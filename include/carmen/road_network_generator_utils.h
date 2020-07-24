@@ -52,20 +52,24 @@ typedef struct
 {
 	int u;
 	int v;
+	int u_ref;
+	int v_ref;
 	double cost;
-	vector <carmen_rddf_waypoint> rddf_point; //optional. Used only for lane level graph
 } edge_t;
 
 
 typedef struct
 {
 	int id;
+	int id_ref;
 	char type;
 	double lon;
 	double lat;
 	carmen_rddf_waypoint rddf_point;
 	vector <edge_t> edges;
 	vector<neaby_lane_t> nearby_lanes;
+	int back_joint_node_id;
+	int next_joint_node_id;
 } node_t;
 
 
@@ -80,12 +84,15 @@ float convert_world_coordinate_image_coordinate_to_image_coordinate(double world
 vector<string> get_files_from_rddf_list(char *rddf_list);
 void load_rddfs (vector<string> files, vector< vector<carmen_rddf_waypoint> > &rddfs);
 graph_t build_nearby_lanes (graph_t graph, double nearby_lane_range, char *option);
-graph_t build_lane_graph (graph_t lane_graph, graph_t graph, char *option);
 double euclidean_distance(double x1, double y1, double x2, double y2);
 void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordinate);
-graph_t build_graph(graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, char* option);
-graph_t read_graph_file (char* graph_file);
-void save_graph_to_file(graph_t graph, char* graph_file);
+graph_t build_lane_graph (graph_t lane_graph, graph_t &graph);
+graph_t build_graph(vector<string> files, graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, char* option);
+FILE *open_graph_file(char* graph_file, string option);
+graph_t read_graph_file (FILE *f_graph);
+graph_t read_lane_graph_file (FILE *f_graph);
+void save_graph_to_file(graph_t graph, FILE *f_graph);
+void save_lane_graph_to_file(graph_t lane_graph, FILE *f_graph);
 void save_graph_to_gpx (graph_t graph);
 
 

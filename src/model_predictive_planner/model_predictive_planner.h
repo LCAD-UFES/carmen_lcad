@@ -17,7 +17,5 @@ carmen_ackerman_path_point_t move_to_front_axle(carmen_ackerman_path_point_t pos
 
 //double compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius);
 
-
-
 #endif /* MODEL_PREDICTIVE_PLANNER_H_ */
 

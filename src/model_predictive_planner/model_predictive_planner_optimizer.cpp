@@ -29,7 +29,42 @@ extern int use_unity_simulator;
 
 
 void
-compute_a_and_t_from_s(double s, double target_v,
+compute_a_and_t_from_s_reverse(double s, double target_v,
+		TrajectoryLookupTable::TrajectoryDimensions target_td,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		ObjectiveFunctionParams *params)
+{
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
+	if (fabs(target_td.v_i) == 0.0)
+		target_td.v_i = 0.0;
+	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	a = (-1)*a;
+	tcp_seed.tt = (target_v - target_td.v_i) / a;
+	if (a < -GlobalState::robot_config.maximum_acceleration_reverse)
+	{
+		a = GlobalState::robot_config.maximum_acceleration_reverse;
+		double v = fabs(target_td.v_i);
+		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v) + v)) / a;
+		a = (-1)*a;
+
+	}
+	else if (a > GlobalState::robot_config.maximum_deceleration_reverse)
+	{
+		a = GlobalState::robot_config.maximum_deceleration_reverse;
+		double v = fabs(target_td.v_i);
+		tcp_seed.tt = -(sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
+	}
+	else if (a == 0.0 && target_td.v_i != 0.0)
+		tcp_seed.tt = s/target_td.v_i;
+
+//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
+	params->suitable_tt = tcp_seed.tt;
+	params->suitable_acceleration = tcp_seed.a = a;
+}
+
+
+void
+compute_a_and_t_from_s_foward(double s, double target_v,
 		TrajectoryLookupTable::TrajectoryDimensions target_td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
@@ -55,6 +90,19 @@ compute_a_and_t_from_s(double s, double target_v,
 //	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
+}
+
+
+void
+compute_a_and_t_from_s(double s, double target_v,
+		TrajectoryLookupTable::TrajectoryDimensions target_td,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		ObjectiveFunctionParams *params)
+{
+	if (GlobalState::reverse_driving)
+		compute_a_and_t_from_s_reverse(s, target_v, target_td, tcp_seed, params);
+	else
+		compute_a_and_t_from_s_foward(s, target_v, target_td, tcp_seed, params);
 }
 
 
@@ -148,7 +196,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 
 	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
 		tcp.tt = 0.2;
-	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
+	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais//TODO
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 	if (tcp.s < 0.2)
 		tcp.s = 0.2;
@@ -279,8 +327,8 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 	for (unsigned int j = 0; j < path.size(); j++)
 	{
 		// TODO: Alberto @@@ tratar disso quando estivermos dando reh tambem
-		if (path.at(j).v < 0.0)
-			continue;
+//		if (path.at(j).v < 0.0)
+//			continue;
 
 		carmen_ackerman_path_point_t front_axle = move_to_front_axle(path.at(j));
 
@@ -503,6 +551,8 @@ my_g(const gsl_vector *x, void *params)
 //    {
 //        distance_to_moving_obstacles = compute_collision_with_moving_obstacles(path, my_params->target_td->v_i);
 //    }
+
+//	plot_state(path, my_params->detailed_lane, my_params->detailed_lane);
 
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
@@ -814,7 +864,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	// Se estou co velocidade vi e quero chagar a vt, sendo que vt < vi, a eh negativo. O tempo, tt, para
 	// ir de vi a vt pode ser derivado de dS/dt = Vo + a*t -> vt = vi + a*tt; a*tt = vt - vi; tt = (vt - vi) / a
 
-	if (target_v < 0.0)
+	if (!GlobalState::reverse_driving && target_v < 0.0)
 		target_v = 0.0;
 	params.optimize_time = OPTIMIZE_DISTANCE;
 //	params.optimize_time = OPTIMIZE_TIME;
@@ -1023,9 +1073,9 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	}
 
 //	printf("lane plan_cost = %lf\n", params.plan_cost);
-	if (params.plan_cost > 0.5)
+	if (params.plan_cost > 11.5)
 	{
-//		printf(">>>>>>>>>>>>>> lane plan_cost > 3.6\n");
+//		printf(">>>>>>>>>>>>>> lane plan_cost > 11.5\n");
 		tcp.valid = false;
 	}
 
@@ -1333,8 +1383,10 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
 	ObjectiveFunctionParams params;
-	params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
-//	params.detailed_lane = detailed_lane;
+	if (GlobalState::reverse_driving)
+		params.detailed_lane = detailed_lane;
+	else
+		params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
 	params.use_lane = use_lane;
 
 	bool optmize_time_and_acc = false;

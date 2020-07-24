@@ -714,6 +714,14 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
 
 
 void
+display_lidar(Mat &image, vector<image_cartesian> points, int r, int g, int b)
+{
+	for (unsigned int i = 0; i < points.size(); i++)
+		circle(image, Point(points[i].image_x, points[i].image_y), 1, cvScalar(b, g, r), 1, 8, 0);
+}
+
+
+void
 show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
@@ -746,14 +754,16 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
     	}
 	}
 
-//	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-	vector<vector<image_cartesian>> lidar_points;
-	lidar_points.push_back(points);
-//    show_LIDAR(image, lidar_points, 255, 0, 0);
-	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
-    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
+// //	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
+// 	vector<vector<image_cartesian>> lidar_points;
+// 	lidar_points.push_back(points);
+// //    show_LIDAR(image, lidar_points, 255, 0, 0);
+// 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+//     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-    resize(image, image, Size(640, 480 * IMAGE_HEIGHT_CROP));
+	display_lidar(image, points, 0, 255, 0);
+
+    // resize(image, image, Size(640, 480 * IMAGE_HEIGHT_CROP));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
@@ -993,7 +1003,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	int crop_x = 0;
 	int crop_y = 0;
 	int crop_w = image_msg->width;
-	int crop_h = image_msg->height * IMAGE_HEIGHT_CROP;
+	int crop_h = image_msg->height;// * IMAGE_HEIGHT_CROP;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file

@@ -42,10 +42,10 @@
 #define RATIO_K3		1.394			// Ratio (Wikipedia) of k3 geometric progression
 #define ZERO_K3_I		7				// Index of zero k3
 
-#define N_I_V			9				// Number of Initial velocities
+#define N_I_V			14				// Number of Initial velocities (it was 9 before reverse_driving)
 #define FIRST_I_V		1.3				// First Initial velocity, or scale factor of its geometric progression
 #define RATIO_I_V		1.381				// Ratio (Wikipedia) of Initial velocity geometric progression
-#define ZERO_I_V_I		0				// Index of zero Initial velocity
+#define ZERO_I_V_I		4				// Index of zero Initial velocity (it was 0 before reverse_driving)
 
 #define N_D_V			8				// Number of Velocities displacements
 #define FIRST_D_V		1.6				// First Velocity displacement, or scale factor of its geometric progression
@@ -183,6 +183,10 @@ TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajec
 float get_d_yaw_by_index(int index);
 float get_theta_by_index(int index);
 float get_distance_by_index(int index);
+
+
+void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
+		  vector<carmen_ackerman_path_point_t> &pSeed);
 
 
 #endif /* TRAJECTORY_LOOKUP_TABLE_H_ */

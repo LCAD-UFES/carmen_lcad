@@ -12,7 +12,8 @@
 #include "rrt_node.h"
 #include "command.h"
 #include "pose.h"
-
+#include <vector>
+#include <math.h>
 
 class Util
 {
@@ -109,4 +110,15 @@ public:
 	static bool between(carmen_ackerman_path_point_t &p, const Pose *pose, carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w);
 };
 
+//-----------Funcoes para extrair dados do Experimento------------------------
+double dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w);
+double get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
+        carmen_ackerman_path_point_t p2,
+        carmen_ackerman_path_point_t robot);
+
+void get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima);
+void save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
+					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
+					const vector<Command> &lastOdometryVector);
+//------------------------------------------------------------
 #endif /* UTIL_H_ */
