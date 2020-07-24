@@ -11,7 +11,6 @@ IFLAGS += \
 	`pkg-config --cflags opencv`
 
 LFLAGS += \
-	`pkg-config --libs opencv` \
 	-lparam_interface \
 	-lipc \
 	-lglobal \
@@ -24,7 +23,8 @@ LFLAGS += \
 	-lreadlog \
 	-lkinect_interface \
 	-lboost_signals \
-	-lboost_system
+	-lboost_system \
+	`pkg-config --libs opencv`
 
 SOURCES = \
 	road_mapper_main.cpp \
