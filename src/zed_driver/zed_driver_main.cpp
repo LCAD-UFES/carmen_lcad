@@ -67,7 +67,7 @@ void
 set_ZED_stream(Camera &zed)
 {
     InitParameters init_parameters;
-    init_parameters.camera_resolution = RESOLUTION::HD1080; // Use HD1080 video mode
+    init_parameters.camera_resolution = RESOLUTION::HD720; //2208*1242 => HD2K: 0; 1920*1080 => HD1080: 1; 1280*720 => HD720: 2, 672*376 => VGA: 3
     init_parameters.camera_fps = 30;                        // Set fps at 30
 
     ERROR_CODE state = zed.open(init_parameters);
@@ -114,7 +114,7 @@ main(int argc, char **argv)
 
     carmen_bumblebee_basic_define_messages(camera_id);
 
-    setup_bumblebee_basic_message(msg, 1920, 1080);
+    setup_bumblebee_basic_message(msg, 1280, 720);
 
     set_ZED_stream(zed);
 
@@ -141,7 +141,7 @@ main(int argc, char **argv)
 
 			// DO NOT ERASE, usefull for debug
             // cout <<"Image resolution: " << left_image.getWidth() << "-" << left_image.getHeight() << "    " << cv_left_image.rows << "x"  << cv_left_image. cols << " || Image timestamp: " << left_image.timestamp.data_ns << endl;
-			resize(cv_left_image, cv_left_image, Size(640, 480));     imshow("ZED Image", cv_left_image);      waitKey(1);
+			// resize(cv_left_image, cv_left_image, Size(640, 480));     imshow("ZED Image", cv_left_image);      waitKey(1);
         }
     }
     zed.close();
