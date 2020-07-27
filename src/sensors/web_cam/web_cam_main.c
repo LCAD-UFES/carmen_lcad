@@ -3,6 +3,7 @@
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include "opencv2/videoio/videoio_c.h"
 
 //#define __CARMEN_WEB_CAM_VIEW_DEBUG_INFO
 
