@@ -30,6 +30,7 @@
 #include "../camera_hw_interface.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include "opencv2/videoio/videoio_c.h"
 
 static carmen_camera_image_t buffer_image;
 static CvCapture *capture = 0;

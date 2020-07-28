@@ -3,3 +3,4 @@ offroad_planner binary
 camera_viewer binary
 route_planner binary
 path_smoothing_study binary
+camera_drivers binary

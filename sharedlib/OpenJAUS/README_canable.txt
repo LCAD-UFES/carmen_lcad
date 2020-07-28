@@ -25,6 +25,10 @@ canbusload can0 500000      # Calculate bus loading percentage on can0
 cangen can0 -D 11223344DEADBEEF -L 8    # Generate fixed-data CAN messages
 
 cansniffer -c can0          # Display top-style view of can traffic
+-m <mask>       (initial FILTER default 0x00000000)
+-v <value>      (initial FILTER default 0x00000000)
+-q              (quiet - all IDs deactivated)
+-c              (color changes)
 
 The filter of cansniffer FILTER can be a single CAN-ID or a CAN-ID/Bitmask:
 +1F5<ENTER>    - add CAN-ID 0x1F5
@@ -56,7 +60,42 @@ $ canplayer vcan0=can1 -v -I candump-2015-03-20_123001.log
 https://sgframework.readthedocs.io/en/latest/cantutorial.html
 
 
-###Mensagens Cambio SARA Black - Sara branca muda para 00 01 02 respectivamente
+### Toyota Etios
+ID  data
+25  0F C2 0F FE 50 00 00 5B -  90 degrees Right Steering (Bytes 0 e 1 - Alngle of Position) (Bytes 6 e 7 Torck)
+25  0F 87 0F FE 90 00 00 60 - 180 degrees Right
+25  0F 49 0F FE 30 00 00 C2 - 270 degrees Right
+25  0F 0E 0F FE A0 00 00 F7 - 360 degrees Right
+25  0F 0E 0F FE A0 00 00 F7 - 450 degrees Right
+25  0E 96 0F FE 00 00 00 DE - 540 degrees Right
+25  0E 59 0F FE E0 00 00 81 - 630 degrees Right
+25  0E 36 0F FE 60 00 00 DE - 675 degrees Right
+25  00 00 0F FE 30 00 00 6A - Steering ZERO
+25  00 3A 0F FE 00 00 00 74 -  90 degrees Left
+25  00 78 0F FE 90 00 00 42 - 180 degrees Left
+25  00 B1 0F FE 30 00 00 1B - 270 degrees Left
+25  00 EF 0F FE B0 00 00 D9 - 360 degrees Left 
+25  01 29 0F FE 90 00 00 F4 - 450 degrees Left 
+25  01 29 0F FE 90 00 00 F4 - 540 degrees Left 
+25  01 A2 0F FE 50 00 00 2D - 630 degrees Left 
+25  01 D9 0F FE 30 00 00 44 - 710 degrees Left
+
+1D0  08 D5 09 00 00 00 00 BF - Gear Park         (Byte 5 indicates the Gerar) (Bytes 6 and 7 indicates aceleration)
+1D0  00 00 02 00 00 00 00 DB - Gear Rearward
+1D0  0C 58 0C 00 00 00 00 49 - Gear Drive
+1D0  00 00 10 00 00 00 00 E9 - Gear Neutral
+
+49F  00 00 00 02 00 00 20 00 - Gear Park         (Byte 4 indicates the Gerar) (Bytes 0 and 1 indicates aceleration)
+49F  00 00 00 01 00 00 20 00 - Gear Rearward
+49F  00 00 00 0A 00 00 20 00 - Gear Drive
+49F  00 00 00 02 00 00 00 96 - Gear Neutral    (Aceleration at 3000 RPM)
+
+AA - Velocity
+B4 - Velocity
+
+
+
+### Mensagens Cambio SARA Black - Sara branca muda para 00 01 02 respectivamente
                __
  10F8109A [8]  04 00 00 00 00 00 00 5A - Neutro
                __
@@ -64,7 +103,7 @@ https://sgframework.readthedocs.io/en/latest/cantutorial.html
                __
  10F8109A [8]  06 00 00 00 00 00 00 5A - Rear
 
-###Mensagens Velocidade SARA - mph
+### Mensagens Velocidade SARA - mph
                   __ __
  10F8109A [8]  05 00 00 00 00 00 00 5A - Drive - Velocity
 Ex: zero para velocidade
@@ -75,14 +114,11 @@ Ex: zero para velocidade
 
 
 ### Mensagens publicadas direcao FOX
-
  0C2
  0D0
  3D0
  729
  
-
-
 
 ### Resultados Ford Fusion
 
