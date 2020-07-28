@@ -69,7 +69,7 @@ int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
 double mapper_velodyne_range_max;
-double mapper_range_max_factor;
+double mapper_range_max_factor = 1.0;
 double mapper_unsafe_height_above_ground;     // Points above and bellow this value will not be used by the mapper
 int mapper_save_map = 1;
 double rays_threshold_to_merge_between_maps = 1e12;
@@ -123,7 +123,7 @@ int use_truepos = 0;
 
 double time_secs_between_map_save = 0.0;
 
-static int mapping_mode = -1;
+static int mapping_mode = 0;
 
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
