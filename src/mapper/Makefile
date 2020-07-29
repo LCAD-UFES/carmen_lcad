@@ -85,7 +85,7 @@ libmapper.a: mapper.o
 
 libmapper_interface.so.1: libmapper_interface.o
 
-mapper: mapper.o mapper_main.o libmapper.a neural_mapper_io.o neural_map.o lib_neural_mapper_py.o
+mapper: mapper.o mapper_main.o libmapper.a neural_mapper_io.o neural_map.o lib_neural_mapper_py.o $(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a
 
 convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 
