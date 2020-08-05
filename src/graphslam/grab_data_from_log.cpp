@@ -67,7 +67,6 @@ find_nearest_message(vector<message_type> &queue, double reference_sensor_time, 
 			{
 				printf("Warning %d: %s time_diff > 0.3\n", ++num_warnings, sensor_name);
 				fflush(stdout);
-				return -2;
 			}
 
 			return i;
@@ -118,49 +117,32 @@ velodyne_handler(double velodyne_timestamp, double initial_timestamp, double fin
 	int gps_orientation_valid;
 	static double last_time;
 	static bool is_first = true;
-	static bool is_first_gps = true;
 	static carmen_pose_3D_t dead_reckoning = {{0.0, 0.0, 0.0}, {0.0, 0.0, initial_odometry_angle}};
 
 	int gpsid = find_nearest_message<StampedPose>(gps_queue, velodyne_timestamp, "gps to velodyne");
 	int odomid = find_nearest_message<StampedOdometry>(odometry_queue, velodyne_timestamp, "odometry to velodyne");
 
 	if ((velodyne_timestamp >= initial_timestamp) && (velodyne_timestamp <= final_timestamp) &&
-		(gpsid != -1) && (odomid >= 0))
+		(gpsid >= 0) && (odomid >= 0))
 	{
 		if (!is_first) // ignore the first message to get a valid last_time
 		{
 			dt = velodyne_timestamp - last_time;
-			double gps_std = -1;
+			dt_gps = velodyne_timestamp - gps_queue[gpsid].time;
 
-			if (gpsid > 0 && (is_first_gps || fabs(odometry_queue[odomid].v) > 1.0))
-			{
-				dt_gps = velodyne_timestamp - gps_queue[gpsid].time;
+			gps_pose = gps_queue[gpsid].pose;
+			gps_orientation = gps_pose.orientation.yaw;
+			gps_orientation_valid = 1;
 
-				gps_pose = gps_queue[gpsid].pose;
-				gps_orientation = gps_pose.orientation.yaw;
-				gps_orientation_valid = 1;
+			double gps_std = gps_queue_stds[gpsid];
 
-				gps_std = gps_queue_stds[gpsid];
-				ackerman_prediction(&gps_pose, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt_gps, distance_between_front_and_rear_axles);
-			}
-			else
-			{
-				printf("Gps data discarded\n");
-				dt_gps = 0.0;
-				gps_pose.position.x = gps_pose.position.y = gps_pose.position.z = 0;	
-				gps_pose.orientation.yaw = gps_pose.orientation.pitch = gps_pose.orientation.yaw = 0;	
-				gps_orientation_valid = -1;
-				gps_std = -1;
-				gps_orientation = -1;
-			}
-
-			if (dt <= 0)
-				printf("** ERROR: (dt <= 0) in velodyne_handler()\n");
+			if ((dt <= 0) || (dt_gps <= 0))
+				printf("** ERROR: (dt <= 0) || (dt_gps <= 0) in velodyne_handler()\n");
 
 			ackerman_prediction(&dead_reckoning, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt, distance_between_front_and_rear_axles);
+			ackerman_prediction(&gps_pose, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt_gps, distance_between_front_and_rear_axles);
 
 			write_sensor_data(dead_reckoning, gps_pose, velodyne_timestamp, gps_std, gps_orientation, gps_orientation_valid);
-			is_first_gps = false;
 		}
 		else
 			is_first = false;

@@ -160,7 +160,7 @@ read_loop_restrictions(char *filename)
 
 
 void
-add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transformer, double initial_angle)
+add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transformer)
 {
 	uint i;
 
@@ -171,30 +171,27 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 	double x_ = gps_to_car.getOrigin().x();
 	double y_ = gps_to_car.getOrigin().y();
 
-	double yaw = initial_angle;
-	double cx = x_ * cos(yaw) - y_ * sin(yaw);
-	double cy = x_ * sin(yaw) + y_ * cos(yaw);
-
-	g2o::SE2 pose(cx, cy, 0.0);
-
-	FILE *caco = fopen("caco.txt", "w");
+//	FILE *caco = fopen("caco.txt", "w");
 	for (i = 0; i < input_data.size(); i++)
 	{
+		double gps_yaw = input_data[i].gps[2];
+		double gps_x = input_data[i].gps[0] - input_data[0].gps[0];
+		double gps_y = input_data[i].gps[1] - input_data[0].gps[1];
+		double car_pose_in_the_world_x = x_ * cos(gps_yaw) - y_ * sin(gps_yaw) + gps_x;
+		double car_pose_in_the_world_y = x_ * sin(gps_yaw) + y_ * cos(gps_yaw) + gps_y;
 
 //		fprintf(caco, "%lf %lf %lf %lf\n", gps_x + input_data[0].gps[0], gps_y + input_data[0].gps[1],
 //				car_pose_in_the_world_x + input_data[0].gps[0], car_pose_in_the_world_y + input_data[0].gps[1]);
 
 		// Cada estimate é o valor inicial de um vértice que representa (é) uma pose do carro quando a núvem de pontos do Velodyne i foi capturada.
-		//SE2 estimate(car_pose_in_the_world_x, car_pose_in_the_world_y, gps_yaw);
-		SE2 estimate = pose * input_data[i].odom;
-		fprintf(caco, "%lf %lf %lf\n", estimate[0], estimate[1], estimate[2]);
-	
+		SE2 estimate(car_pose_in_the_world_x, car_pose_in_the_world_y, gps_yaw);
+
 		VertexSE2 *vertex = new VertexSE2;
 		vertex->setId(i);
 		vertex->setEstimate(estimate);
 		optimizer->addVertex(vertex);
 	}
-	fclose(caco);
+//	fclose(caco);
 }
 
 
@@ -276,21 +273,6 @@ add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, double g
 
 	for (size_t i = 0; i < input_data.size(); i++)
 	{
-		if (i > 0)
-		{
-			double odom_d = sqrt(pow(input_data[i].odom[1] - input_data[i - 1].odom[1], 2) + 
-				pow(input_data[i].odom[0] - input_data[i - 1].odom[0], 2));
-			double odom_dt = fabs(input_data[i].time - input_data[i - 1].time);
-			double odom_v = odom_d / odom_dt;
-
-			if (odom_v < 1.0)
-				continue;
-		}
-
-		if (input_data[i].gps_std < 0 && input_data[i].gps_orientation_valid < 0)
-			continue;
-
-
 		double gps_yaw = input_data[i].gps_yaw;
 		double gps_std_from_quality_flag = input_data[i].gps_std;
 		SE2 gmeasure = input_data[i].gps;
@@ -380,7 +362,7 @@ build_optimization_graph(SparseOptimizer *optimizer,
 		double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
-		tf::Transformer *transformer, double initial_angle)
+		tf::Transformer *transformer)
 {
 	// A fução read_data(), abaixo, lê a saída do grab_data, que é uma arquivo txt (sync.txt)) onde cada linha contém um vetor
 	// com vários dados sincronizados (projetando ackerman) com cada núvem de pontos do Velodyne, sendo eles:
@@ -397,10 +379,10 @@ build_optimization_graph(SparseOptimizer *optimizer,
 	// contém o vetor:
 	// índice de uma núvem do Velodyne, índice de outra núvem do Velodyne, deslocamento x, y, theta da primeira para a
 	// segunda núvem (as outras coordenadas são jogadas fora - não há uma projeção explicita para o plano x, y)
-	// read_loop_restrictions(loops_file);
+	read_loop_restrictions(loops_file);
 
 	// Cria e inicializa vértices de um grafo, onde cada vertice é a pose (x, y, theta) do carro
-	add_and_initialize_vertices(optimizer, transformer, initial_angle);
+	add_and_initialize_vertices(optimizer, transformer);
 
 	// Para cada par de vértices, adiciona uma aresta de odometria, que é um delta_x, delta_y, delta_theta.
 	add_odometry_edges(optimizer, odom_xy_std, odom_orient_std);
@@ -408,7 +390,7 @@ build_optimization_graph(SparseOptimizer *optimizer,
 	// Para cada par de vértices, adiciona uma aresta de gps, que é um x, y, theta.
 	add_gps_edges(optimizer, gps_xy_std_multiplier, gps_yaw_std, transformer);
 
-	// add_loop_closure_edges(optimizer, loop_xy_std, loop_orient_std);
+	add_loop_closure_edges(optimizer, loop_xy_std, loop_orient_std);
 	// add_icp_edges(optimizer);
 
 	optimizer->save("poses_before.g2o");
@@ -441,10 +423,7 @@ save_corrected_vertices(SparseOptimizer *optimizer, tf::Transformer *transformer
 	for (size_t i = 0; i < optimizer->vertices().size(); i++)
 	{
 		v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
-		g2o::SE2 pose = v->estimate();
-
-		// if using only odometry:
-		// pose = g2o::SE2(0,0,-2.679938) * pose;
+		SE2 pose = v->estimate();
 
 		pose.setTranslation(Vector2d(v->estimate()[0] + car_pose_0_in_the_world_x, v->estimate()[1] + car_pose_0_in_the_world_y));
 		pose.setRotation(Rotation2Dd(v->estimate()[2]));
@@ -540,8 +519,7 @@ void
 graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
-		int argc, char **argv,
-		double initial_angle)
+		int argc, char **argv)
 {
 	srand(time(NULL));
 
@@ -557,7 +535,7 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 	factory->registerType("EDGE_GPS_NEW", new HyperGraphElementCreator<EdgeGPSNew>);
 
 	SparseOptimizer *optimizer = initialize_optimizer();
-	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer, initial_angle);
+	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);
 	optimizer->setVerbose(true);
 
 	cerr << "Optimizing" << endl;
@@ -627,9 +605,7 @@ main(int argc, char **argv)
 	double loop_xy_std = args.get<double>("loop_xy_std");
 	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
 
-	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv, initial_angle);
+	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
 	
 	return (0);
 }
-
-
