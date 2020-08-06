@@ -86,6 +86,14 @@ typedef struct voronoi_BFS_node
 } voronoi_BFS_node, *voronoi_BFS_node_p;
 
 
+typedef struct voronoi_node
+{
+	int x;
+	int y;
+	double h;
+} voronoi_node, voronoi_node_p;
+
+
 typedef struct cost_heuristic_node
 {
 	double h;

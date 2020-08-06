@@ -65,6 +65,8 @@ carmen_route_planner_road_network_message route_planner_road_network_message;
 offroad_planner_plan_t plan_path_poses;
 int astar_path_poses_size = 0;
 
+std::vector<voronoi_node> voronoi_points;
+
 voronoi_BFS_node_p **voronoi_map;
 int voronoi_visited_it = 0;
 //cv::Mat temp_voronoi;
@@ -83,7 +85,7 @@ int expansion_number = 0;
 #define CURVATURE_WEIGHT 1.0
 #define	VORONOI_WEIGHT 1.0
 
-#define USE_SMOOTH 1
+#define USE_SMOOTH 0
 #define USE_NOBSTACLE_HEURISTIC 0
 #define EXPANSION_VELOCITY 1.0
 
@@ -91,7 +93,7 @@ using namespace cv;
 
 
 void
-evg_thin_on_map(map_node_p ***astar_map)
+evg_thin_on_map(map_node_p ***astar_map, double *heuristic_obstacle_map)
 {
 	column_type col(astar_map_y_size,Unknown);
 	grid_type curr_grid(astar_map_x_size,col);
@@ -174,6 +176,12 @@ evg_thin_on_map(map_node_p ***astar_map)
 //			printf("Point Skeleton: %d %d \n", skel[i].x,skel[i].y);
 			voronoi_map[skel[i].x][skel[i].y]->is_edge = 1;
 			voronoi_map[skel[i].x][skel[i].y]->nearest_edge = foo_value;
+
+			voronoi_node temp;
+			temp.x = skel[i].x;
+			temp.y = skel[i].y;
+			temp.h = heuristic_obstacle_map[skel[i].y + skel[i].x * astar_map_y_size];
+			voronoi_points.push_back(temp);
 		}
 //		temp_voronoi = imagem.clone();
 		imwrite(outfile, imagem);
@@ -182,8 +190,15 @@ evg_thin_on_map(map_node_p ***astar_map)
 	{
 		for (unsigned int i=0;i<skel.size();i++)
 		{
+
 			voronoi_map[skel[i].x][skel[i].y]->is_edge = 1;
 			voronoi_map[skel[i].x][skel[i].y]->nearest_edge = foo_value;
+
+			voronoi_node temp;
+			temp.x = skel[i].x;
+			temp.y = skel[i].y;
+			temp.h = heuristic_obstacle_map[skel[i].y + skel[i].x * astar_map_y_size];
+			voronoi_points.push_back(temp);
 		}
 	}
 }
@@ -722,11 +737,12 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	gsl_vector_free (v);
 	printf("Terminou a suavização\n");
 
+	/*
 	for (int i = 1; i < size; i++)
 	{
 		printf("%f %f %f %f %f Ponto Ancora=%d\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi, param->anchor_points[i]);
 	}
-
+*/
 	free(param->anchor_points);
 	free(param);
 //	cout << "Smoothing running time is "<<time_count.get_since()<<" seconds\n";
@@ -1370,6 +1386,54 @@ carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t poin
 }
 
 
+carmen_vector_2D_t
+get_edge_in_vision(state_node *current)
+{
+	// Esse método serve para obter a edge (que é obtida pelo método do voronoi) com menor valor de h(n) (o que significa que é a edge mais próxima do goal)
+	// no qual faz uma linha reta com o ponto atual do carro que não bate em um obstáculo
+	int x_c;
+	int y_c;
+	int theta_c;
+	get_current_pos(current, x_c, y_c, theta_c);
+
+	int x, y;
+	double min_h = DBL_MAX;
+	carmen_vector_2D_t min_h_point;
+	min_h_point.x = -1;
+	min_h_point.y = -1;
+	carmen_bresenham_param_t params;
+	int free_line;
+
+	for(int i = 0; i < voronoi_points.size(); i++)
+	{
+		carmen_get_bresenham_parameters(x_c, y_c, voronoi_points[i].x, voronoi_points[i].y, &params);
+		carmen_get_current_point(&params, &x, &y);
+		free_line = 1;
+
+		while (carmen_get_next_point(&params))
+		{
+			carmen_get_current_point(&params, &x, &y);
+			if(voronoi_map[x][y]->is_obstacle == 1)
+			{
+				free_line = 0;
+				break;
+			}
+		}
+
+		if(free_line && voronoi_points[i].h < min_h)
+		{
+			min_h = voronoi_points[i].h;
+			min_h_point.x = voronoi_points[i].x;
+			min_h_point.y = voronoi_points[i].y;
+		}
+
+
+	}
+	return min_h_point;
+
+}
+
+
 std::vector<state_node>
 build_state_path(state_node *node)
 {
@@ -1427,6 +1491,174 @@ astar_mount_path_message(state_node *current_state)
 }
 
 
+double
+carmen_compute_abs_angular_distance(double theta_1, double theta_2)
+{
+	return (carmen_normalize_theta(abs(theta_1 - theta_2)));
+}
+
+
+double
+reed_shepp_cost(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point_t goal)
+{
+	int rs_pathl;
+	int rs_numero;
+	double tr;
+	double ur;
+	double vr;
+	double distance_traveled = 0.0;
+	double distance_traveled_old = 0.0;
+	carmen_ackerman_traj_point_t rs_points[6]; // Por alguma razão, com o valor 5 acontece stack smashing às vezes quando o rs_pathl == 5
+	double v_step;
+	double step_weight;
+	double path_cost = 0.0;
+	carmen_ackerman_traj_point_t point_old = {0, 0, 0, 0, 0};
+
+	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
+	double rs_length = reed_shepp(current, goal, &rs_numero, &tr, &ur, &vr);
+
+	rs_pathl = constRS(rs_numero, tr, ur, vr, current, rs_points);
+	for (int i = rs_pathl; i > 0; i--)
+	{
+		carmen_ackerman_traj_point_t point = rs_points[i];
+		if (rs_points[i].v < 0.0)
+		{
+			v_step = EXPANSION_VELOCITY;
+			step_weight = 1.0;
+		}
+		else
+		{
+			v_step = -EXPANSION_VELOCITY;
+			step_weight = 1.0;
+		}
+		while (DIST2D(point, rs_points[i-1]) > 0.2 || (abs(carmen_compute_abs_angular_distance(point.theta, rs_points[i-1].theta)) > 0.0872665))
+		{
+			distance_traveled_old = distance_traveled;
+			point_old = point;
+			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
+					0.1, &distance_traveled, DELTA_T, robot_config);
+			path_cost += step_weight * (distance_traveled - distance_traveled_old);
+
+		}
+	}
+
+	return path_cost;
+}
+
+
+double
+h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, state_node *goal)
+{
+	double ho = -1;
+	double rs = -1;
+
+	int x_c;
+	int y_c;
+	int theta_c;
+	get_current_pos(current, x_c, y_c, theta_c);
+
+	ho = heuristic_obstacle_map[y_c + x_c * astar_map_y_size];
+	if(USE_NOBSTACLE_HEURISTIC)
+	{
+		if(astar_config.use_matrix_cost_heuristic)
+	//	if(0)
+		{
+			int x = ((current->state.x - goal->state.x) * cos(current->state.theta) - (current->state.y - goal->state.y) * sin(current->state.theta))/astar_config.precomputed_cost_resolution;
+			int y = ((current->state.x - goal->state.x) * sin(current->state.theta) + (current->state.y - goal->state.y) * cos(current->state.theta))/astar_config.precomputed_cost_resolution;
+			int theta;
+
+			if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
+				theta = get_astar_map_theta(carmen_normalize_theta(-(goal->state.theta - current->state.theta)), astar_config.precomputed_cost_theta_size);
+			else
+				theta = get_astar_map_theta(carmen_normalize_theta(goal->state.theta - current->state.theta), astar_config.precomputed_cost_theta_size);
+
+
+			int half_map = round(((astar_config.precomputed_cost_size)/astar_config.precomputed_cost_resolution) / 2);
+		//	printf("Real x = %d y= %d theta = %d\n", x + half_map, y + half_map, theta);
+			if(x < half_map && y < half_map && x > -half_map && y > -half_map)
+			{
+				rs =  heuristic_without_obstacle_map[x + half_map][y + half_map][theta]->h;
+			}
+		}
+		else
+		{
+			double rs_cost = reed_shepp_cost(current->state, goal->state);
+			rs = rs_cost;
+
+		}
+	}
+//	printf("[h]rs = %f\tho = %f\n", rs, ho);
+
+	double returned_h = std::max(rs, ho);
+
+	return returned_h;
+}
+
+
+void
+exit_expansion(state_node *current, double edge_in_vision_theta, carmen_vector_2D_t edge_in_vision, map_node_p ***astar_map, boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> &open, double* heuristic_obstacle_map, state_node *goal_state)
+{
+	int first_fail = 0;
+	double distance_traveled = 0.0;
+	double target_phi;
+	double time_lenght;
+	int size_for;
+	state_node_p old_state = (state_node_p) malloc(sizeof(state_node));
+	carmen_test_alloc(old_state);
+	target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + (edge_in_vision_theta - current->state.theta)), robot_config.max_phi);
+	old_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, robot_config.distance_between_front_and_rear_axles, target_phi, EXPANSION_VELOCITY);
+	if(is_valid_state(old_state, astar_map) == 1)
+	{
+		old_state->distance_traveled_g = DIST2D(old_state->state, current->state);
+		old_state->parent = current;
+	}
+	else
+	{
+		free(old_state);
+		first_fail = 1;
+	}
+
+	if(first_fail == 0)
+	{
+		int x_c;
+		int y_c;
+		int theta_c;
+		get_current_pos(old_state, x_c, y_c, theta_c);
+		while(sqrt(carmen_square(edge_in_vision.x - x_c)+carmen_square(edge_in_vision.y - y_c)) > 4)
+		{
+			if(fabs(edge_in_vision_theta - old_state->state.theta) > 0.02)
+				target_phi = carmen_clamp(-robot_config.max_phi, (old_state->state.phi + (edge_in_vision_theta - old_state->state.theta)), robot_config.max_phi);
+			else
+				target_phi = 0.0;
+			state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
+			carmen_test_alloc(new_state);
+			new_state->state = carmen_conventional_astar_ackerman_kinematic_3(old_state->state, robot_config.distance_between_front_and_rear_axles, target_phi, EXPANSION_VELOCITY);
+
+			if(is_valid_state(new_state, astar_map) == 1)
+			{
+				new_state->distance_traveled_g = DIST2D(new_state->state, old_state->state);
+				new_state->parent = old_state;
+				new_state->g = old_state->g + new_state->distance_traveled_g;
+				new_state->h = h(astar_map, heuristic_obstacle_map ,new_state, goal_state);
+				new_state->f = new_state->g + new_state->h;
+//				printf("Push new_state = %f %f %f\n", new_state->state.x, new_state->state.y, new_state->state.theta);
+//				printf("Push  = %f %f %f\n", sqrt(carmen_square(edge_in_vision.x - x_c)+carmen_square(edge_in_vision.y - y_c)), edge_in_vision.x, edge_in_vision.y );
+				open.push(new_state);
+			}
+			else
+			{
+				free(new_state);
+				break;
+			}
+			old_state = new_state;
+			get_current_pos(old_state, x_c, y_c, theta_c);
+
+		}
+
+	}
+}
+
+
 std::vector<state_node*>
 expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
 {
@@ -1476,13 +1708,6 @@ double
 movementcost(state_node *current, state_node *neighbor)
 {
 	return (neighbor->distance_traveled_g);
-}
-
-
-double
-carmen_compute_abs_angular_distance(double theta_1, double theta_2)
-{
-	return (carmen_normalize_theta(abs(theta_1 - theta_2)));
 }
 
 
@@ -1549,54 +1774,6 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 }
 
 
-double
-reed_shepp_cost(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point_t goal)
-{
-	int rs_pathl;
-	int rs_numero;
-	double tr;
-	double ur;
-	double vr;
-	double distance_traveled = 0.0;
-	double distance_traveled_old = 0.0;
-	carmen_ackerman_traj_point_t rs_points[6]; // Por alguma razão, com o valor 5 acontece stack smashing às vezes quando o rs_pathl == 5
-	double v_step;
-	double step_weight;
-	double path_cost = 0.0;
-	carmen_ackerman_traj_point_t point_old = {0, 0, 0, 0, 0};
-
-	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
-	double rs_length = reed_shepp(current, goal, &rs_numero, &tr, &ur, &vr);
-
-	rs_pathl = constRS(rs_numero, tr, ur, vr, current, rs_points);
-	for (int i = rs_pathl; i > 0; i--)
-	{
-		carmen_ackerman_traj_point_t point = rs_points[i];
-		if (rs_points[i].v < 0.0)
-		{
-			v_step = EXPANSION_VELOCITY;
-			step_weight = 1.0;
-		}
-		else
-		{
-			v_step = -EXPANSION_VELOCITY;
-			step_weight = 1.0;
-		}
-		while (DIST2D(point, rs_points[i-1]) > 0.2 || (abs(carmen_compute_abs_angular_distance(point.theta, rs_points[i-1].theta)) > 0.0872665))
-		{
-			distance_traveled_old = distance_traveled;
-			point_old = point;
-			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
-					0.1, &distance_traveled, DELTA_T, robot_config);
-			path_cost += step_weight * (distance_traveled - distance_traveled_old);
-
-		}
-	}
-
-	return path_cost;
-}
-
-
 int
 hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 {
@@ -1622,55 +1799,6 @@ hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 
 	}
 	return 0;
-}
-
-
-double
-h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, state_node *goal)
-{
-	double ho = -1;
-	double rs = -1;
-
-	int x_c;
-	int y_c;
-	int theta_c;
-	get_current_pos(current, x_c, y_c, theta_c);
-
-	ho = heuristic_obstacle_map[y_c + x_c * astar_map_y_size];
-	if(USE_NOBSTACLE_HEURISTIC)
-	{
-		if(astar_config.use_matrix_cost_heuristic)
-	//	if(0)
-		{
-			int x = ((current->state.x - goal->state.x) * cos(current->state.theta) - (current->state.y - goal->state.y) * sin(current->state.theta))/astar_config.precomputed_cost_resolution;
-			int y = ((current->state.x - goal->state.x) * sin(current->state.theta) + (current->state.y - goal->state.y) * cos(current->state.theta))/astar_config.precomputed_cost_resolution;
-			int theta;
-
-			if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
-				theta = get_astar_map_theta(carmen_normalize_theta(-(goal->state.theta - current->state.theta)), astar_config.precomputed_cost_theta_size);
-			else
-				theta = get_astar_map_theta(carmen_normalize_theta(goal->state.theta - current->state.theta), astar_config.precomputed_cost_theta_size);
-
-
-			int half_map = round(((astar_config.precomputed_cost_size)/astar_config.precomputed_cost_resolution) / 2);
-		//	printf("Real x = %d y= %d theta = %d\n", x + half_map, y + half_map, theta);
-			if(x < half_map && y < half_map && x > -half_map && y > -half_map)
-			{
-				rs =  heuristic_without_obstacle_map[x + half_map][y + half_map][theta]->h;
-			}
-		}
-		else
-		{
-			double rs_cost = reed_shepp_cost(current->state, goal->state);
-			rs = rs_cost;
-
-		}
-	}
-//	printf("[h]rs = %f\tho = %f\n", rs, ho);
-
-	double returned_h = std::max(rs, ho);
-
-	return returned_h;
 }
 
 
@@ -1704,9 +1832,18 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 			// https://ieeexplore.ieee.org/abstract/document/7979125/
 //			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + h(astar_map, heuristic_obstacle_map ,current, goal_state);
 			// Testei acrescentando um certo "roughness" como custo, e realmente parece que o path fica mais suave
-			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + abs(DOT2D(DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state),DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state)));
+			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state); //+ abs(DOT2D(DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state),DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state)));
 //			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
-			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
+
+			/* Abaixo foi apenas um teste, parece que deixou mais lento e não deu muito benefício
+			double distance_to_obstacle = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(neighbor_expansion[it_neighbor_number]->state, distance_map);
+			if(distance_to_obstacle > 0 && distance_to_obstacle < 2.0)
+			{
+				neighbor_expansion[it_neighbor_number]->h += distance_to_nearest_edge(neighbor_expansion[it_neighbor_number]->state.x, neighbor_expansion[it_neighbor_number]->state.y);
+			}
+			*/
+
+//			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			neighbor_expansion[it_neighbor_number]->parent = current;
 
 			//Penalidades
@@ -1735,6 +1872,24 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 		}
 		++it_neighbor_number;
 	}
+/*
+	if(current->state.v > 0)
+	{
+		carmen_vector_2D_t edge_in_vision = get_edge_in_vision(current);
+	//	printf("Edge in vision point = %f %f\n", edge_in_vision.x, edge_in_vision.y);
+		int x_c;
+		int y_c;
+		int theta_c;
+		get_current_pos(current, x_c, y_c, theta_c);
+		double edge_in_vision_theta = carmen_normalize_theta(atan2((edge_in_vision.y - y_c), (edge_in_vision.x - x_c)));
+	//	printf("Angle: %f, %f\n", edge_in_vision_theta, edge_in_vision_theta - current->state.theta);
+
+		if(edge_in_vision_theta - current->state.theta > -0.4 && edge_in_vision_theta - current->state.theta < 0.4)
+		{
+			exit_expansion(current, edge_in_vision_theta, edge_in_vision, astar_map, open, heuristic_obstacle_map, goal_state);
+		}
+	}
+*/
 }
 
 offroad_planner_plan_t
@@ -1792,7 +1947,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	time_count.reset();
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose, astar_map);
 //	printf("Heuristic map time is %f seconds\n\n", time_count.get_since());
-	evg_thin_on_map(astar_map);
+	evg_thin_on_map(astar_map, heuristic_obstacle_map);
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
@@ -1832,7 +1987,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 		astar_map_close_node(astar_map, x, y, theta);
 
-		if(cont_rs_nodes%3==0)
+		if(cont_rs_nodes%7==0)
 		{
 			rs_path = reed_shepp_path(current, goal_state);
 			if(hitObstacle(rs_path, astar_map) == 0 )//&& rs_path.front()->f < (current->h) )
@@ -1864,7 +2019,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 				printf("Otimização falhou, retornou o valor %d\n", res);
 		}
 
-		printf("Planning time is %f seconds\n\n", time_count.get_since());
+		printf("Planning time is %f seconds\n", time_count.get_since());
 		if(expansion_number > 0){
 			printf("Expansion_number = %d \n", expansion_number);
 		}
