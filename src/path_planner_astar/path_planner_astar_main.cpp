@@ -1872,7 +1872,7 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 		}
 		++it_neighbor_number;
 	}
-/*
+
 	if(current->state.v > 0)
 	{
 		carmen_vector_2D_t edge_in_vision = get_edge_in_vision(current);
@@ -1889,7 +1889,7 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 			exit_expansion(current, edge_in_vision_theta, edge_in_vision, astar_map, open, heuristic_obstacle_map, goal_state);
 		}
 	}
-*/
+
 }
 
 offroad_planner_plan_t
