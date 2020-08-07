@@ -1116,7 +1116,7 @@ alloc_astar_map()
 	map_node_p ***astar_map;
 	astar_map_x_size = round((distance_map->config.x_size * distance_map->config.resolution) / astar_config.state_map_resolution);
 	astar_map_y_size = round((distance_map->config.y_size * distance_map->config.resolution)/ astar_config.state_map_resolution);
-	//printf("Astar map size: %f %f %f\n",distance_map->config.resolution, distance_map->config.x_origin, distance_map->config.y_origin);
+	printf("Distance map origin: %f %f\n", distance_map->config.x_origin, distance_map->config.y_origin);
 	//exit(1);
 	int theta_size = astar_config.state_map_theta_resolution;
 	double pos_x = 0.0;
@@ -1661,7 +1661,7 @@ exit_expansion(state_node *current, double edge_in_vision_theta, int edge_in_vis
 				new_state->g = old_state->g + new_state->distance_traveled_g;
 				new_state->h = h(astar_map, heuristic_obstacle_map ,new_state, goal_state);
 				new_state->f = new_state->g + new_state->h;
-				printf("Push new_state = %f %f %f\n", new_state->state.x, new_state->state.y, new_state->state.theta);
+//				printf("Push new_state = %f %f %f\n", new_state->state.x, new_state->state.y, new_state->state.theta);
 //				printf("Push  = %f %f %f\n", sqrt(carmen_square(edge_in_vision.x - x_c)+carmen_square(edge_in_vision.y - y_c)), edge_in_vision.x, edge_in_vision.y );
 				open.push(new_state);
 			}
@@ -1676,7 +1676,7 @@ exit_expansion(state_node *current, double edge_in_vision_theta, int edge_in_vis
 //			printf("Current_pos = %d %d\n", x_c, y_c);
 
 		}
-		printf("Count_expansions = %d\n",count_expansions);
+//		printf("Count_expansions = %d\n",count_expansions);
 
 	}
 }
@@ -1880,28 +1880,29 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 		++it_neighbor_number;
 	}
 
-
+/*
 	if(current->state.v > 0)
 	{
 		int edge_in_vision = get_edge_in_vision(current);
+		printf("edge_in_vision = %d %d %f %d\n", voronoi_points[edge_in_vision].x, voronoi_points[edge_in_vision].y, voronoi_points[edge_in_vision].h, voronoi_points[edge_in_vision].already_expanded);
+
 		if(edge_in_vision > 0 && voronoi_points[edge_in_vision].already_expanded == 0){
-		//	printf("Edge in vision point = %f %f\n", edge_in_vision.x, edge_in_vision.y);
 			int x_c;
 			int y_c;
 			int theta_c;
 			get_current_pos(current, x_c, y_c, theta_c);
-	//		printf("edge_in_vision = %f %f\n", edge_in_vision.x, edge_in_vision.x);
 	//		printf("current = %d %d\n", x_c, y_c);
 			double edge_in_vision_theta = carmen_normalize_theta(atan2((voronoi_points[edge_in_vision].y - y_c), (voronoi_points[edge_in_vision].x - x_c)));
 		//	printf("Angle: %f, %f\n", edge_in_vision_theta, edge_in_vision_theta - current->state.theta);
 
-			if(((edge_in_vision_theta - current->state.theta) > -0.4) && ((edge_in_vision_theta - current->state.theta) < 0.4))
+			if(((edge_in_vision_theta - current->state.theta) > -0.3) && ((edge_in_vision_theta - current->state.theta) < 0.3))
 			{
 				exit_expansion(current, edge_in_vision_theta, edge_in_vision, astar_map, open, heuristic_obstacle_map, goal_state);
 				voronoi_points[edge_in_vision].already_expanded = 1;
 			}
 		}
 	}
+*/
 
 }
 
@@ -1971,9 +1972,10 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		printf("Robot_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(start_state->state, distance_map));
 		return 0;
 	}
+
 	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
 	{
-		printf("goal_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map));
+		printf("Goal_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map));
 		return 0;
 	}
 
@@ -1991,7 +1993,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		open.pop();
 //		Apenas para fazer uma verificação no método que obtém a célula com obstáculo mais próximo
 //		carmen_position_t temp = nearest_obstacle_cell(current->state.x, current->state.y);
-		printf("current cell = %f %f\n", current->state.x, current->state.y);
+//		printf("current cell = %f %f\n", current->state.x, current->state.y);
 //		printf("nearest_obstacle_cell = %f %f\n",temp.x, temp.y);
 
 		if(is_goal(current, goal_state) == 1)
