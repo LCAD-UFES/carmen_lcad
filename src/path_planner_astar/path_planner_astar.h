@@ -91,6 +91,7 @@ typedef struct voronoi_node
 	int x;
 	int y;
 	double h;
+	int already_expanded;
 } voronoi_node, voronoi_node_p;
 
 

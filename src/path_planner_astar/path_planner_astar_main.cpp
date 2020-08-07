@@ -20,7 +20,7 @@
 #include <iostream>
 
 
-#define PRINT_VORONOI 0
+#define PRINT_VORONOI 1
 char* outfile = (char*) "voronoi_edges.ppm";
 unsigned int unknown_min=127;
 unsigned int unknown_max=128;
@@ -89,6 +89,9 @@ int expansion_number = 0;
 #define USE_NOBSTACLE_HEURISTIC 0
 #define EXPANSION_VELOCITY 1.0
 
+#define OBSTACLE_DISTANCE_MIN 1.0
+
+
 using namespace cv;
 
 
@@ -103,7 +106,7 @@ evg_thin_on_map(map_node_p ***astar_map, double *heuristic_obstacle_map)
 		for (int j = 0; j < astar_map_y_size; j++)
 		{
 			double cell= astar_map[i][j][0]->obstacle_distance;
-			if (cell <= 1.0)
+			if (cell <= 1.5)
 				curr_grid[i][j]=Occupied;
 			else
 				curr_grid[i][j]=Free;
@@ -152,7 +155,7 @@ evg_thin_on_map(map_node_p ***astar_map, double *heuristic_obstacle_map)
 		{
 			for (int j = 0; j < astar_map_y_size; j++)
 			{
-				if (astar_map[i][j][0]->obstacle_distance < 1.0)
+				if (astar_map[i][j][0]->obstacle_distance < OBSTACLE_DISTANCE_MIN)
 				{
 					imagem.at<Vec3b>(i, j)[0] = 0;
 					imagem.at<Vec3b>(i, j)[1] = 0;
@@ -181,6 +184,7 @@ evg_thin_on_map(map_node_p ***astar_map, double *heuristic_obstacle_map)
 			temp.x = skel[i].x;
 			temp.y = skel[i].y;
 			temp.h = heuristic_obstacle_map[skel[i].y + skel[i].x * astar_map_y_size];
+			temp.already_expanded = 0;
 			voronoi_points.push_back(temp);
 		}
 //		temp_voronoi = imagem.clone();
@@ -198,6 +202,7 @@ evg_thin_on_map(map_node_p ***astar_map, double *heuristic_obstacle_map)
 			temp.x = skel[i].x;
 			temp.y = skel[i].y;
 			temp.h = heuristic_obstacle_map[skel[i].y + skel[i].x * astar_map_y_size];
+			temp.already_expanded = 0;
 			voronoi_points.push_back(temp);
 		}
 	}
@@ -243,14 +248,14 @@ get_astar_map_theta(double theta, double map_theta_size)
 int
 get_astar_map_x(double x)
 {
-	return round((double) (x - distance_map->config.x_origin) / astar_config.state_map_resolution);
+	return round((double) ((x - distance_map->config.x_origin) / astar_config.state_map_resolution));
 }
 
 
 int
 get_astar_map_y(double y)
 {
-	return round((double) (y - distance_map->config.y_origin) / astar_config.state_map_resolution);
+	return round((double) ((y - distance_map->config.y_origin) / astar_config.state_map_resolution));
 }
 
 
@@ -1075,7 +1080,7 @@ get_obstacle_heuristic_map(carmen_point_t *goal_pose, map_node_p*** astar_map)
 	{
 		for(int y = 0; y < y_size; y++)
 		{
-			if(astar_map[x][y][0]->obstacle_distance < 1.0)
+			if(astar_map[x][y][0]->obstacle_distance <= OBSTACLE_DISTANCE_MIN)
 			{
 				cost_map[y + x * y_size] = 1.0; // Espaco ocupado eh representado como 1.0
 			}
@@ -1111,6 +1116,8 @@ alloc_astar_map()
 	map_node_p ***astar_map;
 	astar_map_x_size = round((distance_map->config.x_size * distance_map->config.resolution) / astar_config.state_map_resolution);
 	astar_map_y_size = round((distance_map->config.y_size * distance_map->config.resolution)/ astar_config.state_map_resolution);
+	//printf("Astar map size: %f %f %f\n",distance_map->config.resolution, distance_map->config.x_origin, distance_map->config.y_origin);
+	//exit(1);
 	int theta_size = astar_config.state_map_theta_resolution;
 	double pos_x = 0.0;
 	double pos_y = 0.0;
@@ -1155,7 +1162,7 @@ alloc_astar_map()
 			voronoi_map[i][j]->is_edge = 0;
 			voronoi_map[i][j]->nearest_edge = foo_value;
 			voronoi_map[i][j]->visited_iteration = 0;
-			if(is_valid_grid_value(i, j, astar_config.state_map_resolution) == 1 && obstacle_distance(pos_x, pos_y) > 1.0)
+			if(is_valid_grid_value(i, j, astar_config.state_map_resolution) == 1 && obstacle_distance(pos_x, pos_y) > OBSTACLE_DISTANCE_MIN)
 				voronoi_map[i][j]->is_obstacle = 0;
 			else
 				voronoi_map[i][j]->is_obstacle = 1;
@@ -1334,14 +1341,18 @@ astar_map_open_node(map_node_p ***astar_map, int x, int y, int theta)
 int
 is_valid_state(state_node *state, map_node_p ***astar_map)
 {
+	if(state->state.x < distance_map->config.x_origin || state->state.y < distance_map->config.y_origin)
+		return 0;
+
 	int x;
 	int y;
 	int theta;
 	get_current_pos(state, x, y, theta);
-	if(x >= astar_map_x_size || y >= astar_map_y_size || x < 0 || y < 0 || carmen_obstacle_avoider_car_distance_to_nearest_obstacle(state->state, distance_map) < 0.5)//astar_map[x][y][theta]->obstacle_distance < 1.5)
+	if(x >= astar_map_x_size || y >= astar_map_y_size || x < 0 || y < 0 || carmen_obstacle_avoider_car_distance_to_nearest_obstacle(state->state, distance_map) < OBSTACLE_DISTANCE_MIN)//astar_map[x][y][theta]->obstacle_distance < 1.5)
 	{
 		return 0;
 	}
+//	printf("Current_pos = %d %d\n", x, y);
 	return 1;
 }
 
@@ -1386,7 +1397,7 @@ carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t poin
 }
 
 
-carmen_vector_2D_t
+int
 get_edge_in_vision(state_node *current)
 {
 	// Esse método serve para obter a edge (que é obtida pelo método do voronoi) com menor valor de h(n) (o que significa que é a edge mais próxima do goal)
@@ -1395,7 +1406,7 @@ get_edge_in_vision(state_node *current)
 	int y_c;
 	int theta_c;
 	get_current_pos(current, x_c, y_c, theta_c);
-
+	int index_voronoi_point = -1;
 	int x, y;
 	double min_h = DBL_MAX;
 	carmen_vector_2D_t min_h_point;
@@ -1425,11 +1436,12 @@ get_edge_in_vision(state_node *current)
 			min_h = voronoi_points[i].h;
 			min_h_point.x = voronoi_points[i].x;
 			min_h_point.y = voronoi_points[i].y;
+			index_voronoi_point = i;
 		}
 
 
 	}
-	return min_h_point;
+	return index_voronoi_point;
 
 }
 
@@ -1441,6 +1453,7 @@ build_state_path(state_node *node)
 	int i = 0;
     while (node != NULL)
     {
+//    	printf("state_path = %d %f %f\n",i ,node->state.x, node->state.y);
         state_path.push_back(*node);
         node = node->parent;
         ++i;
@@ -1459,6 +1472,7 @@ build_rddf_poses(state_node *current_state)
 	carmen_ackerman_traj_point_t last_state;
 	temp_rddf_poses_from_path.push_back(path[0].state);
 	last_state = path[0].state;
+
 	for (int i = 1; i < path.size(); i++)
 	{
 		if(DIST2D(path[i].state, last_state) >= 0.5 || (sign(path[i].state.v) != sign(last_state.v)))
@@ -1485,6 +1499,7 @@ astar_mount_path_message(state_node *current_state)
 	std::vector<carmen_ackerman_traj_point_t>().swap(carmen_astar_path_poses);
 	carmen_astar_path_poses = build_rddf_poses(current_state);
 	astar_path_poses_size = carmen_astar_path_poses.size();
+
 
 //	printf("%f\n",DIST2D(current_globalpos_msg.globalpos, goal_state->state));
 //	printf("Chegou ao fim do path!\n");
@@ -1596,9 +1611,10 @@ h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, 
 
 
 void
-exit_expansion(state_node *current, double edge_in_vision_theta, carmen_vector_2D_t edge_in_vision, map_node_p ***astar_map, boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> &open, double* heuristic_obstacle_map, state_node *goal_state)
+exit_expansion(state_node *current, double edge_in_vision_theta, int edge_in_vision, map_node_p ***astar_map, boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> &open, double* heuristic_obstacle_map, state_node *goal_state)
 {
 	int first_fail = 0;
+	int count_expansions = 0;
 	double distance_traveled = 0.0;
 	double target_phi;
 	double time_lenght;
@@ -1607,6 +1623,7 @@ exit_expansion(state_node *current, double edge_in_vision_theta, carmen_vector_2
 	carmen_test_alloc(old_state);
 	target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + (edge_in_vision_theta - current->state.theta)), robot_config.max_phi);
 	old_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, robot_config.distance_between_front_and_rear_axles, target_phi, EXPANSION_VELOCITY);
+
 	if(is_valid_state(old_state, astar_map) == 1)
 	{
 		old_state->distance_traveled_g = DIST2D(old_state->state, current->state);
@@ -1620,40 +1637,46 @@ exit_expansion(state_node *current, double edge_in_vision_theta, carmen_vector_2
 
 	if(first_fail == 0)
 	{
+
 		int x_c;
 		int y_c;
 		int theta_c;
 		get_current_pos(old_state, x_c, y_c, theta_c);
-		while(sqrt(carmen_square(edge_in_vision.x - x_c)+carmen_square(edge_in_vision.y - y_c)) > 4)
+		while(sqrt(carmen_square(voronoi_points[edge_in_vision].x - x_c)+carmen_square(voronoi_points[edge_in_vision].y - y_c)) > 4)
 		{
 			if(fabs(edge_in_vision_theta - old_state->state.theta) > 0.02)
 				target_phi = carmen_clamp(-robot_config.max_phi, (old_state->state.phi + (edge_in_vision_theta - old_state->state.theta)), robot_config.max_phi);
 			else
 				target_phi = 0.0;
+
 			state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 			carmen_test_alloc(new_state);
 			new_state->state = carmen_conventional_astar_ackerman_kinematic_3(old_state->state, robot_config.distance_between_front_and_rear_axles, target_phi, EXPANSION_VELOCITY);
 
 			if(is_valid_state(new_state, astar_map) == 1)
 			{
+				count_expansions++;
 				new_state->distance_traveled_g = DIST2D(new_state->state, old_state->state);
 				new_state->parent = old_state;
 				new_state->g = old_state->g + new_state->distance_traveled_g;
 				new_state->h = h(astar_map, heuristic_obstacle_map ,new_state, goal_state);
 				new_state->f = new_state->g + new_state->h;
-//				printf("Push new_state = %f %f %f\n", new_state->state.x, new_state->state.y, new_state->state.theta);
+				printf("Push new_state = %f %f %f\n", new_state->state.x, new_state->state.y, new_state->state.theta);
 //				printf("Push  = %f %f %f\n", sqrt(carmen_square(edge_in_vision.x - x_c)+carmen_square(edge_in_vision.y - y_c)), edge_in_vision.x, edge_in_vision.y );
 				open.push(new_state);
 			}
 			else
 			{
+
 				free(new_state);
 				break;
 			}
 			old_state = new_state;
 			get_current_pos(old_state, x_c, y_c, theta_c);
+//			printf("Current_pos = %d %d\n", x_c, y_c);
 
 		}
+		printf("Count_expansions = %d\n",count_expansions);
 
 	}
 }
@@ -1778,25 +1801,9 @@ int
 hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 {
 	for(int i = 0; i < path.size(); i++)
-	{/*
-		if(path.size() - i > 5)
-		{
-			if(astar_map[get_astar_map_x(path[i]->state.x)][get_astar_map_y(path[i]->state.y)][0]->obstacle_distance < 1.5)
-			{
-				return 1;
-			}
-		}
-		else
-		{
-			if(astar_map[get_astar_map_x(path[i]->state.x)][get_astar_map_y(path[i]->state.y)][0]->obstacle_distance < 0.5)
-			{
-				return 1;
-			}
-		}
-		*/
-		if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(path[i]->state, distance_map) < 0.5)
+	{
+		if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(path[i]->state, distance_map) < OBSTACLE_DISTANCE_MIN)
 			return 1;
-
 	}
 	return 0;
 }
@@ -1873,20 +1880,26 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 		++it_neighbor_number;
 	}
 
+
 	if(current->state.v > 0)
 	{
-		carmen_vector_2D_t edge_in_vision = get_edge_in_vision(current);
-	//	printf("Edge in vision point = %f %f\n", edge_in_vision.x, edge_in_vision.y);
-		int x_c;
-		int y_c;
-		int theta_c;
-		get_current_pos(current, x_c, y_c, theta_c);
-		double edge_in_vision_theta = carmen_normalize_theta(atan2((edge_in_vision.y - y_c), (edge_in_vision.x - x_c)));
-	//	printf("Angle: %f, %f\n", edge_in_vision_theta, edge_in_vision_theta - current->state.theta);
+		int edge_in_vision = get_edge_in_vision(current);
+		if(edge_in_vision > 0 && voronoi_points[edge_in_vision].already_expanded == 0){
+		//	printf("Edge in vision point = %f %f\n", edge_in_vision.x, edge_in_vision.y);
+			int x_c;
+			int y_c;
+			int theta_c;
+			get_current_pos(current, x_c, y_c, theta_c);
+	//		printf("edge_in_vision = %f %f\n", edge_in_vision.x, edge_in_vision.x);
+	//		printf("current = %d %d\n", x_c, y_c);
+			double edge_in_vision_theta = carmen_normalize_theta(atan2((voronoi_points[edge_in_vision].y - y_c), (voronoi_points[edge_in_vision].x - x_c)));
+		//	printf("Angle: %f, %f\n", edge_in_vision_theta, edge_in_vision_theta - current->state.theta);
 
-		if(edge_in_vision_theta - current->state.theta > -0.4 && edge_in_vision_theta - current->state.theta < 0.4)
-		{
-			exit_expansion(current, edge_in_vision_theta, edge_in_vision, astar_map, open, heuristic_obstacle_map, goal_state);
+			if(((edge_in_vision_theta - current->state.theta) > -0.4) && ((edge_in_vision_theta - current->state.theta) < 0.4))
+			{
+				exit_expansion(current, edge_in_vision_theta, edge_in_vision, astar_map, open, heuristic_obstacle_map, goal_state);
+				voronoi_points[edge_in_vision].already_expanded = 1;
+			}
 		}
 	}
 
@@ -1940,7 +1953,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	if(DIST2D_P(robot_pose, goal_pose) > astar_map_x_size)
 	{
 		printf("Distância entre robot_pose e goal é maior que o tamanho do mapa local\n");
-		exit(1);
+		return 0;
 	}
 
 
@@ -1952,6 +1965,17 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, 0.0, 0.0, 0.0, NULL, 0);
+
+	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(start_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
+	{
+		printf("Robot_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(start_state->state, distance_map));
+		return 0;
+	}
+	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
+	{
+		printf("goal_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map));
+		return 0;
+	}
 
 	// Following the code from: http://theory.stanford.edu/~amitp/GameProgramming/ImplementationNotes.html
 	open.push(start_state);
@@ -1967,7 +1991,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		open.pop();
 //		Apenas para fazer uma verificação no método que obtém a célula com obstáculo mais próximo
 //		carmen_position_t temp = nearest_obstacle_cell(current->state.x, current->state.y);
-//		printf("current cell = %f %f\n", current->state.x, current->state.y);
+		printf("current cell = %f %f\n", current->state.x, current->state.y);
 //		printf("nearest_obstacle_cell = %f %f\n",temp.x, temp.y);
 
 		if(is_goal(current, goal_state) == 1)
@@ -1997,6 +2021,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 				rs_found = 1;
 				break;
 			}
+
 			clear_list(rs_path);
 
 		}
@@ -2009,6 +2034,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //	printf("=====Current after loop %f %f %f\n", current->state.x, current->state.y, current->state.theta);
 	if(!open.empty() || rs_found)
 	{
+
 //		current = open.top();
 		astar_mount_path_message(current);
 
