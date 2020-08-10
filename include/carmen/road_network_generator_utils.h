@@ -41,6 +41,7 @@ using namespace cv;
 
 typedef struct
 {
+	int nearby_lane_id;
 	int p_ini;
 	int p_sec;
 	int p_penul;
@@ -62,6 +63,7 @@ typedef struct
 {
 	int id;
 	int id_ref;
+	int lane_id;
 	char type;
 	double lon;
 	double lat;
