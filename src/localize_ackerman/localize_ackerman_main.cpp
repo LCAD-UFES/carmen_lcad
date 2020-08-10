@@ -98,15 +98,15 @@ carmen_robot_ackerman_config_t car_config;
 double highest_sensor;
 int robot_publish_odometry;
 
-double x_origin = 0.0;
-double y_origin = 0.0;
+//double x_origin = 0.0;
+//double y_origin = 0.0;
 
 sensor_parameters_t *spherical_sensor_params;
 sensor_data_t *spherical_sensor_data;
 
 carmen_localize_ackerman_globalpos_message globalpos;
 
-extern double laser_ranges[10000];
+//extern double laser_ranges[10000];
 int number_of_sensors;
 double max_range = 0.0;
 carmen_pose_3D_t velodyne_pose;
@@ -894,16 +894,15 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 {
 	carmen_map_server_localize_map_message_to_localize_map(message, &localize_map);
 
-	x_origin = message->config.x_origin;
-	y_origin = message->config.y_origin;
+//	x_origin = message->config.x_origin;
+//	y_origin = message->config.y_origin;
 
 	necessary_maps_available = 1;
 }
 
 
 static void
-globalpos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
-		void *clientData __attribute__ ((unused)))
+globalpos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __attribute__ ((unused)))
 {
 	IPC_RETURN_TYPE err;
 	carmen_localize_ackerman_globalpos_message globalpos;
