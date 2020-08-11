@@ -974,7 +974,7 @@ namespace View
 		switch (type)
 		{
 		case CARMEN_NAVIGATOR_MAP_v:
-			flags = 0;
+			flags = CARMEN_GRAPHICS_ENHACE_LOW_PROB_CONTRAST;
 			break;
 
 		case CARMEN_NAVIGATOR_MAP_LEVEL1_v:
@@ -1006,11 +1006,11 @@ namespace View
 			break;
 
 		case CARMEN_COST_MAP_v:
-			flags = 0;
+			flags = CARMEN_GRAPHICS_ENHACE_LOW_PROB_CONTRAST;
 			break;
 
 		case CARMEN_OFFLINE_MAP_v:
-			flags = 0;
+			flags = CARMEN_GRAPHICS_ENHACE_LOW_PROB_CONTRAST;
 			break;
 
 		case CARMEN_COMPLETE_MAP_v:

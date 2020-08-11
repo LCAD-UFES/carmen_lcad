@@ -361,8 +361,8 @@ get_other_moving_object_pose_and_index(moving_object_t other_moving_object, int 
 				displacement -= DIST2D(lane.lane_points[other_moving_object_index], lane.lane_points[other_moving_object_index + 1]);
 				other_moving_object_index++;
 			}
-//			else
-//				carmen_die("Fatal error: other_moving_object_index >= (lane.size + 1) in get_other_moving_object_pose_and_index().");
+			else
+				carmen_die("Fatal error: other_moving_object_index >= (lane.size + 1) in get_other_moving_object_pose_and_index().");
 		}
 	}
 	else
@@ -374,8 +374,8 @@ get_other_moving_object_pose_and_index(moving_object_t other_moving_object, int 
 				displacement += DIST2D(lane.lane_points[other_moving_object_index], lane.lane_points[other_moving_object_index - 1]);
 				other_moving_object_index--;
 			}
-//			else
-//				carmen_die("Fatal error: other_moving_object_index <= 0 in get_other_moving_object_pose_and_index().");
+			else
+				carmen_die("Fatal error: other_moving_object_index <= 0 in get_other_moving_object_pose_and_index().");
 		}
 	}
 	carmen_point_t displaced_position = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&lane.lane_points[other_moving_object_index], displacement);
