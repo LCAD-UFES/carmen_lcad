@@ -532,10 +532,10 @@ int
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp)
 {
-	printf("Velocity %lf \n", goal->v);
-	int reverse_mode_planning = 0;
-	if (goal->v < 0.0)
-		reverse_mode_planning = 1;
+//	printf("Velocity %lf \n", goal->v);
+//	int reverse_mode_planning = 0;
+//	if (goal->v < 0.0)
+//		reverse_mode_planning = 1;
 
 	int who_set_the_goal_v = NONE;
 	double previous_v = goal->v = get_max_v();
