@@ -361,6 +361,8 @@ get_other_moving_object_pose_and_index(moving_object_t other_moving_object, int 
 				displacement -= DIST2D(lane.lane_points[other_moving_object_index], lane.lane_points[other_moving_object_index + 1]);
 				other_moving_object_index++;
 			}
+//			else
+//				carmen_die("Fatal error: other_moving_object_index >= (lane.size + 1) in get_other_moving_object_pose_and_index().");
 		}
 	}
 	else
@@ -372,6 +374,8 @@ get_other_moving_object_pose_and_index(moving_object_t other_moving_object, int 
 				displacement += DIST2D(lane.lane_points[other_moving_object_index], lane.lane_points[other_moving_object_index - 1]);
 				other_moving_object_index--;
 			}
+//			else
+//				carmen_die("Fatal error: other_moving_object_index <= 0 in get_other_moving_object_pose_and_index().");
 		}
 	}
 	carmen_point_t displaced_position = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&lane.lane_points[other_moving_object_index], displacement);
@@ -619,12 +623,25 @@ update_lanes(vector<lane_t> &lanes, carmen_frenet_path_planner_set_of_paths *set
 }
 
 
+void
+print_set_of_paths(carmen_frenet_path_planner_set_of_paths *set_of_paths)
+{
+	for (int i = 0; i < set_of_paths->number_of_nearby_lanes; i++)
+	{
+		printf("lane_id %d, size %d\n", set_of_paths->nearby_lanes_ids[i], set_of_paths->nearby_lanes_sizes[i]);
+    }
+	printf("\n");
+}
+
+
 carmen_moving_objects_point_clouds_message *
 behavior_selector_moving_objects_tracking(carmen_frenet_path_planner_set_of_paths *set_of_paths,
 		carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	if (!set_of_paths)
 		return (NULL);
+
+	print_set_of_paths(set_of_paths);
 
 	static vector<lane_t> lanes;
 

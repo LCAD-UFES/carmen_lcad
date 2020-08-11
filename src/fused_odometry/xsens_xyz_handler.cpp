@@ -24,6 +24,8 @@ int xsens_sensor_vector_index = 0;
 
 extern int kalman_filter;
 
+bool got_gps_message = false;
+
 
 int
 is_global_pos_initialized()
@@ -724,6 +726,8 @@ set_best_yaw_estimate(sensor_vector_xsens_xyz **xsens_sensor_vector, int xsens_s
 static void 
 xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 {
+	static bool request_global_localization = false;
+
 	if (!xsens_handler.initial_state_initialized)
 	{
 		initialize_states(xsens_mti);
@@ -731,12 +735,26 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 	}
 
 	// Must check if timestamp has changed due to log file jump on log playback
+//	if (reinitialized_gps)//if (check_time_difference(xsens_mti->timestamp))
+//	{
+//		carmen_fused_odometry_initialize(fused_odometry_parameters);
+//		initialize_states(xsens_mti);
+//		reinitialized_gps = 0;
+//
+//		return;
+//	}
 
-	if (reinitialized_gps)//if (check_time_difference(xsens_mti->timestamp))
+	if (check_time_difference(xsens_mti->timestamp))
+	{
+		request_global_localization = true;
+		got_gps_message = false;
+	}
+
+	if (request_global_localization && got_gps_message)
 	{
 		carmen_fused_odometry_initialize(fused_odometry_parameters);
 		initialize_states(xsens_mti);
-		reinitialized_gps = 0;
+		request_global_localization = false;
 
 		return;
 	}
@@ -899,10 +917,12 @@ carmen_gps_xyz_message_handler(carmen_gps_xyz_message *message)
 	if (!xsens_handler.initial_state_initialized)
 		return;
 
-	if (check_time_difference(message->timestamp))
-	{
-		reinitialized_gps = 1;
-	}
+//	if (check_time_difference(message->timestamp))
+//	{
+//		reinitialized_gps = 1;
+//	}
+
+	got_gps_message = true;
 
 	sensor_vector_xsens_xyz *sensor_vector = create_sensor_vector_gps_xyz(message);
 
