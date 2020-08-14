@@ -627,9 +627,8 @@ void
 print_set_of_paths(carmen_frenet_path_planner_set_of_paths *set_of_paths)
 {
 	for (int i = 0; i < set_of_paths->number_of_nearby_lanes; i++)
-	{
 		printf("lane_id %d, size %d\n", set_of_paths->nearby_lanes_ids[i], set_of_paths->nearby_lanes_sizes[i]);
-    }
+
 	printf("\n");
 }
 
@@ -641,7 +640,7 @@ behavior_selector_moving_objects_tracking(carmen_frenet_path_planner_set_of_path
 	if (!set_of_paths)
 		return (NULL);
 
-	print_set_of_paths(set_of_paths);
+//	print_set_of_paths(set_of_paths);
 
 	static vector<lane_t> lanes;
 

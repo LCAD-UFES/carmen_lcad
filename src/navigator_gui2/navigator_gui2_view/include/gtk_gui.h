@@ -36,6 +36,7 @@
 #include <carmen/model_predictive_planner_interface.h>
 #include <carmen/frenet_path_planner_interface.h>
 #include <carmen/route_planner_interface.h>
+#include <carmen/offroad_planner_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -125,9 +126,11 @@ namespace View
 			GtkLabel *labelGridCell;
 			GtkLabel *labelValue;
 			GtkLabel *labelDistTraveled;
-			GtkLabel *labelGlobalPosTimeStamp;
 			GtkLabel *labelLowLevelState;
 			GtkLabel *labelTrafficSignState;
+			GtkLabel *labelOffRoadPlannerState;
+			GtkLabel *labelRoutePlannerState;
+			GtkLabel *labelGlobalPosTimeStamp;
 
 			GtkLabel *labelNavConTimestamp;
 
@@ -298,6 +301,7 @@ namespace View
 		carmen_rddf_annotation_message rddf_annotation_msg;
 
 		carmen_lane_detector_lane_message_t *lane_markings_msg = NULL;
+		carmen_offroad_planner_plan_message *offroad_planner_plan = NULL;
 
 		GdkImage *annotation_image[NUM_RDDF_ANNOTATION_TYPES][NUM_RDDF_ANNOTATION_CODES];
 

@@ -813,10 +813,11 @@ carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point
 	carmen_position_t cell;
 	cell.x = -1.0;
 	cell.y = -1.0;
+	if ((x_map_cell < 0 || x_map_cell >= distance_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map->config.y_size))
+		return (cell);
+
 	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
 	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
-	if (index < 0 || index >= distance_map->size)
-		return (cell);
 
 	cell.x = (double) distance_map->complete_x_offset[index] + (double) global_point_in_map_coords.x;
 	cell.y = (double) distance_map->complete_y_offset[index] + (double) global_point_in_map_coords.y;
@@ -841,11 +842,11 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 	// Transform coordinates to integer indexes
 	int x_map_cell = (int) round(global_point_in_map_coords.x);
 	int y_map_cell = (int) round(global_point_in_map_coords.y);
+	if ((x_map_cell < 0 || x_map_cell >= distance_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map->config.y_size))
+		return (-1.0);
 
 	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
 	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
-	if (index < 0 || index >= distance_map->size)
-		return (-1.0);
 
 	double dx = ((double) distance_map->complete_x_offset[index] + (double) x_map_cell) - global_point_in_map_coords.x;
 	double dy = ((double) distance_map->complete_y_offset[index] + (double) y_map_cell) - global_point_in_map_coords.y;
@@ -875,11 +876,11 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 //	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, localizer_pose, distance_map, displacement);
 //	int x_map_cell = (int) round(path_point_in_map_coords.x);
 //	int y_map_cell = (int) round(path_point_in_map_coords.y);
+//	if ((x_map_cell < 0 || x_map_cell >= distance_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map->config.y_size))
+//		return (min_dist);
 //
 //	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
 //	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
-//	if (index < 0 || index >= distance_map->size)
-//		return (min_dist);
 //
 //	double dx = (double) distance_map->complete_x_offset[index] + (double) x_map_cell - path_point_in_map_coords.x;
 //	double dy = (double) distance_map->complete_y_offset[index] + (double) y_map_cell - path_point_in_map_coords.y;

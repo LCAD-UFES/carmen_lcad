@@ -539,9 +539,11 @@ namespace View
 		controls_.labelGridCell = GTK_LABEL(gtk_builder_get_object(builder, "labelGridCell" ));
 		controls_.labelValue = GTK_LABEL(gtk_builder_get_object(builder, "labelValue" ));
 		controls_.labelDistTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
-		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
 		controls_.labelLowLevelState = GTK_LABEL(gtk_builder_get_object(builder, "labelLowLevelState" ));
 		controls_.labelTrafficSignState = GTK_LABEL(gtk_builder_get_object(builder, "labelTrafficSignState" ));
+		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
+		controls_.labelRoutePlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelRoutePlannerState" ));
+		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
 
 		controls_.labelNavConTimestamp = GTK_LABEL(gtk_builder_get_object(builder, "labelNavConTimestamp" ));
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
@@ -817,6 +819,15 @@ namespace View
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
 			set_distance_traveled(robot.pose, robot_traj.t_vel);
+
+			if (offroad_planner_plan)
+			{
+				sprintf(buffer, "Offroad Planner State: %s", print_offroad_planner_feedback(offroad_planner_plan->offroad_planner_feedback));
+				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
+			}
+
+			sprintf(buffer, "Route Planner State: %lf", globalpos->timestamp);
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
 
 			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp), buffer);
@@ -1640,7 +1651,7 @@ namespace View
 			snprintf(log_buffer,sizeof(log_buffer),"%spictures/%d.jpg", log_path, log_counter);
 			gdk_pixbuf_save(pixbuf, log_buffer, "jpeg", &error, NULL);
 
-			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
+			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOrigin)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelRobot)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelFusedOdometry)),
@@ -1650,7 +1661,10 @@ namespace View
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelValue)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelLowLevelState)),
-					gtk_label_get_text(GTK_LABEL(this->controls_.labelTrafficSignState)), log_button_go );
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelTrafficSignState)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelRoutePlannerState)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState)),
+					log_button_go);
 			fprintf(file_log,"%s\n", log_buffer);
 			log_counter++;
 			g_clear_object(&pixbuf);

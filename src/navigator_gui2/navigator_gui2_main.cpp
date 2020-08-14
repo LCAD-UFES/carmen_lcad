@@ -18,6 +18,8 @@
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
+#include <carmen/offroad_planner_interface.h>
+
 #include <carmen/carmen_graphics.h>
 #include <gtk_gui.h>
 
@@ -265,6 +267,7 @@ navigator_get_offline_map_pointer()
 	return offline_map;
 }
 
+
 carmen_map_t*
 navigator_get_road_map_pointer()
 {
@@ -294,8 +297,6 @@ navigator_unset_goal(double x, double y)
 }
 
 
-
-
 void
 get_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carmen_annotation_t> &annotations)
 {
@@ -314,14 +315,14 @@ get_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carm
 	int j = 0;
 	if (stream == NULL)
 		printf("Arquivo de anotacao não encontrado!");
-	else{
-
+	else
+	{
 		while ((read = getline(&line, &len, stream)) != -1)
 		{
-			if(strstr(line,"RDDF_PLACE")){
-				if(line[strlen(line)-sizeof(char)] == '\n'){
+			if (strstr(line,"RDDF_PLACE"))
+			{
+				if(line[strlen(line)-sizeof(char)] == '\n')
 					line[strlen(line)-sizeof(char)] = '#';
-				}
 
 				strcat(full_annotation,line);
 
@@ -338,29 +339,17 @@ get_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carm
 						strcpy(a.annotation_description,s.c_str());
 					}
 					if (i == 1)
-					{
 						a.annotation_code = stoi(s);
-					}
 					if (i == 2)
-					{
 						a.annotation_type = stoi(s);
-					}
 					if (i == 3)
-					{
 						a.annotation_orientation = stod(s);
-					}
 					if (i == 4)
-					{
 						a.annotation_point.x = stod(s);
-					}
 					if (i == 5)
-					{
 						a.annotation_point.y = stod(s);
-					}
 					if (i == 6)
-					{
 						a.annotation_point.z = stod(s);
-					}
 					i++;
 					p = strtok(NULL, "\t");
 				}
@@ -376,7 +365,8 @@ get_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carm
 }
 
 
-void build_glade_with_annotation (char *annotation_path)
+void
+build_glade_with_annotation (char *annotation_path)
 {
 	char *carmen_home_path, glade_path[1000], glade_path_with_annotation[1000];
 	carmen_home_path = getenv("CARMEN_HOME");
@@ -438,6 +428,105 @@ void build_glade_with_annotation (char *annotation_path)
 
 }
 
+
+void
+get_active_maps_from_menu(char **map, char **superimposed_map)
+{
+	View::GtkGui::Controls controls_ = gui->controls_;
+
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Map)))
+		*map = (char *) "Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_MapLevel1)))
+		*map = (char *) "Map Level1";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_OfflineMap)))
+		*map = (char *) "Offline Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Utility)))
+		*map = (char *) "Utility";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Costs)))
+		*map = (char *) "Costs";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Likelihood)))
+		*map = (char *) "Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_GlobalLikelihood)))
+		*map = (char *) "Global Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Lane)))
+		*map = (char *) "Lane";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_CompleteMap)))
+		*map = (char *) "Complete Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_RemissionMap)))
+		*map = (char *) "Remission Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_MovingObjects)))
+		*map = (char *) "Moving Objects";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_RoadMap)))
+		*map = (char *) "Road Map";
+
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_None)))
+		*superimposed_map = (char *) "None";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Map)))
+		*superimposed_map = (char *) "Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MapLevel1)))
+		*superimposed_map = (char *) "Map Level1";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_OfflineMap)))
+		*superimposed_map = (char *) "Offline Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Utility)))
+		*superimposed_map = (char *) "Utility";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Costs)))
+		*superimposed_map = (char *) "Costs";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Likelihood)))
+		*superimposed_map = (char *) "Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_GlobalLikelihood)))
+		*superimposed_map = (char *) "Global Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Lane)))
+		*superimposed_map = (char *) "Lane";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RemissionMap)))
+		*superimposed_map = (char *) "Remission Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MovingObjects)))
+		*superimposed_map = (char *) "Moving Objects";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RoadMap)))
+		*superimposed_map = (char *) "Road Map";
+}
+
+
+void
+read_user_preferences(int argc, char** argv)
+{
+	static user_param_t param_list[] =
+	{
+		{"window_width",     USER_PARAM_TYPE_INT,    &user_pref_window_width},
+		{"window_height",    USER_PARAM_TYPE_INT,    &user_pref_window_height},
+		{"window_x",         USER_PARAM_TYPE_INT,    &user_pref_window_x},
+		{"window_y",         USER_PARAM_TYPE_INT,    &user_pref_window_y},
+		{"initial_map_zoom", USER_PARAM_TYPE_DOUBLE, &(nav_panel_config.initial_map_zoom)},
+		{"map",              USER_PARAM_TYPE_STRING, &(nav_panel_config.map)},
+		{"superimposed_map", USER_PARAM_TYPE_STRING, &(nav_panel_config.superimposed_map)},
+		{"draw_waypoints",   USER_PARAM_TYPE_ONOFF,  &(nav_panel_config.draw_waypoints)},
+	};
+	user_pref_module = basename(argv[0]);
+	user_pref_param_list = param_list;
+	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
+	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+}
+
+
+void
+set_user_preferences()
+{
+	if (user_pref_window_width > 0 && user_pref_window_height > 0)
+		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
+	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+		gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
+}
+
+
+void
+save_user_preferences()
+{
+	gtk_window_get_size(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_width, &user_pref_window_height);
+	gtk_window_get_position(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_x, &user_pref_window_y);
+	nav_panel_config.initial_map_zoom = gui->controls_.map_view->zoom;
+	get_active_maps_from_menu(&(nav_panel_config.map), &(nav_panel_config.superimposed_map));
+	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1064,102 +1153,22 @@ navigator_ackerman_stop_message_handler()
 
 
 void
-get_active_maps_from_menu(char **map, char **superimposed_map)
+carmen_offroad_planner_plan_message_handler(carmen_offroad_planner_plan_message *message)
 {
-	View::GtkGui::Controls controls_ = gui->controls_;
-
-	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Map)))
-		*map = (char *) "Map";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_MapLevel1)))
-		*map = (char *) "Map Level1";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_OfflineMap)))
-		*map = (char *) "Offline Map";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Utility)))
-		*map = (char *) "Utility";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Costs)))
-		*map = (char *) "Costs";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Likelihood)))
-		*map = (char *) "Likelihood";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_GlobalLikelihood)))
-		*map = (char *) "Global Likelihood";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Lane)))
-		*map = (char *) "Lane";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_CompleteMap)))
-		*map = (char *) "Complete Map";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_RemissionMap)))
-		*map = (char *) "Remission Map";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_MovingObjects)))
-		*map = (char *) "Moving Objects";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_RoadMap)))
-		*map = (char *) "Road Map";
-
-	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_None)))
-		*superimposed_map = (char *) "None";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Map)))
-		*superimposed_map = (char *) "Map";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MapLevel1)))
-		*superimposed_map = (char *) "Map Level1";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_OfflineMap)))
-		*superimposed_map = (char *) "Offline Map";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Utility)))
-		*superimposed_map = (char *) "Utility";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Costs)))
-		*superimposed_map = (char *) "Costs";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Likelihood)))
-		*superimposed_map = (char *) "Likelihood";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_GlobalLikelihood)))
-		*superimposed_map = (char *) "Global Likelihood";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Lane)))
-		*superimposed_map = (char *) "Lane";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RemissionMap)))
-		*superimposed_map = (char *) "Remission Map";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MovingObjects)))
-		*superimposed_map = (char *) "Moving Objects";
-	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RoadMap)))
-		*superimposed_map = (char *) "Road Map";
+	gui->offroad_planner_plan = message;
 }
 
 
-void
-read_user_preferences(int argc, char** argv)
+static gint
+handle_ipc(gpointer			*data __attribute__ ((unused)),
+		gint				 source __attribute__ ((unused)),
+		GdkInputCondition condition __attribute__ ((unused)))
 {
-	static user_param_t param_list[] =
-	{
-		{"window_width",     USER_PARAM_TYPE_INT,    &user_pref_window_width},
-		{"window_height",    USER_PARAM_TYPE_INT,    &user_pref_window_height},
-		{"window_x",         USER_PARAM_TYPE_INT,    &user_pref_window_x},
-		{"window_y",         USER_PARAM_TYPE_INT,    &user_pref_window_y},
-		{"initial_map_zoom", USER_PARAM_TYPE_DOUBLE, &(nav_panel_config.initial_map_zoom)},
-		{"map",              USER_PARAM_TYPE_STRING, &(nav_panel_config.map)},
-		{"superimposed_map", USER_PARAM_TYPE_STRING, &(nav_panel_config.superimposed_map)},
-		{"draw_waypoints",   USER_PARAM_TYPE_ONOFF,  &(nav_panel_config.draw_waypoints)},
-	};
-	user_pref_module = basename(argv[0]);
-	user_pref_param_list = param_list;
-	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
-	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
-	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
-}
+	carmen_ipc_sleep(0.01);
 
+	carmen_graphics_update_ipc_callbacks((GdkInputFunction) handle_ipc);
 
-void
-set_user_preferences()
-{
-	if (user_pref_window_width > 0 && user_pref_window_height > 0)
-		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
-	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
-		gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
-}
-
-
-void
-save_user_preferences()
-{
-	gtk_window_get_size(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_width, &user_pref_window_height);
-	gtk_window_get_position(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_x, &user_pref_window_y);
-	nav_panel_config.initial_map_zoom = gui->controls_.map_view->zoom;
-	get_active_maps_from_menu(&(nav_panel_config.map), &(nav_panel_config.superimposed_map));
-	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+	return 1;
 }
 
 
@@ -1176,19 +1185,6 @@ nav_shutdown(int signo __attribute__ ((unused)))
 		exit(1);
 	}
 }
-
-
-static gint
-handle_ipc(gpointer			*data __attribute__ ((unused)),
-		gint				 source __attribute__ ((unused)),
-		GdkInputCondition condition __attribute__ ((unused)))
-{
-	carmen_ipc_sleep(0.01);
-
-	carmen_graphics_update_ipc_callbacks((GdkInputFunction) handle_ipc);
-
-	return 1;
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1198,6 +1194,7 @@ handle_ipc(gpointer			*data __attribute__ ((unused)),
 // Initializations                                                                              //
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void
 carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
@@ -1389,6 +1386,8 @@ subscribe_ipc_messages()
 			NULL, sizeof(carmen_navigator_ackerman_stop_message),
 			(carmen_handler_t) navigator_ackerman_stop_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) carmen_offroad_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
