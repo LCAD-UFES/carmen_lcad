@@ -297,8 +297,8 @@ pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objec
 
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
-		if (pedestrian_about_to_enter_crosswalk(moving_objects->point_clouds[i], pedestrian_track_annotation, radius) ||
-			(strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0 &&
+		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
+			(pedestrian_about_to_enter_crosswalk(moving_objects->point_clouds[i], pedestrian_track_annotation, radius) ||
 			 DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius))
 		{
 			//printf("In\n");
