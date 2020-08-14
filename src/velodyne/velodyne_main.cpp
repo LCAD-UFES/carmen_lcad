@@ -86,6 +86,27 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 }
 
+
+void
+publish_velodyne_variable_scan_message()
+{
+	carmen_velodyne_variable_scan_message msg;
+	carmen_velodyne_shot shot;
+
+	msg.number_of_shots = velodyne_partial_scan.number_of_32_laser_shots;
+	msg.timestamp = velodyne_partial_scan.timestamp;
+	msg.host = velodyne_partial_scan.host;
+	shot.shot_size = 32;
+	shot.distance = velodyne_partial_scan.partial_scan->distance;
+	shot.intensity = velodyne_partial_scan.partial_scan->intensity;
+	shot.angle = velodyne_partial_scan.partial_scan->angle;
+
+	msg.partial_scan = &shot;
+
+	carmen_velodyne_publish_variable_scan_message(&msg, 0);
+}
+
+
 /*********************************************************
 		   --- Handlers ---
 **********************************************************/
@@ -138,6 +159,8 @@ int main(int argc, char **argv)
 			if (velodyne->pollScan(velodyne_partial_scan))
 			{
 				publish_velodyne_partial_scan();
+
+				//publish_velodyne_variable_scan_message();
 
 				if (velodyne_gps_enabled && velodyne->pollGps())
 				{
