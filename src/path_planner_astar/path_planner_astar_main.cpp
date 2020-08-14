@@ -1863,22 +1863,8 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 		if(astar_map[x][y][theta]->is_closed == 0 && astar_map[x][y][theta]->is_open == 0)
 		{
 			neighbor_expansion[it_neighbor_number]->g = current_node_cost;
-			// Fazendo f(n) = g(n) + h(n) + h(p), onde p é o nó anterior, diminui o número de expansões do algoritmo, mas os pontos ficam menos suaves
-			// https://ieeexplore.ieee.org/abstract/document/7979125/
-//			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + h(astar_map, heuristic_obstacle_map ,current, goal_state);
-			// Testei acrescentando um certo "roughness" como custo, e realmente parece que o path fica mais suave
-			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state); //+ abs(DOT2D(DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state),DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state)));
-//			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
+			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
 
-			/* Abaixo foi apenas um teste, parece que deixou mais lento e não deu muito benefício
-			double distance_to_obstacle = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(neighbor_expansion[it_neighbor_number]->state, distance_map);
-			if(distance_to_obstacle > 0 && distance_to_obstacle < 2.0)
-			{
-				neighbor_expansion[it_neighbor_number]->h += distance_to_nearest_edge(neighbor_expansion[it_neighbor_number]->state.x, neighbor_expansion[it_neighbor_number]->state.y);
-			}
-			*/
-
-//			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			neighbor_expansion[it_neighbor_number]->parent = current;
 
 			//Penalidades
@@ -1888,16 +1874,7 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
 				neighbor_expansion[it_neighbor_number]->g +=1;
-/*
-			if(neighbor_expansion[it_neighbor_number]->state.phi != 0.0)
-				neighbor_expansion[it_neighbor_number]->g +=1;
 
-			if(neighbor_expansion[it_neighbor_number]->state.phi != current->state.phi)
-				neighbor_expansion[it_neighbor_number]->g +=1;
-
-			if(neighbor_expansion[it_neighbor_number]->state.v > 0.0)
-				neighbor_expansion[it_neighbor_number]->g -=1;
-*/
 			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 
 			astar_map_open_node(astar_map, x, y, theta);
@@ -1995,7 +1972,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	evg_thin_on_map(astar_map, heuristic_obstacle_map);
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
-	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
+	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, 0.0, 0.0, 0.0, NULL, 0);
 
 	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(start_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
@@ -2045,6 +2022,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		astar_map_close_node(astar_map, x, y, theta);
 
 		if(cont_rs_nodes%3==0)
+//		if(cont_rs_nodes % int(current->h + 1)==0)
 		{
 			rs_path = reed_shepp_path(current, goal_state);
 			if(hitObstacle(rs_path, astar_map) == 0 )//&& rs_path.front()->f < (current->h) )
