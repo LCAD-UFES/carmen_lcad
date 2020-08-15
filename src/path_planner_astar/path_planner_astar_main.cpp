@@ -85,7 +85,7 @@ int cache_exit_edge;
 #define CURVATURE_WEIGHT 1.0
 #define	VORONOI_WEIGHT 1.0
 
-#define USE_SMOOTH 0
+#define USE_SMOOTH 1
 #define USE_NEW_EXPANSION 1
 #define USE_NOBSTACLE_HEURISTIC 0
 #define EXPANSION_VELOCITY 1.0
@@ -1489,7 +1489,7 @@ build_rddf_poses(state_node *current_state)
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
-//			printf("[build_rddf_poses] %f %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi, path[i].f);
+			printf("[build_rddf_poses] %f %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi, path[i].f);
 		}
 //		distance_to_nearest_edge(path[i].state.x, path[i].state.y);
 //		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
@@ -1681,6 +1681,7 @@ exit_expansion(state_node *current, double edge_in_vision_theta, int edge_in_vis
 				new_state->g = new_state->g * 0.5;
 				new_state->h = h(astar_map, heuristic_obstacle_map ,new_state, goal_state);
 				new_state->f = (new_state->g + new_state->h) * 0.5;
+				new_state->state.v = 3.0;
 //				printf("Push old_state =\t%f\t%f\t%f\n", old_state->state.x, old_state->state.y, old_state->state.theta);
 //				printf("Push parent =    \t%f\t%f\t%f\n", new_state->parent->state.x, new_state->parent->state.y, new_state->parent->state.theta);
 //				printf("Push new_state =\t%f\t%f\t%f\t%f\n", new_state->state.x, new_state->state.y, new_state->state.theta, new_state->f);
@@ -1736,6 +1737,7 @@ expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
 			if(is_valid_state(new_state, astar_map) == 1)
 			{
 				new_state->distance_traveled_g = DIST2D(new_state->state, current->state);
+				new_state->state.v = 3.0* target_v[i];
 				neighbor.push_back(new_state);
 			}
 			else
@@ -1806,7 +1808,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 			new_state->state = point;
 			//Como o Reed Shepp realiza o caminho do goal para um ponto, ele está andando de ré. Por isso precisa-se inverter o sinal de v
-			new_state->state.v = -new_state->state.v;
+			new_state->state.v = -new_state->state.v * 3;
 			new_state->f = path_cost;
 //			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
 			rs_path_nodes.push_back(new_state);
@@ -1886,7 +1888,7 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 	}
 
 
-	if(USE_NEW_EXPANSION && current->state.v > 0 && (cache_exit_edge == -1 || voronoi_points[cache_exit_edge].h > current->h))
+	if(USE_NEW_EXPANSION && !(current->state.v < 0) && (cache_exit_edge == -1 || voronoi_points[cache_exit_edge].h > current->h))
 	{
 		int edge_in_vision = get_edge_in_vision(current);
 //		printf("edge_in_vision = %d %d %f %d\n", voronoi_points[edge_in_vision].x, voronoi_points[edge_in_vision].y, voronoi_points[edge_in_vision].h, voronoi_points[edge_in_vision].already_expanded);
@@ -2317,12 +2319,12 @@ read_parameters(int argc, char **argv)
 	if(astar_config.use_matrix_cost_heuristic && USE_NOBSTACLE_HEURISTIC)
 //	if(0)
 		alloc_cost_map();
-
+/*
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
 	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
 	virtual_laser_message.host = carmen_get_host();
-
+*/
 }
 
 
