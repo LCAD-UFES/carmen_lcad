@@ -1159,6 +1159,15 @@ carmen_offroad_planner_plan_message_handler(carmen_offroad_planner_plan_message 
 }
 
 
+void
+carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
+{
+	gui->final_goal.map = gui->controls_.map_view->internal_map;
+	gui->final_goal.pose = rddf_end_point_message->point;
+	gui->final_goal_placed_and_oriented = 1;
+}
+
+
 static gint
 handle_ipc(gpointer			*data __attribute__ ((unused)),
 		gint				 source __attribute__ ((unused)),
@@ -1388,6 +1397,7 @@ subscribe_ipc_messages()
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) carmen_offroad_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

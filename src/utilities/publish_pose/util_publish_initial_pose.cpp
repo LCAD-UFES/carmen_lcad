@@ -50,6 +50,7 @@ main(int argc, char **argv)
 	pose.theta = atof(argv[3]);
 
 	carmen_ipc_initialize(argc, argv);
+	define_messages();
 
 	sleep(time);
 	publish_starting_pose(pose);

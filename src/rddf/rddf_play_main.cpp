@@ -388,9 +388,7 @@ carmen_rddf_play_subscribe_messages()
 //			(carmen_handler_t) carmen_rddf_play_nearest_waypoint_message_handler,
 //			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_end_point_message(NULL,
-			(carmen_handler_t) carmen_rddf_play_end_point_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
