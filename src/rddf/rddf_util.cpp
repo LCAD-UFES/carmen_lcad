@@ -671,7 +671,7 @@ carmen_rddf_play_parse_input_command_line_parameters(int argc, char **argv)
 		printf("\nUsage 1: %s %s\nUsage 2: %s %s\n\nCarmen parameters:\n", argv[0], usage[0], argv[0], usage[1]);
 		carmen_rddf_play_get_parameters(argc, argv); // display help and exit
 	}
-	if (argc < 2 || argc > 5)
+	if (argc < 2 || argc > 7)
 		exit(printf("Error: Usage 1: %s %s\n       Usage 2: %s %s\n", argv[0], usage[0], argv[0], usage[1]));
 
 	if (strcmp(argv[1], "-use_road_map") == 0)
