@@ -86,7 +86,7 @@ int cache_exit_edge;
 #define	VORONOI_WEIGHT 1.0
 
 #define USE_SMOOTH 1
-#define USE_NEW_EXPANSION 1
+#define USE_NEW_EXPANSION 0
 #define USE_NOBSTACLE_HEURISTIC 0
 #define EXPANSION_VELOCITY 1.0
 
