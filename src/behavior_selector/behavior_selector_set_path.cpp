@@ -91,6 +91,7 @@ collision_s_distance_to_static_object(carmen_frenet_path_planner_set_of_paths *c
 	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
 
 	double min_collision_s_distance = (double) num_samples * delta_t;
+
 	for (int s = 0; s < num_samples; s++)
 	{
 		double v = get_max_v();
@@ -107,10 +108,10 @@ collision_s_distance_to_static_object(carmen_frenet_path_planner_set_of_paths *c
 		carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
 		if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance, &distance_map, NULL) == 1)
 		{
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
-				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
-				virtual_laser_message.num_positions++;
+			virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
+			virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
+			virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+			virtual_laser_message.num_positions++;
 
 			if (((double) s * delta_t) < min_collision_s_distance)
 				min_collision_s_distance = (double) s * delta_t;
@@ -128,7 +129,7 @@ collision_s_distance_to_moving_object(carmen_frenet_path_planner_set_of_paths *c
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
-	if (!current_moving_objects)
+	if (1)//!current_moving_objects || (path_id == current_set_of_paths->selected_path))
 		return ((double) num_samples * delta_t);
 
 	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
@@ -144,6 +145,9 @@ collision_s_distance_to_moving_object(carmen_frenet_path_planner_set_of_paths *c
 
  		for (int i = 0; i < current_moving_objects->num_point_clouds; i++)
 		{
+ 			if (fabs(current_moving_objects->point_clouds[i].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
+ 				continue;
+
 // 			double longitudinal_safety_magin;
 // 			if (moving_objects_poses[s][i].behind && (fabs(moving_objects_poses[s][i].d - current_d) < 0.8)) // moving objects atras do carro
 // 				longitudinal_safety_magin = 0.5;
@@ -199,7 +203,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(carmen_frenet_path_planne
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
-	if (!current_moving_objects)
+	if (1)//!current_moving_objects || (path_id == current_set_of_paths->selected_path))
 		return ((double) num_samples * delta_t);
 
 	double disp = frenet_path_planner_paths_displacement;
@@ -217,6 +221,9 @@ collision_s_distance_to_moving_object_in_parallel_lane(carmen_frenet_path_planne
 
  		for (int i = 0; i < current_moving_objects->num_point_clouds; i++)
 		{
+ 			if (fabs(current_moving_objects->point_clouds[i].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
+ 				continue;
+
  			double longitudinal_safety_magin = in_lane_longitudinal_safety_magin_multiplier * current_moving_objects->point_clouds[i].linear_velocity;
 			double lateral_safety_margin = get_robot_config()->model_predictive_planner_obstacles_safe_distance;
 			carmen_point_t moving_objects_pose = {moving_objects_poses[0][i].pose.x, moving_objects_poses[0][i].pose.y, moving_objects_poses[0][i].pose.theta};

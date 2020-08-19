@@ -646,6 +646,125 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 
 
 void
+remove_moving_objects_from_distance_map_old(carmen_route_planner_road_network_message *road_network_message)
+{
+	if (!road_network_message)
+		return;
+
+	virtual_laser_message.num_positions = 0;
+	for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
+	{
+		carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
+		int *traffic_restrictions = &(road_network_message->traffic_restrictions[road_network_message->nearby_lanes_indexes[i]]);
+		int lane_size = road_network_message->nearby_lanes_sizes[i];
+		for (int j = 0; j < lane_size - 1; j++)
+		{
+			double lane_width = ROUTE_PLANNER_GET_LANE_WIDTH(traffic_restrictions[j]);
+			for (double s = 0.0; s < DIST2D(lane[j], lane[j + 1]); s += distance_map.config.resolution * 0.5)
+			{
+				double lane_x = lane[j].x + s * cos(lane[j].theta);
+				double lane_y = lane[j].y + s * sin(lane[j].theta);
+				for (double d = -lane_width / 2.0; d < lane_width / 2.0; d += distance_map.config.resolution * 0.5)
+				{
+					double x = lane_x + d * cos(lane[j].theta + M_PI / 2.0);
+					double y = lane_y + d * sin(lane[j].theta + M_PI / 2.0);
+
+					// Move global path point coordinates to map coordinates
+					int x_map_cell = (int) round((x - distance_map.config.x_origin) / distance_map.config.resolution);
+					int y_map_cell = (int) round((y - distance_map.config.y_origin) / distance_map.config.resolution);
+					if ((x_map_cell < 0 || x_map_cell >= distance_map.config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map.config.y_size))
+						continue;
+
+					virtual_laser_message.positions[virtual_laser_message.num_positions].x = x;
+					virtual_laser_message.positions[virtual_laser_message.num_positions].y = y;
+					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+					virtual_laser_message.num_positions++;
+
+					int index = y_map_cell + distance_map.config.y_size * x_map_cell;
+					distance_map.complete_x_offset[index] = DISTANCE_MAP_HUGE_DISTANCE;
+					distance_map.complete_y_offset[index] = DISTANCE_MAP_HUGE_DISTANCE;
+				}
+			}
+		}
+	}
+}
+
+
+typedef struct
+{
+	int x_offset;
+	int y_offset;
+	int index;
+} moving_object_point_t;
+
+
+vector <moving_object_point_t>
+remove_moving_objects_from_distance_map(carmen_moving_objects_point_clouds_message *current_moving_objects,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	vector <moving_object_point_t> removed_moving_objects;
+
+	if (!current_moving_objects)
+		return (removed_moving_objects);
+
+	for (int j = 0; j < current_moving_objects->num_point_clouds; j++)
+	{
+		if (fabs(current_moving_objects->point_clouds[j].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
+		{
+			double mo_width = current_moving_objects->point_clouds[j].width * 1.5;
+			double mo_lenght = current_moving_objects->point_clouds[j].length * 2.0;
+			double mo_theta = current_moving_objects->point_clouds[j].orientation;
+			for (double s = -mo_lenght / 2.0; s < mo_lenght / 2.0; s += distance_map.config.resolution * 0.5)
+			{
+				double mo_x = current_moving_objects->point_clouds[j].object_pose.x + s * cos(mo_theta);
+				double mo_y = current_moving_objects->point_clouds[j].object_pose.y + s * sin(mo_theta);
+				for (double d = -mo_width / 2.0; d < mo_width / 2.0; d += distance_map.config.resolution * 0.5)
+				{
+					double x = mo_x + d * cos(mo_theta + M_PI / 2.0);
+					double y = mo_y + d * sin(mo_theta + M_PI / 2.0);
+
+					// Move global path point coordinates to map coordinates
+					int x_map_cell = (int) round((x - distance_map.config.x_origin) / distance_map.config.resolution);
+					int y_map_cell = (int) round((y - distance_map.config.y_origin) / distance_map.config.resolution);
+					if ((x_map_cell < 0 || x_map_cell >= distance_map.config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map.config.y_size))
+						continue;
+
+					virtual_laser_message.positions[virtual_laser_message.num_positions].x = x;
+					virtual_laser_message.positions[virtual_laser_message.num_positions].y = y;
+					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+					virtual_laser_message.num_positions++;
+
+					int index = y_map_cell + distance_map.config.y_size * x_map_cell;
+					moving_object_point_t mo_point = {distance_map.complete_x_offset[index], distance_map.complete_y_offset[index], index};
+					removed_moving_objects.push_back(mo_point);
+				}
+			}
+		}
+	}
+
+	// Tem que ser fora do loop acima para evitar que a escrita abaixo seja copiada para uma mesma celula jah lida (tem sobreposicao acima para garantir cobertura
+	for (unsigned int i = 0; i < removed_moving_objects.size(); i++)
+	{
+		distance_map.complete_x_offset[removed_moving_objects[i].index] = DISTANCE_MAP_HUGE_DISTANCE;
+		distance_map.complete_y_offset[removed_moving_objects[i].index] = DISTANCE_MAP_HUGE_DISTANCE;
+	}
+
+	return (removed_moving_objects);
+}
+
+
+void
+restore_moving_objects_to_distance_map(vector <moving_object_point_t> removed_moving_objects)
+{
+	for (unsigned int i = 0; i < removed_moving_objects.size(); i++)
+	{
+		distance_map.complete_x_offset[removed_moving_objects[i].index] = removed_moving_objects[i].x_offset;
+		distance_map.complete_y_offset[removed_moving_objects[i].index] = removed_moving_objects[i].y_offset;
+	}
+}
+
+
+void
 set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
@@ -662,9 +781,11 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 	if (current_moving_objects)
 		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
 
+	vector <moving_object_point_t> removed_moving_objects = remove_moving_objects_from_distance_map(current_moving_objects, current_robot_pose_v_and_phi);
 	if (use_frenet_path_planner)
 		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
+	restore_moving_objects_to_distance_map(removed_moving_objects);
 
 	if (behavior_selector_performs_path_planning)
 	{
