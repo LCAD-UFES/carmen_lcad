@@ -452,6 +452,9 @@ extern carmen_inline double carmen_get_time(void)
 	return t;
 }
 
+void
+carmen_get_date(char* time_string);
+
 char *carmen_get_host(void);
 
 carmen_default_message *carmen_default_message_create(void);

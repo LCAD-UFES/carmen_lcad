@@ -378,6 +378,7 @@ carmen_find_robot_name(int argc, char **argv)
   return NULL;
 }
 
+
 double
 carmen_get_time(void)
 {
@@ -390,6 +391,27 @@ carmen_get_time(void)
   t = tv.tv_sec + tv.tv_usec/1000000.0;
   return t;
 }
+
+
+void
+carmen_get_date(char* time_string)
+{
+ struct timeval tv;
+ struct tm* ptm;
+
+ // Obtain the time of day, and convert it to a tm struct
+ gettimeofday (&tv, NULL);
+ ptm = localtime (&tv.tv_sec);
+
+ // Format the date and time, down to a single second
+ strftime (time_string, 320, "%Y-%m-%d-%H-%M-%S", ptm);
+ 
+ // Compute milliseconds from microseconds
+ // long milliseconds = tv.tv_usec / 1000;
+ // Print the formatted time, in seconds, followed by a decimal point and the milliseconds
+ // printf ("%s.%03ld\n", time_string, milliseconds);
+}
+
 
 char *carmen_get_host(void)
 {
