@@ -753,7 +753,6 @@ get_log_file_name(int argc, char **argv)
 
     log_filename = argv[1];
   }
-  printf("%s\n", log_filename);
 }
 
 
