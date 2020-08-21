@@ -61,6 +61,7 @@ static int log_ford_escape_status = 0;
 static int log_can_dump = 0;
 char* log_path = 0;
 char* suffix = NULL;
+char* prefix = NULL;
 
 
 void
@@ -97,6 +98,7 @@ get_logger_params(int argc, char** argv)
   carmen_param_t optional_commandline_param_list[] =
   {
 	{(char *) "commandline", (char *) "automatic_file", CARMEN_PARAM_STRING, &log_path, 0, NULL},
+	{(char *) "commandline", (char *) "prefix", CARMEN_PARAM_STRING, &prefix, 0, NULL},
 	{(char *) "commandline", (char *) "suffix", CARMEN_PARAM_STRING, &suffix, 0, NULL},
   };
   carmen_param_install_params(argc, argv, optional_commandline_param_list, sizeof(optional_commandline_param_list) / sizeof(optional_commandline_param_list[0]));
@@ -734,10 +736,15 @@ get_log_file_name(int argc, char **argv)
 	  char date[48]; 
 	  carmen_get_date(date);
 
-	  if (suffix)
-		  sprintf(log_filename, "%s/log_%s_%s.txt", log_path, suffix, date);
+	  if (prefix)
+		  sprintf(log_filename, "%s/log_%s_%s", log_path, prefix, date);
 	  else
-		  sprintf(log_filename, "%s/log_%s.txt", log_path, date);
+		  sprintf(log_filename, "%s/log_%s", log_path, date);
+	  
+	  if (suffix)
+		  sprintf(log_filename, "%s_%s", log_filename, suffix);
+	  
+	  sprintf(log_filename, "%s.txt", log_filename);
   }
   else
   {
@@ -771,8 +778,10 @@ main(int argc, char **argv)
 	  carmen_fclose(outfile);
   }
   outfile = carmen_fopen(log_filename, "w");
+
   if (outfile == NULL)
 	  carmen_die("Error: Could not open file %s for writing.\n", log_filename);
+  
   carmen_logwrite_write_header(outfile);
 
   if (!(log_odometry && log_laser && log_robot_laser))
