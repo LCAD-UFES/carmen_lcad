@@ -47,7 +47,7 @@ SOURCES = viewer_3D.cpp Window.cpp GLDraw.cpp xsens_viewer.cpp draw_car.cpp poin
 	velodyne_360_drawer.cpp interface_drawer.cpp map_drawer.cpp download_map.cpp texture_loader.cpp trajectory_drawer.cpp \
 	velodyne_intensity_drawer.cpp annotation_drawer.cpp symotha_drawer.cpp #lane_analysis_drawer.cpp
 	
-PUBLIC_INCLUDES = velodyne_360_drawer.h
+PUBLIC_INCLUDES = velodyne_360_drawer.h viewer_3D_messages.h viewer_3D_interface.h
 PUBLIC_LIBRARIES = libvelodyne_360_drawer.a
 PUBLIC_BINARIES = viewer_3D xsens_viewer
 PUBLIC_OTHERS = Touareg2.mtl Touareg2.obj
