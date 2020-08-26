@@ -1946,11 +1946,11 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 	// Para enviar um path que não muda de direção
 	if(SEND_MESSAGE_IN_PARTS)
 	{
-		int current_path_size = 0;
 		current_astar_path_poses_till_reverse_direction.clear();
 	//	last_index_poses++;
 		printf("last_index_poses = %d\n", last_index_poses);
 		current_astar_path_poses_till_reverse_direction.push_back(carmen_astar_path_poses[last_index_poses]);
+		int current_path_size = 1;
 		int find_absolute_value = 0;
 		double old_v = current_astar_path_poses_till_reverse_direction[find_absolute_value].v;
 		while(old_v == 0.0 && (find_absolute_value+1 < carmen_astar_path_poses.size()))
@@ -1961,7 +1961,7 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 		printf("\n");
 		for(int i = last_index_poses + 1; i < carmen_astar_path_poses.size() ; i++)
 		{
-			printf("old_v = %f %f\n", old_v, carmen_astar_path_poses[i].v);
+//			printf("old_v = %f %f\n", old_v, carmen_astar_path_poses[i].v);
 			if(old_v == carmen_astar_path_poses[i].v)
 			{
 				current_astar_path_poses_till_reverse_direction.push_back(carmen_astar_path_poses[i]);
@@ -1976,11 +1976,12 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 	//		printf("i = %d\n", i);
 		}
 
-
+		last_index_poses++;
 		plan.path.points = &(current_astar_path_poses_till_reverse_direction[0]);
 		plan.path.length = current_path_size;
 	}
-	else{
+	else
+	{
 		plan.path.points = &(carmen_astar_path_poses[0]);
 		plan.path.length = carmen_astar_path_poses.size();
 	}
