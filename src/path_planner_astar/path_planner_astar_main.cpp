@@ -1950,9 +1950,18 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 	//	last_index_poses++;
 		printf("last_index_poses = %d\n", last_index_poses);
 		current_astar_path_poses_till_reverse_direction.push_back(carmen_astar_path_poses[last_index_poses]);
+//current pose
+		robot.x = current_astar_path_poses_till_reverse_direction[0].x;
+		robot.y = current_astar_path_poses_till_reverse_direction[0].y;
+		robot.theta = current_astar_path_poses_till_reverse_direction[0].theta;
+		robot.v = current_astar_path_poses_till_reverse_direction[0].v;
+		robot.phi = current_astar_path_poses_till_reverse_direction[0].phi;
+
+//current goal
 		goal.x = current_astar_path_poses_till_reverse_direction[0].x;
 		goal.y = current_astar_path_poses_till_reverse_direction[0].y;
 		goal.theta = current_astar_path_poses_till_reverse_direction[0].theta;
+
 		int current_path_size = 1;
 		int find_absolute_value = 0;
 		double old_v = current_astar_path_poses_till_reverse_direction[find_absolute_value].v;
@@ -1983,6 +1992,7 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 		}
 
 		last_index_poses++;
+		plan.robot = robot;
 		plan.goal = goal;
 		plan.path.points = &(current_astar_path_poses_till_reverse_direction[0]);
 		plan.path.length = current_path_size;
