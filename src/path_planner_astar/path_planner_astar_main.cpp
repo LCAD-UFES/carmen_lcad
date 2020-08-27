@@ -95,7 +95,7 @@ int cache_exit_edge;
 #define USE_NOBSTACLE_HEURISTIC 0
 #define EXPANSION_VELOCITY 1.0
 
-#define OBSTACLE_DISTANCE_MIN 1.0
+#define OBSTACLE_DISTANCE_MIN 0.5
 #define SEND_MESSAGE_IN_PARTS 1
 
 int teste_edge = 0;
@@ -357,7 +357,9 @@ calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
 
 	for (int i = 1; i < (num_poses - 1); i++)
 	{
-		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+//		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+		//As vezes ele enviava um phi maior que o maximo
+		path[i].phi = carmen_clamp(-robot_config.max_phi, ((path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0), robot_config.max_phi);
 	}
 }
 
@@ -426,7 +428,8 @@ my_f(const gsl_vector *v, void *params)
 
 	double dmax = 1.5; // escolher um valor melhor
 //	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
-	double kmax = 0.22; // Encontrar outra forma de obter esse valor
+//	double kmax = 0.22; // Encontrar outra forma de obter esse valor
+	double kmax = 0.178571429;
 
 	double obstacle_cost = 0.0;
 	double curvature_cost = 0.0;
@@ -517,7 +520,8 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 
 	double dmax = 1.5; // escolher um valor melhor
 //	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
-	double kmax = 0.22; // Encontrar outra forma de obter esse valor
+//	double kmax = 0.22; // Encontrar outra forma de obter esse valor
+	double kmax = 0.178571429;
 	double voronoi_a = 1.0;
 	double voronoi_max_distance = 2.0;
 
@@ -561,6 +565,7 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 
 //	delta_phi = abs(atan2(i_next.y - i.y, i_next.x - i.x) - atan2(i.y - i_prev.y, i.x - i_prev.x));
 //	delta_phi = delta_phi / sqrt(DOT2D(delta_i, delta_i));
+//	printf("delta_phi = %f %f\n", delta_phi, kmax);
 	if(delta_phi > kmax)
 	{
 		curvature_cost += pow(delta_phi, 2) * (delta_phi - kmax);
@@ -1496,7 +1501,7 @@ build_rddf_poses(state_node *current_state)
 
 	for (int i = 1; i < path.size(); i++)
 	{
-		if(DIST2D(path[i].state, last_state) >= 0.5 || (sign(path[i].state.v) != sign(last_state.v)))
+		if(DIST2D(path[i].state, last_state) >= 0.4 || (sign(path[i].state.v) != sign(last_state.v)))
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
@@ -1692,7 +1697,7 @@ exit_expansion(state_node *current, double edge_in_vision_theta, int edge_in_vis
 				new_state->g = new_state->g * 0.5;
 				new_state->h = h(astar_map, heuristic_obstacle_map ,new_state, goal_state);
 				new_state->f = (new_state->g + new_state->h) * 0.5;
-				new_state->state.v = 3.0;
+				new_state->state.v = 1.0;
 //				printf("Push old_state =\t%f\t%f\t%f\n", old_state->state.x, old_state->state.y, old_state->state.theta);
 //				printf("Push parent =    \t%f\t%f\t%f\n", new_state->parent->state.x, new_state->parent->state.y, new_state->parent->state.theta);
 //				printf("Push new_state =\t%f\t%f\t%f\t%f\n", new_state->state.x, new_state->state.y, new_state->state.theta, new_state->f);
@@ -1748,7 +1753,7 @@ expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
 			if(is_valid_state(new_state, astar_map) == 1)
 			{
 				new_state->distance_traveled_g = DIST2D(new_state->state, current->state);
-				new_state->state.v = 3.0* target_v[i];
+				new_state->state.v = 1.0* target_v[i];
 				neighbor.push_back(new_state);
 			}
 			else
@@ -1819,7 +1824,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 			new_state->state = point;
 			//Como o Reed Shepp realiza o caminho do goal para um ponto, ele está andando de ré. Por isso precisa-se inverter o sinal de v
-			new_state->state.v = -new_state->state.v * 3;
+			new_state->state.v = -new_state->state.v * 1;
 			new_state->f = path_cost;
 //			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
 			rs_path_nodes.push_back(new_state);
