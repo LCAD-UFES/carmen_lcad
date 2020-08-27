@@ -1686,7 +1686,8 @@ exit_expansion(state_node *current, double edge_in_vision_theta, int edge_in_vis
 
 			state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 			carmen_test_alloc(new_state);
-			new_state->state = carmen_conventional_astar_ackerman_kinematic_3(old_state->state, robot_config.distance_between_front_and_rear_axles, target_phi, EXPANSION_VELOCITY);
+//			new_state->state = carmen_conventional_astar_ackerman_kinematic_3(old_state->state, robot_config.distance_between_front_and_rear_axles, target_phi, EXPANSION_VELOCITY);
+			new_state->state = carmen_conventional_astar_ackerman_kinematic_3(old_state->state, SQRT2, target_phi, EXPANSION_VELOCITY);
 
 			if(is_valid_state(new_state, astar_map) == 1)
 			{
@@ -1856,7 +1857,7 @@ hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 
 
 void
-update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_node *current, state_node *goal_state, boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> &open)
+update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_node *current, state_node *start_state, state_node *goal_state, boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> &open)
 {
 
 	int x;
@@ -1887,11 +1888,21 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-				neighbor_expansion[it_neighbor_number]->g = (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
+				neighbor_expansion[it_neighbor_number]->g = (1.5 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
 
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
-				neighbor_expansion[it_neighbor_number]->g +=2;
+				neighbor_expansion[it_neighbor_number]->g +=1;
+
+			if(current != start_state)
+			{
+				int first_v = current->parent->state.v;
+				int sec_v = current->state.v;
+				int thi_v = neighbor_expansion[it_neighbor_number]->state.v;
+				if(first_v == thi_v && first_v != sec_v)
+					neighbor_expansion[it_neighbor_number]->g +=10;
+			}
+
 
 			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 
@@ -1995,7 +2006,7 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 				goal.x = carmen_astar_path_poses[i].x;
 				goal.y = carmen_astar_path_poses[i].y;
 				goal.theta = carmen_astar_path_poses[i].theta;
-//				goal.v = carmen_astar_path_poses[i].v;
+				goal.v = carmen_astar_path_poses[i].v;
 				goal.phi = carmen_astar_path_poses[i].phi;
 			}
 			else
@@ -2102,8 +2113,8 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 		astar_map_close_node(astar_map, x, y, theta);
 
-//		if(cont_rs_nodes%3==0)
-		if(cont_rs_nodes % int(current->h + 1) == 0)
+		if(cont_rs_nodes%3==0)
+//		if(cont_rs_nodes % int(current->h + 1) == 0)
 		{
 			rs_path = reed_shepp_path(current, goal_state);
 			if(hitObstacle(rs_path, astar_map) == 0 )//&& rs_path.front()->f < (current->h) )
@@ -2118,7 +2129,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 		}
 
-		update_neighbors(astar_map, heuristic_obstacle_map, current, goal_state, open);
+		update_neighbors(astar_map, heuristic_obstacle_map, current, start_state, goal_state, open);
 		++cont_rs_nodes;
 	}
 
