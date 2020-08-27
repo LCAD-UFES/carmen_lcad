@@ -1208,6 +1208,7 @@ nav_shutdown(int signo __attribute__ ((unused)))
 void
 carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
 {
+	printf("%s\n", poly_file);
 	FILE *poly;
 	poly = fopen(poly_file, "r");
 	if (poly == NULL)
@@ -1295,12 +1296,13 @@ read_parameters(int argc, char *argv[],
 		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
 	};
 
-	strcat(polygon_file, poly_file);
-
+	printf("%s\n", polygon_file);
 	carmen_param_allow_unfound_variables(1);
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
 	carmen_param_allow_unfound_variables(0);
+	strcat(polygon_file, poly_file);
+	printf("%s\n", polygon_file);
 	carmen_parse_polygon_file(poly_config, polygon_file);
 
 	carmen_param_t param_cmd_list[] =
