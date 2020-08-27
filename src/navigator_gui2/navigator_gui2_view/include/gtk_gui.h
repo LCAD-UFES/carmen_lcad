@@ -13,10 +13,8 @@
 #include <gtk/gtkgl.h>
 #include <glade/glade.h>
 
-#include "draw_callbacks.h"
 #include "../../navigator_gui2_main.h"
 
-#include <carmen/carmen.h>
 #include <carmen/global_graphics.h>
 #include <carmen/map_graphics.h>
 #include <carmen/grid_mapping.h>
@@ -41,6 +39,8 @@
 
 #include <carmen/rddf_util.h>
 #include <carmen/carmen_gps_wrapper.h>
+
+#include "draw_callbacks.h"
 
 #include <dirent.h>
 

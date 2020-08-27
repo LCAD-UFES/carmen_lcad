@@ -8,26 +8,21 @@
 #include "map_drawer.h"
 
 
-struct map_drawer
-{
-	GLuint* vertex_buffer_ids;
-	GLuint* lvl1_vertex_buffer_ids;
-	GLuint* color_buffer_ids;
-	int* buffer_sizes;
-	int* lvl1_buffer_sizes;
-
-	carmen_map_t* maps;
-	carmen_map_t* lvl1_maps;
-	int max_num_maps;
-	int next_map;
-};
-
-
 map_drawer*
-create_map_drawer(void)
+create_map_drawer(int argc, char** argv)
 {
 	map_drawer* m_drawer = (map_drawer*)malloc(sizeof(map_drawer));
-		
+
+	int num_items;
+
+	carmen_param_t param_list[] =
+	{
+		{"mapper", "map_grid_res", CARMEN_PARAM_DOUBLE, &(m_drawer->map_grid_resolution), 0, NULL},
+	};
+
+	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
 	m_drawer->max_num_maps = 1;
 	m_drawer->next_map = 0;
 

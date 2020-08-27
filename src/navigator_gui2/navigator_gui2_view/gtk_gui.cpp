@@ -12,6 +12,9 @@ int unsubscribe_map_server = 0;
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
+//extern void
+//carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message);
+
 
 GdkColor *
 build_color_gradient()
@@ -625,6 +628,7 @@ namespace View
 		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
 		{
 			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
 		}
 		else if (strcmp(nav_panel_config->superimposed_map, "Map Level1") == 0)
@@ -655,6 +659,7 @@ namespace View
 		if (strcmp(nav_panel_config->map, "Map") == 0)
 		{
 			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
 		}
 		else if (strcmp(nav_panel_config->map, "Map Level1") == 0)

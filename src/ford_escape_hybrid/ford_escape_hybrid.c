@@ -1077,7 +1077,7 @@ initialize_structures()
 	ford_escape_hybrid_config->current_motion_command_vector = NULL;
 	ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
-	memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS);
+	memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS * sizeof(int));
 }
 
 

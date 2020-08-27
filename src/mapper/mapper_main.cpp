@@ -127,7 +127,7 @@ static int mapping_mode = 0;
 
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
-extern carmen_moving_objects_point_clouds_message moving_objects_message;
+extern carmen_moving_objects_point_clouds_message *moving_objects_message;
 
 extern carmen_mapper_virtual_scan_message virtual_scan_message;
 
@@ -135,6 +135,8 @@ char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 
 int use_unity_simulator = 0;
+
+extern carmen_map_t occupancy_map;
 
 
 void
@@ -240,7 +242,28 @@ free_virtual_scan_message()
 static void
 publish_map(double timestamp)
 {
-	mapper_publish_map(timestamp);
+//	mapper_publish_map(timestamp);
+	if (build_snapshot_map)
+	{
+		memcpy(occupancy_map.complete_map, offline_map.complete_map, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));
+		// memset(map.complete_map, 0, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));         // Uncomment to see the snapshot_map on viewer 3D, on carmen-ford-scape.ini turn on mapper_build_snapshot_map an turn off mapper_decay_to_offline_map
+		run_snapshot_mapper();
+	}
+
+	add_virtual_laser_points(&occupancy_map, &virtual_laser_message);
+
+	add_moving_objects(&occupancy_map, moving_objects_message);
+
+	// Publica o mapa compactado aoenas com as celulas com probabilidade igual ou maior que 0.5
+	carmen_compact_map_t cmap;
+	carmen_prob_models_create_compact_map_with_cells_larger_than_value(&cmap, &occupancy_map, 0.5);
+	carmen_mapper_publish_compact_map_message(&cmap, timestamp);
+	carmen_prob_models_free_compact_map(&cmap);
+
+	// Publica o mapa nao compactado
+	carmen_mapper_publish_map_message(&occupancy_map, timestamp);
+//	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
+//	printf("n = %d\n", virtual_laser_message.num_positions);
 }
 
 
@@ -757,7 +780,7 @@ carmen_mapper_virtual_laser_message_handler(carmen_mapper_virtual_laser_message 
 void
 carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
 {
-	moving_objects_message = *moving_objects_point_clouds_message;
+	moving_objects_message = moving_objects_point_clouds_message;
 }
 
 

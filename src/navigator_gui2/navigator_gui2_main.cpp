@@ -647,6 +647,42 @@ mapper_handler(carmen_mapper_map_message *message)
 
 
 void
+carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message)
+{
+	static carmen_compact_map_t *compact_occupancy_map = NULL;
+	static carmen_map_t occupancy_map;
+
+	if (compact_occupancy_map == NULL)
+	{
+		carmen_grid_mapping_create_new_map(&occupancy_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
+		memset(occupancy_map.complete_map, 0, occupancy_map.config.x_size * occupancy_map.config.y_size * sizeof(double));
+
+		compact_occupancy_map = (carmen_compact_map_t *) (calloc(1, sizeof(carmen_compact_map_t)));
+		carmen_cpy_compact_map_message_to_compact_map(compact_occupancy_map, message);
+		carmen_prob_models_uncompress_compact_map(&occupancy_map, compact_occupancy_map);
+	}
+	else
+	{
+		carmen_prob_models_clear_carmen_map_using_compact_map(&occupancy_map, compact_occupancy_map, 0.0);
+		carmen_prob_models_free_compact_map(compact_occupancy_map);
+		carmen_cpy_compact_map_message_to_compact_map(compact_occupancy_map, message);
+		carmen_prob_models_uncompress_compact_map(&occupancy_map, compact_occupancy_map);
+	}
+
+	map = &occupancy_map;
+
+	if (superimposedmap_type == CARMEN_NAVIGATOR_MAP_v)
+	{
+		carmen_map_interface_set_superimposed_map(map);
+		gui->navigator_graphics_redraw_superimposed();
+	}
+
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_NAVIGATOR_MAP_v)
+		gui->navigator_graphics_change_map(map);
+}
+
+
+void
 mapper_level1_handler(carmen_mapper_map_message *message)
 {
 	static double last_time_stamp = 0.0;
@@ -769,14 +805,14 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		memset(cost_map->complete_map, 0, cost_map->config.x_size * cost_map->config.y_size * sizeof(double));
 
 		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
 	}
 	else
 	{
 		carmen_prob_models_clear_carmen_map_using_compact_map(cost_map, compact_cost_map, 0.0);
 		carmen_prob_models_free_compact_map(compact_cost_map);
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
 	}
 

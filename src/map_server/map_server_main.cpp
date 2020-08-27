@@ -19,6 +19,7 @@
 #include <carmen/download_map_interface.h>
 #include <carmen/navigator_astar_interface.h>
 #include <carmen/navigator_spline_interface.h>
+#include <carmen/mapper_interface.h>
 #include <vector>
 
 //TODO: ler da lista de parâmetros se for ler imagens já baixadas

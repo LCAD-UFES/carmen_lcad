@@ -18,13 +18,50 @@
 #include <carmen/collision_detection.h>
 #include <carmen/frenet_path_planner_interface.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/mapper_interface.h>
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
 
+//
+// O obstacle_distance_mapper (ODM) recebe (a) um mapa de ocupação compactado do mapper (apenas as células com probabilidade
+// de ocupação maior que mapper_min_occupied_prob (algo próximo de 0.5) e (b) o road map do route_planner. A partir destes dados,
+// o ODM computa: (i) o mapa de distâncias para células ocupadas com objetos não móveis (ou com movimento lento - SODM); e
+// (ii) os objetos móveis no road map (MO). Estes dois itens são enviados via mensagem existentes para os demais módulos.
+// Alternativamente, estes dois itens podem ser agrupados em uma mensagem, por exemplo, carmen_obstacle_distance_mapper_output_message,
+// e publicados de forma síncrona. Os objetos móveis devem ser codificados nesta mensagem de modo a poder ser acomodados em
+// uma mensagem do tipo carmen_moving_objects_point_clouds_message.
+//
+// O behavior_selector (BS) recebe estes itens via mensagem(s) do ODM e outros dados e: (i) computa um conjunto de paths usando
+// Frenet Frames; (ii) escolhe um goal que possa ser alcançado sem colisão em cada path; (iii) determina a velocidade em cada um
+// destes goals; (iv) e escolhe o melhor conjunto path/goal/velocidade do goal.
+//
+// A escolha do melhor conjunto é feita pontuando: a distância para o goal (quanto maior melhor), a velocidade no goal (quanto
+// maior melhor), e a distância para o path central que leva ao RDDF (quanto menor melhor).
+//
+// O itens (ii) e (iii) imediatamente acima são feitos em conjunto. Isto é, o BS pode, para cada path, fazer busca binária
+// de qual velocidade pode ser atingida sem colisão, respeitando as acelerações máximas e o horizonte de tempo de planejamento.
+// Ele tenta a velociade mais alta possível primeiro, V. Se houver colisão no horizonte de tempo de planejamento,
+// ele tenta a 1/2 de V. Se na metada de V não houver colisão, ele tenta 3/4 de V, caso contrário, 1/4 de V e assim por diante até
+// um nível mínimo de discretização de V em que consiga estabelecer um goal e uma velocidade.
+//
+// Na busca de um par velocidade / goal em um path, o BS examina cada ponto do path em busca de colisões com o SODM (colisão com objetos
+// estáticos) e colisões com os MOs. Além disso, o BS checa anotações e se o goal vai ficar fora do mapa (neste
+// caso, coloca o goal uma posição antes). Ou seja, dá para usar o infra de código existente para escolher goals e velocidade
+// de goals! Basta mandar o path no lugar do RDDF para cada função existente do BS. Mas como escolher o melhor conjunto
+// path/goal/velocidade do goal? A ideia é atribuir custos para cada path (e goal neste path e velocidade neste path) e escolher
+// o de menor custo.
+//
+// Nas mensagens de MO, observar o timestamp dos MOs.
+// Tratar MO no obstacle_avoider.
+// Tratar MO no BS conforme acima.
+// Checar por que os parâmetros do Frenet no carmen ini não estão afetando o BS.
+// Por que entra no Low Level State: Stoping_at_Atop Sign e não sai mais?
+//
+
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
 //#define SIMULATE_MOVING_OBSTACLE
-//#define SIMULATE_LATERAL_MOVING_OBSTACLE
+#define SIMULATE_LATERAL_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -37,6 +74,7 @@ static int activate_tracking = 0;
 bool keep_speed_limit = false;
 double last_speed_limit;
 
+int behavior_selector_use_symotha = 0;
 double param_distance_between_waypoints;
 double param_change_goal_distance;
 double param_distance_interval;
@@ -777,15 +815,15 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 		current_set_of_paths = &set_of_paths;
 	}
 
-	current_moving_objects = behavior_selector_moving_objects_tracking(current_set_of_paths, &distance_map);
-	if (current_moving_objects)
-		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
-
-	vector <moving_object_point_t> removed_moving_objects = remove_moving_objects_from_distance_map(current_moving_objects, current_robot_pose_v_and_phi);
-	if (use_frenet_path_planner)
-		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
-//		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
-	restore_moving_objects_to_distance_map(removed_moving_objects);
+//	current_moving_objects = behavior_selector_moving_objects_tracking(current_set_of_paths, &distance_map);
+//	if (current_moving_objects)
+//		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
+//
+//	vector <moving_object_point_t> removed_moving_objects = remove_moving_objects_from_distance_map(current_moving_objects, current_robot_pose_v_and_phi);
+//	if (use_frenet_path_planner)
+//		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
+////		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
+//	restore_moving_objects_to_distance_map(removed_moving_objects);
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -818,7 +856,7 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 
 
 int
-select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, compact_lane_contents);
 
@@ -879,6 +917,103 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	return (who_set_the_goal_v);
 }
+
+
+int
+select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
+
+	////////////////////////////////////////////////////////////////
+
+//	evaluate_paths();
+//	select_best_path_goal_and_goal_velocity();
+//
+//	set_of_paths.selected_path = selected_path_id;
+//	carmen_frenet_path_planner_publish_set_of_paths_message(&set_of_paths);
+//
+//	static carmen_rddf_road_profile_message rddf_msg;
+//	rddf_msg.poses = &(set_of_paths.set_of_paths[set_of_paths.selected_path * set_of_paths.number_of_poses]);
+//	rddf_msg.poses_back = set_of_paths.poses_back;
+//	rddf_msg.number_of_poses = set_of_paths.number_of_poses;
+//	rddf_msg.number_of_poses_back = set_of_paths.number_of_poses_back;
+//	rddf_msg.annotations = road_network_message->annotations;
+//	rddf_msg.annotations_codes = road_network_message->annotations_codes;
+//	rddf_msg.timestamp = road_network_message->timestamp;
+//	rddf_msg.host = carmen_get_host();
+//
+//	carmen_rddf_publish_road_profile_message(rddf_msg.poses, rddf_msg.poses_back, rddf_msg.number_of_poses, rddf_msg.number_of_poses_back,
+//			rddf_msg.annotations, rddf_msg.annotations_codes);
+//
+//	// Copia rddf_msg para a global last_rddf_message
+//	behavior_selector_motion_planner_publish_path_message(&rddf_msg, param_rddf_num_poses_by_car_velocity);
+//
+//	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+//	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+//		publish_behavior_selector_road_profile_message(&rddf_msg);
+//
+//	free(set_of_paths.set_of_paths);
+//
+//	publish_goal_list(goal_list, goal_list_size, timestamp);
+//	publish_current_state(behavior_selector_state_message);
+
+	//////////////////////////////////////////////////////////////////
+
+
+	set_path(current_robot_pose_v_and_phi, timestamp);
+
+	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
+	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
+
+	int goal_list_size;
+	carmen_ackerman_traj_point_t *first_goal;
+	int goal_type;
+	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy, timestamp);
+
+	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
+
+	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
+			first_goal, goal_type, timestamp);
+	if (error != 0)
+		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
+
+	static carmen_ackerman_traj_point_t last_valid_goal;
+	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
+	int who_set_the_goal_v = NONE;
+	if (goal_list_size > 0)
+	{
+		who_set_the_goal_v = set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, timestamp);
+		publish_goal_list(goal_list, goal_list_size, timestamp);
+
+		last_valid_goal = *first_goal;
+		last_valid_goal_p = &last_valid_goal;
+	}
+	else if (last_valid_goal_p != NULL)
+	{	// Garante parada suave ao fim do rddf
+		last_valid_goal_p->v = 0.0;
+		publish_goal_list(last_valid_goal_p, 1, timestamp);
+	}
+
+	publish_current_state(behavior_selector_state_message);
+
+// Control whether simulated moving obstacles are created by (un)commenting the
+// definition of the macro below at the top of this file.
+#ifdef SIMULATE_MOVING_OBSTACLE
+	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
+	if (simulated_object_pose)
+		add_simulated_object(simulated_object_pose);
+#endif
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
+	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
+	if (simulated_object_pose2)
+		add_simulated_object(simulated_object_pose2);
+#endif
+
+	if (virtual_laser_message.num_positions >= 0)
+		publish_simulated_objects();
+
+	return (who_set_the_goal_v);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -907,7 +1042,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
+	if (behavior_selector_use_symotha)
+		select_behaviour_using_symotha(current_robot_pose_v_and_phi, msg->timestamp);
+	else
+		select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
 
@@ -928,7 +1066,10 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
+	if (behavior_selector_use_symotha)
+		select_behaviour_using_symotha(current_robot_pose_v_and_phi, msg->timestamp);
+	else
+		select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
 
@@ -1006,11 +1147,12 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 static void
 carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	if (compact_lane_contents == NULL)
+	if (behavior_selector_use_symotha && (compact_lane_contents == NULL))
 		return;
 
 	if (compact_distance_map == NULL)
 	{
+		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
 		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
@@ -1034,7 +1176,6 @@ carmen_obstacle_distance_mapper_compact_lane_contents_message_handler(carmen_obs
 {
 	if (compact_lane_contents == NULL)
 	{
-		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
 		compact_lane_contents = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_lane_contents, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
@@ -1223,7 +1364,7 @@ register_handlers()
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -1285,6 +1426,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
+		{(char *) "behavior_selector", (char *) "use_symotha", CARMEN_PARAM_ONOFF, &behavior_selector_use_symotha, 1, NULL},
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
 		{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},
 		{(char *) "behavior_selector", (char *) "following_lane_planner", CARMEN_PARAM_INT, &following_lane_planner, 1, NULL},

@@ -74,7 +74,7 @@ libnavigator_gui2_interface.a:	navigator_gui2_interface.o
 
 libnavigator_gui2_interface.so.1:	navigator_gui2_interface.o
 
-navigator_gui2: navigator_gui2_main.o libnavigator_gui2_interface.a navigator_gui2_view/libnavigator_gui2_view.a
+navigator_gui2: navigator_gui2_main.o libnavigator_gui2_interface.a navigator_gui2_view/libnavigator_gui2_view.a 
 
 # rules
 

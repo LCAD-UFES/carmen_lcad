@@ -123,7 +123,7 @@ void carmen_map_server_copy_offline_map_from_message(carmen_map_t *current_map, 
 
 void carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localize_map_message *message, carmen_localize_ackerman_map_t* localize_map);
 
-void carmen_cpy_compact_cost_message_to_compact_map(carmen_compact_map_t* compact_cost_map,carmen_map_server_compact_cost_map_message* message);
+void carmen_cpy_compact_map_message_to_compact_map(carmen_compact_map_t* compact_cost_map,carmen_map_server_compact_cost_map_message* message);
 
 void carmen_cpy_compact_lane_message_to_compact_map(carmen_compact_map_t* compact_lane_map, carmen_map_server_compact_lane_map_message* message);
 

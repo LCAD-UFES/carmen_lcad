@@ -628,7 +628,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 
 
 void
-carmen_cpy_compact_cost_message_to_compact_map(carmen_compact_map_t* compact_cost_map, carmen_map_server_compact_cost_map_message* message)
+carmen_cpy_compact_map_message_to_compact_map(carmen_compact_map_t* compact_cost_map, carmen_map_server_compact_cost_map_message* message)
 {
 	compact_cost_map->coord_x = (int*) (malloc(message->size * sizeof(int)));
 	compact_cost_map->coord_y = (int*) (malloc(message->size * sizeof(int)));

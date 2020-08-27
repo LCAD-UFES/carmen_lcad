@@ -1,7 +1,7 @@
 #ifndef MAPPER_H_
 #define MAPPER_H_
 
-#include <tf.h>
+//#include <tf.h>
 #include <carmen/moving_objects_interface.h>
 #include "neural_mapper_io.h"
 
@@ -23,6 +23,12 @@ int update_data_params_with_lidar_data(int sensor_number, carmen_velodyne_variab
 int mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message);
 
 void mapper_publish_map(double timestamp);
+
+int run_snapshot_mapper();
+
+void add_virtual_laser_points(carmen_map_t *map, carmen_mapper_virtual_laser_message *virtual_laser_message);
+
+void add_moving_objects(carmen_map_t *map, carmen_moving_objects_point_clouds_message *moving_objects_message);
 
 void mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *globalpos_message, int UPDATE_CELLS_BELOW_CAR);
 

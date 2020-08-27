@@ -325,6 +325,7 @@ static double lastDisplayTime;
 static double time_spent_by_each_scan;
 static double ouster_time_spent_by_each_scan;
 static double distance_between_front_and_rear_axles;
+static double robot_wheel_radius;
 
 static int force_velodyne_flag = 0;
 static int velodyne_active = -1;
@@ -1880,16 +1881,15 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 	int num_points;
 	num_points = 0;
 
-	if (!odometry_initialized)
-        return;
+	if (!force_velodyne_flag)
+		if (!odometry_initialized)
+			return;
 
 	moving_objects_point_clouds_initialized = 1;
 
 	last_moving_objects_point_clouds++;
 	if (last_moving_objects_point_clouds >= moving_objects_point_clouds_size)
-	{
 		last_moving_objects_point_clouds = 0;
-	}
 
 	num_points = account_number_of_points_point_clouds(num_points, moving_objects_point_clouds_message);
 	init_moving_objects_point_cloud(num_points, moving_objects_point_clouds_message->timestamp);
@@ -2043,14 +2043,14 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		memset(cost_map->complete_map, 0, cost_map->config.x_size * cost_map->config.y_size * sizeof(double));
 
 		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
 	}
 	else
 	{
 		carmen_prob_models_clear_carmen_map_using_compact_map(cost_map, compact_cost_map, 0.0);
 		carmen_prob_models_free_compact_map(compact_cost_map);
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
 	}
 
@@ -2634,7 +2634,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     // *********************************************************************
 
     i_drawer = create_interface_drawer();
-    m_drawer = create_map_drawer();
+    m_drawer = create_map_drawer(argc, argv);
     t_drawer1 = create_trajectory_drawer(0.0, 0.0, 1.0);
     t_drawer2 = create_trajectory_drawer(1.0, 0.0, 0.0);
     t_drawer3 = create_trajectory_drawer(0.0, 1.0, 0.0);
@@ -2840,6 +2840,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char*) "velodyne", (char*) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &time_spent_by_each_scan, 0, NULL},
 			{(char*) "velodyne0", (char*) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &ouster_time_spent_by_each_scan, 0, NULL},
             {(char*) "robot", (char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
+            {(char*) "robot", (char*) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
@@ -3232,11 +3233,11 @@ draw_loop(window *w)
 //            carmen_vector_3D_t offset = get_position_offset();
 //            offset.z += sensor_board_1_pose.position.z;
 
-        	//draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
+        	//draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer);
         	if (draw_velodyne_flag > 0)
         		draw_laser_rays(velodyne_points[last_velodyne_position], get_world_position(VELODYNE_HIERARCHY_SIZE,velodyne_hierarchy));
-			if (draw_points_flag > 0)
-				draw_laser_rays(front_bullbar_middle_laser_points[last_laser_position], get_world_position(FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE, front_bullbar_middle_hierarchy));
+        	if (draw_points_flag > 0)
+        		draw_laser_rays(front_bullbar_middle_laser_points[last_laser_position], get_world_position(FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE, front_bullbar_middle_hierarchy));
 
 //			draw_laser_rays(front_bullbar_left_corner_laser_points[last_laser_position], get_world_position(FRONT_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE, front_bullbar_left_corner_hierarchy));
 //			draw_laser_rays(front_bullbar_right_corner_laser_points[last_laser_position], get_world_position(FRONT_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE, front_bullbar_right_corner_hierarchy));
@@ -3250,10 +3251,10 @@ draw_loop(window *w)
 		   carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
 
-		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
-		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
+		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer, m_drawer);
+		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, car_drawer, draw_particles_flag);
 
-		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity);
+		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity, car_drawer);
         }
 
         if (draw_gps_flag)
@@ -3444,7 +3445,7 @@ draw_loop_for_picking(window *w)
         if (draw_rays_flag)
         {
 //            carmen_vector_3D_t offset = get_position_offset();
-//            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
+//            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer, m_drawer);
             draw_laser_rays(laser_points[last_laser_position], get_laser_position(car_fused_pose.position));
         }
 
@@ -3453,10 +3454,10 @@ draw_loop_for_picking(window *w)
            carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
 
-           draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
-           draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
+           draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer, m_drawer);
+           draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, car_drawer, draw_particles_flag);
 
-           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity);
+           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity, car_drawer);
         }
 
         if (draw_gps_flag)

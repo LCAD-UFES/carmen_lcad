@@ -28,10 +28,11 @@ LFLAGS += -lparam_interface -lipc -lglobal -lobstacle_distance_mapper_interface 
 	       -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt \
 	       -lrt -lboost_signals -lboost_system \
 	       -lsimulator_ackerman_interface -lnavigator_ackerman_interface -llocalize_ackerman_interface \
-	       -lbehavior_selector_interface
+	       -lbehavior_selector_interface -lmapper_interface -lroute_planner_interface -lcollision_detection \
+	       -lmoving_objects_interface
 	       	
 # Source code files (.c, .cpp) 
-SOURCES = obstacle_distance_mapper_main.cpp obstacle_distance_mapper_interface.c
+SOURCES = obstacle_distance_mapper_main.cpp obstacle_distance_mapper_datmo.cpp obstacle_distance_mapper_interface.c
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = obstacle_distance_mapper_messages.h obstacle_distance_mapper_interface.h
@@ -49,7 +50,7 @@ libobstacle_distance_mapper_interface.a: obstacle_distance_mapper_interface.o
 
 libobstacle_distance_mapper_interface.so.1: obstacle_distance_mapper_interface.o
 
-obstacle_distance_mapper:	obstacle_distance_mapper_main.o 
+obstacle_distance_mapper:	obstacle_distance_mapper_main.o obstacle_distance_mapper_datmo.o
 
 # rules
 

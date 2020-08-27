@@ -106,6 +106,8 @@ collision_s_distance_to_static_object(carmen_frenet_path_planner_set_of_paths *c
 			break;
 
 		carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
+		// Incluir um loop para testar colisão com objetos móveis lentos o suficiente, como em collision_s_distance_to_moving_object(), só que com o teste ao contrário.
+		// Consultar o mapa sem objetos no road map na linha abaixo.
 		if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance, &distance_map, NULL) == 1)
 		{
 			virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
@@ -129,7 +131,7 @@ collision_s_distance_to_moving_object(carmen_frenet_path_planner_set_of_paths *c
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
-	if (1)//!current_moving_objects || (path_id == current_set_of_paths->selected_path))
+	if (!current_moving_objects)// || (path_id == current_set_of_paths->selected_path))
 		return ((double) num_samples * delta_t);
 
 	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
@@ -203,7 +205,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(carmen_frenet_path_planne
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
-	if (1)//!current_moving_objects || (path_id == current_set_of_paths->selected_path))
+	if (!current_moving_objects)// || (path_id == current_set_of_paths->selected_path))
 		return ((double) num_samples * delta_t);
 
 	double disp = frenet_path_planner_paths_displacement;

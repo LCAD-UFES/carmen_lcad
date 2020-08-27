@@ -63,12 +63,22 @@ carmen_mapper_subscribe_map_message(carmen_mapper_map_message *message, carmen_h
 	CARMEN_MAPPER_MAP_MESSAGE_FMT, message, sizeof(carmen_mapper_map_message), handler, subscribe_how);
 }
 
+
+void
+carmen_mapper_subscribe_compact_map_message(carmen_mapper_compact_map_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME,
+			CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT, message, sizeof(carmen_mapper_compact_map_message), handler, subscribe_how);
+}
+
+
 void
 carmen_mapper_subscribe_map_level1_message(carmen_mapper_map_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
 	carmen_subscribe_message(CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME,
 	CARMEN_MAPPER_MAP_MESSAGE_FMT, message, sizeof(carmen_mapper_map_message), handler, subscribe_how);
 }
+
 
 void
 carmen_mapper_moving_objects_raw_map_subscribe_message(carmen_mapper_map_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
@@ -108,6 +118,13 @@ void
 carmen_mapper_unsubscribe_map_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_MAPPER_MAP_MESSAGE_NAME, handler);
+}
+
+
+void
+carmen_mapper_unsubscribe_compact_map_message(carmen_handler_t handler)
+{
+	carmen_unsubscribe_message(CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME, handler);
 }
 
 
@@ -152,6 +169,17 @@ carmen_mapper_define_map_message()
 
 
 void
+carmen_mapper_define_compact_map_message()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME);
+}
+
+
+void
 carmen_mapper_define_messages()
 {
 	IPC_RETURN_TYPE err;
@@ -163,6 +191,8 @@ carmen_mapper_define_messages()
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_MAP_MOVING_OBJECTS_RAW_MAP_MESSAGE_NAME);
 
 	carmen_mapper_define_virtual_laser_message();
+
+	carmen_mapper_define_compact_map_message();
 }
 
 
@@ -252,3 +282,24 @@ carmen_mapper_moving_objects_raw_map_publish_message(carmen_map_t *carmen_map, d
 //  err = IPC_publishData(CARMEN_MAPPER_DISTANCE_MAP_MESSAGE_NAME, &distance_map_message);
 //  carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAPPER_DISTANCE_MAP_MESSAGE_NAME);
 //}
+
+
+void
+carmen_mapper_publish_compact_map_message(carmen_compact_map_t *carmen_map, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+	static carmen_map_server_compact_cost_map_message msg;
+
+	strcpy(msg.config.origin, "from_mapping");
+	msg.coord_x = carmen_map->coord_x;
+	msg.coord_y = carmen_map->coord_y;
+	msg.value = carmen_map->value;
+	msg.size = carmen_map->number_of_known_points_on_the_map;
+	msg.config = carmen_map->config;
+	msg.host = carmen_get_host();
+	msg.timestamp = timestamp;
+
+	err = IPC_publishData(CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME, &msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME);
+}
+

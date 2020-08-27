@@ -7,6 +7,10 @@ extern char place_of_interest[2048];
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
+//extern void
+//carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message);
+
+
 namespace View
 {
 
@@ -130,10 +134,12 @@ void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 	{
 		superimposed_is_set = 0;
 		carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+//		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
 	}
 	else
 		carmen_mapper_unsubscribe_map_message((carmen_handler_t) mapper_handler);
+//		carmen_mapper_unsubscribe_compact_map_message((carmen_handler_t) carmen_mapper_compact_map_message_handler);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -277,11 +283,13 @@ void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attri
 	{
 		superimposed_is_set = 1;
 		carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+//		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
 		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 	}
 	else
 		carmen_mapper_unsubscribe_map_message((carmen_handler_t) mapper_handler);
+//		carmen_mapper_unsubscribe_compact_map_message((carmen_handler_t) carmen_mapper_compact_map_message_handler);
 }
 
 //extern "C" G_MODULE_EXPORT
