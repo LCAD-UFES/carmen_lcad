@@ -88,7 +88,9 @@ int cache_exit_edge;
 #define SMOOTHNESS_WEIGHT 1.0
 #define OBSTACLE_WEIGHT 1.0
 #define CURVATURE_WEIGHT 1.0
-#define	VORONOI_WEIGHT 1.0
+//#define	VORONOI_WEIGHT 1.0
+
+int VORONOI_WEIGHT = 1;
 
 #define USE_SMOOTH 1
 #define USE_NEW_EXPANSION 0
@@ -96,7 +98,7 @@ int cache_exit_edge;
 #define EXPANSION_VELOCITY 1.0
 
 #define OBSTACLE_DISTANCE_MIN 0.8
-#define SEND_MESSAGE_IN_PARTS 1
+#define SEND_MESSAGE_IN_PARTS 0
 
 int teste_edge = 0;
 
@@ -2183,6 +2185,13 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //		carmen_astar_path_poses.erase(carmen_astar_path_poses.begin());
 		astar_path_sended = 1;
 		last_index_poses = 0;
+
+		printf("VORONOI STATE = %d\n", VORONOI_WEIGHT);
+		if(VORONOI_WEIGHT)
+			VORONOI_WEIGHT = 0;
+		else
+			VORONOI_WEIGHT = 1;
+
 	}
 
 	clear_astar_map(astar_map);
