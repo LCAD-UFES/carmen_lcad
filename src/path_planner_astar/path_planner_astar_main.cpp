@@ -95,7 +95,7 @@ int cache_exit_edge;
 #define USE_NOBSTACLE_HEURISTIC 0
 #define EXPANSION_VELOCITY 1.0
 
-#define OBSTACLE_DISTANCE_MIN 0.5
+#define OBSTACLE_DISTANCE_MIN 0.8
 #define SEND_MESSAGE_IN_PARTS 1
 
 int teste_edge = 0;
@@ -1326,6 +1326,7 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 	new_state->f = f;
 	new_state->parent = parent;
 	new_state->distance_traveled_g = dtg;
+	new_state->total_distance_traveled = 0.0;
 
 	return (new_state);
 }
@@ -1498,14 +1499,29 @@ build_rddf_poses(state_node *current_state)
 	carmen_ackerman_traj_point_t last_state;
 	temp_rddf_poses_from_path.push_back(path[0].state);
 	last_state = path[0].state;
-
+	printf("Está demorando aqui?\n");
 	for (int i = 1; i < path.size(); i++)
 	{
-		if(DIST2D(path[i].state, last_state) >= 0.4 || (sign(path[i].state.v) != sign(last_state.v)))
+		if((DIST2D(path[i].state, last_state) >= 0.4 && DIST2D(path[i].state, last_state) <= 0.5)|| (sign(path[i].state.v) != sign(last_state.v)))
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
-			printf("[build_rddf_poses] %f %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi, path[i].f);
+			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
+		}
+		else if(DIST2D(path[i].state, last_state) > 0.5)
+		{
+			carmen_ackerman_traj_point_t middle_state;
+			middle_state.x = (path[i].state.x + last_state.x)/2.0;
+			middle_state.y = (path[i].state.y + last_state.y)/2.0;
+			middle_state.theta = (path[i].state.theta + last_state.theta)/2.0;
+			middle_state.phi = (path[i].state.phi + last_state.phi)/2.0;
+			middle_state.v = path[i].state.v;
+			temp_rddf_poses_from_path.push_back(middle_state);
+			printf("[middle_state____] %f %f %f %f %f\n", middle_state.x, middle_state.y, middle_state.theta, middle_state.v, middle_state.phi);
+			temp_rddf_poses_from_path.push_back(path[i].state);
+			last_state = path[i].state;
+			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
+
 		}
 //		distance_to_nearest_edge(path[i].state.x, path[i].state.y);
 //		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
@@ -1734,7 +1750,8 @@ expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
     std::vector<state_node*> neighbor;
     double distance_traveled = 0.0;
     double target_phi;
-    double steering_acceleration[3] = {0.4, -0.4, 0.0};
+//    double steering_acceleration[3] = {0.4, -0.4, 0.0};
+    double steering_acceleration[3] = {robot_config.max_phi, -robot_config.max_phi, 0.0};
     double target_v[2]   = {EXPANSION_VELOCITY, -EXPANSION_VELOCITY};
     double time_lenght;
     int size_for;
@@ -1892,7 +1909,7 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
-				neighbor_expansion[it_neighbor_number]->g +=1;
+				neighbor_expansion[it_neighbor_number]->g +=5;
 
 			if(current != start_state)
 			{
@@ -1908,6 +1925,7 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 
 			astar_map_open_node(astar_map, x, y, theta);
 			astar_map[x][y][theta]->g = neighbor_expansion[it_neighbor_number]->g;
+			neighbor_expansion[it_neighbor_number]->total_distance_traveled += current->total_distance_traveled + neighbor_expansion[it_neighbor_number]->distance_traveled_g;
 			open.push(neighbor_expansion[it_neighbor_number]);
 			++expansion_number;
 		}
@@ -2224,7 +2242,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
 	}
 
-	if(astar_path_sended && DIST2D_P(&robot_position, final_goal) < 6.0 && abs(carmen_compute_abs_angular_distance(robot_position.theta, final_goal->theta)) < 0.0872665)
+	if(astar_path_sended && DIST2D_P(&robot_position, final_goal) < 6.0 && abs(carmen_compute_abs_angular_distance(robot_position.theta, final_goal->theta)) < 0.2617995)
 	{
 		printf("Chegou ao destino\n");
 		astar_path_sended = 0;
@@ -2245,7 +2263,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
 //		printf("poses reenviadas %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
 	}
-	else if(astar_path_sended  && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
+	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
 	{
 //		printf("velocity = %f \n", msg->v);
 //		printf("Before last_index_poses = %d\n", last_index_poses);
@@ -2390,7 +2408,8 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] = 
 	{
-			{(char *)"robot",				(char *)"max_velocity", CARMEN_PARAM_DOUBLE, &robot_config.max_v, 1, NULL},//todo add max_v and max_phi in carmen.ini
+			{(char *)"robot", 				(char *) "max_steering_angle",CARMEN_PARAM_DOUBLE, &robot_config.max_phi,1, NULL},
+			{(char *)"robot",				(char *)"max_velocity", CARMEN_PARAM_DOUBLE, &robot_config.max_v, 1, NULL},
 			{(char *)"robot",				(char *)"min_approach_dist", CARMEN_PARAM_DOUBLE, &robot_config.approach_dist, 1, NULL},
 			{(char *)"robot",				(char *)"min_side_dist", CARMEN_PARAM_DOUBLE, &robot_config.side_dist, 1, NULL},
 			{(char *)"robot",				(char *)"length", CARMEN_PARAM_DOUBLE, &robot_config.length, 0, NULL},
@@ -2410,7 +2429,7 @@ read_parameters(int argc, char **argv)
 			{(char *)"navigator",			(char *)"replan_frequency", CARMEN_PARAM_DOUBLE, &nav_config.replan_frequency, 1, NULL},
 			{(char *)"navigator",			(char *)"dont_integrate_odometry", CARMEN_PARAM_ONOFF, &nav_config.dont_integrate_odometry, 1, NULL},
 			{(char *)"navigator",			(char *)"plan_to_nearest_free_point", CARMEN_PARAM_ONOFF,	&nav_config.plan_to_nearest_free_point, 1, NULL},
-			{(char *)"path_planner_astar",	(char *)"max_steering_angle", CARMEN_PARAM_DOUBLE, &robot_config.max_phi, 1, NULL},
+//			{(char *)"path_planner_astar",	(char *)"max_steering_angle", CARMEN_PARAM_DOUBLE, &robot_config.max_phi, 1, NULL},
 			{(char *)"path_planner_astar",	(char *)"state_map_resolution", CARMEN_PARAM_DOUBLE, &astar_config.state_map_resolution, 1, NULL},
 			{(char *)"path_planner_astar",	(char *)"state_map_theta_resolution", CARMEN_PARAM_INT, &astar_config.state_map_theta_resolution, 1, NULL},
 			{(char *)"path_planner_astar",	(char *)"precomputed_cost_size", CARMEN_PARAM_INT, &astar_config.precomputed_cost_size, 1, NULL},
