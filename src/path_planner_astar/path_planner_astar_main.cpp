@@ -88,9 +88,7 @@ int cache_exit_edge;
 #define SMOOTHNESS_WEIGHT 1.0
 #define OBSTACLE_WEIGHT 1.0
 #define CURVATURE_WEIGHT 1.0
-//#define	VORONOI_WEIGHT 1.0
-
-int VORONOI_WEIGHT = 1;
+#define	VORONOI_WEIGHT 0.0
 
 #define USE_SMOOTH 1
 #define USE_NEW_EXPANSION 0
@@ -98,7 +96,7 @@ int VORONOI_WEIGHT = 1;
 #define EXPANSION_VELOCITY 1.0
 
 #define OBSTACLE_DISTANCE_MIN 0.8
-#define SEND_MESSAGE_IN_PARTS 0
+#define SEND_MESSAGE_IN_PARTS 1
 
 int teste_edge = 0;
 
@@ -477,13 +475,15 @@ my_f(const gsl_vector *v, void *params)
 			{
 				if(distance <= dmax)
 					obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
+
+				/*
 				if(distance <= voronoi_max_distance)
 				{
 					distance_voronoi = distance_to_nearest_edge(x_i, y_i);
 					voronoi_cost += (voronoi_a / (voronoi_a + distance)) * (distance_voronoi / (distance + distance_voronoi)) *
 							(pow(distance - voronoi_max_distance, 2) / pow(voronoi_max_distance, 2));
 				}
-
+				*/
 			}
 			else
 			{
@@ -546,7 +546,7 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 
 		if(distance <= dmax)
 			obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
-
+		/*
 		if(distance <= voronoi_max_distance)
 		{
 			distance_voronoi = distance_to_nearest_edge(i.x, i.y);
@@ -554,7 +554,7 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 			voronoi_cost += (voronoi_a / (voronoi_a + distance)) * (distance_voronoi / (distance + distance_voronoi)) *
 					(pow(distance - voronoi_max_distance, 2) / pow(voronoi_max_distance, 2));
 		}
-
+ 	 	 */
 	}
 	else
 	{
@@ -2185,12 +2185,6 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //		carmen_astar_path_poses.erase(carmen_astar_path_poses.begin());
 		astar_path_sended = 1;
 		last_index_poses = 0;
-
-		printf("VORONOI STATE = %d\n", VORONOI_WEIGHT);
-		if(VORONOI_WEIGHT)
-			VORONOI_WEIGHT = 0;
-		else
-			VORONOI_WEIGHT = 1;
 
 	}
 
