@@ -92,14 +92,15 @@ int cache_exit_edge;
 
 #define USE_SMOOTH 1
 #define USE_NEW_EXPANSION 0
-#define USE_NOBSTACLE_HEURISTIC 0
+//#define USE_NOBSTACLE_HEURISTIC 1
 #define EXPANSION_VELOCITY 1.0
 
 #define OBSTACLE_DISTANCE_MIN 0.8
-#define SEND_MESSAGE_IN_PARTS 1
+#define SEND_MESSAGE_IN_PARTS 0
 
 int teste_edge = 0;
 
+int use_matrix_heuristic = 0;
 using namespace cv;
 
 
@@ -1228,7 +1229,8 @@ open_cost_map()
 	fp = fopen (astar_config.precomputed_cost_file_name, "rw");
 	if (fp == NULL)
 	{
-		printf ("Houve um erro ao abrir o arquivo.\n");
+		printf ("Houve um erro ao abrir a matriz. Usando o Reed-Shepp como heurística.\n");
+		use_matrix_heuristic = 0;
 		return 1;
 	}
 
@@ -1249,6 +1251,7 @@ open_cost_map()
 		}
 	}
 	fclose (fp);
+	use_matrix_heuristic = 1;
 	printf("Mapa da heurística sem obstáculos carregado!\n");
 	return 0;
 }
@@ -1283,6 +1286,7 @@ alloc_cost_map()
 	}
 
 	open_cost_map();
+
 }
 
 
@@ -1505,7 +1509,6 @@ build_rddf_poses(state_node *current_state)
 	carmen_ackerman_traj_point_t last_state;
 	temp_rddf_poses_from_path.push_back(path[0].state);
 	last_state = path[0].state;
-	printf("Está demorando aqui?\n");
 	for (int i = 1; i < path.size(); i++)
 	{
 		if((DIST2D(path[i].state, last_state) >= 0.4 && DIST2D(path[i].state, last_state) <= 0.5)|| (sign(path[i].state.v) != sign(last_state.v)))
@@ -1622,9 +1625,9 @@ h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, 
 	get_current_pos(current, x_c, y_c, theta_c);
 
 	ho = heuristic_obstacle_map[y_c + x_c * astar_map_y_size];
-	if(USE_NOBSTACLE_HEURISTIC)
+	if(astar_config.use_matrix_cost_heuristic)
 	{
-		if(astar_config.use_matrix_cost_heuristic)
+		if(use_matrix_heuristic)
 	//	if(0)
 		{
 			int x = ((current->state.x - goal->state.x) * cos(current->state.theta) - (current->state.y - goal->state.y) * sin(current->state.theta))/astar_config.precomputed_cost_resolution;
@@ -2137,8 +2140,8 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 		astar_map_close_node(astar_map, x, y, theta);
 
-		if(cont_rs_nodes%3==0)
-//		if(cont_rs_nodes % int(current->h + 1) == 0)
+//		if(cont_rs_nodes%3==0)
+		if(cont_rs_nodes % int(current->h + 1) == 0)
 		{
 			rs_path = reed_shepp_path(current, goal_state);
 			if(hitObstacle(rs_path, astar_map) == 0 )//&& rs_path.front()->f < (current->h) )
@@ -2449,7 +2452,7 @@ read_parameters(int argc, char **argv)
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
-	if(astar_config.use_matrix_cost_heuristic && USE_NOBSTACLE_HEURISTIC)
+	if(astar_config.use_matrix_cost_heuristic)
 //	if(0)
 		alloc_cost_map();
 /*
