@@ -338,6 +338,16 @@ nearest_edge_cell(int x_map, int y_map)
 }
 
 
+static int
+sign(double a)
+{
+	if (a >= 0.0)
+		return 1;
+	else
+		return -1;
+}
+
+
 void
 calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
 {
@@ -369,10 +379,14 @@ compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 {
 	for (int i = 0; i < (num_poses - 1); i++)
 	{
-		if(path[i].v >= 0.0)
-			path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
-		else
-			path[i].theta = atan2(path[i].y - path[i+1].y, path[i].x - path[i+1].x);
+		//Para não alterar o theta dos pontos âncoras
+		if(sign(path[i].v) == sign(path[i+1].v))
+		{
+			if(path[i].v >= 0.0)
+				path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
+			else
+				path[i].theta = atan2(path[i].y - path[i+1].y, path[i].x - path[i+1].x);
+		}
 	}
 	if (num_poses > 1)
 		path[num_poses - 1].theta = path[num_poses - 2].theta;
@@ -647,16 +661,6 @@ my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
 {
 	*f = my_f(x, params);
 	my_df(x, params, df);
-}
-
-
-static int
-sign (double a)
-{
-	if (a >= 0.0)
-		return 1;
-	else
-		return -1;
 }
 
 
