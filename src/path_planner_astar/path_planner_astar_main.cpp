@@ -485,7 +485,16 @@ my_f(const gsl_vector *v, void *params)
 			carmen_ackerman_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
 			smoothness_cost +=  DOT2D(delta, delta);
 
-			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(param->points[i], distance_map);
+			carmen_ackerman_traj_point_t current;
+			current.x = x_i;
+			current.y = y_i;
+
+			if(param->points[i].v >=0)
+				current.theta = atan2(y_next - y_i, x_next - x_i);
+			else
+				current.theta = atan2(y_i - y_next, x_i - x_next);
+
+			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(current, distance_map);
 			if(distance > 0.0)
 			{
 				if(distance <= dmax)
@@ -554,6 +563,10 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 	carmen_ackerman_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
 	smoothness_cost +=  DOT2D(delta, delta);
 
+	if(i.v >=0)
+		i.theta = atan2(i_next.y - i.y, i_next.x - i.x);
+	else
+		i.theta = atan2(i.y - i_next.y, i.x - i_next.x);
 
 	distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(i, distance_map);
 	if(distance > 0.0)
