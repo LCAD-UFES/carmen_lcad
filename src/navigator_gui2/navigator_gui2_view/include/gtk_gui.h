@@ -302,6 +302,7 @@ namespace View
 
 		carmen_lane_detector_lane_message_t *lane_markings_msg = NULL;
 		carmen_offroad_planner_plan_message *offroad_planner_plan = NULL;
+		carmen_route_planner_road_network_message *route_planner_route = NULL;
 
 		GdkImage *annotation_image[NUM_RDDF_ANNOTATION_TYPES][NUM_RDDF_ANNOTATION_CODES];
 
