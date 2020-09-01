@@ -1833,7 +1833,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 		if (rs_points[i].v < 0.0)
 		{
 			v_step = EXPANSION_VELOCITY;
-			step_weight = 4.0;
+			step_weight = 1.0;
 		}
 		else
 		{
@@ -2148,8 +2148,10 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 			{
 				rs_path.front()->parent = current;
 				current = rs_path.back();
+				open.push(current);
 				rs_found = 1;
-				break;
+				continue;
+//				break;
 			}
 
 			clear_list(rs_path);
