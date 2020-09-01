@@ -441,7 +441,7 @@ double
 my_f(const gsl_vector *v, void *params)
 {
 
-	double dmax = 1.5; // escolher um valor melhor
+	double dmax = 3.0; // escolher um valor melhor
 //	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 //	double kmax = 0.22; // Encontrar outra forma de obter esse valor
 	double kmax = 0.178571429;
@@ -495,25 +495,18 @@ my_f(const gsl_vector *v, void *params)
 				current.theta = atan2(y_i - y_next, x_i - x_next);
 
 			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(current, distance_map);
-			if(distance > 0.0)
-			{
-				if(distance <= dmax)
-					obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
+			if(distance <= dmax)
+				obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
 
-				/*
-				if(distance <= voronoi_max_distance)
-				{
-					distance_voronoi = distance_to_nearest_edge(x_i, y_i);
-					voronoi_cost += (voronoi_a / (voronoi_a + distance)) * (distance_voronoi / (distance + distance_voronoi)) *
-							(pow(distance - voronoi_max_distance, 2) / pow(voronoi_max_distance, 2));
-				}
+			/*
+			if(distance <= voronoi_max_distance)
+			{
+				distance_voronoi = distance_to_nearest_edge(x_i, y_i);
+				voronoi_cost += (voronoi_a / (voronoi_a + distance)) * (distance_voronoi / (distance + distance_voronoi)) *
+						(pow(distance - voronoi_max_distance, 2) / pow(voronoi_max_distance, 2));
+			}
 				*/
-			}
-			else
-			{
-				obstacle_cost += 9999;
 
-			}
 
 			//Utilizando a segunda definição de delta_phi
 			delta_phi = DOT2D(delta_i, delta_i_1)/ (sqrt(DOT2D(delta_i, delta_i)) * sqrt(DOT2D(delta_i_1, delta_i_1)));
@@ -544,7 +537,7 @@ double
 single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i_prev, carmen_ackerman_traj_point_t i_next)
 {
 
-	double dmax = 1.5; // escolher um valor melhor
+	double dmax = 3.0; // escolher um valor melhor
 //	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 //	double kmax = 0.22; // Encontrar outra forma de obter esse valor
 	double kmax = 0.178571429;
@@ -569,25 +562,18 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 		i.theta = atan2(i.y - i_next.y, i.x - i_next.x);
 
 	distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(i, distance_map);
-	if(distance > 0.0)
-	{
 
-		if(distance <= dmax)
-			obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
-		/*
-		if(distance <= voronoi_max_distance)
-		{
-			distance_voronoi = distance_to_nearest_edge(i.x, i.y);
-
-			voronoi_cost += (voronoi_a / (voronoi_a + distance)) * (distance_voronoi / (distance + distance_voronoi)) *
-					(pow(distance - voronoi_max_distance, 2) / pow(voronoi_max_distance, 2));
-		}
- 	 	 */
-	}
-	else
+	if(distance <= dmax)
+		obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
+	/*
+	if(distance <= voronoi_max_distance)
 	{
-		obstacle_cost += 9999;
+		distance_voronoi = distance_to_nearest_edge(i.x, i.y);
+
+		voronoi_cost += (voronoi_a / (voronoi_a + distance)) * (distance_voronoi / (distance + distance_voronoi)) *
+				(pow(distance - voronoi_max_distance, 2) / pow(voronoi_max_distance, 2));
 	}
+	 */
 
 	delta_phi = DOT2D(delta_i, delta_i_1)/ (sqrt(DOT2D(delta_i, delta_i)) * sqrt(DOT2D(delta_i_1, delta_i_1)));
 	delta_phi = safeAcos(delta_phi);
@@ -1931,8 +1917,8 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
-				neighbor_expansion[it_neighbor_number]->g +=5;
-
+				neighbor_expansion[it_neighbor_number]->g +=1;
+/*
 			if(current != start_state)
 			{
 				int first_v = current->parent->state.v;
@@ -1941,12 +1927,13 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 				if(first_v == thi_v && first_v != sec_v)
 					neighbor_expansion[it_neighbor_number]->g +=10;
 			}
-
+*/
 
 			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 
 			astar_map_open_node(astar_map, x, y, theta);
 			astar_map[x][y][theta]->g = neighbor_expansion[it_neighbor_number]->g;
+
 			neighbor_expansion[it_neighbor_number]->total_distance_traveled += current->total_distance_traveled + neighbor_expansion[it_neighbor_number]->distance_traveled_g;
 			open.push(neighbor_expansion[it_neighbor_number]);
 			++expansion_number;
