@@ -96,7 +96,7 @@ int cache_exit_edge;
 #define EXPANSION_VELOCITY 1.0
 
 #define OBSTACLE_DISTANCE_MIN 0.8
-#define SEND_MESSAGE_IN_PARTS 0
+#define SEND_MESSAGE_IN_PARTS 1
 
 int teste_edge = 0;
 
@@ -891,42 +891,29 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 	}
 	int nearest_pose_index = get_index_of_nearest_pose_in_path(path.points, globalpos_message->globalpos, path.length);
 	carmen_ackerman_traj_point_t *path_copy = NULL;
-	bool path_somoothed = false;
-	if (nav_config.smooth_path)
-	{
-		path_copy = (carmen_ackerman_traj_point_t *) malloc(path.length * sizeof(carmen_ackerman_traj_point_t));
-		memcpy((void *) path_copy, (void *) path.points, path.length * sizeof(carmen_ackerman_traj_point_t));
-		//Estava dando erro na linha abaixo
-//		path_somoothed = smooth_path_using_conjugate_gradient(path.points, path.length);
-		if (!path_somoothed)
-		{
-			free(path_copy);
-			path_copy = NULL;
-			printf("Could not smooth path\n");
-		}
-		else
-		{
-			printf("Path smoothed!\n");
-		}
-	}
+
 //	carmen_route_planner_road_network_message route_planner_road_network_message;
 	route_planner_road_network_message.poses = &(path.points[nearest_pose_index]);
 	route_planner_road_network_message.poses_back = get_poses_back(path.points, nearest_pose_index);
 	route_planner_road_network_message.number_of_poses = path.length - nearest_pose_index;
 	route_planner_road_network_message.number_of_poses_back = nearest_pose_index + 1;	// tem que ter pelo menos uma pose_back que eh igual aa primeira poses
+//	route_planner_road_network_message.number_of_poses_back = 1;
 	route_planner_road_network_message.annotations = annotations;
 	route_planner_road_network_message.annotations_codes = annotations_codes;
 	add_lanes(route_planner_road_network_message, path_copy);
 	route_planner_road_network_message.timestamp = globalpos_message->timestamp;
 	route_planner_road_network_message.host = carmen_get_host();
 	first_published = 0;
-//	carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
-//	printf("route_planner print %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
-
-	//free_lanes(route_planner_road_network_message);
-	//free(annotations);
-	//free(annotations_codes);
-	//free(route_planner_road_network_message.poses_back);
+	carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
+/*
+	printf("break\n");
+	for(int i = 0; i < route_planner_road_network_message.number_of_poses; i++)
+		printf("route_planner print %f %f %f %f %f\n", route_planner_road_network_message.poses[i].x, route_planner_road_network_message.poses[i].y, route_planner_road_network_message.poses[i].theta, route_planner_road_network_message.poses[i].v, route_planner_road_network_message.poses[i].phi);
+*/
+	free_lanes(route_planner_road_network_message);
+	free(annotations);
+	free(annotations_codes);
+	free(route_planner_road_network_message.poses_back);
 	// Estava dando erro de corruption na linha abaixo e ainda não encontrei o motivo
 //	free(path.points);
 }
@@ -1510,12 +1497,14 @@ build_rddf_poses(state_node *current_state)
 	last_state = path[0].state;
 	for (int i = 1; i < path.size(); i++)
 	{
-		if((DIST2D(path[i].state, last_state) >= 0.4 && DIST2D(path[i].state, last_state) <= 0.5)|| (sign(path[i].state.v) != sign(last_state.v)))
+		//&& DIST2D(path[i].state, last_state) <= 0.5)
+		if((DIST2D(path[i].state, last_state) >= 0.5 ))//|| (sign(path[i].state.v) != sign(last_state.v)))
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
 			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 		}
+		/*
 		else if(DIST2D(path[i].state, last_state) > 0.5)
 		{
 			carmen_ackerman_traj_point_t middle_state;
@@ -1531,6 +1520,8 @@ build_rddf_poses(state_node *current_state)
 			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 
 		}
+		*/
+
 //		distance_to_nearest_edge(path[i].state.x, path[i].state.y);
 //		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 //		draw_astar_object(&path[i].state, CARMEN_GREEN);
@@ -2246,20 +2237,15 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	}
 
-
-
 	if(astar_path_sended && first_published == 0)
 	{
 		first_published = 1;
-		carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
 	}
 
 	if(astar_path_sended && DIST2D_P(&robot_position, final_goal) < 6.0 && abs(carmen_compute_abs_angular_distance(robot_position.theta, final_goal->theta)) < 0.2617995)
 	{
 		printf("Chegou ao destino\n");
 		astar_path_sended = 0;
-		free_lanes(route_planner_road_network_message);
-		free(route_planner_road_network_message.poses_back);
 		carmen_astar_path_poses.clear();
 	}
 
@@ -2267,16 +2253,22 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	{
 //		printf("route_planner print %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
 //		printf("plan_path print %f %f %f \n", plan_path_poses.path.points->x, plan_path_poses.path.points->y, plan_path_poses.path.points->theta);
+/*
 		int nearest_pose_index = get_index_of_nearest_pose_in_path(route_planner_road_network_message.poses, robot_position, route_planner_road_network_message.number_of_poses);
 		route_planner_road_network_message.poses_back = get_poses_back(route_planner_road_network_message.poses, nearest_pose_index);
 		route_planner_road_network_message.poses = &(route_planner_road_network_message.poses[nearest_pose_index]);
 		route_planner_road_network_message.number_of_poses = route_planner_road_network_message.number_of_poses - nearest_pose_index;
-		route_planner_road_network_message.number_of_poses_back = nearest_pose_index + 1;
+//		route_planner_road_network_message.number_of_poses_back = nearest_pose_index + 1;
+		route_planner_road_network_message.number_of_poses_back = 1;
 		carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
+		*/
+		publish_plan(plan_path_poses.path, msg);
 //		printf("poses reenviadas %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
 	}
 	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
 	{
+//		free_lanes(route_planner_road_network_message);
+//		free(route_planner_road_network_message.poses_back);
 //		printf("velocity = %f \n", msg->v);
 //		printf("Before last_index_poses = %d\n", last_index_poses);
 		plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal);
