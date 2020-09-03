@@ -95,7 +95,7 @@ int cache_exit_edge;
 //#define USE_NOBSTACLE_HEURISTIC 1
 #define EXPANSION_VELOCITY 1.0
 
-#define OBSTACLE_DISTANCE_MIN 0.8
+#define OBSTACLE_DISTANCE_MIN 1.0
 #define SEND_MESSAGE_IN_PARTS 1
 
 int teste_edge = 0;
@@ -517,7 +517,7 @@ my_f(const gsl_vector *v, void *params)
 
 			if(delta_phi > kmax)
 			{
-				curvature_cost += pow(delta_phi, 2) * (delta_phi - kmax);
+				curvature_cost += pow(delta_phi - kmax, 2) * (delta_phi - kmax);
 			}
 
 		}
@@ -584,7 +584,7 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 //	printf("delta_phi = %f %f\n", delta_phi, kmax);
 	if(delta_phi > kmax)
 	{
-		curvature_cost += pow(delta_phi, 2) * (delta_phi - kmax);
+		curvature_cost += pow(delta_phi - kmax, 2) * (delta_phi - kmax);
 	}
 
 	obstacle_cost = OBSTACLE_WEIGHT * obstacle_cost;
@@ -866,6 +866,9 @@ get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index)
 	for (int i = 0; i < (nearest_pose_index + 1); i++)
 		poses_back[i] = path[nearest_pose_index - i];
 
+//	carmen_ackerman_traj_point_t *poses_back = (carmen_ackerman_traj_point_t *) malloc((1) * sizeof(carmen_ackerman_traj_point_t));
+//	poses_back[0] = path[nearest_pose_index];
+
 	return (poses_back);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -905,11 +908,11 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 	route_planner_road_network_message.host = carmen_get_host();
 	first_published = 0;
 	carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
-/*
+
 	printf("break\n");
 	for(int i = 0; i < route_planner_road_network_message.number_of_poses; i++)
 		printf("route_planner print %f %f %f %f %f\n", route_planner_road_network_message.poses[i].x, route_planner_road_network_message.poses[i].y, route_planner_road_network_message.poses[i].theta, route_planner_road_network_message.poses[i].v, route_planner_road_network_message.poses[i].phi);
-*/
+
 	free_lanes(route_planner_road_network_message);
 	free(annotations);
 	free(annotations_codes);
@@ -1983,62 +1986,64 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 	plan.goal_set = 0;
 
 	// Para enviar um path que não muda de direção
-	if(SEND_MESSAGE_IN_PARTS && last_index_poses < carmen_astar_path_poses.size())
+	if(SEND_MESSAGE_IN_PARTS)
 	{
-		current_astar_path_poses_till_reverse_direction.clear();
-	//	last_index_poses++;
-//		printf("last_index_poses = %d\n", last_index_poses);
-		current_astar_path_poses_till_reverse_direction.push_back(carmen_astar_path_poses[last_index_poses]);
-//current pose
-		robot.x = current_astar_path_poses_till_reverse_direction[0].x;
-		robot.y = current_astar_path_poses_till_reverse_direction[0].y;
-		robot.theta = current_astar_path_poses_till_reverse_direction[0].theta;
-		robot.v = current_astar_path_poses_till_reverse_direction[0].v;
-		robot.phi = current_astar_path_poses_till_reverse_direction[0].phi;
+		if(last_index_poses < carmen_astar_path_poses.size()){
+			current_astar_path_poses_till_reverse_direction.clear();
+		//	last_index_poses++;
+	//		printf("last_index_poses = %d\n", last_index_poses);
+			current_astar_path_poses_till_reverse_direction.push_back(carmen_astar_path_poses[last_index_poses]);
+	//current pose
+			robot.x = current_astar_path_poses_till_reverse_direction[0].x;
+			robot.y = current_astar_path_poses_till_reverse_direction[0].y;
+			robot.theta = current_astar_path_poses_till_reverse_direction[0].theta;
+			robot.v = current_astar_path_poses_till_reverse_direction[0].v;
+			robot.phi = current_astar_path_poses_till_reverse_direction[0].phi;
 
-//current goal
-		goal.x = current_astar_path_poses_till_reverse_direction[0].x;
-		goal.y = current_astar_path_poses_till_reverse_direction[0].y;
-		goal.theta = current_astar_path_poses_till_reverse_direction[0].theta;
-		goal.v = current_astar_path_poses_till_reverse_direction[0].v;
-		goal.phi = current_astar_path_poses_till_reverse_direction[0].phi;
+	//current goal
+			goal.x = current_astar_path_poses_till_reverse_direction[0].x;
+			goal.y = current_astar_path_poses_till_reverse_direction[0].y;
+			goal.theta = current_astar_path_poses_till_reverse_direction[0].theta;
+			goal.v = current_astar_path_poses_till_reverse_direction[0].v;
+			goal.phi = current_astar_path_poses_till_reverse_direction[0].phi;
 
-		int current_path_size = 1;
-		int find_absolute_value = 0;
-		double old_v = current_astar_path_poses_till_reverse_direction[find_absolute_value].v;
-		while(old_v == 0.0 && (find_absolute_value+1 < carmen_astar_path_poses.size()))
-		{
-			old_v = carmen_astar_path_poses[find_absolute_value++].v;
-		}
-
-		printf("\n");
-		for(int i = last_index_poses + 1; i < carmen_astar_path_poses.size() ; i++)
-		{
-//			printf("old_v = %f %f\n", old_v, carmen_astar_path_poses[i].v);
-			if(old_v == carmen_astar_path_poses[i].v)
+			int current_path_size = 1;
+			int find_absolute_value = 0;
+			double old_v = current_astar_path_poses_till_reverse_direction[find_absolute_value].v;
+			while(old_v == 0.0 && (find_absolute_value+1 < carmen_astar_path_poses.size()))
 			{
-				current_astar_path_poses_till_reverse_direction.push_back(carmen_astar_path_poses[i]);
-				printf("current_astar = %f %f %f %f %f %d\n",carmen_astar_path_poses[i].x, carmen_astar_path_poses[i].y, carmen_astar_path_poses[i].theta, carmen_astar_path_poses[i].v, carmen_astar_path_poses[i].phi, last_index_poses );
-				last_index_poses = i;
-				current_path_size++;
-				goal.x = carmen_astar_path_poses[i].x;
-				goal.y = carmen_astar_path_poses[i].y;
-				goal.theta = carmen_astar_path_poses[i].theta;
-				goal.v = carmen_astar_path_poses[i].v;
-				goal.phi = carmen_astar_path_poses[i].phi;
+				old_v = carmen_astar_path_poses[find_absolute_value++].v;
 			}
-			else
-			{
-				break;
-			}
-	//		printf("i = %d\n", i);
-		}
 
-		last_index_poses++;
-		plan.robot = robot;
-		plan.goal = goal;
-		plan.path.points = &(current_astar_path_poses_till_reverse_direction[0]);
-		plan.path.length = current_path_size;
+			printf("\n");
+			for(int i = last_index_poses + 1; i < carmen_astar_path_poses.size() ; i++)
+			{
+	//			printf("old_v = %f %f\n", old_v, carmen_astar_path_poses[i].v);
+				if(old_v == carmen_astar_path_poses[i].v)
+				{
+					current_astar_path_poses_till_reverse_direction.push_back(carmen_astar_path_poses[i]);
+					printf("current_astar = %f %f %f %f %f %d\n",carmen_astar_path_poses[i].x, carmen_astar_path_poses[i].y, carmen_astar_path_poses[i].theta, carmen_astar_path_poses[i].v, carmen_astar_path_poses[i].phi, last_index_poses );
+					last_index_poses = i;
+					current_path_size++;
+					goal.x = carmen_astar_path_poses[i].x;
+					goal.y = carmen_astar_path_poses[i].y;
+					goal.theta = carmen_astar_path_poses[i].theta;
+					goal.v = carmen_astar_path_poses[i].v;
+					goal.phi = carmen_astar_path_poses[i].phi;
+				}
+				else
+				{
+					break;
+				}
+		//		printf("i = %d\n", i);
+			}
+
+			last_index_poses++;
+			plan.robot = robot;
+			plan.goal = goal;
+			plan.path.points = &(current_astar_path_poses_till_reverse_direction[0]);
+			plan.path.length = current_path_size;
+		}
 	}
 	else
 	{
@@ -2079,7 +2084,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	time_count.reset();
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose, astar_map);
 //	printf("Heuristic map time is %f seconds\n\n", time_count.get_since());
-	evg_thin_on_map(astar_map, heuristic_obstacle_map);
+//	evg_thin_on_map(astar_map, heuristic_obstacle_map);
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
@@ -2249,7 +2254,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		carmen_astar_path_poses.clear();
 	}
 
-	else if(astar_path_sended && DIST2D(robot_position, *route_planner_road_network_message.poses) > 2.0)
+	else if(astar_path_sended && DIST2D(robot_position, *route_planner_road_network_message.poses) > 4.0)
 	{
 //		printf("route_planner print %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
 //		printf("plan_path print %f %f %f \n", plan_path_poses.path.points->x, plan_path_poses.path.points->y, plan_path_poses.path.points->theta);
@@ -2265,7 +2270,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_plan(plan_path_poses.path, msg);
 //		printf("poses reenviadas %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
 	}
-	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
+	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 4.0)
 	{
 //		free_lanes(route_planner_road_network_message);
 //		free(route_planner_road_network_message.poses_back);
