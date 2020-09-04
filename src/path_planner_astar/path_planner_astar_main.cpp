@@ -395,15 +395,22 @@ compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 {
 	for (int i = 0; i < (num_poses - 1); i++)
 	{
-		//Para não alterar o theta dos pontos âncoras
-//		if(sign(path[i].v) == sign(path[i+1].v))
-//		{
+		if(sign(path[i].v) == sign(path[i+1].v))
+		{
 			if(path[i].v >= 0.0)
 				path[i].theta = carmen_normalize_theta(atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x));
 			else
 				path[i].theta = carmen_normalize_theta(atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x)+ M_PI);
 //				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i+1].y, path[i].x - path[i+1].x));
-//		}
+		}
+		else
+		{
+			if(path[i].v >= 0.0)
+				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x));
+			else
+				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x) + M_PI);
+		}
+
 	}
 	if (num_poses > 1)
 		path[num_poses - 1].theta = path[num_poses - 2].theta;
@@ -862,6 +869,25 @@ free_lanes(carmen_route_planner_road_network_message route_planner_road_network_
     free(route_planner_road_network_message.nearby_lanes_ids);
     free(route_planner_road_network_message.nearby_lanes);
     free(route_planner_road_network_message.traffic_restrictions);
+}
+
+
+int
+get_index_of_nearest_pose_in_current_path(std::vector<carmen_ackerman_traj_point_t> path, carmen_point_t globalpos, int path_length)
+{
+	int nearest_pose_index = 0;
+	double min_dist = DIST2D(path[nearest_pose_index], globalpos);
+	for (int i = 1; i < path_length; i++)
+	{
+		double distance = DIST2D(path[i], globalpos);
+		if (distance < min_dist)
+		{
+			min_dist = distance;
+			nearest_pose_index = i;
+		}
+	}
+//	printf("Alo %d %d\n", nearest_pose_index, path_length);
+	return (nearest_pose_index);
 }
 
 
@@ -2312,7 +2338,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_plan(plan_path_poses.path, msg);
 	}
 
-	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
+	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && get_index_of_nearest_pose_in_current_path(current_astar_path_poses_till_reverse_direction, robot_position, current_astar_path_poses_till_reverse_direction.size()) > current_astar_path_poses_till_reverse_direction.size() -  5)//DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
 	{
 		if(last_index_poses < carmen_astar_path_poses.size() - 5){
 			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal);
