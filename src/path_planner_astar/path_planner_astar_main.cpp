@@ -1866,7 +1866,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 		if (rs_points[i].v < 0.0)
 		{
 			v_step = EXPANSION_VELOCITY;
-			step_weight = 1.0;
+			step_weight = 1.5;
 		}
 		else
 		{
@@ -2148,7 +2148,8 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		return 0;
 	}
 
-	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
+//	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
+	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map) < 0.1)
 	{
 		printf("Goal_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(goal_state->state, distance_map));
 		return 0;
@@ -2189,11 +2190,11 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 		astar_map_close_node(astar_map, x, y, theta, direction);
 
-//		if(cont_rs_nodes%3==0)
-		if(cont_rs_nodes % int(current->h + 1) == 0)
+		if(cont_rs_nodes%3==0)
+//		if(cont_rs_nodes % int(current->h + 1) == 0)
 		{
 			rs_path = reed_shepp_path(current, goal_state);
-			if(hitObstacle(rs_path, astar_map) == 0 )//&& rs_path.front()->f < (current->h) )
+			if(hitObstacle(rs_path, astar_map) == 0)//&& rs_path.front()->f > (current->h) )
 			{
 				rs_path.front()->parent = current;
 				current = rs_path.back();
