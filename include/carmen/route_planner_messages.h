@@ -27,6 +27,18 @@ typedef enum
 	WITHIN_OFFROAD_PLAN
 } offroad_planner_request_t;
 
+
+typedef enum ROUTE_PLANNER_FEEDBACK
+{
+	ROUTE_PLANNED,
+	COULD_NOT_COMPUTE_THE_ROUTE
+} carmen_route_planner_feedback_t;
+
+#define print_route_planner_feedback(x) ( \
+	(x == ROUTE_PLANNED)? "ROUTE_PLANNED": \
+	(x == COULD_NOT_COMPUTE_THE_ROUTE)? "COULD_NOT_COMPUTE_THE_ROUTE": "")
+
+
 typedef struct
 {
 	int number_of_poses;
@@ -53,13 +65,14 @@ typedef struct
     //	nearby_lanes (p_lane_pose) -> p_0_0, p_0_1, p_0_2, p_0_3, p_0_4, p_1_0, p_1_1, p_1_2, p_2_0, p_2_1, p_2_2, p_2_3, p_2_4, p_2_5
 
 	int offroad_planner_request;
+	carmen_route_planner_feedback_t route_planner_feedback;
 
     double timestamp;
     char *host;
 } carmen_route_planner_road_network_message;
 
 #define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_NAME		"carmen_route_planner_road_network_message"
-#define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_FMT		"{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, <int:7>, <int:7>, <int:7>, int, <{double, double, double, double, double}:11>, <int:11>, int, double, string}"
+#define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_FMT		"{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, <int:7>, <int:7>, <int:7>, int, <{double, double, double, double, double}:11>, <int:11>, int, int, double, string}"
 
 
 typedef struct

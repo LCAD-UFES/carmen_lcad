@@ -18,6 +18,7 @@
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
+#include <carmen/route_planner_interface.h>
 #include <carmen/offroad_planner_interface.h>
 
 #include <carmen/carmen_graphics.h>
@@ -1153,6 +1154,13 @@ navigator_ackerman_stop_message_handler()
 
 
 void
+carmen_route_planner_road_network_message_handler(carmen_route_planner_road_network_message *message)
+{
+	gui->route_planner_route = message;
+}
+
+
+void
 carmen_offroad_planner_plan_message_handler(carmen_offroad_planner_plan_message *message)
 {
 	gui->offroad_planner_plan = message;
@@ -1396,6 +1404,7 @@ subscribe_ipc_messages()
 			(carmen_handler_t) navigator_ackerman_stop_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) carmen_offroad_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }

@@ -52,6 +52,7 @@ typedef struct state_node
 	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
 	double distance_traveled_g;
+	double total_distance_traveled;
 	double h;                                // Distance from current state to goal
 	state_node *parent;
 } state_node, *state_node_p;

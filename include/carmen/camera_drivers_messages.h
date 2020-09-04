@@ -81,6 +81,7 @@ typedef struct {
 #define      CAMERA19_NAME        "camera19"
 #define      CAMERA20_NAME        "camera20"
 
+#define MAX_CAMERA_ID 20
 
 #ifdef __cplusplus
 }
