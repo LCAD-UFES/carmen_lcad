@@ -2313,8 +2313,10 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
 	{
-		plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal);
-		publish_plan(plan_path_poses.path, msg);
+		if(last_index_poses < carmen_astar_path_poses.size() - 5){
+			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal);
+			publish_plan(plan_path_poses.path, msg);
+		}
 
 	}
 
