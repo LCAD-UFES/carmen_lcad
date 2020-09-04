@@ -13,7 +13,7 @@ using namespace std;
 extern carmen_frenet_path_planner_set_of_paths *current_set_of_paths;
 extern carmen_moving_objects_point_clouds_message *current_moving_objects;
 
-extern carmen_obstacle_distance_mapper_map_message distance_map;
+extern carmen_obstacle_distance_mapper_map_message distance_map_free_of_moving_objects;
 
 extern int frenet_path_planner_num_paths;
 extern double frenet_path_planner_paths_displacement;
@@ -107,8 +107,8 @@ collision_s_distance_to_static_object(carmen_frenet_path_planner_set_of_paths *c
 
 		carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
 		// Incluir um loop para testar colisão com objetos móveis lentos o suficiente, como em collision_s_distance_to_moving_object(), só que com o teste ao contrário.
-		// Consultar o mapa sem objetos no road map na linha abaixo.
-		if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance, &distance_map, NULL) == 1)
+		if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance,
+				&distance_map_free_of_moving_objects, NULL) == 1)
 		{
 			virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
 			virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
@@ -444,17 +444,17 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 		else
 		{
 			lateral_value = 10.0 * (paths.size() - abs((int) i - ((int) paths.size() / 2)));
-			longitudinal_value = 1000.0 * paths[i].s_distance_without_collision_with_static_object +
-								 100.0  * paths[i].s_distance_without_collision_with_moving_object +
-								 100.0  * paths[i].s_distance_to_moving_object_in_parallel_lane;
+			longitudinal_value = 1000.0 * paths[i].s_distance_without_collision_with_static_object;// +
+//								 100.0  * paths[i].s_distance_without_collision_with_moving_object +
+//								 100.0  * paths[i].s_distance_to_moving_object_in_parallel_lane;
 		}
 		double path_value = longitudinal_value + lateral_value + path_temporal_value[i];
-		printf("\npath %d, v %5.1lf, lv %5.1lf (%5.3lf, %5.3lf, %5.3lf), lat_value %3.1lf, t_value %5.1lf",
-				i, path_value, longitudinal_value,
-				paths[i].s_distance_without_collision_with_static_object,
-				paths[i].s_distance_without_collision_with_moving_object,
-				paths[i].s_distance_to_moving_object_in_parallel_lane,
-				lateral_value, path_temporal_value[i]);
+//		printf("\npath %d, v %5.1lf, lv %5.1lf (%5.3lf, %5.3lf, %5.3lf), lat_value %3.1lf, t_value %5.1lf",
+//				i, path_value, longitudinal_value,
+//				paths[i].s_distance_without_collision_with_static_object,
+//				paths[i].s_distance_without_collision_with_moving_object,
+//				paths[i].s_distance_to_moving_object_in_parallel_lane,
+//				lateral_value, path_temporal_value[i]);
 		if (path_value > best_path_value)
 		{
 			best_path_value = path_value;
@@ -462,8 +462,8 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 		}
 	}
 
-	printf("  -> best_path %d (%d)\n", (paths[best_path].path_has_no_collision)? best_path: -1, current_path);
-	fflush(stdout);
+//	printf("  -> best_path %d (%d) %lf\n", (paths[best_path].path_has_no_collision)? best_path: -1, current_path, current_set_of_paths->timestamp);
+//	fflush(stdout);
 	if (paths[best_path].path_has_no_collision)
 		return (best_path);
 	else

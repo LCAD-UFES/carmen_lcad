@@ -8,6 +8,7 @@
 #include <carmen/udatmo.h>
 #include <carmen/udatmo_messages.h>
 #include <prob_map.h>
+#include <carmen/map.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/motion_planner_interface.h>
@@ -19,6 +20,9 @@
 #include <carmen/frenet_path_planner_interface.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/mapper_interface.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/obstacle_distance_mapper_datmo.h>
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -55,7 +59,6 @@
 // Nas mensagens de MO, observar o timestamp dos MOs.
 // Tratar MO no obstacle_avoider.
 // Tratar MO no BS conforme acima.
-// Checar por que os parâmetros do Frenet no carmen ini não estão afetando o BS.
 // Por que entra no Low Level State: Stoping_at_Atop Sign e não sai mais?
 //
 
@@ -75,6 +78,10 @@ bool keep_speed_limit = false;
 double last_speed_limit;
 
 int behavior_selector_use_symotha = 0;
+double obstacle_probability_threshold 	= 0.5;
+double min_moving_object_velocity 		= 0.3;
+double max_moving_object_velocity 		= 150.0 / 3.6; // 150 km/h
+
 double param_distance_between_waypoints;
 double param_change_goal_distance;
 double param_distance_interval;
@@ -112,6 +119,12 @@ carmen_obstacle_distance_mapper_map_message distance_map;
 static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;
 static carmen_obstacle_distance_mapper_compact_map_message *compact_lane_contents = NULL;
 
+static carmen_mapper_compact_map_message *carmen_mapper_compact_map_msg = NULL;
+static carmen_compact_map_t *compact_occupancy_map = NULL;
+
+carmen_prob_models_distance_map 			distance_map2;
+carmen_obstacle_distance_mapper_map_message distance_map_free_of_moving_objects;
+
 double original_behaviour_selector_central_lane_obstacles_safe_distance;
 double original_model_predictive_planner_obstacles_safe_distance;
 
@@ -141,6 +154,8 @@ extern int selected_path_id;
 extern double localize_ackerman_initialize_message_timestamp;
 
 double parking_speed_limit;
+
+carmen_map_t occupancy_map;
 
 
 int
@@ -384,6 +399,46 @@ add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
 
 	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta - M_PI / 2.0);
 	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta - M_PI / 2.0);
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+}
+
+
+void
+add_larger_simulated_object(carmen_ackerman_traj_point_t *object_pose)
+{
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+
+	double lateral_disp = 0.3;
+	double logitudinal_disp;
+	for (logitudinal_disp = 0; logitudinal_disp < 2.0; logitudinal_disp = logitudinal_disp + 0.2)
+	{
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x +
+				lateral_disp * cos(object_pose->theta + M_PI / 2.0) +
+				logitudinal_disp * cos(object_pose->theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y +
+				lateral_disp * sin(object_pose->theta + M_PI / 2.0) +
+				logitudinal_disp * sin(object_pose->theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x +
+				lateral_disp * cos(object_pose->theta - M_PI / 2.0) +
+				logitudinal_disp * cos(object_pose->theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y +
+				lateral_disp * sin(object_pose->theta - M_PI / 2.0) +
+				logitudinal_disp * sin(object_pose->theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+	}
+
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x +
+			logitudinal_disp * cos(object_pose->theta);
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y +
+			logitudinal_disp * sin(object_pose->theta);
 	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
 	virtual_laser_message.num_positions++;
 }
@@ -803,6 +858,19 @@ restore_moving_objects_to_distance_map(vector <moving_object_point_t> removed_mo
 
 
 void
+create_carmen_obstacle_distance_mapper_map_message(carmen_obstacle_distance_mapper_map_message &distance_map_free_of_moving_objects,
+		carmen_prob_models_distance_map distance_map2, double timestamp)
+{
+	distance_map_free_of_moving_objects.config = distance_map2.config;
+	distance_map_free_of_moving_objects.size = distance_map2.config.x_size * distance_map2.config.y_size;
+	distance_map_free_of_moving_objects.complete_x_offset = distance_map2.complete_x_offset;
+	distance_map_free_of_moving_objects.complete_y_offset = distance_map2.complete_y_offset;
+	distance_map_free_of_moving_objects.host = carmen_get_host();
+	distance_map_free_of_moving_objects.timestamp = timestamp;
+}
+
+
+void
 set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
@@ -815,15 +883,22 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 		current_set_of_paths = &set_of_paths;
 	}
 
-//	current_moving_objects = behavior_selector_moving_objects_tracking(current_set_of_paths, &distance_map);
-//	if (current_moving_objects)
-//		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
-//
-//	vector <moving_object_point_t> removed_moving_objects = remove_moving_objects_from_distance_map(current_moving_objects, current_robot_pose_v_and_phi);
-//	if (use_frenet_path_planner)
-//		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
-////		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
-//	restore_moving_objects_to_distance_map(removed_moving_objects);
+	compact_occupancy_map = obstacle_distance_mapper_uncompress_occupancy_map(&occupancy_map, compact_occupancy_map, carmen_mapper_compact_map_msg);
+	current_moving_objects = obstacle_distance_mapper_datmo(road_network_message, occupancy_map, carmen_mapper_compact_map_msg->timestamp);
+	if (current_moving_objects)
+	{
+		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
+		obstacle_distance_mapper_remove_moving_objects_from_occupancy_map(&occupancy_map, current_moving_objects);
+	}
+	if (distance_map2.complete_distance == NULL)
+		carmen_prob_models_initialize_distance_map(&distance_map2, distance_map.config);
+	carmen_prob_models_create_distance_map(&distance_map2, &occupancy_map, obstacle_probability_threshold);
+	create_carmen_obstacle_distance_mapper_map_message(distance_map_free_of_moving_objects, distance_map2, timestamp);
+//	obstacle_distance_mapper_restore_moving_objects_to_occupancy_map(&occupancy_map, current_moving_objects);
+
+	if (use_frenet_path_planner)
+		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
+//		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -909,7 +984,8 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
 	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose2)
-		add_simulated_object(simulated_object_pose2);
+		add_larger_simulated_object(simulated_object_pose2);
+//		add_simulated_object(simulated_object_pose2);
 #endif
 
 	if (virtual_laser_message.num_positions >= 0)
@@ -1105,6 +1181,13 @@ void
 carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_message)
 {
 	current_moving_objects = moving_objects_message;
+}
+
+
+static void
+carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message)
+{
+	carmen_mapper_compact_map_msg = message;
 }
 
 
@@ -1371,6 +1454,9 @@ register_handlers()
 		carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 		carmen_localize_ackerman_subscribe_initialize_message(NULL, (carmen_handler_t) carmen_localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	}
+
+	if (behavior_selector_use_symotha)
+		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1448,6 +1534,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints_with_v_multiplier", CARMEN_PARAM_DOUBLE, &distance_between_waypoints_with_v_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "performs_path_planning", CARMEN_PARAM_ONOFF, &behavior_selector_performs_path_planning, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
+		{(char *) "rrt",						(char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
 		{(char *) "grid_mapping",      	 (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 	1, NULL},
@@ -1457,6 +1544,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "frenet_path_planner", (char *) "paths_displacement", CARMEN_PARAM_DOUBLE, &frenet_path_planner_paths_displacement, 0, NULL},
 		{(char *) "frenet_path_planner", (char *) "time_horizon", CARMEN_PARAM_DOUBLE, &frenet_path_planner_time_horizon, 0, NULL},
 		{(char *) "frenet_path_planner", (char *) "delta_t", CARMEN_PARAM_DOUBLE, &frenet_path_planner_delta_t, 0, NULL},
+		{(char *) "obstacle_distance_mapper",	(char *) "min_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&min_moving_object_velocity,		1, NULL},
+		{(char *) "obstacle_distance_mapper",	(char *) "max_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&max_moving_object_velocity,		1, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
@@ -1507,6 +1596,8 @@ main(int argc, char **argv)
 	define_messages();
 	register_handlers();
 	signal(SIGINT, signal_handler);
+
+	distance_map2.complete_distance = NULL;
 
 	carmen_ipc_dispatch();
 

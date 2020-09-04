@@ -15,12 +15,13 @@
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/route_planner_interface.h>
 #include <carmen/moving_objects_interface.h>
-#include "obstacle_distance_mapper.h"
+#include "obstacle_distance_mapper_datmo.h"
 
 
 double obstacle_probability_threshold 	= 0.5;
 double obstacle_cost_distance 			= 1.0;
 double min_moving_object_velocity 		= 0.3;
+double max_moving_object_velocity 		= 150.0 / 3.6; // 150 km/h
 int behavior_selector_use_symotha 		= 0;
 
 carmen_map_t 										occupancy_map;
@@ -186,51 +187,6 @@ compute_orm_and_irm_occupancy_maps(carmen_map_t *orm_occupancy_map, carmen_map_t
 }
 
 
-void
-uncompress_occupancy_map(carmen_map_t &occupancy_map, carmen_compact_map_t *&compact_occupancy_map,
-		carmen_mapper_compact_map_message *message)
-{
-	if (compact_occupancy_map == NULL)
-	{
-		carmen_grid_mapping_create_new_map(&occupancy_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
-		memset(occupancy_map.complete_map, 0, occupancy_map.config.x_size * occupancy_map.config.y_size * sizeof(double));
-		occupancy_map.config = message->config;
-		compact_occupancy_map = (carmen_compact_map_t *) calloc(1, sizeof(carmen_compact_map_t));
-		carmen_cpy_compact_map_message_to_compact_map(compact_occupancy_map, message);
-		carmen_prob_models_uncompress_compact_map(&occupancy_map, compact_occupancy_map);
-	}
-	else
-	{
-		occupancy_map.config = message->config;
-		carmen_prob_models_clear_carmen_map_using_compact_map(&occupancy_map, compact_occupancy_map, 0.0);
-		carmen_prob_models_free_compact_map(compact_occupancy_map);
-		carmen_cpy_compact_map_message_to_compact_map(compact_occupancy_map, message);
-		carmen_prob_models_uncompress_compact_map(&occupancy_map, compact_occupancy_map);
-	}
-}
-
-
-void
-remove_moving_objects_from_map(carmen_map_t *occupancy_map, carmen_moving_objects_point_clouds_message *moving_objects)
-{
-	for (int i = 0; i < moving_objects->num_point_clouds; i++)
-	{
-		if (fabs(moving_objects->point_clouds[i].linear_velocity) > min_moving_object_velocity)
-		{
-			for (int k = 0; k < moving_objects->point_clouds[i].point_size; k++)
-			{
-				int x_map_cell = (int) round((moving_objects->point_clouds[i].points[k].x - occupancy_map->config.x_origin) / occupancy_map->config.resolution);
-				int y_map_cell = (int) round((moving_objects->point_clouds[i].points[k].y - occupancy_map->config.y_origin) / occupancy_map->config.resolution);
-				if ((x_map_cell < 0 || x_map_cell >= occupancy_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= occupancy_map->config.y_size))
-					continue;
-
-				occupancy_map->map[x_map_cell][y_map_cell] = 0.0;
-			}
-		}
-	}
-}
-
-
 void 
 moving_objects_detection_tracking_publishing_and_occupancy_map_removal(carmen_map_t &occupancy_map, double timestamp)
 {
@@ -238,7 +194,7 @@ moving_objects_detection_tracking_publishing_and_occupancy_map_removal(carmen_ma
 	if (moving_objects)
 	{
 		carmen_moving_objects_point_clouds_publish_message(moving_objects);
-		remove_moving_objects_from_map(&occupancy_map, moving_objects);
+		obstacle_distance_mapper_remove_moving_objects_from_occupancy_map(&occupancy_map, moving_objects);
 
 		for (int i = 0; i < moving_objects->num_point_clouds; i++)
 			free(moving_objects->point_clouds[i].points);
@@ -290,43 +246,6 @@ obstacle_distance_mapper_publish_compact_distance_and_compact_lane_contents_maps
 
 
 void
-obstacle_distance_mapper_publish_compact_cost_map_test_mode(double timestamp, carmen_obstacle_distance_mapper_compact_map_message *message)
-{
-	static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;
-	static carmen_obstacle_distance_mapper_map_message distance_map;
-
-	if (compact_distance_map == NULL)
-	{
-		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
-		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
-		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
-		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
-	}
-	else
-	{
-		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
-		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
-		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
-		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
-	}
-
-	carmen_prob_models_distance_map real_distance_map;
-	carmen_obstacle_distance_mapper_create_distance_map_from_distance_map_message(&real_distance_map, &distance_map);
-
-	build_obstacle_cost_map(&cost_map, real_distance_map.config, &real_distance_map, obstacle_cost_distance);
-	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
-
-	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
-	{
-		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
-		carmen_prob_models_free_compact_map(&compacted_cost_map);
-	}
-
-	carmen_obstacle_distance_mapper_free_distance_map(&real_distance_map);
-}
-
-
-void
 obstacle_distance_mapper_publish_compact_cost_map(double timestamp)
 {
 	build_obstacle_cost_map(&cost_map, distance_map.config, &distance_map, obstacle_cost_distance);
@@ -351,7 +270,7 @@ carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *mes
 	static carmen_compact_map_t *compact_occupancy_map = NULL;
 	static carmen_map_t occupancy_map;
 
-	uncompress_occupancy_map(occupancy_map, compact_occupancy_map, message);
+	compact_occupancy_map = obstacle_distance_mapper_uncompress_occupancy_map(&occupancy_map, compact_occupancy_map, message);
 
 	moving_objects_detection_tracking_publishing_and_occupancy_map_removal(occupancy_map, message->timestamp);
 	
@@ -449,6 +368,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "rrt",						(char *) "obstacle_cost_distance",			CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,			1, NULL},
 		{(char *) "rrt",						(char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "min_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&min_moving_object_velocity,		1, NULL},
+		{(char *) "obstacle_distance_mapper",	(char *) "max_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&max_moving_object_velocity,		1, NULL},
 		{(char *) "behavior_selector",			(char *) "use_symotha",						CARMEN_PARAM_ONOFF,		&behavior_selector_use_symotha,		1, NULL}
 	};
 

@@ -3,20 +3,19 @@
 
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
-#include <iostream>
-#include <list>
-#include <string>
-#include <queue>
-#include <list>
-#include <utility>
 #include <string.h>
 #include <dirent.h>
-#include <string>
-#include <vector>
 #include <GL/glut.h>
 #include <carmen/rddf_util.h>
 #include <carmen/carmen_gps.h>
 #include <carmen/gps_xyz_interface.h>
+#include <iostream>
+#include <list>
+#include <string>
+#include <vector>
+#include <queue>
+#include <list>
+#include <utility>
 
 #include <opencv2/core/version.hpp>
 #if CV_MAJOR_VERSION == 3
@@ -31,10 +30,6 @@
 #include <opencv/highgui.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 using namespace std;
 using namespace cv;
 
@@ -46,8 +41,12 @@ typedef struct
 	int p_sec;
 	int p_penul;
 	int p_last;
-} neaby_lane_t;
+} nearby_lane_t;
 
+
+#ifndef EDGE_TYPE_
+#define EDGE_TYPE_
+// These structs are needed in a C library (route_planner_interface.h) but this is a C++ library
 
 typedef struct
 {
@@ -61,6 +60,18 @@ typedef struct
 
 typedef struct
 {
+	char *id;
+	carmen_position_t start;
+	carmen_position_t end;
+	edge_t edge;
+	int status;		/* enabled:1 , disabled:0 */
+} route_t;
+
+#endif
+
+
+typedef struct
+{
 	int id;
 	int id_ref;
 	int lane_id;
@@ -69,7 +80,7 @@ typedef struct
 	double lat;
 	carmen_rddf_waypoint rddf_point;
 	vector <edge_t> edges;
-	vector<neaby_lane_t> nearby_lanes;
+	vector <nearby_lane_t> nearby_lanes;
 	int back_joint_node_id;
 	int next_joint_node_id;
 } node_t;
@@ -97,9 +108,5 @@ void save_graph_to_file(graph_t graph, FILE *f_graph);
 void save_lane_graph_to_file(graph_t lane_graph, FILE *f_graph);
 void save_graph_to_gpx (graph_t graph);
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRAPH_UTILS_H_ */
