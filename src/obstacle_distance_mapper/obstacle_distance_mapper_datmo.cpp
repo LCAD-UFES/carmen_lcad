@@ -10,6 +10,7 @@
 extern double min_moving_object_velocity;
 extern double max_moving_object_velocity;
 extern double obstacle_probability_threshold;
+extern double moving_object_merge_distance;
 
 //
 // No codigo abaixo, a deteccao e o traqueamento de objetos moveis eh feito apenas nas lanes da road_network
@@ -240,7 +241,7 @@ predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_m
 	bool within_down_limit = true;
 	int found_index = -1;
 	double forward_max_disp = delta_t * (moving_object->v + max_moving_object_velocity);
-	double backward_max_disp = delta_t * (moving_object->v - max_moving_object_velocity);
+	double backward_max_disp = -delta_t * (moving_object->v - max_moving_object_velocity);
 
 	while (within_up_limit || within_down_limit)
 	{
@@ -286,13 +287,15 @@ predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_m
 int
 get_last_valid_history(moving_object_t *moving_object)
 {
-	int last_valid_history;
-	for (last_valid_history = 1; last_valid_history < MOVING_OBJECT_HISTORY_SIZE; last_valid_history++)
-		if (moving_object->history[last_valid_history].valid)
+	int last_valid_history = -1;
+	for (int i = 1; i < MOVING_OBJECT_HISTORY_SIZE; i++)
+	{
+		if (moving_object->history[i].valid)
+		{
+			last_valid_history = i;
 			break;
-
-	if (last_valid_history == MOVING_OBJECT_HISTORY_SIZE)
-		return (-1);
+		}
+	}
 
 	return (last_valid_history);
 }
@@ -301,18 +304,13 @@ get_last_valid_history(moving_object_t *moving_object)
 void
 try_and_add_a_v_sample(moving_object_t *moving_object)
 {
-	int next_valid = -1;
-	for (int i = 1; i < MOVING_OBJECT_HISTORY_SIZE; i++)
-	{
-		if (moving_object->history[i].valid)
-		{
-			next_valid = i;
-			break;
-		}
-	}
+	double delta_t = 0.0;
 
-	double delta_t = moving_object->history[0].timestamp - moving_object->history[next_valid].timestamp;
-	if ((next_valid != -1) && (delta_t > 0.01))
+	int next_valid = get_last_valid_history(moving_object);
+	if (next_valid != -1)
+		delta_t = moving_object->history[0].timestamp - moving_object->history[next_valid].timestamp;
+
+	if (delta_t > 0.01)
 	{
 		double dist = DIST2D(moving_object->history[0].pose, moving_object->history[next_valid].pose);
 		// distance in the direction of the lane: https://en.wikipedia.org/wiki/Vector_projection
@@ -462,12 +460,14 @@ add_object_history_sample(moving_object_t *moving_object, int first_pose_index, 
 		}
 		i++;
 	}
+//	printf("last %d\n", i);
 
 	if (found)
 	{
 		moving_object->history[0].valid = 1;
-		moving_object->history[0].index = (first_pose_index + i) / 2;
-		lane->examined[(first_pose_index + i) / 2] = true;
+		int index = round((double) (first_pose_index + i) / 2.0);
+		moving_object->history[0].index = index;
+		lane->examined[index] = true;
 		get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object_points);
 		moving_object->history[0].pose.theta = lane->lane_points[moving_object->history[0].index].theta;
 		moving_object->history[0].moving_object_points = moving_object_points;
@@ -496,8 +496,12 @@ update(moving_object_t *moving_object, lane_t *lane, int index, carmen_map_t *oc
 
 	bool found = false;
 	while ((index >= 0) && obstacle_detected(lane, index, occupancy_map))
+	{
+		lane->examined[index] = true;
 		index--;
+	}
 	index++;
+//	printf("\nfirst %d, ", index);
 
 	found = add_object_history_sample(moving_object, index, lane, occupancy_map, timestamp, true);
 
@@ -533,8 +537,7 @@ estimate_new_state(moving_object_t *moving_object, lane_t *lane, double timestam
 	
 	moving_object->history[0].moving_object_points = moving_object->history[sample].moving_object_points;
 	moving_object->history[0].pose = moving_object->history[sample].pose; // para copiar v
-	int index = moving_object->history[sample].index;
-	int new_index = index;
+	int new_index = moving_object->history[sample].index;
 	double delta_t = timestamp - moving_object->history[sample].timestamp;
 	double displacement = delta_t * moving_object->v;
 	if (fabs(displacement) != 0.0)
@@ -588,7 +591,10 @@ track_moving_objects(lane_t *lane, carmen_map_t *occupancy_map, double timestamp
     		estimate_new_state(moving_object, lane, timestamp);
     		moving_object->non_detection_count++;
     		if (moving_object->non_detection_count > MAX_NON_DETECTION_COUNT)
+    		{
     			lane->moving_objects.erase(lane->moving_objects.begin() + i);
+    			i--;
+    		}
     	}
     }
 }
@@ -849,23 +855,26 @@ fill_in_moving_objects_point_clouds_message(vector<lane_t> lanes, double timesta
 void
 remove_lanes_absent_from_road_network(vector<lane_t> &lanes, carmen_route_planner_road_network_message *road_network)
 {
-	printf("remove_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
-			road_network->number_of_nearby_lanes, (int) lanes.size());
-
+//	printf("remove_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
+//			road_network->number_of_nearby_lanes, (int) lanes.size());
+//
     for (unsigned int i = 0; i < lanes.size(); i++)
     {
     	int lane_id = lanes[i].lane_id;
     	bool not_found = true;
-		for (int i = 0; i < road_network->number_of_nearby_lanes; i++)
+		for (int j = 0; j < road_network->number_of_nearby_lanes; j++)
 		{
-			if (lane_id == road_network->nearby_lanes_ids[i])
+			if (lane_id == road_network->nearby_lanes_ids[j])
 			{
 				not_found = false;
 				break;
 			}
 		}
 		if (not_found)
+		{
 			lanes.erase(lanes.begin() + i);
+			i--;
+		}
     }
 }
 
@@ -873,16 +882,16 @@ remove_lanes_absent_from_road_network(vector<lane_t> &lanes, carmen_route_planne
 void
 include_new_lanes_in_road_network(vector<lane_t> &lanes, carmen_route_planner_road_network_message *road_network)
 {
-	printf("include_new_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
-			road_network->number_of_nearby_lanes, (int) lanes.size());
-
+//	printf("include_new_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
+//			road_network->number_of_nearby_lanes, (int) lanes.size());
+//
 	for (int i = 0; i < road_network->number_of_nearby_lanes; i++)
 	{
     	int lane_id = road_network->nearby_lanes_ids[i];
     	bool not_found = true;
         for (unsigned int j = 0; j < lanes.size(); j++)
         {
-        	printf("%d %d, ", lane_id, lanes[j].lane_id);
+//        	printf("%d %d, ", lane_id, lanes[j].lane_id);
 			if (lane_id == lanes[j].lane_id)
 			{
 				not_found = false;
@@ -903,21 +912,21 @@ include_new_lanes_in_road_network(vector<lane_t> &lanes, carmen_route_planner_ro
 			lanes.push_back(new_lane);
 		}
     }
-	printf("\n");
-	fflush(stdout);
+//	printf("\n");
+//	fflush(stdout);
 }
 
 
 void
 update_lanes(vector<lane_t> &lanes, carmen_route_planner_road_network_message *road_network)
 {
-	printf("update_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
-			road_network->number_of_nearby_lanes, (int) lanes.size());
-
-	if (road_network->number_of_nearby_lanes != (int) lanes.size())
-		printf("Error: road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()",
-				road_network->number_of_nearby_lanes, (int) lanes.size());
-
+//	printf("update_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
+//			road_network->number_of_nearby_lanes, (int) lanes.size());
+//
+//	if (road_network->number_of_nearby_lanes != (int) lanes.size())
+//		printf("Error: road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()",
+//				road_network->number_of_nearby_lanes, (int) lanes.size());
+//
 	for (int i = 0; i < road_network->number_of_nearby_lanes; i++)
 	{
     	lane_t *lane = get_lane(lanes, road_network->nearby_lanes_ids[i]);
@@ -1054,7 +1063,7 @@ near(moving_object_t mo_j, moving_object_t mo_k)
 		for (unsigned int j = 0; j < mo_k.history[0].moving_object_points.size(); j++)
 		{
 			carmen_position_t point_k = mo_k.history[0].moving_object_points[j];
-			if (DIST2D(point_j, point_k) < 1.0)
+			if (DIST2D(point_j, point_k) < moving_object_merge_distance)
 				return (true);
 		}
 	}
@@ -1116,63 +1125,6 @@ merge(moving_object_t *mo_l, moving_object_t *mo_m, double map_resolution)
 
 
 void
-merge_old(moving_object_t *mo_l, moving_object_t *mo_m, double map_resolution)
-{
-	int num_samples_l = get_num_valid_samples(mo_l->history);
-	int num_samples_m = get_num_valid_samples(mo_m->history);
-
-	moving_object_t *mo_j;
-	moving_object_t *mo_k;
-	if (num_samples_l > num_samples_m)
-	{
-		mo_j = mo_l;
-		mo_k = mo_m;
-	}
-	else
-	{
-		mo_j = mo_m;
-		mo_k = mo_l;
-	}
-
-	mo_j->average_v.clear();
-	mo_j->average_length.clear();
-	mo_j->average_width.clear();
-	for (int i = 0; i < MOVING_OBJECT_HISTORY_SIZE; i++)
-	{
-		if (mo_j->history[i].valid && mo_k->history[i].valid)
-		{
-			int size_j = mo_j->history[i].moving_object_points.size();
-			int size_k = mo_k->history[i].moving_object_points.size();
-			mo_j->history[i].index = (mo_j->history[i].index * size_j + mo_k->history[i].index * size_k) / (size_j + size_k);
-
-			mo_j->history[i].moving_object_points.insert(mo_j->history[i].moving_object_points.end(), mo_k->history[i].moving_object_points.begin(), mo_k->history[i].moving_object_points.end());
-			get_object_history_sample_mass_center(&(mo_j->history[i]), mo_j->history[i].moving_object_points);
-			compute_object_history_sample_width_and_length(&(mo_j->history[i]), map_resolution);
-
-			mo_j->average_length.add_sample(mo_j->history[i].length);
-			mo_j->average_width.add_sample(mo_j->history[i].width);
-
-			if (mo_j->history[i].v_valid && mo_k->history[i].v_valid)
-				mo_j->average_v.add_sample((mo_j->history[i].pose.v + mo_k->history[i].pose.v) / 2.0);
-			else if (mo_j->history[i].v_valid)
-				mo_j->average_v.add_sample(mo_j->history[i].pose.v);
-			else if (mo_k->history[i].v_valid)
-				mo_j->average_v.add_sample(mo_k->history[i].pose.v);
-		}
-		else if (!mo_j->history[i].valid && mo_k->history[i].valid)
-		{
-			mo_j->average_length.add_sample(mo_k->history[i].length);
-			mo_j->average_width.add_sample(mo_k->history[i].width);
-
-			mo_j->history[i] =  mo_k->history[i];
-			if (mo_k->history[i].v_valid)
-				mo_j->average_v.add_sample(mo_k->history[i].pose.v);
-		}
-	}
-}
-
-
-void
 merge_nearby_objects(vector<lane_t> &lanes, double map_resolution)
 {
 	for (unsigned int i = 0; i < lanes.size(); i++)
@@ -1185,6 +1137,7 @@ merge_nearby_objects(vector<lane_t> &lanes, double map_resolution)
 				{
 					merge(&(lanes[i].moving_objects[j]), &(lanes[i].moving_objects[k]), map_resolution);
 					lanes[i].moving_objects.erase(lanes[i].moving_objects.begin() + k);
+					k--;
 				}
 			}
 		}

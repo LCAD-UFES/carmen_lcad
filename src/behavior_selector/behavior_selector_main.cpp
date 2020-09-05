@@ -81,6 +81,7 @@ int behavior_selector_use_symotha = 0;
 double obstacle_probability_threshold 	= 0.5;
 double min_moving_object_velocity 		= 0.3;
 double max_moving_object_velocity 		= 150.0 / 3.6; // 150 km/h
+double moving_object_merge_distance		= 1.0; // m
 
 double param_distance_between_waypoints;
 double param_change_goal_distance;
@@ -1153,6 +1154,23 @@ static void
 carmen_route_planner_road_network_message_handler(carmen_route_planner_road_network_message *msg)
 {
 	road_network_message = msg;
+	for (int m = 0; m < road_network_message->number_of_nearby_lanes; m++)
+	{
+		int lane = road_network_message->nearby_lanes_ids[m];
+		for (int n = m + 1; n < road_network_message->number_of_nearby_lanes; n++)
+		{
+			if (road_network_message->nearby_lanes_ids[n] == lane)
+			{
+				for (int i = n; i < road_network_message->number_of_nearby_lanes - 1; i++)
+				{
+					road_network_message->nearby_lanes_ids[i] = road_network_message->nearby_lanes_ids[i + 1];
+					road_network_message->nearby_lanes_sizes[i] = road_network_message->nearby_lanes_sizes[i + 1];
+					road_network_message->nearby_lanes_indexes[i] = road_network_message->nearby_lanes_indexes[i + 1];
+				}
+				road_network_message->number_of_nearby_lanes--;
+			}
+		}
+	}
 }
 
 
@@ -1235,8 +1253,9 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 
 	if (compact_distance_map == NULL)
 	{
-		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
 		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		if (!distance_map.complete_x_offset)
+			carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
 	}
@@ -1260,6 +1279,8 @@ carmen_obstacle_distance_mapper_compact_lane_contents_message_handler(carmen_obs
 	if (compact_lane_contents == NULL)
 	{
 		compact_lane_contents = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		if (!distance_map.complete_x_offset)
+			carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_lane_contents, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
 	}
@@ -1546,6 +1567,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "frenet_path_planner", (char *) "delta_t", CARMEN_PARAM_DOUBLE, &frenet_path_planner_delta_t, 0, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "min_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&min_moving_object_velocity,		1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "max_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&max_moving_object_velocity,		1, NULL},
+		{(char *) "obstacle_distance_mapper",	(char *) "moving_object_merge_distance",	CARMEN_PARAM_DOUBLE,	&moving_object_merge_distance,		1, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
@@ -1584,6 +1606,8 @@ main(int argc, char **argv)
 	memset(&last_rddf_annotation_message, 0, sizeof(last_rddf_annotation_message));
 	memset(&road_profile_message, 0, sizeof(carmen_behavior_selector_road_profile_message));
 	memset(&behavior_selector_state_message, 0, sizeof(carmen_behavior_selector_state_message));
+	memset(&distance_map, 0, sizeof(carmen_obstacle_distance_mapper_map_message));
+	memset(&distance_map2, 0, sizeof(carmen_prob_models_distance_map));
 
 	read_parameters(argc, argv);
 	if (behavior_selector_performs_path_planning)
@@ -1596,8 +1620,6 @@ main(int argc, char **argv)
 	define_messages();
 	register_handlers();
 	signal(SIGINT, signal_handler);
-
-	distance_map2.complete_distance = NULL;
 
 	carmen_ipc_dispatch();
 

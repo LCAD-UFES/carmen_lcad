@@ -31,11 +31,13 @@ typedef enum
 typedef enum ROUTE_PLANNER_FEEDBACK
 {
 	ROUTE_PLANNED,
+	ROUTE_PLANNER_IN_RDDF_MODE,
 	COULD_NOT_COMPUTE_THE_ROUTE
 } carmen_route_planner_feedback_t;
 
 #define print_route_planner_feedback(x) ( \
 	(x == ROUTE_PLANNED)? "ROUTE_PLANNED": \
+	(x == ROUTE_PLANNER_IN_RDDF_MODE)? "ROUTE_PLANNER_IN_RDDF_MODE": \
 	(x == COULD_NOT_COMPUTE_THE_ROUTE)? "COULD_NOT_COMPUTE_THE_ROUTE": "")
 
 

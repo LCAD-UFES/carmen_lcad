@@ -22,6 +22,7 @@ double obstacle_probability_threshold 	= 0.5;
 double obstacle_cost_distance 			= 1.0;
 double min_moving_object_velocity 		= 0.3;
 double max_moving_object_velocity 		= 150.0 / 3.6; // 150 km/h
+double moving_object_merge_distance		= 1.0; // m
 int behavior_selector_use_symotha 		= 0;
 
 carmen_map_t 										occupancy_map;
@@ -369,6 +370,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "rrt",						(char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "min_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&min_moving_object_velocity,		1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "max_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&max_moving_object_velocity,		1, NULL},
+		{(char *) "obstacle_distance_mapper",	(char *) "moving_object_merge_distance",	CARMEN_PARAM_DOUBLE,	&moving_object_merge_distance,		1, NULL},
+
 		{(char *) "behavior_selector",			(char *) "use_symotha",						CARMEN_PARAM_ONOFF,		&behavior_selector_use_symotha,		1, NULL}
 	};
 
