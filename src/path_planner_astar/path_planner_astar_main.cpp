@@ -90,7 +90,7 @@ int cache_exit_edge;
 #define CURVATURE_WEIGHT 1.0
 #define	VORONOI_WEIGHT 0.0
 
-#define USE_SMOOTH 1
+#define USE_SMOOTH 0
 #define USE_NEW_EXPANSION 0
 //#define USE_NOBSTACLE_HEURISTIC 1
 #define EXPANSION_VELOCITY 1.0
@@ -1960,22 +1960,17 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 		get_current_pos(neighbor_expansion[it_neighbor_number], x, y, theta, direction);
 
 		if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->g > neighbor_expansion[it_neighbor_number]->g)
-		{
 			astar_map[x][y][theta][direction]->is_open = 0;
-
-		}
 
 		if(astar_map[x][y][theta][direction]->is_closed == 0 && astar_map[x][y][theta][direction]->is_open == 0)
 		{
 			neighbor_expansion[it_neighbor_number]->g = current_node_cost;
 			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
-
 			neighbor_expansion[it_neighbor_number]->parent = current;
 
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-				neighbor_expansion[it_neighbor_number]->g = (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
-
+				neighbor_expansion[it_neighbor_number]->g += (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
 				neighbor_expansion[it_neighbor_number]->g +=10;
