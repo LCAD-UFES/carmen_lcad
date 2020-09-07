@@ -90,7 +90,7 @@ int cache_exit_edge;
 #define CURVATURE_WEIGHT 1.0
 #define	VORONOI_WEIGHT 0.0
 
-#define USE_SMOOTH 0
+#define USE_SMOOTH 1
 #define USE_NEW_EXPANSION 0
 //#define USE_NOBSTACLE_HEURISTIC 1
 #define EXPANSION_VELOCITY 1.0
@@ -1823,7 +1823,6 @@ expansion(state_node *current, state_node *goal_state, map_node_p ****astar_map)
     double target_v[2]   = {EXPANSION_VELOCITY, -EXPANSION_VELOCITY};
     double time_lenght;
     int size_for;
-
     for (int i = 0; i < 2; i++)
     {
     	for (int j = 0; j < 3; j++)
