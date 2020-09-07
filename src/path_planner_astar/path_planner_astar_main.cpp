@@ -289,6 +289,7 @@ get_current_pos(state_node* current_state, int &x, int &y, int &theta, int &dire
 	x = get_astar_map_x(current_state->state.x);
 	y = get_astar_map_y(current_state->state.y);
 	theta = get_astar_map_theta(current_state->state.theta, astar_config.state_map_theta_resolution);
+
 	if(current_state->state.v >= 0)
 		direction = 0;
 	else
@@ -2001,7 +2002,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 		++it_neighbor_number;
 	}
 
-
+/*
 	if(USE_NEW_EXPANSION && !(current->state.v < 0) && (cache_exit_edge == -1 || voronoi_points[cache_exit_edge].h > current->h))
 	{
 		int edge_in_vision = get_edge_in_vision(current);
@@ -2026,7 +2027,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 			}
 		}
 	}
-
+*/
 
 }
 
@@ -2082,7 +2083,7 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 				old_v = carmen_astar_path_poses[find_absolute_value++].v;
 				if(find_absolute_value > 2000)
 				{
-					printf("failsafe 2034\n");
+					printf("failsafe 2085\n");
 					exit(1);
 				}
 			}
