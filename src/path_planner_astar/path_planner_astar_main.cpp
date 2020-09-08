@@ -289,6 +289,7 @@ get_current_pos(state_node* current_state, int &x, int &y, int &theta, int &dire
 	x = get_astar_map_x(current_state->state.x);
 	y = get_astar_map_y(current_state->state.y);
 	theta = get_astar_map_theta(current_state->state.theta, astar_config.state_map_theta_resolution);
+
 	if(current_state->state.v >= 0)
 		direction = 0;
 	else
@@ -395,15 +396,22 @@ compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 {
 	for (int i = 0; i < (num_poses - 1); i++)
 	{
-		//Para não alterar o theta dos pontos âncoras
-//		if(sign(path[i].v) == sign(path[i+1].v))
-//		{
+		if(sign(path[i].v) == sign(path[i+1].v))
+		{
 			if(path[i].v >= 0.0)
 				path[i].theta = carmen_normalize_theta(atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x));
 			else
 				path[i].theta = carmen_normalize_theta(atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x)+ M_PI);
 //				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i+1].y, path[i].x - path[i+1].x));
-//		}
+		}
+		else
+		{
+			if(path[i].v >= 0.0)
+				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x));
+			else
+				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x) + M_PI);
+		}
+
 	}
 	if (num_poses > 1)
 		path[num_poses - 1].theta = path[num_poses - 2].theta;
@@ -862,6 +870,25 @@ free_lanes(carmen_route_planner_road_network_message route_planner_road_network_
     free(route_planner_road_network_message.nearby_lanes_ids);
     free(route_planner_road_network_message.nearby_lanes);
     free(route_planner_road_network_message.traffic_restrictions);
+}
+
+
+int
+get_index_of_nearest_pose_in_current_path(std::vector<carmen_ackerman_traj_point_t> path, carmen_point_t globalpos, int path_length)
+{
+	int nearest_pose_index = 0;
+	double min_dist = DIST2D(path[nearest_pose_index], globalpos);
+	for (int i = 1; i < path_length; i++)
+	{
+		double distance = DIST2D(path[i], globalpos);
+		if (distance < min_dist)
+		{
+			min_dist = distance;
+			nearest_pose_index = i;
+		}
+	}
+//	printf("Alo %d %d\n", nearest_pose_index, path_length);
+	return (nearest_pose_index);
 }
 
 
@@ -1796,7 +1823,6 @@ expansion(state_node *current, state_node *goal_state, map_node_p ****astar_map)
     double target_v[2]   = {EXPANSION_VELOCITY, -EXPANSION_VELOCITY};
     double time_lenght;
     int size_for;
-
     for (int i = 0; i < 2; i++)
     {
     	for (int j = 0; j < 3; j++)
@@ -1934,22 +1960,17 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 		get_current_pos(neighbor_expansion[it_neighbor_number], x, y, theta, direction);
 
 		if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->g > neighbor_expansion[it_neighbor_number]->g)
-		{
 			astar_map[x][y][theta][direction]->is_open = 0;
-
-		}
 
 		if(astar_map[x][y][theta][direction]->is_closed == 0 && astar_map[x][y][theta][direction]->is_open == 0)
 		{
 			neighbor_expansion[it_neighbor_number]->g = current_node_cost;
 			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
-
 			neighbor_expansion[it_neighbor_number]->parent = current;
 
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-				neighbor_expansion[it_neighbor_number]->g = (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
-
+				neighbor_expansion[it_neighbor_number]->g += (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
 				neighbor_expansion[it_neighbor_number]->g +=10;
@@ -1980,7 +2001,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 		++it_neighbor_number;
 	}
 
-
+/*
 	if(USE_NEW_EXPANSION && !(current->state.v < 0) && (cache_exit_edge == -1 || voronoi_points[cache_exit_edge].h > current->h))
 	{
 		int edge_in_vision = get_edge_in_vision(current);
@@ -2005,7 +2026,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 			}
 		}
 	}
-
+*/
 
 }
 
@@ -2061,7 +2082,7 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 				old_v = carmen_astar_path_poses[find_absolute_value++].v;
 				if(find_absolute_value > 2000)
 				{
-					printf("failsafe 2034\n");
+					printf("failsafe 2085\n");
 					exit(1);
 				}
 			}
@@ -2312,7 +2333,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_plan(plan_path_poses.path, msg);
 	}
 
-	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
+	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && get_index_of_nearest_pose_in_current_path(current_astar_path_poses_till_reverse_direction, robot_position, current_astar_path_poses_till_reverse_direction.size()) > current_astar_path_poses_till_reverse_direction.size() -  5)//DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 2.0)
 	{
 		if(last_index_poses < carmen_astar_path_poses.size() - 5){
 			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal);
