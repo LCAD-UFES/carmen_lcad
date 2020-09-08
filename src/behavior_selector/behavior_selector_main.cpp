@@ -98,10 +98,12 @@ double distance_to_moving_object_with_v_multiplier;
 double distance_between_waypoints_with_v_multiplier;
 
 int behavior_selector_performs_path_planning;
+
 carmen_route_planner_road_network_message *road_network_message = NULL;
 extern int selected_path_id;
 extern double localize_ackerman_initialize_message_timestamp;
 
+int behavior_selector_reverse_driving = 0;
 double parking_speed_limit;
 
 
@@ -587,6 +589,7 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 		if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) && 	// Reduz o criterio dos obstaculos moveis se for barreira
 			(distance_to_annotation < 45.0))
 		{
+			//TODO Check this constant 0.3
 			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance *= 0.3;	// Padrao da Ida a Guarapari
 			get_robot_config()->model_predictive_planner_obstacles_safe_distance *= 0.3;		// Padrao da Ida a Guarapari
 			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
@@ -1184,6 +1187,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "distance_to_moving_object_with_v_multiplier", CARMEN_PARAM_DOUBLE, &distance_to_moving_object_with_v_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints_with_v_multiplier", CARMEN_PARAM_DOUBLE, &distance_between_waypoints_with_v_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "performs_path_planning", CARMEN_PARAM_ONOFF, &behavior_selector_performs_path_planning, 0, NULL},
+		{(char *) "behavior_selector", (char *) "reverse_driving", CARMEN_PARAM_ONOFF, &behavior_selector_reverse_driving, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},

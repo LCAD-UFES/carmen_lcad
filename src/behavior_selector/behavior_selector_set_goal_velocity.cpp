@@ -21,7 +21,7 @@ extern double last_speed_limit;
 extern double robot_max_centripetal_acceleration;
 extern double distance_to_moving_object_with_v_multiplier;
 extern bool keep_speed_limit;
-
+extern int behavior_selector_reverse_driving;
 extern carmen_route_planner_road_network_message *road_network_message;
 extern double parking_speed_limit;
 
@@ -533,9 +533,9 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		int goal_type, double timestamp)
 {
 //	printf("Velocity %lf \n", goal->v);
-//	int reverse_mode_planning = 0;
-//	if (goal->v < 0.0)
-//		reverse_mode_planning = 1;
+	int reverse_mode_planning = 0;
+	if (goal->v < 0.0)
+		reverse_mode_planning = 1;
 
 	int who_set_the_goal_v = NONE;
 	double previous_v = goal->v = get_max_v();
@@ -574,12 +574,11 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
 
-//	if (reverse_mode_planning)
-//	{
-//		goal->v = (-1.0) * goal->v;
-//		printf("Changed Velocity %lf \n", goal->v);
-//	}
-
+	if (reverse_mode_planning && behavior_selector_reverse_driving)
+	{
+		goal->v = (-1.0) * goal->v;
+		printf("Changed Velocity %lf \n", goal->v);
+	}
 
 
 	return (who_set_the_goal_v);
