@@ -784,80 +784,6 @@ remove_moving_objects_from_distance_map_old(carmen_route_planner_road_network_me
 }
 
 
-typedef struct
-{
-	int x_offset;
-	int y_offset;
-	int index;
-} moving_object_point_t;
-
-
-vector <moving_object_point_t>
-remove_moving_objects_from_distance_map(carmen_moving_objects_point_clouds_message *current_moving_objects,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
-{
-	vector <moving_object_point_t> removed_moving_objects;
-
-	if (!current_moving_objects)
-		return (removed_moving_objects);
-
-	for (int j = 0; j < current_moving_objects->num_point_clouds; j++)
-	{
-		if (fabs(current_moving_objects->point_clouds[j].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
-		{
-			double mo_width = current_moving_objects->point_clouds[j].width * 1.5;
-			double mo_lenght = current_moving_objects->point_clouds[j].length * 2.0;
-			double mo_theta = current_moving_objects->point_clouds[j].orientation;
-			for (double s = -mo_lenght / 2.0; s < mo_lenght / 2.0; s += distance_map.config.resolution * 0.5)
-			{
-				double mo_x = current_moving_objects->point_clouds[j].object_pose.x + s * cos(mo_theta);
-				double mo_y = current_moving_objects->point_clouds[j].object_pose.y + s * sin(mo_theta);
-				for (double d = -mo_width / 2.0; d < mo_width / 2.0; d += distance_map.config.resolution * 0.5)
-				{
-					double x = mo_x + d * cos(mo_theta + M_PI / 2.0);
-					double y = mo_y + d * sin(mo_theta + M_PI / 2.0);
-
-					// Move global path point coordinates to map coordinates
-					int x_map_cell = (int) round((x - distance_map.config.x_origin) / distance_map.config.resolution);
-					int y_map_cell = (int) round((y - distance_map.config.y_origin) / distance_map.config.resolution);
-					if ((x_map_cell < 0 || x_map_cell >= distance_map.config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map.config.y_size))
-						continue;
-
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = x;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = y;
-					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-					virtual_laser_message.num_positions++;
-
-					int index = y_map_cell + distance_map.config.y_size * x_map_cell;
-					moving_object_point_t mo_point = {distance_map.complete_x_offset[index], distance_map.complete_y_offset[index], index};
-					removed_moving_objects.push_back(mo_point);
-				}
-			}
-		}
-	}
-
-	// Tem que ser fora do loop acima para evitar que a escrita abaixo seja copiada para uma mesma celula jah lida (tem sobreposicao acima para garantir cobertura
-	for (unsigned int i = 0; i < removed_moving_objects.size(); i++)
-	{
-		distance_map.complete_x_offset[removed_moving_objects[i].index] = DISTANCE_MAP_HUGE_DISTANCE;
-		distance_map.complete_y_offset[removed_moving_objects[i].index] = DISTANCE_MAP_HUGE_DISTANCE;
-	}
-
-	return (removed_moving_objects);
-}
-
-
-void
-restore_moving_objects_to_distance_map(vector <moving_object_point_t> removed_moving_objects)
-{
-	for (unsigned int i = 0; i < removed_moving_objects.size(); i++)
-	{
-		distance_map.complete_x_offset[removed_moving_objects[i].index] = removed_moving_objects[i].x_offset;
-		distance_map.complete_y_offset[removed_moving_objects[i].index] = removed_moving_objects[i].y_offset;
-	}
-}
-
-
 void
 create_carmen_obstacle_distance_mapper_map_message(carmen_obstacle_distance_mapper_map_message &distance_map_free_of_moving_objects,
 		carmen_prob_models_distance_map distance_map2, double timestamp)
@@ -1468,7 +1394,7 @@ register_handlers()
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (behavior_selector_performs_path_planning)
 	{
