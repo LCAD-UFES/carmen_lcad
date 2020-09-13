@@ -175,6 +175,7 @@ public:
 		}
 		double mOld = (mN * mM - x) / (mN - 1);
 		mS -= (x - mM) * (x - mOld);
+		mS = mS < 0.0 ? 0.0: mS; // para evitar negativar em casos de valores muito pequenos após a linha acima
 		mM = mOld;
 		--mN;
 	}

@@ -13,6 +13,8 @@ extern "C"
 void initGl(int width, int height);
 
 void set_camera(carmen_pose_3D_t pose);
+carmen_pose_3D_t get_camera_pose();
+carmen_pose_3D_t get_camera_offset();
 void set_camera_offset(carmen_vector_3D_t offset);
 void move_camera(carmen_vector_3D_t displacement);
 void rotate_camera(carmen_orientation_3D_t rotation);

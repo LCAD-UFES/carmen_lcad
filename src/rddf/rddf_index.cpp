@@ -1072,7 +1072,7 @@ carmen_search_next_poses_index(double x, double y, double yaw, double timestamp 
 	timestamp_index_position = find_timestamp_index_position_with_full_index_search(x, y, yaw, 1);
 
 	num_poses_aquired = fill_in_waypoints_array(timestamp_index_position, poses_ahead, num_poses_desired, &last_pose_acquired, annotations);
-	(*num_poses_back) = fill_in_backward_waypoints_array(timestamp_index_position, poses_back, num_poses_desired / 3);
+	(*num_poses_back) = fill_in_backward_waypoints_array(timestamp_index_position, poses_back, num_poses_desired);
 	if (perform_loop)
 		if (/*carmen_rddf_has_closed_loop() && */ (num_poses_aquired < num_poses_desired))
 			num_poses_aquired += get_more_more_poses_from_begining(num_poses_desired - num_poses_aquired, poses_ahead, last_pose_acquired, num_poses_aquired, annotations);

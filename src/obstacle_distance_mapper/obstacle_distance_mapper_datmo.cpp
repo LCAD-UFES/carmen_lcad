@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 #include <carmen/carmen.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/frenet_path_planner_interface.h>
@@ -80,7 +81,7 @@ typedef struct
 int next_mo_id = 0;
 
 
-int
+static int
 get_num_valid_samples(moving_object_history_t *history)
 {
 	int sum = 0;
@@ -92,7 +93,7 @@ get_num_valid_samples(moving_object_history_t *history)
 }
 
 
-int
+static int
 get_last_valid_index(moving_object_history_t *history)
 {
 	int index = -1;
@@ -109,7 +110,7 @@ get_last_valid_index(moving_object_history_t *history)
 }
 
 
-int
+static int
 get_last_valid_history_sample(moving_object_history_t *history)
 {
 	int sample = -1;
@@ -126,7 +127,7 @@ get_last_valid_history_sample(moving_object_history_t *history)
 }
 
 
-lane_t *
+static lane_t *
 get_lane(vector<lane_t> &lanes, int lane_id)
 {
 	lane_t *lane;
@@ -143,11 +144,14 @@ get_lane(vector<lane_t> &lanes, int lane_id)
 }
 
 
-void
+static void
 shift_history(moving_object_t *moving_object)
 {
 	if (moving_object->history[MOVING_OBJECT_HISTORY_SIZE - 1].v_valid)
-		moving_object->average_v.remove_sample(moving_object->history[MOVING_OBJECT_HISTORY_SIZE - 1].pose.v);
+	{
+		moving_object->average_longitudinal_v.remove_sample(moving_object->history[MOVING_OBJECT_HISTORY_SIZE - 1].pose.v);
+		moving_object->average_lateral_v.remove_sample(moving_object->history[MOVING_OBJECT_HISTORY_SIZE - 1].lateral_v);
+	}
 
 	if (moving_object->history[MOVING_OBJECT_HISTORY_SIZE - 1].valid)
 	{
@@ -163,7 +167,7 @@ shift_history(moving_object_t *moving_object)
 }
 
 
-bool
+static bool
 obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map)
 {
 	if ((i < 0) || (i >= (lane->size - 1)))
@@ -202,10 +206,29 @@ obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map)
 }
 
 
-int
+static int
+get_index_of_the_nearest_lane_pose(carmen_ackerman_traj_point_t pose, lane_t *lane)
+{
+	int nearest_pose_index = 0;
+	double min_distance = DIST2D(pose, lane->lane_points[0]);
+	for (int i = 1; i < lane->size; i++)
+	{
+		double distance = DIST2D(pose, lane->lane_points[i]);
+		if (distance < min_distance)
+		{
+			min_distance = distance;
+			nearest_pose_index = i;
+		}
+	}
+
+	return (nearest_pose_index);
+}
+
+
+static int
 predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_map_t *occupancy_map, double timestamp)
 {
-	int index = moving_object->history[1].index;
+	int index = get_index_of_the_nearest_lane_pose(moving_object->history[1].pose, lane);
 
 	// Prediz o novo indice em função da velocidade atual
 	double delta_t = timestamp - moving_object->history[1].timestamp;
@@ -235,23 +258,27 @@ predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_m
 		index = new_index;
 	}
 
-	// Procura pelo objeto móvel assumindo que a velocidade está dentro de certos limites
+	// Procura pelo objeto móvel na lane (daí, só precisa da velocidade longitudinal) assumindo que a velocidade está dentro de certos limites
 	int delta_index = 0;
 	bool within_up_limit = true;
 	bool within_down_limit = true;
 	int found_index = -1;
-	double forward_max_disp = delta_t * (moving_object->v + max_moving_object_velocity);
-	double backward_max_disp = -delta_t * (moving_object->v - max_moving_object_velocity);
+	double v_max_displacement;
+	if (moving_object->average_longitudinal_v.num_samples() >= 2)
+		v_max_displacement = 3.0 * moving_object->average_longitudinal_v.standard_deviation_unbiased(); // 3 sigmas
+	else
+		v_max_displacement = max_moving_object_velocity;
+	double max_disp = delta_t * v_max_displacement;
 
 	while (within_up_limit || within_down_limit)
 	{
 		int increased_index = index + delta_index;
 		if ((increased_index >= (lane->size - 1)) ||
-			(DIST2D(lane->lane_points[index], lane->lane_points[increased_index]) > forward_max_disp)) // isso é apenas uma aproximação em curvas
+			(DIST2D(lane->lane_points[index], lane->lane_points[increased_index]) > max_disp)) // isso é apenas uma aproximação em curvas
 			within_up_limit = false;
 		int decreased_index = index - delta_index;
 		if ((decreased_index < 0) ||
-			(DIST2D(lane->lane_points[index], lane->lane_points[decreased_index]) > backward_max_disp)) // isso é apenas uma aproximação em curvas
+			(DIST2D(lane->lane_points[index], lane->lane_points[decreased_index]) > max_disp)) // isso é apenas uma aproximação em curvas
 			within_down_limit = false;
 
 		if (within_up_limit)
@@ -284,7 +311,7 @@ predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_m
 }
 
 
-int
+static int
 get_last_valid_history(moving_object_t *moving_object)
 {
 	int last_valid_history = -1;
@@ -301,7 +328,7 @@ get_last_valid_history(moving_object_t *moving_object)
 }
 
 
-void
+static void
 try_and_add_a_v_sample(moving_object_t *moving_object)
 {
 	double delta_t = 0.0;
@@ -315,9 +342,15 @@ try_and_add_a_v_sample(moving_object_t *moving_object)
 		double dist = DIST2D(moving_object->history[0].pose, moving_object->history[next_valid].pose);
 		// distance in the direction of the lane: https://en.wikipedia.org/wiki/Vector_projection
 		double angle = ANGLE2D(moving_object->history[next_valid].pose, moving_object->history[0].pose);
+
 		double distance = dist * cos(angle - moving_object->history[0].pose.theta);
 		moving_object->history[0].pose.v = distance / delta_t;
-		moving_object->average_v.add_sample(moving_object->history[0].pose.v);
+		moving_object->average_longitudinal_v.add_sample(moving_object->history[0].pose.v);
+
+		distance = dist * sin(angle - moving_object->history[0].pose.theta);
+		moving_object->history[0].lateral_v = distance / delta_t;
+		moving_object->average_lateral_v.add_sample(moving_object->history[0].lateral_v);
+
 		moving_object->history[0].v_valid = 1;
 	}
 	else
@@ -328,46 +361,81 @@ try_and_add_a_v_sample(moving_object_t *moving_object)
 }
 
 
-void
-update_object_statistics(moving_object_t *moving_object)
+static void
+get_object_history_sample_mass_center(moving_object_history_t *moving_object, vector <carmen_position_t> moving_object_points)
 {
-	try_and_add_a_v_sample(moving_object);
+	moving_object->pose.x = 0.0;
+	moving_object->pose.y = 0.0;
 
-	moving_object->non_detection_count = 0;
-	moving_object->pose = moving_object->history[0].pose;
-	moving_object->average_length.add_sample(moving_object->history[0].length);
-	moving_object->average_width.add_sample(moving_object->history[0].width);
-	if (moving_object->average_v.num_samples() != 0)
-		moving_object->v = moving_object->v + 0.2 * (moving_object->average_v.arithmetic_mean() - moving_object->v);
-	else
-		moving_object->v = 0.0;
-}
-
-
-void
-compute_object_history_sample_width_and_length(moving_object_history_t *mo, double map_resolution)
-{
-	double width = 0.0;
-	double length = 0.0;
-	for (unsigned int i = 0; i < mo->moving_object_points.size(); i++)
+	for (unsigned int i = 0; i < moving_object_points.size(); i++)
 	{
-		double x = mo->moving_object_points[i].x - mo->pose.x;
-		double y = mo->moving_object_points[i].y - mo->pose.y;
-		double sin, cos;
-		sincos(-mo->pose.theta, &sin, &cos);
-		double xr = fabs(x * cos - y * sin);
-		double yr = fabs(x * sin + y * cos);
-		width = (yr > width)? yr: width;
-		length = (xr > length)? xr: length;
+		moving_object->pose.x += moving_object_points[i].x;
+		moving_object->pose.y += moving_object_points[i].y;
 	}
 
-	double additional_size_due_to_map_discretization = map_resolution * M_SQRT2;
-	mo->width = 2.0 * ((width > map_resolution)? width: map_resolution) + additional_size_due_to_map_discretization;
-	mo->length = 2.0 * ((length > map_resolution)? length: map_resolution) + additional_size_due_to_map_discretization;
+	moving_object->pose.x /= (double) moving_object_points.size();
+	moving_object->pose.y /= (double) moving_object_points.size();
 }
 
 
-bool
+static void
+compute_object_history_sample_width_and_length_and_correct_pose(moving_object_history_t *mo_sample, double map_resolution)
+{
+	double min_x, max_x, min_y, max_y;
+	min_x = max_x = min_y = max_y = 0.0;
+	double sin, cos;
+	sincos(-mo_sample->pose.theta, &sin, &cos);
+	for (unsigned int i = 0; i < mo_sample->moving_object_points.size(); i++)
+	{
+		double x = mo_sample->moving_object_points[i].x - mo_sample->pose.x;
+		double y = mo_sample->moving_object_points[i].y - mo_sample->pose.y;
+		double xr = x * cos - y * sin;
+		double yr = x * sin + y * cos;
+		max_x = (xr > max_x)? xr: max_x;
+		max_y = (yr > max_y)? yr: max_y;
+		min_x = (xr < min_x)? xr: min_x;
+		min_y = (yr < min_y)? yr: min_y;
+	}
+
+	double length = max_x - min_x;
+	double width = max_y - min_y;
+	double additional_size_due_to_map_discretization = map_resolution * M_SQRT2;
+	mo_sample->length = ((length > map_resolution)? length: map_resolution) + additional_size_due_to_map_discretization;
+	mo_sample->width = ((width > map_resolution)? width: map_resolution) + additional_size_due_to_map_discretization;
+
+	double x = (max_x + min_x) / 2.0; // pose correction in x
+	double y = (max_y + min_y) / 2.0; // pose correction in y
+	sincos(mo_sample->pose.theta, &sin, &cos); // reorient to theta
+	double xr = x * cos - y * sin;
+	double yr = x * sin + y * cos;
+	mo_sample->pose.x += xr;
+	mo_sample->pose.y += yr;
+}
+
+
+static void
+update_object_statistics(moving_object_t *moving_object, carmen_map_t *occupancy_map)
+{
+	get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object->history[0].moving_object_points);
+	compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
+
+	if (moving_object->history[0].valid)
+	{
+		try_and_add_a_v_sample(moving_object);
+
+		moving_object->non_detection_count = 0;
+		moving_object->pose = moving_object->history[0].pose;
+		moving_object->average_length.add_sample(moving_object->history[0].length);
+		moving_object->average_width.add_sample(moving_object->history[0].width);
+		if (moving_object->average_longitudinal_v.num_samples() != 0)
+			moving_object->v = moving_object->v + 0.2 * (moving_object->average_longitudinal_v.arithmetic_mean() - moving_object->v);
+		else
+			moving_object->v = 0.0;
+	}
+}
+
+
+static bool
 get_object_points(vector <carmen_position_t> &moving_object_points, lane_t *lane, int i, bool forward, carmen_map_t *occupancy_map)
 {
 	double signal = (forward)? 1.0: -1.0;
@@ -414,30 +482,51 @@ get_object_points(vector <carmen_position_t> &moving_object_points, lane_t *lane
 }
 
 
-void
-get_object_history_sample_mass_center(moving_object_history_t *moving_object, vector <carmen_position_t> moving_object_points)
+static bool
+compare_points(carmen_position_t a, carmen_position_t b)
 {
-	moving_object->pose.x = 0.0;
-	moving_object->pose.y = 0.0;
-
-	for (unsigned int i = 0; i < moving_object_points.size(); i++)
+	if (a.x < b.x)
 	{
-		moving_object->pose.x += moving_object_points[i].x;
-		moving_object->pose.y += moving_object_points[i].y;
+		return (true);
+	}
+	else if (a.x == b.x)
+	{
+		if (a.y < b.y)
+		{
+			return (true);
+		}
 	}
 
-	moving_object->pose.x /= (double) moving_object_points.size();
-	moving_object->pose.y /= (double) moving_object_points.size();
+    return (false);
 }
 
 
-bool
+static bool
+same_points(carmen_position_t a, carmen_position_t b)
+{
+	if ((a.x == b.x) && (a.y == b.y))
+		return (true);
+	else
+		return (false);
+}
+
+
+static void
+remove_duplicate_points(vector <carmen_position_t> &moving_object_points)
+{
+	sort(moving_object_points.begin(), moving_object_points.end(), compare_points);
+	moving_object_points.erase(unique(moving_object_points.begin(), moving_object_points.end(), same_points), moving_object_points.end());
+}
+
+
+static bool
 add_object_history_sample(moving_object_t *moving_object, int first_pose_index, lane_t *lane,
 		carmen_map_t *occupancy_map, double timestamp, bool forward)
 {
 	int i = first_pose_index;
 	vector <carmen_position_t> moving_object_points;
-	memset(&(moving_object->history[0]), 0, sizeof(moving_object_history_t));
+	moving_object->history[0] = {};
+
 
 	bool found = false;
 	if (forward)
@@ -468,11 +557,11 @@ add_object_history_sample(moving_object_t *moving_object, int first_pose_index, 
 		int index = round((double) (first_pose_index + i) / 2.0);
 		moving_object->history[0].index = index;
 		lane->examined[index] = true;
+		remove_duplicate_points(moving_object_points);
 		get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object_points);
-		moving_object->history[0].pose.theta = lane->lane_points[moving_object->history[0].index].theta;
 		moving_object->history[0].moving_object_points = moving_object_points;
-		compute_object_history_sample_width_and_length(&(moving_object->history[0]), occupancy_map->config.resolution);
-
+		moving_object->history[0].pose.theta = lane->lane_points[moving_object->history[0].index].theta;
+		compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
 		moving_object->history[0].timestamp = timestamp;
 
 		return (true);
@@ -486,8 +575,8 @@ add_object_history_sample(moving_object_t *moving_object, int first_pose_index, 
 }
 
 
-bool
-update(moving_object_t *moving_object, lane_t *lane, int index, carmen_map_t *occupancy_map, double timestamp)
+static bool
+data_association(moving_object_t *moving_object, lane_t *lane, int index, carmen_map_t *occupancy_map, double timestamp)
 {
 	int last_valid_history = get_last_valid_history(moving_object);
 
@@ -501,173 +590,196 @@ update(moving_object_t *moving_object, lane_t *lane, int index, carmen_map_t *oc
 		index--;
 	}
 	index++;
-//	printf("\nfirst %d, ", index);
 
 	found = add_object_history_sample(moving_object, index, lane, occupancy_map, timestamp, true);
-
+	printf("track %d (%.2lf), ", moving_object->id, moving_object->pose.theta);
 	if (found)
-	{
-		update_object_statistics(moving_object);
 		return (true);
-	}
 	else
 		return (false);
 }
 
 
-bool
+static bool
 track(moving_object_t *moving_object, lane_t *lane, carmen_map_t *occupancy_map, double timestamp)
 {
 	int index = predict_object_pose_index(moving_object, lane, occupancy_map, timestamp);
 //	printf("index %d, id %d, ", index, moving_object->id);
 
 	if (index != -1)
-		return (update(moving_object, lane, index, occupancy_map, timestamp));
+		return (data_association(moving_object, lane, index, occupancy_map, timestamp));
 	else
 		return (false);
 }
 
 
-void
-estimate_new_state(moving_object_t *moving_object, lane_t *lane, double timestamp)
+static void
+round_points(vector <carmen_position_t> &moving_object_points, carmen_map_t *occupancy_map)
+{
+	for (int i = 0; i < (int) moving_object_points.size(); i++)
+	{
+		double x = moving_object_points[i].x;
+		double y = moving_object_points[i].y;
+		x = occupancy_map->config.resolution * round(x / occupancy_map->config.resolution);
+		y = occupancy_map->config.resolution * round(y / occupancy_map->config.resolution);
+		moving_object_points[i].x = x;
+		moving_object_points[i].y = y;
+	}
+}
+
+
+static bool
+estimate_new_state(moving_object_t *moving_object, lane_t *lane, carmen_map_t *occupancy_map, double timestamp)
 {
 	int sample = get_last_valid_history_sample(moving_object->history);
 	if (sample < 0)
-		return;
+		return (true); // delete moving object...
 	
 	moving_object->history[0].moving_object_points = moving_object->history[sample].moving_object_points;
 	moving_object->history[0].pose = moving_object->history[sample].pose; // para copiar v
-	int new_index = moving_object->history[sample].index;
+
+	int new_index = get_index_of_the_nearest_lane_pose(moving_object->history[sample].pose, lane);
 	double delta_t = timestamp - moving_object->history[sample].timestamp;
-	double displacement = delta_t * moving_object->v;
-	if (fabs(displacement) != 0.0)
+	double longitudinal_displacement = delta_t * moving_object->average_longitudinal_v.arithmetic_mean();
+	double lateral_displacement = delta_t * moving_object->average_lateral_v.arithmetic_mean();
+	bool delete_moving_object = false;
+	if ((fabs(longitudinal_displacement) != 0.0) || (fabs(lateral_displacement) != 0.0))
 	{
-		double signal = displacement / fabs(displacement);
-		double displacement_in_lane = 0.0;
-		while (fabs(displacement_in_lane) < fabs(displacement))
+		double delta_s = longitudinal_displacement / (2.0 * (double) sample);
+		double delta_d = lateral_displacement / (2.0 * (double) sample);
+		for (int i = 0; i < 2 * sample; i++)
 		{
-			int aux;
-			if (displacement > 0.0)
+			if ((new_index >=  lane->size) || (new_index < 0))
 			{
-				aux = new_index + 1;
-				if (aux ==  lane->size)
-					break;
+				delete_moving_object = true;
+				break;
 			}
-			else
-			{
-				aux = new_index - 1;
-				if (aux ==  -1)
-					break;
-			}
-			double disp = DIST2D(lane->lane_points[aux], lane->lane_points[new_index]);
+
 			for (unsigned int i = 0; i < moving_object->history[0].moving_object_points.size(); i++)
 			{
-				moving_object->history[0].moving_object_points[i].x += signal * disp * cos(lane->lane_points[new_index].theta);
-				moving_object->history[0].moving_object_points[i].y += signal * disp * sin(lane->lane_points[new_index].theta);
+				moving_object->history[0].moving_object_points[i].x += delta_s * cos(lane->lane_points[new_index].theta) +
+						delta_d * cos(lane->lane_points[new_index].theta + M_PI / 2.0);
+				moving_object->history[0].moving_object_points[i].y += delta_s * sin(lane->lane_points[new_index].theta) +
+						delta_d * sin(lane->lane_points[new_index].theta + M_PI / 2.0);
 			}
-			displacement_in_lane += disp;
-			new_index = aux;
+
+			get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object->history[0].moving_object_points);
+			compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
+			new_index = get_index_of_the_nearest_lane_pose(moving_object->history[0].pose, lane);
 		}
 
+		round_points(moving_object->history[0].moving_object_points, occupancy_map);
 		get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object->history[0].moving_object_points);
+		compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
 	}
 	moving_object->history[0].index = new_index;
 	moving_object->history[0].width =  moving_object->history[sample].width;
 	moving_object->history[0].length =  moving_object->history[sample].length;
 	moving_object->pose = moving_object->history[0].pose;
+
+	return (delete_moving_object);
 }
 
 
-void
+static void
 track_moving_objects(lane_t *lane, carmen_map_t *occupancy_map, double timestamp)
 {
-    for (unsigned int i = 0; i < lane->moving_objects.size(); i++)
+    for (int i = 0; i < (int) lane->moving_objects.size(); i++)
     {
     	moving_object_t *moving_object = &(lane->moving_objects[i]);
     	shift_history(moving_object);
     	bool found = track(moving_object, lane, occupancy_map, timestamp);
     	if (!found)
     	{
-    		estimate_new_state(moving_object, lane, timestamp);
+    		bool delete_moving_object = estimate_new_state(moving_object, lane, occupancy_map, timestamp);
     		moving_object->non_detection_count++;
-    		if (moving_object->non_detection_count > MAX_NON_DETECTION_COUNT)
+    		if (delete_moving_object || (moving_object->non_detection_count > MAX_NON_DETECTION_COUNT))
     		{
+				printf("erase in track: %d, ", lane->moving_objects[i].id);
     			lane->moving_objects.erase(lane->moving_objects.begin() + i);
     			i--;
     		}
+    		else
+    			printf("track_es %d (%.2lf), ", moving_object->id, moving_object->pose.theta);
     	}
     }
 }
 
 
-carmen_ackerman_traj_point_t
-get_other_moving_object_pose_and_index(moving_object_t other_moving_object, int &other_moving_object_index, lane_t lane, double timestamp)
+vector <carmen_position_t>
+get_points_within_moving_object_rectangle(moving_object_t *mo)
 {
-	carmen_ackerman_traj_point_t pose;
-	double other_moving_object_timestamp = other_moving_object.history[0].timestamp;
-	for (int i = 0; i < MOVING_OBJECT_HISTORY_SIZE; i++)
+	if (moving_object_merge_distance == 0.0)
+		carmen_die("moving_object_merge_distance == 0.0 in get_points_within_moving_object_rectangle()");
+
+	double length = mo->average_length.arithmetic_mean();
+	double width = mo->average_width.arithmetic_mean();
+	double slices_x = ceil(length / (moving_object_merge_distance / 2.0));
+	double delta_x = length / slices_x;
+	double slices_y = ceil(width / (moving_object_merge_distance / 2.0));
+	double delta_y = width / slices_y;
+	double sin, cos;
+	sincos(mo->pose.theta, &sin, &cos);
+
+	vector <carmen_position_t> points;
+	for (double x = -length / 2.0; x < ((length / 2.0) + delta_x / 2.0); x += delta_x)
 	{
-		if (other_moving_object.history[i].valid)
+		for (double y = -width / 2.0; y < ((width / 2.0) + delta_y / 2.0); y += delta_y)
 		{
-			pose = other_moving_object.history[i].pose;
-			other_moving_object_timestamp = other_moving_object.history[i].timestamp;
-			other_moving_object_index = other_moving_object.history[i].index;
-			break;
+			double xr = x * cos - y * sin;
+			double yr = x * sin + y * cos;
+			points.push_back({mo->pose.x + xr, mo->pose.y + yr});
 		}
 	}
 
-	double displacement = other_moving_object.v * (timestamp - other_moving_object_timestamp);
-	if (other_moving_object.v > 0)
-	{
-		while (displacement > 0.0)
-		{
-			if (other_moving_object_index < (lane.size + 1))
-			{
-				displacement -= DIST2D(lane.lane_points[other_moving_object_index], lane.lane_points[other_moving_object_index + 1]);
-				other_moving_object_index++;
-			}
-			else
-				carmen_die("Fatal error: other_moving_object_index >= (lane.size + 1) in get_other_moving_object_pose_and_index().");
-		}
-	}
-	else
-	{
-		while (displacement < 0.0)
-		{
-			if (other_moving_object_index > 0)
-			{
-				displacement += DIST2D(lane.lane_points[other_moving_object_index], lane.lane_points[other_moving_object_index - 1]);
-				other_moving_object_index--;
-			}
-			else
-				carmen_die("Fatal error: other_moving_object_index <= 0 in get_other_moving_object_pose_and_index().");
-		}
-	}
-	carmen_point_t displaced_position = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&lane.lane_points[other_moving_object_index], displacement);
-	pose = lane.lane_points[other_moving_object_index]; // para copiar os outros campos
-	pose.x = displaced_position.x;
-	pose.y = displaced_position.y;
-
-	return (pose);
+	return (points);
 }
 
 
-moving_object_t *
+static bool
+near(moving_object_t *mo_j, moving_object_t *mo_k)
+{	// A ordem é importante. O mais completo e conhecido precisa ser o mo_k.
+	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
+	{
+		carmen_position_t point_j = mo_j->history[0].moving_object_points[j];
+		vector <carmen_position_t> points = get_points_within_moving_object_rectangle(mo_k);
+		for (unsigned int k = 0; k < points.size(); k++)
+		{
+			if (DIST2D(point_j, points[k]) < moving_object_merge_distance)
+				return (true);
+		}
+	}
+	return (false);
+}
+
+
+bool
+near_old(moving_object_t *mo_j, moving_object_t *mo_k)
+{
+	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
+	{
+		carmen_position_t point_j = mo_j->history[0].moving_object_points[j];
+		for (unsigned int k = 0; k < mo_k->history[0].moving_object_points.size(); k++)
+		{
+			carmen_position_t point_k = mo_k->history[0].moving_object_points[k];
+			if (DIST2D(point_j, point_k) < moving_object_merge_distance)
+				return (true);
+		}
+	}
+	return (false);
+}
+
+
+static moving_object_t *
 get_near_moving_object_from_another_lane(moving_object_t *moving_object, vector<lane_t> &lanes, int lane_index)
 {
-	double moving_object_half_lane_width = ROUTE_PLANNER_GET_LANE_WIDTH(lanes[lane_index].traffic_restrictions[moving_object->history[0].index]) / 2.0;
-	carmen_ackerman_traj_point_t moving_object_pose = moving_object->history[0].pose;
 	for (unsigned int i = 0; i < lanes.size(); i++)
 	{
 		if (i != (unsigned int) lane_index)
 		{
 			for (unsigned int j = 0; j < lanes[i].moving_objects.size(); j++)
 			{
-				int other_moving_object_index;
-				carmen_ackerman_traj_point_t other_moving_object = get_other_moving_object_pose_and_index(lanes[i].moving_objects[j],
-						other_moving_object_index, lanes[i], moving_object->history[0].timestamp);
-				double olther_moving_object_half_lane_width = ROUTE_PLANNER_GET_LANE_WIDTH(lanes[i].traffic_restrictions[other_moving_object_index]) / 2.0;
-				if (DIST2D(moving_object_pose, other_moving_object) < (moving_object_half_lane_width + olther_moving_object_half_lane_width))
+				if (near(moving_object, &(lanes[i].moving_objects[j])))
 					return (&(lanes[i].moving_objects[j]));
 			}
 		}
@@ -677,11 +789,22 @@ get_near_moving_object_from_another_lane(moving_object_t *moving_object, vector<
 }
 
 
-void
-copy_history(moving_object_t *to, moving_object_t *from)
+static void
+copy_points(moving_object_t *to, vector <carmen_position_t> from, double map_resolution)
+{
+	to->history[0].moving_object_points.insert(to->history[0].moving_object_points.end(), from.begin(), from.end());
+	remove_duplicate_points(to->history[0].moving_object_points);
+	get_object_history_sample_mass_center(&(to->history[0]), to->history[0].moving_object_points);
+	compute_object_history_sample_width_and_length_and_correct_pose(&(to->history[0]), map_resolution);
+}
+
+
+static void
+copy_history(moving_object_t *to, moving_object_t *from, double map_resolution)
 {
 	double delta_angle = carmen_normalize_theta(from->history[0].pose.theta - to->history[0].pose.theta);
 	to->v = from->v * cos(delta_angle);
+	copy_points(to, from->history[0].moving_object_points, map_resolution);
 
 	for (int i = 1; i < MOVING_OBJECT_HISTORY_SIZE; i++) // A history[0] nao deve ser copiada pois jah contem a info mais recente
 	{
@@ -697,48 +820,94 @@ copy_history(moving_object_t *to, moving_object_t *from)
 			if (from->history[i].v_valid)
 			{
 				to->history[i].pose.v = from->history[i].pose.v * cos(delta_angle);
-				to->average_v.add_sample(to->history[i].pose.v);
+				to->average_longitudinal_v.add_sample(to->history[i].pose.v);
+				to->history[i].lateral_v = from->history[i].lateral_v * cos(delta_angle);
+				to->average_lateral_v.add_sample(to->history[i].lateral_v);
 			}
 		}
+	}
+	printf("copy history %d (%.2lf) <- %d (%.2lf), ", to->id, to->history[0].pose.theta, from->id, from->pose.theta);
+}
+
+
+static void
+merge(moving_object_t *mo_j, moving_object_t *mo_k, double map_resolution)
+{
+	printf("merge %d (%.2lf) <- %d (%.2lf), ", mo_j->id, mo_j->pose.theta, mo_k->id, mo_k->pose.theta);
+//	if (mo_j->history[0].valid)
+	{
+		int size_j = mo_j->history[0].moving_object_points.size();
+		int size_k = mo_k->history[0].moving_object_points.size();
+		mo_j->history[0].index = (mo_j->history[0].index * size_j + mo_k->history[0].index * size_k) / (size_j + size_k);
+
+		mo_j->history[0].moving_object_points.insert(mo_j->history[0].moving_object_points.end(), mo_k->history[0].moving_object_points.begin(), mo_k->history[0].moving_object_points.end());
+		remove_duplicate_points(mo_j->history[0].moving_object_points);
+		get_object_history_sample_mass_center(&(mo_j->history[0]), mo_j->history[0].moving_object_points);
+		compute_object_history_sample_width_and_length_and_correct_pose(&(mo_j->history[0]), map_resolution);
+	}
+//	else
+//		mo_j->history[0] = mo_k->history[0];
+}
+
+
+static bool
+merge_with_in_lane_nearby_objects(lane_t *lane, moving_object_t *moving_object, double map_resolution)
+{
+	for (unsigned int j = 0; j < lane->moving_objects.size(); j++)
+	{
+		if (near(moving_object, &(lane->moving_objects[j])))
+		{
+			printf("in detect: ");
+			fflush(stdout);
+			merge(&(lane->moving_objects[j]), moving_object, map_resolution);
+			return (true);
+		}
+	}
+
+	return (false);
+}
+
+
+static void
+add_detected_objects(vector<lane_t> &lanes, int lane_index, int first_pose_index, carmen_map_t *occupancy_map, double timestamp)
+{
+	lane_t *lane = &(lanes[lane_index]);
+	moving_object_t moving_object = {};
+//	memset(&(moving_object.history), 0, sizeof(moving_object.history));
+
+	add_object_history_sample(&moving_object, first_pose_index, lane, occupancy_map, timestamp, true);
+
+	if (!merge_with_in_lane_nearby_objects(lane, &moving_object, occupancy_map->config.resolution))
+	{
+		moving_object.id = next_mo_id++;
+		if (next_mo_id > 999)
+			next_mo_id = 0;
+
+		moving_object_t *moving_object_from_another_lane;
+		if ((moving_object_from_another_lane = get_near_moving_object_from_another_lane(&moving_object, lanes, lane_index)) != NULL)
+			copy_history(&moving_object, moving_object_from_another_lane, occupancy_map->config.resolution);
+
+//		get_object_history_sample_mass_center(&(moving_object.history[0]), moving_object.history[0].moving_object_points);
+//		compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object.history[0]), occupancy_map->config.resolution);
+		moving_object.pose = moving_object.history[0].pose;
+
+		printf("added %d (%.2lf), ", moving_object.id, moving_object.pose.theta);
+		lane->moving_objects.push_back(moving_object);
 	}
 }
 
 
-void
-add_detected_obstacle(vector<lane_t> &lanes, int lane_index, int first_pose_index, carmen_map_t *occupancy_map, double timestamp)
-{
-	lane_t *lane = &(lanes[lane_index]);
-	moving_object_t moving_object;
-	memset(&(moving_object.history), 0, sizeof(moving_object.history));
-
-	moving_object.id = next_mo_id++;
-	if (next_mo_id > 999)
-		next_mo_id = 0;
-
-	bool found = add_object_history_sample(&moving_object, first_pose_index, lane, occupancy_map, timestamp, true);
-
-	moving_object_t *moving_object_from_another_lane;
-	if ((moving_object_from_another_lane = get_near_moving_object_from_another_lane(&moving_object, lanes, lane_index)) != NULL)
-		copy_history(&moving_object, moving_object_from_another_lane);
-
-	if (found)
-		update_object_statistics(&moving_object);
-
-	lane->moving_objects.push_back(moving_object);
-}
-
-
-void
+static void
 detect_new_objects(vector<lane_t> &lanes, int lane_index, carmen_map_t *occupancy_map, double timestamp)
 {
 	lane_t *lane = &(lanes[lane_index]);
 	for (int i = 0; i < (lane->size - 1); i++)
 		if (!lane->examined[i] && obstacle_detected(lane, i, occupancy_map))
-			add_detected_obstacle(lanes, lane_index, i, occupancy_map, timestamp);
+			add_detected_objects(lanes, lane_index, i, occupancy_map, timestamp);
 }
 
 
-void
+static void
 fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds_message *message, box_model_t *box,
 		vector <carmen_position_t> moving_object_points)
 {
@@ -763,7 +932,7 @@ fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds
 		case BUS:
 			model_features.model_name = (char *) ("Bus");
 			model_features.red = 1.0;
-			model_features.green = 0.0;
+			model_features.green = 1.0;
 			model_features.blue = 0.0;
 			break;
 		case CAR:
@@ -773,16 +942,22 @@ fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds
 			model_features.blue = 0.0;
 			break;
 		case BIKE:
-			model_features.model_name = (char *) ("Bike");
-			model_features.red = 0.5;
-			model_features.green = 0.5;
-			model_features.blue = 0.5;
+			model_features.model_name = (char *) ("(Motor)Bike");
+			model_features.red = 1.0;
+			model_features.green = 0.0;
+			model_features.blue = 0.0;
 			break;
 		case PEDESTRIAN:
 			model_features.model_name = (char *) ("Pedestrian");
 			model_features.red = 0.0;
 			model_features.green = 1.0;
 			model_features.blue = 1.0;
+			break;
+		case UNKNOWN:
+			model_features.model_name = (char *) (" ");
+			model_features.red = 0.3;
+			model_features.green = 0.3;
+			model_features.blue = 0.3;
 			break;
 	}
 	model_features.geometry.length = box->average_length;
@@ -804,18 +979,61 @@ fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds
 }
 
 
-carmen_moving_objects_point_clouds_message *
+static char
+get_vehicle_category(double width, double length, double longitudinal_v, double lateral_v, int num_samples)
+{
+	vector<vehicle_category_t> categories = {{BIKE, 0.9, 3.0}, {BIKE, 0.5, 1.5}, 
+											 {PEDESTRIAN, 0.5, 0.5}, {BUS, 2.5, 15.0},
+											 {CAR, 1.7, 4.1}, {CAR, 1.7, 2.0}, {CAR, 2.0, 8.0}}; // Trung-Dung Vu Thesis
+
+	double v = sqrt(longitudinal_v * longitudinal_v + lateral_v * lateral_v);
+
+//	printf("w %.2lf, l %0.2lf, ", width, length);
+
+	if ((v == 0.0) && (num_samples <= 1))
+	{
+//		printf("u - U\n");
+		return ('U');
+	}
+
+	for (int i = 0; i < (int) categories.size(); i++)
+	{
+		if ((categories[i].length > (0.5 * length)) && (categories[i].length < (1.7 * length)) &&
+			(categories[i].width > (0.5 * width)) && (categories[i].width < (1.7 * width)))
+		{
+			if ((categories[i].category == PEDESTRIAN) && (v > 15.0/3.6)) // pedestrian too fast
+			{
+//				printf("a - %c -> (c.length %.1lf > %.2lf) && (c.length %.1lf < %.2lf) && (c.width %.1lf > %.2lf) && (c.width %.1lf < %.2lf)\n",
+//						categories[category].category, categories[category].length, 0.5 * length, categories[category].length, 1.7 * length,
+//						categories[category].width, 0.5 * width, categories[category].width, 1.7 * width);
+				return (UNKNOWN);
+			}
+			else if (((categories[i].category == BIKE) && ((length / width) < 2.0)) || // no motorcycle
+					 ((categories[i].category == BIKE) && (width > 1.55)))
+			{
+				continue;
+			}
+			else
+			{
+//				printf("b - %c -> (c.length %.1lf > %.2lf) && (c.length %.1lf < %.2lf) && (c.width %.1lf > %.2lf) && (c.width %.1lf < %.2lf)\n",
+//						categories[category].category, categories[category].length, 0.5 * length, categories[category].length, 1.7 * length,
+//						categories[category].width, 0.5 * width, categories[category].width, 1.7 * width);
+				return (categories[i].category);
+			}
+		}
+	}
+
+//	printf("c - %c -> (c.length %.1lf > %.2lf) && (c.length %.1lf < %.2lf) && (c.width %.1lf > %.2lf) && (c.width %.1lf < %.2lf)\n",
+//			categories[category].category, categories[category].length, 0.5 * length, categories[category].length, 1.7 * length,
+//			categories[category].width, 0.5 * width, categories[category].width, 1.7 * width);
+
+	return (UNKNOWN);
+}
+
+
+static carmen_moving_objects_point_clouds_message *
 fill_in_moving_objects_point_clouds_message(vector<lane_t> lanes, double timestamp)
 {
-//	static carmen_moving_objects_point_clouds_message static_message;
-//	static bool first_time = true;
-//	if (first_time)
-//	{
-//		static_message.point_clouds = NULL;
-//		first_time = false;
-//	}
-//
-//	carmen_moving_objects_point_clouds_message *message = &static_message;
 	carmen_moving_objects_point_clouds_message *message = (carmen_moving_objects_point_clouds_message *) malloc(sizeof(carmen_moving_objects_point_clouds_message));
 	message->point_clouds = NULL;
 	message->host = carmen_get_host();
@@ -833,10 +1051,14 @@ fill_in_moving_objects_point_clouds_message(vector<lane_t> lanes, double timesta
 	{
 		for (unsigned int j = 0; j < lanes[i].moving_objects.size(); j++)
 		{
+//			printf("id %d, ", lanes[i].moving_objects[j].id);
 			box_model_t box;
-			box.c = 'C'; 		// car
-			box.average_length = lanes[i].moving_objects[j].average_length.arithmetic_mean();
 			box.average_width = lanes[i].moving_objects[j].average_width.arithmetic_mean();
+			box.average_length = lanes[i].moving_objects[j].average_length.arithmetic_mean();
+			box.c = get_vehicle_category(box.average_width, box.average_length,
+					lanes[i].moving_objects[j].average_longitudinal_v.arithmetic_mean(),
+					lanes[i].moving_objects[j].average_lateral_v.arithmetic_mean(),
+					lanes[i].moving_objects[j].average_length.num_samples());
 			box.id = lanes[i].moving_objects[j].id;
 			box.x = lanes[i].moving_objects[j].pose.x;
 			box.y = lanes[i].moving_objects[j].pose.y;
@@ -844,6 +1066,8 @@ fill_in_moving_objects_point_clouds_message(vector<lane_t> lanes, double timesta
 			box.theta = lanes[i].moving_objects[j].pose.theta;
 
 			fill_in_moving_objects_message_element(mo_num, message, &box, lanes[i].moving_objects[j].history[0].moving_object_points);
+//			fill_in_moving_objects_message_element(mo_num, message, &box, get_points_within_moving_object_rectangle(&(lanes[i].moving_objects[j])));
+
 			mo_num++;
 		}
 	}
@@ -852,13 +1076,13 @@ fill_in_moving_objects_point_clouds_message(vector<lane_t> lanes, double timesta
 }
 
 
-void
+static void
 remove_lanes_absent_from_road_network(vector<lane_t> &lanes, carmen_route_planner_road_network_message *road_network)
 {
 //	printf("remove_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
 //			road_network->number_of_nearby_lanes, (int) lanes.size());
 //
-    for (unsigned int i = 0; i < lanes.size(); i++)
+    for (int i = 0; i < (int) lanes.size(); i++)
     {
     	int lane_id = lanes[i].lane_id;
     	bool not_found = true;
@@ -879,7 +1103,7 @@ remove_lanes_absent_from_road_network(vector<lane_t> &lanes, carmen_route_planne
 }
 
 
-void
+static void
 include_new_lanes_in_road_network(vector<lane_t> &lanes, carmen_route_planner_road_network_message *road_network)
 {
 //	printf("include_new_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
@@ -917,7 +1141,7 @@ include_new_lanes_in_road_network(vector<lane_t> &lanes, carmen_route_planner_ro
 }
 
 
-void
+static void
 update_lanes(vector<lane_t> &lanes, carmen_route_planner_road_network_message *road_network)
 {
 //	printf("update_lanes - road_network->number_of_nearby_lanes (%d) != lanes.size() (%d) in update_lanes()\n",
@@ -1028,7 +1252,7 @@ obstacle_distance_mapper_uncompress_occupancy_map(carmen_map_t *occupancy_map, c
 }
 
 
-void
+static void
 print_mo(vector<lane_t> lanes, double timestamp)
 {
 	printf("%lf\n", timestamp);
@@ -1036,9 +1260,9 @@ print_mo(vector<lane_t> lanes, double timestamp)
 	{
 		for (unsigned int j = 0; j < lanes[i].moving_objects.size(); j++)
 		{
-			printf("id %d, lane %d, index %d, valid %d, w_s %d, l_s %d, l %0.2lf, w %0.2lf, v_valid %d, v_s %d, v %0.2lf\n",
+			printf("id %d, lane %d, index %d, valid %d, w_s %d, l_s %d, l %0.2lf, w %0.2lf, v_valid %d, vs_s %d, vd_s %d, vd %0.2lf, vd_std %0.2lf, vs %.2lf, vs_std %0.2lf, v %0.2lf   -   points %ld\n",
 					lanes[i].moving_objects[j].id,
-					i,
+					lanes[i].lane_id,
 					get_last_valid_index(lanes[i].moving_objects[j].history),
 					lanes[i].moving_objects[j].history[0].valid,
 					lanes[i].moving_objects[j].average_width.num_samples(),
@@ -1046,102 +1270,123 @@ print_mo(vector<lane_t> lanes, double timestamp)
 					lanes[i].moving_objects[j].average_length.arithmetic_mean(),
 					lanes[i].moving_objects[j].average_width.arithmetic_mean(),
 					lanes[i].moving_objects[j].history[0].v_valid,
-					lanes[i].moving_objects[j].average_v.num_samples(),
-					lanes[i].moving_objects[j].v);
+					lanes[i].moving_objects[j].average_longitudinal_v.num_samples(),
+					lanes[i].moving_objects[j].average_lateral_v.num_samples(),
+					lanes[i].moving_objects[j].average_lateral_v.arithmetic_mean(),
+					lanes[i].moving_objects[j].average_lateral_v.standard_deviation_unbiased(),
+					lanes[i].moving_objects[j].average_longitudinal_v.arithmetic_mean(),
+					lanes[i].moving_objects[j].average_longitudinal_v.standard_deviation_unbiased(),
+					lanes[i].moving_objects[j].v,
+					lanes[i].moving_objects[j].history[0].moving_object_points.size());
 		}
 	}
 	printf("\n");
 }
 
 
-static bool
-near(moving_object_t mo_j, moving_object_t mo_k)
+static void
+merge_in_lane_objects(lane_t *lane, double map_resolution)
 {
-	for (unsigned int i = 0; i < mo_j.history[0].moving_object_points.size(); i++)
-	{
-		carmen_position_t point_j = mo_j.history[0].moving_object_points[i];
-		for (unsigned int j = 0; j < mo_k.history[0].moving_object_points.size(); j++)
-		{
-			carmen_position_t point_k = mo_k.history[0].moving_object_points[j];
-			if (DIST2D(point_j, point_k) < moving_object_merge_distance)
-				return (true);
-		}
-	}
-	return (false);
+    for (int i = 0; i < (int) lane->moving_objects.size(); i++)
+    {
+    	moving_object_t *moving_object_i = &(lane->moving_objects[i]);
+    	for (int j = i + 1; j < (int) lane->moving_objects.size(); j++)
+    	{
+        	moving_object_t *moving_object_j = &(lane->moving_objects[j]);
+    		if (near(moving_object_i, moving_object_j))
+    		{
+    			int num_samples_i = get_num_valid_samples(moving_object_i->history);
+    			int num_samples_j = get_num_valid_samples(moving_object_j->history);
+
+    			moving_object_t *mo_k;
+    			moving_object_t *mo_l;
+    			bool remove_j;
+    			if (num_samples_i >= num_samples_j)
+    			{
+    				mo_k = moving_object_i;
+    				mo_l = moving_object_j;
+    				remove_j = true;
+    			}
+    			else
+    			{
+    				mo_k = moving_object_j;
+    				mo_l = moving_object_i;
+    				remove_j = false;
+    			}
+
+    			printf("in lane: ");
+    			merge(mo_k, mo_l, map_resolution);
+
+    			if (remove_j)
+    			{
+    				printf("erase in merge in lane: %d, ", lane->moving_objects[j].id);
+    				lane->moving_objects.erase(lane->moving_objects.begin() + j);
+    				j--;
+    			}
+    			else
+    			{
+    				printf("erase in merge in lane: %d, ", lane->moving_objects[i].id);
+    				lane->moving_objects.erase(lane->moving_objects.begin() + i);
+    				i--;
+    				break;
+    			}
+    		}
+    	}
+    }
 }
 
 
 static void
-merge(moving_object_t *mo_l, moving_object_t *mo_m, double map_resolution)
+share_points_between_objects(vector<lane_t> &lanes, carmen_map_t *occupancy_map)
 {
-	int num_samples_l = get_num_valid_samples(mo_l->history);
-	int num_samples_m = get_num_valid_samples(mo_m->history);
-
-	moving_object_t *mo_j;
-	moving_object_t *mo_k;
-	if (num_samples_l > num_samples_m)
+	// Salva os pontos antes de processo de cópia para não copiar duplicado (ida e volta)
+	vector < vector <vector <carmen_position_t> > > all_mo_points;
+	for (int lane_index = 0; lane_index < (int) lanes.size(); lane_index++)
 	{
-		mo_j = mo_l;
-		mo_k = mo_m;
-	}
-	else
-	{
-		mo_j = mo_m;
-		mo_k = mo_l;
+		lane_t *lane = &(lanes[lane_index]);
+		vector <vector <carmen_position_t> > lane_mo_points;
+	    for (int mo_index = 0; mo_index < (int) lane->moving_objects.size(); mo_index++)
+	    {
+	    	moving_object_t *moving_object = &(lane->moving_objects[mo_index]);
+	    	lane_mo_points.push_back(moving_object->history[0].moving_object_points);
+	    }
+	    all_mo_points.push_back(lane_mo_points);
 	}
 
-	if (mo_j->history[0].valid && mo_k->history[0].valid)
+	// Copia pontos de outros objetos quando próximos
+	for (int lane_index = 0; lane_index < (int) lanes.size(); lane_index++)
 	{
-		int size_j = mo_j->history[0].moving_object_points.size();
-		int size_k = mo_k->history[0].moving_object_points.size();
-		mo_j->history[0].index = (mo_j->history[0].index * size_j + mo_k->history[0].index * size_k) / (size_j + size_k);
-
-		mo_j->history[0].moving_object_points.insert(mo_j->history[0].moving_object_points.end(), mo_k->history[0].moving_object_points.begin(), mo_k->history[0].moving_object_points.end());
-		get_object_history_sample_mass_center(&(mo_j->history[0]), mo_j->history[0].moving_object_points);
-
-		mo_j->average_length.remove_sample(mo_j->history[0].length);
-		mo_j->average_width.remove_sample(mo_j->history[0].width);
-		compute_object_history_sample_width_and_length(&(mo_j->history[0]), map_resolution);
-		mo_j->average_length.add_sample(mo_j->history[0].length);
-		mo_j->average_width.add_sample(mo_j->history[0].width);
-
-		if (mo_j->history[0].v_valid && mo_k->history[0].v_valid)
-		{
-			mo_j->average_v.remove_sample(mo_j->history[0].pose.v);
-			mo_j->average_v.add_sample((mo_j->history[0].pose.v + mo_k->history[0].pose.v) / 2.0);
-		}
-		else if (mo_k->history[0].v_valid)
-			mo_j->average_v.add_sample(mo_k->history[0].pose.v);
-	}
-	else if (!mo_j->history[0].valid && mo_k->history[0].valid)
-	{
-		mo_j->history[0] = mo_k->history[0];
-		mo_j->average_length.add_sample(mo_j->history[0].length);
-		mo_j->average_width.add_sample(mo_j->history[0].width);
-		if (mo_k->history[0].v_valid)
-			mo_j->average_v.add_sample(mo_k->history[0].pose.v);
+		lane_t *lane = &(lanes[lane_index]);
+	    for (int mo_index = 0; mo_index < (int) lane->moving_objects.size(); mo_index++)
+	    {
+	    	moving_object_t *moving_object = &(lane->moving_objects[mo_index]);
+			for (int i = 0; i < (int) lanes.size(); i++)
+			{
+				for (int j = 0; j < (int) lanes[i].moving_objects.size(); j++)
+				{
+					bool same_mo = (lane_index == i) && (mo_index == j);
+					if (!same_mo && near(moving_object, &(lanes[i].moving_objects[j])))
+					{
+						printf("copy to %d (%.2lf) from %d (%.2lf), ",
+								moving_object->id, moving_object->pose.theta,
+								lanes[i].moving_objects[j].id, lanes[i].moving_objects[j].pose.theta);
+						copy_points(moving_object, all_mo_points[i][j], occupancy_map->config.resolution);
+					}
+				}
+			}
+	    }
 	}
 }
 
 
-void
-merge_nearby_objects(vector<lane_t> &lanes, double map_resolution)
+static void
+update_statistics(lane_t *lane, carmen_map_t *occupancy_map)
 {
-	for (unsigned int i = 0; i < lanes.size(); i++)
-	{
-		for (unsigned int j = 0; j < lanes[i].moving_objects.size(); j++)
-		{
-			for (unsigned int k = j + 1; k < lanes[i].moving_objects.size(); k++)
-			{
-				if (near(lanes[i].moving_objects[j], lanes[i].moving_objects[k]))
-				{
-					merge(&(lanes[i].moving_objects[j]), &(lanes[i].moving_objects[k]), map_resolution);
-					lanes[i].moving_objects.erase(lanes[i].moving_objects.begin() + k);
-					k--;
-				}
-			}
-		}
-	}
+    for (unsigned int i = 0; i < lane->moving_objects.size(); i++)
+    {
+    	moving_object_t *moving_object = &(lane->moving_objects[i]);
+   		update_object_statistics(moving_object, occupancy_map);
+    }
 }
 
 
@@ -1160,13 +1405,19 @@ obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_n
 	include_new_lanes_in_road_network(lanes, road_network);
 	update_lanes(lanes, road_network);
 
-	for (unsigned int i = 0; i < lanes.size(); i++)
-		track_moving_objects(&(lanes[i]), &occupancy_map, timestamp);
+	for (unsigned int lane_index = 0; lane_index < lanes.size(); lane_index++)
+		track_moving_objects(&(lanes[lane_index]), &occupancy_map, timestamp);
+
+	for (unsigned int lane_index = 0; lane_index < lanes.size(); lane_index++)
+		merge_in_lane_objects(&(lanes[lane_index]), occupancy_map.config.resolution);
 
 	for (unsigned int lane_index = 0; lane_index < lanes.size(); lane_index++)
 		detect_new_objects(lanes, lane_index, &occupancy_map, timestamp);
 
-	merge_nearby_objects(lanes, occupancy_map.config.resolution);
+	share_points_between_objects(lanes, &occupancy_map);
+
+	for (unsigned int lane_index = 0; lane_index < lanes.size(); lane_index++)
+		update_statistics(&(lanes[lane_index]), &occupancy_map);
 
 	print_mo(lanes, timestamp);
 
@@ -1174,4 +1425,3 @@ obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_n
 
 	return (mo);
 }
-

@@ -15,6 +15,7 @@ typedef struct
 	double width;
 	double length;
 	carmen_ackerman_traj_point_t pose;
+	double lateral_v;
 	vector <carmen_position_t> moving_object_points;
 	double timestamp;
 } moving_object_history_t;
@@ -27,9 +28,18 @@ typedef struct
 	carmen_moving_average_c average_width;
 	carmen_moving_average_c average_length;
 	carmen_ackerman_traj_point_t pose;
-	carmen_moving_average_c average_v;
+	carmen_moving_average_c average_longitudinal_v;
+	carmen_moving_average_c average_lateral_v;
 	int non_detection_count;
 } moving_object_t;
+
+typedef struct
+{
+	int category;
+	double width;
+	double length;
+} vehicle_category_t;
+
 
 carmen_moving_objects_point_clouds_message *
 obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *set_of_paths,

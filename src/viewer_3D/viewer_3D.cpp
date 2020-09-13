@@ -2072,7 +2072,9 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
     if (draw_map_flag)// && (time_since_last_draw < 1.0 / 30.0))
     {
-        add_map_message(m_drawer, static_cost_map);
+        carmen_pose_3D_t camera_pose = get_camera_pose();
+        double map_zoom = camera_pose.position.z / 120.0;
+        add_map_message(m_drawer, static_cost_map, get_position_offset(), car_fused_pose, map_zoom);
     }
 }
 
@@ -2097,7 +2099,9 @@ mapper_map_message_handler(carmen_mapper_map_message *message)
 
     if (draw_map_flag)// && (time_since_last_draw < 1.0 / 30.0))
     {
-        add_map_level1_message(m_drawer, message);
+        carmen_pose_3D_t camera_pose = get_camera_pose();
+        double map_zoom = camera_pose.position.z / 120.0;
+        add_map_level1_message(m_drawer, message, get_position_offset(), car_fused_pose, map_zoom);
     }
 }
 
@@ -2559,7 +2563,7 @@ init_flags(void)
     draw_xsens_orientation_flag = 0;
     draw_localize_ackerman_flag = 1;
     draw_annotation_flag = 0;
-    draw_moving_objects_flag = 0;
+    draw_moving_objects_flag = 1;
     draw_gps_axis_flag = 1;
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
@@ -3277,7 +3281,15 @@ draw_loop(window *w)
         }
 
         if (draw_map_flag)
-            draw_map(m_drawer, get_position_offset());
+        {
+            carmen_pose_3D_t camera_pose = get_camera_pose();
+            double map_zoom = camera_pose.position.z / 120.0;
+            draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
+//            carmen_pose_3D_t camera_pose = get_camera_pose();
+//            printf("x %lf, y %lf, z %lf\n", camera_pose.position.x, camera_pose.position.y, camera_pose.position.z);
+//            camera_pose = get_camera_offset();
+//            printf("roll %lf, pitch %lf, yaw %lf\n", camera_pose.orientation.roll, camera_pose.orientation.pitch, camera_pose.orientation.yaw);
+        }
 
         if (draw_trajectory_flag1)
         {
@@ -3480,7 +3492,11 @@ draw_loop_for_picking(window *w)
         }
 
         if (draw_map_flag)
-            draw_map(m_drawer, get_position_offset());
+        {
+            carmen_pose_3D_t camera_pose = get_camera_pose();
+            double map_zoom = camera_pose.position.z / 120.0;
+            draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
+        }
 
         if (draw_trajectory_flag1)
             draw_trajectory(t_drawer1, get_position_offset());

@@ -90,6 +90,8 @@ initGl (int width, int height)
     camera_pose.position.z = 30.0;
     camera_pose.orientation.pitch = carmen_degrees_to_radians (90.0);
 
+    camera_offset.orientation.yaw = carmen_degrees_to_radians (90.0);
+
     background_r = 0.0;
     background_g = 0.0;
     background_b = 0.0;
@@ -110,6 +112,18 @@ void
 set_camera (carmen_pose_3D_t pose)
 {
     camera_pose = pose;
+}
+
+carmen_pose_3D_t
+get_camera_pose()
+{
+    return (camera_pose);
+}
+
+carmen_pose_3D_t
+get_camera_offset()
+{
+    return (camera_offset);
 }
 
 void
