@@ -147,6 +147,8 @@ shift_history(moving_object_t *moving_object)
 		moving_object->average_width.remove_sample(moving_object->history[MOVING_OBJECT_HISTORY_SIZE - 1].width);
 	}
 
+	moving_object->history[MOVING_OBJECT_HISTORY_SIZE - 1].moving_object_points.clear();
+
 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0; i--)
 		moving_object->history[i + 1] = moving_object->history[i];
 
@@ -768,8 +770,12 @@ near(moving_object_t *mo_j, moving_object_t *mo_k)
 		for (unsigned int k = 0; k < points.size(); k++)
 		{
 			if (DIST2D(point_j, points[k]) < moving_object_merge_distance)
+			{
+				points.clear();
 				return (true);
+			}
 		}
+		points.clear();
 	}
 	return (false);
 }
@@ -918,6 +924,8 @@ add_detected_objects(vector<lane_t> &lanes, int lane_index, int first_pose_index
 //		printf("added %d (%.2lf), ", moving_object.id, moving_object.pose.theta);
 		lane->moving_objects.push_back(moving_object);
 	}
+//	if (moving_object.history[0].moving_object_points.size() > 300)
+//		printf(" ");
 }
 
 
@@ -1128,8 +1136,15 @@ remove_lanes_absent_from_road_network(vector<lane_t> &lanes, carmen_route_planne
 				break;
 			}
 		}
+
 		if (not_found)
 		{
+			for (int j = 0; j < (int) lanes[i].moving_objects.size(); j++)
+			{
+				for (int k = 0; k < MOVING_OBJECT_HISTORY_SIZE; k++)
+					lanes[i].moving_objects[j].history[k].moving_object_points.clear();
+				lanes[i].moving_objects.clear();
+			}
 			lanes.erase(lanes.begin() + i);
 			i--;
 		}
@@ -1411,6 +1426,8 @@ share_points_between_objects(vector<lane_t> &lanes, carmen_map_t *occupancy_map)
 			}
 	    }
 	}
+
+	all_mo_points.clear();
 }
 
 

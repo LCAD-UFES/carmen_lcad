@@ -9,8 +9,8 @@ MODULE_COMMENT = Obstacle Distance Mapper Module
 #CXXFLAGS += -Wall -std=c++11 -O0
 
 #To release
-CFLAGS += -Wall -std=c++11 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
-CXXFLAGS += -Wall -std=c++11 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
+CFLAGS += -Wall # -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
+CXXFLAGS += -Wall -std=c++14 # -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
 
 LINK = g++
 
