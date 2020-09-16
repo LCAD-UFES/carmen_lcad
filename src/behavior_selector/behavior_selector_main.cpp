@@ -64,7 +64,7 @@
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
 //#define SIMULATE_MOVING_OBSTACLE
-//#define SIMULATE_LATERAL_MOVING_OBSTACLE
+#define SIMULATE_LATERAL_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -157,6 +157,7 @@ extern double localize_ackerman_initialize_message_timestamp;
 double parking_speed_limit;
 
 carmen_map_t occupancy_map;
+carmen_map_server_offline_map_message *offline_map = NULL;
 
 
 int
@@ -811,7 +812,7 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 	}
 
 	compact_occupancy_map = obstacle_distance_mapper_uncompress_occupancy_map(&occupancy_map, compact_occupancy_map, carmen_mapper_compact_map_msg);
-	current_moving_objects = obstacle_distance_mapper_datmo(road_network_message, occupancy_map, carmen_mapper_compact_map_msg->timestamp);
+	current_moving_objects = obstacle_distance_mapper_datmo(road_network_message, occupancy_map, offline_map, carmen_mapper_compact_map_msg->timestamp);
 	if (current_moving_objects)
 	{
 		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
@@ -824,8 +825,9 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 //	obstacle_distance_mapper_restore_moving_objects_to_occupancy_map(&occupancy_map, current_moving_objects);
 
 	if (use_frenet_path_planner)
-		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
+		set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi, 0, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
+	obstacle_distance_mapper_free_moving_objects_message(current_moving_objects);
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -1136,6 +1138,13 @@ carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *mes
 
 
 static void
+carmen_map_server_offline_map_handler(carmen_map_server_offline_map_message *msg)
+{
+	offline_map = msg;
+}
+
+
+static void
 path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf_msg)
 {
 	if (!necessary_maps_available)
@@ -1404,6 +1413,8 @@ register_handlers()
 
 	if (behavior_selector_use_symotha)
 		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_map_server_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

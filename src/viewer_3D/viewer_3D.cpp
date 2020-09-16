@@ -55,7 +55,6 @@ static lane_analysis_drawer *lane_drawer;
 
 
 static int num_laser_devices;
-static int moving_objects_point_clouds_size = 1;
 static int stereo_point_cloud_size;
 static int ldmrs_size;
 static double ldmrs_min_velocity;
@@ -90,12 +89,9 @@ static int rear_bullbar_left_corner_laser_points_idx;
 static point_cloud *rear_bullbar_right_corner_laser_points;
 static int rear_bullbar_right_corner_laser_points_idx;
 
-static point_cloud *moving_objects_point_clouds;
-static int last_moving_objects_point_clouds;
-static int moving_objects_point_clouds_initialized;
-moving_objects_tracking_t  *moving_objects_tracking;
-int current_num_point_clouds;
-int previous_num_point_clouds = 0;
+static point_cloud *moving_objects_point_clouds = NULL;
+moving_objects_tracking_t  *moving_objects_tracking = NULL;
+int num_moving_objects = 0;
 
 int num_ldmrs_objects = 0;
 carmen_laser_ldmrs_object *ldmrs_objects_tracking;
@@ -617,8 +613,7 @@ static void
 rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 {
 	for (unsigned int i = 0; i < annotations.size(); i++)
-		if (annotations[i].annotation_description)
-			free(annotations[i].annotation_description);
+		free(annotations[i].annotation_description);
 
 	annotations.clear();
 
@@ -1821,87 +1816,39 @@ carmen_laser_laser_message_handler(carmen_laser_laser_message* laser_message)
 	}
 }
 
-void
-init_moving_objects_tracking(int c_num_point_clouds, int p_num_point_clouds)
-{
-	if (c_num_point_clouds != p_num_point_clouds)
-	{
-		free(moving_objects_tracking);
-//		moving_objects_tracking = (moving_objects_tracking_t*) malloc
-//				(c_num_point_clouds * sizeof(moving_objects_tracking_t));
-	}
-	moving_objects_tracking = (moving_objects_tracking_t*) malloc
-			(c_num_point_clouds * sizeof(moving_objects_tracking_t));
-}
-
-static void
-init_moving_objects_point_cloud(int num_points, double timestamp)
-{
-	int i;
-
-	if (moving_objects_point_clouds[last_moving_objects_point_clouds].num_points != num_points)
-	{
-		for (i = 0; i < moving_objects_point_clouds_size; i++)
-		{
-			free(moving_objects_point_clouds[i].points);
-			free(moving_objects_point_clouds[i].point_color);
-		}
-
-		moving_objects_point_clouds[last_moving_objects_point_clouds].points = (carmen_vector_3D_t*) malloc(num_points * sizeof(carmen_vector_3D_t));
-		moving_objects_point_clouds[last_moving_objects_point_clouds].point_color = (carmen_vector_3D_t*) malloc(num_points * sizeof(carmen_vector_3D_t));
-
-		moving_objects_point_clouds[last_moving_objects_point_clouds].num_points = num_points;
-
-	}
-	moving_objects_point_clouds[last_moving_objects_point_clouds].num_points = num_points;
-	moving_objects_point_clouds[last_moving_objects_point_clouds].car_position = car_fused_pose.position;
-	moving_objects_point_clouds[last_moving_objects_point_clouds].timestamp = timestamp;
-
-}
-
-int account_number_of_points_point_clouds(int num_points,
-		carmen_moving_objects_point_clouds_message* moving_objects_point_clouds_message)
-{
-	int i;
-
-	current_num_point_clouds = moving_objects_point_clouds_message->num_point_clouds;
-
-	num_points = 0;
-
-	for (i = 0; i < current_num_point_clouds; i++)
-		num_points += moving_objects_point_clouds_message->point_clouds[i].point_size;
-
-	return num_points;
-}
-
 static void
 carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
 {
-	int i, j;
-	int num_points;
-	num_points = 0;
-
 	if (!force_velodyne_flag)
 		if (!odometry_initialized)
 			return;
 
-	moving_objects_point_clouds_initialized = 1;
+	if (!moving_objects_point_clouds)
+	{	// first time
+		moving_objects_point_clouds = (point_cloud *) malloc(sizeof(point_cloud));
+	}
+	else
+	{
+		free(moving_objects_point_clouds->points);
+		free(moving_objects_point_clouds->point_color);
+		free(moving_objects_tracking);
+	}
 
-	last_moving_objects_point_clouds++;
-	if (last_moving_objects_point_clouds >= moving_objects_point_clouds_size)
-		last_moving_objects_point_clouds = 0;
+	num_moving_objects = moving_objects_point_clouds_message->num_point_clouds;
+	int num_points = 0;
+	for (int i = 0; i < num_moving_objects; i++)
+		num_points += moving_objects_point_clouds_message->point_clouds[i].point_size;
+	moving_objects_point_clouds->num_points = num_points;
+	moving_objects_point_clouds->points = (carmen_vector_3D_t *) malloc(num_points * sizeof(carmen_vector_3D_t));
+	moving_objects_point_clouds->point_color = (carmen_vector_3D_t *) malloc(num_points * sizeof(carmen_vector_3D_t));
+	moving_objects_point_clouds->car_position = car_fused_pose.position;
+	moving_objects_point_clouds->timestamp = moving_objects_point_clouds_message->timestamp;
 
-	num_points = account_number_of_points_point_clouds(num_points, moving_objects_point_clouds_message);
-	init_moving_objects_point_cloud(num_points, moving_objects_point_clouds_message->timestamp);
+	moving_objects_tracking = (moving_objects_tracking_t *) malloc(moving_objects_point_clouds_message->num_point_clouds * sizeof(moving_objects_tracking_t));
 
-	init_moving_objects_tracking(current_num_point_clouds, previous_num_point_clouds);
-	previous_num_point_clouds = current_num_point_clouds;
+	int j = 0;
 
-	int k;
-
-	j = 0;
-
-	for (i = 0; i < current_num_point_clouds; i++)
+	for (int i = 0; i < num_moving_objects; i++)
 	{
 		moving_objects_tracking[i].moving_objects_pose.orientation.yaw = moving_objects_point_clouds_message->point_clouds[i].orientation;
 		moving_objects_tracking[i].moving_objects_pose.orientation.roll = 0.0;
@@ -1923,15 +1870,15 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 //			moving_objects_tracking[i].particulas[k] = moving_objects_point_clouds_message->point_clouds[i].particulas[k];
 //		}
 
-		for (k = 0; k < moving_objects_point_clouds_message->point_clouds[i].point_size; k++, j++)
+		for (int k = 0; k < moving_objects_point_clouds_message->point_clouds[i].point_size; k++, j++)
 		{
-			moving_objects_point_clouds[last_moving_objects_point_clouds].points[j].x = moving_objects_point_clouds_message->point_clouds[i].points[k].x;
-			moving_objects_point_clouds[last_moving_objects_point_clouds].points[j].y = moving_objects_point_clouds_message->point_clouds[i].points[k].y;
-			moving_objects_point_clouds[last_moving_objects_point_clouds].points[j].z = moving_objects_point_clouds_message->point_clouds[i].points[k].z;
+			moving_objects_point_clouds->points[j].x = moving_objects_point_clouds_message->point_clouds[i].points[k].x;
+			moving_objects_point_clouds->points[j].y = moving_objects_point_clouds_message->point_clouds[i].points[k].y;
+			moving_objects_point_clouds->points[j].z = moving_objects_point_clouds_message->point_clouds[i].points[k].z;
 
-			moving_objects_point_clouds[last_moving_objects_point_clouds].point_color[j].x = moving_objects_point_clouds_message->point_clouds[i].r;
-			moving_objects_point_clouds[last_moving_objects_point_clouds].point_color[j].y = moving_objects_point_clouds_message->point_clouds[i].g;
-			moving_objects_point_clouds[last_moving_objects_point_clouds].point_color[j].z = moving_objects_point_clouds_message->point_clouds[i].b;
+			moving_objects_point_clouds->point_color[j].x = moving_objects_point_clouds_message->point_clouds[i].r;
+			moving_objects_point_clouds->point_color[j].y = moving_objects_point_clouds_message->point_clouds[i].g;
+			moving_objects_point_clouds->point_color[j].z = moving_objects_point_clouds_message->point_clouds[i].b;
 		}
 	}
 }
@@ -2126,12 +2073,17 @@ motion_path_handler(carmen_navigator_ackerman_plan_message *message)
 void
 frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 {
+	for (unsigned int i = 0; i < path_plans_frenet_drawer.size(); i++)
+	{
+		free(path_plans_frenet_drawer[i]->path);
+		free(path_plans_frenet_drawer[i]);
+	}
+	path_plans_frenet_drawer.clear();
+
 	if (message->number_of_poses != 0)
 	{
 		int number_of_paths = message->set_of_paths_size / message->number_of_poses;
-		path_plans_frenet_drawer.clear();
 		path_plans_frenet_drawer.resize(number_of_paths);
-
 		for (int j = 0; j < number_of_paths; j++)
 		{
 			carmen_navigator_ackerman_plan_message *frenet_trajectory = (carmen_navigator_ackerman_plan_message*) malloc(sizeof(carmen_navigator_ackerman_plan_message));
@@ -2157,9 +2109,15 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 		}
 	}
 
+	for (unsigned int i = 0; i < path_plans_nearby_lanes_drawer.size(); i++)
+	{
+		free(path_plans_nearby_lanes_drawer[i]->path);
+		free(path_plans_nearby_lanes_drawer[i]);
+	}
+	path_plans_nearby_lanes_drawer.clear();
+
 	if (message->number_of_nearby_lanes != 0)
 	{
-		path_plans_nearby_lanes_drawer.clear();
 		path_plans_nearby_lanes_drawer.resize(message->number_of_nearby_lanes);
 		for (int j = 0; j < message->number_of_nearby_lanes; j++)
 		{
@@ -2175,7 +2133,6 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				path[i].theta   = message->nearby_lanes[lane_start + i].theta;
 				path[i].v		= 0;
 				path[i].phi		= 0;
-
 			}
 			nearby_trajectory->path = path;
 			nearby_trajectory->path_length = lane_size;
@@ -2206,6 +2163,11 @@ navigator_goal_list_message_handler(carmen_behavior_selector_goal_list_message *
 static void
 plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 {
+	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
+	{
+		free(t_drawerTree[i]->path);
+		free(t_drawerTree[i]);
+	}
 	t_drawerTree.clear();
 	t_drawerTree.resize(msg->num_path);
 
@@ -2280,24 +2242,6 @@ static void lane_analysis_handler(carmen_elas_lane_analysis_message * message) {
 }
 #endif
 
-static void
-init_moving_objects_point_clouds(void)
-{
-	moving_objects_point_clouds_initialized = 0; // Only considered initialized when first message is received
-
-	moving_objects_point_clouds = (point_cloud*) malloc(moving_objects_point_clouds_size * sizeof (point_cloud));
-
-    int i;
-    for (i = 0; i < moving_objects_point_clouds_size; i++)
-    {
-    	moving_objects_point_clouds[i].points = NULL;
-    	moving_objects_point_clouds[i].point_color = NULL;
-    	moving_objects_point_clouds[i].num_points = 0;
-    	moving_objects_point_clouds[i].timestamp = carmen_get_time();
-    }
-
-    last_moving_objects_point_clouds = 0;
-}
 
 static void
 init_velodyne(void)
@@ -2924,7 +2868,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
 
 	magnetic_declination = carmen_degrees_to_radians(magnetic_declination);
 
-    init_moving_objects_point_clouds();
     init_laser();
     init_ldmrs();
     init_velodyne();
@@ -3016,13 +2959,6 @@ destroy_stuff()
     }
     free(velodyne_points);
 
-	for (i = 0; i < moving_objects_point_clouds_size; i++)
-	{
-		free(moving_objects_point_clouds[i].points);
-		free(moving_objects_point_clouds[i].point_color);
-	}
-	free(moving_objects_point_clouds);
-
     free(odometry_trail);
     free(localize_ackerman_trail);
     free(gps_trail);
@@ -3036,7 +2972,6 @@ destroy_stuff()
     free(localizer_correction_particles_pos);
     free(localizer_correction_particles_weight);
 
-    free(moving_objects_tracking);
     free(ldmrs_objects_tracking);
 
     destroy_drawers();
@@ -3237,7 +3172,6 @@ draw_loop(window *w)
 //            carmen_vector_3D_t offset = get_position_offset();
 //            offset.z += sensor_board_1_pose.position.z;
 
-        	//draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer);
         	if (draw_velodyne_flag > 0)
         		draw_laser_rays(velodyne_points[last_velodyne_position], get_world_position(VELODYNE_HIERARCHY_SIZE,velodyne_hierarchy));
         	if (draw_points_flag > 0)
@@ -3255,9 +3189,11 @@ draw_loop(window *w)
 		   carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
 
-		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer, m_drawer);
-		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, car_drawer, draw_particles_flag);
-
+           if (moving_objects_point_clouds)
+           {
+			   draw_moving_objects_point_clouds(moving_objects_point_clouds, 1, offset, car_drawer, m_drawer);
+			   draw_tracking_moving_objects(moving_objects_tracking, num_moving_objects, offset, car_drawer, draw_particles_flag);
+           }
 		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity, car_drawer);
         }
 
@@ -3456,8 +3392,6 @@ draw_loop_for_picking(window *w)
 
         if (draw_rays_flag)
         {
-//            carmen_vector_3D_t offset = get_position_offset();
-//            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer, m_drawer);
             draw_laser_rays(laser_points[last_laser_position], get_laser_position(car_fused_pose.position));
         }
 
@@ -3466,9 +3400,11 @@ draw_loop_for_picking(window *w)
            carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
 
-           draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset, car_drawer, m_drawer);
-           draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, car_drawer, draw_particles_flag);
-
+           if (moving_objects_point_clouds)
+           {
+			   draw_moving_objects_point_clouds(moving_objects_point_clouds, 1, offset, car_drawer, m_drawer);
+			   draw_tracking_moving_objects(moving_objects_tracking, num_moving_objects, offset, car_drawer, draw_particles_flag);
+           }
            draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity, car_drawer);
         }
 

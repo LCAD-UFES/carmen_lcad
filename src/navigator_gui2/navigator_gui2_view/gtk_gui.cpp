@@ -723,7 +723,7 @@ namespace View
 	void
 	GtkGui::set_distance_traveled(carmen_point_t robot_pose, double velocity)
 	{
-		char buffer[2048];
+		static char buffer[2048];
 		static bool first_time = true;
 		static double dist_traveled;
 		static carmen_point_t previous_robot_pose;
@@ -753,7 +753,7 @@ namespace View
 			carmen_ackerman_traj_point_t *new_goal,
 			int					autonomous)
 	{
-		char   buffer[2048];
+		static char   buffer[2048];
 		double robot_distance = 0.0, goal_distance = 0.0;
 		carmen_world_point_t new_robot_w;
 		static int previous_width = 0, previous_height = 0;
@@ -787,8 +787,8 @@ namespace View
 
 		if (nav_panel_config->track_robot &&
 				((robot_distance > adjust_distance) ||
-						(previous_width != this->controls_.map_view->image_widget->allocation.width) ||
-						(previous_height != this->controls_.map_view->image_widget->allocation.height)))
+				 (previous_width != this->controls_.map_view->image_widget->allocation.width) ||
+				 (previous_height != this->controls_.map_view->image_widget->allocation.height)))
 			carmen_map_graphics_adjust_scrollbars(this->controls_.map_view, &robot);
 
 		robot_distance = carmen_distance_world(&new_robot_w, &robot);
@@ -850,16 +850,16 @@ namespace View
 	GtkGui::navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t *goal_list, int size)
 	{
 //		int RDDF_MAX_SIZE = 10000;
-		int i;
-		
 		if (this->navigator_goal_list != NULL)
+		{
 			free(this->navigator_goal_list);
+			this->navigator_goal_list = NULL;
+		}
 
 		this->goal_list_size = size;
-
 		this->navigator_goal_list = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * goal_list_size);
 
-		for (i = 0; i < size; i++)
+		for (int i = 0; i < size; i++)
 		{
 			if (valid_carmen_ackerman_traj_point(goal_list[i], this->controls_.map_view->internal_map))
 			{
@@ -890,10 +890,12 @@ namespace View
 		int i;
 
 		if (this->navigator_waypoint_list != NULL)
+		{
 			free(this->navigator_waypoint_list);
+			this->navigator_waypoint_list = NULL;
+		}
 
 		this->waypoint_list_size = size;
-
 		this->navigator_waypoint_list = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * waypoint_list_size);
 
 		for(i = 0; i < size; i++)
@@ -910,8 +912,6 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length)
 	{
-		int index;
-
 		if (this->controls_.map_view->internal_map == NULL)
 			return;
 
@@ -929,7 +929,7 @@ namespace View
 			carmen_test_alloc(this->path);
 			carmen_verbose("Got path of length %d\n", plan_length);
 
-			for (index = 0; index < num_path_points; index++)
+			for (int index = 0; index < num_path_points; index++)
 			{
 				this->path[index].pose.x	   = new_plan[index].x;
 				this->path[index].pose.y	   = new_plan[index].y;
@@ -937,10 +937,6 @@ namespace View
 				this->path[index].map = this->controls_.map_view->internal_map;
 				carmen_verbose("%.1f %.1f\n", this->path[index].pose.x, this->path[index].pose.y);
 			}
-		}
-		else
-		{
-			num_path_points = 0;
 		}
 
 		display_needs_updating = 1;
@@ -950,7 +946,7 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_path(carmen_ackerman_traj_point_t *new_path, int path_length, int path_id)
 	{
-		int i, path_index;
+		int path_index;
 
 		if (this->controls_.map_view->internal_map == NULL)
 			return;
@@ -970,7 +966,7 @@ namespace View
 			path_vector[path_index] = (carmen_world_point_t *) calloc(path_vector_size[path_index], sizeof(carmen_world_point_t));
 			carmen_test_alloc(path_vector[path_index]);
 
-			for (i = 0; i < path_vector_size[path_index]; i++)
+			for (int i = 0; i < path_vector_size[path_index]; i++)
 			{
 				path_vector[path_index][i].pose.x	   = new_path[i].x;
 				path_vector[path_index][i].pose.y	   = new_path[i].y;
@@ -1080,7 +1076,7 @@ namespace View
 	void
 	GtkGui::navigator_graphics_change_map(carmen_map_p new_map)
 	{
-		char buffer[2048];
+		static char buffer[2048];
 		memset(buffer, 0, 2048);
 
 		carmen_map_graphics_add_map(this->controls_.map_view, new_map, flags);
@@ -1127,14 +1123,10 @@ namespace View
 	{
 		int i;
 
-		if (simulator_objects == NULL)
-		{
-			if (num_objects == 0)
-				return;
+		if (simulator_objects != NULL)
+			carmen_list_destroy(&simulator_objects);
 
-			simulator_objects = carmen_list_create(sizeof(carmen_traj_point_t), num_objects);
-		}
-
+		simulator_objects = carmen_list_create(sizeof(carmen_traj_point_t), num_objects);
 		simulator_objects->length = 0;
 
 		for (i = 0; i < num_objects; i++)
@@ -1147,18 +1139,13 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_moving_objects(int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking)
 	{
-		int i;
-		if (moving_objects_list == NULL)
-		{
-			if (num_point_clouds == 0)
-				return;
+		if (moving_objects_list != NULL)
+			carmen_list_destroy(&moving_objects_list);
 
-			moving_objects_list = carmen_list_create(sizeof(moving_objects_tracking_t), num_point_clouds);
-		}
-
+		moving_objects_list = carmen_list_create(sizeof(moving_objects_tracking_t), num_point_clouds);
 		moving_objects_list->length = 0;
 
-		for (i = 0; i < num_point_clouds; i++)
+		for (int i = 0; i < num_point_clouds; i++)
 			carmen_list_add(moving_objects_list, moving_objects_tracking + i);
 
 		display_needs_updating = 1;
@@ -1191,7 +1178,8 @@ namespace View
 
 		if (path_size != allocated_size)
 		{
-			this->canditade_path[0] = (carmen_world_point_t *) realloc (this->canditade_path[0], path_size * sizeof(carmen_world_point_t));
+			free(this->canditade_path[0]);
+			this->canditade_path[0] = (carmen_world_point_t *) malloc (path_size * sizeof(carmen_world_point_t));
 			allocated_size = path_size;
 		}
 
@@ -1220,8 +1208,6 @@ namespace View
 			int path_size[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS],
 			int num_path)
 	{
-		int index;
-
 		if (this->controls_.map_view->internal_map == NULL)
 			return;
 
@@ -1249,7 +1235,7 @@ namespace View
 			carmen_test_alloc(this->plan_tree_p2);
 			carmen_verbose("Got path of length %d\n", num_plan_tree_points);
 
-			for (index = 0; index < num_plan_tree_points; index++)
+			for (int index = 0; index < num_plan_tree_points; index++)
 			{
 				this->plan_tree_p1[index].pose.x	   = p1[index].x;
 				this->plan_tree_p1[index].pose.y	   = p1[index].y;
@@ -1271,6 +1257,8 @@ namespace View
 				free(this->canditade_path[i]);
 			free(this->canditade_path);
 			this->canditade_path = NULL;
+			free(this->canditade_path_color);
+			this->canditade_path_color = NULL;
 		}
 
 		this->num_candidate_path = num_path;
@@ -1304,7 +1292,7 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_fused_odometry(carmen_point_t fused_odometry_pose)
 	{
-		char buffer[2048];
+		static char buffer[2048];
 
 		fused_odometry_position.map = this->controls_.map_view->internal_map;
 		fused_odometry_position.pose = fused_odometry_pose;
@@ -1393,31 +1381,31 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message msg)
+	GtkGui::navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message *msg)
 	{
 		this->behavior_selector_active = 1;
-		this->goal_source = msg.goal_source;
+		this->goal_source = msg->goal_source;
 
-		if((int)msg.following_lane_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboFollowLane)))
-			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboFollowLane, msg.following_lane_algorithm);
+		if((int) msg->following_lane_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboFollowLane)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboFollowLane, msg->following_lane_algorithm);
 
-		if((int)msg.parking_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboParking)))
-			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboParking, msg.parking_algorithm);
+		if((int) msg->parking_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboParking)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboParking, msg->parking_algorithm);
 
-//		if((int)msg.goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
-//			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg.goal_source);
+//		if((int)msg->goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
+//			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg->goal_source);
 
-//		if (msg.goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//		if (msg->goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
 //			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 1);
 //		else
 //			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 0);
 
-		if((int)msg.state != get_state_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboState)))
-			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboState, msg.state);
+		if((int) msg->state != get_state_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->state);
 
-		char buffer[2048];
+		static char buffer[2048];
 		strcpy(buffer, "Low Level State: ");
-		strcat(buffer, get_low_level_state_name(msg.low_level_state));
+		strcat(buffer, get_low_level_state_name(msg->low_level_state));
 
 //		strcpy(ndata.low_level_state_navigator,buffer);
 
@@ -1425,16 +1413,16 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message msg)
+	GtkGui::navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message *msg)
 	{
-		char buffer[2048];
-		sprintf(buffer, "Traffic Sign State: %s", get_traffic_sign_state_name(msg.traffic_sign_state));
-		if (msg.traffic_sign_state != RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF && msg.traffic_sign_data != 0.0)
+		static char buffer[2048];
+		sprintf(buffer, "Traffic Sign State: %s", get_traffic_sign_state_name(msg->traffic_sign_state));
+		if (msg->traffic_sign_state != RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF && msg->traffic_sign_data != 0.0)
 		{
-			int actual_state = (msg.traffic_sign_data > 0.0) ? RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT : RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT;
-			if (msg.traffic_sign_state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT)
+			int actual_state = (msg->traffic_sign_data > 0.0) ? RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT : RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT;
+			if (msg->traffic_sign_state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT)
 				sprintf(buffer, "%s/%s", buffer, get_traffic_sign_state_name(actual_state));
-			sprintf(buffer, "%s   %.3lf (%.3lf deg/m)", buffer, msg.traffic_sign_data, carmen_radians_to_degrees(msg.traffic_sign_data));
+			sprintf(buffer, "%s   %.3lf (%.3lf deg/m)", buffer, msg->traffic_sign_data, carmen_radians_to_degrees(msg->traffic_sign_data));
 		}
 //		strcpy(ndata.traffic_sign_state_navigator,buffer);
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelTrafficSignState), buffer);
@@ -1961,17 +1949,19 @@ namespace View
 
 		if (placement_status == SELECTING_FINAL_REGION)
 		{
-			carmen_map_t* map;
+			static carmen_map_t *map = NULL;
 			carmen_point_t pose;
 			pose = world_point->pose;
 
 			robot_temp.pose = pose;
 			navigator_update_robot(&robot_temp);
 
-			map = (carmen_map_t*) malloc(sizeof(carmen_map_t));
-			map->complete_map = NULL;
-			map->config.map_name = NULL;
-
+			if (!map)
+			{
+				map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+				map->complete_map = NULL;
+				map->config.map_name = NULL;
+			}
 			carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', pose, map);
 
 			navigator_graphics_change_map(map);
@@ -2549,8 +2539,6 @@ namespace View
 
 		if (nav_panel_config->show_dynamic_objects)
 		{
-			//particle.map = the_map_view->internal_map;
-
 			if (moving_objects_list)
 			{
 				for (index = 0; index < moving_objects_list->length; index++)

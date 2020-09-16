@@ -890,14 +890,12 @@ draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ld
 
 
 void
-draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking, int current_num_point_clouds,
+draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking, int num_moving_objects,
 		carmen_vector_3D_t offset, CarDrawer *car_drawer, int draw_particles_flag)
 {
-	/*** MOVING OBJECTS MODULE ***/
-	int i;
 	rotation_matrix *rotate = NULL;
 
-	for (i = 0; i < current_num_point_clouds; i++)
+	for (int i = 0; i < num_moving_objects; i++)
 	{
 		if (moving_objects_tracking[i].geometric_model == -1)
 			continue;
@@ -1298,11 +1296,9 @@ draw_moving_objects_point_clouds(point_cloud *moving_objects_point_clouds, int c
 //    glPointSize (1.0);
 //    glBegin (GL_POINTS);
 
-    int i;
-    for (i = 0; i < cloud_size; i++)
+    for (int i = 0; i < cloud_size; i++)
     {
-        int j;
-        for (j = 0; j < moving_objects_point_clouds[i].num_points; j++)
+        for (int j = 0; j < moving_objects_point_clouds[i].num_points; j++)
         {
             glColor3d (moving_objects_point_clouds[i].point_color[j].x, moving_objects_point_clouds[i].point_color[j].y, moving_objects_point_clouds[i].point_color[j].z);
             draw_square(moving_objects_point_clouds[i].points[j].x - offset.x,

@@ -5,7 +5,18 @@
 extern "C" {
 #endif
 
-typedef struct trajectory_drawer trajectory_drawer;
+typedef struct _trajectory_drawer
+{
+	double r;
+	double g;
+	double b;
+
+	carmen_vector_3D_t* path;
+	int path_size;
+
+	carmen_pose_3D_t* goals;
+	int goals_size;
+} trajectory_drawer;
 
 trajectory_drawer* create_trajectory_drawer(double r, double g, double b);
 void destroy_trajectory_drawer(trajectory_drawer* t_drawer);

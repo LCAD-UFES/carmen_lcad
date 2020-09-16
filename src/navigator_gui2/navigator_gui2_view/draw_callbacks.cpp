@@ -20,6 +20,12 @@ int superimposed_is_set = 0;
 //extern "C" G_MODULE_EXPORT
 gboolean on_drawArea_idle(void *data)
 {
+	static double last_time = 0.0;
+
+	double time = carmen_get_time();
+	if ((time - last_time) < 0.05)
+		return (TRUE);
+
 	GtkGui *gui = static_cast<GtkGui*>(data);
 
 	global_gui = gui;
@@ -32,7 +38,9 @@ gboolean on_drawArea_idle(void *data)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	global_gui->draw_gl_components_car_panel();
 
-	return TRUE;
+	last_time = time;
+
+	return (TRUE);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1212,17 +1220,8 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	{
 		if (global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses != 0)
 		{
-			if ((global_gui->frenet_path_planer_path != NULL) || (global_gui->frenet_path_planer_number_of_poses < global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses))
-			{
-				free(global_gui->frenet_path_planer_path);
-				global_gui->frenet_path_planer_path = NULL;
-			}
-
 			global_gui->frenet_path_planer_number_of_poses = global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses;
-
-			if (global_gui->frenet_path_planer_path == NULL)
-				global_gui->frenet_path_planer_path = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * global_gui->frenet_path_planer_number_of_poses);
-
+			global_gui->frenet_path_planer_path = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * global_gui->frenet_path_planer_number_of_poses);
 			int number_of_paths = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths_size / global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses;
 
 			for (int j = 0; j < number_of_paths; j++)
@@ -1237,16 +1236,11 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 				global_gui->draw_path(global_gui->frenet_path_planer_path, global_gui->frenet_path_planer_number_of_poses, carmen_light_green, carmen_light_green, the_map_view);
 			}
+			free(global_gui->frenet_path_planer_path);
 		}
 
 		if (global_gui->frenet_path_planer_set_of_paths_msg.number_of_nearby_lanes != 0)
 		{
-			if (global_gui->route_planer_lane != NULL)
-			{
-				free(global_gui->route_planer_lane);
-				global_gui->route_planer_lane = NULL;
-			}
-
 			for (int j = 0; j < global_gui->frenet_path_planer_set_of_paths_msg.number_of_nearby_lanes; j++)
 			{
 				int lane_size = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_sizes[j];
@@ -1261,6 +1255,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 				}
 
 				global_gui->draw_path(global_gui->route_planer_lane, lane_size, carmen_orange, carmen_orange, the_map_view);
+				free(global_gui->route_planer_lane);
 			}
 		}
 	}
@@ -1274,19 +1269,10 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_oa_motion_plan)
 	{
-		if ((global_gui->oa_motion_plan != NULL) || (global_gui->oa_motion_plan_size < global_gui->oa_motion_plan_msg.path_length))
-		{
-			free(global_gui->oa_motion_plan);
-			global_gui->oa_motion_plan = NULL;
-		}
-
 		global_gui->oa_motion_plan_size = global_gui->oa_motion_plan_msg.path_length;
+		global_gui->oa_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->oa_motion_plan_size);
 
-		if (global_gui->oa_motion_plan == NULL)
-			global_gui->oa_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->oa_motion_plan_size);
-
-		int i;
-		for (i = 0; i < global_gui->oa_motion_plan_msg.path_length; i++)
+		for (int i = 0; i < global_gui->oa_motion_plan_size; i++)
 		{
 			global_gui->oa_motion_plan[i].pose.x	   = global_gui->oa_motion_plan_msg.path[i].x;
 			global_gui->oa_motion_plan[i].pose.y	   = global_gui->oa_motion_plan_msg.path[i].y;
@@ -1295,23 +1281,15 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		}
 
 		global_gui->draw_path(global_gui->oa_motion_plan, global_gui->oa_motion_plan_size, carmen_green, carmen_green, the_map_view);
+		free(global_gui->oa_motion_plan);
 	}
 
 	if (global_gui->nav_panel_config->show_mpp_motion_plan)
 	{
-		if ((global_gui->mpp_motion_plan != NULL) || (global_gui->mpp_motion_plan_size < global_gui->mpp_motion_plan_msg.plan_length))
-		{
-			free(global_gui->mpp_motion_plan);
-			global_gui->mpp_motion_plan = NULL;
-		}
-
 		global_gui->mpp_motion_plan_size = global_gui->mpp_motion_plan_msg.plan_length;
+		global_gui->mpp_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->mpp_motion_plan_size);
 
-		if (global_gui->mpp_motion_plan == NULL)
-			global_gui->mpp_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->mpp_motion_plan_size);
-
-		int i;
-		for (i = 0; i < global_gui->mpp_motion_plan_msg.plan_length; i++)
+		for (int i = 0; i < global_gui->mpp_motion_plan_size; i++)
 		{
 			global_gui->mpp_motion_plan[i].pose.x	   = global_gui->mpp_motion_plan_msg.plan[i].x;
 			global_gui->mpp_motion_plan[i].pose.y	   = global_gui->mpp_motion_plan_msg.plan[i].y;
@@ -1320,24 +1298,15 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		}
 
 		global_gui->draw_path(global_gui->mpp_motion_plan, global_gui->mpp_motion_plan_size, carmen_blue, carmen_green, the_map_view);
+		free(global_gui->mpp_motion_plan);
 	}
 
 	if (global_gui->nav_panel_config->show_command_plan)
 	{
-		if ((global_gui->obstacle_avoider_path != NULL) || (global_gui->obstacle_avoider_path_size < global_gui->obstacle_avoider_msg.path_length))
-		{
-			free(global_gui->obstacle_avoider_path);
-			global_gui->obstacle_avoider_path = NULL;
-		}
-
 		global_gui->obstacle_avoider_path_size = global_gui->obstacle_avoider_msg.path_length;
+		global_gui->obstacle_avoider_path = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->obstacle_avoider_path_size);
 
-		if (global_gui->obstacle_avoider_path == NULL)
-			global_gui->obstacle_avoider_path = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->obstacle_avoider_path_size);
-
-		int i;
-
-		for (i = 0; i < global_gui->obstacle_avoider_msg.path_length; i++)
+		for (int i = 0; i < global_gui->obstacle_avoider_path_size; i++)
 		{
 			global_gui->obstacle_avoider_path[i].pose.x	   = global_gui->obstacle_avoider_msg.path[i].x;
 			global_gui->obstacle_avoider_path[i].pose.y	   = global_gui->obstacle_avoider_msg.path[i].y;
@@ -1346,6 +1315,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		}
 
 		global_gui->draw_path(global_gui->obstacle_avoider_path, global_gui->obstacle_avoider_path_size, carmen_red, carmen_red, the_map_view);
+		free(global_gui->obstacle_avoider_path);
 	}
 
 	if (global_gui->nav_panel_config->draw_path)

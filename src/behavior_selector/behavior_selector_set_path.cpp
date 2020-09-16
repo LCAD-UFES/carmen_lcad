@@ -11,7 +11,6 @@ using namespace std;
 
 
 extern carmen_frenet_path_planner_set_of_paths *current_set_of_paths;
-extern carmen_moving_objects_point_clouds_message *current_moving_objects;
 
 extern carmen_obstacle_distance_mapper_map_message distance_map_free_of_moving_objects;
 
@@ -127,7 +126,8 @@ collision_s_distance_to_static_object(carmen_frenet_path_planner_set_of_paths *c
 
 
 double
-collision_s_distance_to_moving_object(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
+collision_s_distance_to_moving_object(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+		carmen_moving_objects_point_clouds_message *current_moving_objects, int path_id,
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
@@ -201,7 +201,8 @@ get_rddf_displaced(carmen_ackerman_traj_point_t *rddf_poses_ahead, int number_of
 
 
 double
-collision_s_distance_to_moving_object_in_parallel_lane(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
+collision_s_distance_to_moving_object_in_parallel_lane(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+		carmen_moving_objects_point_clouds_message *current_moving_objects, int path_id,
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
@@ -338,7 +339,8 @@ simulate_moving_object_movement(t_point_cloud_struct *moving_object, carmen_acke
 
 void
 compute_moving_objects_future_poses(vector<vector <moving_object_pose_info_t> > &moving_objects_poses, double delta_t, int num_poses,
-		carmen_frenet_path_planner_set_of_paths *current_set_of_paths)
+		carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+		carmen_moving_objects_point_clouds_message *current_moving_objects)
 {
 	if (!current_moving_objects)
 		return;
@@ -383,6 +385,7 @@ path_with_collision_in_between(int path_id, vector<path_collision_info_t> path_c
 
 vector<path_collision_info_t>
 get_paths_collision_info(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+		carmen_moving_objects_point_clouds_message *current_moving_objects,
 		vector<vector <moving_object_pose_info_t> > moving_objects_data, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		double delta_t, int num_samples)
 {
@@ -395,10 +398,10 @@ get_paths_collision_info(carmen_frenet_path_planner_set_of_paths *current_set_of
 
 		path_collision_info.path_id = path_id;
 		path_collision_info.s_distance_without_collision_with_moving_object = collision_s_distance_to_moving_object(current_set_of_paths,
-				path_id, moving_objects_data, delta_t, num_samples, current_robot_pose_v_and_phi);
+				current_moving_objects, path_id, moving_objects_data, delta_t, num_samples, current_robot_pose_v_and_phi);
 
-		path_collision_info.s_distance_to_moving_object_in_parallel_lane = collision_s_distance_to_moving_object_in_parallel_lane(current_set_of_paths, path_id,
-				moving_objects_data, delta_t, num_samples, current_robot_pose_v_and_phi);
+		path_collision_info.s_distance_to_moving_object_in_parallel_lane = collision_s_distance_to_moving_object_in_parallel_lane(current_set_of_paths,
+				current_moving_objects, path_id, moving_objects_data, delta_t, num_samples, current_robot_pose_v_and_phi);
 
 		path_collision_info.s_distance_without_collision_with_static_object = collision_s_distance_to_static_object(current_set_of_paths,
 				path_id, delta_t, num_samples);//, current_robot_pose_v_and_phi);
@@ -520,6 +523,7 @@ init_path_temporal_value(int number_of_paths)
 
 void
 set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+		carmen_moving_objects_point_clouds_message *current_moving_objects,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp)
 {
 	if (!current_set_of_paths)
@@ -540,12 +544,12 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		num_moving_objects = 0;
 
 	vector<vector <moving_object_pose_info_t> > moving_objects_data(num_samples, vector <moving_object_pose_info_t>(num_moving_objects));
-	compute_moving_objects_future_poses(moving_objects_data, delta_t, num_samples, current_set_of_paths);
+	compute_moving_objects_future_poses(moving_objects_data, delta_t, num_samples, current_set_of_paths, current_moving_objects);
 
 //	virtual_laser_message.num_positions = 0;
 
-	vector<path_collision_info_t> paths = get_paths_collision_info(current_set_of_paths, moving_objects_data,
-			current_robot_pose_v_and_phi, delta_t, num_samples);
+	vector<path_collision_info_t> paths = get_paths_collision_info(current_set_of_paths, current_moving_objects,
+			moving_objects_data, current_robot_pose_v_and_phi, delta_t, num_samples);
 
 	int best_path = get_path_better_than_the_current_path(paths, current_set_of_paths, path_temporal_value);
 	update_current_path(best_path, number_of_paths, current_set_of_paths, path_temporal_value,

@@ -9,20 +9,6 @@
 #include "trajectory_drawer.h"
 
 
-struct trajectory_drawer
-{
-	double r;
-	double g;
-	double b;
-
-	carmen_vector_3D_t* path;
-	int path_size;
-	
-	carmen_pose_3D_t* goals;
-	int goals_size;
-};
-
-
 trajectory_drawer*
 create_trajectory_drawer(double r, double g, double b)
 {
