@@ -97,7 +97,7 @@ int cache_exit_edge;
 
 //#define OBSTACLE_DISTANCE_MIN 1.0
 #define OBSTACLE_DISTANCE_MIN 0.5
-#define SEND_MESSAGE_IN_PARTS 0
+#define SEND_MESSAGE_IN_PARTS 1
 
 int teste_edge = 0;
 
@@ -1568,7 +1568,7 @@ build_rddf_poses(state_node *current_state)
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
-//			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
+			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 		}
 		/*
 		else if(DIST2D(path[i].state, last_state) > 0.5)
@@ -2363,7 +2363,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_plan(plan_path_poses.path, msg);
 	}
 
-	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v == 0.0 && get_index_of_nearest_pose_in_current_path(current_astar_path_poses_till_reverse_direction, robot_position, current_astar_path_poses_till_reverse_direction.size()) > current_astar_path_poses_till_reverse_direction.size() -  3)//DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 5.0)
+	else if(astar_path_sended && SEND_MESSAGE_IN_PARTS && msg->v < 0.01 && (DIST2D(robot_position, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1]) <= 3.0) && abs(carmen_compute_abs_angular_distance(robot_position.theta, current_astar_path_poses_till_reverse_direction[current_astar_path_poses_till_reverse_direction.size()-1].theta)) < (0.2617995*4))//get_index_of_nearest_pose_in_current_path(current_astar_path_poses_till_reverse_direction, robot_position, current_astar_path_poses_till_reverse_direction.size()) > current_astar_path_poses_till_reverse_direction.size() -  3)
 	{
 		if(last_index_poses < carmen_astar_path_poses.size() - 5){
 			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal);
