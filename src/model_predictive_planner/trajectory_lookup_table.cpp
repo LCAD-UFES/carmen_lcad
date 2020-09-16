@@ -1065,7 +1065,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	gsl_interp_accel_free(acc);
 	carmen_ackerman_path_point_t furthest_point;
 	td.dist = get_max_distance_in_path(path, furthest_point);
-	if (GlobalState::reverse_driving)
+	if (GlobalState::reverse_planning)
 		td.theta = carmen_normalize_theta(atan2(furthest_point.y, furthest_point.x)+(-M_PI));
 	else
 		td.theta = atan2(furthest_point.y, furthest_point.x);

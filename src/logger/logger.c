@@ -59,11 +59,14 @@ static int log_bumblebee_save_to_file = 0;
 static int log_velodyne_save_to_file = 0;
 static int log_ford_escape_status = 0;
 static int log_can_dump = 0;
+char* log_path = 0;
+char* suffix = NULL;
+char* prefix = NULL;
 
-void get_logger_params(int argc, char** argv) {
 
-  int num_items;
-
+void
+get_logger_params(int argc, char** argv)
+{
   carmen_param_t param_list[] = {
     {"logger", "odometry",    			CARMEN_PARAM_ONOFF, &log_odometry, 0, NULL},
     {"logger", "visual_odometry",		CARMEN_PARAM_ONOFF, &log_visual_odometry, 0, NULL},
@@ -89,12 +92,21 @@ void get_logger_params(int argc, char** argv) {
     {"logger", "ford_escape_status", 	CARMEN_PARAM_ONOFF, &log_ford_escape_status, 0, NULL},
     {"logger", "can_dump", 				CARMEN_PARAM_ONOFF, &log_can_dump, 0, NULL},
   };
+  carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
-  num_items = sizeof(param_list)/sizeof(param_list[0]);
-  carmen_param_install_params(argc, argv, param_list, num_items);
+  carmen_param_allow_unfound_variables(1);
+  carmen_param_t optional_commandline_param_list[] =
+  {
+	{(char *) "commandline", (char *) "automatic_file", CARMEN_PARAM_STRING, &log_path, 0, NULL},
+	{(char *) "commandline", (char *) "prefix", CARMEN_PARAM_STRING, &prefix, 0, NULL},
+	{(char *) "commandline", (char *) "suffix", CARMEN_PARAM_STRING, &suffix, 0, NULL},
+  };
+  carmen_param_install_params(argc, argv, optional_commandline_param_list, sizeof(optional_commandline_param_list) / sizeof(optional_commandline_param_list[0]));
+  carmen_param_allow_unfound_variables(0);
 }
 
-void get_all_params(void)
+void 
+get_all_params(void)
 {
   char **variables, **values, **modules;
   int list_length, index, num_modules, module_index;
@@ -702,7 +714,9 @@ register_ipc_messages(void)
 			   CARMEN_SUBSCRIBE_LATEST);
 }
 
-void shutdown_module(int sig)
+
+void
+shutdown_module(int sig)
 {
   if(sig == SIGINT) {
     carmen_fclose(outfile);
@@ -712,19 +726,46 @@ void shutdown_module(int sig)
   }
 }
 
-int main(int argc, char **argv)
-{
 
-  /* initialize connection to IPC network */
+void
+get_log_file_name(int argc, char **argv)
+{
+  if (log_path)
+  {
+	  log_filename = (char*) malloc (64 * sizeof(char));
+	  char date[48]; 
+	  carmen_get_date(date);
+
+	  if (prefix)
+		  sprintf(log_filename, "%s/log_%s_%s", log_path, prefix, date);
+	  else
+		  sprintf(log_filename, "%s/log_%s", log_path, date);
+	  
+	  if (suffix)
+		  sprintf(log_filename, "%s_%s", log_filename, suffix);
+	  
+	  sprintf(log_filename, "%s.txt", log_filename);
+  }
+  else
+  {
+  	if (argc < 2)
+	  carmen_die("Usage: %s <logfile>\n", argv[0]);
+
+    log_filename = argv[1];
+  }
+}
+
+
+int 
+main(int argc, char **argv)
+{
   carmen_ipc_initialize(argc, argv);
   carmen_param_check_version(argv[0]);
 
-  if (argc < 2)
-	  carmen_die("Usage: %s <logfile>\n", argv[0]);
+  get_logger_params(argc, argv);
 
-  log_filename = argv[1];
+  get_log_file_name(argc, argv);
 
-  /* open logfile, check if file overwrites something */
   outfile = carmen_fopen(log_filename, "r");
   if (outfile != NULL)
   {
@@ -736,11 +777,11 @@ int main(int argc, char **argv)
 	  carmen_fclose(outfile);
   }
   outfile = carmen_fopen(log_filename, "w");
+
   if (outfile == NULL)
 	  carmen_die("Error: Could not open file %s for writing.\n", log_filename);
+  
   carmen_logwrite_write_header(outfile);
-
-  get_logger_params(argc, argv);
 
   if (!(log_odometry && log_laser && log_robot_laser))
 	  carmen_warn("\nWARNING: You are neither logging laser nor odometry messages!\n");

@@ -2,12 +2,13 @@
 #ifndef _CARMEN_ROUTE_PLANNER_INTERFACE_H_
 #define _CARMEN_ROUTE_PLANNER_INTERFACE_H_
 
+
 #include <carmen/carmen.h>
-#include "route_planner_messages.h"
+#include <carmen/route_planner_messages.h>
 
 #ifdef __cplusplus
 extern "C"
-{
+{ 
 #endif
 
 	void
@@ -24,6 +25,9 @@ extern "C"
 
 	void
 	carmen_route_planner_subscribe_destination_message(carmen_route_planner_destination_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+	void
+	carmen_route_planner_unsubscribe_destination_message(carmen_handler_t handler);
 
 	void
 	carmen_route_planner_set_destination(char *destination, carmen_point_t destination_point);

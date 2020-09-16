@@ -35,6 +35,8 @@ static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
 static double distance_to_remove_annotation_goal = 1.5;
 
+extern int behavior_selector_reverse_driving;
+
 int position_of_next_annotation = 0;
 
 
@@ -487,6 +489,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 //	printf("v %lf\n", udatmo_speed_front());
 	int last_obstacle_free_waypoint_index = 0;
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
+	int first_pose_change_direction_index = 0;
 
 #ifdef PRINT_UDATMO_LOG
 
@@ -661,6 +664,26 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, -2.0);
 			moving_obstacle_trasition = 0.0;
 		}
+
+		//parking se pose anterior foi em uma direcao, aguarda o carro terminar todo o path dessa direcao antes de mudar de direcao (reh/drive)
+//		else if ((behavior_selector_reverse_driving) &&
+//				(((rddf->poses[current_goal_rddf_index].v > 0.0) && (rddf->poses[rddf_pose_index].v < 0.0)) ||
+//				((rddf->poses[current_goal_rddf_index].v < 0.0) && (rddf->poses[rddf_pose_index].v > 0.0))))
+//		{
+//			if (first_pose_change_direction_index == 0)
+//				first_pose_change_direction_index = rddf_pose_index;
+//
+//			double dist = DIST2D(rddf->poses[current_goal_rddf_index], robot_pose);
+//			if (dist > 0.5 && robot_pose.v != 0.0)
+//				break;
+//
+//			else if(rddf_pose_index == first_pose_change_direction_index)
+//			{
+//				first_pose_change_direction_index = 0;
+//				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+//			}
+//		}
+
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) && // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo
 				  !rddf_pose_hit_obstacle)) // e se ela nao colide com um obstaculo.

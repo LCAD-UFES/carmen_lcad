@@ -37,6 +37,33 @@ remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channel
 }
 
 void
+offline_map_to_image(carmen_map_p map, cv::Mat *offline_map_img, int channels)
+{
+	unsigned char *image_data = carmen_graphics_convert_to_image(map, 0);
+
+	int i = 0, j = 0;
+	for (i = 0; i < map->config.x_size; i++)
+	{
+		for (j = 0; j < map->config.y_size; j++)
+		{
+			uchar red   = (uchar) image_data[((i * map->config.y_size + j) * 3)];
+			uchar green = (uchar) image_data[((i * map->config.y_size + j) * 3) + 1];
+			uchar blue  = (uchar) image_data[((i * map->config.y_size + j) * 3) + 2];
+			if (channels == 1)
+			{
+				offline_map_img->at<uchar>(map->config.y_size - 1 - j, i) = (red + green + blue) / 3;
+			}
+			else
+			{
+				cv::Vec3b color = cv::Vec3b(blue, green, red);
+				offline_map_img->at<cv::Vec3b>(map->config.y_size - 1 - j, i) = color;
+			}
+		}
+	}
+	free(image_data);
+}
+
+void
 road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
 {
 	road_prob *cell_prob;

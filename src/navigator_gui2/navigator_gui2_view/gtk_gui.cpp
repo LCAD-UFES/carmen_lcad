@@ -831,8 +831,13 @@ namespace View
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
 			}
 
-			sprintf(buffer, "Route Planner State: %lf", globalpos->timestamp);
-			gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
+			if (route_planner_route)
+			{
+				sprintf(buffer, "Route Planner State: %s", print_route_planner_feedback(route_planner_route->route_planner_feedback));
+				gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
+			}
+//			sprintf(buffer, "Route Planner State: %lf", globalpos->timestamp);
+//			gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
 
 			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp), buffer);

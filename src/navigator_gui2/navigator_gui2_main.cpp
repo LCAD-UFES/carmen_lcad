@@ -18,6 +18,7 @@
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
+#include <carmen/route_planner_interface.h>
 #include <carmen/offroad_planner_interface.h>
 
 #include <carmen/carmen_graphics.h>
@@ -1161,6 +1162,13 @@ navigator_ackerman_stop_message_handler()
 
 
 void
+carmen_route_planner_road_network_message_handler(carmen_route_planner_road_network_message *message)
+{
+	gui->route_planner_route = message;
+}
+
+
+void
 carmen_offroad_planner_plan_message_handler(carmen_offroad_planner_plan_message *message)
 {
 	gui->offroad_planner_plan = message;
@@ -1303,12 +1311,12 @@ read_parameters(int argc, char *argv[],
 		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
 	};
 
-	strcat(polygon_file, poly_file);
-
 	carmen_param_allow_unfound_variables(1);
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
 	carmen_param_allow_unfound_variables(0);
+	strcat(polygon_file, poly_file);
+	printf("%s\n", polygon_file);
 	carmen_parse_polygon_file(poly_config, polygon_file);
 
 	carmen_param_t param_cmd_list[] =
@@ -1404,6 +1412,7 @@ subscribe_ipc_messages()
 			(carmen_handler_t) navigator_ackerman_stop_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) carmen_offroad_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
