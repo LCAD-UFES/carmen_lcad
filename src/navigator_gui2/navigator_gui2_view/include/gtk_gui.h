@@ -13,10 +13,8 @@
 #include <gtk/gtkgl.h>
 #include <glade/glade.h>
 
-#include "draw_callbacks.h"
 #include "../../navigator_gui2_main.h"
 
-#include <carmen/carmen.h>
 #include <carmen/global_graphics.h>
 #include <carmen/map_graphics.h>
 #include <carmen/grid_mapping.h>
@@ -41,6 +39,8 @@
 
 #include <carmen/rddf_util.h>
 #include <carmen/carmen_gps_wrapper.h>
+
+#include "draw_callbacks.h"
 
 #include <dirent.h>
 
@@ -376,8 +376,8 @@ namespace View
 				int num_path);
 
 		void navigator_graphics_update_fused_odometry(carmen_point_t fused_odometry_pose);
-		void navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message msg);
-		void navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message msg);
+		void navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message *msg);
+		void navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message *msg);
 		void navigator_graphics_update_parking_assistant_goal(carmen_point_t pose);
 		void navigator_graphics_reset();
 		void navigator_graphics_display_config (char *attribute, int value, char *new_status_message);

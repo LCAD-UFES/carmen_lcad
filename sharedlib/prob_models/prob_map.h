@@ -245,6 +245,7 @@ void carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *
 
 void carmen_prob_models_save_compact_map_as_binary_file(carmen_compact_map_t *cmap, char *path);
 void carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *map, double value);
+void carmen_prob_models_create_compact_map_with_cells_larger_than_value(carmen_compact_map_t *cmap, carmen_map_t *map, double value);
 void carmen_prob_models_free_compact_map(carmen_compact_map_t *map);
 void carmen_prob_models_uncompress_compact_map(carmen_map_t *map, carmen_compact_map_t *cmap);
 

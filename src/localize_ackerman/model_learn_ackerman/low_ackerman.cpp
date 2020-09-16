@@ -116,7 +116,7 @@ int curGeneration;
 TSense sense;
  // This array stores the color values for each grid square when printing out the map. For some reason,
  // moving this out as a global variable greatly increases the stability of the code.
-unsigned char map[MAP_WIDTH][MAP_HEIGHT];
+unsigned char occupancy_map[MAP_WIDTH][MAP_HEIGHT];
 
 FILE *diffFile;
 
@@ -879,7 +879,7 @@ void PrintMap(char *name, TAncestor *parent, int particles, double overlayX, dou
 
   for(x=0; x < width; x++)
     for(y=0; y<height; y++)
-      map[x][y] = 0;
+      occupancy_map[x][y] = 0;
 
   lastx = 0;
   lasty = 0;
@@ -893,10 +893,10 @@ void PrintMap(char *name, TAncestor *parent, int particles, double overlayX, dou
       hit = LowComputeProb(x, y, 1.4, parent->ID);
       // All unknown areas are the same color. You can specify what color that is later
       if (hit == UNKNOWN) 
-	map[x][y] = 255;
+	occupancy_map[x][y] = 255;
       else {
 	// This specifies the range of grey values for the different squares in the map. Black is occupied.
-	map[x][y] = (int) (230 - (hit * 230));
+	occupancy_map[x][y] = (int) (230 - (hit * 230));
 	// This allows us to only print out those sections of the map where there is something interesting happening.
 	if (x > lastx)
 	  lastx = x;
@@ -913,25 +913,25 @@ void PrintMap(char *name, TAncestor *parent, int particles, double overlayX, dou
   if (particles) 
     for (i = 0; i < l_cur_particles_used; i++) 
       if ((l_particle[i].x > 0) && (l_particle[i].x < MAP_WIDTH) && (l_particle[i].y > 0) && (l_particle[i].y < MAP_HEIGHT))
-	map[(int) (l_particle[i].x)][(int) (l_particle[i].y)] = 254;
+	occupancy_map[(int) (l_particle[i].x)][(int) (l_particle[i].y)] = 254;
 
   // And this is where the endpoints of the current scan are visualized, if requested.
   if (overlayX != -1) {
-    map[(int) (overlayX)][(int) (overlayY)] = 254;
+    occupancy_map[(int) (overlayX)][(int) (overlayY)] = 254;
     for (i = 0; i < SENSE_NUMBER; i++) {
       theta = overlayTheta + sense[i].theta;
       x = (int) (overlayX + (cos(theta) * sense[i].distance));
       y = (int) (overlayY + (sin(theta) * sense[i].distance));
 
-      if ((map[x][y] < 250) || (map[x][y] == 255)) {
+      if ((occupancy_map[x][y] < 250) || (occupancy_map[x][y] == 255)) {
 	if (sense[i].distance < MAX_SENSE_RANGE) {
-	  if (map[x][y] < 200)
-	    map[x][y] = 251;
+	  if (occupancy_map[x][y] < 200)
+	    occupancy_map[x][y] = 251;
 	  else 
-	    map[x][y] = 252;
+	    occupancy_map[x][y] = 252;
 	}
 	else
-	  map[x][y] = 253;
+	  occupancy_map[x][y] = 253;
       }
     }
   }
@@ -949,20 +949,20 @@ void PrintMap(char *name, TAncestor *parent, int particles, double overlayX, dou
   // you can play with those colors to your aesthetics.
   for (y = lasty; y >= starty; y--) 
     for (x = startx; x <= lastx; x++) {
-      if (map[x][y] == 254) 
+      if (occupancy_map[x][y] == 254) 
 	fprintf(printFile, "%c%c%c", 255, 0, 0);
-      else if (map[x][y] == 253) 
+      else if (occupancy_map[x][y] == 253) 
 	fprintf(printFile, "%c%c%c", 0, 255, 200);
-      else if (map[x][y] == 252) 
+      else if (occupancy_map[x][y] == 252) 
 	fprintf(printFile, "%c%c%c", 255, 55, 55);
-      else if (map[x][y] == 251) 
+      else if (occupancy_map[x][y] == 251) 
 	fprintf(printFile, "%c%c%c", 50, 150, 255);
-      else if (map[x][y] == 250) 
+      else if (occupancy_map[x][y] == 250) 
 	fprintf(printFile, "%c%c%c", 250, 200, 200);
-      else if (map[x][y] == 0) 
+      else if (occupancy_map[x][y] == 0) 
 	fprintf(printFile, "%c%c%c", 100, 250, 100);
       else
-	fprintf(printFile, "%c%c%c", map[x][y], map[x][y], map[x][y]);
+	fprintf(printFile, "%c%c%c", occupancy_map[x][y], occupancy_map[x][y], occupancy_map[x][y]);
     }
       
   // We're finished making the ppm file, and now convert it to png, for compressed storage and easy viewing.

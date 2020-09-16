@@ -513,7 +513,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		carmen_prob_models_free_compact_map(&compact_cost_map);
 	}
 
-	carmen_cpy_compact_cost_message_to_compact_map(&compact_cost_map, message);
+	carmen_cpy_compact_map_message_to_compact_map(&compact_cost_map, message);
 	carmen_prob_models_uncompress_compact_map(&cost_map, &compact_cost_map);
 
 	cost_map.config = message->config;

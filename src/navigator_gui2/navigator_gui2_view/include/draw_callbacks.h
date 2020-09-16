@@ -15,14 +15,12 @@
 #include <gtk/gtkgl.h>
 #include <glade/glade.h>
 
-
-
 #include <gtk_gui.h>
 
 #include <carmen/global_graphics.h>
 #include <carmen/map_graphics.h>
+#include <carmen/mapper_interface.h>
 
-#include "gtk_gui.h"
 
 namespace View
 {

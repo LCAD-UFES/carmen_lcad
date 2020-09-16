@@ -1,27 +1,6 @@
 
 #include "draw_car.h"
 
-struct CarDrawer
-{
-	carmen_vector_3D_t car_size;
-	carmen_pose_3D_t car_pose;
-	double car_axis_distance;
-	double car_wheel_diameter;
-
-	carmen_pose_3D_t sensor_board_1_pose;
-
-	carmen_vector_3D_t laser_size;
-	carmen_pose_3D_t laser_pose;
-	
-	carmen_vector_3D_t sensor_box_size;
-	carmen_pose_3D_t sensor_box_pose;
-
-	carmen_vector_3D_t xsens_size;
-	carmen_pose_3D_t xsens_pose;	
-
-	GLMmodel* carModel;
-};
-
 static void drawBox(double length_x, double length_y, double length_z);
 
 
@@ -44,9 +23,8 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	{"carmodel", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.roll), 0, NULL},
 	{"carmodel", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.pitch), 0, NULL},
 	{"carmodel", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.yaw), 0, NULL},
-	{"car", "axis_distance", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 0, NULL},
-	{"car", "wheel_diameter", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_diameter), 0, NULL},
-
+	{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 0, NULL},
+	{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 0, NULL},
 	{"sensor_board_1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 0, NULL},
 	{"sensor_board_1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 0, NULL},
 	{"sensor_board_1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 0, NULL},
@@ -280,7 +258,7 @@ void draw_car(CarDrawer* carDrawer)
 	// Car
 	glPushMatrix();
 
-		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_diameter/2);
+		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
 		glRotatef(90.0, 1.0, 0.0, 0.0);
 		glRotatef(0.0, 0.0, 1.0, 0.0);
 
@@ -357,20 +335,20 @@ void draw_car(CarDrawer* carDrawer)
 		glPushMatrix();
 			
 			glColor3f(0.3,0.3,0.3);
-			draw_wheel_axis(carDrawer->car_wheel_diameter,carDrawer->car_size.y);
+			draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
 
 			glPushMatrix();
 				glTranslatef(carDrawer->car_axis_distance, 0.0, 0.0);
-				draw_wheel_axis(carDrawer->car_wheel_diameter,carDrawer->car_size.y);
+				draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
 			glPopMatrix();
 
 			glColor3f(1.0,0.0,0.0);
 			glPushMatrix();
-				glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_diameter/2);
+				glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
 				glRotatef(carDrawer->car_pose.orientation.roll, 1.0f, 0.0f, 0.0f);
 				glRotatef(carDrawer->car_pose.orientation.pitch, 0.0f, 1.0f, 0.0f);
 				glRotatef(carDrawer->car_pose.orientation.yaw,  0.0f, 0.0f, 1.0f);
-				drawBox(carDrawer->car_size.x, carDrawer->car_size.y, carDrawer->car_size.z-carDrawer->car_wheel_diameter);
+				drawBox(carDrawer->car_size.x, carDrawer->car_size.y, carDrawer->car_size.z-carDrawer->car_wheel_radius * 2.0);
 			glPopMatrix();
 
 		glPopMatrix();
