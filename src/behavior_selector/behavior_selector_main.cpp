@@ -808,10 +808,15 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 
 	if (behavior_selector_performs_path_planning)
 	{
-		set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
+		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
+		{
+			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
 				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi.v,
 				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
-		current_set_of_paths = &set_of_paths;
+			current_set_of_paths = &set_of_paths;
+		}
+		else
+			current_set_of_paths = NULL;
 	}
 
 	compact_occupancy_map = obstacle_distance_mapper_uncompress_occupancy_map(&occupancy_map, compact_occupancy_map, carmen_mapper_compact_map_msg);
