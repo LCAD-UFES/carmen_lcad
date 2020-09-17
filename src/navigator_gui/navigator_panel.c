@@ -682,8 +682,7 @@ static void truepos_handler(carmen_simulator_ackerman_truepos_message *msg)
 
 static void objects_handler(carmen_simulator_ackerman_objects_message *msg)
 {
-	navigator_graphics_update_simulator_objects
-	(msg->num_objects, msg->objects_list);
+	navigator_graphics_update_simulator_objects(msg->num_objects, msg->objects);
 }
 
 static void plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)

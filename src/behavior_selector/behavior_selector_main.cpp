@@ -20,7 +20,6 @@
 #include <carmen/frenet_path_planner_interface.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/mapper_interface.h>
-#include <carmen/mapper_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/obstacle_distance_mapper_datmo.h>
 
@@ -160,6 +159,8 @@ double parking_speed_limit;
 
 carmen_map_t occupancy_map;
 carmen_map_server_offline_map_message *offline_map = NULL;
+
+carmen_simulator_ackerman_objects_message *carmen_simulator_ackerman_simulated_objects = NULL;
 
 
 int
@@ -445,6 +446,119 @@ add_larger_simulated_object(carmen_ackerman_traj_point_t *object_pose)
 			logitudinal_disp * sin(object_pose->theta);
 	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
 	virtual_laser_message.num_positions++;
+}
+
+
+void
+add_object_to_map(double width, double length, double x, double y, double theta)
+{
+	double logitudinal_disp = -length / 2.0;
+	double lateral_disp = -width / 2.0;
+	for ( ; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
+	{
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x +
+				lateral_disp * cos(theta + M_PI / 2.0) +
+				logitudinal_disp * cos(theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y +
+				lateral_disp * sin(theta + M_PI / 2.0) +
+				logitudinal_disp * sin(theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x +
+				lateral_disp * cos(theta - M_PI / 2.0) +
+				logitudinal_disp * cos(theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y +
+				lateral_disp * sin(theta - M_PI / 2.0) +
+				logitudinal_disp * sin(theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+	}
+
+	lateral_disp = width / 2.0;
+	for ( ; logitudinal_disp < length / 2.0; logitudinal_disp = logitudinal_disp + 0.2)
+	{
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x +
+				lateral_disp * cos(theta + M_PI / 2.0) +
+				logitudinal_disp * cos(theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y +
+				lateral_disp * sin(theta + M_PI / 2.0) +
+				logitudinal_disp * sin(theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x +
+				lateral_disp * cos(theta - M_PI / 2.0) +
+				logitudinal_disp * cos(theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y +
+				lateral_disp * sin(theta - M_PI / 2.0) +
+				logitudinal_disp * sin(theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+	}
+
+	for (lateral_disp = -width / 2.0; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
+	{
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x +
+				lateral_disp * cos(theta + M_PI / 2.0) +
+				logitudinal_disp * cos(theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y +
+				lateral_disp * sin(theta + M_PI / 2.0) +
+				logitudinal_disp * sin(theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x +
+				lateral_disp * cos(theta - M_PI / 2.0) +
+				logitudinal_disp * cos(theta);
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y +
+				lateral_disp * sin(theta - M_PI / 2.0) +
+				logitudinal_disp * sin(theta);
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+		virtual_laser_message.num_positions++;
+	}
+}
+
+
+void
+add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message *msg)
+{
+	if (!msg)
+		return;
+
+	for (int index = 0; index < msg->num_objects; index++)
+	{
+		double width = 1.7;
+		double length = 4.1;
+		switch (msg->objects[index].type)
+		{
+		case CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT:
+		case CARMEN_SIMULATOR_ACKERMAN_LINE_FOLLOWER:
+		case CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT:
+			break;
+
+		case CARMEN_SIMULATOR_ACKERMAN_PERSON:
+			width = 0.5;
+			length = 0.5;
+			break;
+
+		case CARMEN_SIMULATOR_ACKERMAN_BIKE:
+			width = 0.5;
+			length = 1.5;
+			break;
+
+		case CARMEN_SIMULATOR_ACKERMAN_CAR:
+			width = 1.7;
+			length = 4.1;
+			break;
+
+		case CARMEN_SIMULATOR_ACKERMAN_TRUCK:
+			width = 2.5;
+			length = 15.0;
+			break;
+		}
+		add_object_to_map(width, length, msg->objects[index].x, msg->objects[index].y, msg->objects[index].theta);
+	}
 }
 
 
@@ -925,6 +1039,8 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 //		add_simulated_object(simulated_object_pose2);
 #endif
 
+	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects);
+
 	if (virtual_laser_message.num_positions >= 0)
 		publish_simulated_objects();
 
@@ -1149,6 +1265,13 @@ static void
 carmen_map_server_offline_map_handler(carmen_map_server_offline_map_message *msg)
 {
 	offline_map = msg;
+}
+
+
+static void
+carmen_simulator_ackerman_objects_message_handler(carmen_simulator_ackerman_objects_message *msg)
+{
+	carmen_simulator_ackerman_simulated_objects = msg;
 }
 
 
@@ -1423,6 +1546,8 @@ register_handlers()
 		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_map_server_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (carmen_simulator_ackerman_objects_message_handler), CARMEN_SUBSCRIBE_LATEST);
 }
 
 

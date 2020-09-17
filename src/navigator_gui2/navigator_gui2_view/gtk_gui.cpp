@@ -1124,14 +1124,14 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_simulator_objects(int num_objects, carmen_traj_point_t *objects_list)
+	GtkGui::navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list)
 	{
 		int i;
 
 		if (simulator_objects != NULL)
 			carmen_list_destroy(&simulator_objects);
 
-		simulator_objects = carmen_list_create(sizeof(carmen_traj_point_t), num_objects);
+		simulator_objects = carmen_list_create(sizeof(carmen_simulator_ackerman_objects_t), num_objects);
 		simulator_objects->length = 0;
 
 		for (i = 0; i < num_objects; i++)
@@ -1726,9 +1726,7 @@ namespace View
 		GdkCursor *cursor;
 
 		if ((placement_status == PLACING_ROBOT) ||
-				((placement_status == NO_PLACEMENT) &&
-						((event->state & GDK_CONTROL_MASK) &&
-								(event->button == 3))))
+			((placement_status == NO_PLACEMENT) && ((event->state & GDK_CONTROL_MASK) && (event->button == 3))))
 		{
 			//		if (GTK_TOGGLE_BUTTON(autonomous_button)->active)
 			//		{
@@ -1786,7 +1784,7 @@ namespace View
 	{
 		GdkCursor *cursor;
 		if ((placement_status == PLACING_GOAL) ||
-				((placement_status == NO_PLACEMENT) && (event->button == 1) && (event->state & GDK_CONTROL_MASK)))
+			((placement_status == NO_PLACEMENT) && (event->button == 1) && (event->state & GDK_CONTROL_MASK)))
 		{
 			placement_status = NO_PLACEMENT;
 
@@ -1914,20 +1912,23 @@ namespace View
 	GtkGui::orienting_simulator_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point)
 	{
 		GdkCursor *cursor;
-		double angle;
 		if (placement_status == ORIENTING_SIMULATOR)
 		{
 			placement_status = NO_PLACEMENT;
-			angle = atan2(world_point->pose.y - new_person.pose.y,
-					world_point->pose.x - new_person.pose.x);
+			double angle = atan2(world_point->pose.y - new_simulator.pose.y,
+					world_point->pose.x - new_simulator.pose.x);
 			new_simulator.pose.theta = angle;
-			carmen_simulator_ackerman_set_truepose(&(new_simulator.pose));
+			double speed = hypot(world_point->pose.y - new_simulator.pose.y,
+					world_point->pose.x - new_simulator.pose.x);
+			speed /= 10.0;
+			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, object_type);
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
-			return TRUE;
-		}
-		return FALSE;
 
+			return (TRUE);
+		}
+
+		return (FALSE);
 	}
 
 	int
@@ -2513,7 +2514,7 @@ namespace View
 	{
 		int index;
 		carmen_world_point_t particle;
-		carmen_traj_point_t *simulator_object;
+		carmen_simulator_ackerman_objects_t *simulator_object;
 		double circle_size;
 
 		if (nav_panel_config->show_simulator_objects)
@@ -2526,7 +2527,7 @@ namespace View
 			{
 				for (index = 0; index < simulator_objects->length; index++)
 				{
-					simulator_object = (carmen_traj_point_t *) carmen_list_get(simulator_objects, index);
+					simulator_object = (carmen_simulator_ackerman_objects_t *) carmen_list_get(simulator_objects, index);
 					particle.pose.x	 = simulator_object->x;
 					particle.pose.y	 = simulator_object->y;
 					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE, &particle, circle_size);

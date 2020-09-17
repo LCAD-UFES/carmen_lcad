@@ -1124,6 +1124,8 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 				if (global_gui->near_rddf_point_index < 0)
 					global_gui->near_rddf_point_index = 0;
 				global_gui->near_rddf_point = &(global_gui->edited_rddf_goal_list[global_gui->near_rddf_point_index]);
+
+				global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_PERSON;
 				break;
 
 			case GDK_d:
@@ -1136,6 +1138,16 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 
 			case GDK_c:
 				global_gui->freeze_status = (global_gui->freeze_status)? false: true;
+
+				global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_CAR;
+				break;
+
+			case GDK_b:
+				global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_BIKE;
+				break;
+
+			case GDK_t:
+				global_gui->object_type =  CARMEN_SIMULATOR_ACKERMAN_TRUCK;
 				break;
 
 			default:
@@ -1148,9 +1160,22 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 	{
 		switch (event->keyval)
 		{
-			case GDK_c:
-				global_gui->freeze_status = (global_gui->freeze_status)? false: true;
-				break;
+		case GDK_p:
+			global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_PERSON;
+			break;
+
+		case GDK_b:
+			global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_BIKE;
+			break;
+
+		case GDK_t:
+			global_gui->object_type =  CARMEN_SIMULATOR_ACKERMAN_TRUCK;
+			break;
+
+		case GDK_c:
+			global_gui->freeze_status = (global_gui->freeze_status)? false: true;
+			global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_CAR;
+			break;
 
 			default:
 				return FALSE;

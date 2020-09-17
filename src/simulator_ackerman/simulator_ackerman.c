@@ -207,7 +207,8 @@ publish_objects(double timestamp)
 		first = 0;
 	}
 
-	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
+//	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
+	carmen_simulator_ackerman_get_objects(&(objects.num_objects), &(objects.objects));
 	objects.timestamp = timestamp;
 	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME, &objects);
 	carmen_test_ipc(err, "Could not publish simulator_objects_message",
@@ -331,8 +332,6 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	else
 		update_target_v_and_target_phi(simulator_config);
 
-	carmen_simulator_ackerman_update_objects(simulator_config);
-
 	if (!use_truepos)
 	{
 		publish_odometry(timestamp);
@@ -432,7 +431,7 @@ set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 	IPC_unmarshallData(formatter, callData, &msg, sizeof(carmen_simulator_ackerman_set_object_message));
 	IPC_freeByteArray(callData);
 
-	carmen_simulator_ackerman_create_object(msg.pose.x, msg.pose.y, msg.pose.theta,	CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT, msg.speed);
+	carmen_simulator_ackerman_create_object(msg.pose.x, msg.pose.y, msg.pose.theta,	msg.type, msg.speed);
 }
 
 

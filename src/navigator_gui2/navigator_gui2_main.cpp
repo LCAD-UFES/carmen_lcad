@@ -1028,11 +1028,10 @@ carmen_navigator_gui_path_message_handler(carmen_navigator_gui_path_message *msg
 }
 
 
-
 static void
 carmen_simulator_ackerman_objects_message_handler(carmen_simulator_ackerman_objects_message *msg)
 {
-	gui->navigator_graphics_update_simulator_objects(msg->num_objects, msg->objects_list);
+	gui->navigator_graphics_update_simulator_objects(msg->num_objects, msg->objects);
 }
 
 

@@ -312,6 +312,7 @@ namespace View
 		int near_rddf_point_index;
 
 		bool freeze_status;
+		carmen_simulator_ackerman_object_t object_type;
 
 		car_panel *car_panel_gl;
 
@@ -361,7 +362,7 @@ namespace View
 		void navigator_graphics_redraw_superimposed();
 		void navigator_graphics_change_map(carmen_map_p new_map);
 		void navigator_graphics_update_simulator_truepos(carmen_point_t truepose);
-		void navigator_graphics_update_simulator_objects(int num_objects, carmen_traj_point_t *objects_list);
+		void navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list);
 		void navigator_graphics_update_moving_objects(int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking);
 
 		void navigator_graphics_update_plan_to_draw(int path_size, carmen_ackerman_traj_point_t *path);

@@ -97,7 +97,10 @@ pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title
 void
 pid_plot_velocity(double current_vel, double desired_vel, double y_range, char* title)
 {
+	return; // Para nao plotar
+
 	#define PAST_SIZE 300
+
 	static list<double> cvel;
 	static list<double> dvel;
 	static list<double> timestamp;
@@ -136,11 +139,10 @@ pid_plot_velocity(double current_vel, double desired_vel, double y_range, char* 
 
 	fclose(gnuplot_data_file);
 
+	fprintf(gnuplot_pipe, "plot "
+		"'./gnuplot_velocity_data.txt' using 1:2 with lines title 'C%s', './gnuplot_velocity_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
 
-	// fprintf(gnuplot_pipe, "plot "
-	// 		"'./gnuplot_velocity_data.txt' using 1:2 with lines title 'C%s', './gnuplot_velocity_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
-
-	// fflush(gnuplot_pipe);
+	fflush(gnuplot_pipe);
 }
 
 
