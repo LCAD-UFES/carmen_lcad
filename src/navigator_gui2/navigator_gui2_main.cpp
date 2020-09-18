@@ -52,6 +52,9 @@ static char *map_path = NULL;
 char *annotation_path = NULL;
 int autonomous_record_screen = 0;
 
+int publish_map_view = 0;
+double publish_map_view_interval = 0.025;
+
 static carmen_point_t localize_std;
 static View::GtkGui *gui;
 
@@ -1336,11 +1339,22 @@ read_parameters(int argc, char *argv[],
 		build_glade_with_annotation (annotation_path);
 		use_glade_with_annotations = 1;
 	}
+
+	carmen_param_t param_publish_list[] =
+	{
+		{(char *) "navigator_panel", (char *) "publish_map_view", 		   CARMEN_PARAM_ONOFF,  &publish_map_view, 		    1, NULL},
+		{(char *) "navigator_panel", (char *) "publish_map_view_interval", CARMEN_PARAM_DOUBLE, &publish_map_view_interval, 1, NULL},
+	};
+
+	num_items = sizeof(param_publish_list) / sizeof(param_publish_list[0]);
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_publish_list, num_items);
 }
 
 
 void
 subscribe_ipc_messages()
+
 {
 	IPC_RETURN_TYPE err;
 

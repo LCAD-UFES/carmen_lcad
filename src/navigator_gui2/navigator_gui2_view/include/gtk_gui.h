@@ -333,6 +333,8 @@ namespace View
 		void get_place_of_interest(char *goal_source_name);
 		int get_state_code(char* state_name);
 		void save_to_image(GtkMapViewer *mapv);
+		void do_publish_map_view(GtkMapViewer *mapv);
+		double time_of_last_publish = 0.0;
 		void do_redraw(void);
 		void label_autonomy_button(char *str);
 		void change_cursor(GdkColor *fg, GdkColor *bg);
