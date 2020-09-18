@@ -521,8 +521,8 @@ my_f(const gsl_vector *v, void *params)
 
 			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(current, distance_map);
 
-			if(distance > 0)
-				obstacle_cost -= distance;
+//			if(distance > 0)
+//				obstacle_cost -= distance;
 
 			if(distance <= dmax)
 				obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
@@ -593,8 +593,8 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 		i.theta = atan2(i.y - i_next.y, i.x - i_next.x);
 
 	distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(i, distance_map);
-	if(distance > 0)
-		obstacle_cost -= distance;
+//	if(distance > 0)
+//		obstacle_cost -= distance;
 
 	if(distance <= dmax)
 		obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
