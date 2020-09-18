@@ -1,4 +1,5 @@
 #include "gtk_gui.h"
+#include <carmen/navigator_gui2_interface.h>
 
 using namespace std;
 extern int record_screen;
@@ -6,6 +7,9 @@ extern int use_glade_with_annotations;
 extern char place_of_interest[2048];
 extern std::vector <carmen_annotation_t> annotation_list;
 extern int use_route_planner_in_graph_mode;
+extern int publish_map_view;
+extern double publish_map_view_interval;
+
 int button_record_verification=0;
 int unsubscribe_map_server = 0;
 
@@ -1671,6 +1675,31 @@ namespace View
 
 	}
 
+
+	void
+	GtkGui::do_publish_map_view(GtkMapViewer *mapv)
+	{
+		if (mapv == NULL || mapv->drawing_pixmap == NULL)
+			return;
+
+		GdkPixbuf *pixbuf = gdk_pixbuf_get_from_drawable(NULL, mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
+		int width  = mapv->port_size_x;
+		int height = mapv->port_size_y;
+		int image_size = gdk_pixbuf_get_byte_length(pixbuf);
+		unsigned char *raw_image = (unsigned char *) gdk_pixbuf_get_pixels(pixbuf);
+		double x_origin = mapv->internal_map->config.x_origin;
+		double y_origin = mapv->internal_map->config.y_origin;
+		double resolution = mapv->internal_map->config.resolution / mapv->rescale_size;
+		if (mapv->zoom != 100.0)
+		{
+			x_origin += (mapv->x_scroll_adj->value) * resolution;
+			y_origin += (mapv->y_scroll_adj->upper - mapv->y_scroll_adj->value - height) * resolution;
+		}
+
+		carmen_navigator_gui_publish_map_view_message(width, height, image_size, raw_image, x_origin, y_origin, resolution);
+	}
+
+
 	void
 	GtkGui::do_redraw(void)
 	{
@@ -1700,6 +1729,11 @@ namespace View
 					gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonRecord), GTK_STATE_NORMAL, &color);
 					navigator_graphics_pause_recording_message_received();
 				}
+			}
+			if (publish_map_view && ((carmen_get_time() - this->time_of_last_publish) >= publish_map_view_interval))
+			{
+				do_publish_map_view(this->controls_.map_view);
+				this->time_of_last_publish = carmen_get_time();
 			}
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
