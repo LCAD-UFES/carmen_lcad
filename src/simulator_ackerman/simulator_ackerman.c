@@ -28,6 +28,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/map_server_interface.h>
+#include <carmen/route_planner_interface.h>
 #include <control.h>
 
 #include "simulator_ackerman.h"
@@ -64,6 +65,9 @@ static int connected_to_iron_bird = 0;
 static int use_external_true_pose = 0;
 static double iron_bird_v = 0.0;
 static double iron_bird_phi = 0.0;
+
+carmen_route_planner_road_network_message *road_network_message = NULL;
+int autonomous = 0;
 
 
 static void
@@ -432,6 +436,10 @@ set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 	IPC_freeByteArray(callData);
 
 	carmen_simulator_ackerman_create_object(msg.pose.x, msg.pose.y, msg.pose.theta,	msg.type, msg.speed);
+
+	FILE *moving_objects_file = fopen("moving_objects_file.txt", "a");
+	fprintf(moving_objects_file, "%d %lf %lf %lf %lf\n", msg.type, msg.pose.x, msg.pose.y, msg.pose.theta, msg.speed);
+	fclose(moving_objects_file);
 }
 
 
@@ -538,7 +546,7 @@ map_update_handler(carmen_map_t *new_map)
 
 	if (map_x < 0 || map_x >= simulator_config->map.config.x_size ||
 			map_y < 0 || map_y >= simulator_config->map.config.y_size ||
-			simulator_config->map.map[map_x][map_y] > .15 ||
+			simulator_config->map.map[map_x][map_y] > 0.5 ||
 			carmen_simulator_object_too_close(simulator_config->true_pose.x, simulator_config->true_pose.y, -1))
 	{
 		simulator_config->odom_pose = zero;
@@ -689,6 +697,20 @@ truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 }
 
 
+static void
+carmen_route_planner_road_network_message_handler(carmen_route_planner_road_network_message *msg)
+{
+	road_network_message = msg;
+}
+
+
+static void
+carmen_navigator_ackerman_status_message_handler(carmen_navigator_ackerman_status_message *msg)
+{
+	autonomous = (msg->autonomous == 1)? TRUE: FALSE;
+}
+
+
 /* handles ctrl+c */
 static void
 shutdown_module(int x)
@@ -791,6 +813,9 @@ subscribe_to_relevant_messages()
 	carmen_rl_control_subscribe_message(NULL, (carmen_handler_t) rl_control_handler, CARMEN_SUBSCRIBE_LATEST);
 
 #endif
+
+	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	return (0);
 }
@@ -928,10 +953,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"behavior_selector",  "use_truepos", 	CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
 	};
 
-
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
-
 
 	static char frontlaser_fov_string[256];
 	static char frontlaser_res_string[256];
@@ -1010,8 +1033,6 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
-
-
 	// TODO REMOVER ESTA PARTE E LER OS PARAMETROS DIRETAMENTE PARA O ROBO_CONFIG
 	config->robot_config.maximum_steering_command_rate = config->maximum_steering_command_rate;
 	config->robot_config.understeer_coeficient = config->understeer_coeficient;
@@ -1063,7 +1084,6 @@ main(int argc, char **argv)
 		simulate_car_and_publish_readings(NULL, 0, 0);
 		carmen_ipc_sleep(simulator_conf.real_time);
 	}
-
 
 	exit(0);
 }

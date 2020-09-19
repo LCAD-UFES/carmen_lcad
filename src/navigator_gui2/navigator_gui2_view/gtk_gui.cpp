@@ -2549,11 +2549,11 @@ namespace View
 		int index;
 		carmen_world_point_t particle;
 		carmen_simulator_ackerman_objects_t *simulator_object;
-		double circle_size;
+		double circle_radius;
 
 		if (nav_panel_config->show_simulator_objects)
 		{
-			circle_size = robot_config->width / 2.0;
+			circle_radius = 0.25;
 
 			particle.map = the_map_view->internal_map;
 
@@ -2564,8 +2564,8 @@ namespace View
 					simulator_object = (carmen_simulator_ackerman_objects_t *) carmen_list_get(simulator_objects, index);
 					particle.pose.x	 = simulator_object->x;
 					particle.pose.y	 = simulator_object->y;
-					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE, &particle, circle_size);
-					carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE, &particle, circle_size);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE, &particle, circle_radius);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE, &particle, circle_radius);
 				}
 			}
 		}

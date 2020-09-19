@@ -944,7 +944,7 @@ static char
 get_vehicle_category(double width, double length, double longitudinal_v, double lateral_v, int num_samples)
 {
 	vector<vehicle_category_t> categories = {{BIKE, 0.9, 3.0}, {BIKE, 0.5, 1.5},
-											 {PEDESTRIAN, 0.5, 0.5}, {BUS, 2.5, 15.0},
+											 {PEDESTRIAN, 0.5, 0.5}, {BUS, 2.2, 15.0},
 											 {CAR, 1.7, 4.1}, {CAR, 1.7, 2.0}, {CAR, 2.0, 8.0}}; // Trung-Dung Vu Thesis
 
 	double v = sqrt(longitudinal_v * longitudinal_v + lateral_v * lateral_v);

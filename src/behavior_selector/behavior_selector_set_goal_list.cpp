@@ -47,7 +47,7 @@ double speed_around_annotation = 1.0;
 //MOVING_OBJECT moving_object[MOVING_OBJECT_HISTORY_SIZE];
 //int moving_object_in_front_detected = 0;
 
-#define MAX_VIRTUAL_LASER_SAMPLES 100000
+#define MAX_VIRTUAL_LASER_SAMPLES 1000000
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 //SampleFilter filter;
@@ -473,7 +473,8 @@ behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_
 
 
 carmen_ackerman_traj_point_t *
-set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type, carmen_rddf_road_profile_message *rddf, double timestamp)
+set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type,
+		carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
@@ -489,7 +490,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 //	printf("v %lf\n", udatmo_speed_front());
 	int last_obstacle_free_waypoint_index = 0;
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
-	int first_pose_change_direction_index = 0;
+//	int first_pose_change_direction_index = 0;
 
 #ifdef PRINT_UDATMO_LOG
 
@@ -574,6 +575,15 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		}
 #endif
 
+		else if (path_collision_info.valid &&
+				 ((rddf_pose_index == path_collision_info.possible_collision_mo_pose_index) ||
+				  (rddf_pose_index == path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)))
+		{
+			goal_type[goal_index] = MOVING_OBSTACLE_GOAL3;
+			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf);
+			moving_obstacle_trasition = 0.0;
+			break;
+		}
 		else if ((distance_from_car_to_rddf_point > (map_width / 3.0 - distance_car_pose_car_front)) ||
 				 ((rddf_pose_hit_obstacle == 2) && (rddf_pose_index > 10))) // Goal esta fora do mapa
 		{

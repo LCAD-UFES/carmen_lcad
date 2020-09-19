@@ -34,6 +34,7 @@
 #include <carmen/carmen.h>
 #include <carmen/global_graphics.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/route_planner_interface.h>
 
 #include "simulator_ackerman.h"
 #include "objects_ackerman.h"
@@ -49,7 +50,11 @@ static double leg_width = .1;
 static double min_dist_from_robot = .4;
 static double person_speed = .3;
 
+extern carmen_route_planner_road_network_message *road_network_message;
+extern int autonomous;
+
 static void update_other_robot(carmen_object_ackerman_t *object);
+
 
 static void check_list_capacity(void)
 {
@@ -118,10 +123,99 @@ static int in_map(double x, double y, carmen_map_p map)
 
 	occupancy = map->map[map_x][map_y];
 
-	if (occupancy > 0.15 || occupancy < 0)
+	if (occupancy > 0.5 || occupancy < 0)
 		return 0;
 
 	return 1;
+}
+
+carmen_ackerman_traj_point_t *search_old(carmen_ackerman_traj_point_t key, carmen_ackerman_traj_point_t *lane, int size)
+{
+	int begin = 0;
+	int end = size - 1;
+
+	int count = 0;
+	while (begin != end)
+	{
+		double dist_begin = DIST2D(key, lane[begin]);
+		double dist_end = DIST2D(key, lane[end]);
+		if (dist_begin > dist_end)
+			begin = (begin + end) / 2;
+		else
+			end = (begin + end) / 2;
+
+		count++;
+		if (count > size)
+			break;
+	}
+
+	return (&(lane[begin]));
+}
+
+carmen_ackerman_traj_point_t *
+find_nearest_pose_in_lane(carmen_ackerman_traj_point_t key, carmen_ackerman_traj_point_t *lane, int size)
+{
+	double min_distance = DIST2D(key, lane[0]);
+	int index = 0;
+	for (int i = 1; i < size - 1; i++)
+	{
+		double distance = DIST2D(key, lane[i]);
+		if (distance < min_distance)
+		{
+			index = i;
+			min_distance = distance;
+		}
+	}
+
+	return (&(lane[index]));
+}
+
+
+carmen_ackerman_traj_point_t *
+find_nearest_pose_in_the_nearest_lane(carmen_ackerman_traj_point_t pose)
+{
+	carmen_ackerman_traj_point_t *nearest_pose_in_the_nearest_lane = NULL;
+	double nearest_distance = 100000000000.0;
+	for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
+	{
+		carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
+		int size = road_network_message->nearby_lanes_sizes[i];
+		carmen_ackerman_traj_point_t *nearest_pose_in_the_lane = find_nearest_pose_in_lane(pose, lane, size);
+		double distance = DIST2D(pose, *nearest_pose_in_the_lane);
+		if (distance < nearest_distance)
+		{
+			nearest_distance = distance;
+			nearest_pose_in_the_nearest_lane = nearest_pose_in_the_lane;
+		}
+	}
+
+	return (nearest_pose_in_the_nearest_lane);
+}
+
+static void update_object_in_lane(int i, carmen_simulator_ackerman_config_t *simulator_config)
+{
+	double dt = simulator_config->delta_t;
+	carmen_object_ackerman_t new_object = object_list[i];
+	double dx = new_object.tv * dt * cos(new_object.theta);
+	double dy = new_object.tv * dt * sin(new_object.theta);
+	printf("v %lf, dt %lf\n", new_object.tv, dt);
+	new_object.x1 += dx;
+	new_object.y1 += dy;
+
+	carmen_ackerman_traj_point_t pose_ahead;
+	pose_ahead.x = new_object.x1;
+	pose_ahead.y = new_object.y1;
+	carmen_ackerman_traj_point_t *pose_in_lane = find_nearest_pose_in_the_nearest_lane(pose_ahead);
+	int status;
+	carmen_ackerman_traj_point_t next_pose = carmen_get_point_nearest_to_trajectory(&status, pose_in_lane[-1], pose_in_lane[1], pose_ahead, 0.1);
+	new_object.x1 = next_pose.x;
+	new_object.y1 = next_pose.y;
+	new_object.theta = next_pose.theta;
+//	new_object.tv = new_object.tv + 0.05 * (simulator_config->v - new_object.tv);
+	new_object.rv = 0.0;
+
+	object_list[i] = new_object;
+	object_list[i].time_of_last_update = carmen_get_time();
 }
 
 /* randomly updates the person's position based on its velocity */
@@ -382,7 +476,7 @@ add_objects_to_map()
 			break;
 
 		case CARMEN_SIMULATOR_ACKERMAN_TRUCK:
-			width = 2.5;
+			width = 2.2;
 			length = 15.0;
 			break;
 		}
@@ -399,6 +493,9 @@ add_objects_to_map()
 /* updates all objects */
 void carmen_simulator_ackerman_update_objects(carmen_simulator_ackerman_config_t *simulator_config)
 {
+	if (!road_network_message || !autonomous)
+		return;
+
 	for (int index = 0; index < num_objects; index++)
 	{
 		if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT)
@@ -407,8 +504,14 @@ void carmen_simulator_ackerman_update_objects(carmen_simulator_ackerman_config_t
 			update_line_follower(object_list + index, simulator_config);
 		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT)
 			update_other_robot(object_list + index);
+		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_PERSON)
+			update_object_in_lane(index, simulator_config);
+		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_BIKE)
+			update_object_in_lane(index, simulator_config);
 		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_CAR)
-			update_random_object(index, simulator_config);
+			update_object_in_lane(index, simulator_config);
+		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_TRUCK)
+			update_object_in_lane(index, simulator_config);
 		update_traj_object(index);
 	}
 
@@ -513,12 +616,31 @@ void carmen_simulator_ackerman_initialize_object_model(int argc, char *argv[])
 {
 	carmen_param_t param_list[] =
 	{
-	{ "simulator", "person_leg_width", CARMEN_PARAM_DOUBLE, &leg_width, 1, NULL },
-	{ "simulator", "person_dist_from_robot", CARMEN_PARAM_DOUBLE, &min_dist_from_robot, 1, NULL },
-	{ "simulator", "person_speed", CARMEN_PARAM_DOUBLE, &person_speed, 1, NULL } };
+		{ "simulator", "person_leg_width", CARMEN_PARAM_DOUBLE, &leg_width, 1, NULL },
+		{ "simulator", "person_dist_from_robot", CARMEN_PARAM_DOUBLE, &min_dist_from_robot, 1, NULL },
+		{ "simulator", "person_speed", CARMEN_PARAM_DOUBLE, &person_speed, 1, NULL }
+	};
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	// Read moving objects
+	FILE *moving_objects_file = fopen("moving_objects_file.txt", "r");
+	if (moving_objects_file)
+	{
+		char line[2048];
+		while (fgets(line, 2047, moving_objects_file))
+		{
+			if (line[0] == '#')
+				continue;
+
+			int type;
+			double x, y, theta, speed;
+			if (sscanf(line, "%d %lf %lf %lf %lf\n", &type, &x, &y, &theta, &speed) == 5)
+				carmen_simulator_ackerman_create_object(x, y, theta, type, speed);
+		}
+		fclose(moving_objects_file);
+	}
 }
 
 static carmen_object_ackerman_t *

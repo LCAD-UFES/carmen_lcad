@@ -32,13 +32,17 @@ typedef enum ROUTE_PLANNER_FEEDBACK
 {
 	ROUTE_PLANNED,
 	ROUTE_PLANNER_IN_RDDF_MODE,
-	COULD_NOT_COMPUTE_THE_ROUTE
+	COULD_NOT_COMPUTE_THE_ROUTE,
+	PUBLISHING_ROUTE,
+	IDLE
 } carmen_route_planner_feedback_t;
 
 #define print_route_planner_feedback(x) ( \
 	(x == ROUTE_PLANNED)? "ROUTE_PLANNED": \
 	(x == ROUTE_PLANNER_IN_RDDF_MODE)? "ROUTE_PLANNER_IN_RDDF_MODE": \
-	(x == COULD_NOT_COMPUTE_THE_ROUTE)? "COULD_NOT_COMPUTE_THE_ROUTE": "")
+	(x == COULD_NOT_COMPUTE_THE_ROUTE)? "COULD_NOT_COMPUTE_THE_ROUTE": \
+	(x == PUBLISHING_ROUTE)? "PUBLISHING_ROUTE": \
+	(x == IDLE)? "IDLE": ""	)
 
 
 typedef struct
@@ -105,14 +109,14 @@ typedef struct
 
 typedef struct
 {
-	char *route_id;
+	int route_id;
 	int status;			/* enabled:1 , disabled:0 */
 	double timestamp;
 	char *host;
 } carmen_route_planner_route_status_change_message;
 
 #define		CARMEN_ROUTE_PLANNER_ROUTE_STATUS_CHANGE_NAME		"carmen_route_planner_route_status_change"
-#define		CARMEN_ROUTE_PLANNER_ROUTE_STATUS_CHANGE_FMT		"{string, int, double, string}"
+#define		CARMEN_ROUTE_PLANNER_ROUTE_STATUS_CHANGE_FMT		"{int, int, double, string}"
 
 
 typedef struct
@@ -139,10 +143,11 @@ typedef struct
 	double cost;
 } edge_t;
 
+#define DISABLING_COST	1.0e100
 
 typedef struct
 {
-	char *id;
+	int id;
 	carmen_position_t start;
 	carmen_position_t end;
 	edge_t edge;
@@ -163,7 +168,7 @@ typedef struct
 } carmen_route_planner_route_list_message;
 
 #define		CARMEN_ROUTE_PLANNER_ROUTE_LIST_REQUEST_NAME		"carmen_route_planner_route_list_request"
-#define		CARMEN_ROUTE_PLANNER_ROUTE_LIST_REQUEST_FMT			"{{double, double}, double, int, <{string, {double, double}, {double, double}, {int, int, int, int, double}, int}:3>, double, string}"
+#define		CARMEN_ROUTE_PLANNER_ROUTE_LIST_REQUEST_FMT			"{{double, double}, double, int, <{int, {double, double}, {double, double}, {int, int, int, int, double}, int}:3>, double, string}"
 
 #define		CARMEN_ROUTE_PLANNER_ROUTE_LIST_RESPONSE_NAME		"carmen_route_planner_route_list_response"
 #define		CARMEN_ROUTE_PLANNER_ROUTE_LIST_RESPONSE_FMT		CARMEN_ROUTE_PLANNER_ROUTE_LIST_REQUEST_FMT

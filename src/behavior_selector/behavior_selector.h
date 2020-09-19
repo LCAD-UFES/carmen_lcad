@@ -27,21 +27,29 @@ enum
 
 typedef struct
 {
+	int valid;
 	int path_id;
 	double s_distance_without_collision_with_moving_object;	// Distance in seconds. This is related to a path.
-	double s_distance_without_collision_with_static_object;	// Distance in seconds. This is related to a path.
+	int possible_collision_mo_pose_index;					// Future position in the path of a possibly colliding moving object
+	double possible_collision_mo_sv;						// Velocity allong the path of the possibly colliding moving object
+	double possible_collision_mo_dv;						// Velocity orthogonal to the path of the possibly colliding moving object
 	double s_distance_to_moving_object_in_parallel_lane;	// Distance in seconds. This is related to a lane defined by the d distance of farthest point of a path
+	int possible_collision_mo_in_parallel_lane_pose_index;	// Future position in the parallel path (the path not starting at the robot pose, but always at the same final d distance from the main path) of a possibly colliding moving object
+	double possible_collision_mo_in_parallel_lane_sv;		// Velocity allong the parallel path of the possibly colliding moving object
+	double possible_collision_mo_in_parallel_lane_dv;		// Velocity orthogonal to the parallel path of the possibly colliding moving object
+	double s_distance_without_collision_with_static_object;	// Distance in seconds. This is related to a path.
+	int static_object_pose_index;							// Future position in the path of a colliding static object
 	bool path_has_no_collision;
 } path_collision_info_t;
 
 typedef struct
-
 {
 	carmen_point_t pose;
 	double s;
+	double sv;
 	double d;
+	double dv;
 	bool behind;
-
 } moving_object_pose_info_t;
 
 
@@ -93,7 +101,8 @@ extern "C" {
 
 	carmen_rddf_road_profile_message *get_last_rddf_message();
 
-	carmen_ackerman_traj_point_t *set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &goal_type, carmen_rddf_road_profile_message *rddf, double timestamp);
+	carmen_ackerman_traj_point_t *set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type,
+			carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp);
 
 	double distance_between_waypoints_and_goals();
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
@@ -105,12 +114,8 @@ extern "C" {
 
 	void publish_new_best_path(int best_path, double timestamp);
 
-	void set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
-			carmen_moving_objects_point_clouds_message *current_moving_objects,
-			carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp);
-
 	int set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-			int goal_type, double timestamp);
+			int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp);
 
 	carmen_moving_objects_point_clouds_message *behavior_selector_moving_objects_tracking(carmen_frenet_path_planner_set_of_paths *set_of_paths,
 			carmen_obstacle_distance_mapper_map_message *distance_map);

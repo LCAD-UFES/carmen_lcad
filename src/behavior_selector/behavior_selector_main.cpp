@@ -70,6 +70,12 @@
 
 using namespace std;
 
+vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+		carmen_moving_objects_point_clouds_message *current_moving_objects,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp);
+
+
+
 static int necessary_maps_available = 0;
 static bool obstacle_avoider_active_recently = false;
 static int activate_tracking = 0;
@@ -371,7 +377,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	pose_ahead.y = previous_pose.y + dy;
 
 	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
-	for (int i = 0; i < current_set_of_paths->nearby_lanes_sizes[0]; i++)
+	for (int i = 0; i < current_set_of_paths->nearby_lanes_sizes[0] - 1; i++)
 	{
 		int status;
 		next_pose = carmen_get_point_nearest_to_trajectory(&status, current_set_of_paths->nearby_lanes[i], current_set_of_paths->nearby_lanes[i + 1], pose_ahead, 0.1);
@@ -916,7 +922,7 @@ create_carmen_obstacle_distance_mapper_map_message(carmen_obstacle_distance_mapp
 
 
 void
-set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
 
@@ -988,7 +994,7 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	set_path(current_robot_pose_v_and_phi, timestamp);
+	set_path_using_symotha(current_robot_pose_v_and_phi, timestamp);
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
@@ -996,7 +1002,8 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
-	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy, timestamp);
+	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
+			path_collision_info_t {}, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
@@ -1010,7 +1017,8 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	int who_set_the_goal_v = NONE;
 	if (goal_list_size > 0)
 	{
-		who_set_the_goal_v = set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, timestamp);
+		who_set_the_goal_v = set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, last_rddf_message_copy,
+				path_collision_info_t {}, timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 
 		last_valid_goal = *first_goal;
@@ -1048,48 +1056,73 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 }
 
 
+path_collision_info_t
+set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	static carmen_frenet_path_planner_set_of_paths set_of_paths;
+
+	if (behavior_selector_performs_path_planning)
+	{
+		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
+		{
+			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
+				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi.v,
+				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
+			current_set_of_paths = &set_of_paths;
+		}
+		else
+			current_set_of_paths = NULL;
+	}
+
+	distance_map_free_of_moving_objects = distance_map; // O distance_map vem sem objetos móveis do obstacle_distance_mapper
+
+	vector<path_collision_info_t> paths_collision_info;
+	if (use_frenet_path_planner)
+		paths_collision_info = set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi, 0, timestamp);
+//		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
+
+	if (behavior_selector_performs_path_planning)
+	{
+		set_of_paths.selected_path = selected_path_id;
+		carmen_frenet_path_planner_publish_set_of_paths_message(&set_of_paths);
+
+		static carmen_rddf_road_profile_message rddf_msg;
+		rddf_msg.poses = &(set_of_paths.set_of_paths[set_of_paths.selected_path * set_of_paths.number_of_poses]);
+		rddf_msg.poses_back = set_of_paths.poses_back;
+		rddf_msg.number_of_poses = set_of_paths.number_of_poses;
+		rddf_msg.number_of_poses_back = set_of_paths.number_of_poses_back;
+		rddf_msg.annotations = road_network_message->annotations;
+		rddf_msg.annotations_codes = road_network_message->annotations_codes;
+		rddf_msg.timestamp = road_network_message->timestamp;
+		rddf_msg.host = carmen_get_host();
+
+		carmen_rddf_publish_road_profile_message(rddf_msg.poses, rddf_msg.poses_back, rddf_msg.number_of_poses, rddf_msg.number_of_poses_back,
+				rddf_msg.annotations, rddf_msg.annotations_codes);
+
+		// Copia rddf_msg para a global last_rddf_message
+		behavior_selector_motion_planner_publish_path_message(&rddf_msg, param_rddf_num_poses_by_car_velocity);
+
+		last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+		if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+			publish_behavior_selector_road_profile_message(&rddf_msg);
+
+		free(set_of_paths.set_of_paths);
+	}
+
+	if ((int) paths_collision_info.size() > selected_path_id)
+		return (paths_collision_info[selected_path_id]);
+	else
+		return (path_collision_info_t {});
+}
+
+
 int
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	////////////////////////////////////////////////////////////////
-
-//	evaluate_paths();
-//	select_best_path_goal_and_goal_velocity();
-//
-//	set_of_paths.selected_path = selected_path_id;
-//	carmen_frenet_path_planner_publish_set_of_paths_message(&set_of_paths);
-//
-//	static carmen_rddf_road_profile_message rddf_msg;
-//	rddf_msg.poses = &(set_of_paths.set_of_paths[set_of_paths.selected_path * set_of_paths.number_of_poses]);
-//	rddf_msg.poses_back = set_of_paths.poses_back;
-//	rddf_msg.number_of_poses = set_of_paths.number_of_poses;
-//	rddf_msg.number_of_poses_back = set_of_paths.number_of_poses_back;
-//	rddf_msg.annotations = road_network_message->annotations;
-//	rddf_msg.annotations_codes = road_network_message->annotations_codes;
-//	rddf_msg.timestamp = road_network_message->timestamp;
-//	rddf_msg.host = carmen_get_host();
-//
-//	carmen_rddf_publish_road_profile_message(rddf_msg.poses, rddf_msg.poses_back, rddf_msg.number_of_poses, rddf_msg.number_of_poses_back,
-//			rddf_msg.annotations, rddf_msg.annotations_codes);
-//
-//	// Copia rddf_msg para a global last_rddf_message
-//	behavior_selector_motion_planner_publish_path_message(&rddf_msg, param_rddf_num_poses_by_car_velocity);
-//
-//	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
-//	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
-//		publish_behavior_selector_road_profile_message(&rddf_msg);
-//
-//	free(set_of_paths.set_of_paths);
-//
-//	publish_goal_list(goal_list, goal_list_size, timestamp);
-//	publish_current_state(behavior_selector_state_message);
-
-	//////////////////////////////////////////////////////////////////
-
-
-	set_path(current_robot_pose_v_and_phi, timestamp);
+	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, timestamp);
+//	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
@@ -1097,7 +1130,8 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
-	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy, timestamp);
+	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
+			path_collision_info, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
@@ -1111,7 +1145,8 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	int who_set_the_goal_v = NONE;
 	if (goal_list_size > 0)
 	{
-		who_set_the_goal_v = set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, timestamp);
+		who_set_the_goal_v = set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, last_rddf_message_copy,
+				path_collision_info, timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 
 		last_valid_goal = *first_goal;
@@ -1135,8 +1170,11 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
 	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose2)
-		add_simulated_object(simulated_object_pose2);
+		add_larger_simulated_object(simulated_object_pose2);
+//		add_simulated_object(simulated_object_pose2);
 #endif
+
+	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects);
 
 	if (virtual_laser_message.num_positions >= 0)
 		publish_simulated_objects();
@@ -1534,8 +1572,6 @@ register_handlers()
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 	if (behavior_selector_performs_path_planning)
 	{
 		carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1544,6 +1580,8 @@ register_handlers()
 
 	if (behavior_selector_use_symotha)
 		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_map_server_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 

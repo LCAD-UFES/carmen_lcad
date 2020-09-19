@@ -20,11 +20,11 @@ int superimposed_is_set = 0;
 //extern "C" G_MODULE_EXPORT
 gboolean on_drawArea_idle(void *data)
 {
-	static double last_time = 0.0;
-
-	double time = carmen_get_time();
-	if ((time - last_time) < 0.05)
-		return (TRUE);
+//	static double last_time = 0.0;
+//
+//	double time = carmen_get_time();
+//	if ((time - last_time) < 0.05)
+//		return (TRUE);
 
 	GtkGui *gui = static_cast<GtkGui*>(data);
 
@@ -38,7 +38,7 @@ gboolean on_drawArea_idle(void *data)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	global_gui->draw_gl_components_car_panel();
 
-	last_time = time;
+//	last_time = time;
 
 	return (TRUE);
 }
