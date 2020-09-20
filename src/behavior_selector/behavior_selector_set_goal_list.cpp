@@ -576,8 +576,8 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 #endif
 
 		else if (path_collision_info.valid &&
-				 ((rddf_pose_index == path_collision_info.possible_collision_mo_pose_index) ||
-				  (rddf_pose_index == path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)))
+				 ((rddf_pose_index == path_collision_info.possible_collision_mo_pose_index)))// ||
+//				  (rddf_pose_index == path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)))
 		{
 			goal_type[goal_index] = MOVING_OBSTACLE_GOAL3;
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf);

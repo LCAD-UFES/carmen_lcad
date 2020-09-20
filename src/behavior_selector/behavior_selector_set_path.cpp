@@ -140,7 +140,6 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 
 	double min_collision_s_distance = (double) num_samples * delta_t;
 	int index_in_path = current_set_of_paths->number_of_poses;
-	int mo = 0;
 	for (int s = 0; s < num_samples; s++)
 	{
 		double s_displacement = get_s_displacement_for_a_given_sample(s, current_robot_pose_v_and_phi.v, delta_t);
@@ -148,7 +147,7 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 		if (index_in_path == current_set_of_paths->number_of_poses - 1)
 			break;
 
- 		for (mo = 0; mo < current_moving_objects->num_point_clouds; mo++)
+ 		for (int mo = 0; mo < current_moving_objects->num_point_clouds; mo++)
 		{
 // 			if (fabs(current_moving_objects->point_clouds[i].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
 // 				continue;
@@ -157,8 +156,8 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 // 			if (moving_objects_poses[s][i].behind && (fabs(moving_objects_poses[s][i].d - current_d) < 0.8)) // moving objects atras do carro
 // 				longitudinal_safety_magin = 0.5;
 // 			else
- 			double longitudinal_safety_magin = in_path_longitudinal_safety_magin_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
-			double lateral_safety_margin = get_robot_config()->model_predictive_planner_obstacles_safe_distance;// +
+ 			double longitudinal_safety_magin = 5.0 + in_path_longitudinal_safety_magin_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
+			double lateral_safety_margin = get_robot_config()->obstacle_avoider_obstacles_safe_distance;// +
 //					0.1 * fabs(current_moving_objects->point_clouds[i].linear_velocity) *
 //					(current_moving_objects->point_clouds[i].width / current_moving_objects->point_clouds[i].length);
 			carmen_point_t moving_objects_pose = {moving_objects_poses[s][mo].pose.x, moving_objects_poses[s][mo].pose.y, moving_objects_poses[s][mo].pose.theta};
@@ -180,20 +179,24 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 				}
 
 				if (((double) s * delta_t) < min_collision_s_distance)
+				{
 					min_collision_s_distance = (double) s * delta_t;
+					path_collision_info.s_distance_without_collision_with_moving_object = min_collision_s_distance;
+					path_collision_info.possible_collision_mo_pose_index = index_in_path;
+					path_collision_info.possible_collision_mo_sv = moving_objects_poses[0][mo].sv;
+					path_collision_info.possible_collision_mo_dv = moving_objects_poses[0][mo].dv;
+				}
 
 				break;
 			}
 		}
 	}
 
-	path_collision_info.s_distance_without_collision_with_moving_object = min_collision_s_distance;
 	if (min_collision_s_distance == (double) num_samples * delta_t)
+	{
+		path_collision_info.s_distance_without_collision_with_moving_object = min_collision_s_distance;
 		path_collision_info.possible_collision_mo_pose_index = current_set_of_paths->number_of_poses;
-	else
-		path_collision_info.possible_collision_mo_pose_index = index_in_path;
-	path_collision_info.possible_collision_mo_sv = moving_objects_poses[0][mo].sv;
-	path_collision_info.possible_collision_mo_dv = moving_objects_poses[0][mo].dv;
+	}
 }
 
 
@@ -248,7 +251,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 // 				continue;
 
  			double longitudinal_safety_magin = in_lane_longitudinal_safety_magin_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
-			double lateral_safety_margin = get_robot_config()->model_predictive_planner_obstacles_safe_distance;
+			double lateral_safety_margin = get_robot_config()->obstacle_avoider_obstacles_safe_distance;
 			carmen_point_t moving_objects_pose = {moving_objects_poses[0][mo].pose.x, moving_objects_poses[0][mo].pose.y, moving_objects_poses[0][mo].pose.theta};
 			if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_objects_pose,
 					&(current_moving_objects->point_clouds[mo]), longitudinal_safety_magin, lateral_safety_margin))//, 0, 0.0, 0.0))
@@ -261,22 +264,26 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 					virtual_laser_message.num_positions++;
 				}
 				if (((double) s * delta_t) < min_s_distance)
+				{
 					min_s_distance = (double) s * delta_t;
+					path_collision_info.s_distance_to_moving_object_in_parallel_lane = min_s_distance;
+					path_collision_info.possible_collision_mo_in_parallel_lane_pose_index = index_in_path;
+					path_collision_info.possible_collision_mo_in_parallel_lane_sv = moving_objects_poses[0][mo].sv;
+					path_collision_info.possible_collision_mo_in_parallel_lane_dv = moving_objects_poses[0][mo].dv;
+				}
 
 				break;
 			}
 		}
 	}
 
-	free(path);
-
-	path_collision_info.s_distance_to_moving_object_in_parallel_lane = min_s_distance;
 	if (min_s_distance == (double) num_samples * delta_t)
+	{
+		path_collision_info.s_distance_to_moving_object_in_parallel_lane = min_s_distance;
 		path_collision_info.possible_collision_mo_in_parallel_lane_pose_index = current_set_of_paths->number_of_poses;
-	else
-		path_collision_info.possible_collision_mo_in_parallel_lane_pose_index = index_in_path;
-	path_collision_info.possible_collision_mo_in_parallel_lane_sv = moving_objects_poses[0][mo].sv;
-	path_collision_info.possible_collision_mo_in_parallel_lane_dv = moving_objects_poses[0][mo].dv;
+	}
+
+	free(path);
 }
 
 
