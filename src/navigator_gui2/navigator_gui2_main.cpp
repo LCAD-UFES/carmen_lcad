@@ -53,7 +53,7 @@ char *annotation_path = NULL;
 int autonomous_record_screen = 0;
 
 int publish_map_view = 0;
-double publish_map_view_interval = 0.025;
+double publish_map_view_interval = 0.5;
 
 static carmen_point_t localize_std;
 static View::GtkGui *gui;

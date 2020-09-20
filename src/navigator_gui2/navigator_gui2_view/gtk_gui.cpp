@@ -1679,14 +1679,29 @@ namespace View
 	void
 	GtkGui::do_publish_map_view(GtkMapViewer *mapv)
 	{
+		static unsigned char *raw_image = NULL;
+		static int image_size = 0;
+
 		if (mapv == NULL || mapv->drawing_pixmap == NULL)
 			return;
 
-		GdkPixbuf *pixbuf = gdk_pixbuf_get_from_drawable(NULL, mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
+		GdkPixbuf *pixbuf = gdk_pixbuf_get_from_drawable(NULL, (GdkDrawable *) mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
+		int pixbuf_size = gdk_pixbuf_get_byte_length(pixbuf);
+		if (image_size == 0 && pixbuf_size > 0)
+			raw_image = (unsigned char *) malloc(pixbuf_size);
+		else if (image_size < pixbuf_size)
+			raw_image = (unsigned char *) realloc(raw_image, pixbuf_size);
+		if (raw_image == NULL || pixbuf == NULL || pixbuf_size <= 0)
+		{
+			fprintf(stderr, "\nError: Failed to allocate memory for image buffer in GtkGui::do_publish_map_view\n");
+			return;
+		}
+		image_size = pixbuf_size;
+		memcpy(raw_image, gdk_pixbuf_read_pixels(pixbuf), pixbuf_size);
+		g_clear_object(&pixbuf);
+
 		int width  = mapv->port_size_x;
 		int height = mapv->port_size_y;
-		int image_size = gdk_pixbuf_get_byte_length(pixbuf);
-		unsigned char *raw_image = (unsigned char *) gdk_pixbuf_get_pixels(pixbuf);
 		double x_origin = mapv->internal_map->config.x_origin;
 		double y_origin = mapv->internal_map->config.y_origin;
 		double resolution = mapv->internal_map->config.resolution / mapv->rescale_size;

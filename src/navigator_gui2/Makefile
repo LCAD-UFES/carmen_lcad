@@ -36,7 +36,7 @@ CFLAGS += -Wno-unknown-pragmas
 CXXFLAGS += -Wno-unknown-pragmas
 
 # Source code files (.c, .cpp) 
-SOURCES = navigator_gui2_main.cpp navigator_gui2_interface.c
+SOURCES = navigator_gui2_main.cpp navigator_gui2_interface.c 2D_map_view.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = navigator_gui2_messages.h navigator_gui2_interface.h
@@ -47,7 +47,7 @@ PUBLIC_LIBRARIES = libnavigator_gui2_interface.a
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = navigator_gui2
 
-TARGETS = libnavigator_gui2_interface.a navigator_gui2
+TARGETS = libnavigator_gui2_interface.a navigator_gui2 2D_map_view
 PUBLIC_LIBRARIES_SO = libnavigator_gui2_interface.so
 
 ifndef NO_PYTHON
@@ -75,6 +75,8 @@ libnavigator_gui2_interface.a:	navigator_gui2_interface.o
 libnavigator_gui2_interface.so.1:	navigator_gui2_interface.o
 
 navigator_gui2: navigator_gui2_main.o libnavigator_gui2_interface.a navigator_gui2_view/libnavigator_gui2_view.a 
+
+2D_map_view: 2D_map_view.o libnavigator_gui2_interface.a
 
 # rules
 

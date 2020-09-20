@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "viewer_3D.h"
+#include "viewer_3D_interface.h"
 
 #include "GLDraw.h"
 #include "point_cloud_drawer.h"
@@ -344,6 +345,10 @@ static double g_b_green;
 static double g_b_blue;
 
 float ***remission_calibration_table;
+
+int publish_map_view = 0;
+double publish_map_view_interval = 0.5;
+int verbose = 0;
 
 char *user_pref_filename = NULL;
 const char *user_pref_module;
@@ -2894,6 +2899,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 		{(char *) "commandline",	(char *) "velodyne_active",		CARMEN_PARAM_INT,	&(velodyne_active),		0, NULL},
 		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
 		{(char *) "commandline", 	(char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
+		{(char *) "commandline", 	(char *) "verbose", CARMEN_PARAM_ONOFF, &verbose, 0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
@@ -2916,6 +2922,16 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	}
 
 	remission_calibration_table = load_calibration_table(calibration_file);
+
+	carmen_param_t param_publish_list[] =
+	{
+		{(char *) "viewer_3D", (char *) "publish_map_view", 		 CARMEN_PARAM_ONOFF,  &publish_map_view, 		  1, NULL},
+		{(char *) "viewer_3D", (char *) "publish_map_view_interval", CARMEN_PARAM_DOUBLE, &publish_map_view_interval, 1, NULL},
+	};
+
+	num_items = sizeof(param_publish_list) / sizeof(param_publish_list[0]);
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_publish_list, num_items);
 }
 
 
@@ -2979,10 +2995,51 @@ destroy_stuff()
 
 
 void
+do_publish_3D_view(window *w)
+{
+	static unsigned char *raw_image = NULL;
+	static int image_size = 0;
+
+	XWindowAttributes attr;
+	XGetWindowAttributes(w->g_pDisplay, w->g_window, &attr);
+	int pixels_size = attr.width * attr.height * 3;
+	if (pixels_size <= 0)
+		return;
+
+	if (image_size == 0)
+		raw_image = (unsigned char *) malloc(pixels_size);
+	else if (image_size < pixels_size)
+		raw_image = (unsigned char *) realloc(raw_image, pixels_size);
+	if (raw_image == NULL)
+	{
+		fprintf(stderr, "\nError: Failed to allocate memory for image buffer in do_publish_3D_view\n");
+		return;
+	}
+	image_size = pixels_size;
+	for (int y = 0; y < attr.height; y++)
+		glReadPixels(0, (attr.height - 1 - y), attr.width, 1, GL_RGB, GL_UNSIGNED_BYTE, raw_image + (y * attr.width * 3));
+	carmen_pose_3D_t camera_pose = get_camera_pose();
+	carmen_pose_3D_t camera_offset = get_camera_offset();
+
+	static int msg_count = 0;
+	static double t0 = carmen_get_time();
+	msg_count++;
+	if (verbose)
+		printf("\n[viewer_3D]: Publishing carmen_viewer_3D_map_view_message # %04d  t=%7.3lf\n",
+				msg_count, carmen_get_time() - t0);
+
+	carmen_ipc_sleep(0.0001);
+	carmen_viewer_3D_publish_map_view_message(attr.width, attr.height, image_size, raw_image, camera_pose, camera_offset);
+	carmen_ipc_sleep(0.0001);
+}
+
+
+void
 draw_loop(window *w)
 {
     glPointSize(point_size);
     lastDisplayTime = carmen_get_time();
+    double time_of_last_publish = carmen_get_time();
     double fps = 30.0;
 
     while (showWindow(w))
@@ -3305,6 +3362,12 @@ draw_loop(window *w)
         	draw_symotha(symotha_drawer, car_fused_pose);
 
         draw_interface(i_drawer);
+
+		if (publish_map_view && ((carmen_get_time() - time_of_last_publish) >= publish_map_view_interval))
+		{
+			do_publish_3D_view(w);
+			time_of_last_publish = carmen_get_time();
+		}
     }
 }
 
@@ -4196,7 +4259,7 @@ keyPress(int code)
 void
 keyRelease(int code)
 {
-    code = code; // just to make gcc happy
+    (void) code;
 }
 
 
