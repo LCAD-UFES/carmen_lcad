@@ -1022,13 +1022,6 @@ draw_everything()
     	draw_symotha(symotha_drawer, car_fused_pose);
 
     draw_interface(i_drawer);
-//
-//    static double time_of_last_publish = carmen_get_time();
-//	if (publish_map_view && ((carmen_get_time() - time_of_last_publish) >= publish_map_view_interval))
-//	{
-//		do_publish_3D_view();
-//		time_of_last_publish = carmen_get_time();
-//	}
 
 	return (1);
 }
