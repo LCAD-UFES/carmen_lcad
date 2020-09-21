@@ -148,8 +148,10 @@ double frenet_path_planner_delta_t;
 
 int use_frenet_path_planner = 0;
 int use_unity_simulator = 0;
-double in_lane_longitudinal_safety_magin_multiplier;
-double in_path_longitudinal_safety_magin_multiplier;
+double in_lane_longitudinal_safety_margin;
+double in_lane_longitudinal_safety_margin_with_v_multiplier;
+double in_path_longitudinal_safety_margin;
+double in_path_longitudinal_safety_margin_with_v_multiplier;
 
 double distance_to_moving_object_with_v_multiplier;
 double distance_between_waypoints_with_v_multiplier;
@@ -1657,8 +1659,10 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "lateral_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_displacement", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_displacement, 0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_velocity_tuning_factor", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_goal_velocity_tuning_factor, 0, NULL},
-		{(char *) "behavior_selector", (char *) "in_lane_longitudinal_safety_magin_multiplier", CARMEN_PARAM_DOUBLE, &in_lane_longitudinal_safety_magin_multiplier, 0, NULL},
-		{(char *) "behavior_selector", (char *) "in_path_longitudinal_safety_magin_multiplier", CARMEN_PARAM_DOUBLE, &in_path_longitudinal_safety_magin_multiplier, 0, NULL},
+		{(char *) "behavior_selector", (char *) "in_lane_longitudinal_safety_margin", CARMEN_PARAM_DOUBLE, &in_lane_longitudinal_safety_margin, 0, NULL},
+		{(char *) "behavior_selector", (char *) "in_lane_longitudinal_safety_margin_with_v_multiplier", CARMEN_PARAM_DOUBLE, &in_lane_longitudinal_safety_margin_with_v_multiplier, 0, NULL},
+		{(char *) "behavior_selector", (char *) "in_path_longitudinal_safety_margin", CARMEN_PARAM_DOUBLE, &in_path_longitudinal_safety_margin, 0, NULL},
+		{(char *) "behavior_selector", (char *) "in_path_longitudinal_safety_margin_with_v_multiplier", CARMEN_PARAM_DOUBLE, &in_path_longitudinal_safety_margin_with_v_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "distance_to_moving_object_with_v_multiplier", CARMEN_PARAM_DOUBLE, &distance_to_moving_object_with_v_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints_with_v_multiplier", CARMEN_PARAM_DOUBLE, &distance_between_waypoints_with_v_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "performs_path_planning", CARMEN_PARAM_ONOFF, &behavior_selector_performs_path_planning, 0, NULL},

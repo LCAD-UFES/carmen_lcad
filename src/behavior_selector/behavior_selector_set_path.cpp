@@ -20,8 +20,10 @@ extern double frenet_path_planner_time_horizon;
 extern double frenet_path_planner_delta_t;
 
 extern int use_unity_simulator;
-extern double in_lane_longitudinal_safety_magin_multiplier;
-extern double in_path_longitudinal_safety_magin_multiplier;
+extern double in_lane_longitudinal_safety_margin;
+extern double in_lane_longitudinal_safety_margin_with_v_multiplier;
+extern double in_path_longitudinal_safety_margin;
+extern double in_path_longitudinal_safety_margin_with_v_multiplier;
 
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
@@ -152,11 +154,11 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 // 			if (fabs(current_moving_objects->point_clouds[i].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
 // 				continue;
 
-// 			double longitudinal_safety_magin;
+// 			double longitudinal_safety_margin;
 // 			if (moving_objects_poses[s][i].behind && (fabs(moving_objects_poses[s][i].d - current_d) < 0.8)) // moving objects atras do carro
-// 				longitudinal_safety_magin = 0.5;
+// 				longitudinal_safety_margin = 0.5;
 // 			else
- 			double longitudinal_safety_magin = 5.0 + in_path_longitudinal_safety_magin_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
+ 			double longitudinal_safety_margin = in_path_longitudinal_safety_margin + in_path_longitudinal_safety_margin_with_v_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
 			double lateral_safety_margin = get_robot_config()->obstacle_avoider_obstacles_safe_distance;// +
 //					0.1 * fabs(current_moving_objects->point_clouds[i].linear_velocity) *
 //					(current_moving_objects->point_clouds[i].width / current_moving_objects->point_clouds[i].length);
@@ -167,7 +169,7 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 //			else
 //				add_virtual_laser_points = 0;
 			if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_objects_pose,
-					&(current_moving_objects->point_clouds[mo]), longitudinal_safety_magin, lateral_safety_margin))//,
+					&(current_moving_objects->point_clouds[mo]), longitudinal_safety_margin, lateral_safety_margin))//,
 //					i, moving_objects_poses[s][i].s, moving_objects_poses[s][i].d))
 			{
 				if (path_id == current_set_of_paths->selected_path)
@@ -222,7 +224,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
-	if (current_moving_objects->num_point_clouds == 0)
+	if (1)//current_moving_objects->num_point_clouds == 0)
 	{
 		path_collision_info.s_distance_to_moving_object_in_parallel_lane = (double) num_samples * delta_t;
 		path_collision_info.possible_collision_mo_in_parallel_lane_pose_index = current_set_of_paths->number_of_poses;
@@ -250,11 +252,11 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 // 			if (fabs(current_moving_objects->point_clouds[i].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
 // 				continue;
 
- 			double longitudinal_safety_magin = in_lane_longitudinal_safety_magin_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
+ 			double longitudinal_safety_margin = in_lane_longitudinal_safety_margin + in_lane_longitudinal_safety_margin_with_v_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
 			double lateral_safety_margin = get_robot_config()->obstacle_avoider_obstacles_safe_distance;
 			carmen_point_t moving_objects_pose = {moving_objects_poses[0][mo].pose.x, moving_objects_poses[0][mo].pose.y, moving_objects_poses[0][mo].pose.theta};
 			if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_objects_pose,
-					&(current_moving_objects->point_clouds[mo]), longitudinal_safety_magin, lateral_safety_margin))//, 0, 0.0, 0.0))
+					&(current_moving_objects->point_clouds[mo]), longitudinal_safety_margin, lateral_safety_margin))//, 0, 0.0, 0.0))
 			{
 				if (path_id == current_set_of_paths->selected_path)
 				{
