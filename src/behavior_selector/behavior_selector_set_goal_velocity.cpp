@@ -531,40 +531,42 @@ compute_s_range(carmen_ackerman_traj_point_t *poses_ahead, int pose_index, int n
 
 
 double
-set_goal_velocity_according_to_general_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-		int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp __attribute__ ((unused)))
+set_goal_velocity_according_to_general_moving_obstacle(carmen_ackerman_traj_point_t *goal,
+		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi __attribute__ ((unused)),
+		int goal_type, carmen_rddf_road_profile_message *rddf __attribute__ ((unused)),
+		path_collision_info_t path_collision_info __attribute__ ((unused)), double timestamp __attribute__ ((unused)))
 {
 	if (goal_type == MOVING_OBSTACLE_GOAL3)
 	{
-		double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
-		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
-		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
-		double desired_distance;
-		desired_distance = carmen_fmax(distance_to_moving_object_with_v_multiplier * min_dist_according_to_car_v, car_pose_to_car_front + get_robot_config()->distance_between_front_and_rear_axles);
-
-		double distance;
-		double moving_obj_v;
-		if (path_collision_info.possible_collision_mo_pose_index < path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)
-		{
-			distance = compute_s_range(rddf->poses, path_collision_info.possible_collision_mo_pose_index, rddf->number_of_poses) / 3.0;
-			moving_obj_v = path_collision_info.possible_collision_mo_sv;
-		}
-		else
-		{
-			distance = compute_s_range(rddf->poses, path_collision_info.possible_collision_mo_in_parallel_lane_pose_index, rddf->number_of_poses) / 3.0;
-			moving_obj_v = path_collision_info.possible_collision_mo_in_parallel_lane_sv;
-		}
-		distance = 0.0;
-		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 0.1;
-		double new_goal_v;
-		if (goal->v > moving_obj_v)
-			new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
-		else
-			new_goal_v = goal->v;
-		if (new_goal_v < 0.0)
-			new_goal_v = 0.0;
-
+//		double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+//		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
+//		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
+//		double desired_distance;
+//		desired_distance = carmen_fmax(distance_to_moving_object_with_v_multiplier * min_dist_according_to_car_v, car_pose_to_car_front + get_robot_config()->distance_between_front_and_rear_axles);
+//
+//		double distance;
+//		double moving_obj_v;
+//		if (path_collision_info.possible_collision_mo_pose_index < path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)
+//		{
+//			distance = compute_s_range(rddf->poses, path_collision_info.possible_collision_mo_pose_index, rddf->number_of_poses) / 3.0;
+//			moving_obj_v = path_collision_info.possible_collision_mo_sv;
+//		}
+//		else
+//		{
+//			distance = compute_s_range(rddf->poses, path_collision_info.possible_collision_mo_in_parallel_lane_pose_index, rddf->number_of_poses) / 3.0;
+//			moving_obj_v = path_collision_info.possible_collision_mo_in_parallel_lane_sv;
+//		}
+//		distance = 0.0;
+//		// ver "The DARPA Urban Challenge" book, pg. 36.
+//		double Kgap = 0.1;
+//		double new_goal_v;
+//		if (goal->v > moving_obj_v)
+//			new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+//		else
+//			new_goal_v = goal->v;
+//		if (new_goal_v < 0.0)
+//			new_goal_v = 0.0;
+//
 		goal->v = 0.0;//carmen_fmin(new_goal_v, goal->v);
 	}
 

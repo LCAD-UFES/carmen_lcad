@@ -170,6 +170,8 @@ carmen_map_server_offline_map_message *offline_map = NULL;
 
 carmen_simulator_ackerman_objects_message *carmen_simulator_ackerman_simulated_objects = NULL;
 
+double distance_car_pose_car_front;
+
 
 int
 compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
@@ -1706,6 +1708,8 @@ read_parameters(int argc, char **argv)
 
 	original_behaviour_selector_central_lane_obstacles_safe_distance = robot_config.behaviour_selector_central_lane_obstacles_safe_distance;
 	original_model_predictive_planner_obstacles_safe_distance = robot_config.model_predictive_planner_obstacles_safe_distance;
+
+	distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 }
 
 

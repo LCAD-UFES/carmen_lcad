@@ -47,6 +47,22 @@ typedef enum ROUTE_PLANNER_FEEDBACK
 
 typedef struct
 {
+	carmen_ackerman_traj_point_t pose;
+	int node_id;
+	int lane_id;
+} carmen_route_planner_route_t;
+
+
+typedef struct
+{
+	int node_in_lane;
+	int target_node_id;
+	int target_lane_id;
+} carmen_route_planner_junction_t;
+
+
+typedef struct
+{
 	int number_of_poses;
 	int number_of_poses_back;
 	carmen_ackerman_traj_point_t *poses;
@@ -63,6 +79,21 @@ typedef struct
 	int *traffic_restrictions; 	// LANE_WIDTH | LEFT_MARKING | RIGHT_MARKING | LEVEL | YIELD | BIFURCATION
 								//   6 bits   | 3 bits enum  |  3 bits enum  | 2 bits| 1 bit |   1 bit
 
+	int *nearby_lanes_merges_indexes;	// Size == number_of_nearby_lanes. O ponto em nearby_lanes_merges onde começam os merges de cada lane.
+	int *nearby_lanes_merges_sizes;		// Size == number_of_nearby_lanes. O número de merges de cada lane.
+	int nearby_lanes_merges_size;		// Igual ao numero de merges de todas as lanes somado.
+	carmen_route_planner_junction_t *nearby_lanes_merges;			// Size == nearby_lanes_merges_size. Todos os merges, um atras do outro.
+
+	int *nearby_lanes_forks_indexes;	// Size == number_of_nearby_lanes. O ponto em nearby_lanes_forks onde começam os forks de cada lane.
+	int *nearby_lanes_forks_sizes;		// Size == number_of_nearby_lanes. O número de forks de cada lane.
+	int nearby_lanes_forks_size;		// Igual ao numero de forks de todas as lanes somado.
+	carmen_route_planner_junction_t *nearby_lanes_forks;			// Size == nearby_lanes_forks_size. Todos os forks, um atras do outro.
+
+	int *nearby_lanes_node_ids;			// Size == nearby_lanes_size. Ids dos nós (poses) de todas as lanes.
+
+	int route_size;
+	carmen_route_planner_route_t *route;// Size == route_size. Vetor com as poses, o id das poses e o id das lanes
+
     //  Uma network com tres lanes com tamanhos 5, 3 e 6 poses teria:
     //  number_of_nearby_lanes = 3
     //	nearby_lanes_indexes -> 0, 5, 8
@@ -78,7 +109,7 @@ typedef struct
 } carmen_route_planner_road_network_message;
 
 #define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_NAME		"carmen_route_planner_road_network_message"
-#define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_FMT		"{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, <int:7>, <int:7>, <int:7>, int, <{double, double, double, double, double}:11>, <int:11>, int, int, double, string}"
+#define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_FMT		"{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, <int:7>, <int:7>, <int:7>, int, <{double, double, double, double, double}:11>, <int:11>, <int:7>, <int:7>, int, <{int, int, int}:16>, <int:7>, <int:7>, int, <{int, int, int}:20>, <int:11>, int, <{{double, double, double, double, double}, int, int}:23>, int, int, double, string}"
 
 
 typedef struct
