@@ -37,6 +37,8 @@ static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
 static double distance_to_remove_annotation_goal = 1.5;
 
+extern double distance_car_pose_car_front;
+
 extern int behavior_selector_reverse_driving;
 
 int position_of_next_annotation = 0;
@@ -58,6 +60,8 @@ SampleFilter filter2;
 extern bool wait_start_moving;
 
 extern double map_width;
+
+extern int behavior_selector_use_symotha;
 
 
 carmen_behavior_selector_algorithm_t
@@ -506,9 +510,11 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 //	virtual_laser_message.num_positions = 0;
 //	printf("v %lf\n", udatmo_speed_front());
 	int last_obstacle_free_waypoint_index = 0;
+
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
 	int first_pose_change_direction_index = -1;
+
 
 #ifdef PRINT_UDATMO_LOG
 
@@ -543,7 +549,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 
 		static double moving_obstacle_trasition = 0.0;
 #ifdef USE_DATMO_GOAL
-		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
+		if (behavior_selector_use_symotha && (moving_object_in_front_index != -1)) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
 			double d = 0;
 			int ideal_rddf_pose_index;
@@ -593,7 +599,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		}
 #endif
 
-		else if (path_collision_info.valid &&
+		else if (path_collision_info.valid && !path_collision_info.mo_behind &&
 				 ((rddf_pose_index == path_collision_info.possible_collision_mo_pose_index)))// ||
 //				  (rddf_pose_index == path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)))
 		{
