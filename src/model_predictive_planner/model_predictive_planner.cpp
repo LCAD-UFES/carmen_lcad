@@ -181,11 +181,23 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_r
 	{
 		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
+		if (GlobalState::reverse_planning)
+		{
+			 if (lane_in_car_reference[0] <= 0.0)
+			 {
+				 local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+				 							goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+				 lane_in_local_pose->push_back(local_reference_lane_point);
+			 }
+		}
+		else
+		{
+			local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+					goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+			lane_in_local_pose->push_back(local_reference_lane_point);
 
-		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+		}
 
-		lane_in_local_pose->push_back(local_reference_lane_point);
 	}
 }
 
@@ -629,28 +641,33 @@ get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman
 }
 
 
+TrajectoryLookupTable::TrajectoryControlParameters
+get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
+{
+	TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
+	dummy_tcp.valid = true;
+	dummy_tcp.tt = 5.0;
+	dummy_tcp.k1 = 0.0;
+	dummy_tcp.k2 = 0.01;
+	dummy_tcp.k3 = 0.02;
+	dummy_tcp.has_k1 = false;
+	dummy_tcp.shift_knots = false;
+	dummy_tcp.a = 0.0;
+	dummy_tcp.vf = -2.0;
+	dummy_tcp.sf = td.dist;
+	dummy_tcp.s = td.dist;
+	return dummy_tcp;
+}
+
+
 bool
 get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
-		TrajectoryLookupTable::TrajectoryDimensions td)
+		TrajectoryLookupTable::TrajectoryDimensions td, double target_v)
 {
-	if (GlobalState::reverse_driving && !previous_good_tcp.valid)
-	{
-		TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
-		dummy_tcp.valid = true;
-		dummy_tcp.tt = 5.0;
-		dummy_tcp.k1 = 0.0;
-		dummy_tcp.k2 = 0.01;
-		dummy_tcp.k3 = 0.02;
-		dummy_tcp.has_k1 = false;
-		dummy_tcp.shift_knots = false;
-		dummy_tcp.a = 0.0;
-		dummy_tcp.vf = -2.0;
-		dummy_tcp.sf = td.dist;
-		dummy_tcp.s = td.dist;
+	if (0) //(GlobalState::reverse_driving && td.v_i == 0.0) //Just for tests
+		tcp = get_dummy_tcp(td);
 
-		tcp = dummy_tcp;
-	}
 	else if (!previous_good_tcp.valid)
 	{
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
@@ -838,12 +855,11 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 	move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &lane_in_local_pose);
 
-//	if (!GlobalState::reverse_driving && (lane_in_local_pose.size() > 1) && lane_in_local_pose.at(1).x < 0.0)
-//	{
-//		if (1)
-//			printf(KGRN "+++++++++++++ REVERSE DRIVING NAO ESTA ATIVO NOS PARAMETROS - LANE DESCARTADA!!!!\n" RESET);
-//			return;
-//	}
+	if (!GlobalState::reverse_driving && target_v < 0.0)
+	{
+		printf(KGRN "+++++++++++++ REVERSE DRIVING NAO ESTA ATIVO NOS PARAMETROS - LANE DESCARTADA!!!!\n" RESET);
+		return;
+	}
 
 	if (GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane)
 	{
@@ -888,7 +904,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
 //			previous_good_tcp.valid = false;
-			if (!get_tcp_from_td(tcp, previous_good_tcp, td))//, target_v))
+			if (!get_tcp_from_td(tcp, previous_good_tcp, td, target_v))
 				continue;
 
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;

@@ -633,6 +633,15 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
 
+	previous_v = goal->v;
+	if (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL)
+	{
+		goal->v = 0.0;
+		if (previous_v != goal->v)
+			who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
+	}
+
+//TODO hacking to test MPP and path_planner_astar - I WILL FIX IT, I SWEAR!
 	if (reverse_mode_planning && behavior_selector_reverse_driving)
 	{
 		goal->v = (-1.0) * goal->v;
