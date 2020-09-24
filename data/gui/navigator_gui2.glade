@@ -529,6 +529,16 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowNearbyLanes">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Nearby Lanes</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="on_menuDisplay_ShowNearbyLanes_toggled" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkCheckMenuItem" id="menuDisplay_ShowPathPlans">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>

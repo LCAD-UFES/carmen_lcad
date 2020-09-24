@@ -185,6 +185,10 @@ void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowNearbyLanes_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowPathPlans_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 

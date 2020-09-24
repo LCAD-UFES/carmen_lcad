@@ -149,6 +149,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowFusedOdometry;
 			GtkCheckMenuItem* menuDisplay_ShowGaussians;
 			GtkCheckMenuItem* menuDisplay_ShowLaserData;
+			GtkCheckMenuItem* menuDisplay_ShowNearbyLanes;
 			GtkCheckMenuItem* menuDisplay_ShowPathPlans;
 			GtkCheckMenuItem* menuDisplay_ShowOAMotionPlan;
 			GtkCheckMenuItem* menuDisplay_ShowMPPMotionPlan;

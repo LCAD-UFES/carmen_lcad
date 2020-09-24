@@ -250,6 +250,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowFusedOdometry), nav_panel_config->show_fused_odometry);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowGaussians), nav_panel_config->show_gaussians);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowLaserData), nav_panel_config->show_lasers);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowPathPlans), nav_panel_config->show_nearby_lanes);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowPathPlans), nav_panel_config->show_path_plans);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPlan), nav_panel_config->show_command_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMPPMotionPlan), nav_panel_config->show_mpp_motion_plan);
