@@ -1017,7 +1017,7 @@ add_line(carmen_point_t point1, carmen_point_t point2, int color)
 
 
 int
-carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose, carmen_point_t moving_object_pose,
+carmen_obstacle_avoider_car_collides_with_moving_object_old(carmen_point_t car_pose, carmen_point_t moving_object_pose,
 		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin)//,
 		//int obj_id, double obj_s, double obj_d)
 {
@@ -1038,8 +1038,8 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose,
 		carmen_point_t displaced_moving_object_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&mop,
 				displacement);
 
-		if (add_virtual_laser_points)
-			add_circle(displaced_moving_object_pose, moving_object->width / 2.0, CARMEN_RED);
+//		if (add_virtual_laser_points)
+//			add_circle(displaced_moving_object_pose, moving_object->width / 2.0, CARMEN_RED);
 
 		for (int i = 0; i < global_collision_config.n_markers; i++)
 		{
@@ -1049,14 +1049,114 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose,
 
 			double distance = DIST2D(displaced_car_pose, displaced_moving_object_pose);
 
-			if (add_virtual_laser_points)
-			{
-				add_circle(displaced_car_pose, global_collision_config.markers[i].radius, CARMEN_BLUE);
-//				add_line(displaced_car_pose, displaced_moving_object_pose, CARMEN_GREEN);
-			}
-
 			if (distance <= (global_collision_config.markers[i].radius + (moving_object->width / 2.0) + lateral_safety_margin))
+			{
 				collides = 1;
+				if (add_virtual_laser_points)
+				{
+					add_circle(displaced_car_pose, global_collision_config.markers[i].radius, CARMEN_BLUE);
+	//				add_line(displaced_car_pose, displaced_moving_object_pose, CARMEN_GREEN);
+				}
+			}
+		}
+	}
+
+	return (collides);
+}
+
+
+int
+compute_mo_points(carmen_position_t *mo_points, double width, double length, double x, double y, double theta)
+{
+	double logitudinal_disp = -length / 2.0;
+	double lateral_disp = -width / 2.0;
+	int mo_points_size = 0;
+	double sin_plus, cos_plus;
+	sincos(theta + M_PI / 2.0, &sin_plus, &cos_plus);
+	double sin_minus, cos_minus;
+	sincos(theta - M_PI / 2.0, &sin_minus, &cos_minus);
+	for (; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
+	{
+		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos(theta);
+		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin(theta);
+		mo_points_size++;
+
+		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos(theta);
+		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin(theta);
+		mo_points_size++;
+	}
+
+	lateral_disp = width / 2.0;
+	for (; logitudinal_disp < length / 2.0; logitudinal_disp = logitudinal_disp + 0.2)
+	{
+		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos(theta);
+		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin(theta);
+		mo_points_size++;
+
+		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos(theta);
+		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin(theta);
+		mo_points_size++;
+	}
+
+	for (lateral_disp = -width / 2.0; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
+	{
+		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos(theta);
+		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin(theta);
+		mo_points_size++;
+
+		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos(theta);
+		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin(theta);
+		mo_points_size++;
+	}
+
+	return (mo_points_size);
+}
+
+
+int
+carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose, carmen_point_t moving_object_pose,
+		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin)
+{
+	check_collision_config_initialization();
+
+	int collides = 0;
+	carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
+	carmen_position_t mo_points[1000];
+	int mo_points_size = compute_mo_points(mo_points, moving_object->width, moving_object->length, moving_object_pose.x, moving_object_pose.y, moving_object_pose.theta);
+
+	for (double displacement = -longitudinal_safety_magin; displacement <= longitudinal_safety_magin; displacement += 0.5)
+	{
+		carmen_point_t ldcp = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&cp, displacement);
+		carmen_ackerman_traj_point_t ldcp2 = {ldcp.x, ldcp.y, ldcp.theta, 0.0, 0.0};
+		for (int i = 0; i < global_collision_config.n_markers; i++)
+		{
+			carmen_point_t displaced_car_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&ldcp2,
+					global_collision_config.markers[i].x, global_collision_config.markers[i].y);
+
+			for (int j = 0; j < mo_points_size; j++)
+			{
+				double distance = DIST2D(displaced_car_pose, mo_points[j]);
+
+				if (distance <= (global_collision_config.markers[i].radius + lateral_safety_margin))
+				{
+					collides = 1;
+					if (add_virtual_laser_points)
+					{
+						virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_car_pose.x;
+						virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_car_pose.y;
+						virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+						virtual_laser_message.num_positions++;
+
+						virtual_laser_message.positions[virtual_laser_message.num_positions].x = mo_points[j].x;
+						virtual_laser_message.positions[virtual_laser_message.num_positions].y = mo_points[j].y;
+						virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
+						virtual_laser_message.num_positions++;
+
+//						add_circle(displaced_car_pose, global_collision_config.markers[i].radius, CARMEN_BLUE);
+//						add_line(displaced_car_pose, displaced_moving_object_pose, CARMEN_GREEN);
+					}
+				}
+			}
 		}
 	}
 

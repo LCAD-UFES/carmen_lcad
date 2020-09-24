@@ -1629,7 +1629,7 @@ static void draw_simulated_objects(GtkMapViewer *the_map_view)
 {
 	int index;
 	carmen_world_point_t particle;
-	carmen_traj_point_t *simulator_object;
+	carmen_simulator_ackerman_objects_t *simulator_object;
 	double circle_size;
 
 	if (nav_panel_config->show_simulator_objects)
@@ -1642,7 +1642,7 @@ static void draw_simulated_objects(GtkMapViewer *the_map_view)
 		{
 			for (index = 0; index < simulator_objects->length; index++)
 			{
-				simulator_object = (carmen_traj_point_t *) carmen_list_get(simulator_objects, index);
+				simulator_object = (carmen_simulator_ackerman_objects_t *) carmen_list_get(simulator_objects, index);
 				particle.pose.x	 = simulator_object->x;
 				particle.pose.y	 = simulator_object->y;
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE,
@@ -3616,9 +3616,7 @@ void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypo
 	do_redraw();
 }
 
-void navigator_graphics_update_simulator_objects(int num_objects,
-		carmen_traj_point_t
-		*objects_list)
+void navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list)
 {
 	int i;
 
@@ -3629,8 +3627,7 @@ void navigator_graphics_update_simulator_objects(int num_objects,
 			return;
 		}
 
-		simulator_objects = carmen_list_create
-				(sizeof(carmen_traj_point_t), num_objects);
+		simulator_objects = carmen_list_create(sizeof(carmen_simulator_ackerman_objects_t), num_objects);
 	}
 
 	simulator_objects->length = 0;

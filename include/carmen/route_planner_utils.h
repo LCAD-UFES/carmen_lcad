@@ -112,7 +112,7 @@ int find_closest_point_in_graph (graph_t graph, carmen_point_t point);
 carmen_point_t set_destination(vector<carmen_annotation_t> annotations, char *goal);
 void get_annotation_from_rddf(char *carmen_annotation_filename, vector<carmen_annotation_t> &annotations);
 void get_graph_from_file(graph_t *graph, graph_t *lane_graph, char *filename);
-
+void get_route_list(graph_t graph, carmen_position_t center, double range, int *number_of_routes, route_t *routes[]);
 
 #ifdef __cplusplus
 }

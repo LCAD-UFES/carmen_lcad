@@ -505,7 +505,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	if (new_goal_v < 0.0)
 		new_goal_v = 0.0;
 
-	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))//udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
+	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))
 		goal->v = carmen_fmin(new_goal_v, goal->v);
 
 //	FILE *caco = fopen("caco.txt", "a");
@@ -514,6 +514,61 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 //			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
 //	fflush(caco);
 //	fclose(caco);
+
+	return (goal->v);
+}
+
+
+double
+compute_s_range(carmen_ackerman_traj_point_t *poses_ahead, int pose_index, int num_poses)
+{
+	double s_range = 0.0;
+	for (int i = 0; (i < (num_poses - 1)) && (i < pose_index); i++)
+		s_range += DIST2D(poses_ahead[i], poses_ahead[i + 1]);
+
+	return (s_range);
+}
+
+
+double
+set_goal_velocity_according_to_general_moving_obstacle(carmen_ackerman_traj_point_t *goal,
+		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi __attribute__ ((unused)),
+		int goal_type, carmen_rddf_road_profile_message *rddf __attribute__ ((unused)),
+		path_collision_info_t path_collision_info __attribute__ ((unused)), double timestamp __attribute__ ((unused)))
+{
+	if (goal_type == MOVING_OBSTACLE_GOAL3)
+	{
+//		double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+//		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
+//		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
+//		double desired_distance;
+//		desired_distance = carmen_fmax(distance_to_moving_object_with_v_multiplier * min_dist_according_to_car_v, car_pose_to_car_front + get_robot_config()->distance_between_front_and_rear_axles);
+//
+//		double distance;
+//		double moving_obj_v;
+//		if (path_collision_info.possible_collision_mo_pose_index < path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)
+//		{
+//			distance = compute_s_range(rddf->poses, path_collision_info.possible_collision_mo_pose_index, rddf->number_of_poses) / 3.0;
+//			moving_obj_v = path_collision_info.possible_collision_mo_sv;
+//		}
+//		else
+//		{
+//			distance = compute_s_range(rddf->poses, path_collision_info.possible_collision_mo_in_parallel_lane_pose_index, rddf->number_of_poses) / 3.0;
+//			moving_obj_v = path_collision_info.possible_collision_mo_in_parallel_lane_sv;
+//		}
+//		distance = 0.0;
+//		// ver "The DARPA Urban Challenge" book, pg. 36.
+//		double Kgap = 0.1;
+//		double new_goal_v;
+//		if (goal->v > moving_obj_v)
+//			new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+//		else
+//			new_goal_v = goal->v;
+//		if (new_goal_v < 0.0)
+//			new_goal_v = 0.0;
+//
+		goal->v = 0.0;//carmen_fmin(new_goal_v, goal->v);
+	}
 
 	return (goal->v);
 }
@@ -530,7 +585,7 @@ set_goal_velocity_according_to_last_speed_limit_annotation(carmen_ackerman_traj_
 
 int
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-		int goal_type, double timestamp)
+		int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp)
 {
 //	printf("Velocity %lf \n", goal->v);
 	int reverse_mode_planning = 0;
@@ -546,6 +601,12 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 
 	previous_v = goal->v;
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
+	if (previous_v != goal->v)
+		who_set_the_goal_v = MOVING_OBSTACLE;
+
+	previous_v = goal->v;
+	goal->v = set_goal_velocity_according_to_general_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type,
+			rddf, path_collision_info, timestamp);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_OBSTACLE;
 
@@ -574,12 +635,20 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
 
+	previous_v = goal->v;
+	if (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL)
+	{
+		goal->v = 0.0;
+		if (previous_v != goal->v)
+			who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
+	}
+
+//TODO hacking to test MPP and path_planner_astar - I WILL FIX IT, I SWEAR!
 	if (reverse_mode_planning && behavior_selector_reverse_driving)
 	{
 		goal->v = (-1.0) * goal->v;
 		printf("Changed Velocity %lf \n", goal->v);
 	}
-
 
 	return (who_set_the_goal_v);
 }

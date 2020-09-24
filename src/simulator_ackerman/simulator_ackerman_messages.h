@@ -52,8 +52,16 @@ typedef carmen_default_message carmen_simulator_ackerman_truepos_query_message;
 #define CARMEN_SIMULATOR_ACKERMAN_OBJECTS_QUERY_NAME   "carmen_simulator_ackerman_objects_query"
 typedef carmen_default_message carmen_simulator_ackerman_objects_query_message;
 
-typedef enum {CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT, CARMEN_SIMULATOR_ACKERMAN_LINE_FOLLOWER,
-	      CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT} carmen_simulator_ackerman_object_t;
+typedef enum
+{
+	CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT,
+	CARMEN_SIMULATOR_ACKERMAN_LINE_FOLLOWER,
+	CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT,
+	CARMEN_SIMULATOR_ACKERMAN_PERSON,
+	CARMEN_SIMULATOR_ACKERMAN_BIKE,
+	CARMEN_SIMULATOR_ACKERMAN_CAR,
+	CARMEN_SIMULATOR_ACKERMAN_TRUCK
+} carmen_simulator_ackerman_object_t;
 
 typedef struct {
   carmen_point_t pose;
@@ -99,9 +107,18 @@ typedef struct {
 #define CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_NAME "carmen_simulator_ackerman_set_object"
 #define CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_FMT  "{{double,double,double},double,int,double,string}"
 
+typedef struct
+{
+	int type;
+	double x;
+	double y;
+	double theta;
+	double v;
+} carmen_simulator_ackerman_objects_t;
+
 typedef struct {
   int num_objects;
-  carmen_traj_point_t *objects_list;//TODO change this?
+  carmen_simulator_ackerman_objects_t *objects;
   double timestamp;
   char *host;
 } carmen_simulator_ackerman_objects_message;

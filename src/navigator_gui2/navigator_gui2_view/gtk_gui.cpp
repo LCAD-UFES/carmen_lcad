@@ -1,4 +1,5 @@
 #include "gtk_gui.h"
+#include <carmen/navigator_gui2_interface.h>
 
 using namespace std;
 extern int record_screen;
@@ -6,6 +7,9 @@ extern int use_glade_with_annotations;
 extern char place_of_interest[2048];
 extern std::vector <carmen_annotation_t> annotation_list;
 extern int use_route_planner_in_graph_mode;
+extern int publish_map_view;
+extern double publish_map_view_interval;
+
 int button_record_verification=0;
 int unsubscribe_map_server = 0;
 
@@ -1125,14 +1129,14 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_simulator_objects(int num_objects, carmen_traj_point_t *objects_list)
+	GtkGui::navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list)
 	{
 		int i;
 
 		if (simulator_objects != NULL)
 			carmen_list_destroy(&simulator_objects);
 
-		simulator_objects = carmen_list_create(sizeof(carmen_traj_point_t), num_objects);
+		simulator_objects = carmen_list_create(sizeof(carmen_simulator_ackerman_objects_t), num_objects);
 		simulator_objects->length = 0;
 
 		for (i = 0; i < num_objects; i++)
@@ -1672,6 +1676,46 @@ namespace View
 
 	}
 
+
+	void
+	GtkGui::do_publish_map_view(GtkMapViewer *mapv)
+	{
+		static unsigned char *raw_image = NULL;
+		static int image_size = 0;
+
+		if (mapv == NULL || mapv->drawing_pixmap == NULL)
+			return;
+
+		GdkPixbuf *pixbuf = gdk_pixbuf_get_from_drawable(NULL, (GdkDrawable *) mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
+		int pixbuf_size = gdk_pixbuf_get_byte_length(pixbuf);
+		if (image_size == 0 && pixbuf_size > 0)
+			raw_image = (unsigned char *) malloc(pixbuf_size);
+		else if (image_size < pixbuf_size)
+			raw_image = (unsigned char *) realloc(raw_image, pixbuf_size);
+		if (raw_image == NULL || pixbuf == NULL || pixbuf_size <= 0)
+		{
+			fprintf(stderr, "\nError: Failed to allocate memory for image buffer in GtkGui::do_publish_map_view\n");
+			return;
+		}
+		image_size = pixbuf_size;
+		memcpy(raw_image, gdk_pixbuf_read_pixels(pixbuf), pixbuf_size);
+		g_clear_object(&pixbuf);
+
+		int width  = mapv->port_size_x;
+		int height = mapv->port_size_y;
+		double x_origin = mapv->internal_map->config.x_origin;
+		double y_origin = mapv->internal_map->config.y_origin;
+		double resolution = mapv->internal_map->config.resolution / mapv->rescale_size;
+		if (mapv->zoom != 100.0)
+		{
+			x_origin += (mapv->x_scroll_adj->value) * resolution;
+			y_origin += (mapv->y_scroll_adj->upper - mapv->y_scroll_adj->value - height) * resolution;
+		}
+
+		carmen_navigator_gui_publish_map_view_message(width, height, image_size, raw_image, x_origin, y_origin, resolution);
+	}
+
+
 	void
 	GtkGui::do_redraw(void)
 	{
@@ -1702,6 +1746,11 @@ namespace View
 					navigator_graphics_pause_recording_message_received();
 				}
 			}
+			if (publish_map_view && ((carmen_get_time() - this->time_of_last_publish) >= publish_map_view_interval))
+			{
+				do_publish_map_view(this->controls_.map_view);
+				this->time_of_last_publish = carmen_get_time();
+			}
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
 		}
@@ -1727,9 +1776,7 @@ namespace View
 		GdkCursor *cursor;
 
 		if ((placement_status == PLACING_ROBOT) ||
-				((placement_status == NO_PLACEMENT) &&
-						((event->state & GDK_CONTROL_MASK) &&
-								(event->button == 3))))
+			((placement_status == NO_PLACEMENT) && ((event->state & GDK_CONTROL_MASK) && (event->button == 3))))
 		{
 			//		if (GTK_TOGGLE_BUTTON(autonomous_button)->active)
 			//		{
@@ -1787,7 +1834,7 @@ namespace View
 	{
 		GdkCursor *cursor;
 		if ((placement_status == PLACING_GOAL) ||
-				((placement_status == NO_PLACEMENT) && (event->button == 1) && (event->state & GDK_CONTROL_MASK)))
+			((placement_status == NO_PLACEMENT) && (event->button == 1) && (event->state & GDK_CONTROL_MASK)))
 		{
 			placement_status = NO_PLACEMENT;
 
@@ -1915,20 +1962,23 @@ namespace View
 	GtkGui::orienting_simulator_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point)
 	{
 		GdkCursor *cursor;
-		double angle;
 		if (placement_status == ORIENTING_SIMULATOR)
 		{
 			placement_status = NO_PLACEMENT;
-			angle = atan2(world_point->pose.y - new_person.pose.y,
-					world_point->pose.x - new_person.pose.x);
+			double angle = atan2(world_point->pose.y - new_simulator.pose.y,
+					world_point->pose.x - new_simulator.pose.x);
 			new_simulator.pose.theta = angle;
-			carmen_simulator_ackerman_set_truepose(&(new_simulator.pose));
+			double speed = hypot(world_point->pose.y - new_simulator.pose.y,
+					world_point->pose.x - new_simulator.pose.x);
+			speed /= 10.0;
+			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, object_type);
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
-			return TRUE;
-		}
-		return FALSE;
 
+			return (TRUE);
+		}
+
+		return (FALSE);
 	}
 
 	int
@@ -2514,12 +2564,12 @@ namespace View
 	{
 		int index;
 		carmen_world_point_t particle;
-		carmen_traj_point_t *simulator_object;
-		double circle_size;
+		carmen_simulator_ackerman_objects_t *simulator_object;
+		double circle_radius;
 
 		if (nav_panel_config->show_simulator_objects)
 		{
-			circle_size = robot_config->width / 2.0;
+			circle_radius = 0.25;
 
 			particle.map = the_map_view->internal_map;
 
@@ -2527,11 +2577,11 @@ namespace View
 			{
 				for (index = 0; index < simulator_objects->length; index++)
 				{
-					simulator_object = (carmen_traj_point_t *) carmen_list_get(simulator_objects, index);
+					simulator_object = (carmen_simulator_ackerman_objects_t *) carmen_list_get(simulator_objects, index);
 					particle.pose.x	 = simulator_object->x;
 					particle.pose.y	 = simulator_object->y;
-					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE, &particle, circle_size);
-					carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE, &particle, circle_size);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE, &particle, circle_radius);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE, &particle, circle_radius);
 				}
 			}
 		}

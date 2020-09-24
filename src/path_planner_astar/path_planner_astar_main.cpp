@@ -521,8 +521,8 @@ my_f(const gsl_vector *v, void *params)
 
 			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(current, distance_map);
 
-			if(distance > 0)
-				obstacle_cost -= distance;
+//			if(distance > 0)
+//				obstacle_cost -= distance;
 
 			if(distance <= dmax)
 				obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
@@ -593,8 +593,8 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 		i.theta = atan2(i.y - i_next.y, i.x - i_next.x);
 
 	distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(i, distance_map);
-	if(distance > 0)
-		obstacle_cost -= distance;
+//	if(distance > 0)
+//		obstacle_cost -= distance;
 
 	if(distance <= dmax)
 		obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
@@ -1949,6 +1949,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 	int theta;
 	int direction;
 	std::vector<state_node*> neighbor_expansion = expansion(current, goal_state, astar_map);
+	++expansion_number;
 
 	int it_neighbor_number = 0;
 	double current_node_cost = 0.0;
@@ -1995,7 +1996,6 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 
 			neighbor_expansion[it_neighbor_number]->total_distance_traveled = current->total_distance_traveled + neighbor_expansion[it_neighbor_number]->distance_traveled_g;
 			open.push(neighbor_expansion[it_neighbor_number]);
-			++expansion_number;
 		}
 		++it_neighbor_number;
 	}
@@ -2167,7 +2167,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	teste_edge = 0;
 	cache_exit_edge = -1;
 	expansion_number = 0;
-//	time_count.reset();
+	time_count.reset();
 	virtual_laser_message.num_positions = 0;
 	std::vector<state_node*> rs_path;
 	state_node *start_state, *goal_state, *current;
@@ -2183,7 +2183,6 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	}
 
 
-	time_count.reset();
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose, astar_map);
 //	printf("Heuristic map time is %f seconds\n\n", time_count.get_since());
 //	evg_thin_on_map(astar_map, heuristic_obstacle_map);

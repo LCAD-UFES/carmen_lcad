@@ -761,6 +761,22 @@ get_points_within_moving_object_rectangle(moving_object_t *mo)
 
 
 static bool
+close_orientation(moving_object_t *mo_j, moving_object_t *mo_k)
+{
+	double delta_angle = carmen_normalize_theta(mo_j->history[0].pose.theta - mo_k->history[0].pose.theta);
+	double mo_j_v = mo_j->average_longitudinal_v.arithmetic_mean();
+	double mo_k_v = mo_k->average_longitudinal_v.arithmetic_mean();
+	double delta_v = fabs(mo_j_v - mo_k_v * cos(delta_angle));
+	double delta_v_ratio = delta_v / ((fabs(mo_j_v) + fabs(mo_k_v))) / 2.0;
+	if (delta_v_ratio < 0.3)
+		return (true);
+	else
+		return (false);
+
+}
+
+
+static bool
 near(moving_object_t *mo_j, moving_object_t *mo_k)
 {	// A ordem é importante. O mais completo e conhecido precisa ser o mo_k.
 	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
@@ -944,7 +960,7 @@ static char
 get_vehicle_category(double width, double length, double longitudinal_v, double lateral_v, int num_samples)
 {
 	vector<vehicle_category_t> categories = {{BIKE, 0.9, 3.0}, {BIKE, 0.5, 1.5},
-											 {PEDESTRIAN, 0.5, 0.5}, {BUS, 2.5, 15.0},
+											 {PEDESTRIAN, 0.5, 0.5}, {BUS, 2.2, 15.0},
 											 {CAR, 1.7, 4.1}, {CAR, 1.7, 2.0}, {CAR, 2.0, 8.0}}; // Trung-Dung Vu Thesis
 
 	double v = sqrt(longitudinal_v * longitudinal_v + lateral_v * lateral_v);
@@ -1415,7 +1431,7 @@ share_points_between_objects(vector<lane_t> &lanes, carmen_map_t *occupancy_map)
 				for (int j = 0; j < (int) lanes[i].moving_objects.size(); j++)
 				{
 					bool same_mo = (lane_index == i) && (mo_index == j);
-					if (!same_mo && near(moving_object, &(lanes[i].moving_objects[j])))
+					if (!same_mo && close_orientation(moving_object, &(lanes[i].moving_objects[j])) && near(moving_object, &(lanes[i].moving_objects[j])))
 					{
 //						printf("copy to %d (%.2lf) from %d (%.2lf), ",
 //								moving_object->id, moving_object->pose.theta,

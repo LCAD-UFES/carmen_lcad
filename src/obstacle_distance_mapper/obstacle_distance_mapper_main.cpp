@@ -276,6 +276,7 @@ carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *mes
 	
 	if (distance_map.complete_distance == NULL)
 		carmen_prob_models_initialize_distance_map(&distance_map, message->config);
+	// O mapa criado abaixo é publicado sem objetos móveis
 	carmen_prob_models_create_distance_map(&distance_map, &occupancy_map, obstacle_probability_threshold);
 
 	obstacle_distance_mapper_publish_compact_distance_map(message->timestamp);

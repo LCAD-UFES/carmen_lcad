@@ -75,6 +75,8 @@ void carmen_simulator_objects_clear_objects(void);
 void carmen_simulator_ackerman_get_object_poses(int * num, 
 				       carmen_traj_point_t ** coordinates);
 
+void carmen_simulator_ackerman_get_objects(int *num, carmen_simulator_ackerman_objects_t **objects);
+
 int carmen_simulator_object_too_close(double x, double y, int skip);
 
 #ifdef __cplusplus

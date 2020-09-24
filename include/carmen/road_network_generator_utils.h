@@ -57,10 +57,11 @@ typedef struct
 	double cost;
 } edge_t;
 
+#define DISABLING_COST	1.0e100
 
 typedef struct
 {
-	char *id;
+	int id;
 	carmen_position_t start;
 	carmen_position_t end;
 	edge_t edge;

@@ -62,7 +62,7 @@ void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypo
 
 void navigator_graphics_update_xsens_pos(carmen_point_t xsenspose);
 
-void navigator_graphics_update_simulator_objects(int num_objects, carmen_traj_point_t *objects_list);
+void navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list);
 void navigator_graphics_initialize_dynamics(carmen_list_t *people);
 void navigator_graphics_update_dynamics(void);
 

@@ -29,7 +29,7 @@ ifeq ($(UBUNTU_VERSION),"16.04")
 	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC1) -I $(VTK_INC2)
 else
 	PCL_INC = $(wildcard /usr/include/pcl-*)
-	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
+	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 endif
 
