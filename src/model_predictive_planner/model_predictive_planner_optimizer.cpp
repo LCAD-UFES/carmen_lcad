@@ -1073,9 +1073,9 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	}
 
 //	printf("lane plan_cost = %lf\n", params.plan_cost);
-	if (params.plan_cost > 11.5)
+	if (params.plan_cost > 0.5)
 	{
-//		printf(">>>>>>>>>>>>>> lane plan_cost > 11.5\n");
+//		printf(">>>>>>>>>>>>>> lane plan_cost > 0.5\n");
 		tcp.valid = false;
 	}
 
