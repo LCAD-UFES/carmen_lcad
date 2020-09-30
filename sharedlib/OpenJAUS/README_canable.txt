@@ -60,6 +60,17 @@ $ canplayer vcan0=can1 -v -I candump-2015-03-20_123001.log
 https://sgframework.readthedocs.io/en/latest/cantutorial.html
 
 
+
+
+Bring Virtual CAN Interface up
+ $ sudo modprobe vcan
+ $ sudo ip link add dev vcan0 type vcan
+ $ sudo ip link set up vcan0
+ $ candump vcan0
+
+
+
+
 ### Toyota Etios
 ID  data
 25  0F C2 0F FE 50 00 00 5B -  90 degrees Right Steering (Bytes 0 e 1 - Alngle of Position) (Bytes 6 e 7 Torck)
