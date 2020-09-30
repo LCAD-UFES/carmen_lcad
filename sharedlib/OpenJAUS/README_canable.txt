@@ -1,10 +1,7 @@
 = Instalações
 sudo apt-get install can-utils
 
-= Ativar para uso com firmware novo (candleLight -> melhor: ver https://canable.io/getting-started.html#alt-firmware). Seguir
-  procedimento para instalacao de firmware descrito em: https://github.com/cxandy/AZSMZ-USB2CAN/tree/master/Firmware (baixar 
-  software para Windows do site: https://github.com/cxandy/AZSMZ-USB2CAN/blob/master/Firmware/DfuSe_Demo_V3.0.5_Setup.exe 
-  e usar o firmware: https://github.com/cxandy/AZSMZ-USB2CAN/blob/master/Firmware/gsusb_canable.dfu)
+= Para usar o firmware candleLight (bem melhor) ver documentação em: carmen_lcad/sharedlib/OpenJAUS/ojEcoTech4-2/canable/README_Alberto.txt
 
 sudo ip link set can0 up type can bitrate 500000
 

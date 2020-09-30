@@ -52,15 +52,11 @@ static char *map_path = NULL;
 char *annotation_path = NULL;
 int autonomous_record_screen = 0;
 
+int publish_map_view = 0;
+double publish_map_view_interval = 0.5;
+
 static carmen_point_t localize_std;
 static View::GtkGui *gui;
-
-// moving objects
-static int moving_objects_point_clouds_size = 1;
-static int last_moving_objects_point_clouds;
-moving_objects_tracking_t *moving_objects_tracking;
-int current_num_point_clouds;
-int previous_num_point_clouds = 0;
 
 int record_screen;
 int use_glade_with_annotations = 0;
@@ -275,19 +271,6 @@ navigator_get_road_map_pointer()
 	map_type = CARMEN_ROAD_MAP_v;
 
 	return road_map;
-}
-
-
-void
-init_moving_objects_tracking(int c_num_point_clouds, int p_num_point_clouds)
-{
-	if (c_num_point_clouds != p_num_point_clouds)
-	{
-		free(moving_objects_tracking);
-//		moving_objects_tracking = (moving_objects_tracking_t*) malloc
-//				(c_num_point_clouds * sizeof(moving_objects_tracking_t));
-	}
-	moving_objects_tracking = (moving_objects_tracking_t*) malloc(c_num_point_clouds * sizeof(moving_objects_tracking_t));
 }
 
 
@@ -648,6 +631,42 @@ mapper_handler(carmen_mapper_map_message *message)
 
 
 void
+carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message)
+{
+	static carmen_compact_map_t *compact_occupancy_map = NULL;
+	static carmen_map_t occupancy_map;
+
+	if (compact_occupancy_map == NULL)
+	{
+		carmen_grid_mapping_create_new_map(&occupancy_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
+		memset(occupancy_map.complete_map, 0, occupancy_map.config.x_size * occupancy_map.config.y_size * sizeof(double));
+
+		compact_occupancy_map = (carmen_compact_map_t *) (calloc(1, sizeof(carmen_compact_map_t)));
+		carmen_cpy_compact_map_message_to_compact_map(compact_occupancy_map, message);
+		carmen_prob_models_uncompress_compact_map(&occupancy_map, compact_occupancy_map);
+	}
+	else
+	{
+		carmen_prob_models_clear_carmen_map_using_compact_map(&occupancy_map, compact_occupancy_map, 0.0);
+		carmen_prob_models_free_compact_map(compact_occupancy_map);
+		carmen_cpy_compact_map_message_to_compact_map(compact_occupancy_map, message);
+		carmen_prob_models_uncompress_compact_map(&occupancy_map, compact_occupancy_map);
+	}
+
+	map = &occupancy_map;
+
+	if (superimposedmap_type == CARMEN_NAVIGATOR_MAP_v)
+	{
+		carmen_map_interface_set_superimposed_map(map);
+		gui->navigator_graphics_redraw_superimposed();
+	}
+
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_NAVIGATOR_MAP_v)
+		gui->navigator_graphics_change_map(map);
+}
+
+
+void
 mapper_level1_handler(carmen_mapper_map_message *message)
 {
 	static double last_time_stamp = 0.0;
@@ -770,14 +789,14 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		memset(cost_map->complete_map, 0, cost_map->config.x_size * cost_map->config.y_size * sizeof(double));
 
 		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
 	}
 	else
 	{
 		carmen_prob_models_clear_carmen_map_using_compact_map(cost_map, compact_cost_map, 0.0);
 		carmen_prob_models_free_compact_map(compact_cost_map);
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
 	}
 
@@ -921,7 +940,7 @@ grid_mapping_moving_objects_raw_map_handler(carmen_moving_objects_map_message *m
 
 
 static void
-globalpos_ack_handler(carmen_localize_ackerman_globalpos_message *msg)
+carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	carmen_traj_point_t new_robot;
 
@@ -942,7 +961,7 @@ globalpos_ack_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 
 static void
-truepos_handler(carmen_simulator_ackerman_truepos_message *msg)
+carmen_simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
 	gui->navigator_graphics_update_simulator_truepos(msg->truepose);
 }
@@ -999,42 +1018,32 @@ lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
 
 
 static void
-navigator_plan_handler(carmen_navigator_ackerman_plan_message *plan)
+carmen_navigator_ackerman_plan_message_handler(carmen_navigator_ackerman_plan_message *plan)
 {
 	gui->navigator_graphics_update_plan(plan->path, plan->path_length);
 }
 
 
 static void
-path_handler(carmen_navigator_gui_path_message *msg)
+carmen_navigator_gui_path_message_handler(carmen_navigator_gui_path_message *msg)
 {
 	gui->navigator_graphics_update_path(msg->path, msg->path_length, msg->path_id);
 }
 
 
-
 static void
-objects_handler(carmen_simulator_ackerman_objects_message *msg)
+carmen_simulator_ackerman_objects_message_handler(carmen_simulator_ackerman_objects_message *msg)
 {
-	gui->navigator_graphics_update_simulator_objects(msg->num_objects, msg->objects_list);
+	gui->navigator_graphics_update_simulator_objects(msg->num_objects, msg->objects);
 }
 
 
 static void
 carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
 {
-	int i;
+	moving_objects_tracking_t *moving_objects_tracking = (moving_objects_tracking_t *) malloc(moving_objects_point_clouds_message->num_point_clouds * sizeof(moving_objects_tracking_t));
 
-	last_moving_objects_point_clouds++;
-	if (last_moving_objects_point_clouds >= moving_objects_point_clouds_size)
-		last_moving_objects_point_clouds = 0;
-
-	current_num_point_clouds = moving_objects_point_clouds_message->num_point_clouds;
-
-	init_moving_objects_tracking(current_num_point_clouds, previous_num_point_clouds);
-	previous_num_point_clouds = current_num_point_clouds;
-
-	for (i = 0; i < current_num_point_clouds; i++)
+	for (int i = 0; i < moving_objects_point_clouds_message->num_point_clouds; i++)
 	{
 		moving_objects_tracking[i].moving_objects_pose.orientation.yaw = moving_objects_point_clouds_message->point_clouds[i].orientation;
 		moving_objects_tracking[i].moving_objects_pose.orientation.roll = 0.0;
@@ -1051,7 +1060,8 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 		moving_objects_tracking[i].num_associated = moving_objects_point_clouds_message->point_clouds[i].num_associated;
 	}
 
-	gui->navigator_graphics_update_moving_objects(current_num_point_clouds, moving_objects_tracking);
+	gui->navigator_graphics_update_moving_objects(moving_objects_point_clouds_message->num_point_clouds, moving_objects_tracking);
+	free(moving_objects_tracking);
 }
 
 
@@ -1092,16 +1102,16 @@ fused_odometry_handler(carmen_fused_odometry_message *msg)
 
 
 static void
-state_handler(carmen_behavior_selector_state_message *msg)
+carmen_behavior_selector_current_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
-	gui->navigator_graphics_update_behavior_selector_state(*msg);
+	gui->navigator_graphics_update_behavior_selector_state(msg);
 }
 
 
 static void
 traffic_sign_handler(carmen_rddf_traffic_sign_message *msg)
 {
-	gui->navigator_graphics_update_traffic_sign_state(*msg);
+	gui->navigator_graphics_update_traffic_sign_state(msg);
 }
 
 
@@ -1216,7 +1226,6 @@ nav_shutdown(int signo __attribute__ ((unused)))
 void
 carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
 {
-	printf("%s\n", poly_file);
 	FILE *poly;
 	poly = fopen(poly_file, "r");
 	if (poly == NULL)
@@ -1265,6 +1274,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "show_command_plan",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_command_plan),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_mpp_motion_plan",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_mpp_motion_plan),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_oa_motion_plan",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_oa_motion_plan),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_nearby_lanes",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_nearby_lanes),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_path_plans",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_path_plans),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_dynamic_points",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_points),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_dynamic_objects",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_objects),	1, NULL},
@@ -1304,7 +1314,6 @@ read_parameters(int argc, char *argv[],
 		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
 	};
 
-	printf("%s\n", polygon_file);
 	carmen_param_allow_unfound_variables(1);
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
@@ -1331,26 +1340,37 @@ read_parameters(int argc, char *argv[],
 		build_glade_with_annotation (annotation_path);
 		use_glade_with_annotations = 1;
 	}
+
+	carmen_param_t param_publish_list[] =
+	{
+		{(char *) "navigator_panel", (char *) "publish_map_view", 		   CARMEN_PARAM_ONOFF,  &publish_map_view, 		    1, NULL},
+		{(char *) "navigator_panel", (char *) "publish_map_view_interval", CARMEN_PARAM_DOUBLE, &publish_map_view_interval, 1, NULL},
+	};
+
+	num_items = sizeof(param_publish_list) / sizeof(param_publish_list[0]);
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_publish_list, num_items);
 }
 
 
 void
 subscribe_ipc_messages()
+
 {
 	IPC_RETURN_TYPE err;
 
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) (navigator_ackerman_status_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) (navigator_goal_list_message), CARMEN_SUBSCRIBE_LATEST);
-	carmen_navigator_ackerman_subscribe_plan_message(NULL, (carmen_handler_t) (navigator_plan_handler), CARMEN_SUBSCRIBE_LATEST);
-	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) (globalpos_ack_handler), CARMEN_SUBSCRIBE_LATEST);
-	carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) (truepos_handler), CARMEN_SUBSCRIBE_LATEST);
-	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (objects_handler), CARMEN_SUBSCRIBE_LATEST);
-	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) (state_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_ackerman_subscribe_plan_message(NULL, (carmen_handler_t) (carmen_navigator_ackerman_plan_message_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) (carmen_localize_ackerman_globalpos_message_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) (carmen_simulator_ackerman_truepos_message_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (carmen_simulator_ackerman_objects_message_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) (carmen_behavior_selector_current_state_message_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_traffic_sign_message(NULL, (carmen_handler_t) (traffic_sign_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_plan_tree_message(NULL, (carmen_handler_t) (plan_tree_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) (fused_odometry_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) (odometry_handler), CARMEN_SUBSCRIBE_LATEST);
-	carmen_navigator_gui_subscribe_path_message(NULL, (carmen_handler_t) (path_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_gui_subscribe_path_message(NULL, (carmen_handler_t) (carmen_navigator_gui_path_message_handler), CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_FMT);
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME);

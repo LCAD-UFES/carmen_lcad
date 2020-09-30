@@ -15,14 +15,12 @@
 #include <gtk/gtkgl.h>
 #include <glade/glade.h>
 
-
-
 #include <gtk_gui.h>
 
 #include <carmen/global_graphics.h>
 #include <carmen/map_graphics.h>
+#include <carmen/mapper_interface.h>
 
-#include "gtk_gui.h"
 
 namespace View
 {
@@ -184,6 +182,10 @@ void on_menuDisplay_ShowGaussians_toggled (GtkCheckMenuItem* togglebutton,
 
 extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowNearbyLanes_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT

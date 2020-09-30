@@ -12,6 +12,7 @@ PUBLIC_OTHERS = \
 	publish_pose_from_annotation \
 	rebuild_caffe \
 	timestamp_graph \
+	converte_video_para_whatsapp \
 #	make_all \
 #	make_clean_all \
 

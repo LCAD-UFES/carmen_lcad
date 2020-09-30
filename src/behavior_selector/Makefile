@@ -17,12 +17,11 @@ IFLAGS += \
 IFLAGS += -I/usr/include/python3.6 -I/usr/include/python3.5
 
 LFLAGS += \
-	-L$(CARMEN_HOME)/sharedlib/prob_models \
+	-L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp \
 	$(INTERFACE_LIBS) \
 	-lglobal -lipc \
 	-lmap_interface \
 	-lparam_interface  \
-	-lmapper_interface \
 	-lrddf_interface \
 	-lnavigator_ackerman_interface \
 	-llocalize_ackerman_interface \
@@ -30,10 +29,14 @@ LFLAGS += \
 	-lcollision_detection \
 	-lmotion_planner_interface \
 	-lobstacle_avoider_interface \
+	-lobstacle_distance_mapper_datmo \
+	-lmap_server_interface \
+	-lmapper_interface \
 	-lgrid_mapping \
 	-lmap_io \
 	-lmap_util \
 	-lprob_models \
+	-lmap_interface \
 	-lrotation_geometry \
 	-lsimulator_ackerman_interface \
 	-lobstacle_distance_mapper_interface \
@@ -103,7 +106,8 @@ endif
 
 
 behavior_selector: behavior_selector_main.o behavior_selector_set_goal_list.o \
-	behavior_selector_set_goal_velocity.o behavior_selector_set_path.o behavior_selector_mot.o behavior_selector_state_machine.o SampleFilter.o libbehavior_selector_interface.a
+	behavior_selector_set_goal_velocity.o behavior_selector_set_path.o behavior_selector_mot.o \
+	behavior_selector_state_machine.o SampleFilter.o libbehavior_selector_interface.a
 
 libbehavior_selector_interface.a: behavior_selector_interface.o
 

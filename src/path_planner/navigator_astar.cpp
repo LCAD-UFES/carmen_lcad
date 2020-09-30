@@ -176,14 +176,14 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		memset(cost_map.complete_map, 0, cost_map.config.x_size * cost_map.config.y_size * sizeof(double));
 
 		compact_cost_map = (carmen_compact_map_t *) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
 	}
 	else
 	{
 		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, compact_cost_map, 0.0);
 		carmen_prob_models_free_compact_map(compact_cost_map);
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_cpy_compact_map_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
 	}
 

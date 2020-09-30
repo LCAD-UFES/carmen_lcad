@@ -57,10 +57,11 @@ typedef struct
 	double cost;
 } edge_t;
 
+#define DISABLING_COST	1.0e100
 
 typedef struct
 {
-	char *id;
+	int id;
 	carmen_position_t start;
 	carmen_position_t end;
 	edge_t edge;
@@ -75,7 +76,7 @@ typedef struct
 	int id;
 	int id_ref;
 	int lane_id;
-	char type;
+	char type; //'m' for merge node, 'f' for fork node, 'e' for end of road node, 'i' begin of road node, 'n' for normal node
 	double lon;
 	double lat;
 	carmen_rddf_waypoint rddf_point;
@@ -97,6 +98,7 @@ float convert_world_coordinate_image_coordinate_to_image_coordinate(double world
 vector<string> get_files_from_rddf_list(char *rddf_list);
 void load_rddfs (vector<string> files, vector< vector<carmen_rddf_waypoint> > &rddfs);
 graph_t build_nearby_lanes (graph_t graph, double nearby_lane_range, char *option);
+graph_t process_duplicated_nearby_lanes (graph_t graph);
 double euclidean_distance(double x1, double y1, double x2, double y2);
 void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordinate);
 graph_t build_lane_graph (graph_t lane_graph, graph_t &graph);

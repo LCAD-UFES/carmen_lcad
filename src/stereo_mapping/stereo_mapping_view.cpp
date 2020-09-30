@@ -22,7 +22,7 @@ static GtkWidget *drawing_area;
 static GdkPixbuf *stereo_mapping_buffer;
 
 /* Stereo Map Image */
-static double timestamp;
+static double stereo_map_timestamp;
 static IplImage *stereo_map;
 
 /* Init Parameters */
@@ -76,7 +76,7 @@ static void
 stereo_mapping_handler(carmen_stereo_mapping_message *message)
 {
   // copy the image
-  timestamp = message->timestamp;
+  stereo_map_timestamp = message->timestamp;
   memcpy(stereo_map->imageData, message->stereo_mapping_data, message->map_size);
   cvCvtColor(stereo_map, stereo_map, CV_BGR2RGB);
 
@@ -112,7 +112,7 @@ key_press_event(GtkWidget *widget __attribute__ ((unused)),
   if (toupper(key->keyval) == 'S' && (key->state & GDK_CONTROL_MASK))
   {
     char image_name[1024];
-    sprintf(image_name, "stereo_map_%f.bmp", timestamp);
+    sprintf(image_name, "stereo_map_%f.bmp", stereo_map_timestamp);
     cvSaveImage(image_name, stereo_map);
   }
 

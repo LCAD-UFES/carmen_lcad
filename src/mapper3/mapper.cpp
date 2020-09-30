@@ -59,7 +59,7 @@ extern int number_of_threads;
 
 carmen_map_t offline_map;
 
-carmen_map_t map, snapshot_map;
+carmen_map_t occupancy_map, snapshot_map;
 
 carmen_map_t sum_remission_map, sum_remission_snapshot_map;
 carmen_map_t count_remission_map, count_remission_snapshot_map;
@@ -120,7 +120,7 @@ mapper_get_offline_map()
 carmen_map_t *
 get_the_map()
 {
-	return (&map);
+	return (&occupancy_map);
 }
 
 
@@ -512,13 +512,13 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 		{
 			if (create_map_sum_and_count)
-				carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(&map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, tid);
+				carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(&occupancy_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, tid);
 			else
-				carmen_prob_models_update_cells_crossed_by_ray(&map, sensor_params, sensor_data, tid);
+				carmen_prob_models_update_cells_crossed_by_ray(&occupancy_map, sensor_params, sensor_data, tid);
 		}
 		if (create_map_sum_and_count)
 			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(
-				&map,
+				&occupancy_map,
 				&sum_occupancy_map,
 				&count_occupancy_map,
 				sensor_params,
@@ -704,7 +704,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 #pragma omp parallel num_threads(number_of_threads)
 	{
-		log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(log_odds_snapshot_map, &map);
+		log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(log_odds_snapshot_map, &occupancy_map);
 
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
@@ -725,7 +725,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 			);
 
 			carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(
-				&map,
+				&occupancy_map,
 				log_odds_snapshot_map,
 				sensor_params->log_odds.log_odds_l0
 			);
@@ -733,7 +733,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		else // Velodyne and others
 		{
 			if (decay_to_offline_map)
-				map_decay_to_offline_map(&map);
+				map_decay_to_offline_map(&occupancy_map);
 
 			carmen_pose_3D_t neural_mapper_robot_pose = sensor_data->robot_pose[sensor_data->point_cloud_index];
 
@@ -768,7 +768,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		}
 	}
 	
-	mapper_merge_snapshot_map(count_remission_map, snapshot_map, map, rays_threshold_to_merge_between_maps);
+	mapper_merge_snapshot_map(count_remission_map, snapshot_map, occupancy_map, rays_threshold_to_merge_between_maps);
 	
 	mapper_merge_snapshot_map(count_remission_map, sum_remission_snapshot_map, sum_remission_map, rays_threshold_to_merge_between_maps);
 	mapper_merge_snapshot_map(count_remission_map, sum_sqr_remission_snapshot_map, sum_sqr_remission_map, rays_threshold_to_merge_between_maps);
@@ -796,7 +796,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 #pragma omp parallel num_threads(number_of_threads)
 	{
-		log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(log_odds_snapshot_map, &map);
+		log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(log_odds_snapshot_map, &occupancy_map);
 
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
@@ -817,7 +817,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 			);
 
 			carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(
-				&map,
+				&occupancy_map,
 				log_odds_snapshot_map,
 				sensor_params->log_odds.log_odds_l0
 			);
@@ -825,7 +825,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		else // Velodyne and others
 		{
 			if (decay_to_offline_map)
-				map_decay_to_offline_map(&map);
+				map_decay_to_offline_map(&occupancy_map);
 
 			carmen_pose_3D_t neural_mapper_robot_pose = sensor_data->robot_pose[sensor_data->point_cloud_index];
 			update_log_odds_of_cells_in_the_velodyne_perceptual_field(
@@ -838,7 +838,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 				update_and_merge_with_snapshot_map
 			);
 
-			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map, sensor_params->log_odds.log_odds_l0);
+			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&occupancy_map, log_odds_snapshot_map, sensor_params->log_odds.log_odds_l0);
 
 			if (use_neural_mapper)
 			{
@@ -881,7 +881,7 @@ initialize_first_map_block_origin(carmen_map_t *current_carmen_map, carmen_posit
 		carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, map_type, x_origin, y_origin, current_carmen_map);
 
 		if (current_carmen_map->complete_map == NULL)
-			carmen_grid_mapping_initialize_map(current_carmen_map, map.config.x_size, map.config.resolution, map_type);
+			carmen_grid_mapping_initialize_map(current_carmen_map, occupancy_map.config.x_size, occupancy_map.config.resolution, map_type);
 	}
 	else
 		carmen_grid_mapping_get_buffered_map(x_origin, y_origin, current_carmen_map, map_type);
@@ -902,7 +902,7 @@ mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map
 
 	if (first_time)
 	{
-		initialize_first_map_block_origin(&map, map_origin, 'm');
+		initialize_first_map_block_origin(&occupancy_map, map_origin, 'm');
 		initialize_first_map_block_origin(&moving_objects_raw_map, map_origin, 'm');
 
 		if (use_remission)
@@ -919,7 +919,7 @@ mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map
 			initialize_first_map_block_origin(&count_occupancy_map, map_origin, 'o');
 		}
 
-		carmen_grid_mapping_create_new_map(&new_carmen_map, map.config.x_size, map.config.y_size, map.config.resolution, 'm');
+		carmen_grid_mapping_create_new_map(&new_carmen_map, occupancy_map.config.x_size, occupancy_map.config.y_size, occupancy_map.config.resolution, 'm');
 
 		if (use_remission)
 		{
@@ -945,9 +945,9 @@ mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
-			if (offline_map_available && map.complete_map != NULL && map.config.x_origin != 0.0 && save_map)
+			if (offline_map_available && occupancy_map.complete_map != NULL && occupancy_map.config.x_origin != 0.0 && save_map)
 			{
-				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
+				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &occupancy_map);
 				if (use_remission)
 				{
 					carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
@@ -982,12 +982,12 @@ mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map
 		}
 		else
 		{
-			carmen_grid_mapping_update_map_buffer(&map, 'm');
+			carmen_grid_mapping_update_map_buffer(&occupancy_map, 'm');
 			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, &new_carmen_map, 'm');
 		}
 
 		//destroy current map and assign new map to current map
-		carmen_grid_mapping_swap_maps_and_clear_old_map(&map, &new_carmen_map);
+		carmen_grid_mapping_swap_maps_and_clear_old_map(&occupancy_map, &new_carmen_map);
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
@@ -1010,9 +1010,9 @@ mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map
 	moving_objects_raw_map.config.x_origin = x_origin;
 	moving_objects_raw_map.config.y_origin = y_origin;
 
-	map.config.x_origin = snapshot_map.config.x_origin = x_origin;
-	map.config.y_origin = snapshot_map.config.y_origin = y_origin;
-	mapper_clone_map(map, snapshot_map, 'm');
+	occupancy_map.config.x_origin = snapshot_map.config.x_origin = x_origin;
+	occupancy_map.config.y_origin = snapshot_map.config.y_origin = y_origin;
+	mapper_clone_map(occupancy_map, snapshot_map, 'm');
 	
 	if (use_remission)
 	{
@@ -1058,7 +1058,7 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, boo
 
 	if (first_time)
 	{
-		initialize_first_map_block_origin(&map, map_origin, 'm');
+		initialize_first_map_block_origin(&occupancy_map, map_origin, 'm');
 		initialize_first_map_block_origin(&moving_objects_raw_map, map_origin, 'm');
 		if (use_remission)
 		{
@@ -1074,7 +1074,7 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, boo
 			initialize_first_map_block_origin(&count_occupancy_map, map_origin, 'o');
 		}
 
-		carmen_grid_mapping_create_new_map(&new_carmen_map, map.config.x_size, map.config.y_size, map.config.resolution, 'm');
+		carmen_grid_mapping_create_new_map(&new_carmen_map, occupancy_map.config.x_size, occupancy_map.config.y_size, occupancy_map.config.resolution, 'm');
 		if (use_remission)
 		{
 			carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution, 's');
@@ -1099,9 +1099,9 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, boo
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
-			if (offline_map_available && map.complete_map != NULL && map.config.x_origin != 0.0 && save_map)
+			if (offline_map_available && occupancy_map.complete_map != NULL && occupancy_map.config.x_origin != 0.0 && save_map)
 			{
-				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
+				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &occupancy_map);
 				if (use_remission)
 				{
 					carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
@@ -1135,12 +1135,12 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, boo
 		}
 		else
 		{
-			carmen_grid_mapping_update_map_buffer(&map, 'm');
+			carmen_grid_mapping_update_map_buffer(&occupancy_map, 'm');
 			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, &new_carmen_map, 'm');
 		}
 
 		//destroy current map and assign new map to current map
-		carmen_grid_mapping_swap_maps_and_clear_old_map(&map, &new_carmen_map);
+		carmen_grid_mapping_swap_maps_and_clear_old_map(&occupancy_map, &new_carmen_map);
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
@@ -1163,8 +1163,8 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, boo
 	moving_objects_raw_map.config.x_origin = x_origin;
 	moving_objects_raw_map.config.y_origin = y_origin;
 
-	map.config.x_origin = x_origin;
-	map.config.y_origin = y_origin;
+	occupancy_map.config.x_origin = x_origin;
+	occupancy_map.config.y_origin = y_origin;
 
 	if (use_remission)
 	{
@@ -1200,7 +1200,7 @@ run_snapshot_mapper()
 	static rotation_matrix *r_matrix_robot_to_global = NULL;
 	static carmen_map_t *snapshot_map = NULL;
 
-	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
+	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &occupancy_map);
 
 	if (!globalpos_initialized)
 		return (0);
@@ -1210,7 +1210,7 @@ run_snapshot_mapper()
 		current_point_cloud_index =  sensors_data[0].point_cloud_index;
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[0].robot_pose[current_point_cloud_index].orientation);
 		update_log_odds_of_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[0], &sensors_data[0], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
-		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&occupancy_map, snapshot_map);
 	}
 
 	for (i = 1; i < number_of_sensors; i++)
@@ -1220,7 +1220,7 @@ run_snapshot_mapper()
 			current_point_cloud_index =  sensors_data[i].point_cloud_index;
 			r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[i].robot_pose[current_point_cloud_index].orientation);
 			update_log_odds_of_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[i], &sensors_data[i], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
-			carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+			carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&occupancy_map, snapshot_map);
 		}
 	}
 
@@ -1359,9 +1359,9 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 void
 mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map)
 {
-	for (int i = 0; i < (map.config.x_size * map.config.y_size); i++)
-		if (map.complete_map[i] < 0.0)
-       			map.complete_map[i] = offline_map->complete_map[i];
+	for (int i = 0; i < (occupancy_map.config.x_size * occupancy_map.config.y_size); i++)
+		if (occupancy_map.complete_map[i] < 0.0)
+       			occupancy_map.complete_map[i] = offline_map->complete_map[i];
 }
 
 
@@ -1504,13 +1504,13 @@ mapper_publish_map(double timestamp)
 {
 	if (build_snapshot_map)
 	{
-		memcpy(map.complete_map, offline_map.complete_map, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));
+		memcpy(occupancy_map.complete_map, offline_map.complete_map, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));
 		run_snapshot_mapper();
 	}
 
-	add_virtual_laser_points(&map, &virtual_laser_message);
+	add_virtual_laser_points(&occupancy_map, &virtual_laser_message);
 
-	carmen_mapper_publish_map_message(&map, timestamp);
+	carmen_mapper_publish_map_message(&occupancy_map, timestamp);
 }
 
 
@@ -1533,27 +1533,27 @@ mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *g
 
 	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, globalpos_history[last_globalpos].pose.orientation);
 
-	map.config.x_origin = x_origin;
-	map.config.y_origin = y_origin;
+	occupancy_map.config.x_origin = x_origin;
+	occupancy_map.config.y_origin = y_origin;
 
 	if (UPDATE_CELLS_BELOW_CAR)
-		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
+		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &occupancy_map, 0.0, &car_config);
 }
 
 
 void
 mapper_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *sensor_params)
 {
-	carmen_update_cells_in_the_sensor_perceptual_field(&map, xt, zt, sensor_params);
+	carmen_update_cells_in_the_sensor_perceptual_field(&occupancy_map, xt, zt, sensor_params);
 }
 
 
 void
 mapper_save_current_map()
 {
-	if (offline_map_available && map.complete_map != NULL && map.config.x_origin != 0.0)
+	if (offline_map_available && occupancy_map.complete_map != NULL && occupancy_map.config.x_origin != 0.0)
 	{
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
+		carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &occupancy_map);
 		if (use_remission)
 		{
 			carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
@@ -1590,7 +1590,7 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 	car_config = main_car_config;
 	map_config = *main_map_config;
 
-	carmen_grid_mapping_create_new_map(&map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
+	carmen_grid_mapping_create_new_map(&occupancy_map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
 
 	if (use_merge_between_maps)
 		carmen_grid_mapping_create_new_map(&snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');

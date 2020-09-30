@@ -16,7 +16,8 @@ LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobst
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lbase_ackerman_interface \
 	  -lglobal -lipc -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lmapper_interface \
 	  -lmap_server_interface -lford_escape_hybrid_interface -lcontrol -lcarmodel -lfann -lgsl -lgslcblas \
-	  -lobstacle_avoider_interface
+	  -lobstacle_avoider_interface -lroute_planner_interface -lnavigator_ackerman_interface
+	  
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
@@ -33,6 +34,17 @@ MAN_PAGES =
 TARGETS = libcarmodel libcontrol simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a \
 	simulator_ackerman_connect_multiple libsimulator_ackerman.a
 
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+IFLAGS += \
+	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --cflags gtkglext-1.0`
+LFLAGS += \
+	-lglobal_graphics \
+	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --libs gtkglext-1.0`
+endif
 
 ifndef NO_PYTHON
 PUBLIC_LIBRARIES_SO = libsimulator_ackerman_interface.so
@@ -58,7 +70,7 @@ clean_libcontrol:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/
 
 
-libsimulator_ackerman.a: simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o 
+libsimulator_ackerman.a: simulator_ackerman_simulation.o objects_ackerman.o 
 
 simulator_ackerman:	simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o simulator_ackerman_interface.o
 

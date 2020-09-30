@@ -8,8 +8,6 @@ extern "C"
 #endif
 
 
-#include <carmen/mapper_interface.h>
-
 #include "udatmo_messages.h"
 
 

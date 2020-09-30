@@ -412,7 +412,7 @@ build_and_follow_path(double timestamp)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
-		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
+		if (distance_to_goal < 0.5 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
 		{
 			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);

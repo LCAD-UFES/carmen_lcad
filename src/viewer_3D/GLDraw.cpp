@@ -90,6 +90,8 @@ initGl (int width, int height)
     camera_pose.position.z = 30.0;
     camera_pose.orientation.pitch = carmen_degrees_to_radians (90.0);
 
+    camera_offset.orientation.yaw = carmen_degrees_to_radians (90.0);
+
     background_r = 0.0;
     background_g = 0.0;
     background_b = 0.0;
@@ -110,6 +112,18 @@ void
 set_camera (carmen_pose_3D_t pose)
 {
     camera_pose = pose;
+}
+
+carmen_pose_3D_t
+get_camera_pose()
+{
+    return (camera_pose);
+}
+
+carmen_pose_3D_t
+get_camera_offset()
+{
+    return (camera_offset);
 }
 
 void
@@ -650,9 +664,8 @@ draw_linear_velocity(double x, double y, double linear_velocity, double height)
 }
 
 void
-draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ldmrs_objects, double min_velocity)
+draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ldmrs_objects, double min_velocity, CarDrawer *car_drawer)
 {
-
 	int i;
 	rotation_matrix *rotate = NULL;
 
@@ -663,7 +676,7 @@ draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ld
 		carmen_pose_3D_t pos;
 		carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
 		carmen_vector_3D_t s1, s2, s3, s4; /* moving object direction arrow */
-		double correction_wheel_height = 0.28;
+		double correction_wheel_height = car_drawer->car_wheel_radius;
 		double W, L, H;
 
 		pos.position.x = ldmrs_objects_tracking[i].x;
@@ -877,14 +890,12 @@ draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ld
 
 
 void
-draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking, int current_num_point_clouds,
-		carmen_vector_3D_t offset, int draw_particles_flag)
+draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking, int num_moving_objects,
+		carmen_vector_3D_t offset, CarDrawer *car_drawer, int draw_particles_flag)
 {
-	/*** MOVING OBJECTS MODULE ***/
-	int i;
 	rotation_matrix *rotate = NULL;
 
-	for (i = 0; i < current_num_point_clouds; i++)
+	for (int i = 0; i < num_moving_objects; i++)
 	{
 		if (moving_objects_tracking[i].geometric_model == -1)
 			continue;
@@ -892,7 +903,7 @@ draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking,
 		pos = moving_objects_tracking[i].moving_objects_pose;
 		carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
 		carmen_vector_3D_t s1, s2, s3, s4; /* moving object direction arrow */
-		double correction_wheel_height = 0.28;
+		double correction_wheel_height = car_drawer->car_wheel_radius;
 		double W, L, H;
 
 		pos.position.x = pos.position.x - offset.x;
@@ -1078,7 +1089,6 @@ draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking,
 //				pos = moving_objects_tracking[i].moving_objects_pose;
 //				carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
 //				carmen_vector_3D_t s1, s2, s3, s4; /* moving object direction arrow */
-//				double correction_wheel_height = 0.28;
 //				double W, L, H;
 //
 //				pos.position.x = moving_objects_tracking[i].particulas[j].pose.x - offset.x;
@@ -1264,28 +1274,44 @@ draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking,
 
 
 void
-draw_moving_objects_point_clouds(point_cloud *moving_objects_point_clouds, int cloud_size,
-		carmen_vector_3D_t offset)
+draw_square(double x, double y, double z, double l)
 {
-   // glPointSize (5);
-    glBegin (GL_POINTS);
+	double l2 = l /2.0;
+
+	glBegin(GL_QUADS);
+
+	glVertex3f(x - l2, y - l2, z);
+	glVertex3f(x + l2, y - l2, z);
+	glVertex3f(x + l2, y + l2, z);
+	glVertex3f(x - l2, y + l2, z);
+
+	glEnd();
+}
 
 
-//    glColor3d(0.0,0.0,1.0);
+void
+draw_moving_objects_point_clouds(point_cloud *moving_objects_point_clouds, int cloud_size,
+		carmen_vector_3D_t offset, CarDrawer *car_drawer, map_drawer *m_drawer)
+{
+//    glPointSize (1.0);
+//    glBegin (GL_POINTS);
 
-    int i;
-    for (i = 0; i < cloud_size; i++)
+    for (int i = 0; i < cloud_size; i++)
     {
-        int j;
-        for (j = 0; j < moving_objects_point_clouds[i].num_points; j++)
+        for (int j = 0; j < moving_objects_point_clouds[i].num_points; j++)
         {
             glColor3d (moving_objects_point_clouds[i].point_color[j].x, moving_objects_point_clouds[i].point_color[j].y, moving_objects_point_clouds[i].point_color[j].z);
-            glVertex3d (moving_objects_point_clouds[i].points[j].x - offset.x, moving_objects_point_clouds[i].points[j].y - offset.y, moving_objects_point_clouds[i].points[j].z - moving_objects_point_clouds[i].car_position.z - 0.28);
+            draw_square(moving_objects_point_clouds[i].points[j].x - offset.x,
+            		moving_objects_point_clouds[i].points[j].y - offset.y,
+					moving_objects_point_clouds[i].points[j].z - moving_objects_point_clouds[i].car_position.z - car_drawer->car_wheel_radius,
+					m_drawer->map_grid_resolution);
+//            glVertex3d (moving_objects_point_clouds[i].points[j].x - offset.x,
+//            		moving_objects_point_clouds[i].points[j].y - offset.y,
+//					moving_objects_point_clouds[i].points[j].z - moving_objects_point_clouds[i].car_position.z - car_drawer->car_wheel_radius);
         }
     }
 
     glEnd ();
-
 }
 
 static void

@@ -509,7 +509,7 @@ Neural_map_queue::save_map_as_compact_map_binary_file(carmen_map_t map, char* ma
 
 void
 Neural_map_queue::save_map_as_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label,
-		double rotation, double map_max, int map_index, double current_timestamp, carmen_pose_3D_t neural_mapper_robot_pose)
+		double rotation, double map_max __attribute__ ((unused)), int map_index, double current_timestamp, carmen_pose_3D_t neural_mapper_robot_pose)
 {
 	FILE *map_file;
 	char name[1024];

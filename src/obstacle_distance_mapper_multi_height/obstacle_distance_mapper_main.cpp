@@ -16,7 +16,7 @@
 double obstacle_probability_threshold 	= 0.5;
 double obstacle_cost_distance 			= 1.0;
 
-carmen_map_t 										map;
+carmen_map_t 										occupancy_map;
 carmen_prob_models_distance_map 					distance_map;
 carmen_obstacle_distance_mapper_compact_map_message compact_distance_map;
 carmen_obstacle_distance_mapper_compact_map_message compact_lane_contents;

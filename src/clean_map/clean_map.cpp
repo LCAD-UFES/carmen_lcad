@@ -52,7 +52,7 @@ extern carmen_localize_ackerman_map_t localize_map;
  * The map
  */
 
-carmen_map_t map, sum_remission_map, sum_sqr_remission_map, count_remission_map, moving_objects_raw_map,
+carmen_map_t occupancy_map, sum_remission_map, sum_sqr_remission_map, count_remission_map, moving_objects_raw_map,
 				sum_occupancy_map, mean_occupancy_map, count_occupancy_map; //, variance_occupancy_map;
 
 carmen_map_t cost_map;
@@ -604,7 +604,7 @@ initialize_first_map_block_origin(carmen_map_t *current_carmen_map, carmen_posit
 		carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, map_type, x_origin, y_origin, current_carmen_map);
 
 		if (current_carmen_map->complete_map == NULL)
-			carmen_grid_mapping_initialize_map(current_carmen_map, map.config.x_size, map.config.resolution);
+			carmen_grid_mapping_initialize_map(current_carmen_map, occupancy_map.config.x_size, occupancy_map.config.resolution);
 	}
 	else		
 		carmen_grid_mapping_get_buffered_map(x_origin, y_origin, current_carmen_map);
@@ -622,7 +622,7 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 
 	if (first_time)
 	{
-		initialize_first_map_block_origin(&map, map_origin, 'm');
+		initialize_first_map_block_origin(&occupancy_map, map_origin, 'm');
 		initialize_first_map_block_origin(&moving_objects_raw_map, map_origin, 'm');
 		initialize_first_map_block_origin(&sum_remission_map, map_origin, 's');
 		initialize_first_map_block_origin(&sum_sqr_remission_map, map_origin, '2');
@@ -636,7 +636,7 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 			//		initialize_first_map_block_origin(&variance_occupancy_map, map_origin, 'v');
 		}
 
-		carmen_grid_mapping_create_new_map(&new_carmen_map, map.config.x_size, map.config.y_size, map.config.resolution, 'm');
+		carmen_grid_mapping_create_new_map(&new_carmen_map, occupancy_map.config.x_size, occupancy_map.config.y_size, occupancy_map.config.resolution, 'm');
 		carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution, 's');
 		carmen_grid_mapping_create_new_map(&new_sum_sqr_remission_map, sum_sqr_remission_map.config.x_size, sum_sqr_remission_map.config.y_size, sum_sqr_remission_map.config.resolution, '2');
 		carmen_grid_mapping_create_new_map(&new_count_remission_map, count_remission_map.config.x_size, count_remission_map.config.y_size, count_remission_map.config.resolution, 'c');
@@ -661,7 +661,7 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 		if (update_and_merge_with_clean_map_saved_maps)
 		{
 			//save the current map in the given map_path
-			carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
+			carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &occupancy_map);
 			carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
 			carmen_grid_mapping_save_block_map_by_origin(map_path, '2', &sum_sqr_remission_map);
 			carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', &count_remission_map);
@@ -691,12 +691,12 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 		}
 		else
 		{
-			carmen_grid_mapping_update_map_buffer(&map, 'm');
+			carmen_grid_mapping_update_map_buffer(&occupancy_map, 'm');
 			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, &new_carmen_map, 'm');
 		}
 
 		//destroy current map and assign new map to current map
-		carmen_grid_mapping_swap_maps_and_clear_old_map(&map, &new_carmen_map);
+		carmen_grid_mapping_swap_maps_and_clear_old_map(&occupancy_map, &new_carmen_map);
 
 		if (update_and_merge_with_clean_map_saved_maps)
 		{
@@ -718,8 +718,8 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 	moving_objects_raw_map.config.x_origin = x_origin;
 	moving_objects_raw_map.config.y_origin = y_origin;
 
-	map.config.x_origin = x_origin;
-	map.config.y_origin = y_origin;
+	occupancy_map.config.x_origin = x_origin;
+	occupancy_map.config.y_origin = y_origin;
 
 	sum_remission_map.config.x_origin = x_origin;
 	sum_remission_map.config.y_origin = y_origin;
@@ -775,7 +775,7 @@ run_snapshot_clean_map()
 	static rotation_matrix *r_matrix_robot_to_global = NULL;
 	static carmen_map_t *snapshot_map = NULL;
 	
-	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
+	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &occupancy_map);
 	
 	if (!globalpos_initialized)
 		return (0);
@@ -801,7 +801,7 @@ run_snapshot_clean_map()
 			current_point_cloud_index =  sensors_data[i].point_cloud_index;
 			r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[i].robot_pose[current_point_cloud_index].orientation);
 //			update_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[i], &sensors_data[i], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
-			carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+			carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&occupancy_map, snapshot_map);
 		}
 	}
 
@@ -929,9 +929,9 @@ clean_map_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_sca
 void
 clean_map_merge_online_map_with_offline_map(carmen_map_t *offline_map)
 {
-	for (int i = 0; i < (map.config.x_size * map.config.y_size); i++)
-		if (map.complete_map[i] < 0.0)
-       			map.complete_map[i] = offline_map->complete_map[i];
+	for (int i = 0; i < (occupancy_map.config.x_size * occupancy_map.config.y_size); i++)
+		if (occupancy_map.complete_map[i] < 0.0)
+       			occupancy_map.complete_map[i] = offline_map->complete_map[i];
 }
 
 
@@ -966,18 +966,18 @@ clean_map_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message
 
 	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, globalpos_history[last_globalpos].pose.orientation);
 
-	map.config.x_origin = x_origin;
-	map.config.y_origin = y_origin;
+	occupancy_map.config.x_origin = x_origin;
+	occupancy_map.config.y_origin = y_origin;
 
 	if (UPDATE_CELLS_BELOW_CAR)
-		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
+		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &occupancy_map, 0.0, &car_config);
 }
 
 
 void
 clean_map_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *sensor_params)
 {
-	carmen_update_cells_in_the_sensor_perceptual_field(&map, xt, zt, sensor_params);
+	carmen_update_cells_in_the_sensor_perceptual_field(&occupancy_map, xt, zt, sensor_params);
 }
 
 
@@ -986,7 +986,7 @@ clean_map_save_current_map()
 {
 
 	//save the current map in the given map_path
-	carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
+	carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &occupancy_map);
 	carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
 	carmen_grid_mapping_save_block_map_by_origin(map_path, '2', &sum_sqr_remission_map);
 	carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', &count_remission_map);
@@ -1008,7 +1008,7 @@ clean_map_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman
 	car_config = main_car_config;
 	map_config = *main_map_config;
 	
-	carmen_grid_mapping_create_new_map(&map, map_config.x_size, map_config.y_size, map_config.resolution);
+	carmen_grid_mapping_create_new_map(&occupancy_map, map_config.x_size, map_config.y_size, map_config.resolution);
 	carmen_grid_mapping_create_new_map(&offline_map, map_config.x_size, map_config.y_size, map_config.resolution);
 	carmen_grid_mapping_create_new_map(&sum_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
 	carmen_grid_mapping_create_new_map(&sum_sqr_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);

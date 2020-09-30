@@ -20,11 +20,11 @@ PACKAGES = \
 	moving_objects  bumblebee_basic  laser_ldmrs  viewer_3D  stereo  road_finding  v_disparity  stereo_mapping  \
 	grid_mapping  visual_odometry_package2  stereo_point_cloud  xsens  xsens_MTi-G  rrt_planner  velodyne  rddf  \
 	download_map  parking_assistant  navigator_astar  tracker  navigator_spline  navigator_gui  velodyne_camera_calibration  \
-	camera_boxes_to_world  lane_detector  navigator_gui2  mapper  obstacle_distance_mapper  map_server  car_panel_gui  \
+	camera_boxes_to_world  navigator_gui2  mapper  obstacle_distance_mapper  map_server  car_panel_gui  \
 	stereo_velodyne  motion_planner  udatmo1  behavior_selector  base_ackerman  utilities/user_preferences  \
-	visual_tracker  model_predictive_planner  pi_imu  can_dump  utilities/scripts
+	model_predictive_planner  pi_imu  can_dump  utilities/scripts  utilities/publish_pose
 
-PACKAGES_LIB = 
+PACKAGES_LIB = ford_escape_hybrid  sensors/kinect  visual_tracker  lane_detector  voice_interface  traffic_light
 
 ifndef NO_CPP
 PACKAGES += carmenpp

@@ -581,7 +581,7 @@ carmen_map_graphics_new_viewer(int x_size, int y_size, double initial_zoom)
 	gtk_widget_show(zoom_label);
 
 	new_map_view->zoom_adjustment = gtk_adjustment_new
-			(new_map_view->zoom, 10.0, 110.0, 1.0, 10.0, 10.0);
+			(new_map_view->zoom, 30.0, 110.0, 1.0, 10.0, 10.0);
 	scroll_bar = gtk_hscale_new(GTK_ADJUSTMENT(new_map_view->zoom_adjustment));
 	gtk_scale_set_value_pos(GTK_SCALE(scroll_bar), GTK_POS_LEFT);
 	gtk_box_pack_start(GTK_BOX(zoom_box), scroll_bar, TRUE, TRUE, 0);

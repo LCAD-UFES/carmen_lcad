@@ -29,6 +29,7 @@ extern "C" {
 #define	CAR			'C' // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
 #define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
 #define	PEDESTRIAN	'P'
+#define	UNKNOWN		'U'
 
 
 /************
@@ -108,12 +109,19 @@ typedef struct _particle_print particle_print_t;
 
 typedef struct {
 	int point_size;
+	int num_valid_samples;
 	double r, g, b;
 	double linear_velocity;
+	double linear_velocity_std;
+	double lateral_velocity;
+	double lateral_velocity_std;
 	double orientation;
 	double length;
+	double length_std;
 	double width;
+	double width_std;
 	double height;
+	double height_std;
 	int geometric_model;
 	object_model_features_t model_features;
 	int	num_associated;	// The moving object id
@@ -134,7 +142,7 @@ typedef struct {
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
 /* fixme                                                                                                                                       model features...............................................*/
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, int, double, double, double, double, double, double, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
 //#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>,<{{double, double, double}, double, int, {double, double, double} }:1>}:1>, double, string}"
 
 

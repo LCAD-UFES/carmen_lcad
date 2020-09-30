@@ -13,7 +13,6 @@
 #include <carmen/localize_ackerman_likelihood_map.h>
 #include <carmen/map_server_messages.h>
 #include <carmen/mapper_messages.h>
-#include <carmen/mapper_interface.h>
 
 
 #ifdef __cplusplus
@@ -79,7 +78,7 @@ void carmen_map_server_subscribe_compact_cost_map(
 		carmen_subscribe_t subscribe_how);
 
 void
-carmen_cpy_compact_cost_message_to_compact_map(carmen_compact_map_t* compact_cost_map,carmen_map_server_compact_cost_map_message* message);
+carmen_cpy_compact_map_message_to_compact_map(carmen_compact_map_t* compact_cost_map,carmen_map_server_compact_cost_map_message* message);
 
 void
 carmen_cpy_compact_lane_message_to_compact_map(carmen_compact_map_t* compact_lane_map, carmen_map_server_compact_lane_map_message* message);

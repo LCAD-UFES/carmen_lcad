@@ -8,26 +8,24 @@
 #include "map_drawer.h"
 
 
-struct map_drawer
-{
-	GLuint* vertex_buffer_ids;
-	GLuint* lvl1_vertex_buffer_ids;
-	GLuint* color_buffer_ids;
-	int* buffer_sizes;
-	int* lvl1_buffer_sizes;
-
-	carmen_map_t* maps;
-	carmen_map_t* lvl1_maps;
-	int max_num_maps;
-	int next_map;
-};
+int drawVBO = 0;
 
 
 map_drawer*
-create_map_drawer(void)
+create_map_drawer(int argc, char** argv)
 {
 	map_drawer* m_drawer = (map_drawer*)malloc(sizeof(map_drawer));
-		
+
+	int num_items;
+
+	carmen_param_t param_list[] =
+	{
+		{"mapper", "map_grid_res", CARMEN_PARAM_DOUBLE, &(m_drawer->map_grid_resolution), 0, NULL},
+	};
+
+	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
 	m_drawer->max_num_maps = 1;
 	m_drawer->next_map = 0;
 
@@ -77,19 +75,25 @@ destroy_map_drawer(map_drawer* m_drawer)
 	free(m_drawer);
 }
 
-static int getTotalObstacles(carmen_map_t map)
+static int getTotalObstacles(carmen_map_t map, double car_x, double car_y, double zoom)
 {
 	int total = 0;
+	double resolution = map.config.resolution;
 
-	int total_size = map.config.x_size * map.config.y_size;
-	int i;
-	for(i = 0; i < total_size; i++)
+	for (int i = 0; i < map.config.x_size; i++)
 	{
-		double map_value = map.complete_map[i];
-
-		if (map_value > 0.85)
+		for (int j = 0; j < map.config.y_size; j++)
 		{
-			total++;
+			double x = i * resolution;
+			double y = j * resolution;
+			double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
+			if (distance < ((double) map.config.x_size * resolution * zoom))
+			{
+				double map_value = map.complete_map[i * map.config.x_size + j];
+
+				if (map_value > 0.5)
+					total++;
+			}
 		}
 	}
 
@@ -163,28 +167,28 @@ static void fillCubeData(float* vd, int offset, float x, float y, float z, float
 	vd[k+21] = x+length_x; 	vd[k+22] = y-length_y; 	vd[k+23] = z+length_z;
 }
 
-static float *create_vertex_data(carmen_map_t map, int total_size)
+static float *create_vertex_data(carmen_map_t map, int total_size, double car_x, double car_y, double zoom)
 {
 	float *vd = (float *) malloc(total_size * 6 * 4 * 2 * 3 * sizeof(float));
 
 	double resolution = map.config.resolution;
 	int pos = 0;
-	int i;	
-	for (i = 0; i < map.config.x_size; i++)
+	for (int i = 0; i < map.config.x_size; i++)
 	{
-		int j;
-		for (j = 0; j < map.config.y_size; j++)
+		for (int j = 0; j < map.config.y_size; j++)
 		{
-			double map_value = map.complete_map[i * map.config.x_size + j];
-			
-			if (map_value > 0.85)
+			double x = i * resolution;
+			double y = j * resolution;
+			double z = 0.0;
+			double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
+			if (distance < ((double) map.config.x_size * resolution * zoom))
 			{
-				double x = i * resolution;
-				double y = j * resolution;
-				double z = 0.0;
-
-				fillCubeData(vd, pos, x, y, z, resolution, resolution, 0.5);
-				pos += (6 * 4 * 2 * 3);
+				double map_value = map.complete_map[i * map.config.x_size + j];
+				if (map_value > 0.5)
+				{
+					fillCubeData(vd, pos, x, y, z, resolution, resolution, 0.5);
+					pos += (6 * 4 * 2 * 3);
+				}
 			}
 		}
 	}
@@ -194,40 +198,56 @@ static float *create_vertex_data(carmen_map_t map, int total_size)
 
 
 void
-add_map_message(map_drawer* m_drawer, carmen_map_t map)
+add_map_message(map_drawer* m_drawer, carmen_map_t map,
+		carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom)
 {
 	m_drawer->maps[m_drawer->next_map] = map;
 
-	int total_size = getTotalObstacles(map);
-	float *vertex_data = create_vertex_data(map, total_size);
-	glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[m_drawer->next_map]);
-	glBufferData(GL_ARRAY_BUFFER, total_size * (6 * 4 * 2 * 3) * sizeof(float), vertex_data, GL_DYNAMIC_DRAW);
-	free(vertex_data);
+	double offset_x = map.config.x_origin - offset.x;
+	double offset_y = map.config.y_origin - offset.y;
+	double car_x = car_fused_pose.position.x - offset_x;
+	double car_y = car_fused_pose.position.y - offset_y;
 
-	m_drawer->buffer_sizes[m_drawer->next_map] = total_size * 6 * 4;
+	glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[m_drawer->next_map]);
+	if (drawVBO)
+	{
+		int total_size = getTotalObstacles(map, car_x, car_y, map_zoom);
+		float *vertex_data = create_vertex_data(map, total_size, car_x, car_y, map_zoom);
+		glBufferData(GL_ARRAY_BUFFER, total_size * (6 * 4 * 2 * 3) * sizeof(float), vertex_data, GL_STREAM_DRAW);
+		free(vertex_data);
+		m_drawer->buffer_sizes[m_drawer->next_map] = total_size * 6 * 4;
+	}
 	m_drawer->next_map = (m_drawer->next_map + 1) % m_drawer->max_num_maps;
 
-	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
 void
-add_map_level1_message(map_drawer* m_drawer, carmen_mapper_map_message *message)
+add_map_level1_message(map_drawer* m_drawer, carmen_mapper_map_message *message,
+		carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom)
 {
 	carmen_map_t map;
 
 	map.complete_map = message->complete_map;
 	map.config = message->config;
-	
+
 	m_drawer->lvl1_maps[m_drawer->next_map] = map;
 
-	int total_size = getTotalObstacles(map);
-	float* vertex_data = create_vertex_data(map, total_size);
+	double offset_x = map.config.x_origin - offset.x;
+	double offset_y = map.config.y_origin - offset.y;
+	double car_x = car_fused_pose.position.x - offset_x;
+	double car_y = car_fused_pose.position.y - offset_y;
+	
 	glBindBuffer(GL_ARRAY_BUFFER, m_drawer->lvl1_vertex_buffer_ids[m_drawer->next_map]);
-	glBufferData(GL_ARRAY_BUFFER, total_size * (6 * 4 * 2 * 3) * sizeof(float), vertex_data, GL_STATIC_DRAW);
-	free(vertex_data);
-
-	m_drawer->lvl1_buffer_sizes[m_drawer->next_map] = total_size * 6 * 4;
+	if (drawVBO)
+	{
+		int total_size = getTotalObstacles(map, car_x, car_y, map_zoom);
+		float* vertex_data = create_vertex_data(map, total_size, car_x, car_y, map_zoom);
+		glBufferData(GL_ARRAY_BUFFER, total_size * (6 * 4 * 2 * 3) * sizeof(float), vertex_data, GL_STATIC_DRAW);
+		free(vertex_data);
+		m_drawer->lvl1_buffer_sizes[m_drawer->next_map] = total_size * 6 * 4;
+	}
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
@@ -299,7 +319,7 @@ draw_map_element(double x, double y, double z, double map_value, double resoluti
 
 
 static void
-draw_single_map(carmen_map_t map)
+draw_single_map(carmen_map_t map, double car_x, double car_y, double zoom)
 {
 	glPushMatrix();
 	
@@ -307,19 +327,20 @@ draw_single_map(carmen_map_t map)
 
 		double resolution = map.config.resolution;
 
-		int i;
-		for(i=0; i < map.config.x_size; i++)
+		for(int i = 0; i < map.config.x_size; i++)
 		{
-			int j;
-			for(j=0; j < map.config.y_size; j++)
+			for(int j = 0; j < map.config.y_size; j++)
 			{				
 				double x = i * resolution;
 				double y = j * resolution;
-				double z = 0.0;
-				double map_value = map.complete_map[i * map.config.x_size + j];
+				double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
+				if (distance < ((double) map.config.x_size * resolution * zoom))
+				{
+					double z = 0.0;
+					double map_value = map.complete_map[i * map.config.x_size + j];
 
-				draw_map_element(x, y, z, map_value, resolution);
-
+					draw_map_element(x, y, z, map_value, resolution);
+				}
 				//printf("x:% lf, y:% lf, z:% lf\n", x, y, z);
 			}
 		}
@@ -384,7 +405,7 @@ draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 
 
 static void
-draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
+draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom)
 {	
 	int i;
 
@@ -398,7 +419,9 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
 
 			glTranslated(offset_x, offset_y, offset_z);
 
-			draw_single_map(m_drawer->maps[i]);
+			double car_x = car_fused_pose.position.x - offset_x;
+			double car_y = car_fused_pose.position.y - offset_y;
+			draw_single_map(m_drawer->maps[i], car_x, car_y, map_zoom);
 
 			offset_x = m_drawer->maps[i].config.x_origin - offset.x;
 			offset_y = m_drawer->maps[i].config.y_origin - offset.y;
@@ -406,7 +429,7 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
 
 			glTranslated(offset_x, offset_y, offset_z);
 
-			draw_single_map(m_drawer->lvl1_maps[i]);
+			draw_single_map(m_drawer->lvl1_maps[i], car_x, car_y, map_zoom);
 
 		glPopMatrix();
 	}
@@ -414,11 +437,9 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
 
 
 void
-draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset)
+draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom)
 {
 	glPushMatrix();
-
-		int drawVBO = 1;
 
 		if (drawVBO)
 		{
@@ -426,7 +447,7 @@ draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset)
 		}
 		else
 		{
-			draw_map_not_VBO(m_drawer, offset);
+			draw_map_not_VBO(m_drawer, offset, car_fused_pose, map_zoom);
 		}
 
 	glPopMatrix();

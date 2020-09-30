@@ -13,10 +13,8 @@
 #include <gtk/gtkgl.h>
 #include <glade/glade.h>
 
-#include "draw_callbacks.h"
 #include "../../navigator_gui2_main.h"
 
-#include <carmen/carmen.h>
 #include <carmen/global_graphics.h>
 #include <carmen/map_graphics.h>
 #include <carmen/grid_mapping.h>
@@ -41,6 +39,8 @@
 
 #include <carmen/rddf_util.h>
 #include <carmen/carmen_gps_wrapper.h>
+
+#include "draw_callbacks.h"
 
 #include <dirent.h>
 
@@ -149,6 +149,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowFusedOdometry;
 			GtkCheckMenuItem* menuDisplay_ShowGaussians;
 			GtkCheckMenuItem* menuDisplay_ShowLaserData;
+			GtkCheckMenuItem* menuDisplay_ShowNearbyLanes;
 			GtkCheckMenuItem* menuDisplay_ShowPathPlans;
 			GtkCheckMenuItem* menuDisplay_ShowOAMotionPlan;
 			GtkCheckMenuItem* menuDisplay_ShowMPPMotionPlan;
@@ -312,6 +313,7 @@ namespace View
 		int near_rddf_point_index;
 
 		bool freeze_status;
+		carmen_simulator_ackerman_object_t object_type;
 
 		car_panel *car_panel_gl;
 
@@ -332,6 +334,8 @@ namespace View
 		void get_place_of_interest(char *goal_source_name);
 		int get_state_code(char* state_name);
 		void save_to_image(GtkMapViewer *mapv);
+		void do_publish_map_view(GtkMapViewer *mapv);
+		double time_of_last_publish = 0.0;
 		void do_redraw(void);
 		void label_autonomy_button(char *str);
 		void change_cursor(GdkColor *fg, GdkColor *bg);
@@ -361,7 +365,7 @@ namespace View
 		void navigator_graphics_redraw_superimposed();
 		void navigator_graphics_change_map(carmen_map_p new_map);
 		void navigator_graphics_update_simulator_truepos(carmen_point_t truepose);
-		void navigator_graphics_update_simulator_objects(int num_objects, carmen_traj_point_t *objects_list);
+		void navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list);
 		void navigator_graphics_update_moving_objects(int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking);
 
 		void navigator_graphics_update_plan_to_draw(int path_size, carmen_ackerman_traj_point_t *path);
@@ -376,8 +380,8 @@ namespace View
 				int num_path);
 
 		void navigator_graphics_update_fused_odometry(carmen_point_t fused_odometry_pose);
-		void navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message msg);
-		void navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message msg);
+		void navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message *msg);
+		void navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message *msg);
 		void navigator_graphics_update_parking_assistant_goal(carmen_point_t pose);
 		void navigator_graphics_reset();
 		void navigator_graphics_display_config (char *attribute, int value, char *new_status_message);
