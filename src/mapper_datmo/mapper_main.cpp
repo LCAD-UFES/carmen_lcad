@@ -836,7 +836,8 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 
 
 void
-show_semantic_map(double map_resolution, double range_max, vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points)
+show_semantic_map(double map_resolution, double range_max, vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points,
+	vector<vector<image_cartesian>> recovered_clusters, vector<carmen_vector_2D_t> filtered_clusters_mean_pose_vector)
 {
 	int img_planar_depth = (double) 0.5 * range_max / map_resolution;
 	Mat map_img = Mat(Size(img_planar_depth * 2, img_planar_depth * 2), CV_8UC3, Scalar(255, 255, 255));
@@ -860,6 +861,27 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 			if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
 				map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 200, 0);
 		}
+	}
+
+	for (unsigned int i = 0, size = recovered_clusters.size(); i < size; i++)
+	{
+		for (unsigned int j = 0, c_size = recovered_clusters[i].size(); j < c_size; j++)
+		{
+			int px = (double) recovered_clusters[i][j].cartesian_y / map_resolution + img_planar_depth;
+			int py = (double) (map_img.rows / 2) - 1 - recovered_clusters[i][j].cartesian_x / map_resolution;
+			
+			if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
+				map_img.at<Vec3b>(Point(px, py)) = Vec3b(30, 100, 200);
+		}
+	}
+	
+	for (unsigned int i = 0, size = filtered_clusters_mean_pose_vector.size(); i < size; i++)
+	{
+		int px = (double) filtered_clusters_mean_pose_vector[i].y / map_resolution + img_planar_depth;
+		int py = (double) (map_img.rows / 2) - 1 - filtered_clusters_mean_pose_vector[i].x / map_resolution;
+		
+		if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
+			rectangle(map_img, cvPoint(px, py), cvPoint(px+1, py+1), CV_RGB(0, 0, 200), 1, 8);
 	}
 	
 	rectangle(map_img, cvPoint(img_planar_depth - 10 / 2, img_planar_depth - 10 / 2), cvPoint(img_planar_depth + 10 / 2, img_planar_depth + 30 / 2), CV_RGB(0, 0, 200), 1, 8);
@@ -1343,7 +1365,7 @@ process_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, in
 		remove_clusters_of_static_obstacles_using_segmentation(sensor_params, sensor_data, points, clustered_points, camera_index, image_width, image_height, camera_data[camera_index].timestamp[image_index]);
 	}
 
-	remove_classified_rais_from_point_clud(sensor_params, sensor_data, clustered_points);
+	//remove_classified_rais_from_point_clud(sensor_params, sensor_data, clustered_points);
 
 	// if (filter_datmo_count)
 	// 	camera_datmo_count[camera_index]++;
@@ -1362,87 +1384,118 @@ copy_to_filtered_clusters(vector<vector<image_cartesian>> clusters, vector<vecto
 }
 
 
-typedef struct
+// ===================================================================================================================================================================================================================================
+// LEMBRAR DE EXPLICAR NO ARTIGO QUE PODEMOS SEMPRE CONSIDERAR A POSIÇÃO DO OBJETO EM RELAÇÃO AO ROBO E NAO A POSICAO DO OBJETO NO MUNDO, POR QUE EM RELACAO AO ROBO OS OBJETOS SE MOVEM MAIS LENTAMENTE
+// Por isso a funcao compute_mean_point_of_each_object nao precisa transladar os objetos para suas respectivas poses no mundo
+// ===================================================================================================================================================================================================================================
+
+vector<carmen_vector_2D_t>
+compute_mean_point_of_each_cluster(vector<vector<image_cartesian>> clusters_vector)
 {
-	int id;
-	double velocity;
-	double orientation;
-	list <double> timestamp;
-	list <double> x;
-	list <double> y;
-	list <double> theta;
-}movable_object;
+	vector<carmen_vector_2D_t> clusters_poses_vector;
+	carmen_vector_2D_t point;
+	double x_mean = 0.0;
+	double y_mean = 0.0;
+	unsigned int j = 0, c_size = 0;
 
-int
-compute_index_of_furthest_point_from_the_line(double x_min, double y_min, double x_max, double y_max, vector<image_cartesian> &cluster)
-{
-	// dist = |ax0 + by0 + c| / √(a^2 + b^2)
-	double a, b, c, denominator, dist, dist_max = 0.0;
-	int index_max;
+	// double x_max = 0.0;
+	// double y_max = 0.0;
+	// double x_min = 99999999.0;
+	// double y_min = 99999999.0;
 
-	a = y_min - y_max;
-	b = x_max - x_min;
-	c = (x_min * y_max) - (x_max * y_min);
-	denominator = sqrt((a * a) + (b * b));
-
-	for (unsigned int i = 0, c_size = cluster.size(); i < c_size; ++i)
+	for (unsigned int i = 0, size = clusters_vector.size(); i < size; i++)
 	{
-		dist = abs((a * cluster[i].cartesian_x) + (b * cluster[i].cartesian_y) + c) / denominator;
-
-		if (dist > dist_max)
+		for (j = 0, c_size = clusters_vector[i].size(); j < c_size; j++)
 		{
-			dist_max = dist;
-			index_max = i;
+			if (size < 5)    // Empty cluster
+				break;
+			
+			x_mean += clusters_vector[i][j].cartesian_x;
+			y_mean += clusters_vector[i][j].cartesian_y;
+
+			// if (clusters_vector[i][j].cartesian_x > x_max)
+			// 	x_max = clusters_vector[i][j].cartesian_x;
+			// if (clusters_vector[i][j].cartesian_y > y_max)
+			// 	y_max = clusters_vector[i][j].cartesian_y;
+			// if (clusters_vector[i][j].cartesian_x < x_min)
+			// 	x_min = clusters_vector[i][j].cartesian_x;
+			// if (clusters_vector[i][j].cartesian_y < y_min)
+			// 	y_min = clusters_vector[i][j].cartesian_y;
 		}
+		if (j > 0)
+		{
+			point.x = x_mean / double (j - 1);
+			point.y = y_mean / double (j - 1);
+
+			//printf("%lf %lf %lf %lf %lf %lf %lf %lf %d\n", point.x, point.y, x_mean, y_mean, x_max, y_max, x_min, y_min, j);
+			clusters_poses_vector.push_back(point);
+		}
+		x_mean = 0.0;
+		y_mean = 0.0;
+
+		// x_max = 0.0;
+		// y_max = 0.0;
+		// x_min = 99999999.0;
+		// y_min = 99999999.0;
 	}
-	return (index_max);
+	return (clusters_poses_vector);
 }
 
-void
-fix_box_model_to_cluster(vector<image_cartesian> &cluster)
+// ===================================================================================================================================================================================================================================
+// Parametro a ser movido para o local adequado de definição de parametros
+// ===================================================================================================================================================================================================================================
+#define MAX_CLUSTER_DIST 1.0      // Ditance in meters between actual mean pose of a cluster of points and and previous mean pose of a cluster of points, to be considered the same cluster. Used to track clusters and recover a cluster from missing detection
+
+vector<vector<image_cartesian>>
+find_missing_movable_objects(vector<carmen_vector_2D_t> previous_filtered_clusters_mean_pose_vector, vector<carmen_vector_2D_t> filtered_clusters_mean_pose_vector,
+	vector<carmen_vector_2D_t> clustered_points_mean_pose_vector, vector<vector<image_cartesian>> clustered_points, vector<carmen_vector_2D_t> &recovered_clusters_mean_pose_vector)
 {
-	double x_min = 9999, y_min = 9999, x_max = -9999, y_max = -9999;
-	int index_max;
+	vector<vector<image_cartesian>> recovered_clusters;
+	bool cluster_found = false;
+	unsigned int i, j, k, max_i, max_j, max_k;
 
-	for (unsigned int i = 0, c_size = cluster.size(); i < c_size; ++i)
+	for (i = 0, max_i = previous_filtered_clusters_mean_pose_vector.size(); i < max_i; i++)
 	{
-		image_cartesian point = cluster[i];
+		for (j = 0, max_j = filtered_clusters_mean_pose_vector.size(); j < max_j; j++)
+		{
+			if (DIST2D(previous_filtered_clusters_mean_pose_vector[i], filtered_clusters_mean_pose_vector[j]) < MAX_CLUSTER_DIST)
+			{
+				cluster_found = true;
+				break;
+			}
+		}
+		if (!cluster_found)
+		{
+			for (k = 0, max_k = clustered_points_mean_pose_vector.size(); k < max_k; k++)
+			{
+				if (DIST2D(previous_filtered_clusters_mean_pose_vector[i], clustered_points_mean_pose_vector[k]) < MAX_CLUSTER_DIST)
+				{
+					recovered_clusters.push_back(clustered_points[k]);
 
-		if (point.cartesian_x < x_min)
-			y_min = point.cartesian_x;
-		if (point.cartesian_y < y_min)
-			x_min = point.cartesian_y;
-		if (point.cartesian_x > x_max)
-			x_max = point.cartesian_x;
-		if (point.cartesian_y > y_max)
-			y_max = point.cartesian_y;
+					recovered_clusters_mean_pose_vector.push_back(clustered_points_mean_pose_vector[k]);
+					break;
+				}
+			}
+		}
+		cluster_found = false;
 	}
-
-	index_max = compute_index_of_furthest_point_from_the_line(x_min, y_min, x_max, y_max, cluster);
-
-	
-
-}
-void
-fix_box_model_to_clusters(vector<vector<image_cartesian>> &clustered_points)
-{
-	for (unsigned int i = 0, c_size = clustered_points.size(); i < c_size; ++i)
-	{
-		fix_box_model_to_cluster(clustered_points[i]);
-	}
+	return (recovered_clusters);
 }
 
-// t 215:245 problema moto
 int
 filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-	static list<movable_object> tracks;
-
 	int filter_cameras = 0;
 	vector<image_cartesian> points;
 	vector<vector<image_cartesian>> clustered_points;
 	vector<vector<image_cartesian>> filtered_clusters;
 	vector<vector<image_cartesian>> clusters;
+	
+	vector<carmen_vector_2D_t> clustered_points_mean_pose_vector;
+	static vector<carmen_vector_2D_t> filtered_clusters_mean_pose_vector;
+	vector<carmen_vector_2D_t> previous_filtered_clusters_mean_pose_vector;
+	vector<vector<image_cartesian>> recovered_clusters;
+	vector<carmen_vector_2D_t> recovered_clusters_mean_pose_vector;
 	
 	if (active_cameras == 0)
 		return 0;
@@ -1475,18 +1528,32 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 				nearest_time_diff = time_difference;
 			}
 		}
-
 		// if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
 		// 	continue;
 
 		clusters = process_image(sensor_params, sensor_data, camera, nearest_index, points, clustered_points);
 		filtered_clusters = copy_to_filtered_clusters(clusters, filtered_clusters);
-		//filter_sensor_data_using_yolo_old(sensor_params, sensor_data, camera, nearest_index);
 		filter_cameras++;
 	}
+
+	previous_filtered_clusters_mean_pose_vector = filtered_clusters_mean_pose_vector;
+	filtered_clusters_mean_pose_vector.clear();
+
+	filtered_clusters_mean_pose_vector = compute_mean_point_of_each_cluster(filtered_clusters);
+
+	clustered_points_mean_pose_vector = compute_mean_point_of_each_cluster(clustered_points);
+
+	recovered_clusters = find_missing_movable_objects(previous_filtered_clusters_mean_pose_vector, filtered_clusters_mean_pose_vector, clustered_points_mean_pose_vector,
+		clustered_points, recovered_clusters_mean_pose_vector);
+
+	filtered_clusters_mean_pose_vector.insert(filtered_clusters_mean_pose_vector.end(), recovered_clusters_mean_pose_vector.begin(), recovered_clusters_mean_pose_vector.end());
+
+	remove_classified_rais_from_point_clud(sensor_params, sensor_data, filtered_clusters);
+	remove_classified_rais_from_point_clud(sensor_params, sensor_data, recovered_clusters);
+
 	if (verbose >= 2)
 	{
-		show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
+		show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters, recovered_clusters, filtered_clusters_mean_pose_vector);
 	}
 
 	return filter_cameras;
@@ -3790,7 +3857,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	if (!strcmp(neural_network,"squeezeseg")){
+	/*if (!strcmp(neural_network,"squeezeseg")){
 		squeezeseg_segmented.result = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 		squeezeseg_segmented.timestamp = velodyne_message->timestamp;
 	}
@@ -3814,7 +3881,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		squeezeseg_dataset.camera9 = false;
 		squeezeseg_dataset.timestamp = velodyne_message->timestamp;
 	}
-	/*if (!strcmp(neural_network,"rangenet")){
+	if (!strcmp(neural_network,"rangenet")){
 		rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	}*/
 	sensor_msg_count[VELODYNE]++;
@@ -5158,23 +5225,17 @@ main(int argc, char **argv)
 	carmen_map_config_t map_config;
 	carmen_robot_ackerman_config_t car_config;
 
-	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
 
-	/* Check the param server version */
 	carmen_param_check_version(argv[0]);
 
-	/* Register shutdown cleaner handler */
 	signal(SIGINT, shutdown_module);
 
-	/* Initialize all the relevant parameters */
 	read_parameters(argc, argv, &map_config, &car_config);
 	
-	/* Register Python Context for SqueezeSeg */
 	if (!strcmp(neural_network,"squeezeseg")){
 		initialize_python_context();
 	}
-	/* Register Python Context for SalsaNet */
 	if (!strcmp(neural_network,"salsanet")){
 		initialize_python_context_salsanet();
 	}
@@ -5202,10 +5263,8 @@ main(int argc, char **argv)
 
 	mapper_initialize(&map_config, car_config);
 
-	/* Register messages */
 	define_mapper_messages();
 
-	/* Subscribe to relevant messages */
 	subscribe_to_ipc_messages();
 
 	carmen_ipc_dispatch();
