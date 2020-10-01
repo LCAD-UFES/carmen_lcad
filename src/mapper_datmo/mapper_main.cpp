@@ -879,7 +879,8 @@ list<carmen_vector_2D_t> objetcs_pose_list, vector<carmen_vector_2D_t> recovered
 		int py = (double) (map_img.rows / 2) - 1 - recovered_clusters[i].x / map_resolution;
 		
 		if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
-			map_img.at<Vec3b>(Point(px, py)) = Vec3b(30, 30, 180);
+			rectangle(map_img, cvPoint(px, py), cvPoint(px+2, py+2), CV_RGB(0, 0, 200), 1, 8);
+			//map_img.at<Vec3b>(Point(px, py)) = Vec3b(30, 30, 180);
 	}
 	
 	rectangle(map_img, cvPoint(img_planar_depth - 10 / 2, img_planar_depth - 10 / 2), cvPoint(img_planar_depth + 10 / 2, img_planar_depth + 30 / 2), CV_RGB(0, 0, 200), 1, 8);
@@ -1450,6 +1451,17 @@ fix_box_model_to_clusters(vector<vector<image_cartesian>> &clustered_points)
 	}
 }
 
+
+
+
+typedef struct
+{
+	double x;
+	double y;
+	vector<image_cartesian> points;
+}movable_object_cluster;
+
+
 // ===================================================================================================================================================================================================================================
 // LEMBRAR DE EXPLICAR NO ARTIGO QUE PODEMOS SEMPRE CONSIDERAR A POSIÇÃO DO OBJETO EM RELAÇÃO AO ROBO E NAO A POSICAO DO OBJETO NO MUNDO, POR QUE EM RELACAO AO ROBO OS OBJETOS SE MOVEM MAIS LENTAMENTE
 // Por isso a funcao compute_mean_point_of_each_object nao precisa transladar os objetos para suas respectivas poses no mundo
@@ -1463,10 +1475,10 @@ compute_mean_point_of_each_object(vector<vector<image_cartesian>> filtered_clust
 	double y_mean = 0.0;
 	unsigned int j = 0, c_size = 0;
 
-	double x_max = 0.0;
-	double y_max = 0.0;
-	double x_min = 99999999.0;
-	double y_min = 99999999.0;
+	// double x_max = 0.0;
+	// double y_max = 0.0;
+	// double x_min = 99999999.0;
+	// double y_min = 99999999.0;
 
 	for (unsigned int i = 0, size = filtered_clusters.size(); i < size; i++)
 	{
@@ -1478,14 +1490,14 @@ compute_mean_point_of_each_object(vector<vector<image_cartesian>> filtered_clust
 			x_mean += filtered_clusters[i][j].cartesian_x;
 			y_mean += filtered_clusters[i][j].cartesian_y;
 
-			if (filtered_clusters[i][j].cartesian_x > x_max)
-				x_max = filtered_clusters[i][j].cartesian_x;
-			if (filtered_clusters[i][j].cartesian_y > y_max)
-				y_max = filtered_clusters[i][j].cartesian_y;
-			if (filtered_clusters[i][j].cartesian_x < x_min)
-				x_min = filtered_clusters[i][j].cartesian_x;
-			if (filtered_clusters[i][j].cartesian_y < y_min)
-				y_min = filtered_clusters[i][j].cartesian_y;
+			// if (filtered_clusters[i][j].cartesian_x > x_max)
+			// 	x_max = filtered_clusters[i][j].cartesian_x;
+			// if (filtered_clusters[i][j].cartesian_y > y_max)
+			// 	y_max = filtered_clusters[i][j].cartesian_y;
+			// if (filtered_clusters[i][j].cartesian_x < x_min)
+			// 	x_min = filtered_clusters[i][j].cartesian_x;
+			// if (filtered_clusters[i][j].cartesian_y < y_min)
+			// 	y_min = filtered_clusters[i][j].cartesian_y;
 		}
 		if (j > 0)
 		{
@@ -1498,44 +1510,56 @@ compute_mean_point_of_each_object(vector<vector<image_cartesian>> filtered_clust
 		x_mean = 0.0;
 		y_mean = 0.0;
 
-		x_max = 0.0;
-		y_max = 0.0;
-		x_min = 99999999.0;
-		y_min = 99999999.0;
+		// x_max = 0.0;
+		// y_max = 0.0;
+		// x_min = 99999999.0;
+		// y_min = 99999999.0;
 	}
 }
 
-#define MAX_CLUSTER_DIST 1.0
+// ===================================================================================================================================================================================================================================
+// Parametro a ser movido para o local adequado de definição de parametros
+// ===================================================================================================================================================================================================================================
+#define MAX_CLUSTER_DIST 1.0      // Ditance in meters between actual mean pose of a cluster of points and and previous mean pose of a cluster of points, to be considered the same cluster. Used to track clusters and recover a cluster from missing detection
 
 vector<carmen_vector_2D_t>
-find_missing_movable_objects(list<carmen_vector_2D_t> objetcs_mean_pose_list, list<carmen_vector_2D_t> clustered_points_mean_pose_list, list<carmen_vector_2D_t> filtered_clusters_mean_pose_list)
+find_missing_movable_objects(list<carmen_vector_2D_t> previous_filtered_clusters_mean_pose_list, list<carmen_vector_2D_t> &filtered_clusters_mean_pose_list,
+	list<carmen_vector_2D_t> clustered_points_mean_pose_list)
 {
 	vector<carmen_vector_2D_t> recovered_clusters;
-	// bool cluster_found = false;
+	bool cluster_found = false;
 
-	list<carmen_vector_2D_t>::iterator end_of_list_it = objetcs_mean_pose_list.end();
-	for (list<carmen_vector_2D_t>::iterator it = objetcs_mean_pose_list.begin(); it != end_of_list_it; it++)
+	list<carmen_vector_2D_t>::iterator previous_list_end_it = previous_filtered_clusters_mean_pose_list.end();
+	list<carmen_vector_2D_t>::iterator filtered_list_end_it = filtered_clusters_mean_pose_list.end();
+	list<carmen_vector_2D_t>::iterator clustered_list_end_it = clustered_points_mean_pose_list.end();
+
+	list<carmen_vector_2D_t>::iterator previous_it;
+	list<carmen_vector_2D_t>::iterator filtered_it;
+	list<carmen_vector_2D_t>::iterator clustered_it;
+
+	for (previous_it = previous_filtered_clusters_mean_pose_list.begin(); previous_it != previous_list_end_it; previous_it++)
 	{
-		list<carmen_vector_2D_t>::iterator end_of_list2 = filtered_clusters_mean_pose_list.end();
-		for (list<carmen_vector_2D_t>::iterator it1 = filtered_clusters_mean_pose_list.begin(); it1 != end_of_list2; it1++)
+		for (filtered_it = filtered_clusters_mean_pose_list.begin(); filtered_it != filtered_list_end_it; filtered_it++)
 		{
-			if (DIST2D_P(it, it1) < MAX_CLUSTER_DIST)
+			if (DIST2D_P(previous_it, filtered_it) < MAX_CLUSTER_DIST)
 			{
+				cluster_found = true;
 				break;
 			}
-			else
+		}
+		if (!cluster_found)
+		{
+			for (clustered_it = clustered_points_mean_pose_list.begin(); clustered_it != clustered_list_end_it; clustered_it++)
 			{
-				list<carmen_vector_2D_t>::iterator end_of_list3 = clustered_points_mean_pose_list.end();
-				for (list<carmen_vector_2D_t>::iterator it2 = clustered_points_mean_pose_list.begin(); it2 != end_of_list3; it2++)
+				if (DIST2D_P(previous_it, clustered_it) < MAX_CLUSTER_DIST)
 				{
-					if (DIST2D_P(it, it2) < MAX_CLUSTER_DIST)
-					{
-						recovered_clusters.push_back(*it2);
-						break;
-					}
+					recovered_clusters.push_back(*clustered_it);
+					filtered_clusters_mean_pose_list.push_back(*clustered_it);
+					break;
 				}
 			}
 		}
+		cluster_found = false;
 	}
 	return (recovered_clusters);
 }
@@ -1600,9 +1624,9 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 
 	compute_mean_point_of_each_object(clustered_points, clustered_points_mean_pose_list);
 
-	vector<carmen_vector_2D_t> recovered_clusters = find_missing_movable_objects(previous_filtered_clusters_mean_pose_list, clustered_points_mean_pose_list, filtered_clusters_mean_pose_list);
+	vector<carmen_vector_2D_t> recovered_clusters = find_missing_movable_objects(previous_filtered_clusters_mean_pose_list, filtered_clusters_mean_pose_list, clustered_points_mean_pose_list);
 
-	printf("Rec Clus %d\n", recovered_clusters.size());
+	// printf("Rec Clus %d\n", recovered_clusters.size());
 
 	if (verbose >= 2)
 	{
