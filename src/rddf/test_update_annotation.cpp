@@ -4,6 +4,7 @@
 
 
 char *prog_name = NULL;
+char action_char = ' ';
 crud_t action = (crud_t) -1;
 carmen_annotation_t annotation1 = {{0,0,0}, 0, NULL, 0, 0};
 carmen_annotation_t annotation2 = {{0,0,0}, 0, NULL, 0, 0};
@@ -52,34 +53,34 @@ process_parameters()
 {
 	if (action == CREATE_ACTION)
 	{
-		if (annotation1.annotation_point.x == 0.0 || annotation1.annotation_point.y == 0.0)
-			module_usage("required arguments: x, y");
+//		if (annotation1.annotation_point.x == 0.0 || annotation1.annotation_point.y == 0.0)
+//			module_usage("required arguments: x, y");
 		carmen_rddf_publish_update_annotation_message(CREATE_ACTION, annotation1, annotation1);
 		printf("\nPublished carmen_rddf_update_annotation_message:\n");
-		printf("x = %lf  y = %lf  z = %lf  theta = %lf  description = %s  type = %d  code = %d\n",
+		printf("action = %d (%c)  x = %lf  y = %lf  z = %lf  theta = %lf  description = %s  type = %d  code = %d\n", action, action_char,
 				annotation1.annotation_point.x, annotation1.annotation_point.y, annotation1.annotation_point.z,
 				annotation1.annotation_orientation, annotation1.annotation_description, annotation1.annotation_type, annotation1.annotation_code);
 	}
 	else if (action == UPDATE_ACTION)
 	{
-		if (annotation1.annotation_point.x == 0.0 || annotation1.annotation_point.y == 0.0 || annotation2.annotation_point.x == 0.0 || annotation2.annotation_point.y == 0.0)
-			module_usage("required arguments: x, y, x2, y2");
+//		if (annotation1.annotation_point.x == 0.0 || annotation1.annotation_point.y == 0.0 || annotation2.annotation_point.x == 0.0 || annotation2.annotation_point.y == 0.0)
+//			module_usage("required arguments: x, y, x2, y2");
 		carmen_rddf_publish_update_annotation_message(UPDATE_ACTION, annotation1, annotation2);
 		printf("\nPublished carmen_rddf_update_annotation_message:\n");
-		printf("x  = %lf  y  = %lf  z  = %lf  theta  = %lf  description  = %s  type  = %d  code  = %d\n",
+		printf("action = %d (%c)  x  = %lf  y  = %lf  z  = %lf  theta  = %lf  description  = %s  type  = %d  code  = %d\n", action, action_char,
 				annotation1.annotation_point.x, annotation1.annotation_point.y, annotation1.annotation_point.z,
 				annotation1.annotation_orientation, annotation1.annotation_description, annotation1.annotation_type, annotation1.annotation_code);
-		printf("x2 = %lf  y2 = %lf  z2 = %lf  theta2 = %lf  description2 = %s  type2 = %d  code2 = %d\n",
+		printf("                x2 = %lf  y2 = %lf  z2 = %lf  theta2 = %lf  description2 = %s  type2 = %d  code2 = %d\n",
 				annotation2.annotation_point.x, annotation2.annotation_point.y, annotation2.annotation_point.z,
 				annotation2.annotation_orientation, annotation2.annotation_description, annotation2.annotation_type, annotation2.annotation_code);
 	}
 	else if (action == DELETE_ACTION)
 	{
-		if (annotation1.annotation_point.x == 0.0 || annotation1.annotation_point.y == 0.0)
-			module_usage("required arguments: x, y");
+//		if (annotation1.annotation_point.x == 0.0 || annotation1.annotation_point.y == 0.0)
+//			module_usage("required arguments: x, y");
 		carmen_rddf_publish_update_annotation_message(DELETE_ACTION, annotation1, annotation1);
 		printf("\nPublished carmen_rddf_update_annotation_message:\n");
-		printf("x = %lf  y = %lf  z = %lf  theta = %lf  description = %s  type = %d  code = %d\n",
+		printf("action = %d (%c)  x = %lf  y = %lf  z = %lf  theta = %lf  description = %s  type = %d  code = %d\n", action, action_char,
 				annotation1.annotation_point.x, annotation1.annotation_point.y, annotation1.annotation_point.z,
 				annotation1.annotation_orientation, annotation1.annotation_description, annotation1.annotation_type, annotation1.annotation_code);
 	}
@@ -95,6 +96,8 @@ read_parameters(int argc, char *argv[])
 
 	if (action < 0)
 		module_usage("A single action must be used: c, u, d");
+
+	action_char = argv[1][0];
 
 	carmen_param_t param_list[] =
 	{

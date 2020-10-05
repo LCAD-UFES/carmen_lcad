@@ -527,26 +527,27 @@ carmen_rddf_play_clear_annotation_vector()
 
 
 void
-displace_car_pose_according_to_car_orientation(carmen_annotation_t *annotation)
+displace_car_pose_according_to_car_orientation(carmen_annotation_t *annotation, int direction = -1)
 {
 	carmen_ackerman_traj_point_t annotation_point;
 	annotation_point.x = annotation->annotation_point.x;
 	annotation_point.y = annotation->annotation_point.y;
 	annotation_point.theta = annotation->annotation_orientation;
 	double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-	carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
+	carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(
+			&annotation_point, distance_car_pose_car_front * direction);
 	annotation->annotation_point.x = new_annotation_point.x;
 	annotation->annotation_point.y = new_annotation_point.y;
 }
 
 
 int
-find_annotation_by_coordinates(carmen_vector_3D_t point)
+find_annotation_by_coordinates(carmen_vector_3D_t point, double range, int current_index = -1)
 {
 	int i = -1;
 
 	for (i = annotation_read_from_file.size() - 1; i >= 0; i--)
-		if (DIST2D(annotation_read_from_file[i].annotation_point, point) < 0.01)
+		if ((DIST2D(annotation_read_from_file[i].annotation_point, point) < range) && (i != current_index))
 			break;
 
 	return i;
@@ -554,63 +555,78 @@ find_annotation_by_coordinates(carmen_vector_3D_t point)
 
 
 void
+updade_annotation_vector(crud_t action, int old_index, carmen_annotation_t new_annotation)
+{
+	switch (action)
+	{
+		case CREATE_ACTION:
+			annotation_read_from_file.push_back(new_annotation);
+			break;
+		case READ_ACTION:
+			break;
+		case UPDATE_ACTION:
+			free(annotation_read_from_file[old_index].annotation_description);
+			annotation_read_from_file[old_index] = new_annotation;
+			break;
+		case DELETE_ACTION:
+			free(annotation_read_from_file[old_index].annotation_description);
+			annotation_read_from_file.erase(annotation_read_from_file.begin() + old_index);
+			break;
+	}
+}
+
+
+void
 carmen_rddf_play_updade_annotation_vector(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation)
 {
-	if (action == READ_ACTION)
-		return;
-
-	if ((action == CREATE_ACTION || action == UPDATE_ACTION) && (new_annotation.annotation_point.x == 0.0 || new_annotation.annotation_point.y == 0.0))
-	{
-		carmen_warn("Invalid annotation coordinates [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
-				0.0, 0.0, new_annotation.annotation_type, new_annotation.annotation_code);
-		return;
-	}
-
+	int i_old = -1, i_new = -1;
 	carmen_annotation_t old_annotation_d = old_annotation;
 	carmen_annotation_t new_annotation_d = new_annotation;
 	displace_car_pose_according_to_car_orientation(&old_annotation_d);
 	displace_car_pose_according_to_car_orientation(&new_annotation_d);
 
-	int i;
-
-	if (action == CREATE_ACTION)
+	if (action == DELETE_ACTION || action == UPDATE_ACTION)
 	{
-		i = find_annotation_by_coordinates(new_annotation_d.annotation_point);
-		if (i >= 0)
-		{
-			carmen_warn("Another annotation exists [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
-					new_annotation.annotation_point.x, new_annotation.annotation_point.y,
-					annotation_read_from_file[i].annotation_type, annotation_read_from_file[i].annotation_code);
-			return;
-		}
-	}
-	else
-	{
-		i = find_annotation_by_coordinates(old_annotation_d.annotation_point);
-		if (i < 0 || annotation_read_from_file[i].annotation_type != old_annotation_d.annotation_type ||
-					 annotation_read_from_file[i].annotation_code != old_annotation_d.annotation_code)
+		i_old = find_annotation_by_coordinates(old_annotation_d.annotation_point, 0.01);
+		if (i_old < 0 || annotation_read_from_file[i_old].annotation_type != old_annotation_d.annotation_type ||
+						 annotation_read_from_file[i_old].annotation_code != old_annotation_d.annotation_code)
 		{
 			carmen_warn("Annotation does not exist [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
 					old_annotation.annotation_point.x, old_annotation.annotation_point.y,
 					old_annotation.annotation_type, old_annotation.annotation_code);
 			return;
 		}
-		free(annotation_read_from_file[i].annotation_description);
-		if (action == DELETE_ACTION)
+	}
+
+	if (action == CREATE_ACTION || action == UPDATE_ACTION)
+	{
+		if (new_annotation.annotation_point.x == 0.0 || new_annotation.annotation_point.y == 0.0)
 		{
-			annotation_read_from_file.erase(annotation_read_from_file.begin() + i);
+			carmen_warn("Invalid annotation coordinates [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
+					0.0, 0.0, new_annotation.annotation_type, new_annotation.annotation_code);
 			return;
+		}
+
+		i_new = find_annotation_by_coordinates(new_annotation_d.annotation_point, 0.50, i_old);
+		if (i_new >= 0)
+		{
+			carmen_annotation_t existing_annotation = annotation_read_from_file[i_new];
+			displace_car_pose_according_to_car_orientation(&existing_annotation, 1);
+			carmen_warn("Another annotation exists [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
+					existing_annotation.annotation_point.x, existing_annotation.annotation_point.y,
+					existing_annotation.annotation_type, existing_annotation.annotation_code);
+			return;
+		}
+
+		if (new_annotation_d.annotation_description != NULL)
+		{
+			char *description = (char *) malloc(strlen(new_annotation_d.annotation_description) + 1);
+			strcpy(description, new_annotation_d.annotation_description);
+			new_annotation_d.annotation_description = description;
 		}
 	}
 
-	char *description = (char *) malloc(strlen(new_annotation_d.annotation_description) + 1);
-	strcpy(description, new_annotation_d.annotation_description);
-	new_annotation_d.annotation_description = description;
-
-	if (action == UPDATE_ACTION)
-		annotation_read_from_file[i] = new_annotation_d;
-	else
-		annotation_read_from_file.push_back(new_annotation_d);
+	updade_annotation_vector(action, i_old, new_annotation_d);
 }
 
 
