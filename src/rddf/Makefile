@@ -30,11 +30,13 @@ IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/
 IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
 
 SOURCES = rddf_interface.c rddf_play_main.cpp rddf_index.cpp rddf_build_main.cpp rddf_util.cpp rddf_play_annotations.cpp rddf_by_road_map.cpp rddf_resample.cpp
+SOURCES += test_update_annotation.cpp
 
 PUBLIC_INCLUDES = rddf_interface.h rddf_messages.h rddf_util.h rddf_index.h
 PUBLIC_LIBRARIES = librddf_interface.a librddf_util.a librddf_index.a
 PUBLIC_BINARIES = rddf_build rddf_play rddf_annotation_manager rddf_convert_from_kml_to_txt rddf_resample
 TARGETS = librddf_interface.a rddf_build rddf_play rddf_annotation_manager librddf_util.a librddf_index.a rddf_convert_from_kml_to_txt rddf_resample
+TARGETS += test_update_annotation
 
 PUBLIC_LIBRARIES_SO = librddf_interface.so
 ifndef NO_PYTHON
@@ -50,6 +52,7 @@ rddf_build: rddf_build_main.o rddf_util.o rddf_index.o
 rddf_annotation_manager: rddf_annotation_manager.o rddf_interface.o 
 rddf_convert_from_kml_to_txt: rddf_convert_from_kml_to_txt.o rddf_util.o rddf_index.o
 rddf_resample: rddf_resample.o
+test_update_annotation: test_update_annotation.o rddf_interface.o rddf_util.o rddf_index.o
 
 # rules
 include ../Makefile.rules
