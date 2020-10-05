@@ -527,6 +527,94 @@ carmen_rddf_play_clear_annotation_vector()
 
 
 void
+displace_car_pose_according_to_car_orientation(carmen_annotation_t *annotation)
+{
+	carmen_ackerman_traj_point_t annotation_point;
+	annotation_point.x = annotation->annotation_point.x;
+	annotation_point.y = annotation->annotation_point.y;
+	annotation_point.theta = annotation->annotation_orientation;
+	double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+	carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
+	annotation->annotation_point.x = new_annotation_point.x;
+	annotation->annotation_point.y = new_annotation_point.y;
+}
+
+
+int
+find_annotation_by_coordinates(carmen_vector_3D_t point)
+{
+	int i = -1;
+
+	for (i = annotation_read_from_file.size() - 1; i >= 0; i--)
+		if (DIST2D(annotation_read_from_file[i].annotation_point, point) < 0.01)
+			break;
+
+	return i;
+}
+
+
+void
+carmen_rddf_play_updade_annotation_vector(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation)
+{
+	if (action == READ_ACTION)
+		return;
+
+	if ((action == CREATE_ACTION || action == UPDATE_ACTION) && (new_annotation.annotation_point.x == 0.0 || new_annotation.annotation_point.y == 0.0))
+	{
+		carmen_warn("Invalid annotation coordinates [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
+				0.0, 0.0, new_annotation.annotation_type, new_annotation.annotation_code);
+		return;
+	}
+
+	carmen_annotation_t old_annotation_d = old_annotation;
+	carmen_annotation_t new_annotation_d = new_annotation;
+	displace_car_pose_according_to_car_orientation(&old_annotation_d);
+	displace_car_pose_according_to_car_orientation(&new_annotation_d);
+
+	int i;
+
+	if (action == CREATE_ACTION)
+	{
+		i = find_annotation_by_coordinates(new_annotation_d.annotation_point);
+		if (i >= 0)
+		{
+			carmen_warn("Another annotation exists [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
+					new_annotation.annotation_point.x, new_annotation.annotation_point.y,
+					annotation_read_from_file[i].annotation_type, annotation_read_from_file[i].annotation_code);
+			return;
+		}
+	}
+	else
+	{
+		i = find_annotation_by_coordinates(old_annotation_d.annotation_point);
+		if (i < 0 || annotation_read_from_file[i].annotation_type != old_annotation_d.annotation_type ||
+					 annotation_read_from_file[i].annotation_code != old_annotation_d.annotation_code)
+		{
+			carmen_warn("Annotation does not exist [carmen_rddf_play_updade_annotation_vector]: (%lf, %lf)  type %d  code %d\n",
+					old_annotation.annotation_point.x, old_annotation.annotation_point.y,
+					old_annotation.annotation_type, old_annotation.annotation_code);
+			return;
+		}
+		free(annotation_read_from_file[i].annotation_description);
+		if (action == DELETE_ACTION)
+		{
+			annotation_read_from_file.erase(annotation_read_from_file.begin() + i);
+			return;
+		}
+	}
+
+	char *description = (char *) malloc(strlen(new_annotation_d.annotation_description) + 1);
+	strcpy(description, new_annotation_d.annotation_description);
+	new_annotation_d.annotation_description = description;
+
+	if (action == UPDATE_ACTION)
+		annotation_read_from_file[i] = new_annotation_d;
+	else
+		annotation_read_from_file.push_back(new_annotation_d);
+}
+
+
+void
 carmen_rddf_play_load_index(char *rddf_filename)
 {
 	int annotation = 0;
@@ -618,15 +706,7 @@ carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename)
 			//For PEDESTRIAN_TRACK type z is the search radius for pedestrians in meters
 			//For TRAFFIC_SIGN type z is the curvature of the rddf in radians/meter
 
-			carmen_ackerman_traj_point_t annotation_point;
-			annotation_point.x = annotation.annotation_point.x;
-			annotation_point.y = annotation.annotation_point.y;
-			annotation_point.theta = annotation.annotation_orientation;
-			double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-			carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
-
-			annotation.annotation_point.x = new_annotation_point.x;
-			annotation.annotation_point.y = new_annotation_point.y;
+			displace_car_pose_according_to_car_orientation(&annotation);
 			annotation_read_from_file.push_back(annotation);
 		}
 	}

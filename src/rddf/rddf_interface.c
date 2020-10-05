@@ -56,6 +56,13 @@ carmen_rddf_subscribe_add_annotation_message(carmen_rddf_add_annotation_message 
 }
 
 void
+carmen_rddf_subscribe_update_annotation_message(carmen_rddf_update_annotation_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+    carmen_subscribe_message(CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_NAME, CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_FMT,
+                             message, sizeof (carmen_rddf_update_annotation_message), handler, subscribe_how);
+}
+
+void
 carmen_rddf_subscribe_dynamic_annotation_message(carmen_rddf_dynamic_annotation_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
     carmen_subscribe_message(CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME, CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_FMT,
@@ -98,6 +105,12 @@ void
 carmen_rddf_unsubscribe_add_annotation_message(carmen_handler_t handler)
 {
     carmen_unsubscribe_message(CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME, handler);
+}
+
+void
+carmen_rddf_unsubscribe_update_annotation_message(carmen_handler_t handler)
+{
+    carmen_unsubscribe_message(CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_NAME, handler);
 }
 
 void
@@ -146,6 +159,12 @@ carmen_rddf_define_messages()
     //
     err = IPC_defineMsg(CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME);
+
+    //
+    // define the update annotation message
+    //
+    err = IPC_defineMsg(CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_NAME);
 
     //
     // define the dynamic annotation message
@@ -231,6 +250,22 @@ carmen_rddf_publish_add_annotation_message(carmen_vector_3D_t annotation_point, 
 
     err = IPC_publishData(CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME, &rddf_add_annotation_message);
     carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME);
+}
+
+void
+carmen_rddf_publish_update_annotation_message(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation)
+{
+    IPC_RETURN_TYPE err;
+    carmen_rddf_update_annotation_message rddf_update_annotation_message;
+
+    rddf_update_annotation_message.action = action;
+    rddf_update_annotation_message.old_annotation = old_annotation;
+    rddf_update_annotation_message.new_annotation = new_annotation;
+    rddf_update_annotation_message.timestamp = carmen_get_time();
+    rddf_update_annotation_message.host = carmen_get_host();
+
+    err = IPC_publishData(CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_NAME, &rddf_update_annotation_message);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_NAME);
 }
 
 void
