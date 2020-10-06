@@ -153,6 +153,20 @@ extern "C"
 	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME "carmen_rddf_traffic_sign_message"
 	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_FMT "{int,double,double,string}"
 
+	typedef enum {CREATE_ACTION, READ_ACTION, UPDATE_ACTION, DELETE_ACTION} crud_t;
+
+	typedef struct
+	{
+		crud_t action;
+		carmen_annotation_t old_annotation;
+		carmen_annotation_t new_annotation;
+		double timestamp;
+		char *host;
+	} carmen_rddf_update_annotation_message;
+
+	#define CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_NAME "carmen_rddf_update_annotation_message"
+	#define CARMEN_RDDF_UPDATE_ANNOTATION_MESSAGE_FMT "{int,{{double,double,double},double,string,int,int},{{double,double,double},double,string,int,int},double,string}"
+
 #ifdef __cplusplus
 }
 #endif

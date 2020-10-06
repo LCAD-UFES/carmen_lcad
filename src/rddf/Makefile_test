@@ -1,0 +1,28 @@
+include ../Makefile.conf
+
+MODULE_NAME = TEST UPDATE ANNOTATION
+MODULE_COMMENT = Test interface functions with RDDF annotations
+
+LINK = g++
+CFLAGS += -Wall
+
+CXXFLAGS += -std=c++11
+CXXFLAGS += -Wno-ignored-qualifiers
+
+
+LFLAGS += \
+	-lparam_interface \
+	-lipc \
+	-lglobal \
+	-lrddf_interface \
+	-lrddf_util \
+	-lrddf_index \
+
+
+SOURCES = test_update_annotation.cpp
+
+TARGETS = test_update_annotation
+
+test_update_annotation: test_update_annotation.o 
+
+include ../Makefile.rules

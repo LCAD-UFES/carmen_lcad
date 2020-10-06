@@ -299,6 +299,13 @@ carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
 
 
 static void
+carmen_rddf_update_annotation_message_handler(carmen_rddf_update_annotation_message *message)
+{
+	carmen_rddf_play_updade_annotation_vector(message->action, message->old_annotation, message->new_annotation);
+}
+
+
+static void
 carmen_rddf_dynamic_annotation_message_handler(carmen_rddf_dynamic_annotation_message *message)
 {
 	// Avoid reinserting the same annotation over and over.
@@ -391,6 +398,8 @@ carmen_rddf_play_subscribe_messages()
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_update_annotation_message(NULL, (carmen_handler_t) carmen_rddf_update_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_rddf_subscribe_dynamic_annotation_message(NULL, (carmen_handler_t) carmen_rddf_dynamic_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 

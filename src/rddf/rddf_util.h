@@ -58,6 +58,7 @@ void carmen_rddf_play_set_annotations(carmen_point_t robot_pose);
 void carmen_check_for_annotations(carmen_point_t robot_pose,
 		carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back, double timestamp);
+void carmen_rddf_play_updade_annotation_vector(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation);
 
 
 #endif
