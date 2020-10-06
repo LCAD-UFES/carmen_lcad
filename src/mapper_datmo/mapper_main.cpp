@@ -1202,7 +1202,8 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 				case 9:
 					squeezeseg_dataset.camera9 = true;
 			}
-			if (squeezeseg_dataset.camera3 && squeezeseg_dataset.camera5)
+			//if (squeezeseg_dataset.camera3 && squeezeseg_dataset.camera5)
+			if (squeezeseg_dataset.camera3)
 			{
 				libsqueeze_seg_save_txt_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
 				// libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
@@ -3857,7 +3858,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	/*if (!strcmp(neural_network,"squeezeseg")){
+	if (!strcmp(neural_network,"squeezeseg")){
 		squeezeseg_segmented.result = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 		squeezeseg_segmented.timestamp = velodyne_message->timestamp;
 	}
@@ -3881,9 +3882,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		squeezeseg_dataset.camera9 = false;
 		squeezeseg_dataset.timestamp = velodyne_message->timestamp;
 	}
-	if (!strcmp(neural_network,"rangenet")){
-		rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
-	}*/
+	// if (!strcmp(neural_network,"rangenet")){
+	// 	rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	// }
 	sensor_msg_count[VELODYNE]++;
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
 }
@@ -5240,19 +5241,19 @@ main(int argc, char **argv)
 		initialize_python_context_salsanet();
 	}
 	if (!strcmp(neural_network,"yolo")){
-		if (dataset_for_squeezeseg)
-		{
-			initialize_python_dataset();
-		}
+		// if (dataset_for_squeezeseg)
+		// {
+		// 	initialize_python_dataset();
+		// }
 		initializer_YOLO();
 	}
 	if (!strcmp(neural_network,"efficientdet")){
 		classes_names = get_classes_names((char *)"../sharedlib/darknet2/data/coco.names");
 		initialize_Efficientdet(0.2);
-		if (dataset_for_squeezeseg)
-		{
-			// initialize_python_dataset();
-		}
+		// if (dataset_for_squeezeseg)
+		// {
+		// 	// initialize_python_dataset();
+		// }
 	}
 	/* Register TensorRT context for RangeNet++*/
 	/*if (!strcmp(neural_network,"rangenet")){

@@ -28,15 +28,15 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
 #EfficientDet - Comment from 33 to 41 to use python2.7
-IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+#IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 LFLAGS += -lefficientdet
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
-else
-	LFLAGS += `python3.6-config --libs`
-endif
+#UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+##$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+#ifeq ($(UBUNTU_VERSION),"16.04")
+#	LFLAGS += `python3.5-config --libs`
+#else
+#	LFLAGS += `python3.6-config --libs`
+#endif
 
 # Deeplab
 IFLAGS += -I/usr/include/python2.7
