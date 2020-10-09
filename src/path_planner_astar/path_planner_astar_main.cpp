@@ -79,6 +79,8 @@ int voronoi_visited_it = 0;
 int expansion_number = 0;
 int cache_exit_edge;
 
+int reed_shepp_collision = 0;
+
 #define LANE_WIDTH 	2.4
 #define NUM_LANES	1
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
@@ -983,13 +985,19 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
     route_planner_road_network_message.nearby_lanes_forks_sizes = nearby_lanes_forks_sizes;
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
-/*
-	printf("break\n");
-	for(int i = 0; i < route_planner_road_network_message.number_of_poses; i++)
-		printf("route_planner print %f %f %f %f %f\n", route_planner_road_network_message.poses[i].x, route_planner_road_network_message.poses[i].y, route_planner_road_network_message.poses[i].theta, route_planner_road_network_message.poses[i].v, route_planner_road_network_message.poses[i].phi);
+
+	/*
+	int i;
+	time_count.reset();
+	for(i = 0; i < route_planner_road_network_message.number_of_poses; i++){
+//		printf("route_planner print %f %f %f %f %f\n", route_planner_road_network_message.poses[i].x, route_planner_road_network_message.poses[i].y, route_planner_road_network_message.poses[i].theta, route_planner_road_network_message.poses[i].v, route_planner_road_network_message.poses[i].phi);
+//		printf("Collision check: %f \n",carmen_obstacle_avoider_car_distance_to_nearest_obstacle(route_planner_road_network_message.poses[i] ,distance_map));
+		carmen_obstacle_avoider_car_distance_to_nearest_obstacle(route_planner_road_network_message.poses[i] ,distance_map);
+	}
+	printf("Collision check time is %f seconds for %d poses\n", time_count.get_since(), i+1);
 */
+
 	free_lanes(route_planner_road_network_message);
 	free(annotations);
 	free(annotations_codes);
@@ -1910,6 +1918,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 
 	rs_pathl = constRS(rs_numero, tr, ur, vr, current->state, rs_points);
 
+
 	for (int i = rs_pathl; i > 0; i--)
 	{
 		carmen_ackerman_traj_point_t point = rs_points[i];
@@ -1938,7 +1947,16 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			new_state->f = path_cost;
 //			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
 			rs_path_nodes.push_back(new_state);
+			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
+			{
+				reed_shepp_collision = 1;
+				break;
+			}
 		}
+	}
+	if(reed_shepp_collision == 1)
+	{
+		return rs_path_nodes;
 	}
 
 	std::reverse(rs_path_nodes.begin(), rs_path_nodes.end());
@@ -1949,6 +1967,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 		rs_path_nodes[i]->parent = ant_state;
 		ant_state = rs_path_nodes[i];
 	}
+
 	return rs_path_nodes;
 }
 
@@ -2268,8 +2287,10 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //		if(cont_rs_nodes%3==0)
 		if(cont_rs_nodes % int(current->h + 1) == 0)
 		{
+			reed_shepp_collision = 0;
 			rs_path = reed_shepp_path(current, goal_state);
-			if(hitObstacle(rs_path, astar_map) == 0)//&& rs_path.front()->f > (current->h) )
+//			if(hitObstacle(rs_path, astar_map) == 0)//&& rs_path.front()->f > (current->h) )
+			if(reed_shepp_collision == 0)
 			{
 				rs_path.front()->parent = current;
 				current = rs_path.back();
@@ -2297,6 +2318,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		printf("Open List = %ld\n", open.size());
 		printf("Length of the path is %f \n", current->total_distance_traveled);
 		astar_mount_path_message(current);
+		printf("A* Planning time is %f seconds\n", time_count.get_since());
 
 		if (USE_SMOOTH)
 		{
