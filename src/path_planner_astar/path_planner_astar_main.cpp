@@ -97,7 +97,7 @@ int cache_exit_edge;
 
 //#define OBSTACLE_DISTANCE_MIN 1.0
 #define OBSTACLE_DISTANCE_MIN 0.5
-#define SEND_MESSAGE_IN_PARTS 1
+#define SEND_MESSAGE_IN_PARTS 0
 
 int teste_edge = 0;
 
@@ -959,6 +959,31 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 	route_planner_road_network_message.timestamp = globalpos_message->timestamp;
 	route_planner_road_network_message.host = carmen_get_host();
 	first_published = 0;
+
+	// Change in route planner message //////////////////////////////////////////////////////////////////////
+    static int *nearby_lanes_node_ids = NULL;	// Size == nearby_lanes_size. Ids dos nós (poses) de todas as lanes.
+
+	static int *nearby_lanes_merges_indexes = NULL;	// Size == number_of_nearby_lanes. O ponto em nearby_lanes_merges onde começam os merges de cada lane.
+	static int *nearby_lanes_merges_sizes = NULL;		// Size == number_of_nearby_lanes. O número de merges de cada lane.
+
+	static int *nearby_lanes_forks_indexes = NULL;	// Size == number_of_nearby_lanes. O ponto em nearby_lanes_forks onde começam os forks de cada lane.
+	static int *nearby_lanes_forks_sizes = NULL;		// Size == number_of_nearby_lanes. O número de forks de cada lane.
+
+    nearby_lanes_node_ids = (int *) realloc(nearby_lanes_node_ids, route_planner_road_network_message.nearby_lanes_size * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_node_ids = nearby_lanes_node_ids;
+
+    nearby_lanes_merges_indexes = (int *) realloc(nearby_lanes_merges_indexes, route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_merges_indexes = nearby_lanes_merges_indexes;
+    nearby_lanes_merges_sizes = (int *) realloc(nearby_lanes_merges_sizes, route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_merges_sizes = nearby_lanes_merges_sizes;
+
+    nearby_lanes_forks_indexes = (int *) realloc(nearby_lanes_forks_indexes, route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_forks_indexes = nearby_lanes_forks_indexes;
+    nearby_lanes_forks_sizes = (int *) realloc(nearby_lanes_forks_sizes, route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_forks_sizes = nearby_lanes_forks_sizes;
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
 /*
 	printf("break\n");
@@ -2119,6 +2144,7 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 	}
 	else
 	{
+		printf("SEND_MESSAGE_IN_PARTS está desligado, a mensagem está enviando o path inteiro\n");
 		plan.path.points = &(carmen_astar_path_poses[0]);
 		plan.path.length = carmen_astar_path_poses.size();
 	}
