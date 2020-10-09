@@ -1918,6 +1918,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 
 	rs_pathl = constRS(rs_numero, tr, ur, vr, current->state, rs_points);
 
+	double ant_direction = -1;
 
 	for (int i = rs_pathl; i > 0; i--)
 	{
@@ -1947,11 +1948,12 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			new_state->f = path_cost;
 //			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
 			rs_path_nodes.push_back(new_state);
-			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
+			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN || ( ant_direction != -1 && sign(new_state->state.v) != sign(ant_direction)))
 			{
 				reed_shepp_collision = 1;
 				break;
 			}
+			ant_direction = new_state->state.v;
 		}
 	}
 	if(reed_shepp_collision == 1)
