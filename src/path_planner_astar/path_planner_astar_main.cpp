@@ -1951,14 +1951,10 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN || ( ant_direction != -1 && sign(new_state->state.v) != sign(ant_direction)))
 			{
 				reed_shepp_collision = 1;
-				break;
+				return rs_path_nodes;
 			}
 			ant_direction = new_state->state.v;
 		}
-	}
-	if(reed_shepp_collision == 1)
-	{
-		return rs_path_nodes;
 	}
 
 	std::reverse(rs_path_nodes.begin(), rs_path_nodes.end());
