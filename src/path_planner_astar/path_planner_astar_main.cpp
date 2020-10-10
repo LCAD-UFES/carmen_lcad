@@ -104,7 +104,95 @@ int reed_shepp_collision = 0;
 int teste_edge = 0;
 
 int use_matrix_heuristic = 0;
+
 using namespace cv;
+
+
+//Uso do opencv para ilustrar a expansão
+#define CV_PRINT_EXPANSION 0
+Mat map_image;
+
+void
+display_map(carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	if (distance_map->complete_x_offset == NULL)
+		return;
+
+	unsigned int width = distance_map->config.x_size;
+	unsigned int height = distance_map->config.y_size;
+	unsigned int size = width * height;
+	unsigned char map[3*size];
+
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		unsigned int row = (height - 1) - i % height;
+
+		unsigned int col = i / height;
+
+		unsigned int index = row * width + col;
+
+		if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i])
+		{
+			map[index*3] = 0;
+			map[index*3+1] = 0;
+			map[index*3+2] = 0;
+		} else
+		{
+			map[index*3] = 255;
+			map[index*3+1] = 255;
+			map[index*3+2] = 255;
+		}
+	}
+
+    Mat img(width, height, CV_8UC3, map);
+    map_image = img.clone();
+
+    //imshow está dando conflito com gtk. Foi desligado e as imagens são salvas em vez de mostradas
+    //imshow("Obstacle Map", map_image);
+//    waitKey(1);
+}
+
+
+void
+draw_point_on_map_img(double x, double y, carmen_map_config_t config, Scalar color)
+{
+	int img_x = (double) (x - config.x_origin) / config.resolution;
+	int img_y = (double) (y - config.y_origin) / config.resolution;
+
+	circle(map_image, Point(img_x, config.y_size - 1 - img_y), 3, color, -1, 8);
+//	imshow("Obstacle Map", map_image);
+//	waitKey(1);
+	//usleep(10000);
+}
+
+
+void
+draw_state_in_opencv_image(state_node* current, carmen_map_config_t config, Scalar color)
+{
+	if(current->parent == NULL)
+		return;
+
+		int img_x = (double) (current->state.x - config.x_origin) / config.resolution;
+		int img_y = (double) (current->state.y - config.y_origin) / config.resolution;
+		int parent_x = (double) (current->parent->state.x - config.x_origin) / config.resolution;
+		int parent_y = (double) (current->parent->state.y - config.y_origin) / config.resolution;
+
+			line(map_image, Point(img_x, config.y_size - 1 - img_y), Point(parent_x, config.y_size - 1 - parent_y), color, 1, LINE_8);
+}
+
+
+void
+draw_point_in_opencv_image(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point_t parent, carmen_map_config_t config, Scalar color)
+{
+		int img_x = (double) (current.x - config.x_origin) / config.resolution;
+		int img_y = (double) (current.y - config.y_origin) / config.resolution;
+		int parent_x = (double) (parent.x - config.x_origin) / config.resolution;
+		int parent_y = (double) (parent.y - config.y_origin) / config.resolution;
+
+			line(map_image, Point(img_x, config.y_size - 1 - img_y), Point(parent_x, config.y_size - 1 - parent_y), color, 1, LINE_8);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -801,12 +889,13 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	gsl_vector_free (v);
 //	printf("Terminou a suavização\n");
 
-	/*
+
 	for (int i = 1; i < size; i++)
 	{
-		printf("%f %f %f %f %f Ponto Ancora=%d\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi, param->anchor_points[i]);
+//		printf("%f %f %f %f %f Ponto Ancora=%d\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi, param->anchor_points[i]);
+		draw_point_in_opencv_image(poses_ahead[i], poses_ahead[i-1], distance_map->config, Scalar(0,0,255));
 	}
-*/
+
 	free(param->anchor_points);
 	free(param);
 //	cout << "Smoothing running time is "<<time_count.get_since()<<" seconds\n";
@@ -1730,7 +1819,7 @@ build_rddf_poses(state_node *current_state)
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
-			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
+//			printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 		}
 		/*
 		else if(DIST2D(path[i].state, last_state) > 0.5)
@@ -2387,11 +2476,20 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	astar_map_open_node(astar_map, x, y, theta, direction);
 //	sleep(10);
 //	time_count.reset();
+
+	//Display opencv
+	if(CV_PRINT_EXPANSION)
+		display_map(distance_map);
+
+	////////////////////
+
 	while (!open.empty())
 	{
 		current = open.top();
 		open.pop();
 
+		if(CV_PRINT_EXPANSION)
+			draw_state_in_opencv_image(current, distance_map->config, Scalar(0,255,0));
 //		publish_graph(current);
 //		Apenas para fazer uma verificação no método que obtém a célula com obstáculo mais próximo
 //		carmen_position_t temp = nearest_obstacle_cell(current->state.x, current->state.y);
@@ -2428,6 +2526,16 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 				current->total_distance_traveled = rs_path.front()->parent->total_distance_traveled + rs_path.front()->f;
 //				open.push(current);
 				rs_found = 1;
+
+				///Draw reed shepp in image
+/*
+				for(int i = 0; i < rs_path.size(); i++)
+				{
+					draw_state_in_opencv_image(rs_path[i], distance_map->config, Scalar(0,0,255));
+				}
+*/
+				/////////
+
 //				continue;
 				break;
 			}
@@ -2459,8 +2567,14 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		}
 
 		printf("Planning time is %f seconds\n", time_count.get_since());
-		if(expansion_number > 0){
+		if(expansion_number > 0)
 			printf("Expansion_number = %d \n", expansion_number);
+
+		if(CV_PRINT_EXPANSION)
+		{
+			draw_point_on_map_img(start_state->state.x, start_state->state.y, distance_map->config, Scalar(130, 0, 0));
+			draw_point_on_map_img(goal_state->state.x, goal_state->state.y, distance_map->config, Scalar(0, 0, 130));
+			imwrite("Expansion_illustration.png", map_image);
 		}
 
 		for(int i = 0; i < open.size(); i++)
