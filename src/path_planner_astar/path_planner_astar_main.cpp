@@ -925,6 +925,57 @@ get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index)
 
 	return (poses_back);
 }
+
+
+void
+check_path_capacity(offroad_planner_path_t *path)
+{
+	if (path->capacity == 0)
+	{
+		path->capacity = 20;
+		path->points = (carmen_ackerman_traj_point_p) calloc(path->capacity, sizeof(carmen_ackerman_traj_point_t));
+		carmen_test_alloc(path->points);
+
+	}
+	else
+	{
+		while (path->length >= path->capacity)
+		{
+			path->capacity *= 2;
+
+			carmen_ackerman_traj_point_p new_points = (carmen_ackerman_traj_point_p) realloc(path->points, sizeof(carmen_ackerman_traj_point_t) * path->capacity);
+			carmen_test_alloc(new_points);
+			path->points = new_points;
+		}
+	}
+}
+
+
+void
+extract_path_from_graph(state_node *state, offroad_planner_path_t *path)
+{
+	int i = 0;
+	path->length = 50;
+	check_path_capacity(path);
+	state_node *node = (state_node*) malloc(sizeof(state_node));
+	node->state.x = state->state.x;
+	node->state.y = state->state.y;
+	node->state.theta = state->state.theta;
+	node->state.v = state->state.v;
+	node->state.phi = state->state.phi;
+	node->parent = state->parent;
+	while (node != NULL)
+	    {
+//    	printf("state_path = %d %f %f\n",i ,node->state.x, node->state.y);
+		path->points[i] = node->state;
+//        printf("before failsafe %d %f %f %f\n", i, node->state.x, node->state.y, node->state.theta);
+		node = node->parent;
+		++i;
+	}
+	path->length = i;
+
+	free(node);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -934,6 +985,84 @@ get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index)
 // Publishers                                                                                //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+void
+publish_graph(state_node *node)
+{
+//	plot_scores(node);
+
+	offroad_planner_path_t path_;
+	offroad_planner_path_t *path = &path_;
+
+	path->capacity = 50;
+	path->points = (carmen_ackerman_traj_point_p) calloc(path->capacity, sizeof(carmen_ackerman_traj_point_t));
+
+	extract_path_from_graph(node, path);
+
+	if (path->length > 0)
+	{
+		static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+		static bool firstTime = true;
+
+		if (firstTime == true)
+		{
+			IPC_RETURN_TYPE err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, IPC_VARIABLE_LENGTH,
+					CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT);
+			carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+
+			plan_tree_msg.host = carmen_get_host();
+			plan_tree_msg.num_edges = 0;
+			plan_tree_msg.p1 = NULL;
+			plan_tree_msg.p2 = NULL;
+			plan_tree_msg.mask = NULL;
+
+			firstTime = false;
+		}
+
+		if (path->length >= CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)
+		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
+			printf("Error: path->length >= %d in AstarAckerman::publish_graph()\n", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE);
+			return;
+		}
+		plan_tree_msg.num_path = 1;
+		int i = 0;
+		int j = 0;
+		int last_sign = sign(path->points[0].v);
+		while (i < path->length)
+		{
+			if (sign(path->points[i].v) != last_sign)
+			{
+				last_sign = sign(path->points[i].v);
+				plan_tree_msg.path_size[plan_tree_msg.num_path - 1] = j;
+				plan_tree_msg.num_path++;
+				if (plan_tree_msg.num_path >= CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS)
+				{
+					printf("Error: plan_tree_msg.num_path >= %d in AstarAckerman::publish_graph()\n", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS);
+					break;
+				}
+				plan_tree_msg.paths[plan_tree_msg.num_path - 1][0] = path->points[i - 1];
+				plan_tree_msg.paths[plan_tree_msg.num_path - 1][0].v = -plan_tree_msg.paths[plan_tree_msg.num_path - 1][0].v;
+				j = 1;
+			}
+			plan_tree_msg.paths[plan_tree_msg.num_path - 1][j] = path->points[i];
+			i++; j++;
+			if (j >= CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)
+			{
+				printf("Error: j >= %d in AstarAckerman::publish_graph()\n", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE);
+				break;
+			}
+		}
+		plan_tree_msg.path_size[plan_tree_msg.num_path - 1] = j;
+
+//		memcpy(plan_tree_msg.paths[0], path->points, sizeof(carmen_ackerman_traj_point_t) * path->length);
+//		plan_tree_msg.path_size[0] = path->length;
+		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+
+		carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+	}
+//	carmen_ipc_sleep(0.01);
+//	getchar();
+}
 
 
 void
@@ -1918,7 +2047,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 
 	rs_pathl = constRS(rs_numero, tr, ur, vr, current->state, rs_points);
 
-	double ant_direction = -1;
+	double ant_direction = 0;
 
 	for (int i = rs_pathl; i > 0; i--)
 	{
@@ -1948,7 +2077,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			new_state->f = path_cost;
 //			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
 			rs_path_nodes.push_back(new_state);
-			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN || ( ant_direction != -1 && sign(new_state->state.v) != sign(ant_direction)))
+			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN || ( ant_direction != 0 && sign(new_state->state.v) != sign(ant_direction)))
 			{
 				reed_shepp_collision = 1;
 				return rs_path_nodes;
@@ -2017,7 +2146,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
 				neighbor_expansion[it_neighbor_number]->g +=5;
 
-			if(neighbor_expansion[it_neighbor_number]->state.phi != current->state.phi)
+			if(neighbor_expansion[it_neighbor_number]->state.phi != 0.0)
 				neighbor_expansion[it_neighbor_number]->g +=1;
 
 			//Abaixo é uma punição para ele não criar um estado invertido sozinho
@@ -2035,6 +2164,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 
 			astar_map_open_node(astar_map, x, y, theta, direction);
 			astar_map[x][y][theta][direction]->g = neighbor_expansion[it_neighbor_number]->g;
+			astar_map[x][y][theta][direction]->f = neighbor_expansion[it_neighbor_number]->f;
 
 			neighbor_expansion[it_neighbor_number]->total_distance_traveled = current->total_distance_traveled + neighbor_expansion[it_neighbor_number]->distance_traveled_g;
 			open.push(neighbor_expansion[it_neighbor_number]);
@@ -2255,11 +2385,14 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	int direction;
 	get_current_pos(start_state, x, y, theta, direction);
 	astar_map_open_node(astar_map, x, y, theta, direction);
+//	sleep(10);
 //	time_count.reset();
 	while (!open.empty())
 	{
 		current = open.top();
 		open.pop();
+
+//		publish_graph(current);
 //		Apenas para fazer uma verificação no método que obtém a célula com obstáculo mais próximo
 //		carmen_position_t temp = nearest_obstacle_cell(current->state.x, current->state.y);
 //		printf("current cell = %f %f %f %f %f %f\n", current->state.x, current->state.y, current->state.theta, current->state.phi, current->f, current->total_distance_traveled);
@@ -2288,7 +2421,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 			reed_shepp_collision = 0;
 			rs_path = reed_shepp_path(current, goal_state);
 //			if(hitObstacle(rs_path, astar_map) == 0)//&& rs_path.front()->f > (current->h) )
-			if(reed_shepp_collision == 0)
+			if(reed_shepp_collision == 0) //&& hitObstacle(rs_path, astar_map) == 0)
 			{
 				rs_path.front()->parent = current;
 				current = rs_path.back();
