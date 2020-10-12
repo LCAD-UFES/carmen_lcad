@@ -1965,6 +1965,8 @@ h(map_node_p ****astar_map, double* heuristic_obstacle_map, state_node *current,
 //	printf("[h]rs = %f\tho = %f\n", rs, ho);
 
 	double returned_h = std::max(rs, ho);
+//	double returned_h = ho;
+//	double returned_h = DIST2D(current->state, goal->state);
 
 	return returned_h;
 }
@@ -2219,21 +2221,19 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 		current_node_cost = g(current) + movementcost(current, neighbor_expansion[it_neighbor_number]);
 		get_current_pos(neighbor_expansion[it_neighbor_number], x, y, theta, direction);
 
-		if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->g > neighbor_expansion[it_neighbor_number]->g)
-			astar_map[x][y][theta][direction]->is_open = 0;
-
-		if(astar_map[x][y][theta][direction]->is_closed == 0 && astar_map[x][y][theta][direction]->is_open == 0)
+		if(astar_map[x][y][theta][direction]->is_closed == 0)
 		{
+			////Costs
 			neighbor_expansion[it_neighbor_number]->g = current_node_cost;
-			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
+			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + 1/carmen_obstacle_avoider_car_distance_to_nearest_obstacle(neighbor_expansion[it_neighbor_number]->state, distance_map);
 			neighbor_expansion[it_neighbor_number]->parent = current;
 
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-				neighbor_expansion[it_neighbor_number]->g += (1.5 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
+				neighbor_expansion[it_neighbor_number]->g += (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
-				neighbor_expansion[it_neighbor_number]->g +=5;
+				neighbor_expansion[it_neighbor_number]->g +=10;
 
 			if(neighbor_expansion[it_neighbor_number]->state.phi != 0.0)
 				neighbor_expansion[it_neighbor_number]->g +=1;
@@ -2248,15 +2248,22 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 					neighbor_expansion[it_neighbor_number]->g +=20;
 			}
 
-
 			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
+			//////////////////////////////
 
-			astar_map_open_node(astar_map, x, y, theta, direction);
-			astar_map[x][y][theta][direction]->g = neighbor_expansion[it_neighbor_number]->g;
-			astar_map[x][y][theta][direction]->f = neighbor_expansion[it_neighbor_number]->f;
+//			if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->g > neighbor_expansion[it_neighbor_number]->g)
+			if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->f > neighbor_expansion[it_neighbor_number]->f)
+				astar_map[x][y][theta][direction]->is_open = 0;
 
-			neighbor_expansion[it_neighbor_number]->total_distance_traveled = current->total_distance_traveled + neighbor_expansion[it_neighbor_number]->distance_traveled_g;
-			open.push(neighbor_expansion[it_neighbor_number]);
+			if(astar_map[x][y][theta][direction]->is_open == 0)
+			{
+				astar_map_open_node(astar_map, x, y, theta, direction);
+				astar_map[x][y][theta][direction]->g = neighbor_expansion[it_neighbor_number]->g;
+				astar_map[x][y][theta][direction]->f = neighbor_expansion[it_neighbor_number]->f;
+
+				neighbor_expansion[it_neighbor_number]->total_distance_traveled = current->total_distance_traveled + neighbor_expansion[it_neighbor_number]->distance_traveled_g;
+				open.push(neighbor_expansion[it_neighbor_number]);
+			}
 		}
 		++it_neighbor_number;
 	}
@@ -2417,11 +2424,22 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	//Terceiro teste
 	robot_pose->x = 7757871.909156;
 	robot_pose->y = -363568.708179;
-	robot_pose->theta= -0.704927;
+	robot_pose->theta = -0.704927;
 
 	goal_pose->x = 7757928.000000;
 	goal_pose->y = -363577.400000;
-	goal_pose->theta= 2.457696;
+	goal_pose->theta = 2.457696;
+*/
+
+/*
+	//Ilustração de expansões
+	robot_pose->x = 7757866.325708;
+	robot_pose->y = -363563.911265;
+	robot_pose->theta = -0.742732;
+
+	goal_pose->x = 7757863.600000;
+	goal_pose->y = -363545.800000;
+	goal_pose->theta = 0.858117;
 */
 
 	printf("Robot Pose : %f %f %f\n", robot_pose->x, robot_pose->y, robot_pose->theta);
@@ -2488,8 +2506,6 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		current = open.top();
 		open.pop();
 
-		if(CV_PRINT_EXPANSION)
-			draw_state_in_opencv_image(current, distance_map->config, Scalar(0,255,0));
 //		publish_graph(current);
 //		Apenas para fazer uma verificação no método que obtém a célula com obstáculo mais próximo
 //		carmen_position_t temp = nearest_obstacle_cell(current->state.x, current->state.y);
@@ -2510,6 +2526,9 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 			free(current);
 			continue;
 		}
+
+		if(CV_PRINT_EXPANSION)
+			draw_state_in_opencv_image(current, distance_map->config, Scalar(0,255,0));
 
 		astar_map_close_node(astar_map, x, y, theta, direction);
 
