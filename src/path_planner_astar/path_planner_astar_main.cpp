@@ -99,7 +99,7 @@ int reed_shepp_collision = 0;
 
 //#define OBSTACLE_DISTANCE_MIN 1.0
 #define OBSTACLE_DISTANCE_MIN 0.5
-#define SEND_MESSAGE_IN_PARTS 0
+#define SEND_MESSAGE_IN_PARTS 1
 
 int teste_edge = 0;
 
@@ -1924,7 +1924,7 @@ double
 h(map_node_p ****astar_map, double* heuristic_obstacle_map, state_node *current, state_node *goal)
 {
 	double ho = -1;
-	double rs = -1;
+	double rs = 99999;
 
 	int x_c;
 	int y_c;
@@ -1966,6 +1966,7 @@ h(map_node_p ****astar_map, double* heuristic_obstacle_map, state_node *current,
 
 	double returned_h = std::max(rs, ho);
 //	double returned_h = ho;
+//	double returned_h = rs;
 //	double returned_h = DIST2D(current->state, goal->state);
 
 	return returned_h;
@@ -2230,7 +2231,7 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-				neighbor_expansion[it_neighbor_number]->g += (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
+				neighbor_expansion[it_neighbor_number]->g += (4.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
 				neighbor_expansion[it_neighbor_number]->g +=10;
@@ -2401,10 +2402,10 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 int
 carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose)
 {
-/*
+	/*
 	//Primeiro teste
-	robot_pose->x = 7757870.320648;
-	robot_pose->y = -363567.511582;
+	robot_pose->x = 7757871.12;
+	robot_pose->y = -363569.71;
 	robot_pose->theta= -0.713516;
 
 	goal_pose->x = 7757917.200000;
@@ -2413,8 +2414,8 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 	//Segundo teste
 
-	robot_pose->x = 7757870.318257;
-	robot_pose->y = -363567.510643;
+	robot_pose->x = 7757871.12;
+	robot_pose->y = -363569.71;
 	robot_pose->theta= -0.713137;
 
 	goal_pose->x = 7757915.200000;
@@ -2422,8 +2423,8 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	goal_pose->theta= 0.841942;
 
 	//Terceiro teste
-	robot_pose->x = 7757871.909156;
-	robot_pose->y = -363568.708179;
+	robot_pose->x = 7757871.12;
+	robot_pose->y = -363569.71;
 	robot_pose->theta = -0.704927;
 
 	goal_pose->x = 7757928.000000;
@@ -2433,13 +2434,17 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 /*
 	//Ilustração de expansões
-	robot_pose->x = 7757866.325708;
-	robot_pose->y = -363563.911265;
+	robot_pose->x = 7757871.12;
+	robot_pose->y = -363569.71;
 	robot_pose->theta = -0.742732;
 
-	goal_pose->x = 7757863.600000;
-	goal_pose->y = -363545.800000;
-	goal_pose->theta = 0.858117;
+	goal_pose->x = 7757918.38;
+	goal_pose->y = -363594.11;
+	goal_pose->theta = 0.848;
+
+	double random_value = (double)rand()/RAND_MAX*1.3-0.3;
+	goal_pose->x += random_value;
+	goal_pose->y += random_value;
 */
 
 	printf("Robot Pose : %f %f %f\n", robot_pose->x, robot_pose->y, robot_pose->theta);

@@ -72,6 +72,7 @@ typedef struct map_node
 	int y;
 	int theta;
 	double g;
+	double f;
 	int is_open;
 	int is_closed;
 	double obstacle_distance;
