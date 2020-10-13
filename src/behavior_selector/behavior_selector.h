@@ -40,7 +40,7 @@ typedef struct
 	double possible_collision_mo_in_parallel_lane_dv;		// Velocity orthogonal to the parallel path of the possibly colliding moving object
 	double s_distance_without_collision_with_static_object;	// Distance in seconds. This is related to a path.
 	int static_object_pose_index;							// Future position in the path of a colliding static object
-	bool mo_behind;
+	bool mo_in_front;
 	bool path_has_no_collision;
 } path_collision_info_t;
 
@@ -51,7 +51,6 @@ typedef struct
 	double sv;
 	double d;
 	double dv;
-	bool behind;
 } moving_object_pose_info_t;
 
 

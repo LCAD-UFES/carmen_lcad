@@ -599,7 +599,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		}
 #endif
 
-		else if (path_collision_info.valid && !path_collision_info.mo_behind &&
+		else if (path_collision_info.valid && path_collision_info.mo_in_front &&
 				 ((rddf_pose_index == path_collision_info.possible_collision_mo_pose_index)))// ||
 //				  (rddf_pose_index == path_collision_info.possible_collision_mo_in_parallel_lane_pose_index)))
 		{

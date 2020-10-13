@@ -1128,6 +1128,13 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, timestamp);
 //	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
 
+//	static double t = carmen_get_time();
+//	printf("valid %d, mo_in_front %d, possible_collision_mo_pose_index %d, delta_t %0.3lf\n",
+//			path_collision_info.valid, path_collision_info.mo_in_front,
+//			path_collision_info.possible_collision_mo_pose_index,
+//			carmen_get_time() - t);
+//	t = carmen_get_time();
+
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
 
