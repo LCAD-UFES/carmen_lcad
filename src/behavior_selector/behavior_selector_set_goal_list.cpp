@@ -16,12 +16,13 @@
 //#define PRINT_UDATMO_LOG
 #define USE_DATMO_GOAL
 
-//#define USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
+#define USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 
 //uncomment return 0 to enable overtaking
 //#define OVERTAKING
 
 static carmen_robot_ackerman_config_t robot_config;
+static double robot_max_velocity_reverse;
 static double distance_between_waypoints = 5;
 static carmen_ackerman_traj_point_t robot_pose;
 static int robot_initialized = 0;
@@ -441,6 +442,21 @@ set_max_v(double v)
 }
 
 
+double
+get_max_v_reverse()
+{//TODO usar essa variavel dentro do robot_config
+	return (robot_max_velocity_reverse);
+}
+
+
+void
+set_max_v_reverse(double v)
+{
+	//TODO
+	robot_max_velocity_reverse = v;
+}
+
+
 carmen_robot_ackerman_config_t *
 get_robot_config()
 {
@@ -472,11 +488,12 @@ distance_between_waypoints_and_goals()
 
 void
 behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
-		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner)
+		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner, double max_velocity_reverse)
 {
 	udatmo_init(config);
 
 	robot_config = config;
+	robot_max_velocity_reverse = max_velocity_reverse;
 	distance_between_waypoints = dist_between_waypoints;
 	change_goal_distance = change_goal_dist;
 	parking_planner = p_planner;
@@ -703,11 +720,20 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		else if (behavior_selector_reverse_driving && (first_pose_change_direction_index != -1))
 		{
 			double dist = DIST2D(rddf->poses[rddf_pose_index], robot_pose);
-			if (dist > 0.3 && robot_pose.v != 0.0)
+			if (dist > 0.3)
 			{
 				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 				first_pose_change_direction_index = -1;
+			}
+			else
+			{
+				if(robot_pose.v != 0)
+				{
+					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+					first_pose_change_direction_index = -1;
+				}
 			}
 		}
 #endif
