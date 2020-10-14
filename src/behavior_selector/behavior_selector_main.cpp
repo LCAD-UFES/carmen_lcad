@@ -163,6 +163,8 @@ extern int selected_path_id;
 extern double localize_ackerman_initialize_message_timestamp;
 
 int behavior_selector_reverse_driving = 0;
+double robot_max_velocity_reverse = 0.0;
+
 double parking_speed_limit;
 
 carmen_map_t occupancy_map;
@@ -1645,6 +1647,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
+		{(char *) "robot", (char *) "max_velocity_reverse", CARMEN_PARAM_DOUBLE, &robot_max_velocity_reverse, 1, NULL},
 		{(char *) "behavior_selector", (char *) "use_symotha", CARMEN_PARAM_ONOFF, &behavior_selector_use_symotha, 1, NULL},
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
 		{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},
@@ -1698,8 +1701,9 @@ read_parameters(int argc, char **argv)
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
 
+	//TODO It look likes only voice interface uses carmen_ini_max_velocity, check what to do with max_reverse
 	carmen_ini_max_velocity = last_speed_limit = robot_config.max_v;
-	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner);
+	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner, robot_max_velocity_reverse);
 
 	if (param_goal_source_onoff)
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
