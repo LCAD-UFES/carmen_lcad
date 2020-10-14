@@ -17,6 +17,7 @@ LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_
 	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface -lcollision_detection -lnavigator_ackerman_interface -lcarmodel `pkg-config --libs opencv` -lmapper_interface -lgsl -lgslcblas -loffroad_planner_interface -lroute_planner_interface
 
 #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+
 IFLAGS += \
 	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
 	`pkg-config --cflags gtkglext-1.0`
