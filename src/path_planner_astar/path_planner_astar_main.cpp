@@ -99,7 +99,7 @@ int reed_shepp_collision = 0;
 
 //#define OBSTACLE_DISTANCE_MIN 1.0
 #define OBSTACLE_DISTANCE_MIN 0.5
-#define SEND_MESSAGE_IN_PARTS 1
+#define SEND_MESSAGE_IN_PARTS 0
 
 int teste_edge = 0;
 
@@ -2473,7 +2473,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //	evg_thin_on_map(astar_map, heuristic_obstacle_map);
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
-	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, 9999, 9999, NULL, 0);
+	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, 0, 0, NULL, 0);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, 0.0, 0.0, 0.0, NULL, 0);
 
 	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(start_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
