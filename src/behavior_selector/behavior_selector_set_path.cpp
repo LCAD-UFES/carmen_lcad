@@ -171,7 +171,7 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 {
 	path_collision_info.mo_in_front = false;	// Estar atrás é bom. Não precisamos cuidar. Colisão por trás é culpa do moving object.
 
-	if (current_moving_objects->num_point_clouds == 0)
+	if (!current_moving_objects || (current_moving_objects->num_point_clouds == 0))
 	{
 		path_collision_info.s_distance_without_collision_with_moving_object = (double) num_samples * delta_t;
 		path_collision_info.possible_collision_mo_pose_index = current_set_of_paths->number_of_poses;
@@ -584,6 +584,9 @@ init_path_temporal_value(int number_of_paths)
 void
 print_mo(carmen_moving_objects_point_clouds_message *current_moving_objects)
 {
+	if (!current_moving_objects)
+		return;
+
 	for (int j = 0; j < current_moving_objects->num_point_clouds; j++)
 	{
 		printf("id %d, in_front %d, num_samples %d, l %0.2lf, w %0.2lf, vs_s %0.2lf, vd_s %0.2lf   -   points %d\n",
@@ -604,7 +607,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp)
 {
-	if (!current_set_of_paths)
+	if (1)//!current_set_of_paths)
 	{
 		vector<path_collision_info_t> no_collision_info = {};
 		return (no_collision_info);

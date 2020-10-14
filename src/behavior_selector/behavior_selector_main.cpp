@@ -63,7 +63,7 @@
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
 //#define SIMULATE_MOVING_OBSTACLE
-//#define SIMULATE_LATERAL_MOVING_OBSTACLE
+#define SIMULATE_LATERAL_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -944,7 +944,7 @@ set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_a
 	}
 
 	compact_occupancy_map = obstacle_distance_mapper_uncompress_occupancy_map(&occupancy_map, compact_occupancy_map, carmen_mapper_compact_map_msg);
-	current_moving_objects = obstacle_distance_mapper_datmo(road_network_message, occupancy_map, offline_map, carmen_mapper_compact_map_msg->timestamp);
+//	current_moving_objects = obstacle_distance_mapper_datmo(road_network_message, occupancy_map, offline_map, carmen_mapper_compact_map_msg->timestamp);
 	if (current_moving_objects)
 	{
 		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
