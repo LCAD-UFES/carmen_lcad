@@ -607,7 +607,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp)
 {
-	if (1)//!current_set_of_paths)
+	if (!current_set_of_paths || behavior_selector_use_symotha)
 	{
 		vector<path_collision_info_t> no_collision_info = {};
 		return (no_collision_info);
