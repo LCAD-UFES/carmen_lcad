@@ -1246,7 +1246,14 @@ void
 print_road_network(carmen_route_planner_road_network_message *road_network)
 {
 	for (int i = 0; i < road_network->number_of_nearby_lanes; i++)
+	{
 		printf("lane_id %d, size %d\n", road_network->nearby_lanes_ids[i], road_network->nearby_lanes_sizes[i]);
+		carmen_route_planner_junction_t *lane_merges = &(road_network->nearby_lanes_merges[i]);
+		for (int j = 0; j < road_network->nearby_lanes_merges_sizes[i]; j++)
+			printf("target_lane_id %d, node_id %d, index_of_node_in_current_lane %d, target_node_index_in_nearby_lane %d\n",
+					lane_merges->target_lane_id, lane_merges->node_id,
+					lane_merges->index_of_node_in_current_lane, lane_merges->target_node_index_in_nearby_lane);
+	}
 
 	printf("\n");
 }
@@ -1451,7 +1458,7 @@ share_points_between_objects(vector<lane_t> &lanes, carmen_map_t *occupancy_map)
 
 
 int
-get_robot_lane_and_index_in_lane(int &robot_lane, int &robot_index_in_lane,
+get_robot_lane_id_and_index_in_lane(int &robot_lane_id, int &robot_index_in_lane,
 		carmen_route_planner_road_network_message *road_network)
 {
 	if (road_network->number_of_poses == 0)
@@ -1468,7 +1475,7 @@ get_robot_lane_and_index_in_lane(int &robot_lane, int &robot_index_in_lane,
 			if (distance < min_distance)
 			{
 				robot_index_in_lane = i;
-				robot_lane = lane;
+				robot_lane_id = road_network->nearby_lanes_ids[lane];
 				if (distance == 0.0)
 					return (1);
 
@@ -1483,15 +1490,15 @@ get_robot_lane_and_index_in_lane(int &robot_lane, int &robot_index_in_lane,
 
 int
 moving_object_lane_merges_in_front_of_robot(carmen_route_planner_road_network_message *road_network,
-		int moving_object_lane, int robot_lane, int moving_object_index_in_lane, int robot_index_in_lane)
+		int moving_object_lane_index, int robot_lane_id, int moving_object_index_in_lane __attribute__((unused)), int robot_index_in_lane)
 {
 	int merge_in_front = 0;
-	carmen_route_planner_junction_t *moving_object_lane_merges = &(road_network->nearby_lanes_merges[moving_object_lane]);
-	for (int i = 0; i < road_network->nearby_lanes_merges_sizes[moving_object_lane]; i++)
+	carmen_route_planner_junction_t *moving_object_lane_merges = &(road_network->nearby_lanes_merges[moving_object_lane_index]);
+	for (int i = 0; i < road_network->nearby_lanes_merges_sizes[moving_object_lane_index]; i++)
 	{
-		if ((moving_object_lane_merges[i].target_lane_id == robot_lane) &&
-			(moving_object_index_in_lane < moving_object_lane_merges[i].node_in_lane) &&
-			(moving_object_lane_merges[i].target_node_id > robot_index_in_lane))
+		if ((moving_object_lane_merges[i].target_lane_id == robot_lane_id) &&
+//			(moving_object_index_in_lane < moving_object_lane_merges[i].index_of_node_in_current_lane) &&
+			(moving_object_lane_merges[i].target_node_index_in_nearby_lane > robot_index_in_lane))
 		{
 			merge_in_front = 1;
 			return (merge_in_front);
@@ -1503,14 +1510,14 @@ moving_object_lane_merges_in_front_of_robot(carmen_route_planner_road_network_me
 
 
 int
-is_in_front(carmen_route_planner_road_network_message *road_network, int moving_object_lane, moving_object_t *moving_object)
+is_in_front(carmen_route_planner_road_network_message *road_network, int moving_object_lane_index, moving_object_t *moving_object)
 {
-	int robot_lane;
+	int robot_lane_id;
 	int robot_index_in_lane;
-	if (!get_robot_lane_and_index_in_lane(robot_lane, robot_index_in_lane, road_network))
+	if (!get_robot_lane_id_and_index_in_lane(robot_lane_id, robot_index_in_lane, road_network))
 		return (0);
 
-	if (moving_object_lane == robot_lane)
+	if (moving_object->lane_id == robot_lane_id)
 	{
 		if (moving_object->history[0].index > robot_index_in_lane)
 			return (1);
@@ -1519,7 +1526,7 @@ is_in_front(carmen_route_planner_road_network_message *road_network, int moving_
 	}
 	else
 	{
-		if (moving_object_lane_merges_in_front_of_robot(road_network, moving_object_lane, robot_lane, moving_object->history[0].index, robot_index_in_lane))
+		if (moving_object_lane_merges_in_front_of_robot(road_network, moving_object_lane_index, robot_lane_id, moving_object->history[0].index, robot_index_in_lane))
 			return (1);
 		else
 			return (0);
@@ -1553,8 +1560,8 @@ update_statistics(vector<lane_t> &lanes, carmen_route_planner_road_network_messa
 		{
 			moving_object_t *moving_object = &(lane->moving_objects[i]);
 			moving_object->lane_id = lane->lane_id;
-			int moving_object_lane = get_moving_object_lane_index(lane->lane_id, road_network);
-			moving_object->in_front = is_in_front(road_network, moving_object_lane, moving_object);
+			int moving_object_lane_index = get_moving_object_lane_index(lane->lane_id, road_network);
+			moving_object->in_front = is_in_front(road_network, moving_object_lane_index, moving_object);
 //			printf("mo %d, in_front %d\n", moving_object->id, moving_object->in_front);
 			update_object_statistics(moving_object, occupancy_map);
 		}
@@ -1569,7 +1576,7 @@ obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_n
 	if (!road_network)
 		return (NULL);
 
-//	print_road_network(road_network);
+	print_road_network(road_network);
 
 	static vector<lane_t> lanes;
 

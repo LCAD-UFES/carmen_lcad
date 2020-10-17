@@ -1,0 +1,1 @@
+../data/COMO_EDITAR_MAPAS_GRANDES.txt
