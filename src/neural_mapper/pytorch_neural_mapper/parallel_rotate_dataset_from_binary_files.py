@@ -1,4 +1,4 @@
-#Hot to use:
+#How to use:
 # Crie a pasta de saida no mesmo padrao da do data set
 # -Dataset
 #  |--data
@@ -12,23 +12,33 @@ import numpy as np
 import math
 from numpy import std, dtype, float64
 import time
-
+#import threading
+import multiprocessing
 import scipy.sparse
 from PIL import Image
 
-# Limita ground thruth ao raio do laser de todas as imagens passadas pela lista, deixando no formato de nomes apropriado para treinamento
-# Nao cria pastas padrao
-#all_images, precisa apenas do nome da imagem ex: a imagem 0_360000_0.000000_7757679.296649_-363600.985947_1491276861.247797
-# possui na pasta data as 5 estatisticas para ela com sufixo _max, _mean, _min, _numb e std (serao carregadas automaticamente) e
-#  na pasta label _label é carregado automaticamente também
+'''
+ Limita ground thruth ao raio do laser de todas as imagens passadas pela lista, deixando no formato de nomes apropriado para treinamento
+Nao cria pastas padrao all_images, precisa apenas do nome da imagem 
+ex: a imagem 0_360000_0.000000_7757679.296649_-363600.985947_1491276861.247797 possui na pasta data as 5 estatisticas para ela com o
+sufixo _max, _mean, _min, _numb e std (serao carregadas automaticamente) e na pasta label _label é carregado automaticamente também
 
+Para gerar a lista com all_images faca:
+cd <dataset_path/labels>
+ls -v *_label > ../all_images.txt
+abra o arquivo com o gedit ou qualquer outra forma e apague os _label do nome dos arquivos
+usei procurar e substituir
+'''
 
-dataset_list_file = "/home/vinicius/dataset_rotate_teste/slice_to_test.txt"
-dataset_path = "/media/vinicius/NewHD/neural_mapper_raw/guarapari-20170403-2_no_bumblebee/"
+dataset_list_file = "/media/vinicius/HD_EXT_VINI/neural_mapper_raw/guarapari-20170403-2_no_bumblebee-part2/all_images.txt"
+dataset_path = "/media/vinicius/HD_EXT_VINI/neural_mapper_raw/guarapari-20170403-2_no_bumblebee-part2/"
 data_path = "data/"
 label_path = "labels/"
 
-out_path = "/home/vinicius/dataset_rotate_teste/" #"/mnt/ssd/neural_mapper_train/guarapari-20170403-2_augmented-part2/"
+out_path = "/mnt/ssd/neural_mapper_train/guarapari-20170403-2_augmented-part2/"
+
+max_threads = 8
+
 #statistics + label + view
 input_dimensions = 6
 
@@ -40,6 +50,8 @@ map_resolution = 0.2
 radius = (velodyne_max_range/map_resolution)
 new_size = 600
 rotate_dataset = True
+num_rotations = 4 #codigo ainda nao aceita nada diferente disso
+
 calculate_transforms = False
 save_png_to_debug = False
 
@@ -84,17 +96,11 @@ def fixed_normalize_cell(value_map, new_max, last_max, min):
 	return normalized
 
 
-def circle_and_mean(data, radius, total_elements, new_size):
-	sum = 0.0
-	sum_mean_max  = 0.0
-	sum_mean_mean = 0.0
-	sum_mean_min  = 0.0
-	sum_mean_numb = 0.0
-	sum_mean_std  = 0.0
+def circle_and_mean(data, radius, new_size):
 	
 	map_min = -1.0
-		
-	new_data = np.zeros((input_dimensions, new_size, new_size)) 
+	new_data = np.zeros((input_dimensions, new_size, new_size))
+	 
 	for i in range(size):
 		for j in range(size):
 			y = i-center
@@ -110,24 +116,8 @@ def circle_and_mean(data, radius, total_elements, new_size):
 				new_data[4][l][m] = fixed_normalize_cell(data[4][i][j], 1.0, 15,	   map_min) #std
 				#label      l  m
 				new_data[5][l][m] = data[5][i][j]
-				
-				if (calculate_transforms):
-					sum_mean_max  += new_data[0][l][m]
-					sum_mean_mean += new_data[1][l][m]
-					sum_mean_min  += new_data[2][l][m]
-					sum_mean_numb += new_data[3][l][m]
-					sum_mean_std  += new_data[4][l][m]
-	
-					total_elements += 1;
-	
-	if (calculate_transforms):  
-		sum_mean_max  /= (new_size * new_size)
-		sum_mean_mean /= (new_size * new_size)
-		sum_mean_min  /= (new_size * new_size)
-		sum_mean_numb /= (new_size * new_size)
-		sum_mean_std  /= (new_size * new_size)
 
-	return total_elements, sum_mean_max, sum_mean_mean, sum_mean_min, sum_mean_numb, sum_mean_std, new_data   
+	return new_data   
 
 
 def labels_to_img(numpy_image, size):
@@ -197,36 +187,36 @@ def save_rotated(rots_data, rot_id, rotacao, new_count):
 	cv2.imwrite(out_path + label_path + str(new_count) + '_' + str(rotacao) + '_view.png', img)
 
 
-def save_rotated_sparse(rots_data, rot_id, rotacao, new_count, new_size):
+def save_rotated_sparse(rots_data, rot_id, rotacao, new_count, new_size, name_data):
 		
 	#Dados_rotacionado rotaca graus
 	
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_max')     ,   scipy.sparse.csr_matrix(rots_data[rot_id][0]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_mean')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][1]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_min')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][2]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_numb')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][3]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_std')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][4]))
-	scipy.sparse.save_npz((out_path + label_path + str(new_count) + '_' + str(rotacao) + '_label')  ,   scipy.sparse.csr_matrix(rots_data[rot_id][5]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_max')     ,   scipy.sparse.csr_matrix(rots_data[rot_id][0]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_mean')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][1]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_min')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][2]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_numb')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][3]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_std')    ,   scipy.sparse.csr_matrix(rots_data[rot_id][4]))
+	scipy.sparse.save_npz((out_path + label_path + new_count + '_' + str(rotacao) + '_' + name_data + '_label')  ,   scipy.sparse.csr_matrix(rots_data[rot_id][5]))
 			
 	img = labels_to_img(rots_data[rot_id][5], new_size)
-	cv2.imwrite(out_path + label_path + str(new_count) + '_' + str(rotacao) + '_view.png', img)
+	cv2.imwrite(out_path + label_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_view.png', img)
 
 	
-def teste_visualize(new_data, new_count, rotacao):
+def teste_visualize(new_data, new_count, rotacao, name_data):
 	
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_max' + '_view.png', (new_data[0]*127))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_mean' + '_view.png', (new_data[1]*127))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_min' + '_view.png', (new_data[2]*127))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_numb' + '_view.png', (new_data[3]*127))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_std' + '_view.png', (new_data[4]*127))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_max' + '_view.png', (new_data[0]*127))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_mean' + '_view.png', (new_data[1]*127))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_min' + '_view.png', (new_data[2]*127))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_numb' + '_view.png', (new_data[3]*127))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_std' + '_view.png', (new_data[4]*127))
 
-def teste_visualize_with_rotation(new_count, rots_data, rotacao, rot_id):
+def teste_visualize_with_rotation(new_count, rots_data, rotacao, rot_id, name_data):
 		
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_max' + '_view.png', (rots_data[rot_id][0]*255))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_mean' + '_view.png', (rots_data[rot_id][1]*255))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_min' + '_view.png', (rots_data[rot_id][2]*255))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_numb' + '_view.png', (rots_data[rot_id][3]*255))
-	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao)+ '_std' + '_view.png', (rots_data[rot_id][4]*255))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_max' + '_view.png', (rots_data[rot_id][0]*255))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_mean' + '_view.png', (rots_data[rot_id][1]*255))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_min' + '_view.png', (rots_data[rot_id][2]*255))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_numb' + '_view.png', (rots_data[rot_id][3]*255))
+	cv2.imwrite(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_' + name_data + '_std' + '_view.png', (rots_data[rot_id][4]*255))
 	
 		
 def save(new_data, rots_data, new_count):
@@ -270,45 +260,43 @@ def save(new_data, rots_data, new_count):
 	return new_count
 
 
-def save_as_sparse_matrix(new_data, rots_data, new_count, new_size):
+def save_as_sparse_matrix(new_data, rots_data, new_size, item):
 	#Dados_circulo
+	temp_name = item.split("_")
+	name_data = (temp_name[2] + "_" + temp_name[3] + "_" + temp_name[4] + "_" + temp_name[5])
+	new_count = temp_name[0]
 	rotacao = 0
 	if save_png_to_debug:
 		teste_visualize(new_data, new_count, rotacao)
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.save_npz.html
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_max'),   scipy.sparse.csr_matrix(new_data[0]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_mean')  , scipy.sparse.csr_matrix(new_data[1]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_min')  , scipy.sparse.csr_matrix(new_data[2]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_numb')  , scipy.sparse.csr_matrix(new_data[3]))
-	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_std')  , scipy.sparse.csr_matrix(new_data[4]))
-	scipy.sparse.save_npz((out_path + label_path + str(new_count) + '_' + str(rotacao) + '_label'), scipy.sparse.csr_matrix(new_data[5]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_max'),   scipy.sparse.csr_matrix(new_data[0]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_mean')  , scipy.sparse.csr_matrix(new_data[1]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_min')  , scipy.sparse.csr_matrix(new_data[2]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_numb')  , scipy.sparse.csr_matrix(new_data[3]))
+	scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_std')  , scipy.sparse.csr_matrix(new_data[4]))
+	scipy.sparse.save_npz((out_path + label_path + new_count + '_' + str(rotacao) + '_' + name_data + '_label'), scipy.sparse.csr_matrix(new_data[5]))
 	img = labels_to_img(new_data[5], new_size)
-	cv2.imwrite(out_path + label_path + str(new_count) + '_' + str(rotacao) + '_view.png', img)
-	new_count += 1
-	
+	cv2.imwrite(out_path + label_path + new_count + '_' + str(rotacao) + '_' + name_data + '_view.png', img)
+		
 	if rotate_dataset:
         # 	teste_visualize_with_rotation(new_count, rots_data, 90, 0)
-		save_rotated_sparse(rots_data, 0, 90, new_count, new_size)
-		new_count += 1
-		save_rotated_sparse(rots_data, 1, 180, new_count, new_size)
-		new_count += 1
-		save_rotated_sparse(rots_data, 2, 270, new_count, new_size)
-		new_count += 1
+		save_rotated_sparse(rots_data, 0, 90, new_count, new_size, name_data)
+		save_rotated_sparse(rots_data, 1, 180, new_count, new_size, name_data)
+		save_rotated_sparse(rots_data, 2, 270, new_count, new_size, name_data)
 
             #Dados_rotacionado flip horizontal graus
 		rotacao = 'flipH'
-		scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_max')  ,   scipy.sparse.csr_matrix(rots_data[3][0]))
-		scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_mean') ,   scipy.sparse.csr_matrix(rots_data[3][1]))
-		scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_min') ,   scipy.sparse.csr_matrix(rots_data[3][2]))
-		scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_numb') ,   scipy.sparse.csr_matrix(rots_data[3][3]))
-		scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_std') ,   scipy.sparse.csr_matrix(rots_data[3][4]))
-		scipy.sparse.save_npz((out_path + label_path + str(new_count) + '_' +str(rotacao) + '_label'),   scipy.sparse.csr_matrix(rots_data[3][5]))
+		scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_max')  ,   scipy.sparse.csr_matrix(rots_data[3][0]))
+		scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_mean') ,   scipy.sparse.csr_matrix(rots_data[3][1]))
+		scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_min') ,   scipy.sparse.csr_matrix(rots_data[3][2]))
+		scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_numb') ,   scipy.sparse.csr_matrix(rots_data[3][3]))
+		scipy.sparse.save_npz((out_path + data_path + new_count + '_' + str(rotacao) + '_' + name_data + '_std') ,   scipy.sparse.csr_matrix(rots_data[3][4]))
+		scipy.sparse.save_npz((out_path + label_path + new_count + '_' +str(rotacao) + '_' + name_data + '_label'),   scipy.sparse.csr_matrix(rots_data[3][5]))
 		
 		img = labels_to_img(rots_data[3][5], new_size)
-		cv2.imwrite(out_path + label_path + str(new_count) + '_' + str(rotacao) + '_view.png', img)
-		new_count += 1
+		cv2.imwrite(out_path + label_path + new_count + '_' + str(rotacao) + '_' + name_data + '_view.png', img)
 		
-	return new_count
+		return new_count
 
 
 def save_as_tiff(new_data, rots_data, new_count):
@@ -370,73 +358,42 @@ def calculate_std(sum_var_max, sum_var_mean, sum_var_min, sum_var_numb, sum_var_
 	
 	arq.close()
 
-#main
-dataset_list = getDatasetList(dataset_list_file)
-
-mean_max  = 0.0
-mean_mean = 0.0
-mean_min  = 0.0
-mean_numb = 0.0
-mean_std  = 0.0
-
-var_max  = 0.0
-var_mean = 0.0
-var_min  = 0.0
-var_numb = 0.0
-var_std  = 0.0
-
-num_rotations = 4
-total_elements = 0.0
-num_files = len(dataset_list)
-
-inicio = time.time()
-
-for item in dataset_list:
+def load_cut_rotate_and_save_dataset(item, input_dimensions, new_size, num_rotations, radius, rotate_dataset):
 	data = load_statistics_label_view(item)
 	new_data = np.zeros((input_dimensions, new_size, new_size))
-
-	total_elements, sum_mean_max, sum_mean_mean, sum_mean_min, sum_mean_numb, sum_mean_std, new_data = circle_and_mean(data, radius, total_elements, new_size)
-	
-	if calculate_transforms == False:
-		if rotate_dataset:
-			rots = rotate(new_data, num_rotations)
-		else:
-			rots = None
-			
-		new_count = save_as_sparse_matrix(new_data, rots, new_count, new_size)
-	
-	if calculate_transforms:
-		mean_max  += sum_mean_max
-		mean_mean += sum_mean_mean
-		mean_min  += sum_mean_min
-		mean_numb += sum_mean_numb
-		mean_std  += sum_mean_std
-		total_mean = []
-		total_mean = calculate_total_mean(mean_max, mean_mean, mean_min, mean_numb, mean_std)
-	
-if calculate_transforms:
-		
-	for item in dataset_list:
-		data = load_statistics_label_view(item)
-		
-		sum_var_max, sum_var_mean, sum_var_min, sum_var_numb, sum_var_std = calc_variance(new_data, new_size, total_mean)
-		var_max  +=  sum_var_max 
-		var_mean +=  sum_var_mean
-		var_min  +=  sum_var_min 
-		var_numb +=  sum_var_numb
-		var_std  +=  sum_var_std
-	
+	new_data = circle_and_mean(data, radius, new_size)
 	if rotate_dataset:
 		rots = rotate(new_data, num_rotations)
 	else:
 		rots = None
-	 	
-		new_count = save_as_sparse_matrix(new_data, rots, new_count, new_size)
+						
+	save_as_sparse_matrix(new_data, rots, new_size, item)
+			
+##############################################
 
-if calculate_transforms:
-	calculate_std(mean_max, mean_mean, mean_min, mean_numb, mean_std, num_rotations,
-					 var_max, var_mean, var_min, var_numb, var_std, total_elements, num_files)
-# print(dataset_mean_max, dataset_mean_mean, dataset_mean_min, dataset_mean_numb, dataset_mean_std)
+
+#main
+dataset_list = getDatasetList(dataset_list_file)
+
+num_files = len(dataset_list)
+   
+    
+inicio = time.time()
+
+mythreads = []
+total = 0
+
+for item in dataset_list:
+	t = multiprocessing.Process(target=load_cut_rotate_and_save_dataset, args=[item, input_dimensions, new_size, num_rotations, radius, rotate_dataset])
+	mythreads.append(t)
+	t.start()
+	total += 1
+#	print("Peguei a thread {} \n estou com o item {} \n\n".format(total, item))
+	if (len(mythreads) >= max_threads) or not (total < num_files):
+		for t in mythreads:
+			t.join()
+		mythreads[:] = []  # clear the thread's list
+		print('Saved {} images already...'.format(total))
 
 fim = time.time()
 print("\n\n\nTempo total: ", fim - inicio)

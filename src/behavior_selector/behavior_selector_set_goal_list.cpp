@@ -16,7 +16,7 @@
 //#define PRINT_UDATMO_LOG
 #define USE_DATMO_GOAL
 
-#define USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
+//#define USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 
 //uncomment return 0 to enable overtaking
 //#define OVERTAKING
@@ -728,7 +728,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 			}
 			else
 			{
-				if(robot_pose.v != 0)
+				if(robot_pose.v != 0.0)
 				{
 					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
@@ -746,6 +746,17 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 			moving_obstacle_trasition = 0.0;
 		}
+
+#ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
+		else if (goal_index == 0 &&
+				(rddf_pose_index == (rddf->number_of_poses - 1))
+				&& !rddf_pose_hit_obstacle) //-> Se nao achou nenhum goal valido, e o ultimo ponto do path eh o final goal, adiciona o goal la
+		{
+			goal_type[goal_index] = FINAL_GOAL;
+			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+		}
+#endif
+
 	}
 
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);

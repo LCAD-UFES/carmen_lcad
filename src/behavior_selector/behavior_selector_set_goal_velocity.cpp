@@ -546,6 +546,22 @@ compute_s_range(carmen_ackerman_traj_point_t *poses_ahead, int pose_index, int n
 
 
 double
+compute_dist_walked_from_robot_to_goal(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *goal_pose, int num_poses)
+{
+	double s_range = 0.0;
+	for (int i = 0; i < (num_poses - 1); i++)
+	{
+		if (poses_ahead[i].x == goal_pose->x && poses_ahead[i].y == goal_pose->y)
+			break;
+
+		s_range += DIST2D(poses_ahead[i], poses_ahead[i + 1]);
+	}
+
+	return (s_range);
+}
+
+
+double
 set_goal_velocity_according_to_general_moving_obstacle(carmen_ackerman_traj_point_t *goal,
 		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi __attribute__ ((unused)),
 		int goal_type, carmen_rddf_road_profile_message *rddf __attribute__ ((unused)),
@@ -598,15 +614,31 @@ set_goal_velocity_according_to_last_speed_limit_annotation(carmen_ackerman_traj_
 }
 
 
+double
+compute_max_v_using_torricelli(double v_init, double aceleration, double distance)
+{
+	return (sqrt((v_init * v_init) + (2.0 * aceleration * distance)));
+}
+
+
 int
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp)
 {
 //	printf("Velocity %lf \n", goal->v);
 	double previous_v;
+	int reversing_driving = 0;
+
+	double static activate_intermediate_velocity = 0;
+	static double initial_dist = 0.0;
+	static double intermediate_velocity = 0.0;
+	double path_dist = 0.0;
 
 	if(behavior_selector_reverse_driving && goal->v < 0.0)
+	{
 		previous_v = goal->v = get_max_v_reverse();
+		reversing_driving = 1;
+	}
 	else
 		previous_v = goal->v = get_max_v();
 
@@ -660,7 +692,60 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		if (previous_v != goal->v)
 			who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
 	}
+
 	previous_v = goal->v;
+	if (goal_type == FINAL_GOAL)
+	{
+		goal->v = 0.0;
+		if (previous_v != goal->v)
+			who_set_the_goal_v = STOP_AT_FINAL_GOAL;
+	}
+
+	previous_v = goal->v;
+	if (behavior_selector_reverse_driving &&
+			(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL ||
+			goal_type == FINAL_GOAL) &&
+			(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
+			((current_robot_pose_v_and_phi->v < 0.2) && (current_robot_pose_v_and_phi->v > -0.2)))
+	{
+
+		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
+
+		if (initial_dist == 0.0)
+		{
+			initial_dist = path_dist;
+			intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
+//			printf("Velocity torricelli %lf \n", goal->v);
+			activate_intermediate_velocity = 1;
+		}
+	}
+
+	if (behavior_selector_reverse_driving &&
+		activate_intermediate_velocity &&
+	   (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
+	{
+		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
+
+		if (initial_dist / 2.0 > path_dist)
+		{
+			goal->v = 0.0;
+			initial_dist = 0.0;
+			activate_intermediate_velocity = 0;
+		}
+		else
+		{
+			if(reversing_driving)
+				goal->v = -intermediate_velocity;
+			else
+				goal->v = intermediate_velocity;
+
+		}
+		if (previous_v != goal->v)
+			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
+	}
+
+	previous_v = goal->v;
+//	printf("Velocity escolhida %lf \n", goal->v);
 
 	return (who_set_the_goal_v);
 }
