@@ -31,6 +31,8 @@ typedef struct
 	carmen_moving_average_c average_longitudinal_v;
 	carmen_moving_average_c average_lateral_v;
 	int non_detection_count;
+	int in_front;
+	int lane_id;
 } moving_object_t;
 
 typedef struct

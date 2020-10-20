@@ -946,7 +946,7 @@ set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_a
 	}
 
 	compact_occupancy_map = obstacle_distance_mapper_uncompress_occupancy_map(&occupancy_map, compact_occupancy_map, carmen_mapper_compact_map_msg);
-	current_moving_objects = obstacle_distance_mapper_datmo(road_network_message, occupancy_map, offline_map, carmen_mapper_compact_map_msg->timestamp);
+//	current_moving_objects = obstacle_distance_mapper_datmo(road_network_message, occupancy_map, offline_map, carmen_mapper_compact_map_msg->timestamp);
 	if (current_moving_objects)
 	{
 		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
@@ -1129,6 +1129,13 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, timestamp);
 //	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
+
+//	static double t = carmen_get_time();
+//	printf("valid %d, mo_in_front %d, possible_collision_mo_pose_index %d, delta_t %0.3lf\n",
+//			path_collision_info.valid, path_collision_info.mo_in_front,
+//			path_collision_info.possible_collision_mo_pose_index,
+//			carmen_get_time() - t);
+//	t = carmen_get_time();
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);

@@ -57,8 +57,10 @@ typedef struct
 
 typedef struct
 {
-	int node_in_lane;
-	int target_node_id;
+	int node_id;
+	int index_of_node_in_current_lane;
+	int target_node_index_in_nearby_lane;
+	//int target_node_id;
 	int target_lane_id;
 } carmen_route_planner_junction_t;
 
@@ -112,6 +114,18 @@ typedef struct
 
 #define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_NAME		"carmen_route_planner_road_network_message"
 #define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_FMT		"{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, <int:7>, <int:7>, <int:7>, int, <{double, double, double, double, double}:11>, <int:11>, <int:7>, <int:7>, int, <{int, int, int}:16>, <int:7>, <int:7>, int, <{int, int, int}:20>, <int:11>, int, <{{double, double, double, double, double}, int, int}:23>, int, int, double, string}"
+
+
+typedef struct
+{
+	char *predefined_route;
+	int code; //0 - rota com inicio e fim; 1 - rota ciclica
+	double timestamp;
+	char *host;
+} carmen_route_planner_predefined_route_message;
+
+#define		CARMEN_ROUTE_PLANNER_PREDEFINED_ROUTE_MESSAGE_NAME		"carmen_route_planner_predefined_route_message"
+#define		CARMEN_ROUTE_PLANNER_PREDEFINED_ROUTE_MESSAGE_FMT		"{string, int, double, string}"
 
 
 typedef struct
