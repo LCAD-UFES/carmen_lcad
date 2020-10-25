@@ -333,8 +333,9 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (!necessary_maps_available || !current_set_of_paths || (current_set_of_paths->number_of_nearby_lanes == 0))
 		return (NULL);
 
-	carmen_rddf_road_profile_message *rddf = last_rddf_message;
-	if (rddf == NULL)
+	carmen_ackerman_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
+	int number_of_poses = current_set_of_paths->number_of_poses;
+	if (poses == NULL)
 		return (NULL);
 
 	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
@@ -345,7 +346,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 
 	if (initial_time == 0.0)
 	{
-		returned_pose = previous_pose = rddf->poses[0];
+		returned_pose = previous_pose = poses[0];
 		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
 		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
 
@@ -364,8 +365,8 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
 	if (t < stop_t1)
-		v = current_robot_pose_v_and_phi.v + 0.9;
-//		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
+//		v = current_robot_pose_v_and_phi.v + 0.9;
+		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
 
 	if (t > stop_t2)
 	{
@@ -383,10 +384,10 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	pose_ahead.y = previous_pose.y + dy;
 
 	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
-	for (int i = 0; i < current_set_of_paths->nearby_lanes_sizes[0] - 1; i++)
+	for (int i = 0; i < number_of_poses - 1; i++)
 	{
 		int status;
-		next_pose = carmen_get_point_nearest_to_trajectory(&status, current_set_of_paths->nearby_lanes[i], current_set_of_paths->nearby_lanes[i + 1], pose_ahead, 0.1);
+		next_pose = carmen_get_point_nearest_to_trajectory(&status, poses[i], poses[i + 1], pose_ahead, 0.1);
 		if ((status == POINT_WITHIN_SEGMENT) || (status == POINT_BEFORE_SEGMENT))
 			break;
 	}
@@ -813,23 +814,32 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 			//TODO Check this constant 0.3
 			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance *= 0.3;	// Padrao da Ida a Guarapari
 			get_robot_config()->model_predictive_planner_obstacles_safe_distance *= 0.3;		// Padrao da Ida a Guarapari
-			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
-			udatmo_set_model_predictive_planner_obstacles_safe_distance(get_robot_config()->model_predictive_planner_obstacles_safe_distance);
+			if (behavior_selector_use_symotha)
+			{
+				udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
+				udatmo_set_model_predictive_planner_obstacles_safe_distance(get_robot_config()->model_predictive_planner_obstacles_safe_distance);
+			}
 		}
 		else
 		{
 			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance = original_behaviour_selector_central_lane_obstacles_safe_distance;
 			get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance;
-			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(original_behaviour_selector_central_lane_obstacles_safe_distance);
-			udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
+			if (behavior_selector_use_symotha)
+			{
+				udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(original_behaviour_selector_central_lane_obstacles_safe_distance);
+				udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
+			}
 		}
 	}
 	else
 	{
 		get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance = original_behaviour_selector_central_lane_obstacles_safe_distance;
 		get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance;
-		udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(original_behaviour_selector_central_lane_obstacles_safe_distance);
-		udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
+		if (behavior_selector_use_symotha)
+		{
+			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(original_behaviour_selector_central_lane_obstacles_safe_distance);
+			udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
+		}
 	}
 
 	double distance_between_waypoints = param_distance_between_waypoints;
@@ -1009,7 +1019,7 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
 	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
-			path_collision_info_t {}, timestamp);
+			path_collision_info_t {}, current_moving_objects, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
@@ -1127,15 +1137,12 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 {
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
+//	double t2 = carmen_get_time();
+
 	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, timestamp);
 //	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
 
-//	static double t = carmen_get_time();
-//	printf("valid %d, mo_in_front %d, possible_collision_mo_pose_index %d, delta_t %0.3lf\n",
-//			path_collision_info.valid, path_collision_info.mo_in_front,
-//			path_collision_info.possible_collision_mo_pose_index,
-//			carmen_get_time() - t);
-//	t = carmen_get_time();
+//	printf("delta_t funcao %0.3lf\n", carmen_get_time() - t2);
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
@@ -1144,7 +1151,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
 	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
-			path_collision_info, timestamp);
+			path_collision_info, current_moving_objects, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
@@ -1208,6 +1215,8 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
+//	static double t = carmen_get_time();
+
 	if (!necessary_maps_available || (!behavior_selector_performs_path_planning && !last_rddf_message))
 		return;
 
@@ -1222,10 +1231,16 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
+//	double t2 = carmen_get_time();
 	if (behavior_selector_use_symotha)
 		select_behaviour_using_symotha(current_robot_pose_v_and_phi, msg->timestamp);
 	else
 		select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
+
+//	printf("delta_t handler total %0.3lf, delta_t funcao %0.3lf\n",
+//			carmen_get_time() - t, carmen_get_time() - t2);
+//
+//	t = carmen_get_time();
 }
 
 

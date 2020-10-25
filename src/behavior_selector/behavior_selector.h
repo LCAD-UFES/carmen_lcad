@@ -107,7 +107,8 @@ extern "C" {
 	carmen_rddf_road_profile_message *get_last_rddf_message();
 
 	carmen_ackerman_traj_point_t *set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type,
-			carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp);
+			carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info,
+			carmen_moving_objects_point_clouds_message *current_moving_objects, double timestamp);
 
 	double distance_between_waypoints_and_goals();
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
@@ -140,6 +141,10 @@ extern "C" {
 	 * @brief Report whether the first goal is a moving obstacle.
 	 */
 	bool is_moving_obstacle_ahead();
+
+	double datmo_speed_front();
+	double datmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose,
+			carmen_robot_ackerman_config_t *robot_config);
 
 #ifdef __cplusplus
 }

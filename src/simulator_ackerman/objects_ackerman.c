@@ -153,7 +153,7 @@ carmen_ackerman_traj_point_t *search_old(carmen_ackerman_traj_point_t key, carme
 }
 
 carmen_ackerman_traj_point_t *
-find_nearest_pose_in_lane(carmen_ackerman_traj_point_t key, carmen_ackerman_traj_point_t *lane, int size)
+find_nearest_pose_in_lane(carmen_ackerman_traj_point_t key, carmen_ackerman_traj_point_t *lane, int size, int *index_in_lane)
 {
 	double min_distance = DIST2D(key, lane[0]);
 	int index = 0;
@@ -167,12 +167,14 @@ find_nearest_pose_in_lane(carmen_ackerman_traj_point_t key, carmen_ackerman_traj
 		}
 	}
 
+	*index_in_lane = index;
+
 	return (&(lane[index]));
 }
 
 
 carmen_ackerman_traj_point_t *
-find_nearest_pose_in_the_nearest_lane(carmen_ackerman_traj_point_t pose)
+find_nearest_pose_in_the_nearest_lane(carmen_ackerman_traj_point_t pose, int *lane_size, int *index_in_lane)
 {
 	carmen_ackerman_traj_point_t *nearest_pose_in_the_nearest_lane = NULL;
 	double nearest_distance = 100000000000.0;
@@ -180,12 +182,15 @@ find_nearest_pose_in_the_nearest_lane(carmen_ackerman_traj_point_t pose)
 	{
 		carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
 		int size = road_network_message->nearby_lanes_sizes[i];
-		carmen_ackerman_traj_point_t *nearest_pose_in_the_lane = find_nearest_pose_in_lane(pose, lane, size);
+		int index;
+		carmen_ackerman_traj_point_t *nearest_pose_in_the_lane = find_nearest_pose_in_lane(pose, lane, size, &index);
 		double distance = DIST2D(pose, *nearest_pose_in_the_lane);
 		if (distance < nearest_distance)
 		{
 			nearest_distance = distance;
 			nearest_pose_in_the_nearest_lane = nearest_pose_in_the_lane;
+			*lane_size = size;
+			*index_in_lane = index;
 		}
 	}
 
@@ -198,19 +203,28 @@ static void update_object_in_lane(int i, carmen_simulator_ackerman_config_t *sim
 	carmen_object_ackerman_t new_object = object_list[i];
 	double dx = new_object.tv * dt * cos(new_object.theta);
 	double dy = new_object.tv * dt * sin(new_object.theta);
-	printf("v %lf, dt %lf\n", new_object.tv, dt);
+//	printf(" v %lf, dt %lf, x %lf, y %lf\n", new_object.tv, dt, new_object.x1, new_object.y1);
 	new_object.x1 += dx;
 	new_object.y1 += dy;
 
 	carmen_ackerman_traj_point_t pose_ahead;
 	pose_ahead.x = new_object.x1;
 	pose_ahead.y = new_object.y1;
-	carmen_ackerman_traj_point_t *pose_in_lane = find_nearest_pose_in_the_nearest_lane(pose_ahead);
+	int lane_size;
+	int index_in_lane;
+	carmen_ackerman_traj_point_t *pose_in_lane = find_nearest_pose_in_the_nearest_lane(pose_ahead, &lane_size, &index_in_lane);
 	int status;
-	carmen_ackerman_traj_point_t next_pose = carmen_get_point_nearest_to_trajectory(&status, pose_in_lane[-1], pose_in_lane[1], pose_ahead, 0.1);
+	carmen_ackerman_traj_point_t next_pose;
+	if (index_in_lane == 0)
+		next_pose = carmen_get_point_nearest_to_trajectory(&status, pose_in_lane[0], pose_in_lane[1], pose_ahead, 0.1);
+	else if (index_in_lane >= (lane_size - 1))
+		next_pose = carmen_get_point_nearest_to_trajectory(&status, pose_in_lane[-1], pose_in_lane[0], pose_ahead, 0.1);
+	else
+		next_pose = carmen_get_point_nearest_to_trajectory(&status, pose_in_lane[-1], pose_in_lane[1], pose_ahead, 0.1);
 	new_object.x1 = next_pose.x;
 	new_object.y1 = next_pose.y;
 	new_object.theta = next_pose.theta;
+//	printf("*v %lf, dt %lf, x %lf, y %lf\n", new_object.tv, dt, new_object.x1, new_object.y1);
 //	new_object.tv = new_object.tv + 0.05 * (simulator_config->v - new_object.tv);
 	new_object.rv = 0.0;
 

@@ -1245,14 +1245,25 @@ update_lanes(vector<lane_t> &lanes, carmen_route_planner_road_network_message *r
 void
 print_road_network(carmen_route_planner_road_network_message *road_network)
 {
+	printf("\n");
+
 	for (int i = 0; i < road_network->number_of_nearby_lanes; i++)
 	{
 		printf("lane_id %d, size %d\n", road_network->nearby_lanes_ids[i], road_network->nearby_lanes_sizes[i]);
-		carmen_route_planner_junction_t *lane_merges = &(road_network->nearby_lanes_merges[i]);
+
+		carmen_route_planner_junction_t *lane_merges = &(road_network->nearby_lanes_merges[road_network->nearby_lanes_merges_indexes[i]]);
 		for (int j = 0; j < road_network->nearby_lanes_merges_sizes[i]; j++)
-			printf("target_lane_id %d, node_id %d, index_of_node_in_current_lane %d, target_node_index_in_nearby_lane %d\n",
+			printf("lane_id %d, merge %d: target_lane_id %d, node_id %d, index_of_node_in_current_lane %d, target_node_index_in_nearby_lane %d\n",
+					road_network->nearby_lanes_ids[i], j,
 					lane_merges->target_lane_id, lane_merges->node_id,
 					lane_merges->index_of_node_in_current_lane, lane_merges->target_node_index_in_nearby_lane);
+
+		carmen_route_planner_junction_t *lane_forks = &(road_network->nearby_lanes_forks[road_network->nearby_lanes_forks_indexes[i]]);
+		for (int j = 0; j < road_network->nearby_lanes_forks_sizes[i]; j++)
+			printf("lane_id %d, fork %d: target_lane_id %d, node_id %d, index_of_node_in_current_lane %d, target_node_index_in_nearby_lane %d\n",
+					road_network->nearby_lanes_ids[i], j,
+					lane_forks->target_lane_id, lane_forks->node_id,
+					lane_forks->index_of_node_in_current_lane, lane_forks->target_node_index_in_nearby_lane);
 	}
 
 	printf("\n");
@@ -1336,10 +1347,11 @@ print_mo(vector<lane_t> lanes, double timestamp)
 	{
 		for (unsigned int j = 0; j < lanes[i].moving_objects.size(); j++)
 		{
-			printf("id %d, lane %d, index %d, valid %d, w_s %d, l_s %d, l %0.2lf, w %0.2lf, v_valid %d, vs_s %d, vd_s %d, vd %0.2lf, vd_std %0.2lf, vs %.2lf, vs_std %0.2lf   -   points %ld\n",
+			printf("id %d, lane %d, index %d, in_front %d, valid %d, w_s %d, l_s %d, l %0.2lf, w %0.2lf, v_valid %d, vs_s %d, vd_s %d, vd %0.2lf, vd_std %0.2lf, vs %.2lf, vs_std %0.2lf   -   points %ld\n",
 					lanes[i].moving_objects[j].id,
 					lanes[i].lane_id,
 					get_last_valid_index(lanes[i].moving_objects[j].history),
+					lanes[i].moving_objects[j].in_front,
 					lanes[i].moving_objects[j].history[0].valid,
 					lanes[i].moving_objects[j].average_width.num_samples(),
 					lanes[i].moving_objects[j].average_length.num_samples(),
@@ -1576,7 +1588,7 @@ obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_n
 	if (!road_network)
 		return (NULL);
 
-	print_road_network(road_network);
+//	print_road_network(road_network);
 
 	static vector<lane_t> lanes;
 

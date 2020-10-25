@@ -505,8 +505,8 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double desired_distance;
 	desired_distance = carmen_fmax(distance_to_moving_object_with_v_multiplier * min_dist_according_to_car_v, car_pose_to_car_front + get_robot_config()->distance_between_front_and_rear_axles);
 
-	double distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
-	double moving_obj_v = udatmo_speed_front();
+	double distance = datmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
+	double moving_obj_v = datmo_speed_front();
 
 	// ver "The DARPA Urban Challenge" book, pg. 36.
 	double Kgap = 0.1;

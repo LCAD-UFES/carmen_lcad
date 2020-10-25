@@ -231,7 +231,7 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 						path_collision_info.mo_in_front = true;	// Posível colisão com objeto móvel à frente.
 				}
 
-//				break;
+				break;
 			}
 		}
 	}
