@@ -93,12 +93,9 @@ typedef struct
 } graph_t;
 
 
-float convert_world_coordinate_image_coordinate_to_image_coordinate(double world_point, double world_origin, double map_resolution);
 vector<string> get_files_from_rddf_list(char *rddf_list);
 void load_rddfs (vector<string> files, vector< vector<carmen_rddf_waypoint> > &rddfs);
 void build_nearby_lanes(graph_t &graph, double nearby_lane_range, vector< vector<int> > nearby_indexes);
-// graph_t build_nearby_lanes (graph_t graph, double nearby_lane_range, char *option);
-graph_t process_duplicated_nearby_lanes (graph_t graph);
 double euclidean_distance(double x1, double y1, double x2, double y2);
 void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordinate);
 graph_t build_lane_graph (graph_t lane_graph, graph_t &graph);

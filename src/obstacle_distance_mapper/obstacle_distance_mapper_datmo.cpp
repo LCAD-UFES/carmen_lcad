@@ -1588,7 +1588,7 @@ obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_n
 	if (!road_network)
 		return (NULL);
 
-//	print_road_network(road_network);
+	print_road_network(road_network);
 
 	static vector<lane_t> lanes;
 

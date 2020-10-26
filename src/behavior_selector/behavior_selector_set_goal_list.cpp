@@ -250,7 +250,7 @@ datmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *current
 	}
 	else
 	{
-		if (goal_index == 0)
+		if ((goal_index == 0) && current_moving_objects)
 		{
 			for (int i = 0; i < current_moving_objects->num_point_clouds; i++)
 			{
