@@ -87,7 +87,7 @@ busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_an
 	if (nearest_pedestrian_track_annotation == NULL)
 		return (false);
 
-	if ((nearest_pedestrian_track_annotation->annotation_code == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY))// &&
+	if ((nearest_pedestrian_track_annotation->annotation_code == RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY))// &&
 //		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 //		(distance_to_act_on_annotation >= distance_to_annotation) &&
 //		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))

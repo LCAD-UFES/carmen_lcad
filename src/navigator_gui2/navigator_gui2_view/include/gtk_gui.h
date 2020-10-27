@@ -112,6 +112,7 @@ namespace View
 
 			//GtkComboBox *comboGoalSource;
 			GtkComboBox *comboPlaceOfInterest;
+			GtkComboBox *comboPredefinedRoute;
 			GtkComboBox *comboState;
 			GtkComboBox *comboFollowLane;
 			GtkComboBox *comboParking;
@@ -331,7 +332,9 @@ namespace View
 		void InitializePathVector();
 		int get_algorithm_code(char *algorithm_name);
 //		int get_goal_source_code(char* goal_source_name);
-		void get_place_of_interest(char *goal_source_name);
+		void get_place_of_interest(char *new_place_of_interest);
+		void get_predefined_route(char *new_predefined_route);
+		void reset_predefined_route();
 		int get_state_code(char* state_name);
 		void save_to_image(GtkMapViewer *mapv);
 		void do_publish_map_view(GtkMapViewer *mapv);

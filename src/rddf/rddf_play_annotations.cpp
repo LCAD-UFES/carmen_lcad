@@ -438,7 +438,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
 			if (pedestrian_track_busy_new(moving_objects, annotation_read_from_file[annotation_index]))
-				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY;
+				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY;
 			else
 				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
 			annotations_to_publish.push_back(annotation_i);
