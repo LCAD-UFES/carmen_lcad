@@ -976,6 +976,11 @@ choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vect
 }
 
 
+// ===================================================================================================================================================================================================================================
+// Parametro a ser movido para o local adequado de definição de parametros
+// ===================================================================================================================================================================================================================================
+#define CLUSTER_PERCENT_TO_CLASSIFICATION_DIV_FACETOR 5      // if number of points inside the bbox > (cluster_size / CLUSTER_PERCENT_TO_CLASSIFICATION_DIV_FACETOR) means the cluster pertains to the class of the bounding box
+
 void
 classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points)
 {
@@ -993,7 +998,7 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 		for (unsigned int i = 0; i < number_of_clusters; i++)
 		{
 			unsigned int cluster_size = clustered_points[i].size();
-			//unsigned int min_points_inside_bbox = cluster_size / 5;
+			unsigned int min_points_inside_bbox = cluster_size / CLUSTER_PERCENT_TO_CLASSIFICATION_DIV_FACETOR;
 			for (unsigned int j = 0; j < cluster_size; j++)
 			{
 				if ((unsigned int) clustered_points[i][j].image_x >=  predictions[h].x &&
@@ -1003,7 +1008,8 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 				{
 					cont++;
 				
-					if ((cluster_size > 5 && cont > 5) || (cluster_size < 5 && cont > 1)) // TODO penasar melhor
+					// if ((cluster_size > 5 && cont > 5) || (cluster_size < 5 && cont > 1)) // TODO penasar melhor
+					if ((cont > min_points_inside_bbox))
 					{
 						// printf("C %d\n", cont);
 						moving_object_cluster_index.push_back(i);
@@ -1491,16 +1497,16 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 	vector<vector<image_cartesian>> clustered_points;
 	vector<vector<image_cartesian>> filtered_clusters;
 	vector<vector<image_cartesian>> clusters;
-	
+
 	vector<carmen_vector_2D_t> clustered_points_mean_pose_vector;
 	static vector<carmen_vector_2D_t> filtered_clusters_mean_pose_vector;
 	vector<carmen_vector_2D_t> previous_filtered_clusters_mean_pose_vector;
 	vector<vector<image_cartesian>> recovered_clusters;
 	vector<carmen_vector_2D_t> recovered_clusters_mean_pose_vector;
-	
+
 	if (active_cameras == 0)
 		return 0;
-	
+
 	points = compute_obstacle_points(sensor_params, sensor_data);
 
 	clustered_points = dbscan_compute_clusters(0.5, 1, points);
@@ -1533,10 +1539,10 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 		// 	continue;
 
 		clusters = process_image(sensor_params, sensor_data, camera, nearest_index, points, clustered_points);
-		filtered_clusters = copy_to_filtered_clusters(clusters, filtered_clusters);
+		//filtered_clusters = copy_to_filtered_clusters(clusters, filtered_clusters);
+		filtered_clusters.insert(filtered_clusters.end(), clusters.begin(), clusters.end());
 		filter_cameras++;
 	}
-
 	previous_filtered_clusters_mean_pose_vector = filtered_clusters_mean_pose_vector;
 	filtered_clusters_mean_pose_vector.clear();
 
