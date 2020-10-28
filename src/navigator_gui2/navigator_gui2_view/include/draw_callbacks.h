@@ -263,6 +263,9 @@ extern "C" G_MODULE_EXPORT
 void on_comboPlaceOfInterest_changed(GtkWidget *widget, GtkGui* data);
 
 extern "C" G_MODULE_EXPORT
+void on_comboPredefinedRoute_changed(GtkWidget *widget, GtkGui* data);
+
+extern "C" G_MODULE_EXPORT
 void on_comboState_changed(GtkWidget *widget, GtkGui* data);
 
 extern "C" G_MODULE_EXPORT

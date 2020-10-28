@@ -87,7 +87,7 @@ busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_an
 	if (nearest_pedestrian_track_annotation == NULL)
 		return (false);
 
-	if ((nearest_pedestrian_track_annotation->annotation_code == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY))// &&
+	if ((nearest_pedestrian_track_annotation->annotation_code == RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY))// &&
 //		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 //		(distance_to_act_on_annotation >= distance_to_annotation) &&
 //		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
@@ -143,7 +143,14 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 	// t = (va - v0) / a
 	// da = va * t + 0.5 * a * t * t
 
-	double a = -get_robot_config()->maximum_acceleration_forward * 1.1;
+	double a;
+	if (v0 > 0.0)
+		a = -get_robot_config()->maximum_acceleration_forward * 1.1;
+	else
+		a = -get_robot_config()->maximum_acceleration_reverse * 1.1;
+
+	v0 = fabs(v0); //a distancia para reagir a anotacao independe do sinal, sinal soh indica orientacao do movimento.
+
 	double t = (va - v0) / a;
 	double daa = v0 * t + 0.5 * a * t * t;
 
@@ -194,6 +201,7 @@ double
 get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		double timestamp)
 {
+	//TODO Isso aqui nao deveria pegar o MAX_V?
 	double v = 60.0 / 3.6;
 
 	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
@@ -336,7 +344,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 
 	if (!autonomous)
 		clearing_annotation = false;
-
+//TODO Soh pega as anotacoes para frente. Precisamos tratar essas mesmas anotacao para tras?
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 			current_robot_pose_v_and_phi, wait_start_moving);
 
@@ -357,6 +365,8 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 
 		double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 				distance_to_annotation);
+
+		//TODO Depende da direcao do movimento do carro.
 		bool annotation_ahead = carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point);
 
 		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
@@ -372,12 +382,15 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 				previous_annotation_point = nearest_velocity_related_annotation->annotation_point;
 
 			clearing_annotation = true;
+			//TODO tem que Certificar de que ou ta tudo negativo ou positivo (acho que deveria tratar tudo positivo)
 			goal->v = carmen_fmin(
 					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation),
 					goal->v);
 
 			if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
 					((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL2))))
+
+				//TODO retorna positivo
 				goal->v = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi,
 						timestamp);
 		}
@@ -415,7 +428,8 @@ set_goal_velocity_according_to_obstacle_distance(carmen_ackerman_traj_point_t *g
 	return (goal->v);
 }
 
-
+//@@@Vinicius Aqui o target_v nao pode ser negativo atrapalharah os teste de fmin.
+//Deve-se ter cuidado com a current_v, na funcao atual, nao faz diferenca o sinal, porem seria melhor usar fabs para garantir
 double
 limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_ackerman_traj_point_t *goal,
 		carmen_ackerman_traj_point_t *path, int number_of_poses)
@@ -479,7 +493,8 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 
 extern SampleFilter filter2;
 
-
+//TODO @@@Vinicius Acho que current_robot_pose_v_and_phi nao pode ser negativo aqui, bem como o goal->v
+//Acho que essa funcao nao faz sentido para dar reh se ela soh considerar os obstaculos moveis para frente. Vou usar o fabs para mante-la funcionando
 double
 set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp __attribute__ ((unused)))
@@ -490,8 +505,8 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double desired_distance;
 	desired_distance = carmen_fmax(distance_to_moving_object_with_v_multiplier * min_dist_according_to_car_v, car_pose_to_car_front + get_robot_config()->distance_between_front_and_rear_axles);
 
-	double distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
-	double moving_obj_v = udatmo_speed_front();
+	double distance = datmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
+	double moving_obj_v = datmo_speed_front();
 
 	// ver "The DARPA Urban Challenge" book, pg. 36.
 	double Kgap = 0.1;
@@ -525,6 +540,22 @@ compute_s_range(carmen_ackerman_traj_point_t *poses_ahead, int pose_index, int n
 	double s_range = 0.0;
 	for (int i = 0; (i < (num_poses - 1)) && (i < pose_index); i++)
 		s_range += DIST2D(poses_ahead[i], poses_ahead[i + 1]);
+
+	return (s_range);
+}
+
+
+double
+compute_dist_walked_from_robot_to_goal(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *goal_pose, int num_poses)
+{
+	double s_range = 0.0;
+	for (int i = 0; i < (num_poses - 1); i++)
+	{
+		if (poses_ahead[i].x == goal_pose->x && poses_ahead[i].y == goal_pose->y)
+			break;
+
+		s_range += DIST2D(poses_ahead[i], poses_ahead[i + 1]);
+	}
 
 	return (s_range);
 }
@@ -583,57 +614,76 @@ set_goal_velocity_according_to_last_speed_limit_annotation(carmen_ackerman_traj_
 }
 
 
+double
+compute_max_v_using_torricelli(double v_init, double aceleration, double distance)
+{
+	return (sqrt((v_init * v_init) + (2.0 * aceleration * distance)));
+}
+
+
 int
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp)
 {
 //	printf("Velocity %lf \n", goal->v);
-	int reverse_mode_planning = 0;
-	if (goal->v < 0.0)
-		reverse_mode_planning = 1;
+	double previous_v;
+	int reversing_driving = 0;
+
+	double static activate_intermediate_velocity = 0;
+	static double initial_dist = 0.0;
+	static double intermediate_velocity = 0.0;
+	double path_dist = 0.0;
+
+	if(behavior_selector_reverse_driving && goal->v < 0.0)
+	{
+		previous_v = goal->v = get_max_v_reverse();
+		reversing_driving = 1;
+	}
+	else
+		previous_v = goal->v = get_max_v();
 
 	int who_set_the_goal_v = NONE;
-	double previous_v = goal->v = get_max_v();
-	if (goal_type == OBSTACLE_GOAL)
+
+	if (goal_type == OBSTACLE_GOAL)//@@@Vinicius aqui vai tudo ao quadrado, exceto pelo fmin, (mas passei fabs por garantia) goal_v negativo aqui atrapalha, tem que tratar.
 		goal->v = set_goal_velocity_according_to_obstacle_distance(goal, current_robot_pose_v_and_phi);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = OBSTACLE;
 
-	previous_v = goal->v;
+	previous_v = goal->v;//@@@Vinicius verificar para que o sinal velocidade atual nao atrapalhe na distancia de seguranca. Porem tem que ver o tratamento de objetos moveis para reh
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_OBSTACLE;
 
-	previous_v = goal->v;
+	previous_v = goal->v; //@@@Vinicius Nao fiz nada, apenas coloca o goal pra zero
 	goal->v = set_goal_velocity_according_to_general_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type,
 			rddf, path_collision_info, timestamp);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_OBSTACLE;
 
-	previous_v = goal->v;
+	previous_v = goal->v; //@@@Vinicius target_v nao pode ser negativo esse robot_pose eh diferente do current..pose_v? tratar ele para garantir de nao ser usado errado
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
 			last_rddf_message->poses, last_rddf_message->number_of_poses);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = CENTRIPETAL_ACCELERATION;
 
-	previous_v = goal->v;
+	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
 	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, timestamp);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = ANNOTATION;
 
 	previous_v = goal->v;
-	if (keep_speed_limit)
+	if (keep_speed_limit) //@@@Vinicius Aqui gol_v nao pode ser negativo fmin
 		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = KEEP_SPEED_LIMIT;
 
-	previous_v = goal->v;
-	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
-		 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
-		(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
-		goal->v = parking_speed_limit;
-	if (previous_v != goal->v)
-		who_set_the_goal_v = PARKING_MANOUVER;
+//	previous_v = goal->v; //@@@Vinicius Isso nao deve ser mais necessario, apenas limita a velocidade em parking jah esta tratado
+//	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
+//		 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
+//		(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
+//		goal->v = parking_speed_limit;
+//	if (previous_v != goal->v)
+//		who_set_the_goal_v = PARKING_MANOUVER;
 
 	previous_v = goal->v;
 	if (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL)
@@ -643,12 +693,59 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 			who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
 	}
 
-//TODO hacking to test MPP and path_planner_astar - I WILL FIX IT, I SWEAR!
-	if (reverse_mode_planning && behavior_selector_reverse_driving)
+	previous_v = goal->v;
+	if (goal_type == FINAL_GOAL)
 	{
-		goal->v = (-1.0) * goal->v;
-		printf("Changed Velocity %lf \n", goal->v);
+		goal->v = 0.0;
+		if (previous_v != goal->v)
+			who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 	}
+
+	previous_v = goal->v;
+	if (behavior_selector_reverse_driving &&
+			(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL ||
+			goal_type == FINAL_GOAL) &&
+			(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
+			((current_robot_pose_v_and_phi->v < 0.2) && (current_robot_pose_v_and_phi->v > -0.2)))
+	{
+
+		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
+
+		if (initial_dist == 0.0)
+		{
+			initial_dist = path_dist;
+			intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
+//			printf("Velocity torricelli %lf \n", goal->v);
+			activate_intermediate_velocity = 1;
+		}
+	}
+
+	if (behavior_selector_reverse_driving &&
+		activate_intermediate_velocity &&
+	   (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
+	{
+		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
+
+		if (initial_dist / 2.0 > path_dist)
+		{
+			goal->v = 0.0;
+			initial_dist = 0.0;
+			activate_intermediate_velocity = 0;
+		}
+		else
+		{
+			if(reversing_driving)
+				goal->v = -intermediate_velocity;
+			else
+				goal->v = intermediate_velocity;
+
+		}
+		if (previous_v != goal->v)
+			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
+	}
+
+	previous_v = goal->v;
+//	printf("Velocity escolhida %lf \n", goal->v);
 
 	return (who_set_the_goal_v);
 }

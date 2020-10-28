@@ -5,7 +5,10 @@ using namespace std;
 extern int record_screen;
 extern int use_glade_with_annotations;
 extern char place_of_interest[2048];
-extern std::vector <carmen_annotation_t> annotation_list;
+extern char predefined_route[2048];
+extern int predefined_route_code;
+extern std::vector <carmen_annotation_t> place_of_interest_list;
+extern std::vector <carmen_annotation_t> predefined_route_list;
 extern int use_route_planner_in_graph_mode;
 extern int publish_map_view;
 extern double publish_map_view_interval;
@@ -254,7 +257,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowFusedOdometry), nav_panel_config->show_fused_odometry);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowGaussians), nav_panel_config->show_gaussians);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowLaserData), nav_panel_config->show_lasers);
-		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowPathPlans), nav_panel_config->show_nearby_lanes);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowNearbyLanes), nav_panel_config->show_nearby_lanes);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowPathPlans), nav_panel_config->show_path_plans);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPlan), nav_panel_config->show_command_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMPPMotionPlan), nav_panel_config->show_mpp_motion_plan);
@@ -414,7 +417,7 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/pedestrian_2_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/pedestrian_2_15_red.png", carmen_home_path);
-		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY] = get_annotation_image(annotation_image_filename);
+		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/stop-line_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 
@@ -496,6 +499,7 @@ namespace View
 		controls_.menuDisplay_ShowGaussians = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowGaussians" ));
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
 		controls_.menuDisplay_ShowLateralOffset = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLateralOffset" ));
+		controls_.menuDisplay_ShowNearbyLanes = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowNearbyLanes" ));
 		controls_.menuDisplay_ShowPathPlans = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowPathPlans" ));
 		controls_.menuDisplay_ShowOAMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowOAMotionPlan" ));
 		controls_.menuDisplay_ShowMPPMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowMPPMotionPlan" ));
@@ -534,6 +538,7 @@ namespace View
 
 		//controls_.comboGoalSource = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboGoalSource" ));
 		controls_.comboPlaceOfInterest = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPlaceOfInterest" ));
+		controls_.comboPredefinedRoute = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPredefinedRoute" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
 		controls_.comboFollowLane = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowLane" ));
 		controls_.comboParking = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboParking" ));
@@ -1347,6 +1352,7 @@ namespace View
 	GtkGui::get_place_of_interest(char *new_place_of_interest)
 	{
 		std::string d;
+		std::string place_annotation_prefix("RDDF_PLACE_");
 		int destination_index = 0;
 
 		if (strcmp(new_place_of_interest, "Robot") == 0)
@@ -1356,18 +1362,21 @@ namespace View
 		}
 		else
 		{
-			for (unsigned int i = 0; i < annotation_list.size(); i++)
+			for (unsigned int i = 0; i < place_of_interest_list.size(); i++)
 			{
-				string d(annotation_list[i].annotation_description);
-				d = d.substr(11, d.size()-1).c_str();
+				string d(place_of_interest_list[i].annotation_description);
+				if (d.substr(0, place_annotation_prefix.size()) == place_annotation_prefix)
+					d = d.substr(place_annotation_prefix.size());
+
 				if (strcmp(new_place_of_interest, d.c_str()) == 0)
 				{
 					destination_index = i;
 					break;
 				}
 			}
-			destination.x = annotation_list[destination_index].annotation_point.x;
-			destination.y = annotation_list[destination_index].annotation_point.y;
+			destination.x = place_of_interest_list[destination_index].annotation_point.x;
+			destination.y = place_of_interest_list[destination_index].annotation_point.y;
+			destination.theta = place_of_interest_list[destination_index].annotation_orientation;
 			nav_panel_config->map = (char*)"Offline Map";
 		}
 
@@ -1376,6 +1385,48 @@ namespace View
 		carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', destination, navigator_get_offline_map_pointer());
 		navigator_graphics_change_map(navigator_get_offline_map_pointer());
 	}
+
+
+	void
+	GtkGui::get_predefined_route(char *new_predefined_route)
+	{
+		std::string d;
+		std::string predefined_route_prefix("PREDEFINED_ROUTE_");
+		int index = 0;
+		int code = 0;
+
+		if (strcmp(new_predefined_route, "None") != 0)
+		{
+			for (unsigned int i = 0; i < predefined_route_list.size(); i++)
+			{
+				string d(predefined_route_list[i].annotation_description);
+				if (d.substr(0, predefined_route_prefix.size()) == predefined_route_prefix)
+					d = d.substr(predefined_route_prefix.size());
+
+				if (strcmp(new_predefined_route, d.c_str()) == 0)
+				{
+					index = i;
+					break;
+				}
+			}
+			destination.x = predefined_route_list[index].annotation_point.x;
+			destination.y = predefined_route_list[index].annotation_point.y;
+			destination.theta = predefined_route_list[index].annotation_orientation;
+			code = (predefined_route_list[index].annotation_code != 0);
+		}
+
+		strcpy(predefined_route, new_predefined_route);
+		predefined_route_code = code;
+	}
+
+
+	void
+	GtkGui::reset_predefined_route()
+	{
+		strcpy(predefined_route, "None");
+		predefined_route_code = 0;
+	}
+
 
 	int
 	GtkGui::get_state_code(char* state_name)

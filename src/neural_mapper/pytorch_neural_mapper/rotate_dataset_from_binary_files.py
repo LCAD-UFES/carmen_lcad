@@ -18,15 +18,17 @@ from PIL import Image
 
 # Limita ground thruth ao raio do laser de todas as imagens passadas pela lista, deixando no formato de nomes apropriado para treinamento
 # Nao cria pastas padrao
+#all_images, precisa apenas do nome da imagem ex: a imagem 0_360000_0.000000_7757679.296649_-363600.985947_1491276861.247797
+# possui na pasta data as 5 estatisticas para ela com sufixo _max, _mean, _min, _numb e std (serao carregadas automaticamente) e
+#  na pasta label _label é carregado automaticamente também
 
 
-dataset_list_file = "/media/vinicius/NewHD/neural_mapper_raw/volta_da_ufes_20191003/all_images_filtred.txt"
-dataset_path = "/media/vinicius/NewHD/neural_mapper_raw/volta_da_ufes_20191003/"
+dataset_list_file = "/home/vinicius/dataset_rotate_teste/slice_to_test.txt"
+dataset_path = "/media/vinicius/NewHD/neural_mapper_raw/guarapari-20170403-2_no_bumblebee/"
 data_path = "data/"
 label_path = "labels/"
 
-out_path = "/mnt/ssd/neural_mapper_train/volta_da_ufes_20191003_augmented/"
-
+out_path = "/home/vinicius/dataset_rotate_teste/" #"/mnt/ssd/neural_mapper_train/guarapari-20170403-2_augmented-part2/"
 #statistics + label + view
 input_dimensions = 6
 
@@ -39,7 +41,7 @@ radius = (velodyne_max_range/map_resolution)
 new_size = 600
 rotate_dataset = True
 calculate_transforms = False
-
+save_png_to_debug = False
 
 def getDatasetList(file_name):
 	file = open(file_name)
@@ -231,7 +233,9 @@ def save(new_data, rots_data, new_count):
 	
 	#Dados_circulo
 	rotacao = 0
-	teste_visualize(new_data, new_count, rotacao)
+	if save_png_to_debug:
+		teste_visualize(new_data, new_count, rotacao)
+		
 	new_data[0].tofile(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_max')
 	new_data[1].tofile(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_mean')
 	new_data[2].tofile(out_path + data_path + str(new_count) + '_' + str(rotacao) + '_min')
@@ -269,7 +273,8 @@ def save(new_data, rots_data, new_count):
 def save_as_sparse_matrix(new_data, rots_data, new_count, new_size):
 	#Dados_circulo
 	rotacao = 0
-	teste_visualize(new_data, new_count, rotacao)
+	if save_png_to_debug:
+		teste_visualize(new_data, new_count, rotacao)
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.save_npz.html
 	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_max'),   scipy.sparse.csr_matrix(new_data[0]))
 	scipy.sparse.save_npz((out_path + data_path + str(new_count) + '_' + str(rotacao) + '_mean')  , scipy.sparse.csr_matrix(new_data[1]))

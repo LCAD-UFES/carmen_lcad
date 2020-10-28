@@ -2,6 +2,8 @@
 
 extern int record_screen;
 extern char place_of_interest[2048];
+extern char predefined_route[2048];
+extern int predefined_route_code;
 
 
 extern void
@@ -500,10 +502,10 @@ void on_menuDisplay_ShowNearbyLanes_toggled (GtkCheckMenuItem* togglebutton __at
 {
 	global_gui->nav_panel_config->show_nearby_lanes = gtk_check_menu_item_get_active(togglebutton);
 
-	// if (global_gui->nav_panel_config->show_nearby_lanes)
-	// 	carmen_frenet_path_planner_subscribe_set_of_paths_message(&global_gui->frenet_path_planer_set_of_paths_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-	// else
-	// 	carmen_frenet_path_planner_subscribe_set_of_paths_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+	if (global_gui->nav_panel_config->show_nearby_lanes)
+	 	carmen_frenet_path_planner_subscribe_set_of_paths_message(&global_gui->frenet_path_planer_set_of_paths_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	else
+	 	carmen_frenet_path_planner_subscribe_set_of_paths_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -688,6 +690,18 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_comboPredefinedRoute_changed(GtkWidget *widget __attribute__((unused)),
+					   GtkGui* gui)
+{
+	if (global_gui)
+	{
+		global_gui->get_predefined_route(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboPredefinedRoute));
+		if (strcmp(predefined_route, "None") != 0)
+			carmen_route_planner_set_predefined_route(predefined_route, predefined_route_code);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -698,6 +712,14 @@ void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 	}
 	else
 		carmen_route_planner_set_destination(place_of_interest, global_gui->destination);
+
+	if (global_gui)
+	{
+		gtk_combo_box_set_active((GtkComboBox *) global_gui->controls_.comboPredefinedRoute, 0);
+		global_gui->reset_predefined_route();
+		global_gui->display_needs_updating = 1;
+		global_gui->do_redraw();
+	}
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1275,29 +1297,9 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 			}
 			free(global_gui->frenet_path_planer_path);
 		}
-
-		if (global_gui->frenet_path_planer_set_of_paths_msg.number_of_nearby_lanes != 0)
-		{
-			for (int j = 0; j < global_gui->frenet_path_planer_set_of_paths_msg.number_of_nearby_lanes; j++)
-			{
-				int lane_size = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_sizes[j];
-				global_gui->route_planer_lane = (carmen_world_point_t *) malloc(lane_size * sizeof(carmen_world_point_t));
-				int lane_start = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_indexes[j];
-				for (int i = 0; i < lane_size; i++)
-				{
-					global_gui->route_planer_lane[i].pose.x	  	= global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes[lane_start + i].x;
-					global_gui->route_planer_lane[i].pose.y	  	= global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes[lane_start + i].y;
-					global_gui->route_planer_lane[i].pose.theta = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes[lane_start + i].theta;
-					global_gui->route_planer_lane[i].map 	   	= global_gui->controls_.map_view->internal_map;
-				}
-
-				global_gui->draw_path(global_gui->route_planer_lane, lane_size, carmen_orange, carmen_orange, the_map_view);
-				free(global_gui->route_planer_lane);
-			}
-		}
 	}
 
-	if ((global_gui->nav_panel_config->show_path_plans == 0) && global_gui->nav_panel_config->show_nearby_lanes && (global_gui->robot.pose.x != 0.0 && global_gui->robot.pose.y != 0.0))
+	if (global_gui->nav_panel_config->show_nearby_lanes)
 	{
 		if (global_gui->route_planner_route != NULL)
 		{
@@ -1317,6 +1319,38 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 					}
 
 					global_gui->draw_path(global_gui->route_planer_lane, lane_size, carmen_orange, carmen_orange, the_map_view);
+					free(global_gui->route_planer_lane);
+				}
+
+				if (global_gui->route_planner_route->number_of_poses > 0)
+				{
+					int lane_size = global_gui->route_planner_route->number_of_poses;
+					global_gui->route_planer_lane = (carmen_world_point_t *) malloc(lane_size * sizeof(carmen_world_point_t));
+					for (int i = 0; i < lane_size; i++)
+					{
+						global_gui->route_planer_lane[i].pose.x	  	= global_gui->route_planner_route->poses[i].x;
+						global_gui->route_planer_lane[i].pose.y	  	= global_gui->route_planner_route->poses[i].y;
+						global_gui->route_planer_lane[i].pose.theta = global_gui->route_planner_route->poses[i].theta;
+						global_gui->route_planer_lane[i].map 	   	= global_gui->controls_.map_view->internal_map;
+					}
+
+					global_gui->draw_path(global_gui->route_planer_lane, lane_size, carmen_light_blue, carmen_light_blue, the_map_view);
+					free(global_gui->route_planer_lane);
+				}
+
+				if (global_gui->route_planner_route->number_of_poses_back > 0)
+				{
+					int lane_size = global_gui->route_planner_route->number_of_poses_back;
+					global_gui->route_planer_lane = (carmen_world_point_t *) malloc(lane_size * sizeof(carmen_world_point_t));
+					for (int i = 0; i < lane_size; i++)
+					{
+						global_gui->route_planer_lane[i].pose.x	  	= global_gui->route_planner_route->poses_back[i].x;
+						global_gui->route_planer_lane[i].pose.y	  	= global_gui->route_planner_route->poses_back[i].y;
+						global_gui->route_planer_lane[i].pose.theta = global_gui->route_planner_route->poses_back[i].theta;
+						global_gui->route_planer_lane[i].map 	   	= global_gui->controls_.map_view->internal_map;
+					}
+
+					global_gui->draw_path(global_gui->route_planer_lane, lane_size, carmen_light_blue, carmen_light_blue, the_map_view);
 					free(global_gui->route_planer_lane);
 				}
 			}

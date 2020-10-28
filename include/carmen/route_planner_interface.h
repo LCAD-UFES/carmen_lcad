@@ -24,6 +24,15 @@ extern "C"
 	carmen_route_planner_publish_road_network_message(carmen_route_planner_road_network_message *route_planner_road_network_message);
 
 	void
+	carmen_route_planner_subscribe_predefined_route_message(carmen_route_planner_predefined_route_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+	void
+	carmen_route_planner_unsubscribe_predefined_route_message(carmen_handler_t handler);
+
+	void
+	carmen_route_planner_set_predefined_route(char *predefined_route, int code);
+
+	void
 	carmen_route_planner_subscribe_destination_message(carmen_route_planner_destination_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 	void

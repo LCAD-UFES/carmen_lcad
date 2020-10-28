@@ -37,10 +37,8 @@ using namespace cv;
 typedef struct
 {
 	int nearby_lane_id;
-	int p_ini;
-	int p_sec;
-	int p_penul;
-	int p_last;
+	int initial_node_id;
+	int nearby_lane_size;
 } nearby_lane_t;
 
 
@@ -81,6 +79,7 @@ typedef struct
 	double lat;
 	carmen_rddf_waypoint rddf_point;
 	vector <edge_t> edges;
+	vector <edge_t> edges_in;
 	vector <nearby_lane_t> nearby_lanes;
 	int back_joint_node_id;
 	int next_joint_node_id;
@@ -94,15 +93,13 @@ typedef struct
 } graph_t;
 
 
-float convert_world_coordinate_image_coordinate_to_image_coordinate(double world_point, double world_origin, double map_resolution);
 vector<string> get_files_from_rddf_list(char *rddf_list);
 void load_rddfs (vector<string> files, vector< vector<carmen_rddf_waypoint> > &rddfs);
-graph_t build_nearby_lanes (graph_t graph, double nearby_lane_range, char *option);
-graph_t process_duplicated_nearby_lanes (graph_t graph);
+void build_nearby_lanes(graph_t &graph, double nearby_lane_range, vector< vector<int> > nearby_indexes);
 double euclidean_distance(double x1, double y1, double x2, double y2);
 void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordinate);
 graph_t build_lane_graph (graph_t lane_graph, graph_t &graph);
-graph_t build_graph(vector<string> files, graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, char* option);
+graph_t build_graph(vector<string> files, graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, vector< vector<int> > &nearby_indexes, char* option);
 FILE *open_graph_file(char* graph_file, string option);
 graph_t read_graph_file (FILE *f_graph);
 graph_t read_lane_graph_file (FILE *f_graph);

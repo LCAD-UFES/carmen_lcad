@@ -1068,44 +1068,48 @@ carmen_obstacle_avoider_car_collides_with_moving_object_old(carmen_point_t car_p
 int
 compute_mo_points(carmen_position_t *mo_points, double width, double length, double x, double y, double theta)
 {
+	double points_displacement = 0.4;
+
 	double logitudinal_disp = -length / 2.0;
 	double lateral_disp = -width / 2.0;
 	int mo_points_size = 0;
+	double sin, cos;
+	sincos(theta, &sin, &cos);
 	double sin_plus, cos_plus;
 	sincos(theta + M_PI / 2.0, &sin_plus, &cos_plus);
 	double sin_minus, cos_minus;
 	sincos(theta - M_PI / 2.0, &sin_minus, &cos_minus);
-	for (; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
+	for (; lateral_disp < width / 2.0; lateral_disp = lateral_disp + points_displacement)
 	{
-		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos(theta);
-		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin(theta);
+		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos;
+		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin;
 		mo_points_size++;
 
-		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos(theta);
-		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin(theta);
+		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos;
+		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin;
 		mo_points_size++;
 	}
 
 	lateral_disp = width / 2.0;
-	for (; logitudinal_disp < length / 2.0; logitudinal_disp = logitudinal_disp + 0.2)
+	for (; logitudinal_disp < length / 2.0; logitudinal_disp = logitudinal_disp + points_displacement)
 	{
-		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos(theta);
-		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin(theta);
+		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos;
+		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin;
 		mo_points_size++;
 
-		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos(theta);
-		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin(theta);
+		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos;
+		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin;
 		mo_points_size++;
 	}
 
-	for (lateral_disp = -width / 2.0; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
+	for (lateral_disp = -width / 2.0; lateral_disp < width / 2.0; lateral_disp = lateral_disp + points_displacement)
 	{
-		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos(theta);
-		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin(theta);
+		mo_points[mo_points_size].x = x + lateral_disp * cos_plus + logitudinal_disp * cos;
+		mo_points[mo_points_size].y = y + lateral_disp * sin_plus + logitudinal_disp * sin;
 		mo_points_size++;
 
-		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos(theta);
-		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin(theta);
+		mo_points[mo_points_size].x = x + lateral_disp * cos_minus + logitudinal_disp * cos;
+		mo_points[mo_points_size].y = y + lateral_disp * sin_minus + logitudinal_disp * sin;
 		mo_points_size++;
 	}
 
@@ -1155,6 +1159,8 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose,
 //						add_circle(displaced_car_pose, global_collision_config.markers[i].radius, CARMEN_BLUE);
 //						add_line(displaced_car_pose, displaced_moving_object_pose, CARMEN_GREEN);
 					}
+					else
+						return (collides);
 				}
 			}
 		}

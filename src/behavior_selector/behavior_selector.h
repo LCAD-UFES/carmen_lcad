@@ -23,7 +23,9 @@ enum
 	ANNOTATION,
 	KEEP_SPEED_LIMIT,
 	PARKING_MANOUVER,
-	WAIT_SWITCH_VELOCITY_SIGNAL
+	WAIT_SWITCH_VELOCITY_SIGNAL,
+	INTERMEDIATE_VELOCITY,
+	STOP_AT_FINAL_GOAL
 };
 
 typedef struct
@@ -40,7 +42,7 @@ typedef struct
 	double possible_collision_mo_in_parallel_lane_dv;		// Velocity orthogonal to the parallel path of the possibly colliding moving object
 	double s_distance_without_collision_with_static_object;	// Distance in seconds. This is related to a path.
 	int static_object_pose_index;							// Future position in the path of a colliding static object
-	bool mo_behind;
+	bool mo_in_front;
 	bool path_has_no_collision;
 } path_collision_info_t;
 
@@ -51,7 +53,6 @@ typedef struct
 	double sv;
 	double d;
 	double dv;
-	bool behind;
 } moving_object_pose_info_t;
 
 
@@ -62,7 +63,7 @@ extern "C" {
 	void change_distance_between_waypoints_and_goals(double dist_between_waypoints, double change_goal_dist);
 
 	void behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints,
-			double change_goal_dist, carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner);
+			double change_goal_dist, carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner, double max_velocity_reverse);
 
 	void behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t robot_pose);
 
@@ -97,6 +98,8 @@ extern "C" {
 	int *behavior_selector_get_goal_type();
 
 	carmen_ackerman_traj_point_t get_robot_pose();
+	double get_max_v_reverse();
+	void set_max_v_reverse(double v);
 	double get_max_v();
 	void set_max_v(double v);
 	carmen_robot_ackerman_config_t *get_robot_config();
@@ -104,7 +107,8 @@ extern "C" {
 	carmen_rddf_road_profile_message *get_last_rddf_message();
 
 	carmen_ackerman_traj_point_t *set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type,
-			carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp);
+			carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info,
+			carmen_moving_objects_point_clouds_message *current_moving_objects, double timestamp);
 
 	double distance_between_waypoints_and_goals();
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
@@ -137,6 +141,10 @@ extern "C" {
 	 * @brief Report whether the first goal is a moving obstacle.
 	 */
 	bool is_moving_obstacle_ahead();
+
+	double datmo_speed_front();
+	double datmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose,
+			carmen_robot_ackerman_config_t *robot_config);
 
 #ifdef __cplusplus
 }
