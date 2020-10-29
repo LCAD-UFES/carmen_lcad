@@ -95,7 +95,7 @@ int reed_shepp_collision = 0;
 #define USE_SMOOTH 1
 #define USE_NEW_EXPANSION 0
 //#define USE_NOBSTACLE_HEURISTIC 1
-#define EXPANSION_VELOCITY 1.0
+#define EXPANSION_VELOCITY 1.42
 
 //#define OBSTACLE_DISTANCE_MIN 1.0
 #define OBSTACLE_DISTANCE_MIN 0.5
@@ -495,11 +495,12 @@ compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 //				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i+1].y, path[i].x - path[i+1].x));
 		}
 		else
-		{
+		{/*
 			if(path[i].v >= 0.0)
 				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x));
 			else
 				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x) + M_PI);
+				*/
 		}
 
 	}
@@ -1646,7 +1647,7 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 int
 is_goal(state_node* current_state, state_node* goal_state)
 {
-	if(DIST2D(current_state->state, goal_state->state) < 0.9 && abs(carmen_radians_to_degrees(current_state->state.theta) - carmen_radians_to_degrees(goal_state->state.theta)) < 5)
+	if(DIST2D(current_state->state, goal_state->state) < 0.2 && abs(carmen_radians_to_degrees(current_state->state.theta) - carmen_radians_to_degrees(goal_state->state.theta)) < 5)
 		return 1;
 	else
 		return 0;
@@ -1692,8 +1693,8 @@ is_valid_state(state_node *state, map_node_p ****astar_map)
 carmen_ackerman_traj_point_t
 carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t point, double lenght, double phi, double v)
 {
-	double	radcurv = lenght / tan(fabs(phi));
-
+//	double	radcurv = lenght / tan(fabs(phi));
+/*
 	if(phi == 0)
 	{
 		point.x += v * cos(point.theta);
@@ -1724,7 +1725,11 @@ carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t poin
 		point.phi = phi;
 
 	}
-
+*/
+	point.theta += v * (tan(phi) / lenght);
+	point.theta = carmen_normalize_theta(point.theta);
+	point.x += v * cos(point.theta);
+	point.y += v * sin(point.theta);
 	return point;
 }
 
@@ -1815,7 +1820,7 @@ build_rddf_poses(state_node *current_state)
 	for (int i = 1; i < path.size(); i++)
 	{
 		//&& DIST2D(path[i].state, last_state) <= 0.5)
-		if((DIST2D(path[i].state, last_state) >= 0.5 )|| (sign(path[i].state.v) != sign(last_state.v)))
+		if((DIST2D(path[i].state, last_state) >= 1.3 )|| (sign(path[i].state.v) != sign(last_state.v)))
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
@@ -2083,8 +2088,8 @@ expansion(state_node *current, state_node *goal_state, map_node_p ****astar_map)
     	{
         	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
         	carmen_test_alloc(new_state);
-        	target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
-//        	target_phi = steering_acceleration[j];
+//        	target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
+        	target_phi = steering_acceleration[j];
         	new_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, robot_config.distance_between_front_and_rear_axles, target_phi, target_v[i]);
 //        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 1.0 , &distance_traveled, DELTA_T, robot_config);
 
@@ -2228,32 +2233,19 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 			neighbor_expansion[it_neighbor_number]->g = current_node_cost;
 			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + 1/carmen_obstacle_avoider_car_distance_to_nearest_obstacle(neighbor_expansion[it_neighbor_number]->state, distance_map);
 			neighbor_expansion[it_neighbor_number]->parent = current;
+			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-				neighbor_expansion[it_neighbor_number]->g += (4.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
+				neighbor_expansion[it_neighbor_number]->f += (4.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
-				neighbor_expansion[it_neighbor_number]->g +=10;
+				neighbor_expansion[it_neighbor_number]->f += 10;
 
-			if(neighbor_expansion[it_neighbor_number]->state.phi != 0.0)
-				neighbor_expansion[it_neighbor_number]->g +=1;
-
-			//Abaixo é uma punição para ele não criar um estado invertido sozinho
-			if(current != start_state)
-			{
-				int first_v = current->parent->state.v;
-				int sec_v = current->state.v;
-				int thi_v = neighbor_expansion[it_neighbor_number]->state.v;
-				if(first_v == thi_v && first_v != sec_v)
-					neighbor_expansion[it_neighbor_number]->g +=20;
-			}
-
-			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			//////////////////////////////
 
-//			if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->g > neighbor_expansion[it_neighbor_number]->g)
-			if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->f > neighbor_expansion[it_neighbor_number]->f)
+			if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->g > neighbor_expansion[it_neighbor_number]->g)
+//			if(astar_map[x][y][theta][direction]->is_open == 1 && astar_map[x][y][theta][direction]->f > neighbor_expansion[it_neighbor_number]->f)
 				astar_map[x][y][theta][direction]->is_open = 0;
 
 			if(astar_map[x][y][theta][direction]->is_open == 0)
@@ -2402,35 +2394,42 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 int
 carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose)
 {
-	/*
-	//Primeiro teste
-	robot_pose->x = 7757871.12;
-	robot_pose->y = -363569.71;
-	robot_pose->theta= -0.713516;
 
-	goal_pose->x = 7757917.200000;
-	goal_pose->y = -363591.200000;
-	goal_pose->theta= -2.245537;
+	int teste = -1;
 
-	//Segundo teste
+	if(teste == 0)
+	{
+		//Primeiro teste
+		robot_pose->x = 7757871.12;
+		robot_pose->y = -363569.71;
+		robot_pose->theta = -0.713516;
 
-	robot_pose->x = 7757871.12;
-	robot_pose->y = -363569.71;
-	robot_pose->theta= -0.713137;
+		goal_pose->x = 7757917.200000;
+		goal_pose->y = -363591.200000;
+		goal_pose->theta = -2.245537;
+	}
+	else if(teste == 1)
+	{
+		//Segundo teste
+		robot_pose->x = 7757871.12;
+		robot_pose->y = -363569.71;
+		robot_pose->theta = -0.713137;
 
-	goal_pose->x = 7757915.200000;
-	goal_pose->y = -363592.800000;
-	goal_pose->theta= 0.841942;
+		goal_pose->x = 7757914.400000;
+		goal_pose->y = -363592.400000;
+		goal_pose->theta = 0.904827;
+	}
+	else if(teste == 2)
+	{
+		//Terceiro teste
+		robot_pose->x = 7757871.12;
+		robot_pose->y = -363569.71;
+		robot_pose->theta = -0.704927;
 
-	//Terceiro teste
-	robot_pose->x = 7757871.12;
-	robot_pose->y = -363569.71;
-	robot_pose->theta = -0.704927;
-
-	goal_pose->x = 7757928.000000;
-	goal_pose->y = -363577.400000;
-	goal_pose->theta = 2.457696;
-*/
+		goal_pose->x = 7757930.400000;
+		goal_pose->y = -363578.200000;
+		goal_pose->theta = 2.493261;
+	}
 
 /*
 	//Ilustração de expansões
@@ -2442,8 +2441,9 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	goal_pose->y = -363594.11;
 	goal_pose->theta = 0.848;
 
-	double random_value = (double)rand()/RAND_MAX*1.3-0.3;
+	double random_value = (double)rand()/RAND_MAX*1.1-0.1;
 	goal_pose->x += random_value;
+	random_value = (double)rand()/RAND_MAX*1.1-0.1;
 	goal_pose->y += random_value;
 */
 
@@ -2545,6 +2545,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //			if(hitObstacle(rs_path, astar_map) == 0)//&& rs_path.front()->f > (current->h) )
 			if(reed_shepp_collision == 0) //&& hitObstacle(rs_path, astar_map) == 0)
 			{
+//				printf("1- Distancia = %f\n", DIST2D(current->state, goal_state->state));
 				rs_path.front()->parent = current;
 				current = rs_path.back();
 				current->total_distance_traveled = rs_path.front()->parent->total_distance_traveled + rs_path.front()->f;
