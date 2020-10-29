@@ -388,7 +388,7 @@ carmen_velodyne_free_variable_velodyne_message(
 	
  	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
 
-     carmen_param_t param_list[] = {
+    carmen_param_t param_list[] = {
  			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config_p->model, 0, NULL},
  			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config_p->ip, 0, NULL},
  			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config_p->port, 0, NULL},
@@ -407,18 +407,17 @@ carmen_velodyne_free_variable_velodyne_message(
  			{lidar_string, (char*)"ray_order", CARMEN_PARAM_STRING, &ray_order_string, 0, NULL},
  			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_angles_string, 0, NULL},
  	};
- 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
- 	carmen_param_install_params(argc, argv, param_list, num_items);
+ 	carmen_param_install_params(argc, argv, param_list, (sizeof(param_list) / sizeof(param_list[0])));
 
-     lidar_config_p->vertical_angles = (double*) malloc(lidar_config_p->shot_size * sizeof(double));
+    lidar_config_p->vertical_angles = (double*) malloc(lidar_config_p->shot_size * sizeof(double));
  	lidar_config_p->ray_order = (int*) malloc(lidar_config_p->shot_size * sizeof(int));
+ 		
+	for (int i = 0; i < lidar_config_p->shot_size; i++)
+ 		lidar_config_p->ray_order[i] = CLF_READ_INT(&ray_order_string); // CLF_READ_DOUBLE takes a double number from a string
 
-     for (int i = 0; i < lidar_config_p->shot_size; i++)
+   	for (int i = 0; i < lidar_config_p->shot_size; i++)
  		lidar_config_p->vertical_angles[i] = CLF_READ_DOUBLE(&vertical_angles_string); // CLF_READ_DOUBLE takes a double number from a string
 
- 	for (int i = 0; i < lidar_config_p->shot_size; i++)
- 		lidar_config_p->ray_order[i] = CLF_READ_INT(&ray_order_string); // CLF_READ_DOUBLE takes a double number from a string
-    
  	// DO NOT ERASE very useful for debug
  	// printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config_p->model, lidar_config_p->port, lidar_config_p->shot_size, lidar_config_p->min_sensing, lidar_config_p->max_sensing, lidar_config_p->range_division_factor, lidar_config_p->time_between_shots);
  	// printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config_p->pose.position.x, lidar_config_p->pose.position.y, lidar_config_p->pose.position.z, lidar_config_p->pose.orientation.roll, lidar_config_p->pose.orientation.pitch, lidar_config_p->pose.orientation.yaw);
