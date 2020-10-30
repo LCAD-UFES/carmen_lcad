@@ -891,11 +891,11 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 //	printf("Terminou a suavização\n");
 
 
-	for (int i = 1; i < size; i++)
-	{
+//	for (int i = 1; i < size; i++)
+//	{
 //		printf("%f %f %f %f %f Ponto Ancora=%d\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi, param->anchor_points[i]);
-		draw_point_in_opencv_image(poses_ahead[i], poses_ahead[i-1], distance_map->config, Scalar(0,0,255));
-	}
+//		draw_point_in_opencv_image(poses_ahead[i], poses_ahead[i-1], distance_map->config, Scalar(0,0,255));
+//	}
 
 	free(param->anchor_points);
 	free(param);
@@ -1322,7 +1322,7 @@ save_map(char *file_name, double *map, int x_size, int y_size)
 	for (int i = 0; i < x_size * y_size; i++)
 	{
 		double value = map[i];
-		if (value != 10000.0)
+		if (1) //value != 10000.0)
 		{
 //			printf("Value = %f\n", value);
 			if (value < min_value)
@@ -1340,10 +1340,10 @@ save_map(char *file_name, double *map, int x_size, int y_size)
 		double value = map[i];
 //		if (value != -1.0)
 //		{
-//			value = (value - min_value) / (max_value - min_value);
-//			if (value < 0.8)
-//				value = 0.8;
-//			value = (value - 0.8) / (1.0 - 0.8);
+			value = (value - min_value) / (max_value - min_value);
+			if (value > 0.45)
+				value = 0.45;
+			value = (value - min_value) / (0.45 - min_value);
 //		}
 		map_copy[i] = value;
 	}
@@ -1420,9 +1420,9 @@ get_obstacle_heuristic_map(carmen_point_t *goal_pose, map_node_p**** astar_map)
 
 	for (int i = 0; i < x_size * y_size; i++)
 		if (utility_map[i] >= 50000.0) // O infinito de distacia eh representado como 50000.0, assim como o espaco ocupado.
-			utility_map[i] = 1000.0;
+			utility_map[i] = x_size;
 
-	save_map((char *) "obstacle_heuristic.map", utility_map, x_size, y_size);
+	save_map((char *) "GDM.map", utility_map, x_size, y_size);
 	printf("Mapa da heurística com obstáculos carregado!\n");
 	free(cost_map);
 	return utility_map;
@@ -1644,16 +1644,6 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 }
 
 
-int
-is_goal(state_node* current_state, state_node* goal_state)
-{
-	if(DIST2D(current_state->state, goal_state->state) < 0.2 && abs(carmen_radians_to_degrees(current_state->state.theta) - carmen_radians_to_degrees(goal_state->state.theta)) < 5)
-		return 1;
-	else
-		return 0;
-}
-
-
 void
 astar_map_close_node(map_node_p ****astar_map, int x, int y, int theta, int direction)
 {
@@ -1730,6 +1720,8 @@ carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t poin
 	point.theta = carmen_normalize_theta(point.theta);
 	point.x += v * cos(point.theta);
 	point.y += v * sin(point.theta);
+	point.v = v;
+	point.phi = phi;
 	return point;
 }
 
@@ -2091,6 +2083,7 @@ expansion(state_node *current, state_node *goal_state, map_node_p ****astar_map)
 //        	target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
         	target_phi = steering_acceleration[j];
         	new_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, robot_config.distance_between_front_and_rear_axles, target_phi, target_v[i]);
+
 //        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 1.0 , &distance_traveled, DELTA_T, robot_config);
 
 //			new_state->distance_traveled_g = SQRT2 * astar_config.state_map_resolution;
@@ -2193,6 +2186,45 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 	}
 
 	return rs_path_nodes;
+}
+
+
+int
+is_goal(state_node** current, state_node* goal_state, int cont_rs_nodes)
+{
+	if(DIST2D((*current)->state, goal_state->state) < 0.2 && abs(carmen_radians_to_degrees((*current)->state.theta) - carmen_radians_to_degrees(goal_state->state.theta)) < 5)
+		return 1;
+	else if(cont_rs_nodes % int((*current)->h + 1) == 0)
+	{
+		std::vector<state_node*> rs_path;
+		reed_shepp_collision = 0;
+		rs_path = reed_shepp_path((*current), goal_state);
+		if(reed_shepp_collision == 0)
+		{
+//			printf("1- Distancia = %f\n", DIST2D(current->state, goal_state->state));
+			rs_path.front()->parent = (*current);
+			(*current) = rs_path.back();
+			(*current)->total_distance_traveled = rs_path.front()->parent->total_distance_traveled + rs_path.front()->f;
+
+			///Draw reed shepp in image
+/*
+			for(int i = 0; i < rs_path.size(); i++)
+			{
+				draw_state_in_opencv_image(rs_path[i], distance_map->config, Scalar(0,0,255));
+			}
+*/
+			/////////
+			return 1;
+		}
+		else
+		{
+			clear_list(rs_path);
+			return 0;
+		}
+
+	}
+	else
+		return 0;
 }
 
 
@@ -2421,6 +2453,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	}
 	else if(teste == 2)
 	{
+/*
 		//Terceiro teste
 		robot_pose->x = 7757871.12;
 		robot_pose->y = -363569.71;
@@ -2429,6 +2462,14 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		goal_pose->x = 7757930.400000;
 		goal_pose->y = -363578.200000;
 		goal_pose->theta = 2.493261;
+*/
+		robot_pose->x = 7757919.29;
+		robot_pose->y = -363584.23;
+		robot_pose->theta = 0.798698;
+
+		goal_pose->x = 7757902.0;
+		goal_pose->y = -363597.20;
+		goal_pose->theta = -0.772066;
 	}
 
 /*
@@ -2454,7 +2495,6 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	expansion_number = 0;
 	time_count.reset();
 	virtual_laser_message.num_positions = 0;
-	std::vector<state_node*> rs_path;
 	state_node *start_state, *goal_state, *current;
 
 	int cont_rs_nodes = 0;
@@ -2473,7 +2513,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //	evg_thin_on_map(astar_map, heuristic_obstacle_map);
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
-	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, 0, 0, NULL, 0);
+	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, EXPANSION_VELOCITY, 0.0, 0.0, 0, 0, NULL, 0);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, 0.0, 0.0, 0.0, NULL, 0);
 
 	if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(start_state->state, distance_map) < OBSTACLE_DISTANCE_MIN)
@@ -2517,7 +2557,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //		printf("current cell = %f %f %f %f %f %f\n", current->state.x, current->state.y, current->state.theta, current->state.phi, current->f, current->total_distance_traveled);
 //		printf("nearest_obstacle_cell = %f %f\n",temp.x, temp.y);
 
-		if(is_goal(current, goal_state) == 1)
+		if(is_goal(&current, goal_state, cont_rs_nodes) == 1)
 		{
 			printf("Goal encontrado %f\n", DIST2D(current->state, goal_state->state));
 			printf("Current_state: %f %f %f \n", current->state.x, current->state.y, current->state.theta);
@@ -2537,45 +2577,13 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 		astar_map_close_node(astar_map, x, y, theta, direction);
 
-//		if(cont_rs_nodes%3==0)
-		if(cont_rs_nodes % int(current->h + 1) == 0)
-		{
-			reed_shepp_collision = 0;
-			rs_path = reed_shepp_path(current, goal_state);
-//			if(hitObstacle(rs_path, astar_map) == 0)//&& rs_path.front()->f > (current->h) )
-			if(reed_shepp_collision == 0) //&& hitObstacle(rs_path, astar_map) == 0)
-			{
-//				printf("1- Distancia = %f\n", DIST2D(current->state, goal_state->state));
-				rs_path.front()->parent = current;
-				current = rs_path.back();
-				current->total_distance_traveled = rs_path.front()->parent->total_distance_traveled + rs_path.front()->f;
-//				open.push(current);
-				rs_found = 1;
-
-				///Draw reed shepp in image
-/*
-				for(int i = 0; i < rs_path.size(); i++)
-				{
-					draw_state_in_opencv_image(rs_path[i], distance_map->config, Scalar(0,0,255));
-				}
-*/
-				/////////
-
-//				continue;
-				break;
-			}
-
-			clear_list(rs_path);
-
-		}
-
 		update_neighbors(astar_map, heuristic_obstacle_map, current, start_state, goal_state, open);
 		++cont_rs_nodes;
 	}
 
 	free(heuristic_obstacle_map);
 //	printf("=====Current after loop %f %f %f\n", current->state.x, current->state.y, current->state.theta);
-	if(!open.empty() || rs_found)
+	if(!open.empty()) //|| rs_found)
 	{
 
 //		current = open.top();
