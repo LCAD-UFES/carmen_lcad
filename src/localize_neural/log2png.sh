@@ -51,7 +51,7 @@ for i in "${!dirs[@]}"; do
     for left in ${dirs[$i]}/*.l.png; do
         right="${left/l.png/r.png}"
         disp="${left/l.png/d.png}"
-        if [ -f "$disp" ]; then
+        if [ ! -f "$disp" ]; then
             echo "Processing ${left} ${right}"
             ~/deepslam/spsstereo/build/spsstereo $left $right
              mv disparity.png ${disp}
