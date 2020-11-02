@@ -2,6 +2,8 @@
 
 extern int record_screen;
 extern char place_of_interest[2048];
+extern char predefined_route[2048];
+extern int predefined_route_code;
 
 
 extern void
@@ -688,6 +690,18 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_comboPredefinedRoute_changed(GtkWidget *widget __attribute__((unused)),
+					   GtkGui* gui)
+{
+	if (global_gui)
+	{
+		global_gui->get_predefined_route(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboPredefinedRoute));
+		if (strcmp(predefined_route, "None") != 0)
+			carmen_route_planner_set_predefined_route(predefined_route, predefined_route_code);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -698,6 +712,14 @@ void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 	}
 	else
 		carmen_route_planner_set_destination(place_of_interest, global_gui->destination);
+
+	if (global_gui)
+	{
+		gtk_combo_box_set_active((GtkComboBox *) global_gui->controls_.comboPredefinedRoute, 0);
+		global_gui->reset_predefined_route();
+		global_gui->display_needs_updating = 1;
+		global_gui->do_redraw();
+	}
 }
 
 //extern "C" G_MODULE_EXPORT

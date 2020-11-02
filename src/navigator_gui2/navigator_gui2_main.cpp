@@ -65,6 +65,9 @@ int use_route_planner_in_graph_mode;
 char place_of_interest[2048];
 char previous_place_of_interest[2048];
 
+char predefined_route[2048];
+int predefined_route_code;
+
 char *user_pref_filename = NULL;
 const char *user_pref_module;
 user_param_t *user_pref_param_list;
@@ -74,8 +77,8 @@ int user_pref_window_height = -1;
 int user_pref_window_x = -1;
 int user_pref_window_y = -1;
 
-std::vector <carmen_annotation_t> annotation_list;
-
+std::vector <carmen_annotation_t> place_of_interest_list;
+std::vector <carmen_annotation_t> predefined_route_list;
 
 static void
 navigator_get_empty_map()
@@ -282,125 +285,145 @@ navigator_unset_goal(double x, double y)
 
 
 void
-get_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carmen_annotation_t> &annotations)
+read_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carmen_annotation_t> &list1, int annotation_type1,
+		std::vector<carmen_annotation_t> &list2, int annotation_type2)
 {
-	char full_annotation[3000];
-	FILE *stream;
-	char *line = NULL;
-	char *p; int i;
-	size_t len = 0;
-	ssize_t read;
-	bzero(full_annotation,3000);
-	char buffer[1024];
-	bzero(buffer,1024);
-	//strcat(buffer,getenv("CARMEN_HOME"));
-	//strcat(buffer,"/data/rddf_annotation_log_20140418.txt\0");
-	stream = fopen(carmen_annotation_filename, "r");
-	int j = 0;
+	char line[1024], description[1024];
+	carmen_annotation_t a;
+	FILE *stream = fopen(carmen_annotation_filename, "r");
 	if (stream == NULL)
-		printf("Arquivo de anotacao não encontrado!");
-	else
 	{
-		while ((read = getline(&line, &len, stream)) != -1)
-		{
-			if (strstr(line,"RDDF_PLACE"))
-			{
-				if(line[strlen(line)-sizeof(char)] == '\n')
-					line[strlen(line)-sizeof(char)] = '#';
-
-				strcat(full_annotation,line);
-
-				carmen_annotation_t a;
-				p = strtok(line, "\t");
-				//printf("%s\n", p);
-				i = 0;
-				while (p != NULL)
-				{
-					string s  (p);
-					if (i == 0)
-					{
-						a.annotation_description = (char*)malloc((strlen(p)+1) * sizeof(char));
-						strcpy(a.annotation_description,s.c_str());
-					}
-					if (i == 1)
-						a.annotation_code = stoi(s);
-					if (i == 2)
-						a.annotation_type = stoi(s);
-					if (i == 3)
-						a.annotation_orientation = stod(s);
-					if (i == 4)
-						a.annotation_point.x = stod(s);
-					if (i == 5)
-						a.annotation_point.y = stod(s);
-					if (i == 6)
-						a.annotation_point.z = stod(s);
-					i++;
-					p = strtok(NULL, "\t");
-				}
-				annotations.push_back(a);
-//				cout<<annotations[j].annotation_description<<endl;
-				j++;
-			}
-		}
+		printf("Error: annotation file not found: %s\n", carmen_annotation_filename);
+		return;
 	}
-	free(line);
+
+	while (fgets(line, 1023, stream) != NULL)
+	{
+		if (sscanf(line, "%s %d %d %lf %lf %lf %lf", description, &a.annotation_type, &a.annotation_code,
+				&a.annotation_orientation, &a.annotation_point.x, &a.annotation_point.y, &a.annotation_point.z) != 7)
+			continue;
+
+		if (description[0] == '#')
+			continue;
+
+		if (a.annotation_type != annotation_type1 && a.annotation_type != annotation_type2)
+			continue;
+
+		a.annotation_description = (char *) malloc((strlen(description) + 1) * sizeof(char));
+		strcpy(a.annotation_description, description);
+
+		if (a.annotation_type == annotation_type1)
+			list1.push_back(a);
+		else if (a.annotation_type == annotation_type2)
+			list2.push_back(a);
+	}
 	fclose(stream);
-	//printf("%s\n", allrddf);
+}
+
+
+std::vector <string>
+read_glade_file(char *glade_path)
+{
+	std::vector <string> glade_file; //each position is a line of .glade file
+	int bufferLength = 1024;
+	char buffer[bufferLength];
+
+	FILE *f_glade = fopen (glade_path, "r");
+	if (f_glade == NULL)
+	{
+		fprintf(stderr, "Error: glade file not found: %s\n", glade_path);
+		exit(1);
+	}
+
+	while (fgets(buffer, bufferLength, f_glade))
+	{
+		string g (buffer);
+		glade_file.push_back(g);
+	}
+
+	fclose(f_glade);
+
+	return glade_file;
+}
+
+
+std::vector <string>
+format_annotation_to_gtk_list_store(std::vector <carmen_annotation_t> annotation_list, const char *annotation_prefix)
+{
+	std::vector <string> gtk_list_store;
+	std::vector <string> sorted_items;
+	string row_begin = "      <row>\n";
+	string row_end = "      </row>\n";
+
+	for (unsigned int i = 0; i < annotation_list.size(); i++)
+	{
+		string d(annotation_list[i].annotation_description);
+		if (d.substr(0, strlen(annotation_prefix)) == std::string(annotation_prefix))
+			d = d.substr(strlen(annotation_prefix));
+		sorted_items.push_back(d);
+	}
+	std::sort(sorted_items.begin(), sorted_items.end());
+
+	for (unsigned int i = 0; i < sorted_items.size(); i++)
+	{
+		gtk_list_store.push_back(row_begin);
+		string d(sorted_items[i]);
+		string col = "        <col id=\"0\" translatable=\"yes\">" + d + "</col>\n";
+		gtk_list_store.push_back(col);
+		gtk_list_store.push_back(row_end);
+	}
+
+	return gtk_list_store;
+}
+
+
+int
+get_gtk_list_store_data_index(std::vector <string> &glade_file, const char *gtk_list_store_id)
+{
+	int index;
+
+	for (index = 0; index < (int) glade_file.size(); index++)
+		if (glade_file[index].find("\"GtkListStore\"") != std::string::npos && glade_file[index].find(gtk_list_store_id) != std::string::npos)
+			break;
+
+	for (; index < (int) glade_file.size(); index++)
+		if (glade_file[index].find("</") != std::string::npos && glade_file[index].find("data") != std::string::npos)
+			break;
+
+	if (index == (int) glade_file.size())
+		index = -1;
+
+	return index;
 }
 
 
 void
 build_glade_with_annotation (char *annotation_path)
 {
-	char *carmen_home_path, glade_path[1000], glade_path_with_annotation[1000];
-	carmen_home_path = getenv("CARMEN_HOME");
+	const char *place_annotation_prefix = "RDDF_PLACE_";
+	const char *place_gtk_list_store_id = "\"listPlaceOfInterest\"";
+	const char *predefined_route_annotation_prefix = "PREDEFINED_ROUTE_";
+	const char *predefined_route_gtk_list_store_id = "\"listPredefinedRoute\"";
+
+	read_annotation_list_from_file(annotation_path, place_of_interest_list, RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST,
+			predefined_route_list, RDDF_ANNOTATION_TYPE_PREDEFINED_ROUTE);
+
+	char glade_path[1000];
+	char *carmen_home_path = getenv("CARMEN_HOME");
 	sprintf(glade_path, "%s/data/gui/navigator_gui2.glade", carmen_home_path);
-	get_annotation_list_from_file(annotation_path, annotation_list);
-	std::vector <string> annotations_in_glade;
-	string row_begin = "      <row>\n";
-	string row_end = "      </row>\n";
+	std::vector <string> glade_file = read_glade_file(glade_path);
 
-	std::vector <string> sorted_places;
-	for (unsigned int i = 0; i < annotation_list.size(); i++)
-	{
-		string d(annotation_list[i].annotation_description);
-		d = d.substr(11, d.size()-1).c_str();
-		sorted_places.push_back(d);
-	}
-	std::sort(sorted_places.begin(), sorted_places.end());
+	std::vector <string> places_in_glade = format_annotation_to_gtk_list_store(place_of_interest_list, place_annotation_prefix);
+	int place_list_data_index = get_gtk_list_store_data_index(glade_file, place_gtk_list_store_id);
+	if (place_list_data_index >= 0)
+		glade_file.insert(glade_file.begin() + place_list_data_index, places_in_glade.begin(), places_in_glade.end());
 
-	for (unsigned int i = 0; i < sorted_places.size(); i++)
-	{
-		annotations_in_glade.push_back(row_begin);
-//		string d(annotation_list[i].annotation_description);
-//		d = d.substr(11, d.size()-1).c_str();
-		string d(sorted_places[i]);
-		string col = "        <col id=\"0\" translatable=\"yes\">"+d+"</col>\n";
-		annotations_in_glade.push_back(col);
-		annotations_in_glade.push_back(row_end);
-		//				printf("\t%d - %s\n", i, d.substr(11, d.size()-1).c_str());
-	}
+	std::vector <string> predefined_routes_in_glade = format_annotation_to_gtk_list_store(predefined_route_list, predefined_route_annotation_prefix);
+	int predefined_route_list_data_index = get_gtk_list_store_data_index(glade_file, predefined_route_gtk_list_store_id);
+	if (predefined_route_list_data_index >= 0)
+		glade_file.insert(glade_file.begin() + predefined_route_list_data_index, predefined_routes_in_glade.begin(), predefined_routes_in_glade.end());
 
-	FILE *f_glade = fopen (glade_path, "r");
-	if (f_glade == NULL)
-	{
-		printf("Glade file doesn't exist in %s\n", glade_path);
-		exit(1);
-	}
-
-	std::vector <string> glade_file; //each position is a line of .glade file
-	int bufferLength = 1024;
-	char buffer[bufferLength];
-	while (fgets(buffer, bufferLength, f_glade))
-	{
-		string g (buffer);
-		glade_file.push_back(g);
-	}
-	fclose(f_glade);
-
-	printf("%s\n", place_of_interest);
-
-	glade_file.insert(glade_file.begin()+13, annotations_in_glade.begin(), annotations_in_glade.end());
+	char glade_path_with_annotation[1000];
 	sprintf(glade_path_with_annotation, "%s/data/gui/navigator_gui2_annotation.glade", carmen_home_path);
 	FILE *f_glade_with_annotations = fopen (glade_path_with_annotation, "w");
 
@@ -409,7 +432,6 @@ build_glade_with_annotation (char *annotation_path)
 		fprintf(f_glade_with_annotations, "%s", glade_file[i].c_str());
 	}
 	fclose(f_glade_with_annotations);
-
 }
 
 
@@ -1455,6 +1477,8 @@ init_navigator_gui_variables(int argc, char* argv[])
 
 	strcpy(place_of_interest, "Robot");
 	strcpy(previous_place_of_interest, "Robot");
+	strcpy(predefined_route, "None");
+	predefined_route_code = 0;
 }
 
 
