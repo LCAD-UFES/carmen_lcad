@@ -645,7 +645,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 			who_set_the_goal_v, last_update_timestamp, timestamp);
 
 	for (int i = 0; i < number_of_paths; i++)
-		path_temporal_value[i] *= exp(-0.01 * (timestamp - last_update_timestamp));
+		path_temporal_value[i] *= exp(-0.1 * (timestamp - last_update_timestamp));
 
 //	print_mo(current_moving_objects);
 //	print_path = true;
