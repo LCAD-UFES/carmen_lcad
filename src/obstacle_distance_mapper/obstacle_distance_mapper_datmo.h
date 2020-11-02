@@ -4,8 +4,8 @@
 
 using namespace std;
 
-#define MOVING_OBJECT_HISTORY_SIZE 	40
-#define MAX_NON_DETECTION_COUNT		15
+#define MOVING_OBJECT_HISTORY_SIZE 	20
+#define MAX_NON_DETECTION_COUNT		7
 
 typedef struct
 {
@@ -33,6 +33,7 @@ typedef struct
 	int non_detection_count;
 	int in_front;
 	int lane_id;
+	int index_in_poses_ahead;
 } moving_object_t;
 
 typedef struct

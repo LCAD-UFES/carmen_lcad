@@ -25,6 +25,8 @@ double max_moving_object_velocity 		= 150.0 / 3.6; // 150 km/h
 double moving_object_merge_distance		= 1.0; // m
 int behavior_selector_use_symotha 		= 0;
 
+double distance_car_pose_car_front;
+
 carmen_map_t 										occupancy_map;
 carmen_mapper_compact_map_message 					compact_occupancy_map;
 carmen_map_server_offline_map_message 				*offline_map = NULL;
@@ -371,6 +373,7 @@ static int
 read_parameters(int argc, char **argv)
 {
 	int num_items;
+	double distance_between_front_and_rear_axles, distance_between_front_car_and_front_wheels;
 
 	carmen_param_t param_list[] =
 	{
@@ -380,11 +383,16 @@ read_parameters(int argc, char **argv)
 		{(char *) "obstacle_distance_mapper",	(char *) "max_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&max_moving_object_velocity,		1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "moving_object_merge_distance",	CARMEN_PARAM_DOUBLE,	&moving_object_merge_distance,		1, NULL},
 
-		{(char *) "behavior_selector",			(char *) "use_symotha",						CARMEN_PARAM_ONOFF,		&behavior_selector_use_symotha,		1, NULL}
+		{(char *) "behavior_selector",			(char *) "use_symotha",						CARMEN_PARAM_ONOFF,		&behavior_selector_use_symotha,		1, NULL},
+
+		{(char *) "robot", 						(char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 1, NULL},
+		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &distance_between_front_car_and_front_wheels, 1, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
 
 	return 0;
 }

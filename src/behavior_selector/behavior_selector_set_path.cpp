@@ -122,16 +122,15 @@ collision_s_distance_to_static_object(path_collision_info_t &path_collision_info
 	double min_collision_s_distance = (double) num_samples * delta_t;
 	int index_in_path;
 	int last_path_pose = last_path_pose_that_the_car_can_occupy(path, current_set_of_paths->number_of_poses, current_robot_pose_v_and_phi.v);
+	double max_distance_to_static_object_considered = 1.5 * distance_between_waypoints_and_goals() + distance_car_pose_car_front;
 	if (last_path_pose != -1)
 	{
 		for (int s = 0; s < num_samples; s++)
 		{
 			double v = get_max_v();
-	//		if (current_robot_pose_v_and_phi.v < 5.0)
-	//			v = 5.0;
-	//		else
-	//			v = current_robot_pose_v_and_phi.v;
 			double s_displacement = get_s_displacement_for_a_given_sample(s, v, delta_t);
+			if (s_displacement > max_distance_to_static_object_considered)
+				break;
 			carmen_point_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path, last_path_pose);
 			if (index_in_path >= last_path_pose - 1)
 				break;
@@ -195,6 +194,9 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 
  		for (int mo = 0; mo < current_moving_objects->num_point_clouds; mo++)
 		{
+ 			if (current_moving_objects->point_clouds[mo].index_in_poses_ahead != -1)
+ 				continue; // ignora moving objects que estao em poses_ahead
+
 // 			if (fabs(current_moving_objects->point_clouds[i].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
 // 				continue;
 
@@ -589,9 +591,12 @@ print_mo(carmen_moving_objects_point_clouds_message *current_moving_objects)
 
 	for (int j = 0; j < current_moving_objects->num_point_clouds; j++)
 	{
-		printf("id %d, in_front %d, num_samples %d, l %0.2lf, w %0.2lf, vs_s %0.2lf, vd_s %0.2lf   -   points %d\n",
+		printf("id %d, in_front %d, lane_id %d, lane_index %d, index_in_pa %d, num_samples %d, l %0.2lf, w %0.2lf, vs_s %0.2lf, vd_s %0.2lf   -   points %d\n",
 				current_moving_objects->point_clouds[j].num_associated,
 				current_moving_objects->point_clouds[j].in_front,
+				current_moving_objects->point_clouds[j].lane_id,
+				current_moving_objects->point_clouds[j].lane_index,
+				current_moving_objects->point_clouds[j].index_in_poses_ahead,
 				current_moving_objects->point_clouds[j].num_valid_samples,
 				current_moving_objects->point_clouds[j].length,
 				current_moving_objects->point_clouds[j].width,
@@ -640,7 +645,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 			who_set_the_goal_v, last_update_timestamp, timestamp);
 
 	for (int i = 0; i < number_of_paths; i++)
-		path_temporal_value[i] *= exp(-0.05 * (timestamp - last_update_timestamp));
+		path_temporal_value[i] *= exp(-0.01 * (timestamp - last_update_timestamp));
 
 //	print_mo(current_moving_objects);
 //	print_path = true;

@@ -8,10 +8,13 @@
 #include "obstacle_distance_mapper_datmo.h"
 #include "obstacle_distance_mapper_interface.h"
 
+#define LATERAL_V_MULTIPLIER 0.1
+
 extern double min_moving_object_velocity;
 extern double max_moving_object_velocity;
 extern double obstacle_probability_threshold;
 extern double moving_object_merge_distance;
+extern double distance_car_pose_car_front;
 
 //
 // No codigo abaixo, a deteccao e o traqueamento de objetos moveis eh feito apenas nas lanes da road_network
@@ -157,6 +160,34 @@ shift_history(moving_object_t *moving_object)
 }
 
 
+inline bool
+touch_offline_map(carmen_map_server_offline_map_message *offline_map, double x_world, double y_world)
+{
+	if (!offline_map)
+		return (false);
+
+	// Precisa computar novamente pois a origin pode ser diferente
+	int x_0 = (int) (round((x_world - offline_map->config.x_origin) / offline_map->config.resolution));
+	int y_0 = (int) (round((y_world - offline_map->config.y_origin) / offline_map->config.resolution));
+	int x_size = offline_map->config.x_size;
+	int y_size = offline_map->config.y_size;
+	for (int x_map_cell = x_0 - 1; x_map_cell <= x_0 + 1; x_map_cell++)
+	{
+		if ((x_map_cell < 0 || x_map_cell >= x_size))
+			continue;
+		for (int y_map_cell = y_0 - 1; y_map_cell <= y_0 + 1; y_map_cell++)
+		{
+			if ((y_map_cell < 0 || y_map_cell >= y_size))
+				continue;
+			if (offline_map->complete_map[x_map_cell * y_size + y_map_cell] >= obstacle_probability_threshold)
+				return (true);
+		}
+	}
+
+	return (false);
+}
+
+
 static bool
 obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map, carmen_map_server_offline_map_message *offline_map)
 {
@@ -188,20 +219,8 @@ obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map, carmen_map_s
 				continue;
 
 			if (occupancy_map->map[x_map_cell][y_map_cell] >= obstacle_probability_threshold)
-			{
-				if (offline_map)
-				{
-					int x_map_cell = (int) round((x - offline_map->config.x_origin) / offline_map->config.resolution);
-					int y_map_cell = (int) round((y - offline_map->config.y_origin) / offline_map->config.resolution);
-					if ((x_map_cell < 0 || x_map_cell >= offline_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= offline_map->config.y_size))
-						return (true);
-
-					if (offline_map->complete_map[x_map_cell * offline_map->config.y_size + y_map_cell] < obstacle_probability_threshold)
-						return (true);
-				}
-				else
+				if (!touch_offline_map(offline_map, x, y))
 					return (true);
-			}
 		}
 	}
 
@@ -352,7 +371,7 @@ try_and_add_a_v_sample(moving_object_t *moving_object)
 		moving_object->history[0].pose.v = distance / delta_t;
 		moving_object->average_longitudinal_v.add_sample(moving_object->history[0].pose.v);
 
-		distance = dist * sin(angle - moving_object->history[0].pose.theta);
+		distance = dist * sin(angle - moving_object->history[0].pose.theta) * LATERAL_V_MULTIPLIER;
 		moving_object->history[0].lateral_v = distance / delta_t;
 		moving_object->average_lateral_v.add_sample(moving_object->history[0].lateral_v);
 
@@ -475,20 +494,7 @@ get_object_points(vector <carmen_position_t> &moving_object_points, lane_t *lane
 
 			if (occupancy_map->map[x_map_cell][y_map_cell] >= obstacle_probability_threshold)
 			{
-				bool did_not_hit_obstacle_in_offline_map = false;
-				if (offline_map)
-				{
-					int x_map_cell = (int) round((x - offline_map->config.x_origin) / offline_map->config.resolution);
-					int y_map_cell = (int) round((y - offline_map->config.y_origin) / offline_map->config.resolution);
-					if ((x_map_cell < 0 || x_map_cell >= offline_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= offline_map->config.y_size))
-						did_not_hit_obstacle_in_offline_map = true;
-					else if (offline_map->complete_map[x_map_cell * offline_map->config.y_size + y_map_cell] < obstacle_probability_threshold)
-						did_not_hit_obstacle_in_offline_map = true;
-				}
-				else
-					did_not_hit_obstacle_in_offline_map = true;
-
-				if (did_not_hit_obstacle_in_offline_map)
+				if (!touch_offline_map(offline_map, x, y))
 				{
 					found = true;
 
@@ -1014,6 +1020,7 @@ fill_in_moving_objects_message_element(t_point_cloud_struct *point_cloud, moving
 	point_cloud->in_front = moving_object.in_front;
 	point_cloud->lane_id = moving_object.lane_id;
 	point_cloud->lane_index = moving_object.history[0].index;
+	point_cloud->index_in_poses_ahead = moving_object.index_in_poses_ahead;
 	point_cloud->r = 0.0;
 	point_cloud->g = 0.0;
 	point_cloud->b = 1.0;
@@ -1347,11 +1354,12 @@ print_mo(vector<lane_t> lanes, double timestamp)
 	{
 		for (unsigned int j = 0; j < lanes[i].moving_objects.size(); j++)
 		{
-			printf("id %d, lane %d, index %d, in_front %d, valid %d, w_s %d, l_s %d, l %0.2lf, w %0.2lf, v_valid %d, vs_s %d, vd_s %d, vd %0.2lf, vd_std %0.2lf, vs %.2lf, vs_std %0.2lf   -   points %ld\n",
+			printf("id %d, lane %d, index %d, in_front %d, index_in_p_a %d, valid %d, w_s %d, l_s %d, l %0.2lf, w %0.2lf, v_valid %d, vs_s %d, vd_s %d, vd %0.2lf, vd_std %0.2lf, vs %.2lf, vs_std %0.2lf   -   points %ld\n",
 					lanes[i].moving_objects[j].id,
 					lanes[i].lane_id,
 					get_last_valid_index(lanes[i].moving_objects[j].history),
 					lanes[i].moving_objects[j].in_front,
+					lanes[i].moving_objects[j].index_in_poses_ahead,
 					lanes[i].moving_objects[j].history[0].valid,
 					lanes[i].moving_objects[j].average_width.num_samples(),
 					lanes[i].moving_objects[j].average_length.num_samples(),
@@ -1521,28 +1529,95 @@ moving_object_lane_merges_in_front_of_robot(carmen_route_planner_road_network_me
 }
 
 
-int
-is_in_front(carmen_route_planner_road_network_message *road_network, int moving_object_lane_index, moving_object_t *moving_object)
+carmen_ackerman_traj_point_t *
+get_poses_ahead_lane_and_lane_size(int &size, carmen_route_planner_road_network_message *road_network, int robot_lane_id)
 {
-	int robot_lane_id;
-	int robot_index_in_lane;
-	if (!get_robot_lane_id_and_index_in_lane(robot_lane_id, robot_index_in_lane, road_network))
-		return (0);
+	int lane = 0;
+	for (  ; lane < road_network->number_of_nearby_lanes; lane++)
+	{
+		if (road_network->nearby_lanes_ids[lane] == robot_lane_id)
+			break;
+	}
 
+	size = road_network->nearby_lanes_sizes[lane];
+	return (&(road_network->nearby_lanes[road_network->nearby_lanes_indexes[lane]]));
+}
+
+
+int
+move_robot_index_in_lane_to_consider_robot_and_moving_object_dimensions(int robot_index_in_lane,
+			int robot_lane_id, carmen_route_planner_road_network_message *road_network, double mo_length)
+{
+	int lane_size;
+	carmen_ackerman_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
+	double distance_to_move = distance_car_pose_car_front - mo_length / 2.0;
+	if (distance_to_move >= 0.0)
+	{
+		for (int i = robot_index_in_lane; i < lane_size - 1; i++)
+		{
+			distance_to_move -= DIST2D(lane_poses[i], lane_poses[i + 1]);
+			if (distance_to_move < 0.0)
+				return (i);
+		}
+	}
+	else
+	{
+		for (int i = robot_index_in_lane; i > 0; i--)
+		{
+			distance_to_move += DIST2D(lane_poses[i], lane_poses[i - 1]);
+			if (distance_to_move > 0.0)
+				return (i);
+		}
+	}
+
+	return (0);
+}
+
+
+int
+is_in_front(carmen_route_planner_road_network_message *road_network, int moving_object_lane_index, moving_object_t *moving_object,
+		int robot_lane_id, int robot_index_in_lane, int robot_index_in_lane_moved)
+{
 	if (moving_object->lane_id == robot_lane_id)
 	{
-		if (moving_object->history[0].index > robot_index_in_lane)
+		if (moving_object->history[0].index > robot_index_in_lane_moved)
 			return (1);
 		else
 			return (0);
 	}
 	else
 	{
-		if (moving_object_lane_merges_in_front_of_robot(road_network, moving_object_lane_index, robot_lane_id, moving_object->history[0].index, robot_index_in_lane))
+		if (moving_object_lane_merges_in_front_of_robot(road_network, moving_object_lane_index,
+				robot_lane_id, moving_object->history[0].index, robot_index_in_lane))
 			return (1);
 		else
 			return (0);
 	}
+}
+
+
+int
+get_moving_object_index_in_poses_ahead(carmen_route_planner_road_network_message *road_network, moving_object_t *moving_object,
+		int robot_lane_id, int robot_index_in_lane, int robot_index_in_lane_moved, double mo_length)
+{
+	if ((moving_object->lane_id != robot_lane_id) || (moving_object->history[0].index <= robot_index_in_lane_moved))
+		return (-1);
+
+	int moving_object_index_in_poses_ahead = moving_object->history[0].index - robot_index_in_lane;
+	if (moving_object_index_in_poses_ahead >= road_network->number_of_poses)
+		return (-1);
+
+	int lane_size;
+	carmen_ackerman_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
+	double distance_to_move = mo_length / 2.0;
+	for (int i = moving_object_index_in_poses_ahead; i > 0; i--)
+	{
+		distance_to_move -= DIST2D(lane_poses[i], lane_poses[i + 1]);
+		if (distance_to_move < 0.0)
+			return (i);
+	}
+
+	return (0);
 }
 
 
@@ -1573,8 +1648,22 @@ update_statistics(vector<lane_t> &lanes, carmen_route_planner_road_network_messa
 			moving_object_t *moving_object = &(lane->moving_objects[i]);
 			moving_object->lane_id = lane->lane_id;
 			int moving_object_lane_index = get_moving_object_lane_index(lane->lane_id, road_network);
-			moving_object->in_front = is_in_front(road_network, moving_object_lane_index, moving_object);
-//			printf("mo %d, in_front %d\n", moving_object->id, moving_object->in_front);
+			int robot_lane_id;
+			int robot_index_in_lane;
+			if (get_robot_lane_id_and_index_in_lane(robot_lane_id, robot_index_in_lane, road_network))
+			{
+				int robot_index_in_lane_moved = move_robot_index_in_lane_to_consider_robot_and_moving_object_dimensions(robot_index_in_lane,
+						robot_lane_id, road_network, moving_object->average_length.arithmetic_mean());
+				moving_object->in_front = is_in_front(road_network, moving_object_lane_index, moving_object, robot_lane_id,
+						robot_index_in_lane, robot_index_in_lane_moved);
+				moving_object->index_in_poses_ahead = get_moving_object_index_in_poses_ahead(road_network, moving_object,
+						robot_lane_id, robot_index_in_lane, robot_index_in_lane_moved, moving_object->average_length.arithmetic_mean());
+			}
+			else
+			{
+				moving_object->in_front = 0;
+				moving_object->index_in_poses_ahead = -1;
+			}
 			update_object_statistics(moving_object, occupancy_map);
 		}
 	}
@@ -1588,7 +1677,7 @@ obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_n
 	if (!road_network)
 		return (NULL);
 
-	print_road_network(road_network);
+//	print_road_network(road_network);
 
 	static vector<lane_t> lanes;
 
