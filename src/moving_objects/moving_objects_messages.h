@@ -113,6 +113,7 @@ typedef struct {
 	int in_front;
 	int lane_id;
 	int lane_index;
+	int index_in_poses_ahead;
 	double r, g, b;
 	double linear_velocity;
 	double linear_velocity_std;
@@ -145,7 +146,7 @@ typedef struct {
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
 /* fixme                                                                                                                                       model features...............................................*/
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, int, int, int, int, double, double, double, double, double, double, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, int, int, int, int, int, double, double, double, double, double, double, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
 //#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>,<{{double, double, double}, double, int, {double, double, double} }:1>}:1>, double, string}"
 
 

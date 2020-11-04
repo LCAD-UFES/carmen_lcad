@@ -308,7 +308,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			index_of_nearest_annotation = i;
 		}
 	}
-	if (((distance_to_nearest_annotation < 35.0) &&
+	if (((distance_to_nearest_annotation < 50.0) &&
 		carmen_rddf_play_annotation_is_forward(globalpos_message->globalpos,
 		last_rddf_annotation_message.annotations[index_of_nearest_annotation].annotation_point)) ||
 		(distance_to_nearest_annotation < 8.0))

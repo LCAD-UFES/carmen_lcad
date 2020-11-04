@@ -484,24 +484,13 @@ calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
 void
 compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 {
-	for (int i = 0; i < (num_poses - 1); i++)
+	for (int i = 1; i < (num_poses - 1); i++)
 	{
-		if(sign(path[i].v) == sign(path[i+1].v))
-		{
-			if(path[i].v >= 0.0)
-				path[i].theta = carmen_normalize_theta(atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x));
-			else
-				path[i].theta = carmen_normalize_theta(atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x)+ M_PI);
-//				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i+1].y, path[i].x - path[i+1].x));
-		}
+
+		if(path[i-1].v >= 0.0)
+			path[i-1].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x));
 		else
-		{/*
-			if(path[i].v >= 0.0)
-				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x));
-			else
-				path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x) + M_PI);
-				*/
-		}
+			path[i-1].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x)+ M_PI);
 
 	}
 	if (num_poses > 1)
@@ -559,8 +548,8 @@ my_f(const gsl_vector *v, void *params)
 	double dmax = 1.0; // escolher um valor melhor
 //	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 //	double kmax = 0.22; // Encontrar outra forma de obter esse valor
-//	double kmax = 0.178571429;
-	double kmax = 0.108571429;
+	double kmax = 0.178571429;
+//	double kmax = 0.108571429;
 
 	double obstacle_cost = 0.0;
 	double curvature_cost = 0.0;
@@ -660,8 +649,8 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 	double dmax = 1.0; // escolher um valor melhor
 //	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 //	double kmax = 0.22; // Encontrar outra forma de obter esse valor
-//	double kmax = 0.178571429;
-	double kmax = 0.108571429;
+	double kmax = 0.178571429;
+//	double kmax = 0.108571429;
 
 	double voronoi_a = 1.0;
 	double voronoi_max_distance = 2.0;
@@ -2269,10 +2258,10 @@ update_neighbors(map_node_p ****astar_map, double* heuristic_obstacle_map ,state
 
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-				neighbor_expansion[it_neighbor_number]->f += (4.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
+				neighbor_expansion[it_neighbor_number]->f += (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g);
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
-				neighbor_expansion[it_neighbor_number]->f += 10;
+				neighbor_expansion[it_neighbor_number]->f += 5;
 
 			//////////////////////////////
 

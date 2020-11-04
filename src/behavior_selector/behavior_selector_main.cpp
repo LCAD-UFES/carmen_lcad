@@ -367,6 +367,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (t < stop_t1)
 //		v = current_robot_pose_v_and_phi.v + 0.9;
 		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
+//		v = current_robot_pose_v_and_phi.v + 0.1; // Motos radicais!
 
 	if (t > stop_t2)
 	{
@@ -432,7 +433,7 @@ add_larger_simulated_object(carmen_ackerman_traj_point_t *object_pose)
 
 	double lateral_disp = 0.3;
 	double logitudinal_disp;
-	for (logitudinal_disp = 0; logitudinal_disp < 2.0; logitudinal_disp = logitudinal_disp + 0.2)
+	for (logitudinal_disp = -10.0; logitudinal_disp < -1.0; logitudinal_disp = logitudinal_disp + 0.2)
 	{
 		virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x +
 				lateral_disp * cos(object_pose->theta + M_PI / 2.0) +
