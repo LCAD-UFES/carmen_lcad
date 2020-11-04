@@ -351,6 +351,9 @@ convert_predtions_array(vector<bbox_t> predictions)
 void
 call_python_function(unsigned char *image, vector<bbox_t> predictions, double timestamp)
 {
+	if (predictions.size() == 0)
+		return;
+	
 	npy_intp predictions_dimensions[2] = {(int)predictions.size(), 4};
 
 	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);        //convert testVector to a numpy array
@@ -990,10 +993,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		return;
 
-	if (sick_vector.size() > 0)
-		sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
-	else
-		return;
+	// if (sick_vector.size() > 0)
+	// 	sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
+	// else
+	// 	return;
 
 	if (camera_side == 0)
 		img = image_msg->raw_left;
@@ -1012,10 +1015,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	//////// Yolo
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
-
 	//////// Python
 	call_python_function(open_cv_image.data, predictions, image_msg->timestamp);
-
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 //	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
