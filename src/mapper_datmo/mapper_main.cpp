@@ -1175,7 +1175,7 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 	open_cv_image = open_cv_image(myROI);
 		
 	if (!strcmp(neural_network, "yolo"))
-		predictions_vector = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2, 0.5);
+		predictions_vector = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5, 0.5);
 	if (!strcmp(neural_network, "efficientdet"))
 	 	predictions_vector = run_EfficientDet(open_cv_image.data, open_cv_image.cols, open_cv_image.rows);
 	
@@ -1405,45 +1405,26 @@ compute_mean_point_of_each_cluster(vector<vector<image_cartesian>> clusters_vect
 	double y_mean = 0.0;
 	unsigned int j = 0, c_size = 0;
 
-	// double x_max = 0.0;
-	// double y_max = 0.0;
-	// double x_min = 99999999.0;
-	// double y_min = 99999999.0;
 
 	for (unsigned int i = 0, size = clusters_vector.size(); i < size; i++)
 	{
 		for (j = 0, c_size = clusters_vector[i].size(); j < c_size; j++)
 		{
-			if (size < 5)    // Empty cluster
-				break;
+			// if (size < 5)    // Empty cluster
+			// 	break;
 			
 			x_mean += clusters_vector[i][j].cartesian_x;
 			y_mean += clusters_vector[i][j].cartesian_y;
-
-			// if (clusters_vector[i][j].cartesian_x > x_max)
-			// 	x_max = clusters_vector[i][j].cartesian_x;
-			// if (clusters_vector[i][j].cartesian_y > y_max)
-			// 	y_max = clusters_vector[i][j].cartesian_y;
-			// if (clusters_vector[i][j].cartesian_x < x_min)
-			// 	x_min = clusters_vector[i][j].cartesian_x;
-			// if (clusters_vector[i][j].cartesian_y < y_min)
-			// 	y_min = clusters_vector[i][j].cartesian_y;
 		}
 		if (j > 0)
 		{
 			point.x = x_mean / double (j - 1);
 			point.y = y_mean / double (j - 1);
 
-			//printf("%lf %lf %lf %lf %lf %lf %lf %lf %d\n", point.x, point.y, x_mean, y_mean, x_max, y_max, x_min, y_min, j);
 			clusters_poses_vector.push_back(point);
 		}
 		x_mean = 0.0;
 		y_mean = 0.0;
-
-		// x_max = 0.0;
-		// y_max = 0.0;
-		// x_min = 99999999.0;
-		// y_min = 99999999.0;
 	}
 	return (clusters_poses_vector);
 }
