@@ -100,6 +100,8 @@ int reed_shepp_collision = 0;
 //#define OBSTACLE_DISTANCE_MIN 1.0
 #define OBSTACLE_DISTANCE_MIN 0.5
 #define SEND_MESSAGE_IN_PARTS 0
+// ONE_VELOCITY_POSSIBLE 0 = disable, 1 = only forward, 2 = only backwards 
+#define ONE_VELOCITY_POSSIBLE 1
 
 int teste_edge = 0;
 
@@ -594,10 +596,11 @@ my_f(const gsl_vector *v, void *params)
 			current.x = x_i;
 			current.y = y_i;
 
-			if(param->points[i].v >=0)
-				current.theta = atan2(y_next - y_i, x_next - x_i);
+			if(param->points[i-1].v >=0)
+				current.theta = carmen_normalize_theta(atan2(y_i - y_prev, x_i - x_prev));
+//				current.theta = atan2(y_next - y_i, x_next - x_i);
 			else
-				current.theta = atan2(y_i - y_next, x_i - x_next);
+				current.theta = carmen_normalize_theta(atan2(y_i - y_prev, x_i - x_prev) + M_PI);
 
 			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(current, distance_map);
 
@@ -667,10 +670,14 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 	carmen_ackerman_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
 	smoothness_cost +=  DOT2D(delta, delta);
 
-	if(i.v >=0)
-		i.theta = atan2(i_next.y - i.y, i_next.x - i.x);
+	if(i_prev.v >=0)
+		i.theta = carmen_normalize_theta(atan2(i.y - i_prev.y, i.x - i_prev.x));
 	else
-		i.theta = atan2(i.y - i_next.y, i.x - i_next.x);
+		i.theta = carmen_normalize_theta(atan2(i.y - i_prev.y, i.x - i_prev.x) + M_PI);
+
+//		i.theta = atan2(i_next.y - i.y, i_next.x - i.x);
+//	else
+//		i.theta = atan2(i.y - i_next.y, i.x - i_next.x);
 
 	distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(i, distance_map);
 //	if(distance > 0)
@@ -785,7 +792,7 @@ set_anchor(param_t *params)
 	params->anchor_points[params->path_size - 1] = 1;
 	for (int i = 1; i < (params->path_size - 1); i++)
 	{
-		if (sign(params->points[i].v) != sign(params->points[i+1].v))
+		if (sign(params->points[i].v) != sign(params->points[i+1].v) || (DIST2D(params->points[i], params->points[i-1]) <= 0.8 ))
 			params->anchor_points[i] = 1;
 		else
 		{
@@ -1801,7 +1808,7 @@ build_rddf_poses(state_node *current_state)
 	for (int i = 1; i < path.size(); i++)
 	{
 		//&& DIST2D(path[i].state, last_state) <= 0.5)
-		if((DIST2D(path[i].state, last_state) >= 1.3 )|| (sign(path[i].state.v) != sign(last_state.v)))
+		if((DIST2D(path[i].state, last_state) >= 0.2 )|| (sign(path[i].state.v) != sign(last_state.v)))
 		{
 			temp_rddf_poses_from_path.push_back(path[i].state);
 			last_state = path[i].state;
@@ -2067,6 +2074,8 @@ expansion(state_node *current, state_node *goal_state, map_node_p ****astar_map)
     {
     	for (int j = 0; j < 3; j++)
     	{
+		if((ONE_VELOCITY_POSSIBLE == 1 && target_v[i] < 0) || (ONE_VELOCITY_POSSIBLE == 2 && target_v[i] > 0))
+		    continue;
         	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
         	carmen_test_alloc(new_state);
 //        	target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
@@ -2141,7 +2150,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			v_step = -EXPANSION_VELOCITY;
 			step_weight = 1.0;
 		}
-		while (DIST2D(point, rs_points[i-1]) > 0.2 || (abs(carmen_compute_abs_angular_distance(point.theta, rs_points[i-1].theta)) > 0.0872665))
+		while (DIST2D(point, rs_points[i-1]) > 0.1 || (abs(carmen_compute_abs_angular_distance(point.theta, rs_points[i-1].theta)) > 0.0472665))
 		{
 
 			distance_traveled_old = distance_traveled;
@@ -2156,7 +2165,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			new_state->f = path_cost;
 //			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
 			rs_path_nodes.push_back(new_state);
-			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN || ( ant_direction != 0 && sign(new_state->state.v) != sign(ant_direction)))
+			if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(new_state->state, distance_map) < OBSTACLE_DISTANCE_MIN || ( ant_direction != 0 && sign(new_state->state.v) != sign(ant_direction)) || ((ONE_VELOCITY_POSSIBLE == 1 && new_state->state.v < 0) || (ONE_VELOCITY_POSSIBLE == 2 && new_state->state.v > 0)))
 			{
 				reed_shepp_collision = 1;
 				return rs_path_nodes;
