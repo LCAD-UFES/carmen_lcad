@@ -132,16 +132,6 @@ int neural_mapper_max_distance_meters = 0;
 int neural_mapper_data_pace = 0;
 /**********************/
 
-
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// TESTE DE USAR RAIOS QUE NAO FORAM CLASSIFICADOS COMO OBSTACULOS
-vector<image_cartesian> all_rays;
-vector<vector<image_cartesian>> no_obstacle_classified_rays;
-vector<image_cartesian> filtered_rays_global;
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
 rotation_matrix *r_matrix_car_to_global = NULL;
 
 int use_truepos = 0;
@@ -830,18 +820,12 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 
 	//printf("Points Size %d\n", points.size());
 	
-    // display_lidar(image, filtered_rays_global, 100, 150, 150);
-	
-	display_lidar(image, points, 0, 0, 200);                       // Blue points are all points that hit an obstacle
+    display_lidar(image, points, 0, 0, 200);                       // Blue points are all points that hit an obstacle
 	display_lidar_matrix(image, clustered_points, 0, 255, 0);      // Green points are the clustered and classified as moving objects points
 
-	// printf("%d\n", no_obstacle_classified_rays.size());
-
-	display_lidar_matrix(image, no_obstacle_classified_rays, 255, 0, 0);  // Red points are all points not classifyed as obstacles by the mapper but are inside de bounding box
-
-    //if (image.cols > 640)
+    if (image.cols > 640)
 	{
-		resize(image, image, Size(1280, image.rows * (1280.0 / image.cols)), INTER_NEAREST);
+		resize(image, image, Size(640, image.rows * (640.0 / image.cols)));
 	}
 	
 	sprintf(info, "Camera %d Detections", camera_index);
@@ -851,29 +835,6 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 }
 
 
-Vec3b
-cluster_color_vec3b[] =
-{
-	Vec3b(255, 0, 0),
-    Vec3b(255, 255, 0),
-    Vec3b(255, 0, 255),
-    Vec3b(0, 255, 255),
-    Vec3b(150, 150, 150),
-    Vec3b(150, 150, 0),
-    Vec3b(150, 0, 150),
-    Vec3b(0, 150, 150),
-    Vec3b(107, 142, 35),
-    Vec3b(152, 251, 152),
-    Vec3b(70, 130, 180),
-    Vec3b(220, 20, 60),
-    Vec3b(255, 0, 0),
-    Vec3b(0, 0, 142),
-    Vec3b(0, 0, 70),
-    Vec3b(0, 60, 100),
-    Vec3b(0, 80, 100),
-    Vec3b(0, 0, 230),
-    Vec3b(119, 11, 32),
-};
 void
 show_semantic_map(double map_resolution, double range_max, vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points,
 	vector<vector<image_cartesian>> recovered_clusters, vector<carmen_vector_2D_t> filtered_clusters_mean_pose_vector)
@@ -888,7 +849,6 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 		
 		if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
 			map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 0, 0);
-			// map_img.at<Vec3b>(Point(px, py)) = cluster_color_vec3b[i];
 	}
 	
 	for (unsigned int i = 0, size = clustered_points.size(); i < size; i++)
@@ -1016,47 +976,13 @@ choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vect
 }
 
 
-vector<image_cartesian>
-remove_points_behind_cam_and_compute_img_coordnates(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index,
-	int image_width, int image_height, vector<image_cartesian> points)
-{
-	vector<image_cartesian> filtered_rays;
-
-	int cloud_index = sensor_data->point_cloud_index;
-	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
-	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
-	double cu = camera_params[camera_index].cu_factor * image_width;
-	double cv = camera_params[camera_index].cv_factor * image_height;
-
-	for (unsigned int i = 0, size = points.size(); i < size; i++)
-	{
-		int scan_index = points[i].shot_number * sensor_params->vertical_resolution;
-		double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
-
-		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > (M_PI_2/8)) // Disregard laser shots out of the camera's field of view
-			continue;
-		
-		tf::Point velodyne_p3d = tf::Point(points[i].cartesian_x, points[i].cartesian_y, points[i].cartesian_z);
-
-		tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
-
-		points[i].image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
-		points[i].image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
-
-		filtered_rays.push_back(points[i]);
-	}
-	return (filtered_rays);
-}
-
-
 // ===================================================================================================================================================================================================================================
 // Parametro a ser movido para o local adequado de definição de parametros
 // ===================================================================================================================================================================================================================================
-#define CLUSTER_PERCENT_TO_CLASSIFICATION_DIV_FACETOR 3      // if number of points inside the bbox > (cluster_size / CLUSTER_PERCENT_TO_CLASSIFICATION_DIV_FACETOR) means the cluster pertains to the class of the bounding box
+#define CLUSTER_PERCENT_TO_CLASSIFICATION_DIV_FACETOR 5      // if number of points inside the bbox > (cluster_size / CLUSTER_PERCENT_TO_CLASSIFICATION_DIV_FACETOR) means the cluster pertains to the class of the bounding box
 
 void
-classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points,
-sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_width, int image_height)
+classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points)
 {
 	//printf("4\n");
 	unsigned int cont = 0;
@@ -1115,32 +1041,13 @@ sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index
 		cluster.clear();
 		best_cluster_index = 0;
 		moving_object_cluster_index.clear();
-
-		if (classified.back().size() == 0)
-		{
-			// printf("BBOX empty\n");
-			filtered_rays_global = remove_points_behind_cam_and_compute_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, all_rays);
-
-			vector<image_cartesian> classified_rays;
-			for (unsigned int i = 0; i < filtered_rays_global.size(); i++)
-			{
-				if ((unsigned int) filtered_rays_global[i].image_x >=  predictions[h].x &&
-					(unsigned int) filtered_rays_global[i].image_x <= (predictions[h].x + predictions[h].w) &&
-					(unsigned int) filtered_rays_global[i].image_y >=  predictions[h].y &&
-					(unsigned int) filtered_rays_global[i].image_y <= (predictions[h].y + predictions[h].h))
-				{
-					classified_rays.push_back(filtered_rays_global[i]);
-				}
-			}
-			no_obstacle_classified_rays.push_back(classified_rays);
-		}
 	}
 	clustered_points = classified;
 }
 
 
 vector<vector<image_cartesian>>
-remove_points_behind_cam_and_compute_img_coordnates_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index,
+remove_points_behind_cam_and_compute_img_coordnates(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index,
 	int image_width, int image_height, vector<vector<image_cartesian>> clusters)
 {
 	vector<vector<image_cartesian>> filtered;
@@ -1268,13 +1175,13 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 	open_cv_image = open_cv_image(myROI);
 		
 	if (!strcmp(neural_network, "yolo"))
-		predictions_vector = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2, 0.5);
+		predictions_vector = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5, 0.5);
 	if (!strcmp(neural_network, "efficientdet"))
 	 	predictions_vector = run_EfficientDet(open_cv_image.data, open_cv_image.cols, open_cv_image.rows);
-
+	
 	predictions_vector = filter_predictions_of_interest(predictions_vector);
 	
-	classify_clusters_of_poits_using_detections(predictions_vector, clustered_points, sensor_params, sensor_data, camera_index, image_width, image_height);
+	classify_clusters_of_poits_using_detections(predictions_vector, clustered_points);
 
 	if (verbose >= 2)
 	{
@@ -1454,7 +1361,7 @@ process_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, in
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
 	
-	clustered_points = remove_points_behind_cam_and_compute_img_coordnates_old(sensor_params, sensor_data, camera_index, image_width, image_height, clustered_points);
+	clustered_points = remove_points_behind_cam_and_compute_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, clustered_points);
 	
 	if (!strcmp(neural_network, "yolo") || !strcmp(neural_network, "efficientdet"))
 	{
@@ -1498,45 +1405,26 @@ compute_mean_point_of_each_cluster(vector<vector<image_cartesian>> clusters_vect
 	double y_mean = 0.0;
 	unsigned int j = 0, c_size = 0;
 
-	// double x_max = 0.0;
-	// double y_max = 0.0;
-	// double x_min = 99999999.0;
-	// double y_min = 99999999.0;
 
 	for (unsigned int i = 0, size = clusters_vector.size(); i < size; i++)
 	{
 		for (j = 0, c_size = clusters_vector[i].size(); j < c_size; j++)
 		{
-			if (size < 5)    // Empty cluster
-				break;
+			// if (size < 5)    // Empty cluster
+			// 	break;
 			
 			x_mean += clusters_vector[i][j].cartesian_x;
 			y_mean += clusters_vector[i][j].cartesian_y;
-
-			// if (clusters_vector[i][j].cartesian_x > x_max)
-			// 	x_max = clusters_vector[i][j].cartesian_x;
-			// if (clusters_vector[i][j].cartesian_y > y_max)
-			// 	y_max = clusters_vector[i][j].cartesian_y;
-			// if (clusters_vector[i][j].cartesian_x < x_min)
-			// 	x_min = clusters_vector[i][j].cartesian_x;
-			// if (clusters_vector[i][j].cartesian_y < y_min)
-			// 	y_min = clusters_vector[i][j].cartesian_y;
 		}
 		if (j > 0)
 		{
 			point.x = x_mean / double (j - 1);
 			point.y = y_mean / double (j - 1);
 
-			//printf("%lf %lf %lf %lf %lf %lf %lf %lf %d\n", point.x, point.y, x_mean, y_mean, x_max, y_max, x_min, y_min, j);
 			clusters_poses_vector.push_back(point);
 		}
 		x_mean = 0.0;
 		y_mean = 0.0;
-
-		// x_max = 0.0;
-		// y_max = 0.0;
-		// x_min = 99999999.0;
-		// y_min = 99999999.0;
 	}
 	return (clusters_poses_vector);
 }
@@ -1582,78 +1470,14 @@ find_missing_movable_objects(vector<carmen_vector_2D_t> previous_filtered_cluste
 	return (recovered_clusters);
 }
 
-
-void
-compute_distance_to_b_object(vector<vector<image_cartesian>> filtered_clusters)
-{
-	for (unsigned int i = 0; i < filtered_clusters.size(); i++)
-	{
-		if (filtered_clusters[i].size() > 0)
-			printf("DIST: %lf\n", sqrt(pow(filtered_clusters[i][0].cartesian_x, 2) + pow(filtered_clusters[i][0].cartesian_y, 2)));
-	}
-}
-
-
-vector<image_cartesian>
-compute_compute_all_rays_cartesian_coordnates(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
-{
-	vector<image_cartesian> points;
-	int cloud_index = sensor_data->point_cloud_index;
-	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
-	int thread_id = omp_get_thread_num();
-
-	// if (number_of_laser_shots < 1024)
-	// 	return (points);
-
-	for (int i = 0; i < number_of_laser_shots; i++)
-	{
-		int scan_index = i * sensor_params->vertical_resolution;
-		double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
-		
-		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
-		
-		for (int j = 1; j < sensor_params->vertical_resolution; j++)
-		{
-			double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + j].vertical_angle);
-			double range = sensor_data->points[cloud_index].sphere_points[scan_index + j].length;
-			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-			
-			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][j];
-			// double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
-			
-			// if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
-			if (range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
-			{
-				image_cartesian point;
-				point.shot_number = i;
-				point.ray_number = j;
-				point.image_x = 0;
-				point.image_y = 0;
-				point.cartesian_x = velodyne_p3d.x();
-				point.cartesian_y = velodyne_p3d.y(); // Must be inverted because Velodyne angle is reversed with CARMEN angles
-				point.cartesian_z = velodyne_p3d.z();
-				
-				points.push_back(point);
-			}
-		}
-	}
-	return (points);
-}
-
-
 int
 filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-
-	no_obstacle_classified_rays.clear();
-
 	int filter_cameras = 0;
 	vector<image_cartesian> points;
 	vector<vector<image_cartesian>> clustered_points;
 	vector<vector<image_cartesian>> filtered_clusters;
 	vector<vector<image_cartesian>> clusters;
-
-	all_rays = compute_compute_all_rays_cartesian_coordnates(sensor_params, sensor_data);
 
 	vector<carmen_vector_2D_t> clustered_points_mean_pose_vector;
 	static vector<carmen_vector_2D_t> filtered_clusters_mean_pose_vector;
@@ -1695,8 +1519,6 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 		// if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
 		// 	continue;
 
-		// filtered_rays_global = remove_points_behind_cam_and_compute_img_coordnates(sensor_params, sensor_data, camera, camera_data[camera].width[nearest_index], camera_data[camera].height[nearest_index], all_rays);
-
 		clusters = process_image(sensor_params, sensor_data, camera, nearest_index, points, clustered_points);
 		//filtered_clusters = copy_to_filtered_clusters(clusters, filtered_clusters);
 		filtered_clusters.insert(filtered_clusters.end(), clusters.begin(), clusters.end());
@@ -1704,10 +1526,6 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 	}
 	previous_filtered_clusters_mean_pose_vector = filtered_clusters_mean_pose_vector;
 	filtered_clusters_mean_pose_vector.clear();
-
-	compute_distance_to_b_object(filtered_clusters);
-
-	compute_distance_to_b_object(no_obstacle_classified_rays);
 
 	filtered_clusters_mean_pose_vector = compute_mean_point_of_each_cluster(filtered_clusters);
 
@@ -1723,7 +1541,7 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 
 	if (verbose >= 2)
 	{
-		//show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters, recovered_clusters, filtered_clusters_mean_pose_vector);
+		show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters, recovered_clusters, filtered_clusters_mean_pose_vector);
 	}
 
 	return filter_cameras;
