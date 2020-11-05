@@ -1073,6 +1073,34 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 }
 
 
+static void
+print_road_network(carmen_route_planner_road_network_message *road_network)
+{
+	printf("\n");
+
+	for (int i = 0; i < road_network->number_of_nearby_lanes; i++)
+	{
+		printf("lane_id %d, size %d\n", road_network->nearby_lanes_ids[i], road_network->nearby_lanes_sizes[i]);
+
+		carmen_route_planner_junction_t *lane_merges = &(road_network->nearby_lanes_merges[road_network->nearby_lanes_merges_indexes[i]]);
+		for (int j = 0; j < road_network->nearby_lanes_merges_sizes[i]; j++)
+			printf("lane_id %d, merge %d: target_lane_id %d, node_id %d, index_of_node_in_current_lane %d, target_node_index_in_nearby_lane %d\n",
+					road_network->nearby_lanes_ids[i], j,
+					lane_merges->target_lane_id, lane_merges->node_id,
+					lane_merges->index_of_node_in_current_lane, lane_merges->target_node_index_in_nearby_lane);
+
+		carmen_route_planner_junction_t *lane_forks = &(road_network->nearby_lanes_forks[road_network->nearby_lanes_forks_indexes[i]]);
+		for (int j = 0; j < road_network->nearby_lanes_forks_sizes[i]; j++)
+			printf("lane_id %d, fork %d: target_lane_id %d, node_id %d, index_of_node_in_current_lane %d, target_node_index_in_nearby_lane %d\n",
+					road_network->nearby_lanes_ids[i], j,
+					lane_forks->target_lane_id, lane_forks->node_id,
+					lane_forks->index_of_node_in_current_lane, lane_forks->target_node_index_in_nearby_lane);
+	}
+
+	printf("\n");
+}
+
+
 path_collision_info_t
 set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -1093,6 +1121,7 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 
 	distance_map_free_of_moving_objects = distance_map; // O distance_map vem sem objetos móveis do obstacle_distance_mapper
 
+//	print_road_network(road_network_message);
 	vector<path_collision_info_t> paths_collision_info;
 	if (use_frenet_path_planner)
 		paths_collision_info = set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi, 0, timestamp);

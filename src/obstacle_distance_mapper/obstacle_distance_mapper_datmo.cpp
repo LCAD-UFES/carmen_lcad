@@ -1504,7 +1504,7 @@ get_robot_lane_id_and_index_in_lane(int &robot_lane_id, int &robot_index_in_lane
 		}
 	}
 
-	return (0);
+	return (1);
 }
 
 
@@ -1513,7 +1513,7 @@ moving_object_lane_merges_in_front_of_robot(carmen_route_planner_road_network_me
 		int moving_object_lane_index, int robot_lane_id, int moving_object_index_in_lane __attribute__((unused)), int robot_index_in_lane)
 {
 	int merge_in_front = 0;
-	carmen_route_planner_junction_t *moving_object_lane_merges = &(road_network->nearby_lanes_merges[moving_object_lane_index]);
+	carmen_route_planner_junction_t *moving_object_lane_merges = &(road_network->nearby_lanes_merges[road_network->nearby_lanes_merges_indexes[moving_object_lane_index]]);
 	for (int i = 0; i < road_network->nearby_lanes_merges_sizes[moving_object_lane_index]; i++)
 	{
 		if ((moving_object_lane_merges[i].target_lane_id == robot_lane_id) &&
