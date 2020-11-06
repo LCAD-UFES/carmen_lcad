@@ -25,10 +25,11 @@ http://www.cs.cmu.edu/~ipc/
 extern "C" {
 #endif
 
-#define	BUS			'B' // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
-#define	CAR			'C' // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
-#define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
 #define	PEDESTRIAN	'P'
+#define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
+#define	CAR			'C' // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
+#define	BUS			'B' // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
+#define	TRUCK		'T'
 #define	UNKNOWN		'U'
 
 
@@ -165,6 +166,30 @@ struct _moving_objects_tracking
 };
 
 typedef struct _moving_objects_tracking moving_objects_tracking_t;
+
+
+
+typedef struct {
+	double x;  
+	double y;
+	double theta;
+	double v;       // Linear Velocity
+	char type;
+} moving_object;
+
+typedef struct {
+	int num_objects;
+	moving_object *objects;
+	double timestamp;
+	char *host;
+} carmen_moving_objects_message;
+
+
+
+#define CARMEN_MOVING_OBJECTS_MESSAGE_NAME 	"carmen_moving_objects_message"
+#define CARMEN_MOVING_OBJECTS_MESSAGE_FMT	"{int, <{double, double, double, double, char}:1>, double, string}"
+
+
 
 #ifdef __cplusplus
 }

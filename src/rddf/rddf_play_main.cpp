@@ -53,6 +53,7 @@ carmen_traffic_light_message *traffic_lights = NULL;
 deque<carmen_rddf_dynamic_annotation_message> dynamic_annotation_messages;
 
 carmen_moving_objects_point_clouds_message *moving_objects = NULL;
+carmen_moving_objects_message *pedestrians_tracked = NULL;
 
 bool simulated_pedestrian_on = false;
 
