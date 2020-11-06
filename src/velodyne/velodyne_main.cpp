@@ -86,6 +86,44 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 }
 
+void
+setup_message(carmen_velodyne_variable_scan_message &msg, int number_of_shots, int shot_size)
+{
+	msg.partial_scan = (carmen_velodyne_shot *) malloc ((number_of_shots + 1) * sizeof(carmen_velodyne_shot));
+	
+    for (int i = 0 ; i <= number_of_shots; i++)
+	{
+		msg.partial_scan[i].shot_size = shot_size;
+		msg.partial_scan[i].distance  = (unsigned short*) malloc (shot_size * sizeof(unsigned short));
+		msg.partial_scan[i].intensity = (unsigned char*)  malloc (shot_size * sizeof(unsigned char));
+	}
+	msg.host = carmen_get_host();
+}
+
+void
+publish_velodyne_variable_scan()
+{
+	static bool first_time = true;
+	static carmen_velodyne_variable_scan_message msg;
+
+	if (first_time)
+	{
+		setup_message(msg, 4000, 32);
+		first_time = false;
+	}
+	msg.number_of_shots = velodyne_partial_scan.number_of_32_laser_shots;
+	
+	for(int i = 0; i < velodyne_partial_scan.number_of_32_laser_shots; i++)
+	{
+		msg.partial_scan[i].distance = velodyne_partial_scan.partial_scan[i].distance;
+		msg.partial_scan[i].intensity = velodyne_partial_scan.partial_scan[i].intensity;
+		msg.partial_scan[i].angle = velodyne_partial_scan.partial_scan[i].angle;
+	}
+	msg.timestamp = velodyne_partial_scan.timestamp;
+
+	carmen_velodyne_publish_variable_scan_message(&msg, 0);
+}
+
 
 /*********************************************************
 		   --- Handlers ---
@@ -139,6 +177,8 @@ int main(int argc, char **argv)
 			if (velodyne->pollScan(velodyne_partial_scan))
 			{
 				publish_velodyne_partial_scan();
+
+				// publish_velodyne_variable_scan();
 
 				if (velodyne_gps_enabled && velodyne->pollGps())
 				{
