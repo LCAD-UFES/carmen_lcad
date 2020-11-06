@@ -1817,11 +1817,19 @@ initializer()
 	initialize_transformations(board_pose, camera_pose, &transformer);
 	initialize_transformations(board_pose, camera_pose, &transformer_sick);
 
-	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
-	string class_names_file = "../../sharedlib/darknet2/data/coco.names";
-	obj_names = objects_names_from_file(class_names_file);
+	char* carmen_home = getenv("CARMEN_HOME");
+	char classes_names_path[1024];
+	char yolo_cfg_path[1024];
+	char yolo_weights_path[1024];
 
-	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+	sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
+	sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
+	sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
+
+	classes_names = get_classes_names(classes_names_path);
+	obj_names = objects_names_from_file(classes_names_path);
+	network_struct = initialize_YOLO(yolo_cfg_path, yolo_weights_path);
+
 }
 
 
@@ -1829,7 +1837,7 @@ int
 main(int argc, char **argv)
 {
     if ((argc != 8))
-        carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)>"
+        carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 7 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)>"
         		" <meters_spacement> <qtd_crops> <log_name> <groundtruth_path> <-cs for slices -ss without slices>\n",
                    argv[0], argc - 1, argv[0]);
 
