@@ -98,6 +98,7 @@ namespace View
 	class GtkGui
 	{
 	private:
+	void get_navigator_map();
 
 	public:
 
