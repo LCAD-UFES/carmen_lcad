@@ -29,6 +29,8 @@
 
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
+//#define save_rddf_to_file
+
 Tree tree; //tree rooted on robot
 int g_teacher_mode = 0;
 TrajectoryLookupTable *g_trajectory_lookup_table;
@@ -636,6 +638,7 @@ static void
 behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
 {
 	Pose goal_pose;
+	double desired_v;
 
 	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
 	{
@@ -649,12 +652,30 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	goal_pose.y = msg->goal_list->y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
 
-//	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
-	double desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
-	if (desired_v < GlobalState::robot_config.max_v)
-		GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+	if (GlobalState::reverse_driving && msg->goal_list->v < 0.0)
+	{
+		if (GlobalState::robot_config.max_v > 0.0)
+			GlobalState::robot_config.max_v = GlobalState::param_max_vel_reverse;
+
+		desired_v = fmax(msg->goal_list->v, GlobalState::param_max_vel_reverse);
+
+		if (desired_v < GlobalState::robot_config.max_v)
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+		else
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+	}
 	else
-		GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+	{
+		if (GlobalState::robot_config.max_v < 0.0)
+			GlobalState::robot_config.max_v = GlobalState::param_max_vel;
+
+		desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+		if (desired_v < GlobalState::robot_config.max_v)
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+		else
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+	}
+
 //	printf("v %lf\n", GlobalState::robot_config.max_v);
 
 	GlobalState::set_goal_pose(goal_pose);
@@ -723,6 +744,22 @@ ford_escape_status_handler(carmen_ford_escape_status_message *msg)
 void
 lane_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
 {
+
+#ifdef save_rddf_to_file
+	int static last_number_of_poses = 0;
+
+	if (message->number_of_poses != last_number_of_poses)
+	{
+		FILE *rddf_file = fopen("rddf_reh.txt", "a");
+		for (int i = 0; i < message->number_of_poses; i++)
+		{
+			fprintf(rddf_file, "%lf %lf %lf %lf %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i].theta, message->poses[i].v, message->poses[i].phi, carmen_get_time());
+		}
+		fprintf(rddf_file, "------------------------------------------------------\n");
+		fclose(rddf_file);
+
+		last_number_of_poses = message->number_of_poses;
+	}
 	//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 	//
 	//	for (int i = 0; i < message->number_of_poses; i++)
@@ -730,6 +767,7 @@ lane_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
 	//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
 	//		getchar();
 	//	}
+#endif
 }
 
 
@@ -876,6 +914,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", 	(char *) "maximum_steering_command_rate",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate,					1, NULL},
 		{(char *) "robot", 	(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
 		{(char *) "robot", 	(char *) "max_centripetal_acceleration",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,							1, NULL},
+		{(char *) "robot", 	(char *) "max_velocity_reverse",						CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,								 		1, NULL},
 		{(char *) "rddf",   (char *) "source_tracker", 								CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,									0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL},

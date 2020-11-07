@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
+#include <string>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_multimin.h>
@@ -23,10 +24,11 @@ extern int use_unity_simulator;
 
 void
 plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
-		  vector<carmen_ackerman_path_point_t> &pSeed)
+		  vector<carmen_ackerman_path_point_t> &pSeed, std::string titles[])
 {
 //	plot data Table - Last TCP - Optmizer tcp - Lane
 	//Plot Optmizer step tcp and lane?
+
 
 	#define DELTA_T (1.0 / 40.0)
 
@@ -56,8 +58,9 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 
 	for (unsigned int i = 0; i < pOTCP.size(); i++)
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
-	for (unsigned int i = 0; i < pLane.size(); i++)
-		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
+	if(!pLane.empty())
+		for (unsigned int i = 0; i < pLane.size(); i++)
+			fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
 
 	for (unsigned int i = 0; i < pSeed.size(); i++)
 		fprintf(gnuplot_data_seed, "%lf %lf\n", pSeed.at(i).x, pSeed.at(i).y);
@@ -69,9 +72,9 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 //	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
 
 	fprintf(gnuplot_pipeMP, "plot "
-			"'./gnuplot_data.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'OTCP',"
-			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane',"
-			"'./gnuplot_data_seed.txt' using 1:2 with lines title 'Seed' axes x1y1\n");
+			"'./gnuplot_data.txt' using 1:2:3:4 w vec size  0.3, 10 filled title '%s',"
+			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title '%s',"
+			"'./gnuplot_data_seed.txt' using 1:2 with lines title '%s' axes x1y1\n", titles[0].c_str(), titles[1].c_str(), titles[2].c_str());
 
 	fflush(gnuplot_pipeMP);
 }
@@ -214,6 +217,7 @@ search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 	// Tem que passar o td ao inves do tdd.
 	TrajectoryLookupTable::TrajectoryControlParameters tcp;
 	tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+
 	if (tcp.valid)
 		return (tcp);
 
@@ -713,6 +717,7 @@ generate_trajectory_control_parameters_sample(double k2, double k3, int i_v, int
 	tcp.k3 = k3;
 
 	double v0 = get_initial_velocity_by_index(i_v);
+
 	double distance = get_distance_by_index(dist);
 
 	double time;
@@ -1066,7 +1071,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	carmen_ackerman_path_point_t furthest_point;
 	td.dist = get_max_distance_in_path(path, furthest_point);
 	if (GlobalState::reverse_planning)
-		td.theta = carmen_normalize_theta(atan2(furthest_point.y, furthest_point.x)+(-M_PI));
+		td.theta = carmen_normalize_theta(atan2(furthest_point.y, furthest_point.x)-(M_PI));
 	else
 		td.theta = atan2(furthest_point.y, furthest_point.x);
 	td.d_yaw = furthest_point.theta;
@@ -1238,6 +1243,16 @@ fill_in_trajectory_lookup_table()
 						// Otimizar e checar se eh valida a trajetoria usando as facilidades de
 						// visualizacao ja implementadas.
 					{
+						if (i_v < 4)
+						{
+							GlobalState::reverse_driving = 1;
+							GlobalState::reverse_planning = 1;
+						}
+						else
+						{
+							GlobalState::reverse_driving = 0;
+							GlobalState::reverse_planning = 0;
+						}
 						//i_v = 7;
 						TrajectoryLookupTable::TrajectoryControlParameters tcp = generate_trajectory_control_parameters_sample(k2, k3, i_v, dist);
 						vector<carmen_ackerman_path_point_t> path;
