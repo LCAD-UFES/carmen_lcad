@@ -554,8 +554,9 @@ namespace View
 		controls_.labelDistTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
 		controls_.labelLowLevelState = GTK_LABEL(gtk_builder_get_object(builder, "labelLowLevelState" ));
 		controls_.labelTrafficSignState = GTK_LABEL(gtk_builder_get_object(builder, "labelTrafficSignState" ));
-		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
 		controls_.labelRoutePlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelRoutePlannerState" ));
+		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
+		controls_.labelOffRoadPlannerRequest = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerRequest" ));
 		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
 
 		controls_.labelNavConTimestamp = GTK_LABEL(gtk_builder_get_object(builder, "labelNavConTimestamp" ));
@@ -816,9 +817,9 @@ namespace View
 			{
 				sprintf(buffer, "Route Planner State: %s", print_route_planner_feedback(route_planner_route->route_planner_feedback));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
+				sprintf(buffer, "Offroad Planner Request: %s", print_route_planner_request(route_planner_route->offroad_planner_request));
+				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest), buffer);
 			}
-//			sprintf(buffer, "Route Planner State: %lf", globalpos->timestamp);
-//			gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
 
 			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp), buffer);
@@ -1724,7 +1725,7 @@ namespace View
 			snprintf(log_buffer,sizeof(log_buffer),"%spictures/%d.jpg", log_path, log_counter);
 			gdk_pixbuf_save(pixbuf, log_buffer, "jpeg", &error, NULL);
 
-			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
+			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOrigin)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelRobot)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelFusedOdometry)),
@@ -1737,6 +1738,7 @@ namespace View
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelTrafficSignState)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelRoutePlannerState)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest)),
 					log_button_go);
 			fprintf(file_log,"%s\n", log_buffer);
 			log_counter++;

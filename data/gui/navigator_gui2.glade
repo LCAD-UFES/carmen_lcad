@@ -1100,21 +1100,6 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="labelOffRoadPlannerState">
-                                    <property name="selectable">True</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="xalign">0</property>
-                                    <property name="xpad">5</property>
-                                    <property name="label" translatable="yes">Offroad Planner State:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">10</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <object class="GtkLabel" id="labelRoutePlannerState">
                                     <property name="selectable">True</property>
                                     <property name="visible">True</property>
@@ -1126,7 +1111,37 @@
                                   <packing>
                                     <property name="expand">True</property>
                                     <property name="fill">True</property>
+                                    <property name="position">10</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="labelOffRoadPlannerRequest">
+                                    <property name="selectable">True</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="xalign">0</property>
+                                    <property name="xpad">5</property>
+                                    <property name="label" translatable="yes">Offroad Planner Request:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
                                     <property name="position">11</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="labelOffRoadPlannerState">
+                                    <property name="selectable">True</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="xalign">0</property>
+                                    <property name="xpad">5</property>
+                                    <property name="label" translatable="yes">Offroad Planner State:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">12</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1141,7 +1156,7 @@
                                   <packing>
                                     <property name="expand">True</property>
                                     <property name="fill">True</property>
-                                    <property name="position">12</property>
+                                    <property name="position">13</property>
                                   </packing>
                                 </child>
                               </object>

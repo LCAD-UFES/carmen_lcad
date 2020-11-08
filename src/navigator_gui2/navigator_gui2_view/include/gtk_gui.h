@@ -130,8 +130,9 @@ namespace View
 			GtkLabel *labelDistTraveled;
 			GtkLabel *labelLowLevelState;
 			GtkLabel *labelTrafficSignState;
-			GtkLabel *labelOffRoadPlannerState;
 			GtkLabel *labelRoutePlannerState;
+			GtkLabel *labelOffRoadPlannerRequest;
+			GtkLabel *labelOffRoadPlannerState;
 			GtkLabel *labelGlobalPosTimeStamp;
 
 			GtkLabel *labelNavConTimestamp;
