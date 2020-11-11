@@ -1,0 +1,21 @@
+
+Graph Summary Report
+--------------
+SVG file: '../data/map_rddf_reh//@7757820_-363720.svg'
+
+RDDF file #1: '../data/map_rddf_reh//rddf_7757820_-363720_path4133.txt'
+ 78 waypoints in 38.45 meters
+     [ 0]  start point                (x,y)  7757903.299000	-363594.918000	 (   83.30,   125.08)  
+     [77]  finish point               (x,y)  7757873.810000	-363570.240000	 (   53.81,   149.76)  
+     [77]  merge          RDDF #2     (x,y)  7757873.810000	-363570.240000	 (   53.81,   149.76)  
+
+RDDF file #2: '../data/map_rddf_reh//rddf_7757820_-363720_path4135.txt'
+ 48 waypoints in 23.73 meters
+     [ 0]  start point                (x,y)  7757892.786000	-363568.369000	 (   72.79,   151.63)  
+     [47]  finish point               (x,y)  7757873.810000	-363570.240000	 (   53.81,   149.76)  
+     [47]  merge          RDDF #1     (x,y)  7757873.810000	-363570.240000	 (   53.81,   149.76)  
+     [24]  bad waypoint               (x,y)  7757883.845386	-363575.843825	 (   63.85,   144.16)  bad steering angle: | -37.27°| > 30.01°
+     [25]  bad waypoint               (x,y)  7757883.352219	-363575.771120	 (   63.35,   144.23)  bad steering angle: | -33.08°| > 30.01°
+
+Command for re-editing the RDDFs:
+./edit_graph_inkscape.py  -i ../data/map_rddf_reh/  -o ../data/map_rddf_reh/  --window  7757820.0  -363720.0  210.0  210.0  '../data/map_rddf_reh//rddf_7757820_-363720_path4133.txt'  '../data/map_rddf_reh//rddf_7757820_-363720_path4135.txt' 

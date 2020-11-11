@@ -310,6 +310,8 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 
 #ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 
+	first_pose_change_direction_index = -1;
+
 	if (behavior_selector_reverse_driving &&
 		(rddf_pose_index > 0 && rddf_pose_index < (rddf->number_of_poses - 1)))
 	{
@@ -813,7 +815,9 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		}
 #ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 		//parking se pose anterior foi em uma direcao, aguarda o carro terminar todo o path dessa direcao antes de mudar de direcao (reh/drive)
-		else if (behavior_selector_reverse_driving && (first_pose_change_direction_index != -1))
+		else if (behavior_selector_reverse_driving &&
+				(first_pose_change_direction_index != -1)
+				&& (carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(current_goal.v)))
 		{
 			double dist = DIST2D(rddf->poses[rddf_pose_index], robot_pose);
 			if (dist > 0.3)
