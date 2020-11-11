@@ -331,15 +331,14 @@ pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objec
 
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
+		// printf("DP %lf\n", DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose));
 		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
 			(pedestrian_about_to_enter_crosswalk(moving_objects->point_clouds[i], pedestrian_track_annotation, radius) ||
 			 DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius))
 		{
-			//printf("In\n");
 			return (true);
 		}
 	}
-	//printf("Out\n");
 	return (false);
 }
 
@@ -379,8 +378,8 @@ pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_m
 	{
 		if (strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0)
 		{
-			if ((DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius &&                    // Inside the crosswalk circle
-				 moving_objects_msg->point_clouds[i].linear_velocity > 0.2 &&                                              // Moving faster than 0.2m/s
+			if ((DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius &&                 // Inside the crosswalk circle
+				 moving_objects_msg->point_clouds[i].linear_velocity > 0.8 &&                                              // Moving faster than 0.2m/s
 				 abs(current_globalpos_msg->globalpos.theta - moving_objects_msg->point_clouds[i].orientation) > 0.2)      // Not moving parallel to the car (sideways with the crosswalk)
 				 )//||
 				 //pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], displaced_crosswalk_pose, radius))
@@ -407,11 +406,11 @@ pedestrian_crossing_new(carmen_moving_objects_message *pedestrians_tracked, carm
 			p.x = pedestrians_tracked->objects[i].x;
 			p.y = pedestrians_tracked->objects[i].y;
 
-			if ((DIST2D(p, displaced_crosswalk_pose) < radius &&                    // Inside the crosswalk circle
-				 pedestrians_tracked->objects[i].v > 0.2 &&                         // Moving faster than 0.2m/s
-				 abs(current_globalpos_msg->globalpos.theta - pedestrians_tracked->objects[i].theta) > 0.2)      // Not moving parallel to the car (sideways with the crosswalk)
-				 )//||
-				 //pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], displaced_crosswalk_pose, radius))
+			if (DIST2D(p, displaced_crosswalk_pose) < radius                    // Inside the crosswalk circle
+				&& pedestrians_tracked->objects[i].v > 0.9                      // Moving faster than 0.2m/s
+				// && abs(current_globalpos_msg->globalpos.theta - pedestrians_tracked->objects[i].theta) > 0.2      // Not moving parallel to the car (sideways with the crosswalk)
+				)//||
+				//pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], displaced_crosswalk_pose, radius))
 			{
 					return (true);
 			}
@@ -496,7 +495,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 	switch (crosswalk_state)
 	{
 		case Free_Crosswalk:
-			//printf("Free_Crosswalk \n");
+			// printf("Free_Crosswalk \n");
 			if (pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Stopping_Busy_Crosswalk;
@@ -505,7 +504,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (false);
 
 		case Stopping_Busy_Crosswalk:
-			//printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
+			// printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (!pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Free_Crosswalk;
@@ -518,7 +517,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Stopped_Busy_Crosswalk:
-			//printf("Stopped_Busy_Crosswalk \n");
+			// printf("Stopped_Busy_Crosswalk \n");
 			if (!pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Leaving_Crosswalk;
@@ -527,7 +526,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Leaving_Crosswalk:
-			//printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
+			// printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
 			{
 				// printf("pedestrian_crossing \n");
@@ -541,6 +540,37 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (false);
 	}
 	return (true);
+}
+
+
+void
+check_nearst_pedestrian_track_state()
+{
+	unsigned int size = annotations_to_publish.size();
+	int nearst_annotation_index = -1;
+	double dist = 0.0, nearst_annotation_dist = DBL_MAX;
+
+	for (unsigned int i = 0; i < size; i++)
+	{
+		if (annotations_to_publish[i].annotation.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
+		{
+			dist = DIST2D(current_globalpos_msg->globalpos, annotations_to_publish[i].annotation.annotation_point);
+
+			if (dist < nearst_annotation_dist)
+			{
+				nearst_annotation_dist = dist;
+				nearst_annotation_index = i;
+			}
+		}
+	}
+	if (nearst_annotation_index != -1)
+	{
+		// if (pedestrian_track_busy_new(moving_objects, annotations_to_publish[nearst_annotation_index].annotation))
+		if (check_if_pedestrian_track_is_busy(pedestrians_tracked, annotations_to_publish[nearst_annotation_index].annotation))
+		{
+			annotations_to_publish[nearst_annotation_index].annotation.annotation_code = RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY;
+		}
+	}
 }
 
 
@@ -589,9 +619,9 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
 			// if (pedestrian_track_busy_new(moving_objects, annotation_read_from_file[annotation_index]))
-			if (check_if_pedestrian_track_is_busy(pedestrians_tracked, annotation_read_from_file[annotation_index]))
-				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY;
-			else
+			// // if (check_if_pedestrian_track_is_busy(pedestrians_tracked, annotation_read_from_file[annotation_index]))
+			// 	annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY;
+			// else
 				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
 			annotations_to_publish.push_back(annotation_i);
 			return (true);
@@ -638,6 +668,8 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		}
 		return (true);
 	}
+
+	check_nearst_pedestrian_track_state();
 
 	return (false);
 }
