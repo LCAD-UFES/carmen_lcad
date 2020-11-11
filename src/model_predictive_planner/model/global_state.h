@@ -86,6 +86,7 @@ public:
 
 	static int reverse_driving;
 	static int reverse_planning;
+	static double param_max_vel_reverse;
 
 	static double max_square_distance_to_lane;
 

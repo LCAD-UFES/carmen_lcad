@@ -142,43 +142,56 @@ navigator_get_map(carmen_navigator_map_t type, int is_superimposed)
 	{
 	case CARMEN_NONE_v:
 		navigator_get_empty_map();
+		gui->nav_panel_config->map = (char *) "None";
 		break;
 	case CARMEN_LOCALIZE_LMAP_v:
 		navigator_get_specific_map(is_superimposed, likelihood_map, CARMEN_LOCALIZE_LMAP_v);
+		gui->nav_panel_config->map = (char *) "Likelihood";
 		break;
 	case CARMEN_LOCALIZE_GMAP_v:
 		navigator_get_specific_map(is_superimposed, global_likelihood_map, CARMEN_LOCALIZE_GMAP_v);
+		gui->nav_panel_config->map = (char *) "Global Likelihood";
 		break;
 	case CARMEN_LANE_MAP_v:
 		navigator_get_specific_map(is_superimposed, lane_map, CARMEN_LANE_MAP_v);
+		gui->nav_panel_config->map = (char *) "Lane";
 		break;
 	case CARMEN_COST_MAP_v:
 		navigator_get_specific_map(is_superimposed, cost_map, CARMEN_COST_MAP_v);
+		gui->nav_panel_config->map = (char *) "Costs";
 		break;
 	case CARMEN_NAVIGATOR_MAP_v:
 		navigator_get_specific_map(is_superimposed, map, CARMEN_NAVIGATOR_MAP_v);
+		gui->nav_panel_config->map = (char *) "Map";
 		break;
 	case CARMEN_NAVIGATOR_MAP_LEVEL1_v:
 		navigator_get_specific_map(is_superimposed, map_level1, CARMEN_NAVIGATOR_MAP_LEVEL1_v);
+		gui->nav_panel_config->map = (char *) "Map Level1";
 		break;
 	case CARMEN_OFFLINE_MAP_v:
 		navigator_get_specific_map(is_superimposed, offline_map, CARMEN_OFFLINE_MAP_v);
+		gui->nav_panel_config->map = (char *) "Offline Map";
 		break;
 	case CARMEN_COMPLETE_MAP_v:
 		navigator_get_complete_map(is_superimposed);
+		gui->nav_panel_config->map = (char *) "Complete Map";
 		break;
 	case CARMEN_REMISSION_MAP_v:
 		navigator_get_specific_map(is_superimposed, remission_map, CARMEN_REMISSION_MAP_v);
+		gui->nav_panel_config->map = (char *) "Remission Map";
 		break;
 	case CARMEN_MOVING_OBJECTS_MAP_v:
 		navigator_get_specific_map(is_superimposed, moving_objects_map, CARMEN_MOVING_OBJECTS_MAP_v);
+		gui->nav_panel_config->map = (char *) "Moving Objects";
 		break;
 	case CARMEN_ROAD_MAP_v:
 		navigator_get_specific_map(is_superimposed, road_map, CARMEN_ROAD_MAP_v);
+		gui->nav_panel_config->map = (char *) "Road Map";
 		break;
 
 	default:
 		navigator_get_specific_map(is_superimposed, map, CARMEN_NAVIGATOR_MAP_v);
+		gui->nav_panel_config->map = (char *) "Map";
 		break;
 	}
 }

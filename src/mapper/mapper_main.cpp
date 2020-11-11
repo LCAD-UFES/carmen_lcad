@@ -138,6 +138,9 @@ int use_unity_simulator = 0;
 
 extern carmen_map_t occupancy_map;
 
+int publish_diff_map = 0;
+double publish_diff_map_interval = 0.5;
+
 
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
@@ -240,6 +243,50 @@ free_virtual_scan_message()
 
 
 static void
+do_publish_diff_map(carmen_map_t *base_map, carmen_map_t *new_map, double timestamp)
+{
+	if (base_map == NULL || new_map == NULL ||
+		base_map->config.x_origin   != new_map->config.x_origin   || base_map->config.y_origin != new_map->config.y_origin ||
+		base_map->config.x_size     != new_map->config.x_size     || base_map->config.y_size   != new_map->config.y_size   ||
+		base_map->config.resolution != new_map->config.resolution)
+		return;
+
+	static double time_of_last_publish = 0.0;
+	if (publish_diff_map && ((timestamp - time_of_last_publish) < publish_diff_map_interval))
+		return;
+	time_of_last_publish = timestamp;
+
+	carmen_map_config_t config = base_map->config;
+	int size = 0;
+	int number_of_cells = base_map->config.x_size * base_map->config.y_size;
+	short int *coord_x = (short int *) malloc(number_of_cells * sizeof(short int));
+	short int *coord_y = (short int *) malloc(number_of_cells * sizeof(short int));
+	unsigned char *value = (unsigned char *) malloc(number_of_cells * sizeof(unsigned char));
+	carmen_test_alloc(coord_x);
+	carmen_test_alloc(coord_y);
+	carmen_test_alloc(value);
+
+	for (int i = 0; i < number_of_cells; i++)
+	{
+		int new_value = int(new_map->complete_map[i] * 255.0);
+		if (new_value != int(base_map->complete_map[i] * 255.0))
+		{
+			coord_x[size] = i / config.y_size;
+			coord_y[size] = i % config.y_size;
+			value[size] = (unsigned char) new_value;
+			size++;
+		}
+	}
+
+	carmen_mapper_publish_diff_map_message(coord_x, coord_y, value, size, config, timestamp);
+
+	free(coord_x);
+	free(coord_y);
+	free(value);
+}
+
+
+static void
 publish_map(double timestamp)
 {
 //	mapper_publish_map(timestamp);
@@ -264,6 +311,7 @@ publish_map(double timestamp)
 	carmen_mapper_publish_map_message(&occupancy_map, timestamp);
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
 //	printf("n = %d\n", virtual_laser_message.num_positions);
+	do_publish_diff_map(&offline_map, &occupancy_map, timestamp);
 }
 
 
@@ -1583,6 +1631,8 @@ read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_r
 		{(char *) "commandline", (char *) "num_clouds", CARMEN_PARAM_INT, &neural_map_num_clouds, 0, NULL},
 		{(char *) "commandline", (char *) "time_secs_between_map_save", CARMEN_PARAM_DOUBLE, &time_secs_between_map_save, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
+		{(char *) "mapper", 	 (char *) "publish_diff_map",		   CARMEN_PARAM_ONOFF,  &publish_diff_map, 		    1, NULL},
+		{(char *) "mapper", 	 (char *) "publish_diff_map_interval", CARMEN_PARAM_DOUBLE, &publish_diff_map_interval, 1, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 

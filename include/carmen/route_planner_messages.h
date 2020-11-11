@@ -28,6 +28,13 @@ typedef enum
 	WITHIN_OFFROAD_PLAN
 } offroad_planner_request_t;
 
+#define print_route_planner_request(x) ( \
+	(x == NO_REQUEST)? "NO_REQUEST": \
+	(x == PLAN_FROM_POSE_TO_LANE)? "PLAN_FROM_POSE_TO_LANE": \
+	(x == PLAN_FROM_LANE_TO_FINAL_POSE)? "PLAN_FROM_LANE_TO_FINAL_POSE": \
+	(x == PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE)? "PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE": \
+	(x == WITHIN_OFFROAD_PLAN)? "WITHIN_OFFROAD_PLAN": "" )
+
 
 typedef enum ROUTE_PLANNER_FEEDBACK
 {

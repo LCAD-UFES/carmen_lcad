@@ -554,8 +554,9 @@ namespace View
 		controls_.labelDistTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
 		controls_.labelLowLevelState = GTK_LABEL(gtk_builder_get_object(builder, "labelLowLevelState" ));
 		controls_.labelTrafficSignState = GTK_LABEL(gtk_builder_get_object(builder, "labelTrafficSignState" ));
-		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
 		controls_.labelRoutePlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelRoutePlannerState" ));
+		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
+		controls_.labelOffRoadPlannerRequest = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerRequest" ));
 		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
 
 		controls_.labelNavConTimestamp = GTK_LABEL(gtk_builder_get_object(builder, "labelNavConTimestamp" ));
@@ -666,36 +667,7 @@ namespace View
 		else
 			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
 
-		if (strcmp(nav_panel_config->map, "Map") == 0)
-		{
-			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
-//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
-		}
-		else if (strcmp(nav_panel_config->map, "Map Level1") == 0)
-			navigator_get_map(CARMEN_NAVIGATOR_MAP_LEVEL1_v, 1);
-		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
-			navigator_get_map(CARMEN_OFFLINE_MAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Utility") == 0)
-			navigator_get_map(CARMEN_NAVIGATOR_UTILITY_v, 0);
-		else if (strcmp(nav_panel_config->map, "Costs") == 0)
-			navigator_get_map(CARMEN_COST_MAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Likelihood") == 0)
-			navigator_get_map(CARMEN_LOCALIZE_LMAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Global Likelihood") == 0)
-			navigator_get_map(CARMEN_LOCALIZE_GMAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Lane") == 0)
-			navigator_get_map(CARMEN_LANE_MAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Complete Map") == 0)
-			navigator_get_map(CARMEN_COMPLETE_MAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Remission Map") == 0)
-			navigator_get_map(CARMEN_REMISSION_MAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
-			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 0);
-		else if (strcmp(nav_panel_config->map, "Road Map") == 0)
-			navigator_get_map(CARMEN_ROAD_MAP_v, 0);
-		else
-			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
+		get_navigator_map();
 	}
 
 	void
@@ -845,9 +817,9 @@ namespace View
 			{
 				sprintf(buffer, "Route Planner State: %s", print_route_planner_feedback(route_planner_route->route_planner_feedback));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
+				sprintf(buffer, "Offroad Planner Request: %s", print_route_planner_request(route_planner_route->offroad_planner_request));
+				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest), buffer);
 			}
-//			sprintf(buffer, "Route Planner State: %lf", globalpos->timestamp);
-//			gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
 
 			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp), buffer);
@@ -1348,17 +1320,58 @@ namespace View
 //		return -1;
 //	}
 
+	void GtkGui::get_navigator_map()
+	{
+		if (strcmp(nav_panel_config->map, "Map") == 0)
+		{
+			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) (mapper_handler), CARMEN_SUBSCRIBE_LATEST);
+			//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
+		}
+		else if (strcmp(nav_panel_config->map, "Map Level1") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_MAP_LEVEL1_v, 1);
+		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
+			navigator_get_map(CARMEN_OFFLINE_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Utility") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_UTILITY_v, 0);
+		else if (strcmp(nav_panel_config->map, "Costs") == 0)
+			navigator_get_map(CARMEN_COST_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Likelihood") == 0)
+			navigator_get_map(CARMEN_LOCALIZE_LMAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Global Likelihood") == 0)
+			navigator_get_map(CARMEN_LOCALIZE_GMAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Lane") == 0)
+			navigator_get_map(CARMEN_LANE_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Complete Map") == 0)
+			navigator_get_map(CARMEN_COMPLETE_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Remission Map") == 0)
+			navigator_get_map(CARMEN_REMISSION_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
+			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Road Map") == 0)
+			navigator_get_map(CARMEN_ROAD_MAP_v, 0);
+		else
+			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
+	}
+
 	void
 	GtkGui::get_place_of_interest(char *new_place_of_interest)
 	{
 		std::string d;
 		std::string place_annotation_prefix("RDDF_PLACE_");
 		int destination_index = 0;
+		static char *previous_map = NULL;
 
 		if (strcmp(new_place_of_interest, "Robot") == 0)
 		{
 			destination.x = globalpos->globalpos.x;
 			destination.y = globalpos->globalpos.y;
+			if (previous_map)
+			{
+				nav_panel_config->map = previous_map;
+				get_navigator_map();
+				previous_map = NULL;
+			}
 		}
 		else
 		{
@@ -1377,13 +1390,20 @@ namespace View
 			destination.x = place_of_interest_list[destination_index].annotation_point.x;
 			destination.y = place_of_interest_list[destination_index].annotation_point.y;
 			destination.theta = place_of_interest_list[destination_index].annotation_orientation;
-			nav_panel_config->map = (char*)"Offline Map";
+			final_goal.pose = destination;
+			final_goal.map = this->controls_.map_view->internal_map;
+			carmen_rddf_publish_end_point_message(50, final_goal.pose);
+
+			if (!previous_map)
+				previous_map = nav_panel_config->map;
+			nav_panel_config->map = (char *) "Offline Map";
+
+			strcpy(place_of_interest, new_place_of_interest);
+			carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', destination, navigator_get_offline_map_pointer());
+			navigator_graphics_set_flags(CARMEN_NAVIGATOR_MAP_v);
+			navigator_graphics_change_map(navigator_get_offline_map_pointer());
+			update_local_map = 1;
 		}
-
-		strcpy(place_of_interest, new_place_of_interest);
-
-		carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', destination, navigator_get_offline_map_pointer());
-		navigator_graphics_change_map(navigator_get_offline_map_pointer());
 	}
 
 
@@ -1705,7 +1725,7 @@ namespace View
 			snprintf(log_buffer,sizeof(log_buffer),"%spictures/%d.jpg", log_path, log_counter);
 			gdk_pixbuf_save(pixbuf, log_buffer, "jpeg", &error, NULL);
 
-			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
+			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOrigin)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelRobot)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelFusedOdometry)),
@@ -1718,6 +1738,7 @@ namespace View
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelTrafficSignState)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelRoutePlannerState)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest)),
 					log_button_go);
 			fprintf(file_log,"%s\n", log_buffer);
 			log_counter++;
@@ -2227,7 +2248,7 @@ namespace View
 	{
 		GdkCursor *cursor;
 
-		if ( (placement_status == PLACING_FINAL_GOAL) )
+		if (placement_status == PLACING_FINAL_GOAL)
 		{
 			final_goal = *world_point;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);

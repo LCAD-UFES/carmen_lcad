@@ -645,17 +645,58 @@ TrajectoryLookupTable::TrajectoryControlParameters
 get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
 {
 	TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
-	dummy_tcp.valid = true;
-	dummy_tcp.tt = 5.0;
-	dummy_tcp.k1 = 0.0;
-	dummy_tcp.k2 = 0.01;
-	dummy_tcp.k3 = 0.02;
-	dummy_tcp.has_k1 = false;
-	dummy_tcp.shift_knots = false;
-	dummy_tcp.a = 0.0;
-	dummy_tcp.vf = -2.0;
-	dummy_tcp.sf = td.dist;
-	dummy_tcp.s = td.dist;
+	//type = 1 reh reto/ 2- reh curva a direita 2- reh curva a esquerda
+	int tcp_type;
+	if (td.theta > 0.3)
+		tcp_type = 2;
+	else if (td.theta < -0.3)
+		tcp_type = 3;
+	else
+		tcp_type = 1;
+
+	if (tcp_type == 1)
+	{
+		dummy_tcp.valid = true;
+		dummy_tcp.tt = 2.5;;
+		dummy_tcp.k1 = 0.0;
+		dummy_tcp.k2 = 0.01;
+		dummy_tcp.k3 = 0.02;
+		dummy_tcp.has_k1 = true;
+		dummy_tcp.shift_knots = false;
+		dummy_tcp.a = -0.7;
+		dummy_tcp.vf = -2.0;
+		dummy_tcp.sf = td.dist;
+		dummy_tcp.s = td.dist;
+	}
+	else if (tcp_type == 2)
+	{
+		dummy_tcp.valid = true;
+		dummy_tcp.tt = 2.5;//4.2252857989082688;
+		dummy_tcp.k1 = -0.17769236781390979;
+		dummy_tcp.k2 = -1.3001704239163896;
+		dummy_tcp.k3 = -0.20967541493688466;
+		dummy_tcp.has_k1 = true;
+		dummy_tcp.shift_knots = false;
+		dummy_tcp.a = -0.71001114309832969;
+		dummy_tcp.vf = -2.9999999999999991;
+		dummy_tcp.sf = 6.3379786983624049;
+		dummy_tcp.s = 6.3379286983624015;
+	}
+	else if (tcp_type == 3)
+	{
+		dummy_tcp.valid = true;
+		dummy_tcp.tt = 2.5;//4.2252857989082688;
+		dummy_tcp.k1 = 0.17769236781390979;
+		dummy_tcp.k2 = 1.3001704239163896;
+		dummy_tcp.k3 = 0.20967541493688466;
+		dummy_tcp.has_k1 = true;
+		dummy_tcp.shift_knots = false;
+		dummy_tcp.a = -0.71001114309832969;
+		dummy_tcp.vf = -2.9999999999999991;
+		dummy_tcp.sf = 6.3379786983624049;
+		dummy_tcp.s = 6.3379286983624015;
+	}
+
 	return dummy_tcp;
 }
 
@@ -663,9 +704,9 @@ get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
 bool
 get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
-		TrajectoryLookupTable::TrajectoryDimensions td, double target_v)
+		TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	if (0) //(GlobalState::reverse_driving && td.v_i == 0.0) //Just for tests
+	if (0) //(GlobalState::reverse_planning && !previous_good_tcp.valid && td.v_i == 0.0) //Just for tests
 		tcp = get_dummy_tcp(td);
 
 	else if (!previous_good_tcp.valid)
@@ -681,6 +722,12 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		if (!tcp.valid)
 		{
 			printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
+			if (0)//(GlobalState::reverse_planning)
+			{
+				printf(KMAG "@@@@@@@@@@@ Trying a dummy_TCP\n");
+				tcp = get_dummy_tcp(td);
+				return (true);
+			}
 			return (false);
 		}
 		tcp.s = td.dist;
@@ -834,18 +881,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		GlobalState::reverse_planning = 0;
 	}
 
-//	if (goal_is_behind_car(localizer_pose, &goalPoseVector[0]))
-//		{
-//			if(target_v == 0.0 && lastOdometryVector[0].v == 0.0)
-//			{
-//				target_v = 1.0;
-//				printf("fiz isso aqui \n ");
-//			}
-//			target_v = (-1)*target_v;
-//			GlobalState::reverse_planning = 1;
-//		}
-
-
 	if (first_time || !GlobalState::following_path)
 	{
 		previous_good_tcp.valid = false;
@@ -904,8 +939,17 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
 //			previous_good_tcp.valid = false;
-			if (!get_tcp_from_td(tcp, previous_good_tcp, td, target_v))
+			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
+			//TODO Descomentar para usar o plot!
+			vector<carmen_ackerman_path_point_t> pathSeed;
+			if (plot_to_debug)
+			{
+				TrajectoryLookupTable::TrajectoryDimensions td_copy = td;
+				TrajectoryLookupTable::TrajectoryControlParameters tcp_copy = tcp;
+
+				pathSeed = simulate_car_from_parameters(td_copy, tcp_copy, td.v_i, lastOdometryVector[0].phi, false, 0.025);
+			}
 
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;
 			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
@@ -916,17 +960,15 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				vector<carmen_ackerman_path_point_t> path;
 				vector<carmen_ackerman_path_point_t> path_local;
 
-				//TODO Descomentar para usar o plot!
-				vector<carmen_ackerman_path_point_t> pathSeed;
-				if (plot_to_debug)
-					pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
-
 				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
 					continue;
 
 				//TODO Gnuplot
 				if (plot_to_debug)
-					plot_state(path_local, detailed_lane, pathSeed);
+				{
+					string gnuplot_titles[3] = {"OTCP", "Lane", "Seed"};
+					plot_state(path_local, detailed_lane, pathSeed, gnuplot_titles);
+				}
 
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;
@@ -939,6 +981,11 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				otcps[j + i * lastOdometryVector.size()] = otcp;
 				if (print_to_debug)
 					printf(KYEL "+++++++++++++ Could NOT optimize !!!!\n" RESET);
+				if (plot_to_debug)
+				{
+					string gnuplot_titles[3] = {"OTCP-Falhou-Seed", "Lane", "Seed"};
+					plot_state(pathSeed, detailed_lane, pathSeed, gnuplot_titles);
+				}
 			}
 		}
 

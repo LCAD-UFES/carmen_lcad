@@ -19,6 +19,10 @@ carmen_mapper_subscribe_compact_map_message(carmen_mapper_compact_map_message *m
 		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
+carmen_mapper_subscribe_diff_map_message(carmen_mapper_diff_map_message *message,
+		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
 carmen_mapper_subscribe_map_level1_message(carmen_mapper_map_message *message,
 		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
@@ -43,6 +47,9 @@ carmen_mapper_unsubscribe_map_message(carmen_handler_t handler);
 
 void
 carmen_mapper_unsubscribe_compact_map_message(carmen_handler_t handler);
+
+void
+carmen_mapper_unsubscribe_diff_map_message(carmen_handler_t handler);
 
 void
 carmen_mapper_unsubscribe_map_level1_message(carmen_handler_t handler);
@@ -91,6 +98,10 @@ carmen_mapper_moving_objects_raw_map_publish_message(carmen_map_t *carmen_map, d
 
 void
 carmen_mapper_publish_compact_map_message(carmen_compact_map_t *carmen_map, double timestamp);
+
+void
+carmen_mapper_publish_diff_map_message(short int *coord_x, short int *coord_y, unsigned char *value, int size, carmen_map_config_t config, double timestamp);
+
 
 #ifdef __cplusplus
 }
