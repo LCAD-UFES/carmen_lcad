@@ -57,7 +57,8 @@ LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkml
 	
 # Source code files (.c, .cpp) 
 SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper_interface.c \
-			compute_velodyne_calibration_table.cpp neural_mapper_io.cpp neural_map.cpp lib_neural_mapper_py.cpp #neural_mapper_dataset_check.cpp
+		  compute_velodyne_calibration_table.cpp neural_mapper_io.cpp neural_map.cpp lib_neural_mapper_py.cpp \
+		  test_diff_map.cpp #neural_mapper_dataset_check.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h
@@ -67,7 +68,8 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a compute_velodyne_calibration_table #neural_mapper_dataset_check
+TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a \
+		  compute_velodyne_calibration_table test_diff_map #neural_mapper_dataset_check
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -90,6 +92,8 @@ mapper: mapper.o mapper_main.o libmapper.a libmapper_interface.a neural_mapper_i
 convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 
 compute_velodyne_calibration_table: compute_velodyne_calibration_table.o
+
+test_diff_map: test_diff_map.o libmapper_interface.a
 
 #neural_mapper_dataset_check: neural_mapper_dataset_check.o
 
