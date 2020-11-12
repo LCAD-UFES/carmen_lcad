@@ -792,7 +792,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		}
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&  // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
 				   !wait_start_moving && busy_pedestrian_track_ahead(robot_pose, timestamp))) &&
-				  !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
+				   !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
 		{
 			goal_type[goal_index] = ANNOTATION_GOAL2;
 			double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
