@@ -114,6 +114,7 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_YIELD) && !wait_start_moving) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) && busy_pedestrian_track_ahead(*current_robot_pose_v_and_phi, carmen_get_time()) && !wait_start_moving) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
@@ -214,6 +215,8 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.08;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
+		v = 0.08;
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD)
 		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
