@@ -1066,7 +1066,7 @@ carmen_obstacle_avoider_car_collides_with_moving_object_old(carmen_point_t car_p
 
 
 int
-compute_mo_points(carmen_position_t *mo_points, double width, double length, double x, double y, double theta)
+compute_mo_points_old(carmen_position_t *mo_points, double width, double length, double x, double y, double theta)
 {
 	double points_displacement = 0.4;
 
@@ -1118,7 +1118,67 @@ compute_mo_points(carmen_position_t *mo_points, double width, double length, dou
 
 
 int
+compute_mo_points(carmen_position_t *mo_points, double width, double length, double x, double y, double theta)
+{
+	double points_displacement = width / 2.0;
+	int mo_points_size = 0;
+	double sin, cos;
+	sincos(theta, &sin, &cos);
+
+	for (double logitudinal_disp = -length / 2.0; logitudinal_disp < length / 2.0; logitudinal_disp = logitudinal_disp + points_displacement)
+	{
+		mo_points[mo_points_size].x = x + logitudinal_disp * cos;
+		mo_points[mo_points_size].y = y + logitudinal_disp * sin;
+		mo_points_size++;
+	}
+
+	return (mo_points_size);
+}
+
+
+int
 carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose, carmen_point_t moving_object_pose,
+		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin)
+{
+	check_collision_config_initialization();
+
+	carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
+	carmen_position_t mo_points[1000];
+	int mo_points_size = compute_mo_points(mo_points, moving_object->width, moving_object->length, moving_object_pose.x, moving_object_pose.y, moving_object_pose.theta);
+//	printf("id %d, mo_points_size %d\n", moving_object->num_associated, mo_points_size);
+	double mo_radius_plus_safety_margin = moving_object->width / 2.0 + lateral_safety_margin;
+	carmen_collision_marker_t *markers = global_collision_config.markers;
+	int n_markers = global_collision_config.n_markers;
+	for (double displacement = -longitudinal_safety_magin; displacement <= longitudinal_safety_magin; displacement += 0.5)
+	{
+		carmen_point_t ldcp = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&cp, displacement);
+		carmen_ackerman_traj_point_t ldcp2 = {ldcp.x, ldcp.y, ldcp.theta, 0.0, 0.0};
+		for (int i = 0; i < n_markers; i++)
+		{
+			double radius = markers[i].radius + mo_radius_plus_safety_margin;
+			double radius_sq = radius * radius;
+			carmen_point_t displaced_car_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&ldcp2,
+					markers[i].x, markers[i].y);
+			double x = displaced_car_pose.x;
+			double y = displaced_car_pose.y;
+			for (int j = 0; j < mo_points_size; j++)
+			{
+				double mo_p_x = mo_points[j].x;
+				double mo_p_y = mo_points[j].y;
+				double distance_sq = (x - mo_p_x) * (x - mo_p_x) + (y - mo_p_y) * (y - mo_p_y);
+
+				if (distance_sq <= radius_sq)
+					return (1);
+			}
+		}
+	}
+
+	return (0);
+}
+
+
+int
+carmen_obstacle_avoider_car_collides_with_moving_object_for_debug(carmen_point_t car_pose, carmen_point_t moving_object_pose,
 		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin)
 {
 	check_collision_config_initialization();

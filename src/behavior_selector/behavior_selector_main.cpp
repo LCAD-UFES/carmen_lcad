@@ -72,7 +72,8 @@ using namespace std;
 
 vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp);
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *last_valid_goal,
+		int who_set_the_goal_v, double timestamp);
 
 
 
@@ -939,7 +940,8 @@ create_carmen_obstacle_distance_mapper_map_message(carmen_obstacle_distance_mapp
 
 
 void
-set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *last_valid_goal,
+		double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
 
@@ -970,7 +972,8 @@ set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_a
 //	obstacle_distance_mapper_restore_moving_objects_to_occupancy_map(&occupancy_map, current_moving_objects);
 
 	if (use_frenet_path_planner)
-		set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi, 0, timestamp);
+		set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi,
+				last_valid_goal, 0, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
 	obstacle_distance_mapper_free_moving_objects_message(current_moving_objects);
 
@@ -1007,11 +1010,14 @@ set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_a
 int
 select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
+	static carmen_ackerman_traj_point_t last_valid_goal;
+	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
+
 	carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, compact_lane_contents);
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	set_path_using_symotha(current_robot_pose_v_and_phi, timestamp);
+	set_path_using_symotha(current_robot_pose_v_and_phi, last_valid_goal_p, timestamp);
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
@@ -1029,8 +1035,6 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	if (error != 0)
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
-	static carmen_ackerman_traj_point_t last_valid_goal;
-	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
 	int who_set_the_goal_v = NONE;
 	if (goal_list_size > 0)
 	{
@@ -1102,7 +1106,8 @@ print_road_network(carmen_route_planner_road_network_message *road_network)
 
 
 path_collision_info_t
-set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *last_valid_goal,
+		double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
 
@@ -1124,7 +1129,8 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 //	print_road_network(road_network_message);
 	vector<path_collision_info_t> paths_collision_info;
 	if (use_frenet_path_planner)
-		paths_collision_info = set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi, 0, timestamp);
+		paths_collision_info = set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi,
+				last_valid_goal, 0, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
 
 	if (behavior_selector_performs_path_planning)
@@ -1165,11 +1171,14 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 int
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
+	static carmen_ackerman_traj_point_t last_valid_goal;
+	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
+
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
 //	double t2 = carmen_get_time();
 
-	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, timestamp);
+	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, last_valid_goal_p, timestamp);
 //	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
 
 //	printf("delta_t funcao %0.3lf\n", carmen_get_time() - t2);
@@ -1190,8 +1199,6 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (error != 0)
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
-	static carmen_ackerman_traj_point_t last_valid_goal;
-	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
 	int who_set_the_goal_v = NONE;
 	if (goal_list_size > 0)
 	{
@@ -1550,10 +1557,15 @@ carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_ini
 
 
 static void
-signal_handler(int signo __attribute__ ((unused)) )
+shutdown_module(int signo)
 {
-	carmen_ipc_disconnect();
-	exit(0);
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		printf("behaviour_selector: disconnected.\n");
+
+		exit(0);
+	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1792,7 +1804,7 @@ main(int argc, char **argv)
 
 	define_messages();
 	register_handlers();
-	signal(SIGINT, signal_handler);
+	signal(SIGINT, shutdown_module);
 
 	carmen_ipc_dispatch();
 
