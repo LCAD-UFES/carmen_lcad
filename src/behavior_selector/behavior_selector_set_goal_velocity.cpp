@@ -14,6 +14,8 @@ extern carmen_rddf_annotation_message last_rddf_annotation_message;
 extern carmen_rddf_road_profile_message *last_rddf_message;
 extern bool last_rddf_annotation_message_valid;
 
+extern carmen_robot_ackerman_config_t robot_config;
+
 extern bool autonomous;
 
 extern double last_speed_limit;
@@ -211,8 +213,12 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
-			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
+			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
+			 (DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
+	{
+		// printf ("D %lf\n", DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point));
 		v = 0.08;
+	}
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
 		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&

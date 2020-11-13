@@ -379,7 +379,7 @@ pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_m
 		if (strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0)
 		{
 			if ((DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius &&                 // Inside the crosswalk circle
-				 moving_objects_msg->point_clouds[i].linear_velocity > 0.8 &&                                              // Moving faster than 0.2m/s
+				 moving_objects_msg->point_clouds[i].linear_velocity > 0.4 &&                                              // Moving faster than 0.2m/s
 				 abs(current_globalpos_msg->globalpos.theta - moving_objects_msg->point_clouds[i].orientation) > 0.2)      // Not moving parallel to the car (sideways with the crosswalk)
 				 )//||
 				 //pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], displaced_crosswalk_pose, radius))
@@ -407,7 +407,7 @@ pedestrian_crossing_new(carmen_moving_objects_message *pedestrians_tracked, carm
 			p.y = pedestrians_tracked->objects[i].y;
 
 			if (DIST2D(p, displaced_crosswalk_pose) < radius                    // Inside the crosswalk circle
-				&& pedestrians_tracked->objects[i].v > 0.9                      // Moving faster than 0.2m/s
+				&& pedestrians_tracked->objects[i].v > 0.4                      // Moving faster than 0.2m/s
 				// && abs(current_globalpos_msg->globalpos.theta - pedestrians_tracked->objects[i].theta) > 0.2      // Not moving parallel to the car (sideways with the crosswalk)
 				)//||
 				//pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], displaced_crosswalk_pose, radius))
@@ -565,8 +565,8 @@ check_nearst_pedestrian_track_state()
 	}
 	if (nearst_annotation_index != -1)
 	{
-		// if (pedestrian_track_busy_new(moving_objects, annotations_to_publish[nearst_annotation_index].annotation))
-		if (check_if_pedestrian_track_is_busy(pedestrians_tracked, annotations_to_publish[nearst_annotation_index].annotation))
+		if (pedestrian_track_busy_new(moving_objects, annotations_to_publish[nearst_annotation_index].annotation))
+		// if (check_if_pedestrian_track_is_busy(pedestrians_tracked, annotations_to_publish[nearst_annotation_index].annotation))
 		{
 			annotations_to_publish[nearst_annotation_index].annotation.annotation_code = RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY;
 		}
