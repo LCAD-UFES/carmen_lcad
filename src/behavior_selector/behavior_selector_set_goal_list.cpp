@@ -14,7 +14,6 @@
 #define MAX_ANNOTATIONS 50
 
 //#define PRINT_UDATMO_LOG
-#define USE_DATMO_GOAL
 
 //#define USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 
@@ -692,9 +691,6 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 				last_obstacle_free_waypoint_index, distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation,
 				distance_to_last_obstacle_free_waypoint, rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index,
 				current_moving_objects, timestamp, first_pose_change_direction_index);
-#ifndef USE_DATMO_GOAL
-		rddf_pose_hit_obstacle = 0;
-#endif
 
 		static double moving_obstacle_trasition = 0.0;
 		if (rddf_pose_hit_obstacle)
@@ -710,7 +706,6 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 			moving_obstacle_trasition = 0.0;
 			break;
 		}
-#ifdef USE_DATMO_GOAL
 		else if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
 			double d = 0;
@@ -757,12 +752,6 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 			}
 			break;
 		}
-#else
-		if (0) {
-
-		}
-#endif
-
 		else if (path_collision_info.valid && path_collision_info.mo_in_front &&
 				 (rddf_pose_index >= path_collision_info.possible_collision_mo_pose_index))
 		{
@@ -800,6 +789,8 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		}
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) &&  // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
 				   !wait_start_moving && stop_sign_ahead(robot_pose)) ||
+//				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_YIELD) &&
+//				   !wait_start_moving && path_collision_info.valid && path_collision_info.mo_in_front) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
 				   !wait_start_moving && red_traffic_light_ahead(robot_pose, timestamp)) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
@@ -818,6 +809,7 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 		else if (((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER) || // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
 //				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
+//				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_YIELD) && !wait_start_moving) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) && !wait_start_moving)) &&
 				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo

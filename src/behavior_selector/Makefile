@@ -3,9 +3,9 @@ include ../Makefile.conf
 MODULE_NAME = Behavior Selector
 MODULE_COMMENT = Change path planner algorithms and speed limits
 
-LINK=g++
-CFLAGS += -std=c99
-CXXFLAGS += -std=c++11
+LINK=g++ -pg
+CFLAGS += -std=c99 -pg
+CXXFLAGS += -std=c++11 -pg
 
 IFLAGS += \
 	-I$(CARMEN_HOME)/sharedlib/prob_models \
