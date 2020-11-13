@@ -46,6 +46,21 @@ typedef struct
 
 typedef struct
 {
+	short int *coord_x;
+	short int *coord_y;
+	unsigned char *value;
+	int size;
+	carmen_map_config_t config;
+	double timestamp;
+	char *host;
+} carmen_mapper_diff_map_message;
+
+#define CARMEN_MAPPER_DIFF_MAP_MESSAGE_NAME	"carmen_mapper_diff_map_message"
+#define CARMEN_MAPPER_DIFF_MAP_MESSAGE_FMT	"{<short:4>, <short:4>, <byte:4>, int, {int, int, double, [byte:64], string, double, double}, double, string}"
+
+
+typedef struct
+{
 	int num_positions;
 	carmen_position_t *positions;
 	char *colors;

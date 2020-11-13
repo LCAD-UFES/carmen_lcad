@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="210.0mm"
+   id="svg_2020_11_10_15_56_58_577448"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="@7757820_-363720.svg"
+   viewBox="0 0 210.0 210.0"
+   width="210.0mm"
+   version="1.1">
+  <metadata
+     id="metadata_2020_11_10_15_56_58_577575">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs_2020_11_10_15_56_58_577623" />
+  <sodipodi:namedview
+     bordercolor="#666666"
+     borderopacity="1"
+     gridtolerance="10"
+     guidetolerance="10"
+     id="namedview_2020_11_10_15_56_58_577640"
+     inkscape:current-layer="svg_2020_11_10_15_56_58_577448"
+     inkscape:cx="219.54513"
+     inkscape:cy="487.45176"
+     inkscape:document-units="mm"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-height="1056"
+     inkscape:window-maximized="1"
+     inkscape:window-width="1863"
+     inkscape:window-x="57"
+     inkscape:window-y="24"
+     inkscape:zoom="4.48"
+     objecttolerance="10"
+     pagecolor="#ffffff"
+     showgrid="false"
+     inkscape:object-nodes="true" />
+  <image
+     sodipodi:absref="/home/vinicius/carmen_lcad/data/map_rddf_reh/m7757820_-363720.png"
+     xlink:href="m7757820_-363720.png"
+     y="0.0"
+     x="0.0"
+     width="210.0"
+     preserveAspectRatio="none"
+     inkscape:label="image_m7757820_-363720.png"
+     id="image_2020_11_10_15_56_58_577741"
+     height="210.0" />
+  <path
+     style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.28222221px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="M 83.299003,84.917861 57.740171,63.528748 53.810264,60.239974"
+     id="path4133"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccc" />
+  <path
+     style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.28222221px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 72.7864,58.369087 c 0,0 -3.307811,4.897053 -5.701749,6.50356 -0.834401,0.559944 -1.84678,0.940536 -2.850874,0.979988 -0.950023,0.03733 -1.871343,-0.379481 -2.761787,-0.712718 -0.808487,-0.302565 -1.574675,-0.716428 -2.316336,-1.15817 -1.86862,-1.112973 -5.34539,-3.741773 -5.34539,-3.741773"
+     id="path4135"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cssssc" />
+</svg>

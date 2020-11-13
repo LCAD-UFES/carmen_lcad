@@ -657,13 +657,13 @@ get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
 	if (tcp_type == 1)
 	{
 		dummy_tcp.valid = true;
-		dummy_tcp.tt = 5.0;
+		dummy_tcp.tt = 2.5;;
 		dummy_tcp.k1 = 0.0;
 		dummy_tcp.k2 = 0.01;
 		dummy_tcp.k3 = 0.02;
 		dummy_tcp.has_k1 = true;
 		dummy_tcp.shift_knots = false;
-		dummy_tcp.a = 0.0;
+		dummy_tcp.a = -0.7;
 		dummy_tcp.vf = -2.0;
 		dummy_tcp.sf = td.dist;
 		dummy_tcp.s = td.dist;
@@ -671,7 +671,7 @@ get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
 	else if (tcp_type == 2)
 	{
 		dummy_tcp.valid = true;
-		dummy_tcp.tt = 4.2252857989082688;
+		dummy_tcp.tt = 2.5;//4.2252857989082688;
 		dummy_tcp.k1 = -0.17769236781390979;
 		dummy_tcp.k2 = -1.3001704239163896;
 		dummy_tcp.k3 = -0.20967541493688466;
@@ -685,7 +685,7 @@ get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
 	else if (tcp_type == 3)
 	{
 		dummy_tcp.valid = true;
-		dummy_tcp.tt = 4.2252857989082688;
+		dummy_tcp.tt = 2.5;//4.2252857989082688;
 		dummy_tcp.k1 = 0.17769236781390979;
 		dummy_tcp.k2 = 1.3001704239163896;
 		dummy_tcp.k3 = 0.20967541493688466;
@@ -722,6 +722,12 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		if (!tcp.valid)
 		{
 			printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
+			if (0)//(GlobalState::reverse_planning)
+			{
+				printf(KMAG "@@@@@@@@@@@ Trying a dummy_TCP\n");
+				tcp = get_dummy_tcp(td);
+				return (true);
+			}
 			return (false);
 		}
 		tcp.s = td.dist;

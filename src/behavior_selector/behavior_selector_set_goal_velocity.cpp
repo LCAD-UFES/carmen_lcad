@@ -116,7 +116,7 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_YIELD) && !wait_start_moving) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) && busy_pedestrian_track_ahead(*current_robot_pose_v_and_phi, carmen_get_time()) && !wait_start_moving) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			  (annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) && !wait_start_moving) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP)) &&
@@ -223,7 +223,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 		v = 0.09;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
 		v = 2.5;
-	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP)
 		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
 		v = 0.6; //1.2 //2.0 reduzido pois as cancelas estao mais lentas para abrir

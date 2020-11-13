@@ -143,9 +143,10 @@ double slope_angle(const vector<double>& x, const vector<double>& y)
     return atan2(numerator,denominator);
 }
 
-void update_world_position(pedestrian* p, double new_x, double new_y, double new_timestamp)
+void 
+update_world_position(pedestrian* p, double new_x, double new_y, double new_timestamp)
 {
-	p->circular_idx = (p->circular_idx+1)%P_BUFF_SIZE;
+	p->circular_idx = (p->circular_idx + 1) % P_BUFF_SIZE;
 	p->timestamp[p->circular_idx] = new_timestamp;
 	p->x_world[p->circular_idx] = new_x;
 	p->y_world[p->circular_idx] = new_y;
@@ -160,7 +161,7 @@ void update_world_position(pedestrian* p, double new_x, double new_y, double new
 	vector<double> ori;
 
 	int i = 0;
-	for(i = 0; i<P_BUFF_SIZE-1; i++)
+	for (i = 0; i < P_BUFF_SIZE-1; i++)
 	{
 		int idx = (p->circular_idx+P_BUFF_SIZE-i) % P_BUFF_SIZE;
 		int prev_idx = (p->circular_idx+P_BUFF_SIZE-i-1) % P_BUFF_SIZE;
@@ -661,7 +662,7 @@ compute_num_measured_objects(vector<pedestrian> objects_poses)
 
 	for (int i = 0; i < objects_poses.size(); i++)
 	{
-		if ((get_pedestrian_x(objects_poses[i]) > 0.0 || get_pedestrian_y(objects_poses[i]) > 0.0)&&objects_poses[i].active)
+		if ((get_pedestrian_x(objects_poses[i]) > 0.0 || get_pedestrian_y(objects_poses[i]) > 0.0) && objects_poses[i].active)
 			num_objects++;
 	}
 	return (num_objects);
@@ -762,11 +763,12 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 // 	lidar_points.push_back(points);
 // //    show_LIDAR(image, lidar_points, 255, 0, 0);
 // 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
-//     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
+    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-	display_lidar(image, points, 0, 255, 0);
+	// display_lidar(image, points, 0, 255, 0);
 
     // resize(image, image, Size(640, 480 * IMAGE_HEIGHT_CROP));
+	resize(image, image, Size(640, 480));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
