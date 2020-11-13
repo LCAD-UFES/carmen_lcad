@@ -421,9 +421,13 @@ set_goal_velocity_according_to_obstacle_distance(carmen_ackerman_traj_point_t *g
 {
 	double distance_to_obstacle = DIST2D_P(current_robot_pose_v_and_phi, goal);
 
-	goal->v = carmen_fmin(
+	double tmp = carmen_fmin(
 				get_velocity_at_goal(current_robot_pose_v_and_phi->v, 0.0, distance_to_obstacle, distance_to_obstacle),
-				goal->v);
+				fabs(goal->v));
+	if (goal->v < 0.0)
+		goal->v = -tmp;
+	else
+		goal->v = tmp;
 
 	return (goal->v);
 }
