@@ -437,6 +437,52 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 
 
 void
+build_and_publish_moving_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
+{
+	carmen_moving_objects_message msg;
+	vector<pedestrian> tmp_predictions = predictions;
+
+	for (int i=0; i<simulated_pedestrians.size(); i++)
+	{
+		if (simulated_pedestrians[i].active)
+		{
+			tmp_predictions.push_back(simulated_pedestrians[i].p);
+			image_cartesian ic;
+			vector<image_cartesian> vic;
+			vic.push_back(ic);
+			points_lists.push_back(vic);
+		}
+	}
+	
+	int num_objects = compute_num_measured_objects(tmp_predictions);
+
+	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
+
+	msg.timestamp = carmen_get_time();
+	msg.host = carmen_get_host();
+
+	msg.num_objects = num_objects;
+	moving_object moving_objects_vector[num_objects];
+	msg.objects = moving_objects_vector;
+
+	for (int i = 0, k = 0; i < tmp_predictions.size(); i++)
+	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
+		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0) && tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
+		{
+			moving_objects_vector[k].x = get_pedestrian_x(tmp_predictions[i]);
+			moving_objects_vector[k].y = get_pedestrian_y(tmp_predictions[i]);
+			moving_objects_vector[k].theta = tmp_predictions[i].orientation;
+			moving_objects_vector[k].v     = tmp_predictions[i].velocity;
+			moving_objects_vector[k].type = PEDESTRIAN;
+
+			k++;
+		}
+	}
+	carmen_moving_objects_publish_message(&msg);
+}
+
+
+void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	globalpos.theta = globalpos_message->globalpos.theta;
@@ -445,8 +491,11 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	vector<vector<image_cartesian>> filtered_points;
 	update_simulated_pedestrians(globalpos_message->timestamp);
+	
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 	publish_moving_objects_message(globalpos_message->timestamp, &msg);
+
+	// build_and_publish_moving_objects_message(pedestrian_tracks, filtered_points);
 }
 
 
@@ -462,10 +511,15 @@ shutdown_module(int signo)
 {
     if (signo == SIGINT)
     {
+		carmen_moving_objects_point_clouds_message msg;
+		msg.num_point_clouds = 0;
+		msg.point_clouds = NULL;
+		publish_moving_objects_message(carmen_get_time(), &msg);  // Publish empty message to clear moving objets in the modules that use it. Moving objects are persistent!
+
         carmen_ipc_disconnect();
         cvDestroyAllWindows();
 
-        printf("Neural Object Detector: Disconnected.\n");
+        printf("Neural Object Detector Simulator: Disconnected.\n");
         exit(0);
     }
 }
@@ -507,14 +561,14 @@ initialize_simulated_pedestrians()
 //	new_p2.orientation = 1.5;
 //	simulated_pedestrians.push_back(new_p2);
 
-	new_p.start_time = 0.0;                     // Stopped near border
-	new_p.stop_time = 9915703060.0;
-	new_p.x = 7757888.0;
-	new_p.y = -363586.0;
-	new_p.active = false;
-	new_p.velocity = 0.001;
-	new_p.orientation = -0.766;
-	simulated_pedestrians.push_back(new_p);
+	// new_p.start_time = 0.0;                     // Stopped near border
+	// new_p.stop_time = 9915703060.0;
+	// new_p.x = 7757888.0;
+	// new_p.y = -363586.0;
+	// new_p.active = false;
+	// new_p.velocity = 0.001;
+	// new_p.orientation = -0.766;
+	// simulated_pedestrians.push_back(new_p);
 
 //	new_p.start_time = 0.0;                     // Sideways
 //	new_p.stop_time = 9915703060.0;
@@ -623,6 +677,16 @@ initialize_simulated_pedestrians()
 // new_p.velocity = 0.01;
 // new_p.orientation = 2.46;
 // simulated_pedestrians.push_back(new_p);
+
+new_p.start_time = 0.0;                     // Stopped near border
+new_p.stop_time = 9915703060.0;
+new_p.x = 7757590.12;
+new_p.y = -363965.01;
+new_p.orientation = -1.336;
+new_p.active = false;
+new_p.velocity = 0.5;
+simulated_pedestrians.push_back(new_p);
+
 }
 
 
