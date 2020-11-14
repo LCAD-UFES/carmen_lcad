@@ -108,6 +108,44 @@ distance_to_busy_pedestrian_track(carmen_ackerman_traj_point_t current_robot_pos
 
 
 double
+distance_to_must_yield(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		path_collision_info_t path_collision_info, double timestamp)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, wait_start_moving);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+
+	if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp) &&
+		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD))
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
+double
+distance_to_yield(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, wait_start_moving);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+
+	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD)
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
+double
 distance_to_pedestrian_track_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
@@ -145,6 +183,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 		case Free_Running:
 			break;
 
+
 		case Following_Moving_Object:
 			break;
 
@@ -159,6 +198,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 			carmen_navigator_ackerman_go();
 			break;
 
+
 		case Stopping_At_Busy_Pedestrian_Track:
 			break;
 		case Stopped_At_Busy_Pedestrian_Track_S0:
@@ -169,6 +209,19 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 		case Stopped_At_Busy_Pedestrian_Track_S2:
 			carmen_navigator_ackerman_go();
 			break;
+
+
+		case Stopping_At_Yield:
+			break;
+		case Stopped_At_Yield_S0:
+//			carmen_navigator_ackerman_stop();
+			break;
+		case Stopped_At_Yield_S1:
+			break;
+		case Stopped_At_Yield_S2:
+//			carmen_navigator_ackerman_go();
+			break;
+
 
 		case Stopping_At_Stop_Sign:
 			break;
@@ -188,7 +241,8 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type __attribute__ ((unused)), double timestamp)
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type __attribute__ ((unused)),
+		path_collision_info_t path_collision_info, double timestamp)
 {
 	switch (decision_making_state_msg->low_level_state)
 	{
@@ -206,9 +260,12 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
 			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_At_Busy_Pedestrian_Track;
+			else if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopping_At_Yield;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
 			break;
+
 
 		case Stopping_At_Red_Traffic_Light:
 			if ((current_robot_pose_v_and_phi.v < 0.15) &&
@@ -241,6 +298,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_traffic_light_stop(current_robot_pose_v_and_phi) > 2.0))
 				decision_making_state_msg->low_level_state = Free_Running;
 			break;
+
 
 		case Stopping_At_Busy_Pedestrian_Track:
 			if ((current_robot_pose_v_and_phi.v < 0.15) &&
@@ -276,6 +334,40 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S0;
 			break;
 
+
+		case Stopping_At_Yield:
+			if ((current_robot_pose_v_and_phi.v < 0.15) &&
+				((distance_to_yield(current_robot_pose_v_and_phi) < 2.0) ||
+				 (distance_to_yield(current_robot_pose_v_and_phi) == 1000.0)))
+				decision_making_state_msg->low_level_state = Stopped_At_Yield_S0;
+			break;
+		case Stopped_At_Yield_S0:
+			decision_making_state_msg->low_level_state = Stopped_At_Yield_S1;
+			break;
+		case Stopped_At_Yield_S1:
+			{
+				static int steps2 = 0;
+
+				if (steps2 > 3)
+				{
+					if (!must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+					{
+						steps2 = 0;
+						decision_making_state_msg->low_level_state = Stopped_At_Yield_S2;
+					}
+				}
+				else
+					steps2++;
+			}
+			break;
+		case Stopped_At_Yield_S2:
+			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_yield(current_robot_pose_v_and_phi) > 2.0))
+				decision_making_state_msg->low_level_state = Free_Running;
+			if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopped_At_Yield_S0;
+			break;
+
+
 		case Stopping_At_Stop_Sign:
 			if ((fabs(current_robot_pose_v_and_phi.v) < 0.01) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
@@ -298,11 +390,11 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 int
 run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal, int goal_type,
-		double timestamp)
+		path_collision_info_t path_collision_info, double timestamp)
 {
 	int error;
 
-	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, goal_type, timestamp);
+	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, goal_type, path_collision_info, timestamp);
 	if (error != 0)
 		return (error);
 
