@@ -53,6 +53,10 @@ typedef enum
 	Stopped_At_Busy_Pedestrian_Track_S0,
 	Stopped_At_Busy_Pedestrian_Track_S1,
 	Stopped_At_Busy_Pedestrian_Track_S2,
+	Stopping_At_Yield,
+	Stopped_At_Yield_S0,
+	Stopped_At_Yield_S1,
+	Stopped_At_Yield_S2,
 	Stopping_At_Stop_Sign,
 	Stopped_At_Stop_Sign_S0,
 	Stopped_At_Stop_Sign_S1

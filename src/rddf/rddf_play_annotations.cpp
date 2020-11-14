@@ -611,6 +611,18 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 			return (true);
 		}
 	}
+	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_YIELD)
+	{
+		bool orientation_ok = angle_to_annotation < 50.0 ? true : false;
+
+		double radius = annotation_read_from_file[annotation_index].annotation_point.z;
+		if ((dist < radius) && orientation_ok)
+		{
+			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+			annotations_to_publish.push_back(annotation_i);
+			return (true);
+		}
+	}
 	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
 	{
 		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
@@ -665,8 +677,8 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
 			annotations_to_publish.push_back(annotation_i);
+			return (true);
 		}
-		return (true);
 	}
 
 	check_nearst_pedestrian_track_state();

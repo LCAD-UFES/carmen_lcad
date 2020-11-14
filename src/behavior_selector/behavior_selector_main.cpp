@@ -72,8 +72,8 @@ using namespace std;
 
 vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *last_valid_goal,
-		int who_set_the_goal_v, double timestamp);
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		int who_set_the_goal_v, carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 
 
@@ -940,8 +940,8 @@ create_carmen_obstacle_distance_mapper_map_message(carmen_obstacle_distance_mapp
 
 
 void
-set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *last_valid_goal,
-		double timestamp)
+set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
 
@@ -972,8 +972,8 @@ set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_a
 //	obstacle_distance_mapper_restore_moving_objects_to_occupancy_map(&occupancy_map, current_moving_objects);
 
 	if (use_frenet_path_planner)
-		set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi,
-				last_valid_goal, 0, timestamp);
+		set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi, 0,
+				behavior_selector_state_message, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
 	obstacle_distance_mapper_free_moving_objects_message(current_moving_objects);
 
@@ -1017,7 +1017,7 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	set_path_using_symotha(current_robot_pose_v_and_phi, last_valid_goal_p, timestamp);
+	set_path_using_symotha(current_robot_pose_v_and_phi, behavior_selector_state_message, timestamp);
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
@@ -1026,12 +1026,12 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
 	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
-			path_collision_info_t {}, current_moving_objects, timestamp);
+			path_collision_info_t {}, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			first_goal, goal_type, timestamp);
+			first_goal, goal_type, path_collision_info_t {}, timestamp);
 	if (error != 0)
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
@@ -1039,7 +1039,7 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	if (goal_list_size > 0)
 	{
 		who_set_the_goal_v = set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, last_rddf_message_copy,
-				path_collision_info_t {}, timestamp);
+				path_collision_info_t {}, behavior_selector_state_message, timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 
 		last_valid_goal = *first_goal;
@@ -1106,8 +1106,8 @@ print_road_network(carmen_route_planner_road_network_message *road_network)
 
 
 path_collision_info_t
-set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *last_valid_goal,
-		double timestamp)
+set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
 
@@ -1130,7 +1130,7 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen
 	vector<path_collision_info_t> paths_collision_info;
 	if (use_frenet_path_planner)
 		paths_collision_info = set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi,
-				last_valid_goal, 0, timestamp);
+				0, behavior_selector_state_message, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
 
 	if (behavior_selector_performs_path_planning)
@@ -1178,7 +1178,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 //	double t2 = carmen_get_time();
 
-	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, last_valid_goal_p, timestamp);
+	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, behavior_selector_state_message, timestamp);
 //	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
 
 //	printf("delta_t funcao %0.3lf\n", carmen_get_time() - t2);
@@ -1190,12 +1190,12 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
 	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
-			path_collision_info, current_moving_objects, timestamp);
+			path_collision_info, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			first_goal, goal_type, timestamp);
+			first_goal, goal_type, path_collision_info, timestamp);
 	if (error != 0)
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
@@ -1203,7 +1203,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (goal_list_size > 0)
 	{
 		who_set_the_goal_v = set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, last_rddf_message_copy,
-				path_collision_info, timestamp);
+				path_collision_info, behavior_selector_state_message, timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 
 		last_valid_goal = *first_goal;

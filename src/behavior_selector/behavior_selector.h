@@ -25,13 +25,15 @@ enum
 	PARKING_MANOUVER,
 	WAIT_SWITCH_VELOCITY_SIGNAL,
 	INTERMEDIATE_VELOCITY,
-	STOP_AT_FINAL_GOAL
+	STOP_AT_FINAL_GOAL,
+	STATE_MACHINE
 };
 
 typedef struct
 {
 	int valid;
 	int path_id;
+	int moving_object_id;
 	double s_distance_without_collision_with_moving_object;	// Distance in seconds. This is related to a path.
 	int possible_collision_mo_pose_index;					// Future position in the path of a possibly colliding moving object
 	double possible_collision_mo_sv;						// Velocity allong the path of the possibly colliding moving object
@@ -85,6 +87,9 @@ extern "C" {
 
 	void behavior_selector_remove_goal();
 
+	carmen_ackerman_traj_point_t *behavior_selector_get_last_goal_list(int &last_goal_list_size);
+	int behavior_selector_get_last_goal_type();
+
 	void behavior_selector_update_annotations(carmen_rddf_annotation_message *message);
 
 	carmen_behavior_selector_algorithm_t get_current_algorithm();
@@ -108,11 +113,15 @@ extern "C" {
 
 	carmen_ackerman_traj_point_t *set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type,
 			carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info,
-			carmen_moving_objects_point_clouds_message *current_moving_objects, double timestamp);
+			carmen_moving_objects_point_clouds_message *current_moving_objects,
+			carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 	double distance_between_waypoints_and_goals();
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 	bool busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+	bool must_yield(path_collision_info_t path_collision_info, double timestamp);
+	bool must_yield_ahead(path_collision_info_t path_collision_info, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+			double timestamp);
 	bool stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi);
 
 	void publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description,
@@ -121,14 +130,15 @@ extern "C" {
 	void publish_new_best_path(int best_path, double timestamp);
 
 	int set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-			int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info, double timestamp);
+			int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info,
+			carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 	carmen_moving_objects_point_clouds_message *behavior_selector_moving_objects_tracking(carmen_frenet_path_planner_set_of_paths *set_of_paths,
 			carmen_obstacle_distance_mapper_map_message *distance_map);
 
 	int run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
 			carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal, int goal_type,
-			double timestamp);
+			path_collision_info_t path_collision_info, double timestamp);
 
 	carmen_annotation_t *get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
 			carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving);
