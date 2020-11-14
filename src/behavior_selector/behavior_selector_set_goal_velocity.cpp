@@ -700,7 +700,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	//	printf("Velocity %lf \n", goal->v);
-	printf("goal_type %d \n", goal_type);
+//	printf("goal_type %d \n", goal_type);
 	double previous_v;
 	int reversing_driving = 0;
 
