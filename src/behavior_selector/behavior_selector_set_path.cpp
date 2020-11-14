@@ -732,9 +732,10 @@ get_robot_acc_from_pose_and_goal(carmen_ackerman_traj_point_t *pose,
 	if (acc > get_robot_config()->maximum_acceleration_forward)
 		acc = get_robot_config()->maximum_acceleration_forward;
 
-	printf("last_goal_list_size %d, %s, goal_list[0].v %lf, goal_list[1].v %lf, pose.v %lf, S %lf\n", last_goal_list_size,
-			get_low_level_state_name(behavior_selector_state_message.low_level_state),
-			goal_list[0].v, goal_list[1].v, pose->v, S);
+//	printf("last_goal_list_size %d, %s, goal_list[0].v %lf, goal_list[1].v %lf, pose.v %lf, S %lf, goal_type %d\n",
+//			last_goal_list_size,
+//			get_low_level_state_name(behavior_selector_state_message.low_level_state),
+//			goal_list[0].v, goal_list[1].v, pose->v, S, behavior_selector_get_last_goal_type());
 
 	return (acc);
 }
@@ -818,7 +819,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 	for (int i = 0; i < number_of_paths; i++)
 		path_temporal_value[i] *= exp(-0.1 * (timestamp - last_update_timestamp));
 
-	print_mo(current_moving_objects, robot_acc);
+//	print_mo(current_moving_objects, robot_acc);
 //	print_path = true;
 
 	return (paths_collision_info);
