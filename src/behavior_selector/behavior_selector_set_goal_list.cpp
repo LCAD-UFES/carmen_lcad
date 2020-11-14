@@ -20,7 +20,7 @@
 //uncomment return 0 to enable overtaking
 //#define OVERTAKING
 
-static carmen_robot_ackerman_config_t robot_config;
+carmen_robot_ackerman_config_t robot_config;
 static double robot_max_velocity_reverse;
 static double distance_between_waypoints = 5;
 static carmen_ackerman_traj_point_t robot_pose;
@@ -600,6 +600,40 @@ distance_between_waypoints_and_goals()
 }
 
 
+double
+compute_final_velocity_using_torricelli(double current_velocity, double acceleration, double poses_displacement)
+{
+	double vel = (current_velocity * current_velocity) + (2 * acceleration * poses_displacement);
+
+	if (vel > 0.0)
+		return (sqrt(vel));
+	
+	return (0.0);
+}
+
+
+int
+compute_stop_pose_rddf_index(carmen_ackerman_traj_point_t robot_state, carmen_rddf_road_profile_message *rddf_vector, int current_rddf_index, int rddf_size, 
+	double deceleration, double robot_velocity_zero_bias)
+{
+	rddf_size = rddf_size - 1;        // To deal with i + 1
+	double final_v = robot_state.v;
+
+	for (int i = 0; i < rddf_size; i++)
+	{
+		final_v = compute_final_velocity_using_torricelli(final_v, deceleration, DIST2D(rddf_vector->poses[i], rddf_vector->poses[i + 1]));
+
+		// printf("FV %lf %lf %lf\n", robot_state.v, final_v, DIST2D(rddf_vector->poses[i], rddf_vector->poses[i + 1]));
+
+		if (final_v < robot_velocity_zero_bias)
+		{
+			return (i+1);
+		}
+	}
+	return (-1);
+}
+
+
 void
 behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
 		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner, double max_velocity_reverse)
@@ -648,6 +682,10 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 
 	int first_pose_change_direction_index = -1;
 
+	static int SWITCH_GOAL_SIGN = 0;
+	static int goal_in_pedestrian_track_rddf_index = -1;
+
+
 
 #ifdef PRINT_UDATMO_LOG
 
@@ -668,6 +706,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
+
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
 		int rddf_pose_hit_obstacle, moving_object_in_front_index;
 
@@ -677,15 +716,25 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 				distance_to_last_obstacle_free_waypoint, rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index,
 				current_moving_objects, timestamp, first_pose_change_direction_index);
 
+		if ((SWITCH_GOAL_SIGN != 0) && carmen_sign(rddf->poses[rddf_pose_index].v) != SWITCH_GOAL_SIGN)
+			continue;
+
 		static double moving_obstacle_trasition = 0.0;
 		if (rddf_pose_hit_obstacle)
 		{
 			goal_type[goal_index] = OBSTACLE_GOAL;
 			double distance_to_free_waypoint = DIST2D(rddf->poses[0], rddf->poses[last_obstacle_free_waypoint_index]);
-			double reduction_factor = (robot_pose.v > 1.0)? 1.0 / robot_pose.v: 1.0;
+			double reduction_factor = (fabs(robot_pose.v) > 1.0)? 1.0 / fabs(robot_pose.v): 1.0;
 			if (distance_to_free_waypoint >= (distance_car_pose_car_front / 2.0))
+			{
+				double displacement = ((distance_car_pose_car_front / 2.0) * reduction_factor);
+
+				if(rddf->poses[rddf_pose_index].v >= 0.0)
+					displacement = -displacement;
+
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf,
-						-(distance_car_pose_car_front / 2.0) * reduction_factor);
+						displacement);
+			}
 			else
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
 			moving_obstacle_trasition = 0.0;
@@ -810,19 +859,33 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 				   !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
 		{
 			goal_type[goal_index] = ANNOTATION_GOAL2;
-			double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
-			if (distance_to_waypoint >= 0.0)
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, -2.0);
-			else
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
+
+			double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]); // Distancia da extremidade dianteira do robo para a anotacao
+
+			if (distance_to_waypoint > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)) // Se passou deste ponto, o robo ja está muito encima da faixa e nao adianta mais parar
+			{
+				// if (goal_in_pedestrian_track_rddf_index == -1)
+					goal_in_pedestrian_track_rddf_index = compute_stop_pose_rddf_index(robot_pose, rddf, 0, rddf->number_of_poses, -1.0, 0.2);  ///////////// TODO ler a desaceleracao e o zero bias do carmen ini
+
+				// printf ("RDDF_I %d %d %lf %lf\n", rddf_pose_index, goal_in_pedestrian_track_rddf_index, (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels), distance_to_waypoint);
+				
+				// if (goal_in_pedestrian_track_rddf_index > -1)
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, goal_in_pedestrian_track_rddf_index, rddf);
+				//add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, -2.0);
+			}
+			// else
+			// 	add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
 			moving_obstacle_trasition = 0.0;
 		}
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) && !wait_start_moving)) &&  // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
 				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo
 				 rddf_pose_hit_obstacle) // e se ela colidiu com obstaculo.
 		{	// Ou seja, se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao anterior mais proxima da anotacao que estiver livre.
+			// goal_in_pedestrian_track_rddf_index = -1;
+
 			goal_type[goal_index] = ANNOTATION_GOAL3;
-			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, -2.0);
+			double displacement = ((rddf->poses[rddf_pose_index].v >= 0.0) ? -2.0 : 2.0);
+			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, displacement);
 			moving_obstacle_trasition = 0.0;
 		}
 #ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
@@ -845,6 +908,10 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 					first_pose_change_direction_index = -1;
+				}
+				else if (fabs(robot_pose.v) < 0.2)
+				{
+					SWITCH_GOAL_SIGN = carmen_sign(rddf->poses[rddf_pose_index+1].v);
 				}
 			}
 		}

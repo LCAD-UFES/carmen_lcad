@@ -14,6 +14,8 @@ extern carmen_rddf_annotation_message last_rddf_annotation_message;
 extern carmen_rddf_road_profile_message *last_rddf_message;
 extern bool last_rddf_annotation_message_valid;
 
+extern carmen_robot_ackerman_config_t robot_config;
+
 extern bool autonomous;
 
 extern double last_speed_limit;
@@ -259,8 +261,12 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 			 must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
 		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
-			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
+			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
+			 (DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
+	{
+		// printf ("D %lf\n", DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point));
 		v = 0.08;
+	}
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
 		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
@@ -484,9 +490,13 @@ set_goal_velocity_according_to_obstacle_distance(carmen_ackerman_traj_point_t *g
 {
 	double distance_to_obstacle = DIST2D_P(current_robot_pose_v_and_phi, goal);
 
-	goal->v = carmen_fmin(
+	double tmp = carmen_fmin(
 				get_velocity_at_goal(current_robot_pose_v_and_phi->v, 0.0, distance_to_obstacle, distance_to_obstacle),
-				goal->v);
+				fabs(goal->v));
+	if (goal->v < 0.0)
+		goal->v = -tmp;
+	else
+		goal->v = tmp;
 
 	return (goal->v);
 }
