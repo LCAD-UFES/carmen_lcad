@@ -50,6 +50,7 @@ typedef struct {
   double tv, rv;
   IPC_CONTEXT_PTR context;
   double time_of_last_update;
+  int lane_id;
 } carmen_object_ackerman_t;
 
 /* creates a new objects at the given position */

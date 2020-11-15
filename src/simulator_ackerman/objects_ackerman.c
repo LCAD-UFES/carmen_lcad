@@ -99,6 +99,8 @@ void carmen_simulator_ackerman_create_object(double x, double y, double theta, c
 	object_list[num_objects].tv = speed;
 	object_list[num_objects].rv = 0;
 
+	object_list[num_objects].lane_id = 0;
+
 	traj_object_list[num_objects].t_vel = speed;
 	traj_object_list[num_objects].r_vel = speed;
 	traj_object_list[num_objects].x = x;
@@ -174,23 +176,43 @@ find_nearest_pose_in_lane(carmen_ackerman_traj_point_t key, carmen_ackerman_traj
 
 
 carmen_ackerman_traj_point_t *
-find_nearest_pose_in_the_nearest_lane(carmen_ackerman_traj_point_t pose, int *lane_size, int *index_in_lane)
+find_nearest_pose_in_the_nearest_lane(carmen_object_ackerman_t *object, carmen_ackerman_traj_point_t pose,
+		int *lane_size, int *index_in_lane)
 {
 	carmen_ackerman_traj_point_t *nearest_pose_in_the_nearest_lane = NULL;
 	double nearest_distance = 100000000000.0;
-	for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
+	if (object->lane_id == 0)
 	{
-		carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
-		int size = road_network_message->nearby_lanes_sizes[i];
-		int index;
-		carmen_ackerman_traj_point_t *nearest_pose_in_the_lane = find_nearest_pose_in_lane(pose, lane, size, &index);
-		double distance = DIST2D(pose, *nearest_pose_in_the_lane);
-		if (distance < nearest_distance)
+		int lane_index = 0;
+		for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
 		{
-			nearest_distance = distance;
-			nearest_pose_in_the_nearest_lane = nearest_pose_in_the_lane;
-			*lane_size = size;
-			*index_in_lane = index;
+			carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
+			int size = road_network_message->nearby_lanes_sizes[i];
+			int index;
+			carmen_ackerman_traj_point_t *nearest_pose_in_the_lane = find_nearest_pose_in_lane(pose, lane, size, &index);
+			double distance = DIST2D(pose, *nearest_pose_in_the_lane);
+			if (distance < nearest_distance)
+			{
+				lane_index = i;
+				nearest_distance = distance;
+				nearest_pose_in_the_nearest_lane = nearest_pose_in_the_lane;
+				*lane_size = size;
+				*index_in_lane = index;
+			}
+		}
+
+		object->lane_id = road_network_message->nearby_lanes_ids[lane_index];
+	}
+	else
+	{
+		for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
+		{
+			if (object->lane_id == road_network_message->nearby_lanes_ids[i])
+			{
+				carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
+				*lane_size = road_network_message->nearby_lanes_sizes[i];
+				nearest_pose_in_the_nearest_lane = find_nearest_pose_in_lane(pose, lane, *lane_size, index_in_lane);
+			}
 		}
 	}
 
@@ -212,7 +234,7 @@ static void update_object_in_lane(int i, carmen_simulator_ackerman_config_t *sim
 	pose_ahead.y = new_object.y1;
 	int lane_size;
 	int index_in_lane;
-	carmen_ackerman_traj_point_t *pose_in_lane = find_nearest_pose_in_the_nearest_lane(pose_ahead, &lane_size, &index_in_lane);
+	carmen_ackerman_traj_point_t *pose_in_lane = find_nearest_pose_in_the_nearest_lane(&new_object, pose_ahead, &lane_size, &index_in_lane);
 	int status;
 	carmen_ackerman_traj_point_t next_pose;
 	if (index_in_lane == 0)

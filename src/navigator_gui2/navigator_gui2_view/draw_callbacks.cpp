@@ -1266,12 +1266,6 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	global_gui->draw_plan_tree(the_map_view, pixel_size);
 
-	if (global_gui->nav_panel_config->show_true_pos)
-		global_gui->draw_simulated_robot(the_map_view);
-
-	if (global_gui->nav_panel_config->show_simulator_objects)
-		global_gui->draw_simulated_objects(the_map_view);
-
 	//do some animation when the user is placing something (like robot or goal)
 	global_gui->draw_placing_animation(the_map_view);
 
@@ -1440,5 +1434,11 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	global_gui->draw_path_vector(the_map_view);
 
 	global_gui->draw_gl_components_car_panel();
+
+	if (global_gui->nav_panel_config->show_true_pos)
+		global_gui->draw_simulated_robot(the_map_view);
+
+	if (global_gui->nav_panel_config->show_simulator_objects)
+		global_gui->draw_simulated_objects(the_map_view);
 }
 }

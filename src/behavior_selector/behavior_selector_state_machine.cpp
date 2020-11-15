@@ -51,6 +51,26 @@ distance_to_stop_sign(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 }
 
 
+bool
+wait_for_given_seconds(double seconds)
+{
+	static double start_time = 0.0;
+
+	if (start_time == 0.0)
+		start_time = carmen_get_time();
+
+	if (start_time - carmen_get_time() < seconds)
+	{
+		return (true);
+	}
+	else
+	{
+		start_time = 0.0;
+		return (false);
+	}
+}
+
+
 double
 distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -226,9 +246,11 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 		case Stopping_At_Stop_Sign:
 			break;
 		case Stopped_At_Stop_Sign_S0:
-			carmen_navigator_ackerman_stop();
+//			carmen_navigator_ackerman_stop();
 			break;
 		case Stopped_At_Stop_Sign_S1:
+			break;
+		case Stopped_At_Stop_Sign_S2:
 			break;
 		default:
 			printf("Error: Unknown state in perform_state_action()\n");
@@ -340,6 +362,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				((distance_to_yield(current_robot_pose_v_and_phi) < 2.0) ||
 				 (distance_to_yield(current_robot_pose_v_and_phi) == 1000.0)))
 				decision_making_state_msg->low_level_state = Stopped_At_Yield_S0;
+			else if (!must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Stopped_At_Yield_S0:
 			decision_making_state_msg->low_level_state = Stopped_At_Yield_S1;
@@ -350,7 +374,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 				if (steps2 > 3)
 				{
-					if (!must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+					if (!must_yield(path_collision_info, timestamp))
 					{
 						steps2 = 0;
 						decision_making_state_msg->low_level_state = Stopped_At_Yield_S2;
@@ -363,7 +387,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped_At_Yield_S2:
 			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_yield(current_robot_pose_v_and_phi) > 2.0))
 				decision_making_state_msg->low_level_state = Free_Running;
-			if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+			if (must_yield(path_collision_info, timestamp))
 				decision_making_state_msg->low_level_state = Stopped_At_Yield_S0;
 			break;
 
@@ -376,13 +400,36 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
 			break;
 		case Stopped_At_Stop_Sign_S1:
-			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))
-				decision_making_state_msg->low_level_state = Free_Running;
-			break;
-		default:
+		{
+			static bool wait_stopped = true;
+
+			if (wait_stopped)
+			{
+				if (wait_for_given_seconds(2.0))
+					wait_stopped = false;
+			}
+			else
+			{
+				if (!must_yield(path_collision_info, timestamp))
+				{
+					wait_stopped = true;
+					decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S2;
+				}
+			}
+		}
+		break;
+	case Stopped_At_Stop_Sign_S2:
+		if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_stop_sign(current_robot_pose_v_and_phi) > 1.0))
+			decision_making_state_msg->low_level_state = Free_Running;
+		if (must_yield(path_collision_info, timestamp))
+			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
+		break;
+
+	default:
 			printf("Error: Unknown state in perform_state_transition()\n");
 			return (2);
 	}
+
 	return (0);
 }
 

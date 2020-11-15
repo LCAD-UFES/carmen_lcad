@@ -59,7 +59,8 @@ typedef enum
 	Stopped_At_Yield_S2,
 	Stopping_At_Stop_Sign,
 	Stopped_At_Stop_Sign_S0,
-	Stopped_At_Stop_Sign_S1
+	Stopped_At_Stop_Sign_S1,
+	Stopped_At_Stop_Sign_S2
 } carmen_behavior_selector_low_level_state_t;
 
 typedef enum

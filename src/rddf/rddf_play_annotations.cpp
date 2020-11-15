@@ -611,9 +611,10 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 			return (true);
 		}
 	}
-	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_YIELD)
+	else if ((annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
+			 (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_YIELD))
 	{
-		bool orientation_ok = angle_to_annotation < 50.0 ? true : false;
+		bool orientation_ok = angle_to_annotation < 30.0 ? true : false;
 
 		double radius = annotation_read_from_file[annotation_index].annotation_point.z;
 		if ((dist < radius) && orientation_ok)
@@ -636,18 +637,6 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 			// else
 				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
 			annotations_to_publish.push_back(annotation_i);
-			return (true);
-		}
-	}
-	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-	{
-		bool orientation_ok = angle_to_annotation < 15.0 ? true : false;
-
-		if ((dist < 20.0) && orientation_ok)
-		{
-			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-			annotations_to_publish.push_back(annotation_i);
-//			printf("---STOP\n");
 			return (true);
 		}
 	}

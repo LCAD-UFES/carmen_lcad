@@ -202,6 +202,7 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 	if (state == Stopping_At_Stop_Sign) 			return ((char *) "Stopping_At_Stop_Sign");
 	if (state == Stopped_At_Stop_Sign_S0) 			return ((char *) "Stopped_At_Stop_Sign_S0");
 	if (state == Stopped_At_Stop_Sign_S1) 			return ((char *) "Stopped_At_Stop_Sign_S1");
+	if (state == Stopped_At_Stop_Sign_S2) 			return ((char *) "Stopped_At_Stop_Sign_S2");
 
 	return ((char *) " ");
 }

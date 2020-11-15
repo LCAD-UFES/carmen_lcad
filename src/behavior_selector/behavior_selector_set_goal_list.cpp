@@ -821,7 +821,9 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			moving_obstacle_trasition = 0.0;
 		}
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) &&  // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
-				   !wait_start_moving && stop_sign_ahead(robot_pose)) ||
+				   ((behavior_selector_state_message.low_level_state == Stopping_At_Stop_Sign) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Stop_Sign_S0) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Stop_Sign_S1))) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_YIELD) &&
 				   (must_yield(path_collision_info, timestamp) ||
 					(behavior_selector_state_message.low_level_state == Stopping_At_Yield) ||

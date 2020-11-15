@@ -110,7 +110,7 @@ must_yield(path_collision_info_t path_collision_info, double timestamp)
 	if (path_collision_info.valid && path_collision_info.mo_in_front)
 		last_must_yield_timestamp = timestamp;
 
-	if (timestamp - last_must_yield_timestamp < 2.0)
+	if (timestamp - last_must_yield_timestamp < 0.5)
 		return (true);
 	else
 		return (false);
@@ -139,7 +139,7 @@ must_yield_ahead(path_collision_info_t path_collision_info, carmen_ackerman_traj
 		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
 		last_must_yield_timestamp = timestamp;
 
-	if (timestamp - last_must_yield_timestamp < 2.0)
+	if (timestamp - last_must_yield_timestamp < 0.5)
 		return (true);
 	else
 		return (false);
@@ -246,7 +246,8 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 
 double
 get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
-		path_collision_info_t path_collision_info, double timestamp)
+		path_collision_info_t path_collision_info, carmen_behavior_selector_state_message behavior_selector_state_message,
+		double timestamp)
 {
 	//TODO Isso aqui nao deveria pegar o MAX_V?
 	double v = 60.0 / 3.6;
@@ -259,7 +260,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD) &&
 			 must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
-		v = 0.0;
+		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
 			 (DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
@@ -267,7 +268,8 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 		// printf ("D %lf\n", DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point));
 		v = 0.08;
 	}
-	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
+			 (behavior_selector_state_message.low_level_state != Stopped_At_Stop_Sign_S2))
 		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
@@ -393,7 +395,8 @@ compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_ackerma
 
 double
 set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, int goal_type,
-		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp)
+		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, path_collision_info_t path_collision_info,
+		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	static bool clearing_annotation = false;
 	static carmen_vector_3D_t previous_annotation_point = {0.0, 0.0, 0.0};
@@ -417,7 +420,8 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 //		fflush(caco13);
 //		fclose(caco13);
 
-		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi, path_collision_info, timestamp);
+		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi, path_collision_info,
+				behavior_selector_state_message, timestamp);
 
 		double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 				distance_to_annotation);
@@ -448,7 +452,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 
 				//TODO retorna positivo
 				goal->v = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi,
-						path_collision_info, timestamp);
+						path_collision_info, behavior_selector_state_message, timestamp);
 		}
 
 		if (!annotation_ahead || (DIST2D(previous_annotation_point, nearest_velocity_related_annotation->annotation_point) > 0.0))
@@ -742,7 +746,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		who_set_the_goal_v = CENTRIPETAL_ACCELERATION;
 
 	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
-	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, path_collision_info, timestamp);
+	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, path_collision_info,
+			behavior_selector_state_message, timestamp);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = ANNOTATION;
 

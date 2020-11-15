@@ -122,6 +122,7 @@ extern "C" {
 	bool must_yield(path_collision_info_t path_collision_info, double timestamp);
 	bool must_yield_ahead(path_collision_info_t path_collision_info, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 			double timestamp);
+
 	bool stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi);
 
 	void publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description,

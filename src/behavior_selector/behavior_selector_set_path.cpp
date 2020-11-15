@@ -166,6 +166,46 @@ collision_s_distance_to_static_object(path_collision_info_t &path_collision_info
 }
 
 
+double
+update_path_collision_info(path_collision_info_t &path_collision_info, double min_collision_s_distance,
+		int s, double delta_t, int mo, int index_in_path, vector<vector<moving_object_pose_info_t> > moving_objects_poses,
+		carmen_moving_objects_point_clouds_message *current_moving_objects)
+{
+	if (((double) (s) * delta_t) < min_collision_s_distance)
+	{
+		min_collision_s_distance = (double) (s) * delta_t;
+		path_collision_info.s_distance_without_collision_with_moving_object = min_collision_s_distance;
+		path_collision_info.possible_collision_mo_pose_index = index_in_path;
+		if (current_moving_objects->point_clouds[mo].in_front)
+			path_collision_info.mo_in_front = true; // Posível colisão com objeto móvel à frente.
+
+		path_collision_info.moving_object_id = current_moving_objects->point_clouds[mo].num_associated;
+		path_collision_info.possible_collision_mo_sv = moving_objects_poses[0][mo].sv;
+		path_collision_info.possible_collision_mo_dv = moving_objects_poses[0][mo].dv;
+	}
+	else if (((double) (s) * delta_t) == min_collision_s_distance) // Outro objeto móvel à mesma distância. Troca para este se ele oferecer mais risco
+	{
+		if (path_collision_info.mo_in_front == false) // Se o anterior não estava na frente, já troca por este
+		{
+			if (current_moving_objects->point_clouds[mo].in_front)
+				path_collision_info.mo_in_front = true; // Posível colisão com objeto móvel à frente.
+
+			path_collision_info.moving_object_id = current_moving_objects->point_clouds[mo].num_associated;
+			path_collision_info.possible_collision_mo_sv = moving_objects_poses[0][mo].sv;
+			path_collision_info.possible_collision_mo_dv = moving_objects_poses[0][mo].dv;
+		}
+		else if (current_moving_objects->point_clouds[mo].in_front && (path_collision_info.possible_collision_mo_sv < moving_objects_poses[0][mo].sv)) // Se este estiver mais rápido, troca por este
+		{
+			path_collision_info.moving_object_id = current_moving_objects->point_clouds[mo].num_associated;
+			path_collision_info.possible_collision_mo_sv = moving_objects_poses[0][mo].sv;
+			path_collision_info.possible_collision_mo_dv = moving_objects_poses[0][mo].dv;
+		}
+	}
+
+	return (min_collision_s_distance);
+}
+
+
 void
 collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info,
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
@@ -203,19 +243,10 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
  			if (current_moving_objects->point_clouds[mo].index_in_poses_ahead != -1)
  				continue; // ignora moving objects que estao em poses_ahead
 
-// 			if (fabs(current_moving_objects->point_clouds[i].linear_velocity) > fabs(current_robot_pose_v_and_phi.v) / 5.0)
-// 				continue;
-
  			double longitudinal_safety_margin = in_path_longitudinal_safety_margin + in_path_longitudinal_safety_margin_with_v_multiplier * fabs(current_moving_objects->point_clouds[mo].linear_velocity);
 			double lateral_safety_margin = get_robot_config()->obstacle_avoider_obstacles_safe_distance;// +
-//					0.1 * fabs(current_moving_objects->point_clouds[i].linear_velocity) *
-//					(current_moving_objects->point_clouds[i].width / current_moving_objects->point_clouds[i].length);
 			carmen_point_t moving_objects_pose = {moving_objects_poses[s][mo].pose.x, moving_objects_poses[s][mo].pose.y, moving_objects_poses[s][mo].pose.theta};
 
-//			if ((s == 50) && (DIST2D(car_pose, moving_objects_pose) < 20.0) && (virtual_laser_message.num_positions < 5000))
-//				add_virtual_laser_points = 0;
-//			else
-//				add_virtual_laser_points = 0;
 			if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_objects_pose,
 					&(current_moving_objects->point_clouds[mo]), longitudinal_safety_margin, lateral_safety_margin))//,
 //					i, moving_objects_poses[s][i].s, moving_objects_poses[s][i].d))
@@ -228,19 +259,8 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 					virtual_laser_message.num_positions++;
 				}
 
-				if (((double) s * delta_t) < min_collision_s_distance)
-				{
-					min_collision_s_distance = (double) s * delta_t;
-					path_collision_info.s_distance_without_collision_with_moving_object = min_collision_s_distance;
-					path_collision_info.possible_collision_mo_pose_index = index_in_path;
-					path_collision_info.possible_collision_mo_sv = moving_objects_poses[0][mo].sv;
-					path_collision_info.possible_collision_mo_dv = moving_objects_poses[0][mo].dv;
-					if (current_moving_objects->point_clouds[mo].in_front)
-						path_collision_info.mo_in_front = true;	// Posível colisão com objeto móvel à frente.
-					path_collision_info.moving_object_id = current_moving_objects->point_clouds[mo].num_associated;
-				}
-
-				break;
+				min_collision_s_distance = update_path_collision_info(path_collision_info, min_collision_s_distance,
+						s, delta_t, mo, index_in_path, moving_objects_poses, current_moving_objects);
 			}
 		}
 	}
@@ -706,25 +726,40 @@ print_mo(carmen_moving_objects_point_clouds_message *current_moving_objects, dou
 
 
 double
-get_robot_acc_from_pose_and_goal(carmen_ackerman_traj_point_t *pose,
+get_robot_acc_from_pose_and_goal(double &requested_acc, carmen_ackerman_traj_point_t *pose,
 		carmen_behavior_selector_state_message behavior_selector_state_message)
 {
 	int last_goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
 	if (last_goal_list_size == 0)
+	{
+		requested_acc = 0.0;
 		return (0.0);
+	}
 
 	carmen_ackerman_traj_point_t *goal;
+	goal = &(goal_list[0]);
+	double S = DIST2D_P(pose, goal);
+	if (S < 0.1)
+		requested_acc = 0.0;
+	else
+		requested_acc = ((goal->v * goal->v) - (pose->v * pose->v)) / (2.0 * S);
+	if (requested_acc > get_robot_config()->maximum_acceleration_forward)
+		requested_acc = get_robot_config()->maximum_acceleration_forward;
+
 	if ((last_goal_list_size > 1) &&
 		((behavior_selector_get_last_goal_type() == MOVING_OBSTACLE_GOAL3) ||
 		 (behavior_selector_state_message.low_level_state == Stopping_At_Yield) ||
 		 (behavior_selector_state_message.low_level_state == Stopped_At_Yield_S0) ||
-		 (behavior_selector_state_message.low_level_state == Stopped_At_Yield_S1)))
+		 (behavior_selector_state_message.low_level_state == Stopped_At_Yield_S1) ||
+		 (behavior_selector_state_message.low_level_state == Stopping_At_Stop_Sign) ||
+		 (behavior_selector_state_message.low_level_state == Stopped_At_Stop_Sign_S0) ||
+		 (behavior_selector_state_message.low_level_state == Stopped_At_Stop_Sign_S1)))
 		goal = &(goal_list[1]);
 	else
 		goal = &(goal_list[0]);
 
-	double S = DIST2D_P(pose, goal);
+	S = DIST2D_P(pose, goal);
 	if (S < 0.1)
 		return (0.0);
 
@@ -743,7 +778,7 @@ get_robot_acc_from_pose_and_goal(carmen_ackerman_traj_point_t *pose,
 FILE *gnuplot_pipe;
 
 void
-plot(double smooth_acc, double acc, double v, double v_max)
+plot(double used_acc, double requested_acc, double v)
 {
 	static bool first_time = true;
 
@@ -752,20 +787,20 @@ plot(double smooth_acc, double acc, double v, double v_max)
 		first_time = false;
 
 		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set yrange [-3:6]\n");
 
 		FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
 		fclose(gnuplot_data_file);
 	}
 
 	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "a");
-	fprintf(gnuplot_data_file, "%lf %lf %lf %lf\n", smooth_acc, acc, v, v_max);
+	fprintf(gnuplot_data_file, "%lf %lf %lf\n", used_acc, requested_acc, v);
 	fclose(gnuplot_data_file);
 
 	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' u 1 w l lt rgb 'red'    t 'smooth_acc',"
-			"'./gnuplot_data.txt' u 2 w l lt rgb 'red'    t 'acc',"
-			"'./gnuplot_data.txt' u 3 w l lt rgb 'green'  t 'v',"
-			"'./gnuplot_data.txt' u 4 w l lt rgb 'blue'   t 'v_max'\n");
+			"'./gnuplot_data.txt' u 1 w l lt rgb 'blue'    t 'used_acc',"
+			"'./gnuplot_data.txt' u 2 w l lt rgb 'red'    t 'requested_acc',"
+			"'./gnuplot_data.txt' u 3 w l lt rgb 'green'  t 'v'\n");
 
 	fflush(gnuplot_pipe);
 }
@@ -803,12 +838,15 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 //	virtual_laser_message.num_positions = 0;
 
 	static double robot_acc = 0.0;
-	double instantaneous_acc = get_robot_acc_from_pose_and_goal(&current_robot_pose_v_and_phi, behavior_selector_state_message);
+	double requested_acc;
+	double instantaneous_acc = get_robot_acc_from_pose_and_goal(requested_acc, &current_robot_pose_v_and_phi, behavior_selector_state_message);
 //	if (instantaneous_acc > robot_acc)
 //		robot_acc = instantaneous_acc;
 //	else
 		robot_acc += 0.1 * (instantaneous_acc - robot_acc);
-//	plot(robot_acc, instantaneous_acc, current_robot_pose_v_and_phi.v, get_max_v());
+
+	plot(robot_acc, requested_acc, current_robot_pose_v_and_phi.v);
+
 	vector<path_collision_info_t> paths_collision_info = get_paths_collision_info(current_set_of_paths, current_moving_objects,
 			moving_objects_data, current_robot_pose_v_and_phi, robot_acc, delta_t, num_samples);
 
