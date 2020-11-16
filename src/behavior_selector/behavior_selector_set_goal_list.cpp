@@ -15,7 +15,7 @@
 
 //#define PRINT_UDATMO_LOG
 
-//#define USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
+#define USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 
 //uncomment return 0 to enable overtaking
 //#define OVERTAKING
@@ -115,7 +115,16 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 		carmen_rddf_road_profile_message *rddf)
 {
 	goal_list[goal_index] = rddf->poses[rddf_pose_index];
-	goal_list[goal_index].v = get_max_v();
+	
+	if (carmen_sign(rddf->poses[rddf_pose_index].v) == 1)
+	{
+		goal_list[goal_index].v = get_max_v();
+	}
+	else
+	{
+		goal_list[goal_index].v = get_max_v_reverse();
+	}
+	
 	annotations[goal_index] = rddf->annotations[rddf_pose_index];
 	current_goal = rddf->poses[rddf_pose_index];
 	current_goal_rddf_index = rddf_pose_index;
@@ -131,7 +140,15 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 	carmen_point_t new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&new_car_traj_point, displacement);
 	new_car_traj_point.x = new_car_pose.x;
 	new_car_traj_point.y = new_car_pose.y;
-	new_car_traj_point.v = get_max_v();
+	
+	if (carmen_sign(rddf->poses[rddf_pose_index].v) == 1)
+	{
+		new_car_traj_point.v = get_max_v();
+	}
+	else
+	{
+		new_car_traj_point.v = get_max_v_reverse();
+	}
 
 	goal_list[goal_index] = new_car_traj_point;
 	annotations[goal_index] = rddf->annotations[rddf_pose_index];
@@ -313,17 +330,13 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 
 	first_pose_change_direction_index = -1;
 
-	if (behavior_selector_reverse_driving &&
-		(rddf_pose_index > 0 && rddf_pose_index < (rddf->number_of_poses - 1)))
+	if (behavior_selector_reverse_driving && (rddf_pose_index < (rddf->number_of_poses - 1)))
 	{
-		if(((rddf->poses[rddf_pose_index].v > 0.0) && (rddf->poses[rddf_pose_index + 1].v < 0.0)) ||
-		   ((rddf->poses[rddf_pose_index].v < 0.0) && (rddf->poses[rddf_pose_index + 1].v > 0.0)))
+		if(carmen_sign(rddf->poses[rddf_pose_index].v) != carmen_sign(rddf->poses[rddf_pose_index + 1].v))
 		{
 			first_pose_change_direction_index = rddf_pose_index;
-			//			printf("Entrei aqui\n");
 		}
 	}
-
 #endif
 
 	return (rddf_pose_hit_obstacle);
@@ -684,6 +697,8 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 
 	static int SWITCH_GOAL_SIGN = 0;
 
+	static carmen_ackerman_traj_point_t previous_first_goal;
+
 
 #ifdef PRINT_UDATMO_LOG
 
@@ -701,6 +716,9 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			left_obst.x, left_obst.y, left_obst_velocity,
 			right_obst.x, right_obst.y, right_obst_velocity);
 #endif
+	// for (int rddf_pose_index = 0; rddf_pose_index < 10; rddf_pose_index++)
+	// 	printf("%lf ", rddf->poses[rddf_pose_index].v);
+	// printf("\n");
 
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
@@ -860,11 +878,11 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 		{
 			goal_type[goal_index] = ANNOTATION_GOAL2;
 			double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]); // Distancia da extremidade dianteira do robo para a anotacao
-			printf ("ENtrou  ");
+			// printf ("ENtrou  ");
 			if (distance_to_waypoint > (MAX_DISTANCE_FRONT_CAR_TO_CROSSWALK + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)) // Se passou deste ponto, o robo ja está muito encima da faixa e nao adianta mais parar
 			{
 				int	goal_in_pedestrian_track_rddf_index = compute_stop_pose_rddf_index(robot_pose, rddf, rddf->number_of_poses, -1.0, 0.2);  ///////////// TODO ler a desaceleracao e o zero bias do carmen ini
-				printf ("RDDF_I %d %d %lf %lf\n", rddf_pose_index, goal_in_pedestrian_track_rddf_index, (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels), distance_to_waypoint);
+				// printf ("RDDF_I %d %d %lf %lf\n", rddf_pose_index, goal_in_pedestrian_track_rddf_index, (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels), distance_to_waypoint);
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, goal_in_pedestrian_track_rddf_index, rddf);
 			}
 			moving_obstacle_trasition = 0.0;
@@ -882,29 +900,34 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 #ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 		//parking se pose anterior foi em uma direcao, aguarda o carro terminar todo o path dessa direcao antes de mudar de direcao (reh/drive)
 		else if (behavior_selector_reverse_driving &&
-				(first_pose_change_direction_index != -1)
-				&& (carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(current_goal.v)))
+				(first_pose_change_direction_index != -1)  // -1 indica que este é um goal de mudanca de direcao
+				// && (carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(current_goal.v))
+				)
 		{
 			double dist = DIST2D(rddf->poses[rddf_pose_index], robot_pose);
-			if (dist > 0.3)
+			// printf ("%lf %lf %d %d", dist, robot_pose.v, carmen_sign(rddf->poses[rddf_pose_index].v), carmen_sign(previous_first_goal.v));
+
+			if (((dist > 0.3) || (fabs(robot_pose.v) > 0.2)) && (carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(previous_first_goal.v)))
 			{
+				// printf (" Add");
 				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-				first_pose_change_direction_index = -1;
+				// first_pose_change_direction_index = -1;
 			}
-			else
-			{
-				if(robot_pose.v != 0.0)
-				{
-					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-					first_pose_change_direction_index = -1;
-				}
-				else if (fabs(robot_pose.v) < 0.2)
-				{
-					SWITCH_GOAL_SIGN = carmen_sign(rddf->poses[rddf_pose_index+1].v);
-				}
-			}
+			// printf ("\n");
+			// else
+			// {
+			// 	if(robot_pose.v != 0.0)
+			// 	{
+			// 		goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+			// 		add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+			// 		first_pose_change_direction_index = -1;
+			// 	}
+			// 	else if (fabs(robot_pose.v) < 0.2)
+			// 	{
+			// 		SWITCH_GOAL_SIGN = carmen_sign(rddf->poses[rddf_pose_index+1].v);
+			// 	}
+			// }
 		}
 #endif
 
@@ -933,8 +956,15 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 
 	goal_list_size = current_goal_list_size = goal_index;
 
+	// printf("Goal List: ");
+	// for (int i = 0; i < goal_list_size; i++)
+	// 	printf("%lf  ", goal_list[i].v);
+
+	// printf("\n");
+
 	first_goal = &(goal_list[0]);
 	first_goal_type = goal_type[0];
+	previous_first_goal = goal_list[0];
 
 	return (goal_list);
 }
