@@ -16,10 +16,10 @@ extern double obstacle_probability_threshold;
 extern double moving_object_merge_distance;
 extern double distance_car_pose_car_front;
 
-extern carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_message;
-extern carmen_behavior_selector_goal_list_message *behavior_selector_goal_list_message;
+carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_message = NULL;
+carmen_behavior_selector_goal_list_message *behavior_selector_goal_list_message = NULL;
 
-extern double maximum_acceleration_forward;
+double maximum_acceleration_forward;
 
 //
 // No codigo abaixo, a deteccao e o traqueamento de objetos moveis eh feito apenas nas lanes da road_network
@@ -1551,7 +1551,7 @@ simulate_moving_object_in_its_lane(moving_object_t *moving_object, carmen_ackerm
 
 
 double
-get_robot_acc_from_pose_and_goal(carmen_ackerman_traj_point_t pose)
+get_robot_acc(carmen_ackerman_traj_point_t pose)
 {
 	int last_goal_list_size = behavior_selector_goal_list_message->size;
 	if (last_goal_list_size == 0)
@@ -1574,7 +1574,7 @@ get_robot_acc_from_pose_and_goal(carmen_ackerman_traj_point_t pose)
 double
 simulate_robot_in_its_lane(carmen_ackerman_traj_point_t *lane_poses, int index_in_lane, int target_node_index_in_lane)
 {
-	double a = get_robot_acc_from_pose_and_goal(lane_poses[index_in_lane]);
+	double a = get_robot_acc(lane_poses[index_in_lane]);
 	double v = localize_ackerman_globalpos_message->v;
 	double S = get_s_displacement(lane_poses, index_in_lane, target_node_index_in_lane);
 

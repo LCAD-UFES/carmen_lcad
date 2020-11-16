@@ -40,9 +40,9 @@ carmen_map_server_compact_lane_map_message			*compact_lane_map = NULL;
 carmen_obstacle_distance_mapper_compact_map_message *behaviour_selector_compact_lane_contents_message = NULL;
 carmen_route_planner_road_network_message 			*road_network_message = NULL;
 
-carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_message = NULL;
-carmen_behavior_selector_goal_list_message *behavior_selector_goal_list_message = NULL;
-double maximum_acceleration_forward;
+extern carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_message;
+extern carmen_behavior_selector_goal_list_message *behavior_selector_goal_list_message;
+extern double maximum_acceleration_forward;
 
 
 using namespace std;
