@@ -9,6 +9,7 @@ extern bool wait_start_moving;
 extern bool autonomous;
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
+extern carmen_robot_ackerman_config_t robot_config;
 
 
 bool
@@ -261,6 +262,25 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 }
 
 
+bool
+robot_reached_non_return_point(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (nearest_pedestrian_track_annotation == NULL)
+		return (false);
+
+	if (DIST2D(current_robot_pose_v_and_phi, nearest_pedestrian_track_annotation->annotation_point) < 
+		(MAX_DISTANCE_FRONT_CAR_TO_CROSSWALK + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels))
+	{
+		// printf("non return\n");
+		return (true);
+	}
+	return (false);
+}
+
+
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type __attribute__ ((unused)),
@@ -280,7 +300,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Free_Running:
 			if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
-			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
+			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) && !robot_reached_non_return_point(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Busy_Pedestrian_Track;
 			else if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_At_Yield;

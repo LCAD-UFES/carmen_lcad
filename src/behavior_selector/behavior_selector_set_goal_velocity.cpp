@@ -41,9 +41,8 @@ displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
 }
 
 
-carmen_annotation_t *
-get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message,
-		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+carmen_annotation_t*
+get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;

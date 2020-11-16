@@ -845,7 +845,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 //	else
 		robot_acc += 0.1 * (instantaneous_acc - robot_acc);
 
-	plot(robot_acc, requested_acc, current_robot_pose_v_and_phi.v);
+	// plot(robot_acc, requested_acc, current_robot_pose_v_and_phi.v);
 
 	vector<path_collision_info_t> paths_collision_info = get_paths_collision_info(current_set_of_paths, current_moving_objects,
 			moving_objects_data, current_robot_pose_v_and_phi, robot_acc, delta_t, num_samples);
