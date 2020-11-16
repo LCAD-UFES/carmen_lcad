@@ -14,6 +14,10 @@
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include "SampleFilter.h"
 
+
+#define MAX_DISTANCE_FRONT_CAR_TO_CROSSWALK 1.5
+
+
 enum
 {
 	NONE,
@@ -117,9 +121,16 @@ extern "C" {
 			carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 	double distance_between_waypoints_and_goals();
+
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+	
 	bool busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+	
+	carmen_annotation_t*
+	get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi);
+	
 	bool must_yield(path_collision_info_t path_collision_info, double timestamp);
+	
 	bool must_yield_ahead(path_collision_info_t path_collision_info, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 			double timestamp);
 
