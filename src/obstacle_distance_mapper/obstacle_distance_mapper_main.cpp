@@ -40,9 +40,10 @@ carmen_map_server_compact_lane_map_message			*compact_lane_map = NULL;
 carmen_obstacle_distance_mapper_compact_map_message *behaviour_selector_compact_lane_contents_message = NULL;
 carmen_route_planner_road_network_message 			*road_network_message = NULL;
 
-carmen_point_t g_goal_position;
-carmen_point_t g_robot_position;
-carmen_point_t goal_list_message;
+carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_message = NULL;
+carmen_behavior_selector_goal_list_message *behavior_selector_goal_list_message = NULL;
+double maximum_acceleration_forward;
+
 
 using namespace std;
 
@@ -64,7 +65,7 @@ using namespace std;
 //
 // O itens (ii) e (iii) imediatamente acima são feitos em conjunto. Isto é, o BS pode, para cada path, fazer busca binária
 // de qual velocidade pode ser atingida sem colisão, respeitando as acelerações máximas e o horizonte de tempo de planejamento.
-// Ele tenta a velociade mais alta possível primeiro, V. Se houver colisão no horizonte de tempo de planejamento,
+// Ele tenta a velocidade mais alta possível primeiro, V. Se houver colisão no horizonte de tempo de planejamento,
 // ele tenta a 1/2 de V. Se na metada de V não houver colisão, ele tenta 3/4 de V, caso contrário, 1/4 de V e assim por diante até
 // um nível mínimo de discretização de V em que consiga estabelecer um goal e uma velocidade.
 //
@@ -335,6 +336,20 @@ carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_
 
 
 static void
+carmen_localize_ackerman__globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	localize_ackerman_globalpos_message = msg;
+}
+
+
+static void
+behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
+{
+	behavior_selector_goal_list_message = msg;
+}
+
+
+static void
 shutdown_module(int signo)
 {
 	if (signo == SIGINT)
@@ -366,6 +381,9 @@ register_handlers()
 	carmen_behaviour_selector_subscribe_compact_lane_contents_message(NULL, (carmen_handler_t) carmen_behaviour_selector_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_map_server_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) carmen_localize_ackerman__globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -386,7 +404,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector",			(char *) "use_symotha",						CARMEN_PARAM_ONOFF,		&behavior_selector_use_symotha,		1, NULL},
 
 		{(char *) "robot", 						(char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 1, NULL},
-		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &distance_between_front_car_and_front_wheels, 1, NULL},
+		{(char *) "robot", 						(char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &distance_between_front_car_and_front_wheels, 1, NULL},
+		{(char *) "robot", 						(char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &maximum_acceleration_forward, 1, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
