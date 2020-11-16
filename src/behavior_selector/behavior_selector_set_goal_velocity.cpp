@@ -712,6 +712,9 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	static double intermediate_velocity = 0.0;
 	double path_dist = 0.0;
 
+
+	// printf ("GV %lf  ", goal->v);
+
 	if(behavior_selector_reverse_driving && goal->v < 0.0)
 	{
 		previous_v = goal->v = get_max_v_reverse();
@@ -719,6 +722,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	}
 	else
 		previous_v = goal->v = get_max_v();
+
+	// printf (" %lf\n", goal->v);
 
 	int who_set_the_goal_v = NONE;
 
@@ -738,11 +743,15 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_OBSTACLE;
 
+	// printf ("GV %lf  ", goal->v);
 	previous_v = goal->v; //@@@Vinicius target_v nao pode ser negativo esse robot_pose eh diferente do current..pose_v? tratar ele para garantir de nao ser usado errado
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
 			last_rddf_message->poses, last_rddf_message->number_of_poses);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = CENTRIPETAL_ACCELERATION;
+
+
+	// printf (" %lf\n", goal->v);
 
 	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
 	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, path_collision_info,
@@ -762,10 +771,10 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		who_set_the_goal_v = KEEP_SPEED_LIMIT;
 
 	previous_v = goal->v; //@@@Vinicius Isso nao deve ser mais necessario, apenas limita a velocidade em parking jah esta tratado
-	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
-		 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
-		(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
-		goal->v = parking_speed_limit;
+	// if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
+	// 	 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
+	// 	(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
+	// 	goal->v = parking_speed_limit;
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
 
@@ -829,7 +838,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	}
 
 	previous_v = goal->v;
-//	printf("Velocity escolhida %lf \n", goal->v);
+	// printf("Velocity escolhida %d %lf \n", who_set_the_goal_v, goal->v);
 
 	return (who_set_the_goal_v);
 }
