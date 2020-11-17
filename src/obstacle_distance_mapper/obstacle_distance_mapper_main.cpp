@@ -301,7 +301,7 @@ carmen_mapper_map_message_handler(carmen_mapper_map_message *msg)
 {
 	build_occupancy_map(occupancy_map, msg);
 
-//	moving_objects_detection_tracking_publishing_and_occupancy_map_removal(occupancy_map, msg->timestamp);
+	moving_objects_detection_tracking_publishing_and_occupancy_map_removal(occupancy_map, msg->timestamp);
 
 	if (distance_map.complete_distance == NULL)
 		carmen_prob_models_initialize_distance_map(&distance_map, msg->config);
