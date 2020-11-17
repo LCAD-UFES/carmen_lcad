@@ -1,7 +1,16 @@
 1- Copie o arquivo com o rddf para o bin (tem que ser para o rddf_edited.txt)
+ex:
  cp ../data/rndf/rddf-log_voltadaufes-20160513.txt rddf_edited.txt
  
-2- Na interface do navigator_gui2 selecione Goals->Edit Rddf Goals
+2- Se estiver usando o route_planner para publicar o rddf 
+   Desabilite o modo grafo do route_planner no carmen-ford-escape.ini (ou o .ini que voce estiver usado)
+ex:
+        gedit $CARMEN_HOME/src/carmen-ford-escape.ini
+Procure o parametro e coloque como off
+
+        route_planner_in_graph_mode				off
+
+3- Rode seu process e Na interface do navigator_gui2 selecione Goals->Edit Rddf Goals
  - Isso vai abrir o arquivo rddf_edited.txt e exibi-lo em vermelho no navigator_gui2
  
 3- Ajuste o mapa para ver claramente a pose do RDDF que voce quer editar 
