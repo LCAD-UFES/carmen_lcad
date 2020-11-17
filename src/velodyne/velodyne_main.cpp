@@ -86,29 +86,24 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 }
 
-void
-setup_message(carmen_velodyne_variable_scan_message &msg, int number_of_shots, int shot_size)
-{
-	msg.partial_scan = (carmen_velodyne_shot *) malloc ((number_of_shots + 1) * sizeof(carmen_velodyne_shot));
-	
-    for (int i = 0 ; i <= number_of_shots; i++)
-	{
-		msg.partial_scan[i].shot_size = shot_size;
-		msg.partial_scan[i].distance  = (unsigned short*) malloc (shot_size * sizeof(unsigned short));
-		msg.partial_scan[i].intensity = (unsigned char*)  malloc (shot_size * sizeof(unsigned char));
-	}
-	msg.host = carmen_get_host();
-}
 
 void
 publish_velodyne_variable_scan()
 {
-	static bool first_time = true;
+    static bool first_time = true;
 	static carmen_velodyne_variable_scan_message msg;
 
 	if (first_time)
 	{
-		setup_message(msg, 4000, 32);
+		msg.partial_scan = (carmen_velodyne_shot *) malloc ((4000 + 1) * sizeof(carmen_velodyne_shot));
+	
+        for (int i = 0 ; i <= 4000; i++)
+        {
+            msg.partial_scan[i].shot_size = 32;
+            msg.partial_scan[i].distance  = (unsigned short*) malloc (32 * sizeof(unsigned short));
+            msg.partial_scan[i].intensity = (unsigned char*)  malloc (32 * sizeof(unsigned char));
+        }
+        msg.host = carmen_get_host();
 		first_time = false;
 	}
 	msg.number_of_shots = velodyne_partial_scan.number_of_32_laser_shots;
