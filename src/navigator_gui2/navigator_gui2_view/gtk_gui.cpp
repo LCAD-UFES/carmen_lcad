@@ -182,7 +182,9 @@ namespace View
 
 		simulator_objects = NULL;
 		people = NULL;
-		moving_objects_list = NULL;
+
+		for (int i = 0; i < 6; i++)
+			moving_objects_list[i] = NULL;
 
 		simulator_trueposition.pose.x = 0.0;
 		simulator_trueposition.pose.y = 0.0;
@@ -1124,16 +1126,16 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_moving_objects(int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking)
+	GtkGui::navigator_graphics_update_moving_objects(int id, int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking)
 	{
-		if (moving_objects_list != NULL)
-			carmen_list_destroy(&moving_objects_list);
+		if (moving_objects_list[id] != NULL)
+			carmen_list_destroy(&(moving_objects_list[id]));
 
-		moving_objects_list = carmen_list_create(sizeof(moving_objects_tracking_t), num_point_clouds);
-		moving_objects_list->length = 0;
+		moving_objects_list[id] = carmen_list_create(sizeof(moving_objects_tracking_t), num_point_clouds);
+		moving_objects_list[id]->length = 0;
 
 		for (int i = 0; i < num_point_clouds; i++)
-			carmen_list_add(moving_objects_list, moving_objects_tracking + i);
+			carmen_list_add(moving_objects_list[id], moving_objects_tracking + i);
 
 		display_needs_updating = 1;
 		do_redraw();
@@ -2667,55 +2669,58 @@ namespace View
 
 		if (nav_panel_config->show_dynamic_objects)
 		{
-			if (moving_objects_list)
+			for (int i = 0; i < 6; i++)
 			{
-				for (index = 0; index < moving_objects_list->length; index++)
+				if (moving_objects_list[i])
 				{
-					moving_objects_tracking = (moving_objects_tracking_t *) carmen_list_get(moving_objects_list, index);
+					for (index = 0; index < moving_objects_list[i]->length; index++)
+					{
+						moving_objects_tracking = (moving_objects_tracking_t *) carmen_list_get(moving_objects_list[i], index);
 
-					carmen_world_point_t wp[4];
-					carmen_world_point_t location;
+						carmen_world_point_t wp[4];
+						carmen_world_point_t location;
 
-					double width2, length2;
+						double width2, length2;
 
-					location.pose.theta = moving_objects_tracking->moving_objects_pose.orientation.yaw;
-					location.pose.x = moving_objects_tracking->moving_objects_pose.position.x;// + fused_odometry_position.pose.x ;
-					location.pose.y = moving_objects_tracking->moving_objects_pose.position.y;// + fused_odometry_position.pose.y ;
-					location.map = the_map_view->internal_map;
+						location.pose.theta = moving_objects_tracking->moving_objects_pose.orientation.yaw;
+						location.pose.x = moving_objects_tracking->moving_objects_pose.position.x;// + fused_odometry_position.pose.x ;
+						location.pose.y = moving_objects_tracking->moving_objects_pose.position.y;// + fused_odometry_position.pose.y ;
+						location.map = the_map_view->internal_map;
 
-					width2 = moving_objects_tracking->width / 2.0;
-					length2 = moving_objects_tracking->length / 2.0;
+						width2 = moving_objects_tracking->width / 2.0;
+						length2 = moving_objects_tracking->length / 2.0;
 
-					wp[0].pose.x = x_coord(-length2, width2, &location);
-					wp[0].pose.y = y_coord(-length2, width2, &location);
-					wp[1].pose.x = x_coord(-length2, -width2, &location);
-					wp[1].pose.y = y_coord(-length2, -width2, &location);
-					wp[2].pose.x = x_coord(length2, -width2, &location);
-					wp[2].pose.y = y_coord(length2, -width2, &location);
-					wp[3].pose.x = x_coord(length2, width2, &location);
-					wp[3].pose.y = y_coord(length2, width2, &location);
+						wp[0].pose.x = x_coord(-length2, width2, &location);
+						wp[0].pose.y = y_coord(-length2, width2, &location);
+						wp[1].pose.x = x_coord(-length2, -width2, &location);
+						wp[1].pose.y = y_coord(-length2, -width2, &location);
+						wp[2].pose.x = x_coord(length2, -width2, &location);
+						wp[2].pose.y = y_coord(length2, -width2, &location);
+						wp[3].pose.x = x_coord(length2, width2, &location);
+						wp[3].pose.y = y_coord(length2, width2, &location);
 
-					wp[0].map = wp[1].map = wp[2].map = wp[3].map = location.map;
+						wp[0].map = wp[1].map = wp[2].map = wp[3].map = location.map;
 
-					GdkColor *colour;
-					if (strcmp(moving_objects_tracking->model_features.model_name, "pedestrian") == 0)
-						colour = &carmen_red;
-					else
-						colour = &carmen_black;
+						GdkColor *colour;
+						if (strcmp(moving_objects_tracking->model_features.model_name, "pedestrian") == 0)
+							colour = &carmen_red;
+						else
+							colour = &carmen_black;
 
-					if (moving_objects_tracking->model_features.model_id == 'C')
-						colour = &carmen_red;
-					else if (moving_objects_tracking->model_features.model_id == 'b')
-						colour = &carmen_green;
-					else if (moving_objects_tracking->model_features.model_id == 'P')
-						colour = &carmen_blue;
+						if (moving_objects_tracking->model_features.model_id == 'C')
+							colour = &carmen_red;
+						else if (moving_objects_tracking->model_features.model_id == 'b')
+							colour = &carmen_green;
+						else if (moving_objects_tracking->model_features.model_id == 'P')
+							colour = &carmen_blue;
 
-					carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
+						carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
 
-					char obj_id[256];
-					sprintf(obj_id, "%d", moving_objects_tracking->num_associated);
-					GdkFont *text_font = gdk_font_load("-*-courier*-bold-r-normal--0-0-0-0-*-0-iso8859-1"); // Ubuntu command: xlsfonts
-					carmen_map_graphics_draw_string(the_map_view, &carmen_black, text_font, &location, obj_id);
+						char obj_id[256];
+						sprintf(obj_id, "%d", moving_objects_tracking->num_associated);
+						GdkFont *text_font = gdk_font_load("-*-courier*-bold-r-normal--0-0-0-0-*-0-iso8859-1"); // Ubuntu command: xlsfonts
+						carmen_map_graphics_draw_string(the_map_view, &carmen_black, text_font, &location, obj_id);
+					}
 				}
 			}
 		}
