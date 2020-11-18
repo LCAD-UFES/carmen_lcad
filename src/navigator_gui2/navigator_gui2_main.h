@@ -12,6 +12,7 @@ typedef struct
 	int	   track_robot;
 	int    draw_path;
 	int    show_nearby_lanes;
+	int    show_nearby_lanes_width;
 	int    show_path_plans;
 	int	   draw_waypoints;
 	int	   draw_robot_waypoints;

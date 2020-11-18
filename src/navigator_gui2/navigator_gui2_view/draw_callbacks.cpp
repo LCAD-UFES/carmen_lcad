@@ -509,6 +509,13 @@ void on_menuDisplay_ShowNearbyLanes_toggled (GtkCheckMenuItem* togglebutton __at
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowNearbyLanesWidth_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui)
+{
+	global_gui->nav_panel_config->show_nearby_lanes_width = gtk_check_menu_item_get_active(togglebutton);
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowPathPlans_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -1346,6 +1353,39 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 					global_gui->draw_path(global_gui->route_planer_lane, lane_size, carmen_light_blue, carmen_light_blue, the_map_view);
 					free(global_gui->route_planer_lane);
+				}
+			}
+		}
+	}
+
+	if (global_gui->nav_panel_config->show_nearby_lanes_width)
+	{
+		if (global_gui->route_planner_route != NULL)
+		{
+			if (global_gui->route_planner_route->number_of_nearby_lanes != 0)
+			{
+				carmen_world_point_t path_x_1, path_x_2;
+				path_x_1.map = global_gui->controls_.map_view->internal_map;
+				path_x_2.map = global_gui->controls_.map_view->internal_map;
+
+				for (int j = 0; j < global_gui->route_planner_route->number_of_nearby_lanes; j++)
+				{
+					int lane_size = global_gui->route_planner_route->nearby_lanes_sizes[j];
+					int lane_start = global_gui->route_planner_route->nearby_lanes_indexes[j];
+
+					for (int i = 0; i < lane_size; i++)
+					{
+						int traffic_restrictions = global_gui->route_planner_route->traffic_restrictions[lane_start + i];
+						double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions);
+						double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions);
+
+						carmen_ackerman_traj_point_t lane_point = global_gui->route_planner_route->nearby_lanes[lane_start + i];
+						path_x_1.pose.x = lane_point.x + lane_left_width * cos(lane_point.theta + M_PI / 2.0);
+						path_x_1.pose.y = lane_point.y + lane_left_width * sin(lane_point.theta + M_PI / 2.0);
+						path_x_2.pose.x = lane_point.x - lane_right_width * cos(lane_point.theta + M_PI / 2.0);
+						path_x_2.pose.y = lane_point.y - lane_right_width * sin(lane_point.theta + M_PI / 2.0);
+						carmen_map_graphics_draw_line(the_map_view, &carmen_orange, &path_x_1, &path_x_2);
+					}
 				}
 			}
 		}

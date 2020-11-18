@@ -199,7 +199,8 @@ obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map, carmen_map_s
 	if ((i < 0) || (i >= (lane->size - 1)))
 		carmen_die("Fatal error: (i < 0) || (i >= (lane->size - 1)) in obstacle_detected().");
 
-	double lane_width = ROUTE_PLANNER_GET_LANE_WIDTH(lane->traffic_restrictions[i]);
+	double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(lane->traffic_restrictions[i]);
+	double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(lane->traffic_restrictions[i]);
 	double distance = DIST2D(lane->lane_points[i], lane->lane_points[i + 1]);
 	if (distance > 2.5)
 	{
@@ -212,7 +213,7 @@ obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map, carmen_map_s
 	{
 		double lane_x = lane->lane_points[i].x + s * cos(lane->lane_points[i].theta);
 		double lane_y = lane->lane_points[i].y + s * sin(lane->lane_points[i].theta);
-		for (double d = -lane_width / 2.0; d < lane_width / 2.0; d += occupancy_map->config.resolution * 0.5)
+		for (double d = -lane_right_width; d < lane_left_width; d += occupancy_map->config.resolution * 0.5)
 		{
 			double x = lane_x + d * cos(lane->lane_points[i].theta + M_PI / 2.0);
 			double y = lane_y + d * sin(lane->lane_points[i].theta + M_PI / 2.0);
@@ -473,7 +474,8 @@ get_object_points(vector <carmen_position_t> &moving_object_points, lane_t *lane
 		carmen_die("Fatal error: (i < 0) || (i + signal >= lane->size) || (i + signal < 0) in get_object_points().");
 
 	bool found = false;
-	double lane_width = ROUTE_PLANNER_GET_LANE_WIDTH(lane->traffic_restrictions[i]);
+	double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(lane->traffic_restrictions[i]);
+	double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(lane->traffic_restrictions[i]);
 	double s_distance = DIST2D(lane->lane_points[i], lane->lane_points[i + (int) signal]);
 	if (s_distance > 2.5)
 	{
@@ -486,7 +488,7 @@ get_object_points(vector <carmen_position_t> &moving_object_points, lane_t *lane
 	{
 		double lane_x = lane->lane_points[i].x + signal * s * cos(lane->lane_points[i].theta);
 		double lane_y = lane->lane_points[i].y + signal * s * sin(lane->lane_points[i].theta);
-		for (double d = -lane_width / 2.0; d < lane_width / 2.0; d += occupancy_map->config.resolution * 0.5)
+		for (double d = -lane_right_width; d < lane_left_width; d += occupancy_map->config.resolution * 0.5)
 		{
 			double x = lane_x + d * cos(lane->lane_points[i].theta + M_PI / 2.0);
 			double y = lane_y + d * sin(lane->lane_points[i].theta + M_PI / 2.0);

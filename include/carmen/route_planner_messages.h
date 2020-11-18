@@ -16,8 +16,10 @@ extern "C" {
 #endif
 
 
-#define ROUTE_PLANNER_GET_LANE_WIDTH(traffic_restrictions) (((double) (traffic_restrictions & 0x3f)) * 0.1)
-#define ROUTE_PLANNER_SET_LANE_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~0x3f) | ((int) (lane_width * 10.0) & 0x3f))
+#define ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions)  (((double) (traffic_restrictions & 0x3f)) * 0.1)
+#define ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions) (((double) ((traffic_restrictions & (0x3f << 6)) >> 6)) * 0.1)
+#define ROUTE_PLANNER_SET_LANE_LEFT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~0x3f) | ((int) (lane_width * 10.0) & 0x3f))
+#define ROUTE_PLANNER_SET_LANE_RIGHT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~(0x3f << 6)) | (((int) (lane_width * 10.0) & 0x3f) << 6))
 
 typedef enum
 {
@@ -87,8 +89,8 @@ typedef struct
 	int *nearby_lanes_ids;		// Cada id eh um codigo que identifica uma lane unicamente.
 	int nearby_lanes_size;		// Igual ao numero de poses de todas as lanes somado.
 	carmen_ackerman_traj_point_t *nearby_lanes;	// Todas as lanes (number_of_nearby_lanes), uma apos a outra. A primeira lane eh sempre a rota e sempre deve ter id = 0, jah que ela eh uma composicao de lanes do grafo
-	int *traffic_restrictions; 	// LANE_WIDTH | LEFT_MARKING | RIGHT_MARKING | LEVEL | YIELD | BIFURCATION
-								//   6 bits   | 3 bits enum  |  3 bits enum  | 2 bits| 1 bit |   1 bit
+	int *traffic_restrictions; 	// LANE_LEFT_WIDTH | LANE_RIGHT_WIDTH | LEFT_MARKING | RIGHT_MARKING | LEVEL | YIELD | BIFURCATION
+								//     6 bits      |      6 bits      |  3 bits enum |  3 bits enum  | 2 bits| 1 bit |   1 bit
 
 	int *nearby_lanes_merges_indexes;	// Size == number_of_nearby_lanes. O ponto em nearby_lanes_merges onde começam os merges de cada lane.
 	int *nearby_lanes_merges_sizes;		// Size == number_of_nearby_lanes. O número de merges de cada lane.
