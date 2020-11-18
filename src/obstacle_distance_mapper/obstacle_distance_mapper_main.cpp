@@ -167,12 +167,13 @@ compute_orm_and_irm_occupancy_maps(carmen_map_t *orm_occupancy_map, carmen_map_t
 		int lane_size = road_network_message->nearby_lanes_sizes[i];
 		for (int j = 0; j < lane_size - 1; j++)
 		{
-			double lane_width = ROUTE_PLANNER_GET_LANE_WIDTH(traffic_restrictions[j]);
+			double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions[j]);
+			double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions[j]);
 			for (double s = 0.0; s < DIST2D(lane[j], lane[j + 1]); s += occupancy_map->config.resolution * 0.5)
 			{
 				double lane_x = lane[j].x + s * cos(lane[j].theta);
 				double lane_y = lane[j].y + s * sin(lane[j].theta);
-				for (double d = -lane_width / 2.0; d < lane_width / 2.0; d += occupancy_map->config.resolution * 0.5)
+				for (double d = -lane_right_width; d < lane_left_width; d += occupancy_map->config.resolution * 0.5)
 				{
 					double x = lane_x + d * cos(lane[j].theta + M_PI / 2.0);
 					double y = lane_y + d * sin(lane[j].theta + M_PI / 2.0);

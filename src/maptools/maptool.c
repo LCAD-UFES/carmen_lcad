@@ -71,8 +71,9 @@ static int handle_options(int argc,  char *argv[], int *force)
       *force = 1;
       break;
     case 'h':
-      main_usage(argv[0]);
     case '?':
+      main_usage(argv[0]);
+      break;
     default:
       carmen_warn("\nUnknown option character %c", optopt);
       if (isdigit(optopt) || optopt == '.')

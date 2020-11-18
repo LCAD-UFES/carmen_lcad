@@ -258,6 +258,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowGaussians), nav_panel_config->show_gaussians);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowLaserData), nav_panel_config->show_lasers);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowNearbyLanes), nav_panel_config->show_nearby_lanes);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowNearbyLanesWidth), nav_panel_config->show_nearby_lanes_width);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowPathPlans), nav_panel_config->show_path_plans);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPlan), nav_panel_config->show_command_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMPPMotionPlan), nav_panel_config->show_mpp_motion_plan);
@@ -500,6 +501,7 @@ namespace View
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
 		controls_.menuDisplay_ShowLateralOffset = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLateralOffset" ));
 		controls_.menuDisplay_ShowNearbyLanes = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowNearbyLanes" ));
+		controls_.menuDisplay_ShowNearbyLanesWidth = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowNearbyLanesWidth" ));
 		controls_.menuDisplay_ShowPathPlans = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowPathPlans" ));
 		controls_.menuDisplay_ShowOAMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowOAMotionPlan" ));
 		controls_.menuDisplay_ShowMPPMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowMPPMotionPlan" ));

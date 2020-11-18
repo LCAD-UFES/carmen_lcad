@@ -21,7 +21,8 @@ int steering_model = 1;
 MessageControl messageControl;
 
 
-#define LANE_WIDTH 	2.4
+#define LANE_LEFT_WIDTH 	(4.0 / 2.0) // 2.4
+#define LANE_RIGHT_WIDTH 	((4.0 / 2.0) - 0.5) // 2.4
 #define NUM_LANES	1
 
 
@@ -45,13 +46,15 @@ add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_
     for (int i = route_planner_road_network_message.number_of_poses_back - 1; i > 0; i--)
 	{
     	route_planner_road_network_message.nearby_lanes[pose_i] = route_planner_road_network_message.poses_back[i];
-    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_WIDTH(0, LANE_WIDTH);
+    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_LEFT_WIDTH(0, LANE_LEFT_WIDTH);
+    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_RIGHT_WIDTH(route_planner_road_network_message.traffic_restrictions[pose_i], LANE_RIGHT_WIDTH);
     	pose_i++;
 	}
     for (int i = 0; i < route_planner_road_network_message.number_of_poses; i++)
 	{
     	route_planner_road_network_message.nearby_lanes[pose_i] = route_planner_road_network_message.poses[i];
-    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_WIDTH(0, LANE_WIDTH);
+    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_LEFT_WIDTH(0, LANE_LEFT_WIDTH);
+    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_RIGHT_WIDTH(route_planner_road_network_message.traffic_restrictions[pose_i], LANE_RIGHT_WIDTH);
     	pose_i++;
 	}
 }
