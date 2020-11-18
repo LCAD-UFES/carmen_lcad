@@ -1100,6 +1100,36 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 }
 
 
+
+
+
+void
+moving_objects_point_clouds_message_handler_0(carmen_moving_objects_point_clouds_message *msg)
+{
+	moving_objects_tracking_t *moving_objects_tracking = (moving_objects_tracking_t *) malloc(msg->num_point_clouds * sizeof(moving_objects_tracking_t));
+
+	for (int i = 0; i < msg->num_point_clouds; i++)
+	{
+		moving_objects_tracking[i].moving_objects_pose.orientation.yaw = msg->point_clouds[i].orientation;
+		moving_objects_tracking[i].moving_objects_pose.orientation.roll = 0.0;
+		moving_objects_tracking[i].moving_objects_pose.orientation.pitch = 0.0;
+		moving_objects_tracking[i].moving_objects_pose.position.x = msg->point_clouds[i].object_pose.x;
+		moving_objects_tracking[i].moving_objects_pose.position.y = msg->point_clouds[i].object_pose.y;
+		moving_objects_tracking[i].moving_objects_pose.position.z = msg->point_clouds[i].object_pose.z;
+		moving_objects_tracking[i].length = msg->point_clouds[i].model_features.geometry.length;
+		moving_objects_tracking[i].width = msg->point_clouds[i].model_features.geometry.width;
+		moving_objects_tracking[i].height = msg->point_clouds[i].height;
+		moving_objects_tracking[i].linear_velocity = msg->point_clouds[i].linear_velocity;
+		moving_objects_tracking[i].geometric_model = msg->point_clouds[i].geometric_model;
+		moving_objects_tracking[i].model_features = msg->point_clouds[i].model_features;
+		moving_objects_tracking[i].num_associated = msg->point_clouds[i].num_associated;
+	}
+
+	gui->navigator_graphics_update_moving_objects(msg->num_point_clouds, moving_objects_tracking);
+	free(moving_objects_tracking);
+}
+
+
 static void
 plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 {
@@ -1431,6 +1461,8 @@ subscribe_ipc_messages()
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message_generic(0, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_0, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_lane_map(NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
