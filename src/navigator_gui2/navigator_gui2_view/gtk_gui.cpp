@@ -2988,7 +2988,8 @@ namespace View
 
 			if (nav_panel_config->draw_robot_waypoints)
 			{
-				draw_robot_shape(the_map_view, (path + index), FALSE, &robot_color);
+				draw_robot_shape(the_map_view, (path + index), TRUE, &robot_color);
+				draw_robot_shape(the_map_view, (path + index), FALSE, &carmen_black);
 				draw_orientation_mark(the_map_view, (path + index));
 			}
 

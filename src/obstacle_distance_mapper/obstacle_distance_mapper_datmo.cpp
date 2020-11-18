@@ -1553,6 +1553,9 @@ simulate_moving_object_in_its_lane(moving_object_t *moving_object, carmen_ackerm
 double
 get_robot_acc(carmen_ackerman_traj_point_t pose)
 {
+	if (!behavior_selector_goal_list_message)
+		return (0.0);
+
 	int last_goal_list_size = behavior_selector_goal_list_message->size;
 	if (last_goal_list_size == 0)
 		return (0.0);
@@ -1575,7 +1578,10 @@ double
 simulate_robot_in_its_lane(carmen_ackerman_traj_point_t *lane_poses, int index_in_lane, int target_node_index_in_lane)
 {
 	double a = get_robot_acc(lane_poses[index_in_lane]);
-	double v = localize_ackerman_globalpos_message->v;
+	double v = 0.0;
+	if (localize_ackerman_globalpos_message)
+		v = localize_ackerman_globalpos_message->v;
+
 	double S = get_s_displacement(lane_poses, index_in_lane, target_node_index_in_lane);
 
 	if ((a == 0.0) && (v != 0.0))
@@ -1619,7 +1625,7 @@ moving_object_arrives_first(moving_object_t *moving_object,
 	double moving_object_time_to_merge = simulate_moving_object_in_its_lane(moving_object, lane_poses, moving_object_index_in_lane,
 			target_node_index_in_moving_object_lane);
 
-	if (robot_time_to_merge > moving_object_time_to_merge)
+	if ((robot_time_to_merge + 2.0) > moving_object_time_to_merge)
 		return (true);
 	else
 		return (false);
@@ -1631,7 +1637,7 @@ moving_object_arrives_in_merge_in_front_of_robot(moving_object_t *moving_object,
 		carmen_route_planner_road_network_message *road_network,
 		int moving_object_lane_index, int robot_lane_id, int moving_object_index_in_lane, int robot_index_in_lane)
 {
-	int merge_in_front = 0;
+	int arrives_in_front = 0;
 	carmen_route_planner_junction_t *moving_object_lane_merges = &(road_network->nearby_lanes_merges[road_network->nearby_lanes_merges_indexes[moving_object_lane_index]]);
 	for (int i = 0; i < road_network->nearby_lanes_merges_sizes[moving_object_lane_index]; i++)
 	{
@@ -1644,13 +1650,13 @@ moving_object_arrives_in_merge_in_front_of_robot(moving_object_t *moving_object,
 					moving_object_index_in_lane, robot_index_in_lane, moving_object_lane_merges[i].target_node_index_in_nearby_lane,
 					moving_object_lane_merges[i].index_of_node_in_current_lane))
 			{
-				merge_in_front = 1;
-				return (merge_in_front);
+				arrives_in_front = 1;
+				return (arrives_in_front);
 			}
 		}
 	}
 
-	return (merge_in_front);
+	return (arrives_in_front);
 }
 
 
