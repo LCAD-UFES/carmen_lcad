@@ -1,11 +1,3 @@
-/*********************************************************
-	 ---   My Module Specific Messages ---
-
-See IPC documentation for more information:
-http://www.cs.cmu.edu/~ipc/
-
-*********************************************************/
-
 #include <carmen/grid_mapping.h>
 #include <carmen/map_io.h>
 #include <carmen/map_interface.h>
@@ -138,17 +130,9 @@ typedef struct {
 typedef struct {
 	int num_point_clouds;
 	t_point_cloud_struct *point_clouds;
-	double timestamp; 		/* !!! obrigatory !!! */
-	char *host; 			/* !!! obrigatory !!! */
+	double timestamp;
+	char *host;
 } carmen_moving_objects_point_clouds_message;
-
-/* The message's name, will be used for message registration in IPC Central module */
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME 	"carmen_moving_objects_point_clouds_message_name"
-
-/* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-/* fixme                                                                                                                                       model features...............................................*/
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, int, int, int, int, int, double, double, double, double, double, double, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
-//#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>,<{{double, double, double}, double, int, {double, double, double} }:1>}:1>, double, string}"
 
 
 struct _moving_objects_tracking
@@ -168,27 +152,16 @@ struct _moving_objects_tracking
 typedef struct _moving_objects_tracking moving_objects_tracking_t;
 
 
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME 	"carmen_moving_objects_point_clouds_message_name"
 
-typedef struct {
-	double x;  
-	double y;
-	double theta;
-	double v;       // Linear Velocity
-	char type;
-} moving_object;
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, int, int, int, int, int, double, double, double, double, double, double, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
 
-typedef struct {
-	int num_objects;
-	moving_object *objects;
-	double timestamp;
-	char *host;
-} carmen_moving_objects_message;
-
-
-
-#define CARMEN_MOVING_OBJECTS_MESSAGE_NAME 	"carmen_moving_objects_message"
-#define CARMEN_MOVING_OBJECTS_MESSAGE_FMT	"{int, <{double, double, double, double, char}:1>, double, string}"
-
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_0_NAME 	"carmen_moving_objects_point_clouds_message_0_name"
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_1_NAME 	"carmen_moving_objects_point_clouds_message_1_name"
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_2_NAME 	"carmen_moving_objects_point_clouds_message_2_name"
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_3_NAME 	"carmen_moving_objects_point_clouds_message_3_name"
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_4_NAME 	"carmen_moving_objects_point_clouds_message_4_name"
+//#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>,<{{double, double, double}, double, int, {double, double, double} }:1>}:1>, double, string}"
 
 
 #ifdef __cplusplus
@@ -197,5 +170,3 @@ typedef struct {
 
 #endif
 #endif
-
-// @}
