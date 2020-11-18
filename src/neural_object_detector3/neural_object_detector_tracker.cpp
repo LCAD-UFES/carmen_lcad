@@ -775,34 +775,34 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 }
 
 
-void
-build_and_publish_moving_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
-{
-	carmen_moving_objects_message msg;
-	vector<pedestrian> tmp_predictions = predictions;
-	int num_objects = compute_num_measured_objects(tmp_predictions);
+// void
+// build_and_publish_moving_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
+// {
+// 	carmen_moving_objects_message msg;
+// 	vector<pedestrian> tmp_predictions = predictions;
+// 	int num_objects = compute_num_measured_objects(tmp_predictions);
 
-	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
+// 	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
 
-	msg.num_objects = num_objects;
-	moving_object moving_objects_vector[num_objects];
-	msg.objects = moving_objects_vector;
+// 	msg.num_objects = num_objects;
+// 	moving_object moving_objects_vector[num_objects];
+// 	msg.objects = moving_objects_vector;
 
-	for (int i = 0, k = 0; i < tmp_predictions.size(); i++)
-	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0) && tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
-		{
-			moving_objects_vector[k].x = get_pedestrian_x(tmp_predictions[i]);
-			moving_objects_vector[k].y = get_pedestrian_y(tmp_predictions[i]);
-			moving_objects_vector[k].theta = tmp_predictions[i].orientation;
-			moving_objects_vector[k].v     = tmp_predictions[i].velocity;
-			moving_objects_vector[k].type = PEDESTRIAN;
+// 	for (int i = 0, k = 0; i < tmp_predictions.size(); i++)
+// 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
+// 		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0) && tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
+// 		{
+// 			moving_objects_vector[k].x = get_pedestrian_x(tmp_predictions[i]);
+// 			moving_objects_vector[k].y = get_pedestrian_y(tmp_predictions[i]);
+// 			moving_objects_vector[k].theta = tmp_predictions[i].orientation;
+// 			moving_objects_vector[k].v     = tmp_predictions[i].velocity;
+// 			moving_objects_vector[k].type = PEDESTRIAN;
 
-			k++;
-		}
-	}
-	carmen_moving_objects_publish_message(&msg);
-}
+// 			k++;
+// 		}
+// 	}
+// 	carmen_moving_objects_publish_message(&msg);
+// }
 
 
 carmen_moving_objects_point_clouds_message
@@ -1078,7 +1078,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	// carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 	// publish_moving_objects_message(image_msg->timestamp, &msg);
 
-	build_and_publish_moving_objects_message(pedestrian_tracks, filtered_points);
+	// build_and_publish_moving_objects_message(pedestrian_tracks, filtered_points);
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
