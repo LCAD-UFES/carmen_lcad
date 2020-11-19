@@ -346,7 +346,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 	switch (crosswalk_state)
 	{
 		case Free_Crosswalk:
-			printf("Free_Crosswalk \n");
+			// printf("Free_Crosswalk \n");
 			if (pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Stopping_Busy_Crosswalk;
@@ -355,7 +355,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (false);
 
 		case Stopping_Busy_Crosswalk:
-			printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
+			// printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (!pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Free_Crosswalk;
@@ -368,7 +368,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Stopped_Busy_Crosswalk:
-			printf("Stopped_Busy_Crosswalk \n");
+			// printf("Stopped_Busy_Crosswalk \n");
 			if (!pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Leaving_Crosswalk;
@@ -377,7 +377,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Leaving_Crosswalk:
-			printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
+			// printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
 			{
 				// printf("pedestrian_crossing \n");
