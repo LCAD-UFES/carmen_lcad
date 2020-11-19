@@ -1364,9 +1364,9 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		{
 			if (global_gui->route_planner_route->number_of_nearby_lanes != 0)
 			{
-				carmen_world_point_t path_x_1, path_x_2;
-				path_x_1.map = global_gui->controls_.map_view->internal_map;
-				path_x_2.map = global_gui->controls_.map_view->internal_map;
+				carmen_world_point_t lane_line_start, lane_line_end;
+				lane_line_start.map = global_gui->controls_.map_view->internal_map;
+				lane_line_end.map = global_gui->controls_.map_view->internal_map;
 
 				for (int j = 0; j < global_gui->route_planner_route->number_of_nearby_lanes; j++)
 				{
@@ -1380,11 +1380,17 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 						double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions);
 
 						carmen_ackerman_traj_point_t lane_point = global_gui->route_planner_route->nearby_lanes[lane_start + i];
-						path_x_1.pose.x = lane_point.x + lane_left_width * cos(lane_point.theta + M_PI / 2.0);
-						path_x_1.pose.y = lane_point.y + lane_left_width * sin(lane_point.theta + M_PI / 2.0);
-						path_x_2.pose.x = lane_point.x - lane_right_width * cos(lane_point.theta + M_PI / 2.0);
-						path_x_2.pose.y = lane_point.y - lane_right_width * sin(lane_point.theta + M_PI / 2.0);
-						carmen_map_graphics_draw_line(the_map_view, &carmen_orange, &path_x_1, &path_x_2);
+						lane_line_start.pose.x = lane_point.x + (lane_left_width * cos(lane_point.theta + M_PI / 2.0));
+						lane_line_start.pose.y = lane_point.y + (lane_left_width * sin(lane_point.theta + M_PI / 2.0));
+						lane_line_end.pose.x = lane_point.x;
+						lane_line_end.pose.y = lane_point.y;
+						carmen_map_graphics_draw_line(the_map_view, &carmen_green, &lane_line_start, &lane_line_end);
+
+						lane_line_start.pose.x = lane_point.x;
+						lane_line_start.pose.y = lane_point.y;
+						lane_line_end.pose.x = lane_point.x - lane_right_width * cos(lane_point.theta + M_PI / 2.0);
+						lane_line_end.pose.y = lane_point.y - lane_right_width * sin(lane_point.theta + M_PI / 2.0);
+						carmen_map_graphics_draw_line(the_map_view, &carmen_red, &lane_line_start, &lane_line_end);
 					}
 				}
 			}

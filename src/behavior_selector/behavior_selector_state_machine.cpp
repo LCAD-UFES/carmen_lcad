@@ -272,7 +272,7 @@ robot_reached_non_return_point(carmen_ackerman_traj_point_t current_robot_pose_v
 		return (false);
 
 	if (DIST2D(current_robot_pose_v_and_phi, nearest_pedestrian_track_annotation->annotation_point) < 
-		(MAX_DISTANCE_FRONT_CAR_TO_CROSSWALK + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels))
+		(MIN_DISTANCE_TO_CONSIDER_CROSSWALK + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels))
 	{
 		// printf("non return\n");
 		return (true);

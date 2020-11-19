@@ -2680,7 +2680,7 @@ namespace View
 						moving_objects_tracking = (moving_objects_tracking_t *) carmen_list_get(moving_objects_list[i], index);
 
 						carmen_world_point_t wp[4];
-						carmen_world_point_t location;
+						carmen_world_point_t location, line_end;
 
 						double width2, length2;
 
@@ -2717,6 +2717,10 @@ namespace View
 							colour = &carmen_blue;
 
 						carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
+
+						line_end = location;
+						DISPLACE2D(line_end.pose, (width2 + 2), location.pose.theta);
+						carmen_map_graphics_draw_line(the_map_view, colour, &location, &line_end);
 
 						char obj_id[256];
 						sprintf(obj_id, "%d", moving_objects_tracking->num_associated);

@@ -2,11 +2,11 @@
 
 using namespace std;
 
-carmen_pose_3D_t velodyne_pose;
-carmen_velodyne_partial_scan_message *velodyne_msg;
-carmen_point_t globalpos;
+carmen_localize_ackerman_globalpos_message *last_globalpos = NULL;
 
-bool go_msg_absent;
+bool go_msg_absent = false;
+
+double terminal_pedestrian_v = -1.0;
 
 #define P_BUFF_SIZE 10
 
@@ -229,7 +229,9 @@ update_simulated_pedestrians (double timestamp)
 	if (go_msg_absent)
 		return;
 
-	for (int i=0; i<simulated_pedestrians.size(); i++)
+	// printf("N %d\n", simulated_pedestrians.size());
+
+	for (int i = 0; i < simulated_pedestrians.size(); i++)
 	{
 		if (!simulated_pedestrians[i].active && timestamp > simulated_pedestrians[i].start_time && timestamp < simulated_pedestrians[i].stop_time)
 		{
@@ -395,9 +397,9 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 			msg.point_clouds[l].linear_velocity = tmp_predictions[i].velocity;
 			msg.point_clouds[l].orientation = tmp_predictions[i].orientation;
 
-			msg.point_clouds[l].length = 0.2;
-			msg.point_clouds[l].height = 0.2;
-			msg.point_clouds[l].width  = 0.2;
+			msg.point_clouds[l].width  = 1.0;
+			msg.point_clouds[l].length = 1.0;
+			msg.point_clouds[l].height = 2.0;
 
 			msg.point_clouds[l].object_pose.x = get_pedestrian_x(tmp_predictions[i]);
 			msg.point_clouds[l].object_pose.y = get_pedestrian_y(tmp_predictions[i]);
@@ -405,9 +407,9 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 
 
 			msg.point_clouds[l].geometric_model = 0;
-			msg.point_clouds[l].model_features.geometry.height = 0.2;
-			msg.point_clouds[l].model_features.geometry.length = 0.2;
-			msg.point_clouds[l].model_features.geometry.width = 0.2;
+			msg.point_clouds[l].model_features.geometry.width  = 1.0;
+			msg.point_clouds[l].model_features.geometry.length = 1.0;
+			msg.point_clouds[l].model_features.geometry.height = 2.0;
 			msg.point_clouds[l].model_features.red = 1.0;
 			msg.point_clouds[l].model_features.green = 1.0;
 			msg.point_clouds[l].model_features.blue = 0.8;
@@ -485,15 +487,71 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
-	globalpos.theta = globalpos_message->globalpos.theta;
-	globalpos.x = globalpos_message->globalpos.x;
-	globalpos.y = globalpos_message->globalpos.y;
+	last_globalpos = globalpos_message;
 
 	vector<vector<image_cartesian>> filtered_points;
 	update_simulated_pedestrians(globalpos_message->timestamp);
 	
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 	publish_moving_objects_message(&msg);
+}
+
+
+double
+calc_theta(double x1, double y1, double x, double y)
+{
+	double theta = carmen_normalize_theta(atan2((y1 - y), (x1 - x)));
+	return theta;
+}
+
+
+static void
+rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
+{
+	static bool dealing_with_annotation = false;
+
+	int number_of_annotations = message->num_annotations;
+	int nearst_annotation_index = -1;
+	double angular_diff = 0.0, dist = 0.0, nearst_annotation_dist = DBL_MAX;
+
+	for (int i = 0; i < number_of_annotations; i++)
+	{
+		if (message->annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
+		{
+			dist = DIST2D(last_globalpos->globalpos, message->annotations[i].annotation_point);
+
+			angular_diff = fabs(ANGLE2D(message->annotations[i].annotation_point, last_globalpos->globalpos));
+
+			if ((dist < nearst_annotation_dist) && (angular_diff < M_PI_4))
+			{
+				nearst_annotation_dist = dist;
+				nearst_annotation_index = i;
+			}
+		}
+	}
+
+
+	if (!dealing_with_annotation && nearst_annotation_index != -1)
+	{
+		dealing_with_annotation = true;
+
+		fake_pedestrian new_p;
+
+		new_p.start_time = 0.0;
+		new_p.stop_time = 9915703060.0;
+		new_p.x = message->annotations[nearst_annotation_index].annotation_point.x;
+		new_p.y = message->annotations[nearst_annotation_index].annotation_point.y;
+		DISPLACE2D(new_p, 3.5, message->annotations[nearst_annotation_index].annotation_orientation);
+		DISPLACE2D(new_p, message->annotations[nearst_annotation_index].annotation_point.z, message->annotations[nearst_annotation_index].annotation_orientation - M_PI_2);  // annotation_point.z stores the radius of the crosswalk circle
+		
+		new_p.active = false;
+		if (terminal_pedestrian_v != -1.0)
+			new_p.velocity = terminal_pedestrian_v;
+		else
+			new_p.velocity = 0.3;
+		new_p.orientation = message->annotations[nearst_annotation_index].annotation_orientation + M_PI_2;
+		simulated_pedestrians.push_back(new_p);
+	}
 }
 
 
@@ -531,6 +589,8 @@ subscribe_messages()
 
     carmen_subscribe_message((char *) CARMEN_NAVIGATOR_ACKERMAN_GO_NAME, (char *) CARMEN_DEFAULT_MESSAGE_FMT, NULL, sizeof(carmen_navigator_ackerman_go_message),
     		(carmen_handler_t)navigator_ackerman_go_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -680,11 +740,23 @@ new_p.start_time = 0.0;                     // Stopped near border
 new_p.stop_time = 9915703060.0;
 new_p.x = 7757590.12;
 new_p.y = -363965.01;
-new_p.orientation =  -2.475; //-1.336;
+new_p.orientation = -1.336;
 new_p.active = false;
 new_p.velocity = 0.5;
 simulated_pedestrians.push_back(new_p);
 
+}
+
+void
+read_parameters(int argc, char **argv)
+{
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "v", CARMEN_PARAM_DOUBLE, &terminal_pedestrian_v, 0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 }
 
 
@@ -692,6 +764,8 @@ int
 main(int argc, char **argv)
 {
     carmen_ipc_initialize(argc, argv);
+	
+	read_parameters(argc, argv);
 
     subscribe_messages();
 
@@ -699,7 +773,7 @@ main(int argc, char **argv)
 
     signal(SIGINT, shutdown_module);
 
-    initialize_simulated_pedestrians();
+    // initialize_simulated_pedestrians();
 
 	setlocale(LC_ALL, "C");
 
