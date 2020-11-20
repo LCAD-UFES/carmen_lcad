@@ -61,6 +61,8 @@ extern "C"
 
 	#define RDDF_ANNOTATION_CODE_PREDEFINED_ROUTE_CYCLIC	22
 
+	#define MIN_DISTANCE_TO_CONSIDER_CROSSWALK 1.5
+
 
 	typedef struct
     {

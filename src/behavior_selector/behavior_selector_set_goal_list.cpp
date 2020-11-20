@@ -879,7 +879,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			goal_type[goal_index] = ANNOTATION_GOAL2;
 			double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]); // Distancia da extremidade dianteira do robo para a anotacao
 			// printf ("ENtrou  ");
-			if (distance_to_waypoint > (MAX_DISTANCE_FRONT_CAR_TO_CROSSWALK + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)) // Se passou deste ponto, o robo ja está muito encima da faixa e nao adianta mais parar
+			if (distance_to_waypoint > (MIN_DISTANCE_TO_CONSIDER_CROSSWALK + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)) // Se passou deste ponto, o robo ja está muito encima da faixa e nao adianta mais parar
 			{
 				int	goal_in_pedestrian_track_rddf_index = compute_stop_pose_rddf_index(robot_pose, rddf, rddf->number_of_poses, -1.0, 0.2);  ///////////// TODO ler a desaceleracao e o zero bias do carmen ini
 				// printf ("RDDF_I %d %d %lf %lf\n", rddf_pose_index, goal_in_pedestrian_track_rddf_index, (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels), distance_to_waypoint);

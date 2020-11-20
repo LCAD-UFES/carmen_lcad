@@ -775,36 +775,6 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 }
 
 
-// void
-// build_and_publish_moving_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
-// {
-// 	carmen_moving_objects_message msg;
-// 	vector<pedestrian> tmp_predictions = predictions;
-// 	int num_objects = compute_num_measured_objects(tmp_predictions);
-
-// 	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
-
-// 	msg.num_objects = num_objects;
-// 	moving_object moving_objects_vector[num_objects];
-// 	msg.objects = moving_objects_vector;
-
-// 	for (int i = 0, k = 0; i < tmp_predictions.size(); i++)
-// 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-// 		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0) && tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
-// 		{
-// 			moving_objects_vector[k].x = get_pedestrian_x(tmp_predictions[i]);
-// 			moving_objects_vector[k].y = get_pedestrian_y(tmp_predictions[i]);
-// 			moving_objects_vector[k].theta = tmp_predictions[i].orientation;
-// 			moving_objects_vector[k].v     = tmp_predictions[i].velocity;
-// 			moving_objects_vector[k].type = PEDESTRIAN;
-
-// 			k++;
-// 		}
-// 	}
-// 	carmen_moving_objects_publish_message(&msg);
-// }
-
-
 carmen_moving_objects_point_clouds_message
 build_detected_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
 {
@@ -831,12 +801,14 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 			msg.point_clouds[l].g = 1.0;
 			msg.point_clouds[l].b = 0.0;
 
+			// printf("V %lf\n", tmp_predictions[i].velocity);
+
 			msg.point_clouds[l].linear_velocity = tmp_predictions[i].velocity;
 			msg.point_clouds[l].orientation = tmp_predictions[i].orientation;
 
-			msg.point_clouds[l].length = 4.5;
-			msg.point_clouds[l].height = 1.8;
-			msg.point_clouds[l].width  = 1.6;
+			msg.point_clouds[l].width  = 1.0;
+			msg.point_clouds[l].length = 1.0;
+			msg.point_clouds[l].height = 2.0;
 
 			msg.point_clouds[l].object_pose.x = get_pedestrian_x(tmp_predictions[i]);
 			msg.point_clouds[l].object_pose.y = get_pedestrian_y(tmp_predictions[i]);
@@ -844,9 +816,9 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 
 
 			msg.point_clouds[l].geometric_model = 0;
-			msg.point_clouds[l].model_features.geometry.height = 1.8;
-			msg.point_clouds[l].model_features.geometry.length = 3.0;
-			msg.point_clouds[l].model_features.geometry.width = 1.0;
+			msg.point_clouds[l].model_features.geometry.width  = 1.0;
+			msg.point_clouds[l].model_features.geometry.length = 1.0;
+			msg.point_clouds[l].model_features.geometry.height = 2.0;
 			msg.point_clouds[l].model_features.red = 1.0;
 			msg.point_clouds[l].model_features.green = 1.0;
 			msg.point_clouds[l].model_features.blue = 0.8;
@@ -986,12 +958,12 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 
 
 void
-publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clouds_message *msg)
+publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg)
 {
-	msg->timestamp = timestamp;
+	msg->timestamp = carmen_get_time();
 	msg->host = carmen_get_host();
 
-    carmen_moving_objects_point_clouds_publish_message(msg);
+    carmen_moving_objects_point_clouds_publish_message_generic(0, msg);
 }
 
 
@@ -1075,10 +1047,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	}
 	clean_pedestrians(image_msg->timestamp, 1.0);
 	
-	// carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
-	// publish_moving_objects_message(image_msg->timestamp, &msg);
-
-	// build_and_publish_moving_objects_message(pedestrian_tracks, filtered_points);
+	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
+	publish_moving_objects_message(&msg);
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
@@ -1284,6 +1254,8 @@ main(int argc, char **argv)
 	read_parameters(argc, argv);
 
 	subscribe_messages();
+
+	carmen_moving_objects_point_clouds_define_messages_generic(0);
 
 	signal(SIGINT, shutdown_module);
 

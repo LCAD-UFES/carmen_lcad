@@ -15,9 +15,6 @@
 #include "SampleFilter.h"
 
 
-#define MAX_DISTANCE_FRONT_CAR_TO_CROSSWALK 1.5
-
-
 enum
 {
 	NONE,

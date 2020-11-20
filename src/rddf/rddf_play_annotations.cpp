@@ -203,38 +203,6 @@ get_key_non_blocking(void)
 }
 
 
-bool
-pedestrian_track_busy(carmen_moving_objects_point_clouds_message *moving_objects, carmen_annotation_t pedestrian_track_annotation)
-{
-	int ch = get_key_non_blocking();
-
-	if (ch == 'p')
-		simulated_pedestrian_on = true;
-	if (ch == ' ')
-		simulated_pedestrian_on = false;
-
-	if (simulated_pedestrian_on)
-		return (true);
-
-	if (moving_objects == NULL)
-		return (false);
-
-	carmen_vector_2D_t world_point;
-	double displacement = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-	double theta = pedestrian_track_annotation.annotation_orientation;
-	world_point.x = pedestrian_track_annotation.annotation_point.x + displacement * cos(theta);
-	world_point.y = pedestrian_track_annotation.annotation_point.y + displacement * sin(theta);
-
-	for (int i = 0; i < moving_objects->num_point_clouds; i++)
-	{
-		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
-			(DIST2D(moving_objects->point_clouds[i].object_pose, world_point) < pedestrian_track_annotation.annotation_point.z))
-			return (true);
-	}
-	return (false);
-}
-
-
 carmen_vector_2D_t
 get_displaced_annotation_position(carmen_annotation_t pedestrian_track_annotation)    // The crosswalk annotated position is displaced by the distance from rear axle to car front
 {                                                                                     // because the annotation position is made this way
@@ -299,9 +267,9 @@ pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objec
 	for (int i = 0; i < moving_objects_msg->num_point_clouds; i++)
 	{
 		// printf("DP %lf\n", DIST2D(moving_objects_msg->point_clouds[i].object_pose, displaced_crosswalk_pose));
-		if ((strcmp(moving_objects_msg->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
-			(pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], pedestrian_track_annotation, radius) ||
-			 DIST2D(moving_objects_msg->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius))
+		if ((strcmp(moving_objects_msg->point_clouds[i].model_features.model_name, "pedestrian") == 0)
+			&& (DIST2D(moving_objects_msg->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius))
+			    // || pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], pedestrian_track_annotation, radius) ) // TODO checar se esta funcionando
 		{
 			return (true);
 		}
@@ -322,7 +290,7 @@ pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_m
 
 		if ((strcmp(moving_objects_msg->point_clouds[i].model_features.model_name, "pedestrian") == 0)
 			&& (DIST2D(moving_objects_msg->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius)
-			&& (moving_objects_msg->point_clouds[i].linear_velocity > 0.4)
+			&& (moving_objects_msg->point_clouds[i].linear_velocity > 0.9)
 			//&& abs(current_globalpos_msg->globalpos.theta - moving_objects_msg->point_clouds[i].orientation) > 0.2)      // Not moving parallel to the car (sideways with the crosswalk)
 			)//||
 			//pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], displaced_crosswalk_pose, radius)
@@ -337,16 +305,15 @@ pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_m
 bool
 pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_objects_msg, carmen_annotation_t pedestrian_track_annotation)
 {
-	// printf ("Entrou\n");
 	if (moving_objects_msg == NULL || moving_objects_msg->num_point_clouds < 1)
 		return (false);
 
-	carmen_vector_2D_t displaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+	// carmen_vector_2D_t displaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
 
 	switch (crosswalk_state)
 	{
 		case Free_Crosswalk:
-			printf("Free_Crosswalk \n");
+			// printf("Free_Crosswalk \n");
 			if (pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Stopping_Busy_Crosswalk;
@@ -355,20 +322,22 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (false);
 
 		case Stopping_Busy_Crosswalk:
-			printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
-			if (!pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
-			{
-				crosswalk_state = Free_Crosswalk;
-				return (false);
-			}
-			else if (current_globalpos_msg->v < 0.15 && DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose) < 20.0) // || dist stop point < 2.0
+			// printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, pedestrian_track_annotation.annotation_point));
+			// if (!pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
+			// {
+			// 	crosswalk_state = Free_Crosswalk;
+			// 	return (false);
+			// }
+			// else 
+			if ((current_globalpos_msg->v < 0.2)
+				&& (DIST2D(current_globalpos_msg->globalpos, pedestrian_track_annotation.annotation_point) < (pedestrian_track_annotation.annotation_point.z + 3.0))) // annotation_point.z stores the radius of the crosswalk circle
 			{
 				crosswalk_state = Stopped_Busy_Crosswalk;
 			}
 			return (true);
 
 		case Stopped_Busy_Crosswalk:
-			printf("Stopped_Busy_Crosswalk \n");
+			// printf("Stopped_Busy_Crosswalk \n");
 			if (!pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Leaving_Crosswalk;
@@ -377,20 +346,18 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Leaving_Crosswalk:
-			printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
+			// printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, pedestrian_track_annotation.annotation_point));
 			if (pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
 			{
-				// printf("pedestrian_crossing \n");
 				crosswalk_state = Stopped_Busy_Crosswalk;
 				return (true);
 			}
-			else if (DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose) < 2.0)
+			if (DIST2D(pedestrian_track_annotation.annotation_point, current_globalpos_msg->globalpos) < MIN_DISTANCE_TO_CONSIDER_CROSSWALK)
 			{
 				crosswalk_state = Free_Crosswalk;
 			}
 			return (false);
 	}
-	// printf ("Saiu\n");
 	return (true);
 }
 
@@ -400,7 +367,7 @@ check_nearst_pedestrian_track_state()
 {
 	unsigned int size = annotations_to_publish.size();
 	int nearst_annotation_index = -1;
-	double dist = 0.0, nearst_annotation_dist = DBL_MAX;
+	double angular_diff = 0.0, dist = 0.0, nearst_annotation_dist = DBL_MAX;
 
 	for (unsigned int i = 0; i < size; i++)
 	{
@@ -408,7 +375,9 @@ check_nearst_pedestrian_track_state()
 		{
 			dist = DIST2D(current_globalpos_msg->globalpos, annotations_to_publish[i].annotation.annotation_point);
 
-			if (dist < nearst_annotation_dist)
+			angular_diff = fabs(ANGLE2D(annotations_to_publish[i].annotation.annotation_point, current_globalpos_msg->globalpos));
+
+			if ((dist < nearst_annotation_dist) && (angular_diff < M_PI_4))
 			{
 				nearst_annotation_dist = dist;
 				nearst_annotation_index = i;

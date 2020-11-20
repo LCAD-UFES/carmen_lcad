@@ -142,6 +142,8 @@ extern "C" {
 #define ROTATE3DZ(p,theta) p.x = p.x * cos(theta) - p.y * sin(theta); \
 						   p.y = p.x * sin(theta) + p.y * cos(theta);
 
+#define DISPLACE2D(p,offset,theta) p.x += offset * cos(theta); \
+								   p.y += offset * sin(theta);
 
 #define	POINT_WITHIN_SEGMENT		0
 #define	SEGMENT_TOO_SHORT			1
