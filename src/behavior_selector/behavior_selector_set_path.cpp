@@ -524,12 +524,12 @@ compute_moving_objects_future_poses(vector<vector <moving_object_pose_info_t> > 
 
 			moving_objects_poses[s][i] = moving_object_pose_info;
 //			if (DIST2D(current_moving_objects->point_clouds[i].object_pose, path[0]) < 25.0)
-			{
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = moving_object_pose_info.pose.x;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = moving_object_pose_info.pose.y;
-				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_LIGHT_GREEN;
-				virtual_laser_message.num_positions++;
-			}
+//			{
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = moving_object_pose_info.pose.x;
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = moving_object_pose_info.pose.y;
+//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_LIGHT_GREEN;
+//				virtual_laser_message.num_positions++;
+//			}
 		}
 	}
 }

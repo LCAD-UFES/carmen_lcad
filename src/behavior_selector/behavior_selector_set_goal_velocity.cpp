@@ -715,7 +715,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 
 	// printf ("GV %lf  ", goal->v);
 
-	if(behavior_selector_reverse_driving && goal->v < 0.0)
+	if (behavior_selector_reverse_driving && goal->v < 0.0)
 	{
 		previous_v = goal->v = get_max_v_reverse();
 		reversing_driving = 1;

@@ -298,7 +298,11 @@ predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_m
 		v_max_displacement = 3.0 * moving_object->average_longitudinal_v.standard_deviation(); // 3 sigmas
 	else
 		v_max_displacement = max_moving_object_velocity;
-	double max_disp = delta_t * v_max_displacement;
+
+	double dist_between_waypoints = (index + 1 < lane->size - 1)?
+			DIST2D(lane->lane_points[index], lane->lane_points[index + 1]): DIST2D(lane->lane_points[index], lane->lane_points[index - 1]);
+
+	double max_disp = delta_t * v_max_displacement + moving_object->average_length.arithmetic_mean() / 2.0 + dist_between_waypoints;
 
 	while (within_up_limit || within_down_limit)
 	{
@@ -792,20 +796,22 @@ close_orientation(moving_object_t *mo_j, moving_object_t *mo_k)
 static bool
 near(moving_object_t *mo_j, moving_object_t *mo_k)
 {	// A ordem é importante. O mais completo e conhecido precisa ser o mo_k.
+	vector <carmen_position_t> points = get_points_within_moving_object_rectangle(mo_k);
 	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
 	{
 		carmen_position_t point_j = mo_j->history[0].moving_object_points[j];
-		vector <carmen_position_t> points = get_points_within_moving_object_rectangle(mo_k);
 		for (unsigned int k = 0; k < points.size(); k++)
 		{
 			if (DIST2D(point_j, points[k]) < moving_object_merge_distance)
 			{
 				points.clear();
+
 				return (true);
 			}
 		}
-		points.clear();
 	}
+	points.clear();
+
 	return (false);
 }
 
