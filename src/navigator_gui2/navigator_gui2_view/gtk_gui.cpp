@@ -2719,7 +2719,8 @@ namespace View
 						carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
 
 						line_end = location;
-						DISPLACE2D(line_end.pose, (width2 + 2), location.pose.theta);
+						double line_length = (width2 > 2.0) ? (width2 + 2.0) : (width2 + 1.0);
+						DISPLACE2D(line_end.pose, line_length, location.pose.theta);
 						carmen_map_graphics_draw_line(the_map_view, colour, &location, &line_end);
 
 						char obj_id[256];
