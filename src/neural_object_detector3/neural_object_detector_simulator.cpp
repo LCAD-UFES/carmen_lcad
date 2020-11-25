@@ -388,7 +388,7 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 
 	for (int i = 0, l = 0; i < tmp_predictions.size(); i++)
 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0)&&tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
+		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0) && tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
 		{
 			msg.point_clouds[l].r = 1.0;
 			msg.point_clouds[l].g = 1.0;
@@ -396,6 +396,8 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 
 			msg.point_clouds[l].linear_velocity = tmp_predictions[i].velocity;
 			msg.point_clouds[l].orientation = tmp_predictions[i].orientation;
+
+			// printf("%lf %lf\n", tmp_predictions[i].orientation, last_globalpos->globalpos.theta);
 
 			msg.point_clouds[l].width  = 1.0;
 			msg.point_clouds[l].length = 1.0;
@@ -438,56 +440,16 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 }
 
 
-// void
-// build_and_publish_moving_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
-// {
-// 	carmen_moving_objects_message msg;
-// 	vector<pedestrian> tmp_predictions = predictions;
-
-// 	for (int i=0; i<simulated_pedestrians.size(); i++)
-// 	{
-// 		if (simulated_pedestrians[i].active)
-// 		{
-// 			tmp_predictions.push_back(simulated_pedestrians[i].p);
-// 			image_cartesian ic;
-// 			vector<image_cartesian> vic;
-// 			vic.push_back(ic);
-// 			points_lists.push_back(vic);
-// 		}
-// 	}
-	
-// 	int num_objects = compute_num_measured_objects(tmp_predictions);
-
-// 	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
-
-// 	msg.timestamp = carmen_get_time();
-// 	msg.host = carmen_get_host();
-
-// 	msg.num_objects = num_objects;
-// 	moving_object moving_objects_vector[num_objects];
-// 	msg.objects = moving_objects_vector;
-
-// 	for (int i = 0, k = 0; i < tmp_predictions.size(); i++)
-// 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-// 		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0) && tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
-// 		{
-// 			moving_objects_vector[k].x = get_pedestrian_x(tmp_predictions[i]);
-// 			moving_objects_vector[k].y = get_pedestrian_y(tmp_predictions[i]);
-// 			moving_objects_vector[k].theta = tmp_predictions[i].orientation;
-// 			moving_objects_vector[k].v     = tmp_predictions[i].velocity;
-// 			moving_objects_vector[k].type = PEDESTRIAN;
-
-// 			k++;
-// 		}
-// 	}
-// 	carmen_moving_objects_publish_message(&msg);
-// }
-
-
 void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	last_globalpos = globalpos_message;
+
+	// carmen_point_t pos;
+	// pos.x = 7756880.63;
+	// pos.y =	-364044.30;
+	// double theta = ANGLE2D(last_globalpos->globalpos, pos);
+	// printf("%lf %lf   %lf\n", last_globalpos->globalpos.theta, theta, fabs(carmen_normalize_theta(last_globalpos->globalpos.theta - theta)));
 
 	vector<vector<image_cartesian>> filtered_points;
 	update_simulated_pedestrians(globalpos_message->timestamp);
@@ -510,9 +472,12 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 {
 	static bool dealing_with_annotation = false;
 
+	if (last_globalpos == NULL)
+		return;
+
 	int number_of_annotations = message->num_annotations;
 	int nearst_annotation_index = -1;
-	double angular_diff = 0.0, dist = 0.0, nearst_annotation_dist = DBL_MAX;
+	double angle = 0.0, dist = 0.0, nearst_annotation_dist = DBL_MAX;
 
 	for (int i = 0; i < number_of_annotations; i++)
 	{
@@ -520,9 +485,11 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 		{
 			dist = DIST2D(last_globalpos->globalpos, message->annotations[i].annotation_point);
 
-			angular_diff = fabs(ANGLE2D(message->annotations[i].annotation_point, last_globalpos->globalpos));
+			angle = ANGLE2D(last_globalpos->globalpos, message->annotations[i].annotation_point);
+			
+			// printf("%d %lf %lf\n", i, dist, angle);
 
-			if ((dist < nearst_annotation_dist) && (angular_diff < M_PI_4))
+			if ((dist < nearst_annotation_dist) && (fabs(carmen_normalize_theta(last_globalpos->globalpos.theta - angle)) < M_PI_2))
 			{
 				nearst_annotation_dist = dist;
 				nearst_annotation_index = i;
@@ -530,6 +497,7 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 		}
 	}
 
+	// printf("%d %lf\n", nearst_annotation_index, angle);
 
 	if (!dealing_with_annotation && nearst_annotation_index != -1)
 	{
@@ -542,15 +510,17 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 		new_p.x = message->annotations[nearst_annotation_index].annotation_point.x;
 		new_p.y = message->annotations[nearst_annotation_index].annotation_point.y;
 		DISPLACE2D(new_p, 3.5, message->annotations[nearst_annotation_index].annotation_orientation);
-		DISPLACE2D(new_p, message->annotations[nearst_annotation_index].annotation_point.z, message->annotations[nearst_annotation_index].annotation_orientation - M_PI_2);  // annotation_point.z stores the radius of the crosswalk circle
+		DISPLACE2D(new_p, message->annotations[nearst_annotation_index].annotation_point.z, carmen_normalize_theta(message->annotations[nearst_annotation_index].annotation_orientation - M_PI_2));  // annotation_point.z stores the radius of the crosswalk circle
 		
 		new_p.active = false;
 		if (terminal_pedestrian_v != -1.0)
 			new_p.velocity = terminal_pedestrian_v;
 		else
 			new_p.velocity = 0.3;
-		new_p.orientation = message->annotations[nearst_annotation_index].annotation_orientation + M_PI_2;
+		new_p.orientation = carmen_normalize_theta(message->annotations[nearst_annotation_index].annotation_orientation + M_PI_2);
 		simulated_pedestrians.push_back(new_p);
+
+		// printf("%lf %lf %d\n", new_p.orientation, last_globalpos->globalpos.theta, nearst_annotation_index);
 	}
 }
 
