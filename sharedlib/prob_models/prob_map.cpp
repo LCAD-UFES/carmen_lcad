@@ -1479,7 +1479,7 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_free);
-		sigma = sensor_params->unexpeted_delta_range_sigma / 50.0;
+		sigma = sensor_params->unexpeted_delta_range_sigma / 2.0;
 	}
 	else
 	{

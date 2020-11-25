@@ -2503,7 +2503,10 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 			frenet_trajectory->timestamp = message->timestamp;
 			frenet_trajectory->host = message->host;
 
-			path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0);
+			if (j == message->selected_path)
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0);
+			else
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0);
 			add_trajectory_message(path_plans_frenet_drawer[j], frenet_trajectory);
 		    free(path);
 		    free(frenet_trajectory);

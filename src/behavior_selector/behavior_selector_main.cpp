@@ -574,7 +574,7 @@ add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message 
 			break;
 		}
 
-		if (DIST2D(current_robot_pose_v_and_phi, msg->objects[index]) < 20.0)
+//		if (DIST2D(current_robot_pose_v_and_phi, msg->objects[index]) < 20.0)
 			add_object_to_map(width, length, msg->objects[index].x, msg->objects[index].y, msg->objects[index].theta);
 	}
 }

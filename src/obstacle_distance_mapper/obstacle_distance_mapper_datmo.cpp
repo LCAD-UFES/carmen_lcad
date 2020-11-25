@@ -413,8 +413,17 @@ get_object_history_sample_mass_center(moving_object_history_t *moving_object, ve
 
 
 static void
-compute_object_history_sample_width_and_length_and_correct_pose(moving_object_history_t *mo_sample, double map_resolution)
+compute_object_width_and_length_and_correct_pose(moving_object_t *moving_object, double map_resolution,
+		bool is_adding_sample = false)
 {
+	moving_object_history_t *mo_sample = &(moving_object->history[0]);
+//	printf("id %d, pose (%lf %lf)\n", moving_object->id, mo_sample->pose.x, mo_sample->pose.y);
+	if (!is_adding_sample)
+	{
+		moving_object->average_width.remove_sample(mo_sample->width);
+		moving_object->average_length.remove_sample(mo_sample->length);
+	}
+
 	double min_x, max_x, min_y, max_y;
 	min_x = max_x = min_y = max_y = 0.0;
 	double sin, cos;
@@ -434,16 +443,31 @@ compute_object_history_sample_width_and_length_and_correct_pose(moving_object_hi
 	double length = max_x - min_x;
 	double width = max_y - min_y;
 	double additional_size_due_to_map_discretization = map_resolution * M_SQRT2;
-	mo_sample->length = ((length > map_resolution)? length: map_resolution) + additional_size_due_to_map_discretization;
 	mo_sample->width = ((width > map_resolution)? width: map_resolution) + additional_size_due_to_map_discretization;
+	mo_sample->length = ((length > map_resolution)? length: map_resolution) + additional_size_due_to_map_discretization;
 
-	double x = (max_x + min_x) / 2.0; // pose correction in x
-	double y = (max_y + min_y) / 2.0; // pose correction in y
-	sincos(mo_sample->pose.theta, &sin, &cos); // reorient to theta
-	double xr = x * cos - y * sin;
-	double yr = x * sin + y * cos;
-	mo_sample->pose.x += xr;
-	mo_sample->pose.y += yr;
+	if (mo_sample->width > 3.0)
+		mo_sample->width = 3.0;
+
+	if (mo_sample->length > 15.0)
+		mo_sample->length = 15.0;
+
+	if ((mo_sample->width > 1.1) && ((mo_sample->length / mo_sample->width) < 2.4))
+		mo_sample->length = mo_sample->width * 2.4;
+
+//	double x = (max_x + min_x) / 2.0; // pose correction in x
+//	double y = (max_y + min_y) / 2.0; // pose correction in y
+//	double x = max_x;//(max_x + min_x) / 2.0; // pose correction in x
+//	double y = (max_y + min_y) / 2.0; // pose correction in y
+//	sincos(mo_sample->pose.theta, &sin, &cos); // reorient to theta
+//	double xr = x * cos - y * sin;
+//	double yr = x * sin + y * cos;
+//	mo_sample->pose.x += xr;
+//	mo_sample->pose.y += yr;
+
+	moving_object->pose = mo_sample->pose;
+	moving_object->average_width.add_sample(mo_sample->width);
+	moving_object->average_length.add_sample(mo_sample->length);
 }
 
 
@@ -451,7 +475,7 @@ static void
 update_object_statistics(moving_object_t *moving_object, carmen_map_t *occupancy_map)
 {
 	get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object->history[0].moving_object_points);
-	compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
+	compute_object_width_and_length_and_correct_pose(moving_object, occupancy_map->config.resolution);
 
 	if (moving_object->history[0].valid)
 	{
@@ -459,8 +483,10 @@ update_object_statistics(moving_object_t *moving_object, carmen_map_t *occupancy
 
 		moving_object->non_detection_count = 0;
 		moving_object->pose = moving_object->history[0].pose;
-		moving_object->average_length.add_sample(moving_object->history[0].length);
-		moving_object->average_width.add_sample(moving_object->history[0].width);
+//		moving_object->average_length.remove_sample(moving_object->history[0].length);
+//		moving_object->average_width.remove_sample(moving_object->history[0].width);
+//		moving_object->average_length.add_sample(moving_object->history[0].length);
+//		moving_object->average_width.add_sample(moving_object->history[0].width);
 //		if (moving_object->average_longitudinal_v.num_samples() != 0)
 //			moving_object->v = moving_object->v + 0.2 * (moving_object->average_longitudinal_v.arithmetic_mean() - moving_object->v);
 //		else
@@ -600,7 +626,10 @@ add_object_history_sample(moving_object_t *moving_object, int first_pose_index, 
 		get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object_points);
 		moving_object->history[0].moving_object_points = moving_object_points;
 		moving_object->history[0].pose.theta = lane->lane_points[moving_object->history[0].index].theta;
-		compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
+		compute_object_width_and_length_and_correct_pose(moving_object, occupancy_map->config.resolution, true);
+//		moving_object->pose = moving_object->history[0].pose;
+//		moving_object->average_length.add_sample(moving_object->history[0].length);
+//		moving_object->average_width.add_sample(moving_object->history[0].width);
 		moving_object->history[0].timestamp = timestamp;
 
 		return (true);
@@ -705,13 +734,13 @@ estimate_new_state(moving_object_t *moving_object, lane_t *lane, carmen_map_t *o
 			}
 
 			get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object->history[0].moving_object_points);
-			compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
+			compute_object_width_and_length_and_correct_pose(moving_object, occupancy_map->config.resolution);
 			new_index = get_index_of_the_nearest_lane_pose(moving_object->history[0].pose, lane);
 		}
 
 		round_points(moving_object->history[0].moving_object_points, occupancy_map);
 		get_object_history_sample_mass_center(&(moving_object->history[0]), moving_object->history[0].moving_object_points);
-		compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object->history[0]), occupancy_map->config.resolution);
+		compute_object_width_and_length_and_correct_pose(moving_object, occupancy_map->config.resolution);
 	}
 	moving_object->history[0].index = new_index;
 	moving_object->history[0].width =  moving_object->history[sample].width;
@@ -747,34 +776,34 @@ track_moving_objects(lane_t *lane, carmen_map_t *occupancy_map, carmen_map_serve
 }
 
 
-vector <carmen_position_t>
-get_points_within_moving_object_rectangle(moving_object_t *mo)
-{
-	if (moving_object_merge_distance == 0.0)
-		carmen_die("moving_object_merge_distance == 0.0 in get_points_within_moving_object_rectangle()");
-
-	double length = mo->average_length.arithmetic_mean();
-	double width = mo->average_width.arithmetic_mean();
-	double slices_x = ceil(length / (moving_object_merge_distance / 2.0));
-	double delta_x = length / slices_x;
-	double slices_y = ceil(width / (moving_object_merge_distance / 2.0));
-	double delta_y = width / slices_y;
-	double sin, cos;
-	sincos(mo->pose.theta, &sin, &cos);
-
-	vector <carmen_position_t> points;
-	for (double x = -length / 2.0; x < ((length / 2.0) + delta_x / 2.0); x += delta_x)
-	{
-		for (double y = -width / 2.0; y < ((width / 2.0) + delta_y / 2.0); y += delta_y)
-		{
-			double xr = x * cos - y * sin;
-			double yr = x * sin + y * cos;
-			points.push_back({mo->pose.x + xr, mo->pose.y + yr});
-		}
-	}
-
-	return (points);
-}
+//vector <carmen_position_t>
+//get_points_within_moving_object_rectangle(moving_object_t *mo)
+//{
+//	if (moving_object_merge_distance == 0.0)
+//		carmen_die("moving_object_merge_distance == 0.0 in get_points_within_moving_object_rectangle()");
+//
+//	double length = mo->average_length.arithmetic_mean();
+//	double width = mo->average_width.arithmetic_mean();
+//	double slices_x = ceil(length / (moving_object_merge_distance / 2.0));
+//	double delta_x = length / slices_x;
+//	double slices_y = ceil(width / (moving_object_merge_distance / 2.0));
+//	double delta_y = width / slices_y;
+//	double sin, cos;
+//	sincos(mo->pose.theta, &sin, &cos);
+//
+//	vector <carmen_position_t> points;
+//	for (double x = -length / 2.0; x < ((length / 2.0) + delta_x / 2.0); x += delta_x)
+//	{
+//		for (double y = -width / 2.0; y < ((width / 2.0) + delta_y / 2.0); y += delta_y)
+//		{
+//			double xr = x * cos - y * sin;
+//			double yr = x * sin + y * cos;
+//			points.push_back({mo->pose.x + xr, mo->pose.y + yr});
+//		}
+//	}
+//
+//	return (points);
+//}
 
 
 static bool
@@ -794,43 +823,125 @@ close_orientation(moving_object_t *mo_j, moving_object_t *mo_k)
 
 
 static bool
-near(moving_object_t *mo_j, moving_object_t *mo_k)
+near_one_side(moving_object_t *mo_j, moving_object_t *mo_k)
 {	// A ordem é importante. O mais completo e conhecido precisa ser o mo_k.
-	vector <carmen_position_t> points = get_points_within_moving_object_rectangle(mo_k);
-	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
-	{
-		carmen_position_t point_j = mo_j->history[0].moving_object_points[j];
-		for (unsigned int k = 0; k < points.size(); k++)
-		{
-			if (DIST2D(point_j, points[k]) < moving_object_merge_distance)
-			{
-				points.clear();
+	// https://stackoverflow.com/questions/2752725/finding-whether-a-point-lies-inside-a-rectangle-or-not
+	// Cada objeto eh um retangulo. Verificar se os cantos de um então dentro do outro. Pode usar uma folga no tamanho de um deles.
 
-				return (true);
-			}
-		}
+	//	Assuming the rectangle is represented by three points A,B,C, with AB and BC perpendicular, you only need to check
+	//	the projections of the query point P on AB and BC:
+	//
+	//	(0 <= dotABAP) && (dotABAP <= dotABAB) && (0 <= dotBCBP) && (dotBCBP <= dotBCBC)
+	//
+	//	AB is vector AB, with coordinates (Bx-Ax,By-Ay), and dot(U,V) is the dot product of vectors U and V: Ux*Vx+Uy*Vy.
+
+	carmen_position_t A, B, C, AB, AP, BC, BP;
+	carmen_position_t mo_k_center = {mo_k->pose.x, mo_k->pose.y};
+	double mo_k_l_2 = moving_object_merge_distance + mo_k->average_length.arithmetic_mean() / 2.0;
+	double mo_k_w_2 = moving_object_merge_distance / 2.0 + mo_k->average_width.arithmetic_mean() / 2.0;
+	double cos_mo_k_theta, sin_mo_k_theta;
+	sincos(mo_k->pose.theta, &sin_mo_k_theta, &cos_mo_k_theta);
+
+	A.x = mo_k_center.x - mo_k_l_2 * cos_mo_k_theta + mo_k_w_2 * sin_mo_k_theta;
+	A.y = mo_k_center.y - mo_k_l_2 * sin_mo_k_theta - mo_k_w_2 * cos_mo_k_theta;
+
+	B.x = mo_k_center.x - mo_k_l_2 * cos_mo_k_theta - mo_k_w_2 * sin_mo_k_theta;
+	B.y = mo_k_center.y - mo_k_l_2 * sin_mo_k_theta + mo_k_w_2 * cos_mo_k_theta;
+
+	C.x = mo_k_center.x + mo_k_l_2 * cos_mo_k_theta + mo_k_w_2 * sin_mo_k_theta;
+	C.y = mo_k_center.y + mo_k_l_2 * sin_mo_k_theta - mo_k_w_2 * cos_mo_k_theta;
+
+	AB = VECTOR2D(A, B);
+	BC = VECTOR2D(B, C);
+
+	double dotABAB = DOT2D(AB, AB);
+	double dotBCBC = DOT2D(BC, BC);
+
+	carmen_position_t mo_j_center = {mo_j->pose.x, mo_j->pose.y};
+	double mo_j_l_2 = mo_j->average_length.arithmetic_mean() / 2.0;
+	double mo_j_w_2 = mo_j->average_width.arithmetic_mean() / 2.0;
+	double cos_mo_j_theta, sin_mo_j_theta;
+	sincos(mo_j->pose.theta, &sin_mo_j_theta, &cos_mo_j_theta);
+
+	carmen_position_t P[4];
+	P[0].x = mo_j_center.x - mo_j_l_2 * cos_mo_j_theta + mo_j_w_2 * sin_mo_j_theta;
+	P[0].y = mo_j_center.y - mo_j_l_2 * sin_mo_j_theta - mo_j_w_2 * cos_mo_j_theta;
+
+	P[1].x = mo_j_center.x - mo_j_l_2 * cos_mo_j_theta - mo_j_w_2 * sin_mo_j_theta;
+	P[1].y = mo_j_center.y - mo_j_l_2 * sin_mo_j_theta + mo_j_w_2 * cos_mo_j_theta;
+
+	P[2].x = mo_j_center.x + mo_j_l_2 * cos_mo_j_theta + mo_j_w_2 * sin_mo_j_theta;
+	P[2].y = mo_j_center.y + mo_j_l_2 * sin_mo_j_theta - mo_j_w_2 * cos_mo_j_theta;
+
+	P[3].x = mo_j_center.x + mo_j_l_2 * cos_mo_j_theta - mo_j_w_2 * sin_mo_j_theta;
+	P[3].y = mo_j_center.y + mo_j_l_2 * sin_mo_j_theta + mo_j_w_2 * cos_mo_j_theta;
+
+	for (int i = 0; i < 4; i++)
+	{
+		AP = VECTOR2D(A, P[i]);
+		BP = VECTOR2D(B, P[i]);
+
+		double dotABAP = DOT2D(AB, AP);
+		double dotBCBP = DOT2D(BC, BP);
+
+		if (((0.0 <= dotABAP) && (dotABAP <= dotABAB) && (0.0 <= dotBCBP) && (dotBCBP <= dotBCBC)))
+			return (true);
 	}
-	points.clear();
 
 	return (false);
 }
 
 
-bool
-near_old(moving_object_t *mo_j, moving_object_t *mo_k)
+static bool
+near(moving_object_t *mo_j, moving_object_t *mo_k)
 {
-	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
-	{
-		carmen_position_t point_j = mo_j->history[0].moving_object_points[j];
-		for (unsigned int k = 0; k < mo_k->history[0].moving_object_points.size(); k++)
-		{
-			carmen_position_t point_k = mo_k->history[0].moving_object_points[k];
-			if (DIST2D(point_j, point_k) < moving_object_merge_distance)
-				return (true);
-		}
-	}
+	if (near_one_side(mo_j, mo_k))
+		return (true);
+	if (near_one_side(mo_k, mo_j))
+		return (true);
+
 	return (false);
 }
+
+
+//bool
+//near_previo(moving_object_t *mo_j, moving_object_t *mo_k)
+//{	// A ordem é importante. O mais completo e conhecido precisa ser o mo_k.
+//	vector <carmen_position_t> points = get_points_within_moving_object_rectangle(mo_k);
+//	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
+//	{
+//		carmen_position_t point_j = mo_j->history[0].moving_object_points[j];
+//		for (unsigned int k = 0; k < points.size(); k++)
+//		{
+//			if (DIST2D(point_j, points[k]) < moving_object_merge_distance)
+//			{
+//				points.clear();
+//
+//				return (true);
+//			}
+//		}
+//	}
+//	points.clear();
+//
+//	return (false);
+//}
+
+
+//bool
+//near_old(moving_object_t *mo_j, moving_object_t *mo_k)
+//{
+//	for (unsigned int j = 0; j < mo_j->history[0].moving_object_points.size(); j++)
+//	{
+//		carmen_position_t point_j = mo_j->history[0].moving_object_points[j];
+//		for (unsigned int k = 0; k < mo_k->history[0].moving_object_points.size(); k++)
+//		{
+//			carmen_position_t point_k = mo_k->history[0].moving_object_points[k];
+//			if (DIST2D(point_j, point_k) < moving_object_merge_distance)
+//				return (true);
+//		}
+//	}
+//	return (false);
+//}
 
 
 static moving_object_t *
@@ -858,7 +969,7 @@ copy_points(moving_object_t *to, vector <carmen_position_t> from, double map_res
 	to->history[0].moving_object_points.insert(to->history[0].moving_object_points.end(), from.begin(), from.end());
 	remove_duplicate_points(to->history[0].moving_object_points);
 	get_object_history_sample_mass_center(&(to->history[0]), to->history[0].moving_object_points);
-	compute_object_history_sample_width_and_length_and_correct_pose(&(to->history[0]), map_resolution);
+	compute_object_width_and_length_and_correct_pose(to, map_resolution);
 }
 
 
@@ -907,7 +1018,7 @@ merge(moving_object_t *mo_j, moving_object_t *mo_k, double map_resolution)
 		mo_j->history[0].moving_object_points.insert(mo_j->history[0].moving_object_points.end(), mo_k->history[0].moving_object_points.begin(), mo_k->history[0].moving_object_points.end());
 		remove_duplicate_points(mo_j->history[0].moving_object_points);
 		get_object_history_sample_mass_center(&(mo_j->history[0]), mo_j->history[0].moving_object_points);
-		compute_object_history_sample_width_and_length_and_correct_pose(&(mo_j->history[0]), map_resolution);
+		compute_object_width_and_length_and_correct_pose(mo_j, map_resolution);
 	}
 //	else
 //		mo_j->history[0] = mo_k->history[0];
@@ -922,7 +1033,7 @@ merge_with_in_lane_nearby_objects(lane_t *lane, moving_object_t *moving_object, 
 		if (near(moving_object, &(lane->moving_objects[j])))
 		{
 //			printf("in detect: ");
-			fflush(stdout);
+//			fflush(stdout);
 			merge(&(lane->moving_objects[j]), moving_object, map_resolution);
 			return (true);
 		}
@@ -953,8 +1064,8 @@ add_detected_objects(vector<lane_t> &lanes, int lane_index, int first_pose_index
 			copy_history(&moving_object, moving_object_from_another_lane, occupancy_map->config.resolution);
 
 //		get_object_history_sample_mass_center(&(moving_object.history[0]), moving_object.history[0].moving_object_points);
-//		compute_object_history_sample_width_and_length_and_correct_pose(&(moving_object.history[0]), occupancy_map->config.resolution);
-		moving_object.pose = moving_object.history[0].pose;
+//		compute_object_width_and_length_and_correct_pose(&(moving_object), occupancy_map->config.resolution);
+//		moving_object.pose = moving_object.history[0].pose;
 
 //		printf("added %d (%.2lf), ", moving_object.id, moving_object.pose.theta);
 		lane->moving_objects.push_back(moving_object);
@@ -1296,7 +1407,7 @@ obstacle_distance_mapper_remove_moving_objects_from_occupancy_map(carmen_map_t *
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
 		if ((fabs(moving_objects->point_clouds[i].linear_velocity) > min_moving_object_velocity) ||
-			(moving_objects->point_clouds[i].num_valid_samples < 2))
+			(moving_objects->point_clouds[i].num_valid_samples < 3))
 		{
 			for (int k = 0; k < moving_objects->point_clouds[i].point_size; k++)
 			{
@@ -1363,6 +1474,7 @@ void
 print_mo(vector<lane_t> lanes, double timestamp)
 {
 	printf("%lf\n", timestamp);
+
 	for (unsigned int i = 0; i < lanes.size(); i++)
 	{
 		for (unsigned int j = 0; j < lanes[i].moving_objects.size(); j++)
@@ -1402,7 +1514,19 @@ merge_in_lane_objects(lane_t *lane, double map_resolution)
     	for (int j = i + 1; j < (int) lane->moving_objects.size(); j++)
     	{
         	moving_object_t *moving_object_j = &(lane->moving_objects[j]);
-    		if (near(moving_object_i, moving_object_j))
+        	bool should_merge = false;
+        	if (moving_object_j->average_length.arithmetic_mean() > moving_object_i->average_length.arithmetic_mean())
+        	{
+        		if (moving_object_i->average_longitudinal_v.num_samples() < MOVING_OBJECT_HISTORY_SIZE / 2)
+        			should_merge = near(moving_object_i, moving_object_j);
+        	}
+        	else
+        	{
+        		if (moving_object_j->average_longitudinal_v.num_samples() < MOVING_OBJECT_HISTORY_SIZE / 2)
+        			should_merge = near(moving_object_j, moving_object_i);
+        	}
+
+    		if (should_merge)
     		{
     			int num_samples_i = get_num_valid_samples(moving_object_i->history);
     			int num_samples_j = get_num_valid_samples(moving_object_j->history);
@@ -1798,7 +1922,7 @@ carmen_moving_objects_point_clouds_message *
 obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_network,
 		carmen_map_t &occupancy_map, carmen_map_server_offline_map_message *offline_map, double timestamp)
 {
-	if (!road_network)
+	if (!road_network || !offline_map)
 		return (NULL);
 
 //	print_road_network(road_network);
@@ -1813,10 +1937,10 @@ obstacle_distance_mapper_datmo(carmen_route_planner_road_network_message *road_n
 		track_moving_objects(&(lanes[lane_index]), &occupancy_map, offline_map, timestamp);
 
 	for (unsigned int lane_index = 0; lane_index < lanes.size(); lane_index++)
-		merge_in_lane_objects(&(lanes[lane_index]), occupancy_map.config.resolution);
+		detect_new_objects(lanes, lane_index, &occupancy_map, offline_map, timestamp);
 
 	for (unsigned int lane_index = 0; lane_index < lanes.size(); lane_index++)
-		detect_new_objects(lanes, lane_index, &occupancy_map, offline_map, timestamp);
+		merge_in_lane_objects(&(lanes[lane_index]), occupancy_map.config.resolution);
 
 	share_points_between_objects(lanes, &occupancy_map);
 

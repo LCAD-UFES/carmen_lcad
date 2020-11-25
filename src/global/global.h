@@ -110,6 +110,8 @@ extern "C" {
 
 #define PERP2D(u,v)  ((u).x * (v).y - (u).y * (v).x)
 
+#define VECTOR2D(x1,x2) {(x2).x - (x1).x, (x2).y - (x1).y}
+
 #define DOT2D(x1,x2) ((x1).x * (x2).x + (x1).y * (x2).y)
 
 #define DOT2D_P(x1,x2) ((x1)->x * (x2)->x + (x1)->y * (x2)->y)
