@@ -408,127 +408,10 @@ static void update_traj_object(int index)
 	}
 }
 
-void
-add_rectangle_to_map(carmen_mapper_virtual_laser_message *virtual_laser_message, double width, double length, int index)
-{
-	double logitudinal_disp = -length / 2.0;
-	double lateral_disp = -width / 2.0;
-	for ( ; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
-	{
-		virtual_laser_message->positions[virtual_laser_message->num_positions].x = object_list[index].x1 +
-				lateral_disp * cos(object_list[index].theta + M_PI / 2.0) +
-				logitudinal_disp * cos(object_list[index].theta);
-		virtual_laser_message->positions[virtual_laser_message->num_positions].y = object_list[index].y1 +
-				lateral_disp * sin(object_list[index].theta + M_PI / 2.0) +
-				logitudinal_disp * sin(object_list[index].theta);
-		virtual_laser_message->colors[virtual_laser_message->num_positions] = CARMEN_PURPLE;
-		virtual_laser_message->num_positions++;
-
-		virtual_laser_message->positions[virtual_laser_message->num_positions].x = object_list[index].x1 +
-				lateral_disp * cos(object_list[index].theta - M_PI / 2.0) +
-				logitudinal_disp * cos(object_list[index].theta);
-		virtual_laser_message->positions[virtual_laser_message->num_positions].y = object_list[index].y1 +
-				lateral_disp * sin(object_list[index].theta - M_PI / 2.0) +
-				logitudinal_disp * sin(object_list[index].theta);
-		virtual_laser_message->colors[virtual_laser_message->num_positions] = CARMEN_PURPLE;
-		virtual_laser_message->num_positions++;
-	}
-
-	lateral_disp = width / 2.0;
-	for ( ; logitudinal_disp < length / 2.0; logitudinal_disp = logitudinal_disp + 0.2)
-	{
-		virtual_laser_message->positions[virtual_laser_message->num_positions].x = object_list[index].x1 +
-				lateral_disp * cos(object_list[index].theta + M_PI / 2.0) +
-				logitudinal_disp * cos(object_list[index].theta);
-		virtual_laser_message->positions[virtual_laser_message->num_positions].y = object_list[index].y1 +
-				lateral_disp * sin(object_list[index].theta + M_PI / 2.0) +
-				logitudinal_disp * sin(object_list[index].theta);
-		virtual_laser_message->colors[virtual_laser_message->num_positions] = CARMEN_PURPLE;
-		virtual_laser_message->num_positions++;
-
-		virtual_laser_message->positions[virtual_laser_message->num_positions].x = object_list[index].x1 +
-				lateral_disp * cos(object_list[index].theta - M_PI / 2.0) +
-				logitudinal_disp * cos(object_list[index].theta);
-		virtual_laser_message->positions[virtual_laser_message->num_positions].y = object_list[index].y1 +
-				lateral_disp * sin(object_list[index].theta - M_PI / 2.0) +
-				logitudinal_disp * sin(object_list[index].theta);
-		virtual_laser_message->colors[virtual_laser_message->num_positions] = CARMEN_PURPLE;
-		virtual_laser_message->num_positions++;
-	}
-
-	for (lateral_disp = -width / 2.0; lateral_disp < width / 2.0; lateral_disp = lateral_disp + 0.2)
-	{
-		virtual_laser_message->positions[virtual_laser_message->num_positions].x = object_list[index].x1 +
-				lateral_disp * cos(object_list[index].theta + M_PI / 2.0) +
-				logitudinal_disp * cos(object_list[index].theta);
-		virtual_laser_message->positions[virtual_laser_message->num_positions].y = object_list[index].y1 +
-				lateral_disp * sin(object_list[index].theta + M_PI / 2.0) +
-				logitudinal_disp * sin(object_list[index].theta);
-		virtual_laser_message->colors[virtual_laser_message->num_positions] = CARMEN_PURPLE;
-		virtual_laser_message->num_positions++;
-
-		virtual_laser_message->positions[virtual_laser_message->num_positions].x = object_list[index].x1 +
-				lateral_disp * cos(object_list[index].theta - M_PI / 2.0) +
-				logitudinal_disp * cos(object_list[index].theta);
-		virtual_laser_message->positions[virtual_laser_message->num_positions].y = object_list[index].y1 +
-				lateral_disp * sin(object_list[index].theta - M_PI / 2.0) +
-				logitudinal_disp * sin(object_list[index].theta);
-		virtual_laser_message->colors[virtual_laser_message->num_positions] = CARMEN_PURPLE;
-		virtual_laser_message->num_positions++;
-	}
-}
-
-void
-add_objects_to_map()
-{
-	carmen_mapper_virtual_laser_message virtual_laser_message;
-	virtual_laser_message.positions = (carmen_position_t *) malloc(num_objects * 1000 * sizeof(carmen_position_t));
-	virtual_laser_message.colors = (char *) malloc(num_objects * 1000 * sizeof(char));
-	virtual_laser_message.num_positions = 0;
-	for (int index = 0; index < num_objects; index++)
-	{
-		double width = 1.7;
-		double length = 4.1;
-		switch (object_list[index].type)
-		{
-		case CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT:
-		case CARMEN_SIMULATOR_ACKERMAN_LINE_FOLLOWER:
-		case CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT:
-			break;
-
-		case CARMEN_SIMULATOR_ACKERMAN_PERSON:
-			width = 0.5;
-			length = 0.5;
-			break;
-
-		case CARMEN_SIMULATOR_ACKERMAN_BIKE:
-			width = 0.5;
-			length = 1.5;
-			break;
-
-		case CARMEN_SIMULATOR_ACKERMAN_CAR:
-			width = 1.7;
-			length = 4.1;
-			break;
-
-		case CARMEN_SIMULATOR_ACKERMAN_TRUCK:
-			width = 2.2;
-			length = 15.0;
-			break;
-		}
-		add_rectangle_to_map(&virtual_laser_message, width, length, index);
-	}
-
-	virtual_laser_message.host = carmen_get_host();
-	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
-
-	free(virtual_laser_message.positions);
-	free(virtual_laser_message.colors);
-}
-
 /* updates all objects */
 void carmen_simulator_ackerman_update_objects(carmen_simulator_ackerman_config_t *simulator_config)
 {
+	// Quem adiciona os objetos no mapa é o behavior_selector. Ele recebe a mensagem de objetos simulados publicada pelo simulator_ackerman
 	if (!road_network_message || !autonomous)
 		return;
 
@@ -548,10 +431,9 @@ void carmen_simulator_ackerman_update_objects(carmen_simulator_ackerman_config_t
 			update_object_in_lane(index, simulator_config);
 		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_TRUCK)
 			update_object_in_lane(index, simulator_config);
+
 		update_traj_object(index);
 	}
-
-//	add_objects_to_map();
 }
 
 static void add_object_to_laser(double object_x, double object_y, double width, carmen_laser_laser_message *laser,

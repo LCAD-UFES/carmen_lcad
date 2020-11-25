@@ -1294,7 +1294,10 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 					global_gui->frenet_path_planer_path[i].map 	      = global_gui->controls_.map_view->internal_map;
 				}
 
-				global_gui->draw_path(global_gui->frenet_path_planer_path, global_gui->frenet_path_planer_number_of_poses, carmen_light_green, carmen_light_green, the_map_view);
+				if (j != global_gui->frenet_path_planer_set_of_paths_msg.selected_path)
+					global_gui->draw_path(global_gui->frenet_path_planer_path, global_gui->frenet_path_planer_number_of_poses, carmen_light_green, carmen_light_green, the_map_view);
+				else
+					global_gui->draw_path(global_gui->frenet_path_planer_path, global_gui->frenet_path_planer_number_of_poses, carmen_blue, carmen_blue, the_map_view);
 			}
 			free(global_gui->frenet_path_planer_path);
 		}

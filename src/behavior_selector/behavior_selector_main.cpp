@@ -536,15 +536,16 @@ add_object_to_map(double width, double length, double x, double y, double theta)
 
 
 void
-add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message *msg)
+add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message *msg,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
 	if (!msg)
 		return;
 
 	for (int index = 0; index < msg->num_objects; index++)
 	{
-		double width = 1.7;
-		double length = 4.1;
+		double width = 0.1;
+		double length = 0.1;
 		switch (msg->objects[index].type)
 		{
 		case CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT:
@@ -572,7 +573,9 @@ add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message 
 			length = 15.0;
 			break;
 		}
-		add_object_to_map(width, length, msg->objects[index].x, msg->objects[index].y, msg->objects[index].theta);
+
+		if (DIST2D(current_robot_pose_v_and_phi, msg->objects[index]) < 20.0)
+			add_object_to_map(width, length, msg->objects[index].x, msg->objects[index].y, msg->objects[index].theta);
 	}
 }
 
@@ -1069,7 +1072,7 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 //		add_simulated_object(simulated_object_pose2);
 #endif
 
-	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects);
+	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects, current_robot_pose_v_and_phi);
 
 	if (virtual_laser_message.num_positions >= 0)
 		publish_simulated_objects();
@@ -1232,7 +1235,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 //		add_simulated_object(simulated_object_pose2);
 #endif
 
-	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects);
+	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects, current_robot_pose_v_and_phi);
 
 	if (virtual_laser_message.num_positions >= 0)
 		publish_simulated_objects();
