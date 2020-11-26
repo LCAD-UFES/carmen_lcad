@@ -155,13 +155,13 @@ carmen_ackerman_traj_point_t *search_old(carmen_ackerman_traj_point_t key, carme
 }
 
 carmen_ackerman_traj_point_t *
-find_nearest_pose_in_lane(carmen_ackerman_traj_point_t key, carmen_ackerman_traj_point_t *lane, int size, int *index_in_lane)
+find_nearest_pose_in_lane(carmen_ackerman_traj_point_t pose, carmen_ackerman_traj_point_t *lane, int size, int *index_in_lane)
 {
-	double min_distance = DIST2D(key, lane[0]);
+	double min_distance = DIST2D(pose, lane[0]);
 	int index = 0;
-	for (int i = 1; i < size - 1; i++)
+	for (int i = 1; i < size; i++)
 	{
-		double distance = DIST2D(key, lane[i]);
+		double distance = DIST2D(pose, lane[i]);
 		if (distance < min_distance)
 		{
 			index = i;
@@ -172,6 +172,36 @@ find_nearest_pose_in_lane(carmen_ackerman_traj_point_t key, carmen_ackerman_traj
 	*index_in_lane = index;
 
 	return (&(lane[index]));
+}
+
+
+carmen_ackerman_traj_point_t *
+node_merges_with_another_lane(int *another_lane_id, int *lane_size, int *node_index_in_lane, int lane_index)
+{
+	carmen_route_planner_junction_t *nearby_lane_merges = &(road_network_message->nearby_lanes_merges[road_network_message->nearby_lanes_merges_indexes[lane_index]]);
+	for (int merge = 0; merge < road_network_message->nearby_lanes_merges_sizes[lane_index]; merge++)
+	{
+		if (nearby_lane_merges[merge].index_of_node_in_current_lane == *node_index_in_lane)
+		{
+			*another_lane_id = nearby_lane_merges[merge].target_lane_id;
+			for (int another_lane_index = 0; another_lane_index < road_network_message->number_of_nearby_lanes; another_lane_index++)
+			{
+				if (*another_lane_id == road_network_message->nearby_lanes_ids[another_lane_index])
+				{
+					carmen_ackerman_traj_point_t *another_lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[another_lane_index]]);
+					int target_node_index_in_nearby_lane = nearby_lane_merges[merge].target_node_index_in_nearby_lane;
+					if (target_node_index_in_nearby_lane != -1)
+					{
+						*node_index_in_lane = target_node_index_in_nearby_lane;
+						*lane_size = road_network_message->nearby_lanes_sizes[another_lane_index];
+						return (&(another_lane[target_node_index_in_nearby_lane]));
+					}
+				}
+			}
+		}
+	}
+
+	return (NULL);
 }
 
 
@@ -212,6 +242,16 @@ find_nearest_pose_in_the_nearest_lane(carmen_object_ackerman_t *object, carmen_a
 				carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
 				*lane_size = road_network_message->nearby_lanes_sizes[i];
 				nearest_pose_in_the_nearest_lane = find_nearest_pose_in_lane(pose, lane, *lane_size, index_in_lane);
+				if (*index_in_lane == (*lane_size - 1))
+				{
+					int another_lane_id;
+					carmen_ackerman_traj_point_t *pose_in_another_lane;
+					if ((pose_in_another_lane = node_merges_with_another_lane(&another_lane_id, lane_size, index_in_lane, i)) != NULL)
+					{
+						object->lane_id = another_lane_id;
+						nearest_pose_in_the_nearest_lane = pose_in_another_lane;
+					}
+				}
 			}
 		}
 	}
@@ -235,6 +275,9 @@ static void update_object_in_lane(int i, carmen_simulator_ackerman_config_t *sim
 	int lane_size;
 	int index_in_lane;
 	carmen_ackerman_traj_point_t *pose_in_lane = find_nearest_pose_in_the_nearest_lane(&new_object, pose_ahead, &lane_size, &index_in_lane);
+	if (!pose_in_lane)
+		return;
+
 	int status;
 	carmen_ackerman_traj_point_t next_pose;
 	if (index_in_lane == 0)
