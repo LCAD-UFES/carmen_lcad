@@ -771,10 +771,11 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		who_set_the_goal_v = KEEP_SPEED_LIMIT;
 
 	previous_v = goal->v; //@@@Vinicius Isso nao deve ser mais necessario, apenas limita a velocidade em parking jah esta tratado
-	// if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
-	// 	 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
-	// 	(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
-	// 	goal->v = parking_speed_limit;
+	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
+	 	 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
+	 	(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
+	 	goal->v = parking_speed_limit;
+
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
 
