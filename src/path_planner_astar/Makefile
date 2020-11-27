@@ -26,12 +26,12 @@ LFLAGS += \
 	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
 	`pkg-config --libs gtkglext-1.0`
 
-SOURCES = path_planner_astar_main.cpp reeds_sheep.cpp planning.cpp offroad_planner_distance_map.cpp 
+SOURCES = path_planner_astar_main.cpp path_planner_astar.cpp reeds_sheep.cpp planning.cpp offroad_planner_distance_map.cpp 
 
 PUBLIC_BINARIES = path_planner_astar 
 TARGETS = path_planner_astar 
 
-path_planner_astar: path_planner_astar_main.o reeds_sheep.o planning.o offroad_planner_distance_map.o
+path_planner_astar: path_planner_astar_main.o path_planner_astar.o reeds_sheep.o planning.o offroad_planner_distance_map.o
 
 include ../Makefile.rules
 

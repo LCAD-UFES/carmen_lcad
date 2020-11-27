@@ -149,4 +149,36 @@ reed_shepp(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal
 int
 constRS(int num, double t, double u, double v, carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_p points);
 
-//Reed Shepp ////////////////////////////
+int
+get_index_of_nearest_pose_in_path(carmen_ackerman_traj_point_t *path, carmen_point_t globalpos, int path_length);
+
+carmen_ackerman_traj_point_t *
+get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index);
+
+void
+add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_message,
+		carmen_ackerman_traj_point_t *path_copy);
+
+void
+free_lanes(carmen_route_planner_road_network_message route_planner_road_network_message);
+
+double *
+get_goal_distance_map(carmen_point_t *goal_pose, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map);
+
+std::vector<carmen_ackerman_traj_point_t>
+carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
+		carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map, double *goal_distance_map,
+		nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map);
+
+int
+smooth_rddf_using_conjugate_gradient(std::vector<carmen_ackerman_traj_point_t> &astar_path);
+
+offroad_planner_plan_t
+astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goal_pose, std::vector<carmen_ackerman_traj_point_t> path_result);
+
+carmen_map_t *
+copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map);
+
+void
+alloc_cost_map();
+
