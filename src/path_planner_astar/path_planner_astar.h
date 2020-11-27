@@ -182,3 +182,6 @@ copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map)
 void
 alloc_cost_map();
 
+double
+carmen_compute_abs_angular_distance(double theta_1, double theta_2);
+
