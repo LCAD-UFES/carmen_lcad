@@ -14,11 +14,14 @@ int use_nonholonomic_heuristic_cost_map = 0;
 
 carmen_point_t *final_goal = NULL;
 int final_goal_received = 0;
+int path_sended = 0;
+
 int grid_state_map_x_size;
 int grid_state_map_y_size;
 
 carmen_route_planner_road_network_message route_planner_road_network_message;
-
+offroad_planner_plan_t plan_path_poses;
+std::vector<carmen_ackerman_traj_point_t> astar_path;
 
 static int
 sign(double a)
@@ -1523,6 +1526,7 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose, 
 					n = n->parent;
 					free(temp);
 				}
+				path_sended = 1;
 
 				return path_result;
 			}
@@ -1562,6 +1566,7 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose, 
 
 	printf("Path não encontrado!\n");
 	clear_astar_search(FH, grid_state_map, goal_node);
+	path_sended = 0;
 	return path_result;
 }
 
@@ -1577,20 +1582,24 @@ static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	carmen_point_t robot_position = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta};
+
 	if (final_goal_received != 0)
 	{
+		if(!astar_path.empty())
+			astar_path.clear();
+
 		pose_node initial_pose, goal_pose;
 		initial_pose = {robot_position.x, robot_position.y, robot_position.theta, Forward};
 		goal_pose = {final_goal->x, final_goal->y, final_goal->theta, Forward};
 		double* goal_distance_map = get_goal_distance_map(final_goal, obstacle_distance_grid_map);
-		std::vector<carmen_ackerman_traj_point_t> astar_path = carmen_path_planner_astar_search(&initial_pose, &goal_pose, obstacle_distance_grid_map, goal_distance_map, nonholonomic_heuristic_cost_map);
+		astar_path = carmen_path_planner_astar_search(&initial_pose, &goal_pose, obstacle_distance_grid_map, goal_distance_map, nonholonomic_heuristic_cost_map);
 
 		if(astar_path.size() > 2)
 		{
 			if (USE_SMOOTH)
 				smooth_rddf_using_conjugate_gradient(astar_path);
 
-			offroad_planner_plan_t plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal, astar_path);
+			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal, astar_path);
 			publish_plan(plan_path_poses.path, msg);
 
 			for(int i = 0; i< astar_path.size(); i++)
@@ -1606,6 +1615,16 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		free(goal_distance_map);
 
 		final_goal_received = 0;
+	}
+
+	if(path_sended && DIST2D(robot_position, *route_planner_road_network_message.poses) > 4.0)
+	{
+		publish_plan(plan_path_poses.path, msg);
+	}
+	if(path_sended && DIST2D_P(&robot_position, final_goal) < 6.0 && abs(carmen_compute_abs_angular_distance(robot_position.theta, final_goal->theta)) < 0.2617995)
+	{
+		printf("Chegou ao destino\n");
+		path_sended = 0;
 	}
 
 }
