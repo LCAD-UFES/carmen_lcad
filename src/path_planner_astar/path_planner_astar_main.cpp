@@ -9,7 +9,7 @@ static carmen_obstacle_distance_mapper_map_message distance_map_struct;
 carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map = NULL;
 carmen_map_p map_occupancy = NULL;
 
-nonholonomic_heuristic_cost_p*** nonholonomic_heuristic_cost_map;
+nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map;
 int use_nonholonomic_heuristic_cost_map = 0;
 
 carmen_point_t *final_goal = NULL;
