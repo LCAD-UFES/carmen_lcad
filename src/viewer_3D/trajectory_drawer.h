@@ -11,10 +11,11 @@ typedef struct _trajectory_drawer
 	double g;
 	double b;
 
-	carmen_vector_3D_t* path;
+	carmen_vector_3D_t *path;
+	carmen_vector_3D_t *path_segment_color;
 	int path_size;
 
-	carmen_pose_3D_t* goals;
+	carmen_pose_3D_t *goals;
 	int goals_size;
 } trajectory_drawer;
 

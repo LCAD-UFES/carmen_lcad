@@ -2494,8 +2494,8 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				path[i].x	  = message->set_of_paths[j * message->number_of_poses + i].x;
 				path[i].y	  = message->set_of_paths[j * message->number_of_poses + i].y;
 				path[i].theta = message->set_of_paths[j * message->number_of_poses + i].theta;
-				path[i].v	  = 0;
-				path[i].phi	  = 0;
+				path[i].v	  = message->set_of_paths[j * message->number_of_poses + i].v;
+				path[i].phi	  = message->set_of_paths[j * message->number_of_poses + i].phi;
 			}
 
 			frenet_trajectory->path = path;

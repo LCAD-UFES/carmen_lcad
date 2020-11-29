@@ -16,6 +16,7 @@ create_trajectory_drawer(double r, double g, double b)
 	trajectory_drawer* t_drawer = (trajectory_drawer*)malloc(sizeof(trajectory_drawer));
 		
 	t_drawer->path = NULL;
+	t_drawer->path_segment_color = NULL;
 	t_drawer->path_size = 0;
 
 	t_drawer->goals = NULL;
@@ -31,24 +32,38 @@ create_trajectory_drawer(double r, double g, double b)
 
 void
 destroy_trajectory_drawer(trajectory_drawer* t_drawer)
-{	
+{
 	free(t_drawer->path);
 	free(t_drawer->goals);
 	free(t_drawer);
 }
 
 void
-add_trajectory_message(trajectory_drawer* t_drawer, carmen_navigator_ackerman_plan_message *message)
+add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_plan_message *message)
 {
-	t_drawer->path = (carmen_vector_3D_t*)realloc(t_drawer->path, message->path_length * sizeof(carmen_vector_3D_t));
+	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->path_length * sizeof(carmen_vector_3D_t));
+	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->path_length * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->path_length;
 
 	int i;
-	for(i=0; i<t_drawer->path_size; i++)
+	for(i = 0; i < t_drawer->path_size; i++)
 	{
 		t_drawer->path[i].x = message->path[i].x;
 		t_drawer->path[i].y = message->path[i].y;
 		t_drawer->path[i].z = 0.0;
+
+		if ((i == t_drawer->path_size - 1) || (message->path[i + 1].v >= 0.0))
+		{
+			t_drawer->path_segment_color[i].x = t_drawer->r;
+			t_drawer->path_segment_color[i].y = t_drawer->g;
+			t_drawer->path_segment_color[i].z = t_drawer->b;
+		}
+		else
+		{
+			t_drawer->path_segment_color[i].x = 1.0;
+			t_drawer->path_segment_color[i].y = 0.0;
+			t_drawer->path_segment_color[i].z = 0.0;
+		}
 	}
 }
 
@@ -103,14 +118,12 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 
 		glBegin(GL_LINE_STRIP);
 			
-			glColor3f(t_drawer->r, t_drawer->g, t_drawer->b);
-
-			//printf("\nOffset: x:% lf y:% lf z:% lf\n", offset.x, offset.y, offset.z);
+//			glColor3f(t_drawer->r, t_drawer->g, t_drawer->b);
 
 			int i;
-			for(i=0; i<t_drawer->path_size; i++)
+			for (i = 0; i < t_drawer->path_size; i++)
 			{				
-				//printf("x:% lf y:% lf z:% lf\n", t_drawer->path[i].x, t_drawer->path[i].y, t_drawer->path[i].z);
+				glColor3f(t_drawer->path_segment_color[i].x, t_drawer->path_segment_color[i].y, t_drawer->path_segment_color[i].z);
 				glVertex3d(t_drawer->path[i].x - offset.x, t_drawer->path[i].y - offset.y, t_drawer->path[i].z);
 			}
 		
@@ -126,5 +139,3 @@ draw_trajectory(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 	draw_path(t_drawer, offset);
 	draw_goals(t_drawer, offset);
 }
-
-
