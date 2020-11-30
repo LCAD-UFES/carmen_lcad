@@ -838,11 +838,41 @@ find_nearest_point_around_point_found(carmen_pose_index index, long position, do
 //}
 
 
+int
+modify_index_position_according_car_direction(int current_index, carmen_timestamp_index &carmen_index_ordered_by_timestamp, double dist, int &pose_reached, double &min_dist, int &sign_new_direction, int &index_switch_direction)
+{
+
+	if ((current_index < (carmen_index_ordered_by_timestamp.size() - 1)) &&
+			(carmen_sign(carmen_index_ordered_by_timestamp[current_index].velocity_x) != carmen_sign(carmen_index_ordered_by_timestamp[current_index+1].velocity_x))
+			&& (sign_new_direction == 0 || carmen_sign(carmen_index_ordered_by_timestamp[current_index].velocity_x) == sign_new_direction))
+	{
+		index_switch_direction = current_index;
+		if (dist < 0.3)
+		{
+			pose_reached = index_switch_direction;
+			sign_new_direction = carmen_sign(carmen_index_ordered_by_timestamp[index_switch_direction + 1].velocity_x);
+			index_switch_direction = -1;
+			min_dist = -1;
+		}
+	}
+
+	if ((sign_new_direction != 0) &&
+			(carmen_sign(carmen_index_ordered_by_timestamp[current_index].velocity_x) != sign_new_direction))
+		return 1;
+
+	return 0;
+}
+
+
 long
 find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood, int search_only_in_the_begining)
 {
 	int i, min_dist_pos = 0;
-	double dist, min_dist = -1;
+	double dist = DBL_MAX;
+	double min_dist = -1;
+	static int index_switch_direction = -1;
+	static int sign_new_direction = 0;
+	static int pose_reached = 0;
 
 	for(i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
 	{
@@ -854,10 +884,16 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 		if (timestamp_ignore_neighborhood > 0)
 			if (fabs(timestamp_ignore_neighborhood - carmen_index_ordered_by_timestamp[i].timestamp) < 3 * 60)
 				continue;
-			
+
 		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
 
-		if ((dist < min_dist) || (min_dist == -1))
+		if (modify_index_position_according_car_direction(i, carmen_index_ordered_by_timestamp, dist, pose_reached, min_dist, sign_new_direction, index_switch_direction))
+		{
+			min_dist = -1;
+			continue;
+		}
+
+		if (((dist < min_dist) || (min_dist == -1)) && ((index_switch_direction == -1) || (i <= index_switch_direction)) && (i > pose_reached))
 		{
 			// ignore points with incorrect orientation
 			if (test_orientation)
@@ -868,6 +904,15 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 			min_dist_pos = i;
 		}
 	}
+
+	if (min_dist_pos == carmen_index_ordered_by_timestamp.size() && dist < 0.2)
+	{
+		index_switch_direction = -1;
+		sign_new_direction = 0;
+		pose_reached = 0;
+	}
+
+	printf("min_dist = %lf min_dist_pos = %d index_switch_direction = %d sign_new_direction = %d \n", min_dist, min_dist_pos, index_switch_direction, sign_new_direction);
 
 	return min_dist_pos;
 }

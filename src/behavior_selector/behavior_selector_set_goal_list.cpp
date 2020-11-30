@@ -695,8 +695,6 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 
 	int first_pose_change_direction_index = -1;
 
-	static int SWITCH_GOAL_SIGN = 0;
-
 	static carmen_ackerman_traj_point_t previous_first_goal;
 
 
@@ -731,9 +729,6 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 				last_obstacle_free_waypoint_index, distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation,
 				distance_to_last_obstacle_free_waypoint, rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index,
 				current_moving_objects, timestamp, first_pose_change_direction_index);
-
-		if ((SWITCH_GOAL_SIGN != 0) && carmen_sign(rddf->poses[rddf_pose_index].v) != SWITCH_GOAL_SIGN)
-			continue;
 
 		static double moving_obstacle_trasition = 0.0;
 		if (rddf_pose_hit_obstacle)
@@ -907,27 +902,16 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			double dist = DIST2D(rddf->poses[rddf_pose_index], robot_pose);
 			// printf ("%lf %lf %d %d", dist, robot_pose.v, carmen_sign(rddf->poses[rddf_pose_index].v), carmen_sign(previous_first_goal.v));
 
-			if (((dist > 0.3) || (fabs(robot_pose.v) > 0.2)) && (carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(previous_first_goal.v)))
+			if (((dist > 0.3) || (fabs(robot_pose.v) > 0.2)))
 			{
-				// printf (" Add");
-				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-				// first_pose_change_direction_index = -1;
+//				 if(carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(previous_first_goal.v))
+				 {
+					 // printf (" Add");
+					 goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+					 add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+					 // first_pose_change_direction_index = -1;
+				 }
 			}
-			// printf ("\n");
-			// else
-			// {
-			// 	if(robot_pose.v != 0.0)
-			// 	{
-			// 		goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-			// 		add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-			// 		first_pose_change_direction_index = -1;
-			// 	}
-			// 	else if (fabs(robot_pose.v) < 0.2)
-			// 	{
-			// 		SWITCH_GOAL_SIGN = carmen_sign(rddf->poses[rddf_pose_index+1].v);
-			// 	}
-			// }
 		}
 #endif
 
