@@ -912,7 +912,7 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 		pose_reached = 0;
 	}
 
-	printf("min_dist = %lf min_dist_pos = %d index_switch_direction = %d sign_new_direction = %d \n", min_dist, min_dist_pos, index_switch_direction, sign_new_direction);
+//	printf("min_dist = %lf min_dist_pos = %d index_switch_direction = %d sign_new_direction = %d \n", min_dist, min_dist_pos, index_switch_direction, sign_new_direction);
 
 	return min_dist_pos;
 }
