@@ -770,12 +770,11 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = KEEP_SPEED_LIMIT;
 
-	previous_v = goal->v; //@@@Vinicius Isso nao deve ser mais necessario, apenas limita a velocidade em parking jah esta tratado
-	if (!behavior_selector_reverse_driving &&
-		(((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
+	previous_v = goal->v; //Limita a velocidade quando o offroad eh acionado, tanto para frente quanto para reh
+	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
 	 	 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
-	 	(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING)))
-	 	goal->v = parking_speed_limit;
+	 	(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
+	 	goal->v = (reversing_driving == 1)? -parking_speed_limit : parking_speed_limit;
 
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
