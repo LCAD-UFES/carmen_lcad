@@ -865,7 +865,7 @@ modify_index_position_according_car_direction(int current_index, carmen_timestam
 
 
 long
-find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood, int search_only_in_the_begining)
+find_timestamp_index_position_with_full_index_search_new(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood, int search_only_in_the_begining)
 {
 	int i, min_dist_pos = 0;
 	double dist = DBL_MAX;
@@ -916,6 +916,42 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 
 	return min_dist_pos;
 }
+
+
+long
+find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood, int search_only_in_the_begining)
+{
+	int i, min_dist_pos = 0;
+	double dist, min_dist = -1.0;
+
+	for (i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
+	{
+		if (search_only_in_the_begining && i > 100)
+			break;
+
+		// esse if eh para tratar os fechamentos de loop. se estamos no fim do rddf, buscamos a pose mais proxima
+		// com uma diferenca temporal maior que 3 minutos para evitar que poses proximas a posicao atual sejam retornados.
+		if (timestamp_ignore_neighborhood > 0)
+			if (fabs(timestamp_ignore_neighborhood - carmen_index_ordered_by_timestamp[i].timestamp) < 3 * 60)
+				continue;
+
+		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
+
+		if ((dist < min_dist) || (min_dist == -1))
+		{
+			// ignore points with incorrect orientation
+			if (test_orientation)
+				if (fabs(carmen_normalize_theta(carmen_index_ordered_by_timestamp[i].yaw - yaw)) > (M_PI / 2.0))
+					continue;
+
+			min_dist = dist;
+			min_dist_pos = i;
+		}
+	}
+
+	return (min_dist_pos);
+}
+
 
 long
 find_timestamp_index_position_with_full_index_search_near_timestamp(double x, double y, double yaw, int test_orientation, double timestamp_near)

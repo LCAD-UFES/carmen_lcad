@@ -102,10 +102,10 @@ typedef struct
 	int nearby_lanes_forks_size;		// Igual ao numero de forks de todas as lanes somado.
 	carmen_route_planner_junction_t *nearby_lanes_forks;			// Size == nearby_lanes_forks_size. Todos os forks, um atras do outro.
 
-	// int *nearby_crossroads_indexes;	// Size == number_of_nearby_lanes. O ponto em nearby_crossroads onde começam os cruzamentos de cada lane.
-	// int *nearby_crossroads_sizes;		// Size == number_of_nearby_lanes. O número de cruzamentos de cada lane.
-	// int nearby_crossroads_size;		// Igual ao numero de cruzamentos de todas as lanes somado.
-	// carmen_route_planner_junction_t *nearby_crossroads;			// Size == nearby_crossroads_size. Todos os cruzamenttos, um atras do outro.
+	int *nearby_lanes_crossroads_indexes;	// Size == number_of_nearby_lanes. O ponto em nearby_crossroads onde começam os cruzamentos de cada lane.
+	int *nearby_lanes_crossroads_sizes;		// Size == number_of_nearby_lanes. O número de cruzamentos de cada lane.
+	int nearby_lanes_crossroads_size;		// Igual ao numero de cruzamentos de todas as lanes somado.
+	carmen_route_planner_junction_t *nearby_lanes_crossroads;		// Size == nearby_lanes_crossroads_size. Todos os cruzamenttos, um atras do outro.
 
 	int *nearby_lanes_node_ids;			// Size == nearby_lanes_size. Ids dos nós (poses) de todas as lanes.
 
@@ -149,9 +149,13 @@ typedef struct
 	<int:7>, \
 	int, \
 	<{int, int, int, int}:20>, \
+	<int:7>, \
+	<int:7>, \
+	int, \
+	<{int, int, int, int}:24>, \
 	<int:11>, \
 	int, \
-	<{{double, double, double, double, double}, int, int}:23>, \
+	<{{double, double, double, double, double}, int, int}:27>, \
 	int, \
 	int, \
 	double, \

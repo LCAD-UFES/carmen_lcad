@@ -116,14 +116,14 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 {
 	goal_list[goal_index] = rddf->poses[rddf_pose_index];
 	
-	if (carmen_sign(rddf->poses[rddf_pose_index].v) == 1)
-	{
-		goal_list[goal_index].v = get_max_v();
-	}
-	else
-	{
-		goal_list[goal_index].v = get_max_v_reverse();
-	}
+//	if (carmen_sign(rddf->poses[rddf_pose_index].v) == 1)
+//	{
+//		goal_list[goal_index].v = get_max_v();
+//	}
+//	else
+//	{
+//		goal_list[goal_index].v = get_max_v_reverse();
+//	}
 	
 	annotations[goal_index] = rddf->annotations[rddf_pose_index];
 	current_goal = rddf->poses[rddf_pose_index];
@@ -141,14 +141,14 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 	new_car_traj_point.x = new_car_pose.x;
 	new_car_traj_point.y = new_car_pose.y;
 	
-	if (carmen_sign(rddf->poses[rddf_pose_index].v) == 1)
-	{
-		new_car_traj_point.v = get_max_v();
-	}
-	else
-	{
-		new_car_traj_point.v = get_max_v_reverse();
-	}
+//	if (carmen_sign(rddf->poses[rddf_pose_index].v) == 1)
+//	{
+//		new_car_traj_point.v = get_max_v();
+//	}
+//	else
+//	{
+//		new_car_traj_point.v = get_max_v_reverse();
+//	}
 
 	goal_list[goal_index] = new_car_traj_point;
 	annotations[goal_index] = rddf->annotations[rddf_pose_index];
@@ -332,10 +332,8 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 
 	if (behavior_selector_reverse_driving && (rddf_pose_index < (rddf->number_of_poses - 1)))
 	{
-		if(carmen_sign(rddf->poses[rddf_pose_index].v) != carmen_sign(rddf->poses[rddf_pose_index + 1].v))
-		{
+		if (carmen_sign(rddf->poses[rddf_pose_index].v) != carmen_sign(rddf->poses[rddf_pose_index + 1].v))
 			first_pose_change_direction_index = rddf_pose_index;
-		}
 	}
 #endif
 
@@ -480,7 +478,7 @@ behavior_selector_add_goal(carmen_point_t goal)
 	goal_list[goal_list_size].x = goal.x;
 	goal_list[goal_list_size].y = goal.y;
 	goal_list[goal_list_size].theta = goal.theta;
-	goal_list[goal_list_size].v = get_max_v();
+	goal_list[goal_list_size].v = 0.0;
 
 	goal_list_size++;
 }
@@ -714,9 +712,13 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			left_obst.x, left_obst.y, left_obst_velocity,
 			right_obst.x, right_obst.y, right_obst_velocity);
 #endif
-	// for (int rddf_pose_index = 0; rddf_pose_index < 10; rddf_pose_index++)
-	// 	printf("%lf ", rddf->poses[rddf_pose_index].v);
-	// printf("\n");
+//	 for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses; rddf_pose_index++)
+//	 	printf("%lf %lf %lf %lf\n",
+//	 			rddf->poses[rddf_pose_index].v,
+//				rddf->poses[rddf_pose_index].x,
+//				rddf->poses[rddf_pose_index].y,
+//				rddf->poses[rddf_pose_index].theta);
+//	 printf("\n");
 
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{

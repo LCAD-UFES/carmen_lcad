@@ -800,9 +800,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 			(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL ||
 			goal_type == FINAL_GOAL) &&
 			(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
-			((current_robot_pose_v_and_phi->v < 0.2) && (current_robot_pose_v_and_phi->v > -0.2)))
+			(fabs(current_robot_pose_v_and_phi->v) < 0.2))
 	{
-
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 
 		if (initial_dist == 0.0)
@@ -828,12 +827,12 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		}
 		else
 		{
-			if(reversing_driving)
+			if (reversing_driving)
 				goal->v = -intermediate_velocity;
 			else
 				goal->v = intermediate_velocity;
-
 		}
+
 		if (previous_v != goal->v)
 			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
 	}
