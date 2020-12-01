@@ -30,7 +30,8 @@ static int goal_type[GOAL_LIST_SIZE];
 static int annotations[GOAL_LIST_SIZE];
 static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
-static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
+static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
+//static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
 static carmen_behavior_selector_algorithm_t following_lane_planner;
@@ -328,13 +329,13 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 
 #ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 
-	first_pose_change_direction_index = -1;
 
-	if (behavior_selector_reverse_driving && (rddf_pose_index < (rddf->number_of_poses - 1)))
-	{
-		if (carmen_sign(rddf->poses[rddf_pose_index].v) != carmen_sign(rddf->poses[rddf_pose_index + 1].v))
-			first_pose_change_direction_index = rddf_pose_index;
-	}
+	if (behavior_selector_reverse_driving &&
+		(rddf_pose_index < (rddf->number_of_poses - 1)) &&
+		(carmen_sign(rddf->poses[rddf_pose_index].v) != carmen_sign(rddf->poses[rddf_pose_index + 1].v)))
+		first_pose_change_direction_index = rddf_pose_index;
+	else
+		first_pose_change_direction_index = -1;
 #endif
 
 	return (rddf_pose_hit_obstacle);
@@ -712,13 +713,13 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			left_obst.x, left_obst.y, left_obst_velocity,
 			right_obst.x, right_obst.y, right_obst_velocity);
 #endif
-//	 for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses; rddf_pose_index++)
-//	 	printf("%lf %lf %lf %lf\n",
-//	 			rddf->poses[rddf_pose_index].v,
-//				rddf->poses[rddf_pose_index].x,
-//				rddf->poses[rddf_pose_index].y,
-//				rddf->poses[rddf_pose_index].theta);
-//	 printf("\n");
+//	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses; rddf_pose_index++)
+//		printf("%lf %lf %lf %lf\n",
+//			rddf->poses[rddf_pose_index].v,
+//			rddf->poses[rddf_pose_index].x,
+//			rddf->poses[rddf_pose_index].y,
+//			rddf->poses[rddf_pose_index].theta);
+//	printf("\n");
 
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
@@ -897,23 +898,11 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 #ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 		//parking se pose anterior foi em uma direcao, aguarda o carro terminar todo o path dessa direcao antes de mudar de direcao (reh/drive)
 		else if (behavior_selector_reverse_driving &&
-				(first_pose_change_direction_index != -1)  // -1 indica que este é um goal de mudanca de direcao
-				// && (carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(current_goal.v))
-				)
+				 ((first_pose_change_direction_index != -1)	&&
+				  (DIST2D(rddf->poses[rddf_pose_index], robot_pose) > 1.0)))
 		{
-			double dist = DIST2D(rddf->poses[rddf_pose_index], robot_pose);
-			// printf ("%lf %lf %d %d", dist, robot_pose.v, carmen_sign(rddf->poses[rddf_pose_index].v), carmen_sign(previous_first_goal.v));
-
-			if (((dist > 0.3) || (fabs(robot_pose.v) > 0.2)))
-			{
-//				 if(carmen_sign(rddf->poses[rddf_pose_index].v) == carmen_sign(previous_first_goal.v))
-				 {
-					 // printf (" Add");
-					 goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-					 add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-					 // first_pose_change_direction_index = -1;
-				 }
-			}
+			 goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+			 add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 		}
 #endif
 

@@ -723,8 +723,6 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	else
 		previous_v = goal->v = get_max_v();
 
-	// printf (" %lf\n", goal->v);
-
 	int who_set_the_goal_v = NONE;
 
 	if (goal_type == OBSTACLE_GOAL)//@@@Vinicius aqui vai tudo ao quadrado, exceto pelo fmin, (mas passei fabs por garantia) goal_v negativo aqui atrapalha, tem que tratar.
@@ -743,15 +741,11 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_OBSTACLE;
 
-	// printf ("GV %lf  ", goal->v);
 	previous_v = goal->v; //@@@Vinicius target_v nao pode ser negativo esse robot_pose eh diferente do current..pose_v? tratar ele para garantir de nao ser usado errado
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
 			last_rddf_message->poses, last_rddf_message->number_of_poses);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = CENTRIPETAL_ACCELERATION;
-
-
-	// printf (" %lf\n", goal->v);
 
 	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
 	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, path_collision_info,
@@ -775,7 +769,6 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	 	 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
 	 	(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
 	 	goal->v = (reversing_driving == 1)? -parking_speed_limit : parking_speed_limit;
-
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
 
@@ -797,10 +790,9 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 
 	previous_v = goal->v;
 	if (behavior_selector_reverse_driving &&
-			(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL ||
-			goal_type == FINAL_GOAL) &&
-			(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
-			(fabs(current_robot_pose_v_and_phi->v) < 0.2))
+		(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL) &&
+//		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
+		(fabs(current_robot_pose_v_and_phi->v) < 0.2))
 	{
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 
@@ -808,14 +800,12 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		{
 			initial_dist = path_dist;
 			intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
-//			printf("Velocity torricelli %lf \n", goal->v);
 			activate_intermediate_velocity = 1;
 		}
 	}
 
-	if (behavior_selector_reverse_driving &&
-		activate_intermediate_velocity &&
-	   (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
+	if (behavior_selector_reverse_driving && activate_intermediate_velocity &&
+	    (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
 	{
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 
@@ -838,7 +828,6 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	}
 
 	previous_v = goal->v;
-	// printf("Velocity escolhida %d %lf \n", who_set_the_goal_v, goal->v);
 
 	return (who_set_the_goal_v);
 }

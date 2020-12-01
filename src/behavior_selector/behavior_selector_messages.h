@@ -156,7 +156,6 @@ typedef struct
 	carmen_behavior_selector_low_level_state_t low_level_state;
 	carmen_behavior_selector_operation_mode_t behaviour_seletor_mode;
 
-
 	double timestamp;
 	char *host;
 } carmen_behavior_selector_state_message;

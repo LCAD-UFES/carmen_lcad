@@ -737,7 +737,7 @@ namespace View
 	GtkGui::navigator_graphics_update_display(carmen_traj_point_p new_robot,
 			carmen_localize_ackerman_globalpos_message *current_globalpos,
 			carmen_ackerman_traj_point_t *new_goal,
-			int					autonomous)
+			int	autonomous)
 	{
 		static char   buffer[2048];
 		double robot_distance = 0.0, goal_distance = 0.0;
@@ -798,15 +798,17 @@ namespace View
 
 		if (!freeze_status)
 		{
-			sprintf(buffer, "Robot: %.2f, %.2f, %2.3f (%3.2f)", robot.pose.x,
-					robot.pose.y, robot.pose.theta, carmen_radians_to_degrees(robot.pose.theta));
+			sprintf(buffer, "Robot: %.2f, %.2f, %2.3f (%3.2f), %5.1f km/h (%.2f m/s)", robot.pose.x,
+					robot.pose.y, robot.pose.theta, carmen_radians_to_degrees(robot.pose.theta),
+					globalpos->v * 3.6, globalpos->v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
 
 			sprintf(buffer, "Velocity: %5.1f km/h (%.2f m/s), %.2f %s", robot_traj.t_vel * 3.6, robot_traj.t_vel,
 					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
-			sprintf(buffer, "Goal: %.2f, %.2f, %.3f (%.2f deg) (%.2lf Km/h)", goal.x, goal.y, goal.theta, carmen_radians_to_degrees(goal.theta), 3.6 * goal.v);
+			sprintf(buffer, "Goal: %.2f, %.2f, %.3f (%.2f deg) (%.2lf Km/h, %.2f m/s)", goal.x, goal.y, goal.theta,
+					carmen_radians_to_degrees(goal.theta), 3.6 * goal.v, goal.v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
 			set_distance_traveled(robot.pose, robot_traj.t_vel);
