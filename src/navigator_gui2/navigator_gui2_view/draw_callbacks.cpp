@@ -967,8 +967,8 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 
 	if (!global_gui->freeze_status)
 	{
-		sprintf(buffer, "Grid Cell: %d, %d  (%1.3f\t%.1f\t%.1f)", point.x, point.y,
-				global_gui->robot.pose.theta, world_point->pose.x, world_point->pose.y);
+		sprintf(buffer, "Grid Cell: %d, %d  (%.1f, %.1f)", point.x, point.y,
+				world_point->pose.x, world_point->pose.y);
 		gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelGridCell), buffer);
 
 		if (the_map != NULL)

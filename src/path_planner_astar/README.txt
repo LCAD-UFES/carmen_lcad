@@ -3,7 +3,7 @@ Para utilizar o path_planner_astar basta executar o central, o process-navigate-
 Então seleciona o robot position no navigator_gui e então o final goal. Após isso aguarde o algoritmo rodar e enviar as poses para o sistema.
 
 ./central
-./proccontrol process-navigate-volta-da-ufes-pid.ini 
+./proccontrol process-anderson-astar.ini 
 ./path_planner_astar
 
 Para utilizar o algoritmo é necessário ter a matriz para a heurística sem obstáculos. Para gerar a matriz, é necessário executar o código cost_matrix (a execução demora, então é melhor baixar a matriz em algum lugar).

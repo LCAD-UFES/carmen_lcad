@@ -574,7 +574,7 @@ add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message 
 			break;
 		}
 
-		if (DIST2D(current_robot_pose_v_and_phi, msg->objects[index]) < 20.0)
+//		if (DIST2D(current_robot_pose_v_and_phi, msg->objects[index]) < 20.0)
 			add_object_to_map(width, length, msg->objects[index].x, msg->objects[index].y, msg->objects[index].theta);
 	}
 }
@@ -644,7 +644,7 @@ publish_updated_lane_contents(double timestamp)
 
 
 void
-publish_current_state(carmen_behavior_selector_state_message msg)
+publish_current_state(carmen_behavior_selector_state_message *msg)
 {
 	IPC_RETURN_TYPE err;
 	carmen_behavior_selector_state_t current_state;
@@ -654,18 +654,18 @@ publish_current_state(carmen_behavior_selector_state_message msg)
 
 	behavior_selector_get_full_state(&current_state, &following_lane_planner, &parking_planner, &current_goal_source);
 
-	msg.timestamp = carmen_get_time();
-	msg.host = carmen_get_host();
+	msg->timestamp = carmen_get_time();
+	msg->host = carmen_get_host();
 
-	msg.algorithm = get_current_algorithm();
-	msg.state = current_state;
+	msg->algorithm = get_current_algorithm();
+	msg->state = current_state;
 
-	msg.following_lane_algorithm = following_lane_planner;
-	msg.parking_algorithm = parking_planner;
+	msg->following_lane_algorithm = following_lane_planner;
+	msg->parking_algorithm = parking_planner;
 
-	msg.goal_source = current_goal_source;
+	msg->goal_source = current_goal_source;
 
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, &msg);
+	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
 }
 
@@ -1056,7 +1056,7 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	}
 
 	publish_updated_lane_contents(timestamp);
-	publish_current_state(behavior_selector_state_message);
+	publish_current_state(&behavior_selector_state_message);
 
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
@@ -1219,7 +1219,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		publish_goal_list(last_valid_goal_p, 1, timestamp);
 	}
 
-	publish_current_state(behavior_selector_state_message);
+	publish_current_state(&behavior_selector_state_message);
 
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.

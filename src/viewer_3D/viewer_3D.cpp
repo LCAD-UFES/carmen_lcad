@@ -2494,8 +2494,8 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				path[i].x	  = message->set_of_paths[j * message->number_of_poses + i].x;
 				path[i].y	  = message->set_of_paths[j * message->number_of_poses + i].y;
 				path[i].theta = message->set_of_paths[j * message->number_of_poses + i].theta;
-				path[i].v	  = 0;
-				path[i].phi	  = 0;
+				path[i].v	  = message->set_of_paths[j * message->number_of_poses + i].v;
+				path[i].phi	  = message->set_of_paths[j * message->number_of_poses + i].phi;
 			}
 
 			frenet_trajectory->path = path;
@@ -2503,7 +2503,10 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 			frenet_trajectory->timestamp = message->timestamp;
 			frenet_trajectory->host = message->host;
 
-			path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0);
+			if (j == message->selected_path)
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0);
+			else
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0);
 			add_trajectory_message(path_plans_frenet_drawer[j], frenet_trajectory);
 		    free(path);
 		    free(frenet_trajectory);

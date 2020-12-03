@@ -120,14 +120,16 @@ get_car_pose_at_s_displacement(double s_displacement, carmen_ackerman_traj_point
 void
 collision_s_distance_to_static_object(path_collision_info_t &path_collision_info,
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
-		double delta_t, int num_samples, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double robot_acc)
+		double delta_t, int num_samples, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		double robot_acc, double distance_to_goal)
 {
 	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
 
 	double min_collision_s_distance = (double) num_samples * delta_t;
 	int index_in_path;
 	int last_path_pose = last_path_pose_that_the_car_can_occupy(path, current_set_of_paths->number_of_poses, current_robot_pose_v_and_phi.v);
-	double max_distance_to_static_object_considered = 1.5 * distance_between_waypoints_and_goals() + distance_car_pose_car_front;
+	double max_distance_to_static_object_considered =
+			1.15 * ((distance_between_waypoints_and_goals() + distance_to_goal) / 2.0) + distance_car_pose_car_front;
 	if (last_path_pose != -1)
 	{
 		for (int s = 0; s < num_samples; s++)
@@ -559,6 +561,14 @@ get_paths_collision_info(carmen_frenet_path_planner_set_of_paths *current_set_of
 	int number_of_paths = current_set_of_paths->set_of_paths_size / current_set_of_paths->number_of_poses;
 	vector<path_collision_info_t> path_collision_info_v;
 
+	int last_goal_list_size;
+	double distance_to_goal;
+	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	if (last_goal_list_size == 0)
+		distance_to_goal = 0.0;
+	else
+		distance_to_goal = DIST2D(current_robot_pose_v_and_phi, goal_list[0]);
+
 	for (int path_id = 0; path_id < number_of_paths; path_id++)
 	{
 		path_collision_info_t path_collision_info;
@@ -572,7 +582,7 @@ get_paths_collision_info(carmen_frenet_path_planner_set_of_paths *current_set_of
 				current_moving_objects, path_id, moving_objects_data, delta_t, num_samples, current_robot_pose_v_and_phi, 0.0);
 
 		collision_s_distance_to_static_object(path_collision_info, current_set_of_paths,
-				path_id, delta_t, num_samples, current_robot_pose_v_and_phi, 0.0);
+				path_id, delta_t, num_samples, current_robot_pose_v_and_phi, 0.0, distance_to_goal);
 
 		if (use_unity_simulator)
 			path_collision_info.s_distance_without_collision_with_static_object = (double) num_samples * delta_t;
@@ -705,6 +715,8 @@ print_mo(carmen_moving_objects_point_clouds_message *current_moving_objects, dou
 {
 	if (!current_moving_objects)
 		return;
+
+	printf("%lf\n", current_moving_objects->timestamp);
 
 	for (int j = 0; j < current_moving_objects->num_point_clouds; j++)
 	{
