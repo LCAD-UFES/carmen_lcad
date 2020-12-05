@@ -919,7 +919,8 @@ find_timestamp_index_position_with_full_index_search_new(double x, double y, dou
 
 
 long
-find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood, int search_only_in_the_begining)
+find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation,
+		double timestamp_ignore_neighborhood, int search_only_in_the_begining, double v, int test_v)
 {
 	int i, min_dist_pos = 0;
 	double dist, min_dist = -1.0;
@@ -936,6 +937,15 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 				continue;
 
 		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
+		if (test_v)
+		{
+			if (fabs(v) > 0.01)
+			{
+				if (((v > 0.0) && (carmen_index_ordered_by_timestamp[i].velocity_x < 0.0)) ||
+					((v < 0.0) && (carmen_index_ordered_by_timestamp[i].velocity_x > 0.0)))
+					dist += 5.0;
+			}
+		}
 
 		if ((dist < min_dist) || (min_dist == -1))
 		{
@@ -1134,7 +1144,7 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 
 
 int
-carmen_search_next_poses_index(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t* poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_desired, int *annotations, int perform_loop = 0)
+carmen_search_next_poses_index_old(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t* poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_desired, int *annotations, int perform_loop = 0)
 {
 //	static int closed_loop = 0;
 //	//static double time_when_closed_loop = 0;
@@ -1174,6 +1184,26 @@ carmen_search_next_poses_index(double x, double y, double yaw, double timestamp 
 //	}
 
 	return num_poses_aquired;
+}
+
+
+int
+carmen_search_next_poses_index(double x, double y, double yaw, double v, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t* poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_desired, int *annotations, int perform_loop = 0)
+{
+	long timestamp_index_position;
+	int num_poses_aquired = 0;
+	carmen_ackerman_traj_point_t last_pose_acquired;
+	(void) timestamp; // to not warning. I use it sometimes to debug.
+
+	timestamp_index_position = find_timestamp_index_position_with_full_index_search(x, y, yaw, 1, 0, 0, v, 1);
+
+	num_poses_aquired = fill_in_waypoints_array(timestamp_index_position, poses_ahead, num_poses_desired, &last_pose_acquired, annotations);
+	(*num_poses_back) = fill_in_backward_waypoints_array(timestamp_index_position, poses_back, num_poses_desired);
+	if (perform_loop)
+		if (num_poses_aquired < num_poses_desired)
+			num_poses_aquired += get_more_more_poses_from_begining(num_poses_desired - num_poses_aquired, poses_ahead, last_pose_acquired, num_poses_aquired, annotations);
+
+	return (num_poses_aquired);
 }
 
 

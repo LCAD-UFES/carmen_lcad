@@ -29,6 +29,8 @@
 
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
+#define PHI_DECAY_TIME 3.0
+
 //#define save_rddf_to_file
 
 Tree tree; //tree rooted on robot
@@ -163,6 +165,29 @@ publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands
 
 
 void
+publish_path_follower_single_motion_command_with_decaying_phi(double v, double phi, double timestamp)
+{
+	carmen_ackerman_motion_command_t commands[2];
+
+	static double previous_timestamp = 0.0;
+	if ((timestamp - previous_timestamp) > 5.0 * PHI_DECAY_TIME)
+		previous_timestamp = timestamp;
+
+	double decay = 1.0 - (timestamp - previous_timestamp) / PHI_DECAY_TIME;
+	if (decay >= 0.0)
+		phi = phi * decay;
+	else
+		phi = 0.0;
+
+	commands[0].v = v;
+	commands[0].phi = phi;
+	commands[0].time = 0.5;
+	commands[1] = commands[0];
+	publish_path_follower_motion_commands(commands, 2, timestamp);
+}
+
+
+void
 publish_path_follower_single_motion_command(double v, double phi, double timestamp)
 {
 	carmen_ackerman_motion_command_t commands[2];
@@ -176,9 +201,19 @@ publish_path_follower_single_motion_command(double v, double phi, double timesta
 
 
 void
-publish_model_predictive_planner_single_motion_command(double v, double phi, double timestamp)
+publish_model_predictive_planner_single_motion_command_with_decaying_phi(double v, double phi, double timestamp)
 {
 	vector<carmen_ackerman_path_point_t> path;
+
+	static double previous_timestamp = 0.0;
+	if ((timestamp - previous_timestamp) > 5.0 * PHI_DECAY_TIME)
+		previous_timestamp = timestamp;
+
+	double decay = 1.0 - (timestamp - previous_timestamp) / PHI_DECAY_TIME;
+	if (decay >= 0.0)
+		phi = phi * decay;
+	else
+		phi = 0.0;
 
 	carmen_ackerman_path_point_t traj;
 	traj.v = v;
@@ -188,7 +223,7 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 
-	publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+	publish_path_follower_single_motion_command_with_decaying_phi(0.0, phi, timestamp);
 }
 
 
@@ -355,7 +390,7 @@ void
 stop()
 {
 	GlobalState::following_path = false;
-	publish_model_predictive_planner_single_motion_command(0.0, 0.0, carmen_get_time());
+	publish_model_predictive_planner_single_motion_command_with_decaying_phi(0.0, 0.0, carmen_get_time());
 }
 
 
@@ -413,10 +448,9 @@ build_and_follow_path(double timestamp)
 		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
-		// goal achieved!
 		if (distance_to_goal < 0.5 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
 		{
-			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
 			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 		}
 		else
@@ -429,25 +463,46 @@ build_and_follow_path(double timestamp)
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
-//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
-
-//				FILE *caco = fopen("caco2.txt", "a");
-//				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
-//						path_follower_path.begin()->command.v,
-//						GlobalState::behavior_selector_low_level_state);
-//				fflush(caco);
-//				fclose(caco);
 			}
-			//		else
-				//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			//		{
-			//			if (GlobalState::last_odometry.v == 0.0)
-			//				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
-			//			else
-			//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			//		}
+			else if (fabs(GlobalState::last_odometry.v) < 0.01)
+			{
+				publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
+				add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
+			}
+//			else
+//			{
+//				double d_yaw = 0.0;
+//				if (goal_list_message.number_of_poses > 3)
+//					d_yaw = carmen_normalize_theta(goal_list_message.poses[3].theta - GlobalState::localizer_pose->theta);
+//				if (d_yaw > 0.0)
+//				{
+//					if (GlobalState::robot_config.max_v > 0.0)
+//					{
+//						publish_path_follower_single_motion_command(0.0, GlobalState::robot_config.max_phi, timestamp);
+//						add_to_steering_delay_queue(GlobalState::robot_config.max_phi, timestamp);
+//					}
+//					else
+//					{
+//						publish_path_follower_single_motion_command(0.0, -GlobalState::robot_config.max_phi, timestamp);
+//						add_to_steering_delay_queue(-GlobalState::robot_config.max_phi, timestamp);
+//					}
+//				}
+//				else if (d_yaw < 0.0)
+//				{
+//					if (GlobalState::robot_config.max_v > 0.0)
+//					{
+//						publish_path_follower_single_motion_command(0.0, -GlobalState::robot_config.max_phi, timestamp);
+//						add_to_steering_delay_queue(-GlobalState::robot_config.max_phi, timestamp);
+//					}
+//					else
+//					{
+//						publish_path_follower_single_motion_command(0.0, GlobalState::robot_config.max_phi, timestamp);
+//						add_to_steering_delay_queue(GlobalState::robot_config.max_phi, timestamp);
+//					}
+//				}
+//			}
 		}
-//		publish_plan_tree_for_navigator_gui(tree);
+
 		publish_navigator_ackerman_status_message();
 	}
 }
@@ -464,7 +519,7 @@ build_and_follow_path_new(double timestamp)
 		// goal achieved!
 		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
 		{
-			publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			publish_model_predictive_planner_single_motion_command_with_decaying_phi(0.0, 0.0, timestamp);
 		}
 		else
 		{
@@ -476,7 +531,7 @@ build_and_follow_path_new(double timestamp)
 //				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
 			//		else
-			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			//			publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
 //		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
@@ -654,29 +709,21 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 
 	if (GlobalState::reverse_driving && msg->goal_list->v < 0.0)
 	{
-		if (GlobalState::robot_config.max_v > 0.0)
-			GlobalState::robot_config.max_v = GlobalState::param_max_vel_reverse;
-
 		desired_v = fmax(msg->goal_list->v, GlobalState::param_max_vel_reverse);
 
-		if (desired_v < GlobalState::robot_config.max_v)
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
-		else
+		if (desired_v > GlobalState::robot_config.max_v)
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+		else
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 	}
 	else
 	{
-		if (GlobalState::robot_config.max_v < 0.0)
-			GlobalState::robot_config.max_v = GlobalState::param_max_vel;
-
 		desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
 		if (desired_v < GlobalState::robot_config.max_v)
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
 		else
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 	}
-
-//	printf("v %lf\n", GlobalState::robot_config.max_v);
 
 	GlobalState::set_goal_pose(goal_pose);
 }

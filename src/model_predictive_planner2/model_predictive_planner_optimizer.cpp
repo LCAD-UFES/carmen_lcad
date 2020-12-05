@@ -268,10 +268,10 @@ dist2(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
 carmen_ackerman_path_point_t
 move_to_front_axle(carmen_ackerman_path_point_t pose)
 {
-	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
+//	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
 	carmen_ackerman_path_point_t pose_moved = pose;
-	pose_moved.x += L * cos(pose.theta);
-	pose_moved.y += L * sin(pose.theta);
+//	pose_moved.x += L * cos(pose.theta);
+//	pose_moved.y += L * sin(pose.theta);
 
 	return (pose_moved);
 }
