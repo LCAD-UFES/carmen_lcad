@@ -232,7 +232,7 @@ pedestrian create_pedestrian(int t_id)
 }
 
 void
-update_pedestrians(short* pedestrian_python, double timestamp)
+update_pedestrians(short* pedestrian_python)
 {
 	for (int i=0; i<pedestrian_tracks.size(); i++)
 	{
@@ -247,7 +247,7 @@ update_pedestrians(short* pedestrian_python, double timestamp)
 			if(pedestrian_tracks[j].track_id == p_id)
 			{
 				update_pedestrian_bbox(&pedestrian_tracks[j],pedestrian_python+i);
-				pedestrian_tracks[j].last_timestamp = timestamp;
+				pedestrian_tracks[j].last_timestamp = carmen_get_time();
 				break;
 			}
 		}
@@ -255,15 +255,17 @@ update_pedestrians(short* pedestrian_python, double timestamp)
 		{
 			pedestrian new_p = create_pedestrian(p_id);
 			update_pedestrian_bbox(&new_p,pedestrian_python+i);
-			new_p.last_timestamp = timestamp;
+			new_p.last_timestamp = carmen_get_time();
 			pedestrian_tracks.push_back(new_p);
 		}
 	}
 }
 
 void
-clean_pedestrians(double timestamp, double max_time)
+clean_pedestrians(double max_time)
 {
+	double timestamp = carmen_get_time();
+
 	for (vector<pedestrian>::iterator it=pedestrian_tracks.begin(); it != pedestrian_tracks.end();)
 	{
 		if(timestamp - it->last_timestamp > max_time)
@@ -350,7 +352,7 @@ convert_predtions_array(vector<bbox_t> predictions)
 
 
 void
-call_python_function(unsigned char *image, vector<bbox_t> predictions, double timestamp)
+call_python_function(unsigned char *image, vector<bbox_t> predictions)
 {
 	if (predictions.size() == 0)
 		return;
@@ -373,7 +375,7 @@ call_python_function(unsigned char *image, vector<bbox_t> predictions, double ti
 		exit (printf("Error: The predctions erro.\n"));
 	}
 
-	update_pedestrians(predict,timestamp);
+	update_pedestrians(predict);
 
 	if (PyErr_Occurred())
 		PyErr_Print();
@@ -908,45 +910,84 @@ carmen_translte_3d(double *x, double *y, double *z, double offset_x, double offs
 }
 
 
-void
-generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<image_cartesian>> points_inside_bbox)
+float
+intersectionOverUnion(bbox_t box1, bbox_t box2)
 {
-	static vector<image_cartesian> traffic_light_points;
-	static int count = 0;
-	int traffic_light_found = 1;
+	// https://github.com/lukaswals/cpp-iout/blob/master/cppIOUT/IOUT.cpp
+	float minx1 = box1.x;
+	float maxx1 = box1.x + box1.w;
+	float miny1 = box1.y;
+	float maxy1 = box1.y+ box1.h;
 
-	for (int i = 0; i < predictions.size(); i++)
+	float minx2 = box2.x;
+	float maxx2 = box2.x + box2.w;
+	float miny2 = box2.y;
+	float maxy2 = box2.y + box2.h;
+
+	if (minx1 > maxx2 || maxx1 < minx2 || miny1 > maxy2 || maxy1 < miny2)
+		return (0.0);
+	else
 	{
-		if (predictions[i].obj_id == 9)
+		float dx = std::min(maxx2, maxx1) - std::max(minx2, minx1);
+		float dy = std::min(maxy2, maxy1) - std::max(miny2, miny1);
+		float area1 = (maxx1 - minx1) * (maxy1 - miny1);
+		float area2 = (maxx2 - minx2) * (maxy2 - miny2);
+		float inter = dx * dy; // Intersection
+		float uni = area1 + area2 - inter; // Union
+		
+		float IoU = inter / uni;
+
+		return (IoU);
+	}
+}
+
+
+int
+find_pedestrian_greater_id()
+{
+	int greater_id = 0;
+
+	for (unsigned int i = 0; i < pedestrian_tracks.size(); i++)
+	{
+		if (greater_id < pedestrian_tracks[i].track_id)
+			greater_id = pedestrian_tracks[i].track_id;
+	}
+	return (greater_id + 1);
+}
+
+
+void
+insert_missing_pedestrians_in_the_track(vector<bbox_t> predictions)
+{
+	unsigned int i = 0, predictions_size = predictions.size(), j = 0, pedestrian_tracks_size = pedestrian_tracks.size();
+
+	for (i = 0; i < predictions_size; i++)
+	{
+		for (j = 0; j < pedestrian_tracks_size; j++)
 		{
-			//printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
-			for (int j = 0; j < points_inside_bbox[i].size(); j++)
-			{
-				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
+			if (pedestrian_tracks[i].active == false)
+				continue;
 
-				//carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z, board_pose.position.x, board_pose.position.y, board_pose.position.z);
-				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, board_pose.position.x, board_pose.position.y);
-				carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.theta);
-				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+			bbox_t p;
+			p.x = pedestrian_tracks[j].x;
+			p.y = pedestrian_tracks[j].y;
+			p.w = pedestrian_tracks[j].w;
+			p.h = pedestrian_tracks[j].h;
 
-				traffic_light_points.push_back(points_inside_bbox[i][j]);
-				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
-			}
-			count = 0;
-			traffic_light_found = 0;
+			if (intersectionOverUnion(predictions[i], p) > 0.1)
+				break;
+		}
+		if (j == pedestrian_tracks_size)
+		{
+			pedestrian new_p = create_pedestrian(find_pedestrian_greater_id());
+			new_p.x = predictions[i].x;
+			new_p.y = predictions[i].y;
+			new_p.w = predictions[i].w;
+			new_p.h = predictions[i].h;
+			new_p.last_timestamp = carmen_get_time();
+			pedestrian_tracks.push_back(new_p);
 		}
 	}
-	count += traffic_light_found;
-
-	if (count >= 20)                // If stays without see a traffic light for more than 20 frames
-	{                               // Compute traffic light positions and generate annotations
-		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
-		//printf("--- %d\n", (int)traffic_light_clusters.size());
-		compute_annotation_specifications(traffic_light_clusters);
-		traffic_light_points.clear();
-		count = 0;
-	}
-	//printf("Cont %d\n", count);
 }
 
 
@@ -1020,7 +1061,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
 	//////// Python
-	call_python_function(open_cv_image.data, predictions, image_msg->timestamp);
+	call_python_function(open_cv_image.data, predictions);
+	
+	// printf("PS %d ", pedestrian_tracks.size());
+
+	insert_missing_pedestrians_in_the_track(predictions);
+	
+	// printf(" %d\n", pedestrian_tracks.size());
+	
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 //	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
@@ -1045,7 +1093,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			//		pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos_msg->globalpos.theta));
 		}
 	}
-	clean_pedestrians(image_msg->timestamp, 1.0);
+	clean_pedestrians(3.0);
 	
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 	publish_moving_objects_message(&msg);
