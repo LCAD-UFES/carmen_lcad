@@ -1,0 +1,42 @@
+
+Graph Summary Report
+--------------
+SVG file: '../data/map_rddf_reh/new2/@7756490_-364140.svg'
+
+RDDF file #1: '../data/map_rddf_reh/new2//rddf-log_volta_da_ufes-20190625-contrario.txt'
+ 690 waypoints in 303.39 meters
+     [  0]  start point                       (x,y)  7757919.734000	-363721.151000	 ( 1429.73,   418.85)  
+     [689]  finish point                      (x,y)  7757800.264000	-363519.473000	 ( 1310.26,   620.53)  
+     [459]  fork                  RDDF #3     (x,y)  7757879.248000	-363573.728000	 ( 1389.25,   566.27)  
+
+RDDF file #2: '../data/map_rddf_reh/new2//rddf-voltadaufes-20170809.txt'
+ 578 waypoints in 287.70 meters
+     [  0]  start point                       (x,y)  7757799.040000	-363521.959000	 ( 1309.04,   618.04)  
+     [577]  finish point                      (x,y)  7757926.215000	-363712.890000	 ( 1436.21,   427.11)  
+     [228]  merge                 RDDF #4     (x,y)  7757891.834000	-363588.284000	 ( 1401.83,   551.72)  
+     [339]  bad waypoint                      (x,y)  7757938.192000	-363628.963000	 ( 1448.19,   511.04)  bad steering angle: | -32.80°| > 30.01°
+     [340]  bad waypoint                      (x,y)  7757938.489000	-363629.248000	 ( 1448.49,   510.75)  bad steering angle: |  33.43°| > 30.01°
+
+RDDF file #3: '../data/map_rddf_reh/new2//rddf_7756490_-364140_path4166.txt'
+  35 waypoints in 17.54 meters
+     [  0]  start point                       (x,y)  7757879.248000	-363573.728000	 ( 1389.25,   566.27)  
+     [ 34]  finish point                      (x,y)  7757892.659000	-363568.610000	 ( 1402.66,   571.39)  
+     [  0]  fork                  RDDF #1     (x,y)  7757879.248000	-363573.728000	 ( 1389.25,   566.27)  bad steering angle: | -86.60°| > 30.01°
+     [ 13]  bad waypoint                      (x,y)  7757885.418000	-363576.106000	 ( 1395.42,   563.89)  bad steering angle: |  35.03°| > 30.01°
+     [ 14]  bad waypoint                      (x,y)  7757885.937469	-363576.057854	 ( 1395.94,   563.94)  bad steering angle: |  38.29°| > 30.01°
+     [ 15]  bad waypoint                      (x,y)  7757886.449733	-363575.933304	 ( 1396.45,   564.07)  bad steering angle: |  33.90°| > 30.01°
+
+RDDF file #4: '../data/map_rddf_reh/new2//rddf_7756490_-364140_path4168.txt'
+  45 waypoints in 21.65 meters
+     [  0]  start point                       (x,y)  7757893.394000	-363569.602000	 ( 1403.39,   570.40)  
+     [ 44]  finish point                      (x,y)  7757891.834000	-363588.284000	 ( 1401.83,   551.72)  
+     [ 44]  merge                 RDDF #2     (x,y)  7757891.834000	-363588.284000	 ( 1401.83,   551.72)  bad steering angle: |  40.44°| > 30.01°
+     [ 25]  bad waypoint                      (x,y)  7757887.514000	-363580.223000	 ( 1397.51,   559.78)  bad steering angle: |  34.01°| > 30.01°
+     [ 26]  bad waypoint                      (x,y)  7757887.594054	-363580.705049	 ( 1397.59,   559.29)  bad steering angle: |  30.27°| > 30.01°
+
+Command for re-editing the RDDFs:
+./edit_graph_inkscape.py  -o ../data/map_rddf_reh/new2/  --window  7756490.0  -364140.0  1540.0  700.0  '../data/map_rddf_reh/new2//rddf-log_volta_da_ufes-20190625-contrario.txt'  '../data/map_rddf_reh/new2//rddf-voltadaufes-20170809.txt'  '../data/map_rddf_reh/new2//rddf_7756490_-364140_path4166.txt'  '../data/map_rddf_reh/new2//rddf_7756490_-364140_path4168.txt' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="../data/map_rddf_reh/new2//graph-log_volta_da_ufes-20190625-contrario_150m.gr";  RANGE="150";  echo -e '/data/map_rddf_reh/new2/rddf-log_volta_da_ufes-20190625-contrario.txt\n/data/map_rddf_reh/new2/rddf-voltadaufes-20170809.txt\n/data/map_rddf_reh/new2/rddf_7756490_-364140_path4166.txt\n/data/map_rddf_reh/new2/rddf_7756490_-364140_path4168.txt' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE
