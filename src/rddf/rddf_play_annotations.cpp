@@ -171,11 +171,11 @@ carmen_rddf_play_check_if_end_point_is_reachable(carmen_ackerman_traj_point_t *p
 
 
 int
-carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max, int *rddf_annotations)
+carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double v, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max, int *rddf_annotations)
 {
 	clear_annotations(rddf_annotations, num_poses_ahead_max);
 
-	int num_poses_ahead = carmen_search_next_poses_index(x, y, yaw, timestamp, poses_ahead, poses_back, num_poses_back, num_poses_ahead_max, rddf_annotations, carmen_rddf_perform_loop);
+	int num_poses_ahead = carmen_search_next_poses_index(x, y, yaw, v, timestamp, poses_ahead, poses_back, num_poses_back, num_poses_ahead_max, rddf_annotations, carmen_rddf_perform_loop);
 	return carmen_rddf_play_check_if_end_point_is_reachable(poses_ahead, num_poses_ahead, rddf_annotations);
 }
 

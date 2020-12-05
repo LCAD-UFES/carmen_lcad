@@ -35,29 +35,24 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	if (fabs(target_td.v_i) == 0.0)
-		target_td.v_i = 0.0;
-	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
-	a = (-1)*a;
+	double a = -(target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
 	tcp_seed.tt = (target_v - target_td.v_i) / a;
-	if (a < -GlobalState::robot_config.maximum_acceleration_reverse)
+	if (a > GlobalState::robot_config.maximum_acceleration_reverse)
 	{
 		a = GlobalState::robot_config.maximum_acceleration_reverse;
-		double v = fabs(target_td.v_i);
-		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v) + v)) / a;
-		a = (-1)*a;
-
+		double v = target_td.v_i;
+		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v) - v)) / a;
 	}
-	else if (a > GlobalState::robot_config.maximum_deceleration_reverse)
+	else if (a < -GlobalState::robot_config.maximum_deceleration_reverse)
 	{
-		a = GlobalState::robot_config.maximum_deceleration_reverse;
-		double v = fabs(target_td.v_i);
+		a = -GlobalState::robot_config.maximum_deceleration_reverse;
+		double v = target_td.v_i;
 		tcp_seed.tt = -(sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
 	}
-	else if (a == 0.0 && target_td.v_i != 0.0)
-		tcp_seed.tt = s/target_td.v_i;
 
-//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
+	if (tcp_seed.tt > 200.0)
+		tcp_seed.tt = 200.0;
+
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -84,10 +79,10 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 		double v = target_td.v_i;
 		tcp_seed.tt = -(sqrt(2.0 * a * s + v * v) + v) / a;
 	}
+
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
 
-//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -274,10 +269,10 @@ dist2(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
 carmen_ackerman_path_point_t
 move_to_front_axle(carmen_ackerman_path_point_t pose)
 {
-	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
+//	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
 	carmen_ackerman_path_point_t pose_moved = pose;
-	pose_moved.x += L * cos(pose.theta);
-	pose_moved.y += L * sin(pose.theta);
+//	pose_moved.x += L * cos(pose.theta);
+//	pose_moved.y += L * sin(pose.theta);
 
 	return (pose_moved);
 }
@@ -300,7 +295,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
 		{
-			if(GlobalState::reverse_planning)
+			if (GlobalState::reverse_planning)
 				distance = dist(path.at(i),
 								my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
 			else
@@ -335,7 +330,7 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 //			continue;
 		carmen_ackerman_path_point_t axle;
 
-		if(GlobalState::reverse_planning) //mantem o eixo traseiro
+		if (GlobalState::reverse_planning) //mantem o eixo traseiro
 			axle = path.at(j);
 		else
 			axle = move_to_front_axle(path.at(j));
@@ -459,13 +454,15 @@ my_f(const gsl_vector *x, void *params)
 
 	double result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-		result = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 2.0) +
-			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 2.0));
+		result =
+			((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
+			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
+			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0);
 	else
-		result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 2.0) +
-			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 2.0));
+		result = sqrt(
+			((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
+			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
+			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
 
 	my_params->plan_cost = result;
 
@@ -565,19 +562,22 @@ my_g(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	my_params->plan_cost = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
-			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
+	my_params->plan_cost = sqrt(
+			((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
+			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2) +
+			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2));
 
 	double result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
-		if (td.dist < 7.0)
-			GlobalState::w2 *= exp(td.dist - 7.0);  // Tries to smooth the steering wheel behavior near to stop
+		double current_w2 = GlobalState::w2;
+//		if (td.dist < 7.0)
+//			current_w2 *= exp(td.dist - 7.0);  // Tries to smooth the steering wheel behavior near to stop
+
 		result = (
-				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +   // Distance from the last pose of the path to the goal (in polar coordinates)
-				GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +  // Angular distance from the last pose of the path to the goal (in polar coordinates)
-				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +  // Angular distance from last pose of the path car orientation to the goal car orientation
+				GlobalState::w1 * (((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index) +   // Distance from the last pose of the path to the goal (in polar coordinates)
+				current_w2      * ((carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index) +  // Angular distance from the last pose of the path to the goal (in polar coordinates)
+				GlobalState::w3 * ((carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index) +  // Angular distance from last pose of the path car orientation to the goal car orientation
 				GlobalState::w4 * path_to_lane_distance + // já é quandrática
 				GlobalState::w5 * proximity_to_obstacles + // já é quandrática
 				GlobalState::w6 * tcp.sf * tcp.sf); // + path_size // traveled_distance
@@ -585,12 +585,14 @@ my_g(const gsl_vector *x, void *params)
 	}
 	else
 	{
-		if (td.dist < 7.0)
-			GlobalState::w2 *= exp(td.dist - 7.0);
+		double current_w2 = GlobalState::w2;
+//		if (td.dist < 7.0)
+//			current_w2 *= exp(td.dist - 7.0);
+
 		result = sqrt(
-				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				GlobalState::w1 * (((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index) +
+				current_w2      * ((carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index) +
+				GlobalState::w3 * ((carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index) +
 				GlobalState::w4 * path_to_lane_distance + // já é quandrática
 				GlobalState::w5 * proximity_to_obstacles + // já é quandrática
 				GlobalState::w6 * tcp.sf * tcp.sf);
@@ -639,9 +641,9 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
 	double g_w_h = my_g(x_h, params);
 	double d_g_w_h;
-	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-		d_g_w_h = 200.0 * (g_w_h - g_x) / h;
-	else
+//	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
+//		d_g_w_h = 200.0 * (g_w_h - g_x) / h;
+//	else
 		d_g_w_h = (g_w_h - g_x) / h;
 
 	gsl_vector_set(df, 0, d_g_x_h);
@@ -692,9 +694,10 @@ my_h(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	my_params->plan_cost = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
-			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
+	my_params->plan_cost = sqrt(
+			((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
+			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2) +
+			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2));
 
 	double w1, w2, w3, w4, w5, w6, result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
@@ -702,10 +705,11 @@ my_h(const gsl_vector *x, void *params)
 		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 3.0; w6 = 0.005;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
+
 		result = (
-				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				w1 * (((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index) +
+				w2 * ((carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index) +
+				w3 * ((carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index) +
 				w4 * path_to_lane_distance + // já é quandrática
 				w5 * proximity_to_obstacles + // já é quandrática
 				w6 * tcp.sf * tcp.sf);
@@ -717,22 +721,15 @@ my_h(const gsl_vector *x, void *params)
 //		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
+
 		result = sqrt(
-				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				w1 * (((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index) +
+				w2 * ((carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index) +
+				w3 * ((carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index) +
 				w4 * path_to_lane_distance + // já é quandrática
 				w5 * proximity_to_obstacles + // já é quandrática
 				w6 * tcp.sf * tcp.sf); //+
 //				w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
-//		printf("--------\nW1: %0.2lf W2: %0.2lf W3: %0.2lf W4: %0.2lf W5: %0.2lf W6: %0.2lf W7: %0.2lf\n",
-//				(w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index),
-//				(w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index),
-//				(w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index),
-//				(w4 * path_to_lane_distance), // já é quandrática
-//				(w5 * proximity_to_obstacles), // já é quandrática
-//				(w6 * tcp.sf * tcp.sf),
-//				(w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf)));
 	}
 
 //	printf("NEW result %.2lf s %.2lf sf %.2lf, tdc %.2lf, tdd %.2f, a %lf v_i %.2lf v_f %.2lf vt %.2lf TT %lf\n--------\n", result, tcp.s, tcp.sf,
@@ -1386,18 +1383,21 @@ get_path_to_lane_distance(TrajectoryLookupTable::TrajectoryDimensions td,
 
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v,
+		vector<carmen_ackerman_path_point_t> detailed_lane,
 		bool use_lane, bool has_previous_good_tcp)
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
+	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete;
 	ObjectiveFunctionParams params;
 	params.use_lane = use_lane;
 
 	if (GlobalState::reverse_planning)
-		if(!detailed_lane.empty())
+	{
+		if (!detailed_lane.empty())
 			params.detailed_lane = detailed_lane;
 		else
 			params.use_lane = false;
+	}
 	else
 		params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
 
@@ -1405,7 +1405,14 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 
 //	virtual_laser_message.num_positions = 0;
 
-	tcp_copy = tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
+	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
+
+	/////////////////// plot para debug
+//	TrajectoryLookupTable::TrajectoryDimensions dummy_target_td = target_td;
+//	TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp = tcp_complete;
+//	dummy_tcp.valid = true;
+//	vector<carmen_ackerman_path_point_t> seed_path = simulate_car_from_parameters(dummy_target_td, dummy_tcp, target_td.v_i, target_td.phi_i, false);
+	///////////////////
 
 //	verify_shift_option_for_k1(tcp_seed, target_td, tcp_complete);
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
@@ -1415,26 +1422,15 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	else
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
-//	if (tcp_complete.valid)
-//	{
-//		double dist = get_path_to_lane_distance(target_td, tcp_complete, &params);
-//		printf("dist %lf %d\n", dist, (int) params.detailed_lane.size());
-//		if (dist > GlobalState::max_square_distance_to_lane)
-//			tcp_complete.valid = false;
-//	}
-
-//	if (target_td.dist < 2.0)
-//	{
-//		tcp_complete.k1 = tcp_copy.k1;
-//		tcp_complete.k2 = tcp_copy.k2;
-//		tcp_complete.k3 = tcp_copy.k3;
-//	}
-//	print_tcp(tcp_complete, params.plan_cost);
-//	print_td(target_td, target_v);
-//	printf("\n");
-//	if (tcp_complete.tt < 0.0)
-//		printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
-//			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
+	/////////////////// plot para debug
+//	dummy_target_td = target_td;
+//	dummy_tcp = tcp_complete;
+//	dummy_tcp.valid = true;
+//
+//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(dummy_target_td, dummy_tcp, target_td.v_i, target_td.phi_i, false);
+//	std::string titles[] = {"otcp", "detailed lane", "seed path"};
+//	plot_state(path, detailed_lane, seed_path, titles);
+	///////////////////
 
 	return (tcp_complete);
 }

@@ -898,15 +898,39 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 #ifdef USE_STOP_BEFORE_CHANGE_DIRECTION_GOAL
 		//parking se pose anterior foi em uma direcao, aguarda o carro terminar todo o path dessa direcao antes de mudar de direcao (reh/drive)
 		else if (behavior_selector_reverse_driving &&
-				 ((first_pose_change_direction_index != -1)	&&
-				  (DIST2D(rddf->poses[rddf_pose_index], robot_pose) > 1.0)))
+				 ((first_pose_change_direction_index != -1)))//	&&
+//				  (DIST2D(rddf->poses[rddf_pose_index], robot_pose) > 1.0)))
 		{
-			 goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-			 add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+			static double keep_goal_time = 0.0;
+			if (first_pose_change_direction_index > 2)
+			{
+				if (goal_index == 0)
+					keep_goal_time = 0.0;
+
+				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+			}
+			else
+			{
+				if ((fabs(robot_pose.v) < 0.01) && (keep_goal_time == 0.0))
+					keep_goal_time = carmen_get_time();
+
+				if (keep_goal_time == 0.0)
+				{
+					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+				}
+				else if ((carmen_get_time() - keep_goal_time) < 2.0)
+				{
+					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+				}
+			}
 		}
 #endif
 
-		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) && // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
+		else if ((((distance_from_car_to_rddf_point >= distance_between_waypoints) ||
+				   ((distance_from_car_to_rddf_point >= distance_between_waypoints / 2.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo
 				  !rddf_pose_hit_obstacle)) // e se ela nao colide com um obstaculo.
 		{

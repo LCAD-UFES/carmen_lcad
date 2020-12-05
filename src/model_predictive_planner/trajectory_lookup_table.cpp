@@ -23,8 +23,9 @@ extern int use_unity_simulator;
 
 
 void
-plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
-		  vector<carmen_ackerman_path_point_t> &pSeed, std::string titles[])
+plot_state(vector<carmen_ackerman_path_point_t> pOTCP,
+		vector<carmen_ackerman_path_point_t> pLane,
+		vector<carmen_ackerman_path_point_t> pSeed, std::string titles[])
 {
 //	plot data Table - Last TCP - Optmizer tcp - Lane
 	//Plot Optmizer step tcp and lane?
@@ -41,15 +42,17 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 		first_time = false;
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set xrange [-20:20]\n");
 		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
 //		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
-		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
-		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'm'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'm'\n");
 //		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
 //		fprintf(gnuplot_pipe, "set ytics nomirror\n");
 //		fprintf(gnuplot_pipe, "set y2tics\n");
 		fprintf(gnuplot_pipeMP, "set tics out\n");
+//		fprintf(gnuplot_pipeMP, "set size square\n");
+		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
 	}
 
 	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
@@ -57,10 +60,23 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 	FILE *gnuplot_data_seed = fopen("gnuplot_data_seed.txt", "w");
 
 	for (unsigned int i = 0; i < pOTCP.size(); i++)
-		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
-	if(!pLane.empty())
+	{
+		if (pOTCP.at(i).v >= 0.0)
+			fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
+		else
+			fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta + M_PI), 1.0 * sin(pOTCP.at(i).theta + M_PI), pOTCP.at(i).theta + M_PI, pOTCP.at(i).phi, pOTCP.at(i).time);
+	}
+
+	if (!pLane.empty())
+	{
 		for (unsigned int i = 0; i < pLane.size(); i++)
-			fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
+		{
+			if (pLane.at(i).v >= 0.0)
+				fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
+			else
+				fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta + M_PI), 1.0 * sin(pLane.at(i).theta + M_PI), pLane.at(i).theta + M_PI, pLane.at(i).phi, pLane.at(i).time);
+		}
+	}
 
 	for (unsigned int i = 0; i < pSeed.size(); i++)
 		fprintf(gnuplot_data_seed, "%lf %lf\n", pSeed.at(i).x, pSeed.at(i).y);

@@ -176,6 +176,7 @@ build_and_send_rddf_and_annotations(carmen_point_t robot_pose, double timestamp)
 				robot_pose.x,
 				robot_pose.y,
 				robot_pose.theta,
+				0.0,
 				timestamp,
 				carmen_rddf_poses_ahead,
 				carmen_rddf_poses_back,

@@ -181,23 +181,10 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_r
 	{
 		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-		if (GlobalState::reverse_planning)
-		{
-			 if (lane_in_car_reference[0] <= 0.0)
-			 {
-				 local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-				 							goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
-				 lane_in_local_pose->push_back(local_reference_lane_point);
-			 }
-		}
-		else
-		{
-			local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-					goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
-			lane_in_local_pose->push_back(local_reference_lane_point);
 
-		}
-
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+		lane_in_local_pose->push_back(local_reference_lane_point);
 	}
 }
 
@@ -243,9 +230,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 		return false;
 
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
-	if (!GlobalState::reverse_planning)
-		move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
-
+	move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 	move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 
 	return (goal_in_lane);
@@ -551,15 +536,16 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 		if (GlobalState::distance_map != NULL)
 		{
 			double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
+											point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
 			if (circle_invasion > 0)
-					hit_points.push_back(path[i]); //pra plotar
+				hit_points.push_back(path[i]); //pra plotar
 
 			if (circle_invasion > max_circle_invasion)
 				max_circle_invasion = circle_invasion;
 		}
 	}
-	if(!hit_points.size())
+
+	if (!hit_points.size())
 		hit_points.push_back(path[0]);
 
 #ifdef PLOT_COLLISION
@@ -708,7 +694,6 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 {
 	if (0) //(GlobalState::reverse_planning && !previous_good_tcp.valid && td.v_i == 0.0) //Just for tests
 		tcp = get_dummy_tcp(td);
-
 	else if (!previous_good_tcp.valid)
 	{
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
@@ -789,10 +774,10 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 	}
 
-	move_path_to_current_robot_pose(path, localizer_pose);
-
 	if (path_has_collision_or_phi_exceeded(path))
 		return (false);
+
+	move_path_to_current_robot_pose(path, localizer_pose);
 
 
 	// Para evitar que o fim do path bata em obstáculos devido a atrazo na propagacao da posicao atual deles
@@ -955,6 +940,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
 					use_lane, previous_good_tcp.valid);
 			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
+
+			/////////////////// plot para debug
+//			vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
+//			std::string titles[] = {"otcp", "detailed lane", "lane in local pose"};
+//			plot_state(path, detailed_lane, lane_in_local_pose, titles);
+			///////////////////
+
 			if (otcp.valid)
 			{
 				vector<carmen_ackerman_path_point_t> path;

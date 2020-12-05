@@ -574,7 +574,7 @@ add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message 
 			break;
 		}
 
-//		if (DIST2D(current_robot_pose_v_and_phi, msg->objects[index]) < 20.0)
+		if (DIST2D(current_robot_pose_v_and_phi, msg->objects[index]) < 1000.0)
 			add_object_to_map(width, length, msg->objects[index].x, msg->objects[index].y, msg->objects[index].theta);
 	}
 }
@@ -1081,8 +1081,8 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 }
 
 
-static void
-print_road_network(carmen_route_planner_road_network_message *road_network)
+void
+print_road_network_behavior_selector(carmen_route_planner_road_network_message *road_network)
 {
 	printf("\n");
 
@@ -1130,7 +1130,7 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 
 	distance_map_free_of_moving_objects = distance_map; // O distance_map vem sem objetos móveis do obstacle_distance_mapper
 
-//	print_road_network(road_network_message);
+//	print_road_network_behavior_selector(road_network_message);
 	vector<path_collision_info_t> paths_collision_info;
 	if (use_frenet_path_planner)
 		paths_collision_info = set_optimum_path(current_set_of_paths, current_moving_objects, current_robot_pose_v_and_phi,
@@ -1169,6 +1169,18 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		return (paths_collision_info[selected_path_id]);
 	else
 		return (path_collision_info_t {});
+}
+
+
+void
+print_rddf(carmen_rddf_road_profile_message *rddf_message, carmen_ackerman_traj_point_t *first_goal, int goal_type)
+{
+	for (int i = 0; i < 10000 && i < rddf_message->number_of_poses; i++)
+		printf("%lf %lf %lf %lf\n",
+				rddf_message->poses[i].x, rddf_message->poses[i].y, rddf_message->poses[i].theta,
+				rddf_message->poses[i].v);
+	printf("first_goal %lf %lf %lf %lf, goal_type %d\n",
+			first_goal->x, first_goal->y, first_goal->theta, first_goal->v, goal_type);
 }
 
 
@@ -1218,6 +1230,8 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		last_valid_goal_p->v = 0.0;
 		publish_goal_list(last_valid_goal_p, 1, timestamp);
 	}
+
+//	print_rddf(last_rddf_message, first_goal, goal_type);
 
 	publish_current_state(&behavior_selector_state_message);
 

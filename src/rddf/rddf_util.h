@@ -51,7 +51,7 @@ int carmen_rddf_play_pose_out_of_map_coordinates(carmen_point_t pose, carmen_map
 void carmen_rddf_play_check_reset_traffic_sign_state(carmen_point_t new_pose);
 int carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
 		carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max);
-int carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max, int *rddf_annotations);
+int carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double v, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max, int *rddf_annotations);
 void carmen_rddf_play_clear_annotations(int *rddf_annotations, int num_annotations);
 void carmen_rddf_play_clear_annotations();
 void carmen_rddf_play_set_annotations(carmen_point_t robot_pose);
