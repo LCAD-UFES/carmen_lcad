@@ -232,7 +232,6 @@ objects_names_from_file(string const class_names_file)
     return file_lines;
 }
 
-
 void
 show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
 		vector<bbox_t> predictions, double hood_removal_percentage, double fps,
@@ -240,18 +239,40 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 {
     char confianca[25];
     char frame_rate[25];
+	char area[25];
 
     sprintf(frame_rate, "FPS = %.2f", fps);
+	double image_height = (double) rgb_image->rows; // 768 pixels
+	double focal_length = 6.0; //f(mm)
+	double sensor_height = camera_pose.position.z * 100.0; // sensorheight(mm)
 
     //cv::putText(*rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
-
+		double distance = 0.0;
+		bool first = true;
+		double real_height = 1600.0; //car_height(mm)
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+		{
 			cv::circle(*rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
 					laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
+			if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length != 0.0)
+			{
+				if(first)
+				{
+					distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
+					//distance =  f(mm) * realheight(mm) * imageheight(pixels) / objheight(pixels) * sensorheight(mm)
+					real_height = distance * 500.0 * (double) predictions[i].h * sensor_height / (focal_length * image_height); // mm
 
+					first = false;
+				}
+				if((laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5) < distance)
+					distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
+					real_height = distance * 500.0 * (double) predictions[i].h * sensor_height / (focal_length * image_height); // mm
+			}
+			// takes the point closest for metrics
+		}
         cv::Scalar object_color;
 
         sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
@@ -275,6 +296,25 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
 
         	cv::putText(*rgb_image, confianca,
+        			cv::Point(predictions[i].x + 1, predictions[i].y + predictions[i].h + 1),
+					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+			
+			//double area_predicted = predictions[i].w * predictions[i].h;
+			//distance =  f(mm) * realheight(mm) * imageheight(pixels) / objheight(pixels) * sensorheight(mm);
+
+			double distance_to_object = focal_length * real_height * image_height / (predictions[i].h * sensor_height); // mm
+			distance_to_object = distance_to_object * 2.0 / 1000.0; // distance has to be multiplied by 2.0 to since lidar * 0.5.
+			
+			if (distance != 0.0){
+				sprintf(area, "%.2f %.2f", distance, distance_to_object);
+				cout << "h=" << predictions[i].h << "\tlidar=" << distance << "\tcalc=" << distance_to_object << "\treal_height=" << real_height << endl;
+			}else{
+				sprintf(area, "NL %.3f", distance_to_object);
+				cout << "h=" << predictions[i].h << "\tlidar=NL" << "\tcalc=" << distance_to_object << "\treal_height=" << real_height << endl;
+			}
+
+
+        	cv::putText(*rgb_image, area,
         			cv::Point(predictions[i].x + 1, predictions[i].y - 3),
 					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
         }
@@ -1499,7 +1539,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
         string str_gt_path (gt_path);
         string groundtruth_folder = str_gt_path + "-r.txt";
-
+		
         //if (access(groundtruth_folder.c_str(), F_OK) == 0)
         	show_detections_alberto(transform_factor_of_slice_to_original_frame ,scene_slices, bounding_boxes_of_slices, bounding_boxes_of_slices_in_original_image,
         			rddf_points_in_image_filtered, image_msg->timestamp);
@@ -1639,6 +1679,7 @@ create_folders()
 	int retorno;
 	if (strcmp(detection_type,"-cs") == 0)
 	{
+		std::cout << log_name << std::endl;
 		sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
 		sprintf(folder_image_name, "%s_%.0lf_mts_images/", log_name,meters_spacement);
 		str_folder_name = folder_name;
@@ -1764,6 +1805,8 @@ read_parameters(int argc, char **argv)
 		{bumblebee_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL },
 		{bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
 		{bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
+		{bumblebee_string, (char*) "baseline", CARMEN_PARAM_DOUBLE, &camera_parameters.baseline, 0, NULL },
+		{bumblebee_string, (char*) "fov", CARMEN_PARAM_DOUBLE, &camera_parameters.fov, 0, NULL },
 		{bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
 
 		{sensor_board_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &board_pose.position.x, 0, NULL },
