@@ -3,6 +3,8 @@ include ../Makefile.conf
 MODULE_NAME = SIMPLE_STEREO
 MODULE_COMMENT = Only Stereo Module
 
+CC = g++
+
 ifndef NO_CUDA
 
 CUDALIB64 :=/usr/local/cuda/lib64/

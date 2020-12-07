@@ -34,16 +34,16 @@
 #ifndef CARMEN_MAP_EDITOR_GRAPHICS_H
 #define CARMEN_MAP_EDITOR_GRAPHICS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 
 extern GtkItemFactory *item_factory;
 
 /* conversions from coordinates on the map to coordinates on the pixmap */
 /* converts an x position on the drawing area to an x grid
  on the map */
-extern carmen_inline double 
+extern carmen_inline double
 pix_x_to_map(double pix_x)
 {
   return (double)(pix_x)/mult + (double)xstart;
@@ -96,8 +96,8 @@ void start_drawing_window(int *argc, char **argv[]);
 
 void set_up_map_widgets(void);
 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 #endif

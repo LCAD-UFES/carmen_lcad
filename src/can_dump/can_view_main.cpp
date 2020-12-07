@@ -9,21 +9,6 @@
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-static void
-publish_can_dump_can_line_message(char *can_line)
-{
-	carmen_can_dump_can_line_message message;
-
-	if (can_line[strlen(can_line) - 1] == '\n')
-		can_line[strlen(can_line) - 1] = '\0'; // Apaga o '\n' no fim da string
-
-	message.can_line = can_line;
-	message.timestamp = carmen_get_time();
-	message.host = carmen_get_host();
-
-	carmen_can_dump_publish_can_line_message(&message);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -34,6 +19,25 @@ publish_can_dump_can_line_message(char *can_line)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+
+static void
+can_dump_message_handler(carmen_can_dump_can_line_message *message)
+{
+	printf("%s - %lf\n", message->can_line, message->timestamp);
+}
+
+
+static void
+shutdown_module(int signo)
+{
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		printf("can_view: disconnected.\n");
+
+		exit(0);
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -50,13 +54,14 @@ int
 main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
+	carmen_param_check_version(argv[0]);
+
 	carmen_can_dump_define_can_line_message();
 
-//	FILE *can_dump = popen("ssh -XC pi@192.168.0.13 'candump any'", "r");
-	char line[1024];
+	carmen_can_dump_subscribe_can_line_message(NULL, (carmen_handler_t) can_dump_message_handler, CARMEN_SUBSCRIBE_ALL);
+	signal(SIGINT, shutdown_module);
 
-	while (fgets(line, 1023, stdin) != NULL)
-		publish_can_dump_can_line_message(line);
+	carmen_ipc_dispatch();
 
 	return (0);
 }

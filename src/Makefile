@@ -18,7 +18,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu localize_neural \
 	   fused_odometry moving_objects bumblebee_basic laser_ldmrs viewer_3D 	\
-	   stereo road_finding v_disparity stereo_mapping grid_mapping 	\
+	   stereo road_finding v_disparity grid_mapping 	\
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G \
 	   rrt_planner subdir_module_example velodyne log_filter rddf \
 	   download_map parking_assistant navigator_astar \
@@ -33,7 +33,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   moving_objects_simulator zed_camera2 graphslam pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer traffic_light \
 	   tracker_opentld  \
-	   velodyne_camera_calibration # neural_object_detector3
+	   velodyne_camera_calibration # neural_object_detector3  stereo_mapping
 	   
 	   # hypergraphsclam \ 
 	   # visual_tracker lane_detector voice_interface

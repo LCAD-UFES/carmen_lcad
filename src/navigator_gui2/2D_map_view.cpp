@@ -140,14 +140,14 @@ void
 save_user_preferences()
 {
 	// Function cv::getWindowImageRect requires OpenCV version 3.4.1 or higher
-#if	(CV_VERSION_MAJOR * 10000 + CV_VERSION_MINOR * 100 + CV_VERSION_REVISION) >= 30401
-	Rect display = getWindowImageRect(window_name);
-	user_pref_window_width  = display.width / (show_left + show_right);
-	user_pref_window_height = display.height;
-	user_pref_window_x = display.x;
-	user_pref_window_y = display.y - 56;
-	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
-#endif
+//#if	(CV_VERSION_MAJOR * 10000 + CV_VERSION_MINOR * 100 + CV_VERSION_REVISION) >= 30401
+//	Rect display = getWindowImageRect(window_name);
+//	user_pref_window_width  = display.width / (show_left + show_right);
+//	user_pref_window_height = display.height;
+//	user_pref_window_x = display.x;
+//	user_pref_window_y = display.y - 56;
+//	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+//#endif
 }
 
 

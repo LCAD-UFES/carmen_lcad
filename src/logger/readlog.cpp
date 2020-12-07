@@ -44,6 +44,23 @@ using namespace cv;
 
 extern char *log_filename;
 
+int string_up_to_double_length(char *str)
+{
+	char *c_enter = strchr(str, '\n'); // check also for newline
+	char *c = strchr(str, '.');
+
+	if (c_enter == NULL && c == NULL) // it is the last word in the string
+		return (strlen(str));
+
+	if (c_enter != NULL && c == NULL) // there is no double but a newline
+		return (c_enter - str);
+
+	while ((*c != ' ') && (*c != '\t') && (c != str))
+		c--;
+
+	return (c - str);
+}
+
 void CLF_READ_STRING(char *dst, char **string)
 {
 	int l;
@@ -53,6 +70,16 @@ void CLF_READ_STRING(char *dst, char **string)
 		*string += 1;
 
 	l = first_wordlength(*string);
+	strncpy(dst, *string, l);
+	dst[l] = '\0';
+	*string += l;
+}
+
+void CLF_READ_STRING_UP_TO_DOUBLE(char *dst, char **string)
+{
+	int l;
+
+	l = string_up_to_double_length(*string);
 	strncpy(dst, *string, l);
 	dst[l] = '\0';
 	*string += l;
@@ -863,6 +890,22 @@ char *carmen_string_to_robot_ackerman_velocity_message(char *string, carmen_robo
 
 	msg->v = CLF_READ_DOUBLE(&current_pos);
 	msg->phi = CLF_READ_DOUBLE(&current_pos);
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char *carmen_string_to_carmen_can_dump_can_line_message(char *string, carmen_can_dump_can_line_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "CAN_DUMP_CAN_LINE", 17) == 0)
+		current_pos = current_pos + 17;
+
+	static char can_line[1024];
+	CLF_READ_STRING_UP_TO_DOUBLE(can_line, &current_pos);	// read up to timestamp
+	msg->can_line = can_line;
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);
 	return current_pos;

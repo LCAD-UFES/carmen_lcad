@@ -33,8 +33,8 @@
 
 #include <gtk/gtk.h>
 #include <carmen/carmen.h>
-
-GdkColor carmen_graphics_add_color_rgb(int r, int g, int b);
+#include <carmen/global_graphics.h>
+//GdkColor carmen_graphics_add_color_rgb(int r, int g, int b);
 
 #include "map_editor.h"
 #include "map_editor_drawing.h"
@@ -974,7 +974,7 @@ fill(double under, int map_x, int map_y)
   carmen_stack_t *temp;
   int w,h;
 
-  temp = calloc(1, sizeof(carmen_stack_t));
+  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
   carmen_test_alloc(temp);
   temp->x = map_x;
   temp->y = map_y;
@@ -1000,7 +1000,7 @@ fill(double under, int map_x, int map_y)
 			  w, h);
       if(map_x-1 >=0 && map->map[map_x-1][map_y] == under)
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x-1;
 	  temp->y = map_y;
@@ -1008,7 +1008,7 @@ fill(double under, int map_x, int map_y)
 	}
       if(map_x+1 < map->config.x_size && map->map[map_x+1][map_y] == under)
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x+1;
 	  temp->y = map_y;
@@ -1016,7 +1016,7 @@ fill(double under, int map_x, int map_y)
 	}
       if(map_y-1 >=0 && map->map[map_x][map_y-1] == under)
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x;
 	  temp->y = map_y-1;
@@ -1024,7 +1024,7 @@ fill(double under, int map_x, int map_y)
 	}
       if(map_y+1 < map->config.y_size && map->map[map_x][map_y+1] == under)
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x;
 	  temp->y = map_y+1;
@@ -1059,7 +1059,7 @@ fuzzy_fill(double under, int map_x, int map_y, int ** seen)
   carmen_stack_t *temp;
   int w,h;
 
-  temp = calloc(1, sizeof(carmen_stack_t));
+  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
   carmen_test_alloc(temp);
   temp->x = map_x;
   temp->y = map_y;
@@ -1087,7 +1087,7 @@ fuzzy_fill(double under, int map_x, int map_y, int ** seen)
       if(map_x-1 >=0 && fabs(map->map[map_x-1][map_y] - under) < fuzzyness 
 	 && !seen[map_x-1][map_y])
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x-1;
 	  temp->y = map_y;
@@ -1096,7 +1096,7 @@ fuzzy_fill(double under, int map_x, int map_y, int ** seen)
       if(map_x+1 < map->config.x_size && fabs(map->map[map_x+1][map_y]-under) < fuzzyness 
 	 && !seen[map_x+1][map_y])
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x+1;
 	  temp->y = map_y;
@@ -1105,7 +1105,7 @@ fuzzy_fill(double under, int map_x, int map_y, int ** seen)
       if(map_y-1 >=0 && fabs(map->map[map_x][map_y-1] - under) < fuzzyness 
 	 && !seen[map_x][map_y-1])
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x;
 	  temp->y = map_y-1;
@@ -1114,7 +1114,7 @@ fuzzy_fill(double under, int map_x, int map_y, int ** seen)
       if(map_y+1 < map->config.y_size && fabs(map->map[map_x][map_y+1] - under) < fuzzyness 
 	 && !seen[map_x][map_y+1])
 	{
-	  temp = calloc(1, sizeof(carmen_stack_t));
+	  temp = (carmen_stack_t *) calloc(1, sizeof(carmen_stack_t));
 	  carmen_test_alloc(temp);
 	  temp->x = map_x;
 	  temp->y = map_y+1;
@@ -1193,7 +1193,7 @@ move(int state, double pix_x, double pix_y)
   switch(state)
     {
     case 0:
-      /*     see below (*²) for comment
+      /*     see below (*ï¿½) for comment
 	      xm = pix_x;
 	      ym = pix_y;      */
       xs = x;
@@ -1245,7 +1245,7 @@ move(int state, double pix_x, double pix_y)
 	    else
 	      adjustment->value = ylow;
 	    }
-	  /*² It would be nice to show a line to indicate the movement but this is too slow imho
+	  /*ï¿½ It would be nice to show a line to indicate the movement but this is too slow imho
 	  map_to_tmp();
 	  gdk_gc_set_foreground (drawing_gc, &yellow);
 	  gdk_draw_line (tmp_pixmap, drawing_gc, xm, ym, pix_x, pix_y);*/

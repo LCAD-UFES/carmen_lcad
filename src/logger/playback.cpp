@@ -73,6 +73,8 @@ int playback_pose_is_updated = 0;
 carmen_base_ackerman_odometry_message odometry_ackerman;
 carmen_robot_ackerman_velocity_message velocity_ackerman;
 
+carmen_can_dump_can_line_message can_dump;
+
 carmen_visual_odometry_pose6d_message visual_odometry;
 carmen_simulator_ackerman_truepos_message truepos_ackerman;
 carmen_robot_ackerman_laser_message laser_ackerman1, laser_ackerman2, laser_ackerman3, laser_ackerman4, laser_ackerman5;
@@ -142,6 +144,7 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "ROBOTLASER_ACK5", (char *) CARMEN_ROBOT_ACKERMAN_FRONTLASER_NAME, (converter_func) carmen_string_to_robot_ackerman_laser_message, &laser_ackerman5, 0},
 	{(char *) "ODOM_ACK", (char *) CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, (converter_func) carmen_string_to_base_ackerman_odometry_message, &odometry_ackerman, 0},
 	{(char *) "ROBOTVELOCITY_ACK", (char *) CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, (converter_func) carmen_string_to_robot_ackerman_velocity_message, &velocity_ackerman, 0},
+	{(char *) "CAN_DUMP_CAN_LINE", (char *) CARMEN_CAN_DUMP_CAN_LINE_MESSAGE_NAME, (converter_func) carmen_string_to_carmen_can_dump_can_line_message, &can_dump, 0},
 	{(char *) "VISUAL_ODOMETRY", (char *) CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME, (converter_func) carmen_string_to_visual_odometry_message, &visual_odometry, 0},
 	{(char *) "TRUEPOS_ACK", (char *) CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, (converter_func) carmen_string_to_simulator_ackerman_truepos_message, &truepos_ackerman, 0},
 	{(char *) "IMU", (char *) CARMEN_IMU_MESSAGE_NAME, (converter_func) carmen_string_to_imu_message, &imu, 0},
@@ -1087,6 +1090,7 @@ set_messages()
 {
 	memset(&odometry_ackerman, 0, sizeof(odometry_ackerman));
 	memset(&velocity_ackerman, 0, sizeof(velocity_ackerman));
+	memset(&can_dump, 0, sizeof(can_dump));
 	memset(&visual_odometry, 0, sizeof(visual_odometry));
 	memset(&imu, 0, sizeof(imu));
 	memset(&truepos_ackerman, 0, sizeof(truepos_ackerman));

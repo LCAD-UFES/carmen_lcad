@@ -3,6 +3,7 @@ include ../Makefile.conf
 MODULE_NAME = VISUAL_TRACKER
 MODULE_COMMENT = Visual Tracker Module
 
+CC = g++
 LINK = g++
 
 IFLAGS += -I/usr/include/QtCore -I/usr/include/QtGui
