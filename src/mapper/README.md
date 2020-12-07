@@ -1,5 +1,5 @@
 # Map Memorization and Forgetting in the IARA Autonomous Car 
-## [Technical Report](https://arxiv.org/ftp/arxiv/papers/1810/1810.02355.pdf)
+## [Click here to Access the Technical Report (.pdf)](https://arxiv.org/ftp/arxiv/papers/1810/1810.02355.pdf)
 
 ## Abstract: 
 
