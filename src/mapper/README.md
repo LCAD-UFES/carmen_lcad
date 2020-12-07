@@ -7,4 +7,4 @@ In this work, we present a novel strategy to correct imperfections in occupancy 
 
 ## Acknowledgements
 
-Research supported by Conselho Nacional de Desenvolvimento Científico e Tecnológico – CNPq, Brazil (grants 552630/2011-0, 12786/2013-1, 311120/2016-4 and 311504/2017-5), Fundação de Amparo à Pesquisa do Espírito Santo – FAPES, Brazil (grant 48511579/2009), and by Vale/FAPES (grant 75537958/16).
+Research financed in part by Conselho Nacional de Desenvolvimento Científico e Tecnológico (CNPq, Brazil, grants 311120/2016-4 and 311504/2017-5); by Coordenação de Aperfeiçoamento de Pessoal de Nível Superior - Brazil (CAPES) - Finance Code 001; and by Vale/FAPES (grant 75537958/16).
