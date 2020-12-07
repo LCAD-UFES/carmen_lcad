@@ -1,5 +1,6 @@
 include ../Makefile.conf
 
+CC = g++
 LINK = g++
 CFLAGS += -std=c99
 

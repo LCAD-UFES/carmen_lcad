@@ -41,7 +41,7 @@
 
 
 #include "map_editor.h"
-#include "map_editor_graphics.h"
+//#include "map_editor_graphics.h"
 #include "map_editor_drawing.h"
 #include "map_editor_menus.h"
 
@@ -157,7 +157,7 @@ static GdkPixmap *generate_pixmap(unsigned char* image_data,
 
 /* converts an x position on the drawing area to an x grid
    on the map */
-carmen_inline double 
+carmen_inline double
 pix_x_to_map(double pix_x)
 {
   return (double)(pix_x)/mult + (double)xstart;
@@ -284,9 +284,9 @@ setup_colors(void)
   if (drawing_gc == NULL) 
     drawing_gc = gdk_gc_new(drawing_area->window);
   if (drawing_gc == NULL)	
-    carmen_die("drawing_gc could not be initialized\n");
+    carmen_die((char *) "drawing_gc could not be initialized\n");
 
-  yellow = carmen_graphics_add_color("Yellow");
+  yellow = carmen_graphics_add_color((char *) "Yellow");
   blue = carmen_graphics_add_color_rgb(0, 0, 255);
   red = carmen_graphics_add_color_rgb(255, 0, 0);
   purple = carmen_graphics_add_color_rgb(150, 0, 150);
@@ -522,7 +522,7 @@ motion_notify_event( GtkWidget *widget, GdkEventMotion *event )
     {
       x = event->x;
       y = event->y;
-      state = event->state;
+      state = (GdkModifierType) event->state;
     }
 	
   map_point.x = pix_x_to_map(x);
@@ -926,8 +926,7 @@ void start_drawing_window(int *argc, char **argv[])
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
-  g_signal_connect (GTK_OBJECT (window), "destroy", 
-		    G_CALLBACK(gtk_main_quit), "WM destroy");
+  g_signal_connect(GTK_OBJECT (window), "destroy", G_CALLBACK(gtk_main_quit), "WM destroy");
 
   gtk_window_set_title (GTK_WINDOW (window), "Map");
   gtk_signal_connect (GTK_OBJECT (window), "delete_event", 
@@ -1043,8 +1042,8 @@ void start_drawing_window(int *argc, char **argv[])
                                   GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
   gtk_table_attach(GTK_TABLE(drawing_table), scrolled_window,
 		   1,2,1,2,
-		   GTK_EXPAND|GTK_SHRINK|GTK_FILL,
-		   GTK_EXPAND|GTK_SHRINK|GTK_FILL,
+		   (GtkAttachOptions) (GTK_EXPAND|GTK_SHRINK|GTK_FILL),
+		   (GtkAttachOptions) (GTK_EXPAND|GTK_SHRINK|GTK_FILL),
                    1,1);
   gtk_widget_set_usize(scrolled_window, 225, 225);
   gtk_widget_show (scrolled_window);
@@ -1071,13 +1070,13 @@ void start_drawing_window(int *argc, char **argv[])
 
   gtk_table_attach(GTK_TABLE(drawing_table), hrule,
 		   1,2,0,1,
-		   GTK_FILL|GTK_EXPAND|GTK_SHRINK,
+		   (GtkAttachOptions) (GTK_FILL|GTK_EXPAND|GTK_SHRINK),
 		   GTK_FILL,
                    1,1);
   gtk_table_attach(GTK_TABLE(drawing_table), vrule,
 		   0,1,1,2,
 		   GTK_FILL,
-		   GTK_EXPAND|GTK_SHRINK|GTK_FILL,
+		   (GtkAttachOptions) (GTK_EXPAND|GTK_SHRINK|GTK_FILL),
                    1,1);
 
   gtk_widget_show (hrule);

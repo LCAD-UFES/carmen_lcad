@@ -1263,7 +1263,7 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 	frame_number++;
 }
 
-int compress_image = 1;
+int compress_image = 0;
 
 void
 camera_drivers_write_camera_message_to_log(int camera_id, camera_message *message, carmen_FILE *outfile, char *log_path, double time_spent)

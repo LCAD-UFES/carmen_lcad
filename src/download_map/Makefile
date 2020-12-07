@@ -1,5 +1,7 @@
 include ../Makefile.conf
 
+CC = g++
+LINK = g++
 CFLAGS += -g -Wall
 LFLAGS += -lglobal -lipc -lparam_interface \
 			-llocalize_ackerman_interface -lgps_xyz_interface \
@@ -16,10 +18,12 @@ PUBLIC_LIBRARIES = libdownload_map.a
 PUBLIC_BINARIES = download_map
 MAN_PAGES =
 
-TARGETS = download_map libdownload_map.a offiline_download_map
+TARGETS = libdownload_map.a download_map offiline_download_map
 
 libdownload_map.a: download_map_interface.o
-download_map: download_map.o download_map_main.o download_map_interface.o
+
+download_map: download_map.o libdownload_map.a download_map_main.o
+
 offiline_download_map: download_map.o offiline_download_map.o download_map_interface.o
 
 include ../Makefile.rules

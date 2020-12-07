@@ -31,8 +31,8 @@ download_map_from_google_maps (double latitude, double longitude)
 
 	int map_width = 600;
 
-	char *maptype = "satellite";
-	char *filename = "gps_image.png";
+	char *maptype = (char *) "satellite";
+	char *filename = (char *) "gps_image.png";
 
 	get_image_from_gps (latitude, longitude, maptype, map_width, filename);
 
