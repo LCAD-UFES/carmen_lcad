@@ -13,6 +13,9 @@
 #include <carmen/laser_ldmrs_utils.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/camera_drivers_interface.h>
+#include <carmen/camera_drivers_messages.h>
+
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>

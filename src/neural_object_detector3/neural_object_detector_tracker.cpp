@@ -8,6 +8,16 @@ int camera;
 int camera_side;
 char **classes_names;
 void *network_struct;
+
+char camera_model[128];    // Camera model in case of using camera_message
+int message_number = -1;   // Number of the camera message
+double resize_factor = 1.0; // Factor of resize
+int cropx = 0;       // Crop starting point
+int cropy = 0;
+int width  = -1;     // Width of crop
+int heigth = -1;     // Heigth of crop
+
+
 carmen_localize_ackerman_globalpos_message *globalpos_msg;
 carmen_velodyne_partial_scan_message *velodyne_msg;
 carmen_laser_ldmrs_new_message* sick_laser_message;
@@ -1105,6 +1115,23 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
 void
+camera_image_handler(camera_message *msg)
+{
+	static bool first_time = true;
+
+    if (first_time)
+    {
+        first_time = false;
+    }
+
+    Mat cv_image = Mat(msg->images[0].height, msg->images[0].width, CV_8UC3, msg->images[0].raw_data, 0);
+
+    imshow("New Image", cv_image);
+    waitKey(1);
+}
+
+
+void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	velodyne_msg = velodyne_message;
@@ -1201,6 +1228,8 @@ subscribe_messages()
     carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    camera_drivers_subscribe_message(message_number, NULL, (carmen_handler_t) camera_image_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1271,6 +1300,23 @@ read_parameters(int argc, char **argv)
 
     num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
+
+
+
+    carmen_param_allow_unfound_variables(1);
+
+   	carmen_param_t optional_commandline_param_list[] =
+   	{
+   		{(char *) "commandline", (char *) "camera", CARMEN_PARAM_STRING, &camera_model, 0, NULL},
+   		{(char *) "commandline", (char *) "id",     CARMEN_PARAM_INT,    &message_number, 0, NULL},
+   		{(char *) "commandline", (char *) "resize", CARMEN_PARAM_DOUBLE, &resize_factor, 0, NULL},
+   		{(char *) "commandline", (char *) "cropx",  CARMEN_PARAM_INT, &cropx, 0, NULL},
+   		{(char *) "commandline", (char *) "cropy",  CARMEN_PARAM_INT, &cropy, 0, NULL},
+   		{(char *) "commandline", (char *) "width",  CARMEN_PARAM_INT, &width, 0, NULL},
+   		{(char *) "commandline", (char *) "heigth", CARMEN_PARAM_INT, &heigth, 0, NULL},
+   	};
+   	carmen_param_install_params(argc, argv, optional_commandline_param_list, sizeof(optional_commandline_param_list) / sizeof(optional_commandline_param_list[0]));
+
 }
 
 
