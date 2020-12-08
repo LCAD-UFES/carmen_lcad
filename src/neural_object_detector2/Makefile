@@ -33,7 +33,7 @@ PUBLIC_BINARIES = neural_object_detector2
 
 #TARGETS = darknet2 libclustering velodyne_camera_calibration camera_boxes_to_world neural_object_detector2 neural_object_detector_test2 neural_object_detector_main_new2
 #TARGETS = darknet2 libclustering velodyne_camera_calibration camera_boxes_to_world neural_object_detector2 neural_object_detector_main_new2
-TARGETS = darknet libclustering velodyne_camera_calibration camera_boxes_to_world neural_object_detector2 neural_object_detector_main_new2
+TARGETS = darknet libclustering visual_tracker_interface velodyne_camera_calibration camera_boxes_to_world neural_object_detector2 neural_object_detector_main_new2
 
 #neural_object_detector2: dbscan.o SampleFilter_neural_object_detector2.o neural_object_detector_main2_yolov3.o neural_object_detector2.o 
 neural_object_detector2: dbscan.o SampleFilter_neural_object_detector2.o neural_object_detector_main2_yolov4.o neural_object_detector2.o 
@@ -51,7 +51,10 @@ darknet:
 
 libclustering:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libclustering
-	
+
+visual_tracker_interface:
+	$(MAKE) -C $(CARMEN_HOME)/src/visual_tracker
+
 velodyne_camera_calibration:
 	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
 	
