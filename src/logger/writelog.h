@@ -195,7 +195,7 @@ carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_
 		double timestamp, int frequency, char *log_filename);
 
 void
-camera_drivers_write_camera_message_to_log(int camera_id, camera_message *message, carmen_FILE *outfile, char *log_path, double time_spent);
+camera_drivers_write_camera_message_to_log(int camera_id, int compress_image, camera_message *message, carmen_FILE *outfile, char *log_path, double time_spent);
 
 void carmen_logwrite_write_xsens_euler(carmen_xsens_global_euler_message* msg,
 			       carmen_FILE *outfile,
