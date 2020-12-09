@@ -772,7 +772,7 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
     {
     	if (pedestrian[i].active)
     	{
-			sprintf(info, "%d Person", pedestrian[i].track_id);
+			sprintf(info, "%.2f %d Person", pedestrian[i].velocity, pedestrian[i].track_id);
 
 			rectangle(image, Point(pedestrian[i].x, pedestrian[i].y), Point((pedestrian[i].x + pedestrian[i].w), (pedestrian[i].y + pedestrian[i].h)),
 							Scalar(255, 255, 0), 4);
