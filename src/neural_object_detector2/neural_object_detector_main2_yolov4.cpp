@@ -831,6 +831,7 @@ get_predictions_of_slices (int i, cv::Mat image)
 	img = image.data;
 	// predictions = run_YOLO(img, image.cols, image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
 	predictions = run_YOLO(img, 3, image.cols, image.rows, network_struct, classes_names, 0.5, 0.5);
+	//predictions = run_YOLO(src_image.data, 3, src_image.cols, src_image.rows, network_struct, classes_names, 0.5, 0.5);
 	//detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
 	return (predictions);
 }
@@ -844,7 +845,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 
 	int thickness = -1;
 	int lineType = 8;
-	//cout<<rddf_points_in_image.size()<<" "<<distances_of_rddf_from_car.size()<<endl;
+	cout<<rddf_points_in_image.size()<<" "<<distances_of_rddf_from_car.size()<<endl;
 	for (int i = 0; i < rddf_points_in_image.size(); i++)
 	{
 		cv::Mat roi;
@@ -860,15 +861,16 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		//if (i > 0)//pedro
 		if (i >= 0)//ranik
 		{
-			//double dist_percentage = (100.0 - distances_of_rddf_from_car[i])/100.0;//pedro
-			//double dist_percentage = pow((1-(meters_spacement/100)),i);//ramoni
-			double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
-			//cout<<dist_percentage<<endl;
-			//image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
-			//image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
+			// cout <<  "distances_of_rddf_from_car_" << i << " " <<  distances_of_rddf_from_car[i] << endl;
+			double dist_percentage = (100.0 - distances_of_rddf_from_car[i]/10.0)/100.0;//pedro
+			// double dist_percentage = pow((1-(meters_spacement/100)),i);//ramoni
+			// double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
+			// cout<<dist_percentage<<endl;
+			// image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
+			// image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
 			image_size_x = static_cast<double>(scene_slices[0].cols) * dist_percentage;//ranik
 			image_size_y = static_cast<double>(scene_slices[0].rows) * dist_percentage;//ranik
-			//cout<<image_size_x<<" "<<image_size_y<<endl;
+			cout<< "img_x: " <<image_size_x<<" y:"<<image_size_y<<endl;
 		}
 
 		//cv::circle(out, cv::Point(rddf_points_in_image[i].x, rddf_points_in_image[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
@@ -904,11 +906,12 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		{
 			//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
 			double scale = image_size_y*(3.0/4.0);
-			top_left_point.x = rddf_points_in_image[i].x - (image_size_x/2);
-			top_left_point.y = rddf_points_in_image[i].y-scale;
+			top_left_point.x = abs(rddf_points_in_image[i].x) - (image_size_x/2); // abs Piumbini
+			top_left_point.y = abs(rddf_points_in_image[i].y) - scale;
 			cv::Rect rec(top_left_point.x, top_left_point.y, image_size_x, image_size_y);
-			//cout<<"Slice"<<i<<" "<<image_size_x<<" "<<image_size_y<<endl;
-			//cout<<rddf_points[i].x - (image_size_x/2)<<" "<<rddf_points[i].y-scale<<" "<<image_size_y-(rddf_points[i].y-scale)<<endl;
+			// cout<<"Slice"<<i<<" "<<image_size_x<<" "<<image_size_y<<endl;
+			// cout<<"rddf_points_in_image[i].x=" << rddf_points_in_image[i].x << " y=" << rddf_points_in_image[i].y << endl;
+			// cout<<rddf_points_in_image[i].x - (image_size_x/2)<<" "<<rddf_points_in_image[i].y-scale<<" "<<image_size_y-(rddf_points_in_image[i].y-scale)<<endl;
 			if (check_rect_inside_image(rec, out))
 			{
 				roi = out (rec);
@@ -1285,6 +1288,10 @@ void
 rddf_handler(carmen_behavior_selector_road_profile_message *message)
 {
 	last_rddf_poses = *message;
+	/*cout<<"rddf_handler"<<endl;
+	for(int i=0; i<last_rddf_poses.number_of_poses; i++){
+		printf("%lf %lf\n", last_rddf_poses.poses->x, last_rddf_poses.poses->y);
+	}*/
 }
 
 
@@ -1456,13 +1463,14 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
+	char janela[25];
 	vector<carmen_position_t> rddf_points_in_image_filtered;
 	vector<carmen_position_t> rddf_points_in_image_full;
 	vector<double> distances_of_rddf_from_car;
 	double hood_removal_percentage = 0.2;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 	cv::Size size(320, 320);
-
+	
     cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
     cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
 
@@ -1479,18 +1487,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     else
         return;
 
-    cv::Mat src_image_copy = src_image.clone();
-
+	cv::Mat src_image_copy = src_image.clone();
+	
     cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * crop_x / 2.0, 0,
     		src_image_copy.cols - src_image_copy.cols * crop_x, src_image_copy.rows));
     src_image = pRoi;
     src_image_copy = src_image.clone();
-
+	
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
-
+	
     cv::Mat rgb_image_copy = rgb_image.clone();
     or_image = rgb_image.clone();
-
+	
     vector<bbox_t> bounding_boxes_of_slices_in_original_image;
     vector<cv::Scalar> colors;
     vector<cv::Mat> scene_slices;
@@ -1506,7 +1514,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     {
     	carmen_pose_3D_t car_pose = filter_pitch(pose);
     	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
-
+		
     	cv::Mat out;
     	out = rgb_image;
     	rddf_points_in_image_filtered = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
@@ -1520,26 +1528,30 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	t.translate_factor_x = 0;
     	t.translate_factor_y = 0;
     	transform_factor_of_slice_to_original_frame.push_back(t);
-    	get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image_filtered, distances_of_rddf_from_car);
+		get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image_filtered, distances_of_rddf_from_car);
     	vector<vector<bbox_t>> bounding_boxes_of_slices;
-
-    	for (int i = 0; i < qtd_crops; i++)
+		// cout << "Passou ate 0; scene_slices=" << scene_slices.size() << endl;
+    	for (int i = 0; i < qtd_crops; i++) // Piumbini: coloquei -1 aqui pq tava dando 1 a menos q o crops
     	{
     		vector<bbox_t> predictions;
+			// sprintf(janela, "Test %d", i);
+			// cv::imshow(janela, scene_slices[i]);
+			// cv::waitKey(100);
+			// cout << "Passou ate 1; qt_crops=" << qtd_crops << " i=" << i << endl;
     		predictions = get_predictions_of_slices(i, scene_slices[i]);
     		bounding_boxes_of_slices.push_back(predictions);
     	}
-
+		// cout << "Passou ate 2" << endl;
 
     	bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
-
+		// cout << "Passou ate 3" << endl;
     	char arr[50];
         char gt_path[200];
         strcpy(gt_path, groundtruth_path);
         sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
         string str_gt_path (gt_path);
         string groundtruth_folder = str_gt_path + "-r.txt";
-		
+		// cout << "Passou ate 4" << endl;
         //if (access(groundtruth_folder.c_str(), F_OK) == 0)
         	show_detections_alberto(transform_factor_of_slice_to_original_frame ,scene_slices, bounding_boxes_of_slices, bounding_boxes_of_slices_in_original_image,
         			rddf_points_in_image_filtered, image_msg->timestamp);
@@ -1550,7 +1562,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 //    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_full, "Foviated Detection");
 
     	colors = get_slice_colors (qtd_crops);
-
+		// cout << "Passou ate 5" << endl;
     	//printf("%lf-r.png\n", image_msg->timestamp);
 //    	save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors,
 //    	    				transform_factor_of_slice_to_original_frame, rddf_points_in_image_filtered, rddf_points_in_image_full, bounding_boxes_of_slices);
@@ -1792,7 +1804,7 @@ read_parameters(int argc, char **argv)
 
 
 
-    sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // Geather the cameri ID
+    sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // Geather the camera ID
     sprintf(camera_string, "%s%d", "camera", camera);
     sprintf(bullbar_string, "%s", "front_bullbar");
     sprintf(sick_string, "%s", "laser_ldmrs");

@@ -4,6 +4,8 @@ include ../../src/Makefile.conf
 MODULE_NAME = LIB_STEREO_CSBP
 MODULE_COMMENT = STEREO CSBP LIB 
 
+CC = g++
+
 TARGETS = libstereo.a
 
 FLAGSLINKER := -lm \
@@ -52,8 +54,6 @@ qx_csbp_OMP.o: qx_csbp_OMP.c
 	
 qx_csbp_GPU.o: qx_csbp_GPU.cu
 	nvcc -O -arch=sm_50 -c  qx_csbp_GPU.cu 
-
-
 
 
 #clean:

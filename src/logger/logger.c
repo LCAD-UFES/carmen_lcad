@@ -62,7 +62,7 @@ static int log_can_dump = 0;
 char* log_path = 0;
 char* suffix = NULL;
 char* prefix = NULL;
-
+int compress_image = 0;
 
 void
 get_logger_params(int argc, char** argv)
@@ -98,6 +98,7 @@ get_logger_params(int argc, char** argv)
   carmen_param_t optional_commandline_param_list[] =
   {
 	{(char *) "commandline", (char *) "automatic_file", CARMEN_PARAM_STRING, &log_path, 0, NULL},
+	{(char *) "commandline", (char *) "compress_image", CARMEN_PARAM_ONOFF, &compress_image, 0, NULL},
 	{(char *) "commandline", (char *) "prefix", CARMEN_PARAM_STRING, &prefix, 0, NULL},
 	{(char *) "commandline", (char *) "suffix", CARMEN_PARAM_STRING, &suffix, 0, NULL},
   };
@@ -535,121 +536,121 @@ void bumblebee13_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_me
 void
 camera1_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(1, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(1, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera2_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(2, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(2, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera3_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(3, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(3, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera4_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(4, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(4, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera5_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(5, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(5, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera6_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(6, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(6, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera7_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(7, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(7, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera8_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(8, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(8, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera9_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(9, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(9, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera10_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(10, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(10, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera11_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(11, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(11, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera12_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(12, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(12, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera13_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(13, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(13, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera14_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(14, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(14, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera15_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(15, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(15, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera16_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(16, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(16, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera17_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(17, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(17, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera18_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(18, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(18, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera19_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(19, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(19, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 void
 camera20_handler(camera_message *message)
 {
-	camera_drivers_write_camera_message_to_log(20, message, outfile, log_filename, carmen_get_time() - logger_starttime);
+	camera_drivers_write_camera_message_to_log(20, compress_image, message, outfile, log_filename, carmen_get_time() - logger_starttime);
 }
 
 

@@ -4,6 +4,7 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = WEB_CAM_PACKAGE
 MODULE_COMMENT = Web Cam Module
 
+CC = g++
 LINK = g++
 
 IFLAGS += 

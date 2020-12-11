@@ -192,6 +192,7 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg);
  **/
 char *carmen_string_to_robot_ackerman_velocity_message(char *string, carmen_robot_ackerman_velocity_message *msg);
 
+char *carmen_string_to_carmen_can_dump_can_line_message(char *string, carmen_can_dump_can_line_message *msg);
 
 /** Guesses the field of view for a SICK in case the configuration is underspecified.
  * @param number of laser beams

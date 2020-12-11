@@ -2588,7 +2588,7 @@ plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 }
 
 
-static void
+void
 carmen_download_map_handler(carmen_download_map_message *message)
 {
     download_map_message.height = message->height;
@@ -3673,9 +3673,9 @@ subscribe_ipc_messages(void)
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
     
  
-    carmen_download_map_subscribe_message(NULL,
-                                          (carmen_handler_t) carmen_download_map_handler,
-                                          CARMEN_SUBSCRIBE_LATEST);
+//    carmen_download_map_subscribe_message(NULL,
+//                                          (carmen_handler_t) carmen_download_map_handler,
+//                                          CARMEN_SUBSCRIBE_LATEST);
 
     carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
                                           (carmen_handler_t) carmen_localize_neural_base_message_handler,

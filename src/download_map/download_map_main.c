@@ -46,8 +46,8 @@ download_map_from_google_maps (double latitude, double longitude)
 
 	int map_width = 512;
 
-	char *maptype = "satellite";
-	char *filename = "gps_image.png";
+	char *maptype = (char *) "satellite";
+	char *filename = (char *) "gps_image.png";
 
 	get_image_from_gps (latitude, longitude, maptype, map_width, filename);
 
@@ -234,6 +234,18 @@ shutdown_module(int signo)
 
 		exit(0);
 	}
+}
+
+
+void
+carmen_download_map_define_messages()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_DOWNLOAD_MAP_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_DOWNLOAD_MAP_MESSAGE_FMT);
+
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_DOWNLOAD_MAP_MESSAGE_NAME);
 }
 
 

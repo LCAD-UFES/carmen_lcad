@@ -3,6 +3,8 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = "CVCAM"
 MODULE_COMMENT = "Publishes images from camera"
 
+CC = g++
+
 SOURCES = cvcam.c
 TARGETS = libcvcam.a 
 

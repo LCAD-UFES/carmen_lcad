@@ -1,6 +1,7 @@
 include ../Makefile.conf
 
-LINK = g++
+#CC = g++
+#LINK = g++
 
 CFLAGS += -fopenmp
 CXXFLAGS += -std=c++11 -Wno-write-strings

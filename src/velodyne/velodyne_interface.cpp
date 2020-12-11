@@ -263,7 +263,7 @@ carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_
 
 
 void
-variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_message *msg,int vertical_resolution, spherical_point_cloud *points,
+variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_message *msg, int vertical_resolution, spherical_point_cloud *points,
 		unsigned char *intensity, int *ray_order, double *vertical_correction, float range_max, double range_division_factor, double timestamp, int use_remission)
 {
 	points->timestamp = timestamp;
@@ -286,7 +286,6 @@ variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_m
 				intensity[i * vertical_resolution + j] = msg->partial_scan[i].intensity[ray_order[j]];
 		}
 	}
-
 }
 
 
