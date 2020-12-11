@@ -290,8 +290,8 @@ pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_v
 		if (strcmp(moving_objects_vector->point_clouds[i].model_features.model_name, "pedestrian") == 0)
 		{
 			if ((DIST2D(moving_objects_vector->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius &&                    // Inside the crosswalk circle
-				 moving_objects_vector->point_clouds[i].linear_velocity > 0.4 &&                                              // Moving faster than 0.2m/s
-				 abs(current_globalpos_msg->globalpos.theta - moving_objects_vector->point_clouds[i].orientation) > 0.4)      // Not moving parallel to the car (sideways with the crosswalk)
+				 moving_objects_vector->point_clouds[i].linear_velocity > 0.2 &&                                              // Moving faster than 0.2m/s
+				 abs(current_globalpos_msg->globalpos.theta - moving_objects_vector->point_clouds[i].orientation) > 0.2)      // Not moving parallel to the car (sideways with the crosswalk)
 				 )//||
 				 //pedestrian_about_to_enter_crosswalk(moving_objects_vector->point_clouds[i], displaced_crosswalk_pose, radius))
 			{

@@ -4,13 +4,27 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
-int camera;
-int camera_side;
+// int camera;
+// int camera_side = 0;
 char **classes_names;
 void *network_struct;
-carmen_localize_ackerman_globalpos_message *globalpos_msg;
-carmen_velodyne_partial_scan_message *velodyne_msg;
-carmen_laser_ldmrs_new_message* sick_laser_message;
+
+char* camera_model;    // Camera model in case of using camera_message
+int image_index = 0;   // camera_message may contain several images from same camera
+int message_number = -1;   // Number of the camera message
+double resize_factor = 1.0; // Factor of resize
+int crop_x = 0;       // Crop starting point
+int crop_y = 0;
+int crop_w  = -1;     // Width of crop
+int crop_h = -1;     // Heigth of crop
+int original_img_width = -1;
+int original_img_height = -1;
+
+carmen_localize_ackerman_globalpos_message *globalpos_msg = NULL;
+carmen_velodyne_partial_scan_message *velodyne_msg = NULL;
+carmen_laser_ldmrs_new_message* sick_laser_message = NULL;
+carmen_rddf_annotation_message* rddf_annotation_message = NULL;
+
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t camera_pose;
@@ -729,18 +743,25 @@ display_lidar(Mat &image, vector<image_cartesian> points, int r, int g, int b)
 
 void
 show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
-		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
+		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, 
+		unsigned int crop_width, unsigned int crop_height, double dist_to_pedestrian_track)
 {
-	char object_info[25];
-    char frame_rate[25];
+	char info[128];
 
     cvtColor(image, image, COLOR_RGB2BGR);
 
-    sprintf(frame_rate, "FPS = %.2f", fps);
+	sprintf(info, "%dx%d", image.cols, image.rows);
+    putText(image, info, Point(10, 15), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 
-    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+    sprintf(info, "FPS %.2f", fps);
+    putText(image, info, Point(10, 30), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 
-
+	if (dist_to_pedestrian_track < 200)
+	{
+		sprintf(info, "DIST %.2f", dist_to_pedestrian_track);
+		putText(image, info, Point(10, 45), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+	}
+	
     for (unsigned int i = 0; i < predictions.size(); i++)
 	{
 		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
@@ -751,26 +772,25 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
     {
     	if (pedestrian[i].active)
     	{
-			sprintf(object_info, "%d Person", pedestrian[i].track_id);
+			sprintf(info, "%.2f %d Person", pedestrian[i].velocity, pedestrian[i].track_id);
 
 			rectangle(image, Point(pedestrian[i].x, pedestrian[i].y), Point((pedestrian[i].x + pedestrian[i].w), (pedestrian[i].y + pedestrian[i].h)),
 							Scalar(255, 255, 0), 4);
 
-			putText(image, object_info, Point(pedestrian[i].x + 1, pedestrian[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+			putText(image, info, Point(pedestrian[i].x + 1, pedestrian[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     	}
 	}
 
-// //	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-// 	vector<vector<image_cartesian>> lidar_points;
-// 	lidar_points.push_back(points);
-// //    show_LIDAR(image, lidar_points, 255, 0, 0);
-// 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+	// show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
+	// vector<vector<image_cartesian>> lidar_points;
+	// lidar_points.push_back(points);
+	// show_LIDAR(image, lidar_points, 255, 0, 0);
+	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
 	// display_lidar(image, points, 0, 255, 0);
 
-    // resize(image, image, Size(640, 480 * IMAGE_HEIGHT_CROP));
-	resize(image, image, Size(640, 480));
+	resize(image, image, Size(image.cols * resize_factor, image.rows * resize_factor));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
@@ -991,6 +1011,118 @@ insert_missing_pedestrians_in_the_track(vector<bbox_t> predictions)
 }
 
 
+double
+distance_to_pedestrian_track_annotaion()
+{
+	double min_dist_to_pedestrian_track = DBL_MAX, dist_to_pedestrian_track = DBL_MAX;
+
+	for (int i = 0, size = rddf_annotation_message->num_annotations; i < size; i++)
+	{
+		if (rddf_annotation_message->annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
+			dist_to_pedestrian_track = DIST2D(globalpos_msg->globalpos, rddf_annotation_message->annotations[i].annotation_point);
+		
+		if (dist_to_pedestrian_track < min_dist_to_pedestrian_track)
+			min_dist_to_pedestrian_track = dist_to_pedestrian_track;
+	}
+	return (min_dist_to_pedestrian_track);
+}
+
+
+void
+publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg);
+
+
+void
+track_pedestrians(Mat open_cv_image, double timestamp)
+{
+	if (globalpos_msg == NULL || rddf_annotation_message == NULL)
+		return;
+
+	static bool first_time = true;
+	double fps;
+	static double start_time = 0.0;
+	double dist_to_pedestrian_track = DBL_MAX;
+
+	vector<bbox_t> predictions;
+	vector<image_cartesian> points;
+	vector<vector<image_cartesian>> points_inside_bbox;
+	vector<vector<image_cartesian>> filtered_points;
+
+	if (first_time)
+	{
+		init_python(open_cv_image.cols, open_cv_image.rows);
+
+		original_img_width = open_cv_image.cols;
+		original_img_height = open_cv_image.rows;
+
+		if (crop_w == -1)
+			crop_w = open_cv_image.cols;
+
+		if (crop_h == -1)
+			crop_h = open_cv_image.rows;
+		
+		first_time = false;
+	}
+
+	// if (velodyne_vector.size() > 0)
+	// 	velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
+	// else
+	// 	return;
+
+	// Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
+	open_cv_image = open_cv_image(myROI);
+
+	dist_to_pedestrian_track = distance_to_pedestrian_track_annotaion();
+
+	if (dist_to_pedestrian_track < 70.0)        // 70 meter is above the range of velodyne
+	{
+		//////// Yolo
+		predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
+		
+		predictions = filter_predictions_of_interest(predictions);
+
+		//////// Python
+		call_python_function(open_cv_image.data, predictions);
+		
+		insert_missing_pedestrians_in_the_track(predictions);
+		
+		points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
+	//	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
+	//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+		
+		points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
+
+		filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+
+		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+		for (int i = 0; i < positions.size(); i++)
+		{
+			if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
+			{
+				carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_pose.position.x, board_pose.position.y);
+				//			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, bullbar_pose.position.x, bullbar_pose.position.y); //bullbar if the points are from sick, board if the points are from velodyne
+				carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
+				carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+
+				update_world_position(&pedestrian_tracks[i], positions[i].cartesian_x,positions[i].cartesian_y, timestamp);
+				//printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
+				//		pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos_msg->globalpos.theta));
+			}
+		}
+		clean_pedestrians(3.0);
+		
+		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
+		publish_moving_objects_message(&msg);
+	}
+
+	fps = 1.0 / (carmen_get_time() - start_time);
+	start_time = carmen_get_time();
+	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_pedestrian_track);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
@@ -1015,92 +1147,30 @@ publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void
-image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 {
-	static bool first_time = true;
-	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
-	carmen_laser_ldmrs_new_message sick_sync_with_cam;
-	double fps;
-	static double start_time = 0.0;
 	unsigned char *img;
 
-	if (first_time)
-	{
-		init_python(image_msg->width, image_msg->height);
-		first_time = false;
-	}
-
-	if ((image_msg == NULL) || (globalpos_msg == NULL))
-		return;
-
-	if (velodyne_vector.size() > 0)
-		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
+	if (image_index == 1)
+		img = msg->raw_right;
 	else
-		return;
+		img = msg->raw_left;
 
-	// if (sick_vector.size() > 0)
-	// 	sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
-	// else
-	// 	return;
+	Mat open_cv_image = Mat(msg->height, msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
-	if (camera_side == 0)
-		img = image_msg->raw_left;
-	else
-		img = image_msg->raw_right;
+	track_pedestrians(open_cv_image, msg->timestamp);
+}
 
-	int crop_x = 0;
-	int crop_y = 0;
-	int crop_w = image_msg->width;
-	int crop_h = image_msg->height;// * IMAGE_HEIGHT_CROP;
 
-	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
-	open_cv_image = open_cv_image(myROI);
+void
+camera_image_handler(camera_message *msg)
+{
+	if (image_index > msg->number_of_images)
+		carmen_die("Image index %d exceeds the camera number of images %d!\n", image_index, msg->number_of_images);
 
-	//////// Yolo
-	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
-	predictions = filter_predictions_of_interest(predictions);
-	//////// Python
-	call_python_function(open_cv_image.data, predictions);
-	
-	// printf("PS %d ", pedestrian_tracks.size());
+	Mat open_cv_image = Mat(msg->images[image_index].height, msg->images[image_index].width, CV_8UC3, msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
-	insert_missing_pedestrians_in_the_track(predictions);
-	
-	// printf(" %d\n", pedestrian_tracks.size());
-	
-	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
-			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-//	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
-//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-
-	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
-
-	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
-
-	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-	for (int i=0; i < positions.size();i++)
-	{
-		if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
-		{
-			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_pose.position.x, board_pose.position.y);
-			//			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, bullbar_pose.position.x, bullbar_pose.position.y); //bullbar if the points are from sick, board if the points are from velodyne
-			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
-			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
-
-			update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
-			//printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
-			//		pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos_msg->globalpos.theta));
-		}
-	}
-	clean_pedestrians(3.0);
-	
-	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
-	publish_moving_objects_message(&msg);
-
-	fps = 1.0 / (carmen_get_time() - start_time);
-	start_time = carmen_get_time();
-	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+	track_pedestrians(open_cv_image, msg->timestamp);
 }
 
 
@@ -1111,26 +1181,24 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_msg);
 
-	carmen_velodyne_partial_scan_message velodyne_copy;
+	// carmen_velodyne_partial_scan_message velodyne_copy;
 
-	velodyne_copy.host = velodyne_msg->host;
-	velodyne_copy.number_of_32_laser_shots = velodyne_msg->number_of_32_laser_shots;
+	// velodyne_copy.host = velodyne_msg->host;
+	// velodyne_copy.number_of_32_laser_shots = velodyne_msg->number_of_32_laser_shots;
 
-	velodyne_copy.partial_scan = (carmen_velodyne_32_laser_shot *) malloc(
-			sizeof(carmen_velodyne_32_laser_shot) * velodyne_msg->number_of_32_laser_shots);
+	// velodyne_copy.partial_scan = (carmen_velodyne_32_laser_shot *) malloc(sizeof(carmen_velodyne_32_laser_shot) * velodyne_msg->number_of_32_laser_shots);
 
-	memcpy(velodyne_copy.partial_scan, velodyne_msg->partial_scan,
-		   sizeof(carmen_velodyne_32_laser_shot) * velodyne_msg->number_of_32_laser_shots);
+	// memcpy(velodyne_copy.partial_scan, velodyne_msg->partial_scan, sizeof(carmen_velodyne_32_laser_shot) * velodyne_msg->number_of_32_laser_shots);
 
-	velodyne_copy.timestamp = velodyne_msg->timestamp;
+	// velodyne_copy.timestamp = velodyne_msg->timestamp;
 
-	velodyne_vector.push_back(velodyne_copy);
+	// velodyne_vector.push_back(velodyne_copy);
 
-	if (velodyne_vector.size() > MAX_POSITIONS)
-	{
-		free(velodyne_vector.begin()->partial_scan);
-		velodyne_vector.erase(velodyne_vector.begin());
-	}
+	// if (velodyne_vector.size() > MAX_POSITIONS)
+	// {
+	// 	free(velodyne_vector.begin()->partial_scan);
+	// 	velodyne_vector.erase(velodyne_vector.begin());
+	// }
 }
 
 
@@ -1170,9 +1238,16 @@ carmen_laser_ldmrs_new_message_handler(carmen_laser_ldmrs_new_message* laser_mes
 
 
 void
-localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	globalpos_msg = globalpos_message;
+	globalpos_msg = msg;
+}
+
+
+void
+rddf_annotation_message_handler(carmen_rddf_annotation_message *msg)
+{
+	rddf_annotation_message = msg;
 }
 
 
@@ -1192,26 +1267,13 @@ shutdown_module(int signo)
 
 
 void
-subscribe_messages()
-{
-    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-}
-
-
-void
-read_parameters(int argc, char **argv)
+read_parameters_old(int argc, char **argv)
 {
 	if ((argc != 3))
 		carmen_die("%s: Wrong number of parameters. neural_object_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
 
-	camera = atoi(argv[1]);             // Define the camera to be used
-    camera_side = atoi(argv[2]);        // 0 For left image 1 for right image
+	int camera = atoi(argv[1]);             // Define the camera to be used
+    int camera_side = atoi(argv[2]);        // 0 For left image 1 for right image
 
     int num_items;
 
@@ -1268,16 +1330,86 @@ read_parameters(int argc, char **argv)
 		{sick_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &sick_pose.orientation.pitch, 0, NULL },
 		{sick_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &sick_pose.orientation.yaw, 0, NULL }
     };
-
     num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
+}
+
+void
+read_parameters(int argc, char **argv)
+{
+	if ((argc < 3))
+		carmen_die("%s: Wrong number of parameters. neural_object_detector requires 2 parameter and received %d. \n Usage: %s <camera_model> <message_number>\n", argv[0], argc - 1, argv[0]);
+
+	camera_model = argv[1];
+	message_number = atoi(argv[2]);
+
+	carmen_param_t param_list[] =
+    {
+		{camera_model, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL},
+		{camera_model, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL},
+		{camera_model, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL},
+		{camera_model, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL},
+		{camera_model, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL},
+		{camera_model, (char*) "x",     CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
+		{camera_model, (char*) "y",     CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
+		{camera_model, (char*) "z",     CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},
+		{camera_model, (char*) "roll",  CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL},
+		{camera_model, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL},
+		{camera_model, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL},
+
+		{(char *) "velodyne", (char *) "x",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
+		{(char *) "velodyne", (char *) "y",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
+		{(char *) "velodyne", (char *) "z",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
+		{(char *) "velodyne", (char *) "roll",  CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
+		{(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
+		{(char *) "velodyne", (char *) "yaw",   CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+
+		{(char *) "sensor_board_1", (char*) "x",     CARMEN_PARAM_DOUBLE, &board_pose.position.x, 0, NULL },
+		{(char *) "sensor_board_1", (char*) "y",     CARMEN_PARAM_DOUBLE, &board_pose.position.y, 0, NULL },
+		{(char *) "sensor_board_1", (char*) "z",     CARMEN_PARAM_DOUBLE, &board_pose.position.z, 0, NULL },
+		{(char *) "sensor_board_1", (char*) "roll",  CARMEN_PARAM_DOUBLE, &board_pose.orientation.roll, 0, NULL},
+		{(char *) "sensor_board_1", (char*) "pitch", CARMEN_PARAM_DOUBLE, &board_pose.orientation.pitch, 0, NULL},
+		{(char *) "sensor_board_1", (char*) "yaw",   CARMEN_PARAM_DOUBLE, &board_pose.orientation.yaw, 0, NULL},
+    };
+    carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+ 	carmen_param_allow_unfound_variables(1);
+   	carmen_param_t optional_commandline_param_list[] =
+   	{
+   		{(char *) "commandline", (char *) "image", CARMEN_PARAM_INT, &image_index, 0, NULL},
+		{(char *) "commandline", (char *) "resize", CARMEN_PARAM_DOUBLE, &resize_factor, 0, NULL},
+   		{(char *) "commandline", (char *) "cropx",  CARMEN_PARAM_INT, &crop_x, 0, NULL},
+   		{(char *) "commandline", (char *) "cropy",  CARMEN_PARAM_INT, &crop_y, 0, NULL},
+   		{(char *) "commandline", (char *) "cropw",  CARMEN_PARAM_INT, &crop_w, 0, NULL},
+   		{(char *) "commandline", (char *) "croph", CARMEN_PARAM_INT, &crop_h, 0, NULL},
+   	};
+   	carmen_param_install_params(argc, argv, optional_commandline_param_list, sizeof(optional_commandline_param_list) / sizeof(optional_commandline_param_list[0]));
+
+	printf ("%s %d Iid%d %lf %d %d %d %d\n", camera_model, message_number, image_index, resize_factor, crop_x, crop_y, crop_w, crop_w);
+}
+
+
+void
+subscribe_messages()
+{
+    carmen_bumblebee_basic_subscribe_stereoimage(message_number, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    camera_drivers_subscribe_message(message_number, NULL, (carmen_handler_t) camera_image_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
 void
 initializer()
 {
-	initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
+	// initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
 
 	char* carmen_home = getenv("CARMEN_HOME");
 	char classes_names_path[1024];

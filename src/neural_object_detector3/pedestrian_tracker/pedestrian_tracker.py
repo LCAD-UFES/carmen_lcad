@@ -37,7 +37,7 @@ def set_image_settings(w, h):
 	print("Python image dimension: " + str(image_width) + " " + str(image_height) + "\n")
 	
 	logger.setLevel(logging.INFO)
-	tracker = OnlineTracker(min_cls_score=0.1, min_ap_dist=0.8, max_time_lost=30)	
+	tracker = OnlineTracker(min_cls_score=0.01, min_ap_dist=0.8, max_time_lost=30)	
 			
 
 

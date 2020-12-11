@@ -355,7 +355,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
+	if (fabs(desired_velocity) < 0.05) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
 	{
 		desired_velocity = 0.0;
 		g_velocity_PID_controler_state = STOP_CAR;
@@ -374,8 +374,8 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		error_t_1 = integral_t = integral_t_1 = 0.0;
 
 		*throttle_command = 0.0;
-//		*brakes_command = 100.0;
-		*brakes_command = *brakes_command + 0.05 * (100.0 - *brakes_command); // Estudar esta linha para reduzir parada brusca
+		*brakes_command = 100.0;
+//		*brakes_command = *brakes_command + 0.05 * (100.0 - *brakes_command); // Estudar esta linha para reduzir parada brusca
 
 		if ((desired_velocity > 0.0) && (current_velocity >= -0.05))
 		{

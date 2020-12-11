@@ -1254,6 +1254,14 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 	build_sensor_point_cloud(&sensors_data[sensor_number].points, sensors_data[sensor_number].intensity,
 			&sensors_data[sensor_number].point_cloud_index, num_points, NUM_VELODYNE_POINT_CLOUDS, use_remission);
 
+	// printf ("PARTIAL\n");
+	// for (int i = 0; i < sensors_params[sensor_number].vertical_resolution; i++)
+	// 	printf ("%d ", sensors_params[sensor_number].ray_order[i]);
+	// printf ("\n");
+	// for (int i = 0; i < sensors_params[sensor_number].vertical_resolution; i++)
+	// 	printf ("%lf ", sensors_params[sensor_number].vertical_correction[i]);
+	// printf ("\n");
+
 	carmen_velodyne_partial_scan_update_points_with_remission_check(velodyne_message, sensors_params[sensor_number].vertical_resolution,
 			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index],
 			sensors_data[sensor_number].intensity[sensors_data[sensor_number].point_cloud_index],
@@ -1285,27 +1293,35 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 int
 update_data_params_with_lidar_data(int sensor_number, carmen_velodyne_variable_scan_message *msg)
 {
-	static int msg_id;
+	// static int msg_id;
 
 	if (!globalpos_initialized)
 		return (ok_to_publish);
 	
 	int num_points = msg->number_of_shots * sensors_params[sensor_number].vertical_resolution;
 
-	ok_to_publish = 0;
+	// ok_to_publish = 0;
 
-	if (sensors_data[sensor_number].last_timestamp == 0.0)    // Todo ainda precisa????
-	{
-		sensors_data[sensor_number].last_timestamp = msg->timestamp;
-		msg_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
+	// if (sensors_data[sensor_number].last_timestamp == 0.0)    // Todo ainda precisa????
+	// {
+	// 	sensors_data[sensor_number].last_timestamp = msg->timestamp;
+	// 	msg_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
 
-		return (ok_to_publish);
-	}
+	// 	return (ok_to_publish);
+	// }
 
 	sensors_data[sensor_number].current_timestamp = msg->timestamp;
 
 	build_sensor_point_cloud(&sensors_data[sensor_number].points, sensors_data[sensor_number].intensity,
 			&sensors_data[sensor_number].point_cloud_index, num_points, NUM_VELODYNE_POINT_CLOUDS, use_remission);
+	
+	// printf ("VARIABLE\n");
+	// for (int i = 0; i < sensors_params[sensor_number].vertical_resolution; i++)
+	// 	printf ("%d ", sensors_params[sensor_number].ray_order[i]);
+	// printf ("\n");
+	// for (int i = 0; i < sensors_params[sensor_number].vertical_resolution; i++)
+	// 	printf ("%lf ", sensors_params[sensor_number].vertical_correction[i]);
+	// printf ("\n");
 
 	variable_scan_update_points_with_remission_check(msg, sensors_params[sensor_number].vertical_resolution,
 			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index],
@@ -1319,16 +1335,16 @@ update_data_params_with_lidar_data(int sensor_number, carmen_velodyne_variable_s
 	sensors_data[sensor_number].robot_phi[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].phi;
 	sensors_data[sensor_number].points_timestamp[sensors_data[sensor_number].point_cloud_index] = msg->timestamp;
 
-	if (msg_id >= 0)                // TODO ainda precisa???
-	{
-		//if (build_snapshot_map)
+	// if (msg_id >= 0)                // TODO ainda precisa???
+	// {
+	// 	//if (build_snapshot_map)
 		ok_to_publish = 1;
-		//else
+	// 	//else
 
-		if (msg_id > 1000000)
-			msg_id = 0;
-	}
-	msg_id++;
+	// 	if (msg_id > 1000000)
+	// 		msg_id = 0;
+	// }
+	// msg_id++;
 	sensors_data[sensor_number].last_timestamp = msg->timestamp;   ///  ???????
 
 	return (ok_to_publish);

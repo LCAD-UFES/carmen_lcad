@@ -426,19 +426,19 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 	}
 }
 
-// void
-// setup_message(carmen_velodyne_variable_scan_message &msg, int number_of_shots, int shot_size)
-// {
-// 	msg.partial_scan = (carmen_velodyne_shot *) malloc ((number_of_shots + 1) * sizeof(carmen_velodyne_shot));
+void
+setup_message(carmen_velodyne_variable_scan_message &msg, int number_of_shots, int shot_size)
+{
+	msg.partial_scan = (carmen_velodyne_shot *) malloc ((number_of_shots + 1) * sizeof(carmen_velodyne_shot));
 	
-//     for (int i = 0 ; i <= number_of_shots; i++)
-// 	{
-// 		msg.partial_scan[i].shot_size = shot_size;
-// 		msg.partial_scan[i].distance  = (unsigned short*) malloc (shot_size * sizeof(unsigned short));
-// 		msg.partial_scan[i].intensity = (unsigned char*)  malloc (shot_size * sizeof(unsigned char));
-// 	}
-// 	msg.host = carmen_get_host();
-// }
+    for (int i = 0 ; i <= number_of_shots; i++)
+	{
+		msg.partial_scan[i].shot_size = shot_size;
+		msg.partial_scan[i].distance  = (unsigned short*) malloc (shot_size * sizeof(unsigned short));
+		msg.partial_scan[i].intensity = (unsigned char*)  malloc (shot_size * sizeof(unsigned char));
+	}
+	msg.host = carmen_get_host();
+}
 
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
@@ -463,7 +463,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	// }
 	// msg.timestamp = velodyne_message->timestamp;
 
-	// update_data_params_with_lidar_data(14, &msg);
+	// update_data_params_with_lidar_data(10, &msg);
 }
 
 static void
@@ -1320,6 +1320,40 @@ get_sensors_param(int argc, char **argv)
 
 
 void
+sort_ray_order_by_vertical_correction_angles(sensor_parameters_t params)
+{
+	int aux = 0;
+	
+	for (int i = params.vertical_resolution - 1; i > 0; i--)
+	{
+		for (int j = 0; j < i; j++)
+		{
+			if (params.vertical_correction[params.ray_order[j]] > params.vertical_correction[params.ray_order[j + 1]])
+			{
+				aux = params.ray_order[j];
+				params.ray_order[j] = params.ray_order[j + 1];
+				params.ray_order[j + 1] = aux;
+			}
+		}
+	}
+}
+
+
+void
+sort_vertical_correction_angles(sensor_parameters_t params)
+{
+	double aux[params.vertical_resolution];
+
+	memcpy(aux, params.vertical_correction, params.vertical_resolution * sizeof(double));
+
+	for (int i = 0; i < params.vertical_resolution; i++)
+	{
+		params.vertical_correction[i] = aux[params.ray_order[i]];
+	}
+}
+
+
+void
 get_lidars_sensor_params()
 {
 	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
@@ -1371,6 +1405,9 @@ get_lidars_sensor_params()
 		carmen_prob_models_alloc_sensor_data(&sensors_data[i + 10], sensors_params[i + 10].vertical_resolution, number_of_threads);
 
 		sensors_params[i + 10].remission_calibration = NULL; //(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
+
+		sort_ray_order_by_vertical_correction_angles(sensors_params[i + 10]);
+		sort_vertical_correction_angles(sensors_params[i + 10]);
 	}
 }
 
@@ -1694,7 +1731,7 @@ subscribe_to_ipc_messages()
 	if (sensors_params[9].alive)
 		carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t)stereo_velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 
-	//-------------------------------------------------------------------------------//
+	//-------------------------------------------------------------------------------------------------------------------------------------//
 	// LIDARS
 	if (sensors_params[10].alive)
 		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
