@@ -17,7 +17,7 @@ PACKAGES = \
 	ipc  global  param_daemon  proccontrol  sensors/laser_new  sensors/ultrasonic  sensors/web_cam  \
 	obstacle_avoider  simulator_ackerman  localize_ackerman  robot_ackerman  maptools  logger  \
 	dynamic_object_detector  navigator_ackerman  pantilt  laser  gps  gps_xyz  imu  localize_neural  fused_odometry  \
-	moving_objects  bumblebee_basic  laser_ldmrs  viewer_3D  stereo  road_finding  v_disparity  stereo_mapping  \
+	moving_objects  bumblebee_basic  laser_ldmrs  viewer_3D  stereo  road_finding  v_disparity  \
 	grid_mapping  visual_odometry_package2  stereo_point_cloud  xsens  xsens_MTi-G  rrt_planner  velodyne  rddf  \
 	download_map  parking_assistant  navigator_astar  tracker  navigator_spline  navigator_gui  velodyne_camera_calibration  \
 	camera_boxes_to_world  navigator_gui2  mapper  obstacle_distance_mapper  map_server  car_panel_gui  \

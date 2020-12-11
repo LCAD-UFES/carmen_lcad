@@ -15,7 +15,7 @@ rm_symbolic_links()
 MODULES=". ../sharedlib 
 	../sharedlib/prob_models  ../sharedlib/libcontrol  ../sharedlib/libcarmodel  ../sharedlib/gl_plotter  
 	../sharedlib/libsickldmrs  ../sharedlib/libbee  ../sharedlib/libvelodyne  ../sharedlib/libelas  
-	../sharedlib/libstereovgram  ../sharedlib/libstereo  ../sharedlib/libcmt  ../sharedlib/darknet2  
+	../sharedlib/libstereovgram  ../sharedlib/libstereo  ../sharedlib/libcmt  ../sharedlib/OpenJAUS  ../sharedlib/darknet2  
 	../sharedlib/libsickldmrs2  ipc  global  param_daemon  proccontrol  map_server  simulator_ackerman    
 	obstacle_distance_mapper  rddf  behavior_selector  model_predictive_planner  rrt_planner  obstacle_avoider  
 	navigator_gui2  viewer_3D  bumblebee_basic  logger  gps_xyz  base_ackerman  visual_odometry_package2  
@@ -25,7 +25,7 @@ MODULES=". ../sharedlib
 	navigator_ackerman  navigator_gui  localize_neural  grid_mapping  stereo_velodyne  moving_objects  
 	traffic_light  navigator_astar  motion_planner  dynamic_object_detector  lane_detector  car_panel_gui  
 	utilities/user_preferences  stereo_point_cloud  voice_interface  download_map  navigator_spline  tracker  
-	laser  stereo_mapping  road_finding  parking_assistant  udatmo1 camera_boxes_to_world  v_disparity"
+	laser  road_finding  parking_assistant  udatmo1 camera_boxes_to_world  v_disparity"
 
 
 ERRORS=
