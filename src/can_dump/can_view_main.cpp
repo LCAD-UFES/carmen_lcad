@@ -24,6 +24,7 @@ static void
 can_dump_message_handler(carmen_can_dump_can_line_message *message)
 {
 	printf("%s - %lf\n", message->can_line, message->timestamp);
+	fflush(stdout);
 }
 
 
