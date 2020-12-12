@@ -41,13 +41,13 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 	{
 		a = GlobalState::robot_config.maximum_acceleration_reverse;
 		double v = target_td.v_i;
-		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v) - v)) / a;
+		tcp_seed.tt = fabs((sqrt(fabs(2.0 * a * s + v * v)) - v) / a);
 	}
 	else if (a < -GlobalState::robot_config.maximum_deceleration_reverse)
 	{
 		a = -GlobalState::robot_config.maximum_deceleration_reverse;
 		double v = target_td.v_i;
-		tcp_seed.tt = -(sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
+		tcp_seed.tt = fabs(-(sqrt(fabs(2.0 * a * s + v * v)) + v) / a);
 	}
 
 	if (tcp_seed.tt > 200.0)
@@ -199,7 +199,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 //	if (tcp.a > GlobalState::robot_config.maximum_acceleration_forward) // a aceleracao nao pode ser positiva demais
 //		tcp.a = GlobalState::robot_config.maximum_acceleration_forward;
 
-	double max_phi_during_planning = 1.0 * GlobalState::robot_config.max_phi;
+	double max_phi_during_planning = 10.0 * GlobalState::robot_config.max_phi;
 	double max_phi_during_planning2 = 10.0 * GlobalState::robot_config.max_phi;
 	if (tcp.has_k1)
 	{
@@ -291,7 +291,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 		increment = 1;
 	else
 		increment = 3;
-	for (unsigned int i = 0; i < path.size(); i += increment)
+	for (unsigned int i = path.size() / 2; i < path.size(); i += increment)
 	{
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))

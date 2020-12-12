@@ -912,7 +912,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			}
 			else
 			{
-				if ((fabs(robot_pose.v) < 0.01) && (keep_goal_time == 0.0))
+				if ((fabs(robot_pose.v) < 0.05) && (keep_goal_time == 0.0))
 					keep_goal_time = carmen_get_time();
 
 				if (keep_goal_time == 0.0)
@@ -920,7 +920,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 				}
-				else if ((carmen_get_time() - keep_goal_time) < 6.0)	// Espera parado um pouco
+				else if ((carmen_get_time() - keep_goal_time) < 4.0)	// Espera parado um pouco
 				{
 					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
