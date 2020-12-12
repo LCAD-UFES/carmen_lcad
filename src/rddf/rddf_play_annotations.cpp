@@ -267,7 +267,7 @@ pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objec
 	for (int i = 0; i < moving_objects_vector->num_point_clouds; i++)
 	{
 		if ((strcmp(moving_objects_vector->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
-			(pedestrian_about_to_enter_crosswalk(moving_objects_vector->point_clouds[i], pedestrian_track_annotation, radius) ||
+			(/*pedestrian_about_to_enter_crosswalk(moving_objects_vector->point_clouds[i], pedestrian_track_annotation, radius) ||*/
 			 DIST2D(moving_objects_vector->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius))
 		{
 			//printf("In\n");
@@ -314,7 +314,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 	switch (crosswalk_state)
 	{
 		case Free_Crosswalk:
-			// printf("Free_Crosswalk \n");
+			printf("Free_Crosswalk \n");
 			if (pedestrian_in_crosswalk(moving_objects_vector, pedestrian_track_annotation))
 			{
 				crosswalk_state = Stopping_Busy_Crosswalk;
@@ -323,7 +323,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (false);
 
 		case Stopping_Busy_Crosswalk:
-			// printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
+			printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			/* if (!pedestrian_in_crosswalk(moving_objects_vector, pedestrian_track_annotation))
 			{
 				crosswalk_state = Free_Crosswalk;
@@ -336,7 +336,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Stopped_Busy_Crosswalk:
-			// printf("Stopped_Busy_Crosswalk \n");
+			printf("Stopped_Busy_Crosswalk \n");
 			if (!pedestrian_crossing(moving_objects_vector, pedestrian_track_annotation))
 			{
 				crosswalk_state = Leaving_Crosswalk;
@@ -345,10 +345,10 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Leaving_Crosswalk:
-			// printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
+			printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (pedestrian_crossing(moving_objects_vector, pedestrian_track_annotation))
 			{
-				printf("pedestrian_crossing \n");
+//				printf("pedestrian_crossing \n");
 				crosswalk_state = Stopped_Busy_Crosswalk;
 				return (true);
 			}

@@ -844,9 +844,15 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 					(behavior_selector_state_message.low_level_state == Stopped_At_Yield_S0) ||
 					(behavior_selector_state_message.low_level_state == Stopped_At_Yield_S1))) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
-				   !wait_start_moving && red_traffic_light_ahead(robot_pose, timestamp)) ||
+				   (red_traffic_light_ahead(robot_pose, timestamp) ||
+					(behavior_selector_state_message.low_level_state == Stopping_At_Red_Traffic_Light) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Red_Traffic_Light_S0) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Red_Traffic_Light_S1))) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
-				   !wait_start_moving && busy_pedestrian_track_ahead(robot_pose, timestamp))) &&
+				   (busy_pedestrian_track_ahead(robot_pose, timestamp) ||
+					(behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1)))) &&
 				  !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
 		{
 			goal_type[goal_index] = ANNOTATION_GOAL2;

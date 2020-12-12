@@ -211,24 +211,24 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 		case Stopping_At_Red_Traffic_Light:
 			break;
 		case Stopped_At_Red_Traffic_Light_S0:
-			carmen_navigator_ackerman_stop();
+//			carmen_navigator_ackerman_stop();
 			break;
 		case Stopped_At_Red_Traffic_Light_S1:
 			break;
 		case Stopped_At_Red_Traffic_Light_S2:
-			carmen_navigator_ackerman_go();
+//			carmen_navigator_ackerman_go();
 			break;
 
 
 		case Stopping_At_Busy_Pedestrian_Track:
 			break;
 		case Stopped_At_Busy_Pedestrian_Track_S0:
-			carmen_navigator_ackerman_stop();
+//			carmen_navigator_ackerman_stop();
 			break;
 		case Stopped_At_Busy_Pedestrian_Track_S1:
 			break;
 		case Stopped_At_Busy_Pedestrian_Track_S2:
-			carmen_navigator_ackerman_go();
+//			carmen_navigator_ackerman_go();
 			break;
 
 
