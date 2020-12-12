@@ -8,8 +8,8 @@ LINK = g++
 CFLAGS += -Wall
 
 # Application specific include directories.
-IFLAGS += -I ../../sharedlib/OpenJAUS/ojIARASim/include
-LFLAGS += -L ../../sharedlib/OpenJAUS/ojIARASim/lib
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/ojIARASim/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/ojIARASim/lib
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lojIARASim -lparam_interface -lipc -lglobal -lcan_dump_interface
@@ -26,8 +26,11 @@ PUBLIC_LIBRARIES = libcan_dump_interface.a
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = can_dump can_view can_playback
 
-TARGETS = libcan_dump_interface.a can_dump can_view can_playback
+TARGETS = OpenJAUS libcan_dump_interface.a can_dump can_view can_playback
 PUBLIC_LIBRARIES_SO = libcan_dump_interface.so 
+
+OpenJAUS:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/OpenJAUS
 
 libcan_dump_interface.a: can_dump_interface.o
 
