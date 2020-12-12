@@ -44,7 +44,7 @@ PUBLIC_LIBRARIES = libmodel_predictive_planner_interface.a
 PUBLIC_INCLUDES = model_predictive_planner_interface.h model_predictive_planner_message.h rrt_node.h robot_state.h command.h pose.h
 PUBLIC_OTHERS = trajectory_lookup_table.bin
 
-TARGETS = libcarmodel model_predictive_planner plot_decision_making_hierarchy ibmodel_predictive_planner_interface.a
+TARGETS = libcarmodel model_predictive_planner plot_decision_making_hierarchy libmodel_predictive_planner_interface.a
 
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
