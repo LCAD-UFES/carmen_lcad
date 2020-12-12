@@ -114,44 +114,8 @@ publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path, double times
 
 
 void
-publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_point_t> path, double timestamp)
-{
-	if (!GlobalState::following_path)
-		return;
-
-	carmen_ackerman_motion_command_t *commands =
-			(carmen_ackerman_motion_command_t*) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
-	int i = 0;
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
-	{
-		commands[i].v = it->v;
-		commands[i].phi = it->phi;
-		commands[i].time = it->time;
-		commands[i].x = it->x;
-		commands[i].y = it->y;
-		commands[i].theta = it->theta;
-
-		i++;
-	}
-
-	int num_commands = path.size();
-	if (GlobalState::use_obstacle_avoider)
-	{
-		if (!g_teacher_mode)  // standard operation
-			carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
-		else  // mode to prevent sending mpp commands to the rest of the control hierarchy and interfaces.
-			carmen_robot_ackerman_publish_teacher_motion_command(commands, num_commands, timestamp);
-	}
-	else
-		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
-
-	free(commands);
-}
-
-
-void
 publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands, double timestamp)
-{
+{	// Estas mensagens bypassam o path_follower!!!
 	if (GlobalState::use_obstacle_avoider)
 	{
 		if (!g_teacher_mode)  // standard operation
@@ -167,6 +131,8 @@ publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands
 void
 publish_path_follower_single_motion_command_with_decaying_phi(double v, double phi, double timestamp)
 {
+	// Esta mensagem bypassa o path_follower
+
 	carmen_ackerman_motion_command_t commands[2];
 
 	static double previous_timestamp = 0.0;
@@ -183,47 +149,31 @@ publish_path_follower_single_motion_command_with_decaying_phi(double v, double p
 	commands[0].phi = phi;
 	commands[0].time = 0.5;
 	commands[1] = commands[0];
+
 	publish_path_follower_motion_commands(commands, 2, timestamp);
-}
 
+	// Abaixo, envia uma mensagem vazia para o path_follower para ele nao fazer nada
+	rrt_path_message msg;
 
-void
-publish_path_follower_single_motion_command(double v, double phi, double timestamp)
-{
-	carmen_ackerman_motion_command_t commands[2];
+	msg.host  = carmen_get_host();
+	msg.timestamp = timestamp;
+	msg.last_goal = GlobalState::last_goal ? 1 : 0;
 
-	commands[0].v = v;
-	commands[0].phi = phi;
-	commands[0].time = 0.5;
-	commands[1] = commands[0];
-	publish_path_follower_motion_commands(commands, 2, timestamp);
-}
-
-
-void
-publish_model_predictive_planner_single_motion_command_with_decaying_phi(double v, double phi, double timestamp)
-{
-	vector<carmen_ackerman_path_point_t> path;
-
-	static double previous_timestamp = 0.0;
-	if ((timestamp - previous_timestamp) > 5.0 * PHI_DECAY_TIME)
-		previous_timestamp = timestamp;
-
-	double decay = 1.0 - (timestamp - previous_timestamp) / PHI_DECAY_TIME;
-	if (decay >= 0.0)
-		phi = phi * decay;
+	if (GlobalState::goal_pose)
+	{
+		msg.goal.x = GlobalState::goal_pose->x;
+		msg.goal.y = GlobalState::goal_pose->y;
+		msg.goal.theta = GlobalState::goal_pose->theta;
+	}
 	else
-		phi = 0.0;
+	{
+		msg.goal.x = msg.goal.y = msg.goal.theta = 0.0;
+	}
 
-	carmen_ackerman_path_point_t traj;
-	traj.v = v;
-	traj.phi = phi;
-	traj.time = 1.0;
-	path.push_back(traj);
-	path.push_back(traj);
-	publish_model_predictive_planner_motion_commands(path, timestamp);
+	msg.size = 0;
+	msg.path = NULL;
 
-	publish_path_follower_single_motion_command_with_decaying_phi(0.0, phi, timestamp);
+	Publisher_Util::publish_rrt_path_message(&msg);
 }
 
 
@@ -390,7 +340,28 @@ void
 stop()
 {
 	GlobalState::following_path = false;
-	publish_model_predictive_planner_single_motion_command_with_decaying_phi(0.0, 0.0, carmen_get_time());
+
+	// A mensagem abaixo bypassa o path_follower
+	carmen_ackerman_motion_command_t commands[2];
+
+	commands[0].v = 0.0;
+	commands[0].phi = 0.0;
+	commands[0].time = 0.5;
+	commands[1] = commands[0];
+
+	publish_path_follower_motion_commands(commands, 2, carmen_get_time());
+
+	// Abaixo, envia uma mensagem vazia para o path_follower para ele nao fazer nada
+	rrt_path_message msg;
+
+	msg.last_goal = 0;
+	msg.goal.x = msg.goal.y = msg.goal.theta = 0.0;
+	msg.size = 0;
+	msg.path = NULL;
+	msg.host  = carmen_get_host();
+	msg.timestamp = carmen_get_time();
+
+	Publisher_Util::publish_rrt_path_message(&msg);
 }
 
 
@@ -443,14 +414,16 @@ build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
 
-	if (GlobalState::goal_pose &&
+	if (GlobalState::following_path && GlobalState::goal_pose &&
 		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
 		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		if (distance_to_goal < 0.5 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
 		{
+			// Esta mensagem bypassa o path_follower
 			publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
+			// Para que este servicco abaixo?
 			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 		}
 		else
@@ -461,79 +434,19 @@ build_and_follow_path(double timestamp)
 				add_to_steering_delay_queue(path[0].phi, timestamp);
 
 				path_follower_path = build_path_follower_path(path);
+				// A mensagem abaixo que segue morro abaixo
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
+				// Para quem publica a mensagem abaixo?
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
 			else if (fabs(GlobalState::last_odometry.v) < 0.01)
 			{
+				// Esta mensagem bypassa o path_follower
 				publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
 				add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 			}
-//			else
-//			{
-//				double d_yaw = 0.0;
-//				if (goal_list_message.number_of_poses > 3)
-//					d_yaw = carmen_normalize_theta(goal_list_message.poses[3].theta - GlobalState::localizer_pose->theta);
-//				if (d_yaw > 0.0)
-//				{
-//					if (GlobalState::robot_config.max_v > 0.0)
-//					{
-//						publish_path_follower_single_motion_command(0.0, GlobalState::robot_config.max_phi, timestamp);
-//						add_to_steering_delay_queue(GlobalState::robot_config.max_phi, timestamp);
-//					}
-//					else
-//					{
-//						publish_path_follower_single_motion_command(0.0, -GlobalState::robot_config.max_phi, timestamp);
-//						add_to_steering_delay_queue(-GlobalState::robot_config.max_phi, timestamp);
-//					}
-//				}
-//				else if (d_yaw < 0.0)
-//				{
-//					if (GlobalState::robot_config.max_v > 0.0)
-//					{
-//						publish_path_follower_single_motion_command(0.0, -GlobalState::robot_config.max_phi, timestamp);
-//						add_to_steering_delay_queue(-GlobalState::robot_config.max_phi, timestamp);
-//					}
-//					else
-//					{
-//						publish_path_follower_single_motion_command(0.0, GlobalState::robot_config.max_phi, timestamp);
-//						add_to_steering_delay_queue(GlobalState::robot_config.max_phi, timestamp);
-//					}
-//				}
-//			}
 		}
 
-		publish_navigator_ackerman_status_message();
-	}
-}
-
-
-void
-build_and_follow_path_new(double timestamp)
-{
-	if (GlobalState::goal_pose &&
-		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
-		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
-	{
-		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
-		// goal achieved!
-		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
-		{
-			publish_model_predictive_planner_single_motion_command_with_decaying_phi(0.0, 0.0, timestamp);
-		}
-		else
-		{
-			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
-			if (tree.num_paths > 0 && path.size() > 0)
-			{
-				publish_model_predictive_planner_motion_commands(path, timestamp);
-				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
-//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
-			}
-			//		else
-			//			publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
-		}
-//		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }
@@ -638,10 +551,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	Pose pose = Util::convert_to_pose(msg->globalpos);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
-	if (GlobalState::use_mpc)
-		build_and_follow_path_new(msg->timestamp);
-	else
-		build_and_follow_path(msg->timestamp);
+	build_and_follow_path(msg->timestamp);
 }
 
 
@@ -654,10 +564,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	Pose pose = Util::convert_to_pose(msg->truepose);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
-	if (GlobalState::use_mpc)
-		build_and_follow_path_new(msg->timestamp);
-	else
-		build_and_follow_path(msg->timestamp);
+	build_and_follow_path(msg->timestamp);
 }
 
 

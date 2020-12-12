@@ -119,9 +119,7 @@ void
 publish_navigator_ackerman_status_message()
 {
 	if (!GlobalState::localize_pose)
-	{
 		return;
-	}
 
 	IPC_RETURN_TYPE err = IPC_OK;
 

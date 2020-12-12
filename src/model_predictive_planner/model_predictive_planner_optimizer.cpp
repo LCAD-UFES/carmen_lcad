@@ -199,24 +199,24 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 //	if (tcp.a > GlobalState::robot_config.maximum_acceleration_forward) // a aceleracao nao pode ser positiva demais
 //		tcp.a = GlobalState::robot_config.maximum_acceleration_forward;
 
-//	double max_phi_during_planning = 1.8 * GlobalState::robot_config.max_phi;
-//	if (tcp.has_k1)
-//	{
-//		if (tcp.k1 > max_phi_during_planning)
-//			tcp.k1 = max_phi_during_planning;
-//		else if (tcp.k1 < -max_phi_during_planning)
-//			tcp.k1 = -max_phi_during_planning;
-//	}
-//
-//	if (tcp.k2 > max_phi_during_planning)
-//		tcp.k2 = max_phi_during_planning;
-//	else if (tcp.k2 < -max_phi_during_planning)
-//		tcp.k2 = -max_phi_during_planning;
-//
-//	if (tcp.k3 > max_phi_during_planning)
-//		tcp.k3 = max_phi_during_planning;
-//	else if (tcp.k3 < -max_phi_during_planning)
-//		tcp.k3 = -max_phi_during_planning;
+	double max_phi_during_planning = 1.0 * GlobalState::robot_config.max_phi;
+	if (tcp.has_k1)
+	{
+		if (tcp.k1 > max_phi_during_planning)
+			tcp.k1 = max_phi_during_planning;
+		else if (tcp.k1 < -max_phi_during_planning)
+			tcp.k1 = -max_phi_during_planning;
+	}
+
+	if (tcp.k2 > max_phi_during_planning)
+		tcp.k2 = max_phi_during_planning;
+	else if (tcp.k2 < -max_phi_during_planning)
+		tcp.k2 = -max_phi_during_planning;
+
+	if (tcp.k3 > max_phi_during_planning)
+		tcp.k3 = max_phi_during_planning;
+	else if (tcp.k3 < -max_phi_during_planning)
+		tcp.k3 = -max_phi_during_planning;
 
 	tcp.valid = true;
 

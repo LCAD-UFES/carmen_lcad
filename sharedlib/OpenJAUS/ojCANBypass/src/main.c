@@ -260,10 +260,6 @@ int main(int argCount, char **argString)
 //			send_can_package(out_can_sockfd, 0x181, 0xE8, 0x03, 0x00, 0x44, 0x03, 0x00, 0x00, 0x00);
 //			break;
 //
-//		case 'd': // para tras
-//			horn = (horn == 3)? 2: 3;
-//			send_can_package(out_can_sockfd, 0x1B1, 4, 0, 0, 0, horn, 0, 0, 0);
-//			break;
 //		}
 //		printf("move_up_down %d, move_left_right %d\n", move_up_down, move_left_right);
 	}

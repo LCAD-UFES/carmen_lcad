@@ -81,6 +81,14 @@ static double last_behaviour_selector_compact_lane_contents_message_timestamp = 
 
 
 static void
+obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands,
+		int num_motion_commands, double timestamp)
+{
+	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands, num_motion_commands, timestamp);
+}
+
+
+static void
 publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
@@ -171,7 +179,7 @@ obstacle_avoider_timer_handler()
 
 	if (num_motion_commands_in_vector[motion_command_vetor] > 0)
 	{
-		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
+		obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
 				num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 
 		//  Para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)

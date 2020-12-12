@@ -46,6 +46,40 @@ static int simulate_legacy_500 = 0;
 static int connected_to_iron_bird = 0;
 
 
+void
+add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, double timestamp)
+{
+	static double previous_timestamp = 0.0;
+	static double previous_raw_v = 0.0;
+	static double previous_raw_phi = 0.0;
+
+	if (previous_timestamp == 0.0)
+	{
+		*odometry_v = previous_raw_v = raw_v;
+		*odometry_phi = previous_raw_phi = raw_phi;
+
+		previous_timestamp = timestamp;
+	}
+	else
+	{
+		if ((timestamp - previous_timestamp) >= 0.1)
+		{
+			if (raw_v > 1.5)
+				previous_raw_v = raw_v;
+			else if (raw_v > 0.7)
+				previous_raw_v = raw_v * 0.7 + fabs(carmen_gaussian_random(0.0, raw_v * 0.1));
+			else
+				previous_raw_v = 0.06;
+			previous_raw_phi = raw_phi;
+			previous_timestamp = timestamp;
+		}
+		*odometry_v = previous_raw_v;
+		*odometry_phi = previous_raw_phi;
+	}
+//	pid_plot_phi(*odometry_v, raw_v, 10.0, "phi");
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //																								//
 // Publishers																					//
@@ -88,40 +122,7 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
 }
-
-
-void
-add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, double timestamp)
-{
-	static double previous_timestamp = 0.0;
-	static double previous_raw_v = 0.0;
-	static double previous_raw_phi = 0.0;
-
-	if (previous_timestamp == 0.0)
-	{
-		*odometry_v = previous_raw_v = raw_v;
-		*odometry_phi = previous_raw_phi = raw_phi;
-
-		previous_timestamp = timestamp;
-	}
-	else
-	{
-		if ((timestamp - previous_timestamp) >= 0.1)
-		{
-			if (raw_v > 1.5)
-				previous_raw_v = raw_v;
-			else if (raw_v > 0.7)
-				previous_raw_v = raw_v * 0.7 + fabs(carmen_gaussian_random(0.0, raw_v * 0.1));
-			else
-				previous_raw_v = 0.06;
-			previous_raw_phi = raw_phi;
-			previous_timestamp = timestamp;
-		}
-		*odometry_v = previous_raw_v;
-		*odometry_phi = previous_raw_phi;
-	}
-//	pid_plot_phi(*odometry_v, raw_v, 10.0, "phi");
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +168,7 @@ shutdown_module()
 	}
 	exit(0);
 }
-
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
