@@ -200,6 +200,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 //		tcp.a = GlobalState::robot_config.maximum_acceleration_forward;
 
 	double max_phi_during_planning = 1.0 * GlobalState::robot_config.max_phi;
+	double max_phi_during_planning2 = 10.0 * GlobalState::robot_config.max_phi;
 	if (tcp.has_k1)
 	{
 		if (tcp.k1 > max_phi_during_planning)
@@ -208,15 +209,15 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 			tcp.k1 = -max_phi_during_planning;
 	}
 
-	if (tcp.k2 > max_phi_during_planning)
-		tcp.k2 = max_phi_during_planning;
-	else if (tcp.k2 < -max_phi_during_planning)
-		tcp.k2 = -max_phi_during_planning;
+	if (tcp.k2 > max_phi_during_planning2)
+		tcp.k2 = max_phi_during_planning2;
+	else if (tcp.k2 < -max_phi_during_planning2)
+		tcp.k2 = -max_phi_during_planning2;
 
-	if (tcp.k3 > max_phi_during_planning)
-		tcp.k3 = max_phi_during_planning;
-	else if (tcp.k3 < -max_phi_during_planning)
-		tcp.k3 = -max_phi_during_planning;
+	if (tcp.k3 > max_phi_during_planning2)
+		tcp.k3 = max_phi_during_planning2;
+	else if (tcp.k3 < -max_phi_during_planning2)
+		tcp.k3 = -max_phi_during_planning2;
 
 	tcp.valid = true;
 
@@ -535,7 +536,7 @@ my_g(const gsl_vector *x, void *params)
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
 	{
-		if (path.size() != my_params->path_size)
+		if (1)//path.size() != my_params->path_size)
 		{
 			compute_path_points_nearest_to_lane(my_params, path);
 			path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
@@ -561,19 +562,20 @@ my_g(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	my_params->plan_cost = sqrt(
-			((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
-			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2) +
-			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2));
+	double sqr_delta_dist = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index;
+	double sqr_delta_theta = (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2);
+	double sqr_delta_d_yaw = (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2);
+
+	my_params->plan_cost = sqrt(sqr_delta_dist + sqr_delta_theta + sqr_delta_d_yaw);
 
 	double current_w2 = GlobalState::w2;
 //	if (td.dist < 7.0)
 //		current_w2 *= exp(td.dist - 7.0);
 
 	double result = sqrt(
-			GlobalState::w1 * (((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index) +
-			current_w2      * ((carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index) +
-			GlobalState::w3 * ((carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index) +
+			GlobalState::w1 * sqr_delta_dist +
+			current_w2      * sqr_delta_theta +
+			GlobalState::w3 * sqr_delta_d_yaw +
 			GlobalState::w4 * path_to_lane_distance + // já é quandrática
 			GlobalState::w5 * proximity_to_obstacles + // já é quandrática
 			GlobalState::w6 * tcp.sf * tcp.sf);
