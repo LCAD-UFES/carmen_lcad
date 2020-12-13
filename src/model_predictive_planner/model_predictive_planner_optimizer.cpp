@@ -1256,6 +1256,32 @@ move_detailed_lane_to_front_axle(vector<carmen_ackerman_path_point_t> &detailed_
 }
 
 
+void
+limit_tcp_phi(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
+{
+	double max_phi_during_planning = 1.0 * GlobalState::robot_config.max_phi;
+	double max_phi_during_planning2 = 1.0 * GlobalState::robot_config.max_phi;
+
+	if (tcp.has_k1)
+	{
+		if (tcp.k1 > max_phi_during_planning)
+			tcp.k1 = max_phi_during_planning;
+		else if (tcp.k1 < -max_phi_during_planning)
+			tcp.k1 = -max_phi_during_planning;
+	}
+
+	if (tcp.k2 > max_phi_during_planning2)
+		tcp.k2 = max_phi_during_planning2;
+	else if (tcp.k2 < -max_phi_during_planning2)
+		tcp.k2 = -max_phi_during_planning2;
+
+	if (tcp.k3 > max_phi_during_planning2)
+		tcp.k3 = max_phi_during_planning2;
+	else if (tcp.k3 < -max_phi_during_planning2)
+		tcp.k3 = -max_phi_during_planning2;
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v,
@@ -1295,6 +1321,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	verify_shift_option_for_k1(tcp_seed, target_td, tcp_complete);
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
 
+	limit_tcp_phi(tcp_complete);
 	if (optmize_time_and_acc)
 		tcp_complete = optimized_lane_trajectory_control_parameters_new(tcp_complete, target_td, target_v, params);
 	else

@@ -141,9 +141,15 @@ publish_path_follower_single_motion_command_with_decaying_phi(double v, double p
 
 	double decay = 1.0 - (timestamp - previous_timestamp) / PHI_DECAY_TIME;
 	if (decay >= 0.0)
+	{
 		phi = phi * decay;
+		v = v * decay;
+	}
 	else
+	{
 		phi = 0.0;
+		v = 0.0;
+	}
 
 	commands[0].v = v;
 	commands[0].phi = phi;
@@ -153,27 +159,27 @@ publish_path_follower_single_motion_command_with_decaying_phi(double v, double p
 	publish_path_follower_motion_commands(commands, 2, timestamp);
 
 	// Abaixo, envia uma mensagem vazia para o path_follower para ele nao fazer nada
-	rrt_path_message msg;
-
-	msg.host  = carmen_get_host();
-	msg.timestamp = timestamp;
-	msg.last_goal = GlobalState::last_goal ? 1 : 0;
-
-	if (GlobalState::goal_pose)
-	{
-		msg.goal.x = GlobalState::goal_pose->x;
-		msg.goal.y = GlobalState::goal_pose->y;
-		msg.goal.theta = GlobalState::goal_pose->theta;
-	}
-	else
-	{
-		msg.goal.x = msg.goal.y = msg.goal.theta = 0.0;
-	}
-
-	msg.size = 0;
-	msg.path = NULL;
-
-	Publisher_Util::publish_rrt_path_message(&msg);
+//	rrt_path_message msg;
+//
+//	msg.host  = carmen_get_host();
+//	msg.timestamp = timestamp;
+//	msg.last_goal = GlobalState::last_goal ? 1 : 0;
+//
+//	if (GlobalState::goal_pose)
+//	{
+//		msg.goal.x = GlobalState::goal_pose->x;
+//		msg.goal.y = GlobalState::goal_pose->y;
+//		msg.goal.theta = GlobalState::goal_pose->theta;
+//	}
+//	else
+//	{
+//		msg.goal.x = msg.goal.y = msg.goal.theta = 0.0;
+//	}
+//
+//	msg.size = 0;
+//	msg.path = NULL;
+//
+//	Publisher_Util::publish_rrt_path_message(&msg);
 }
 
 
@@ -352,16 +358,16 @@ stop()
 	publish_path_follower_motion_commands(commands, 2, carmen_get_time());
 
 	// Abaixo, envia uma mensagem vazia para o path_follower para ele nao fazer nada
-	rrt_path_message msg;
-
-	msg.last_goal = 0;
-	msg.goal.x = msg.goal.y = msg.goal.theta = 0.0;
-	msg.size = 0;
-	msg.path = NULL;
-	msg.host  = carmen_get_host();
-	msg.timestamp = carmen_get_time();
-
-	Publisher_Util::publish_rrt_path_message(&msg);
+//	rrt_path_message msg;
+//
+//	msg.last_goal = 0;
+//	msg.goal.x = msg.goal.y = msg.goal.theta = 0.0;
+//	msg.size = 0;
+//	msg.path = NULL;
+//	msg.host  = carmen_get_host();
+//	msg.timestamp = carmen_get_time();
+//
+//	Publisher_Util::publish_rrt_path_message(&msg);
 }
 
 
@@ -439,7 +445,7 @@ build_and_follow_path(double timestamp)
 				// Para quem publica a mensagem abaixo?
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
-			else if (fabs(GlobalState::last_odometry.v) < 0.01)
+			else if (fabs(GlobalState::robot_config.max_v) < 0.07)
 			{
 				// Esta mensagem bypassa o path_follower
 				publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
@@ -449,6 +455,7 @@ build_and_follow_path(double timestamp)
 
 		publish_navigator_ackerman_status_message();
 	}
+	fflush(stdout);
 }
 
 /**

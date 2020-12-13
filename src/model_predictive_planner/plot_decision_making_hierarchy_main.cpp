@@ -5,9 +5,10 @@
 
 
 // Global variables
-carmen_robot_ackerman_motion_command_message *robot_motion_command_message;
-carmen_base_ackerman_motion_command_message *base_motion_command_message;
-rrt_path_message *mpp_message;
+carmen_base_ackerman_odometry_message *base_ackerman_odometry_message = NULL;
+carmen_robot_ackerman_motion_command_message *robot_motion_command_message = NULL;
+carmen_base_ackerman_motion_command_message *base_motion_command_message = NULL;
+rrt_path_message *mpp_message = NULL;
 
 
 void
@@ -35,7 +36,7 @@ plot_phi_in_trajectories()
 
 	double t;
 	t = 0.0;
-	for (int i = 0; (i < base_motion_command_message->num_motion_commands) && (t < 3.0); i++)
+	for (int i = 0; base_motion_command_message && (i < base_motion_command_message->num_motion_commands) && (t < 3.0); i++)
 	{
 		fprintf(base_motion_file, "%lf %lf\n", base_motion_command_message->motion_command[i].phi, t);
 		t += base_motion_command_message->motion_command[i].time;
@@ -43,7 +44,7 @@ plot_phi_in_trajectories()
 	}
 
 	t = 0.0;
-	for (int i = 0; (i < robot_motion_command_message->num_motion_commands) && (t < 3.0); i++)
+	for (int i = 0; robot_motion_command_message && (i < robot_motion_command_message->num_motion_commands) && (t < 3.0); i++)
 	{
 		fprintf(robot_motion_file, "%lf %lf\n", robot_motion_command_message->motion_command[i].phi, t);
 		t += base_motion_command_message->motion_command[i].time;
@@ -51,7 +52,7 @@ plot_phi_in_trajectories()
 	}
 
 	t = 0.0;
-	for (int i = 0; (i < mpp_message->size) && (t < 3.0); i++)
+	for (int i = 0; mpp_message && (i < mpp_message->size) && (t < 3.0); i++)
 	{
 		fprintf(mpp_file, "%lf %lf\n", mpp_message->path[i].p1.phi, t);
 		t += mpp_message->path[i].time;
@@ -64,8 +65,8 @@ plot_phi_in_trajectories()
 
 	fprintf(gnuplot_pipeMP, "plot "
 			"'./mpp.txt' using 2:1 w l title 'mpp' lt rgb 'blue',"
-			"'./base_motion.txt' using 2:1 w l title 'base' lt rgb 'green',"
-			"'./robot_motion.txt' using 2:1 with linespoints title 'robot' lt rgb 'red'\n");
+			"'./robot_motion.txt' using 2:1 w l title 'robot' lt rgb 'green',"
+			"'./base_motion.txt' using 2:1 with linespoints title 'base' lt rgb 'red'\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -83,7 +84,7 @@ plot_v_in_trajectories()
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 		fprintf(gnuplot_pipeMP, "set xrange [0:3]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-3:3]\n");
 		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
 		fprintf(gnuplot_pipeMP, "set ylabel 'v'\n");
 //		fprintf(gnuplot_pipeMP, "set tics out\n");
@@ -96,7 +97,7 @@ plot_v_in_trajectories()
 
 	double t;
 	t = 0.0;
-	for (int i = 0; (i < base_motion_command_message->num_motion_commands) && (t < 3.0); i++)
+	for (int i = 0; base_motion_command_message && (i < base_motion_command_message->num_motion_commands) && (t < 3.0); i++)
 	{
 		fprintf(base_motion_file, "%lf %lf\n", base_motion_command_message->motion_command[i].v, t);
 		t += base_motion_command_message->motion_command[i].time;
@@ -104,7 +105,7 @@ plot_v_in_trajectories()
 	}
 
 	t = 0.0;
-	for (int i = 0; (i < robot_motion_command_message->num_motion_commands) && (t < 3.0); i++)
+	for (int i = 0; robot_motion_command_message && (i < robot_motion_command_message->num_motion_commands) && (t < 3.0); i++)
 	{
 		fprintf(robot_motion_file, "%lf %lf\n", robot_motion_command_message->motion_command[i].v, t);
 		t += base_motion_command_message->motion_command[i].time;
@@ -112,7 +113,7 @@ plot_v_in_trajectories()
 	}
 
 	t = 0.0;
-	for (int i = 0; (i < mpp_message->size) && (t < 3.0); i++)
+	for (int i = 0; mpp_message && (i < mpp_message->size) && (t < 3.0); i++)
 	{
 		fprintf(mpp_file, "%lf %lf\n", mpp_message->path[i].p1.v, t);
 		t += mpp_message->path[i].time;
@@ -125,8 +126,70 @@ plot_v_in_trajectories()
 
 	fprintf(gnuplot_pipeMP, "plot "
 			"'./mpp_v.txt' using 2:1 w l title 'mpp' lt rgb 'blue',"
-			"'./base_motion_v.txt' using 2:1 w l title 'base' lt rgb 'green',"
-			"'./robot_motion_v.txt' using 2:1 with linespoints title 'robot' lt rgb 'red'\n");
+			"'./robot_motion_v.txt' using 2:1 w l title 'robot' lt rgb 'green',"
+			"'./base_motion_v.txt' using 2:1 with linespoints title 'base' lt rgb 'red'\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
+
+void
+plot_v_history()
+{
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+	static double t0;
+
+	FILE *mpp_file, *base_motion_file, *robot_motion_file, *odometry_file;
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+//		fprintf(gnuplot_pipeMP, "set xrange [0:3]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-3:3]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'v'\n");
+//		fprintf(gnuplot_pipeMP, "set tics out\n");
+//		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
+
+		mpp_file = fopen("mpp_v.txt", "w");
+		base_motion_file = fopen("base_motion_v.txt", "w");
+		robot_motion_file = fopen("robot_motion_v.txt", "w");
+		odometry_file = fopen("robot_odometry_v.txt", "w");
+
+		t0 = carmen_get_time();
+	}
+	else
+	{
+		mpp_file = fopen("mpp_v.txt", "a");
+		base_motion_file = fopen("base_motion_v.txt", "a");
+		robot_motion_file = fopen("robot_motion_v.txt", "a");
+		odometry_file = fopen("robot_odometry_v.txt", "a");
+	}
+
+	if (base_ackerman_odometry_message)
+		fprintf(odometry_file, "%lf %lf\n", base_ackerman_odometry_message->v, base_ackerman_odometry_message->timestamp - t0);
+
+	if (base_motion_command_message && base_motion_command_message->num_motion_commands > 0)
+		fprintf(base_motion_file, "%lf %lf\n", base_motion_command_message->motion_command[0].v, base_motion_command_message->timestamp - t0);
+
+	if (robot_motion_command_message && robot_motion_command_message->num_motion_commands > 0)
+		fprintf(robot_motion_file, "%lf %lf\n", robot_motion_command_message->motion_command[0].v, robot_motion_command_message->timestamp - t0);
+
+	if (mpp_message && mpp_message->size > 0)
+		fprintf(mpp_file, "%lf %lf\n", mpp_message->path[0].p1.v, mpp_message->timestamp - t0);
+
+	fclose(mpp_file);
+	fclose(base_motion_file);
+	fclose(robot_motion_file);
+	fclose(odometry_file);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./mpp_v.txt' using 2:1 w l title 'mpp' lt rgb 'blue',"
+			"'./robot_motion_v.txt' using 2:1 w l title 'robot' lt rgb 'green',"
+			"'./base_motion_v.txt' using 2:1 w l title 'base' lt rgb 'red',"
+			"'./robot_odometry_v.txt' using 2:1 w l title 'odometry' lt rgb 'black'\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -171,7 +234,15 @@ base_ackerman_motion_command_message_handler(carmen_base_ackerman_motion_command
 	base_motion_command_message = motion_command_message;
 
 	plot_phi_in_trajectories();
-	plot_v_in_trajectories();
+//	plot_v_in_trajectories();
+	plot_v_history();
+}
+
+
+static void
+base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *msg)
+{
+	base_ackerman_odometry_message = msg;
 }
 
 
@@ -208,6 +279,7 @@ subscribe_to_relevant_messages()
 			(carmen_handler_t) rrt_path_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) robot_ackerman_motion_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) base_ackerman_motion_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

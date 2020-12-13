@@ -769,26 +769,32 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		who_set_the_goal_v = PARKING_MANOUVER;
 
 	previous_v = goal->v;
-	if (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL)
-		goal->v = 0.0;
+	double distance_to_act_on_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, 0.0,
+					DIST2D_P(current_robot_pose_v_and_phi, goal));
+	double distance_to_goal = DIST2D_P(current_robot_pose_v_and_phi, goal);
+	if ((goal_type == SWITCH_VELOCITY_SIGNAL_GOAL) && (distance_to_act_on_goal >= distance_to_goal))
+		goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v,
+							  	  0.0, distance_to_goal, DIST2D_P(current_robot_pose_v_and_phi, goal)),
+							  fabs(goal->v));
 	if (previous_v != goal->v)
 		who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
 
 //	printf("1 - goal v %lf, who_set_the_goal_v %d\n", goal->v, who_set_the_goal_v);
 
 	previous_v = goal->v;
-	if (goal_type == FINAL_GOAL)
-		goal->v = 0.0;
+	if ((goal_type == FINAL_GOAL) && (distance_to_act_on_goal >= distance_to_goal))
+		goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v,
+							  	  0.0, distance_to_goal, DIST2D_P(current_robot_pose_v_and_phi, goal)),
+							  fabs(goal->v));
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
-//	printf("2 - goal v %lf, who_set_the_goal_v %d\n", goal->v, who_set_the_goal_v);
+//	static int i = 0;
+//	printf("2 - goal v %lf, who_set_the_goal_v %d, %d\n", goal->v, who_set_the_goal_v, i++);
+//	fflush(stdout);
 
 	previous_v = goal->v;
-	if (behavior_selector_reverse_driving &&
-		(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL) &&
-//		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
-		(fabs(current_robot_pose_v_and_phi->v) < 0.2))
+	if (fabs(current_robot_pose_v_and_phi->v) < 0.2)
 	{
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 
@@ -800,8 +806,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		}
 	}
 
-	if (behavior_selector_reverse_driving && activate_intermediate_velocity &&
-	    (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
+	if (activate_intermediate_velocity)
 	{
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 

@@ -926,7 +926,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 				}
-				else if ((carmen_get_time() - keep_goal_time) < 4.0)	// Espera parado um pouco
+				else if ((carmen_get_time() - keep_goal_time) < 3.5)	// Espera parado um pouco
 				{
 					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
@@ -935,10 +935,10 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 		}
 #endif
 
-		else if ((((distance_from_car_to_rddf_point >= distance_between_waypoints) ||
-				   ((distance_from_car_to_rddf_point >= distance_between_waypoints / 2.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
+		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) ||  // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
+				  ((distance_from_car_to_rddf_point >= distance_between_waypoints / 2.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Trocando a constante que divide distance_between_waypoints pode-se alterar a distância entre waypoints em caso de reh
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo
-				  !rddf_pose_hit_obstacle)) // e se ela nao colide com um obstaculo.
+				  !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
 		{
 			goal_type[goal_index] = FREE_RUN_GOAL1;
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);

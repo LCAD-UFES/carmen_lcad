@@ -97,7 +97,7 @@ Steering::draw(float angle)
             x = r * cos(i);
             y = r * sin(i);
 
-            if ((x >= -90) & (x <= 90))
+            if ((x >= -90) && (x <= 90))
             {
                 glVertex3f(x, y, 0);
 

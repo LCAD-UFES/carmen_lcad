@@ -108,7 +108,7 @@ Speedometer::draw(void)
     }
     glEnd();
 
-    drawLabelsVelocimeter();
+   	drawLabelsVelocimeter();
 
     glTranslatef(100, 0, 0);
 }
