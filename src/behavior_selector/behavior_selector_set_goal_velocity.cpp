@@ -883,6 +883,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
 	}
 
+//	printf("who_set_the_goal_v %d\n", who_set_the_goal_v);
+//	fflush(stdout);
 //	previous_v = goal->v;
 //	double distance_to_act_on_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, 0.0,
 //					DIST2D_P(current_robot_pose_v_and_phi, goal));
