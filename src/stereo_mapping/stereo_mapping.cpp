@@ -36,7 +36,7 @@
 #include <carmen/visual_odometry_interface.h>
 
 /* My own includes */
-#include "stereo_mapping_messages.h"
+//#include "stereo_mapping_messages.h"
 #include "stereo_mapping_interface.h"
 #include "stereo_mapping_map.h"
 #include "stereo_mapping_kalman_filter.h"

@@ -1,8 +1,9 @@
 include ../Makefile.conf
 
 CC = g++
-LINK = g++
-CFLAGS += -std=c99
+LINK = 
+
+CFLAGS += -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models

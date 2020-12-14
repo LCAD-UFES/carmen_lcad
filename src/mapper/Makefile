@@ -10,7 +10,7 @@ MODULE_COMMENT = Mapper Maps using Velodyne!
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 #CFLAGS += -g -pg
-LINK = g++
+LINK = 
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
