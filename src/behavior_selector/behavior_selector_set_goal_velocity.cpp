@@ -180,6 +180,27 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 }
 
 
+carmen_ackerman_traj_point_t *
+get_nearest_final_goal()
+{
+	carmen_ackerman_traj_point_t *final_goal = NULL;
+
+	int goal_list_size;
+	int *goal_type;
+	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_last_goals_and_types(goal_type, goal_list_size);
+	for (int i = 0; i < goal_list_size; i++)
+	{
+		if (goal_type[i] == FINAL_GOAL)
+		{
+			final_goal = &(goal_list[i]);
+			break;
+		}
+	}
+
+	return (final_goal);
+}
+
+
 double
 get_distance_to_act_on_annotation(double v0, double va, double distance_to_annotation)
 {
@@ -191,16 +212,16 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 
 	double a;
 	if (v0 > 0.0)
-		a = -get_robot_config()->maximum_acceleration_forward * 1.1;
+		a = -get_robot_config()->maximum_acceleration_forward * 1.1; // Desaceleracao para anotacoes
 	else
-		a = -get_robot_config()->maximum_acceleration_reverse * 1.1;
+		a = -get_robot_config()->maximum_acceleration_reverse * 1.1; // Desaceleracao para reh
 
 	v0 = fabs(v0); //a distancia para reagir a anotacao independe do sinal, sinal soh indica orientacao do movimento.
 
 	double t = (va - v0) / a;
-	double daa = v0 * t + 0.5 * a * t * t;
+	double t_deceleration = ((t - 0.5) > 0.0)? (t - 0.5): 0.0;
+	double daa = v0 * t + 0.5 * a * t_deceleration * t_deceleration;
 
-	//printf("t %.2lf, v0 %.1lf, va %.1lf, a %.2lf, tt %.2lf, daa %.1lf, da %.1lf\n", carmen_get_time(), v0, va, a, t, daa, distance_to_annotation);
 	if (daa > distance_to_annotation)
 		return (daa);// + 3.0 * get_robot_config()->distance_between_front_and_rear_axles);
 	else
@@ -476,6 +497,51 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 
 
 double
+set_goal_velocity_according_to_final_goal(carmen_ackerman_traj_point_t *goal, int goal_type,
+		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+{
+	static bool clearing_final_goal = false;
+	static carmen_ackerman_traj_point_t previous_final_goal_point = {};
+
+	if (!autonomous)
+		clearing_final_goal = false;
+
+	carmen_ackerman_traj_point_t *nearest_final_goal = get_nearest_final_goal();
+
+	if (nearest_final_goal != NULL)
+	{
+		double distance_to_final_goal = DIST2D_P(nearest_final_goal, current_robot_pose_v_and_phi);
+		double velocity_at_final_goal = 0.0;
+		double distance_to_act_on_final_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_final_goal,
+				distance_to_final_goal);
+		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
+
+		if (clearing_final_goal ||
+			(distance_to_final_goal < distance_to_act_on_final_goal) ||
+			(distance_to_final_goal < distance_to_goal))
+		{
+			if (!clearing_final_goal)
+				previous_final_goal_point = *nearest_final_goal;
+
+			clearing_final_goal = true;
+			//TODO tem que Certificar de que ou ta tudo negativo ou positivo (acho que deveria tratar tudo positivo)
+			goal->v = carmen_fmin(
+					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_final_goal, distance_to_goal, distance_to_final_goal),
+					goal->v);
+
+			if (goal_type == FINAL_GOAL)
+				goal->v = 0.0;
+		}
+
+		if (DIST2D(previous_final_goal_point, *nearest_final_goal) > 0.0)
+			clearing_final_goal = false;
+	}
+
+	return (goal->v);
+}
+
+
+double
 set_goal_velocity_according_to_state_machine(carmen_ackerman_traj_point_t *goal,
 		carmen_behavior_selector_state_message behavior_selector_state_message)
 {
@@ -702,8 +768,6 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		int goal_type, carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
-//	printf("0 - goal v %lf, goal_type %d\n", goal->v, goal_type);
-
 	double previous_v;
 	int reversing_driving = 0;
 
@@ -769,32 +833,22 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		who_set_the_goal_v = PARKING_MANOUVER;
 
 	previous_v = goal->v;
-	double distance_to_act_on_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, 0.0,
-					DIST2D_P(current_robot_pose_v_and_phi, goal));
-	double distance_to_goal = DIST2D_P(current_robot_pose_v_and_phi, goal);
-	if ((goal_type == SWITCH_VELOCITY_SIGNAL_GOAL) && (distance_to_act_on_goal >= distance_to_goal))
-		goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v,
-							  	  0.0, distance_to_goal, DIST2D_P(current_robot_pose_v_and_phi, goal)),
-							  fabs(goal->v));
+	if (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL)
+		goal->v = 0.0;
 	if (previous_v != goal->v)
-		who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
-
-//	printf("1 - goal v %lf, who_set_the_goal_v %d\n", goal->v, who_set_the_goal_v);
+		who_set_the_goal_v = STOP_AT_SWITCH_VELOCITY_SIGNAL;
 
 	previous_v = goal->v;
-	if ((goal_type == FINAL_GOAL) && (distance_to_act_on_goal >= distance_to_goal))
-		goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v,
-							  	  0.0, distance_to_goal, DIST2D_P(current_robot_pose_v_and_phi, goal)),
-							  fabs(goal->v));
+	if (goal_type == FINAL_GOAL)
+		goal->v = 0.0;
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
-//	static int i = 0;
-//	printf("2 - goal v %lf, who_set_the_goal_v %d, %d\n", goal->v, who_set_the_goal_v, i++);
-//	fflush(stdout);
-
 	previous_v = goal->v;
-	if (fabs(current_robot_pose_v_and_phi->v) < 0.2)
+	if (behavior_selector_reverse_driving &&
+		(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL) &&
+		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
+		(fabs(current_robot_pose_v_and_phi->v) < 0.2))
 	{
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 
@@ -806,7 +860,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		}
 	}
 
-	if (activate_intermediate_velocity)
+	if (behavior_selector_reverse_driving && activate_intermediate_velocity &&
+	    (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
 	{
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 
@@ -827,7 +882,24 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		if (previous_v != goal->v)
 			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
 	}
-//	printf("3 - goal v %lf, who_set_the_goal_v %d\n\n", goal->v, who_set_the_goal_v);
+
+//	previous_v = goal->v;
+//	double distance_to_act_on_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, 0.0,
+//					DIST2D_P(current_robot_pose_v_and_phi, goal));
+//	double distance_to_goal = DIST2D_P(current_robot_pose_v_and_phi, goal);
+//	if ((goal_type == SWITCH_VELOCITY_SIGNAL_GOAL) && (distance_to_act_on_goal >= distance_to_goal))
+//		goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v,
+//							  	  0.0, distance_to_goal, DIST2D_P(current_robot_pose_v_and_phi, goal)),
+//							  fabs(goal->v));
+//	if (previous_v != goal->v)
+//		who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
+//
+////	printf("1 - goal v %lf, who_set_the_goal_v %d\n", goal->v, who_set_the_goal_v);
+//
+//	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
+//	goal->v = set_goal_velocity_according_to_final_goal(goal, goal_type, current_robot_pose_v_and_phi);
+//	if (previous_v != goal->v)
+//		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
 	previous_v = goal->v;
 

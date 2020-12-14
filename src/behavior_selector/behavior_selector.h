@@ -24,7 +24,7 @@ enum
 	ANNOTATION,
 	KEEP_SPEED_LIMIT,
 	PARKING_MANOUVER,
-	WAIT_SWITCH_VELOCITY_SIGNAL,
+	STOP_AT_SWITCH_VELOCITY_SIGNAL,
 	INTERMEDIATE_VELOCITY,
 	STOP_AT_FINAL_GOAL,
 	STATE_MACHINE
@@ -89,6 +89,8 @@ extern "C" {
 	void behavior_selector_remove_goal();
 
 	carmen_ackerman_traj_point_t *behavior_selector_get_last_goal_list(int &last_goal_list_size);
+	carmen_ackerman_traj_point_t *behavior_selector_get_last_goals_and_types(int *&goals_types, int &last_goal_list_size);
+
 	int behavior_selector_get_last_goal_type();
 
 	void behavior_selector_update_annotations(carmen_rddf_annotation_message *message);

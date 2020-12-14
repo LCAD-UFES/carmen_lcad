@@ -754,6 +754,56 @@ get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_t
 }
 
 
+void
+plot_v(vector<carmen_ackerman_path_point_t> path, vector<carmen_ackerman_path_point_t> path2)
+{
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:3]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-3:3]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'v'\n");
+//		fprintf(gnuplot_pipeMP, "set tics out\n");
+//		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
+	}
+
+	FILE *mpp_file = fopen("mpp_v.txt", "w");
+	FILE *mpp_file2 = fopen("mpp_v2.txt", "w");
+
+	double t;
+	t = 0.0;
+	for (int i = 0; (i < (int) path.size()) && (t < 3.0); i++)
+	{
+		fprintf(mpp_file, "%lf %lf\n", path[i].v, t);
+		t += path[i].time;
+		fprintf(mpp_file, "%lf %lf\n", path[i].v, t);
+	}
+
+	t = 0.0;
+	for (int i = 0; (i < (int) path2.size()) && (t < 3.0); i++)
+	{
+		fprintf(mpp_file2, "%lf %lf\n", path2[i].v, t);
+		t += path2[i].time;
+		fprintf(mpp_file2, "%lf %lf\n", path2[i].v, t);
+	}
+
+	fclose(mpp_file);
+	fclose(mpp_file2);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./mpp_v.txt' using 2:1 w l title 'mpp' lt rgb 'blue', "
+			"'./mpp_v2.txt' using 2:1 w l title 'mpp2' lt rgb 'red'\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
+
 bool
 get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		vector<carmen_ackerman_path_point_t> &path_local,
@@ -767,6 +817,9 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
 	else
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
+
+//	vector<carmen_ackerman_path_point_t> path_copy = path;
+
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
@@ -789,6 +842,8 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 //		filter_path(path);
 	if (!GlobalState::use_mpc && !use_unity_simulator)
 		filter_path(path);
+
+//	plot_v(path_copy, path);
 
 	return (true);
 }

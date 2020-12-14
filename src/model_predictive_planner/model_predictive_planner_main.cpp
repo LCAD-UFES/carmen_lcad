@@ -452,10 +452,9 @@ build_and_follow_path(double timestamp)
 				add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 			}
 		}
-
-		publish_navigator_ackerman_status_message();
 	}
-	fflush(stdout);
+
+	publish_navigator_ackerman_status_message();
 }
 
 /**

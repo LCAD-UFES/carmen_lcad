@@ -1,7 +1,7 @@
 include ../Makefile.conf
 
 CC = g++
-LINK = 
+#LINK = 
 
 CFLAGS += -std=c++11
 
