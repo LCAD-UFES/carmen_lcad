@@ -438,7 +438,7 @@ build_and_follow_path(double timestamp)
 		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
 	{
 		double distance_to_goal = DIST2D_P(GlobalState::goal_pose, GlobalState::localizer_pose);
-		if ((distance_to_goal > 1.5) || (fabs(GlobalState::robot_config.max_v) > 0.07) || (fabs(GlobalState::last_odometry.v) > 0.07))
+		if ((distance_to_goal > 1.5) || (fabs(GlobalState::robot_config.max_v) > 0.07) || (fabs(GlobalState::last_odometry.v) > 0.4))
 		{
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 			if ((tree.num_paths > 0) && (path.size() > 1) && (plan_time(path) > 0.0))
@@ -451,10 +451,10 @@ build_and_follow_path(double timestamp)
 				// Para quem publica a mensagem abaixo?
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
-			else if (fabs(GlobalState::robot_config.max_v) <= 0.07)
+			else if (fabs(GlobalState::robot_config.max_v) <= 0.4)
 			{
 				// Esta mensagem bypassa o path_follower
-				publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
+				publish_path_follower_single_motion_command_with_decaying_phi(GlobalState::last_odometry.v, GlobalState::last_odometry.phi, timestamp);
 				// Para que este servicco abaixo?
 				add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 			}
@@ -462,7 +462,7 @@ build_and_follow_path(double timestamp)
 		else
 		{
 			// Esta mensagem bypassa o path_follower
-			publish_path_follower_single_motion_command_with_decaying_phi(0.0, GlobalState::last_odometry.phi, timestamp);
+			publish_path_follower_single_motion_command_with_decaying_phi(GlobalState::last_odometry.v, GlobalState::last_odometry.phi, timestamp);
 			// Para que este servicco abaixo?
 			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 		}
