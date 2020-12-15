@@ -65,8 +65,8 @@ plot_phi_in_trajectories()
 
 	fprintf(gnuplot_pipeMP, "plot "
 			"'./mpp.txt' using 2:1 w l title 'mpp' lt rgb 'blue',"
-			"'./robot_motion.txt' using 2:1 w l title 'robot' lt rgb 'green',"
-			"'./base_motion.txt' using 2:1 with linespoints title 'base' lt rgb 'red'\n");
+			"'./robot_motion.txt' using 2:1 with linespoints title 'robot' lt rgb 'green',"
+			"'./base_motion.txt' using 2:1 w l title 'base' lt rgb 'red'\n");
 
 	fflush(gnuplot_pipeMP);
 }

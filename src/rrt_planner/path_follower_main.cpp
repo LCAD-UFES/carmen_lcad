@@ -170,12 +170,12 @@ namespace RRT_IPC
 {
 
 static void
-build_and_follow_path(carmen_point_t point, double pose_timestamp)
+build_and_follow_path(carmen_point_t globalpos, double pose_timestamp)
 {
 	//printf("\n *** entrou em build_and_follow_path() - %lf  %lf\n", carmen_get_time(), carmen_get_time() - t0);
 	//t0 = carmen_get_time();
 	Robot_State initial_robot_state;
-	Pose pose = Util::convert_to_pose(point);
+	Pose pose = Util::convert_to_pose(globalpos);
 
 	GlobalState::set_robot_pose(pose, pose_timestamp);
 
