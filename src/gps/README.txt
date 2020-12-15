@@ -11,7 +11,7 @@ Ver senha no e-mail do alberto -> procurar por "Atendimento Numero:#89857/2016 -
 
 -Identificar bases mais próximas para acesso.
 
-Atualmente usamos a CEFE0 que fica em Vitória (Jucutuquara)
+Atualmente usamos a CEFE1 (antiga CEFE0) que fica em Vitória (Jucutuquara)
 Se estiver em São Paulo por exemplo, deve-se usar a POLI0 ou EACH0 dependendo de qual estiver mais próxima do local onde seu GPS estiver. 
 https://www.ibge.gov.br/geociencias/informacoes-sobre-posicionamento-geodesico/rede-geodesica/16258-rede-brasileira-de-monitoramento-continuo-dos-sistemas-gnss-rbmc.html?=&t=dados-diarios-e-situacao-operacional
 
