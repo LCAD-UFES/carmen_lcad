@@ -11,6 +11,30 @@ carmen_base_ackerman_motion_command_message *base_motion_command_message = NULL;
 rrt_path_message *mpp_message = NULL;
 
 
+double
+elapsed_time(double t0, double timestamp, carmen_ackerman_motion_command_p command, int i)
+{
+	double t = timestamp - t0;
+
+	for (int j = 0; j < i; j++)
+		t += command[j].time;
+
+	return (t);
+}
+
+
+double
+elapsed_time(double t0, double timestamp, Edge_Struct *command, int i)
+{
+	double t = timestamp - t0;
+
+	for (int j = 0; j < i; j++)
+		t += command[j].time;
+
+	return (t);
+}
+
+
 void
 plot_phi_in_trajectories()
 {
@@ -34,10 +58,11 @@ plot_phi_in_trajectories()
 	FILE *base_motion_file = fopen("base_motion.txt", "w");
 	FILE *robot_motion_file = fopen("robot_motion.txt", "w");
 
-	double t;
-	t = 0.0;
+	double t0 = base_motion_command_message->timestamp;
+	double t = 0.0;
 	for (int i = 0; base_motion_command_message && (i < base_motion_command_message->num_motion_commands) && (t < 3.0); i++)
 	{
+		t = elapsed_time(t0, base_motion_command_message->timestamp, base_motion_command_message->motion_command, i);
 		fprintf(base_motion_file, "%lf %lf\n", base_motion_command_message->motion_command[i].phi, t);
 		t += base_motion_command_message->motion_command[i].time;
 		fprintf(base_motion_file, "%lf %lf\n", base_motion_command_message->motion_command[i].phi, t);
@@ -46,6 +71,7 @@ plot_phi_in_trajectories()
 	t = 0.0;
 	for (int i = 0; robot_motion_command_message && (i < robot_motion_command_message->num_motion_commands) && (t < 3.0); i++)
 	{
+		t = elapsed_time(t0, robot_motion_command_message->timestamp, robot_motion_command_message->motion_command, i);
 		fprintf(robot_motion_file, "%lf %lf\n", robot_motion_command_message->motion_command[i].phi, t);
 		t += base_motion_command_message->motion_command[i].time;
 		fprintf(robot_motion_file, "%lf %lf\n", robot_motion_command_message->motion_command[i].phi, t);
@@ -54,6 +80,7 @@ plot_phi_in_trajectories()
 	t = 0.0;
 	for (int i = 0; mpp_message && (i < mpp_message->size) && (t < 3.0); i++)
 	{
+		t = elapsed_time(t0, mpp_message->timestamp, mpp_message->path, i);
 		fprintf(mpp_file, "%lf %lf\n", mpp_message->path[i].p1.phi, t);
 		t += mpp_message->path[i].time;
 		fprintf(mpp_file, "%lf %lf\n", mpp_message->path[i].p1.phi, t);
