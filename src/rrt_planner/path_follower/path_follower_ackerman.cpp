@@ -43,10 +43,10 @@ Path_Follower_Ackerman::stop()
 void
 Path_Follower_Ackerman::set_path(list<RRT_Path_Edge> path)
 {
-	this->path = path;
-
 	if (!robot_lost && path.empty())
 		return;
+
+	this->path = path;
 
 	if (!path.empty())
 	{
@@ -125,7 +125,7 @@ Path_Follower_Ackerman::build_and_send_refined_path()
 //		if (GlobalState::last_odometry.v == 0.0)
 //			publish_path_follower_single_motion_command(0.0, 0.0, carmen_get_time());
 //		else
-//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, carmen_get_time());
+			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, carmen_get_time());
 		return;
 	}
 
