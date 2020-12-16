@@ -186,8 +186,8 @@ float get_theta_by_index(int index);
 float get_distance_by_index(int index);
 
 
-void plot_state(vector<carmen_ackerman_path_point_t> pOTCP, vector<carmen_ackerman_path_point_t> pLane,
-		  vector<carmen_ackerman_path_point_t> pSeed, std::string titles[]);
+void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
+		  vector<carmen_ackerman_path_point_t> &pSeed, std::string titles[]);
 
 
 #endif /* TRAJECTORY_LOOKUP_TABLE_H_ */
