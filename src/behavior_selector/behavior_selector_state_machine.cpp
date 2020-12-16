@@ -427,7 +427,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 			if (wait_stopped)
 			{
-				if (wait_for_given_seconds(4.0))
+				if (wait_for_given_seconds(5.0))
 					wait_stopped = false;
 			}
 			else

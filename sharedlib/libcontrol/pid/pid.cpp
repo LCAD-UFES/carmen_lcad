@@ -42,6 +42,7 @@ static double g_velocity_backward_deccelerating_Kp;
 static double g_velocity_backward_deccelerating_Ki;
 static double g_velocity_backward_deccelerating_Kd;
 static double g_brake_gap;
+static double g_max_brake_effort;
 
 
 void
@@ -355,7 +356,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (fabs(desired_velocity) < 0.01) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
+	if (fabs(desired_velocity) < 0.05) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
 	{
 		desired_velocity = 0.0;
 		g_velocity_PID_controler_state = STOP_CAR;
@@ -374,8 +375,8 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		error_t_1 = integral_t = integral_t_1 = 0.0;
 
 		*throttle_command = 0.0;
-		*brakes_command = 100.0;
-//		*brakes_command = *brakes_command + 0.05 * (100.0 - *brakes_command); // Estudar esta linha para reduzir parada brusca
+		*brakes_command = g_max_brake_effort;
+//		*brakes_command = *brakes_command + 0.05 * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
 
 		if ((desired_velocity > 0.0) && (current_velocity >= -0.05))
 		{
@@ -491,6 +492,8 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 {
 	int num_items;
 
+	carmen_param_allow_unfound_variables(0);
+
 	carmen_param_t param_list[]=
 	{
 		{(char *)"robot", (char *)"PID_steering_kp", CARMEN_PARAM_DOUBLE, &g_steering_Kp, 0, NULL},
@@ -510,6 +513,7 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Ki, 0, NULL},
 		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Kd, 0, NULL},
 		{(char *)"robot", (char *)"PID_velocity_brake_gap", CARMEN_PARAM_DOUBLE, &g_brake_gap, 0, NULL},
+		{(char *)"robot", (char *)"PID_velocity_max_brake_effort", CARMEN_PARAM_DOUBLE, &g_max_brake_effort, 0, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
