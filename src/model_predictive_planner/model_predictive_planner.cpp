@@ -181,10 +181,23 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_r
 	{
 		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
+		if (GlobalState::reverse_planning)
+		{
+			 if (lane_in_car_reference[0] <= 0.0)
+			 {
+				 local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+				 							goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+				 lane_in_local_pose->push_back(local_reference_lane_point);
+			 }
+		}
+		else
+		{
+			local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+					goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+			lane_in_local_pose->push_back(local_reference_lane_point);
 
-		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
-		lane_in_local_pose->push_back(local_reference_lane_point);
+		}
+
 	}
 }
 
@@ -230,7 +243,9 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 		return false;
 
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
-	move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	if (!GlobalState::reverse_planning)
+		move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+
 	move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 
 	return (goal_in_lane);
@@ -536,16 +551,15 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 		if (GlobalState::distance_map != NULL)
 		{
 			double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-											point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
+					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
 			if (circle_invasion > 0)
-				hit_points.push_back(path[i]); //pra plotar
+					hit_points.push_back(path[i]); //pra plotar
 
 			if (circle_invasion > max_circle_invasion)
 				max_circle_invasion = circle_invasion;
 		}
 	}
-
-	if (!hit_points.size())
+	if(!hit_points.size())
 		hit_points.push_back(path[0]);
 
 #ifdef PLOT_COLLISION
@@ -694,6 +708,7 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 {
 	if (0) //(GlobalState::reverse_planning && !previous_good_tcp.valid && td.v_i == 0.0) //Just for tests
 		tcp = get_dummy_tcp(td);
+
 	else if (!previous_good_tcp.valid)
 	{
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
@@ -754,56 +769,6 @@ get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_t
 }
 
 
-void
-plot_v(vector<carmen_ackerman_path_point_t> path, vector<carmen_ackerman_path_point_t> path2)
-{
-	static bool first_time = true;
-	static FILE *gnuplot_pipeMP;
-
-	if (first_time)
-	{
-		first_time = false;
-
-		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:3]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-3:3]\n");
-		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
-		fprintf(gnuplot_pipeMP, "set ylabel 'v'\n");
-//		fprintf(gnuplot_pipeMP, "set tics out\n");
-//		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
-	}
-
-	FILE *mpp_file = fopen("mpp_v.txt", "w");
-	FILE *mpp_file2 = fopen("mpp_v2.txt", "w");
-
-	double t;
-	t = 0.0;
-	for (int i = 0; (i < (int) path.size()) && (t < 3.0); i++)
-	{
-		fprintf(mpp_file, "%lf %lf\n", path[i].v, t);
-		t += path[i].time;
-		fprintf(mpp_file, "%lf %lf\n", path[i].v, t);
-	}
-
-	t = 0.0;
-	for (int i = 0; (i < (int) path2.size()) && (t < 3.0); i++)
-	{
-		fprintf(mpp_file2, "%lf %lf\n", path2[i].v, t);
-		t += path2[i].time;
-		fprintf(mpp_file2, "%lf %lf\n", path2[i].v, t);
-	}
-
-	fclose(mpp_file);
-	fclose(mpp_file2);
-
-	fprintf(gnuplot_pipeMP, "plot "
-			"'./mpp_v.txt' using 2:1 w l title 'mpp' lt rgb 'blue', "
-			"'./mpp_v2.txt' using 2:1 w l title 'mpp2' lt rgb 'red'\n");
-
-	fflush(gnuplot_pipeMP);
-}
-
-
 bool
 get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		vector<carmen_ackerman_path_point_t> &path_local,
@@ -817,9 +782,6 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
 	else
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
-
-//	vector<carmen_ackerman_path_point_t> path_copy = path;
-
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
@@ -842,8 +804,6 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 //		filter_path(path);
 	if (!GlobalState::use_mpc && !use_unity_simulator)
 		filter_path(path);
-
-//	plot_v(path_copy, path);
 
 	return (true);
 }
@@ -995,13 +955,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
 					use_lane, previous_good_tcp.valid);
 			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
-
-			/////////////////// plot para debug
-//			vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
-//			std::string titles[] = {"otcp", "detailed lane", "lane in local pose"};
-//			plot_state(path, detailed_lane, lane_in_local_pose, titles);
-			///////////////////
-
 			if (otcp.valid)
 			{
 				vector<carmen_ackerman_path_point_t> path;
