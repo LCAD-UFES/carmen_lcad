@@ -1,0 +1,5 @@
+7a7127832e0ade58d787940f9d907874487bc83c - ja com problema
+f35df97023f0e58ad9c995bbe549a1d6e3f8302d - Ja com problema - Primeiro problema comeca jah com nao mover o eixo do carro (move_to_front_axle) Alteracao na my_f correcao de parenteses tbm
+nao deu problema com correcao da my_g w2 e my_df bug de 
+c2782a432eff45ffa16086cc7ddd974a43379f4c - Parece BOM mas o anterior estava parecendo melhor mecher no bug de mover o path para o local para global para checar colisao
+aebe65eeee3c8e55ab81dd85c08f748250d9aa07 - BOM!	
