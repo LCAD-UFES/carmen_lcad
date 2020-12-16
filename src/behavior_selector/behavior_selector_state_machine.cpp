@@ -15,19 +15,18 @@ extern carmen_robot_ackerman_config_t robot_config;
 bool
 stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, wait_start_moving);
+	carmen_annotation_t *nearest_stop_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_STOP,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
-	if (nearest_velocity_related_annotation == NULL)
+	if (nearest_stop_annotation == NULL)
 		return (false);
 
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+	double distance_to_annotation = DIST2D(nearest_stop_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
 	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
-	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
-		(distance_to_act_on_annotation >= distance_to_annotation) &&
-		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
+	if ((distance_to_act_on_annotation >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_stop_annotation->annotation_point))
 		return (true);
 	else
 		return (false);
@@ -60,14 +59,15 @@ wait_for_given_seconds(double seconds)
 	if (start_time == 0.0)
 		start_time = carmen_get_time();
 
-	if (start_time - carmen_get_time() < seconds)
+	double t = carmen_get_time();
+	if (t - start_time < seconds)
 	{
-		return (true);
+		return (false);
 	}
 	else
 	{
 		start_time = 0.0;
-		return (false);
+		return (true);
 	}
 }
 
@@ -413,8 +413,10 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 
 		case Stopping_At_Stop_Sign:
-			if ((fabs(current_robot_pose_v_and_phi.v) < 0.01) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
+			if ((fabs(current_robot_pose_v_and_phi.v) < 0.5) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
+			if (!stop_sign_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Stopped_At_Stop_Sign_S0:
 			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
@@ -425,7 +427,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 			if (wait_stopped)
 			{
-				if (wait_for_given_seconds(2.0))
+				if (wait_for_given_seconds(4.0))
 					wait_stopped = false;
 			}
 			else

@@ -158,8 +158,8 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_YIELD) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
@@ -274,26 +274,26 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 
 	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
 		red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
-		v = 0.08;
+		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
-		v = 0.08;
+		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD) &&
 			 must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
-		v = 0.08;
+		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
 			 (DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
 	{
 		// printf ("D %lf\n", DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point));
-		v = 0.08;
+		v = 0.0;
 	}
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
 			 (behavior_selector_state_message.low_level_state != Stopped_At_Stop_Sign_S2))
-		v = 0.08;
+		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
-		v = 0.09;
+		v = 0.0;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
 		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP)
@@ -423,8 +423,14 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 
 	if (!autonomous)
 		clearing_annotation = false;
-//TODO Soh pega as anotacoes para frente. Precisamos tratar essas mesmas anotacao para tras?
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+
+	carmen_annotation_t *nearest_velocity_related_annotation;
+	//TODO Soh pega as anotacoes para frente. Precisamos tratar essas mesmas anotacao para tras?
+	if (goal_type == ANNOTATION_GOAL_STOP)
+		nearest_velocity_related_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_STOP, last_rddf_annotation_message,
+			current_robot_pose_v_and_phi);
+	else
+		nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 			current_robot_pose_v_and_phi, wait_start_moving);
 
 	if (nearest_velocity_related_annotation != NULL)
@@ -456,7 +462,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
 			   (distance_to_annotation < distance_to_goal)) && annotation_ahead) ||
 			   ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
-				((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL2)))))
+				((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL_STOP)))))
 		{
 			if (!clearing_annotation)
 				previous_annotation_point = nearest_velocity_related_annotation->annotation_point;
@@ -468,7 +474,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 					goal->v);
 
 			if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
-					((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL2))))
+					((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL_STOP))))
 
 				//TODO retorna positivo
 				goal->v = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi,
