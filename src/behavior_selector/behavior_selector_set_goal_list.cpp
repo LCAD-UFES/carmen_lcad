@@ -847,7 +847,12 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			goal_type[goal_index] = ANNOTATION_GOAL_STOP;
 			double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
 			if (distance_to_waypoint >= 0.0)
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, 0.0);
+			{
+				double displacement = 0.0;
+				if (rddf->poses[rddf_pose_index].v >= 0.0)
+					displacement = -displacement;
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
+			}
 			else
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
 			moving_obstacle_trasition = 0.0;
