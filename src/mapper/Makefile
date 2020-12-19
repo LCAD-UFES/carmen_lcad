@@ -40,10 +40,11 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
 	-lparam_interface -llaser_interface -lipc -lmapper_interface -lobstacle_avoider_interface		\
 	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
-	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
+	-lultrasonic_filter_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
-	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface
+	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils \
+	-lmoving_objects_interface # -lstereo_mapping_interface
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
@@ -68,8 +69,8 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a \
-		  compute_velodyne_calibration_table test_diff_map #neural_mapper_dataset_check
+TARGETS = libprob_models.a mapper libmapper_interface.a libmapper.a \
+		  compute_velodyne_calibration_table test_diff_map # convert_maps_from_float_to_double neural_mapper_dataset_check
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -89,7 +90,7 @@ libmapper_interface.so.1: libmapper_interface.o
 
 mapper: mapper.o mapper_main.o libmapper.a libmapper_interface.a neural_mapper_io.o neural_map.o lib_neural_mapper_py.o $(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a
 
-convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
+# convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 
 compute_velodyne_calibration_table: compute_velodyne_calibration_table.o
 
