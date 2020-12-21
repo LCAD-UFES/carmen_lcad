@@ -779,6 +779,159 @@ velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *m
 
 
 static void
+localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *msg)
+{
+	printf("entrou\n");
+	int odometry_index, fused_odometry_index, instanteneous_maps_ok = 0;
+
+	odometry_index = get_base_ackerman_odometry_index_by_timestamp(msg->timestamp);
+	fused_odometry_index = get_fused_odometry_index_by_timestamp(msg->timestamp);
+
+	if (mapping_mode)
+	{
+		publish_globalpos_on_mapping_mode(&fused_odometry_vector[fused_odometry_index], msg->timestamp);
+		return;
+	}
+
+	if (!necessary_maps_available || !global_localization_requested || ((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
+		return;
+
+	instanteneous_maps_ok = localize_ackerman_variable_scan_build_instanteneous_maps(msg, &spherical_sensor_params[sensor_number], 
+			&spherical_sensor_data[sensor_number], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+	
+	if (!instanteneous_maps_ok)
+		return;
+
+	// TUDO the filter should be one for each lidar?
+	carmen_localize_ackerman_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
+			msg->timestamp, car_config.distance_between_front_and_rear_axles);
+
+	publish_particles_prediction(filter, &summary, msg->timestamp);
+
+	carmen_localize_ackerman_velodyne_correction(filter, &localize_map, &local_compacted_map, &local_compacted_mean_remission_map,
+			&local_compacted_variance_remission_map, &binary_map);
+
+	publish_particles_correction(filter, &summary, msg->timestamp);
+
+	if (filter->initialized)
+		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
+
+	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
+	{
+		carmen_localize_ackerman_velodyne_resample(filter);
+	}
+
+	if (filter->initialized)
+	{
+		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
+		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,	msg->timestamp);
+
+		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
+			publish_carmen_base_ackerman_odometry();
+	}
+
+	if (g_reinitiaze_particles)
+		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
+}
+
+void
+variable_scan_message_handler_0(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(10, message);
+}
+
+void
+variable_scan_message_handler_1(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(11, message);
+}
+
+void
+variable_scan_message_handler_2(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(12, message);
+}
+
+void
+variable_scan_message_handler_3(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(13, message);
+}
+
+void
+variable_scan_message_handler_4(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(14, message);
+}
+
+void
+variable_scan_message_handler_5(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(15, message);
+}
+
+void
+variable_scan_message_handler_6(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(16, message);
+}
+
+void
+variable_scan_message_handler_7(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(17, message);
+}
+
+void
+variable_scan_message_handler_8(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(18, message);
+}
+
+void
+variable_scan_message_handler_9(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(19, message);
+}
+
+void
+variable_scan_message_handler_10(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(20, message);
+}
+
+void
+variable_scan_message_handler_11(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(21, message);
+}
+
+void
+variable_scan_message_handler_12(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(22, message);
+}
+
+void
+variable_scan_message_handler_13(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(23, message);
+}
+
+void
+variable_scan_message_handler_14(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(24, message);
+}
+
+void
+variable_scan_message_handler_15(carmen_velodyne_variable_scan_message *message)
+{
+	localize_using_lidar(25, message);
+}
+
+
+static void
 robot_ackerman_frontlaser_handler(carmen_robot_ackerman_laser_message *flaser)
 {
 	if (!necessary_maps_available)
@@ -1046,6 +1199,115 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 
 
 void
+get_alive_LIDARs_sensors(int argc, char **argv)
+{
+	int i;
+	char sensor[128];
+	char locc[128];
+	char lfree[128];
+	char l0[128];
+	char unexpeted_delta_range_sigma[128];
+	char range_max_factor[128];
+
+	for (i = 10; i < 11/* number_of_sensors */; i++)
+	{
+		sprintf(sensor, "lidar%d", i - 10);
+		sprintf(locc, "lidar%d_locc", i - 10);
+		sprintf(lfree, "lidar%d_lfree", i - 10);
+		sprintf(l0, "lidar%d_l0", i - 10);
+		sprintf(unexpeted_delta_range_sigma, "lidar%d_unexpeted_delta_range_sigma", i - 10);
+		sprintf(range_max_factor, "lidar%d_range_max_factor", i - 10);
+
+
+		carmen_param_t param_list[] =
+		{
+			{(char *) "localize_ackerman", sensor, CARMEN_PARAM_ONOFF, &spherical_sensor_params[i].alive, 0, NULL},
+			{sensor, (char *) "shot_size", 	       CARMEN_PARAM_INT, &spherical_sensor_params[i].vertical_resolution, 0, NULL},
+			{sensor, (char *) "max_range", 	       CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].range_max, 0, NULL},
+			{sensor, (char *) "time_between_shots", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].time_spent_by_each_scan, 0, NULL},
+			{sensor, (char *) "range_division_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].range_division_factor, 0, NULL},
+			{(char *) "localize_ackerman", locc, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", lfree, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", l0, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", range_max_factor, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].range_max_factor, 0, NULL},
+			{(char *) "localize_ackerman", unexpeted_delta_range_sigma, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].unsafe_height_above_ground, 0, NULL},
+		};
+		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	// printf("====%s %d %d %lf %lf %lf %lf %lf %lf %lf %lf\n", sensor, spherical_sensor_params[i].alive, spherical_sensor_params[i].vertical_resolution, spherical_sensor_params[i].range_max,
+	// spherical_sensor_params[i].time_spent_by_each_scan, spherical_sensor_params[i].log_odds.log_odds_occ, spherical_sensor_params[i].log_odds.log_odds_free, 
+	// spherical_sensor_params[i].log_odds.log_odds_l0, spherical_sensor_params[i].range_max_factor, spherical_sensor_params[i].unexpeted_delta_range_sigma, spherical_sensor_params[i].unsafe_height_above_ground);
+
+		spherical_sensor_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads, sizeof(carmen_vector_2D_t*));
+		spherical_sensor_data[i].maxed = (int**)calloc(number_of_threads, sizeof(int*));
+		spherical_sensor_data[i].obstacle_height = (double**)calloc(number_of_threads, sizeof(double*));
+		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads, sizeof(double*));
+		spherical_sensor_data[i].point_cloud_index = 0;
+		spherical_sensor_data[i].points = NULL;
+		spherical_sensor_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads, sizeof(carmen_vector_2D_t*));;
+		spherical_sensor_data[i].ray_size_in_the_floor = (double**)calloc(number_of_threads, sizeof(double*));
+		spherical_sensor_data[i].processed_intensity = (double**)calloc(number_of_threads, sizeof(double*));
+		spherical_sensor_data[i].ray_hit_the_robot = (int**)calloc(number_of_threads, sizeof(int*));
+		spherical_sensor_data[i].ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads, sizeof(int));
+
+		spherical_sensor_params[i].name = NULL;
+		spherical_sensor_params[i].ray_order = NULL;
+		spherical_sensor_params[i].sensor_to_support_matrix = NULL;
+		spherical_sensor_params[i].vertical_correction = NULL;
+		spherical_sensor_params[i].vertical_resolution = 0;
+
+		for (int j = 0; j < number_of_threads; j++)
+		{
+			spherical_sensor_data[i].ray_position_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].maxed[j] = NULL;
+			spherical_sensor_data[i].obstacle_height[j] = NULL;
+			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
+			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].processed_intensity[j] = NULL;
+			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
+		}
+
+		spherical_sensor_params[i].name = (char *)calloc(strlen(sensor) + 1, sizeof(char));
+		strcpy(spherical_sensor_params[i].name, sensor);
+
+		int i;
+		int flipped;
+		int horizontal_resolution;
+		char stereo_velodyne_string[256];
+		int roi_ini, roi_end;
+
+		// int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6) || (correction_type == 7); // See carmen_ford_escape.ini # TODO usar o correction type
+		
+		// spherical_sensor_params[i].use_remission = use_remission;
+
+		if (calibration_file)
+			spherical_sensor_params[0].calibration_table = load_calibration_table(calibration_file);
+		else
+			spherical_sensor_params[0].calibration_table = load_calibration_table((char *) "calibration_table.txt");
+		
+		spherical_sensor_params[0].save_calibration_file = NULL;
+
+		spherical_sensor_params[0].pose = velodyne_pose;
+		spherical_sensor_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, spherical_sensor_params[0].pose.position, sensor_board_1_to_car_matrix);
+
+		spherical_sensor_params[0].height = spherical_sensor_params[0].sensor_robot_reference.z + robot_wheel_radius;
+
+		init_velodyne_points(&spherical_sensor_data[i].points, &spherical_sensor_data[i].intensity, &spherical_sensor_data[i].robot_pose,
+				&spherical_sensor_data[i].robot_velocity, &spherical_sensor_data[i].robot_timestamp, &spherical_sensor_data[i].robot_phi);
+		
+		spherical_sensor_params[i].sensor_to_support_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
+		spherical_sensor_data[i].point_cloud_index = 0;
+			
+		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, number_of_threads);
+
+		spherical_sensor_params[i].current_range_max = spherical_sensor_params[i].range_max;
+	}
+}
+
+
+void
 get_alive_sensors(int argc, char **argv)
 {
 	int i;
@@ -1113,6 +1375,23 @@ get_alive_sensors(int argc, char **argv)
 		{(char *) "localize_ackerman", (char *) "stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].unexpeted_delta_range_sigma, 0, NULL},
 		{(char *) "localize_ackerman", (char *) "stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
+		{(char *) "mapper", (char *) "lidar0", CARMEN_PARAM_ONOFF, &spherical_sensor_params[10].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar1", CARMEN_PARAM_ONOFF, &spherical_sensor_params[11].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar2", CARMEN_PARAM_ONOFF, &spherical_sensor_params[12].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar3", CARMEN_PARAM_ONOFF, &spherical_sensor_params[13].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar4", CARMEN_PARAM_ONOFF, &spherical_sensor_params[14].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar5", CARMEN_PARAM_ONOFF, &spherical_sensor_params[15].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar6", CARMEN_PARAM_ONOFF, &spherical_sensor_params[16].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar7", CARMEN_PARAM_ONOFF, &spherical_sensor_params[17].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar8", CARMEN_PARAM_ONOFF, &spherical_sensor_params[18].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar9", CARMEN_PARAM_ONOFF, &spherical_sensor_params[19].alive, 1, NULL},
+        {(char *) "mapper", (char *) "lidar10", CARMEN_PARAM_ONOFF, &spherical_sensor_params[20].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar11", CARMEN_PARAM_ONOFF, &spherical_sensor_params[21].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar12", CARMEN_PARAM_ONOFF, &spherical_sensor_params[22].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar13", CARMEN_PARAM_ONOFF, &spherical_sensor_params[23].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar14", CARMEN_PARAM_ONOFF, &spherical_sensor_params[24].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar15", CARMEN_PARAM_ONOFF, &spherical_sensor_params[25].alive, 1, NULL},
+
 		{(char *) "localize_ackerman", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].unsafe_height_above_ground, 0, NULL},
 
 		{(char *) "localize_ackerman",  (char *) "velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max_factor, 0, NULL}
@@ -1162,6 +1441,8 @@ get_alive_sensors(int argc, char **argv)
 			strcpy(spherical_sensor_params[i].name, param_list[i].variable);
 		}
 	}
+
+	get_alive_LIDARs_sensors(argc, argv);
 }
 
 
@@ -1248,7 +1529,7 @@ get_sensors_param(int argc, char **argv, int correction_type)
 		spherical_sensor_params[0].current_range_max = spherical_sensor_params[0].range_max;
 	}
 
-	for (i = 1; i < number_of_sensors; i++)
+	for (i = 1; i < 10; i++)
 	{
 		spherical_sensor_params[i].use_remission = use_remission;
 
@@ -1586,6 +1867,56 @@ subscribe_to_ipc_message()
 		if (spherical_sensor_params[3].alive)
 			carmen_stereo_velodyne_subscribe_scan_message(3, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST);
 	}
+	
+	//-------------------------------------------------------------------------------------------------------------------------------------//
+	// LIDARS
+	if (spherical_sensor_params[10].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+
+	if (spherical_sensor_params[11].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_1, CARMEN_SUBSCRIBE_LATEST, 1);
+
+	if (spherical_sensor_params[12].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_2, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[13].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_3, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[14].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_4, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[15].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_5, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[16].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_6, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[17].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_7, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[18].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[19].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_9, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[20].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_10, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[21].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_11, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[22].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_12, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[23].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_13, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[24].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_14, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (spherical_sensor_params[25].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 2);
 }
 
 
