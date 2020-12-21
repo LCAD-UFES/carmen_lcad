@@ -1201,6 +1201,7 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 void
 get_alive_LIDARs_sensors(int argc, char **argv)
 {
+	printf("Entrou 1\n");
 	int i;
 	char sensor[128];
 	char locc[128];
@@ -1272,27 +1273,27 @@ get_alive_LIDARs_sensors(int argc, char **argv)
 		spherical_sensor_params[i].name = (char *)calloc(strlen(sensor) + 1, sizeof(char));
 		strcpy(spherical_sensor_params[i].name, sensor);
 
-		int i;
-		int flipped;
-		int horizontal_resolution;
-		char stereo_velodyne_string[256];
-		int roi_ini, roi_end;
+		// int i;
+		// int flipped;
+		// int horizontal_resolution;
+		// char stereo_velodyne_string[256];
+		// int roi_ini, roi_end;
 
 		// int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6) || (correction_type == 7); // See carmen_ford_escape.ini # TODO usar o correction type
 		
 		// spherical_sensor_params[i].use_remission = use_remission;
 
 		if (calibration_file)
-			spherical_sensor_params[0].calibration_table = load_calibration_table(calibration_file);
+			spherical_sensor_params[i].calibration_table = load_calibration_table(calibration_file);
 		else
-			spherical_sensor_params[0].calibration_table = load_calibration_table((char *) "calibration_table.txt");
+			spherical_sensor_params[i].calibration_table = load_calibration_table((char *) "calibration_table.txt");
 		
-		spherical_sensor_params[0].save_calibration_file = NULL;
+		spherical_sensor_params[i].save_calibration_file = NULL;
 
-		spherical_sensor_params[0].pose = velodyne_pose;
-		spherical_sensor_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, spherical_sensor_params[0].pose.position, sensor_board_1_to_car_matrix);
+		spherical_sensor_params[i].pose = velodyne_pose;
+		spherical_sensor_params[i].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, spherical_sensor_params[0].pose.position, sensor_board_1_to_car_matrix);
 
-		spherical_sensor_params[0].height = spherical_sensor_params[0].sensor_robot_reference.z + robot_wheel_radius;
+		spherical_sensor_params[i].height = spherical_sensor_params[0].sensor_robot_reference.z + robot_wheel_radius;
 
 		init_velodyne_points(&spherical_sensor_data[i].points, &spherical_sensor_data[i].intensity, &spherical_sensor_data[i].robot_pose,
 				&spherical_sensor_data[i].robot_velocity, &spherical_sensor_data[i].robot_timestamp, &spherical_sensor_data[i].robot_phi);
@@ -1304,6 +1305,7 @@ get_alive_LIDARs_sensors(int argc, char **argv)
 
 		spherical_sensor_params[i].current_range_max = spherical_sensor_params[i].range_max;
 	}
+	printf("Entrou 2\n");
 }
 
 
@@ -1442,7 +1444,7 @@ get_alive_sensors(int argc, char **argv)
 		}
 	}
 
-	get_alive_LIDARs_sensors(argc, argv);
+	// get_alive_LIDARs_sensors(argc, argv);
 }
 
 
@@ -1686,7 +1688,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
 		{(char *) "velodyne", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 
-		{(char *) "localize_ackerman",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
+		{(char *) "localize_ackerman", (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
 		{(char *) "localize_ackerman", (char *) "safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
 		{(char *) "localize_ackerman", (char *) "correction_type", CARMEN_PARAM_INT, &param->correction_type, 0, NULL},
 
