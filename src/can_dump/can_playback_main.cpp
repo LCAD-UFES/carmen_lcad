@@ -48,24 +48,24 @@ can_dump_publish_can_message(carmen_can_dump_can_line_message *message)
 	buffer[0] = '\0';
 	sscanf(message->can_line, "can%d -> can%d  %X   [%d] %[^\n]",
 			&can_in, &can_out, &(frame.can_id), &can_dlc, buffer);
+	frame.can_dlc = can_dlc;
 
-	if (can_in != desired_can)
+	if ((desired_can != 2) && (can_in != desired_can))
 		return;
 
 	if (strncmp(buffer, "remote", 6) == 0)
-		return;
-
-	sscanf(message->can_line, "can%d -> can%d  %X   [%d]  %[^\n]",
-				&can_in, &can_out, &(frame.can_id), &can_dlc, buffer);
-	frame.can_dlc = can_dlc;
-
-	for (int i = 0; i < frame.can_dlc; i++)
 	{
-		int can_byte;
-		sscanf(buffer + i * 3, "%02X", &can_byte);
-		frame.data[i] = can_byte;
+		frame.can_id |= CAN_RTR_FLAG;
 	}
-
+	else
+	{
+		for (int i = 0; i < frame.can_dlc; i++)
+		{
+			int can_byte;
+			sscanf(buffer + i * 3, "%02X", &can_byte);
+			frame.data[i] = can_byte;
+		}
+	}
 //	printf("%s\n", message->can_line);
 //	print_test_frame(&frame);
 	send_frame(out_can_sockfd, &frame);
