@@ -12,9 +12,11 @@ char *g_out_dir = (char *) ".";
 static int g_image_channels = 3;
 cv::Mat *g_remission_map_img = NULL;
 cv::Mat *g_remission_map_img3 = NULL;
+cv::Mat *g_remission_map_img4 = NULL;
 static carmen_map_p g_remission_map = NULL;
 cv::Mat *g_offline_map_img = NULL;
 cv::Mat *g_offline_map_img3 = NULL;
+cv::Mat *g_offline_map_img4 = NULL;
 static carmen_map_p g_offline_map = NULL;
 
 
@@ -23,6 +25,7 @@ rotate_90_counterclockwise(cv::Mat &img)
 {
 	uchar cell_1a, cell_1b, cell_1c, cell_1d;
 	cv::Vec3b cell_3a, cell_3b, cell_3c, cell_3d;
+	cv::Vec4b cell_4a, cell_4b, cell_4c, cell_4d;
 
 	if (img.cols != img.rows)
 		return;
@@ -53,6 +56,17 @@ rotate_90_counterclockwise(cv::Mat &img)
 				img.at<cv::Vec3b>(img.rows - 1 - row, img.cols - 1 - col) = cell_3d;
 				img.at<cv::Vec3b>(img.cols - 1 - col, row) = cell_3a;
 			}
+			else if (img.channels() == 4)
+			{
+				cell_4a = img.at<cv::Vec4b>(row, col);
+				cell_4b = img.at<cv::Vec4b>(col, img.rows - 1 - row);
+				cell_4c = img.at<cv::Vec4b>(img.rows - 1 - row, img.cols - 1 - col);
+				cell_4d = img.at<cv::Vec4b>(img.cols - 1 - col, row);
+				img.at<cv::Vec4b>(row, col) = cell_4b;
+				img.at<cv::Vec4b>(col, img.rows - 1 - row) = cell_4c;
+				img.at<cv::Vec4b>(img.rows - 1 - row, img.cols - 1 - col) = cell_4d;
+				img.at<cv::Vec4b>(img.cols - 1 - col, row) = cell_4a;
+			}
 		}
 	}
 }
@@ -63,6 +77,7 @@ map_img_is_empty(cv::Mat &map_img, char file_type)
 {
 	uchar empty_value = 0;
 	cv::Vec3b empty_value3;
+	cv::Vec4b empty_value4;
 
 	if (file_type == 'h')
 		empty_value = 253;
@@ -72,6 +87,7 @@ map_img_is_empty(cv::Mat &map_img, char file_type)
 		empty_value = (255 + 144 + 30) / 3;
 	else if (file_type == 'm')
 		empty_value3 = cv::Vec3b(255, 144, 30);
+	empty_value4 = cv::Vec4b(empty_value3[0], empty_value3[1], empty_value3[2], 255);
 
 	for (int row = 0; row < map_img.rows; row++)
 	{
@@ -81,6 +97,9 @@ map_img_is_empty(cv::Mat &map_img, char file_type)
 				return false;
 
 			if (map_img.channels() == 3 && map_img.at<cv::Vec3b>(row, col) != empty_value3)
+				return false;
+
+			if (map_img.channels() == 4 && map_img.at<cv::Vec4b>(row, col) != empty_value4)
 				return false;
 		}
 	}
@@ -158,6 +177,18 @@ save_remission_map_image(void)
 			else
 				cv::imwrite(path, *g_remission_map_img3);
 		}
+		if (g_image_channels == 4 || g_image_channels == '*')
+		{
+			remission_map_to_image(g_remission_map, g_remission_map_img4, 4);
+			sprintf(path, "%s/%c%s", g_out_dir, 'i', &name[1]);
+			printf("saving remission map image %s\n", path);
+			if (g_up_north)
+				rotate_90_counterclockwise(*g_remission_map_img4);
+			if (g_split)
+				write_split(*g_remission_map_img4, g_out_dir, 'i', x_origin, y_origin, x_meters, y_meters);
+			else
+				cv::imwrite(path, *g_remission_map_img4);
+		}
 	}
 }
 
@@ -202,6 +233,18 @@ save_offline_map_image(void)
 			else
 				cv::imwrite(path, *g_offline_map_img3);
 		}
+		if (g_image_channels == 4 || g_image_channels == '*')
+		{
+			offline_map_to_image(g_offline_map, g_offline_map_img4, 4);
+			sprintf(path, "%s/%c%s", g_out_dir, 'm', &name[1]);
+			printf("saving offline map image %s\n", path);
+			if (g_up_north)
+				rotate_90_counterclockwise(*g_offline_map_img4);
+			if (g_split)
+				write_split(*g_offline_map_img4, g_out_dir, 'm', x_origin, y_origin, x_meters, y_meters);
+			else
+				cv::imwrite(path, *g_offline_map_img4);
+		}
 	}
 }
 
@@ -212,7 +255,7 @@ prog_usage(char *prog_name, const char *error_msg = NULL)
 	if (error_msg)
 		fprintf(stderr, "\n%s\n", error_msg);
 
-	fprintf(stderr, "\nUsage:   %s   -remission {on|off}  -offline {on|off}  -out_dir <dir>  -image_channels {1|3|'*'}\n", prog_name);
+	fprintf(stderr, "\nUsage:   %s   -remission {on|off}  -offline {on|off}  -out_dir <dir>  -image_channels {1|3|4|'*'}\n", prog_name);
 	fprintf(stderr,   "         %*c   -up_north  {on|off}  -split   {on|off}\n", (int) strlen(prog_name), ' ');
 	fprintf(stderr,   "default: %s   -remission  off      -offline  on       -out_dir .      -image_channels 3\n", prog_name);
 	fprintf(stderr,   "         %*c   -up_north   off      -split    off\n\n", (int) strlen(prog_name), ' ');
@@ -259,7 +302,7 @@ read_parameters(int argc, char **argv)
 
 	if (image_channels)
 	{
-		if(strcmp(image_channels, "1") == 0 || strcmp(image_channels, "3") == 0)
+		if(strcmp(image_channels, "1") == 0 || strcmp(image_channels, "3") == 0 || strcmp(image_channels, "4") == 0)
 			g_image_channels = atoi(image_channels);
 		else if(strcmp(image_channels, "*") == 0)
 			g_image_channels = '*';
@@ -292,6 +335,13 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 												CV_8UC3,
 												cv::Scalar::all(0));
 		}
+		if (g_image_channels == 4 || g_image_channels == '*')
+		{
+			g_remission_map_img4 = new cv::Mat(g_remission_map->config.y_size,
+												g_remission_map->config.x_size,
+												CV_8UC4,
+												cv::Scalar::all(0));
+		}
 		first_time = 0;
 	}
 	memcpy(g_remission_map->complete_map, msg->complete_mean_remission_map, sizeof(double) * msg->size);
@@ -322,6 +372,13 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 			g_offline_map_img3 = new cv::Mat(g_offline_map->config.y_size,
 											g_offline_map->config.x_size,
 											CV_8UC3,
+											cv::Scalar::all(0));
+		}
+		if (g_image_channels == 4 || g_image_channels == '*')
+		{
+			g_offline_map_img4 = new cv::Mat(g_offline_map->config.y_size,
+											g_offline_map->config.x_size,
+											CV_8UC4,
 											cv::Scalar::all(0));
 		}
 		first_time = 0;
@@ -362,12 +419,16 @@ deinitialize_maps(void)
 		g_remission_map_img->release();
 	if (g_remission_map_img3)
 		g_remission_map_img3->release();
+	if (g_remission_map_img4)
+		g_remission_map_img4->release();
 	if (g_offline_map)
 		free_map_pointer(g_offline_map);
 	if (g_offline_map_img)
 		g_offline_map_img->release();
 	if (g_offline_map_img3)
 		g_offline_map_img3->release();
+	if (g_offline_map_img4)
+		g_offline_map_img4->release();
 }
 
 
