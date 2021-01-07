@@ -7,10 +7,10 @@
 #include "option_list.h"
 #include "blas.h"
 #include "assert.h"
-#include "dark_cuda.h"
+//#include "dark_cuda.h"
 #include <sys/time.h>
 
-
+//teste utilizando a lista de imagens do treino para gerar como output o rótulo estimado
 void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile, char *filename)
 {
     network net = parse_network_cfg_custom(cfgfile, 1, 0);
@@ -25,14 +25,14 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
 
     char *name_list = labels;
     int classes = classes_qtd;
-    printf(" classes = %d, output in cfg = %d \n", classes, net.layers[net.n - 1].c);
+    printf(" classes on label.txt = %d, classes in config.txt = %d \n", classes, net.layers[net.n - 3].c);
     layer l = net.layers[net.n - 1];
     if (classes != l.outputs && (l.type == SOFTMAX || l.type == COST)) {
         printf("\n Error: num of filters = %d in the last conv-layer in cfg-file doesn't match to classes = %d in data-file \n",
             l.outputs, classes);
         getchar();
     }
-    int top = 5;
+    int top = 1;
 
     int i = 0;
     char **names = get_labels(name_list);
@@ -63,12 +63,10 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
             if(net.hierarchy) hierarchy_predictions(predictions, net.outputs, net.hierarchy, 0);
             top_k(predictions, net.outputs, 1, indexes);
 
-            //for(i = 0; i < top; ++i){
-                int index = indexes[0];
-                if(net.hierarchy) printf("%d, %s: %f, parent: %s \n",index, names[index], predictions[index], (net.hierarchy->parent[index] >= 0) ? names[net.hierarchy->parent[index]] : "Root");
-                else printf("%s: %f\n",names[index], predictions[index]);
-            //}
-
+            int index = indexes[0];
+            if(net.hierarchy) printf("%d, %s: %f, parent: %s \n",index, names[index], predictions[index], (net.hierarchy->parent[index] >= 0) ? names[net.hierarchy->parent[index]] : "Root");
+            else printf("%s: %f\n",names[index], predictions[index]); // output esperado 
+            
             free_image(cropped);
             if (resized.data != im.data) {
                 free_image(resized);
@@ -82,16 +80,17 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
 
 int main(int argc, char **argv)
 {
+    printf("entrou\n");
     int classes_qtd=0;
     std::ifstream labels_file;
     std::string line;
-    labels_file.open("labels.txt");
+    labels_file.open("config/labels.txt");
     while(getline(labels_file, line))
     {
         if (!line.empty())
             classes_qtd++;
     }
 
-    predict_classifier("labels.txt", classes_qtd,"config.cfg", "classifier.weights", "train.txt");
+    predict_classifier("config/labels.txt", classes_qtd,"config/config.cfg", "config/classifier.weights", "config/train.txt");
     return 0;
 }

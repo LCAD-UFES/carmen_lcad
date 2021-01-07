@@ -13,26 +13,26 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/
 
 LFLAGS += -fPIC -l:libdarknet.so -lstdc++
 
-SOURCES = classifier.cpp
+SOURCES = localize_neural2.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = config/classifier
+PUBLIC_BINARIES = localize_neural2
 
-TARGETS = darknet classifier
+TARGETS = darknet localize_neural2
 
-classifier: classifier.o
+localize_neural2: localize_neural2.o
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4
 
-clean: clean_darknet clean_classifier
+clean: clean_darknet clean_localize_neural2
 
 clean_darknet:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/darknet4
 
-clean_classifier:
-	rm -f $(PUBLIC_BINARIES)
+clean_localize_neural2:
+	rm -f $(TARGETS)
 	
 include ../Makefile.rules
 
