@@ -19,8 +19,8 @@ ex.:  /dados/ufes/20161021<br>
 !!!! lembre-se de executar o comando "git pull" para ter sempre a versão mais atual do carmen e submódulos !!!!!<br>
 <br>
 execute os seguintes comandos para gerar a lista de imagens: (altere o caminho de acordo com seu caso)<br>
-"cd /dados/ufes/<br>
-find \`pwd\`/20161021/ -name \*.l.png > imagens.txt<br>"
+cd /dados/ufes/<br>
+find \`pwd\`/20161021/ -name \*.l.png > imagens.txt<br>
 mv imagens.txt $CARMEN_HOME/src/localize_neural2/config/train.txt<br>
 <br>
 Para compilar basta executar o comando make da seguinte forma:<br>
