@@ -82,16 +82,16 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
 
 int main(int argc, char **argv)
 {
-    // int classes_qtd=0;
-    // std::ifstream labels_file;
-    // std::string line;
-    // labels_file.open("labels.txt");
-    // while(getline(labels_file, line))
-    // {
-    //     if (!line.empty())
-    //         classes_qtd++;
-    // }
+    int classes_qtd=0;
+    std::ifstream labels_file;
+    std::string line;
+    labels_file.open("labels.txt");
+    while(getline(labels_file, line))
+    {
+        if (!line.empty())
+            classes_qtd++;
+    }
 
-    predict_classifier("labels.txt", 651,"config.cfg", "classifier.weights", "train.txt");
+    predict_classifier("labels.txt", classes_qtd,"config.cfg", "classifier.weights", "train.txt");
     return 0;
 }
