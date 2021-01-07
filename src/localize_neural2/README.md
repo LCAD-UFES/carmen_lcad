@@ -34,7 +34,7 @@ OBS.: <br>
 O arquivo <br>
 config/basepos-20191003-20191003-5m-1m.txt, referente ao log_volta_da_ufes-20191003.txt (disponível no google drive de logs do LCAD)<br>
 contém a lista de labels e respectivas imagens e poses, no seguinte formato<br>
-<font size="-1">image label x y z rx ry rz timestamp<br>
+<font size="8px">image label x y z rx ry rz timestamp<br>
 /dados/ufes/20191003/1570117889.210752.bb3.l.png 0 7757730.3562 -363561.284062 0.0 0.037827 0.023097 0.674785 1570117889.210752<br>
 /dados/ufes/20191003/1570117928.424578.bb3.l.png 1 7757734.3402 -363558.144286 0.0 0.035305 -0.016079 0.677648 1570117928.424578<br>
 /dados/ufes/20191003/1570117929.611112.bb3.l.png 2 7757738.44882 -363555.113682 0.0 0.037699 -0.030118 0.662518 1570117929.611112<br>
