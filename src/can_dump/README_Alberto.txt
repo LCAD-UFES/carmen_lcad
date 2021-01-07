@@ -2,8 +2,8 @@ Para rodar o can_playback:
 
  ./can_playback 1 vcan0
 
-Onde o 1 é o numero do can que está no log que se deseja dar play (escritas da can1 vistas durante a gravacao do log), 
-e vcan0 é a interface can corrente onde se deseja publicar o log.
+Onde o 1 é o numero do can que está no log que se deseja dar play (escritas da can1 vistas durante a gravacao do log;
+se o numero for 2, todas as mensagens sao publicadas), e vcan0 é a interface can corrente onde se deseja publicar o log.
 
 Com o log tocando, voce pode usar as ferramentas can usuais (candump, cansniffer, etc.).
 Exemplo de process de playback de log: process-can_playback.ini
