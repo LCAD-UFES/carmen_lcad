@@ -24,11 +24,16 @@ remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channel
 //				remission_map_img->at<uchar>(i, j) = aux;
 				remission_map_img->at<uchar>(map->config.y_size - 1 - j, i) = aux;
 			}
-			else
+			else if (channels == 3)
 			{
 				cv::Vec3b color = cv::Vec3b(aux, aux, aux);
 //				remission_map_img->at<cv::Vec3b>(i, j) = color;
 				remission_map_img->at<cv::Vec3b>(map->config.y_size - 1 - j, i) = color;
+			}
+			else if (channels == 4)
+			{
+				cv::Vec4b color = cv::Vec4b(aux, aux, aux, 255);
+				remission_map_img->at<cv::Vec4b>(map->config.y_size - 1 - j, i) = color;
 			}
 		}
 	}
@@ -53,10 +58,16 @@ offline_map_to_image(carmen_map_p map, cv::Mat *offline_map_img, int channels)
 			{
 				offline_map_img->at<uchar>(map->config.y_size - 1 - j, i) = (red + green + blue) / 3;
 			}
-			else
+			else if (channels == 3)
+
 			{
 				cv::Vec3b color = cv::Vec3b(blue, green, red);
 				offline_map_img->at<cv::Vec3b>(map->config.y_size - 1 - j, i) = color;
+			}
+			else if (channels == 4)
+			{
+				cv::Vec4b color = cv::Vec4b(blue, green, red, 255);
+				offline_map_img->at<cv::Vec4b>(map->config.y_size - 1 - j, i) = color;
 			}
 		}
 	}

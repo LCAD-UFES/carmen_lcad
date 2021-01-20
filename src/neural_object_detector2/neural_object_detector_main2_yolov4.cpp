@@ -24,6 +24,7 @@ char *crops_tam;
 char *groundtruth_path;
 char *detection_type;
 carmen_camera_parameters camera_parameters;
+double focal_length;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t bullbar_pose;
 carmen_pose_3D_t sick_pose;
@@ -243,14 +244,14 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 
     sprintf(frame_rate, "FPS = %.2f", fps);
 	double image_height = (double) rgb_image->rows; // 768 pixels
-	double focal_length = 6.0; //f(mm)
+	// double focal_length = 6.0; //f(mm)
 	double sensor_height = camera_pose.position.z * 100.0; // sensorheight(mm)
 
     //cv::putText(*rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
-		double distance = 0.0;
+		double real_distance = 0.0;
 		bool first = true;
 		double real_height = 1600.0; //car_height(mm)
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
@@ -261,15 +262,12 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 			{
 				if(first)
 				{
-					distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
-					//distance =  f(mm) * realheight(mm) * imageheight(pixels) / objheight(pixels) * sensorheight(mm)
-					real_height = distance * 500.0 * (double) predictions[i].h * sensor_height / (focal_length * image_height); // mm
-
+					real_distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
 					first = false;
 				}
-				if((laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5) < distance)
-					distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
-					real_height = distance * 500.0 * (double) predictions[i].h * sensor_height / (focal_length * image_height); // mm
+				if((laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5) < real_distance)
+					real_distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
+					// real_height = real_distance * 500.0 * (double) predictions[i].h * sensor_height / (focal_length * image_height); // mm
 			}
 			// takes the point closest for metrics
 		}
@@ -299,18 +297,17 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
         			cv::Point(predictions[i].x + 1, predictions[i].y + predictions[i].h + 1),
 					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 			
-			//double area_predicted = predictions[i].w * predictions[i].h;
 			//distance =  f(mm) * realheight(mm) * imageheight(pixels) / objheight(pixels) * sensorheight(mm);
 
 			double distance_to_object = focal_length * real_height * image_height / (predictions[i].h * sensor_height); // mm
 			distance_to_object = distance_to_object * 2.0 / 1000.0; // distance has to be multiplied by 2.0 to since lidar * 0.5.
 			
-			if (distance != 0.0){
-				sprintf(area, "%.2f %.2f", distance, distance_to_object);
-				cout << "h=" << predictions[i].h << "\tlidar=" << distance << "\tcalc=" << distance_to_object << "\treal_height=" << real_height << endl;
+			if (real_distance != 0.0){
+				sprintf(area, "%.2f %.2f", real_distance, distance_to_object);
+				cout << "\t" << real_distance << "\t" << distance_to_object << endl;
 			}else{
 				sprintf(area, "NL %.3f", distance_to_object);
-				cout << "h=" << predictions[i].h << "\tlidar=NL" << "\tcalc=" << distance_to_object << "\treal_height=" << real_height << endl;
+				cout << "\tNL" << "\t" << distance_to_object << endl;
 			}
 
 
@@ -845,7 +842,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 
 	int thickness = -1;
 	int lineType = 8;
-	cout<<rddf_points_in_image.size()<<" "<<distances_of_rddf_from_car.size()<<endl;
+	// cout<<rddf_points_in_image.size()<<" "<<distances_of_rddf_from_car.size()<<endl;
 	for (int i = 0; i < rddf_points_in_image.size(); i++)
 	{
 		cv::Mat roi;
@@ -862,15 +859,14 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		if (i >= 0)//ranik
 		{
 			// cout <<  "distances_of_rddf_from_car_" << i << " " <<  distances_of_rddf_from_car[i] << endl;
-			double dist_percentage = (100.0 - distances_of_rddf_from_car[i]/10.0)/100.0;//pedro
+			// double dist_percentage = (100.0 - distances_of_rddf_from_car[i]/10.0)/100.0;//pedro
 			// double dist_percentage = pow((1-(meters_spacement/100)),i);//ramoni
-			// double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
-			// cout<<dist_percentage<<endl;
+			double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik 
 			// image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
 			// image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
 			image_size_x = static_cast<double>(scene_slices[0].cols) * dist_percentage;//ranik
 			image_size_y = static_cast<double>(scene_slices[0].rows) * dist_percentage;//ranik
-			cout<< "img_x: " <<image_size_x<<" y:"<<image_size_y<<endl;
+			// cout<< "img_x: " <<image_size_x<<" y:"<<image_size_y<<endl;
 		}
 
 		//cv::circle(out, cv::Point(rddf_points_in_image[i].x, rddf_points_in_image[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
@@ -906,8 +902,8 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		{
 			//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
 			double scale = image_size_y*(3.0/4.0);
-			top_left_point.x = abs(rddf_points_in_image[i].x) - (image_size_x/2); // abs Piumbini
-			top_left_point.y = abs(rddf_points_in_image[i].y) - scale;
+			top_left_point.x = rddf_points_in_image[i].x - (image_size_x/2);
+			top_left_point.y = rddf_points_in_image[i].y - scale;
 			cv::Rect rec(top_left_point.x, top_left_point.y, image_size_x, image_size_y);
 			// cout<<"Slice"<<i<<" "<<image_size_x<<" "<<image_size_y<<endl;
 			// cout<<"rddf_points_in_image[i].x=" << rddf_points_in_image[i].x << " y=" << rddf_points_in_image[i].y << endl;
@@ -915,7 +911,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 			if (check_rect_inside_image(rec, out))
 			{
 				roi = out (rec);
-				//cout<<roi.cols<<" "<<roi.rows<<endl;
+				// cout<< "roi.cols=" << roi.cols<<" rows="<<roi.rows<<endl;
 				mult_scale_x += double(scene_slices[0].cols) / double(roi.cols);
 				mult_scale_y += double(scene_slices[0].rows) / double(roi.rows);
 				t.scale_factor_x = mult_scale_x;
@@ -1029,6 +1025,8 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 	printf("******************************************\n");
 	printf("Timestamp %lf:\n\n", image_timestamp);
     char confianca[25];
+	char distance_gt[25];
+	char distance[25];
     int line_tickness = 1;
 //    char frame_rate[25];
 //
@@ -1043,38 +1041,51 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     sprintf(gt_path,"%s/%lf", gt_path, image_timestamp);
     string str_gt_path (gt_path);
     string groundtruth_folder = str_gt_path + "-r.txt";
-    int thickness = -1;
+	int thickness = -1;
     int lineType = 8;
 
     bbox_t gt;
+	gt.x = gt.y = gt.w = gt.h = 0;
+	double real_height = 1600.0; //car_height(mm)
+	double image_height = (double) scene_slices[0].rows; // 768 pixels
+	double sensor_height = camera_pose.position.z * 100.0; // sensorheight(mm)
+	double distance_to_object = 0.0;
+	double distance_to_object_gt = 0.0;
+
     char classe[50];
     float x1, x2, y1, y2;
-    // if (access(groundtruth_folder.c_str(), F_OK) == 0)
-    // {
-    // 	//cout<<groundtruth_folder<<" show"<<endl;
-    // 	FILE *f;
-    // 	f = fopen (groundtruth_folder.c_str(), "r");
-    // 	//int yy = fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
-    // 	//yy = yy;
+    if (access(groundtruth_folder.c_str(), F_OK) == 0)
+    {
+    	//cout<<groundtruth_folder<<" show"<<endl;
+    	FILE *f;
+    	if (f = fopen (groundtruth_folder.c_str(), "r"))
+    	{
+    		while (fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2) != EOF)
+    		{
+    			gt.x = (int)x1;
+				gt.y = (int)y1;
+				gt.w = (int)(x2 - x1);
+				gt.h = (int)(y2 - y1);
+				cv::rectangle(scene_slices[0],
+						cv::Point(gt.x, gt.y),
+						cv::Point(gt.x + gt.w, gt.y + gt.h),
+						Scalar(0, 255, 0), 3);
+				distance_to_object_gt = focal_length * real_height * image_height / (gt.h * sensor_height); // mm
+				distance_to_object_gt = distance_to_object_gt * 2.0 / 1000.0; // distance has to be multiplied by 2.0 to since lidar * 0.5.
+				sprintf(distance_gt, "dgt=%.3f", distance_to_object_gt);
+				cv::putText(scene_slices[0], distance_gt,
+        				cv::Point(gt.x + 1, gt.y + gt.h + 10),
+						cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+    		}
+		} else 
+			gt.x = gt.y = gt.w = gt.h = 0;
 
-    // 	while (fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2) != EOF)
-    // 	{
-    // 		gt.x = (int)x1;
-    // 		gt.y = (int)y1;
-    // 		gt.w = (int)(x2 - x1);
-    // 		gt.h = (int)(y2 - y1);
-    // 		cv::rectangle(scene_slices[0],
-    // 				cv::Point(gt.x, gt.y),
-	// 				cv::Point(gt.x + gt.w, gt.y + gt.h),
-	// 				Scalar(0, 255, 0), 3);
-    // 	}
-
-    // }
+    }
     // else
     // 	exit(0);
 
     string name;
-    for (int i = 0; i < qtd_crops; i++)
+    for (int i = 0; i < scene_slices.size(); i++)
     {
     	cv::Mat image;
 		stringstream ss;
@@ -1084,7 +1095,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 //		name = "Foveated Detection" + im_ts;
 		ss << i;
 		name = "Foveated Detection" + ss.str();
-
+		
     	for (int j = 0; j < bounding_boxes_of_slices[i].size(); j++)
     	{
     		//cout<<bounding_boxes_of_slices[i].size()<<endl;
@@ -1111,6 +1122,16 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 					object_color = cv::Scalar(0, 0, 255);
 					line_tickness = 2;
 
+					distance_to_object = focal_length * real_height * image_height / (predictions[i].h * sensor_height); // mm
+					distance_to_object = distance_to_object * 2.0 / 1000.0; // distance has to be multiplied by 2.0 to since lidar * 0.5.
+					sprintf(distance, "dc=%.3f", distance_to_object);
+					// cout << "h=" << predictions[i].h << "\tlidar=NL" << "\tcalc=" << distance_to_object << "\treal_height=" << real_height << endl;
+			
+        			cv::putText(scene_slices[i], distance,
+        				cv::Point(b.x + 1, b.y - 3),
+						cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+
+					
 //				image = scene_slices[i].clone();
 
 					cv::rectangle(scene_slices[i],
@@ -1119,18 +1140,18 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 							object_color, line_tickness);
 
 				cout<<"Bboxes slice "<<i<<":"<<endl;
-				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d - > %0.4f\n",
-						b_print.x, b_print.y, b_print.x + b_print.w, b_print.x + b_print.w, b_print.w, b_print.h, b_print.prob);
+				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d distance: %.3f - > %0.4f\n",
+						b_print.x, b_print.y, b_print.x + b_print.w, b_print.x + b_print.w, b_print.w, b_print.h, distance_to_object, b_print.prob);
 			}
 
     	}
     	float iou;
     	float iou2;
-    	if(i == qtd_crops-1)
+    	if(i == scene_slices.size()-1)
     	{
 
     		cout<<endl<<endl<<"Groundtruth:"<<endl;
-    		printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d\n", gt.x, gt.y, gt.x + gt.w, gt.x + gt.w, gt.w, gt.h);
+    		printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d distance: %.3f\n", gt.x, gt.y, gt.x + gt.w, gt.x + gt.w, gt.w, gt.h, distance_to_object_gt);
     		cout<<endl;
 
     		for (int k = 0; k < predictions.size(); k++)
@@ -1464,6 +1485,7 @@ void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	char janela[25];
+	char arr[50];
 	vector<carmen_position_t> rddf_points_in_image_filtered;
 	vector<carmen_position_t> rddf_points_in_image_full;
 	vector<double> distances_of_rddf_from_car;
@@ -1505,8 +1527,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
     if (strcmp(detection_type,"-ss") == 0){
     	//img = src_image.data;
-    	// bounding_boxes_of_slices_in_original_image = run_YOLO(src_image.data, src_image.cols, src_image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);
+		// bounding_boxes_of_slices_in_original_image = run_YOLO(src_image.data, src_image.cols, src_image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);
 		bounding_boxes_of_slices_in_original_image = run_YOLO(src_image.data, 3, src_image.cols, src_image.rows, network_struct, classes_names, 0.5, 0.5);
+		if (bounding_boxes_of_slices_in_original_image.size()>0)
+		{
+			sprintf(arr,"%lf", image_msg->timestamp);
+			cout << arr;
+		}
     	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_filtered, "Original Detection");
     	colors = get_slice_colors (1);
     }
@@ -1531,7 +1558,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image_filtered, distances_of_rddf_from_car);
     	vector<vector<bbox_t>> bounding_boxes_of_slices;
 		// cout << "Passou ate 0; scene_slices=" << scene_slices.size() << endl;
-    	for (int i = 0; i < qtd_crops; i++) // Piumbini: coloquei -1 aqui pq tava dando 1 a menos q o crops
+    	for (int i = 0; i < scene_slices.size(); i++) 
     	{
     		vector<bbox_t> predictions;
 			// sprintf(janela, "Test %d", i);
@@ -1551,7 +1578,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
         string str_gt_path (gt_path);
         string groundtruth_folder = str_gt_path + "-r.txt";
-		// cout << "Passou ate 4" << endl;
+		cout << "GT Folder:" << groundtruth_folder << endl;
         //if (access(groundtruth_folder.c_str(), F_OK) == 0)
         	show_detections_alberto(transform_factor_of_slice_to_original_frame ,scene_slices, bounding_boxes_of_slices, bounding_boxes_of_slices_in_original_image,
         			rddf_points_in_image_filtered, image_msg->timestamp);
@@ -1561,7 +1588,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	//cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
 //    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_full, "Foviated Detection");
 
-    	colors = get_slice_colors (qtd_crops);
+    	colors = get_slice_colors (scene_slices.size());
 		// cout << "Passou ate 5" << endl;
     	//printf("%lf-r.png\n", image_msg->timestamp);
 //    	save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors,
@@ -1820,6 +1847,7 @@ read_parameters(int argc, char **argv)
 		{bumblebee_string, (char*) "baseline", CARMEN_PARAM_DOUBLE, &camera_parameters.baseline, 0, NULL },
 		{bumblebee_string, (char*) "fov", CARMEN_PARAM_DOUBLE, &camera_parameters.fov, 0, NULL },
 		{bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
+		{bumblebee_string, (char*) "tlight_dist_correction", CARMEN_PARAM_DOUBLE, &focal_length, 0, NULL },
 
 		{sensor_board_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &board_pose.position.x, 0, NULL },
 		{sensor_board_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &board_pose.position.y, 0, NULL },
