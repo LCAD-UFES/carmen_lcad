@@ -63,6 +63,12 @@
 enum possible_states {Not_visited, Open, Closed};
 enum motion_direction {Forward, Backward};
 
+//Se COMPARE_HEURISTIC == 1, o código irá usar o heuristic_number para alternar as heurísticas e vai rodar a busca 4 vezes.
+#define COMPARE_HEURISTIC 0
+static const char* heuristic_compare_message[] = {"Máximo das duas heurísticas ------------------------------",
+											"Somente Heurística com obstáculo (GDM) -------------------",
+											"Somente Heurística sem obstáculos (NHCM)------------------",
+											"Distância Euclidiana como Heurística ---------------------"};
 
 #define DRAW_EXPANSION_TREE 0
 #define RUN_EXPERIMENT 0

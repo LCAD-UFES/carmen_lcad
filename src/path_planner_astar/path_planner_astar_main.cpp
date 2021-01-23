@@ -11,6 +11,7 @@ carmen_map_p map_occupancy = NULL;
 
 nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map;
 int use_nonholonomic_heuristic_cost_map = 1;
+int heuristic_number = 0;
 
 carmen_point_t *final_goal = NULL;
 int final_goal_received = 0;
@@ -146,7 +147,18 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		goal_pose = {goal_position.x, goal_position.y, goal_position.theta, Forward};
 		double *goal_distance_map = get_goal_distance_map(goal_position, obstacle_distance_grid_map);
 
+		#if COMPARE_HEURISTIC
+		for (int i = 0; i < 4; i++)
+		{
+			heuristic_number = i;
+			printf("%s\n", heuristic_compare_message[i]);
+			astar_path = carmen_path_planner_astar_search(&initial_pose, &goal_pose, obstacle_distance_grid_map, goal_distance_map, nonholonomic_heuristic_cost_map);
+		}
+
+		#else
+
 		astar_path = carmen_path_planner_astar_search(&initial_pose, &goal_pose, obstacle_distance_grid_map, goal_distance_map, nonholonomic_heuristic_cost_map);
+		#endif
 
 		if (astar_path.size() > 2)
 		{

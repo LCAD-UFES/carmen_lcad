@@ -8,12 +8,15 @@ extern carmen_map_p map_occupancy;
 
 extern nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map;
 extern int use_nonholonomic_heuristic_cost_map;
+extern int heuristic_number;
 
 extern int grid_state_map_x_size;
 extern int grid_state_map_y_size;
 
 cv::Mat map_image;
 int expanded_nodes_by_astar;
+
+char expansion_tree_file_name[] = "Expansion_illustration_0.png";
 
 
 static int
@@ -513,7 +516,7 @@ smooth_rddf_using_conjugate_gradient(std::vector<carmen_ackerman_traj_point_t> &
 	gsl_multimin_fdfminimizer_free (s);
 	gsl_vector_free (v);
 //	printf("Terminou a suavização\n");
-#if DRAW_EXPANSION_TREE
+#if DRAW_EXPANSION_TREE && 0
 	for (int i = 1; i < size; i++)
 		draw_point_in_opencv_image(astar_path[i], astar_path[i-1], obstacle_distance_grid_map->config, cv::Scalar(0,0,255));
 
@@ -1071,8 +1074,8 @@ reed_shepp_path(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point
 double
 h(state_node *current_pose, state_node *goal_pose, grid_state_p**** grid_state_map, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map, double* goal_distance_map, nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map)
 {
-	double ho = -10;
-	double nh = -10;
+	double ho = -1;
+	double nh = -1;
 
 	int x_c;
 	int y_c;
@@ -1104,7 +1107,30 @@ h(state_node *current_pose, state_node *goal_pose, grid_state_p**** grid_state_m
 
 //	printf("NH = %f HO = %f\n", nh, ho);
 
-	return std::max(nh, ho);
+	double return_h;
+
+	#if COMPARE_HEURISTIC
+
+	switch(heuristic_number){
+		case 0:
+			return_h = std::max(nh, ho);
+			break;
+		case 1:
+			return_h = ho;
+			break;
+		case 2:
+			return_h = std::max(nh, DIST2D(current_pose->pose, goal_pose->pose));
+			break;
+		case 3:
+			return_h = DIST2D(current_pose->pose, goal_pose->pose);
+			break;
+	}
+
+	#else
+	return_h = std::max(nh, ho);
+	#endif
+
+	return return_h;
 }
 
 
@@ -1542,15 +1568,20 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 				printf("Initial node: %f %f %f \n", initial_pose->x, initial_pose->y, initial_pose->theta);
 				printf("Goal node: %f %f %f \n", goal_node->pose.x, goal_node->pose.y, goal_node->pose.theta);
 
+				get_astar_path(n, path_result);
+
 #if DRAW_EXPANSION_TREE
 					draw_point_on_map_img(initial_node->pose.x, initial_node->pose.y, obstacle_distance_grid_map->config, cv::Scalar(130, 0, 0), map_image);
 					draw_point_on_map_img(goal_node->pose.x, goal_node->pose.y, obstacle_distance_grid_map->config, cv::Scalar(0, 0, 130), map_image);
-					imwrite("Expansion_illustration.png", map_image);
+					for (int i = 1; i < path_result.size(); i++)
+						draw_point_in_opencv_image(path_result[i], path_result[i-1], obstacle_distance_grid_map->config, cv::Scalar(0,0,255));
+					expansion_tree_file_name[strlen(expansion_tree_file_name) - 5] = heuristic_number + '0';
+					printf("Expansion_tree_file_name = %s\n", expansion_tree_file_name);
+					imwrite(expansion_tree_file_name, map_image);
 #endif
 
-				get_astar_path(n, path_result);
 				clear_astar_search(FH, grid_state_map, goal_node);
-				printf("Expanded_nodes = %d\n", expanded_nodes_by_astar);
+				printf("---------------------- Expanded_nodes = %d\n", expanded_nodes_by_astar);
 				state_node *temp;
 				while (n != NULL)
 				{
@@ -1594,7 +1625,12 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 					}
 				}
 #if DRAW_EXPANSION_TREE
-		draw_state_in_opencv_image(n, obstacle_distance_grid_map->config, cv::Scalar(0, 255, 0), map_image);
+				int r = 0, g = 0, b = 0;
+				int dist_to_goal = int(DIST2D(n->pose, goal_node->pose));
+				int dist_to_initial = int(DIST2D(n->pose, initial_node->pose));
+				g = dist_to_goal%255;
+				r = dist_to_initial%255;
+		draw_state_in_opencv_image(n, obstacle_distance_grid_map->config, cv::Scalar(b, g, r), map_image);
 #endif
 			}
 		}
