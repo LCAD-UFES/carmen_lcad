@@ -106,14 +106,14 @@ draw_point_on_map_img(double x, double y, carmen_map_config_t config, cv::Scalar
 
 
 void
-draw_point_in_opencv_image(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point_t parent, carmen_map_config_t config, cv::Scalar color)
+draw_point_in_opencv_image(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point_t parent, carmen_map_config_t config, cv::Scalar color, int size = 1)
 {
 		int img_x = (double) (current.x - config.x_origin) / config.resolution;
 		int img_y = (double) (current.y - config.y_origin) / config.resolution;
 		int parent_x = (double) (parent.x - config.x_origin) / config.resolution;
 		int parent_y = (double) (parent.y - config.y_origin) / config.resolution;
 
-		cv::line(map_image, cv::Point(img_x, config.y_size - 1 - img_y), cv::Point(parent_x, config.y_size - 1 - parent_y), color, 1, cv::LINE_8);
+		cv::line(map_image, cv::Point(img_x, config.y_size - 1 - img_y), cv::Point(parent_x, config.y_size - 1 - parent_y), color, size, cv::LINE_8);
 }
 
 
@@ -1571,13 +1571,13 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 				get_astar_path(n, path_result);
 
 #if DRAW_EXPANSION_TREE
-					draw_point_on_map_img(initial_node->pose.x, initial_node->pose.y, obstacle_distance_grid_map->config, cv::Scalar(130, 0, 0), map_image);
-					draw_point_on_map_img(goal_node->pose.x, goal_node->pose.y, obstacle_distance_grid_map->config, cv::Scalar(0, 0, 130), map_image);
-					for (int i = 1; i < path_result.size(); i++)
-						draw_point_in_opencv_image(path_result[i], path_result[i-1], obstacle_distance_grid_map->config, cv::Scalar(0,0,255));
-					expansion_tree_file_name[strlen(expansion_tree_file_name) - 5] = heuristic_number + '0';
-					printf("Expansion_tree_file_name = %s\n", expansion_tree_file_name);
-					imwrite(expansion_tree_file_name, map_image);
+				draw_point_on_map_img(initial_node->pose.x, initial_node->pose.y, obstacle_distance_grid_map->config, cv::Scalar(130, 0, 0), map_image);
+				draw_point_on_map_img(goal_node->pose.x, goal_node->pose.y, obstacle_distance_grid_map->config, cv::Scalar(0, 0, 130), map_image);
+				for (int i = 1; i < path_result.size(); i++)
+					draw_point_in_opencv_image(path_result[i], path_result[i-1], obstacle_distance_grid_map->config, cv::Scalar(0,0,255), 2);
+				expansion_tree_file_name[strlen(expansion_tree_file_name) - 5] = heuristic_number + '0';
+				printf("Expansion_tree_file_name = %s\n", expansion_tree_file_name);
+				imwrite(expansion_tree_file_name, map_image);
 #endif
 
 				clear_astar_search(FH, grid_state_map, goal_node);
@@ -1628,9 +1628,9 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 				int r = 0, g = 0, b = 0;
 				int dist_to_goal = int(DIST2D(n->pose, goal_node->pose));
 				int dist_to_initial = int(DIST2D(n->pose, initial_node->pose));
-				g = dist_to_goal%255;
-				r = dist_to_initial%255;
-		draw_state_in_opencv_image(n, obstacle_distance_grid_map->config, cv::Scalar(b, g, r), map_image);
+				g = carmen_clamp(0, dist_to_goal, 255);
+				b = carmen_clamp(0, dist_to_initial, 255);
+				draw_state_in_opencv_image(n, obstacle_distance_grid_map->config, cv::Scalar(b, g, r), map_image);
 #endif
 			}
 		}
