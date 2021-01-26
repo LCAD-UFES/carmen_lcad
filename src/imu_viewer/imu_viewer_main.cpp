@@ -18,6 +18,9 @@ carmen_xsens_global_quat_message *xsens_quat_message, *data;
 carmen_xsens_global_message *data_pose, *pose;
 carmen_pi_imu_message_t *imu_msg;
 
+int g_display_pi_imu = 0;
+
+
 rotation_matrix *
 create_rotation_matrix_from_quaternions_new(carmen_xsens_quat quat)
 {
@@ -82,6 +85,11 @@ get_angles_from_rotation_matrix_new(rotation_matrix *r_matrix)//, carmen_xsens_g
 void
 xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 {
+	if (g_display_pi_imu && xsens_quat_message->m_count != 1234)
+		return;
+	if (!g_display_pi_imu && xsens_quat_message->m_count == 1234)
+		return;
+
 	data->m_acc.x = xsens_quat_message->m_acc.x;
 	data->m_acc.y = xsens_quat_message->m_acc.y;
 	data->m_acc.z = xsens_quat_message->m_acc.z;
@@ -95,11 +103,6 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data->m_mag.y = xsens_quat_message->m_mag.y;
 	data->m_mag.z = xsens_quat_message->m_mag.z;
 
-//	printf ("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-//			xsens_quat_message->m_acc.x, xsens_quat_message->m_acc.y, xsens_quat_message->m_acc.z,
-//			xsens_quat_message->m_gyr.x, xsens_quat_message->m_gyr.y, xsens_quat_message->m_gyr.z,
-//			xsens_quat_message->m_mag.x, xsens_quat_message->m_mag.y, xsens_quat_message->m_mag.z);
-
 	data->quat_data = xsens_quat_message->quat_data;
 
 	rotation_matrix *r_mat = create_rotation_matrix_from_quaternions_new(data->quat_data);
@@ -109,6 +112,12 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data_pose->m_roll = euler_angles.roll;
 	data_pose->m_pitch = euler_angles.pitch;
 	data_pose->m_yaw = euler_angles.yaw;
+
+	printf("r % 6.1lf, p % 6.1lf, y % 6.1lf, ax % 6.2lf  ay % 6.2lf  az % 6.2lf, gx % 5.3lf  gy % 5.3lf  gz % 5.3lf, mx % 5.2lf  my % 5.2lf  mz % 5.2lf\n",
+			180.0 * euler_angles.roll / M_PI, 180.0 * euler_angles.pitch / M_PI, 180.0 * euler_angles.yaw / M_PI,
+			xsens_quat_message->m_acc.x, xsens_quat_message->m_acc.y, xsens_quat_message->m_acc.z,
+			xsens_quat_message->m_gyr.x, xsens_quat_message->m_gyr.y, xsens_quat_message->m_gyr.z,
+			xsens_quat_message->m_mag.x, xsens_quat_message->m_mag.y, xsens_quat_message->m_mag.z);
 }
 
 
@@ -168,9 +177,17 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, shutdown_module);
 
-	data = (carmen_xsens_global_quat_message*) calloc (1, sizeof (carmen_xsens_global_quat_message));
-	data_pose = (carmen_xsens_global_message*) calloc(1, sizeof (carmen_xsens_global_message));
-	imu_msg = (carmen_pi_imu_message_t*) calloc(1, sizeof (carmen_pi_imu_message_t));
+	if (argc == 2)
+	{
+		if (strcmp(argv[1], "pi_imu") == 0)
+			g_display_pi_imu = 1;
+		else
+			g_display_pi_imu = 0;
+	}
+
+	data = (carmen_xsens_global_quat_message *) calloc (1, sizeof (carmen_xsens_global_quat_message));
+	data_pose = (carmen_xsens_global_message *) calloc(1, sizeof (carmen_xsens_global_message));
+	imu_msg = (carmen_pi_imu_message_t *) calloc(1, sizeof (carmen_pi_imu_message_t));
 
 	carmen_xsens_subscribe_xsens_global_quat_message(NULL,
 			(carmen_handler_t) xsens_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);

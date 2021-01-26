@@ -326,14 +326,13 @@ draw_arrow (float size)
     glEnd ();
 }
 
+
 static void
-draw_axis (double length)
+draw_gps_axis(double length)
 {
     length = 2 * length;
 
     glPushMatrix ();
-
-    //glColor3f(0.4, 1.0, 0.4);
 
     glPushMatrix ();
     glTranslatef (length / 2.0, 0.0, 0.0);
@@ -343,40 +342,31 @@ draw_axis (double length)
     draw_box (0.05, length, 0.05);
     draw_box (0.05, 0.05, length);
 
-    glColor3f (0.0, 0.0, 0.0);
-    double l;
-    for (l = 0; l < length; l += 1.0)
-    {
-        glPushMatrix ();
-        glTranslatef (0.0, 0.0, l);
-        draw_box (0.06, 0.06, 0.02);
-        glPopMatrix ();
+    glPopMatrix ();
+}
 
-        glPushMatrix ();
-        glTranslatef (0.0, 0.0, -l);
-        draw_box (0.06, 0.06, 0.02);
-        glPopMatrix ();
+static void
+draw_xsens_axis(double length)
+{
+    glPushMatrix ();
 
-        glPushMatrix ();
-        glTranslatef (0.0, l, 0.0);
-        draw_box (0.06, 0.02, 0.06);
-        glPopMatrix ();
+    glPushMatrix ();
+    glTranslatef (length / 2.0, 0.0, 0.0);
+    glColor3f(1.0, 0.0, 0.0);
+    draw_box (2.0 * length, 0.05, 0.05);
+    glPopMatrix ();
 
-        glPushMatrix ();
-        glTranslatef (0.0, -l, 0.0);
-        draw_box (0.06, 0.02, 0.06);
-        glPopMatrix ();
+    glPushMatrix ();
+    glTranslatef (0.0, length / 2.0, 0.0);
+    glColor3f(0.0, 1.0, 0.0);
+    draw_box (0.05, length, 0.05);
+    glPopMatrix ();
 
-        glPushMatrix ();
-        glTranslatef (l, 0.0, 0.0);
-        draw_box (0.02, 0.06, 0.06);
-        glPopMatrix ();
-
-        glPushMatrix ();
-        glTranslatef (-l, 0.0, 0.0);
-        draw_box (0.02, 0.06, 0.06);
-        glPopMatrix ();
-    }
+    glPushMatrix ();
+    glTranslatef (0.0, 0.0, length / 2.0);
+    glColor3f(0.0, 0.0, 1.0);
+    draw_box (0.05, 0.05, length);
+    glPopMatrix ();
 
     glPopMatrix ();
 }
@@ -407,15 +397,15 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
     glPushMatrix ();
 
     glTranslatef (xsens_global_position.x, xsens_global_position.y, xsens_global_position.z);
-    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.yaw - xsens_yaw_bias)), 0.0f, 0.0f, 1.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.yaw - xsens_pose.orientation.yaw - xsens_yaw_bias)), 0.0f, 0.0f, 1.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.pitch - xsens_pose.orientation.pitch)), 0.0f, 1.0f, 0.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.roll - xsens_pose.orientation.roll)), 1.0f, 0.0f, 0.0f);
 //    printf("xsens_angle %lf, car angle %lf, xsens_bias %lf, roll %lf, pitch %lf\n",
 //    		carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.yaw)),
 //    		carmen_radians_to_degrees(car_pose.orientation.yaw), carmen_radians_to_degrees(xsens_yaw_bias),
 //			carmen_radians_to_degrees(xsens_orientation.roll), carmen_radians_to_degrees(xsens_orientation.pitch));
-    glRotatef (carmen_radians_to_degrees(xsens_orientation.pitch), 0.0f, 1.0f, 0.0f);
-    glRotatef (carmen_radians_to_degrees(xsens_orientation.roll), 1.0f, 0.0f, 0.0f);
 
-    draw_axis (1.0);
+    draw_xsens_axis(1.0);
 
     glPopMatrix ();
 }
@@ -428,14 +418,14 @@ draw_gps_orientation (double gps_orientation, int gps_heading_valid, carmen_orie
     glPushMatrix ();
 
     glTranslatef (xsens_global_position.x, xsens_global_position.y, xsens_global_position.z);
-    glRotatef (carmen_radians_to_degrees (gps_orientation), 0.0f, 0.0f, 1.0f);
-    glRotatef (carmen_radians_to_degrees (xsens_orientation.pitch), 0.0f, 1.0f, 0.0f);
-    glRotatef (carmen_radians_to_degrees (xsens_orientation.roll), 1.0f, 0.0f, 0.0f);
+    glRotatef (carmen_radians_to_degrees(gps_orientation), 0.0f, 0.0f, 1.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.pitch - xsens_pose.orientation.pitch)), 0.0f, 1.0f, 0.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.roll - xsens_pose.orientation.roll)), 1.0f, 0.0f, 0.0f);
 
     if (gps_heading_valid)
-    	draw_axis (1.0);
+    	draw_gps_axis(1.0);
     else
-    	draw_axis (0.5);
+    	draw_gps_axis(0.5);
 
     glPopMatrix ();
 }
