@@ -177,8 +177,9 @@ maximo (inverta e deve ficar proximo do minimo - o maximo e o minimo observados 
 eh positivo e negativo, respectivamente; podem ser ambos positivos ou negativos).
 
 Se algum dos eixos acima estiver errado no seu sinal (estiver ao contrario), altere as linhas abaixo
-do arquivo xx (ou seu equivalente ser estiver usando outra IMU; examine o diretorio deste arquivo)
-para trocar o sinal apropriadamente (elas ficam no fim do aquivo):
+do arquivo ~/carmen_lcad/src/pi_imu/RTIMULib2/RTIMULib/IMUDrivers/RTIMULSM9DS1.cpp (ou seu equivalente se 
+estiver usando outra IMU; examine o diretorio deste arquivo) para trocar o sinal apropriadamente (elas 
+ficam no fim do aquivo):
 
     //  sort out gyro axes and correct for bias
 
