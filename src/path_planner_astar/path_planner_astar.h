@@ -1,3 +1,6 @@
+#ifndef PATH_PLANNER_ASTAR_H_
+#define PATH_PLANNER_ASTAR_H_
+
 #include <carmen/carmen.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
@@ -20,6 +23,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <iostream>
+#include <sys/time.h>
+
 
 #include <boost/heap/fibonacci_heap.hpp>
 
@@ -34,10 +39,10 @@
 #include "planning.hpp"
 
 
-#define OBSTACLE_DISTANCE_MIN 0.5
+#define OBSTACLE_DISTANCE_MIN 0.2
 #define EXPAND_NODES_V 1.42
 
-#define PENALTIES_W1 5.0
+#define PENALTIES_W1 10.0
 #define PENALTIES_W2 15.0
 
 #define SEND_MESSAGE_IN_PARTS 0
@@ -48,8 +53,6 @@
 #define OBSTACLE_WEIGHT 10.0
 #define CURVATURE_WEIGHT 1.0
 
-
-
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
 
 #define LANE_WIDTH 	2.4
@@ -59,6 +62,23 @@
 
 enum possible_states {Not_visited, Open, Closed};
 enum motion_direction {Forward, Backward};
+
+//Se COMPARE_HEURISTIC == 1, o código irá usar o heuristic_number para alternar as heurísticas e vai rodar a busca 4 vezes.
+#define COMPARE_HEURISTIC 0
+static const char* heuristic_compare_message[] = {"Máximo das duas heurísticas ------------------------------",
+											"Somente Heurística com obstáculo (GDM) -------------------",
+											"Somente Heurística sem obstáculos (NHCM)------------------",
+											"Distância Euclidiana como Heurística ---------------------"};
+
+#define DRAW_EXPANSION_TREE 0
+#define RUN_EXPERIMENT 0
+static carmen_point_t experiments_ICRA[][2] = {{{7757871.12, -363569.71, -0.713516}, {7757917.2, -363591.2, -2.245537}}, /* Primeiro Experimento RUN_EXPERIMENT = 1*/
+											  {{7757871.12, -363569.71, -0.713516},  {7757914.4, -363592.4, 0.904827 }},	/* Segundo Experimento RUN_EXPERIMENT = 2*/
+											  {{7757919.29, -363584.23, 0.798698},   {7757902.0, -363597.20, -0.772066}},	/* Terceiro Experimento RUN_EXPERIMENT = 3*/
+											  {{7757871.12, -363569.71, -0.742732},  {7757918.38, -363594.11, 0.848}}, /* Exp. Num. de expansões RUN_EXPERIMENT = 4*/
+											  {{6.406038, 200.798055, -0.013616},    {197.400100, 28.400100, -1.570796}}, /* Exp. 1 Dissertação RUN_EXPERIMENT = 5 (mapa = maze_path_planner_astar)*/
+											  {{14.279905, 198.104850, -0.082015},  {185.600100, 72.800100, -0.105666}}, /* Exp. 2 Dissertação RUN_EXPERIMENT = 6 (mapa = maze_path_planner_astar) */
+											  {{12.408781, 162.966350, -0.024575},  {102.800100, 173.200100, -1.570796}}};	/* Exp. 3 Dissertação RUN_EXPERIMENT = 7 (mapa = nonholonomic_path_planner_astar) */
 
 typedef struct {
     double state_map_resolution;
@@ -88,6 +108,13 @@ typedef struct state_node
 	double h;
 	double f;
 	state_node *parent;
+
+	//Extension
+	int expanded_nodes;
+	//enum car_movement {Forward_Left, Forward_Straight, Forward_Right, Backward_Left, Backward_Straight, Backward_Right};
+	int movement;
+	//
+
 } state_node, *state_node_p;
 
 
@@ -163,7 +190,7 @@ void
 free_lanes(carmen_route_planner_road_network_message route_planner_road_network_message);
 
 double *
-get_goal_distance_map(carmen_point_t *goal_pose, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map);
+get_goal_distance_map(carmen_point_t goal_pose, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map);
 
 std::vector<carmen_ackerman_traj_point_t>
 carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
@@ -185,3 +212,7 @@ alloc_cost_map();
 double
 carmen_compute_abs_angular_distance(double theta_1, double theta_2);
 
+void
+override_initial_and_goal_poses(carmen_point_t &initial_pose, carmen_point_t &goal_pose);
+
+#endif /* PATH_PLANNER_ASTAR_H__ */
