@@ -83,6 +83,12 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ sudo apt-get install i2c-tools libi2c-dev python-smbus
  $ sudo apt-get install liboctave-dev
  $ sudo apt-get install subversion
+ $ sudo apt install setserial
+ $ sudo apt-get install freeglut3 freeglut3-dev
+ $ sudo apt-get install gedit
+ $ sudo apt-get install eclipse
+ $ sudo apt-get install eclipse-ctd
+
  ```
 
 # Install carmen_lcad sources
@@ -142,6 +148,90 @@ Below you can see that a device is connected to the i2c bus which is using the a
  ```
 For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
 
+O arquivo de calibracao, apos rodar o comando acima, ficarah no diretorio corrente 
+(~/carmen_lcad/src/pi_imu/RTIMULib2) e se chama RTIMULib.ini. Copie este arquivo para
+~/carmen_lcad/src/pi_imu/pi_imu_server quando obtiver uma boa calibracao. Para saber se obtever
+continue lendo a seguir.
+
+O carmen_lcad usa o sistema de coordenadas da mao direita: dedo indicador para frente (x), medio para a direita (y)
+e polegar para cima (z).
+
+Para saber se o sistema de coordenada de sua IMU estah correto para o carmen_lcad, rode o programa acima
+e verifique se a tela estah igual aa mostrada no arquivo correct_coordinate_system.png quando a IMU
+tem seu eixo x apontado para o norte (use uma bussola para saber para onde eh o norte; certique-se de estar
+longe de materiais muito magneticos).
+
+Para chegar a uma configuracao correta como a do arquivo correct_coordinate_system.png, calibre o melhor
+que puder a IMU seguindo ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf e verique se:
+
+1- Quando os eixos x, y e z da IMU apontam para cima (cada um, individualmente), o valor de aceleracao 
+(Accelerometers (g): em RTIMULibDemoGL) de cada eixo medido por RTIMULibDemoGL eh proximo de 1.0 (e nao -1.0).
+
+2- Quando olhando para um dos eixos x, y ou z (vire o eixo da IMU na direcao do seu rosto) e girando
+a IMU no sentido anti-horario, o valor da velocidade angular (Gyros (radians/s): em RTIMULibDemoGL) deste 
+eixo eh positivo.
+
+3- Quando os eixos x, y e z da IMU apontam para o norte (cada um, individualmente), o valor do fluxo 
+magnetico (Magnetometers (uT): em RTIMULibDemoGL) de cada eixo medido por RTIMULibDemoGL eh proximo do 
+maximo (inverta e deve ficar proximo do minimo - o maximo e o minimo observados nao necessariamente
+eh positivo e negativo, respectivamente; podem ser ambos positivos ou negativos).
+
+Se algum dos eixos acima estiver errado no seu sinal (estiver ao contrario), altere as linhas abaixo
+do arquivo xx (ou seu equivalente ser estiver usando outra IMU; examine o diretorio deste arquivo)
+para trocar o sinal apropriadamente (elas ficam no fim do aquivo):
+
+    //  sort out gyro axes and correct for bias
+
+    m_imuData.gyro.setZ(m_imuData.gyro.z());
+    m_imuData.gyro.setY(-m_imuData.gyro.y());
+
+    //  sort out accel data;
+
+    m_imuData.accel.setX(m_imuData.accel.x());
+    m_imuData.accel.setY(-m_imuData.accel.y());
+    m_imuData.accel.setZ(m_imuData.accel.z());
+
+    //  sort out compass axes
+
+    m_imuData.compass.setX(-m_imuData.compass.x());
+    m_imuData.compass.setY(-m_imuData.compass.y());
+//    m_imuData.compass.setZ(-m_imuData.compass.z());
+
+    //  now do standard processing
+
+    handleGyroBias();
+    calibrateAverageCompass();
+    calibrateAccel();
+
+    //  now update the filter
+
+
+Quando a calibracao estiver OK, voce pode verifica-la junto ao resto do sistema carmen_lcad rodando:
+
+No Raspberry Pi:
+
+```bash
+ $ cd ~/carmen_lcad/src/pi_imu/pi_imu_server
+ $ ./Output/pi_imu_server_driver 
+```
+
+No PC (um comando abaixo por terminal e dentro do ~/carmen_lcad/bin):
+
+```bash
+ $ ./central
+ $ ./param_deamon ../src/carmen-ford-escape.ini
+ $ ./viewer_3D
+ $ ./pi_imu_client_driver <IP do Raspbery pi>
+```
+(Este teste requer o programa pi_imu_client_driver. Sua compilacao eh descrita mais abaixo.)
+
+No viewer_3D, deligue o GPS Axis e ligue o XSENS Axis. 
+
+Ao apontar o eixo x da IMU para o norte como seu eixo z apontando para cima, o eixo x (vermelho) da IMU 
+no viewer_3D deve apontar para a frente do carro, o eixo y (verde) para a esquerda e o eixo z (azul) para cima. 
+Use o zoom e mova o carro no viewer_3D se precisar.
+
+
 # Compile the pi_imu client drive module on your computer
 
 ```bash
@@ -158,7 +248,27 @@ For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
  $ $CARMEN_HOME/bin/imu_viewer 
 ```
 
- The pi_imu_viewer program will display the image of a box representing the state of the IMU
+The pi_imu_viewer program will display the image of a box representing the state of the IMU.
+
+Este programa nao usa o mesmo sistema de coordenadas do carmen_lcad, mas pode ser util pois
+imprime os angulos da pose da IMU e os dados de seus sensores. 
+
+Ele pode mostrar os dados de uma IMU pi ou da XSENS individualmente e ao mesmo tempo (se voce rodar duas 
+instancias dele em terminais diferentes pode ver as duas IMUs ao mesmo tempo). Para isso,
+use para a PI IMU:
+
+```bash
+ $ $CARMEN_HOME/bin/imu_viewer pi_imu
+```
+
+E para a XSENS:
+
+```bash
+ $ $CARMEN_HOME/bin/imu_viewer xsens
+```
+
+Note que, neste caso, as duas IMUs estarao publicando mensagens de xsens (o sistema espera que
+mensagens de apenas uma sejam publicadas).
 
 
 # Configure an Static IP to the Raspberry PI on IARA's network
@@ -199,3 +309,4 @@ For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
 ```
 
  The eth0 inet addr must be 192.168.1.15
+
