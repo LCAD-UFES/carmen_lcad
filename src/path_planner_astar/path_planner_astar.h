@@ -75,7 +75,10 @@ static const char* heuristic_compare_message[] = {"Máximo das duas heurísticas
 static carmen_point_t experiments_ICRA[][2] = {{{7757871.12, -363569.71, -0.713516}, {7757917.2, -363591.2, -2.245537}}, /* Primeiro Experimento RUN_EXPERIMENT = 1*/
 											  {{7757871.12, -363569.71, -0.713516},  {7757914.4, -363592.4, 0.904827 }},	/* Segundo Experimento RUN_EXPERIMENT = 2*/
 											  {{7757919.29, -363584.23, 0.798698},   {7757902.0, -363597.20, -0.772066}},	/* Terceiro Experimento RUN_EXPERIMENT = 3*/
-											  {{7757871.12, -363569.71, -0.742732},  {7757918.38, -363594.11, 0.848}}};	/* Exp. Num. de expansões RUN_EXPERIMENT = 4*/
+											  {{7757871.12, -363569.71, -0.742732},  {7757918.38, -363594.11, 0.848}}, /* Exp. Num. de expansões RUN_EXPERIMENT = 4*/
+											  {{6.406038, 200.798055, -0.013616},    {197.400100, 28.400100, -1.570796}}, /* Exp. 1 Dissertação RUN_EXPERIMENT = 5 (mapa = maze_path_planner_astar)*/
+											  {{14.279905, 198.104850, -0.082015},  {185.600100, 72.800100, -0.105666}}, /* Exp. 2 Dissertação RUN_EXPERIMENT = 6 (mapa = maze_path_planner_astar) */
+											  {{12.408781, 162.966350, -0.024575},  {102.800100, 173.200100, -1.570796}}};	/* Exp. 3 Dissertação RUN_EXPERIMENT = 7 (mapa = nonholonomic_path_planner_astar) */
 
 typedef struct {
     double state_map_resolution;

@@ -32,9 +32,10 @@ sign(double a)
 void
 override_initial_and_goal_poses(carmen_point_t &initial_pose, carmen_point_t &goal_pose)
 {
-	if (RUN_EXPERIMENT > 4 || RUN_EXPERIMENT < 0)
+	if (RUN_EXPERIMENT > (sizeof(experiments_ICRA) / sizeof(experiments_ICRA[0])) || RUN_EXPERIMENT < 0)
 	{
-		printf("Invalid RUN_EXPERIMENT value. Error in line %d of the file %s\n", __LINE__, __FILE__);
+		printf("Invalid RUN_EXPERIMENT value. Error in line %d of the file %s\n", __LINE__ - 2, __FILE__);
+		printf("RUN_EXPERIMENTE equals to %d while it should be bigger than 0 and smaller than %ld\n", RUN_EXPERIMENT, (sizeof(experiments_ICRA) / sizeof(experiments_ICRA[0])));
 		exit(1);
 	}
 
