@@ -118,7 +118,7 @@ bool RTIMULSM9DS1::IMUInit()
     // Set up temperature sensor
 
     m_temperatureScale = 1.0 / 16.0;
-    m_temperatureBias = 25.0;
+    m_temperatureBias = 27.5;
 
     //
 
