@@ -50,7 +50,7 @@ bool RTIMULSM9DS1::IMUInit()
     m_imuData.accelValid = true;
     m_imuData.compassValid = true;
     m_imuData.pressureValid = false;
-    m_imuData.temperatureValid = false;
+    m_imuData.temperatureValid = true;
     m_imuData.humidityValid = false;
 
     //  configure IMU
@@ -114,6 +114,13 @@ bool RTIMULSM9DS1::IMUInit()
         HAL_ERROR1("Incorrect LSM9DS1 accel/mag id %d\n", result);
         return false;
     }
+
+    // Set up temperature sensor
+
+    m_temperatureScale = 1.0 / 16.0;
+    m_temperatureBias = 25.0;
+
+    //
 
     if (!setAccelCTRL6())
         return false;
@@ -353,6 +360,7 @@ bool RTIMULSM9DS1::IMURead()
 {
     unsigned char status;
     unsigned char gyroData[6];
+    unsigned char tempData[2];
     unsigned char accelData[6];
     unsigned char compassData[6];
 
@@ -361,6 +369,11 @@ bool RTIMULSM9DS1::IMURead()
 
     if ((status & 0x3) == 0)
         return false;
+
+    for (int i = 0; i<2; i++){
+        if (!m_settings->HALRead(m_accelGyroSlaveAddr, LSM9DS1_OUT_TEMP_L + i, 1, &tempData[i], "Failed to read LSM9DS1 temp data"))
+            return false;
+    }
 
     for (int i = 0; i<6; i++){
         if (!m_settings->HALRead(m_accelGyroSlaveAddr, LSM9DS1_OUT_X_L_G + i, 1, &gyroData[i], "Failed to read LSM9DS1 gyro data"))
@@ -379,6 +392,8 @@ bool RTIMULSM9DS1::IMURead()
     RTMath::convertToVector(gyroData, m_imuData.gyro, m_gyroScale, false);
     RTMath::convertToVector(accelData, m_imuData.accel, m_accelScale, false);
     RTMath::convertToVector(compassData, m_imuData.compass, m_compassScale, false);
+    RTMath::convertToRTFLOAT(tempData, &(m_imuData.temperature), m_temperatureScale, false);
+    m_imuData.temperature += m_temperatureBias;
 
     //  sort out gyro axes and correct for bias
 
