@@ -1,4 +1,4 @@
-#Para permitir rodar comandos remotamente no Raspberry Pi siga os passos abaixo:
+# Para permitir rodar comandos remotamente no Raspberry Pi siga os passos abaixo:
 
 1- Se você ainda não tem uma chave pública no computador que vai acessar o Pi, execute os comando abaixo 
   para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
@@ -14,7 +14,7 @@
  ssh pi@192.168.1.15 'ls'
 
 
-#Connecting Reach to Raspberry 3
+# Connecting Reach to Raspberry 3
 
 Connect the white wire (RX) of the connector S1 (see reachm_connectors.png; please note that the GPIOs in the picture are not 
 those of Raspberry but Reach ones) of Reach M+ (or Reach M2) to the TXD pin input of a USB-to-RS232 TTL adaptor, the 
@@ -52,12 +52,12 @@ sudo raspi-config
 Select option 5, Interfacing options, then option P6, Serial, and select No. Exit raspi-config.
 ---------------------------------------------------	
 
-#Configuring Reach to receive correction and send position via serial
+# Configuring Reach to receive correction and send position via serial
 
 To configure Reach M+, follow the instructions in Reach_Configuration.doc (for Reach M2, Reach_M2_Configuration.doc)
 
 
-#Installing dependencies, downloading src and sharedlib/libcmt directories from git and compile carmen code
+# Installing dependencies, downloading src and sharedlib/libcmt directories from git and compile carmen code
 
 Edit .bashrc and insert at its end:
 
@@ -101,7 +101,7 @@ Compile xsens_MTi-G module on the Raspberry PI (this compiles the gps as well):
 ```
 
 ---------------------------------------------------
-#Running Reach M+ Module on Raspberry
+# Running Reach M+ Module on Raspberry
 
 Install str2str to receive correction from NTRIP server and send it to Reach via S1 serial port. For that,
 download and install RTKLIB
@@ -134,7 +134,7 @@ if CEFE1 is out of order}
 sudo $CARMEN_HOME/src/gps/gps_reachm_server /dev/ttyACM0 115200 1 3457
 ```
 
-#For running str2str automatically on system initialization:
+# For running str2str automatically on system initialization:
 
 Set str2str to run as a systemd service (https://raspberrypi.stackexchange.com/questions/8734/execute-script-on-start-up -> Running a script as a systemd service).
 
@@ -212,7 +212,7 @@ ps ax | grep str2str
 ```
 
 ---------------------------------------------------
-#Running Reach M+ Module on PC
+# Running Reach M+ Module on PC
 
 ```bash
 $CARMEN_HOME/bin/central
@@ -220,7 +220,7 @@ $CARMEN_HOME/src/gps/gps_reachm_client 192.168.1.15 3457
 ```
 
 --------------------------------------------------
-#Running str2str permanently in the Raspberry
+# Running str2str permanently in the Raspberry
 
 Edit /etc/rc.local and add the following line before "exit 0"
 
