@@ -33,6 +33,7 @@ Alternatively, use the UART of Raspberry Pi as described below. In this case, co
 proper pins of Raspberry Pi (GND, +5v and TxD of the GPIO serial port).
 
 ---------------------------------------------------
+
 Configuring the GPIO serial port on Raspberry 3 
 (https://spellfoundry.com/2016/05/29/configuring-gpio-serial-port-raspbian-jessie-including-pi-3-4/;
 https://spellfoundry.com/2016/05/29/configuring-gpio-serial-port-raspbian-jessie-including-pi-3-4/)
@@ -55,6 +56,7 @@ sudo raspi-config
 ```
 
 Select option 5, Interfacing options, then option P6, Serial, and select No. Exit raspi-config.
+
 ---------------------------------------------------	
 
 # Configuring Reach to receive correction and send position via serial
