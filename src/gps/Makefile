@@ -7,6 +7,8 @@ LINK=g++
 
 IFLAGS += 
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lstdc++
+# Para o Raspberry Pi
+LFLAGS += -L/usr/local/ipc-3.9.1/src/lib/Linux-4.14/
 
 SOURCES = gps-io.c gps-ipc.c gps-nmea.c gps-main.c \
 	  gps_nmea_interface.c gps-test.cpp gps-trimble-main.cpp gps_reachm_server.c gps_reachm_client.c
