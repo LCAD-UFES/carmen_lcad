@@ -128,11 +128,66 @@ if CEFE1 is out of order}
 sudo $CARMEN_HOME/src/gps/gps_reachm_server /dev/ttyACM0 115200 1 3457
 ```
 
-For running str2str automatically on system initialization, edit /etc/rc.local and insert at its end:
+#For running str2str automatically on system initialization:
 
-'''
-/home/pi/carmen_lcad/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off > /dev/null 2>&1
-'''
+Set str2str to run as a systemd service (https://raspberrypi.stackexchange.com/questions/8734/execute-script-on-start-up -> Running a script as a systemd service).
+
+If the Raspberry Pi is running systemd, which is the case for raspbian and most modern linuces, then you can configure str2str to run as a 
+systemd service — this provides granular control over the lifecycle and execution environment, as well as preconditions for (re)starting the script, 
+such as the network being up and running. It is also possible to configure the service restart in case of failure (Restart=always, 
+and delay between restarting e.g. RestartSec=10).
+
+For system-wide use, create your systemd unit file under /etc/systemd/system, e.g. with sudo gedit /etc/systemd/system/str2strd.service with the content:
+
+[Unit]
+Description=str2str daemon
+## make sure we only start the service after network is up
+Wants=network-online.target
+After=network.target
+
+[Service]
+## use 'Type=forking' if the service backgrounds itself
+## other values are Type=simple (default) and Type=oneshot
+Type=simple
+## here we can set custom environment variables
+Environment=AUTOSSH_GATETIME=0
+Environment=AUTOSSH_PORT=0
+ExecStart=/home/pi/carmen_lcad/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off > /dev/null 2>&1
+ExecStop=/usr/bin/killall -9 str2strd
+### NOTE: you can have multiple `ExecStop` lines
+ExecStop=/usr/bin/killall str2str
+# don't use 'nobody' if your script needs to access user files
+# (if User is not set the service will run as root)
+#User=nobody
+
+# Useful during debugging; remove it once the service is working
+#StandardOutput=console
+
+[Install]
+WantedBy=multi-user.target
+
+Now we are ready to test the service:
+
+```bash
+systemctl start str2strd
+
+Checking the status of the service:
+
+```bash
+systemctl status str2strd
+```
+
+Stopping the service:
+
+```bash
+systemctl stop str2strd
+```
+
+Once you verified that the service works as expected enable it with:
+
+```bash
+systemctl enable str2strd
+```
 
 ---------------------------------------------------
 #Running Reach M+ Module on PC
