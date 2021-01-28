@@ -20,7 +20,7 @@ Connect the white wire (RX) of the connector S1 (see reachm_connectors.png; plea
 those of Raspberry but Reach ones) of Reach M+ (or Reach M2) to the TXD pin input of a USB-to-RS232 TTL adaptor, the 
 black wire (GND) to the GND pin input of USB to TTL adaptor, and the red wire (5V) to the Raspberry +5v - see
 reach_connections.jpg. I know, I know, Emlid says "do not power the device with more than one source". However, the extra
-power is necessary in this setup (at least for Reach M2). Do not connect the other wires.
+power is necessary in this setup (at least for Reach M2). Do not connect the other wires. 
 
 Connect the USB-to-RS232 TTL adaptor to the Raspberry Pi.
 
