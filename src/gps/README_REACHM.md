@@ -2,17 +2,22 @@
 
 1- Se você ainda não tem uma chave pública no computador que vai acessar o Pi, execute os comando abaixo 
   para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+```bash
  cd
  ssh-keygen -t rsa
+```
 
 2- Copie a chave pública do computador que vai acessar o Pi para o Pi com os comando abaixo
+```bash
  cd
  ssh pi@192.168.1.15 mkdir -p .ssh
  cat ~/.ssh/id_rsa.pub | ssh pi@192.168.1.15 'cat >> .ssh/authorized_keys'
+```
 
 3- Teste se funcionou com o comando abaixo
+```bash
  ssh pi@192.168.1.15 'ls'
-
+```
 
 # Connecting Reach to Raspberry 3
 
