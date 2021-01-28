@@ -79,6 +79,7 @@ and run:
 ```
  $ sudo apt-get install subversion libncurses5 libncurses5-dev
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/ $CARMEN_HOME/src
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/include/ $CARMEN_HOME/include
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ $CARMEN_HOME/sharedlib/libcmt
 ```
 
@@ -186,6 +187,7 @@ Now we are ready to test the service:
 
 ```bash
 systemctl start str2strd
+```
 
 Checking the status of the service:
 
