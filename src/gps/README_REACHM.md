@@ -195,7 +195,7 @@ Checking the status of the service:
 systemctl status str2strd
 ```
 
-Stopping the service:
+Stopping the service (note que, se der stop a serial, por alguma razao, para de enviar dados para o Reach e tem que rebootar o Raspberry):
 
 ```bash
 systemctl stop str2strd
