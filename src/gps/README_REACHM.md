@@ -1,6 +1,25 @@
+#Para permitir rodar comandos remotamente no Raspberry Pi siga os passos abaixo:
+
+1- Se você ainda não tem uma chave pública no computador que vai acessar o Pi, execute os comando abaixo 
+  para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+ cd
+ ssh-keygen -t rsa
+
+2- Copie a chave pública do computador que vai acessar o Pi para o Pi com os comando abaixo
+ cd
+ ssh pi@192.168.1.15 mkdir -p .ssh
+ cat ~/.ssh/id_rsa.pub | ssh pi@192.168.1.15 'cat >> .ssh/authorized_keys'
+
+3- Teste se funcionou com o comando abaixo
+ ssh pi@192.168.1.15 'ls'
+
+
 #Connecting Reach to Raspberry 3
 
-Connect the white wire output (RXD) of Reach to the TXD pin input of USB to TTL adaptor, and the black wire output (GRD) of Reach to the GRD pin input of USB to TTL adaptor.
+Connect the white wire (RX) of the connector S1 (see reachm_connectors.png) of Reach M+ (or Reach M2) to the TXD pin input of a USB to RS232 TTL adaptor, and the 
+black wire (GND) to the GND pin input of USB to TTL adaptor (do not connect the other wires). Connect this USB to TTL adaptor to the Raspberry Pi.
+
+Alternatively, use the UART of Raspberry Pi as described below.
 
 ---------------------------------------------------
 Configuring the GPIO serial port on Raspberry 3 
@@ -25,26 +44,13 @@ sudo raspi-config
 ```
 
 Select option 5, Interfacing options, then option P6, Serial, and select No. Exit raspi-config.
-	
+---------------------------------------------------	
 
 #Configuring Reach to receive correction and send position via serial
 
-To configure Reach, connect the antenna to it, access http://reach.local using a browser, and set the Correction Input and Position Output as defined below.
+To configure Reach M+, follow the instructions in Reach_Configuration.doc (for Reach M2, Reach_M2_Configuration.doc)
 
-```
-Correction input
-Serial
-Device: UART
-Baud rate: 115200
-Format: RTCM3t
 
-Position output
-Serial
-Device: USB-to-PC
-Baud rate: 115200
-Format: NMEA
-```
----------------------------------------------------
 #Installing dependencies, downloading src and sharedlib/libcmt directories from git and compile carmen code
 
 Edit .bashrc and insert at its end:
@@ -81,17 +87,18 @@ Compile Carmen code:
  Robot numbers [*]: 1,2
 ```
 
-Compile xsens_MTi-G module on the Raspberry PI:
+Compile xsens_MTi-G module on the Raspberry PI (this compiles the gps as well):
 
 ```bash
  $ cd ~/carmen_lcad/src/xsens_MTi-G
  $ ./make_pi
-
+```
 
 ---------------------------------------------------
-Installing str2str to receive correction from NTRIP server and send it to Reach via S1 serial port
+#Running Reach M+ Module on Raspberry
 
-Downloading and installing RTKLIB
+Install str2str to receive correction from NTRIP server and send it to Reach via S1 serial port. For that,
+download and install RTKLIB
 (https://github.com/tomojitakasu/RTKLIB/tree/rtklib_2.4.3)
 
 ```bash
@@ -100,11 +107,23 @@ git clone https://github.com/tomojitakasu/RTKLIB.git
 cd $CARMEN_HOME/sharedlib/RTKLIB/app
 source makeall.sh
 ```
----------------------------------------------------
-#Running Reach M+ Module on Raspberry
+
+Connect Reach M+ (or Reach M2) to the Raspberry Pi with the USB to RS232 TTL adaptor and also using a USB to mini USB cable and
+configure low latency serial mode (very important!)
+
+```bash
+ $ sudo apt-get update
+ $ sudo apt install setserial
+ $ sudo usermod -a -G dialout pi
+ $ setserial /dev/ttyACM0 low_latency 
+```
+
+Then, run:
 
 ```bash
 sudo $CARMEN_HOME/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off
+{or sudo $CARMEN_HOME/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/ESNV0:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off
+if CEFE1 is out of order}
 
 sudo $CARMEN_HOME/src/gps/gps_reachm_server /dev/ttyACM0 115200 1 3457
 ```
