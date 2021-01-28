@@ -16,10 +16,16 @@
 
 #Connecting Reach to Raspberry 3
 
-Connect the white wire (RX) of the connector S1 (see reachm_connectors.png) of Reach M+ (or Reach M2) to the TXD pin input of a USB to RS232 TTL adaptor, and the 
-black wire (GND) to the GND pin input of USB to TTL adaptor (do not connect the other wires). Connect this USB to TTL adaptor to the Raspberry Pi.
+Connect the white wire (RX) of the connector S1 (see reachm_connectors.png; please note that the GPIOs in the picture are not 
+those of Raspberry but Reach ones) of Reach M+ (or Reach M2) to the TXD pin input of a USB-to-RS232 TTL adaptor, the 
+black wire (GND) to the GND pin input of USB to TTL adaptor, and the red wire (5V) to the Raspberry +5v - see
+reach_connections.png. I know, I know, Emlid says "do not power the device with more than one source". However, the extra
+power is necessary in this setup (at least for Reach M2). Do not connect the other wires.
 
-Alternatively, use the UART of Raspberry Pi as described below.
+Connect the USB-to-RS232 TTL adaptor to the Raspberry Pi.
+
+Alternatively, use the UART of Raspberry Pi as described below. In this case, connect RX, GND and 5V to the
+proper pins of Raspberry Pi (GND, +5v and TxD of the GPIO serial port).
 
 ---------------------------------------------------
 Configuring the GPIO serial port on Raspberry 3 
@@ -137,8 +143,10 @@ systemd service — this provides granular control over the lifecycle and execut
 such as the network being up and running. It is also possible to configure the service restart in case of failure (Restart=always, 
 and delay between restarting e.g. RestartSec=10).
 
-For system-wide use, create your systemd unit file under /etc/systemd/system, e.g. with sudo gedit /etc/systemd/system/str2strd.service with the content:
+For system-wide use, create your systemd unit file under /etc/systemd/system, e.g. with sudo 
+gedit /etc/systemd/system/str2strd.service with the content (troque ESNV0 pela base apropriada!!!!):
 
+```bash
 [Unit]
 Description=str2str daemon
 ## make sure we only start the service after network is up
@@ -152,7 +160,7 @@ Type=simple
 ## here we can set custom environment variables
 Environment=AUTOSSH_GATETIME=0
 Environment=AUTOSSH_PORT=0
-ExecStart=/home/pi/carmen_lcad/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off > /dev/null 2>&1
+ExecStart=/home/pi/carmen_lcad/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/ESNV0:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off > /dev/null 2>&1
 ExecStop=/usr/bin/killall -9 str2strd
 ### NOTE: you can have multiple `ExecStop` lines
 ExecStop=/usr/bin/killall str2str
@@ -165,6 +173,7 @@ ExecStop=/usr/bin/killall str2str
 
 [Install]
 WantedBy=multi-user.target
+```
 
 Now we are ready to test the service:
 
@@ -183,10 +192,23 @@ Stopping the service:
 systemctl stop str2strd
 ```
 
+After changing /etc/systemd/system/str2strd.service:
+
+```bash
+systemctl daemon-reload
+systemctl restart str2strd
+```
+
+
 Once you verified that the service works as expected enable it with:
 
 ```bash
 systemctl enable str2strd
+```
+
+To check if the str2str deamon is running you can also use:
+```bash
+ps ax | grep str2str
 ```
 
 ---------------------------------------------------
