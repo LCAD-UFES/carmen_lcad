@@ -35,6 +35,8 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ sudo raspi-config
 ```
 
+Entre em Interface Options e ative o I2C e o SPI.
+
 
 # How to Enable i2c on the Raspberry Pi
 
