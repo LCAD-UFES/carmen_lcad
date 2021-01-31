@@ -70,7 +70,7 @@ $ sudo reboot
 
 Once your Raspberry Pi reboots, you can check for any components connected to the i2c bus by using i2cdetect;
 
-$ 
+$ sudo /usr/sbin/i2cdetect -y 1
 
 A table like the table below will be shown and if any divices are connected, thier address will be shown. 
 Below you can see that a device is connected to the i2c bus which is using the address of 0x6b.
