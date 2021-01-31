@@ -91,7 +91,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ sudo apt-get install freeglut3 freeglut3-dev
  $ sudo apt-get install gedit
  $ sudo apt-get install eclipse
- $ sudo apt-get install eclipse-ctd
+ $ sudo apt-get install eclipse-cdt
 
  ```
 
