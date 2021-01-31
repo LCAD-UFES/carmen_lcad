@@ -35,7 +35,12 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ sudo raspi-config
 ```
 
-Entre em Interface Options e ative o I2C e o SPI. Volte e entre em Advanced Options -> GL Driver -> GL (Full KMS) -> Ok. 
+Entre em Interface Options e ative o I2C e o SPI. Volte e entre em Advanced Options -> GL Driver -> GL (Full KMS) -> Ok. Reboot.
+
+```bash
+ $ sudo apt-get install mesa-utils
+ $ glxgears {para testar o OpenGL}
+```
 
 
 # How to Enable i2c on the Raspberry Pi
@@ -65,7 +70,7 @@ $ sudo reboot
 
 Once your Raspberry Pi reboots, you can check for any components connected to the i2c bus by using i2cdetect;
 
-$ sudo /usr/sbin/i2cdetect -y 1
+$ 
 
 A table like the table below will be shown and if any divices are connected, thier address will be shown. 
 Below you can see that a device is connected to the i2c bus which is using the address of 0x6b.
@@ -94,6 +99,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ sudo apt-get install cmake
  $ sudo apt-get install qt4-dev-tools
  $ sudo apt-get install qtcreator
+ $ sudo apt-get install libgtk-3-dev
 
  ```
 
@@ -158,7 +164,7 @@ For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
 
 O arquivo de calibracao, apos rodar o comando acima, ficarah no diretorio corrente 
 (~/carmen_lcad/src/pi_imu/RTIMULib2) e se chama RTIMULib.ini. Copie este arquivo para
-~/carmen_lcad/src/pi_imu/pi_imu_server quando obtiver uma boa calibracao. Para saber se obtever
+~/carmen_lcad/src/pi_imu/pi_imu_server quando obtiver uma boa calibracao. Para saber se obteve,
 continue lendo a seguir.
 
 O carmen_lcad usa o sistema de coordenadas da mao direita: dedo indicador para frente (x), medio para a direita (y)
