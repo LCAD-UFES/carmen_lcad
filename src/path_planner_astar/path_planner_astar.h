@@ -27,6 +27,7 @@
 
 
 #include <boost/heap/fibonacci_heap.hpp>
+#include <boost/heap/d_ary_heap.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -42,8 +43,8 @@
 #define OBSTACLE_DISTANCE_MIN 0.2
 #define EXPAND_NODES_V 1.42
 
-#define PENALTIES_W1 10.0
-#define PENALTIES_W2 15.0
+#define PENALTIES_W1 2.0
+#define PENALTIES_W2 5.0
 
 #define SEND_MESSAGE_IN_PARTS 0
 
@@ -70,6 +71,8 @@ static const char* heuristic_compare_message[] = {"Máximo das duas heurísticas
 											"Somente Heurística sem obstáculos (NHCM)------------------",
 											"Distância Euclidiana como Heurística ---------------------"};
 
+
+#define HEAP_USED 2 // 0 = fibonacci heap; 1 = priority queue; 2 = binary heap;
 #define DRAW_EXPANSION_TREE 0
 #define RUN_EXPERIMENT 0
 static carmen_point_t experiments_ICRA[][2] = {{{7757871.12, -363569.71, -0.713516}, {7757917.2, -363591.2, -2.245537}}, /* Primeiro Experimento RUN_EXPERIMENT = 1*/

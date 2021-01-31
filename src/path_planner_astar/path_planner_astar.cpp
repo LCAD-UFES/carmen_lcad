@@ -15,6 +15,7 @@ extern int grid_state_map_y_size;
 
 cv::Mat map_image;
 int expanded_nodes_by_astar;
+const int boost_arity = 2;
 
 char expansion_tree_file_name[] = "Expansion_illustration_0.png";
 
@@ -952,7 +953,13 @@ alloc_cost_map()
 
 
 void
+#if HEAP_USED == 0
 clear_astar_search(boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> &FH, grid_state_p ****astar_map, state_node* goal_node)
+#elif HEAP_USED == 1
+clear_astar_search(std::priority_queue<state_node*, std::vector<state_node*>, StateNodePtrComparator> &FH, grid_state_p ****astar_map, state_node* goal_node)
+#elif HEAP_USED == 2
+clear_astar_search(boost::heap::d_ary_heap<state_node*, boost::heap::arity<boost_arity>, boost::heap::compare<StateNodePtrComparator>> &FH, grid_state_p ****astar_map, state_node* goal_node)
+#endif
 {
 	for (int i = 0; i < FH.size(); i++)
 	{
@@ -960,7 +967,7 @@ clear_astar_search(boost::heap::fibonacci_heap<state_node*, boost::heap::compare
 		FH.pop();
 		free(temp);
 	}
-	FH.clear();
+//	FH.clear();
 
 	clear_grid_state_map(astar_map);
 	free(goal_node);
@@ -1541,7 +1548,17 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 	if (initial_nodes_failed == 1)
 		return path_result;
 
+#if HEAP_USED == 0
+	printf("Usando Fibonacci Heap\n");
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> FH;
+#elif HEAP_USED == 1
+	printf("Usando Priority queue\n");
+	std::priority_queue<state_node*, std::vector<state_node*>, StateNodePtrComparator> FH;
+#elif HEAP_USED == 2
+	printf("Usando Binary heap\n");
+    boost::heap::d_ary_heap<state_node*, boost::heap::arity<boost_arity>, boost::heap::compare<StateNodePtrComparator>> FH;
+#endif
+
 	FH.push(initial_node);
 
 	int x, y, theta, direction;
