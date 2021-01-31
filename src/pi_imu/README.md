@@ -63,8 +63,10 @@ i2c-bcm2708
 $ sudo gedit /boot/config.txt
 
 Add these two lines to the bottom of the file:
-dtparam=i2c_arm=on
+dtparam=i2c_arm=on,i2c_arm_baudrate=1000000
 dtparam=i2c1=on
+
+{,i2c_arm_baudrate=1000000 eh para a MPU-9250, mas deve funcionar com outras. Se nao funcionar, retirar}
 
 $ sudo reboot
 
