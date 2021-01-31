@@ -41,19 +41,21 @@ Entre em Interface Options e ative o I2C e o SPI.
 # How to Enable i2c on the Raspberry Pi
 
 ```bash
-$ sudo nano /etc/modprobe.d/raspi-blacklist.conf
+$ sudo apt-get update
+$ sudo apt-get install gedit
+$ sudo gedit /etc/modprobe.d/raspi-blacklist.conf
 
 Place a hash '#' in front of blacklist i2c-bcm2708
 If the above file is blank or doesn't exist, then skip the above step
 
 
-$ sudo nano /etc/modules
+$ sudo gedit /etc/modules
 Add these two lines;
 
 i2c-dev
 i2c-bcm2708
 
-$ sudo nano /boot/config.txt
+$ sudo gedit /boot/config.txt
 
 Add these two lines to the bottom of the file:
 dtparam=i2c_arm=on
