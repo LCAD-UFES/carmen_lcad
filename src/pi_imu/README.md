@@ -27,7 +27,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 - O cartão esta formatado e pode ser inserido no Raspberry para utilização.
 
 
-# Enable the IMU
+# Enable the IMU interface e OpenGL
 
 - Não execute upgrade
 
@@ -35,7 +35,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ sudo raspi-config
 ```
 
-Entre em Interface Options e ative o I2C e o SPI.
+Entre em Interface Options e ative o I2C e o SPI. Volte e entre em Advanced Options -> GL Driver -> GL (Full KMS) -> Ok. 
 
 
 # How to Enable i2c on the Raspberry Pi
@@ -90,14 +90,18 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ sudo apt install setserial
  $ sudo apt-get install freeglut3 freeglut3-dev
  $ sudo apt-get install gedit
- $ sudo apt-get install eclipse
- $ sudo apt-get install eclipse-cdt
+ $ sudo apt-get install eclipse eclipse-cdt
+ $ sudo apt-get install cmake
+ $ sudo apt-get install qt4-dev-tools
+ $ sudo apt-get install qtcreator
 
  ```
 
 # Install carmen_lcad sources
 
+```bash
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/ ~/carmen_lcad/src
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/include/ ~/carmen_lcad/include
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ ~/carmen_lcad/sharedlib/libcmt
 ```
 
@@ -109,7 +113,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ sudo tar -xzvf ipc-3.9.1a.tar.gz
  $ cd ipc-3.9.1/src/
  $ sudo cp ~/carmen_lcad/src/xsens_MTi-G/formatters.h .
- $ make
+ $ sudo make
 ```
 
 - Substitua o arquivo Makefile.rules do src do carmen
@@ -122,7 +126,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
 
 ```bash
  $ cd ~/carmen_lcad/src
- $ ./configure --nojava --nozlib --nocuda
+ $ ./configure --nojava --nozlib --nocuda --nographics
  Should the C++ tools be installed for CARMEN: [Y/n] Y
  Should Python Bindings be installed: [y/N] N
  Should the old laser server be used instead of the new one: [y/N] N
