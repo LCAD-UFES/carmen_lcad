@@ -233,6 +233,13 @@ objects_names_from_file(string const class_names_file)
     return file_lines;
 }
 
+double
+distance_accuracy (double measured, double gt)
+{
+	double dif = abs(gt - measured);
+	return (100.0 * (1.0 -(dif/gt)));
+}
+
 void
 show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
 		vector<bbox_t> predictions, double hood_removal_percentage, double fps,
@@ -301,13 +308,14 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 
 			double distance_to_object = focal_length * real_height * image_height / (predictions[i].h * sensor_height); // mm
 			distance_to_object = distance_to_object * 2.0 / 1000.0; // distance has to be multiplied by 2.0 to since lidar * 0.5.
-			
+			double accuracy;
 			if (real_distance != 0.0){
+				accuracy = distance_accuracy(distance_to_object, real_distance);
 				sprintf(area, "%.2f %.2f", real_distance, distance_to_object);
-				cout << "\t" << real_distance << "\t" << distance_to_object << endl;
+				cout << "\t" << real_distance << "\t" << distance_to_object << "\t" << accuracy << endl;
 			}else{
 				sprintf(area, "NL %.3f", distance_to_object);
-				cout << "\tNL" << "\t" << distance_to_object << endl;
+				cout << "\tNL" << "\t" << distance_to_object << "\t" << "NA" << endl endl;
 			}
 
 
@@ -634,6 +642,8 @@ calc_area (int width, int height)
 {
 	return (width * height);
 }
+
+
 
 
 float
@@ -1140,18 +1150,19 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 							object_color, line_tickness);
 
 				cout<<"Bboxes slice "<<i<<":"<<endl;
-				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d distance: %.3f - > %0.4f\n",
+				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d, d: %.3f - > %0.4f\n",
 						b_print.x, b_print.y, b_print.x + b_print.w, b_print.x + b_print.w, b_print.w, b_print.h, distance_to_object, b_print.prob);
 			}
 
     	}
     	float iou;
     	float iou2;
+		double accuracy;
     	if(i == scene_slices.size()-1)
     	{
-
+			accuracy = distance_accuracy(distance_to_object, distance_to_object_gt);
     		cout<<endl<<endl<<"Groundtruth:"<<endl;
-    		printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d distance: %.3f\n", gt.x, gt.y, gt.x + gt.w, gt.x + gt.w, gt.w, gt.h, distance_to_object_gt);
+    		printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d, d: %.3f Accuracy: %.3f\n", gt.x, gt.y, gt.x + gt.w, gt.x + gt.w, gt.w, gt.h, distance_to_object_gt, accuracy);
     		cout<<endl;
 
     		for (int k = 0; k < predictions.size(); k++)
@@ -1578,7 +1589,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
         string str_gt_path (gt_path);
         string groundtruth_folder = str_gt_path + "-r.txt";
-		cout << "GT Folder:" << groundtruth_folder << endl;
+		// cout << "GT Folder:" << groundtruth_folder << endl;
         //if (access(groundtruth_folder.c_str(), F_OK) == 0)
         	show_detections_alberto(transform_factor_of_slice_to_original_frame ,scene_slices, bounding_boxes_of_slices, bounding_boxes_of_slices_in_original_image,
         			rddf_points_in_image_filtered, image_msg->timestamp);
