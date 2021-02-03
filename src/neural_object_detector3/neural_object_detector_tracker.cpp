@@ -1014,6 +1014,9 @@ insert_missing_pedestrians_in_the_track(vector<bbox_t> predictions)
 double
 distance_to_pedestrian_track_annotaion()
 {
+	if (rddf_annotation_message == NULL)
+		return (DBL_MAX);
+	
 	double min_dist_to_pedestrian_track = DBL_MAX, dist_to_pedestrian_track = DBL_MAX;
 
 	for (int i = 0, size = rddf_annotation_message->num_annotations; i < size; i++)
@@ -1035,7 +1038,7 @@ publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg);
 void
 track_pedestrians(Mat open_cv_image, double timestamp)
 {
-	if (globalpos_msg == NULL || rddf_annotation_message == NULL)
+	if (globalpos_msg == NULL)
 		return;
 
 	static bool first_time = true;
