@@ -6,7 +6,7 @@ MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 LINK = g++
 CXXFLAGS = -std=c++11
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src  -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src

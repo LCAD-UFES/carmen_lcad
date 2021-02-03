@@ -25,6 +25,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
+#include <numeric>
 
 using namespace std;
 using namespace cv;

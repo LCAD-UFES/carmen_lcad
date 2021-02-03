@@ -27,7 +27,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 - O cartão esta formatado e pode ser inserido no Raspberry para utilização.
 
 
-# Enable the IMU
+# Enable the IMU interface e OpenGL
 
 - Não execute upgrade
 
@@ -35,27 +35,38 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ sudo raspi-config
 ```
 
+Entre em Interface Options e ative o I2C e o SPI. Volte e entre em Advanced Options -> GL Driver -> GL (Full KMS) -> Ok. Reboot.
+
+```bash
+ $ sudo apt-get install mesa-utils
+ $ glxgears {para testar o OpenGL}
+```
+
 
 # How to Enable i2c on the Raspberry Pi
 
 ```bash
-$ sudo nano /etc/modprobe.d/raspi-blacklist.conf
+$ sudo apt-get update
+$ sudo apt-get install gedit
+$ sudo gedit /etc/modprobe.d/raspi-blacklist.conf
 
 Place a hash '#' in front of blacklist i2c-bcm2708
 If the above file is blank or doesn't exist, then skip the above step
 
 
-$ sudo nano /etc/modules
+$ sudo gedit /etc/modules
 Add these two lines;
 
 i2c-dev
 i2c-bcm2708
 
-$ sudo nano /boot/config.txt
+$ sudo gedit /boot/config.txt
 
 Add these two lines to the bottom of the file:
-dtparam=i2c_arm=on
+dtparam=i2c_arm=on,i2c_arm_baudrate=1000000
 dtparam=i2c1=on
+
+{,i2c_arm_baudrate=1000000 eh para a MPU-9250, mas deve funcionar com outras. Se nao funcionar, retirar}
 
 $ sudo reboot
 
@@ -86,14 +97,19 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ sudo apt install setserial
  $ sudo apt-get install freeglut3 freeglut3-dev
  $ sudo apt-get install gedit
- $ sudo apt-get install eclipse
- $ sudo apt-get install eclipse-ctd
+ $ sudo apt-get install eclipse eclipse-cdt
+ $ sudo apt-get install cmake
+ $ sudo apt-get install qt4-dev-tools
+ $ sudo apt-get install qtcreator
+ $ sudo apt-get install libgtk-3-dev
 
  ```
 
 # Install carmen_lcad sources
 
+```bash
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/ ~/carmen_lcad/src
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/include/ ~/carmen_lcad/include
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ ~/carmen_lcad/sharedlib/libcmt
 ```
 
@@ -105,7 +121,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ sudo tar -xzvf ipc-3.9.1a.tar.gz
  $ cd ipc-3.9.1/src/
  $ sudo cp ~/carmen_lcad/src/xsens_MTi-G/formatters.h .
- $ make
+ $ sudo make
 ```
 
 - Substitua o arquivo Makefile.rules do src do carmen
@@ -118,7 +134,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
 
 ```bash
  $ cd ~/carmen_lcad/src
- $ ./configure --nojava --nozlib --nocuda
+ $ ./configure --nojava --nozlib --nocuda --nographics
  Should the C++ tools be installed for CARMEN: [Y/n] Y
  Should Python Bindings be installed: [y/N] N
  Should the old laser server be used instead of the new one: [y/N] N
@@ -150,7 +166,7 @@ For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
 
 O arquivo de calibracao, apos rodar o comando acima, ficarah no diretorio corrente 
 (~/carmen_lcad/src/pi_imu/RTIMULib2) e se chama RTIMULib.ini. Copie este arquivo para
-~/carmen_lcad/src/pi_imu/pi_imu_server quando obtiver uma boa calibracao. Para saber se obtever
+~/carmen_lcad/src/pi_imu/pi_imu_server quando obtiver uma boa calibracao. Para saber se obteve,
 continue lendo a seguir.
 
 O carmen_lcad usa o sistema de coordenadas da mao direita: dedo indicador para frente (x), medio para a direita (y)
