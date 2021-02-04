@@ -647,6 +647,15 @@ void carmen_ipc_dispatch(void)
   }
 }
 
+void carmen_ipc_dispatch_nonblocking(void)
+{
+  if (IPC_listen(1) == IPC_Error) // wait 1 micro second for a message
+  {
+    /* If control reaches here, IPC_listen returned IPC_Error */
+    printf("Error while receiving IPC messages!\n");
+  }
+}
+
 void carmen_ipc_sleep(double timeout)
 {
   double current_time, timestamp;

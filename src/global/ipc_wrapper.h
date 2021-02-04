@@ -96,6 +96,9 @@ void
 carmen_ipc_dispatch(void);
 
 void
+carmen_ipc_dispatch_nonblocking(void);
+
+void
 carmen_ipc_sleep(double timeout);
 
 void
