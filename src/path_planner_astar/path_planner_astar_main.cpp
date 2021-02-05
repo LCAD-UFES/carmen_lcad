@@ -148,7 +148,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		double *goal_distance_map = get_goal_distance_map(goal_position, obstacle_distance_grid_map);
 
 		#if COMPARE_HEURISTIC
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			heuristic_number = i;
 			printf("%s\n", heuristic_compare_message[i]);
