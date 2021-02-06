@@ -1,4 +1,67 @@
+# Para testar o módulo
+
+Para testar o módulo você precisa gerar a base de teste e executar o módulo em modo teste.
+
+## Gerar base de teste
+
+Você vai precisar de um log e do poses_opt deste log. Vamos usar o log log_volta_da_ufes-20191003.txt. Seu poses_opt pode
+ser econtrado no local padrão: data/graphslam/poses_opt-log_volta_da_ufes-20191003.txt
+
+Edite o arquivo src/localize_neural/log2png.sh e inclua o log de interesse e o diretório onde serão
+gravadas as imagens da base. A seguir rode os comandos:
+
+```bash
+ cd src/localize_neural
+ log2png.sh
+```
+
+Rode o comando abaixo no diretório bin para gerar as poses de cada imagem. Se você for empregar outro log, modifique o 
+process abaixo de acordo. Lembre-se de criar o diretório de saída de localize_neural_dataset (/dados/ufes e /dados/ufes/20191003 no 
+../src/localize_neural2/process-ground-truth-generator.ini).
+
+```bash
+ ./proccontrol ../src/localize_neural2/process-ground-truth-generator.ini
+```
+
+Sua base de teste é o diretório /dados/ufes/20191003 e o arquivo /dados/ufes/camerapos-20191003.txt especificados em 
+../src/localize_neural2/process-ground-truth-generator.ini, mais o arquivo basepos-20191003-20191003-5m-1m.txt.
+O nome deste arquivo representa:
+
+```bash
+ basepos-<data set de referencia>-<data set de teste>-<espacamento entre os key frames do data set de referencia>-<espacamento estre as imagens no data set de teste>.txt.
+```
+
+Para gerar o arquivo basepos-20191003-20191003-5m-1m.txt você vai precisar rodar os comandos abaixo:
+
+```bash
+ cd src/localize_neural2
+ python gerar_dataset/scripts/dataset.py -i /dados/ufes/ -o /dados/ufes_gt/ -b 5 -l 1
+```
+
+O arquivo será gerado em /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt. O afastamento entre as imagens neste
+aqrquivo é de 5m.
+
+Este processo também gera o arquivo /dados/ufes_gt/livepos-20191003-20191003-5m-1m.txt, que é usado no treino.
+Este arquivo tem o mesmo formato de basepos-20191003-20191003-5m-1m.txt, mas o afastamento entre as imagens
+é de 1m.
+
+xxxxxxxxxxxxxxxxxxx
+
+O procedimento acima conclui o processo de geração da base de teste.
+
+
+## Executar o módulo em modo teste
+
+Para rodar o módulo no modo de desenvolvimento é necessário um arquivo com uma lista de arquivos de imagem.
+O comando abaixo gera o arquivo test.txt com tal lista, associada ao log log_volta_da_ufes-20191003.txt.
+
+```bash
+ readlink -f /dados/ufes/20191003/*r.png > ~/carmen_lcad/src/localize_neural2/config/test.txt
+```
+
+
 # link com as imagens dos logs da IARA - Volta da UFES
+
 https://drive.google.com/drive/folders/1tqRKGO3DtW1yreoxYeD9Ssc3Ip8fxaXC?usp=sharing
 
 20160825<br>

@@ -10,8 +10,10 @@ CXXFLAGS = -std=c++11 -g
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet4/src -I$(CARMEN_HOME)/sharedlib/darknet4/include 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/
 
+CFLAGS += `pkg-config --cflags opencv`
 
-LFLAGS += -fPIC -l:libdarknet.so -lstdc++ -g
+
+LFLAGS += -g -fPIC -l:libdarknet.so -lstdc++ `pkg-config --libs opencv`
 
 SOURCES = localize_neural2.cpp
 

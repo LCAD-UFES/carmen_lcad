@@ -10,6 +10,14 @@
 //#include "dark_cuda.h"
 #include <sys/time.h>
 
+#include <opencv/cv.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/core/version.hpp>
+
+using namespace std;
+using namespace cv;
+
 
 //teste utilizando a lista de imagens do treino para gerar como output o rótulo estimado
 void
@@ -40,9 +48,8 @@ predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile
     int i = 0;
     char **names = get_labels(name_list);
     clock_t time;
-    int* indexes = (int *) xcalloc(top, sizeof(int));
-    char buff[256];
-    char *input = buff;
+    int *indexes = (int *) xcalloc(top, sizeof(int));
+    char input[1024];
 
     std::ifstream images_file;
     images_file.open(filename);
@@ -50,26 +57,29 @@ predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile
     
     if (images_file.is_open())
     {
-        while( getline(images_file,line))
+        while (getline(images_file, line))
         {
-            strncpy(input, line.c_str(), sizeof(line));
+            strcpy(input, line.c_str());
+            Mat opencv_image = imread(input, IMREAD_COLOR);
+            imshow("localize_neural2", opencv_image);
+            int k = waitKey(1); // Wait for a keystroke in the window
+
             image im = load_image_color(input, 0, 0);
             image resized = resize_min(im, net.w);
             image cropped = crop_image(resized, (resized.w - net.w)/2, (resized.h - net.h)/2, net.w, net.h);
-            printf("%d %d\n", cropped.w, cropped.h);
 
             float *X = cropped.data;
 
             double time = get_time_point();
             float *predictions = network_predict(net, X);
-            printf("%s: Predicted in %lf milli-seconds.\n", input, ((double) get_time_point() - time) / 1000);
+            printf("%s: Predicted in % 6.2lf milli-seconds. ", input, ((double) get_time_point() - time) / 1000);
 
-            if(net.hierarchy) hierarchy_predictions(predictions, net.outputs, net.hierarchy, 0);
+            if (net.hierarchy)
+            	hierarchy_predictions(predictions, net.outputs, net.hierarchy, 0);
             top_k(predictions, net.outputs, 1, indexes);
 
             int index = indexes[0];
-            if(net.hierarchy) printf("%d, %s: %f, parent: %s \n",index, names[index], predictions[index], (net.hierarchy->parent[index] >= 0) ? names[net.hierarchy->parent[index]] : "Root");
-            else printf("%s: %f\n", names[index], predictions[index]); // output esperado
+           	printf("%s: %f\n", names[index], predictions[index]); // output esperado
             
             free_image(cropped);
             if (resized.data != im.data)
@@ -106,7 +116,7 @@ main(int argc, char **argv)
             classes_qtd++;
     }
 
-    predict_classifier((char *) "config/labels.txt", classes_qtd, (char *) "config/config.cfg", (char *) "config/classifier.weights", (char *) "config/train.txt");
+    predict_classifier((char *) "config/labels.txt", classes_qtd, (char *) "config/config.cfg", (char *) "config/classifier.weights", (char *) "config/test.txt");
 
     return 0;
 }

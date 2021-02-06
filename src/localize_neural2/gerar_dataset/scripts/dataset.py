@@ -167,7 +167,7 @@ if __name__ == '__main__':
 
     print 'running script with those arguments:\n\timages path:',input_dir,'\n\toutput directory:',output_dir,'\n\toffset base:',offset_base,'\n\toffset live:',offset_curr
 
-    datasets = ['20160830', '20170119','20160825', '20160825-01', '20160825-02', '20171205', '20180112','20180112-02','20161021','20191003']
+    datasets = ['20191003']
     i = len(datasets)-1
     for j in range(0, len(datasets)):  # curr datasets
         # if i != j: continue  # skips building base and curr datasets with different data
