@@ -77,9 +77,48 @@ predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile
             if (net.hierarchy)
             	hierarchy_predictions(predictions, net.outputs, net.hierarchy, 0);
             top_k(predictions, net.outputs, 1, indexes);
-
+            
             int index = indexes[0];
-           	printf("%s: %f\n", names[index], predictions[index]); // output esperado
+            char pose_X[50], pose_Y[50], pose_Yaw[50];
+            char pred[250];
+            
+            strcpy(pred,names[index]);
+            
+            char *p = strtok(pred, " ");
+            if(p!=NULL)
+            {
+                strcpy(pose_X,p);
+            }
+            else 
+            {
+                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                exit(0);
+            }
+            
+            p = strtok(NULL, " ");
+            if(p!=NULL) 
+            {                
+                strcpy(pose_Y,p);
+            }
+            else 
+            {
+                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                exit(0);
+            }
+
+            p = strtok(NULL," ");
+            if(p!=NULL) 
+            {
+                strcpy(pose_Yaw,p);
+            }
+            else 
+            {
+                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                exit(0);
+            }
+           	printf("confidence:%f, X: %s, Y: %s, Yaw: %s\n", predictions[index], pose_X,pose_Y,pose_Yaw); // output esperado
+            p = strtok(NULL," ");
+            
             
             free_image(cropped);
             if (resized.data != im.data)
@@ -101,7 +140,7 @@ main(int argc, char **argv)
     int classes_qtd = 0;
     std::ifstream labels_file;
     std::string line;
-    char *lables_file_name = (char *) "config/labels.txt";
+    char *lables_file_name = (char *) "config/poses_and_labels.txt";
 
     labels_file.open(lables_file_name);
     if (!labels_file)
@@ -116,7 +155,7 @@ main(int argc, char **argv)
             classes_qtd++;
     }
 
-    predict_classifier((char *) "config/labels.txt", classes_qtd, (char *) "config/config.cfg", (char *) "config/classifier.weights", (char *) "config/test.txt");
+    predict_classifier((char *) "config/poses_and_labels.txt", classes_qtd, (char *) "config/config.cfg", (char *) "config/classifier.weights", (char *) "config/test.txt");
 
     return 0;
 }
