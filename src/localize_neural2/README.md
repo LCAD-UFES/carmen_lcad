@@ -45,6 +45,7 @@ Este processo também gera o arquivo /dados/ufes_gt/livepos-20191003-20191003-5m
 Este arquivo tem o mesmo formato de basepos-20191003-20191003-5m-1m.txt, mas o afastamento entre as imagens
 é de 1m.
 
+
 xxxxxxxxxxxxxxxxxxx
 
 O procedimento acima conclui o processo de geração da base de teste.
@@ -59,6 +60,11 @@ O comando abaixo gera o arquivo test.txt com tal lista, associada ao log log_vol
  readlink -f /dados/ufes/20191003/*r.png > ~/carmen_lcad/src/localize_neural2/config/test.txt
 ```
 
+É necessário também a lista de poses e labels associadas às saídas da rede treinada. Em nosso exemplo, basta executar o seguinte comando:
+
+```bash
+ cat /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt |grep -v label| awk '{print "$3" "$4" "$8 }' > config/poses_and_labels.txt
+```
 
 # link com as imagens dos logs da IARA - Volta da UFES
 
