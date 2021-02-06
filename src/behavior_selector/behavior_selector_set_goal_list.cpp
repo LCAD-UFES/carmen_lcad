@@ -36,8 +36,6 @@ static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
 static double distance_to_remove_annotation_goal = 1.5;
 
-extern double distance_car_pose_car_front;
-
 extern int behavior_selector_reverse_driving;
 
 int position_of_next_annotation = 0;

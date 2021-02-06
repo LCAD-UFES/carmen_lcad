@@ -134,6 +134,7 @@ carmen_obstacle_distance_mapper_map_message distance_map_free_of_moving_objects;
 
 double original_behaviour_selector_central_lane_obstacles_safe_distance;
 double original_model_predictive_planner_obstacles_safe_distance;
+double behaviour_selector_annotation_safe_distance_multiplier;
 
 static double carmen_ini_max_velocity;
 
@@ -816,9 +817,11 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 		if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) && 	// Reduz o criterio dos obstaculos moveis se for barreira
 			(distance_to_annotation < 45.0))
 		{
-			//TODO Check this constant 0.3
-			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance *= 0.3;	// Padrao da Ida a Guarapari
-			get_robot_config()->model_predictive_planner_obstacles_safe_distance *= 0.3;		// Padrao da Ida a Guarapari
+			get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance * behaviour_selector_annotation_safe_distance_multiplier;
+			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance =
+					original_behaviour_selector_central_lane_obstacles_safe_distance -
+					original_model_predictive_planner_obstacles_safe_distance +
+					original_model_predictive_planner_obstacles_safe_distance * behaviour_selector_annotation_safe_distance_multiplier;
 			if (behavior_selector_use_symotha)
 			{
 				udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
@@ -1745,6 +1748,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "central_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_central_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_displacement", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_displacement, 0, NULL},
+		{(char *) "behavior_selector", (char *) "annotation_safe_distance_multiplier", CARMEN_PARAM_DOUBLE, &behaviour_selector_annotation_safe_distance_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_velocity_tuning_factor", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_goal_velocity_tuning_factor, 0, NULL},
 		{(char *) "behavior_selector", (char *) "in_lane_longitudinal_safety_margin", CARMEN_PARAM_DOUBLE, &in_lane_longitudinal_safety_margin, 0, NULL},
 		{(char *) "behavior_selector", (char *) "in_lane_longitudinal_safety_margin_with_v_multiplier", CARMEN_PARAM_DOUBLE, &in_lane_longitudinal_safety_margin_with_v_multiplier, 0, NULL},
