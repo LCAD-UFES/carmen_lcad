@@ -18,10 +18,8 @@
 using namespace std;
 using namespace cv;
 
-
 //teste utilizando a lista de imagens do treino para gerar como output o rótulo estimado
-void
-predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile, char *filename)
+void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfile, char *filename)
 {
     network net = parse_network_cfg_custom(cfgfile, 1, 0);
     if (weightfile)
@@ -40,7 +38,7 @@ predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile
     if (classes != l.outputs && (l.type == SOFTMAX || l.type == COST))
     {
         printf("\n Error: num of filters = %d in the last conv-layer in cfg-file doesn't match to classes = %d in data-file \n",
-            l.outputs, classes);
+               l.outputs, classes);
         getchar();
     }
     int top = 1;
@@ -48,78 +46,119 @@ predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile
     int i = 0;
     char **names = get_labels(name_list);
     clock_t time;
-    int *indexes = (int *) xcalloc(top, sizeof(int));
+    int *indexes = (int *)xcalloc(top, sizeof(int));
     char input[1024];
 
     std::ifstream images_file;
     images_file.open(filename);
     std::string line;
-    
+    int last_label = -1;
+    int iteration = 0;
+
     if (images_file.is_open())
     {
         while (getline(images_file, line))
         {
+            iteration++;
             strcpy(input, line.c_str());
-            Mat opencv_image = imread(input, IMREAD_COLOR);
-            imshow("localize_neural2", opencv_image);
-            int k = waitKey(1); // Wait for a keystroke in the window
+
+            if (last_label == 650)
+            {
+                iteration = 1;
+                last_label = 0;
+            }
 
             image im = load_image_color(input, 0, 0);
             image resized = resize_min(im, net.w);
-            image cropped = crop_image(resized, (resized.w - net.w)/2, (resized.h - net.h)/2, net.w, net.h);
+            image cropped = crop_image(resized, (resized.w - net.w) / 2, (resized.h - net.h) / 2, net.w, net.h);
 
             float *X = cropped.data;
 
             double time = get_time_point();
             float *predictions = network_predict(net, X);
-            printf("%s: Predicted in % 6.2lf milli-seconds. ", input, ((double) get_time_point() - time) / 1000);
+            //printf("%s: Predicted in % 6.2lf milli-seconds. ", input, ((double) get_time_point() - time) / 1000);
 
             if (net.hierarchy)
-            	hierarchy_predictions(predictions, net.outputs, net.hierarchy, 0);
+                hierarchy_predictions(predictions, net.outputs, net.hierarchy, 0);
+
             top_k(predictions, net.outputs, 1, indexes);
-            
+
             int index = indexes[0];
-            char pose_X[50], pose_Y[50], pose_Yaw[50];
+
+            if (last_label > -1)
+            {
+                if ((index >= last_label) && (index <= last_label + iteration))
+                {
+                    iteration = 1;
+                    last_label = index;
+                }
+                else
+                {
+                    index = last_label;
+                }
+            }
+            else
+            {
+                last_label = index;
+            }
+            char pose_X[50], pose_Y[50], pose_Yaw[50], pose_image_path[1024];
             char pred[250];
-            
-            strcpy(pred,names[index]);
-            
+
+            strcpy(pred, names[index]);
+
             char *p = strtok(pred, " ");
-            if(p!=NULL)
+            if (p != NULL)
             {
-                strcpy(pose_X,p);
+                strcpy(pose_X, p);
             }
-            else 
-            {
-                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
-                exit(0);
-            }
-            
-            p = strtok(NULL, " ");
-            if(p!=NULL) 
-            {                
-                strcpy(pose_Y,p);
-            }
-            else 
+            else
             {
                 printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
                 exit(0);
             }
 
-            p = strtok(NULL," ");
-            if(p!=NULL) 
+            p = strtok(NULL, " ");
+            if (p != NULL)
             {
-                strcpy(pose_Yaw,p);
+                strcpy(pose_Y, p);
             }
-            else 
+            else
             {
                 printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
                 exit(0);
             }
-           	printf("confidence:%f, X: %s, Y: %s, Yaw: %s\n", predictions[index], pose_X,pose_Y,pose_Yaw); // output esperado
-            p = strtok(NULL," ");
-            
-            
+
+            p = strtok(NULL, " ");
+            if (p != NULL)
+            {
+                strcpy(pose_Yaw, p);
+            }
+            else
+            {
+                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                exit(0);
+            }
+            p = strtok(NULL, " ");
+            if (p != NULL)
+            {
+                strcpy(pose_image_path, p);
+            }
+            else
+            {
+                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                exit(0);
+            }
+            printf("confidence:%f, X: %s, Y: %s, Yaw: %s, predicted_label: %d, last_right_label: %d, possible_label: %d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
+
+            p = strtok(NULL, " ");
+
+            Mat live_image = imread(input, IMREAD_COLOR);
+            Mat pose_image = imread(pose_image_path, IMREAD_COLOR);
+            Mat compare_images;
+            vconcat(live_image, pose_image, compare_images);
+            imshow("localize_neural2", compare_images);
+            int k = waitKey(1); // Wait for a keystroke in the window
+
             free_image(cropped);
             if (resized.data != im.data)
                 free_image(resized);
@@ -127,26 +166,24 @@ predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weightfile
         }
     }
     else
-    	printf("Could not open images_file %s\n", filename);
+        printf("Could not open images_file %s\n", filename);
 
     free(indexes);
     free_network(net);
 }
 
-
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int classes_qtd = 0;
     std::ifstream labels_file;
     std::string line;
-    char *lables_file_name = (char *) "config/poses_and_labels.txt";
+    char *lables_file_name = (char *)"config/poses_and_labels.txt";
 
     labels_file.open(lables_file_name);
     if (!labels_file)
     {
-    	printf("Could not open labels file %s\n", lables_file_name);
-    	exit(1);
+        printf("Could not open labels file %s\n", lables_file_name);
+        exit(1);
     }
 
     while (getline(labels_file, line))
@@ -155,7 +192,7 @@ main(int argc, char **argv)
             classes_qtd++;
     }
 
-    predict_classifier((char *) "config/poses_and_labels.txt", classes_qtd, (char *) "config/config.cfg", (char *) "config/classifier.weights", (char *) "config/test.txt");
+    predict_classifier((char *)"config/poses_and_labels.txt", classes_qtd, (char *)"config/config.cfg", (char *)"config/classifier.weights", (char *)"config/test.txt");
 
     return 0;
 }
