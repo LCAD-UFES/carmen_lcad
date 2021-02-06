@@ -8,7 +8,7 @@
 #include <TH/TH.h>
 #include <THC/THC.h>
 #include "localize_neural_torch.h"
-#include "localize_neural_util.h"
+//#include "localize_neural_util.h"
 
 static int input_width = 320;
 static int input_height = 240;

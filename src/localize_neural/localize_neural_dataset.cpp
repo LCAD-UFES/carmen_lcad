@@ -22,7 +22,7 @@
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/xsens_interface.h>
 
-#include "localize_neural_util.h"
+//#include "localize_neural_util.h"
 
 #include <tf.h>
 
@@ -108,11 +108,11 @@ save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int
 	compose_output_path(output_dir_name, left_img_filename, &left_composed_path);
 	compose_output_path(output_dir_name, right_img_filename, &right_composed_path);
 
-	copy_image((char *)stereo_image->raw_left, left_img, stereo_image->width, stereo_image->height);
-	copy_image((char *)stereo_image->raw_right, right_img, stereo_image->width, stereo_image->height);
+	// copy_image((char *)stereo_image->raw_left, left_img, stereo_image->width, stereo_image->height);
+	// copy_image((char *)stereo_image->raw_right, right_img, stereo_image->width, stereo_image->height);
 
-	resize_image(&left_img, 640, 480);
-	resize_image(&right_img, 640, 480);
+	// resize_image(&left_img, 640, 480);
+	// resize_image(&right_img, 640, 480);
 
 	cvSetImageROI(left_img, crop);
 	cvSetImageROI(right_img, crop);
@@ -184,17 +184,35 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 	}
 
 	int nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
+	
 	if (nearest_message_index < 0)
 	{
 		carmen_warn("nearest_message_index < 0\n");
 		return;
 	}
+	
 
 	carmen_localize_ackerman_globalpos_message globalpos_message = globalpos_message_buffer[nearest_message_index];
 	carmen_pose_3D_t globalpos = globalpos_message.pose;
 	globalpos.position.x = globalpos_message.globalpos.x;
 	globalpos.position.y = globalpos_message.globalpos.y;
 	globalpos.orientation.yaw = globalpos_message.globalpos.theta;
+
+	// printf("pose: %i\n",nearest_message_index);
+	// printf("pose: %d %d %d %d %f %f \n",
+	// 	globalpos.position.x,
+	// 	globalpos.position.y,
+	// 	globalpos.position.z,
+	// 	globalpos.orientation.yaw,
+	// 	stereo_image->timestamp,
+	// 	globalpos_message.timestamp
+	// 	);
+
+	// if (nearest_message_index < 0)
+	// {
+	// 	carmen_warn("nearest_message_index < 0\n");
+	// 	return;
+	// }
 
 	double dt = stereo_image->timestamp - globalpos_message.timestamp;
 	if (dt >= 0.0)
@@ -206,14 +224,14 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 		carmen_die("dt < 0\n");
 	}
 
-	/*
-	tf::Pose camera_wrt_world = get_camera_pose_wrt_world(globalpos);
+	
+	// tf::Pose camera_wrt_world = get_camera_pose_wrt_world(globalpos);
 
-	tf::Vector3 position = camera_wrt_world.getOrigin();
-	tf::Quaternion orientation = camera_wrt_world.getRotation();
+	// tf::Vector3 position = camera_wrt_world.getOrigin();
+	// tf::Quaternion orientation = camera_wrt_world.getRotation();
 
-	tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
-	*/
+	// tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+	
 	create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
 
 	fprintf(image_pose_output_file, "%lf %lf %lf %lf %lf %lf %lf %s/%s %s/%s\n",
@@ -257,6 +275,7 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *message)
 {
+	printf("CHEGOU LOCALIZE ACKERMAN %lf %lf %lf\n",message->globalpos.x,message->globalpos.y,message->globalpos.theta);
 	globalpos_message_buffer[globalpos_message_index] = *message;
 	globalpos_message_index = (globalpos_message_index + 1) % 100;
 }
@@ -387,11 +406,9 @@ void
 subscribe_messages()
 {
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
 
 int
 main(int argc, char *argv[])
