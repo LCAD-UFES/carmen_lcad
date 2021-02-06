@@ -1353,7 +1353,7 @@ check_initial_nodes(state_node *initial_node, state_node *goal_node, carmen_obst
 
 	if (carmen_obstacle_avoider_car_distance_to_nearest_obstacle(trajectory_pose, obstacle_distance_grid_map) < OBSTACLE_DISTANCE_MIN)
 	{
-		printf("Robot_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(trajectory_pose, obstacle_distance_grid_map));
+		printf("!!!!!!!!!!!!!!!!!!!!!!! Robot_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(trajectory_pose, obstacle_distance_grid_map));
 		failed = 1;
 	}
 
@@ -1365,7 +1365,7 @@ check_initial_nodes(state_node *initial_node, state_node *goal_node, carmen_obst
 
 	if (carmen_obstacle_avoider_car_distance_to_nearest_obstacle(trajectory_pose, obstacle_distance_grid_map) < OBSTACLE_DISTANCE_MIN)
 	{
-		printf("Goal_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(trajectory_pose, obstacle_distance_grid_map));
+		printf("!!!!!!!!!!!!!!!!!!!!!!! Goal_pose next to obstacle: %f\n", carmen_obstacle_avoider_car_distance_to_nearest_obstacle(trajectory_pose, obstacle_distance_grid_map));
 		failed = 1;
 	}
 	printf("Goal_pose = %f %f %f\n", goal_node->pose.x, goal_node->pose.y, goal_node->pose.theta);

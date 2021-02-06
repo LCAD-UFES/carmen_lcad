@@ -49,18 +49,24 @@ Entre em Interface Options e ative o I2C e o SPI. Volte e entre em Advanced Opti
 $ sudo apt-get update
 $ sudo apt-get install gedit
 $ sudo gedit /etc/modprobe.d/raspi-blacklist.conf
+```
 
 Place a hash '#' in front of blacklist i2c-bcm2708
 If the above file is blank or doesn't exist, then skip the above step
 
 
+```bash
 $ sudo gedit /etc/modules
+```
+
 Add these two lines;
 
 i2c-dev
 i2c-bcm2708
 
+```bash
 $ sudo gedit /boot/config.txt
+```
 
 Add these two lines to the bottom of the file:
 dtparam=i2c_arm=on,i2c_arm_baudrate=1000000
@@ -68,15 +74,20 @@ dtparam=i2c1=on
 
 {,i2c_arm_baudrate=1000000 eh para a MPU-9250, mas deve funcionar com outras. Se nao funcionar, retirar}
 
+```bash
 $ sudo reboot
+```
 
 Once your Raspberry Pi reboots, you can check for any components connected to the i2c bus by using i2cdetect;
 
+```bash
 $ sudo /usr/sbin/i2cdetect -y 1
+```
 
 A table like the table below will be shown and if any divices are connected, thier address will be shown. 
 Below you can see that a device is connected to the i2c bus which is using the address of 0x6b.
 
+```bash
 0 1 2 3 4 5 6 7 8 9 a b c d e f
 00: -- -- -- -- -- -- -- -- -- -- -- -- --
 10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -87,6 +98,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
 60: -- -- -- -- -- -- -- -- -- -- -- 6b -- -- -- --
 70: -- -- -- -- -- -- -- --
 ```
+
 # Install Dependencies
 
 ```bash
@@ -156,12 +168,16 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ ./Output/pi_imu_server_driver 
 ```
 
+Dependendo da IMU, substitua o arquivo pi_imu_server/RTIMULib.ini por pi_imu_server/RTIMULib-LSM9DS1.ini ou outro
+disponivel no diretorio.
+
 # Testing and calibrating the pi_imu drive module on the Raspberry PI
 
 ```bash
  $ cd ~/carmen_lcad/src/pi_imu/RTIMULib2
  $ ./Linux/build/RTIMULibDemoGL/RTIMULibDemoGL {or ./Linux/build/RTIMULibDemo/RTIMULibDemo if OpenGL is not working}
  ```
+
 For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
 
 O arquivo de calibracao, apos rodar o comando acima, ficarah no diretorio corrente 
@@ -254,13 +270,13 @@ Use o zoom e mova o carro no viewer_3D se precisar.
 ```bash
  $ cd $CARMEN_HOME/src/pi_imu
  $ make
- $ ./pi_imu_client_driver
+ $ ./pi_imu_client_driver {<ip of machine running pi_imu_server_driver> default = 192.168.1.15}
 ```
 
 # Visualize the pi_imu module on your computer
 
 ```bash
- $ cd $CARMEN_HOME/src/pi_imu_viewer
+ $ cd $CARMEN_HOME/src/pi_imu_viewer <pi_imu | no_pi_imu>
  $ make
  $ $CARMEN_HOME/bin/imu_viewer 
 ```

@@ -36,7 +36,7 @@
 
 //  FIFO transfer size
 
-#define MPU9250_FIFO_CHUNK_SIZE     12                      // gyro and accels take 12 bytes
+#define MPU9250_FIFO_CHUNK_SIZE     14                      // accels, gyro and temperature take 14 bytes
 
 #ifdef MPU9250_CACHE_MODE
 
@@ -102,6 +102,8 @@ private:
 
     RTFLOAT m_gyroScale;
     RTFLOAT m_accelScale;
+    RTFLOAT m_temperatureScale;
+    RTFLOAT m_temperatureBias;
 
 
 #ifdef MPU9250_CACHE_MODE
