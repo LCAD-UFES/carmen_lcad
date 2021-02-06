@@ -270,13 +270,13 @@ Use o zoom e mova o carro no viewer_3D se precisar.
 ```bash
  $ cd $CARMEN_HOME/src/pi_imu
  $ make
- $ ./pi_imu_client_driver
+ $ ./pi_imu_client_driver {<ip of machine running pi_imu_server_driver> default = 192.168.1.15}
 ```
 
 # Visualize the pi_imu module on your computer
 
 ```bash
- $ cd $CARMEN_HOME/src/pi_imu_viewer
+ $ cd $CARMEN_HOME/src/pi_imu_viewer <pi_imu | no_pi_imu>
  $ make
  $ $CARMEN_HOME/bin/imu_viewer 
 ```
