@@ -17,14 +17,14 @@ static char *gps_tf_name = (char *) "/gps";
 
 static carmen_fused_odometry_parameters *fused_odometry_parameters;
 
-static int reinitialized_gps = 0;
-
 sensor_vector_xsens_xyz **xsens_sensor_vector = NULL;
 int xsens_sensor_vector_index = 0;
 
 extern int kalman_filter;
 
 bool got_gps_message = false;
+
+double xsens_magnetic_declination = 0.0;
 
 
 int
@@ -103,6 +103,7 @@ get_car_orientation_from_message(carmen_xsens_xyz_message *xsens_xyz_message)
 	tf::Quaternion tf_quat_xsens = carmen_quaternion_to_tf_quaternion(xsens_xyz_message->quat);
 	
 	carmen_orientation_3D_t orientation = get_orientation_car_reference_from_message(tf_quat_xsens);
+	orientation.yaw -= xsens_magnetic_declination;
 
 	return orientation;
 }
@@ -114,6 +115,7 @@ get_car_orientation_from_message(carmen_xsens_global_quat_message *xsens_mti_mes
 	tf::Quaternion tf_quat_xsens(xsens_mti_message->quat_data.m_data[1], xsens_mti_message->quat_data.m_data[2], xsens_mti_message->quat_data.m_data[3], xsens_mti_message->quat_data.m_data[0]);
 	
 	carmen_orientation_3D_t orientation = get_orientation_car_reference_from_message(tf_quat_xsens);
+	orientation.yaw -= xsens_magnetic_declination;
 
 	return orientation;
 }
@@ -392,7 +394,7 @@ globalpos_ackerman_initialize_from_xsens(carmen_fused_odometry_state_vector init
 
 	mean.x = initial_state.pose.position.x;
 	mean.y = initial_state.pose.position.y;
-	mean.theta = initial_state.pose.orientation.yaw;// - 0.35;
+	mean.theta = initial_state.pose.orientation.yaw;
 
 	carmen_point_t std;
 	std.x = fused_odometry_parameters->xsens_gps_x_std_error;
@@ -456,6 +458,8 @@ initialize_states(carmen_xsens_xyz_message *xsens_xyz)
 void 
 initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 {
+	// Esta initialize_states() que eh usada hoje
+
 	static int first_time = 1;
 	static double first_timestamp = 0.0;
 	
@@ -477,6 +481,10 @@ initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 			}
 			else
 				initial_state.pose.orientation = get_car_orientation_from_message(xsens_mti);
+
+			carmen_orientation_3D_t orientation = get_car_orientation_from_message(xsens_mti);
+			printf("yaw %lf magnetic_declination %lf\n", 180.0 * orientation.yaw / M_PI, 180.0 * xsens_magnetic_declination / M_PI);
+			fflush(stdout);
 
 			globalpos_ackerman_initialize_from_xsens(initial_state, xsens_mti->timestamp);
 
@@ -616,6 +624,9 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
 		correction(measure_weight_particle, sensor_vector, fused_odometry_parameters);
 		publish_fused_odometry();
+//		carmen_orientation_3D_t orientation = get_car_orientation_from_message(xsens_xyz);
+//		printf("yaw %lf magnetic_declination %lf\n", 180.0 * orientation.yaw / M_PI, 180.0 * xsens_magnetic_declination / M_PI);
+//		fflush(stdout);
 		xsens_handler.gps_performance_degradation *= 0.98; // fator de decaimento
 		xsens_handler.gps_orientation_performance_degradation *= 0.98; // fator de decaimento
 	}
@@ -726,6 +737,7 @@ set_best_yaw_estimate(sensor_vector_xsens_xyz **xsens_sensor_vector, int xsens_s
 static void 
 xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 {
+	// Esta eh a funcao corrementemente usado pelo XSENS
 	static bool request_global_localization = false;
 
 	if (!xsens_handler.initial_state_initialized)
@@ -786,6 +798,9 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
 		correction(measure_weight_orientation, sensor_vector, fused_odometry_parameters);
 		publish_fused_odometry();
+//		carmen_orientation_3D_t orientation = get_car_orientation_from_message(xsens_mti);
+//		printf("yaw %lf magnetic_declination %lf\n", 180.0 * orientation.yaw / M_PI, 180.0 * xsens_magnetic_declination / M_PI);
+//		fflush(stdout);
 		xsens_handler.gps_performance_degradation *= 0.98; // fator de decaimento
 		xsens_handler.gps_orientation_performance_degradation *= 0.98; // fator de decaimento
 	}
@@ -985,31 +1000,35 @@ initialize_carmen_parameters(xsens_xyz_handler *xsens_handler, int argc, char **
 
 	carmen_param_t param_list[] = 
 	{
-		{(char*)"sensor_board_1", (char*)"x",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.position.x,	0, NULL},
-		{(char*)"sensor_board_1", (char*)"y",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.position.y,	0, NULL},
-		{(char*)"sensor_board_1", (char*)"z",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.position.z,	0, NULL},
-		{(char*)"sensor_board_1", (char*)"roll",	CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.orientation.roll,0, NULL},
-		{(char*)"sensor_board_1", (char*)"pitch",	CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.orientation.pitch,0, NULL},
-		{(char*)"sensor_board_1", (char*)"yaw",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.orientation.yaw,	0, NULL},
+		{(char *) "sensor_board_1", (char *) "x",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.position.x,	0, NULL},
+		{(char *) "sensor_board_1", (char *) "y",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.position.y,	0, NULL},
+		{(char *) "sensor_board_1", (char *) "z",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.position.z,	0, NULL},
+		{(char *) "sensor_board_1", (char *) "roll",	CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.orientation.roll,0, NULL},
+		{(char *) "sensor_board_1", (char *) "pitch",	CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.orientation.pitch,0, NULL},
+		{(char *) "sensor_board_1", (char *) "yaw",		CARMEN_PARAM_DOUBLE, &xsens_handler->sensor_board_pose.orientation.yaw,	0, NULL},
 
-		{(char*)"xsens", (char*)"x",			CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.position.x,		0, NULL},
-		{(char*)"xsens", (char*)"y",			CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.position.y,		0, NULL},
-		{(char*)"xsens", (char*)"z",			CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.position.z,		0, NULL},
-		{(char*)"xsens", (char*)"roll",			CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.roll,	0, NULL},
-		{(char*)"xsens", (char*)"pitch",		CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.pitch,	0, NULL},
-		{(char*)"xsens", (char*)"yaw",			CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.yaw,	0, NULL},
+		{(char *) "xsens", (char *) "x",				CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.position.x,		0, NULL},
+		{(char *) "xsens", (char *) "y",				CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.position.y,		0, NULL},
+		{(char *) "xsens", (char *) "z",				CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.position.z,		0, NULL},
+		{(char *) "xsens", (char *) "roll",				CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.roll,	0, NULL},
+		{(char *) "xsens", (char *) "pitch",			CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.pitch,	0, NULL},
+		{(char *) "xsens", (char *) "yaw",				CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.yaw,	0, NULL},
 
-		{(char*)"gps_nmea", (char*)"x",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.x,		0, NULL},
-		{(char*)"gps_nmea", (char*)"y",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.y,		0, NULL},
-		{(char*)"gps_nmea", (char*)"z",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.z,		0, NULL},
-		{(char*)"gps_nmea", (char*)"roll",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.roll,		0, NULL},
-		{(char*)"gps_nmea", (char*)"pitch",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.pitch,	0, NULL},
-		{(char*)"gps_nmea", (char*)"yaw",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.yaw,		0, NULL},
+		{(char *) "xsens", (char *) "magnetic_declination", CARMEN_PARAM_DOUBLE, &xsens_magnetic_declination,	0, NULL},
+
+		{(char *) "gps_nmea", (char *) "x",				CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.x,		0, NULL},
+		{(char *) "gps_nmea", (char *) "y",				CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.y,		0, NULL},
+		{(char *) "gps_nmea", (char *) "z",				CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.z,		0, NULL},
+		{(char *) "gps_nmea", (char *) "roll",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.roll,		0, NULL},
+		{(char *) "gps_nmea", (char *) "pitch",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.pitch,	0, NULL},
+		{(char *) "gps_nmea", (char *) "yaw",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.yaw,		0, NULL},
 
 	};
 	
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	xsens_magnetic_declination = carmen_degrees_to_radians(xsens_magnetic_declination);
 }
 
 
