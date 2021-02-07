@@ -911,7 +911,8 @@ bool RTIMUSettings::loadSettings()
     }
     HAL_INFO1("Settings file %s loaded\n", m_filename);
     fclose(m_fd);
-    return saveSettings();                                  // make sure settings file is correct and complete
+    return (true);
+//    return saveSettings();                                  // make sure settings file is correct and complete
 }
 
 bool RTIMUSettings::saveSettings()
