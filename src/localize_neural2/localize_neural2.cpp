@@ -110,6 +110,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             if (p != NULL)
             {
                 strcpy(pose_X, p);
+                pose_X[10] = '\0';
             }
             else
             {
@@ -121,6 +122,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             if (p != NULL)
             {
                 strcpy(pose_Y, p);
+                pose_Y[10] = '\0';
             }
             else
             {
@@ -132,6 +134,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             if (p != NULL)
             {
                 strcpy(pose_Yaw, p);
+                pose_Yaw[6] = '\0';
             }
             else
             {
@@ -148,7 +151,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
                 printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
                 exit(0);
             }
-            printf("confidence:%f, X: %s, Y: %s, Yaw: %s, predicted_label: %d, last_right_label: %d, possible_label: %d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
+            printf("confidence:%4.2f, X: %s, Y: %s, Yaw: %s, predicted_label: %03d, last_right_label: %03d, possible_label: %03d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
 
             p = strtok(NULL, " ");
 
