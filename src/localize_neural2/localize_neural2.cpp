@@ -54,7 +54,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
     std::string line;
     int last_label = -1;
     int iteration = 0;
-
+    
     if (images_file.is_open())
     {
         while (getline(images_file, line))
@@ -62,7 +62,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             iteration++;
             strcpy(input, line.c_str());
 
-            if (last_label == 650)
+            if (last_label == classes-1)
             {
                 iteration = 1;
                 last_label = 0;
@@ -158,7 +158,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             Mat live_image = imread(input, IMREAD_COLOR);
             Mat pose_image = imread(pose_image_path, IMREAD_COLOR);
             Mat compare_images;
-            vconcat(live_image, pose_image, compare_images);
+            hconcat(live_image, pose_image, compare_images);
             imshow("localize_neural2", compare_images);
             int k = waitKey(1); // Wait for a keystroke in the window
 
