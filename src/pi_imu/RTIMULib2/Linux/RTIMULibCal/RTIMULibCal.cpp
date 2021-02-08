@@ -34,7 +34,7 @@
 
 //  where to find the ellipsoid fitting code
 
-#define ELLIPSOID_FIT_DIR               "../RTEllipsoidFit/"
+#define ELLIPSOID_FIT_DIR               "RTEllipsoidFit/"
 
 //  function prototypes
 

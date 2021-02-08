@@ -1071,7 +1071,7 @@ rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 
 
 static void
-carmen_fused_odometry_message_handler(carmen_fused_odometry_particle_message *odometry_message)
+carmen_fused_odometry_message_handler(carmen_fused_odometry_message *odometry_message)
 {
     xsens_yaw_bias = odometry_message->xsens_yaw_bias;
 

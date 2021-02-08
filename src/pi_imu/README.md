@@ -175,7 +175,9 @@ disponivel no diretorio.
 
 ```bash
  $ cd ~/carmen_lcad/src/pi_imu/RTIMULib2
- $ ./Linux/build/RTIMULibDemoGL/RTIMULibDemoGL {or ./Linux/build/RTIMULibDemo/RTIMULibDemo if OpenGL is not working}
+ $ ./Linux/build/RTIMULibDemoGL/RTIMULibDemoGL 
+ {or ./Linux/build/RTIMULibDemo/RTIMULibDemo if OpenGL is not working}
+ {or ./Linux/build/RTIMULibDemoGL/RTIMULibCal for terminal only calibration}
  ```
 
 For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
