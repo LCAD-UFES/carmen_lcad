@@ -40,19 +40,23 @@
 
 
 declare -a logs=(
-"/dados/log_volta_da_ufes-20191003.txt" 
+"/dados/log_volta_da_ufes-20191003.txt"
+"dados/log_volta_da_ufes-20160825.txt" 
 )
 
 declare -a dirs=(
 "/dados/ufes/20191003"
+"/dados/ufes/20160825"
 )
 
 
 declare -a cams=(
 3
+3
 )
 
 declare -a crops=(
+380
 380
 )
 
