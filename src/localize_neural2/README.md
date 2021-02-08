@@ -63,7 +63,7 @@ O comando abaixo gera o arquivo test.txt com tal lista, associada ao log log_vol
 É necessário também a lista de poses e labels associadas às saídas da rede treinada. Em nosso exemplo, basta executar o seguinte comando:
 
 ```bash
- cat /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt |grep -v label| awk '{print "$3" "$4" "$8" "$1}' > config/poses_and_labels.txt
+ cat /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt |grep -v label| awk '{print $3 " " $4 " " $8 " " $1}' > config/poses_and_labels.txt
 ```
 
 # link com as imagens dos logs da IARA - Volta da UFES

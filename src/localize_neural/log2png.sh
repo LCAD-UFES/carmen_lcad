@@ -40,11 +40,11 @@
 
 
 declare -a logs=(
-"/dados/log_volta_da_ufes-20191003.txt" 
+"/dados/log_voltadaufes-20160830.txt" 
 )
 
 declare -a dirs=(
-"/dados/ufes/20191003"
+"/dados/ufes/20160830"
 )
 
 
