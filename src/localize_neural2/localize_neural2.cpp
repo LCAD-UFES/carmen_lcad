@@ -7,9 +7,8 @@
 #include "option_list.h"
 #include "blas.h"
 #include "assert.h"
-//#include "dark_cuda.h"
 #include <sys/time.h>
-
+#include <gflags/gflags.h>
 #include <opencv/cv.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -17,6 +16,15 @@
 
 using namespace std;
 using namespace cv;
+
+DEFINE_string(poses_and_labels, "", "poses and labels file");
+
+DEFINE_string(config_file, "", "darknet config file");
+
+DEFINE_string(weights_file, "", "network weights file in darknet format");
+
+DEFINE_string(images_list, "", "list of images used for training, test or validation");
+
 
 //teste utilizando a lista de imagens do treino para gerar como output o rótulo estimado
 void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfile, char *filename)
@@ -114,7 +122,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             }
             else
             {
-                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
                 exit(0);
             }
 
@@ -126,7 +134,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             }
             else
             {
-                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
                 exit(0);
             }
 
@@ -138,7 +146,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             }
             else
             {
-                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
                 exit(0);
             }
             p = strtok(NULL, " ");
@@ -148,7 +156,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             }
             else
             {
-                printf("\nThe poses_and_labels.txt is not right.\n Please verify your dataset and steps to generate it.");
+                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
                 exit(0);
             }
             printf("confidence:%4.2f, X: %s, Y: %s, Yaw: %s, predicted_label: %03d, last_right_label: %03d, possible_label: %03d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
@@ -177,15 +185,29 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
 
 int main(int argc, char **argv)
 {
+    string config_file, weight_file,  poses_list, images_list; 
+    ::google::ParseCommandLineFlags(&argc, &argv, true);
+    if (FLAGS_poses_and_labels == "" || FLAGS_weights_file == "" || FLAGS_config_file == "" || FLAGS_images_list == "")
+    {
+        printf("Please execute: %s --poses_and_lages config/poses_and_labels.txt  --weghts_file classifier.weights --config_file config.cfg --images_list test.txt \n",argv[0]);
+        exit(1);
+    }
+    else 
+    {
+        poses_list  = FLAGS_poses_and_labels;
+        weight_file = FLAGS_weights_file;
+        config_file = FLAGS_config_file;
+        images_list = FLAGS_images_list;
+    }
     int classes_qtd = 0;
     std::ifstream labels_file;
     std::string line;
-    char *lables_file_name = (char *)"config/poses_and_labels.txt";
+    
 
-    labels_file.open(lables_file_name);
+    labels_file.open(poses_list.c_str());
     if (!labels_file)
     {
-        printf("Could not open labels file %s\n", lables_file_name);
+        printf("Could not open labels file %s\n", poses_list.c_str());
         exit(1);
     }
 
@@ -195,7 +217,7 @@ int main(int argc, char **argv)
             classes_qtd++;
     }
 
-    predict_classifier((char *)"config/poses_and_labels.txt", classes_qtd, (char *)"config/config.cfg", (char *)"config/classifier.weights", (char *)"config/test.txt");
+    predict_classifier((char *)poses_list.c_str(), classes_qtd, (char *) config_file.c_str(), (char *) weight_file.c_str(), (char *)images_list.c_str());
 
     return 0;
 }
