@@ -50,9 +50,11 @@ declare -a dirs=(
 
 declare -a cams=(
 3
+3
 )
 
 declare -a crops=(
+380
 380
 )
 
