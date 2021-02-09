@@ -1,4 +1,3 @@
-
 include ../Makefile.conf
 
 MODULE_NAME = Localize Neural 2.0
@@ -12,18 +11,20 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/
 
 CFLAGS += `pkg-config --cflags opencv` -I/usr/include/gflags
 
+LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface
+LFLAGS += -fPIC -lgflags -l:libdarknet.so -lstdc++ `pkg-config --libs opencv` 
 
-LFLAGS += -g -fPIC -lgflags -l:libdarknet.so -lstdc++ `pkg-config --libs opencv` 
-
-SOURCES = localize_neural2.cpp
+SOURCES = localize_neural2.cpp dnn_visual_gl_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = localize_neural2
+PUBLIC_BINARIES = localize_neural2 dnn_visual_gl
 
-TARGETS = darknet localize_neural2
+TARGETS = darknet localize_neural2 dnn_visual_gl
 
 localize_neural2: localize_neural2.o
+
+dnn_visual_gl: dnn_visual_gl_main.o
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4  > /dev/null 2>&1

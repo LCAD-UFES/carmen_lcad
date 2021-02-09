@@ -27,7 +27,8 @@ DEFINE_string(images_list, "", "list of images used for training, test or valida
 
 
 //teste utilizando a lista de imagens do treino para gerar como output o rótulo estimado
-void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfile, char *filename)
+void
+predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfile, char *filename)
 {
     network net = parse_network_cfg_custom(cfgfile, 1, 0);
     if (weightfile)
@@ -109,6 +110,7 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
             {
                 last_label = index;
             }
+
             char pose_X[50], pose_Y[50], pose_Yaw[50], pose_image_path[1024];
             char pred[250];
 
@@ -159,12 +161,14 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
                 printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
                 exit(0);
             }
-            printf("confidence:%4.2f, X: %s, Y: %s, Yaw: %s, predicted_label: %03d, last_right_label: %03d, possible_label: %03d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
+            printf("confidence: %4.2f, X: %s, Y: %s, Yaw: %s, predicted_label: %03d, last_right_label: %03d, possible_label: %03d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
 
             p = strtok(NULL, " ");
 
             Mat live_image = imread(input, IMREAD_COLOR);
-            Mat pose_image = imread(pose_image_path, IMREAD_COLOR);
+            Mat pose_image = Mat::zeros(Size(live_image.cols, live_image.rows), live_image.type());
+            if (predictions[index] > 0.05)
+            	pose_image = imread(pose_image_path, IMREAD_COLOR);
             Mat compare_images;
             hconcat(live_image, pose_image, compare_images);
             imshow("localize_neural2", compare_images);
@@ -183,13 +187,16 @@ void predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weig
     free_network(net);
 }
 
-int main(int argc, char **argv)
+
+int
+main(int argc, char **argv)
 {
     string config_file, weight_file,  poses_list, images_list; 
     ::google::ParseCommandLineFlags(&argc, &argv, true);
+
     if (FLAGS_poses_and_labels == "" || FLAGS_weights_file == "" || FLAGS_config_file == "" || FLAGS_images_list == "")
     {
-        printf("Please execute: %s --poses_and_lages config/poses_and_labels.txt  --weghts_file classifier.weights --config_file config.cfg --images_list test.txt \n",argv[0]);
+        printf(" Usage: %s --poses_and_labels config/poses_and_labels.txt  --weights_file config/classifier.weights --config_file config/config.cfg --images_list config/test.txt \n",argv[0]);
         exit(1);
     }
     else 
@@ -217,7 +224,7 @@ int main(int argc, char **argv)
             classes_qtd++;
     }
 
-    predict_classifier((char *)poses_list.c_str(), classes_qtd, (char *) config_file.c_str(), (char *) weight_file.c_str(), (char *)images_list.c_str());
+    predict_classifier((char *) poses_list.c_str(), classes_qtd, (char *) config_file.c_str(), (char *) weight_file.c_str(), (char *)images_list.c_str());
 
     return 0;
 }
