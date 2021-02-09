@@ -36,34 +36,62 @@ static int bumblebee_basic_height;
 
 network net;
 char **learned_poses;
+int MAE, last_correct_prediction = -1;
 
-
-image
-convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char *data)
+cv::Mat convert_darknet_image_to_cv_mat(image img)
 {
-	unsigned int c = 3;    // Number of channels
-    image image = make_image(w, h, c);
+	image copy = copy_image(img);
+	constrain_image(copy);
+	int channels = img.c;
+	int width = img.w;
+	int height = img.h;
+	cv::Mat mat = cv::Mat(height, width, CV_8UC(channels));
+	int step = mat.step;
 
-    if (data == NULL)
-    	return image;
+	for (int y = 0; y < img.h; ++y)
+	{
+		for (int x = 0; x < img.w; ++x)
+		{
+			for (int c = 0; c < img.c; ++c)
+			{
+				float val = img.data[c * img.h * img.w + y * img.w + x];
+				mat.data[y * step + x * img.c + c] = (unsigned char)(val * 255);
+			}
+		}
+	}
 
-    for (unsigned int k = 0; k < c; ++k)
-    {
-    	for (unsigned int j = 0; j < h; ++j)
-    	{
-    		for (unsigned int i = 0; i < w; ++i)
-    		{
-    			int dst_index = i + (w * j) + (w * h * k);
-    			int src_index = k + (c * i) + (c * w * j);
-    			image.data[dst_index] = (float) (data[src_index] / 255.0);    // 255 because of conversion Uchar (byte) ti float
-    		}
-    	}
-    }
+	if (mat.channels() == 3)
+		cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
+	else if (mat.channels() == 4)
+		cv::cvtColor(mat, mat, cv::COLOR_RGBA2BGR);
 
-    return (image);
+	return mat;
+}
+
+image convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char *data)
+{
+	unsigned int c = 3; // Number of channels
+	image image = make_image(w, h, c);
+
+	if (data == NULL)
+		return image;
+
+	for (unsigned int k = 0; k < c; ++k)
+	{
+		for (unsigned int j = 0; j < h; ++j)
+		{
+			for (unsigned int i = 0; i < w; ++i)
+			{
+				int dst_index = i + (w * j) + (w * h * k);
+				int src_index = k + (c * i) + (c * w * j);
+				image.data[dst_index] = (float)(data[src_index] / 255.0); // 255 because of conversion Uchar (byte) ti float
+			}
+		}
+	}
+
+	return (image);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -73,48 +101,59 @@ convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void
-bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
 	image img = convert_image_msg_to_darknet_image(stereo_image->width, stereo_image->height, stereo_image->raw_right);
-//	image img_without_car_hood = crop_image(img, 320, 240, 640, 380);
-//	image resized_img = resize_min(img_without_car_hood, net.w);
-	image resized_img = resize_min(img, net.w);
-	image cropped_img = crop_image(resized_img, (resized_img.w - net.w) / 2, (resized_img.h - net.h) / 2, net.w, net.h);
+	image img_without_car_hood = crop_image(img, 0, 0, 640, 380);
+	image resized_img = resize_min(img_without_car_hood, net.w);
+	image resized_img_without_car_hood = resize_min(resized_img, net.w);
+	image cropped_img = crop_image(resized_img_without_car_hood, (resized_img.w - net.w) / 2, (resized_img.h - net.h) / 2, net.w, net.h);
+
+	cv::Mat mat = convert_darknet_image_to_cv_mat(cropped_img);
+	cv::namedWindow("Cropped Image", cv::WINDOW_NORMAL);
+	cv::imshow("Cropped Image", mat);
 
 	float *predictions = network_predict(net, cropped_img.data);
 
 	int selected_pose_label;
 	top_k(predictions, net.outputs, 1, &selected_pose_label);
 
+	//verifica se é a primeira pose detectada
+	if (last_correct_prediction == -1)
+	{
+		last_correct_prediction = selected_pose_label; //inicializa last_correct_prediction
+	}
+	else if ( (selected_pose_label >= last_correct_prediction) && (selected_pose_label <= (last_correct_prediction + MAE)) )
+	{												   //verifica se está dentro da MAE
+		last_correct_prediction = selected_pose_label; //atualiza last_correct_prediction
+	}
+	else
+	{
+		selected_pose_label = last_correct_prediction; // caso negativo, pega a última pose
+	}
+
 	double x, y, theta;
 	char predicted_image_file_name[2048];
 	sscanf(learned_poses[selected_pose_label], "%lf %lf %lf %s", &x, &y, &theta, predicted_image_file_name);
 	printf("confidence %lf, %lf %lf %lf %s\n", predictions[selected_pose_label], x, y, theta, predicted_image_file_name);
-//	printf("confidence %lf, %s\n", predictions[selected_pose_label], learned_poses[selected_pose_label]);
+	//	printf("confidence %lf, %s\n", predictions[selected_pose_label], learned_poses[selected_pose_label]);
 
-   	Mat pose_image = imread(predicted_image_file_name, IMREAD_COLOR);
-    imshow("dnn_visual_gl", pose_image);
-    waitKey(1);
+	Mat pose_image = imread(predicted_image_file_name, IMREAD_COLOR);
+	imshow("dnn_visual_gl", pose_image);
+	waitKey(1);
 
-
-//    free_image(img_without_car_hood);
+	//    free_image(img_without_car_hood);
 	free_image(resized_img);
 	free_image(cropped_img);
 }
 
-
-void
-shutdown_module(int signo)
+void shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
@@ -125,74 +164,65 @@ shutdown_module(int signo)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
 // Initializations                                                                              //
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void
-read_parameters(int argc, char **argv)
+void read_parameters(int argc, char **argv)
 {
 	char bumblebee_string[256];
 	char camera_string[256];
 
 	carmen_param_t param_cmd_list[] =
-	{
-		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
-	};
+		{
+			{(char *)"commandline", (char *)"camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+		};
 
-	carmen_param_install_params(argc, argv, param_cmd_list, sizeof(param_cmd_list)/sizeof(param_cmd_list[0]));
+	carmen_param_install_params(argc, argv, param_cmd_list, sizeof(param_cmd_list) / sizeof(param_cmd_list[0]));
 
 	sprintf(camera_string, "%s%d", "camera", camera);
 	sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
 
 	carmen_param_t param_list[] =
-	{
-		{bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
-		{bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
-	};
+		{
+			{bumblebee_string, (char *)"width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
+			{bumblebee_string, (char *)"height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
+		};
 
-	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 }
 
-
-void
-initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename)
+void initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename, int selected_MAE)
 {
-    net = parse_network_cfg_custom(cfgfile, 1, 0);
-    if (weightfile)
-        load_weights(&net, weightfile);
+	MAE = selected_MAE;
+	net = parse_network_cfg_custom(cfgfile, 1, 0);
+	if (weightfile)
+		load_weights(&net, weightfile);
 
-    set_batch_network(&net, 1);
-    srand(2222222);
+	set_batch_network(&net, 1);
+	srand(2222222);
 
-    fuse_conv_batchnorm(net);
-    calculate_binary_weights(net);
+	fuse_conv_batchnorm(net);
+	calculate_binary_weights(net);
 
-    learned_poses = get_labels(learned_poses_filename);
+	learned_poses = get_labels(learned_poses_filename);
 }
 
-
-void
-subscribe_messages()
+void subscribe_messages()
 {
-	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t)bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	signal(SIGINT, shutdown_module);
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	initialize_structures(argv[1], argv[2], argv[3]);
+	initialize_structures(argv[1], argv[2], argv[3], atoi(argv[4]));
 
 	read_parameters(argc, argv);
 
@@ -201,4 +231,3 @@ main(int argc, char *argv[])
 
 	return (0);
 }
-

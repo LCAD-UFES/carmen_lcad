@@ -7,6 +7,7 @@
 #include "option_list.h"
 #include "blas.h"
 #include "assert.h"
+#include "image.h"
 #include <sys/time.h>
 #include <gflags/gflags.h>
 #include <opencv/cv.h>
@@ -25,6 +26,31 @@ DEFINE_string(weights_file, "", "network weights file in darknet format");
 
 DEFINE_string(images_list, "", "list of images used for training, test or validation");
 
+cv::Mat image_to_mat(image img)
+{
+
+    image copy = copy_image(img);
+    constrain_image(copy);  
+    int channels = img.c;
+    int width = img.w;
+    int height = img.h;
+    cv::Mat mat = cv::Mat(height, width, CV_8UC(channels));
+    int step = mat.step;
+
+    for (int y = 0; y < img.h; ++y) {
+        for (int x = 0; x < img.w; ++x) {
+            for (int c = 0; c < img.c; ++c) {
+                float val = img.data[c*img.h*img.w + y*img.w + x];
+                mat.data[y*step + x*img.c + c] = (unsigned char)(val * 255);
+            }
+        }
+    }
+
+    if (mat.channels() == 3) cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
+    else if (mat.channels() == 4) cv::cvtColor(mat, mat, cv::COLOR_RGBA2BGR);
+
+    return mat;
+}
 
 //teste utilizando a lista de imagens do treino para gerar como output o rótulo estimado
 void
@@ -78,6 +104,7 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
             }
 
             image im = load_image_color(input, 0, 0);
+            
             image resized = resize_min(im, net.w);
             image cropped = crop_image(resized, (resized.w - net.w) / 2, (resized.h - net.h) / 2, net.w, net.h);
 
@@ -164,10 +191,16 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
             printf("confidence: %4.2f, X: %s, Y: %s, Yaw: %s, predicted_label: %03d, last_right_label: %03d, possible_label: %03d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
 
             p = strtok(NULL, " ");
+            
 
-            Mat live_image = imread(input, IMREAD_COLOR);
+            cv::Mat mat = image_to_mat(cropped);
+            cv::namedWindow("teste", cv::WINDOW_NORMAL);
+            cv::imshow("teste", mat);
+            
+
+            Mat live_image = imread(input,IMREAD_COLOR);
             Mat pose_image = Mat::zeros(Size(live_image.cols, live_image.rows), live_image.type());
-            if (predictions[index] > 0.05)
+            if (predictions[index] > 0.001)
             	pose_image = imread(pose_image_path, IMREAD_COLOR);
             Mat compare_images;
             hconcat(live_image, pose_image, compare_images);
