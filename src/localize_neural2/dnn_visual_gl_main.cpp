@@ -38,10 +38,10 @@ network net;
 char **learned_poses;
 int MAE, last_correct_prediction = -1;
 
-cv::Mat convert_darknet_image_to_cv_mat(image img)
+
+cv::Mat
+convert_darknet_image_to_cv_mat(image img)
 {
-	image copy = copy_image(img);
-	constrain_image(copy);
 	int channels = img.c;
 	int width = img.w;
 	int height = img.h;
@@ -68,7 +68,9 @@ cv::Mat convert_darknet_image_to_cv_mat(image img)
 	return mat;
 }
 
-image convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char *data)
+
+image
+convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char *data)
 {
 	unsigned int c = 3; // Number of channels
 	image image = make_image(w, h, c);
@@ -107,36 +109,36 @@ image convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigne
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+void
+bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
 	image img = convert_image_msg_to_darknet_image(stereo_image->width, stereo_image->height, stereo_image->raw_right);
-	image img_without_car_hood = crop_image(img, 0, 0, 640, 380);
-	image resized_img = resize_min(img_without_car_hood, net.w);
-	image resized_img_without_car_hood = resize_min(resized_img, net.w);
-	image cropped_img = crop_image(resized_img_without_car_hood, (resized_img.w - net.w) / 2, (resized_img.h - net.h) / 2, net.w, net.h);
+	image img_without_car_hood = crop_image(img, 0, 0, 640, 380); 	// crop_image() nao faz free()
+	image resized_img_without_car_hood = resize_min(img_without_car_hood, net.w);
+	image cropped_resized_img_without_car_hood = crop_image(resized_img_without_car_hood, (resized_img_without_car_hood.w - net.w) / 2, (resized_img_without_car_hood.h - net.h) / 2, net.w, net.h);
 
-	cv::Mat mat = convert_darknet_image_to_cv_mat(cropped_img);
+	cv::Mat mat = convert_darknet_image_to_cv_mat(cropped_resized_img_without_car_hood);
 	cv::namedWindow("Cropped Image", cv::WINDOW_NORMAL);
 	cv::imshow("Cropped Image", mat);
 
-	float *predictions = network_predict(net, cropped_img.data);
+	float *predictions = network_predict(net, cropped_resized_img_without_car_hood.data);
 
 	int selected_pose_label;
 	top_k(predictions, net.outputs, 1, &selected_pose_label);
 
 	//verifica se é a primeira pose detectada
-	if (last_correct_prediction == -1)
-	{
-		last_correct_prediction = selected_pose_label; //inicializa last_correct_prediction
-	}
-	else if ( (selected_pose_label >= last_correct_prediction) && (selected_pose_label <= (last_correct_prediction + MAE)) )
-	{												   //verifica se está dentro da MAE
-		last_correct_prediction = selected_pose_label; //atualiza last_correct_prediction
-	}
-	else
-	{
-		selected_pose_label = last_correct_prediction; // caso negativo, pega a última pose
-	}
+//	if (last_correct_prediction == -1)
+//	{
+//		last_correct_prediction = selected_pose_label; //inicializa last_correct_prediction
+//	}
+//	else if ( (selected_pose_label >= last_correct_prediction) && (selected_pose_label <= (last_correct_prediction + MAE)) )
+//	{												   //verifica se está dentro da MAE
+//		last_correct_prediction = selected_pose_label; //atualiza last_correct_prediction
+//	}
+//	else
+//	{
+//		selected_pose_label = last_correct_prediction; // caso negativo, pega a última pose
+//	}
 
 	double x, y, theta;
 	char predicted_image_file_name[2048];
@@ -145,15 +147,20 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	//	printf("confidence %lf, %s\n", predictions[selected_pose_label], learned_poses[selected_pose_label]);
 
 	Mat pose_image = imread(predicted_image_file_name, IMREAD_COLOR);
+    if (predictions[selected_pose_label] < 0.05)
+        pose_image = Mat::zeros(Size(pose_image.cols, pose_image.rows), pose_image.type());
 	imshow("dnn_visual_gl", pose_image);
 	waitKey(1);
 
-	//    free_image(img_without_car_hood);
-	free_image(resized_img);
-	free_image(cropped_img);
+	free_image(img);
+	free_image(img_without_car_hood);
+	free_image(resized_img_without_car_hood);
+	free_image(cropped_resized_img_without_car_hood);
 }
 
-void shutdown_module(int signo)
+
+void
+shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
@@ -170,15 +177,16 @@ void shutdown_module(int signo)
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void read_parameters(int argc, char **argv)
+void
+read_parameters(int argc, char **argv)
 {
 	char bumblebee_string[256];
 	char camera_string[256];
 
 	carmen_param_t param_cmd_list[] =
-		{
-			{(char *)"commandline", (char *)"camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
-		};
+	{
+		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+	};
 
 	carmen_param_install_params(argc, argv, param_cmd_list, sizeof(param_cmd_list) / sizeof(param_cmd_list[0]));
 
@@ -194,7 +202,9 @@ void read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 }
 
-void initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename, int selected_MAE)
+
+void
+initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename, int selected_MAE)
 {
 	MAE = selected_MAE;
 	net = parse_network_cfg_custom(cfgfile, 1, 0);
@@ -210,14 +220,21 @@ void initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_
 	learned_poses = get_labels(learned_poses_filename);
 }
 
-void subscribe_messages()
+
+void
+subscribe_messages()
 {
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t)bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+
+int
+main(int argc, char *argv[])
 {
+	printf(" Usage: ./dnn_visual_gl config/config.cfg config/classifier.weights config/poses_and_labels.txt 2 -camera_id 3");
+	fflush(stdout);
+
 	signal(SIGINT, shutdown_module);
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
