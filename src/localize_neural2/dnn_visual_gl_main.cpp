@@ -23,6 +23,8 @@
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/xsens_interface.h>
+#include <carmen/gps_xyz_messages.h>
+#include <carmen/gps_xyz_interface.h>
 
 #include "network.h"
 #include "parser.h"
@@ -93,6 +95,17 @@ convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char
 
 	return (image);
 }
+
+
+void
+carmen_gps_xyz_publish_message(carmen_gps_xyz_message gps_xyz_message)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+
+	err = IPC_publishData(CARMEN_GPS_XYZ_MESSAGE_NAME, &gps_xyz_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_GPS_XYZ_MESSAGE_NAME);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,6 +114,40 @@ convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void
+publish_gps_xyz(double x, double y, double theta, double timestamp)
+{
+	carmen_gps_xyz_message gps_xyz_message = {};
+
+	gps_xyz_message.nr = 1; // Trimble
+//	gps_xyz_message.utc = gps_gpgga->utc;
+//	gps_xyz_message.latitude = gps_gpgga->latitude;
+//	gps_xyz_message.latitude_dm = gps_gpgga->latitude_dm;
+//	gps_xyz_message.lat_orient = gps_gpgga->lat_orient;
+//	gps_xyz_message.longitude = gps_gpgga->longitude;
+//	gps_xyz_message.longitude_dm = gps_gpgga->longitude_dm;
+//	gps_xyz_message.long_orient = gps_gpgga->long_orient;
+	gps_xyz_message.gps_quality = 4;
+//	gps_xyz_message.num_satellites = gps_gpgga->num_satellites;
+//	gps_xyz_message.hdop = gps_gpgga->hdop;
+//	gps_xyz_message.sea_level = gps_gpgga->sea_level;
+//	gps_xyz_message.altitude = gps_gpgga->altitude;
+//	gps_xyz_message.geo_sea_level = gps_gpgga->geo_sea_level;
+//	gps_xyz_message.geo_sep = gps_gpgga->geo_sep;
+//	gps_xyz_message.data_age = gps_gpgga->data_age;
+
+//	if (gps_gpgga->lat_orient == 'S') latitude = -gps_gpgga->latitude;
+//	if (gps_gpgga->long_orient == 'W') longitude = -gps_gpgga->longitude;
+
+	gps_xyz_message.x = x;
+	gps_xyz_message.y = y;
+	gps_xyz_message.z = 0.0;
+
+	gps_xyz_message.timestamp = timestamp;
+	gps_xyz_message.host = carmen_get_host();
+
+	carmen_gps_xyz_publish_message(gps_xyz_message);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -145,6 +192,7 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 	sscanf(learned_poses[selected_pose_label], "%lf %lf %lf %s", &x, &y, &theta, predicted_image_file_name);
 	printf("confidence %lf, %lf %lf %lf %s\n", predictions[selected_pose_label], x, y, theta, predicted_image_file_name);
 	//	printf("confidence %lf, %s\n", predictions[selected_pose_label], learned_poses[selected_pose_label]);
+	publish_gps_xyz(x, y, theta, stereo_image->timestamp);
 
 	Mat pose_image = imread(predicted_image_file_name, IMREAD_COLOR);
     if (predictions[selected_pose_label] < 0.05)
