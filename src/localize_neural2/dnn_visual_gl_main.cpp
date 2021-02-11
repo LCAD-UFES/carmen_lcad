@@ -25,6 +25,7 @@
 #include <carmen/xsens_interface.h>
 #include <carmen/gps_xyz_messages.h>
 #include <carmen/gps_xyz_interface.h>
+#include <carmen/camera_drivers_interface.h>
 
 #include "network.h"
 #include "parser.h"
@@ -97,6 +98,59 @@ convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char
 }
 
 
+double
+infer_pose(carmen_point_t *pose, double width, double height,
+		int dx, int dy, int w, int h,
+		unsigned char *image_raw, double timestamp)
+{
+	image img = convert_image_msg_to_darknet_image(width, height, image_raw);
+	image img_without_car_hood = crop_image(img, dx, dy, w, h); 	// crop_image() nao faz free()
+	image resized_img_without_car_hood = resize_min(img_without_car_hood, net.w);
+	image cropped_resized_img_without_car_hood = crop_image(resized_img_without_car_hood, (resized_img_without_car_hood.w - net.w) / 2, (resized_img_without_car_hood.h - net.h) / 2, net.w, net.h);
+
+	cv::Mat mat = convert_darknet_image_to_cv_mat(cropped_resized_img_without_car_hood);
+	cv::namedWindow("Cropped Image", cv::WINDOW_NORMAL);
+	cv::imshow("Cropped Image", mat);
+
+	float *predictions = network_predict(net, cropped_resized_img_without_car_hood.data);
+
+	int selected_pose_label;
+	top_k(predictions, net.outputs, 1, &selected_pose_label);
+
+	//verifica se é a primeira pose detectada
+//	if (last_correct_prediction == -1)
+//	{
+//		last_correct_prediction = selected_pose_label; //inicializa last_correct_prediction
+//	}
+//	else if ( (selected_pose_label >= last_correct_prediction) && (selected_pose_label <= (last_correct_prediction + MAE)) )
+//	{												   //verifica se está dentro da MAE
+//		last_correct_prediction = selected_pose_label; //atualiza last_correct_prediction
+//	}
+//	else
+//	{
+//		selected_pose_label = last_correct_prediction; // caso negativo, pega a última pose
+//	}
+
+	char predicted_image_file_name[2048];
+	sscanf(learned_poses[selected_pose_label], "%lf %lf %lf %s", &(pose->x), &(pose->y), &(pose->theta), predicted_image_file_name);
+	printf("confidence %lf, %lf %lf %lf %s\n", predictions[selected_pose_label], pose->x, pose->y, pose->theta, predicted_image_file_name);
+	//	printf("confidence %lf, %s\n", predictions[selected_pose_label], learned_poses[selected_pose_label]);
+
+	Mat pose_image = imread(predicted_image_file_name, IMREAD_COLOR);
+    if (predictions[selected_pose_label] < 0.05)
+        pose_image = Mat::zeros(Size(pose_image.cols, pose_image.rows), pose_image.type());
+	imshow("dnn_visual_gl", pose_image);
+	waitKey(1);
+
+	free_image(img);
+	free_image(img_without_car_hood);
+	free_image(resized_img_without_car_hood);
+	free_image(cropped_resized_img_without_car_hood);
+
+	return (predictions[selected_pose_label]);
+}
+
+
 void
 carmen_gps_xyz_publish_message(carmen_gps_xyz_message gps_xyz_message)
 {
@@ -106,6 +160,18 @@ carmen_gps_xyz_publish_message(carmen_gps_xyz_message gps_xyz_message)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_GPS_XYZ_MESSAGE_NAME);
 }
 
+
+void
+publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gphdt_ptr)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+
+	if (carmen_extern_gphdt_ptr != NULL)
+	{
+		err = IPC_publishData (CARMEN_GPS_GPHDT_MESSAGE_NAME, carmen_extern_gphdt_ptr);
+		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPHDT_MESSAGE_NAME);
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -147,6 +213,14 @@ publish_gps_xyz(double x, double y, double theta, double timestamp)
 	gps_xyz_message.host = carmen_get_host();
 
 	carmen_gps_xyz_publish_message(gps_xyz_message);
+
+	carmen_gps_gphdt_message carmen_gphdt;
+	carmen_gphdt.nr = 1;
+	carmen_gphdt.heading = theta;
+	carmen_gphdt.valid = 1;
+	carmen_gphdt.timestamp = timestamp;
+	carmen_gphdt.host = carmen_get_host();
+	publish_carmen_gps_gphdt_message(&carmen_gphdt);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -159,51 +233,26 @@ publish_gps_xyz(double x, double y, double theta, double timestamp)
 void
 bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
-	image img = convert_image_msg_to_darknet_image(stereo_image->width, stereo_image->height, stereo_image->raw_right);
-	image img_without_car_hood = crop_image(img, 0, 0, 640, 380); 	// crop_image() nao faz free()
-	image resized_img_without_car_hood = resize_min(img_without_car_hood, net.w);
-	image cropped_resized_img_without_car_hood = crop_image(resized_img_without_car_hood, (resized_img_without_car_hood.w - net.w) / 2, (resized_img_without_car_hood.h - net.h) / 2, net.w, net.h);
+	carmen_point_t pose;
+	double confidence = infer_pose(&pose, stereo_image->width, stereo_image->height,
+			0, 0, 640, 380,
+			stereo_image->raw_right, stereo_image->timestamp);
 
-	cv::Mat mat = convert_darknet_image_to_cv_mat(cropped_resized_img_without_car_hood);
-	cv::namedWindow("Cropped Image", cv::WINDOW_NORMAL);
-	cv::imshow("Cropped Image", mat);
+	if (confidence > 0.15)
+		publish_gps_xyz(pose.x, pose.y, pose.theta, stereo_image->timestamp);
+}
 
-	float *predictions = network_predict(net, cropped_resized_img_without_car_hood.data);
 
-	int selected_pose_label;
-	top_k(predictions, net.outputs, 1, &selected_pose_label);
+void
+camera_drivers_message_handler(camera_message *msg)
+{
+	carmen_point_t pose;
+	double confidence = infer_pose(&pose, msg->images[0].width, msg->images[0].height,
+			0, 50, 640, 380,
+			(unsigned char *) msg->images[0].raw_data, msg->timestamp);
 
-	//verifica se é a primeira pose detectada
-//	if (last_correct_prediction == -1)
-//	{
-//		last_correct_prediction = selected_pose_label; //inicializa last_correct_prediction
-//	}
-//	else if ( (selected_pose_label >= last_correct_prediction) && (selected_pose_label <= (last_correct_prediction + MAE)) )
-//	{												   //verifica se está dentro da MAE
-//		last_correct_prediction = selected_pose_label; //atualiza last_correct_prediction
-//	}
-//	else
-//	{
-//		selected_pose_label = last_correct_prediction; // caso negativo, pega a última pose
-//	}
-
-	double x, y, theta;
-	char predicted_image_file_name[2048];
-	sscanf(learned_poses[selected_pose_label], "%lf %lf %lf %s", &x, &y, &theta, predicted_image_file_name);
-	printf("confidence %lf, %lf %lf %lf %s\n", predictions[selected_pose_label], x, y, theta, predicted_image_file_name);
-	//	printf("confidence %lf, %s\n", predictions[selected_pose_label], learned_poses[selected_pose_label]);
-	publish_gps_xyz(x, y, theta, stereo_image->timestamp);
-
-	Mat pose_image = imread(predicted_image_file_name, IMREAD_COLOR);
-    if (predictions[selected_pose_label] < 0.05)
-        pose_image = Mat::zeros(Size(pose_image.cols, pose_image.rows), pose_image.type());
-	imshow("dnn_visual_gl", pose_image);
-	waitKey(1);
-
-	free_image(img);
-	free_image(img_without_car_hood);
-	free_image(resized_img_without_car_hood);
-	free_image(cropped_resized_img_without_car_hood);
+	if (confidence > 0.15)
+		publish_gps_xyz(pose.x, pose.y, pose.theta, msg->timestamp);
 }
 
 
@@ -273,6 +322,8 @@ void
 subscribe_messages()
 {
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t)bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
+    camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) camera_drivers_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

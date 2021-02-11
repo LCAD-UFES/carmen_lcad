@@ -11,7 +11,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/
 
 CFLAGS += `pkg-config --cflags opencv` -I/usr/include/gflags
 
-LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface
+LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface -lcamera_drivers
 LFLAGS += -fPIC -lgflags -l:libdarknet.so -lstdc++ `pkg-config --libs opencv` 
 
 SOURCES = localize_neural2.cpp dnn_visual_gl_main.cpp
