@@ -32,6 +32,7 @@ carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
 tf::Transformer transformer_sick;
+carmen_laser_ldmrs_new_message sick_sync_with_cam;
 
 string str_folder_name;
 string str_folder_image_name;
@@ -98,6 +99,26 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this ne
     return (velodyne);
 }
 
+carmen_laser_ldmrs_new_message
+find_sick_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
+{
+	bumblebee_timestamp -= CAM_DELAY;
+	carmen_laser_ldmrs_new_message sick;
+    double minTimestampDiff = DBL_MAX;
+    int minTimestampIndex = -1;
+
+    for (unsigned int i = 0; i < sick_vector.size(); i++)
+    {
+        if (fabs(sick_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff)
+        {
+            minTimestampIndex = i;
+            minTimestampDiff = fabs(sick_vector[i].timestamp - bumblebee_timestamp);
+        }
+    }
+
+    sick = sick_vector[minTimestampIndex];
+    return (sick);
+}
 
 void
 build_moving_objects_message(vector<carmen_tracked_cluster_t> clusters)
@@ -232,35 +253,88 @@ objects_names_from_file(string const class_names_file)
 
     return file_lines;
 }
-
+//Piumbini
 double
-distance_accuracy (double measured, double gt)
+distance_error (double measured, double gt)
 {
 	double dif = abs(gt - measured);
-	return (100.0 * (1.0 -(dif/gt)));
+	if (gt != 0.0){
+		double acc = 100.0 * (dif/gt);
+		return acc;
+	}else{
+		return 0.0;
+	}
+}
+
+//Piumbini
+
+std::vector< std::vector<carmen_velodyne_points_in_cam_t> >
+sick_points_in_boxes(std::vector<bounding_box> bouding_boxes_list,
+                         carmen_camera_parameters camera_parameters,
+						 unsigned int width, unsigned int height)
+{
+	int crop_x = 0;
+	int crop_y = 0;
+	int crop_w = width;// 1280;
+	int crop_h = height;
+	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
+			camera_parameters,
+			&transformer_sick,
+			width, height);
+	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
+			width, height, crop_x, crop_y, crop_w, crop_h);
+
+	std::vector< std::vector<carmen_velodyne_points_in_cam_t> > laser_points_in_camera_box_list;
+
+	
+	for (unsigned int i = 0; i < bouding_boxes_list.size(); i++)
+	{
+		std::vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera_box;
+		for (unsigned int j = 0; j < sick_points.size(); j++)
+		{
+			if (sick_points[j].ipx > bouding_boxes_list[i].pt1.x
+					&& sick_points[j].ipx < bouding_boxes_list[i].pt2.x
+					&& sick_points[j].ipy > bouding_boxes_list[i].pt1.y
+					&& sick_points[j].ipy < bouding_boxes_list[i].pt2.y)
+			{
+				laser_points_in_camera_box.push_back(sick_points[j]);
+			}
+		}
+
+		laser_points_in_camera_box_list.push_back(laser_points_in_camera_box);
+	}
+
+	return laser_points_in_camera_box_list;
 }
 
 void
 show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
+		vector<vector<carmen_velodyne_points_in_cam_t>> sick_points_in_camera_box_list,
 		vector<bbox_t> predictions, double hood_removal_percentage, double fps,
                 vector<carmen_position_t> rddf_points, string window_name)
 {
     char confianca[25];
     char frame_rate[25];
-	char area[25];
+	char sick_string[25];
+	char distance_string[25];
+	char lidar_string[25];
 
     sprintf(frame_rate, "FPS = %.2f", fps);
 	double image_height = (double) rgb_image->rows; // 768 pixels
 	// double focal_length = 6.0; //f(mm)
-	double sensor_height = camera_pose.position.z * 100.0; // sensorheight(mm)
+	//double sensor_height = camera_pose.position.z * 10000.0; // sensorheight(mm)
+	double focal_length = 6.0; //f(mm) 3.8
+	double sensor_height = 4.927868852;
 
     //cv::putText(*rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
-		double real_distance = 0.0;
+		double lidar_distance = 0.0;
+		double sick_distance = 0.0;
 		bool first = true;
-		double real_height = 1600.0; //car_height(mm)
+		bool first_sick = true;
+		double real_height = 1500.0; //car_height(mm)
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
 		{
 			cv::circle(*rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
@@ -269,18 +343,42 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 			{
 				if(first)
 				{
-					real_distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
+					lidar_distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length;
 					first = false;
+				} else {
+					// Takes the middle point of bbox
+					if ( laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > (predictions[i].x + predictions[i].w)/2 - 5 &&
+					 laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < (predictions[i].x + predictions[i].w)/2 + 5 &&
+					 laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > (predictions[i].y + predictions[i].h)/2 - 5 &&
+					 laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < (predictions[i].y + predictions[i].h)/2 + 5)
+					 	lidar_distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length;
+						
 				}
-				if((laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5) < real_distance)
-					real_distance = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.length * 0.5;
-					// real_height = real_distance * 500.0 * (double) predictions[i].h * sensor_height / (focal_length * image_height); // mm
+				// real_height = lidar_distance * 500.0 * (double) predictions[i].h * sensor_height / (focal_length * image_height); // mm
 			}
-			// takes the point closest for metrics
+		}
+		for (unsigned int j = 0; j < sick_points_in_camera_box_list[i].size(); j++)
+		{
+			cv::circle(*rgb_image, cv::Point(sick_points_in_camera_box_list[i][j].ipx,
+					sick_points_in_camera_box_list[i][j].ipy), 1, cv::Scalar(0, 255, 255), 1);
+			if (sick_points_in_camera_box_list[i][j].laser_polar.length != 0.0 && sick_points_in_camera_box_list[i][j].laser_polar.length < 150.0)
+			{
+				if(first_sick)
+				{
+					sick_distance = sick_points_in_camera_box_list[i][j].laser_polar.length;
+					first_sick = false;
+				} else {
+					if ( sick_points_in_camera_box_list[i][j].ipx > (predictions[i].x + predictions[i].w)/2 - 5 &&
+					 sick_points_in_camera_box_list[i][j].ipx < (predictions[i].x + predictions[i].w)/2 + 5 &&
+					 sick_points_in_camera_box_list[i][j].ipy > (predictions[i].y + predictions[i].h)/2 - 5 &&
+					 sick_points_in_camera_box_list[i][j].ipy < (predictions[i].y + predictions[i].h)/2 + 5)
+						sick_distance = sick_points_in_camera_box_list[i][j].laser_polar.length;
+				}
+			}
 		}
         cv::Scalar object_color;
 
-        sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
+        // sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
 
         int obj_id = predictions.at(i).obj_id;
 
@@ -290,38 +388,57 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 
         if (obj_name.compare("car") == 0)
         {
-        	object_color = cv::Scalar(0, 0, 255);
+        	object_color = cv::Scalar(0, 255, 0);
         	cv::rectangle(*rgb_image,
         			cv::Point(predictions[i].x, predictions[i].y),
 					cv::Point(predictions[i].x + predictions[i].w, predictions[i].y + predictions[i].h),
 					object_color, 1);
 
-        	cv::putText(*rgb_image, obj_name,
-        			cv::Point(predictions[i].x + 1, predictions[i].y - 3),
-					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
+        	// cv::putText(*rgb_image, obj_name,
+        	// 		cv::Point(predictions[i].x + 1, predictions[i].y - 3),
+			// 		cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
 
-        	cv::putText(*rgb_image, confianca,
-        			cv::Point(predictions[i].x + 1, predictions[i].y + predictions[i].h + 1),
-					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+			// cv::putText(*rgb_image, confianca,
+        	// 		cv::Point(predictions[i].x + 1, predictions[i].y + predictions[i].h + 1),
+			// 		cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 			
 			//distance =  f(mm) * realheight(mm) * imageheight(pixels) / objheight(pixels) * sensorheight(mm);
-
+			// cout << endl << "*focallength: " << focal_length << " imgheight: " << image_height << " predictions[" << i << "].h:" <<  predictions[i].h;
+			// cout << " sensorheight: " << sensor_height << " real_height: " << real_height << endl;
 			double distance_to_object = focal_length * real_height * image_height / (predictions[i].h * sensor_height); // mm
-			distance_to_object = distance_to_object * 2.0 / 1000.0; // distance has to be multiplied by 2.0 to since lidar * 0.5.
-			double accuracy;
-			if (real_distance != 0.0){
-				accuracy = distance_accuracy(distance_to_object, real_distance);
-				sprintf(area, "%.2f %.2f", real_distance, distance_to_object);
-				cout << "\t" << real_distance << "\t" << distance_to_object << "\t" << accuracy << endl;
+			distance_to_object = distance_to_object / 1000.0; // mm to meters.
+			double accuracy_lidar;
+			double accuracy_sick;
+			cout << "\t" << distance_to_object << "\t";
+			sprintf(distance_string, "%.2f", distance_to_object);
+			if (lidar_distance != 0.0){
+				accuracy_lidar = distance_error(distance_to_object, lidar_distance);
+				sprintf(lidar_string, "%.2f", lidar_distance);
+				cout << lidar_distance << "\t" << accuracy_lidar << "\t";
 			}else{
-				sprintf(area, "NL %.3f", distance_to_object);
-				cout << "\tNL" << "\t" << distance_to_object << "\t" << "NA" << endl endl;
+				sprintf(lidar_string, "NL");
+				cout << "NL" << "\tNLA\t" ;
 			}
+			if (sick_distance != 0.0){
+				accuracy_sick = distance_error(distance_to_object, sick_distance);
+				sprintf(sick_string, "%.2f", sick_distance);
+				cout << sick_distance << "\t" << accuracy_sick << "\t";
+			}else{
+				sprintf(sick_string, "NS");
+				cout << "NS" << "\tNSA\t";
+			}
+			cout << endl;
 
 
-        	cv::putText(*rgb_image, area,
+        	cv::putText(*rgb_image, lidar_string,
         			cv::Point(predictions[i].x + 1, predictions[i].y - 3),
-					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
+			cv::putText(*rgb_image, sick_string,
+        			cv::Point(predictions[i].x + 1, predictions[i].y - 15),
+					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 255), 1);
+			cv::putText(*rgb_image, distance_string,
+        			cv::Point(predictions[i].x + 1, predictions[i].y - 28),
+					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
         }
 
 //        if (obj_name.compare("car") == 0)
@@ -410,8 +527,6 @@ get_slice_colors (unsigned int slices_size)
 	}
 	return (colors);
 }
-
-
 
 bool before_first_file = true;
 bool acessessing = false;
@@ -581,7 +696,11 @@ detections(vector<bbox_t> predictions, carmen_bumblebee_basic_stereoimage_messag
 	// Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
 	vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
 			&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
-
+	
+	//SICK
+	vector<vector<carmen_velodyne_points_in_cam_t>> sick_points_in_camera_box_list = sick_points_in_boxes(bouding_boxes_list,
+			camera_parameters,
+			image_msg->width, image_msg->height);
 
 	// ONLY Convert from sferical to cartesian cordinates
 	vector< vector<carmen_vector_3D_t>> cluster_list = get_cluster_list(laser_points_in_camera_box_list);
@@ -614,7 +733,7 @@ detections(vector<bbox_t> predictions, carmen_bumblebee_basic_stereoimage_messag
 	start_time = carmen_get_time();
 
 #ifdef SHOW_DETECTIONS
-	show_detections(rgb_image, laser_points_in_camera_box_list, predictions,
+	show_detections(rgb_image, laser_points_in_camera_box_list, sick_points_in_camera_box_list, predictions,
 			hood_removal_percentage, fps, rddf_points, window_name);
 #endif
 }
@@ -1032,8 +1151,8 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 		vector<vector<bbox_t>> bounding_boxes_of_slices, vector<bbox_t> predictions,
 		vector<carmen_position_t> rddf_points_in_image_filtered, double image_timestamp)
 {
-	printf("******************************************\n");
-	printf("Timestamp %lf:\n\n", image_timestamp);
+	// printf("******************************************\n");
+	// printf("Timestamp %lf:\n\n", image_timestamp);
     char confianca[25];
 	char distance_gt[25];
 	char distance[25];
@@ -1091,6 +1210,8 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 			gt.x = gt.y = gt.w = gt.h = 0;
 
     }
+	sprintf(arr,"%lf", image_timestamp);
+	cout << arr;
     // else
     // 	exit(0);
 
@@ -1132,11 +1253,10 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 					object_color = cv::Scalar(0, 0, 255);
 					line_tickness = 2;
 
-					distance_to_object = focal_length * real_height * image_height / (predictions[i].h * sensor_height); // mm
+					distance_to_object = focal_length * real_height * image_height / (b.h * sensor_height); // mm
 					distance_to_object = distance_to_object * 2.0 / 1000.0; // distance has to be multiplied by 2.0 to since lidar * 0.5.
 					sprintf(distance, "dc=%.3f", distance_to_object);
-					// cout << "h=" << predictions[i].h << "\tlidar=NL" << "\tcalc=" << distance_to_object << "\treal_height=" << real_height << endl;
-			
+					
         			cv::putText(scene_slices[i], distance,
         				cv::Point(b.x + 1, b.y - 3),
 						cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
@@ -1148,22 +1268,24 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 							cv::Point(b.x, b.y),
 							cv::Point(b.x + b.w, b.y + b.h),
 							object_color, line_tickness);
-
-				cout<<"Bboxes slice "<<i<<":"<<endl;
-				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d, d: %.3f - > %0.4f\n",
-						b_print.x, b_print.y, b_print.x + b_print.w, b_print.x + b_print.w, b_print.w, b_print.h, distance_to_object, b_print.prob);
+				
+				// cout<<"Bboxes slice "<<i<<":"<<endl;
+				// printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d, d: %.3f - > %0.4f\n",
+				// 		b_print.x, b_print.y, b_print.x + b_print.w, b_print.x + b_print.w, b_print.w, b_print.h, distance_to_object, b_print.prob);
 			}
 
     	}
     	float iou;
     	float iou2;
-		double accuracy;
     	if(i == scene_slices.size()-1)
     	{
-			accuracy = distance_accuracy(distance_to_object, distance_to_object_gt);
-    		cout<<endl<<endl<<"Groundtruth:"<<endl;
-    		printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d, d: %.3f Accuracy: %.3f\n", gt.x, gt.y, gt.x + gt.w, gt.x + gt.w, gt.w, gt.h, distance_to_object_gt, accuracy);
-    		cout<<endl;
+			double accuracy;
+			cout << "\t" << distance_to_object;
+			accuracy = distance_error(distance_to_object, distance_to_object_gt);
+			cout << "\t" << distance_to_object_gt << "\t" << accuracy << endl;
+    		// cout<<endl<<endl<<"Groundtruth:"<<endl;
+    		// printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d, d: %.3f Accuracy: %.3f\n", gt.x, gt.y, gt.x + gt.w, gt.x + gt.w, gt.w, gt.h, distance_to_object_gt, accuracy);
+    		// cout<<endl;
 
     		for (int k = 0; k < predictions.size(); k++)
     		{
@@ -1195,13 +1317,13 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     			iou = calc_percentage_of_rectangles_intersection (l1, r1, l2, r2);
     			if (iou > 50)
     			{
-    				cout<<"Filtered:"<<endl;
-    				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d -> %0.4f  IOU: %f\n", det.x, det.y, det.x + det.w, det.x + det.w, det.w, det.h, det.prob, iou);
+    				// cout<<"Filtered:"<<endl;
+    				// printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d -> %0.4f  IOU: %f\n", det.x, det.y, det.x + det.w, det.x + det.w, det.w, det.h, det.prob, iou);
     			}
     			else
     			{
-    				cout<<"Filtered:"<<endl;
-    				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d -> %0.4f  IOU: %f ****** \n", det.x, det.y, det.x + det.w, det.x + det.w, det.w, det.h, det.prob, iou);
+    				// cout<<"Filtered:"<<endl;
+    				// printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d -> %0.4f  IOU: %f ****** \n", det.x, det.y, det.x + det.w, det.x + det.w, det.w, det.h, det.prob, iou);
     			}
 
 
@@ -1282,7 +1404,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     	cv::imshow(name, aux_img);
     	cv::waitKey(1);
     }
-    printf("******************************************\n\n\n\n\n\n");
+    // printf("******************************************\n\n\n\n\n\n");
 }
 
 
@@ -1519,6 +1641,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp); // TODO não faz sentido! Tem que sempre pegar a ultima msg do velodyne
     else
         return;
+	
+	if (sick_vector.size() > 0)
+		sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
+	else
+		return;
 
 	cv::Mat src_image_copy = src_image.clone();
 	
@@ -1911,7 +2038,7 @@ void
 initializer()
 {
 	initialize_transformations(board_pose, camera_pose, &transformer);
-	initialize_transformations(board_pose, camera_pose, &transformer_sick);
+	initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
 
 	char* carmen_home = getenv("CARMEN_HOME");
 	char classes_names_path[1024];
