@@ -181,7 +181,7 @@ publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gphdt_p
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void
-publish_gps_xyz(double x, double y, double theta, double timestamp)
+publish_gps_xyz(double x, double y, double theta, double confidence, double timestamp)
 {
 	carmen_gps_xyz_message gps_xyz_message = {};
 
@@ -193,7 +193,10 @@ publish_gps_xyz(double x, double y, double theta, double timestamp)
 //	gps_xyz_message.longitude = gps_gpgga->longitude;
 //	gps_xyz_message.longitude_dm = gps_gpgga->longitude_dm;
 //	gps_xyz_message.long_orient = gps_gpgga->long_orient;
-	gps_xyz_message.gps_quality = 4;
+	if (confidence > 0.1)
+		gps_xyz_message.gps_quality = 4;
+	else
+		gps_xyz_message.gps_quality = 0;
 //	gps_xyz_message.num_satellites = gps_gpgga->num_satellites;
 //	gps_xyz_message.hdop = gps_gpgga->hdop;
 //	gps_xyz_message.sea_level = gps_gpgga->sea_level;
@@ -217,7 +220,10 @@ publish_gps_xyz(double x, double y, double theta, double timestamp)
 	carmen_gps_gphdt_message carmen_gphdt;
 	carmen_gphdt.nr = 1;
 	carmen_gphdt.heading = theta;
-	carmen_gphdt.valid = 1;
+	if (confidence > 0.1)
+		carmen_gphdt.valid = 1;
+	else
+		carmen_gphdt.valid = 0;
 	carmen_gphdt.timestamp = timestamp;
 	carmen_gphdt.host = carmen_get_host();
 	publish_carmen_gps_gphdt_message(&carmen_gphdt);
@@ -238,8 +244,7 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 			0, 0, 640, 380,
 			stereo_image->raw_right, stereo_image->timestamp);
 
-	if (confidence > 0.15)
-		publish_gps_xyz(pose.x, pose.y, pose.theta, stereo_image->timestamp);
+	publish_gps_xyz(pose.x, pose.y, pose.theta, confidence, stereo_image->timestamp);
 }
 
 
@@ -251,8 +256,7 @@ camera_drivers_message_handler(camera_message *msg)
 			0, 50, 640, 380,
 			(unsigned char *) msg->images[0].raw_data, msg->timestamp);
 
-	if (confidence > 0.15)
-		publish_gps_xyz(pose.x, pose.y, pose.theta, msg->timestamp);
+	publish_gps_xyz(pose.x, pose.y, pose.theta, confidence, msg->timestamp);
 }
 
 
