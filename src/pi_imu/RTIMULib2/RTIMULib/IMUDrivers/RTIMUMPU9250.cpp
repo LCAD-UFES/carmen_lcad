@@ -645,9 +645,17 @@ bool RTIMUMPU9250::IMURead()
 
     //  now do standard processing
 
+//    static int countt = 0;
+//    if (countt % 100 == 0)
+//    	printf("antes - % 5.2lf, % 5.2lf, % 5.2lf\n" ,  m_imuData.compass.x(),  m_imuData.compass.y(),  m_imuData.compass.z());
+
     handleGyroBias();
     calibrateAverageCompass();
     calibrateAccel();
+
+//    if (countt % 100 == 0)
+//    	printf("depoi - % 5.2lf, % 5.2lf, % 5.2lf\n" ,  m_imuData.compass.x(),  m_imuData.compass.y(),  m_imuData.compass.z());
+//    countt++;
 
     if (m_firstTime)
         m_imuData.timestamp = RTMath::currentUSecsSinceEpoch();

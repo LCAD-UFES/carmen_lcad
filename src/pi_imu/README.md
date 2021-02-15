@@ -177,7 +177,7 @@ disponivel no diretorio.
  $ cd ~/carmen_lcad/src/pi_imu/RTIMULib2
  $ ./Linux/build/RTIMULibDemoGL/RTIMULibDemoGL 
  {or ./Linux/build/RTIMULibDemo/RTIMULibDemo if OpenGL is not working}
- {or ./Linux/build/RTIMULibDemoGL/RTIMULibCal for terminal only calibration}
+ {or ./Linux/build/RTIMULibCal/RTIMULibCal for terminal only calibration}
  ```
 
 For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
@@ -240,6 +240,11 @@ ficam no fim do aquivo):
 
     //  now update the filter
 
+
+Em veiculos como o Art, melhor calibrar usando a interface de texto e apenas maximo e minimo do magnetometro.
+Ou seja, coloque para calibrar, retire a sensorbox de sua fixacao e gire-a de ponta cabeca e para a posicao
+normal para ajustar o maximo de z. Depois, fize-a e dirija o Art em circulos para obter o maximo e minimo de
+x e y.
 
 Quando a calibracao estiver OK, voce pode verifica-la junto ao resto do sistema carmen_lcad rodando:
 

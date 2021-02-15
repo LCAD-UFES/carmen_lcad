@@ -194,7 +194,8 @@ void RTIMU::setCalibrationData()
 
         for (int i = 0; i < 3; i++) {
             delta = (m_settings->m_compassCalMax.data(i) - m_settings->m_compassCalMin.data(i)) / 2.0f;
-            m_compassCalScale[i] = maxDelta / delta;            // makes everything the same range
+//            m_compassCalScale[i] = maxDelta / delta;            // makes everything the same range
+            m_compassCalScale[i] = 1.0 / delta;            // @@@ Alberto: normalizacao entre -1 e 1
             m_compassCalOffset[i] = (m_settings->m_compassCalMax.data(i) + m_settings->m_compassCalMin.data(i)) / 2.0f;
         }
     }
@@ -397,7 +398,8 @@ void RTIMU::calibrateAverageCompass()
                 for (int i = 0; i < 3; i++)
                 {
                     delta = (m_runtimeMagCalMax[i] - m_runtimeMagCalMin[i]) / 2.0;
-                    m_compassCalScale[i] = magMaxDelta / delta;
+//                    m_compassCalScale[i] = magMaxDelta / delta;
+                    m_compassCalScale[i] = 1.0 / delta;
                     m_compassCalOffset[i] = (m_runtimeMagCalMax[i] + m_runtimeMagCalMin[i]) / 2.0;
                 }
             }
