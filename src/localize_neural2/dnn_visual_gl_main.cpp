@@ -335,8 +335,11 @@ subscribe_messages()
 int
 main(int argc, char *argv[])
 {
-	printf(" Usage: ./dnn_visual_gl config/config.cfg config/classifier.weights config/poses_and_labels.txt 2 -camera_id 3");
-	fflush(stdout);
+	if (argc != 7)
+	{
+		printf(" Usage: ./dnn_visual_gl config/config.cfg config/classifier.weights config/poses_and_labels.txt 2 -camera_id 3\n");
+		exit (1);
+	}
 
 	signal(SIGINT, shutdown_module);
 	carmen_ipc_initialize(argc, argv);

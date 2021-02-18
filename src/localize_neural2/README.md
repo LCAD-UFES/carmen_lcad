@@ -2,69 +2,41 @@
 
 Para testar o módulo você precisa gerar a base de teste e executar o módulo em modo teste.
 
-## Gerar base de teste
+## Executar o módulo em modo teste (uso em produção)
 
-Você vai precisar de um log e do poses_opt deste log. Vamos usar o log log_volta_da_ufes-20191003.txt. Seu poses_opt pode
-ser econtrado no local padrão: data/graphslam/poses_opt-log_volta_da_ufes-20191003.txt
-
-Edite o arquivo src/localize_neural/log2png.sh e inclua o log de interesse e o diretório onde serão
-gravadas as imagens da base. A seguir rode os comandos:
+Para rodar o módulo (dnn_visual_gl) no modo de produção é necessário um arquivo com uma lista de arquivos de imagem (imagens
+aprendidas pela rede neural), poses e labels: poses_and_labels.txt. Para gerar este arquivo precisamos de um outro 
+arquivo que contém linhas como a abaixo:
 
 ```bash
- cd src/localize_neural
- log2png.sh
+/dados/ufes/20191003/1570117938.166961.bb3.l.png 13 7757785.56312 -363523.757782 0.0 0.011196 -0.04909 0.252019 1570117938.166961
 ```
 
-Rode o comando abaixo no diretório bin para gerar as poses de cada imagem. Se você for empregar outro log, modifique o 
-process abaixo de acordo. Lembre-se de criar o diretório de saída de localize_neural_dataset (/dados/ufes e /dados/ufes/20191003 no 
-../src/localize_neural2/process-ground-truth-generator.ini).
+Nesta linha, temos uma imagem usada para treino ou teste, o label desta pose (saída da rede, 13), a pose 6D (x, y, z, roll, pitch e yaw),
+e o timestamp.
+
+Para gerar o arquivo com as linhas acima, precisamos rodar o comando abaixo:
 
 ```bash
- ./proccontrol ../src/localize_neural2/process-ground-truth-generator.ini
+python2.7 $CARMEN_HOME/src/localize_neural2/gerar_dataset/scripts/dataset.py -i /dados/ufes/ -o /dados/ufes_gt/ -b 5 -l 1
 ```
 
-Sua base de teste é o diretório /dados/ufes/20191003 e o arquivo /dados/ufes/camerapos-20191003.txt especificados em 
-../src/localize_neural2/process-ground-truth-generator.ini, mais o arquivo basepos-20191003-20191003-5m-1m.txt.
-O nome deste arquivo representa:
 
-```bash
- basepos-<data set de referencia>-<data set de teste>-<espacamento entre os key frames do data set de referencia>-<espacamento estre as imagens no data set de teste>.txt.
-```
-
-Para gerar o arquivo basepos-20191003-20191003-5m-1m.txt você vai precisar rodar os comandos abaixo:
-
-```bash
- cd src/localize_neural2
- python gerar_dataset/scripts/dataset.py -i /dados/ufes/ -o /dados/ufes_gt/ -b 5 -l 1
-```
-
-O arquivo será gerado em /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt. O afastamento entre as imagens neste
-aqrquivo é de 5m.
-
-Este processo também gera o arquivo /dados/ufes_gt/livepos-20191003-20191003-5m-1m.txt, que é usado no treino.
-Este arquivo tem o mesmo formato de basepos-20191003-20191003-5m-1m.txt, mas o afastamento entre as imagens
-é de 1m.
-
-
-xxxxxxxxxxxxxxxxxxx
-
-O procedimento acima conclui o processo de geração da base de teste.
-
-
-## Executar o módulo em modo teste
-
-Para rodar o módulo no modo de desenvolvimento é necessário um arquivo com uma lista de arquivos de imagem.
-O comando abaixo gera o arquivo test.txt com tal lista, associada ao log log_volta_da_ufes-20191003.txt.
-
-```bash
- readlink -f /dados/ufes/20191003/*r.png > ~/carmen_lcad/src/localize_neural2/config/test.txt
-```
-
-É necessário também a lista de poses e labels associadas às saídas da rede treinada. Em nosso exemplo, basta executar o seguinte comando:
+O comando abaixo gera o arquivo poses_and_labels.txt a partir do arquivo XXXXX.
 
 ```bash
  cat /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt |grep -v label| awk '{print $3 " " $4 " " $8 " " $1}' > config/poses_and_labels.txt
 ```
+
+Depois disso é só rodar um process que publique images de câmera e, em seguida, o módulo com seus parâmetros:
+
+```bash
+ ./deep_vgl config/config.cfg config/classifier.weights config/poses_and_labels.txt 2 -camera_id 3
+```
+
+O módulo dnn_visual_gl vai publicar mensagens gps_xyz e gps gphdt que permitirão localização global.
+Use bin/gps_xyz-test se quiser examinar (só as informações essenciais à localização global são incluídas nas mensagens).
+
 
 # link com as imagens dos logs da IARA - Volta da UFES
 
@@ -114,3 +86,65 @@ contém a lista de labels e respectivas imagens e poses, no seguinte formato<br>
 /dados/ufes/20191003/1570117933.982701.bb3.l.png 7 7757759.3385 -363539.104213 0.0 0.045324 -0.050641 0.660624 1570117933.982701<br>
 /dados/ufes/20191003/1570117934.732098.bb3.l.png 8 7757763.63225 -363535.829442 0.0 0.041511 -0.050475 0.652415 1570117934.732098<br>
 </sub>
+
+## Gerar base de teste
+
+Você vai precisar de um log e do poses_opt deste log. Vamos usar o log log_volta_da_ufes-20191003.txt. Seu poses_opt pode
+ser econtrado no local padrão: data/graphslam/poses_opt-log_volta_da_ufes-20191003.txt
+
+Edite o arquivo src/localize_neural/log2png.sh e inclua o log de interesse e o diretório onde serão
+gravadas as imagens da base. A seguir rode os comandos:
+
+```bash
+ cd src/localize_neural
+ log2png.sh
+```
+
+Rode o comando abaixo no diretório bin para gerar as poses de cada imagem. Se você for empregar outro log, modifique o 
+process abaixo de acordo. Lembre-se de criar o diretório de saída de localize_neural_dataset (/dados/ufes e /dados/ufes/20191003 no 
+../src/localize_neural2/process-ground-truth-generator.ini).
+
+```bash
+ ./proccontrol ../src/localize_neural2/process-ground-truth-generator.ini
+```
+
+Sua base de teste é o diretório /dados/ufes/20191003 e o arquivo /dados/ufes/camerapos-20191003.txt especificados em 
+../src/localize_neural2/process-ground-truth-generator.ini, mais o arquivo basepos-20191003-20191003-5m-1m.txt.
+O nome deste arquivo representa:
+
+```bash
+ basepos-<data set de referencia>-<data set de teste>-<espacamento entre os key frames do data set de referencia>-<espacamento estre as imagens no data set de teste>.txt.
+```
+
+Para gerar o arquivo basepos-20191003-20191003-5m-1m.txt você vai precisar rodar os comandos abaixo:
+
+```bash
+ cd src/localize_neural2
+ python gerar_dataset/scripts/dataset.py -i /dados/ufes/ -o /dados/ufes_gt/ -b 5 -l 1
+```
+
+O arquivo será gerado em /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt. O afastamento entre as imagens neste
+aqrquivo é de 5m.
+
+Este processo também gera o arquivo /dados/ufes_gt/livepos-20191003-20191003-5m-1m.txt, que é usado no treino.
+Este arquivo tem o mesmo formato de basepos-20191003-20191003-5m-1m.txt, mas o afastamento entre as imagens
+é de 1m.
+
+
+xxxxxxxxxxxxxxxxxxx
+
+O procedimento acima conclui o processo de geração da base de teste.
+
+
+```bash
+ readlink -f /dados/ufes/20191003/*r.png > ~/carmen_lcad/src/localize_neural2/config/test.txt
+```
+
+É necessário também a lista de poses e labels associadas às saídas da rede treinada. Em nosso exemplo, basta executar o 
+seguinte comando:
+
+```bash
+ cat /dados/ufes_gt/basepos-20191003-20191003-5m-1m.txt |grep -v label| awk '{print $3 " " $4 " " $8 " " $1}' > config/poses_and_labels.txt
+```
+
+

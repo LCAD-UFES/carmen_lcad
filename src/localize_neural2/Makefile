@@ -18,13 +18,13 @@ SOURCES = localize_neural2.cpp dnn_visual_gl_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = localize_neural2 dnn_visual_gl
+PUBLIC_BINARIES = localize_neural2 deep_vgl
 
-TARGETS = darknet localize_neural2 dnn_visual_gl
+TARGETS = darknet localize_neural2 deep_vgl
 
 localize_neural2: localize_neural2.o
 
-dnn_visual_gl: dnn_visual_gl_main.o
+deep_vgl: dnn_visual_gl_main.o
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4  > /dev/null 2>&1

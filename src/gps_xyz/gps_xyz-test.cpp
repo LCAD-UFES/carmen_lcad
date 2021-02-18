@@ -47,65 +47,97 @@
 #include <carmen/gps_xyz_messages.h>
 
 
-int gps_xyz_update = 0;
-carmen_gps_xyz_message gps_xyz;
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Handlers																						//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
-ipc_gps_xyz_handler(carmen_gps_xyz_message *data __attribute__ ((unused)))
+ipc_gps_xyz_handler(carmen_gps_xyz_message *message)
 {
-	gps_xyz_update++;
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "        gps xyz message\n");
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, " nr:               %d\n", message->nr);
+	fprintf(stderr, " utc:              %f\n", message->utc);
+	fprintf(stderr, " latitude:         %f\n", message->latitude);
+	fprintf(stderr, " latitude (DM):    %f\n", message->latitude_dm);
+	fprintf(stderr, " lat_orient:       %c\n", message->lat_orient);
+	fprintf(stderr, " longitude:        %f\n", message->longitude);
+	fprintf(stderr, " longitude (DM):   %f\n", message->longitude_dm);
+	fprintf(stderr, " long_orient:      %c\n", message->long_orient);
+	fprintf(stderr, " gps_quality:      %d\n", message->gps_quality);
+	fprintf(stderr, " num_satellites:   %d\n", message->num_satellites);
+	fprintf(stderr, " hdop:             %f\n", message->hdop);
+	fprintf(stderr, " sea_level:        %f\n", message->sea_level);
+	fprintf(stderr, " altitude:         %f\n", message->altitude);
+	fprintf(stderr, " geo_sea_level:    %f\n", message->geo_sea_level);
+	fprintf(stderr, " geo_sep:          %f\n", message->geo_sep);
+	fprintf(stderr, " data_age:         %d\n", message->data_age);
+	fprintf(stderr, " x:                %f\n", message->x);
+	fprintf(stderr, " y:                %f\n", message->y);
+	fprintf(stderr, " z:                %f\n", message->z);
+	fprintf(stderr, " zone:             %f\n", message->zone);
+	fprintf(stderr, " hemisphere_north: %d\n\n", message->hemisphere_north);
+
+	//Transformando novamente em latitude e longitude
+	Gdc_Coord_3d teste = carmen_Utm_Gdc2(-message->y, message->x, message->z, message->zone, message->hemisphere_north);
+	fprintf(stderr, "Transformando novamente em latitude, longitude e altitude:\n");
+	fprintf(stderr, "(%f, %f, %f)\n\n", teste.latitude, teste.longitude, teste.elevation);
+
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "\n");
 }
+
+
+void
+ipc_gps_gphdt_handler(carmen_gps_gphdt_message *message)
+{
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "        gps gphdt message\n" );
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, " gps number:        %d\n", message->nr);
+	fprintf(stderr, " valid:             %d\n", message->valid);
+	fprintf(stderr, " heading:           %f\n", message->heading);
+	fprintf(stderr, " timestamp:         %f\n", message->timestamp);
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "\n");
+}
+
+
+void
+shutdown_module(int signal __attribute__ ((unused)))
+{
+	static int done = 0;
+
+	if (!done)
+	{
+		carmen_ipc_disconnect();
+		printf("Disconnected from IPC.\n");
+		done = 1;
+	}
+
+	exit(0);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int
 main(int argc, char *argv[])
 {
+	signal(SIGINT, shutdown_module);
+
 	carmen_ipc_initialize(argc, argv);
-	carmen_gps_xyz_subscribe_message(&gps_xyz, (carmen_handler_t) ipc_gps_xyz_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_gps_xyz_subscribe_message(NULL, (carmen_handler_t) ipc_gps_xyz_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_gps_subscribe_nmea_hdt_message(NULL, (carmen_handler_t) ipc_gps_gphdt_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	while (1)
-	{
-		IPC_listen(0);
-		if (gps_xyz_update != 0)
-		{
-			fprintf(stderr, "===================================\n");
-			fprintf(stderr, "        gps xyz message\n");
-			fprintf(stderr, "===================================\n");
-			fprintf(stderr, " nr:               %d\n", gps_xyz.nr);
-			fprintf(stderr, " utc:              %f\n", gps_xyz.utc);
-			fprintf(stderr, " latitude:         %f\n", gps_xyz.latitude);
-			fprintf(stderr, " latitude (DM):    %f\n", gps_xyz.latitude_dm);
-			fprintf(stderr, " lat_orient:       %c\n", gps_xyz.lat_orient);
-			fprintf(stderr, " longitude:        %f\n", gps_xyz.longitude);
-			fprintf(stderr, " longitude (DM):   %f\n", gps_xyz.longitude_dm);
-			fprintf(stderr, " long_orient:      %c\n", gps_xyz.long_orient);
-			fprintf(stderr, " gps_quality:      %d\n", gps_xyz.gps_quality);
-			fprintf(stderr, " num_satellites:   %d\n", gps_xyz.num_satellites);
-			fprintf(stderr, " hdop:             %f\n", gps_xyz.hdop);
-			fprintf(stderr, " sea_level:        %f\n", gps_xyz.sea_level);
-			fprintf(stderr, " altitude:         %f\n", gps_xyz.altitude);
-			fprintf(stderr, " geo_sea_level:    %f\n", gps_xyz.geo_sea_level);
-			fprintf(stderr, " geo_sep:          %f\n", gps_xyz.geo_sep);
-			fprintf(stderr, " data_age:         %d\n", gps_xyz.data_age);
-			fprintf(stderr, " x:                %f\n", gps_xyz.x);
-			fprintf(stderr, " y:                %f\n", gps_xyz.y);
-			fprintf(stderr, " z:                %f\n", gps_xyz.z);
-			fprintf(stderr, " zone:             %f\n", gps_xyz.zone);
-			fprintf(stderr, " hemisphere_north: %d\n\n", gps_xyz.hemisphere_north);
+	carmen_ipc_dispatch();
 
-			//Transformando novamente em latitude e longitude
-			Gdc_Coord_3d teste = carmen_Utm_Gdc2(-gps_xyz.y, gps_xyz.x, gps_xyz.z, gps_xyz.zone, gps_xyz.hemisphere_north);
-			fprintf(stderr, "Transformando novamente em latitude, longitude e altitude:\n");
-			fprintf(stderr, "(%f, %f, %f)\n\n", teste.latitude, teste.longitude, teste.elevation);
-
-			fprintf(stderr, "===================================\n");
-			fprintf(stderr, "\n");
-
-			gps_xyz_update = 0;
-		}
-		usleep(10000);
-	}
 	return(0);
 }
 
