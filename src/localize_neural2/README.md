@@ -18,9 +18,8 @@ e o timestamp.
 Para gerar o arquivo com as linhas acima, precisamos rodar o comando abaixo:
 
 ```bash
-python2.7 $CARMEN_HOME/src/localize_neural2/gerar_dataset/scripts/dataset.py -i /dados/ufes/ -o /dados/ufes_gt/ -b 5 -l 1
+python2.7 $CARMEN_HOME/src/localize_neural2/gerar_dataset/scripts/dataset.py -i /dados/ufes/ -o /dados/ufes_gt/ -b 5 -l 1 -I $CARMEN_HOME/src/localize_neural2/gerar_dataset/scripts/logs.txt
 ```
-
 
 O comando abaixo gera o arquivo poses_and_labels.txt a partir do arquivo XXXXX.
 

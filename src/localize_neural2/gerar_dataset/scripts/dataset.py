@@ -161,9 +161,9 @@ if __name__ == '__main__':
             print ("Successfully created the directory %s " % args.output_dir)
 
     datasets = np.loadtxt(args.input_images_directories, comments="#", delimiter=",", unpack=False, dtype=int)
-    
-    print datasets
-
+    if datasets.size < 2:
+        datasets = [datasets]
+        
     input_dir = args.images_path  #'/dados/ufes/'
     output_dir = args.output_dir #'/dados/ufes_wnn/'
 
