@@ -18,17 +18,17 @@ pode ser usando para treino) e um para treino.
 Escolha os logs que serão utilizados. Neste tutorial, utilizaremos três logs:
 
 ```bash
-
-/dados/log_volta_da_ufes_art-20210120.txt
 /dados/log_volta_da_ufes_art-20210131.txt
+/dados/log_volta_da_ufes_art-20210120.txt
 /dados/log_saida_lcad3_art-20210212.txt
 ```
 
-Os dois primeiros logs acima são da volta da Ufes completa, equanto que o terceiro é apenas do Art saindo no Lcad3
+Os dois primeiros logs acima são da volta da Ufes completa, equanto que o terceiro é apenas do Art saindo no Lcad3.
 
 ## STEP 1.1
 
-Precisamos gerar o arquivo "$CARMEN_HOME/src/deep_vgl/treino_e_teste/logs.txt" contendo as linhas abaixo:
+Gere o arquivo "$CARMEN_HOME/src/deep_vgl/treino_e_teste/logs.txt" contendo linhas como abaixo (apropriadas para os 
+logs mencionados no passo anterior):
 
 ```bash
 /dados/log_volta_da_ufes_art-20210120.txt   /dados/ufes/20210120    1   0     2   640x480     0
@@ -56,49 +56,80 @@ primeiras linhas das 480 linhas da imagem. No Art toda a imagem pode ser aprovei
 
 ## STEP 1.2
 
-Gerar as imagens:
-
-execute o seguinte comando para extrair as imagens dos logs selecionados.
+Execute o seguinte comando para extrair as imagens dos logs selecionados:
 
 ```bash
-$CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/generate_images.sh
+$CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/generate_images.sh $CARMEN_HOME/src/deep_vgl/treino_e_teste/logs.txt
 ```
-Após isso as imagens estarão disponíveis nas pastas listadas no arquivo logs.txt
+Após isso, as imagens estarão disponíveis nas pastas listadas no arquivo logs.txt
 
 ## STEP 1.3
 
-Precisamo gerar o arquivo que associa as poses dos logs com as imagens capturadas (extraídas no passo anterior). Nesse momento chamamos de "camerapos". São um "preview" do dataset, mas sem tratamento algum.
+Gere o arquivo que associa as poses dos logs com as imagens capturadas (extraídas no passo anterior). Nesse momento, chamamos 
+estes arquivos de "camerapos". São um "preview" do dataset, mas sem tratamento algum.
 
 Para gerar os camerapos, executamos o playback de cada log utilizando o process-ground-truth-generator.ini, com o módulo localize_neural_dataset habilitado.
 
 Edite o arquivo "$CARMEN_HOME/src/deep_vgl/process-ground-truth-generator.ini" para ajustar as seguintes linhas ao seu caso:
 
 ```bash
-
-playback    gt_log          1   0   ./playback /dados/log_voltadaufes-20160825.txt
-exporter    gt_generator    1   0   ./localize_neural_dataset -camera_id 3 -output_dir /dados/ufes/20160825 -output_txt /dados/ufes/camerapos-20160825.txt 
- 
+ param_daemon       support         1       0           ./param_daemon ../src/carmen-mercedes-atego.ini
 ```
+
+Acima, coloque o arquivo de parâmetros de seu robô.
+ 
+```bash
+playback           gt_log	    1       0           ./playback /dados/log_volta_da_ufes_art-20210131.txt
+```
+
+Acima, troque o log para um dos logs do STEP 1.1.
+
+```bash
+ exporter           gt_generator    1       0           ./localize_neural_dataset -camera_id 1 -output_dir /dados/ufes/20210131 -output_txt /dados/ufes/camerapos-20210131.txt 
+```
+
+Acima, troque a data do log (em dois lugares) e o camera_id.
+
+```bash
+ map_server         support         1       0           ./map_server -map_path ../data/map_volta_da_ufes-20210131-art2 -map_x 7757721.8 -map_y -363569.5 -block_map on 
+```
+
+Acima, troque o mapa para seu mapa de referência.
+
+```bash
+ navigator_gui      monitors        1       0           ./navigator_gui2 -map_path /dados/maps/map_volta_da_ufes-20210131-art2 
+```
+
+Acima, troque o mapa para seu mapa de referência.
+
+```bash
+ bumblebee_3view    monitors        0       0           ./bumblebee_basic_view 3
+ Camera1            monitors        1       0           ./camera_viewer 1
+```
+
+Acima, ative o monitor de imagens da sua câmera.
+
 
 ## STEP 1.4
 
-copie process-ground-truth-generator.ini para $CARMEN_HOME/bin com o seguinte comando:
+Copie process-ground-truth-generator.ini para $CARMEN_HOME/bin com o seguinte comando:
 
 ```bash
- 
 cp $CARMEN_HOME/src/deep_vgl/process-ground-truth-generator.ini $CARMEN_HOME/bin
-
 ```
 
-e rode o playback do log:
+E rode o playback do log:
 
 ```bash
-
 cd $CARMEN_HOME/bin
-./central &
-./proccontrol process-ground-truth-generator.ini
+{abra um novo terminal e execute} ./central
+{abra um novo terminal e execute} ./proccontrol process-ground-truth-generator.ini
 
 ```
+
+Certifique-se de que o robô está corretamente localizado no início do log. Se não, localize-o manualmente logo no inicio do log.
+
+
 
 ### Repita os steps 1.3 e 1.4 para cada log selecionado.
 
