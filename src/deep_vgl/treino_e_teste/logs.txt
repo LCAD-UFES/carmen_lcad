@@ -1,0 +1,2 @@
+/dados/log_volta_da_ufes-20191003.txt   /dados/ufes/20191003    3   380     1   640x480     0
+/dados/log_volta_da_ufes-20160825.txt   /dados/ufes/20160825    3   380     1   640x480     0
