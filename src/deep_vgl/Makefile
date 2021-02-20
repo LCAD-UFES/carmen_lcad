@@ -14,15 +14,17 @@ CFLAGS += `pkg-config --cflags opencv` -I/usr/include/gflags
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface -lcamera_drivers
 LFLAGS += -fPIC -lgflags -l:libdarknet.so -lstdc++ `pkg-config --libs opencv` 
 
-SOURCES = localize_neural2.cpp deep_vgl_main.cpp
+SOURCES = deep_vgl-test.cpp deep_vgl-eval.cpp deep_vgl_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = localize_neural2 deep_vgl
+PUBLIC_BINARIES = deep_vgl-test deep_vgl-eval deep_vgl
 
-TARGETS = darknet localize_neural2 deep_vgl
+TARGETS = darknet deep_vgl-test deep_vgl-eval deep_vgl
 
-localize_neural2: localize_neural2.o
+deep_vgl-test: deep_vgl-test.o
+
+deep_vgl-eval: deep_vgl-eval.o
 
 deep_vgl: deep_vgl_main.o
 

@@ -153,6 +153,24 @@ cat `ls /dados/ufes_gt/basepos-*-5m-1m.txt | awk '{print $1}'| tail -n 1` | grep
 
 ``` 
 
+Agora temos um arquivo com a lista de labels num formato que a darknet possa interpretar corretamente.
+Como nossas labels são inteiros e as imagens não nomeadas com timestamp, foi necessário adicionar essas TAGS (B e E) antes e depois do label, para que a darknet conseguisse identificar corretamente a label no nome da imagem. Evitamos assim de alterar o código da darknet.
+```bash
+
+# conteúdo do arquivo labels.txt
+B0E
+B1E
+.
+.
+.
+B132E
+.
+.
+.
+B650E
+
+```
+
 Precisamos saber o total de labels criadas, para isso execute o seguinte commando:
 
 ```bash
