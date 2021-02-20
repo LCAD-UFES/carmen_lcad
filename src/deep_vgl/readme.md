@@ -185,9 +185,19 @@ Siga o passo a passo no README da darknet e compile para seu hardware.
 
 ## Agora temos que criar as configurações da darknet para iniciar o treinamento da rede
 
-(Detalhar esta etapa melhor, anotei assim para nao perder o raciocínio)
+Precisamos agora editar os arquivos deepvgl.cfg e deepvgl.data para as configurações correspondentes ao novo dataset.
 
-Precisamos editar os arquivos deepvgl.cfg e deepvgl.data para as configurações correspondentes ao novo dataset
+O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuração da DNN e deve ser alterado para que a última camada corresponda ao total de labels geradas nos passos anteriores. É importante também garantir que o total de iterações seja no mínimo igual ao total de imagens do dataset. Nesse exemplo editaremos o total de iterações para 45000 (suficiente para o total de imagens) e o número de neurônios na última camada convolucional para 651 (total de labels). Desta forma, editaremos as linhas 20 e 193 do deepvgl.cfg:
+
+![max_batches](https://raw.githubusercontent.com/LCAD-UFES/carmen_lcad/master/src/deep_vgl/max_batches.png)
+
+![conv_filters](https://raw.githubusercontent.com/LCAD-UFES/carmen_lcad/master/src/deep_vgl/conv_filters.png)
+
+
+
+
+
+#######################################33
 
 Temos também que copiar os arquivos:
 * labels.txt
