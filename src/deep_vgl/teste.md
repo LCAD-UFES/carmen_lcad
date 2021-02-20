@@ -3,10 +3,11 @@
 ## Para testar a rede (precisa do python2.7 instalado)
 
 Para avaliar o quanto a rede está acertando precisaremos dos seguintes arquivos (gerados na etapa de treino):
-* deepvgl.cfg               # as configurações da rede
-* labels.txt                # os labels gerados para o dataset de treino
-* deepvgl_final.weights     # os pesos da rede, gerados durante a execução do treino da darknet (vários serão gerados e podem ser avaliados)
-
+```bash
+deepvgl.cfg               # as configurações da rede
+labels.txt                # os labels gerados para o dataset de treino
+deepvgl_final.weights     # os pesos da rede, gerados durante a execução do treino da darknet (vários serão gerados e podem ser avaliados)
+```
 Precisamos também de uma lista de imagens para validação, que devem ter o mesmo formado da lista utilizada para treino.
 Podemos utilizar a mesma lista de imagens usada para treinamento da rede (/dados/ufes/train.list). 
 
