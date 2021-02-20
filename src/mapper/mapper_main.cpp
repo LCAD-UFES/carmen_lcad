@@ -101,7 +101,7 @@ carmen_rddf_annotation_message last_rddf_annotation_message;
 int robot_near_strong_slow_down_annotation = 0;
 
 bool offline_map_available = false;
-int ok_to_publish = 0;
+int ok_to_publish = 1;
 int number_of_threads = 1;
 
 int camera3_ready = 0;
@@ -370,6 +370,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
+		if (decay_to_offline_map)
+			map_decay_to_offline_map(&occupancy_map);
+
 		free_virtual_scan_message();
 
 		// A ordem eh importante
