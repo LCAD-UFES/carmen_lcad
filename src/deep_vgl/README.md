@@ -1,11 +1,11 @@
 #DeepVGL
 
 ## Para treinar
-[a relative link](treino.md)
+[Como treinar o DeepVGL](treino.md)
 
 ## Para teste/avaliação de resultado
- [a relative link](teste.md)
+ [Como testar e verificar o percentual de acertos](teste.md)
 
  ## Para executar o módulo no Carmen
 
- [a relative link](deepvgl.md)
+ [Integração com CARMEN](deepvgl.md)
