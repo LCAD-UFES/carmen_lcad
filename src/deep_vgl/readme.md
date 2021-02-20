@@ -77,7 +77,7 @@ Precisamo gerar o arquivo que associa as poses dos logs com as imagens capturada
 
 Para gerar os camerapos, executamos o playback de cada log utilizando o process-ground-truth-generator.ini, com o módulo localize_neural_dataset habilitado.
 
-Edite o arquivo "$CARMEN_HOME/src/deep_vgl/treino_e_teste/datasets/process-ground-truth-generator.ini" para ajustar as seguintes linhas ao seu caso:
+Edite o arquivo "$CARMEN_HOME/src/deep_vgl/process-ground-truth-generator.ini" para ajustar as seguintes linhas ao seu caso:
 
 ```bash
 
@@ -92,7 +92,7 @@ copie process-ground-truth-generator.ini para $CARMEN_HOME/bin com o seguinte co
 
 ```bash
  
-cp $CARMEN_HOME/src/deep_vgl/treino_e_teste/datasets/process-ground-truth-generator.ini $CARMEN_HOME/bin
+cp $CARMEN_HOME/src/deep_vgl/process-ground-truth-generator.ini $CARMEN_HOME/bin
 
 ```
 
