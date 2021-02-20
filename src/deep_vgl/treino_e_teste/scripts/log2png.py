@@ -13,6 +13,28 @@ def check_setup(input_list, output_dir):
         raise Exception('The output_dir is not a valid directory!')    
 
 
+def save_one_img(img, img_size, dst_size, timestamp, camera_id, output_dir, max_height=None):
+    img = img.reshape(img_size)[:, :, ::-1]  # transpose channels RGB -> BGR
+
+    ori_size = img_size[:2][::-1]  # transpose height x width -> width x height
+
+    if dst_size is None:
+        dst_size = ori_size
+
+    if dst_size != ori_size:
+        img = cv2.resize(img, dst_size)
+
+    if max_height is not None:
+        img = img[0:max_height]
+
+    img_fname = '{0}.intelbras{1}.png'.format(timestamp, camera_id)
+    if not (os.path.isfile(os.path.join(output_dir, img_fname))):
+        print('Saving image {} into {}'.format(img_fname, output_dir))
+        cv2.imwrite(os.path.join(output_dir, img_fname), img)
+    else:
+        print('Skipping image {} into {}'.format(img_fname, output_dir))
+
+
 def save_any_img(img_left, img_right, img_size, dst_size, timestamp, camera_id, output_dir, max_height=None):
     img_left = img_left.reshape(img_size)[:, :, ::-1]  # transpose channels RGB -> BGR
     img_right = img_right.reshape(img_size)[:, :, ::-1]  # transpose channels RGB -> BGR
@@ -54,6 +76,14 @@ def save_new_img(image, output_dir, camera_id, dst_size=None, max_height=None):
     img_right = np.fromfile(img_handler, count=image['bytes'], dtype=np.uint8)
 
     save_any_img(img_left, img_right, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height)
+
+
+def save_new_img2(image, output_dir, camera_id, dst_size=None, max_height=None):
+    img_handler = open(image['path'], 'rb')
+
+    img = np.fromfile(img_handler, count=image['bytes'], dtype=np.uint8)
+
+    save_one_img(img, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height)
 
 
 def read_old_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, max_height=None, ignore_top=0):
@@ -126,10 +156,49 @@ def read_new_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_
     f.close()
 
 
+def read_new2_log(log, input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, max_height=None, ignore_top=0):
+    total = 0
+    mythreads = []
+    f = open(input_list, 'rb')
+    line = f.readline()
+    
+    ignored_lines = 0
+    while ignored_lines < ignore_top:
+        line = f.readline()
+        ignored_lines+=1
+    
+    while line and total < max_lines:
+        item = line.strip().split()
+        
+        timestamp = float(item[4])
+        high_level_subdir = int(int(timestamp / 10000.0) * 10000.0)
+        low_level_subdir = int(int(timestamp / 100.0) * 100.0)
+        path = log + "_images/" + str(high_level_subdir) + "/" + str(low_level_subdir) + "/" + item[4] + "_camera" + str(camera_id) + "_0.image"   
+        
+        image = {
+            'path': path,
+            'size': (int(item[8]), int(item[7]), 3),
+            'bytes': int(item[6]),
+            'timestamp': item[4].decode('utf-8'),
+        }
+        line = f.readline()
+        t = threading.Thread(target=save_new_img2, args=(image, output_dir, camera_id, dst_size, max_height))
+        mythreads.append(t)
+        t.start()
+        total += 1
+        if (len(mythreads) >= max_threads) or not (line and total < max_lines):
+            for t in mythreads:
+                t.join()
+            mythreads[:] = []  # clear the thread's list
+            print('Saved {} images already...'.format(total))
+    f.close()
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Convert images from LOG to PNG')
     parser.add_argument('-i', '--input_list', type=str, required=True)
+    parser.add_argument('-g', '--log', type=str, required=True)
     parser.add_argument('-o', '--output_dir', type=str, required=True)
     parser.add_argument('-c', '--camera_id', type=int, required=True)
     parser.add_argument('-f', '--log_format', type=int, required=True)
@@ -137,7 +206,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--max_threads', type=int, required=False, default=10)
     parser.add_argument('-m', '--max_height', type=int, required=False, default=0)
     parser.add_argument('-s', '--image_size', type=str, required=False, default='none')
-    parser.add_argument('-t', '--ignore_top', type=int, required=False, default=0)
+    parser.add_argument('-p', '--ignore_top', type=int, required=False, default=0)
     argv = vars(parser.parse_args())
 
     check_setup(argv['input_list'], argv['output_dir'])
@@ -148,8 +217,10 @@ if __name__ == '__main__':
     
     print('Destination size: {}'.format(dst_size))
 
-    if argv['log_format'] == 1:     # 1-New Log Format
-        read_new_log(argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
-    else:   # 0-Old Log Format
+    if argv['log_format'] == 0: # 0-Old Log Format
         read_old_log(argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
+    elif argv['log_format'] == 1:  # 1-New Log Format
+        read_new_log(argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
+    else:
+        read_new2_log(argv['log'], argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
     print('out')

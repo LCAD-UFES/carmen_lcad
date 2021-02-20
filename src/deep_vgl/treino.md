@@ -3,45 +3,40 @@
 ## Para treinar a rede (precisa do python2.7 instalado)
 
 Precisaremos de um log com mapa já criado.
-Esse mapa, e seu respectivo log, serão utilizados como base para gerar as poses utilizadas na tabela de poses/images do DeepVGL.
+Esse mapa, e seu respectivo log, serão utilizados como base para gerar as poses utilizadas na tabela de images/poses 
+aprendidas pela rede neural (Deep Neural Network - DNN) do DeepVGL.
 
-Presicaremos também de logs que serão utilizados para extrair as imagens do treino da DNN.
+Precisaremos também de logs adicionais que serão utilizados para extrair mais imagens de treino para a DNN.
 
 Nesse exemplo utilizaremos 2 logs.
 
-Pode ser feito com apenas 1 log, mas é recomendado pelo menos 2 logs, um para base e um para treino.
+Pode ser feito com apenas 1 log, mas é recomendado pelo menos 2 logs, um para a tabela de images/poses (que também
+pode ser usando para treino) e um para treino.
 
 ## STEP 1
-Escolha os logs que serão utilizados.
 
-Geralmente ficam salvos em "/dados"
+Escolha os logs que serão utilizados. Neste tutorial, utilizaremos três logs:
 
 ```bash
 
-ls /dados
-log_volta_da_ufes-20160825.txt
-log_volta_da_ufes-20160825.txt_bumblebee
-log_volta_da_ufes-20160825.txt_velodyne
-log_volta_da_ufes-20191003.txt
-log_volta_da_ufes-20191003.txt_bumblebee
-log_volta_da_ufes-20191003.txt_velodyne
-
+/dados/log_volta_da_ufes_art-20210120.txt
+/dados/log_volta_da_ufes_art-20210131.txt
+/dados/log_saida_lcad3_art-20210212.txt
 ```
+
+Os dois primeiros logs acima são da volta da Ufes completa, equanto que o terceiro é apenas do Art saindo no Lcad3
 
 ## STEP 1.1
 
-Precisamos gerar o arquivo "$CARMEN_HOME/src/deep_vgl/treino_e_teste/logs.txt" contendo linhas como no exemplo abaixo:
-
-ex.:
+Precisamos gerar o arquivo "$CARMEN_HOME/src/deep_vgl/treino_e_teste/logs.txt" contendo as linhas abaixo:
 
 ```bash
-
-/dados/log_volta_da_ufes-20191003.txt   /dados/ufes/20191003    3   380     1   640x480     0
-/dados/log_volta_da_ufes-20160825.txt   /dados/ufes/20160825    3   380     1   640x480     0
-
+/dados/log_volta_da_ufes_art-20210120.txt   /dados/ufes/20210120    1   0     2   640x480     0
+/dados/log_volta_da_ufes_art-20210131.txt   /dados/ufes/20210131    1   0     2   640x480     0
+/dados/log_saida_lcad3_art-20210212.txt     /dados/ufes/20210212    1   0     2   640x480     0
 ```
 
-Nesse exemplo, cada linha possui:
+Acima, cada linha possui:
 
 1 - o caminho absoluto para o arquivo de log.
 
@@ -49,13 +44,14 @@ Nesse exemplo, cada linha possui:
 
 3 - a câmera utilizada no log.
 
-4 - o crop height (para eliminar áreas indesejadas da imagem).
+4 - o crop height (Para eliminar áreas indesejadas da imagem; no caso da Bumblebee, este valor deve ser 380 para pegar apenas as 380
+primeiras linhas das 480 linhas da imagem. No Art toda a imagem pode ser aproveitada).
 
-5 - log format (1 or 2).
+5 - log format (0, 1 ou 2; 0 para logs antigos, onde a imagem fica dentro do arquivo .txt de log; 1 para logs novos, onde a imagem é salvada à parte; e 2 para logs com imagens de câmeras Intelbras).
 
-6 - as dimensões da imagem de saída
+6 - as dimensões das imagens que devem ser salvas
 
-7 - o total de linhas a serem ignoradas o topo da imagem (inteiro)
+7 - o total de linhas a serem ignoradas a partir do topo da imagem (0 nas câmeras do Art e em câmeras bumblebee da Iara)
 
 
 ## STEP 1.2
@@ -65,9 +61,7 @@ Gerar as imagens:
 execute o seguinte comando para extrair as imagens dos logs selecionados.
 
 ```bash
-
 $CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/generate_images.sh
-
 ```
 Após isso as imagens estarão disponíveis nas pastas listadas no arquivo logs.txt
 
