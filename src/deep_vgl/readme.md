@@ -194,23 +194,43 @@ O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuraçã
 ![conv_filters](https://raw.githubusercontent.com/LCAD-UFES/carmen_lcad/master/src/deep_vgl/conv_filters.png)
 
 
+Salve as alterações!
 
+Agora precisamos alterar o arquivo deepvgl.data, que contém a lista de tudo que a darknet precisa para executar o treino corretamente.
+Para isso, execute o comando abaixo e edite as linhas conforme o exemplo mostrado:
 
+```bash
 
-#######################################33
+gedit $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/deepvgl.data
 
-Temos também que copiar os arquivos:
-* labels.txt
-* deepvgl.cfg
-* deepvgl.data
-para a pasta CFG da Darknet
+```
+
+O conteúdo deve ficar parecido com isso:
+
+```bash
+
+classes=651                         # total de labels do dataset (classes para a darknet)
+train  = /dados/ufes/train.list     # caminho para o arquivo com a lista das imagens de treino
+valid  = /dados/ufes/train.list     # repetimos a arquivo anterior pois não utilizaremos a validação da darknet
+labels = /dados/ufes/labels.txt     # caminho para o arquivo com as labels
+backup = backup/                    # local onde a darknet salvará os pesos da rede durante o treino
+top=1                               # quando executando com o parâmetro "-topk", o inteiro representa o top: 1, 2 ... na métrica da ImageNet 
+
+```
+
+Por último, copie esses arquivos para "/dados/ufes/" com o seguinte comando:
+```bash
+
+cp $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/{labels\.txt,deepvgl\.cfg,deepvgl\.data} /dados/ufes/
+
+```
 
 Agora basta iniciar o treinamento com o comando abaixo:
 
 ```bash
 
 cd /dados/darknet
-./darknet classifier train cfg/deepvgl.data cfg/deepvgl.cfg darknet19_448.conv.23
+./darknet classifier train /dados/ufes/deepvgl.data /dados/ufes/deepvgl.cfg darknet19_448.conv.23
 
 ```
 Ao final, teremos os pesos da rede salvos na pasta /dados/darknet/backup
