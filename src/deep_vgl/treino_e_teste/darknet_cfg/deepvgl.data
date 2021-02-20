@@ -1,0 +1,6 @@
+classes=651
+train  = /dados/ufes/train.list
+valid  = /dados/ufes/train.list
+labels = /dados/ufes/labels.txt
+backup = backup/
+top=1
