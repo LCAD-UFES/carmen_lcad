@@ -1,20 +1,26 @@
 #!/usr/bin/env bash
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
+LOGTXT=$1
+if [ "$LOGTXT"=="" ]; then
+    echo "missing argument"
+    echo "usage: $0 $SCRIPTPATH/../logs.txt"
+    exit 0;
+fi
 
-declare -a logs=(`cat $1 | awk '{ print $1 }'`)
+declare -a logs=(`cat $LOGTXT | awk '{ print $1 }'`)
 
-declare -a dirs=(`cat $1 | awk '{ print $2 }'`)
+declare -a dirs=(`cat $LOGTXT | awk '{ print $2 }'`)
 
-declare -a cams=(`cat $1 | awk '{ print $3 }'`)
+declare -a cams=(`cat $LOGTXT | awk '{ print $3 }'`)
 
-declare -a crops=(`cat $1 | awk '{ print $4 }'`)
+declare -a crops=(`cat $LOGTXT | awk '{ print $4 }'`)
 
-declare -a fmts=(`cat $1 | awk '{ print $5 }'`)
+declare -a fmts=(`cat $LOGTXT | awk '{ print $5 }'`)
 
-declare -a imgsize=(`cat $1 | awk '{ print $6 }'`)
+declare -a imgsize=(`cat $LOGTXT | awk '{ print $6 }'`)
 
-declare -a ignore_top=(`cat $1 | awk '{ print $7 }'`)
+declare -a ignore_top=(`cat $LOGTXT | awk '{ print $7 }'`)
 
 for i in "${!dirs[@]}"; do
     mkdir -p ${dirs[$i]}
