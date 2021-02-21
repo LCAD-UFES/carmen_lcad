@@ -130,33 +130,29 @@ cd $CARMEN_HOME/bin
 Certifique-se de que o robô está corretamente localizado no início do log. Se não, localize-o manualmente logo no inicio do log.
 
 
-
 ### Repita os steps 1.3 e 1.4 para cada log selecionado.
 
 ## STEP 2
 
-Agora que temos os camerapos e as imagens de cada log, precisamos geras os arquivos de dataset propriamente ditos e ajustar as imagens para o padrão utilizado pela darknet (DNN utilizada no DeepVGL).
+Agora que temos os camerapos e as imagens de cada log, precisamos gerar os arquivos de dataset propriamente ditos e ajustar as imagens para o padrão utilizado pela darknet (DNN utilizada no DeepVGL).
 Para isso executaremos um script que precisa de alguns parâmetros relativos ao conjunto de dados e espaçamento escolhidos.
 
 Configure os seguintes parâmetros em \'$CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/config.txt\':
 
 ```bash
-
 - image_path="/dados/ufes/" # images target directory from previous steps
-- output_path="/dados/ufes_gt/" # outpu directory 
+- output_path="/dados/ufes_gt/" # output directory 
 - base_offset=5 # spacing between base poses
 - live_offset=1 # spacing between live poses
-
 ```
+
 Uma vez configurados os parâmetros podemos executar o seguinte comando para gerar o dataset de fato:
 
 ```bash
-
 $CARMEN_HOME/src/deep_vgl/scripts/dataset.sh
-
 ```
 
-## Após terminar de executar, serão geradas algumas saídas
+Após terminar de executar, serão geradas algumas saídas
 
 Em output_path (/dados/ufes_gt nesse exemplo):
 * Arquivos basepos-<log_base>-<log_treino>-<base_offset>-<live_offset>.txt: utilizado para teste e produção.
@@ -173,15 +169,13 @@ Pasta train (/dados/ufes/train nesse exemplo):
 Em nosso exemplo, salvamos os arquivos em "/dados/ufes_gt", desta forma o comando a seguir gera a lista de labels utilizadas pela darknet durante o treinamento.
 
 ```bash
-
 cat `ls /dados/ufes_gt/basepos-*-5m-1m.txt | awk '{print $1}'| tail -n 1` | grep -v label | awk '{print "B"$2"E"}' > $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt 
-
-``` 
+```
 
 Agora temos um arquivo com a lista de labels num formato que a darknet possa interpretar corretamente.
 Como nossas labels são inteiros e as imagens não nomeadas com timestamp, foi necessário adicionar essas TAGS (B e E) antes e depois do label, para que a darknet conseguisse identificar corretamente a label no nome da imagem. Evitamos assim de alterar o código da darknet.
-```bash
 
+```bash
 # conteúdo do arquivo labels.txt
 B0E
 B1E
@@ -193,19 +187,15 @@ B132E
 .
 .
 B650E
-
 ```
 
 Precisamos saber o total de labels criadas, para isso execute o seguinte commando:
 
 ```bash
-
 cat $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt | wc -l
-
-``` 
+```
 
 O número exibido será utilizado para configurar a saída da darknet.
-
 Neste exemplo 651 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
 
 ## É necessário ter a Darknet apropriadamente instalada.
@@ -215,14 +205,12 @@ Baixe a darknet e compile de acordo com seu hardware. Recomendo utilizar GPU (CU
 o comando abaixo baixa a darknet em /dados/:
 
 ```bash
-
 cd /dados/
 git clone https://github.com/AlexeyAB/darknet
 cd darknet
 wget https://pjreddie.com/media/files/darknet19_448.conv.23
 cd $CARMEN_HOME/src/deep_vgl/
-
-``` 
+```
 
 Siga o passo a passo no README da darknet e compile para seu hardware.
 
@@ -243,37 +231,31 @@ Agora precisamos alterar o arquivo deepvgl.data, que contém a lista de tudo que
 Para isso, execute o comando abaixo e edite as linhas conforme o exemplo mostrado:
 
 ```bash
-
 gedit $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/deepvgl.data
-
 ```
 
 O conteúdo deve ficar parecido com isso:
 
 ```bash
-
 classes=651                         # total de labels do dataset (classes para a darknet)
 train  = /dados/ufes/train.list     # caminho para o arquivo com a lista das imagens de treino
 valid  = /dados/ufes/train.list     # repetimos a arquivo anterior pois não utilizaremos a validação da darknet
 labels = /dados/ufes/labels.txt     # caminho para o arquivo com as labels
 backup = backup/                    # local onde a darknet salvará os pesos da rede durante o treino
 top=1                               # quando executando com o parâmetro "-topk", o inteiro representa o top: 1, 2 ... na métrica da ImageNet 
-
 ```
 
 Por último, copie esses arquivos para "/dados/ufes/" com o seguinte comando:
+
 ```bash
-
 cp $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/{labels\.txt,deepvgl\.cfg,deepvgl\.data} /dados/ufes/
-
 ```
 
 Agora basta iniciar o treinamento com o comando abaixo:
 
 ```bash
-
 cd /dados/darknet
 ./darknet classifier train /dados/ufes/deepvgl.data /dados/ufes/deepvgl.cfg darknet19_448.conv.23
-
 ```
+
 Ao final, teremos os pesos da rede salvos na pasta /dados/darknet/backup

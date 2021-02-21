@@ -8,7 +8,7 @@ IFLAGS += -isystem $(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lmovement
 LFLAGS += -llocalize_ackerman_interface -lbumblebee_basic_interface -lfused_odometry_interface -lvelodyne_interface
-LFLAGS += -lrotation_geometry -lmapper_interface 
+LFLAGS += -lrotation_geometry -lmapper_interface -lcamera_drivers
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath  
 LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system -lm -pthread
 
