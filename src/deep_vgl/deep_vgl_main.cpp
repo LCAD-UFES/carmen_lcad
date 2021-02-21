@@ -327,7 +327,6 @@ subscribe_messages()
 {
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t)bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
     camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) camera_drivers_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
