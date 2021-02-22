@@ -23,8 +23,8 @@ def find_closest_in_space(curr_pose, base_poses, curr_time, base_times, base_off
         # remove pontos na contra-mao
         orientation = np.abs(curr_pose[2] - base_poses[j][2])
         if (orientation <= math.pi/2) \
-                and (distance >= 0) and (distance <= smallest_distance) \
-                and (interval >= 0) and (interval <= shortest_interval):
+                and (distance >= 0) and (distance <= smallest_distance): # \
+                # and (interval >= 0) and (interval <= shortest_interval):
             smallest_distance = distance
             shortest_interval = interval
             nearest_index = j
@@ -77,10 +77,13 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
     
     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True, dtype=np.dtype(columns))
     data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True, dtype=np.dtype(columns))
+#     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
+#     data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True)
 
     data_base_loop = detect_closure_loop(data_base, offset_base)
     data_curr_loop = detect_closure_loop(data_curr, offset_curr)
-
+    data_curr_loop = -1
+    
     data_base = data_base[:data_base_loop]
     data_curr = data_curr[:data_curr_loop]
 

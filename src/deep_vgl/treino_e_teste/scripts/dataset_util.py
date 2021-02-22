@@ -4,8 +4,10 @@ import numpy.linalg as LA
 from collections import deque
 
 
+# columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
+#            ('timestamp', object), ('left_image', object), ('right_image', object)]
 columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
-           ('timestamp', object), ('left_image', object), ('right_image', object)]
+           ('timestamp', object), ('left_image', object)]
 
 
 delta_datasetcolumns = [('delta_tx', float), ('delta_ty', float), ('delta_tz', float), ('delta_rx', float), ('delta_ry', float), ('delta_rz', float),

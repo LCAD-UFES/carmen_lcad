@@ -1,4 +1,4 @@
-classes=651
+classes=658
 train  = /dados/ufes/train.list
 valid  = /dados/ufes/train.list
 labels = /dados/ufes/labels.txt

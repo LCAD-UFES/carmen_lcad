@@ -31,8 +31,8 @@ Gere o arquivo "$CARMEN_HOME/src/deep_vgl/treino_e_teste/logs.txt" contendo linh
 logs mencionados no passo anterior):
 
 ```bash
-/dados/log_volta_da_ufes_art-20210120.txt   /dados/ufes/20210120    1   0     2   640x480     0
 /dados/log_volta_da_ufes_art-20210131.txt   /dados/ufes/20210131    1   0     2   640x480     0
+/dados/log_volta_da_ufes_art-20210120.txt   /dados/ufes/20210120    1   0     2   640x480     0
 /dados/log_saida_lcad3_art-20210212.txt     /dados/ufes/20210212    1   0     2   640x480     0
 ```
 
@@ -85,10 +85,10 @@ playback           gt_log	    1       0           ./playback /dados/log_volta_da
 Acima, troque o log para um dos logs do STEP 1.1.
 
 ```bash
- exporter           gt_generator    1       0           ./localize_neural_dataset -camera_id 1 -output_dir /dados/ufes/20210131 -output_txt /dados/ufes/camerapos-20210131.txt 
+ exporter           gt_generator    1       0           ./localize_neural_dataset -camera_id 1 -camera_type 1 -output_dir /dados/ufes/20210131 -output_txt /dados/ufes/camerapos-20210131.txt 
 ```
 
-Acima, troque a data do log (em dois lugares) e o camera_id.
+Acima, troque a data do log (em dois lugares), o camera_id, e o camera_type (0 - Bumblebee, 1 - Intelbras).
 
 ```bash
  map_server         support         1       0           ./map_server -map_path ../data/map_volta_da_ufes-20210131-art2 -map_x 7757721.8 -map_y -363569.5 -block_map on 
@@ -109,7 +109,6 @@ Acima, troque o mapa para seu mapa de referência.
 
 Acima, ative o monitor de imagens da sua câmera.
 
-
 ## STEP 1.4
 
 Copie process-ground-truth-generator.ini para $CARMEN_HOME/bin com o seguinte comando:
@@ -129,6 +128,8 @@ cd $CARMEN_HOME/bin
 
 Certifique-se de que o robô está corretamente localizado no início do log. Se não, localize-o manualmente logo no inicio do log.
 
+Quando terminar o processo, edite o arquivo de saida (/dados/ufes/camerapos-20210131.txt) removendo linhas iniciais se necessário.
+
 
 ### Repita os steps 1.3 e 1.4 para cada log selecionado.
 
@@ -137,22 +138,29 @@ Certifique-se de que o robô está corretamente localizado no início do log. Se
 Agora que temos os camerapos e as imagens de cada log, precisamos gerar os arquivos de dataset propriamente ditos e ajustar as imagens para o padrão utilizado pela darknet (DNN utilizada no DeepVGL).
 Para isso executaremos um script que precisa de alguns parâmetros relativos ao conjunto de dados e espaçamento escolhidos.
 
-Configure os seguintes parâmetros em \'$CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/config.txt\':
+Configure os seguintes parâmetros em $CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/config.txt (estes parâmetros abaixo são bons):
 
 ```bash
 - image_path="/dados/ufes/" # images target directory from previous steps
 - output_path="/dados/ufes_gt/" # output directory 
-- base_offset=5 # spacing between base poses
-- live_offset=1 # spacing between live poses
+- base_offset=5 # spacing between base poses (poses no log de referência que serão associadas a labels pela DNN)
+- live_offset=1 # spacing between live poses (poses nos demais logs, inclusive no de referência)
 ```
 
-Uma vez configurados os parâmetros podemos executar o seguinte comando para gerar o dataset de fato:
+Uma vez configurados os parâmetros, podemos executar o seguinte comando para gerar o dataset de fato:
 
 ```bash
-$CARMEN_HOME/src/deep_vgl/scripts/dataset.sh
+$CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/dataset.sh
 ```
 
-Após terminar de executar, serão geradas algumas saídas
+Este comando usa o arquivo logs.txt do STEP 1.1 para identificar quais logs vai empregar. A ordem é importante: o primeiro log
+será usado como referência pela DNN (suas imagens, espaçadas de base_offset (m), estarão associadas a labels, um
+por imagem). 
+
+Durante a execução serão mostrados gráficos dos caminhos percurridos nos logs e a relação de cada pose de cada log com uma pose do log
+de referência (o primeiro gráfico é do log de referência com ele próprio).
+
+Após terminar de executar, serão geradas algumas saídas:
 
 Em output_path (/dados/ufes_gt nesse exemplo):
 * Arquivos basepos-<log_base>-<log_treino>-<base_offset>-<live_offset>.txt: utilizado para teste e produção.
@@ -186,7 +194,7 @@ B132E
 .
 .
 .
-B650E
+B657E
 ```
 
 Precisamos saber o total de labels criadas, para isso execute o seguinte commando:
@@ -196,7 +204,7 @@ cat $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt | wc -l
 ```
 
 O número exibido será utilizado para configurar a saída da darknet.
-Neste exemplo 651 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
+Neste exemplo 658 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
 
 ## É necessário ter a Darknet apropriadamente instalada.
 
@@ -218,7 +226,7 @@ Siga o passo a passo no README da darknet e compile para seu hardware.
 
 Precisamos agora editar os arquivos deepvgl.cfg e deepvgl.data para as configurações correspondentes ao novo dataset.
 
-O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuração da DNN e deve ser alterado para que a última camada corresponda ao total de labels geradas nos passos anteriores. É importante também garantir que o total de iterações seja no mínimo igual ao total de imagens do dataset. Nesse exemplo editaremos o total de iterações para 45000 (suficiente para o total de imagens) e o número de neurônios na última camada convolucional para 651 (total de labels). Desta forma, editaremos as linhas 20 e 193 do deepvgl.cfg:
+O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuração da DNN e deve ser alterado para que a última camada corresponda ao total de labels geradas nos passos anteriores. É importante também garantir que o total de iterações seja no mínimo igual ao total de imagens do dataset. Nesse exemplo editaremos o total de iterações para 45000 (suficiente para o total de imagens) e o número de neurônios na última camada convolucional para 658 (total de labels). Desta forma, editaremos as linhas 20 e 193 do deepvgl.cfg:
 
 ![max_batches](https://raw.githubusercontent.com/LCAD-UFES/carmen_lcad/master/src/deep_vgl/max_batches.png)
 
@@ -237,7 +245,7 @@ gedit $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/deepvgl.data
 O conteúdo deve ficar parecido com isso:
 
 ```bash
-classes=651                         # total de labels do dataset (classes para a darknet)
+classes=658                         # total de labels do dataset (classes para a darknet)
 train  = /dados/ufes/train.list     # caminho para o arquivo com a lista das imagens de treino
 valid  = /dados/ufes/train.list     # repetimos a arquivo anterior pois não utilizaremos a validação da darknet
 labels = /dados/ufes/labels.txt     # caminho para o arquivo com as labels

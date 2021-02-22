@@ -29,6 +29,7 @@
 tf::Transformer transformer(false);
 
 static int camera;
+static int camera_type;	// 0 - Bumblebee, 1 - Intelbras
 static int bumblebee_basic_width;
 static int bumblebee_basic_height;
 static carmen_pose_3D_t car_pose_g;
@@ -374,6 +375,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+		{(char *) "commandline", (char *) "camera_type", CARMEN_PARAM_INT, &camera_type, 0, NULL},
 		{(char *) "commandline", (char *) "output_dir", CARMEN_PARAM_STRING, &output_dir_name, 0, NULL},
 		{(char *) "commandline", (char *) "output_txt", CARMEN_PARAM_STRING, &image_pose_output_filename, 0, NULL}
 	};
@@ -456,7 +458,10 @@ void
 initialize_structures()
 {
 	image_pose_output_file = fopen(image_pose_output_filename, "w");
-	fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image right_image\n");
+	if (camera_type == 0)	// Bumblebee
+		fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image right_image\n");
+	else					// Intelbras
+		fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image\n");
 	memset(globalpos_message_buffer, 0, 100 * sizeof(carmen_localize_ackerman_globalpos_message));
 }
 

@@ -17,7 +17,7 @@ python $SCRIPTPATH/dataset.py -i $image_path -o $output_path -b $base_offset -l 
 echo "creating dataset image/pose lists"
 python $SCRIPTPATH/dataset_concat.py -i $image_path -o $output_path -b $base_offset -l $live_offset -I /tmp/input_images_directories.txt
 
-train=`ls $output_path/*-TRAIN-*`
+train=`ls ${output_path}*-TRAIN-*`
 
 if [[ ! -d $image_path/train/  || ! -f $image_path/train/log.txt ]]; then
 
@@ -26,8 +26,8 @@ if [[ ! -d $image_path/train/  || ! -f $image_path/train/log.txt ]]; then
 
     val=`cat $image_path/train/log.txt | wc -l`
     if [ $val -gt 0 ]; then
-        echo "antes de prosseguir, remova os links quebrados listados em $image_path/train/log.txt, se existirem."
-        rm `cat $image_path/train/log.txt | awk '{print $1}' | cut -f1 -d':'`
+        echo "antes de prosseguir, remova os links quebrados listados em ${image_path}train/log.txt, se existirem."
+        rm `cat ${image_path}train/log.txt | awk '{print $1}' | cut -f1 -d':'`
     fi
 fi
 
