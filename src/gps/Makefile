@@ -30,11 +30,11 @@ gps_nmea:			gps-io.o gps-ipc.o gps-nmea.o gps-main.o
 
 gps_nmea_trimble:	gps-ipc.o gps-nmea.o gps_nmea_interface.o gps-trimble-main.o
 
-gps_reachm_server:			gps-io.o gps-ipc.o gps-nmea.o gps_reachm_server.o
+gps_reachm_server:	gps-io.o gps-ipc.o gps-nmea.o gps_reachm_server.o
 
-gps_reachm_client:			gps-io.o gps-ipc.o gps-nmea.o gps_reachm_client.o
+gps_reachm_client:	gps-io.o gps-ipc.o gps-nmea.o gps_reachm_client.o
 
-gps_test:			gps-test.o gps_nmea_interface.o
+gps_test:			gps-test.o gps-ipc.o gps_nmea_interface.o
 
 libgps_nmea_interface.a:	gps_nmea_interface.o
 

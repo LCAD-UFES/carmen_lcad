@@ -327,7 +327,6 @@ subscribe_messages()
 {
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t)bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
     camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) camera_drivers_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -335,8 +334,11 @@ subscribe_messages()
 int
 main(int argc, char *argv[])
 {
-	printf(" Usage: ./dnn_visual_gl config/config.cfg config/classifier.weights config/poses_and_labels.txt 2 -camera_id 3");
-	fflush(stdout);
+	if (argc != 7)
+	{
+		printf(" Usage: ./dnn_visual_gl config/config.cfg config/classifier.weights config/poses_and_labels.txt 2 -camera_id 3\n");
+		exit (1);
+	}
 
 	signal(SIGINT, shutdown_module);
 	carmen_ipc_initialize(argc, argv);

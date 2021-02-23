@@ -140,6 +140,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_dir')
     parser.add_argument('-b', '--base_offset')
     parser.add_argument('-l', '--live_offset')
+    parser.add_argument('-I', '--input_images_directories')
 
     args = parser.parse_args()
     
@@ -159,6 +160,10 @@ if __name__ == '__main__':
         else:
             print ("Successfully created the directory %s " % args.output_dir)
 
+    datasets = np.loadtxt(args.input_images_directories, comments="#", delimiter=",", unpack=False, dtype=int)
+    if datasets.size < 2:
+        datasets = [datasets]
+        
     input_dir = args.images_path  #'/dados/ufes/'
     output_dir = args.output_dir #'/dados/ufes_wnn/'
 
@@ -167,8 +172,8 @@ if __name__ == '__main__':
 
     print 'running script with those arguments:\n\timages path:',input_dir,'\n\toutput directory:',output_dir,'\n\toffset base:',offset_base,'\n\toffset live:',offset_curr
 
-    datasets = ['20191003']
-    i = len(datasets)-1
+    #datasets = ['20160830', '20170119','20160825', '20160825-01', '20160825-02', '20171205', '20180112','20180112-02','20161021','20191003']
+    i = 0
     for j in range(0, len(datasets)):  # curr datasets
         # if i != j: continue  # skips building base and curr datasets with different data
         # if i == j: continue  # skips building base and curr datasets with same data

@@ -81,7 +81,7 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
     int i = 0;
     char **names = get_labels(name_list);
     clock_t time;
-    int *indexes = (int *)xcalloc(top, sizeof(int));
+    int *indexes = (int *) xcalloc(top, sizeof(int));
     char input[1024];
 
     std::ifstream images_file;
@@ -192,16 +192,16 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
 
             p = strtok(NULL, " ");
             
-
             cv::Mat mat = image_to_mat(cropped);
             cv::namedWindow("teste", cv::WINDOW_NORMAL);
             cv::imshow("teste", mat);
             
-
-            Mat live_image = imread(input,IMREAD_COLOR);
-            Mat pose_image = Mat::zeros(Size(live_image.cols, live_image.rows), live_image.type());
+            Mat live_image = imread(input, IMREAD_COLOR);
+            Mat pose_image;
             if (predictions[index] > 0.001)
             	pose_image = imread(pose_image_path, IMREAD_COLOR);
+            else
+            	pose_image = Mat::zeros(Size(live_image.cols, live_image.rows), live_image.type());
             Mat compare_images;
             hconcat(live_image, pose_image, compare_images);
             imshow("localize_neural2", compare_images);
@@ -259,5 +259,5 @@ main(int argc, char **argv)
 
     predict_classifier((char *) poses_list.c_str(), classes_qtd, (char *) config_file.c_str(), (char *) weight_file.c_str(), (char *)images_list.c_str());
 
-    return 0;
+    return (0);
 }

@@ -29,6 +29,7 @@
 tf::Transformer transformer(false);
 
 static int camera;
+static int camera_type;	// 0 - Bumblebee, 1 - Intelbras
 static int bumblebee_basic_width;
 static int bumblebee_basic_height;
 static carmen_pose_3D_t car_pose_g;
@@ -84,10 +85,25 @@ compose_filename_from_timestamp_bb(double timestamp, char **filename, char *exte
 
 
 void
+compose_filename_from_timestamp(double timestamp, char **filename, char *extension, int camera)
+{
+	*filename = (char*) malloc (256 * sizeof(char));
+	sprintf((*filename), "%lf.intelbras%d%s", timestamp, camera, extension);
+}
+
+
+void
 create_stereo_filename_from_timestamp(double timestamp, char **left_img_filename, char **right_img_filename, int camera)
 {
-	compose_filename_from_timestamp_bb(timestamp, left_img_filename, (char*)"l.png", camera);
-	compose_filename_from_timestamp_bb(timestamp, right_img_filename, (char*)"r.png", camera);
+	compose_filename_from_timestamp_bb(timestamp, left_img_filename, (char *)"l.png", camera);
+	compose_filename_from_timestamp_bb(timestamp, right_img_filename, (char *)"r.png", camera);
+}
+
+
+void
+create_image_filename_from_timestamp(double timestamp, char **img_filename, int camera)
+{
+	compose_filename_from_timestamp(timestamp, img_filename, (char *) ".png", camera);
 }
 
 
@@ -173,6 +189,45 @@ get_interpolated_pose_at_time(carmen_pose_3D_t robot_pose, double dt, double v, 
 
 
 void
+save_pose_to_file(camera_message *image, int camera)
+{
+	char *img_filename;
+
+	if ((image == NULL) || (image_pose_output_file == NULL))
+		carmen_die("no image received\n");
+
+	int nearest_message_index = find_nearest_globalpos_message(image->timestamp);
+
+	if (nearest_message_index < 0)
+	{
+		carmen_warn("nearest_message_index < 0\n");
+		return;
+	}
+
+	carmen_localize_ackerman_globalpos_message globalpos_message = globalpos_message_buffer[nearest_message_index];
+	carmen_pose_3D_t globalpos = globalpos_message.pose;
+	globalpos.position.x = globalpos_message.globalpos.x;
+	globalpos.position.y = globalpos_message.globalpos.y;
+	globalpos.orientation.yaw = globalpos_message.globalpos.theta;
+
+	double dt = image->timestamp - globalpos_message.timestamp;
+	if (dt >= 0.0)
+		globalpos = get_interpolated_pose_at_time(globalpos, dt, globalpos_message.v, globalpos_message.phi);
+	else
+		carmen_die("dt < 0\n");
+
+	create_image_filename_from_timestamp(image->timestamp, &img_filename, camera);
+
+	fprintf(image_pose_output_file, "%lf %lf %lf %lf %lf %lf %lf %s/%s\n",
+			globalpos.position.x, globalpos.position.y, globalpos.position.z,	//tx, ty, tz
+			globalpos.orientation.roll, globalpos.orientation.pitch, globalpos.orientation.yaw,		//rx, ry, rz,
+			image->timestamp,
+			(char *) output_dir_name, img_filename);
+	fflush(image_pose_output_file);
+}
+
+
+void
 save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
 	//double roll, pitch, yaw;
@@ -191,7 +246,6 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 		return;
 	}
 	
-
 	carmen_localize_ackerman_globalpos_message globalpos_message = globalpos_message_buffer[nearest_message_index];
 	carmen_pose_3D_t globalpos = globalpos_message.pose;
 	globalpos.position.x = globalpos_message.globalpos.x;
@@ -223,7 +277,6 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 	{
 		carmen_die("dt < 0\n");
 	}
-
 	
 	// tf::Pose camera_wrt_world = get_camera_pose_wrt_world(globalpos);
 
@@ -273,6 +326,13 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 
 
 void
+camera_drivers_message_handler(camera_message *image)
+{
+	save_pose_to_file(image, camera);
+}
+
+
+void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *message)
 {
 	printf("CHEGOU LOCALIZE ACKERMAN %lf %lf %lf\n",message->globalpos.x,message->globalpos.y,message->globalpos.theta);
@@ -315,6 +375,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+		{(char *) "commandline", (char *) "camera_type", CARMEN_PARAM_INT, &camera_type, 0, NULL},
 		{(char *) "commandline", (char *) "output_dir", CARMEN_PARAM_STRING, &output_dir_name, 0, NULL},
 		{(char *) "commandline", (char *) "output_txt", CARMEN_PARAM_STRING, &image_pose_output_filename, 0, NULL}
 	};
@@ -397,7 +458,10 @@ void
 initialize_structures()
 {
 	image_pose_output_file = fopen(image_pose_output_filename, "w");
-	fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image right_image\n");
+	if (camera_type == 0)	// Bumblebee
+		fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image right_image\n");
+	else					// Intelbras
+		fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image\n");
 	memset(globalpos_message_buffer, 0, 100 * sizeof(carmen_localize_ackerman_globalpos_message));
 }
 
@@ -407,6 +471,7 @@ subscribe_messages()
 {
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
+    camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) camera_drivers_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -14,17 +14,19 @@ CFLAGS += `pkg-config --cflags opencv` -I/usr/include/gflags
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface -lcamera_drivers
 LFLAGS += -fPIC -lgflags -l:libdarknet.so -lstdc++ `pkg-config --libs opencv` 
 
-SOURCES = localize_neural2.cpp dnn_visual_gl_main.cpp
+SOURCES = deep_vgl-test.cpp deep_vgl-eval.cpp deep_vgl_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = localize_neural2 dnn_visual_gl
+PUBLIC_BINARIES = deep_vgl-test deep_vgl-eval deep_vgl
 
-TARGETS = darknet localize_neural2 dnn_visual_gl
+TARGETS = darknet deep_vgl-test deep_vgl-eval deep_vgl
 
-localize_neural2: localize_neural2.o
+deep_vgl-test: deep_vgl-test.o
 
-dnn_visual_gl: dnn_visual_gl_main.o
+deep_vgl-eval: deep_vgl-eval.o
+
+deep_vgl: deep_vgl_main.o
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4  > /dev/null 2>&1
