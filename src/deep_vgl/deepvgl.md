@@ -9,19 +9,19 @@ Para utilizar o módulo deep_vgl integrado ao carmen precisaremos dos seguintes 
 
 Todos esses arquivos foram gerados nas etapas de treinamento e de teste da rede.
 
-A configuração necessário para executar o módulo no mapa "map_ida_guarapari-20170403-2" com o log "log_volta_da_ufes-20191003.txt" estão salvos na pasta ```bash 
+A configuração necessário para executar o módulo no mapa "map_ida_guarapari-20170403-2" com o log "log_volta_da_ufes-20191003.txt" estão salvos na pasta 
 
+```bash 
 $CARMEN_HOME/src/deep_vgl/config
-
 ```
+
 e podem ser utilizados normalmente. Para isso, inicie o carmen com a seguinte sequencia de comandos.
 
-1° rode a centrar:
-```bash
+1° rode a central:
 
+```bash
 cd $CARMEN_HOME/bin
 ./central
-
 ```
 
 Em outro terminal execute o process.ini de sua preferência que publique imagens de câmera. Lembre-se de desligar o gps_xyz, pois queremos utilizar o deep_vgl para essa função.
@@ -37,11 +37,10 @@ cd $CARMEN_HOME/bin
 Depois disso é só rodar o módulo com seus parâmetros:
 
 ```bash
-
- ./deep_vgl /dados/ufes/deepvgl.cfg /dados/darknet/backup/deepvgl_final.weights config/poses_and_labels.txt 2 -camera_id 3
-
+ ./deep_vgl /dados/ufes/deepvgl.cfg /dados/darknet/backup/deepvgl_final.weights config/poses_and_labels.txt 2 -camera_id 1
 ```
-(Lembre-se de colocar o id da câmera utilizada no log, nesse exemplo é 3)
+
+(Lembre-se de colocar o id da câmera utilizada no log, nesse exemplo é 1)
 
 O módulo dnn_visual_gl vai publicar mensagens gps_xyz e gps gphdt que permitirão localização global.
 Use bin/gps_xyz-test se quiser examinar (só as informações essenciais à localização global são incluídas nas mensagens).

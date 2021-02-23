@@ -7,11 +7,10 @@ Esse mapa, e seu respectivo log, serão utilizados como base para gerar as poses
 aprendidas pela rede neural (Deep Neural Network - DNN) do DeepVGL.
 
 Precisaremos também de logs adicionais que serão utilizados para extrair mais imagens de treino para a DNN.
-
-Nesse exemplo utilizaremos 2 logs.
-
 Pode ser feito com apenas 1 log, mas é recomendado pelo menos 2 logs, um para a tabela de images/poses (que também
 pode ser usando para treino) e um para treino.
+
+O log base pode ser, também, uma composição de logs (um trecho de interesse pode ser adicionado ao log base, por exemplo).
 
 ## STEP 1
 
@@ -24,6 +23,7 @@ Escolha os logs que serão utilizados. Neste tutorial, utilizaremos três logs:
 ```
 
 Os dois primeiros logs acima são da volta da Ufes completa, equanto que o terceiro é apenas do Art saindo no Lcad3.
+Este terceiro log será juntado ao primeiro, como veremos abaixo, para o DeepVGL permitir a localização dentro do Lcad3 também.
 
 ## STEP 1.1
 
@@ -128,7 +128,8 @@ cd $CARMEN_HOME/bin
 
 Certifique-se de que o robô está corretamente localizado no início do log. Se não, localize-o manualmente logo no inicio do log.
 
-Quando terminar o processo, edite o arquivo de saida (/dados/ufes/camerapos-20210131.txt) removendo linhas iniciais se necessário.
+Quando terminar o processo, edite o arquivo de saida (/dados/ufes/camerapos-20210131.txt) removendo linhas iniciais se necessário
+(linhas onde a localização ainda não estava Ok, por exemplo).
 
 
 ### Repita os steps 1.3 e 1.4 para cada log selecionado.
@@ -147,13 +148,50 @@ Configure os seguintes parâmetros em $CARMEN_HOME/src/deep_vgl/treino_e_teste/s
 - live_offset=1 # spacing between live poses (poses nos demais logs, inclusive no de referência)
 ```
 
-Uma vez configurados os parâmetros, podemos executar o seguinte comando para gerar o dataset de fato:
+### Juntando logs em um mesmo log base, ou de referência.
+
+Caso você não vá juntar logs, pule esta etapa.
+
+Para juntar logs temos que, na verdade, juntar arquivos camerapos. Para isso, basta concatena-los com cat. No exemplo
+abaixo, vamos juntar os logs log_volta_da_ufes_art-20210131.txt e log_saida_lcad3_art-20210212.txt.
+
+
+```bash
+cd /dados/ufes
+cat camerapos-20210212.txt camerapos-20210131.txt > temp.txt
+mv temp.txt camerapos-20210131.txt
+```
+
+A ordem é importante: o fim de um log deve encontrar-se, aproximadamente, com o início de outro.
+Lembre-se de remover os cabeçalhos repetidos no arquivo final.
+
+%Para juntar logs temos que, na verdade, juntar arquivos camerapos. Mas não basta concatena-los com cat; precisamos
+%mover as imagens dos logs que serão juntados ao log base para o diretório de imagens do log base e editar
+%o arquivo camerapos do novo log base composto por vários logs de modos a ter o caminho correto para cada imagem
+%da base.
+
+A passo a seguir usa o arquivo logs.txt do STEP 1.1, que contém os três logs. Como juntamos dois, dos três logs,
+precisamos remover um deles de logs.txt. Neste exemplo, o log log_saida_lcad3_art-20210212.txt. Assim, remova
+a linha com o log log_saida_lcad3_art-20210212.txt de logs.txt.
+
+### Execução do processo de geração de bases.
+
+Uma vez configurados os parâmetros e, eventualmente, juntados os logs, podemos executar o seguinte comando para 
+gerar o dataset de fato:
 
 ```bash
 $CARMEN_HOME/src/deep_vgl/treino_e_teste/scripts/dataset.sh
 ```
 
-Este comando usa o arquivo logs.txt do STEP 1.1 para identificar quais logs vai empregar. A ordem é importante: o primeiro log
+Caso precise repetir o comando acima, execute:
+
+```bash
+rm -r /dados/ufes/train
+rm -r /dados/ufes/train.list
+rm -r /dados/ufes_gt/*
+```
+
+O comando dataset.sh usa o arquivo logs.txt do STEP 1.1 para identificar quais logs vai empregar. A ordem é importante: o primeiro log
 será usado como referência pela DNN (suas imagens, espaçadas de base_offset (m), estarão associadas a labels, um
 por imagem). 
 
@@ -172,9 +210,10 @@ Pasta train (/dados/ufes/train nesse exemplo):
 * A lista de imagens utilizadas para treinamento (no formato da darknet).
 
 
-## Precisamos enumerar o total de classes e configurar a rede para treinamento.
+## Enumeração do total de classes e configuração da rede para treinamento.
 
-Em nosso exemplo, salvamos os arquivos em "/dados/ufes_gt", desta forma o comando a seguir gera a lista de labels utilizadas pela darknet durante o treinamento.
+Em nosso exemplo, salvamos os arquivos em "/dados/ufes_gt". O comando a seguir gera a lista de labels utilizadas pela 
+darknet no treinamento e teste.
 
 ```bash
 cat `ls /dados/ufes_gt/basepos-*-5m-1m.txt | awk '{print $1}'| tail -n 1` | grep -v label | awk '{print "B"$2"E"}' > $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt 
@@ -204,38 +243,29 @@ cat $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt | wc -l
 ```
 
 O número exibido será utilizado para configurar a saída da darknet.
-Neste exemplo 658 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
+Neste exemplo 687 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
 
-## É necessário ter a Darknet apropriadamente instalada.
+## Obtenção do pré-treino da darknet.
 
-Baixe a darknet e compile de acordo com seu hardware. Recomendo utilizar GPU (CUDnn) e OpenCV.
-
-o comando abaixo baixa a darknet em /dados/:
+O DeepVGL usa parte da darknet pré-treinada para facilitar o trainamento (camadas iniciais). Baixe-as para
+o local apropriado no carmen_lcad: 
 
 ```bash
-cd /dados/
-git clone https://github.com/AlexeyAB/darknet
-cd darknet
+cd $CARMEN_HOME/sharedlib/darknet4/
 wget https://pjreddie.com/media/files/darknet19_448.conv.23
-cd $CARMEN_HOME/src/deep_vgl/
 ```
 
-Siga o passo a passo no README da darknet e compile para seu hardware.
+Caso necessário, siga o passo a passo no $CARMEN_HOME/sharedlib/darknet4/README.md da darknet para compila-la para seu hardware.
 
-## Agora temos que criar as configurações da darknet para iniciar o treinamento da rede
+## Configurações da darknet para iniciar o treinamento da rede.
 
 Precisamos agora editar os arquivos deepvgl.cfg e deepvgl.data para as configurações correspondentes ao novo dataset.
 
-O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuração da DNN e deve ser alterado para que a última camada corresponda ao total de labels geradas nos passos anteriores. É importante também garantir que o total de iterações seja no mínimo igual ao total de imagens do dataset. Nesse exemplo editaremos o total de iterações para 45000 (suficiente para o total de imagens) e o número de neurônios na última camada convolucional para 658 (total de labels). Desta forma, editaremos as linhas 20 e 193 do deepvgl.cfg:
+O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuração da DNN e deve ser alterado para que a última camada corresponda ao total de labels geradas nos passos anteriores. É importante também garantir que o total de iterações seja no mínimo igual ao total de imagens do dataset. Nesse exemplo editaremos o total de iterações para 8000 (suficiente para o total de imagens) e o número de neurônios na última camada convolucional para 687 (total de labels). 
 
-![max_batches](https://raw.githubusercontent.com/LCAD-UFES/carmen_lcad/master/src/deep_vgl/max_batches.png)
+Desta forma, editaremos a linha "max_batches=" e a última linha "filters=" do deepvgl.cfg:
 
-![conv_filters](https://raw.githubusercontent.com/LCAD-UFES/carmen_lcad/master/src/deep_vgl/conv_filters.png)
-
-
-Salve as alterações!
-
-Agora precisamos alterar o arquivo deepvgl.data, que contém a lista de tudo que a darknet precisa para executar o treino corretamente.
+Agora, precisamos alterar o arquivo deepvgl.data, que contém a lista de tudo que a darknet precisa para executar o treino corretamente.
 Para isso, execute o comando abaixo e edite as linhas conforme o exemplo mostrado:
 
 ```bash
@@ -245,7 +275,7 @@ gedit $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/deepvgl.data
 O conteúdo deve ficar parecido com isso:
 
 ```bash
-classes=658                         # total de labels do dataset (classes para a darknet)
+classes=687                         # total de labels do dataset (classes para a darknet)
 train  = /dados/ufes/train.list     # caminho para o arquivo com a lista das imagens de treino
 valid  = /dados/ufes/train.list     # repetimos a arquivo anterior pois não utilizaremos a validação da darknet
 labels = /dados/ufes/labels.txt     # caminho para o arquivo com as labels
@@ -253,7 +283,7 @@ backup = backup/                    # local onde a darknet salvará os pesos da 
 top=1                               # quando executando com o parâmetro "-topk", o inteiro representa o top: 1, 2 ... na métrica da ImageNet 
 ```
 
-Por último, copie esses arquivos para "/dados/ufes/" com o seguinte comando:
+Por último, copie esses arquivos para "/dados/ufes/" com o seguinte comando (não se esqueça de salvar os arquivos modificados acima!):
 
 ```bash
 cp $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/{labels\.txt,deepvgl\.cfg,deepvgl\.data} /dados/ufes/
@@ -263,7 +293,12 @@ Agora basta iniciar o treinamento com o comando abaixo:
 
 ```bash
 cd /dados/darknet
-./darknet classifier train /dados/ufes/deepvgl.data /dados/ufes/deepvgl.cfg darknet19_448.conv.23
+./darknet classifier train /dados/ufes/deepvgl.data /dados/ufes/deepvgl.cfg darknet19_448.conv.23 -topk
 ```
 
-Ao final, teremos os pesos da rede salvos na pasta /dados/darknet/backup
+A darknet vai começar a treinar e mostrar um gráfico de desempenho. 
+
+Nas linhas impressas pela darknet, as colunas são:
+XXXXXXXXXX
+
+Ao final, teremos os pesos da rede salvos na pasta /dados/darknet/backup com o nome de XXXXXXX

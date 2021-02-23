@@ -14,9 +14,7 @@ Podemos utilizar a mesma lista de imagens usada para treinamento da rede (/dados
 O comando abaixo gera como saída o percentual de acertos da rede com MAE 1, 2 e 3.
 
 ```bash
-
-$CARMEN_HOME/srv/deep_vgl/src/deep_vgl/deep_vgl-eval --labels /dados/ufes/labels.txt --weights_file /dados/darknet/backup/deepvgl_final.weights --config_file /dados/ufes/deepvgl.cfg --images_list /dados/ufes/train.list 
-
+$CARMEN_HOME/src/deep_vgl/deep_vgl-eval --labels /dados/ufes/labels.txt --weights_file $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights --config_file /dados/ufes/deepvgl.cfg --images_list /dados/ufes/train.list 
 ```
 Podemos utilizar qualquer um dos pesos gerados (presentes na pasta "/dados/darknet/backup") e gerar uma lista de imagens de validação, não presentes no treino.
 
@@ -28,12 +26,11 @@ Para visualizar as predições, e gerar os arquivos necessários para integraç�
 
 Novamente precisaremos dos pesos da rede ("/dados/darknet/backup/deepvgl_final.weights") e das configurações da rede ("/dados/ufes/deepvgl.cfg").
 
-Porém, agora utilizaremos uma lista diferente de imagens. Para gerar essa lista executamos o comando abaixo, lembre-se de ajustá-lo para a pasta que deseja utilizar como teste. Em nosso caso "/dados/ufse/20191003":
+Porém, agora utilizaremos uma lista diferente de imagens. Para gerar essa lista executamos o comando abaixo, lembre-se de ajustá-lo 
+para a pasta que deseja utilizar como teste. Em nosso caso "/dados/ufes/20210120":
 
 ```bash
-
-readlink -f /dados/ufes/20191003/*r.png > $CARMEN_HOME/src/deep_vgl/config/test-20191003.txt
-
+readlink -f /dados/ufes/20210120/*.png > $CARMEN_HOME/src/deep_vgl/config/test-20210120.txt
 ```
 
 Também é necessário um arquivo com uma lista de arquivos de imagem (imagens aprendidas pela rede neural), poses e labels: poses_and_labels.txt. 
@@ -50,23 +47,20 @@ e o timestamp.
 Esse arquivo foi gerado na etapa de treinamento e está salvo (em nosso exemplo) na pasta "/dados/ufes_gt" com o nome:
 
 ```bash
-
-/dados/ufes_gt/basepos-20191003-20160825-5m-1m.txt
-
+/dados/ufes_gt/basepos-20210131-20210120-5m-1m.txt
 ```
 
-O comando abaixo gera o arquivo poses_and_labels.txt a partir do arquivo "/dados/ufes_gt/basepos-20191003-20160825-5m-1m.txt".
+O comando abaixo gera o arquivo poses_and_labels.txt a partir do arquivo "/dados/ufes_gt/basepos-20210131-20210120-5m-1m.txt".
 
 ```bash
-
-cat /dados/ufes_gt/basepos-20191003-20160825-5m-1m.txt |grep -v label| awk '{print $3 " " $4 " " $8 " " $1}' > config/poses_and_labels.txt
-
+cd $CARMEN_HOME/src/deep_vgl
+cat /dados/ufes_gt/basepos-20210131-20210120-5m-1m.txt |grep -v label| awk '{print $3 " " $4 " " $8 " " $1}' > config/poses_and_labels.txt
 ```
 Agora é só executar o comando abaixo para visualizar exatamente o que o deep_vgl está vendo:
 
 ```bash
-
-./deep_vgl-test --poses_and_labels config/poses_and_labels.txt --weights_file /dados/darknet/backup/deepvgl_final.weights --config_file /dados/ufes/deepvgl.cfg  --images_list $CARMEN_HOME/src/deep_vgl/config/test-20191003.txt 
+cd $CARMEN_HOME/src/deep_vgl
+./deep_vgl-test --poses_and_labels config/poses_and_labels.txt --weights_file $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights --config_file treino_e_teste/darknet_cfg/deepvgl.cfg  --images_list $CARMEN_HOME/src/deep_vgl/config/test-20210120.txt 
 
 ```
 

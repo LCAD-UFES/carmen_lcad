@@ -54,7 +54,7 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
     int i = 0;
     char **names = get_labels(name_list);
     clock_t time;
-    int* indexes = (int*)xcalloc(top, sizeof(int));
+    int* indexes = (int *) xcalloc(top, sizeof(int));
     char buff[1024];
     char *input = buff;
     
@@ -71,11 +71,11 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
     std::ifstream images_file;
     images_file.open(filename);
     std::string line;
-    printf("tentando abrir images_file\n");
+    printf("\nAbrindo images_file %s\n", filename);
     image im;
     image resized;
     image cropped;
-    if(images_file.is_open())
+    if (images_file.is_open())
     {
         while( getline(images_file,line)){    
             i+=1;        
@@ -140,9 +140,12 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
             free_image(im);
         }
     }
-    else printf("nao abriu %s\n",filename);
+    else
+    	printf("Nao foi possivel abrir %s\n", filename);
+
     free(indexes);
     free_network(net);
+
     printf("avg_mae_0: %f; avg_mae_1: %f; avg_mae_2: %f - %f mili sec\n",avg_mae_0/(i),avg_mae_1/(i),avg_mae_2/(i),prediction_time);
 }
 
