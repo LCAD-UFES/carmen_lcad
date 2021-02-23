@@ -63,6 +63,11 @@ static double v_multiplier;
 
 int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
 
+unsigned int publish_combined_visual_and_car_odometry = 0;
+int wait_visual_odometry_to_publish = 0;
+
+carmen_visual_odometry_pose6d_message visual_odometry_pose6d;
+
 int g_go_state = 0;
 
 
@@ -174,6 +179,52 @@ set_wrench_efforts_desired_v_and_curvature()
 }
 
 
+void build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
+{
+	//TODO verificar se tem que sicronizar com o visual de alguma outra forma
+	if (wait_visual_odometry_to_publish)
+	{
+		switch (combine_visual_and_car_odometry_phi)
+		{
+		case VISUAL_ODOMETRY_PHI:
+			robot_ackerman_velocity_message->phi = visual_odometry_pose6d.phi;
+			break;
+		case CAR_ODOMETRY_PHI:
+			robot_ackerman_velocity_message->phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
+			break;
+		case VISUAL_CAR_ODOMETRY_PHI:
+			//TODO
+			robot_ackerman_velocity_message->phi = carmen_normalize_theta(((get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config) + visual_odometry_pose6d.phi) / 2.0));
+			break;
+		default:
+			break;
+		}
+
+		switch (combine_visual_and_car_odometry_vel)
+		{
+		case VISUAL_ODOMETRY_VEL:
+			robot_ackerman_velocity_message->v = visual_odometry_pose6d.v;
+			break;
+		case CAR_ODOMETRY_VEL:
+			robot_ackerman_velocity_message->v = g_XGV_velocity;
+			break;
+
+		case VISUAL_CAR_ODOMETRY_VEL:
+			//TODO
+			robot_ackerman_velocity_message->v = (g_XGV_velocity + visual_odometry_pose6d.v)/2.0;
+			break;
+		default:
+
+			break;
+		}
+
+
+		robot_ackerman_velocity_message->timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
+		robot_ackerman_velocity_message->host = carmen_get_host();
+
+		wait_visual_odometry_to_publish = 0;
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
@@ -265,10 +316,17 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 //	printf("%lf %lf %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
 	if (ford_escape_hybrid_config->publish_odometry)
 	{
-		robot_ackerman_velocity_message.v = g_XGV_velocity;
-		robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-		robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
-		robot_ackerman_velocity_message.host = carmen_get_host();
+		//TODO COnstruindo fusao de odometria e visual odometry
+
+		if (publish_combined_visual_and_car_odometry)
+			build_combined_visual_and_car_odometry(&robot_ackerman_velocity_message);
+		else
+		{
+			robot_ackerman_velocity_message.v = g_XGV_velocity;
+			robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
+			robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
+			robot_ackerman_velocity_message.host = carmen_get_host();
+		}
 
 		err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
 		carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
@@ -466,6 +524,14 @@ navigator_ackerman_stop_message_handler()
 	change_control_mode_to_wrench_efforts(XGV_CCU);
 	g_go_state = 0;
 	carmen_warn("stop\n");
+}
+
+
+static void
+visual_odometry_handler(carmen_visual_odometry_pose6d_message *message)
+{
+	visual_odometry_pose6d = *message;
+	wait_visual_odometry_to_publish = 1;
 }
 
 
@@ -976,6 +1042,10 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 
 		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(config->publish_odometry), 0, NULL},
 
+		{"robot", "publish_combined_visual_and_car_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_visual_and_car_odometry), 0, NULL},
+		{"robot", "combine_visual_and_car_odometry_phi", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_phi), 0, NULL},
+		{"robot", "combine_visual_and_car_odometry_vel", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_vel), 0, NULL},
+
 		{"rrt",   "use_mpc",          CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
 		{"rrt",   "use_rlpid",        CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL}
 	};
@@ -1024,6 +1094,8 @@ subscribe_to_relevant_messages()
 
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_message_handler,	CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	if (publish_combined_visual_and_car_odometry)
+		carmen_visual_odometry_subscribe_pose6d_message(NULL, (carmen_handler_t) visual_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

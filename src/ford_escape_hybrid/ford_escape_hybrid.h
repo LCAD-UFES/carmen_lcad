@@ -32,10 +32,24 @@
 #include "ford_escape_hybrid_messages.h"
 #include <carmen/localize_ackerman_motion.h>
 #include <carmen/fused_odometry_messages.h>
+#include <carmen/visual_odometry_interface.h>
 
 
 #define NUM_MOTION_COMMANDS_VECTORS	5
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
+
+
+int combine_visual_and_car_odometry_phi;
+int combine_visual_and_car_odometry_vel;
+//combine_visual_and_car_odometry options
+#define VISUAL_ODOMETRY_PHI 1
+#define CAR_ODOMETRY_PHI 2
+#define VISUAL_CAR_ODOMETRY_PHI 3
+
+#define VISUAL_ODOMETRY_VEL 1
+#define CAR_ODOMETRY_VEL 2
+#define VISUAL_CAR_ODOMETRY_VEL 3
+
 
 
 #ifdef __cplusplus
