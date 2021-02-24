@@ -32,3 +32,23 @@ Para visualizar e comparar a odometria visual com a odometria de um robo voce po
  gnuplot> plot "visual_odometry_graph.txt" u 5:3 w l t 'robot v', "visual_odometry_graph.txt" u 5:1 w l t 'visual o. v'
  gnuplot> plot "visual_odometry_graph.txt" u 5:4 w l t 'robot phi', "visual_odometry_graph.txt" u 5:2 w l t 'visual o. phi'
 
+Existe ainda a opção de combinar a visual odometry com a odometria do carro. 
+Caso de estudo: Quando só se tem a informação de giro do volante do robô pode se usar a visual odometry para gerar a velocidade.
+Ness caso o ford_escape_hybrid (hardware) assina a mensagem de pose6d da visual odometry e monta a mensagem carmen_robot_ackerman_velocity_message combinando as odometrias.
+Para usar essa opção deixe os parametros da seguinte forma:
+
+visual_odometry_publish 			off
+robot_publish_odometry				on
+robot_publish_combined_visual_and_car_odometry 	on
+
+E escolha a combinação da odometria com os parâmetros:
+robot_combine_visual_and_car_odometry_phi       1 #
+robot_combine_visual_and_car_odometry_vel       2 # 1-publish VISUAL_ODOMETRY_ velocity instead car velocity / 2-CAR_ODOMETRY_VEL / 3-COMBINE VISUAL and CAR ODOMETRY VELOCITY   
+
+A opção 1 o ford_escape irá publicar o PHI/Velocidade da VISUAL_ODOMETRY em vez do phi/velocidade do hardware.
+A opção 2 o ford_escape irá publicar o PHI/Velocidade do hardware em vez do phi/velocidade da VISUAL_ODOMETRY.
+A opção 3 o ford_escape irá publicar uma combinação do PHI/Velocidade do hardware com o phi/velocidade da VISUAL_ODOMETRY usando algum algoritimo.
+
+Mais detalhes em $CARMEN_HOME/src/ford_escape_hybrid/README.txt
+
+
