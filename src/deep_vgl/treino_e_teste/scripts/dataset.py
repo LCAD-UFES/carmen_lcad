@@ -4,6 +4,7 @@ from dataset_util import *
 import matplotlib.pyplot as plt
 import sys
 import argparse
+from scipy import spatial
 
 def base_datasetname(dir, year_base, year_curr, offset_base, offset_curr):
     return dir + "basepos-{0}-{1}-{2}m-{3}m.txt".format(year_base, year_curr, offset_base, offset_curr)
@@ -22,7 +23,7 @@ def find_closest_in_space(curr_pose, base_poses, curr_time, base_times, base_off
         distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
         # remove pontos na contra-mao
         orientation = np.abs(curr_pose[2] - base_poses[j][2])
-        if (orientation <= math.pi/2) \
+        if (orientation <= math.pi/8) \
                 and (distance >= 0) and (distance <= smallest_distance): # \
                 # and (interval >= 0) and (interval <= shortest_interval):
             smallest_distance = distance
@@ -30,6 +31,17 @@ def find_closest_in_space(curr_pose, base_poses, curr_time, base_times, base_off
             nearest_index = j
     return nearest_index
 
+def new_loop_closure(data, min_distance):
+    index = -1
+    tree = spatial.KDTree(list(zip(data['x'].ravel(),data['y'].ravel())))
+    #print tree.data
+    print math.trunc(len(tree.data))
+    for i in range(math.trunc(len(tree.data)*0.75),len(tree.data)):
+        current = tree.data[i]
+        if i - tree.query_ball_point(current, r=min_distance)[0] > 200:
+            index = i
+            break
+    return index
 
 def detect_closure_loop(data, min_distance):
     index = -1
@@ -75,21 +87,25 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
     data_curr_label2 = []
     data_curr_index2 = []
     
-    temp_date = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
-    if temp_date.shape()[1] == 9:
-        set_columns(stereo_columns)
-    else:
+    temp_data = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
+    
+    if len(temp_data[1]) == 8:
         set_columns(single_columns)
+    else:
+        set_columns(stereo_columns)
 
     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True, dtype=np.dtype(columns))
     data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True, dtype=np.dtype(columns))
 #     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
 #     data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True)
 
-    data_base_loop = detect_closure_loop(data_base, offset_base)
-    data_curr_loop = detect_closure_loop(data_curr, offset_curr)
+
+    data_base_loop = new_loop_closure(data_base,0.5)
     data_curr_loop = -1
     
+    #data_base_loop = detect_closure_loop(data_base, offset_base)
+    #data_curr_loop = detect_closure_loop(data_curr, offset_curr)
+        
     data_base = data_base[:data_base_loop]
     data_curr = data_curr[:data_curr_loop]
 
