@@ -19,23 +19,20 @@ python $SCRIPTPATH/dataset_concat.py -i $image_path -o $output_path -b $base_off
 
 train=`ls ${output_path}*-TRAIN-*`
 
-echo $train
+if [[ ! -d $image_path/train/  || ! -f $image_path/train/log.txt ]]; then
+
+    echo "generating darknet image names structure for train"
+    $SCRIPTPATH/gera_dataset_darknet.sh $train $image_path/train
+
+    val=`cat $image_path/train/log.txt | wc -l`
+    if [ $val -gt 0 ]; then
+        echo "antes de prosseguir, remova os links quebrados listados em ${image_path}train/log.txt, se existirem."
+        rm `cat ${image_path}train/log.txt | awk '{print $1}' | cut -f1 -d':'`
+    fi
+fi
 
 
-# if [[ ! -d $image_path/train/  || ! -f $image_path/train/log.txt ]]; then
-
-#     echo "generating darknet image names structure for train"
-#     $SCRIPTPATH/gera_dataset_darknet.sh $train $image_path/train
-
-#     val=`cat $image_path/train/log.txt | wc -l`
-#     if [ $val -gt 0 ]; then
-#         echo "antes de prosseguir, remova os links quebrados listados em ${image_path}train/log.txt, se existirem."
-#         rm `cat ${image_path}train/log.txt | awk '{print $1}' | cut -f1 -d':'`
-#     fi
-# fi
-
-
-# cd $image_path
-# echo "generating darknet image list for train"
-# find `pwd`/train -name \*.png > $image_path/ordered.list
-# shuf $image_path/ordered.list > $image_path/train.list
+cd $image_path
+echo "generating darknet image list for train"
+find `pwd`/train -name \*.png > $image_path/ordered.list
+shuf $image_path/ordered.list > $image_path/train.list
