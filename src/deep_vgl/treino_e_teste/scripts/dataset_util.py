@@ -49,6 +49,33 @@ def signed_direction(a, b):
     return 1 if delta_xy[0] >= -0.01 else -1
 
 
+def new_get_indices_of_sampled_data(data, min_distance, max_rotation=math.pi):
+    last = None
+    indices = []
+    for i in range(len(data)):
+        count = 0
+        current_heading = np.array(data['rz'][i])
+        current = np.array((data['x'][i], data['y'][i]))
+        if last is None:
+            distance = min_distance
+            rotation = max_rotation
+            last = True
+            indices.append(i)
+        else:
+            for j in range(len(indices)):
+                selected_pose = np.array((data['x'][indices[j]], data['y'][indices[j]]))
+                selected_heading = np.array(data['rz'][indices[j]])
+                distance = LA.norm(selected_pose - current)
+                rotation = np.abs(selected_heading - current_heading)    
+                if distance >= min_distance or rotation >= max_rotation:
+                    count+=1
+            if count == len(indices) :
+                indices.append(i)
+            
+    return indices
+
+
+
 def get_indices_of_sampled_data(data, min_distance, max_rotation=math.pi):
     last = None
     indices = []

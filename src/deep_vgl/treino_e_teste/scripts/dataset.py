@@ -1,9 +1,9 @@
 import os
+import sys
+import argparse
 import numpy as np
 from dataset_util import *
 import matplotlib.pyplot as plt
-import sys
-import argparse
 from scipy import spatial
 
 def base_datasetname(dir, year_base, year_curr, offset_base, offset_curr):
@@ -23,7 +23,7 @@ def find_closest_in_space(curr_pose, base_poses, curr_time, base_times, base_off
         distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
         # remove pontos na contra-mao
         orientation = np.abs(curr_pose[2] - base_poses[j][2])
-        if (orientation <= math.pi/8) \
+        if (orientation <= math.pi/4) \
                 and (distance >= 0) and (distance <= smallest_distance): # \
                 # and (interval >= 0) and (interval <= shortest_interval):
             smallest_distance = distance
@@ -96,20 +96,20 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
 
     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True, dtype=np.dtype(columns))
     data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True, dtype=np.dtype(columns))
-#     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
-#     data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True)
+    # data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
+    # data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True)
 
 
-    data_base_loop = new_loop_closure(data_base,0.5)
-    data_curr_loop = -1
+    # data_base_loop = -1 #new_loop_closure(data_base,0.5)
+    # data_curr_loop = -1
     
-    #data_base_loop = detect_closure_loop(data_base, offset_base)
-    #data_curr_loop = detect_closure_loop(data_curr, offset_curr)
+    # data_base_loop = detect_closure_loop(data_base, offset_base)
+    # data_curr_loop = detect_closure_loop(data_curr, offset_curr)
         
-    data_base = data_base[:data_base_loop]
-    data_curr = data_curr[:data_curr_loop]
+    # data_base = data_base[:data_base_loop]
+    # data_curr = data_curr[:data_curr_loop]
 
-    data_base_index = get_indices_of_sampled_data(data_base, offset_base)
+    data_base_index = new_get_indices_of_sampled_data(data_base, offset_base, math.pi/8)
     data_base = data_base[data_base_index]
     data_base_label = np.arange(data_base.shape[0])
     # data_base_label = np.random.permutation(data_base.shape[0])

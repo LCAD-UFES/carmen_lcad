@@ -243,7 +243,7 @@ cat $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt | wc -l
 ```
 
 O número exibido será utilizado para configurar a saída da darknet.
-Neste exemplo 687 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
+Neste exemplo 657 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
 
 ## Obtenção do pré-treino da darknet.
 
