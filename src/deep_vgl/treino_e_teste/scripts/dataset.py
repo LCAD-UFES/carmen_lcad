@@ -75,6 +75,12 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
     data_curr_label2 = []
     data_curr_index2 = []
     
+    temp_date = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
+    if temp_date.shape()[1] == 9:
+        set_columns(stereo_columns)
+    else:
+        set_columns(single_columns)
+
     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True, dtype=np.dtype(columns))
     data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True, dtype=np.dtype(columns))
 #     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
