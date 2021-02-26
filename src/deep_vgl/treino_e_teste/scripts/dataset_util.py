@@ -4,9 +4,10 @@ import numpy.linalg as LA
 from collections import deque
 
 
-# columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
-#            ('timestamp', object), ('left_image', object), ('right_image', object)]
-columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
+stereo_columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
+            ('timestamp', object), ('left_image', object), ('right_image', object)]
+
+single_columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
            ('timestamp', object), ('left_image', object)]
 
 
@@ -19,6 +20,10 @@ delta_datasetcolumns = [('delta_tx', float), ('delta_ty', float), ('delta_tz', f
                         ('live_fx', float), ('live_cx', float), ('live_fy', float), ('live_cy', float), ('live_baseline', float),
                         ('timestamp', object)]
 
+columns = single_columns
+
+def set_columns(cols):
+    columns = cols
 
 def get_column_format():
     return columns

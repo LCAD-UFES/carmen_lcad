@@ -2,8 +2,9 @@
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 LOGTXT=$1
-if [ "$LOGTXT"=="" ]; then
+if [ "$LOGTXT" == "" ]; then
     echo "missing argument"
+    echo $LOGTXT
     echo "usage: $0 $SCRIPTPATH/../logs.txt"
     exit 0;
 fi
