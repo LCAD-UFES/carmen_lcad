@@ -5,3 +5,4 @@ route_planner binary
 path_smoothing_study binary
 camera_drivers binary
 offroad_planner2 binary
+locomotive_number_detector binary
