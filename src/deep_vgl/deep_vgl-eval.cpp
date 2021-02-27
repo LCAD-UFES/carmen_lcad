@@ -137,7 +137,7 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
             //if (resized.data != im.data) {
             free_image(resized);
             //}
-            free_image(im);
+            //free_image(im);
         }
     }
     else
