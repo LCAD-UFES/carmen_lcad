@@ -226,6 +226,7 @@ publish_gps_xyz(double x, double y, double theta, double confidence, double time
 		carmen_gphdt.valid = 0;
 	carmen_gphdt.timestamp = timestamp;
 	carmen_gphdt.host = carmen_get_host();
+
 	publish_carmen_gps_gphdt_message(&carmen_gphdt);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -194,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_dir', type=str, required=True)
     parser.add_argument('-c', '--camera_id', type=int, required=True)
     parser.add_argument('-f', '--log_format', type=int, required=True)
-    parser.add_argument('-l', '--max_lines', type=int, required=False, default=10338)
+    parser.add_argument('-l', '--max_lines', type=int, required=False, default=10000000)
     parser.add_argument('-t', '--max_threads', type=int, required=False, default=10)
     parser.add_argument('-m', '--max_height', type=int, required=False, default=0)
     parser.add_argument('-s', '--image_size', type=str, required=False, default='none')

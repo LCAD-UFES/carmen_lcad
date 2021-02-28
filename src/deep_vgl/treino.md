@@ -304,7 +304,7 @@ Agora basta iniciar o treinamento com o comando abaixo:
 ```bash
 cd $CARMEN_HOME/sharedlib/darknet4
 make
-./darknet classifier train /dados/ufes/deepvgl.data /dados/ufes/deepvgl.cfg darknet19_448.conv.23 -topk
+./darknet classifier train /dados/ufes/deepvgl.data /dados/ufes/deepvgl.cfg darknet19_448.conv.23 
 ```
 
 A darknet vai começar a treinar e mostrar um gráfico de desempenho. 
@@ -312,4 +312,4 @@ A darknet vai começar a treinar e mostrar um gráfico de desempenho.
 Nas linhas impressas pela darknet, as colunas são:
 XXXXXXXXXX
 
-Ao final, teremos os pesos da rede salvos na pasta /dados/darknet/backup com o nome de XXXXXXX
+Ao final, teremos os pesos da rede salvos na pasta $CARMEN_HOME/sharedlib/darknet4/backup com o nome de deepvgl_final.weights

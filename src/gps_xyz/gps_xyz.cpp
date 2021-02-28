@@ -235,6 +235,12 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 	gps_xyz_message.timestamp = gps_gpgga->timestamp;
 	gps_xyz_message.host = carmen_get_host();
 
+	static double first_timestamp = 0.0;
+	if (first_timestamp == 0)
+		first_timestamp = gps_xyz_message.timestamp;
+	if (gps_xyz_message.timestamp - first_timestamp < 5.0) // wait for deep_vgl
+		return;
+
 	carmen_gps_xyz_publish_message(gps_xyz_message);
 
 
