@@ -111,9 +111,9 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
 
             im = load_image_color(input, 0, 0);
             resized = resize_min(im, net.w);
-            im = crop_image(resized, (resized.w - net.w) / 2, (resized.h - net.h) / 2, net.w, net.h);
+            cropped = crop_image(resized, (resized.w - net.w) / 2, (resized.h - net.h) / 2, net.w, net.h);
 
-            X = im.data;
+            X = cropped.data;
 
             double time = get_time_point();
             float *predictions = network_predict(net, X);
@@ -156,10 +156,9 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
             imshow("DeepVGL", compare_images);
             int k = waitKey(1); // Wait for a keystroke in the window          
             compare_images.release();
-            //free_image(cropped);
+            free_image(cropped);
             free_image(resized);
-            if (resized.data != im.data)
-                free_image(im);
+            free_image(im);
         }
     }
     else
