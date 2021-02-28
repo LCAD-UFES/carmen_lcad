@@ -37,8 +37,13 @@ cd $CARMEN_HOME/bin
 Depois disso é só rodar o módulo com seus parâmetros:
 
 ```bash
- ./deep_vgl /dados/ufes/deepvgl.cfg $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights config/poses_and_labels.txt 2 -camera_id 1
+ ./deep_vgl /dados/ufes/deepvgl.cfg $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights config/poses_and_labels.txt 0 0 640 480 -camera_id 1
 ```
+Acima temos os parâmetro citados no início do texto, e os parâmetros abaixo:
+* total de pixels ignorados à esquerda da imagem (0 pois utilizaremos toda a imagem)
+* total de pixels ignorados ao topo da imagem (0 pois utilizaremos toda a imagem)
+* largura (640 largura da imagem)
+* altura (480 altura da imagem)
 
 (Lembre-se de colocar o id da câmera utilizada no log, nesse exemplo é 1)
 
