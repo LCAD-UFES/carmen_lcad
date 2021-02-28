@@ -89,6 +89,12 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
     std::string line;
     int last_label = -1;
     int iteration = 0;
+    image im;
+    image resized;
+    image cropped;
+    float *X;
+    char pose_image_path[1024];
+    double pose_X, pose_Y, pose_Yaw;
     
     if (images_file.is_open())
     {
@@ -103,98 +109,39 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
                 last_label = 0;
             }
 
-            image im = load_image_color(input, 0, 0);
-            
-            image resized = resize_min(im, net.w);
-            image cropped = crop_image(resized, (resized.w - net.w) / 2, (resized.h - net.h) / 2, net.w, net.h);
+            im = load_image_color(input, 0, 0);
+            resized = resize_min(im, net.w);
+            cropped = crop_image(resized, (resized.w - net.w) / 2, (resized.h - net.h) / 2, net.w, net.h);
 
-            float *X = cropped.data;
+            X = cropped.data;
 
             double time = get_time_point();
             float *predictions = network_predict(net, X);
-            //printf("%s: Predicted in % 6.2lf milli-seconds. ", input, ((double) get_time_point() - time) / 1000);
-
-            if (net.hierarchy)
-                hierarchy_predictions(predictions, net.outputs, net.hierarchy, 0);
-
+            
             top_k(predictions, net.outputs, 1, indexes);
 
             int index = indexes[0];
 
-            if (last_label > -1)
-            {
-                if ((index >= last_label) && (index <= last_label + iteration))
-                {
-                    iteration = 1;
-                    last_label = index;
-                }
-                else
-                {
-                    index = last_label;
-                }
-            }
-            else
-            {
-                last_label = index;
-            }
+            // if (last_label > -1)
+            // {
+            //     if ((index >= last_label) && (index <= last_label + iteration))
+            //     {
+            //         iteration = 1;
+            //         last_label = index;
+            //     }
+            //     else
+            //     {
+            //         index = last_label;
+            //     }
+            // }
+            // else
+            // {
+            //     last_label = index;
+            // }
+           
+            sscanf(names[index],"%lf %lf %lf %s",&pose_X,&pose_Y,&pose_Yaw, pose_image_path);
 
-            char pose_X[50], pose_Y[50], pose_Yaw[50], pose_image_path[1024];
-            char pred[250];
-
-            strcpy(pred, names[index]);
-
-            char *p = strtok(pred, " ");
-            if (p != NULL)
-            {
-                strcpy(pose_X, p);
-                pose_X[10] = '\0';
-            }
-            else
-            {
-                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
-                exit(0);
-            }
-
-            p = strtok(NULL, " ");
-            if (p != NULL)
-            {
-                strcpy(pose_Y, p);
-                pose_Y[10] = '\0';
-            }
-            else
-            {
-                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
-                exit(0);
-            }
-
-            p = strtok(NULL, " ");
-            if (p != NULL)
-            {
-                strcpy(pose_Yaw, p);
-                pose_Yaw[6] = '\0';
-            }
-            else
-            {
-                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
-                exit(0);
-            }
-            p = strtok(NULL, " ");
-            if (p != NULL)
-            {
-                strcpy(pose_image_path, p);
-            }
-            else
-            {
-                printf("\nThe %s is not right.\n Please verify your dataset and steps to generate it.",labels);
-                exit(0);
-            }
-            printf("confidence: %4.2f, X: %s, Y: %s, Yaw: %s, predicted_label: %03d, last_right_label: %03d, possible_label: %03d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
-
-            p = strtok(NULL, " ");
-            
-            cv::Mat mat = image_to_mat(cropped);
-            cv::namedWindow("teste", cv::WINDOW_NORMAL);
-            cv::imshow("teste", mat);
+            printf("confidence: %4.2f, X: %lf, Y: %lf, Yaw: %lf, predicted_label: %03d, last_right_label: %03d, possible_label: %03d\n", predictions[index], pose_X, pose_Y, pose_Yaw, indexes[0], last_label, last_label + iteration); // output esperado
             
             Mat live_image = imread(input, IMREAD_COLOR);
             Mat pose_image;
@@ -204,19 +151,18 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
             	pose_image = Mat::zeros(Size(live_image.cols, live_image.rows), live_image.type());
             Mat compare_images;
             hconcat(live_image, pose_image, compare_images);
-            imshow("localize_neural2", compare_images);
-            int k = waitKey(1); // Wait for a keystroke in the window
-
+            live_image.release();
+            pose_image.release();
+            imshow("DeepVGL", compare_images);
+            int k = waitKey(1); // Wait for a keystroke in the window          
+            compare_images.release();
             free_image(cropped);
-            if (resized.data != im.data)
-                free_image(resized);
+            free_image(resized);
             free_image(im);
         }
     }
     else
         printf("Could not open images_file %s\n", filename);
-
-    free(indexes);
     free_network(net);
 }
 

@@ -13,7 +13,7 @@ def check_setup(input_list, output_dir):
         raise Exception('The output_dir is not a valid directory!')    
 
 
-def save_one_img(img, img_size, dst_size, timestamp, camera_id, output_dir, max_height=None):
+def save_one_img(img, img_size, dst_size, timestamp, camera_id, output_dir, max_height=None, ignore_top=0):
     img = img.reshape(img_size)[:, :, ::-1]  # transpose channels RGB -> BGR
 
     ori_size = img_size[:2][::-1]  # transpose height x width -> width x height
@@ -25,9 +25,12 @@ def save_one_img(img, img_size, dst_size, timestamp, camera_id, output_dir, max_
         img = cv2.resize(img, dst_size)
 
     if max_height is not None:
-        img = img[0:max_height]
+        img = img[ignore_top:max_height]
+    else:
+        img = img[ignore_top:]      
 
     img_fname = '{0}.intelbras{1}.png'.format(timestamp, camera_id)
+
     if not (os.path.isfile(os.path.join(output_dir, img_fname))):
         print('Saving image {} into {}'.format(img_fname, output_dir))
         cv2.imwrite(os.path.join(output_dir, img_fname), img)
@@ -35,7 +38,7 @@ def save_one_img(img, img_size, dst_size, timestamp, camera_id, output_dir, max_
         print('Skipping image {} into {}'.format(img_fname, output_dir))
 
 
-def save_any_img(img_left, img_right, img_size, dst_size, timestamp, camera_id, output_dir, max_height=None):
+def save_any_img(img_left, img_right, img_size, dst_size, timestamp, camera_id, output_dir, max_height=None, ignore_top=0):
     img_left = img_left.reshape(img_size)[:, :, ::-1]  # transpose channels RGB -> BGR
     img_right = img_right.reshape(img_size)[:, :, ::-1]  # transpose channels RGB -> BGR
 
@@ -49,11 +52,15 @@ def save_any_img(img_left, img_right, img_size, dst_size, timestamp, camera_id, 
         img_right = cv2.resize(img_right, dst_size)
 
     if max_height is not None:
-        img_left = img_left[0:max_height]
-        img_right = img_right[0:max_height]
+        img_left = img_left[ignore_top:max_height]
+        img_right = img_right[ignore_top:max_height]
+    else:
+        img_left = img_left[ignore_top:]
+        img_right = img_right[ignore_top:]
 
     img_left_fname = '{0}.bb{1}.l.png'.format(timestamp, camera_id)
     img_right_fname = '{0}.bb{1}.r.png'.format(timestamp, camera_id)
+    
     if not (os.path.isfile(os.path.join(output_dir, img_left_fname)) and 
             os.path.isfile(os.path.join(output_dir, img_right_fname))):
         print('Saving images {} and {} into {}'.format(img_left_fname, img_right_fname, output_dir))
@@ -62,28 +69,28 @@ def save_any_img(img_left, img_right, img_size, dst_size, timestamp, camera_id, 
     else:
         print('Skipping images {} and {} into {}'.format(img_left_fname, img_right_fname, output_dir))
 
-def save_old_img(image, output_dir, camera_id, dst_size=None, max_height=None):
+def save_old_img(image, output_dir, camera_id, dst_size=None, max_height=None, ignore_top=0):
     img_left = np.fromstring(image['left'], count=image['bytes'], dtype=np.uint8)
     img_right = np.fromstring(image['right'], count=image['bytes'], dtype=np.uint8)
 
-    save_any_img(img_left, img_right, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height)
+    save_any_img(img_left, img_right, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height, ignore_top)
 
 
-def save_new_img(image, output_dir, camera_id, dst_size=None, max_height=None):
+def save_new_img(image, output_dir, camera_id, dst_size=None, max_height=None, ignore_top=0):
     img_handler = open(image['path'], 'rb')
 
     img_left = np.fromfile(img_handler, count=image['bytes'], dtype=np.uint8)
     img_right = np.fromfile(img_handler, count=image['bytes'], dtype=np.uint8)
 
-    save_any_img(img_left, img_right, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height)
+    save_any_img(img_left, img_right, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height, ignore_top)
 
 
-def save_new_img2(image, output_dir, camera_id, dst_size=None, max_height=None):
+def save_new_img2(image, output_dir, camera_id, dst_size=None, max_height=None, ignore_top=0):
     img_handler = open(image['path'], 'rb')
 
     img = np.fromfile(img_handler, count=image['bytes'], dtype=np.uint8)
 
-    save_one_img(img, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height)
+    save_one_img(img, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height, ignore_top)
 
 
 def read_old_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, max_height=None, ignore_top=0):
@@ -92,11 +99,6 @@ def read_old_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_
     f = open(input_list, 'rb')
     line = f.readline()
     
-    ignored_lines = 0
-    while ignored_lines < ignore_top:
-        line = f.readline()
-        ignored_lines+=1
-
     print('max lines:{}'.format(max_lines))
     while line and total < max_lines:
         item = line.strip().split()
@@ -110,7 +112,7 @@ def read_old_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_
                 'timestamp': item[7].decode('utf-8')
         }
         line = f.readline()
-        t = threading.Thread(target=save_old_img, args=(image, output_dir, camera_id, dst_size, max_height))
+        t = threading.Thread(target=save_old_img, args=(image, output_dir, camera_id, dst_size, max_height, ignore_top))
         mythreads.append(t)
         t.start()
         total += 1
@@ -130,11 +132,6 @@ def read_new_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_
     f = open(input_list, 'rb')
     line = f.readline()
     
-    ignored_lines = 0
-    while ignored_lines < ignore_top:
-        line = f.readline()
-        ignored_lines+=1
-    
     while line and total < max_lines:
         item = line.strip().split()
         image = {
@@ -144,7 +141,7 @@ def read_new_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_
             'timestamp': item[6].decode('utf-8'),
         }
         line = f.readline()
-        t = threading.Thread(target=save_new_img, args=(image, output_dir, camera_id, dst_size, max_height))
+        t = threading.Thread(target=save_new_img, args=(image, output_dir, camera_id, dst_size, max_height, ignore_top))
         mythreads.append(t)
         t.start()
         total += 1
@@ -161,12 +158,7 @@ def read_new2_log(log, input_list, output_dir, max_threads, max_lines, camera_id
     mythreads = []
     f = open(input_list, 'rb')
     line = f.readline()
-    
-    ignored_lines = 0
-    while ignored_lines < ignore_top:
-        line = f.readline()
-        ignored_lines+=1
-    
+        
     while line and total < max_lines:
         item = line.strip().split()
         
@@ -182,7 +174,7 @@ def read_new2_log(log, input_list, output_dir, max_threads, max_lines, camera_id
             'timestamp': item[4].decode('utf-8'),
         }
         line = f.readline()
-        t = threading.Thread(target=save_new_img2, args=(image, output_dir, camera_id, dst_size, max_height))
+        t = threading.Thread(target=save_new_img2, args=(image, output_dir, camera_id, dst_size, max_height, ignore_top))
         mythreads.append(t)
         t.start()
         total += 1
@@ -202,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_dir', type=str, required=True)
     parser.add_argument('-c', '--camera_id', type=int, required=True)
     parser.add_argument('-f', '--log_format', type=int, required=True)
-    parser.add_argument('-l', '--max_lines', type=int, required=False, default=10338)
+    parser.add_argument('-l', '--max_lines', type=int, required=False, default=10000000)
     parser.add_argument('-t', '--max_threads', type=int, required=False, default=10)
     parser.add_argument('-m', '--max_height', type=int, required=False, default=0)
     parser.add_argument('-s', '--image_size', type=str, required=False, default='none')

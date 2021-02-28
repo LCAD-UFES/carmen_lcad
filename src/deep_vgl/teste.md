@@ -63,4 +63,3 @@ cd $CARMEN_HOME/src/deep_vgl
 ./deep_vgl-test --poses_and_labels config/poses_and_labels.txt --weights_file $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights --config_file treino_e_teste/darknet_cfg/deepvgl.cfg  --images_list $CARMEN_HOME/src/deep_vgl/config/test-20210120.txt 
 
 ```
-

@@ -2,8 +2,9 @@
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 LOGTXT=$1
-if [ "$LOGTXT"=="" ]; then
+if [ "$LOGTXT" == "" ]; then
     echo "missing argument"
+    echo $LOGTXT
     echo "usage: $0 $SCRIPTPATH/../logs.txt"
     exit 0;
 fi
@@ -34,7 +35,7 @@ for i in "${!dirs[@]}"; do
     fi
     
     fgrep ${msg}${cams[$i]} ${logs[$i]} > /dados/log2png${i}.txt
-#    echo "python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}"
+    echo "python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}"
     python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}
 done
 

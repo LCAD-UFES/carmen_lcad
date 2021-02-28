@@ -4,9 +4,10 @@ import numpy.linalg as LA
 from collections import deque
 
 
-# columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
-#            ('timestamp', object), ('left_image', object), ('right_image', object)]
-columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
+stereo_columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
+            ('timestamp', object), ('left_image', object), ('right_image', object)]
+
+single_columns = [('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),
            ('timestamp', object), ('left_image', object)]
 
 
@@ -19,6 +20,10 @@ delta_datasetcolumns = [('delta_tx', float), ('delta_ty', float), ('delta_tz', f
                         ('live_fx', float), ('live_cx', float), ('live_fy', float), ('live_cy', float), ('live_baseline', float),
                         ('timestamp', object)]
 
+columns = single_columns
+
+def set_columns(cols):
+    columns = cols
 
 def get_column_format():
     return columns
@@ -42,6 +47,33 @@ def signed_direction(a, b):
     dif_xy = a[[0,1]] - b[[0,1]]
     delta_xy = rotate2d(dif_xy[:,np.newaxis], -b[[2]])
     return 1 if delta_xy[0] >= -0.01 else -1
+
+
+def new_get_indices_of_sampled_data(data, min_distance, max_rotation=math.pi):
+    last = None
+    indices = []
+    for i in range(len(data)):
+        count = 0
+        current_heading = np.array(data['rz'][i])
+        current = np.array((data['x'][i], data['y'][i]))
+        if last is None:
+            distance = min_distance
+            rotation = max_rotation
+            last = True
+            indices.append(i)
+        else:
+            for j in range(len(indices)):
+                selected_pose = np.array((data['x'][indices[j]], data['y'][indices[j]]))
+                selected_heading = np.array(data['rz'][indices[j]])
+                distance = LA.norm(selected_pose - current)
+                rotation = np.abs(selected_heading - current_heading)    
+                if distance >= min_distance or rotation >= max_rotation:
+                    count+=1
+            if count == len(indices) :
+                indices.append(i)
+            
+    return indices
+
 
 
 def get_indices_of_sampled_data(data, min_distance, max_rotation=math.pi):
