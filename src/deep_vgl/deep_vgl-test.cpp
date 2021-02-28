@@ -151,11 +151,10 @@ predict_classifier(char *labels, int classes_qtd, char *cfgfile, char *weightfil
             	pose_image = Mat::zeros(Size(live_image.cols, live_image.rows), live_image.type());
             Mat compare_images;
             hconcat(live_image, pose_image, compare_images);
-            imshow("DeepVGL", compare_images);
-            int k = waitKey(1); // Wait for a keystroke in the window
-            
             live_image.release();
             pose_image.release();
+            imshow("DeepVGL", compare_images);
+            int k = waitKey(1); // Wait for a keystroke in the window          
             compare_images.release();
             free_image(cropped);
             free_image(resized);
