@@ -1,6 +1,12 @@
 # DeepVGL
 
-## Para treinar a rede (precisa do python2.7 instalado)
+Para treinar a rede neural do DeepVGL você precisa ter o python2.7 instalado. Além disso, você precisa:
+
+```bash
+pip install scipy
+```
+
+## Para treinar a rede
 
 Precisaremos de um log com mapa já criado.
 Esse mapa, e seu respectivo log, serão utilizados como base para gerar as poses utilizadas na tabela de images/poses 
@@ -243,7 +249,7 @@ cat $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt | wc -l
 ```
 
 O número exibido será utilizado para configurar a saída da darknet.
-Neste exemplo 657 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
+Neste exemplo 658 será o total de saídas da rede. Em seu caso, dependendo dos logs escolhidos, esse valor pode ser diferente.
 
 ## Obtenção do pré-treino da darknet.
 
@@ -261,9 +267,13 @@ Caso necessário, siga o passo a passo no $CARMEN_HOME/sharedlib/darknet4/README
 
 Precisamos agora editar os arquivos deepvgl.cfg e deepvgl.data para as configurações correspondentes ao novo dataset.
 
-O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuração da DNN e deve ser alterado para que a última camada corresponda ao total de labels geradas nos passos anteriores. É importante também garantir que o total de iterações seja no mínimo igual ao total de imagens do dataset. Nesse exemplo editaremos o total de iterações para 8000 (suficiente para o total de imagens) e o número de neurônios na última camada convolucional para 687 (total de labels). 
+O arquivo "treino_e_teste/darknet_cfg/deepvgl.cfg" é o arquivo de configuração da DNN e deve ser alterado para que a última camada corresponda ao total de labels geradas nos passos anteriores. É importante também garantir que o total de iterações seja no mínimo igual ao total de imagens do dataset. Nesse exemplo editaremos o total de iterações para 8000 (suficiente para o total de imagens) e o número de neurônios na última camada convolucional para 658 (total de labels). 
 
 Desta forma, editaremos a linha "max_batches=" e a última linha "filters=" do deepvgl.cfg:
+
+```bash
+gedit $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/deepvgl.cfg
+```
 
 Agora, precisamos alterar o arquivo deepvgl.data, que contém a lista de tudo que a darknet precisa para executar o treino corretamente.
 Para isso, execute o comando abaixo e edite as linhas conforme o exemplo mostrado:
@@ -275,7 +285,7 @@ gedit $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/deepvgl.data
 O conteúdo deve ficar parecido com isso:
 
 ```bash
-classes=687                         # total de labels do dataset (classes para a darknet)
+classes=658                         # total de labels do dataset (classes para a darknet)
 train  = /dados/ufes/train.list     # caminho para o arquivo com a lista das imagens de treino
 valid  = /dados/ufes/train.list     # repetimos a arquivo anterior pois não utilizaremos a validação da darknet
 labels = /dados/ufes/labels.txt     # caminho para o arquivo com as labels
@@ -292,7 +302,8 @@ cp $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/{labels\.txt,deepvgl\.cf
 Agora basta iniciar o treinamento com o comando abaixo:
 
 ```bash
-cd /dados/darknet
+cd $CARMEN_HOME/sharedlib/darknet4
+make
 ./darknet classifier train /dados/ufes/deepvgl.data /dados/ufes/deepvgl.cfg darknet19_448.conv.23 -topk
 ```
 
