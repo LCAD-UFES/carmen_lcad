@@ -9,10 +9,16 @@ Para utilizar o módulo deep_vgl integrado ao carmen precisaremos dos seguintes 
 
 Todos esses arquivos foram gerados nas etapas de treinamento e de teste da rede.
 
-A configuração necessário para executar o módulo no mapa "map_ida_guarapari-20170403-2" com o log "log_volta_da_ufes-20191003.txt" estão salvos na pasta 
+Copie-os para a pasta $CARMEN_HOME/data/deep_vgl colocando o nome do mapa como prefixo. Para o exemplo mostrado em treino.md e teste.md,
+a cópia seria como abaixo: 
+
+./deep_vgl-test --poses_and_labels config/poses_and_labels.txt --weights_file $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights --config_file treino_e_teste/darknet_cfg/deepvgl.cfg  --images_list $CARMEN_HOME/src/deep_vgl/config/test-20210120.txt 
+
 
 ```bash 
-$CARMEN_HOME/src/deep_vgl/config
+cp $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights 	$CARMEN_HOME/data/deep_vgl/map_volta_da_ufes-20210131-art2-deepvgl_final.weights
+cp /dados/ufes/deepvgl.cfg 									$CARMEN_HOME/data/deep_vgl/map_volta_da_ufes-20210131-art2-deepvgl.cfg
+cp $CARMEN_HOME/src/deep_vgl/config/poses_and_labels.txt 			$CARMEN_HOME/data/deep_vgl/map_volta_da_ufes-20210131-art2-poses_and_labels.txt
 ```
 
 e podem ser utilizados normalmente. Para isso, inicie o carmen com a seguinte sequencia de comandos.
