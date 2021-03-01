@@ -171,12 +171,7 @@ mv temp.txt camerapos-20210131.txt
 A ordem é importante: o fim de um log deve encontrar-se, aproximadamente, com o início de outro.
 Lembre-se de remover os cabeçalhos repetidos no arquivo final.
 
-%Para juntar logs temos que, na verdade, juntar arquivos camerapos. Mas não basta concatena-los com cat; precisamos
-%mover as imagens dos logs que serão juntados ao log base para o diretório de imagens do log base e editar
-%o arquivo camerapos do novo log base composto por vários logs de modos a ter o caminho correto para cada imagem
-%da base.
-
-A passo a seguir usa o arquivo logs.txt do STEP 1.1, que contém os três logs. Como juntamos dois, dos três logs,
+A passo a seguir usa o arquivo logs.txt do STEP 1.1, que contém os três logs. Como juntamos dois dos três logs,
 precisamos remover um deles de logs.txt. Neste exemplo, o log log_saida_lcad3_art-20210212.txt. Assim, remova
 a linha com o log log_saida_lcad3_art-20210212.txt de logs.txt.
 
@@ -198,7 +193,8 @@ rm -r /dados/ufes_gt/*
 ```
 
 O comando dataset.sh usa o arquivo logs.txt do STEP 1.1 para identificar quais logs vai empregar. A ordem é importante: o primeiro log
-será usado como referência pela DNN (suas imagens, espaçadas de base_offset (m), estarão associadas a labels, um
+(ou o primeiro conjunto de logs se o passo "Juntando logs em um mesmo log base, ou de referência", acima, for empregado) será 
+usado como referência pela DNN (suas imagens, espaçadas de base_offset (m), estarão associadas a labels, um
 por imagem). 
 
 Durante a execução serão mostrados gráficos dos caminhos percurridos nos logs e a relação de cada pose de cada log com uma pose do log
