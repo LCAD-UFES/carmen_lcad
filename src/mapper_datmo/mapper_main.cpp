@@ -890,6 +890,8 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 	resize(map_img, map_img, Size(0, 0), 1.7, 1.7, INTER_NEAREST);
 	imshow("Map Image", map_img);
 	waitKey(1);
+
+	// static int i = 0; char info[64]; sprintf(info, "%d.png", i); imwrite(info, map_img); i++;
 }
 
 
@@ -1189,32 +1191,32 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 		show_detections(open_cv_image.clone(), predictions_vector, points_on_image, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
 
 		// Save pointcloud for dataset
-		if (dataset_for_squeezeseg)
-		{
-			// Save clusters data in libsqueeze_seg_numpy
-			int number_of_laser_shots = sensor_data->points[sensor_data->point_cloud_index].num_points / sensor_params->vertical_resolution;
-			libsqueeze_seg_using_detections(predictions_vector, clustered_points, squeezeseg_dataset.data, sensor_params->vertical_resolution, number_of_laser_shots);
-			switch(camera_index)
-			{
-				case 3:
-					squeezeseg_dataset.camera3 = true;
-					break;
-				case 5:
-					squeezeseg_dataset.camera5 = true;
-					break;
-				case 7:
-					squeezeseg_dataset.camera7 = true;
-					break;
-				case 9:
-					squeezeseg_dataset.camera9 = true;
-			}
-			//if (squeezeseg_dataset.camera3 && squeezeseg_dataset.camera5)
-			if (squeezeseg_dataset.camera3)
-			{
-				libsqueeze_seg_save_txt_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
-				// libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
-			}
-		}
+		// if (dataset_for_squeezeseg)
+		// {
+		// 	// Save clusters data in libsqueeze_seg_numpy
+		// 	int number_of_laser_shots = sensor_data->points[sensor_data->point_cloud_index].num_points / sensor_params->vertical_resolution;
+		// 	libsqueeze_seg_using_detections(predictions_vector, clustered_points, squeezeseg_dataset.data, sensor_params->vertical_resolution, number_of_laser_shots);
+		// 	switch(camera_index)
+		// 	{
+		// 		case 3:
+		// 			squeezeseg_dataset.camera3 = true;
+		// 			break;
+		// 		case 5:
+		// 			squeezeseg_dataset.camera5 = true;
+		// 			break;
+		// 		case 7:
+		// 			squeezeseg_dataset.camera7 = true;
+		// 			break;
+		// 		case 9:
+		// 			squeezeseg_dataset.camera9 = true;
+		// 	}
+		// 	//if (squeezeseg_dataset.camera3 && squeezeseg_dataset.camera5)
+		// 	if (squeezeseg_dataset.camera3)
+		// 	{
+		// 		libsqueeze_seg_save_txt_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+		// 		// libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+		// 	}
+		// }
 	}
 }
 
@@ -1537,7 +1539,7 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 	filtered_clusters_mean_pose_vector.insert(filtered_clusters_mean_pose_vector.end(), recovered_clusters_mean_pose_vector.begin(), recovered_clusters_mean_pose_vector.end());
 
 	remove_classified_rais_from_point_clud(sensor_params, sensor_data, filtered_clusters);
-	remove_classified_rais_from_point_clud(sensor_params, sensor_data, recovered_clusters);
+	remove_classified_rais_from_point_clud(sensor_params, sensor_data, recovered_clusters); // Remove recovered clusters using tracker 
 
 	if (verbose >= 2)
 	{
@@ -2597,9 +2599,9 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 			cv::line(total, cvPoint(x,y-10/2), cvPoint(x,y+5/2), CV_RGB(0,199,0), 1, 8);
 			
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
-			/*double timestamp = sensor_data->points_timestamp[cloud_index];
-			std::string scan = std::to_string(timestamp);
-			imwrite("DATA/"+scan+"_squeezeSeg.jpg", total);*/
+			// double timestamp = sensor_data->points_timestamp[cloud_index];
+			// std::string scan = std::to_string(timestamp);
+			// imwrite("DATA/"+scan+"_squeezeSeg.jpg", total);
 			//cout << "SqueezeSeg: img " << scan << " saved" << endl;
 
 			imshow("Pointcloud SqueezeSeg", total);
@@ -3585,14 +3587,14 @@ include_sensor_data_into_map_old(int sensor_number, carmen_localize_ackerman_glo
 	{
 		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
-		if (!strcmp(neural_network, "squeezeseg"))
-		{
-			filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-		}
-		if (!strcmp(neural_network, "salsanet"))
-		{
-			filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-		}
+		// if (!strcmp(neural_network, "squeezeseg"))
+		// {
+		// 	filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+		// }
+		// if (!strcmp(neural_network, "salsanet"))
+		// {
+		// 	filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+		// }
 		// if (!strcmp(neural_network, "yolo"))
 		// {
 		// 	filter_sensor_data_using_image_yolo(&sensors_params[sensor_number], &sensors_data[sensor_number]);
@@ -3845,30 +3847,30 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	if (!strcmp(neural_network,"squeezeseg")){
-		squeezeseg_segmented.result = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
-		squeezeseg_segmented.timestamp = velodyne_message->timestamp;
-	}
-	if (!strcmp(neural_network,"salsanet")){
-		salsanet_segmented.result = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
-		salsanet_segmented.timestamp = velodyne_message->timestamp;
-	}
-	if (!strcmp(neural_network,"yolo")){
-		squeezeseg_dataset.data = libsqueeze_seg_data_for_train(VELODYNE, velodyne_message, sensors_params);
-		squeezeseg_dataset.camera3 = false;
-		squeezeseg_dataset.camera5 = false;
-		squeezeseg_dataset.camera7 = false;
-		squeezeseg_dataset.camera9 = false;
-		squeezeseg_dataset.timestamp = velodyne_message->timestamp;
-	}
-	if (!strcmp(neural_network,"efficientdet")){
-		squeezeseg_dataset.data = libsqueeze_seg_data_for_train(VELODYNE, velodyne_message, sensors_params);
-		squeezeseg_dataset.camera3 = false;
-		squeezeseg_dataset.camera5 = false;
-		squeezeseg_dataset.camera7 = false;
-		squeezeseg_dataset.camera9 = false;
-		squeezeseg_dataset.timestamp = velodyne_message->timestamp;
-	}
+	// if (!strcmp(neural_network,"squeezeseg")){
+	// 	squeezeseg_segmented.result = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	// 	squeezeseg_segmented.timestamp = velodyne_message->timestamp;
+	// }
+	// if (!strcmp(neural_network,"salsanet")){
+	// 	salsanet_segmented.result = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	// 	salsanet_segmented.timestamp = velodyne_message->timestamp;
+	// }
+	// if (!strcmp(neural_network,"yolo")){
+	// 	squeezeseg_dataset.data = libsqueeze_seg_data_for_train(VELODYNE, velodyne_message, sensors_params);
+	// 	squeezeseg_dataset.camera3 = false;
+	// 	squeezeseg_dataset.camera5 = false;
+	// 	squeezeseg_dataset.camera7 = false;
+	// 	squeezeseg_dataset.camera9 = false;
+	// 	squeezeseg_dataset.timestamp = velodyne_message->timestamp;
+	// }
+	// if (!strcmp(neural_network,"efficientdet")){
+	// 	squeezeseg_dataset.data = libsqueeze_seg_data_for_train(VELODYNE, velodyne_message, sensors_params);
+	// 	squeezeseg_dataset.camera3 = false;
+	// 	squeezeseg_dataset.camera5 = false;
+	// 	squeezeseg_dataset.camera7 = false;
+	// 	squeezeseg_dataset.camera9 = false;
+	// 	squeezeseg_dataset.timestamp = velodyne_message->timestamp;
+	// }
 	// if (!strcmp(neural_network,"rangenet")){
 	// 	rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	// }

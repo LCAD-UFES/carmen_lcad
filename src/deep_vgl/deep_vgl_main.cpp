@@ -39,8 +39,11 @@ static int bumblebee_basic_height;
 
 network net;
 char **learned_poses;
-int MAE, last_correct_prediction = -1;
-
+int last_correct_prediction = -1;
+/****
+ * usados para crop_image()
+ *  esquerda  topo	   largura     altura		****/
+int delta_x,  delta_y, crop_width, crop_height;
 
 cv::Mat
 convert_darknet_image_to_cv_mat(image img)
@@ -306,9 +309,12 @@ read_parameters(int argc, char **argv)
 
 
 void
-initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename, int selected_MAE)
+initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename, int dx, int dy, int w, int h)
 {
-	MAE = selected_MAE;
+	delta_x=dx;
+	delta_y=dy;
+	crop_width=w;
+	crop_height=h;
 	net = parse_network_cfg_custom(cfgfile, 1, 0);
 	if (weightfile)
 		load_weights(&net, weightfile);
@@ -337,7 +343,7 @@ main(int argc, char *argv[])
 {
 	if (argc != 7)
 	{
-		printf(" Usage: ./dnn_visual_gl config/config.cfg config/classifier.weights config/poses_and_labels.txt 2 -camera_id 3\n");
+		printf(" Usage: ./dnn_visual_gl config/config.cfg config/classifier.weights config/poses_and_labels.txt 0 0 640 480 -camera_id 3\n");
 		exit (1);
 	}
 
@@ -345,7 +351,7 @@ main(int argc, char *argv[])
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	initialize_structures(argv[1], argv[2], argv[3], atoi(argv[4]));
+	initialize_structures(argv[1], argv[2], argv[3], atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[6]));
 
 	read_parameters(argc, argv);
 
