@@ -341,7 +341,7 @@ subscribe_messages()
 int
 main(int argc, char *argv[])
 {
-	if (argc != 9)
+	if (argc != 10)
 	{
 		printf(" Usage: ./deep_vgl config/config.cfg config/classifier.weights config/poses_and_labels.txt 0 0 640 480 -camera_id 3\n");
 		exit (1);
