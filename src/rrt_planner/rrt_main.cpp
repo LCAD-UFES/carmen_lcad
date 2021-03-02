@@ -279,11 +279,11 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 		}
 	}
 
-	if (GlobalState::behavior_selector_state != msg->state)
+	if (GlobalState::behavior_selector_mission != msg->mission)
 	{
-		GlobalState::behavior_selector_state = msg->state;
+		GlobalState::behavior_selector_mission = msg->mission;
 
-		if (GlobalState::behavior_selector_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+		if (GlobalState::behavior_selector_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 			selected_rrt = rrt_lane;
 		else
 			selected_rrt = rrt_parking;
