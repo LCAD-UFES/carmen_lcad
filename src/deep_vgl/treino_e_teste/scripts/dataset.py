@@ -14,12 +14,6 @@ def curr_datasetname(dir, year_base, year_curr, offset_base, offset_curr):
     return dir + "livepos-{0}-{1}-{2}m-{3}m.txt".format(year_base, year_curr, offset_base, offset_curr)
 
 def new_closest_point(curr_pose, base_poses, base_offset):
-    # nearest_index = -1
-    # tree = spatial.KDTree(base_poses)
-    # # print tree.data, curr_pose
-    # i = tree.query_ball_point(curr_pose, r=base_offset)
-    # if len(i) > 0:
-    #     nearest_index = max(i) 
     nearest_index = -1
     smallest_distance = base_offset
     shortest_interval = np.float('inf')
@@ -27,6 +21,8 @@ def new_closest_point(curr_pose, base_poses, base_offset):
         distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
         # remove pontos na contra-mao
         orientation = np.abs(curr_pose[2] - base_poses[j][2])
+        if (orientation > (math.pi*3/2)):
+            orientation = np.abs(2*math.pi - orientation)
         if (orientation <= math.pi/2) and (distance >= 0) and (distance <= smallest_distance):
             smallest_distance = distance
             nearest_index = j
@@ -41,7 +37,7 @@ def find_closest_in_space(curr_pose, base_poses, curr_time, base_times, base_off
         distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
         # remove pontos na contra-mao
         orientation = np.abs(curr_pose[2] - base_poses[j][2])
-        if ((orientation <= math.pi/2) or (orientation-(2*math.pi) <= math.pi/2) ) and (distance >= 0) and (distance <= smallest_distance): # and (interval >= 0) and (interval <= shortest_interval):
+        if (orientation <= math.pi/2) and (distance >= 0) and (distance <= smallest_distance): # and (interval >= 0) and (interval <= shortest_interval):
             smallest_distance = distance
             shortest_interval = interval
             nearest_index = j
@@ -137,13 +133,12 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
     # data_curr_time = build_spacial_index(data_curr_pose_2d, curr_start)
     # data_base_time = build_spacial_index(data_base_pose_2d, base_start)
     for index_curr in range(len(data_curr)):
-        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, offset_base/2 )
+        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, offset_base*0.6 )
         # index_base = find_closest_in_space(data_curr_pose_2d[index_curr], data_base_pose_2d,
         #                                    data_curr_time[index_curr], data_base_time,
         #                                    offset_base if index_curr == 0 else 5.0)
         if index_base < 0:  # get only frames ahead in space/time
-            print 'live frame with no match: ', index_curr
-            print data_curr_pose_2d[index_curr]
+            print 'live frame with no match: ', index_curr,' - ',data_curr_pose_2d[index_curr]
             continue
 
         data_curr_label.append(data_base_label[index_base])
