@@ -115,7 +115,7 @@ namespace View
 			GtkComboBox *comboPlaceOfInterest;
 			GtkComboBox *comboPredefinedRoute;
 			GtkComboBox *comboState;
-			GtkComboBox *comboFollowLane;
+			GtkComboBox *comboFollowRoute;
 			GtkComboBox *comboParking;
 
 			GtkLabel *labelStatusMap;
@@ -338,7 +338,7 @@ namespace View
 		void get_place_of_interest(char *new_place_of_interest);
 		void get_predefined_route(char *new_predefined_route);
 		void reset_predefined_route();
-		int get_state_code(char* state_name);
+		int get_mission_code(char *mission_name);
 		void save_to_image(GtkMapViewer *mapv);
 		void do_publish_map_view(GtkMapViewer *mapv);
 		double time_of_last_publish = 0.0;

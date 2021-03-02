@@ -18,16 +18,11 @@ extern int autonomous_status;
 extern carmen_motion_planner_path_message path;
 extern carmen_ackerman_traj_point_t g_robot_position;
 
-extern int current_motion_command_vetor_index;
-extern carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
-extern int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
-
 extern int current_map;
 extern carmen_map_p map_vector[NUM_MAPS];
 extern int necessary_maps_available;
 
 extern carmen_behavior_selector_algorithm_t current_algorithm;
-extern carmen_behavior_selector_state_t current_state;
 
 
 /*********************************************************
@@ -119,7 +114,7 @@ signal_handler(int signo __attribute__ ((unused)) )
 static void
 current_algorithm_handler(carmen_behavior_selector_state_message *msg)
 {
-	motion_planner_set_algorithm(msg->algorithm, msg->state);
+	motion_planner_set_algorithm(msg->algorithm, msg->mission);
 }
 
 

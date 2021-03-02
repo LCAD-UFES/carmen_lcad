@@ -66,7 +66,7 @@ public:
 	static double obstacle_threshold;
 
 	static int current_algorithm;//which algorithm is running, define at carmen_navigator_ackerman_algorithm_t
-	static int behavior_selector_state;
+	static int behavior_selector_mission;
 
 	static char *rddf_path;
 

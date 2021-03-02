@@ -37,7 +37,7 @@
 #include "trajectory_ackerman.h"
 #include "rs.h"
 
-extern carmen_behavior_selector_state_t current_state;
+extern carmen_behavior_selector_mission_t current_mission;
 
 int astar_call_cont = 0;
 int cont_nos_abertos_novos = 0, cont_nos_abertos_alterados = 0, cont_nos_podados = 0, cont_nos_abertos_alterados_fechados = 0;
@@ -363,7 +363,7 @@ carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_point_t start, car
 	if (astar_call_cont == 0)
 	{
 		alloc_astar_map();
-		if(current_state == BEHAVIOR_SELECTOR_PARKING)
+		if (current_mission == BEHAVIOR_SELECTOR_PARK)
 		{
 			alloc_precomputed_cost_map();
 			open_precomputed_cost_map();
@@ -389,7 +389,7 @@ carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_point_t start, car
 	index = 0;
 	while ((node = fh_extractmin(heap)))
 	{
-		if (astar_config.onroad_max_plan_time < t2 - t1 && current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+		if (astar_config.onroad_max_plan_time < t2 - t1 && current_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 		{
 			node = NULL;
 			break;
@@ -435,7 +435,7 @@ carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_point_t start, car
 				merging_astar_path(path, &rs_path);
 			}
 		}
-		if (astar_config.smooth_path && current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+		if (astar_config.smooth_path && current_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 			smooth_path_astar(path);
 		//print_path(path);
 	}
@@ -483,7 +483,7 @@ open_node(carmen_astar_node_p node)
 		{
 
 			cost_weight = 1;
-			if (current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+			if (current_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 				new_point = carmen_conventional_astar_ackerman_kinematic_3(
 						node->point, robot_conf_g.distance_between_front_and_rear_axles, ORIENTATION[j], DIRECTION[i]);
 			else
@@ -550,7 +550,7 @@ h_score(carmen_ackerman_traj_point_t point)
 	x = abs(x);
 	y = abs(y);
 
-	if (current_state == BEHAVIOR_SELECTOR_PARKING)
+	if (current_mission == BEHAVIOR_SELECTOR_PARK)
 	{
 		if (x >= astar_config.precomputed_cost_size / 2 || y >= astar_config.precomputed_cost_size / 2)
 			precomputed_cost = obstacle_cost;
@@ -564,7 +564,7 @@ h_score(carmen_ackerman_traj_point_t point)
 	//printf("obstacle_cost %.2f precomputed_cost %.2f x %d y %d\n",obstacle_cost,precomputed_cost,x,y);
 	h_score = carmen_fmax(obstacle_cost, precomputed_cost);
 
-	if (current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+	if (current_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 		return euclidean_cost;
 
 	return h_score;

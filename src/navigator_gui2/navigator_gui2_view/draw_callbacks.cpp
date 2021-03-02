@@ -734,15 +734,15 @@ void on_comboState_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
-		carmen_behavior_selector_set_state((carmen_behavior_selector_state_t)global_gui->get_state_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)));
+		carmen_behavior_selector_set_mission((carmen_behavior_selector_mission_t)global_gui->get_mission_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)));
 }
 
 //extern "C" G_MODULE_EXPORT
-void on_comboFollowLane_changed(GtkWidget *widget __attribute__((unused)),
+void on_comboFollowRoute_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
-		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboFollowLane)), BEHAVIOR_SELECTOR_FOLLOWING_LANE);
+		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboFollowRoute)), BEHAVIOR_SELECTOR_FOLLOW_ROUTE);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -750,7 +750,7 @@ void on_comboParking_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
-		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboParking)), BEHAVIOR_SELECTOR_PARKING);
+		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboParking)), BEHAVIOR_SELECTOR_PARK);
 }
 
 //extern "C" G_MODULE_EXPORT

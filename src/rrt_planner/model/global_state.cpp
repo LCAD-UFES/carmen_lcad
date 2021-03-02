@@ -55,7 +55,7 @@ double GlobalState::timeout				= 5.0;
 double GlobalState::obstacle_threshold	= 0.5;
 
 int GlobalState::current_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
-int GlobalState::behavior_selector_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
+int GlobalState::behavior_selector_mission = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 
 int GlobalState::publish_tree = 1;
 int GlobalState::publish_lane_map = 0;

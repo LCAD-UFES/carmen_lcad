@@ -648,18 +648,18 @@ void
 publish_current_state(carmen_behavior_selector_state_message *msg)
 {
 	IPC_RETURN_TYPE err;
-	carmen_behavior_selector_state_t current_state;
+	carmen_behavior_selector_mission_t current_mission;
 	carmen_behavior_selector_algorithm_t following_lane_planner;
 	carmen_behavior_selector_algorithm_t parking_planner;
 	carmen_behavior_selector_goal_source_t current_goal_source;
 
-	behavior_selector_get_full_state(&current_state, &following_lane_planner, &parking_planner, &current_goal_source);
+	behavior_selector_get_full_state(&current_mission, &following_lane_planner, &parking_planner, &current_goal_source);
 
 	msg->timestamp = carmen_get_time();
 	msg->host = carmen_get_host();
 
 	msg->algorithm = get_current_algorithm();
-	msg->state = current_state;
+	msg->mission = current_mission;
 
 	msg->following_lane_algorithm = following_lane_planner;
 	msg->parking_algorithm = parking_planner;
@@ -1502,7 +1502,7 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 static void
 set_algorith_handler(carmen_behavior_selector_set_algorithm_message *msg)
 {
-	behavior_selector_set_algorithm(msg->algorithm, msg->state);
+	behavior_selector_set_algorithm(msg->algorithm, msg->mission);
 }
 
 
@@ -1514,9 +1514,9 @@ set_goal_source_handler(carmen_behavior_selector_set_goal_source_message *msg)
 
 
 static void
-set_state_handler(carmen_behavior_selector_set_state_message *msg)
+set_mission_handler(carmen_behavior_selector_set_mission_message *msg)
 {
-	behavior_selector_set_state(msg->state);
+	behavior_selector_set_mission(msg->mission);
 }
 
 
@@ -1639,10 +1639,10 @@ register_handlers()
 			NULL, sizeof(carmen_behavior_selector_set_goal_source_message),
 			(carmen_handler_t)set_goal_source_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME,
-			(char *) CARMEN_BEHAVIOR_SELECTOR_SET_STATE_FMT,
-			NULL, sizeof(carmen_behavior_selector_set_state_message),
-			(carmen_handler_t)set_state_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_NAME,
+			(char *) CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_FMT,
+			NULL, sizeof(carmen_behavior_selector_set_mission_message),
+			(carmen_handler_t)set_mission_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ADD_GOAL_NAME,
 			(char *) CARMEN_BEHAVIOR_SELECTOR_ADD_GOAL_FMT,

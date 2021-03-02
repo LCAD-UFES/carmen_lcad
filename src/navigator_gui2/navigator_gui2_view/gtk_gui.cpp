@@ -544,7 +544,7 @@ namespace View
 		controls_.comboPlaceOfInterest = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPlaceOfInterest" ));
 		controls_.comboPredefinedRoute = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPredefinedRoute" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
-		controls_.comboFollowLane = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowLane" ));
+		controls_.comboFollowRoute = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowRoute" ));
 		controls_.comboParking = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboParking" ));
 
 		controls_.labelStatusMap = GTK_LABEL(gtk_builder_get_object(builder, "labelStatusMap" ));
@@ -1455,13 +1455,13 @@ namespace View
 
 
 	int
-	GtkGui::get_state_code(char* state_name)
+	GtkGui::get_mission_code(char *mission_name)
 	{
-		if (strcmp(state_name, "Following Lane") == 0)
+		if (strcmp(mission_name, "Follow Lane") == 0)
 			return 0;
-		else if(strcmp(state_name, "Parking") == 0)
+		else if(strcmp(mission_name, "Park") == 0)
 			return 1;
-		else if(strcmp(state_name, "Human Intervention") == 0)
+		else if(strcmp(mission_name, "Human Intervention") == 0)
 			return 2;
 
 		return -1;
@@ -1473,8 +1473,8 @@ namespace View
 		this->behavior_selector_active = 1;
 		this->goal_source = msg->goal_source;
 
-		if((int) msg->following_lane_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboFollowLane)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboFollowLane, msg->following_lane_algorithm);
+		if((int) msg->following_lane_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboFollowRoute)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboFollowRoute, msg->following_lane_algorithm);
 
 		if((int) msg->parking_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboParking)))
 			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboParking, msg->parking_algorithm);
@@ -1487,8 +1487,8 @@ namespace View
 //		else
 //			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 0);
 
-		if((int) msg->state != get_state_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->state);
+		if((int) msg->mission != get_mission_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->mission);
 
 		static char buffer[2048];
 		strcpy(buffer, "Low Level State: ");

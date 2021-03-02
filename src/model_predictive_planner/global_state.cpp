@@ -65,7 +65,7 @@ bool GlobalState::ford_escape_online = false;
 carmen_ford_escape_status_message GlobalState::ford_escape_status;
 
 int GlobalState::current_algorithm = CARMEN_BEHAVIOR_SELECTOR_FRENET;
-int GlobalState::behavior_selector_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
+int GlobalState::behavior_selector_mission = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 int GlobalState::behavior_selector_low_level_state = Initializing;
 
 int GlobalState::publish_tree = 1;

@@ -273,7 +273,7 @@ extern "C" G_MODULE_EXPORT
 void on_comboState_changed(GtkWidget *widget, GtkGui* data);
 
 extern "C" G_MODULE_EXPORT
-void on_comboFollowLane_changed(GtkWidget *widget, GtkGui* data);
+void on_comboFollowRoute_changed(GtkWidget *widget, GtkGui* data);
 
 extern "C" G_MODULE_EXPORT
 void on_comboParking_changed(GtkWidget *widget, GtkGui* data);

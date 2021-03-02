@@ -13,7 +13,7 @@ carmen_motion_planner_path_message path;
 int autonomous_status = 0;
 
 carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_GRADIENT;
-static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
+static carmen_behavior_selector_mission_t current_mission = BEHAVIOR_SELECTOR_PARK;
 double min_delta_d = INTMAX_MAX;
 int replan = 1;
 
@@ -732,7 +732,7 @@ motion_planning_obstacle_avoiding_handler()
 	carmen_ackerman_traj_point_t robot_position;
 	static int already_planning = 0;
 
-	if (current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT || current_state == BEHAVIOR_SELECTOR_PARKING)
+	if (current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT || current_mission == BEHAVIOR_SELECTOR_PARK)
 		return;
 
 	if (already_planning)
@@ -848,10 +848,10 @@ generate_next_motion_command(void)
 		return;
 
 	waypoint = g_robot_position;
-	if (current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+	if (current_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 		waypoint_status = next_waypoint(&waypoint, &waypoint_index);
 
-	if (current_state == BEHAVIOR_SELECTOR_PARKING)
+	if (current_mission == BEHAVIOR_SELECTOR_PARK)
 		waypoint_status = next_waypoint_astar(&waypoint);
 
 	if (waypoint_status > 0) /* Goal reached? */
@@ -868,10 +868,10 @@ generate_next_motion_command(void)
 		return;
 	}
 
-	if (current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+	if (current_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 		send_trajectory_to_robot(path.path + waypoint_index, path.path_size - waypoint_index);
 
-	if (current_state == BEHAVIOR_SELECTOR_PARKING)
+	if (current_mission == BEHAVIOR_SELECTOR_PARK)
 		publish_astar_path(path.path + waypoint_index, path.path_size - waypoint_index, g_robot_position);
 	//teste_stop(0.1, 2.0);
 
@@ -931,10 +931,10 @@ motion_planner_stop()
 
 
 void
-motion_planner_set_algorithm(carmen_behavior_selector_algorithm_t new_algorithm, carmen_behavior_selector_state_t new_state)
+motion_planner_set_algorithm(carmen_behavior_selector_algorithm_t new_algorithm, carmen_behavior_selector_mission_t new_mission)
 {
 	current_algorithm = new_algorithm;
-	current_state = new_state;
+	current_mission = new_mission;
 }
 
 
