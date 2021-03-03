@@ -318,7 +318,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
-	GlobalState::behavior_selector_state = msg->state;
+	GlobalState::behavior_selector_mission = msg->mission;
 	GlobalState::current_algorithm = msg->algorithm;
 }
 

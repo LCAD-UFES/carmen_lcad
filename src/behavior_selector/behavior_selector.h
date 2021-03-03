@@ -76,9 +76,9 @@ extern "C" {
 
 	void behavior_selector_publish_periodic_messages();
 
-	void behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state);
+	void behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_mission_t mission);
 
-	int behavior_selector_set_state(carmen_behavior_selector_state_t state);
+	int behavior_selector_set_mission(carmen_behavior_selector_mission_t mission);
 
 	int behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source);
 
@@ -97,10 +97,10 @@ extern "C" {
 
 	carmen_behavior_selector_algorithm_t get_current_algorithm();
 
-	void behavior_selector_get_full_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
+	void behavior_selector_get_full_state(carmen_behavior_selector_mission_t *current_mission_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
 			carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out);
 
-	int behavior_selector_get_state();
+	int behavior_selector_get_mission();
 
 	carmen_ackerman_traj_point_t *behavior_selector_get_goal_list(int *goal_list_size_out);
 	int *behavior_selector_get_goal_type();

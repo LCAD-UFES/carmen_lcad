@@ -49,7 +49,7 @@ def signed_direction(a, b):
     return 1 if delta_xy[0] >= -0.01 else -1
 
 
-def new_get_indices_of_sampled_data(data, min_distance, max_rotation=math.pi):
+def new_get_indices_of_sampled_data(data, min_distance, max_rotation=math.pi/8):
     last = None
     indices = []
     for i in range(len(data)):

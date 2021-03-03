@@ -1429,7 +1429,7 @@ Ackerman::get_env_cost(const Robot_State robot_state)
 {
 	static double env_cost_weight = 1.0;
 
-	if (GlobalState::behavior_selector_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
+	if (GlobalState::behavior_selector_mission == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 	{
 		return (0.5 * Lane_Cost_Function::get_cost(robot_state) + 0.5 * Obstacle_Cost_Function2::get_cost(robot_state.pose, GlobalState::cost_map)) * env_cost_weight;
 	}

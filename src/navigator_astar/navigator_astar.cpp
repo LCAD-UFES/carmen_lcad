@@ -16,7 +16,7 @@ static carmen_robot_ackerman_config_t robot_config;
 static carmen_navigator_config_t nav_config;
 
 static carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_A_STAR;
-carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
+carmen_behavior_selector_mission_t current_mission = BEHAVIOR_SELECTOR_PARK;
 int steering_model = 1;
 MessageControl messageControl;
 
@@ -239,7 +239,7 @@ state_handler(carmen_behavior_selector_state_message *msg)
 {
 //	static carmen_behavior_selector_goal_source_t goal_source = CARMEN_BEHAVIOR_SELECTOR_USER_GOAL;
 	current_algorithm = msg->algorithm;
-	current_state = msg->state;
+	current_mission = msg->mission;
 
 //	if (goal_source != msg->goal_source)
 //	{

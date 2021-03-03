@@ -25,7 +25,7 @@ void motion_planner_set_odometry(double v, double phi);
 void motion_planner_set_path(carmen_motion_planner_path_message *msg);
 void motion_planner_go();
 void motion_planner_stop();
-void motion_planner_set_algorithm(carmen_behavior_selector_algorithm_t new_algorithm, carmen_behavior_selector_state_t new_state);
+void motion_planner_set_algorithm(carmen_behavior_selector_algorithm_t new_algorithm, carmen_behavior_selector_mission_t new_mission);
 int motion_planner_read_parameters(int argc, char **argv);
 carmen_navigator_ackerman_plan_message build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands);
 
