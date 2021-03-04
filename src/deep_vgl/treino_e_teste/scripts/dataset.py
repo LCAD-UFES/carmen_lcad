@@ -13,16 +13,30 @@ def base_datasetname(dir, year_base, year_curr, offset_base, offset_curr):
 def curr_datasetname(dir, year_base, year_curr, offset_base, offset_curr):
     return dir + "livepos-{0}-{1}-{2}m-{3}m.txt".format(year_base, year_curr, offset_base, offset_curr)
 
+def normalize_theta(theta):
+    ret = 0
+    if (theta >= -math.pi) and (theta < math.pi) :
+        ret = theta
+    multiplier = (int)(theta / (2*math.pi))
+    ret = theta - multiplier*2*math.pi
+    if (ret >= math.pi):
+        ret -= 2*math.pi
+    if (ret < -math.pi):
+        ret += 2*math.pi
+    return ret
+
+
 def new_closest_point(curr_pose, base_poses, base_offset):
     nearest_index = -1
     smallest_distance = base_offset
     shortest_interval = np.float('inf')
     for j in range(len(base_poses)):
-        distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
+        distance = LA.norm( normalize_theta( curr_pose[[0,1]] ) - normalize_theta( base_poses[j][[0,1]] ) )
         # remove pontos na contra-mao
         orientation = np.abs(curr_pose[2] - base_poses[j][2])
-        if (orientation > (math.pi*3/2)):
-            orientation = np.abs(2*math.pi - orientation)
+        orientation = normalize_theta(orientation)
+        # if (orientation > (math.pi*3/2)):
+        #     orientation = np.abs(2*math.pi - orientation)
         if (orientation <= math.pi/2) and (distance >= 0) and (distance <= smallest_distance):
             smallest_distance = distance
             nearest_index = j
