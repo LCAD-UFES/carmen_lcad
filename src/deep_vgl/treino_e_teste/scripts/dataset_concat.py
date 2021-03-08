@@ -71,8 +71,8 @@ if __name__ == '__main__':
     input_dir = args.images_path  #'/dados/ufes/'
     output_dir = args.output_dir #'/dados/ufes_wnn/'
 
-    offset_base = int(args.base_offset)
-    offset_curr = int(args.live_offset)
+    offset_base = float(args.base_offset)
+    offset_curr = float(args.live_offset)
 
     print 'running script with those arguments:\n\timages path:',input_dir,'\n\toutput directory:',output_dir,'\n\toffset base:',offset_base,'\n\toffset live:',offset_curr
 

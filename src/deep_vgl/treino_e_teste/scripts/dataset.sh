@@ -19,10 +19,10 @@ python $SCRIPTPATH/dataset_concat.py -i $image_path -o $output_path -b $base_off
 
 train=`ls ${output_path}*-TRAIN-*`
 
-if [[ ! -d $image_path/train/  || ! -f $image_path/train/log.txt ]]; then
+if [[ ! -d ${image_path}train/  || ! -f ${image_path}train/log.txt ]]; then
 
     echo "generating darknet image names structure for train"
-    $SCRIPTPATH/gera_dataset_darknet.sh $train $image_path/train
+    $SCRIPTPATH/gera_dataset_darknet.sh $train ${image_path}train
 
     val=`cat $image_path/train/log.txt | wc -l`
     if [ $val -gt 0 ]; then

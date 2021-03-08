@@ -29,15 +29,15 @@ def normalize_theta(theta):
 def new_closest_point(curr_pose, base_poses, base_offset):
     nearest_index = -1
     smallest_distance = base_offset
-    shortest_interval = np.float('inf')
     for j in range(len(base_poses)):
-        distance = LA.norm( normalize_theta( curr_pose[[0,1]] ) - normalize_theta( base_poses[j][[0,1]] ) )
+        distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
         # remove pontos na contra-mao
-        orientation = np.abs(curr_pose[2] - base_poses[j][2])
-        orientation = normalize_theta(orientation)
+        # orientation = np.abs(normalize_theta(curr_pose[2]) - normalize_theta(base_poses[j][2]))
+        # orientation = normalize_theta(orientation)
         # if (orientation > (math.pi*3/2)):
         #     orientation = np.abs(2*math.pi - orientation)
-        if (orientation <= math.pi/2) and (distance >= 0) and (distance <= smallest_distance):
+        # if (orientation <= math.pi/2) and 
+        if (distance >= 0) and (distance <= smallest_distance):
             smallest_distance = distance
             nearest_index = j
     return nearest_index
@@ -143,11 +143,11 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
 
     data_base_pose_2d = np.dstack([data_base['x'], data_base['y'], data_base['rz']])[0]  # x, y, yaw
     data_curr_pose_2d = np.dstack([data_curr['x'], data_curr['y'], data_curr['rz']])[0]  # x, y, yaw
-    curr_start, base_start = find_start_point(data_curr_pose_2d, data_base_pose_2d)
+    # curr_start, base_start = find_start_point(data_curr_pose_2d, data_base_pose_2d)
     # data_curr_time = build_spacial_index(data_curr_pose_2d, curr_start)
     # data_base_time = build_spacial_index(data_base_pose_2d, base_start)
     for index_curr in range(len(data_curr)):
-        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, offset_base*0.6 )
+        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, offset_base )
         # index_base = find_closest_in_space(data_curr_pose_2d[index_curr], data_base_pose_2d,
         #                                    data_curr_time[index_curr], data_base_time,
         #                                    offset_base if index_curr == 0 else 5.0)
@@ -222,8 +222,8 @@ if __name__ == '__main__':
     input_dir = args.images_path  #'/dados/ufes/'
     output_dir = args.output_dir #'/dados/ufes_wnn/'
 
-    offset_base = int(args.base_offset)
-    offset_curr = int(args.live_offset)
+    offset_base = float(args.base_offset)
+    offset_curr = float(args.live_offset)
 
     print 'running script with those arguments:\n\timages path:',input_dir,'\n\toutput directory:',output_dir,'\n\toffset base:',offset_base,'\n\toffset live:',offset_curr
 
