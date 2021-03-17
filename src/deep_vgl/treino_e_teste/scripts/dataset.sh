@@ -34,5 +34,5 @@ fi
 
 cd $image_path
 echo "generating darknet image list for train"
-find `pwd`/train -name \*.png > $image_path/ordered.list
+ls `pwd`/train/*.png > $image_path/ordered.list
 shuf $image_path/ordered.list > $image_path/train.list
