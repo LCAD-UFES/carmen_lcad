@@ -11,6 +11,6 @@ void*
 load_yolo_network(char *cfg, char *weights, int clear);
 
 std::vector<bbox_t>
-run_YOLO(unsigned char *data, int c, int w, int h, void *net_config, char **classes_names, float threshold, float hier_thresh);
+run_YOLO(unsigned char *data, int w, int h, float threshold);
 
 #endif

@@ -278,7 +278,7 @@ LIB_API std::vector<bbox_t> Detector::detect(image_t img, float thresh, bool use
 
     net.wait_stream = wait_stream;    // 1 - wait CUDA-stream, 0 - not to wait
 #endif
-    std::cout << "net.gpu_index = " << net.gpu_index << std::endl;
+    // std::cout << "net.gpu_index = " << net.gpu_index << std::endl;
 
     image im;
     im.c = img.c;
@@ -295,9 +295,7 @@ LIB_API std::vector<bbox_t> Detector::detect(image_t img, float thresh, bool use
     else
         sized = resize_image(im, net.w, net.h);
     
-    std::cout << "teste0 " << std::endl;
     network_predict(detector_gpu.net, sized.data);
-    std::cout << "teste " << std::endl;
     // if (use_mean) {
         // memcpy(detector_gpu.predictions[detector_gpu.demo_index], prediction, l.outputs * sizeof(float));
         // mean_arrays(detector_gpu.predictions, NFRAMES, l.outputs, detector_gpu.avg);
@@ -339,7 +337,7 @@ LIB_API std::vector<bbox_t> Detector::detect(image_t img, float thresh, bool use
             bbox_vec.push_back(bbox);
         }
     }
-    bbox_vec = tracking_id(bbox_vec);
+    bbox_vec = tracking_id(bbox_vec); // For tracking objects. Included by Piumbini
 
     free_detections(dets, nboxes);
     if(sized.data)
