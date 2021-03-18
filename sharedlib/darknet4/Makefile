@@ -1,18 +1,28 @@
+include $(CARMEN_HOME)/src/Makefile.conf
+
+MODULE_NAME = DARKNET
+MODULE_COMMENT = Darknet Neural Network Framework YoloV4 version 4
+
+ifneq (, $(shell which nvcc))
 GPU=1
-CUDNN=1
+CUDNN=0
 CUDNN_HALF=0
-OPENCV=1
+else
+GPU=0
+CUDNN=0
+CUDNN_HALF=0
+endif
+
+OPENCV=0
 AVX=0
 OPENMP=0
 LIBSO=1
-ZED_CAMERA=0
-ZED_CAMERA_v2_8=0
+ZED_CAMERA=0 # set ZED_CAMERA=1 to enable ZED SDK 3.0 and above
+ZED_CAMERA_v2_8=0 # set ZED_CAMERA_v2_8=1 to enable ZED SDK 2.X
 
 # set GPU=1 and CUDNN=1 to speedup on GPU
 # set CUDNN_HALF=1 to further speedup 3 x times (Mixed-precision on Tensor Cores) GPU: Volta, Xavier, Turing and higher
 # set AVX=1 and OPENMP=1 to speedup on CPU (if error occurs then set AVX=0)
-# set ZED_CAMERA=1 to enable ZED SDK 3.0 and above
-# set ZED_CAMERA_v2_8=1 to enable ZED SDK 2.X
 
 USE_CPP=0
 DEBUG=0
@@ -63,8 +73,8 @@ EXEC=darknet
 OBJDIR=./obj/
 
 ifeq ($(LIBSO), 1)
-LIBNAMESO=libdarknet.so
-APPNAMESO=uselib
+LIBNAMESO=lib/libdarknet4.so
+#APPNAMESO=lib/libdarknet4.so
 endif
 
 ifeq ($(USE_CPP), 1)
@@ -105,11 +115,7 @@ COMMON+= `pkg-config --cflags opencv4 2> /dev/null || pkg-config --cflags opencv
 endif
 
 ifeq ($(OPENMP), 1)
-    ifeq ($(OS),Darwin) #MAC
-	    CFLAGS+= -Xpreprocessor -fopenmp
-	else
-		CFLAGS+= -fopenmp
-	endif
+CFLAGS+= -fopenmp
 LDFLAGS+= -lgomp
 endif
 
@@ -160,16 +166,21 @@ endif
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
-all: $(OBJDIR) backup results setchmod $(EXEC) $(LIBNAMESO) $(APPNAMESO)
+PUBLIC_INCLUDES = bbox.h carmen_darknet_interface.hpp
+
+PUBLIC_LIBRARIES = libdarknet4.a
+
+all: $(OBJDIR) LIBDIR $(EXEC) carmen $(LIBNAMESO) libdarknet4.a #$(APPNAMESO)
 
 ifeq ($(LIBSO), 1)
 CFLAGS+= -fPIC
 
-$(LIBNAMESO): $(OBJDIR) $(OBJS) include/yolo_v2_class.hpp src/yolo_v2_class.cpp
-	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
+$(LIBNAMESO): $(OBJDIR) $(OBJS) obj/carmen_darknet_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
+	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
 
-$(APPNAMESO): $(LIBNAMESO) include/yolo_v2_class.hpp src/yolo_console_dll.cpp
-	$(CPP) -std=c++11 $(COMMON) $(CFLAGS) -o $@ src/yolo_console_dll.cpp $(LDFLAGS) -L ./ -l:$(LIBNAMESO)
+# $(APPNAMESO): $(LIBNAMESO) obj/carmen_darknet_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
+# 	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
+
 endif
 
 $(EXEC): $(OBJS)
@@ -186,14 +197,21 @@ $(OBJDIR)%.o: %.cu $(DEPS)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
-backup:
-	mkdir -p backup
-results:
-	mkdir -p results
-setchmod:
-	chmod +x *.sh
+LIBDIR:
+	mkdir -p lib
 
-.PHONY: clean
+libdarknet4.a: $(OBJDIR) $(OBJS) obj/carmen_darknet_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
+	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
 
-clean:
-	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(APPNAMESO)
+carmen: src/carmen_darknet_interface.cpp carmen_darknet_interface.hpp include/yolo_v2_class.hpp $(DEPS)
+	$(CPP) -std=c++11 $(COMMON) $(CFLAGS) -c $< -o $@
+
+clean: clean_darknet
+
+clean_darknet:
+	rm -rf lib result $(OBJS) $(OBJDIR) $(EXEC) $(LIBNAMESO)
+
+download:
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/17Aoet5rA1BlLVEuEAnIdps3tfdDVIEel/view?usp=sharing yolov4.weights
+
+include $(CARMEN_HOME)/src/Makefile.rules
