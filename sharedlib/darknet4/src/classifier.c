@@ -176,7 +176,7 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 
         int calc_topk_for_each = iter_topk + 2 * train_images_num / (net.batch * net.subdivisions);  // calculate TOPk for each 2 Epochs
         calc_topk_for_each = fmax(calc_topk_for_each, net.burn_in);
-        calc_topk_for_each = fmax(calc_topk_for_each, 100);
+        calc_topk_for_each = fmax(calc_topk_for_each, 200);
         if (i % 10 == 0) {
             if (calc_topk) {
                 fprintf(stderr, "\n (next TOP%d calculation at %d iterations) ", topk_data, calc_topk_for_each);
