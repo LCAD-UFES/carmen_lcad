@@ -32,6 +32,7 @@
 
 // #include "message_interpolation.cpp"
 #include "dbscan.h"
+#include "movable_object.h"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -88,23 +89,6 @@ int active_cameras;
 using namespace std;
 using namespace cv;
 
-//Movable object related funcitons and structs --------
-#define P_BUFF_SIZE 10
-
-struct movable_object
-{
-	int track_id;
-	double velocity;
-	double orientation;
-	unsigned int x, y, w, h;
-	double last_timestamp;
-	bool active;
-	double timestamp[P_BUFF_SIZE];
-	double x_world[P_BUFF_SIZE];
-	double y_world[P_BUFF_SIZE];
-	unsigned int circular_idx;// should be changed only for update_world_position function
-};
-
 vector<movable_object> movable_object_tracks;
 
 carmen_velodyne_partial_scan_message
@@ -147,178 +131,6 @@ find_sick_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necess
 
     sick = sick_vector[minTimestampIndex];
     return (sick);
-}
-
-double
-no_out_mean(vector<double> values)// calculates the mean value removing outlayers(values > 1.5*std_dev)
-{
-	if (values.size() == 0)
-		return 0.0;
-	double mean = 0;
-	for (unsigned int i=0; i<values.size(); i++)
-		mean += values[i];
-	mean /= values.size();
-	double std = 0;
-	for (unsigned int i=0; i<values.size(); i++)
-		std += abs(mean-values[i]);
-	std /= values.size();
-	double sum = 0;
-	int elements = 0;
-	for (unsigned int i=0; i<values.size(); i++)
-	{
-		if (abs(mean-values[i]) < 1.5*std) //change outlayer treshold by changing this
-		{
-			sum += values[i];
-			elements++;
-		}
-	}
-	if (elements == 0)
-		return 0.0;
-	return sum/elements;
-}
-
-
-double slope_angle(const vector<double>& x, const vector<double>& y)
-{
-	if (x.size() < 2)
-		return 0.0;
-
-    double n = x.size();
-
-    double avgX = accumulate(x.begin(), x.end(), 0.0) / n;
-    double avgY = accumulate(y.begin(), y.end(), 0.0) / n;
-
-    double numerator = 0.0;
-    double denominator = 0.0;
-
-    for(int i=0; i<n; ++i){
-        numerator += (x[i] - avgX) * (y[i] - avgY);
-        denominator += (x[i] - avgX) * (x[i] - avgX);
-    }
-
-    if(denominator == 0){
-        return 0.0;
-    }
-    return atan2(numerator,denominator);
-}
-
-void 
-update_world_position(movable_object* p, double new_x, double new_y, double new_timestamp)
-{
-	p->circular_idx = (p->circular_idx + 1) % P_BUFF_SIZE;
-	p->timestamp[p->circular_idx] = new_timestamp;
-	p->x_world[p->circular_idx] = new_x;
-	p->y_world[p->circular_idx] = new_y;
-
-	p->velocity = 0.0;
-	p->orientation = 0.0;
-
-	vector<double> velx_vect;
-	vector<double> vely_vect;
-	vector<double> valid_x;
-	vector<double> valid_y;
-	vector<double> ori;
-
-	int i = 0;
-	for (i = 0; i < P_BUFF_SIZE-1; i++)
-	{
-		int idx = (p->circular_idx+P_BUFF_SIZE-i) % P_BUFF_SIZE;
-		int prev_idx = (p->circular_idx+P_BUFF_SIZE-i-1) % P_BUFF_SIZE;
-		if (p->x_world[prev_idx] == -999.0 && p->y_world[prev_idx] == -999.0)
-			break;
-		double delta_x = p->x_world[idx]-p->x_world[prev_idx];
-		double delta_y = p->y_world[idx]-p->y_world[prev_idx];
-		double delta_t = p->timestamp[idx]-p->timestamp[prev_idx];
-
-		//printf("DELTAS: %f ; %f ; %f --- Vel = %f\n",delta_x, delta_y, delta_t,new_vel);
-		velx_vect.push_back(delta_x/delta_t);
-		vely_vect.push_back(delta_y/delta_t);
-		valid_x.push_back(p->x_world[idx]);
-		valid_y.push_back(p->y_world[idx]);
-		ori.push_back(atan2(delta_y,delta_x));
-	}
-
-	double slope = carmen_normalize_theta(slope_angle(valid_x,valid_y));
-	double mean_ori = carmen_normalize_theta(no_out_mean(ori));
-	if (abs(carmen_normalize_theta(mean_ori-slope)) < abs(carmen_normalize_theta(mean_ori-slope-M_PI)))
-		p->orientation = slope;
-	else
-		p->orientation = carmen_normalize_theta(slope-M_PI);
-	double velx = no_out_mean(velx_vect);
-	double vely = no_out_mean(vely_vect);
-	p->velocity = sqrt(velx*velx+vely*vely);
-}
-
-void
-update_movable_object_bbox(movable_object* p,short* bbox_vector)
-{
-	p->x = bbox_vector[0];
-	p->y = bbox_vector[1];
-	p->w = bbox_vector[2];
-	p->h = bbox_vector[3];
-
-	p->active = true;
-}
-
-double
-get_movable_object_x(movable_object p){
-	return p.x_world[p.circular_idx];
-}
-
-double
-get_movable_object_y(movable_object p){
-	return p.y_world[p.circular_idx];
-}
-
-
-movable_object create_movable_object(int t_id)
-{
-	movable_object p;
-
-	p.circular_idx = P_BUFF_SIZE-1;
-	p.track_id = t_id;
-
-	for(int i = 0; i<P_BUFF_SIZE; i++)
-	{
-		p.timestamp[i] = 0;
-		p.x_world[i] = -999.0;
-		p.y_world[i] = -999.0;
-	}
-	p.velocity = 0.0;
-	p.orientation = 0.0;
-	p.active = true;
-	p.last_timestamp = 0;
-	return p;
-}
-
-void
-update_movable_objects(short* movable_object_python)
-{
-	for (unsigned int i=0; i<movable_object_tracks.size(); i++)
-	{
-		movable_object_tracks[i].active=false;
-	}
-	for (int i=1; i<=movable_object_python[0]*5; i+=5)
-	{
-		int p_id = (movable_object_python+i)[4];
-		unsigned int j=0;
-		for(; j<movable_object_tracks.size(); j++)
-		{
-			if(movable_object_tracks[j].track_id == p_id)
-			{
-				update_movable_object_bbox(&movable_object_tracks[j],movable_object_python+i);
-				movable_object_tracks[j].last_timestamp = carmen_get_time();
-				break;
-			}
-		}
-		if (j == movable_object_tracks.size())
-		{
-			movable_object new_p = create_movable_object(p_id);
-			update_movable_object_bbox(&new_p,movable_object_python+i);
-			new_p.last_timestamp = carmen_get_time();
-			movable_object_tracks.push_back(new_p);
-		}
-	}
 }
 
 void
@@ -543,7 +355,7 @@ show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> 
     sprintf(info, "FPS %.2f", fps);
     putText(image, info, Point(10, 30), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 
-	if (dist_to_movable_object_track < 200)
+	if (dist_to_movable_object_track < 800)
 	{
 		sprintf(info, "DIST %.2f", dist_to_movable_object_track);
 		putText(image, info, Point(10, 45), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
@@ -564,7 +376,7 @@ show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> 
 		
     	if (movable_object[i].active)
     	{
-			sprintf(info, "%.2f %d Person", movable_object[i].velocity, movable_object[i].track_id);
+			sprintf(info, "%.2f %d ", movable_object[i].velocity, movable_object[i].track_id, movable_object[i].obj_id);
 
 			rectangle(image, Point(movable_object[i].x, movable_object[i].y), Point((movable_object[i].x + movable_object[i].w), (movable_object[i].y + movable_object[i].h)),
 							Scalar(255, 255, 0), 4);
@@ -731,21 +543,6 @@ intersectionOverUnion(bbox_t box1, bbox_t box2)
 void
 publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg);
 
-
-int
-find_movable_object_greater_id()
-{
-	int greater_id = 0;
-
-	for (unsigned int i = 0; i < movable_object_tracks.size(); i++)
-	{
-		if (greater_id < movable_object_tracks[i].track_id)
-			greater_id = movable_object_tracks[i].track_id;
-	}
-	return (greater_id + 1);
-}
-
-
 void
 insert_missing_movable_objects_in_the_track(vector<bbox_t> predictions)
 {
@@ -763,17 +560,20 @@ insert_missing_movable_objects_in_the_track(vector<bbox_t> predictions)
 			p.y = movable_object_tracks[j].y;
 			p.w = movable_object_tracks[j].w;
 			p.h = movable_object_tracks[j].h;
+			p.obj_id = movable_object_tracks[j].obj_id;
+			p.track_id = movable_object_tracks[j].track_id;
 
 			if (intersectionOverUnion(predictions[i], p) > 0.1)
 				break;
 		}
 		if (j == movable_object_tracks_size)
 		{
-			movable_object new_p = create_movable_object(find_movable_object_greater_id());
+			movable_object new_p = create_movable_object(predictions[i].track_id);
 			new_p.x = predictions[i].x;
 			new_p.y = predictions[i].y;
 			new_p.w = predictions[i].w;
 			new_p.h = predictions[i].h;
+			new_p.obj_id = predictions[i].obj_id;
 			new_p.last_timestamp = carmen_get_time();
 			movable_object_tracks.push_back(new_p);
 		}
@@ -1063,26 +863,24 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 	// else
 	// 	return;
 
-	// Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
-	
+	/* YOLO with track_id*/
 	predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, 0.45);
-	for (unsigned int a = 0; a < predictions.size() ; a++)
-		cout << "track_id[" << a << "]=" << predictions[a].track_id << endl;
+	/* YOLO */
 	predictions = filter_predictions_of_interest(predictions);
 
-	// insert_missing_movable_objects_in_the_track(predictions);
-	// cout << "teste" << endl;	
+	insert_missing_movable_objects_in_the_track(predictions);
+	
 	points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
 				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
 	//	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_params, &transformer_sick,
 	//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-	// cout << "teste2" << endl;
+	
 	points_inside_bbox = get_points_inside_bounding_boxes(movable_object_tracks, points); 
-	// cout << "teste3" << endl;
+	
 	filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
-	// cout << "teste4" << endl;
+	
 	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
 	for (unsigned int i = 0; i < positions.size(); i++)
 	{
@@ -1093,19 +891,20 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
 			update_world_position(&movable_object_tracks[i], positions[i].cartesian_x,positions[i].cartesian_y, timestamp);
-			//printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
-			//		movable_object_tracks[i].track_id, movable_object_tracks[i].velocity,movable_object_tracks[i].orientation,abs(movable_object_tracks[i].orientation - globalpos_msg->globalpos.theta));
+			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
+					movable_object_tracks[i].track_id, movable_object_tracks[i].velocity,movable_object_tracks[i].orientation,abs(movable_object_tracks[i].orientation - globalpos_msg->globalpos.theta));
 		}
 	}
-	// clean_movable_objects(3.0);
-	// cout << "teste5" << endl;
+	clean_movable_objects(3.0);
+
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(movable_object_tracks, filtered_points);
+
 	publish_moving_objects_message(&msg);
-	// cout << "teste6" << endl;
+
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	show_detections(open_cv_image, movable_object_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_movable_object_track, camera_index);
-	// cout << "teste7" << endl;
+	
 	return 0;
 }
 
