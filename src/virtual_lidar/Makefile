@@ -20,14 +20,15 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/loc
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
 
 #YOLO
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet3/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet4
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
-IFLAGS += -I$(CARMEN_HOME)/src/mapper_datmo
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
-LFLAGS += -L$(CARMEN_HOME)/src/mapper_datmo
+
 
 #OPENCV
 IFLAGS += -DUSE_OPENCV
@@ -39,7 +40,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
-	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet		\
+	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet4		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface \
 	-lmapper -lmapper_interface
@@ -69,7 +70,7 @@ PUBLIC_LIBRARIES = libvirtual_lidar.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = virtual_lidar 
-TARGETS = darknet libprob_models.a mapper_datmo virtual_lidar dbscan
+TARGETS = darknet libprob_models.a virtual_lidar dbscan
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -88,16 +89,11 @@ libvirtual_lidar.a:	virtual_lidar.o
 virtual_lidar: virtual_lidar.o dbscan.o
 
 # rules
-
-mapper_datmo: 
-	$(MAKE) -C $(CARMEN_HOME)/src/mapper_datmo
-
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
 
 darknet:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet3
-
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/

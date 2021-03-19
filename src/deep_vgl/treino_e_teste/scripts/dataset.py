@@ -135,6 +135,7 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
     # data_base = data_base[:data_base_loop]
     # data_curr = data_curr[:data_curr_loop]
 
+    # prepara o dataset base com espacamento a cada offset_base
     data_base_index = new_get_indices_of_sampled_data(data_base, offset_base)
     data_base = data_base[data_base_index]
     data_base_label = np.arange(data_base.shape[0])
@@ -147,7 +148,8 @@ def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, dat
     # data_curr_time = build_spacial_index(data_curr_pose_2d, curr_start)
     # data_base_time = build_spacial_index(data_base_pose_2d, base_start)
     for index_curr in range(len(data_curr)):
-        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, offset_base )
+        # desbloqueando qualquer distancia ate 1.6x o offset_base
+        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, float(offset_base*1.6) )
         # index_base = find_closest_in_space(data_curr_pose_2d[index_curr], data_base_pose_2d,
         #                                    data_curr_time[index_curr], data_base_time,
         #                                    offset_base if index_curr == 0 else 5.0)
