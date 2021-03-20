@@ -62,7 +62,7 @@ static carmen_localize_ackerman_globalpos_message globalpos;
 static int robot_initialized = 0;
 
 carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_A_STAR;
-carmen_behavior_selector_mission_t current_mission = BEHAVIOR_SELECTOR_PARK;
+carmen_behavior_selector_task_t current_task = BEHAVIOR_SELECTOR_PARK;
 carmen_behavior_selector_goal_source_t goal_source = -1;
 
 
@@ -103,7 +103,7 @@ static void
 state_handler(carmen_behavior_selector_state_message *msg)
 {
 	current_algorithm = msg->algorithm;
-	current_mission = msg->mission;
+	current_task = msg->task;
 
 	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_A_STAR && current_algorithm != CARMEN_BEHAVIOR_SELECTOR_GRADIENT)
 		return;

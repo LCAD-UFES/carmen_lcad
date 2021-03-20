@@ -56,26 +56,26 @@ carmen_behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t 
 
 }
 
-void carmen_behavior_selector_set_mission(carmen_behavior_selector_mission_t mission)
+void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
-	carmen_behavior_selector_set_mission_message msg;
+	carmen_behavior_selector_set_task_message msg;
 
 	static int initialized = 0;
 
 	if (!initialized)
 	{
-		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_NAME, IPC_VARIABLE_LENGTH, CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_FMT);
-		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_NAME);
+		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME, IPC_VARIABLE_LENGTH, CARMEN_BEHAVIOR_SELECTOR_SET_TASK_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME);
 		initialized = 1;
 	}
 
-	msg.mission = mission;
+	msg.task = task;
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_NAME, &msg);
-	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_NAME);
+	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME, &msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME);
 }
 
 void carmen_behavior_selector_add_goal(carmen_point_t goal)
@@ -152,7 +152,7 @@ void carmen_behavior_selector_remove_goal()
 }
 
 void
-carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm,  carmen_behavior_selector_mission_t mission)
+carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm,  carmen_behavior_selector_task_t task)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_behavior_selector_set_algorithm_message msg;
@@ -167,7 +167,7 @@ carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algo
 	}
 
 	msg.algorithm = algorithm;
-	msg.mission = mission;
+	msg.task = task;
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 

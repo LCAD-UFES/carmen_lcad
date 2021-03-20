@@ -1455,13 +1455,13 @@ namespace View
 
 
 	int
-	GtkGui::get_mission_code(char *mission_name)
+	GtkGui::get_task_code(char *task_name)
 	{
-		if (strcmp(mission_name, "Follow Lane") == 0)
+		if (strcmp(task_name, "Follow Lane") == 0)
 			return 0;
-		else if(strcmp(mission_name, "Park") == 0)
+		else if(strcmp(task_name, "Park") == 0)
 			return 1;
-		else if(strcmp(mission_name, "Human Intervention") == 0)
+		else if(strcmp(task_name, "Human Intervention") == 0)
 			return 2;
 
 		return -1;
@@ -1487,8 +1487,8 @@ namespace View
 //		else
 //			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 0);
 
-		if((int) msg->mission != get_mission_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->mission);
+		if((int) msg->task != get_task_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->task);
 
 		static char buffer[2048];
 		strcpy(buffer, "Low Level State: ");

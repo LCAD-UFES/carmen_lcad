@@ -114,7 +114,7 @@ signal_handler(int signo __attribute__ ((unused)) )
 static void
 current_algorithm_handler(carmen_behavior_selector_state_message *msg)
 {
-	motion_planner_set_algorithm(msg->algorithm, msg->mission);
+	motion_planner_set_algorithm(msg->algorithm, msg->task);
 }
 
 

@@ -25,11 +25,11 @@ void carmen_behavior_selector_subscribe_goal_list_message(
 		carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how);
 
-void carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_mission_t mission);
+void carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task);
 
 void carmen_behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source);
 
-void carmen_behavior_selector_set_mission(carmen_behavior_selector_mission_t mission);
+void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task);
 
 void carmen_behavior_selector_add_goal(carmen_point_t goal);
 

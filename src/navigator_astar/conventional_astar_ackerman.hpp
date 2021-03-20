@@ -66,7 +66,7 @@ public:
 		astar_queue = NULL;
 	}
 
-	carmen_behavior_selector_mission_t current_mission;//TODO extern
+	carmen_behavior_selector_task_t current_task;//TODO extern
 	carmen_map_t *carmen_planner_map;//TODO extern
 	carmen_navigator_ackerman_astar_t astar_config;//TODO extern
 

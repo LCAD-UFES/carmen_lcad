@@ -338,7 +338,7 @@ namespace View
 		void get_place_of_interest(char *new_place_of_interest);
 		void get_predefined_route(char *new_predefined_route);
 		void reset_predefined_route();
-		int get_mission_code(char *mission_name);
+		int get_task_code(char *task_name);
 		void save_to_image(GtkMapViewer *mapv);
 		void do_publish_map_view(GtkMapViewer *mapv);
 		double time_of_last_publish = 0.0;

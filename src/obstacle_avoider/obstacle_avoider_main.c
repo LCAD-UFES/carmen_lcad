@@ -27,7 +27,7 @@ static double robot_sensor_timeout;
 static double command_timeout;
 
 static carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_GRADIENT;
-static carmen_behavior_selector_mission_t current_mission = BEHAVIOR_SELECTOR_PARK;
+static carmen_behavior_selector_task_t current_task = BEHAVIOR_SELECTOR_PARK;
 
 static int use_truepos = 0;
 static int log_mode = 0;
@@ -401,7 +401,7 @@ static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
 	current_algorithm = msg->algorithm;
-	current_mission = msg->mission;
+	current_task = msg->task;
 }
 
 

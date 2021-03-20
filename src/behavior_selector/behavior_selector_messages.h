@@ -19,7 +19,7 @@ typedef enum
 	BEHAVIOR_SELECTOR_FOLLOW_ROUTE,
 	BEHAVIOR_SELECTOR_PARK,
 	BEHAVIOR_SELECTOR_HUMAN_INTERVENTION
-} carmen_behavior_selector_mission_t;
+} carmen_behavior_selector_task_t;
 
 
 typedef enum
@@ -115,7 +115,7 @@ typedef enum {
 
 typedef struct {
 	carmen_behavior_selector_algorithm_t algorithm;  // algoritmo que será usado na missao
-	carmen_behavior_selector_mission_t mission;
+	carmen_behavior_selector_task_t task;
 	double timestamp;
 	char *host;
 } carmen_behavior_selector_set_algorithm_message;
@@ -124,13 +124,13 @@ typedef struct {
 #define		CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_FMT		"{int, int, double, string}"
 
 typedef struct {
-	carmen_behavior_selector_mission_t mission;
+	carmen_behavior_selector_task_t task;
 	double timestamp;
 	char *host;
-} carmen_behavior_selector_set_mission_message;
+} carmen_behavior_selector_set_task_message;
 
-#define		CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_NAME		"carmen_behavior_selector_set_mission"
-#define		CARMEN_BEHAVIOR_SELECTOR_SET_MISSION_FMT		"{int, double, string}"
+#define		CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME		"carmen_behavior_selector_set_task"
+#define		CARMEN_BEHAVIOR_SELECTOR_SET_TASK_FMT		"{int, double, string}"
 
 typedef struct
 {
@@ -146,7 +146,7 @@ typedef struct
 typedef struct
 {
 	carmen_behavior_selector_algorithm_t algorithm;
-	carmen_behavior_selector_mission_t mission;
+	carmen_behavior_selector_task_t task;
 
 	carmen_behavior_selector_algorithm_t following_lane_algorithm;
 	carmen_behavior_selector_algorithm_t parking_algorithm;

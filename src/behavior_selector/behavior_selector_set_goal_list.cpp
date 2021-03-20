@@ -29,7 +29,7 @@ static int annotations[GOAL_LIST_SIZE];
 static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
 //static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARK;
-static carmen_behavior_selector_mission_t current_mission = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
+static carmen_behavior_selector_task_t current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
 static carmen_behavior_selector_algorithm_t following_lane_planner;
@@ -66,7 +66,7 @@ get_current_algorithm()
 {
 	carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER;
 
-	switch(current_mission)
+	switch(current_task)
 	{
 	case BEHAVIOR_SELECTOR_FOLLOW_ROUTE:
 		current_algorithm = following_lane_planner;
@@ -84,7 +84,7 @@ get_current_algorithm()
 
 
 void
-change_mission(int rddf_annotation)
+change_task(int rddf_annotation)
 {
 	if (current_goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
 		return;
@@ -92,15 +92,15 @@ change_mission(int rddf_annotation)
 	switch(rddf_annotation)
 	{
 	case RDDF_ANNOTATION_TYPE_NONE:
-		current_mission = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
+		current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 		break;
 
 	case RDDF_ANNOTATION_TYPE_END_POINT_AREA:
-		current_mission = BEHAVIOR_SELECTOR_PARK;
+		current_task = BEHAVIOR_SELECTOR_PARK;
 		break;
 
 	case RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION:
-		current_mission = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
+		current_task = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
 		carmen_navigator_ackerman_stop();
 		break;
 	}
@@ -422,22 +422,22 @@ clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int ideal_rddf_pos
 
 
 int
-behavior_selector_set_mission(carmen_behavior_selector_mission_t mission)
+behavior_selector_set_task(carmen_behavior_selector_task_t task)
 {
-	if (mission == current_mission)
+	if (task == current_task)
 		return (0);
 
-	current_mission = mission;
+	current_task = task;
 
 	return (1);
 }
 
 
 void
-behavior_selector_get_full_state(carmen_behavior_selector_mission_t *current_mission_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
+behavior_selector_get_full_state(carmen_behavior_selector_task_t *current_task_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
 		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out)
 {
-	*current_mission_out = current_mission;
+	*current_task_out = current_task;
 	*following_lane_planner_out = following_lane_planner;
 	*parking_planner_out = parking_planner;
 	*current_goal_source_out = current_goal_source;
@@ -445,9 +445,9 @@ behavior_selector_get_full_state(carmen_behavior_selector_mission_t *current_mis
 
 
 int
-behavior_selector_get_mission()
+behavior_selector_get_task()
 {
-	return (current_mission);
+	return (current_task);
 }
 
 
@@ -520,9 +520,9 @@ behavior_selector_get_last_goal_type()
 
 
 void
-behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_mission_t mission)
+behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task)
 {
-	switch(mission)
+	switch(task)
 	{
 	case BEHAVIOR_SELECTOR_FOLLOW_ROUTE:
 		following_lane_planner = algorithm;
