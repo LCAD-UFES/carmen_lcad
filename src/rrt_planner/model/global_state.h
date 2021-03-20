@@ -41,6 +41,7 @@ public:
 	static Robot_State initial_robot_state; // initial state used to recontruct the tree or to follow the path
 
 	static Pose *goal_pose;
+	static bool goal_just_set;
 	static bool last_goal;
 
 	static bool last_path_received_is_empty;

@@ -19,6 +19,7 @@ Robot_State GlobalState::initial_robot_state;
 
 int GlobalState::show_debug_info;
 Pose *GlobalState::goal_pose  = 0;
+bool GlobalState::goal_just_set = false;
 bool GlobalState::last_goal = true;
 
 bool GlobalState::last_path_received_is_empty = false;

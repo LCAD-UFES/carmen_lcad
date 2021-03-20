@@ -112,7 +112,6 @@ public:
 	double change_path_theta;
 
 	vector<RRT_Node *> reaches_goal_nodes;
-
 };
 
 #endif /* RRT_H_ */

@@ -46,6 +46,9 @@ RRT_Parking *rrt_parking;
 RRT_Lane *rrt_lane;
 RRT *selected_rrt = 0;
 
+void
+print_path(list<RRT_Path_Edge> path, char *path_name);
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -54,7 +57,7 @@ RRT *selected_rrt = 0;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void
-publish_rrt_path_message(list<RRT_Path_Edge> &path)
+publish_rrt_path_message(list<RRT_Path_Edge> path)
 {
 	int i = 0;
 	rrt_path_message msg;
@@ -125,6 +128,8 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 		fflush(stdout);
 	}
 
+	print_path(path, (char *) "====== PATH SEND ======");
+
 	Publisher_Util::publish_rrt_path_message(&msg);
 	free(msg.path);
 }
@@ -156,6 +161,7 @@ set_rrt_current_goal(Pose goal_pose)
 		GlobalState::set_goal_pose(goal_pose);
 
 		GlobalState::gradient_cost_map_old = true;
+		GlobalState::goal_just_set = true;
 //		selected_rrt->clear_the_search_tree_and_current_path();
 	}
 }
@@ -180,7 +186,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	if (GlobalState::goal_pose)
 		selected_rrt->build_rrt_path_from_robot_pose(initial_robot_state);
 
-	publish_rrt_path_message(selected_rrt->path);
+//	publish_rrt_path_message(selected_rrt->path);
 	selected_rrt->publish_status_message();
 }
 
@@ -196,7 +202,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	if (GlobalState::goal_pose)
 		selected_rrt->build_rrt_path_from_robot_pose(initial_robot_state);
 
-	publish_rrt_path_message(selected_rrt->path);
+//	publish_rrt_path_message(selected_rrt->path);
 	selected_rrt->publish_status_message();
 }
 
@@ -245,6 +251,21 @@ navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_m
 
 
 static void
+carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
+{
+	Pose goal_pose;
+
+	goal_pose.x		= rddf_end_point_message->point.x;
+	goal_pose.y		= rddf_end_point_message->point.y;
+	goal_pose.theta		= rddf_end_point_message->point.theta;
+
+	GlobalState::last_goal = true;
+
+	set_rrt_current_goal(goal_pose);
+}
+
+
+static void
 behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
 {
 	Pose goal_pose;
@@ -267,11 +288,11 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
-	if (msg->algorithm != GlobalState::current_algorithm)
+	if (1)//msg->algorithm != GlobalState::current_algorithm)
 	{
 		GlobalState::current_algorithm = msg->algorithm;
 
-		if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
+		if (1)//GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
 		{
 			GlobalState::gradient_cost_map_old = true;
 
@@ -390,6 +411,8 @@ register_handlers_specific()
 			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) (carmen_rddf_play_end_point_message_handler), CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -415,16 +438,16 @@ register_handlers()
 void
 read_parameters_specific(int argc, char **argv)
 {
-
-	carmen_param_t optional_param_list[] = {
-			{(char *)"rrt",	(char *)"rddf",						CARMEN_PARAM_STRING,	&GlobalState::rddf_path,				1, NULL},
-			{(char *)"rrt",	(char *)"timeout",					CARMEN_PARAM_DOUBLE,	&GlobalState::timeout,					1, NULL},
-			{(char *)"rrt",	(char *)"plan_time",				CARMEN_PARAM_DOUBLE,	&GlobalState::plan_time,				1, NULL},
-			{(char *)"rrt",	(char *)"distance_interval",		CARMEN_PARAM_DOUBLE,	&GlobalState::distance_interval,		1, NULL},
-			{(char *)"rrt",	(char *)"publish_lane_map",			CARMEN_PARAM_ONOFF,		&GlobalState::publish_lane_map,			1, NULL},
-			{(char *)"rrt",	(char *)"publish_tree",				CARMEN_PARAM_ONOFF,		&GlobalState::publish_tree,				1, NULL},
-			{(char *)"rrt",	(char *)"reuse_last_path",			CARMEN_PARAM_ONOFF,		&GlobalState::reuse_last_path,			1, NULL},
-			{(char *)"rrt",	(char *)"obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&GlobalState::obstacle_cost_distance,	1, NULL}
+	carmen_param_t optional_param_list[] =
+	{
+			{(char *) "rrt",	(char *) "rddf",					CARMEN_PARAM_STRING,	&GlobalState::rddf_path,				1, NULL},
+			{(char *) "rrt",	(char *) "timeout",					CARMEN_PARAM_DOUBLE,	&GlobalState::timeout,					1, NULL},
+			{(char *) "rrt",	(char *) "plan_time",				CARMEN_PARAM_DOUBLE,	&GlobalState::plan_time,				1, NULL},
+			{(char *) "rrt",	(char *) "distance_interval",		CARMEN_PARAM_DOUBLE,	&GlobalState::distance_interval,		1, NULL},
+			{(char *) "rrt",	(char *) "publish_lane_map",		CARMEN_PARAM_ONOFF,		&GlobalState::publish_lane_map,			1, NULL},
+			{(char *) "rrt",	(char *) "publish_tree",			CARMEN_PARAM_ONOFF,		&GlobalState::publish_tree,				1, NULL},
+			{(char *) "rrt",	(char *) "reuse_last_path",			CARMEN_PARAM_ONOFF,		&GlobalState::reuse_last_path,			1, NULL},
+			{(char *) "rrt",	(char *) "obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&GlobalState::obstacle_cost_distance,	1, NULL}
 	};
 
 	carmen_param_allow_unfound_variables(1);
@@ -440,24 +463,25 @@ read_parameters_specific(int argc, char **argv)
 void
 read_parameters(int argc, char **argv)
 {
-	carmen_param_t param_list[] = {
-			{(char *)"robot",	(char *)"length",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.length,								 			1, NULL},
-			{(char *)"robot",	(char *)"width",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.width,								 			1, NULL},
-			{(char *)"robot", 	(char *)"distance_between_rear_wheels",		  			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_wheels,			 		1, NULL},
-			{(char *)"robot", 	(char *)"distance_between_front_and_rear_axles", 		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_and_rear_axles, 			1, NULL},
-			{(char *)"robot", 	(char *)"distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_car_and_front_wheels,	1, NULL},
-			{(char *)"robot", 	(char *)"distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_car_and_rear_wheels,		1, NULL},
-			{(char *)"robot", 	(char *)"max_velocity",						  			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_vel,								 		1, NULL},
-			{(char *)"robot", 	(char *)"max_steering_angle",					  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_phi,								 		1, NULL},
-			{(char *)"robot", 	(char *)"maximum_acceleration_forward",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_forward,					1, NULL},
-			{(char *)"robot", 	(char *)"maximum_acceleration_reverse",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_reverse,					1, NULL},
-			{(char *)"robot", 	(char *)"maximum_deceleration_forward",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_forward,					1, NULL},
-			{(char *)"robot", 	(char *)"maximum_deceleration_reverse",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_reverse,					1, NULL},
-			{(char *)"robot", 	(char *)"desired_decelaration_forward",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_forward,					1, NULL},
-			{(char *)"robot", 	(char *)"desired_decelaration_reverse",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_reverse,					1, NULL},
-			{(char *)"robot", 	(char *)"desired_acceleration",							CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_acceleration,							1, NULL},
-			{(char *)"robot", 	(char *)"desired_steering_command_rate",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_steering_command_rate,					1, NULL},
-			{(char *)"robot", 	(char *)"understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
+	carmen_param_t param_list[] =
+	{
+			{(char *) "robot",	(char *) "length",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.length,								 			1, NULL},
+			{(char *) "robot",	(char *) "width",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.width,								 			1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_rear_wheels",		  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_wheels,			 		1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_front_and_rear_axles", 		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_and_rear_axles, 			1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_car_and_front_wheels,	1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_car_and_rear_wheels,		1, NULL},
+			{(char *) "robot", 	(char *) "max_velocity",						  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_vel,								 		1, NULL},
+			{(char *) "robot", 	(char *) "max_steering_angle",					  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_phi,								 		1, NULL},
+			{(char *) "robot", 	(char *) "maximum_acceleration_forward",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_forward,					1, NULL},
+			{(char *) "robot", 	(char *) "maximum_acceleration_reverse",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_reverse,					1, NULL},
+			{(char *) "robot", 	(char *) "maximum_deceleration_forward",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_forward,					1, NULL},
+			{(char *) "robot", 	(char *) "maximum_deceleration_reverse",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_reverse,					1, NULL},
+			{(char *) "robot", 	(char *) "desired_decelaration_forward",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_forward,					1, NULL},
+			{(char *) "robot", 	(char *) "desired_decelaration_reverse",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_reverse,					1, NULL},
+			{(char *) "robot", 	(char *) "desired_acceleration",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_acceleration,							1, NULL},
+			{(char *) "robot", 	(char *) "desired_steering_command_rate",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_steering_command_rate,					1, NULL},
+			{(char *) "robot", 	(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -471,9 +495,10 @@ read_parameters(int argc, char **argv)
 	GlobalState::distance_interval = 1.5;
 	GlobalState::plan_time = 0.08;
 
-	carmen_param_t optional_param_list[] = {
-			{(char *)"rrt",	(char *)"cheat",				CARMEN_PARAM_ONOFF,		&GlobalState::use_truepos,				1, NULL},
-			{(char *)"rrt",	(char *)"show_debug_info",		CARMEN_PARAM_ONOFF,		&GlobalState::show_debug_info,		1, NULL},
+	carmen_param_t optional_param_list[] =
+	{
+			{(char *) "rrt",	(char *) "cheat",				CARMEN_PARAM_ONOFF,		&GlobalState::use_truepos,			1, NULL},
+			{(char *) "rrt",	(char *) "show_debug_info",		CARMEN_PARAM_ONOFF,		&GlobalState::show_debug_info,		1, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
@@ -495,7 +520,7 @@ main(int argc, char **argv)
 	rrt_lane->set_stop_condition(0.8, carmen_degrees_to_radians(30));
 
 	rrt_parking->set_change_path_condition(0.8, carmen_degrees_to_radians(8));
-	rrt_parking->set_stop_condition(1.0, carmen_degrees_to_radians(10));
+	rrt_parking->set_stop_condition(1.0, carmen_degrees_to_radians(30));
 	rrt_parking->set_max_distance_grad(12.0);
 	rrt_parking->set_distance_near(12.0);
 

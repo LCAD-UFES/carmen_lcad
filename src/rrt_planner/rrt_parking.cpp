@@ -20,9 +20,10 @@
 #include <queue>
 #include <list>
 
-RRT_Parking::RRT_Parking() {
+RRT_Parking::RRT_Parking()
+{
 	max_dist_grad = 15; //max_dist_grad is the maximum value of dist_grad
-	gradient_probability  = 0.95;
+	gradient_probability  = 0.2;
 
 	num_parking_cost_function = 3;
 	parking_cost_functions[0] = new Normalized_Distance_Cost_Function();
@@ -33,6 +34,35 @@ RRT_Parking::RRT_Parking() {
 	parking_weights[2] 	   = 0.13;
 
 	distance_near = 9.0;
+}
+
+
+void
+print_path(list<RRT_Path_Edge> path, char *path_name)
+{
+	return;
+	printf("%s\n", path_name);
+	list<RRT_Path_Edge>::iterator it;
+	for (it = path.begin(); it != path.end(); it++)
+	{
+		printf("v = %2.2lf, phi = %2.2lf, t = %2.3lf, p1.v = %2.2lf, p1.phi = %2.2lf, p2.v = %2.2lf, p2.phi = %2.2lf\n",
+					it->command.v, carmen_radians_to_degrees(it->command.phi), it->time,
+					it->p1.v_and_phi.v, carmen_radians_to_degrees(it->p1.v_and_phi.phi),
+					it->p2.v_and_phi.v, carmen_radians_to_degrees(it->p2.v_and_phi.phi));
+	}
+}
+
+void RRT_Parking::reuse_previous_path()
+{
+	if (path.size() > 0)
+		print_path(path, (char *) "====== PATH ======");
+	if (old_path.size() > 0)
+		print_path(old_path, (char *) "====== OLD PATH ======");
+
+	if ((old_path.size() == 0) && (path.size() > 0) && (reaches_goal_nodes.size() > 0))
+		old_path = path;
+	else
+		path = old_path;
 }
 
 void RRT_Parking::build_rrt_path_from_robot_pose(Robot_State &robot_pose)
@@ -47,7 +77,7 @@ void RRT_Parking::build_rrt_path_from_robot_pose(Robot_State &robot_pose)
 		clear_the_search_tree_and_current_path();
 		tree.add_root_node(robot_pose.pose, GlobalState::last_odometry);
 		check_necessary_conditions_and_build_rrt_path();
-
+//		reuse_previous_path();
 		publish_status_message();
 		return;
 	}
@@ -64,7 +94,9 @@ void RRT_Parking::build_rrt_path_from_robot_pose(Robot_State &robot_pose)
 		publish_status_message();
 	}
 
+//	reuse_previous_path();
 }
+
 
 void RRT_Parking::build_rrt_path()
 {

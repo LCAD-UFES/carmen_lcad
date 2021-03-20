@@ -725,7 +725,7 @@ carmen_geometry_compute_expected_distance(carmen_traj_point_p traj_point,
 		if(map_x < 0 || map_x >= map->config.x_size ||
 				map_y < 0 || map_y >= map->config.y_size)
 			break;
-		if (map->map[map_x][map_y] > 0.15)
+		if (map->map[map_x][map_y] > 0.5)
 			break;
 	}
 	while (carmen_get_next_point(&params));
@@ -801,7 +801,7 @@ carmen_geometry_compute_expected_distance(carmen_traj_point_p traj_point,
 		if(map_x < 0 || map_x >= map->config.x_size ||
 				map_y < 0 || map_y >= map->config.y_size)
 			break;
-		if (map->map[map_x][map_y] < 0.15)
+		if (map->map[map_x][map_y] < 0.5)
 			break;
 		obstacle.x = px / 100;
 		obstacle.y = py / 100;
