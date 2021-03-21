@@ -26,15 +26,17 @@ def normalize_theta(theta):
     return ret
 
 
-def new_closest_point(curr_pose, base_poses, base_offset, secure_distance):
+def new_closest_point(curr_pose, base_poses, base_offset):
     nearest_index = -1
-    smallest_distance = np.abs((base_offset-secure_distance))/2
+    smallest_distance = base_offset
     for j in range(len(base_poses)):
         distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
         # remove pontos na contra-mao
-        #orientation = np.abs(normalize_theta(curr_pose[2]) - normalize_theta(base_poses[j][2]))
-        #orientation = normalize_theta(orientation)
-        #if (orientation <= math.pi/2) and (distance >= 0) and (distance <= smallest_distance):
+        # orientation = np.abs(normalize_theta(curr_pose[2]) - normalize_theta(base_poses[j][2]))
+        # orientation = normalize_theta(orientation)
+        # if (orientation > (math.pi*3/2)):
+        #     orientation = np.abs(2*math.pi - orientation)
+        # if (orientation <= math.pi/2) and 
         if (distance >= 0) and (distance <= smallest_distance):
             smallest_distance = distance
             nearest_index = j
@@ -43,13 +45,15 @@ def new_closest_point(curr_pose, base_poses, base_offset, secure_distance):
 def find_closest_in_space(curr_pose, base_poses, curr_time, base_times, base_offset):
     nearest_index = -1
     smallest_distance = base_offset
+    shortest_interval = np.float('inf')
     for j in range(len(base_poses)):
         interval = np.abs(curr_time - base_times[j])
         distance = LA.norm(curr_pose[[0,1]]-base_poses[j][[0,1]])
         # remove pontos na contra-mao
         orientation = np.abs(curr_pose[2] - base_poses[j][2])
-        if (orientation <= math.pi/2) and (distance >= 0) and (distance <= smallest_distance): 
+        if (orientation <= math.pi/2) and (distance >= 0) and (distance <= smallest_distance): # and (interval >= 0) and (interval <= shortest_interval):
             smallest_distance = distance
+            shortest_interval = interval
             nearest_index = j
     return nearest_index
 
@@ -101,52 +105,87 @@ def save_dataset_base(data, labels, dataset):
             data['timestamp'][i])
         )
     sample_file.close()
+    
 
-def create_baseposes(datasetname_base, datasetname_base_out, offset_base):
+def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, datasetname_curr_out, offset_base, offset_curr):
+    data_curr_label = []
+    data_curr_index = []
+    data_curr_label2 = []
+    data_curr_index2 = []
+    
     temp_data = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
+    
     if len(temp_data[1]) == 8:
         set_columns(single_columns)
     else:
         set_columns(stereo_columns)
+
     data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True, dtype=np.dtype(columns))
+    data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True, dtype=np.dtype(columns))
+    # data_base = np.genfromtxt(datasetname_base, delimiter=' ', names=True)
+    # data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True)
+
+
+    # data_base_loop = -1 #new_loop_closure(data_base,0.5)
+    # data_curr_loop = -1
+    
+    # data_base_loop = detect_closure_loop(data_base, offset_base)
+    # data_curr_loop = detect_closure_loop(data_curr, offset_curr)
+        
+    # data_base = data_base[:data_base_loop]
+    # data_curr = data_curr[:data_curr_loop]
+
     # prepara o dataset base com espacamento a cada offset_base
     data_base_index = new_get_indices_of_sampled_data(data_base, offset_base)
     data_base = data_base[data_base_index]
     data_base_label = np.arange(data_base.shape[0])
+    # data_base_label = np.random.permutation(data_base.shape[0])
     save_dataset_base(data_base, data_base_label, datasetname_base_out)
-    return data_base, data_base_label
 
-def create_liveposes(data_base, data_base_label, datasetname_curr, datasetname_curr_out, offset_base, offset_curr):
-    data_curr_label = []
-    data_curr_index = []
-    temp_data = np.genfromtxt(datasetname_curr, delimiter=' ', names=True)
-    if len(temp_data[1]) == 8:
-        set_columns(single_columns)
-    else:
-        set_columns(stereo_columns)
-    data_curr = np.genfromtxt(datasetname_curr, delimiter=' ', names=True, dtype=np.dtype(columns))
     data_base_pose_2d = np.dstack([data_base['x'], data_base['y'], data_base['rz']])[0]  # x, y, yaw
     data_curr_pose_2d = np.dstack([data_curr['x'], data_curr['y'], data_curr['rz']])[0]  # x, y, yaw
-    
+    # curr_start, base_start = find_start_point(data_curr_pose_2d, data_base_pose_2d)
+    # data_curr_time = build_spacial_index(data_curr_pose_2d, curr_start)
+    # data_base_time = build_spacial_index(data_base_pose_2d, base_start)
     for index_curr in range(len(data_curr)):
-        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, offset_base , offset_curr)
-        if index_base < 0:  
+        # desbloqueando qualquer distancia ate 1.6x o offset_base
+        index_base = new_closest_point(data_curr_pose_2d[index_curr], data_base_pose_2d, float(offset_base*1.6) )
+        # index_base = find_closest_in_space(data_curr_pose_2d[index_curr], data_base_pose_2d,
+        #                                    data_curr_time[index_curr], data_base_time,
+        #                                    offset_base if index_curr == 0 else 5.0)
+        if index_base < 0:  # get only frames ahead in space/time
             print 'live frame with no match: ', index_curr,' - ',data_curr_pose_2d[index_curr]
             continue
-        else:
-            data_curr_label.append(data_base_label[index_base])
-            data_curr_index.append(index_curr)
 
-    data_curr = data_curr[data_curr_index]
-    data_curr_pose_2d = np.dstack([data_curr['x'], data_curr['y'], data_curr['rz']])[0]
-    data_curr_label = np.array(data_curr_label)
+        data_curr_label.append(data_base_label[index_base])
+        data_curr_index.append(index_curr)
+
+    if offset_base == offset_curr:
+        for index_base in range(len(data_base)):
+            nearest_index = -1
+            smallest_distance = offset_base/2
+            for index_curr in data_curr_index:
+                distance = LA.norm(data_curr_pose_2d[index_curr][[0, 1]] - data_base_pose_2d[index_base][[0, 1]])
+                if distance < smallest_distance:
+                    smallest_distance = distance
+                    nearest_index = index_curr
+            if nearest_index >= 0:
+                data_curr_label2.append(data_base_label[index_base])
+                data_curr_index2.append(nearest_index)
+        data_curr_index = data_curr_index2
+        data_curr_label = np.array(data_curr_label2)
+        data_curr = data_curr[data_curr_index]
+    else:
+        data_curr_label = np.array(data_curr_label)
+        data_curr = data_curr[data_curr_index]
+        data_curr_index = get_indices_of_sampled_data(data_curr, offset_curr)
+        data_curr = data_curr[data_curr_index]
+        data_curr_label = data_curr_label[data_curr_index]
+
     save_dataset_base(data_curr, data_curr_label, datasetname_curr_out)
-    return data_base_pose_2d,data_curr_pose_2d,data_curr_label
 
-# def create_dataset(datasetname_base, datasetname_curr, datasetname_base_out, datasetname_curr_out, offset_base, offset_curr):
-#     data_base, data_base_label = create_baseposes(datasetname_base, datasetname_base_out, offset_base) 
-#     data_base_pose_2d, data_curr_pose_2d, data_curr_label = create_liveposes(data_base,data_base_label, datasetname_curr, datasetname_curr_out, offset_base, offset_curr)
-#     plot_dataset(data_base_pose_2d, data_curr_pose_2d, data_curr_label)
+    data_curr_pose_2d = np.dstack([data_curr['x'], data_curr['y'], data_curr['rz']])[0]
+    plot_dataset(data_base_pose_2d, data_curr_pose_2d, data_curr_label)
 
 if __name__ == '__main__':
 
@@ -190,36 +229,16 @@ if __name__ == '__main__':
 
     print 'running script with those arguments:\n\timages path:',input_dir,'\n\toutput directory:',output_dir,'\n\toffset base:',offset_base,'\n\toffset live:',offset_curr
 
-    # criando base usando o primeiro log do arquivo
-    basefilename_in = logfilename(input_dir, datasets[0])
-    basefilename_out = base_datasetname(output_dir, datasets[0], datasets[0], offset_base, offset_curr)
-    data_base = []
-    data_base_label = []
-    if not os.path.isfile(basefilename_out):
-        print 'building ', basefilename_out
-        data_base, data_base_label = create_baseposes(basefilename_in, basefilename_out, offset_base)
-    else:
-        print 'skipping ', basefilename_out
-        local_columns = [('image', object), ('label', object),('x', float), ('y', float), ('z', float), ('rx', float), ('ry', float), ('rz', float),('timestamp', object) ]
-        data_base = np.genfromtxt(basefilename_out, delimiter=' ', names=True, dtype=np.dtype(local_columns))
-        data_base_label = np.arange(data_base.shape[0])
-    currfilename_in = logfilename(input_dir, datasets[0])      
-    currfilename_out = curr_datasetname(output_dir, datasets[0], datasets[0], offset_base, offset_curr)
-    if not os.path.isfile(currfilename_out):
-        print 'building ',  currfilename_out
-        data_base_pose_2d, data_curr_pose_2d, data_curr_label = create_liveposes(data_base,data_base_label, currfilename_in, currfilename_out, offset_base, offset_curr)
-        plot_dataset(data_base_pose_2d, data_curr_pose_2d, data_curr_label)
-    else:
-        print 'skipping ',  currfilename_out 
-
-    # criando treino e validacao usando o primeiro e os demais
-    for j in range(1, len(datasets)):  # curr datasets
-        currfilename_in = logfilename(input_dir, datasets[j])      
-        currfilename_out = curr_datasetname(output_dir, datasets[0], datasets[j], offset_base, offset_curr)
+    #datasets = ['20160830', '20170119','20160825', '20160825-01', '20160825-02', '20171205', '20180112','20180112-02','20161021','20191003']
+    i = 0
+    for j in range(0, len(datasets)):  # curr datasets
+        basefilename_in = logfilename(input_dir, datasets[i])
+        currfilename_in = logfilename(input_dir, datasets[j])
+        basefilename_out = base_datasetname(output_dir, datasets[i], datasets[j], offset_base, offset_curr)
+        currfilename_out = curr_datasetname(output_dir, datasets[i], datasets[j], offset_base, offset_curr)
         if not os.path.isfile(currfilename_out):
-            print 'building ',  currfilename_out
-            data_base_pose_2d, data_curr_pose_2d, data_curr_label = create_liveposes(data_base,data_base_label, currfilename_in, currfilename_out, offset_base, offset_curr)
-            plot_dataset(data_base_pose_2d, data_curr_pose_2d, data_curr_label)
+            print 'building ', basefilename_out, currfilename_out
+            create_dataset(basefilename_in, currfilename_in, basefilename_out, currfilename_out, offset_base, offset_curr)
         else:
-            print 'skipping ',  currfilename_out
+            print 'skipping ', basefilename_out, currfilename_out
 
