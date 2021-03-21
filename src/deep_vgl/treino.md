@@ -151,7 +151,7 @@ Configure os seguintes parâmetros em $CARMEN_HOME/src/deep_vgl/treino_e_teste/s
 - image_path="/dados/ufes/" # images target directory from previous steps
 - output_path="/dados/ufes_gt/" # output directory 
 - base_offset=5 # spacing between base poses (poses no log de referência que serão associadas a labels pela DNN)
-- live_offset=1 # spacing between live poses (poses nos demais logs, inclusive no de referência)
+- live_offset=1 # space ignored between base poses (usado para evitar imagens que podem estar em 2 poses - zona cinza)
 ```
 
 ### Juntando logs em um mesmo log base, ou de referência.
