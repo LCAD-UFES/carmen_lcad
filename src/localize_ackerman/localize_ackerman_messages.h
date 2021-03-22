@@ -80,12 +80,15 @@ typedef struct {
   double v, phi;
   double globalpos_xy_cov;
   int converged;
+  int semi_trailer_engaged;
+  int semi_trailer_type;
+  double beta;
   double timestamp;
   char *host;
 } carmen_localize_ackerman_globalpos_message;
 
 #define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME "carmen_localize_ackerman_globalpos"
-#define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT  "{{double,double,double},{double,double,double},{double,double,double},{{double,double,double},{double,double,double}},{double,double,double},double,double,double,int,double,string}"
+#define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT  "{{double,double,double},{double,double,double},{double,double,double},{{double,double,double},{double,double,double}},{double,double,double},double,double,double,int,int,int,double,double,string}"
 
 /* particle message */
 

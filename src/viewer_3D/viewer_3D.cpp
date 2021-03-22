@@ -840,7 +840,7 @@ draw_everything()
 
     if (draw_velodyne_flag == 1)
     {
-        if (draw_annotation_flag || velodyne_remission_flag)
+//        if (draw_annotation_flag || velodyne_remission_flag)
             glPointSize(5);
         draw_velodyne_points(velodyne_points, velodyne_size);
         glPointSize(point_size);

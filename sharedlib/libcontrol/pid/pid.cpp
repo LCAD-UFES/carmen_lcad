@@ -21,6 +21,8 @@ enum
 #define min_fuzzy_v 4.17 // = 20km/h Parameters start variation from this velocity
 #define max_fuzzy_v 9.72 // = 45km/h Parameters stop variation from twice this velocity
 
+#define NEAR_ZERO_V	0.03
+
 
 // Global variables
 static double g_steering_Kp;
@@ -356,7 +358,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (fabs(desired_velocity) < 0.05) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
+	if (fabs(desired_velocity) < NEAR_ZERO_V) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
 	{
 		desired_velocity = 0.0;
 		g_velocity_PID_controler_state = STOP_CAR;
@@ -376,14 +378,14 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		*throttle_command = 0.0;
 		*brakes_command = g_max_brake_effort;
-//		*brakes_command = *brakes_command + 0.05 * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
+//		*brakes_command = *brakes_command + NEAR_ZERO_V * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
 
-		if ((desired_velocity > 0.0) && (current_velocity >= -0.05))
+		if ((desired_velocity > 0.0) && (current_velocity >= -NEAR_ZERO_V))
 		{
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
 			*gear_command = 1; // gear = Low // 2; //Drive gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 		}
-		if ((desired_velocity < 0.0) && (current_velocity <= 0.05))
+		if ((desired_velocity < 0.0) && (current_velocity <= NEAR_ZERO_V))
 		{
 			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_ACCELERATING;
 			*gear_command = 129; //Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)

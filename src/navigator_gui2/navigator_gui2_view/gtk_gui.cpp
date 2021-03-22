@@ -9,7 +9,7 @@ extern char predefined_route[2048];
 extern int predefined_route_code;
 extern std::vector <carmen_annotation_t> place_of_interest_list;
 extern std::vector <carmen_annotation_t> predefined_route_list;
-extern int use_route_planner_in_graph_mode;
+//extern int use_route_planner_in_graph_mode;
 extern int publish_map_view;
 extern double publish_map_view_interval;
 
