@@ -560,9 +560,9 @@ void navigator_set_goal(double x, double y, double theta)
 	carmen_navigator_ackerman_set_goal(x, y, theta);
 }
 
-void navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state)
+void navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task)
 {
-	carmen_behavior_selector_set_algorithm(algorithm, state);
+	carmen_behavior_selector_set_algorithm(algorithm, task);
 }
 
 void navigator_unset_goal(double x, double y)

@@ -2626,13 +2626,13 @@ static int get_algorithm_code(char *algorithm_name)
 static void
 parking_algorithm_selection_handler(GtkWidget *widget __attribute__ ((unused)), gpointer data __attribute__ ((unused)))
 {
-	navigator_set_algorithm(get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)parking_algorithm_selection)), BEHAVIOR_SELECTOR_PARKING);
+	navigator_set_algorithm(get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)parking_algorithm_selection)), BEHAVIOR_SELECTOR_PARK);
 }
 
 static void
 follow_lane_selection_handler(GtkWidget *widget __attribute__ ((unused)), gpointer data __attribute__ ((unused)))
 {
-	navigator_set_algorithm(get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)follow_lane_algorithm_selection)), BEHAVIOR_SELECTOR_FOLLOWING_LANE);
+	navigator_set_algorithm(get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)follow_lane_algorithm_selection)), BEHAVIOR_SELECTOR_FOLLOW_ROUTE);
 }
 
 static int
@@ -2660,7 +2660,7 @@ get_state_code(char* state_name)
 static void
 state_selection_handler(GtkWidget *widget __attribute__ ((unused)), gpointer data __attribute__ ((unused)))
 {
-	carmen_behavior_selector_set_state(get_state_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)));
+	carmen_behavior_selector_set_task(get_state_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)));
 }
 
 
@@ -2710,8 +2710,8 @@ void navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_
 		gtk_widget_set_sensitive(state_selection, 0);
 
 
-	if((int)msg.state != get_state_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)))
-		gtk_combo_box_set_active((GtkComboBox*)state_selection, msg.state);
+	if((int)msg.task != get_state_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)))
+		gtk_combo_box_set_active((GtkComboBox*)state_selection, msg.task);
 }
 
 int navigator_graphics_init(int argc, char *argv[],
