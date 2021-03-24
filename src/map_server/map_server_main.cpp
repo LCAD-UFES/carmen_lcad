@@ -389,7 +389,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 
 
 static void
-alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
+alloc_rddf_global_data(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	rddf_message = (carmen_rddf_road_profile_message *) calloc (1, sizeof(carmen_rddf_road_profile_message));
 
@@ -403,7 +403,7 @@ alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 
 
 static void
-realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
+realloc_rddf_global_data(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	if (message->number_of_poses != rddf_message->number_of_poses)
 	{
@@ -412,9 +412,7 @@ realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 	}
 
 	if (message->number_of_poses_back != rddf_message->number_of_poses_back)
-	{
 		rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
-	}
 
 	rddf_message->number_of_poses = message->number_of_poses;
 	rddf_message->number_of_poses_back = message->number_of_poses_back;
@@ -422,7 +420,7 @@ realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 
 
 static void
-copy_local_rddf_to_global_rddf(carmen_behavior_selector_road_profile_message *message)
+copy_local_rddf_to_global_rddf(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	memcpy(rddf_message->annotations, message->annotations, message->number_of_poses * sizeof(int));
 	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
@@ -494,7 +492,7 @@ localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize
 
 
 static void
-rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	static carmen_point_t pose_in_last_publish = {0.0, 0.0, 0.0};
 
@@ -715,8 +713,7 @@ register_handlers()
 	carmen_localize_ackerman_subscribe_initialize_message(NULL,
 			(carmen_handler_t) localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-                             NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) (path_goals_and_annotations_message_handler), CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_download_map_subscribe_message(NULL, (carmen_handler_t) download_map_handler, CARMEN_SUBSCRIBE_LATEST);
 

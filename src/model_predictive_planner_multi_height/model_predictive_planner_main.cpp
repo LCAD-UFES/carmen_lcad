@@ -31,7 +31,7 @@
 Tree tree; //tree rooted on robot
 int g_teacher_mode = 0;
 TrajectoryLookupTable *g_trajectory_lookup_table;
-carmen_behavior_selector_road_profile_message goal_list_message;
+carmen_behavior_selector_road_profile_message path_goals_and_annotations_message;
 
 static int update_lookup_table = 0;
 int max_height_level = 0;
@@ -296,7 +296,7 @@ copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_pat
 vector<carmen_ackerman_path_point_t>
 compute_plan(Tree *tree)
 {
-	if (goal_list_message.number_of_poses == 0)
+	if (path_goals_and_annotations_message.number_of_poses == 0)
 	{
 		printf("Error: trying to compute plan without rddf\n");
 		//		vector<carmen_ackerman_path_point_t> a;
@@ -305,7 +305,7 @@ compute_plan(Tree *tree)
 
 	free_tree(tree);
 	vector<vector<carmen_ackerman_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
-			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, &goal_list_message);
+			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, &path_goals_and_annotations_message);
 
 	if (path.size() == 0)
 	{
@@ -794,7 +794,7 @@ register_handlers()
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-			&goal_list_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			&path_goals_and_annotations_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -907,7 +907,7 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	memset(&goal_list_message, 0, sizeof(goal_list_message));
+	memset(&path_goals_and_annotations_message, 0, sizeof(path_goals_and_annotations_message));
 
 	register_handlers();
 

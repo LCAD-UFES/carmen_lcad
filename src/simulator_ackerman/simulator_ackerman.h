@@ -110,7 +110,6 @@ typedef struct
 
 	carmen_localize_ackerman_globalpos_message global_pos;
 	carmen_robot_ackerman_config_t robot_config;
-	carmen_behavior_selector_road_profile_message *rddf_lane_message;
 
 	int initialize_neural_networks;
 	unsigned int use_mpc;

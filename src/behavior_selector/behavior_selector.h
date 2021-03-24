@@ -80,8 +80,6 @@ extern "C" {
 
 	int behavior_selector_set_task(carmen_behavior_selector_task_t task);
 
-	int behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source);
-
 	void behavior_selector_add_goal(carmen_point_t goal);
 
 	void behavior_selector_clear_goal_list();
@@ -98,7 +96,7 @@ extern "C" {
 	carmen_behavior_selector_algorithm_t get_current_algorithm();
 
 	void behavior_selector_get_full_state(carmen_behavior_selector_task_t *current_task_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
-			carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out);
+			carmen_behavior_selector_algorithm_t *parking_planner_out);
 
 	int behavior_selector_get_task();
 

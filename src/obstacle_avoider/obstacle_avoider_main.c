@@ -164,10 +164,6 @@ obstacle_avoider_timer_handler()
 	static double time_of_last_call = 0.0;
 	static int robot_hit_obstacle = 0;
 
-	if ((current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT) &&
-		(current_algorithm != CARMEN_BEHAVIOR_SELECTOR_FRENET))
-		return;
-
 	if (!necessary_maps_available)
 		return;
 
@@ -202,10 +198,6 @@ obstacle_avoider_timer_handler()
 void
 check_message_absence_timeout_timer_handler(void)
 {
-	if ((current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT) &&
-		(current_algorithm != CARMEN_BEHAVIOR_SELECTOR_FRENET))
-		return;
-
 	if (log_mode)
 		return;
 

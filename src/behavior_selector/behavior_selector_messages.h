@@ -2,7 +2,7 @@
  * behavior_selector_messages.h
  *
  *  Created on: 28/09/2012
- *      Author: romulo
+ *      Author: romulo, Alberto
  */
 
 #ifndef BEHAVIOR_SELECTOR_MESSAGES_H_
@@ -63,6 +63,7 @@ typedef enum
 	Stopped_At_Stop_Sign_S2
 } carmen_behavior_selector_low_level_state_t;
 
+
 typedef enum
 {
 	none = 0,
@@ -77,28 +78,8 @@ typedef enum
 	stopped_at_stop_sign,
 } carmen_behavior_selector_operation_mode_t;
 
-
-typedef struct {
-	carmen_ackerman_traj_point_t *goal_list;
-	int size;
-	double timestamp;
-	char *host;
-} carmen_behavior_selector_goal_list_message;
-
-#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME		"carmen_behavior_selector_goal_list"
-#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT		"{<{double, double, double, double, double}:2>,int,double,string}"
-
-typedef struct {
-	carmen_ackerman_traj_point_t *goal_list;
-	int size;
-	double timestamp;
-	char *host;
-} carmen_behavior_selector_goal_list_rddf_message;
-
-#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME		"carmen_behavior_selector_goal_list_rddf"
-#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_FMT		"{<{double, double, double, double, double}:2>,int,double,string}"
-
-typedef enum {
+typedef enum
+{
 	CARMEN_BEHAVIOR_SELECTOR_FRENET,
 	CARMEN_BEHAVIOR_SELECTOR_A_STAR,
 	CARMEN_BEHAVIOR_SELECTOR_RRT,
@@ -107,13 +88,8 @@ typedef enum {
 	CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER
 } carmen_behavior_selector_algorithm_t;
 
-typedef enum {
-	CARMEN_BEHAVIOR_SELECTOR_USER_GOAL,
-	CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL,
-	CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL
-} carmen_behavior_selector_goal_source_t;
-
-typedef struct {
+typedef struct
+{
 	carmen_behavior_selector_algorithm_t algorithm;  // algoritmo que será usado na missao
 	carmen_behavior_selector_task_t task;
 	double timestamp;
@@ -123,7 +99,8 @@ typedef struct {
 #define		CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME		"carmen_behavior_selector_set_algorithm"
 #define		CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_FMT		"{int, int, double, string}"
 
-typedef struct {
+typedef struct
+{
 	carmen_behavior_selector_task_t task;
 	double timestamp;
 	char *host;
@@ -134,24 +111,8 @@ typedef struct {
 
 typedef struct
 {
-	carmen_behavior_selector_goal_source_t goal_source;
-	double timestamp;
-	char *host;
-} carmen_behavior_selector_set_goal_source_message;
-
-#define		CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_NAME	"carmen_behavior_selector_set_goal_source"
-#define		CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_FMT	"{int, double, string}"
-
-
-typedef struct
-{
-	carmen_behavior_selector_algorithm_t algorithm;
 	carmen_behavior_selector_task_t task;
-
-	carmen_behavior_selector_algorithm_t following_lane_algorithm;
-	carmen_behavior_selector_algorithm_t parking_algorithm;
-
-	carmen_behavior_selector_goal_source_t goal_source;
+	carmen_behavior_selector_algorithm_t algorithm;
 
 	carmen_behavior_selector_low_level_state_t low_level_state;
 	carmen_behavior_selector_operation_mode_t behaviour_seletor_mode;
@@ -161,7 +122,7 @@ typedef struct
 } carmen_behavior_selector_state_message;
 
 #define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME		"carmen_behavior_selector_current_state_name"
-#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, int, int, int, double, string}"
+#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, double, string}"
 
 typedef struct
 {
@@ -189,14 +150,16 @@ typedef struct
     int number_of_poses_back;
     carmen_ackerman_traj_point_t *poses;
     carmen_ackerman_traj_point_t *poses_back;
-    // int *signals_annotations;
     int *annotations;
+    int *annotations_codes;
+	int goal_list_size;
+	carmen_ackerman_traj_point_t *goal_list;
     double timestamp;
     char *host;
-} carmen_behavior_selector_road_profile_message;
+} carmen_behavior_selector_path_goals_and_annotations_message;
 
-#define CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME "carmen_behavior_selector_road_profile_message"
-#define CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, double, string}"
+#define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME "carmen_behavior_selector_path_goals_and_annotations_message"
+#define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, <{double, double, double, double, double}:7>, double, string}"
 
 #ifdef __cplusplus
 }

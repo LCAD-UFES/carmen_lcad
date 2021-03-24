@@ -16,18 +16,18 @@ void periodic_publish_globalpos()
 	carmen_localize_ackerman_publish_globalpos_message(&message);
 }
 
-void periodic_publish_goal()
-{
-	static carmen_behavior_selector_goal_list_message message;
-	static carmen_ackerman_traj_point_t goal;
-	goal.x = goalpos.x;
-	goal.y = goalpos.y;
-	goal.theta = goalpos.theta;
-	message.goal_list = &goal;
-	message.size = 1;
-
-	IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &message);
-}
+//void periodic_publish_goal()
+//{
+//	static carmen_behavior_selector_goal_list_message message;
+//	static carmen_ackerman_traj_point_t goal;
+//	goal.x = goalpos.x;
+//	goal.y = goalpos.y;
+//	goal.theta = goalpos.theta;
+//	message.goal_list = &goal;
+//	message.size = 1;
+//
+//	IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &message);
+//}
 
 
 int main(int argc, char *argv[])
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 		goalpos.theta = atof(argv[6]);
 
 		carmen_ipc_addPeriodicTimer(1, periodic_publish_globalpos, NULL);
-		carmen_ipc_addPeriodicTimer(1, periodic_publish_goal, NULL);
+//		carmen_ipc_addPeriodicTimer(1, periodic_publish_goal, NULL);
 		carmen_ipc_dispatch();
 	}
 	printf("parametros insuficientes\n");

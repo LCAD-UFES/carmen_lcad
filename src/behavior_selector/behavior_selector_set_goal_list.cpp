@@ -30,7 +30,6 @@ static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
 //static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARK;
 static carmen_behavior_selector_task_t current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
-static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
 static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
@@ -86,9 +85,6 @@ get_current_algorithm()
 void
 change_task(int rddf_annotation)
 {
-	if (current_goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		return;
-
 	switch(rddf_annotation)
 	{
 	case RDDF_ANNOTATION_TYPE_NONE:
@@ -435,12 +431,11 @@ behavior_selector_set_task(carmen_behavior_selector_task_t task)
 
 void
 behavior_selector_get_full_state(carmen_behavior_selector_task_t *current_task_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
-		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out)
+		carmen_behavior_selector_algorithm_t *parking_planner_out)
 {
 	*current_task_out = current_task;
 	*following_lane_planner_out = following_lane_planner;
 	*parking_planner_out = parking_planner;
-	*current_goal_source_out = current_goal_source;
 }
 
 
@@ -448,20 +443,6 @@ int
 behavior_selector_get_task()
 {
 	return (current_task);
-}
-
-
-int
-behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source)
-{
-	if (current_goal_source == goal_source)
-		return (0);
-
-	current_goal_source = goal_source;
-
-	goal_list_size = 0;
-
-	return (1);
 }
 
 
@@ -541,7 +522,7 @@ behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, 
 void
 behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t pose)
 {
-	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5 && current_goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5)
 		goal_list_size = 0; //provavelmente o robo foi reposicionado
 
 	robot_pose = pose;

@@ -114,9 +114,7 @@ Path_Follower_Ackerman::update_path()
 void
 Path_Follower_Ackerman::build_and_send_refined_path()
 {
-	if (((GlobalState::current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT) &&
-		 (GlobalState::current_algorithm != CARMEN_BEHAVIOR_SELECTOR_FRENET)) ||
-		!GlobalState::localize_pose ||
+	if (!GlobalState::localize_pose ||
 		!GlobalState::following_path)
 		return;
 

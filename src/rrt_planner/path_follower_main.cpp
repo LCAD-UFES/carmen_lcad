@@ -298,14 +298,14 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 
 
 static void
-behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
 	Pose goal_pose;
 
-	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localize_pose)
+	if ((msg->goal_list_size <= 0) || !msg->goal_list || !GlobalState::localize_pose)
 		return;
 
-	GlobalState::last_goal = (msg->size == 1)? true: false;
+	GlobalState::last_goal = (msg->goal_list_size == 1)? true: false;
 
 	goal_pose.x = msg->goal_list->x;
 	goal_pose.y = msg->goal_list->y;
@@ -387,7 +387,7 @@ register_handlers()
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	register_handlers_specific();
 

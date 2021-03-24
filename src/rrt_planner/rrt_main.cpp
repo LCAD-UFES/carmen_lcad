@@ -266,14 +266,14 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 
 
 static void
-behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
 	Pose goal_pose;
 
-	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localize_pose)
+	if ((msg->goal_list_size <= 0) || !msg->goal_list || !GlobalState::localize_pose)
 		return;
 
-	GlobalState::last_goal = (msg->size == 1)? true: false;
+	GlobalState::last_goal = (msg->goal_list_size == 1)? true: false;
 
 	goal_pose.x = msg->goal_list->x;
 	goal_pose.y = msg->goal_list->y;
@@ -400,9 +400,9 @@ register_handlers_specific()
 			NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_behavior_selector_subscribe_goal_list_message(
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(
 			NULL,
-			(carmen_handler_t) behaviour_selector_goal_list_message_handler,
+			(carmen_handler_t) path_goals_and_annotations_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message(

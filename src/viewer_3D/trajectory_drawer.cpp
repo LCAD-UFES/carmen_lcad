@@ -68,13 +68,37 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 }
 
 void
-add_goal_list_message(trajectory_drawer* t_drawer, carmen_behavior_selector_goal_list_message *message)
+add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
-	t_drawer->goals = (carmen_pose_3D_t*)realloc(t_drawer->goals, message->size * sizeof(carmen_pose_3D_t));
-	t_drawer->goals_size = message->size;
+	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->number_of_poses * sizeof(carmen_vector_3D_t));
+	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->number_of_poses * sizeof(carmen_vector_3D_t));
+	t_drawer->path_size = message->number_of_poses;
 
 	int i;
-	for(i=0; i<t_drawer->goals_size; i++)
+	for(i = 0; i < t_drawer->path_size; i++)
+	{
+		t_drawer->path[i].x = message->poses[i].x;
+		t_drawer->path[i].y = message->poses[i].y;
+		t_drawer->path[i].z = 0.0;
+
+		if ((i == t_drawer->path_size - 1) || (message->poses[i + 1].v >= 0.0))
+		{
+			t_drawer->path_segment_color[i].x = t_drawer->r;
+			t_drawer->path_segment_color[i].y = t_drawer->g;
+			t_drawer->path_segment_color[i].z = t_drawer->b;
+		}
+		else
+		{
+			t_drawer->path_segment_color[i].x = 1.0;
+			t_drawer->path_segment_color[i].y = 0.0;
+			t_drawer->path_segment_color[i].z = 0.0;
+		}
+	}
+
+	t_drawer->goals = (carmen_pose_3D_t *) realloc(t_drawer->goals, message->goal_list_size * sizeof(carmen_pose_3D_t));
+	t_drawer->goals_size = message->goal_list_size;
+
+	for(i = 0; i < t_drawer->goals_size; i++)
 	{
 		t_drawer->goals[i].position.x = message->goal_list[i].x;
 		t_drawer->goals[i].position.y = message->goal_list[i].y;

@@ -2558,9 +2558,9 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 }
 
 static void
-navigator_goal_list_message_handler(carmen_behavior_selector_goal_list_message *goals)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
-    add_goal_list_message(t_drawer1, goals);
+	add_path_goals_and_annotations_message(t_drawer1, path_goals_and_annotations_message);
 }
 
 
@@ -3716,8 +3716,8 @@ subscribe_ipc_messages(void)
                                                    (carmen_handler_t) obstacle_avoider_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_behavior_selector_subscribe_goal_list_message(NULL,
-                                                         (carmen_handler_t) navigator_goal_list_message_handler,
+    carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL,
+                                                         (carmen_handler_t) path_goals_and_annotations_message_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
 
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,

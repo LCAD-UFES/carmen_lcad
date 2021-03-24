@@ -224,10 +224,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 
 void
-goal_list_handler(carmen_behavior_selector_goal_list_message *msg)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
 
-	if ((msg->size <= 0) || !msg->goal_list)
+	if ((msg->goal_list_size <= 0) || !msg->goal_list)
 		return;
 
 	messageControl.carmen_planner_ackerman_update_goal(msg->goal_list);
@@ -376,7 +376,7 @@ main(int argc, char **argv)
 	carmen_route_planner_define_messages();
 
 	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-//	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);

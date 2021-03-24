@@ -1056,10 +1056,17 @@ navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
 }
 
 
+//static void
+//navigator_goal_list_message(carmen_behavior_selector_goal_list_message *goals)
+//{
+//	gui->navigator_graphics_update_goal_list(goals->goal_list, goals->size);
+//}
+
+
 static void
-navigator_goal_list_message(carmen_behavior_selector_goal_list_message *goals)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations)
 {
-	gui->navigator_graphics_update_goal_list(goals->goal_list, goals->size);
+	gui->navigator_graphics_update_goal_list(path_goals_and_annotations->goal_list, path_goals_and_annotations->goal_list_size);
 }
 
 
@@ -1410,7 +1417,8 @@ subscribe_ipc_messages()
 	IPC_RETURN_TYPE err;
 
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) (navigator_ackerman_status_handler), CARMEN_SUBSCRIBE_LATEST);
-	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) (navigator_goal_list_message), CARMEN_SUBSCRIBE_LATEST);
+//	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) (navigator_goal_list_message), CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) (path_goals_and_annotations_message_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_plan_message(NULL, (carmen_handler_t) (carmen_navigator_ackerman_plan_message_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) (carmen_localize_ackerman_globalpos_message_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) (carmen_simulator_ackerman_truepos_message_handler), CARMEN_SUBSCRIBE_LATEST);

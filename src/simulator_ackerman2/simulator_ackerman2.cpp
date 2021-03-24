@@ -501,7 +501,7 @@ shutdown_module(int x)
 void
 behavior_selector_lane_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
-	simulator_config->rddf_lane_message = message;
+	simulator_config->path_goals_and_annotations = message;
 }
 
 

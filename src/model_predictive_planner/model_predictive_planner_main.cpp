@@ -5,6 +5,7 @@
  *      Author: romulo
  */
 
+//#include <fenv.h>
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
@@ -34,11 +35,11 @@
 Tree tree; //tree rooted on robot
 int g_teacher_mode = 0;
 TrajectoryLookupTable *g_trajectory_lookup_table;
-carmen_behavior_selector_road_profile_message goal_list_message;
+carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
 static int update_lookup_table = 0;
 
-extern double steering_delay;
+//extern double steering_delay;
 extern double steering_delay_queue_size;
 extern vector <steering_delay_t> steering_delay_queue;
 
@@ -265,10 +266,8 @@ publish_navigator_ackerman_status_message()
 void
 publish_plan_tree_for_navigator_gui(Tree tree)
 {
-	if ((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
-		(GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET))
-		if (GlobalState::publish_tree)
-			Publisher_Util::publish_plan_tree_message(tree);
+	if (GlobalState::publish_tree)
+		Publisher_Util::publish_plan_tree_message(tree);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -307,7 +306,7 @@ copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_pat
 vector<carmen_ackerman_path_point_t>
 compute_plan(Tree *tree)
 {
-	if (goal_list_message.number_of_poses == 0)
+	if (!path_goals_and_annotations_message || (path_goals_and_annotations_message->number_of_poses == 0))
 	{
 		printf("Error: trying to compute plan without rddf\n");
 		//		vector<carmen_ackerman_path_point_t> a;
@@ -316,7 +315,7 @@ compute_plan(Tree *tree)
 
 	free_tree(tree);
 	vector<vector<carmen_ackerman_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
-			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, &goal_list_message);
+			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, path_goals_and_annotations_message);
 
 	if (path.size() == 0)
 	{
@@ -409,9 +408,7 @@ build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
 
-	if (GlobalState::goal_pose &&
-		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
-		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
+	if (GlobalState::goal_pose)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
@@ -461,9 +458,7 @@ build_and_follow_path(double timestamp)
 void
 build_and_follow_path_new(double timestamp)
 {
-	if (GlobalState::goal_pose &&
-		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
-		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
+	if (GlobalState::goal_pose)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
@@ -643,18 +638,20 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 
 
 static void
-behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
+	path_goals_and_annotations_message = msg;
+
 	Pose goal_pose;
 	double desired_v;
 
-	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
+	if ((msg->goal_list_size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
 	{
 		printf("Empty goal list or localize not received\n");
 		return;
 	}
 
-	GlobalState::last_goal = (msg->size == 1)? true: false;
+	GlobalState::last_goal = (msg->goal_list_size == 1)? true: false;
 
 	goal_pose.x = msg->goal_list->x;
 	goal_pose.y = msg->goal_list->y;
@@ -828,8 +825,6 @@ signal_handler(int sig)
 void
 register_handlers()
 {
-	signal(SIGINT, signal_handler);
-
 	if (!GlobalState::use_truepos)
 	{
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -840,10 +835,7 @@ register_handlers()
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-			&goal_list_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -958,13 +950,15 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-	carmen_ipc_initialize(argc, argv);
+//    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+
+    carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	memset(&goal_list_message, 0, sizeof(goal_list_message));
-
 	register_handlers();
+	signal(SIGINT, signal_handler);
+//	signal(SIGFPE, signal_handler);
 
 	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
 	memset((void *) &tree, 0, sizeof(Tree));

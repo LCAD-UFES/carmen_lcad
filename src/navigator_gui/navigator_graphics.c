@@ -202,7 +202,6 @@ static GtkWidget *sync_mode_button;
 static GtkWidget *next_tick_button;
 static GtkWidget *follow_lane_algorithm_selection;
 static GtkWidget *state_selection;
-static GtkWidget *goal_source_selection;
 static GtkWidget *parking_algorithm_selection;
 static GtkWidget *zoom_in_global_map_button;
 static GtkWidget *zoom_out_global_map_button;
@@ -237,7 +236,6 @@ static gint save_image(gpointer data, guint action, GtkWidget *widget);
 
 static void sync_mode_change_handler(char *module, char *variable, char *value);
 
-static int goal_source = 0;
 static int behavior_selector_active = 0;
 
 static void
@@ -505,7 +503,7 @@ void execute_decrement_point()
 
 static void decrement_point(GtkWidget *widget __attribute__ ((unused)), gpointer data __attribute__ ((unused)))
 {
-	if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+	if (!behavior_selector_active)
 	{
 		execute_decrement_point();
 
@@ -521,7 +519,7 @@ static void decrement_point(GtkWidget *widget __attribute__ ((unused)), gpointer
 
 void execute_clear_all_goals()
 {
-	if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+	if (!behavior_selector_active)
 	{
 		if (queuePoints != NULL)
 		{
@@ -1359,7 +1357,7 @@ void update_point(pointers *reached)
 
 static int received_robot_pose(void)
 {
-	if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+	if (!behavior_selector_active)
 		if ((queuePoints != NULL) && (queuePoints->begin != NULL) && (GTK_TOGGLE_BUTTON(autonomous_button)->active))
 		{
 			pointers *reached = queuePoints->curr;
@@ -1693,7 +1691,7 @@ static void draw_goal_list(GtkMapViewer	*the_map_view,
 	}
 
 	//draw goal list set by the interface
-	if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+	if (!behavior_selector_active)
 		if ((queuePoints != NULL) && (queuePoints->begin != NULL))
 		{
 			pointers *lista;
@@ -2382,7 +2380,7 @@ orienting_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_po
 		cursor = gdk_cursor_new(GDK_LEFT_PTR);
 		gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
-		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+		if (!behavior_selector_active)
 		{
 			add_goal_to_internal_list(goal_temp);
 		}
@@ -2603,23 +2601,22 @@ static gint save_image(gpointer	  data __attribute__ ((unused)),
 }
 
 
-static int get_algorithm_code(char *algorithm_name)
+int
+get_algorithm_code(char *algorithm_name)
 {
 	int code = -1;
-	
-	if (algorithm_name == NULL)
-		return (CARMEN_BEHAVIOR_SELECTOR_RRT);
-		
-	if (strcmp(algorithm_name, "Gradient") == 0)
+	if(strcmp(algorithm_name, "Gradient") == 0)
 		code =  CARMEN_BEHAVIOR_SELECTOR_GRADIENT;
-	else if (strcmp(algorithm_name, "A*") == 0)
+	else if(strcmp(algorithm_name, "A*") == 0)
 		code =  CARMEN_BEHAVIOR_SELECTOR_A_STAR;
-	else if (strcmp(algorithm_name, "RRT") == 0)
+	else if(strcmp(algorithm_name, "RRT") == 0)
 		code =  CARMEN_BEHAVIOR_SELECTOR_RRT;
-	else if (strcmp(algorithm_name, "RDDF") == 0)
+	else if(strcmp(algorithm_name, "RDDF") == 0)
 		code =  CARMEN_BEHAVIOR_SELECTOR_RDDF;
+	else if(strcmp(algorithm_name, "Frenet") == 0)
+		code =  CARMEN_BEHAVIOR_SELECTOR_FRENET;
 
-	return (code);
+	return code;
 }
 
 
@@ -2664,54 +2661,38 @@ state_selection_handler(GtkWidget *widget __attribute__ ((unused)), gpointer dat
 }
 
 
-static int
-get_goal_source_code(char* goal_source_name)
+int
+get_task_code(char *task_name)
 {
-	if (goal_source_name == NULL)
-		return (1);
-		
-	if (strcmp(goal_source_name, "User Goal") == 0)
-	{
-		return (0);
-	} 
-	else if(strcmp(goal_source_name, "Rddf Goal") == 0)
-	{
-		return (1);
-	}
+	if (strcmp(task_name, "Follow Lane") == 0)
+		return 0;
+	else if(strcmp(task_name, "Park") == 0)
+		return 1;
+	else if(strcmp(task_name, "Human Intervention") == 0)
+		return 2;
 
-	return (-1);
-}
-
-static void
-goal_source_selection_handler(GtkWidget *widget __attribute__ ((unused)), gpointer data __attribute__ ((unused)))
-{
-	carmen_behavior_selector_set_goal_source(get_goal_source_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)goal_source_selection)));
+	return -1;
 }
 
 void navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message msg)
 {
 	behavior_selector_active = 1;
-	goal_source = msg.goal_source;
 
-	if((int)msg.following_lane_algorithm != get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)follow_lane_algorithm_selection)))
-		gtk_combo_box_set_active((GtkComboBox*)follow_lane_algorithm_selection, msg.following_lane_algorithm);
+	if ((int) msg.task != get_task_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)))
+		gtk_combo_box_set_active((GtkComboBox*)state_selection, msg.task);
 
-	if((int)msg.parking_algorithm != get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)parking_algorithm_selection)))
-		gtk_combo_box_set_active((GtkComboBox*)parking_algorithm_selection, msg.parking_algorithm);
-
-	if((int)msg.goal_source != get_goal_source_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)goal_source_selection)))
+	if (msg.task == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
 	{
-		gtk_combo_box_set_active((GtkComboBox*)goal_source_selection, msg.goal_source);
+		if ((int) msg.algorithm != get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)follow_lane_algorithm_selection)))
+			gtk_combo_box_set_active((GtkComboBox*)follow_lane_algorithm_selection, msg.algorithm);
+	}
+	else if (msg.task == BEHAVIOR_SELECTOR_PARK)
+	{
+		if ((int) msg.algorithm != get_algorithm_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)parking_algorithm_selection)))
+			gtk_combo_box_set_active((GtkComboBox*)parking_algorithm_selection, msg.algorithm);
 	}
 
-	if (msg.goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		gtk_widget_set_sensitive(state_selection, 1);
-	else
-		gtk_widget_set_sensitive(state_selection, 0);
-
-
-	if((int)msg.task != get_state_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)))
-		gtk_combo_box_set_active((GtkComboBox*)state_selection, msg.task);
+	gtk_widget_set_sensitive(state_selection, 0);
 }
 
 int navigator_graphics_init(int argc, char *argv[],
@@ -2841,16 +2822,6 @@ int navigator_graphics_init(int argc, char *argv[],
 			gtk_button_box_set_spacing(GTK_BUTTON_BOX(button_box), 10);
 			gtk_button_box_set_child_size(GTK_BUTTON_BOX(button_box), BUTTON_WIDTH * .4,
 					BUTTON_HEIGHT);
-		}
-
-		{
-			new_label("Goal Source:", button_box);
-			goal_source_selection = gtk_combo_box_text_new();
-			gtk_combo_box_text_append_text((GtkComboBoxText*) goal_source_selection, "User Goal");
-			gtk_combo_box_text_append_text((GtkComboBoxText*)goal_source_selection, "Rddf Goal");
-			gtk_combo_box_set_active((GtkComboBox*)goal_source_selection, 0);
-			g_signal_connect(GTK_OBJECT(goal_source_selection), "changed", G_CALLBACK(goal_source_selection_handler), NULL);
-			gtk_box_pack_end(GTK_BOX(button_box), goal_source_selection, FALSE, FALSE, 0);
 		}
 
 		{

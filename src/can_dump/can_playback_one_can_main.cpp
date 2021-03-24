@@ -41,7 +41,8 @@ can_dump_publish_can_message(carmen_can_dump_can_line_message *message)
 {
 	struct can_frame frame;
 
-	int can_in, can_out;
+//	int can_in;
+	int can_out;
 	char buffer[1024];
 	int can_dlc;
 
