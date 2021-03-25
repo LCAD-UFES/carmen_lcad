@@ -1,0 +1,2 @@
+# to compile
+gcc -std=c++11 -o evaluate_accuracy evaluate_accuracy.cpp -I$CARMEN_HOME/sharedlib/darknet4/src -L$CARMEN_HOME/sharedlib/darknet4/src -I$CARMEN_HOME/sharedlib/darknet4/include -L$CARMEN_HOME/sharedlib/darknet4/ -fPIC -l:libdarknet.so -lstdc++

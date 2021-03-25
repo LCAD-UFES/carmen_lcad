@@ -25,7 +25,7 @@ const double TIME_TO_ACHIEVE_MAX_SPEED = 3.0;
 
 carmen_localize_ackerman_globalpos_message globalpos;
 carmen_behavior_selector_goal_list_message goal_list;
-carmen_rddf_road_profile_message rddf;
+carmen_rddf_road_profile_message path_goals_and_annotations_message;
 
 
 void
@@ -221,9 +221,9 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 	double v = 0;
 	double phi = 0;
 
-	if (goal_list.size <= 0 || rddf.number_of_poses <= 0)
+	if (goal_list.size <= 0 || path_goals_and_annotations_message.number_of_poses <= 0)
 	{
-		printf("Empty goal list (%d) or rddf (%d)! Stopping the car!\n", goal_list.size, rddf.number_of_poses);
+		printf("Empty goal list (%d) or rddf (%d)! Stopping the car!\n", goal_list.size, path_goals_and_annotations_message.number_of_poses);
 
 		if (msg->v < 1.0)
 		{
@@ -281,7 +281,7 @@ main(int argc, char **argv)
 	carmen_localize_ackerman_subscribe_globalpos_message(&globalpos, (carmen_handler_t) carmen_localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_goal_list_message(&goal_list, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_rddf_subscribe_road_profile_message(&rddf, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_road_profile_message(&path_goals_and_annotations_message, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 	return 0;

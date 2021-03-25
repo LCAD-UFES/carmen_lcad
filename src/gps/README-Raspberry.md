@@ -170,13 +170,13 @@ Reboot
 ```
 
 
-# Configu 
+# Configuration
 
 https://docs.emlid.com/reachm-plus/common/reachview/settings/
 https://www.raspberrypi.org/documentation/configuration/wireless/access-point.md
 
 
-# Tos Set the RTK base station:
+# To Set the RTK base station:
 Ifes Vitória
 /home/pi/carmen_lcad/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off
 

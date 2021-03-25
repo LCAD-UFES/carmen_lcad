@@ -372,7 +372,7 @@ get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index
 
 
 void
-save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
+save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
 					const vector<Command> &lastOdometryVector)
 {
@@ -397,7 +397,7 @@ save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_me
 		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
 		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
 				lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
-				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
+				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, path_goals_and_annotations_message->timestamp);
 
 	}
 }

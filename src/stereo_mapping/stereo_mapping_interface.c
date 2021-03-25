@@ -1,5 +1,6 @@
 #include <carmen/carmen.h>
 #include <carmen/stereo_mapping_messages.h>
+#include <carmen/stereo_mapping_interface.h>
 
 char* carmen_stereo_mapping_get_messagename(int camera) {
   switch(camera)

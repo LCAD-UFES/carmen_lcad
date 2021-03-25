@@ -1414,7 +1414,7 @@ extern "C" void cv_draw_object(image sized, float *truth_cpu, int max_boxes, int
 
     while (!selected) {
 #ifndef CV_VERSION_EPOCH
-        int pressed_key = cv::waitKeyEx(20);	// OpenCV 3.x
+        int pressed_key = cv::waitKey(20);	// OpenCV 3.x
 #else
         int pressed_key = cv::waitKey(20);		// OpenCV 2.x
 #endif

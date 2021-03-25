@@ -15,7 +15,7 @@ LFLAGS +=  -lgrid_mapping -lprob_models -lz -lmap_io -lmap_util -lmap_interface 
 	-lmapper_interface -llocalize_ackerman_interface  -lipc \
 	-L/usr/lib64/libkml -lrrt_util_wrapper -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -llocalize_ackerman_core \
 	-lrotation_geometry -ldownload_map -lrddf_interface -ltracker_interface -lnavigator_astar_interface \
-	-lsimulator_ackerman_interface
+	-lsimulator_ackerman_interface -lbehavior_selector_interface
 		
 CFLAGS += -fopenmp -std=c99 
 CXXFLAGS += -Wno-write-strings

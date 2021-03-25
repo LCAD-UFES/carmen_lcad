@@ -712,8 +712,8 @@ run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_da
 		}
 		else // Velodyne and others
 		{
-			if (decay_to_offline_map)
-				map_decay_to_offline_map(&occupancy_map);
+//			if (decay_to_offline_map)
+//				map_decay_to_offline_map(&occupancy_map);
 
 			carmen_pose_3D_t neural_mapper_robot_pose = sensor_data->robot_pose[sensor_data->point_cloud_index];
 
@@ -793,8 +793,8 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		}
 		else // Velodyne and others
 		{
-			if (decay_to_offline_map)
-				map_decay_to_offline_map(&occupancy_map);
+//			if (decay_to_offline_map)
+//				map_decay_to_offline_map(&occupancy_map);
 
 			carmen_pose_3D_t neural_mapper_robot_pose = sensor_data->robot_pose[sensor_data->point_cloud_index];
 

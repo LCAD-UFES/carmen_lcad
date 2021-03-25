@@ -41,7 +41,7 @@ carmen_obstacle_distance_mapper_compact_map_message *behaviour_selector_compact_
 carmen_route_planner_road_network_message 			*road_network_message = NULL;
 
 extern carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_message;
-extern carmen_behavior_selector_goal_list_message *behavior_selector_goal_list_message;
+extern carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message;
 extern double maximum_acceleration_forward;
 
 
@@ -344,9 +344,9 @@ carmen_localize_ackerman__globalpos_handler(carmen_localize_ackerman_globalpos_m
 
 
 static void
-behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
+behaviour_selector_goal_list_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
-	behavior_selector_goal_list_message = msg;
+	path_goals_and_annotations_message = msg;
 }
 
 
@@ -384,7 +384,7 @@ register_handlers()
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_map_server_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) carmen_localize_ackerman__globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

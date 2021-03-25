@@ -117,7 +117,7 @@ double get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
         carmen_ackerman_path_point_t robot);
 
 void get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima);
-void save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
+void save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
 					const vector<Command> &lastOdometryVector);
 //------------------------------------------------------------

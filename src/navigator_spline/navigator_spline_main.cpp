@@ -18,7 +18,7 @@ static carmen_ackerman_traj_point_t poses[MAX_POSITIONS + EXTRA_POSITIONS + 100]
 static void tracker_position_handler(carmen_tracker_position_message *message);
 void publish_spline_path_message(carmen_ackerman_traj_point_t *poses, int number_of_poses);
 static void publish_spline_goal_message(carmen_ackerman_traj_point_t poses);
-void publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses);
+//void publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses);
 
 
 void
@@ -87,19 +87,19 @@ void publish_spline_goal_message(carmen_ackerman_traj_point_t poses)
 }
 
 
-void publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses)
-{
-	IPC_RETURN_TYPE err;
-	carmen_behavior_selector_goal_list_message goal_list_msg;
-	poses->theta = globalpos.theta;
-
-	goal_list_msg.goal_list = poses;
-	goal_list_msg.size = number_of_poses;
-	goal_list_msg.host = carmen_get_host();
-	goal_list_msg.timestamp = carmen_get_time();
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
-}
+//void publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses)
+//{
+//	IPC_RETURN_TYPE err;
+//	carmen_behavior_selector_goal_list_message goal_list_msg;
+//	poses->theta = globalpos.theta;
+//
+//	goal_list_msg.goal_list = poses;
+//	goal_list_msg.size = number_of_poses;
+//	goal_list_msg.host = carmen_get_host();
+//	goal_list_msg.timestamp = carmen_get_time();
+//	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
+//	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+//}
 
 
 /*********************************************************

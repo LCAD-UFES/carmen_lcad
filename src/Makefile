@@ -23,7 +23,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   rrt_planner subdir_module_example velodyne log_filter rddf \
 	   download_map parking_assistant navigator_astar \
 	   tracker navigator_spline navigator_gui \
-	   camera_boxes_to_world navigator_gui2 \
+	   camera_boxes_to_world navigator_gui2 stereo_mapping \
 	   mapper obstacle_distance_mapper map_server car_panel_gui	\
 	   v_disparity stereo_velodyne motion_planner udatmo1 behavior_selector \
 	   base_ackerman driving_playback ford_escape_hybrid \
@@ -33,7 +33,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   moving_objects_simulator zed_camera2 graphslam pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer traffic_light \
 	   tracker_opentld  \
-	   velodyne_camera_calibration # neural_object_detector3  stereo_mapping
+	   velodyne_camera_calibration deep_vgl # neural_object_detector3
 	   
 	   # hypergraphsclam \ 
 	   # visual_tracker lane_detector voice_interface

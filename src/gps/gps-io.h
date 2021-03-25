@@ -50,5 +50,5 @@ int   DEVICE_bytes_waiting( int sd );
 
 void  DEVICE_init_params( SerialDevice *p );
 
-#define BUFFER_LENGTH         512
+#define BUFFER_LENGTH         (2048)
 

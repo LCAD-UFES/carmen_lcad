@@ -19,7 +19,7 @@
 
 function mag_fit_display(x, y, z, center, radii, v, xCorr, yCorr, zCorr)
 
-displayRadius = 100;
+displayRadius = 2;
 
 figure(1);
 hold on;

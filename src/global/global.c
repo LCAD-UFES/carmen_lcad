@@ -413,43 +413,6 @@ carmen_get_date(char* time_string)
 }
 
 
-char *carmen_get_host(void)
-{
-  // The return value of getenv() is a pointer to a static buffer, whose contents
-  // may be changed by later calls. Therefore it's safer to create a copy of
-  // the returned string.
-  //
-  // See: http://www.cplusplus.com/reference/cstdlib/getenv/
-  //
-  // "The pointer returned [by a getenv() call] points to an internal memory block,
-  // whose content or validity may be altered by further calls to getenv
-  // (but not by other library functions)."
-  static char hostname[1024];
-  FILE *bin_host;
-
-  if (getenv("HOST") == NULL) {
-    if (getenv("HOSTNAME") != NULL)
-      setenv("HOST", getenv("HOSTNAME"), 1);
-    else if (getenv("host") != NULL)
-      setenv("HOST", getenv("host"), 1);
-    else if (getenv("hostname") != NULL)
-      setenv("HOST", getenv("hostname"), 1);
-    else {
-      bin_host = popen("/bin/hostname", "r");
-      if (bin_host == NULL)
-	carmen_die("\n\tCan't get machine name from $HOST, $host, $hostname or /bin/hostname.\n"
-		   "\tPlease set one of these environment variables properly.\n\n");
-      fscanf(bin_host, "%s", hostname);
-      setenv("HOST", hostname, 1);
-      pclose(bin_host);
-    }
-  }
-
-  strcpy(hostname, getenv("HOST"));
-  return hostname;
-}
-
-
 carmen_default_message *carmen_default_message_create(void)
 {
   static_message.host = carmen_get_host();

@@ -1,0 +1,5 @@
+#!/bin/bash
+image_path="/dados/ufes/"
+output_path="/dados/ufes_gt/"
+base_offset=5
+live_offset=1

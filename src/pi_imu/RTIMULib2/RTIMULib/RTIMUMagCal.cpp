@@ -254,7 +254,8 @@ void RTIMUMagCal::setMinMaxCal()
 
     for (int i = 0; i < 3; i++) {
         delta = (m_magMax.data(i) -m_magMin.data(i)) / 2.0f;
-        m_minMaxScale.setData(i, maxDelta / delta);            // makes everything the same range
+//        m_minMaxScale.setData(i, maxDelta / delta);            // makes everything the same range
+        m_minMaxScale.setData(i, 1.0 / delta);            // @@@ Alberto: normalizacao entre -1 e 1
         m_minMaxOffset.setData(i, (m_magMax.data(i) + m_magMin.data(i)) / 2.0f);
     }
 }

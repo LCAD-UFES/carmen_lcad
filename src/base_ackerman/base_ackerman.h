@@ -26,8 +26,8 @@
  *
  ********************************************************/
 
-#ifndef SIMULATOR_ACKERMAN_H
-#define SIMULATOR_ACKERMAN_H
+#ifndef BASE_ACKERMAN_H
+#define BASE_ACKERMAN_H
 
 #include "base_ackerman_messages.h"
 #include <carmen/localize_ackerman_motion.h>

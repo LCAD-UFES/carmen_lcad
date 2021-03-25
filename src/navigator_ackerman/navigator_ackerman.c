@@ -62,8 +62,7 @@ static carmen_localize_ackerman_globalpos_message globalpos;
 static int robot_initialized = 0;
 
 carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_A_STAR;
-carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
-carmen_behavior_selector_goal_source_t goal_source = -1;
+carmen_behavior_selector_task_t current_task = BEHAVIOR_SELECTOR_PARK;
 
 
 static void
@@ -91,32 +90,22 @@ publish_navigator_ackerman_messages()
 
 
 static void
-goal_list_handler(carmen_behavior_selector_goal_list_message *msg)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
 	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_A_STAR && current_algorithm != CARMEN_BEHAVIOR_SELECTOR_GRADIENT)
 		return;
 
-	carmen_planner_ackerman_set_goal_list(msg->goal_list, msg->size, &nav_config);
+	carmen_planner_ackerman_set_goal_list(msg->goal_list, msg->goal_list_size, &nav_config);
 }
 
 static void
 state_handler(carmen_behavior_selector_state_message *msg)
 {
 	current_algorithm = msg->algorithm;
-	current_state = msg->state;
+	current_task = msg->task;
 
 	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_A_STAR && current_algorithm != CARMEN_BEHAVIOR_SELECTOR_GRADIENT)
 		return;
-
-	if (goal_source != msg->goal_source)
-	{
-		goal_source = msg->goal_source;
-		carmen_ackerman_traj_point_t point;
-		point.x = -1;
-		point.y = -1;
-		point.theta = -1;
-		carmen_planner_ackerman_update_goal(&point, 1, &nav_config);
-	}
 
 	switch(current_algorithm)
 	{
@@ -133,7 +122,6 @@ state_handler(carmen_behavior_selector_state_message *msg)
 	default:
 		break;
 	}
-
 }
 
 
@@ -407,7 +395,7 @@ main(int argc, char **argv)
 	signal(SIGINT, navigator_shutdown);
 
 	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_map_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) (path_goals_and_annotations_message_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (cheat) 

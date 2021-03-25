@@ -151,6 +151,8 @@ assemble_fused_odometry_message(carmen_fused_odometry_particle_message particle_
 void 
 publish_fused_odometry(void)
 {
+	// Correntemente esta funcao eh chamada de xsens_xyz_handler.cpp
+
 	IPC_RETURN_TYPE err;
 	
 	if (xt == NULL)

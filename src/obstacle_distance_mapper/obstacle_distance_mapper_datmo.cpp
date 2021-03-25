@@ -17,7 +17,7 @@ extern double moving_object_merge_distance;
 extern double distance_car_pose_car_front;
 
 carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_message = NULL;
-carmen_behavior_selector_goal_list_message *behavior_selector_goal_list_message = NULL;
+carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
 double maximum_acceleration_forward;
 
@@ -1685,14 +1685,14 @@ simulate_moving_object_in_its_lane(moving_object_t *moving_object, carmen_ackerm
 double
 get_robot_acc(carmen_ackerman_traj_point_t pose)
 {
-	if (!behavior_selector_goal_list_message)
+	if (!path_goals_and_annotations_message)
 		return (0.0);
 
-	int last_goal_list_size = behavior_selector_goal_list_message->size;
+	int last_goal_list_size = path_goals_and_annotations_message->goal_list_size;
 	if (last_goal_list_size == 0)
 		return (0.0);
 
-	carmen_ackerman_traj_point_t goal = behavior_selector_goal_list_message->goal_list[0];
+	carmen_ackerman_traj_point_t goal = path_goals_and_annotations_message->goal_list[0];
 	double S = DIST2D(pose, goal);
 	double acc;
 	if (S < 0.1)

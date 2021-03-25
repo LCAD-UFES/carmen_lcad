@@ -53,7 +53,11 @@ main(int argc, char **argv)
 	define_messages();
 
 	sleep(time);
-	publish_starting_pose(pose);
+	for (int i = 0; i < 10; i++)
+	{
+		publish_starting_pose(pose);
+		usleep(10000);
+	}
 
 	while (1)
 		sleep(10); // Para não morrer nunca e não gastar CPU

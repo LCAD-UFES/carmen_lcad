@@ -370,6 +370,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
+		if (decay_to_offline_map)
+			map_decay_to_offline_map(&occupancy_map);
+
 		free_virtual_scan_message();
 
 		// A ordem eh importante

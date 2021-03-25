@@ -190,7 +190,7 @@ bool RTIMUMPU9250::IMUInit()
     m_imuData.accelValid = true;
     m_imuData.compassValid = true;
     m_imuData.pressureValid = false;
-    m_imuData.temperatureValid = false;
+    m_imuData.temperatureValid = true;
     m_imuData.humidityValid = false;
 
     //  configure IMU
@@ -241,12 +241,17 @@ bool RTIMUMPU9250::IMUInit()
     if (!setSampleRate())
         return false;
 
-    if(!compassSetup()) {
+    if (!compassSetup()) {
         return false;
     }
 
     if (!setCompassRate())
         return false;
+
+    // Set up temperature sensor
+
+    m_temperatureScale = 1.0 / 333.87;
+    m_temperatureBias =  21.0;
 
     //  enable the sensors
 
@@ -288,7 +293,7 @@ bool RTIMUMPU9250::resetFifo()
     if (!m_settings->HALWrite(m_slaveAddr, MPU9250_INT_ENABLE, 1, "Writing int enable"))
         return false;
 
-    if (!m_settings->HALWrite(m_slaveAddr, MPU9250_FIFO_EN, 0x78, "Failed to set FIFO enables"))
+    if (!m_settings->HALWrite(m_slaveAddr, MPU9250_FIFO_EN, 0xF8, "Failed to set FIFO enables"))
         return false;
 
     return true;
@@ -607,18 +612,21 @@ bool RTIMUMPU9250::IMURead()
 #endif
 
     RTMath::convertToVector(fifoData, m_imuData.accel, m_accelScale, true);
-    RTMath::convertToVector(fifoData + 6, m_imuData.gyro, m_gyroScale, true);
+    RTMath::convertToRTFLOAT(fifoData + 6, &(m_imuData.temperature), m_temperatureScale, true);
+    RTMath::convertToVector(fifoData + 8, m_imuData.gyro, m_gyroScale, true);
     RTMath::convertToVector(compassData + 1, m_imuData.compass, 0.6f, false);
+
+    m_imuData.temperature += m_temperatureBias;
 
     //  sort out gyro axes
 
     m_imuData.gyro.setX(m_imuData.gyro.x());
-    m_imuData.gyro.setY(-m_imuData.gyro.y());
-    m_imuData.gyro.setZ(-m_imuData.gyro.z());
+    m_imuData.gyro.setY(m_imuData.gyro.y());
+    m_imuData.gyro.setZ(m_imuData.gyro.z());
 
     //  sort out accel data;
 
-    m_imuData.accel.setX(-m_imuData.accel.x());
+//    m_imuData.accel.setX(-m_imuData.accel.x());
 
     //  use the compass fuse data adjustments
 
@@ -632,13 +640,22 @@ bool RTIMUMPU9250::IMURead()
 
     temp = m_imuData.compass.x();
     m_imuData.compass.setX(m_imuData.compass.y());
-    m_imuData.compass.setY(-temp);
+    m_imuData.compass.setY(temp);
+    m_imuData.compass.setZ(-m_imuData.compass.z());
 
     //  now do standard processing
+
+//    static int countt = 0;
+//    if (countt % 100 == 0)
+//    	printf("antes - % 5.2lf, % 5.2lf, % 5.2lf\n" ,  m_imuData.compass.x(),  m_imuData.compass.y(),  m_imuData.compass.z());
 
     handleGyroBias();
     calibrateAverageCompass();
     calibrateAccel();
+
+//    if (countt % 100 == 0)
+//    	printf("depoi - % 5.2lf, % 5.2lf, % 5.2lf\n" ,  m_imuData.compass.x(),  m_imuData.compass.y(),  m_imuData.compass.z());
+//    countt++;
 
     if (m_firstTime)
         m_imuData.timestamp = RTMath::currentUSecsSinceEpoch();

@@ -82,8 +82,7 @@ extern "C"
 
     typedef struct
     {
-        // trocar para number_of_waypoints
-        int number_of_poses;
+        int number_of_poses;	// number of waypoints to consider near end_point (point)
         carmen_point_t point;
         double timestamp;
         char *host;

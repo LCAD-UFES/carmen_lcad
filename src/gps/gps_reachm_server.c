@@ -138,13 +138,13 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	carmen_erase_structure(&gpgga, sizeof(carmen_gps_gpgga_message) );
-	carmen_erase_structure(&gprmc, sizeof(carmen_gps_gprmc_message) );
+	carmen_erase_structure(&gpgga, sizeof(carmen_gps_gpgga_message));
+	carmen_erase_structure(&gprmc, sizeof(carmen_gps_gprmc_message));
   
 	gpgga.host = carmen_get_host();
 	gprmc.host = carmen_get_host();
 
-	DEVICE_init_params( &dev );
+	DEVICE_init_params(&dev);
 
 	strncpy(dev.ttyport, argv[1], MAX_NAME_LENGTH);
 	dev.baud = atoi(argv[2]);

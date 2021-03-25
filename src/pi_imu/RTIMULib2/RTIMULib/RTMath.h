@@ -67,6 +67,10 @@ public:
 
     static void convertToVector(unsigned char *rawData, RTVector3& vec, RTFLOAT scale, bool bigEndian);
 
+    //  Takes signed 16 bit data from a char array and converts it to a scaled RTFLOAT
+
+    static void convertToRTFLOAT(unsigned char *rawData, RTFLOAT *val, RTFLOAT scale, bool bigEndian);
+
     //  Takes a pressure in hPa and returns height above sea level in meters
 
     static RTFLOAT convertPressureToHeight(RTFLOAT pressure, RTFLOAT staticPressure = 1013.25);

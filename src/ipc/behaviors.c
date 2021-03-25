@@ -1130,7 +1130,9 @@ void x_ipc_execHnd(CONNECTION_PTR connection, DATA_MSG_PTR dataMsg)
       LOCK_CM_MUTEX;
       direct = DIRECT_CONNECTION(connection);
       UNLOCK_CM_MUTEX;
-      if (!direct) x_ipcSuccess(x_ipcRef); break;
+      if (!direct)
+    	  x_ipcSuccess(x_ipcRef);
+      break;
     }
 
     case UNKNOWN:
