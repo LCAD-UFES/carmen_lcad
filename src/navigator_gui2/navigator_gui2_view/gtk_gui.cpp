@@ -821,9 +821,9 @@ namespace View
 
 			if (route_planner_route)
 			{
-				sprintf(buffer, "Route Planner State: %s", print_route_planner_feedback(route_planner_route->route_planner_feedback));
+				sprintf(buffer, "Route Planner State: %s", print_route_planner_state(route_planner_route->route_planner_state));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
-				sprintf(buffer, "Offroad Planner Request: %s", print_route_planner_request(route_planner_route->offroad_planner_request));
+				sprintf(buffer, "Offroad Planner Request: %s", print_offroad_planner_request(route_planner_route->offroad_planner_request));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest), buffer);
 			}
 

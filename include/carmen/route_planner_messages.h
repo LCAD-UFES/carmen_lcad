@@ -30,7 +30,7 @@ typedef enum
 	WITHIN_OFFROAD_PLAN
 } offroad_planner_request_t;
 
-#define print_route_planner_request(x) ( \
+#define print_offroad_planner_request(x) ( \
 	(x == NO_REQUEST)? "NO_REQUEST": \
 	(x == PLAN_FROM_POSE_TO_LANE)? "PLAN_FROM_POSE_TO_LANE": \
 	(x == PLAN_FROM_LANE_TO_FINAL_POSE)? "PLAN_FROM_LANE_TO_FINAL_POSE": \
@@ -38,7 +38,7 @@ typedef enum
 	(x == WITHIN_OFFROAD_PLAN)? "WITHIN_OFFROAD_PLAN": "" )
 
 
-typedef enum ROUTE_PLANNER_FEEDBACK
+typedef enum ROUTE_PLANNER_STATE
 {
 	ROUTE_PLANNED,
 	ROUTE_PLANNER_IN_RDDF_MODE,
@@ -46,9 +46,9 @@ typedef enum ROUTE_PLANNER_FEEDBACK
 	PUBLISHING_ROUTE,
 	DESTINATION_REACHED,
 	IDLE
-} carmen_route_planner_feedback_t;
+} carmen_route_planner_state_t;
 
-#define print_route_planner_feedback(x) ( \
+#define print_route_planner_state(x) ( \
 	(x == ROUTE_PLANNED)? "ROUTE_PLANNED": \
 	(x == ROUTE_PLANNER_IN_RDDF_MODE)? "ROUTE_PLANNER_IN_RDDF_MODE": \
 	(x == COULD_NOT_COMPUTE_THE_ROUTE)? "COULD_NOT_COMPUTE_THE_ROUTE": \
@@ -119,8 +119,8 @@ typedef struct
     //	nearby_lanes_size = 5+3+6 = 14
     //	nearby_lanes (p_lane_pose) -> p_0_0, p_0_1, p_0_2, p_0_3, p_0_4, p_1_0, p_1_1, p_1_2, p_2_0, p_2_1, p_2_2, p_2_3, p_2_4, p_2_5
 
-	int offroad_planner_request;
-	carmen_route_planner_feedback_t route_planner_feedback;
+	offroad_planner_request_t offroad_planner_request;
+	carmen_route_planner_state_t route_planner_state;
 
     double timestamp;
     char *host;

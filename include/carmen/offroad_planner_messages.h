@@ -8,11 +8,11 @@
 #ifndef OFFROAD_PLANNER_MESSAGES_H_
 #define OFFROAD_PLANNER_MESSAGES_H_
 
+#include <carmen/carmen.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <carmen/carmen.h>
 
 
 typedef enum OFFROAD_PLANNER_FEEDBACK
