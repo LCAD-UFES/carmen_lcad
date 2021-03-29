@@ -1,0 +1,6 @@
+classes=1981
+train  = /home/tgcavalcante/DRIVE/baidu/dataset_darknet/train.list
+valid  = /home/tgcavalcante/DRIVE/baidu/dataset_darknet/valid.list
+labels = /home/tgcavalcante/DRIVE/baidu/dataset_darknet/labels.txt
+backup = backup/
+top=2

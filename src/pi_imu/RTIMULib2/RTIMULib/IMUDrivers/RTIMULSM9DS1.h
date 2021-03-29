@@ -78,6 +78,8 @@ private:
     RTFLOAT m_gyroScale;
     RTFLOAT m_accelScale;
     RTFLOAT m_compassScale;
+    RTFLOAT m_temperatureScale;
+    RTFLOAT m_temperatureBias;
 
 #ifdef LSM9DS1_CACHE_MODE
     bool m_firstTime;                                       // if first sample

@@ -39,22 +39,22 @@
 # declare -a fmts=(1 1 1 1 1 1 1 1 1 1)
 
 
-
-
 declare -a logs=(
-"/dados/log_voltadaufes-20160825.txt" 
+"/dados/log_voltadaufes-20160830.txt" 
 )
 
 declare -a dirs=(
-"/dados/ufes/20160825"
+"/dados/ufes/20160830"
 )
 
 
 declare -a cams=(
 3
+3
 )
 
 declare -a crops=(
+380
 380
 )
 
@@ -72,14 +72,14 @@ for i in "${!dirs[@]}"; do
     fgrep ${msg}${cams[$i]} ${logs[$i]} > /dados/log2png${i}.txt
     python log2png.py -i /dados/log2png${i}.txt -o ${dirs[$i]} -s 640x480 -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]}
  
-    for left in ${dirs[$i]}/*.l.png; do
-        right="${left/l.png/r.png}"
-        disp="${left/l.png/d.png}"
-        if [ ! -f "$disp" ]; then
-            echo "Processing ${left} ${right}"
-            ~/deepslam/spsstereo/build/spsstereo $left $right
-             mv disparity.png ${disp}
-        fi
-    done
+#    for left in ${dirs[$i]}/*.l.png; do
+#        right="${left/l.png/r.png}"
+#        disp="${left/l.png/d.png}"
+#        if [ ! -f "$disp" ]; then
+#            echo "Processing ${left} ${right}"
+#            ~/deepslam/spsstereo/build/spsstereo $left $right
+#            mv disparity.png ${disp}
+#        fi
+#    done
 done
 

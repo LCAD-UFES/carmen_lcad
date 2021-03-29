@@ -168,32 +168,32 @@ get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_od
 
 
 void
-move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
+move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	carmen_ackerman_path_point_t local_reference_lane_point;
 
 	int index = 0;
-	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
+	if (path_goals_and_annotations_message->poses[0].x == path_goals_and_annotations_message->poses[1].x && path_goals_and_annotations_message->poses[0].y == path_goals_and_annotations_message->poses[1].y)
 		index = 1;
 
-	for (int k = index; k < goal_list_message->number_of_poses; k++)
+	for (int k = index; k < path_goals_and_annotations_message->number_of_poses; k++)
 	{
-		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
+		SE2 lane_in_world_reference(path_goals_and_annotations_message->poses[k].x, path_goals_and_annotations_message->poses[k].y, path_goals_and_annotations_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
 		if (GlobalState::reverse_planning)
 		{
 			 if (lane_in_car_reference[0] <= 0.0)
 			 {
 				 local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-				 							goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+				 							path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
 				 lane_in_local_pose->push_back(local_reference_lane_point);
 			 }
 		}
 		else
 		{
 			local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-					goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
+					path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
 			lane_in_local_pose->push_back(local_reference_lane_point);
 
 		}
@@ -203,21 +203,21 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_r
 
 
 void
-move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
+move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	vector<carmen_ackerman_path_point_t> poses_back;
 	carmen_ackerman_path_point_t local_reference_lane_point;
 
-	if ((goal_list_message->number_of_poses_back > 2))
+	if ((path_goals_and_annotations_message->number_of_poses_back > 2))
 	{
-		for (int i = 0; i < goal_list_message->number_of_poses_back; i++)
+		for (int i = 0; i < path_goals_and_annotations_message->number_of_poses_back; i++)
 		{
-			SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
+			SE2 lane_back_in_world_reference(path_goals_and_annotations_message->poses_back[i].x, path_goals_and_annotations_message->poses_back[i].y, path_goals_and_annotations_message->poses_back[i].theta);
 			SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
 
 			local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
-					goal_list_message->poses_back[i].v, goal_list_message->poses_back[i].phi, 0.0};
+					path_goals_and_annotations_message->poses_back[i].v, path_goals_and_annotations_message->poses_back[i].phi, 0.0};
 
 			poses_back.push_back(local_reference_lane_point);
 
@@ -234,19 +234,19 @@ move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_roa
 
 
 bool
-move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
+move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	bool goal_in_lane = false;
 
-	if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
+	if ((path_goals_and_annotations_message->number_of_poses < 2 || path_goals_and_annotations_message->number_of_poses > 250))
 		return false;
 
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 	if (!GlobalState::reverse_planning)
-		move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+		move_poses_back_to_local_reference(robot_pose, path_goals_and_annotations_message, lane_in_local_pose);
 
-	move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	move_poses_foward_to_local_reference(robot_pose, path_goals_and_annotations_message, lane_in_local_pose);
 
 	return (goal_in_lane);
 }
@@ -857,7 +857,7 @@ goal_is_behind_car(Pose *localizer_pose, Pose *goal_pose)
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
-		carmen_behavior_selector_road_profile_message *goal_list_message)
+		carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
 	vector<carmen_ackerman_path_point_t> lane_in_local_pose, detailed_lane;
 	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp;
@@ -885,10 +885,10 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	{
 		previous_good_tcp.valid = false;
 		first_time = false;
-		last_timestamp = goal_list_message->timestamp;
+		last_timestamp = path_goals_and_annotations_message->timestamp;
 	}
 
-	move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &lane_in_local_pose);
+	move_lane_to_robot_reference_system(localizer_pose, path_goals_and_annotations_message, &lane_in_local_pose);
 
 	if (!GlobalState::reverse_driving && target_v < 0.0)
 	{
@@ -1002,7 +1002,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	{
 		put_shorter_path_in_front(paths, shorter_path);
 		previous_good_tcp = best_otcp;
-		last_timestamp = goal_list_message->timestamp;
+		last_timestamp = path_goals_and_annotations_message->timestamp;
 
 		// Mostra a detailed_lane como um plano nas interfaces
 //		move_path_to_current_robot_pose(detailed_lane, localizer_pose);
@@ -1012,7 +1012,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	}
 	else
 	{
-		if ((goal_list_message->timestamp - last_timestamp) > 0.5)
+		if ((path_goals_and_annotations_message->timestamp - last_timestamp) > 0.5)
 			previous_good_tcp.valid = false;
 
 		paths.clear();
@@ -1022,7 +1022,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 vector<vector<carmen_ackerman_path_point_t> >
 compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometry,
-		double target_v, carmen_behavior_selector_road_profile_message *goal_list_message)
+		double target_v, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
 	vector<Command> lastOdometryVector;
 	vector<Pose> goalPoseVector;
@@ -1049,7 +1049,7 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 
 	paths.resize(lastOdometryVector.size() * goalPoseVector.size());
 
-	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
+	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, path_goals_and_annotations_message);
 
 //	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
 //	fflush(stdout);

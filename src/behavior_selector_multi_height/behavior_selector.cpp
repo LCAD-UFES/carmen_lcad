@@ -32,7 +32,6 @@ static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
 static carmen_obstacle_distance_mapper_map_message *current_map_level1 = NULL;
 static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
-static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
 static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;

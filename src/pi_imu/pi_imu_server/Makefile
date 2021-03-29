@@ -28,8 +28,10 @@ RTIMULIBPATH  = ../RTIMULib2/RTIMULib
 CC    			= gcc
 CXX   			= g++
 DEFINES       	=
-CFLAGS			= -pipe -O2 -Wall -W $(DEFINES)
-CXXFLAGS      	= -pipe -O2 -Wall -W $(DEFINES)
+#CFLAGS			= -pipe -O2 -Wall -W $(DEFINES)
+#CXXFLAGS      	= -pipe -O2 -Wall -W $(DEFINES)
+CFLAGS			= -pipe -g -Wall -W $(DEFINES)
+CXXFLAGS      	= -pipe -g -Wall -W $(DEFINES)
 INCPATH       	= -I. -I$(RTIMULIBPATH)
 LINK  			= g++
 LFLAGS			= -Wl,-O1
@@ -76,6 +78,7 @@ DEPS    = $(RTIMULIBPATH)/RTMath.h \
     $(RTIMULIBPATH)/IMUDrivers/RTIMULSM9DS1.h \
     $(RTIMULIBPATH)/IMUDrivers/RTIMUBMX055.h \
     $(RTIMULIBPATH)/IMUDrivers/RTIMUBNO055.h \
+    $(RTIMULIBPATH)/IMUDrivers/RTIMUHMC5883LADXL345.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressure.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressureBMP180.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressureLPS25H.h \
@@ -102,6 +105,7 @@ OBJECTS = objects/pi_imu_server_driver.o \
     objects/RTIMULSM9DS1.o \
     objects/RTIMUBMX055.o \
     objects/RTIMUBNO055.o \
+    objects/RTIMUHMC5883LADXL345.o \
     objects/RTPressure.o \
     objects/RTPressureBMP180.o \
     objects/RTPressureLPS25H.o \
@@ -128,6 +132,7 @@ OBJECTS_TEST = objects/pi_imu_test.o \
     objects/RTIMULSM9DS1.o \
     objects/RTIMUBMX055.o \
     objects/RTIMUBNO055.o \
+    objects/RTIMUHMC5883LADXL345.o \
     objects/RTPressure.o \
     objects/RTPressureBMP180.o \
     objects/RTPressureLPS25H.o \

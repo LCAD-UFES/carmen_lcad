@@ -28,15 +28,12 @@ static int goal_type[GOAL_LIST_SIZE];
 static int annotations[GOAL_LIST_SIZE];
 static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
-//static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
-static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
-static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+//static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARK;
+static carmen_behavior_selector_task_t current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
 static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
 static double distance_to_remove_annotation_goal = 1.5;
-
-extern double distance_car_pose_car_front;
 
 extern int behavior_selector_reverse_driving;
 
@@ -68,12 +65,12 @@ get_current_algorithm()
 {
 	carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER;
 
-	switch(current_state)
+	switch(current_task)
 	{
-	case BEHAVIOR_SELECTOR_FOLLOWING_LANE:
+	case BEHAVIOR_SELECTOR_FOLLOW_ROUTE:
 		current_algorithm = following_lane_planner;
 		break;
-	case BEHAVIOR_SELECTOR_PARKING:
+	case BEHAVIOR_SELECTOR_PARK:
 		current_algorithm = parking_planner;
 		break;
 	default:
@@ -86,23 +83,20 @@ get_current_algorithm()
 
 
 void
-change_state(int rddf_annotation)
+change_task(int rddf_annotation)
 {
-	if (current_goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		return;
-
 	switch(rddf_annotation)
 	{
 	case RDDF_ANNOTATION_TYPE_NONE:
-		current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
+		current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 		break;
 
 	case RDDF_ANNOTATION_TYPE_END_POINT_AREA:
-		current_state = BEHAVIOR_SELECTOR_PARKING;
+		current_task = BEHAVIOR_SELECTOR_PARK;
 		break;
 
 	case RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION:
-		current_state = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
+		current_task = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
 		carmen_navigator_ackerman_stop();
 		break;
 	}
@@ -424,46 +418,31 @@ clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int ideal_rddf_pos
 
 
 int
-behavior_selector_set_state(carmen_behavior_selector_state_t state)
+behavior_selector_set_task(carmen_behavior_selector_task_t task)
 {
-	if (state == current_state)
+	if (task == current_task)
 		return (0);
 
-	current_state = state;
+	current_task = task;
 
 	return (1);
 }
 
 
 void
-behavior_selector_get_full_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
-		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out)
+behavior_selector_get_full_state(carmen_behavior_selector_task_t *current_task_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
+		carmen_behavior_selector_algorithm_t *parking_planner_out)
 {
-	*current_state_out = current_state;
+	*current_task_out = current_task;
 	*following_lane_planner_out = following_lane_planner;
 	*parking_planner_out = parking_planner;
-	*current_goal_source_out = current_goal_source;
 }
 
 
 int
-behavior_selector_get_state()
+behavior_selector_get_task()
 {
-	return (current_state);
-}
-
-
-int
-behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source)
-{
-	if (current_goal_source == goal_source)
-		return (0);
-
-	current_goal_source = goal_source;
-
-	goal_list_size = 0;
-
-	return (1);
+	return (current_task);
 }
 
 
@@ -522,15 +501,15 @@ behavior_selector_get_last_goal_type()
 
 
 void
-behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state)
+behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task)
 {
-	switch(state)
+	switch(task)
 	{
-	case BEHAVIOR_SELECTOR_FOLLOWING_LANE:
+	case BEHAVIOR_SELECTOR_FOLLOW_ROUTE:
 		following_lane_planner = algorithm;
 		break;
 
-	case BEHAVIOR_SELECTOR_PARKING:
+	case BEHAVIOR_SELECTOR_PARK:
 		parking_planner = algorithm;
 		break;
 	default:
@@ -543,7 +522,7 @@ behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, 
 void
 behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t pose)
 {
-	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5 && current_goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5)
 		goal_list_size = 0; //provavelmente o robo foi reposicionado
 
 	robot_pose = pose;

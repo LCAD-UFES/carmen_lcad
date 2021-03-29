@@ -6,7 +6,7 @@ RTIMULib2 is the second version of the original RTIMULib library. The main chang
 
 *** Magnetometer calibration is critical for good performance and, with some IMU chips, meaningful fusion results will not be obtained at all unless the magnetometers have been calibrated ***
 
-## Please note that this project is no longer active and is of historical interest only.
+## Note: We will start long-term support for this project, and new features will be added.
 
 ## Other versions
 
@@ -43,6 +43,7 @@ RTIMULib works with the following IMUs:
 * L3GD20H + LSM303DLHC (optionally with BMP180) as used on the new Adafruit 10-dof IMU.
 * Bosch BMX055 (although magnetometer support is experimental currently).
 * Bosch BNO055 IMU with onchip fusion. Note: will not work reliably with RaspberryPi/Pi2 due to clock-stretching issues.
+* HMC5883L compass + ADXL345 accelerometer + L3G4200D gyro.
 
 The LSM9DS1 implementation was generously supplied by XECDesign.
 
@@ -88,7 +89,13 @@ This directory contains the embedded Linux demo apps (for Raspberry Pi and Intel
 
 ### RTHost
 
+
+#### Native Applications
 RTHost contains the two apps, RTHost and RTHostGL, that can be used by desktops that don't have direct connection to an IMU (as they don't have I2C or SPI interfaces). An Arduino running RTArduLinkIMU from the RTIMULib-Arduino repo provides the hardware interface and a USB cable provides the connection between the desktop and the Arduino.
+
+#### ROS support
+Thanks [apiyap'](https://github.com/apiyap/rtimulib2_ros) contributions, RTIMULib2 is available in ROS, the node code is under ```RTHost/ros```
+
 
 ### RTEllipsoidFit
 
@@ -105,5 +112,3 @@ RTIMULib2 has two mechanisms that can be used to calibrate the magnetometers:
 * Runtime calibration. This mechanism is used if there is no manual calibration data. The magnetometers will remain uncalibrated until a sufficient range of readings has been obtained in each of the axes. The code will continue to monitor magnetometer readings for new maxima and minima and update the calibration data as required. This data is not saved so the procedure will start from scratch if the code is restarted.
 
 Also, if using a non-standard axis rotation, magnetometer calibration (and accelerometer calibration if that has been performed) MUST be run AFTER changing the axis rotation.
-
-

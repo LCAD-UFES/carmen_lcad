@@ -16,6 +16,9 @@ char *tcp_ip_address;
 
 #define do_logger false
 
+#define DEFAULT_SERVER_IP "192.168.1.15"
+
+
 void
 carmen_xsens_define_messages()
 {
@@ -25,6 +28,7 @@ carmen_xsens_define_messages()
     err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
 }
+
 
 void
 carmen_pi_imu_define_messages()
@@ -37,9 +41,8 @@ carmen_pi_imu_define_messages()
 }
 
 
-
 int
-stablished_connection_with_server()
+stablished_connection_with_server(char *server_ip)
 {
 	struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
 	struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
@@ -55,7 +58,7 @@ stablished_connection_with_server()
 	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
 	host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
 
-	status = getaddrinfo("192.168.1.15", PORT, &host_info, &host_info_list);
+	status = getaddrinfo(server_ip, PORT, &host_info, &host_info_list);
 
 	if (status != 0)
 	{
@@ -76,14 +79,14 @@ stablished_connection_with_server()
 
 
 int
-trying_to_reconnect()
+trying_to_reconnect(char *server_ip)
 {
-	int pi_socket = stablished_connection_with_server();
+	int pi_socket = stablished_connection_with_server(server_ip);
 
 	while (pi_socket == -1)
 	{
 		sleep((unsigned int) 5);
-		pi_socket = stablished_connection_with_server();
+		pi_socket = stablished_connection_with_server(server_ip);
 	}
 	return (pi_socket);
 }
@@ -106,7 +109,6 @@ carmen_publish_xsens_quat_message_(carmen_xsens_global_quat_message xsens_quat_m
 	xsens_quat_message.m_acc.x = xsens_quat_message.m_acc.x * G;
 	xsens_quat_message.m_acc.y = xsens_quat_message.m_acc.y * G;
 	xsens_quat_message.m_acc.z = xsens_quat_message.m_acc.z * G;
-	xsens_quat_message.m_temp = 0.0;
 	xsens_quat_message.m_count = 1234;
 
 	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
@@ -146,7 +148,12 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	int pi_socket = stablished_connection_with_server();
+	char *server_ip = (char *) DEFAULT_SERVER_IP;
+
+	if (argc == 2)
+		server_ip = argv[1];
+
+	int pi_socket = stablished_connection_with_server(server_ip);
 
 	carmen_pi_imu_define_messages();
 	carmen_xsens_define_messages();
@@ -163,19 +170,19 @@ main(int argc, char **argv)
 		if (valread == 0 || valread == -1) // 0 Connection lost due to server shutdown -1 Could not connect
 		{
 			close(pi_socket);
-			pi_socket = trying_to_reconnect();
+			pi_socket = trying_to_reconnect(server_ip);
 			continue;
 		}
 		else if ((valread == -1) || (valread != SOCKET_DATA_PACKET_SIZE))
 			continue;
 
-		sscanf((char *) rpi_imu_data, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf*\n",
+		sscanf((char *) rpi_imu_data, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf*\n",
 				&(xsens_quat_message.m_acc.x), &(xsens_quat_message.m_acc.y), &(xsens_quat_message.m_acc.z),
 				&(xsens_quat_message.m_gyr.x), &(xsens_quat_message.m_gyr.y), &(xsens_quat_message.m_gyr.z),
 				&(xsens_quat_message.quat_data.m_data[0]), &(xsens_quat_message.quat_data.m_data[1]), 
 				&(xsens_quat_message.quat_data.m_data[2]), &(xsens_quat_message.quat_data.m_data[3]),
-				&(xsens_quat_message.m_mag.x), &(xsens_quat_message.m_mag.y), 
-				&(xsens_quat_message.m_mag.z));
+				&(xsens_quat_message.m_mag.x), &(xsens_quat_message.m_mag.y), &(xsens_quat_message.m_mag.z),
+				&(xsens_quat_message.m_temp));
 
 //		pi_imu_message.imu_vector.accel.x = xsens_quat_message.m_acc.x;
 //		pi_imu_message.imu_vector.accel.y = xsens_quat_message.m_acc.y;

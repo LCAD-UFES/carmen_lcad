@@ -46,7 +46,7 @@ can_dump_publish_can_message(carmen_can_dump_can_line_message *message)
 	int can_dlc;
 
 	buffer[0] = '\0';
-	sscanf(message->can_line, "can%d -> vcan%d  %X   [%d] %[^\n]",
+	sscanf(message->can_line, "can%d -> can%d  %X   [%d] %[^\n]",
 			&can_in, &can_out, &(frame.can_id), &can_dlc, buffer);
 	frame.can_dlc = can_dlc;
 

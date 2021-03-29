@@ -1,5 +1,5 @@
-#include "darknet.h"
-#include "yolo_v2_class.hpp"
+#include "../include/darknet.h"
+#include "../include/yolo_v2_class.hpp"
 
 #include "network.h"
 
@@ -13,7 +13,7 @@ extern "C" {
 #include "image.h"
 #include "demo.h"
 #include "option_list.h"
-#include "stb_image.h"
+#include "../3rdparty/stb/include/stb_image.h"
 }
 //#include <sys/time.h>
 
@@ -278,7 +278,7 @@ LIB_API std::vector<bbox_t> Detector::detect(image_t img, float thresh, bool use
 
     net.wait_stream = wait_stream;    // 1 - wait CUDA-stream, 0 - not to wait
 #endif
-    //std::cout << "net.gpu_index = " << net.gpu_index << std::endl;
+    // std::cout << "net.gpu_index = " << net.gpu_index << std::endl;
 
     image im;
     im.c = img.c;
@@ -294,33 +294,29 @@ LIB_API std::vector<bbox_t> Detector::detect(image_t img, float thresh, bool use
     }
     else
         sized = resize_image(im, net.w, net.h);
-
-    layer l = net.layers[net.n - 1];
-
-    float *X = sized.data;
-
-    float *prediction = network_predict(net, X);
-
-    if (use_mean) {
-        memcpy(detector_gpu.predictions[detector_gpu.demo_index], prediction, l.outputs * sizeof(float));
-        mean_arrays(detector_gpu.predictions, NFRAMES, l.outputs, detector_gpu.avg);
-        l.output = detector_gpu.avg;
-        detector_gpu.demo_index = (detector_gpu.demo_index + 1) % NFRAMES;
-    }
+    
+    network_predict(detector_gpu.net, sized.data);
+    // if (use_mean) {
+        // memcpy(detector_gpu.predictions[detector_gpu.demo_index], prediction, l.outputs * sizeof(float));
+        // mean_arrays(detector_gpu.predictions, NFRAMES, l.outputs, detector_gpu.avg);
+        // l.output = detector_gpu.avg;
+        // detector_gpu.demo_index = (detector_gpu.demo_index + 1) % NFRAMES;
+    // }
     //get_region_boxes(l, 1, 1, thresh, detector_gpu.probs, detector_gpu.boxes, 0, 0);
-    //if (nms) do_nms_sort(detector_gpu.boxes, detector_gpu.probs, l.w*l.h*l.n, l.classes, nms);
+    // if (nms) do_nms_sort(detector_gpu.boxes, detector_gpu.probs, net.layers[net.n-1].w*net.layers[net.n-1].h*net.layers[net.n-1].n, net.layers[net.n-1].classes, nms);
 
     int nboxes = 0;
     int letterbox = 0;
     float hier_thresh = 0.5;
     detection *dets = get_network_boxes(&net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes, letterbox);
-    if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
+    if (nms) 
+        do_nms_sort(dets, nboxes, net.layers[net.n-1].classes, nms);
 
     std::vector<bbox_t> bbox_vec;
 
     for (int i = 0; i < nboxes; ++i) {
         box b = dets[i].bbox;
-        int const obj_id = max_index(dets[i].prob, l.classes);
+        int const obj_id = max_index(dets[i].prob, net.layers[net.n-1].classes);
         float const prob = dets[i].prob[obj_id];
 
         if (prob > thresh)
@@ -341,6 +337,7 @@ LIB_API std::vector<bbox_t> Detector::detect(image_t img, float thresh, bool use
             bbox_vec.push_back(bbox);
         }
     }
+    bbox_vec = tracking_id(bbox_vec); // For tracking objects. Included by Piumbini
 
     free_detections(dets, nboxes);
     if(sized.data)

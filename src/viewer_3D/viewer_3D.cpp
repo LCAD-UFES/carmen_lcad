@@ -840,7 +840,7 @@ draw_everything()
 
     if (draw_velodyne_flag == 1)
     {
-        if (draw_annotation_flag || velodyne_remission_flag)
+//        if (draw_annotation_flag || velodyne_remission_flag)
             glPointSize(5);
         draw_velodyne_points(velodyne_points, velodyne_size);
         glPointSize(point_size);
@@ -1071,7 +1071,7 @@ rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 
 
 static void
-carmen_fused_odometry_message_handler(carmen_fused_odometry_particle_message *odometry_message)
+carmen_fused_odometry_message_handler(carmen_fused_odometry_message *odometry_message)
 {
     xsens_yaw_bias = odometry_message->xsens_yaw_bias;
 
@@ -2558,9 +2558,9 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 }
 
 static void
-navigator_goal_list_message_handler(carmen_behavior_selector_goal_list_message *goals)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
-    add_goal_list_message(t_drawer1, goals);
+	add_path_goals_and_annotations_message(t_drawer1, path_goals_and_annotations_message);
 }
 
 
@@ -2603,7 +2603,7 @@ carmen_download_map_handler(carmen_download_map_message *message)
     new_map_has_been_received = 1;
 }
 
-static void
+void
 carmen_localize_neural_base_message_handler(carmen_localize_neural_imagepos_message *message)
 {
     if (!localize_imagepos_base_initialized)
@@ -2616,7 +2616,7 @@ carmen_localize_neural_base_message_handler(carmen_localize_neural_imagepos_mess
     memcpy(localize_imagepos_base_message.image_data, message->image_data, message->size * sizeof(char));
 }
 
-static void
+void
 carmen_localize_neural_curr_message_handler(carmen_localize_neural_imagepos_message *message)
 {
     if (!localize_imagepos_curr_initialized)
@@ -3677,13 +3677,13 @@ subscribe_ipc_messages(void)
 //                                          (carmen_handler_t) carmen_download_map_handler,
 //                                          CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
-                                          (carmen_handler_t) carmen_localize_neural_base_message_handler,
-                                          CARMEN_SUBSCRIBE_LATEST);
+//    carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
+//                                          (carmen_handler_t) carmen_localize_neural_base_message_handler,
+//                                          CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_neural_subscribe_imagepos_curframe_message(NULL,
-                                          (carmen_handler_t) carmen_localize_neural_curr_message_handler,
-                                          CARMEN_SUBSCRIBE_LATEST);
+//    carmen_localize_neural_subscribe_imagepos_curframe_message(NULL,
+//                                          (carmen_handler_t) carmen_localize_neural_curr_message_handler,
+//                                          CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
                                                   (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
@@ -3716,8 +3716,8 @@ subscribe_ipc_messages(void)
                                                    (carmen_handler_t) obstacle_avoider_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_behavior_selector_subscribe_goal_list_message(NULL,
-                                                         (carmen_handler_t) navigator_goal_list_message_handler,
+    carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL,
+                                                         (carmen_handler_t) path_goals_and_annotations_message_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
 
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,

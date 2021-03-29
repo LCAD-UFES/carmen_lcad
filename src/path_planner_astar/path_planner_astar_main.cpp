@@ -10,7 +10,8 @@ carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map = NULL;
 carmen_map_p map_occupancy = NULL;
 
 nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map;
-int use_nonholonomic_heuristic_cost_map = 0;
+int use_nonholonomic_heuristic_cost_map = 1;
+int heuristic_number = 0;
 
 carmen_point_t *final_goal = NULL;
 int final_goal_received = 0;
@@ -22,6 +23,8 @@ int grid_state_map_y_size;
 carmen_route_planner_road_network_message route_planner_road_network_message;
 offroad_planner_plan_t plan_path_poses;
 std::vector<carmen_ackerman_traj_point_t> astar_path;
+
+clock_t r_time;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -67,6 +70,9 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 	static int *nearby_lanes_forks_indexes = NULL;	// Size == number_of_nearby_lanes. O ponto em nearby_lanes_forks onde começam os forks de cada lane.
 	static int *nearby_lanes_forks_sizes = NULL;		// Size == number_of_nearby_lanes. O número de forks de cada lane.
 
+	static int *nearby_lanes_crossroads_indexes = NULL;
+	static int *nearby_lanes_crossroads_sizes = NULL;
+
     nearby_lanes_node_ids = (int *) realloc(nearby_lanes_node_ids, route_planner_road_network_message.nearby_lanes_size * sizeof(int));
     route_planner_road_network_message.nearby_lanes_node_ids = nearby_lanes_node_ids;
 
@@ -79,6 +85,11 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
     route_planner_road_network_message.nearby_lanes_forks_indexes = nearby_lanes_forks_indexes;
     nearby_lanes_forks_sizes = (int *) realloc(nearby_lanes_forks_sizes, route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
     route_planner_road_network_message.nearby_lanes_forks_sizes = nearby_lanes_forks_sizes;
+
+    nearby_lanes_crossroads_indexes = (int *) realloc(nearby_lanes_crossroads_indexes, route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+   route_planner_road_network_message.nearby_lanes_crossroads_indexes = nearby_lanes_crossroads_indexes;
+   nearby_lanes_crossroads_sizes = (int *) realloc(nearby_lanes_crossroads_sizes, route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+   route_planner_road_network_message.nearby_lanes_crossroads_sizes = nearby_lanes_crossroads_sizes;
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -121,32 +132,51 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (final_goal_received != 0)
 	{
-		if(!astar_path.empty())
+		r_time = clock();
+
+		carmen_point_t goal_position = {final_goal->x, final_goal->y, final_goal->theta};
+		if (!astar_path.empty())
 			astar_path.clear();
+
+		#if RUN_EXPERIMENT
+			override_initial_and_goal_poses(robot_position, goal_position);
+		#endif
 
 		pose_node initial_pose, goal_pose;
 		initial_pose = {robot_position.x, robot_position.y, robot_position.theta, Forward};
-		goal_pose = {final_goal->x, final_goal->y, final_goal->theta, Forward};
-		double *goal_distance_map = get_goal_distance_map(final_goal, obstacle_distance_grid_map);
-		std::vector<carmen_ackerman_traj_point_t> astar_path = carmen_path_planner_astar_search(&initial_pose, &goal_pose, obstacle_distance_grid_map, goal_distance_map, nonholonomic_heuristic_cost_map);
+		goal_pose = {goal_position.x, goal_position.y, goal_position.theta, Forward};
+		double *goal_distance_map = get_goal_distance_map(goal_position, obstacle_distance_grid_map);
+
+		#if COMPARE_HEURISTIC
+		for (int i = 0; i < 2; i++)
+		{
+			heuristic_number = i;
+			printf("%s\n", heuristic_compare_message[i]);
+			astar_path = carmen_path_planner_astar_search(&initial_pose, &goal_pose, obstacle_distance_grid_map, goal_distance_map, nonholonomic_heuristic_cost_map);
+		}
+
+		#else
+
+		astar_path = carmen_path_planner_astar_search(&initial_pose, &goal_pose, obstacle_distance_grid_map, goal_distance_map, nonholonomic_heuristic_cost_map);
+		#endif
 
 		if (astar_path.size() > 2)
 		{
+			printf("A-star search time = %f\n", (double)(clock() - r_time) / CLOCKS_PER_SEC);
+
 			if (USE_SMOOTH)
+			{
 				smooth_rddf_using_conjugate_gradient(astar_path);
+				printf("Full running time = %f\n", (double)(clock() - r_time) / CLOCKS_PER_SEC);
+			}
+
 
 			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal, astar_path);
 			publish_plan(plan_path_poses.path, msg);
+	}
+//			for (int i = 0; i< astar_path.size(); i++)
+//				printf("Path: %f %f %f %f %f\n", astar_path[i].x, astar_path[i].y, astar_path[i].theta, astar_path[i].v, astar_path[i].phi);
 
-			for (int i = 0; i< astar_path.size(); i++)
-				printf("Path: %f %f %f %f %f\n", astar_path[i].x, astar_path[i].y, astar_path[i].theta, astar_path[i].v, astar_path[i].phi);
-/*
-			calculate_theta_and_phi(astar_path, astar_path.size());
-			printf("After\n");
-			for (int i = 0; i< astar_path.size(); i++)
-				printf("Path: %f %f %f %f %f\n", astar_path[i].x, astar_path[i].y, astar_path[i].theta, astar_path[i].v, astar_path[i].phi);
-*/
-		}
 
 		free(goal_distance_map);
 

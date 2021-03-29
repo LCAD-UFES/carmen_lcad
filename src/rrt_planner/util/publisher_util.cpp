@@ -5,6 +5,7 @@
  *      Author: romulo
  */
 
+#include <carmen/global.h>
 #include "publisher_util.h"
 #include "../message/rrt_planner_interface.h"
 #include <map>
@@ -22,8 +23,118 @@ define_plan_tree_message()
 }
 
 
+carmen_navigator_ackerman_plan_message
+Publisher_Util::get_path(list<RRT_Path_Edge> &path)
+{
+	carmen_navigator_ackerman_plan_message msg;
+	list<RRT_Path_Edge>::iterator it;
+	int i;
+
+	msg.host = carmen_get_host();
+	msg.timestamp = GlobalState::rrt_planner_timestamp;
+
+	if (path.empty())
+	{
+		msg.path = NULL;
+		msg.path_length = 0;
+		return msg;
+	}
+
+	msg.path_length = path.size() + 1;
+	msg.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * (msg.path_length));
+
+	it = path.begin();
+
+	for (i = 0; it != path.end(); it++, i++)
+	{
+		msg.path[i].x	  = it->p1.pose.x;
+		msg.path[i].y	  = it->p1.pose.y;
+		msg.path[i].theta = it->p1.pose.theta;
+		msg.path[i].v	  = it->command.v;
+		msg.path[i].phi	  = it->command.phi;
+
+//		printf( "p.x = %lf, p.y = %lf, p.theta = %lf, p.v = %lf, p.phi = %lf\n",
+//				msg.path[i].x, msg.path[i].y, msg.path[i].theta, msg.path[i].v, msg.path[i].phi);
+	}
+
+	it--;
+	msg.path[i].x	  = it->p2.pose.x;
+	msg.path[i].y	  = it->p2.pose.y;
+	msg.path[i].theta = it->p2.pose.theta;
+	msg.path[i].v	  = it->command.v;
+	msg.path[i].phi	  = it->command.phi;
+
+//	printf( "p.x = %lf, p.y = %lf, p.theta = %lf, p.v = %lf, p.phi = %lf\n\n",
+//					msg.path[i].x, msg.path[i].y, msg.path[i].theta, msg.path[i].v, msg.path[i].phi);
+
+	return msg;
+}
+
+
+double
+get_path_length(list<RRT_Path_Edge> path)
+{
+	double path_length = 0.0;
+	for (list<RRT_Path_Edge>::iterator it = path.begin(); it != path.end(); it++)
+		path_length += DIST2D(it->p1.pose, it->p2.pose);
+
+	return (path_length);
+}
+
+
+int
+Publisher_Util::get_path_or_old_path(const vector<RRT_Node *> reaches_goal_nodes, carmen_navigator_ackerman_plan_tree_message &plan_tree_msg)
+{
+	int num_paths = reaches_goal_nodes.size();
+	if (num_paths > 500)
+	{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
+		printf("Error: num_paths > 500 in Publisher_Util::publish_plan_tree_message()\n");
+		exit(1);
+	}
+
+	static list<RRT_Path_Edge> old_path;
+	if (GlobalState::goal_just_set)
+	{
+		old_path = {};
+		GlobalState::goal_just_set = false;
+	}
+
+	double old_path_length = get_path_length(old_path);
+	if (old_path_length == 0.0)
+		old_path_length = 1000000.0;
+
+	for (unsigned int i = 0; i < reaches_goal_nodes.size(); i++)
+	{
+		list<RRT_Path_Edge> path = Dijkstra::build_path(reaches_goal_nodes[i]);
+		double path_length = get_path_length(path);
+		if ((path_length != 0) && (path_length < old_path_length))
+		{
+			old_path = path;
+			old_path_length = path_length;
+		}
+	}
+
+	if (old_path_length != 0)
+	{
+		carmen_navigator_ackerman_plan_message msg = get_path(old_path);
+		if (msg.path_length > 100)
+		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
+			printf("Error: msg.path_length > 100 in Publisher_Util::publish_plan_tree_message()\n");
+			exit(1);
+		}
+		memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_ackerman_traj_point_t) * msg.path_length);
+		free(msg.path);
+		plan_tree_msg.path_size[0] = msg.path_length;
+
+		return (1);
+	}
+	else
+		return (0);
+}
+
+
 void
-Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> &reaches_goal_nodes)
+Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> reaches_goal_nodes)
 {
 	static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
 	IPC_RETURN_TYPE err = IPC_OK;
@@ -81,28 +192,7 @@ Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> &rea
 		}
 	}
 
-	carmen_navigator_ackerman_plan_message msg;
-	list<RRT_Path_Edge> path;
-	plan_tree_msg.num_path = reaches_goal_nodes.size();
-	if (plan_tree_msg.num_path > 500)
-	{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-		printf("Error: plan_tree_msg.num_path > 500 in Publisher_Util::publish_plan_tree_message()\n");
-		exit(1);
-	}
-	for (unsigned int i = 0; i < reaches_goal_nodes.size(); i++)
-	{
-		path = Dijkstra::build_path(reaches_goal_nodes[i]);
-		msg = get_path(path);
-
-		if (msg.path_length > 100)
-		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-			printf("Error: msg.path_length > 100 in Publisher_Util::publish_plan_tree_message()\n");
-			exit(1);
-		}
-		memcpy(plan_tree_msg.paths[i], msg.path, sizeof(carmen_ackerman_traj_point_t) * msg.path_length);
-		free(msg.path);
-		plan_tree_msg.path_size[i] = msg.path_length;
-	}
+	plan_tree_msg.num_path = get_path_or_old_path(reaches_goal_nodes, plan_tree_msg);
 
 	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
 
@@ -201,54 +291,6 @@ Publisher_Util::publish_plan_message(carmen_navigator_ackerman_plan_message msg)
 	err = IPC_publishData(CARMEN_RRT_PLANNER_PLAN_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish",
 			CARMEN_RRT_PLANNER_PLAN_NAME);
-}
-
-
-carmen_navigator_ackerman_plan_message
-Publisher_Util::get_path(list<RRT_Path_Edge> &path)
-{
-	carmen_navigator_ackerman_plan_message msg;
-	list<RRT_Path_Edge>::iterator it;
-	int i;
-
-	msg.host = carmen_get_host();
-	msg.timestamp = GlobalState::rrt_planner_timestamp;
-
-	if (path.empty())
-	{
-		msg.path = NULL;
-		msg.path_length = 0;
-		return msg;
-	}
-
-	msg.path_length = path.size() + 1;
-	msg.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * (msg.path_length));
-
-	it = path.begin();
-
-	for (i = 0; it != path.end(); it++, i++)
-	{
-		msg.path[i].x	  = it->p1.pose.x;
-		msg.path[i].y	  = it->p1.pose.y;
-		msg.path[i].theta = it->p1.pose.theta;
-		msg.path[i].v	  = it->command.v;
-		msg.path[i].phi	  = it->command.phi;
-
-//		printf( "p.x = %lf, p.y = %lf, p.theta = %lf, p.v = %lf, p.phi = %lf\n",
-//				msg.path[i].x, msg.path[i].y, msg.path[i].theta, msg.path[i].v, msg.path[i].phi);
-	}
-
-	it--;
-	msg.path[i].x	  = it->p2.pose.x;
-	msg.path[i].y	  = it->p2.pose.y;
-	msg.path[i].theta = it->p2.pose.theta;
-	msg.path[i].v	  = it->command.v;
-	msg.path[i].phi	  = it->command.phi;
-
-//	printf( "p.x = %lf, p.y = %lf, p.theta = %lf, p.v = %lf, p.phi = %lf\n\n",
-//					msg.path[i].x, msg.path[i].y, msg.path[i].theta, msg.path[i].v, msg.path[i].phi);
-
-	return msg;
 }
 
 

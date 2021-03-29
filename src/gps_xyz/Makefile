@@ -6,8 +6,9 @@ MODULE_COMMENT = "GPS Module XYZ"
 CFLAGS += #-DPARSE_DEBUG
 IFLAGS += 
 LFLAGS += -L../../sharedlib/libtf/src
-LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lxsens_mtig_interface -lvelodyne_interface	\
-		  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lstdc++ -pthread
+LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lxsens_mtig_interface -lvelodyne_interface -lgps_nmea_interface \
+		  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt \
+		  -lboost_signals -lboost_system -lstdc++ -pthread
 
 SOURCES = gps_xyz_interface.c gps_xyz-test.cpp gps_xyz.cpp
 

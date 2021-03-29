@@ -25,7 +25,6 @@
 #include "RTIMULSM9DS1.h"
 #include "RTIMUSettings.h"
 
-//#define do_log 1
 //  this sets the learning rate for compass running average calculation
 
 #define COMPASS_ALPHA 0.2f
@@ -51,7 +50,7 @@ bool RTIMULSM9DS1::IMUInit()
     m_imuData.accelValid = true;
     m_imuData.compassValid = true;
     m_imuData.pressureValid = false;
-    m_imuData.temperatureValid = false;
+    m_imuData.temperatureValid = true;
     m_imuData.humidityValid = false;
 
     //  configure IMU
@@ -115,6 +114,13 @@ bool RTIMULSM9DS1::IMUInit()
         HAL_ERROR1("Incorrect LSM9DS1 accel/mag id %d\n", result);
         return false;
     }
+
+    // Set up temperature sensor
+
+    m_temperatureScale = 1.0 / 16.0;
+    m_temperatureBias = 27.5;
+
+    //
 
     if (!setAccelCTRL6())
         return false;
@@ -200,33 +206,17 @@ bool RTIMULSM9DS1::setGyroSampleRate()
     switch (m_settings->m_LSM9DS1GyroFsr) {
     case LSM9DS1_GYRO_FSR_250:
         ctrl1 |= 0x00;
-
-        #ifndef do_log
-        	m_gyroScale = (RTFLOAT)0.00875 * RTMATH_DEGREE_TO_RAD;
-		#else
-        	m_gyroScale = (RTFLOAT)1.00000;
-		#endif
-
+        m_gyroScale = (RTFLOAT)0.00875 * RTMATH_DEGREE_TO_RAD;
         break;
 
     case LSM9DS1_GYRO_FSR_500:
         ctrl1 |= 0x08;
-		#ifndef do_log
-        	m_gyroScale = (RTFLOAT)0.0175 * RTMATH_DEGREE_TO_RAD;
-		#else
-        	m_gyroScale = (RTFLOAT)1.00000;
-		#endif
-
+        m_gyroScale = (RTFLOAT)0.0175 * RTMATH_DEGREE_TO_RAD;
         break;
 
     case LSM9DS1_GYRO_FSR_2000:
         ctrl1 |= 0x18;
-		#ifndef do_log
-        	m_gyroScale = (RTFLOAT)0.07 * RTMATH_DEGREE_TO_RAD;
-		#else
-        	m_gyroScale = (RTFLOAT)1.00000;
-		#endif
-
+        m_gyroScale = (RTFLOAT)0.07 * RTMATH_DEGREE_TO_RAD;
         break;
 
     default:
@@ -270,43 +260,19 @@ bool RTIMULSM9DS1::setAccelCTRL6()
 
     switch (m_settings->m_LSM9DS1AccelFsr) {
     case LSM9DS1_ACCEL_FSR_2:
-
-    	#ifndef do_log
-        	m_accelScale = (RTFLOAT)0.000061;
-	#else
-        	m_accelScale = (RTFLOAT)1.000000;
-	#endif
-
+        m_accelScale = (RTFLOAT)0.000061;
         break;
 
     case LSM9DS1_ACCEL_FSR_4:
-
-    	#ifndef do_log
-        	m_accelScale = (RTFLOAT)0.000122;
-	#else
-        	m_accelScale = (RTFLOAT)1.000000;
-	#endif
-
+        m_accelScale = (RTFLOAT)0.000122;
         break;
 
     case LSM9DS1_ACCEL_FSR_8:
-
-    	#ifndef do_log
-        	m_accelScale = (RTFLOAT)0.000244;
-	#else
-        	m_accelScale = (RTFLOAT)1.000000;
-	#endif
-
+        m_accelScale = (RTFLOAT)0.000244;
         break;
 
     case LSM9DS1_ACCEL_FSR_16:
-
-    	#ifndef do_log
-        	m_accelScale = (RTFLOAT)0.000732;
-	#else
-        	m_accelScale = (RTFLOAT)1.000000;
-	#endif
-
+        m_accelScale = (RTFLOAT)0.000732;
         break;
 
     default:
@@ -354,42 +320,22 @@ bool RTIMULSM9DS1::setCompassCTRL2()
     switch (m_settings->m_LSM9DS1CompassFsr) {
     case LSM9DS1_COMPASS_FSR_4:
         ctrl2 = 0;
-
-        #ifndef do_log
-        	m_compassScale = (RTFLOAT)0.014;
-		#else
-        	m_compassScale = (RTFLOAT)1.000;
-		#endif
+        m_compassScale = (RTFLOAT)0.014;
         break;
 
     case LSM9DS1_COMPASS_FSR_8:
         ctrl2 = 0x20;
-
-        #ifndef do_log
-        	m_compassScale = (RTFLOAT)0.029;
-		#else
-        	m_compassScale = (RTFLOAT)1.000;
-		#endif
+        m_compassScale = (RTFLOAT)0.029;
         break;
 
     case LSM9DS1_COMPASS_FSR_12:
         ctrl2 = 0x40;
-
-        #ifndef do_log
-        	m_compassScale = (RTFLOAT)0.043;
-		#else
-        	m_compassScale = (RTFLOAT)1.000;
-		#endif
+        m_compassScale = (RTFLOAT)0.043;
         break;
 
     case LSM9DS1_COMPASS_FSR_16:
         ctrl2 = 0x60;
-
-		#ifndef do_log
-        	m_compassScale = (RTFLOAT)0.058;
-		#else
-        	m_compassScale = (RTFLOAT)1.000;
-		#endif
+        m_compassScale = (RTFLOAT)0.058;
         break;
 
     default:
@@ -414,6 +360,7 @@ bool RTIMULSM9DS1::IMURead()
 {
     unsigned char status;
     unsigned char gyroData[6];
+    unsigned char tempData[2];
     unsigned char accelData[6];
     unsigned char compassData[6];
 
@@ -422,6 +369,11 @@ bool RTIMULSM9DS1::IMURead()
 
     if ((status & 0x3) == 0)
         return false;
+
+    for (int i = 0; i<2; i++){
+        if (!m_settings->HALRead(m_accelGyroSlaveAddr, LSM9DS1_OUT_TEMP_L + i, 1, &tempData[i], "Failed to read LSM9DS1 temp data"))
+            return false;
+    }
 
     for (int i = 0; i<6; i++){
         if (!m_settings->HALRead(m_accelGyroSlaveAddr, LSM9DS1_OUT_X_L_G + i, 1, &gyroData[i], "Failed to read LSM9DS1 gyro data"))
@@ -440,25 +392,25 @@ bool RTIMULSM9DS1::IMURead()
     RTMath::convertToVector(gyroData, m_imuData.gyro, m_gyroScale, false);
     RTMath::convertToVector(accelData, m_imuData.accel, m_accelScale, false);
     RTMath::convertToVector(compassData, m_imuData.compass, m_compassScale, false);
+    RTMath::convertToRTFLOAT(tempData, &(m_imuData.temperature), m_temperatureScale, false);
+    m_imuData.temperature += m_temperatureBias;
 
     //  sort out gyro axes and correct for bias
 
-    m_imuData.gyro.setX(-m_imuData.gyro.x());
-    m_imuData.gyro.setY(m_imuData.gyro.y());
     m_imuData.gyro.setZ(m_imuData.gyro.z());
+    m_imuData.gyro.setY(-m_imuData.gyro.y());
 
     //  sort out accel data;
 
-    m_imuData.accel.setX(-m_imuData.accel.x());
-    m_imuData.accel.setY(m_imuData.accel.y());
+    m_imuData.accel.setX(m_imuData.accel.x());
+    m_imuData.accel.setY(-m_imuData.accel.y());
     m_imuData.accel.setZ(m_imuData.accel.z());
 
     //  sort out compass axes
 
-    m_imuData.compass.setX(m_imuData.compass.x());
-    m_imuData.compass.setY(m_imuData.compass.y());
-    m_imuData.compass.setZ(m_imuData.compass.z());
-
+    m_imuData.compass.setX(-m_imuData.compass.x());
+    m_imuData.compass.setY(-m_imuData.compass.y());
+//    m_imuData.compass.setZ(-m_imuData.compass.z());
 
     //  now do standard processing
 

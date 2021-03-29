@@ -9,7 +9,7 @@ extern char predefined_route[2048];
 extern int predefined_route_code;
 extern std::vector <carmen_annotation_t> place_of_interest_list;
 extern std::vector <carmen_annotation_t> predefined_route_list;
-extern int use_route_planner_in_graph_mode;
+//extern int use_route_planner_in_graph_mode;
 extern int publish_map_view;
 extern double publish_map_view_interval;
 
@@ -544,7 +544,7 @@ namespace View
 		controls_.comboPlaceOfInterest = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPlaceOfInterest" ));
 		controls_.comboPredefinedRoute = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPredefinedRoute" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
-		controls_.comboFollowLane = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowLane" ));
+		controls_.comboFollowRoute = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowRoute" ));
 		controls_.comboParking = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboParking" ));
 
 		controls_.labelStatusMap = GTK_LABEL(gtk_builder_get_object(builder, "labelStatusMap" ));
@@ -821,9 +821,9 @@ namespace View
 
 			if (route_planner_route)
 			{
-				sprintf(buffer, "Route Planner State: %s", print_route_planner_feedback(route_planner_route->route_planner_feedback));
+				sprintf(buffer, "Route Planner State: %s", print_route_planner_state(route_planner_route->route_planner_state));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
-				sprintf(buffer, "Offroad Planner Request: %s", print_route_planner_request(route_planner_route->offroad_planner_request));
+				sprintf(buffer, "Offroad Planner Request: %s", print_offroad_planner_request(route_planner_route->offroad_planner_request));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest), buffer);
 			}
 
@@ -1315,16 +1315,6 @@ namespace View
 		return code;
 	}
 
-//	int
-//	GtkGui::get_goal_source_code(char* goal_source_name)
-//	{
-//		if (strcmp(goal_source_name, "User Goal") == 0)
-//			return 0;
-//		else if(strcmp(goal_source_name, "Rddf Goal") == 0)
-//			return 1;
-//
-//		return -1;
-//	}
 
 	void GtkGui::get_navigator_map()
 	{
@@ -1455,13 +1445,13 @@ namespace View
 
 
 	int
-	GtkGui::get_state_code(char* state_name)
+	GtkGui::get_task_code(char *task_name)
 	{
-		if (strcmp(state_name, "Following Lane") == 0)
+		if (strcmp(task_name, "Follow Lane") == 0)
 			return 0;
-		else if(strcmp(state_name, "Parking") == 0)
+		else if(strcmp(task_name, "Park") == 0)
 			return 1;
-		else if(strcmp(state_name, "Human Intervention") == 0)
+		else if(strcmp(task_name, "Human Intervention") == 0)
 			return 2;
 
 		return -1;
@@ -1471,24 +1461,20 @@ namespace View
 	GtkGui::navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message *msg)
 	{
 		this->behavior_selector_active = 1;
-		this->goal_source = msg->goal_source;
 
-		if((int) msg->following_lane_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboFollowLane)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboFollowLane, msg->following_lane_algorithm);
+		if ((int) msg->task != get_task_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->task);
 
-		if((int) msg->parking_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboParking)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboParking, msg->parking_algorithm);
-
-//		if((int)msg->goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
-//			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg->goal_source);
-
-//		if (msg->goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-//			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 1);
-//		else
-//			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 0);
-
-		if((int) msg->state != get_state_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->state);
+		if (msg->task == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
+		{
+			if ((int) msg->algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboFollowRoute)))
+				gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboFollowRoute, msg->algorithm);
+		}
+		else if (msg->task == BEHAVIOR_SELECTOR_PARK)
+		{
+			if ((int) msg->algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboParking)))
+				gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboParking, msg->algorithm);
+		}
 
 		static char buffer[2048];
 		strcpy(buffer, "Low Level State: ");
@@ -1978,14 +1964,7 @@ namespace View
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
-			if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-			{
-				add_goal_to_internal_list(goal_temp);
-			}
-			else
-			{
-				carmen_behavior_selector_add_goal(goal_temp.pose);
-			}
+			carmen_behavior_selector_add_goal(goal_temp.pose);
 
 			update_local_map = 1;
 
@@ -2328,19 +2307,19 @@ namespace View
 	int
 	GtkGui::received_robot_pose(void)
 	{
-		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		{
-			if ((queuePoints != NULL) && (queuePoints->begin != NULL) && (GTK_TOGGLE_BUTTON(controls_.buttonGo)->active))
-			{
-				pointers *reached = queuePoints->curr;
-
-				if ((reached != NULL) && (reached->next != NULL))
-				{
-					if (carmen_distance(&queuePoints->curr->point.pose, &robot.pose) < 0.5) // 0.5 m // @@@ Alberto: Isso deveria ser controlado pelo navigator, nao pela interface
-						update_point(reached);
-				}
-			}
-		}
+//		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//		{
+//			if ((queuePoints != NULL) && (queuePoints->begin != NULL) && (GTK_TOGGLE_BUTTON(controls_.buttonGo)->active))
+//			{
+//				pointers *reached = queuePoints->curr;
+//
+//				if ((reached != NULL) && (reached->next != NULL))
+//				{
+//					if (carmen_distance(&queuePoints->curr->point.pose, &robot.pose) < 0.5) // 0.5 m // @@@ Alberto: Isso deveria ser controlado pelo navigator, nao pela interface
+//						update_point(reached);
+//				}
+//			}
+//		}
 
 		return (robot.map != NULL);
 	}
@@ -2526,7 +2505,7 @@ namespace View
 	GtkGui::draw_goal_list(GtkMapViewer	*the_map_view,
 			carmen_world_point_t goal)
 	{
-		carmen_world_point_t new_goal;
+//		carmen_world_point_t new_goal;
 		int i;
 
 		//draw current navigator goal
@@ -2546,43 +2525,43 @@ namespace View
 		}
 
 		//draw goal list set by the interface
-		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		{
-			if ((queuePoints != NULL) && (queuePoints->begin != NULL))
-			{
-				pointers *lista;
-
-				lista = queuePoints->begin;
-
-				if (lista->next == NULL)
-				{
-					new_goal = goal;
-					new_goal.pose.x		= lista->point.pose.x;
-					new_goal.pose.y		= lista->point.pose.y;
-					new_goal.pose.theta = lista->point.pose.theta;
-
-					draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
-					draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
-					draw_orientation_mark(the_map_view, &new_goal);
-				}
-				else
-				{
-					while (lista != NULL)
-					{
-						new_goal = goal;
-						new_goal.pose.x		= lista->point.pose.x;
-						new_goal.pose.y		= lista->point.pose.y;
-						new_goal.pose.theta = lista->point.pose.theta;
-
-						draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
-						draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
-						draw_orientation_mark(the_map_view, &new_goal);
-
-						lista = lista->next;
-					}
-				}
-			}
-		}
+//		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//		{
+//			if ((queuePoints != NULL) && (queuePoints->begin != NULL))
+//			{
+//				pointers *lista;
+//
+//				lista = queuePoints->begin;
+//
+//				if (lista->next == NULL)
+//				{
+//					new_goal = goal;
+//					new_goal.pose.x		= lista->point.pose.x;
+//					new_goal.pose.y		= lista->point.pose.y;
+//					new_goal.pose.theta = lista->point.pose.theta;
+//
+//					draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
+//					draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
+//					draw_orientation_mark(the_map_view, &new_goal);
+//				}
+//				else
+//				{
+//					while (lista != NULL)
+//					{
+//						new_goal = goal;
+//						new_goal.pose.x		= lista->point.pose.x;
+//						new_goal.pose.y		= lista->point.pose.y;
+//						new_goal.pose.theta = lista->point.pose.theta;
+//
+//						draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
+//						draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
+//						draw_orientation_mark(the_map_view, &new_goal);
+//
+//						lista = lista->next;
+//					}
+//				}
+//			}
+//		}
 
 		//draw navigator goal list
 		for (i = 0; i < goal_list_size; i++)
@@ -3241,38 +3220,38 @@ namespace View
 		gdk_window_set_cursor(this->controls_.map_view->image_widget->window, cursor);
 	}
 
-	void
-	GtkGui::execute_decrement_point()
-	{
-		if ((queuePoints != NULL) && (queuePoints->begin != NULL))
-		{
-			pointers *item	  = NULL;
-			pointers *itemAux = NULL;
-
-			item = queuePoints->begin;
-
-			while (item->next != NULL)
-			{
-				itemAux = item;
-				item	= item->next;
-			}
-
-			if (itemAux == NULL)
-			{
-//				navigator_stop_moving();
-				queuePoints->begin = NULL;
-				queuePoints->curr  = NULL;
-				queuePoints->end   = NULL;
-			}
-			else
-			{
-				queuePoints->end = itemAux;
-				queuePoints->end->next = NULL;
-			}
-
-			free(item);
-		}
-	}
+//	void
+//	GtkGui::execute_decrement_point()
+//	{
+//		if ((queuePoints != NULL) && (queuePoints->begin != NULL))
+//		{
+//			pointers *item	  = NULL;
+//			pointers *itemAux = NULL;
+//
+//			item = queuePoints->begin;
+//
+//			while (item->next != NULL)
+//			{
+//				itemAux = item;
+//				item	= item->next;
+//			}
+//
+//			if (itemAux == NULL)
+//			{
+////				navigator_stop_moving();
+//				queuePoints->begin = NULL;
+//				queuePoints->curr  = NULL;
+//				queuePoints->end   = NULL;
+//			}
+//			else
+//			{
+//				queuePoints->end = itemAux;
+//				queuePoints->end->next = NULL;
+//			}
+//
+//			free(item);
+//		}
+//	}
 
 	void
 	GtkGui::world_point_to_global_world_point(carmen_world_point_t *world_point)

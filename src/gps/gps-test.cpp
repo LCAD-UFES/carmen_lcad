@@ -44,166 +44,145 @@
 #include <carmen/carmen_gps.h>
 #include <carmen/gps_nmea_interface.h>
 
-int gpgga_update = FALSE;
-int gprmc_update = FALSE;
-int gphdt_update = FALSE;
-carmen_gps_gpgga_message gps_gpgga;
-carmen_gps_gprmc_message gps_gprmc;
-carmen_gps_gphdt_message gps_gphdt;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Handlers																						//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
-ipc_gps_gpgga_handler( carmen_gps_gpgga_message *data __attribute__ ((unused)))
+ipc_gps_gpgga_handler(carmen_gps_gpgga_message *message)
 {
-	gpgga_update = TRUE;
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "        gps gpgga message\n" );
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, " gps number:     %d\n", message->nr);
+	fprintf(stderr, " utc:            %f\n", message->utc);
+	fprintf(stderr, " latitude:       %f\n", message->latitude);
+	fprintf(stderr, " latitude (DM):  %f\n", message->latitude_dm);
+	fprintf(stderr, " lat_orient:     %c\n", message->lat_orient);
+	fprintf(stderr, " longitude:      %f\n", message->longitude);
+	fprintf(stderr, " longitude (DM): %f\n", message->longitude_dm);
+	fprintf(stderr, " long_orient:    %c\n", message->long_orient);
+	fprintf(stderr, " gps_quality:    %d\n", message->gps_quality);
+	fprintf(stderr, " num_satellites: %d\n", message->num_satellites);
+	fprintf(stderr, " hdop:           %f\n", message->hdop);
+	fprintf(stderr, " sea_level:      %f\n", message->sea_level);
+	fprintf(stderr, " altitude:       %f\n", message->altitude);
+	fprintf(stderr, " geo_sea_level:  %f\n", message->geo_sea_level);
+	fprintf(stderr, " geo_sep:        %f\n", message->geo_sep);
+	fprintf(stderr, " data_age:       %d\n", message->data_age);
+
+	double latitude = 0;
+	double longitude = 0;
+	if (message->lat_orient == 'S')
+		latitude = -message->latitude;
+	if (message->long_orient == 'W')
+		longitude = -message->longitude;
+
+	Gdc_Coord_3d gdc = Gdc_Coord_3d(latitude, longitude,  message->sea_level + message->geo_sea_level);
+	Utm_Coord_3d utm;
+	Gdc_To_Utm_Converter::Init();
+	Gdc_To_Utm_Converter::Convert(gdc,utm);
+
+	fprintf(stderr, " x:              %f\n", utm.x);
+	fprintf(stderr, " y:              %f\n", utm.y);
+	fprintf(stderr, " z:              %f\n", utm.z);
+	fprintf(stderr, " timestamp:      %f\n", message->timestamp);
+
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "\n");
 }
 
 
 void
-ipc_gps_gphdt_handler( carmen_gps_gphdt_message *data __attribute__ ((unused)))
+ipc_gps_gphdt_handler(carmen_gps_gphdt_message *message)
 {
-	gphdt_update = TRUE;
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "        gps gphdt message\n" );
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, " gps number:        %d\n", message->nr);
+	fprintf(stderr, " valid:             %d\n", message->valid);
+	fprintf(stderr, " heading:           %f\n", message->heading);
+	fprintf(stderr, " timestamp:         %f\n", message->timestamp);
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "\n");
 }
 
 
 void
-ipc_gps_gprmc_handler( carmen_gps_gprmc_message *data __attribute__ ((unused)))
+ipc_gps_gprmc_handler(carmen_gps_gprmc_message *message)
 {
-	gprmc_update = TRUE;
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "        gps gprmc message\n" );
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, " gps number:        %d\n", message->nr);
+	fprintf(stderr, " validity:          %d\n", message->validity);
+	fprintf(stderr, " utc:               %f\n", message->utc);
+	fprintf(stderr, " latitude:          %f\n", message->latitude);
+	fprintf(stderr, " latitude (DM):     %f\n", message->latitude_dm);
+	fprintf(stderr, " lat_orient:        %c\n", message->lat_orient);
+	fprintf(stderr, " longitude:         %f\n", message->longitude);
+	fprintf(stderr, " longitude (DM):    %f\n", message->longitude_dm);
+	fprintf(stderr, " long_orient:       %c\n", message->long_orient);
+	fprintf(stderr, " speed over ground: %f\n", message->speed);
+	fprintf(stderr, " true_course:       %f\n", message->true_course);
+	fprintf(stderr, " date:              %i\n", message->date);
+	fprintf(stderr, " variation:         %f\n", message->variation);
+	fprintf(stderr, " variation dir:     %c\n", message->var_dir);
+	fprintf(stderr, " timestamp:         %f\n", message->timestamp);
+	fprintf(stderr, "===================================\n");
+	fprintf(stderr, "\n");
 }
 
 
 void
-ipc_update( void )
+shutdown_module(int signal __attribute__ ((unused)))
 {
-	IPC_listen(0);      
+	static int done = 0;
+
+	if (!done)
+	{
+		carmen_ipc_disconnect();
+		printf("Disconnected from IPC.\n");
+		done = 1;
+	}
+
+	exit(0);
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Inicializations																				//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
-ipc_init( int argc, char * argv[] )
+subscribe_to_relevant_messages()
 {
-	carmen_ipc_initialize( argc, argv );
-	/*************************** SUBSCRIBE ***********************/
-	carmen_gps_subscribe_nmea_message( &gps_gpgga,
-				     (carmen_handler_t) ipc_gps_gpgga_handler,
-				     CARMEN_SUBSCRIBE_LATEST );
-	carmen_gps_subscribe_nmea_hdt_message( &gps_gphdt,
-				     (carmen_handler_t) ipc_gps_gphdt_handler,
-				     CARMEN_SUBSCRIBE_LATEST );
-	carmen_gps_subscribe_nmea_rmc_message( &gps_gprmc,
-				     (carmen_handler_t) ipc_gps_gprmc_handler,
-				     CARMEN_SUBSCRIBE_LATEST );
+	carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t) ipc_gps_gpgga_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_gps_subscribe_nmea_hdt_message(NULL, (carmen_handler_t) ipc_gps_gphdt_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_gps_subscribe_nmea_rmc_message(NULL, (carmen_handler_t) ipc_gps_gprmc_handler, CARMEN_SUBSCRIBE_LATEST);
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int
 main( int argc, char *argv[] )
 {
-	ipc_init(argc, argv );
+	carmen_ipc_initialize(argc, argv);
+	subscribe_to_relevant_messages();
 
-	while(1)
-	{
-		ipc_update();
-		if (gpgga_update)
-		{
-			double latitude = 0;
-			double longitude = 0;
-      
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, "        gps gpgga message\n" );
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, " gps number:     %d\n", gps_gpgga.nr);
-			fprintf( stderr, " utc:            %f\n", gps_gpgga.utc );
-			fprintf( stderr, " latitude:       %f\n", gps_gpgga.latitude );
-			fprintf( stderr, " latitude (DM):  %f\n", gps_gpgga.latitude_dm );
-			fprintf( stderr, " lat_orient:     %c\n", gps_gpgga.lat_orient );
-			fprintf( stderr, " longitude:      %f\n", gps_gpgga.longitude );
-			fprintf( stderr, " longitude (DM): %f\n", gps_gpgga.longitude_dm );
-			fprintf( stderr, " long_orient:    %c\n", gps_gpgga.long_orient ); 
-			fprintf( stderr, " gps_quality:    %d\n", gps_gpgga.gps_quality );
-			fprintf( stderr, " num_satellites: %d\n", gps_gpgga.num_satellites );
-			fprintf( stderr, " hdop:           %f\n", gps_gpgga.hdop );  
-			fprintf( stderr, " sea_level:      %f\n", gps_gpgga.sea_level ); 
-			fprintf( stderr, " altitude:       %f\n", gps_gpgga.altitude );  
-			fprintf( stderr, " geo_sea_level:  %f\n", gps_gpgga.geo_sea_level );
-			fprintf( stderr, " geo_sep:        %f\n", gps_gpgga.geo_sep ); 
-			fprintf( stderr, " data_age:       %d\n", gps_gpgga.data_age );
-      
-			if (gps_gpgga.lat_orient == 'S') latitude = -gps_gpgga.latitude;
-			if (gps_gpgga.long_orient == 'W') longitude = -gps_gpgga.longitude;      
-      
-			Gdc_Coord_3d gdc = Gdc_Coord_3d(latitude, longitude,  gps_gpgga.sea_level + gps_gpgga.geo_sea_level);
-			Utm_Coord_3d utm;
-			Gdc_To_Utm_Converter::Init();
-			Gdc_To_Utm_Converter::Convert(gdc,utm);
-      
-			fprintf( stderr, " x:              %f\n", utm.x );    
-			fprintf( stderr, " y:              %f\n", utm.y );
-			fprintf( stderr, " z:              %f\n", utm.z );
-			fprintf( stderr, " timestamp:      %f\n", gps_gpgga.timestamp );
-      
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, "\n" );
-			gpgga_update = FALSE;
-/*
-      			// Transformando o timestamp em data
-      			time_t now;
-      			struct tm ts;
-      			char buf[80];
-      			now = (time_t)gps_gpgga.timestamp;
-      			// Format time, "ddd yyyy-mm-dd hh:mm:ss zzz"
-      			ts = *localtime(&now);
-      			strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
-      			fprintf(stderr, "Data do timestamp = %s\n", buf);
-      
-  			//    time_t t_of_day = mktime(&ts);
-			//  fprintf(stderr, "seconds since the Epoch: %ld\n", (long) t_of_day);
+	carmen_ipc_dispatch();
 
-*/
-		}
-
-		if (gphdt_update)
-		{
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, "        gps gphdt message\n" );
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, " gps number:        %d\n", gps_gphdt.nr);
-			fprintf( stderr, " valid:             %d\n", gps_gphdt.valid);
-			fprintf( stderr, " heading:           %f\n", gps_gphdt.heading );
-			fprintf( stderr, " timestamp:         %f\n", gps_gphdt.timestamp );
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, "\n" );
-			gphdt_update = FALSE;
-		}
-
-		if (gprmc_update)
-		{
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, "        gps gprmc message\n" );
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, " gps number:        %d\n", gps_gprmc.nr);
-			fprintf( stderr, " validity:          %d\n", gps_gprmc.validity );
-			fprintf( stderr, " utc:               %f\n", gps_gprmc.utc );
-			fprintf( stderr, " latitude:          %f\n", gps_gprmc.latitude );
-			fprintf( stderr, " latitude (DM):     %f\n", gps_gprmc.latitude_dm );
-			fprintf( stderr, " lat_orient:        %c\n", gps_gprmc.lat_orient );
-			fprintf( stderr, " longitude:         %f\n", gps_gprmc.longitude );
-			fprintf( stderr, " longitude (DM):    %f\n", gps_gprmc.longitude_dm );
-			fprintf( stderr, " long_orient:       %c\n", gps_gprmc.long_orient ); 
-			fprintf( stderr, " speed over ground: %f\n", gps_gprmc.speed );
-			fprintf( stderr, " true_course:       %f\n", gps_gprmc.true_course ); 
-			fprintf( stderr, " date:              %i\n", gps_gprmc.date );  
-			fprintf( stderr, " variation:         %f\n", gps_gprmc.variation );
-			fprintf( stderr, " variation dir:     %c\n", gps_gprmc.var_dir ); 
-			fprintf( stderr, " timestamp:         %f\n", gps_gprmc.timestamp );
-			fprintf( stderr, "===================================\n" );
-			fprintf( stderr, "\n" );
-			gprmc_update = FALSE;
-		}
-
-		usleep(10000);
-	}
 	return(0);
 }
 

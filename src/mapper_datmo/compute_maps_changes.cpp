@@ -6,6 +6,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
+using namespace cv;
 
 #define rrt_obstacle_probability_threshold 0.5			 // carmen-ford-escape.ini
 #define IS_OBSTACLE rrt_obstacle_probability_threshold   // Minimum probability of a map cell being an obstacle
@@ -21,11 +22,15 @@ int false_negatives_N = 0;
 
 char *save_png_path = NULL;
 char *poses_filename = NULL;
+char *save_complete_map_path = NULL;
 vector<carmen_point_t> poses_array;
 carmen_point_t from_pose = {0.0, 0.0, 0.0};
 carmen_point_t to_pose = {0.0, 0.0, 0.0};
 double radius = 0.0;
 bool show_map_changes = false;
+bool show_complete_map = false;
+
+Mat full_map;
 
 
 cv::Mat
@@ -103,6 +108,85 @@ transform_map_to_image(double gt_cell, double clean_cell, double dirty_cell, boo
 	return cell_color;
 }
 
+void
+compute_complete_map(Mat img, double map_resolution, int x_origin, int y_origin)
+{
+	static int min_x = INT_MAX, min_y = INT_MAX, max_x = 0, max_y = 0;
+
+	if(full_map.empty())
+	{
+		full_map = img;
+		min_x = x_origin;
+		min_y = y_origin;
+		max_x = x_origin;
+		max_y = y_origin;
+	}
+	else
+	{
+		// int px = ((double)(x_origin - min_x)) / map_resolution;
+		// int py = full_map.rows - 1 - ((double)(y_origin - min_y) / map_resolution);
+
+		if ((int)x_origin < min_x)
+		{
+			// printf("Size1 %d %d Black %dx%d\n", (int)x_origin, min_x, (int)((min_x - (int) x_origin) / map_resolution), full_map.rows);
+			Mat all_black_img = Mat::zeros(Size((int)((min_x - (int) x_origin) / map_resolution), full_map.rows), CV_8UC3);
+
+			hconcat(all_black_img, full_map, full_map);
+			// printf("Black %dx%d Full %dx%d\n", all_black_img.cols, all_black_img.rows, full_map.cols, full_map.rows);
+
+			min_x = (int) x_origin;
+		}
+		if ((int) x_origin > max_x)
+		{
+			// printf("Size2  %d %d Black %dx%d\n", (int) x_origin, max_x, (int)(((int) x_origin - max_x) / map_resolution), full_map.rows);
+			Mat all_black_img = Mat::zeros(Size(((int) x_origin - max_x) / map_resolution, full_map.rows), CV_8UC3);
+
+			hconcat(full_map, all_black_img, full_map);
+			// printf("Black %dx%d Full %dx%d\n", all_black_img.cols, all_black_img.rows, full_map.cols, full_map.rows);
+		
+			max_x = (int) x_origin;
+		}
+		if ((int) y_origin < min_y)
+		{
+			// printf("Size3  %d %d Black %dx%d\n", (int) y_origin, min_y, full_map.cols, (int)((min_y - (int) y_origin) / map_resolution));
+			Mat all_black_img = Mat::zeros(Size(full_map.cols, ((min_y - (int) y_origin) / map_resolution)), CV_8UC3);
+			
+			vconcat(full_map, all_black_img, full_map);
+			// printf("Black %dx%d Full %dx%d\n", all_black_img.cols, all_black_img.rows, full_map.cols, full_map.rows);
+			
+			min_y = (int) y_origin;
+		}
+		if ((int) y_origin > max_y)
+		{
+			// printf("Size4 %d %d Black %dx%d\n", (int) y_origin, max_y, full_map.cols, (int)(((int) y_origin - max_y) / map_resolution));
+			Mat all_black_img = Mat::zeros(Size(full_map.cols, (((int) y_origin - max_y) / map_resolution)), CV_8UC3);
+
+			vconcat(all_black_img, full_map, full_map);
+			// printf("Black %dx%d Full %dx%d\n", all_black_img.cols, all_black_img.rows, full_map.cols, full_map.rows);
+			
+			max_y = (int) y_origin;
+		}
+
+		int px = ((double)(x_origin - min_x)) / map_resolution;
+		int py = full_map.rows - 350 - ((double)(y_origin - min_y) / map_resolution);
+
+		// printf("---------------- FM YM %d GT YM %d\n", min_y, (int) y_origin);
+		// printf("---------------- FM %dx%d GT %dx%d\n", full_map.cols, full_map.rows, px, py);
+
+		img.copyTo(full_map(Rect(px, py, 350, 350)));
+	}
+
+	if (show_complete_map)
+	{
+		Mat copy_full_map = full_map.clone();
+		resize(copy_full_map, copy_full_map, Size(copy_full_map.cols * 0.05, copy_full_map.rows * 0.05), INTER_NEAREST);
+		imshow("Full Map", copy_full_map); waitKey(1);
+	}
+
+	
+	// imwrite(save_complete_map_path, full_map);
+	// imwrite("Full.png", full_map);
+}
 
 void
 compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char *save_path)
@@ -114,7 +198,7 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 		fprintf(stderr, "Could not read gt_map: %s\n", gt_path);
 		return;
 	}
-	printf("Opening gt_map: %s\n", gt_path);
+	// printf("Opening gt_map: %s\n", gt_path);
 
 	if (carmen_map_read_gridmap_chunk(clean_path, &clean_map) != 0)
 	{
@@ -122,7 +206,7 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 		carmen_map_free_gridmap(&gt_map);
 		return;
 	}
-	printf("Opening clean_map: %s\n", clean_path);
+	// printf("Opening clean_map: %s\n", clean_path);
 
 	if (carmen_map_read_gridmap_chunk(dirty_path, &dirty_map) != 0)
 	{
@@ -131,7 +215,7 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 		carmen_map_free_gridmap(&clean_map);
 		return;
 	}
-	printf("Opening dirty_map: %s\n", dirty_path);
+	// printf("Opening dirty_map: %s\n", dirty_path);
 
 	char *filename = strrchr(gt_path, '/') + 1;
 	sscanf(filename, "m%lf_%lf.map", &gt_map.config.x_origin, &gt_map.config.y_origin);
@@ -155,18 +239,22 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 	carmen_map_free_gridmap(&dirty_map);
 
 	img = img / shade;
-	resize(img, img, cv::Size(0, 0), 2.5, 2.5, cv::INTER_NEAREST);
+
+	if (save_complete_map_path)
+		compute_complete_map(img, gt_map.config.resolution, gt_map.config.x_origin, gt_map.config.y_origin);
+
+	resize(img, img, Size(0, 0), 2.5, 2.5, INTER_NEAREST);
 
 	if (save_path)
 		imwrite(save_path, img);
 
 	if (show_map_changes)
 	{
-		cv::namedWindow(filename);
-		cv::moveWindow(filename, 10, 10);
+		namedWindow(filename);
+		moveWindow(filename, 10, 10);
 		imshow(filename, img);
-		cv::waitKey(0);
-		cv::destroyWindow(filename);
+		waitKey(0);
+		destroyWindow(filename);
 	}
 }
 
@@ -278,7 +366,7 @@ void
 usage(char *program)
 {
 	fprintf(stderr, "\nUsage: %s <ground_truth_map_path> <clean_map_path> <dirty_map_path> -save <save_png_path> "
-			"-poses <poses_file> -from <x> <y> -to <x> <y> -radius <meters> -show\n\n", program);
+			"-poses <poses_file> -from <x> <y> -to <x> <y> -radius <meters> -show -save_complete <save_png_path>\n\n", program);
 }
 
 
@@ -398,6 +486,20 @@ read_parameters(int argc, char **argv)
 		{
 			show_map_changes = true;
 		}
+		else if (strcmp(argv[i], "-save_complete") == 0)
+		{
+			i++;
+			if (i == argc)
+				exit_error("\nPathname expected after [%d]: %s\n", i - 1, argv);
+			if (save_complete_map_path)
+				exit_error("\nOnly one -save option allowed [%d]: %s\n", i, argv);
+			save_complete_map_path = (char *) malloc (sizeof(char) * 1024);
+			sprintf(save_complete_map_path, "%s/%s", argv[i], "complete_map_changes.png");
+		}
+		else if (strcmp(argv[i], "-show_complete") == 0)
+		{
+			show_complete_map = true;
+		}
 		else
 			exit_error("\nInvalid option [%d]: %s\n", i, argv);
 	}
@@ -417,6 +519,9 @@ main(int argc, char **argv)
     compute_maps_changes(argv[1], argv[2], argv[3]);
 
     compute_metrics();
+
+	if (save_complete_map_path)
+		imwrite(save_complete_map_path, full_map);
 
     return 0;
 }

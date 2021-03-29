@@ -18,64 +18,26 @@ void carmen_behavior_selector_subscribe_current_state_message(
 			handler, subscribe_how);
 }
 
-void
-carmen_behavior_selector_subscribe_goal_list_message(carmen_behavior_selector_goal_list_message *msg,
-		carmen_handler_t handler,
-		carmen_subscribe_t subscribe_how)
-{
-	carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME,
-			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT,
-			msg, sizeof(carmen_behavior_selector_goal_list_message),
-			handler, subscribe_how);
-}
-
-void
-carmen_behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source)
+void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
-	carmen_behavior_selector_set_goal_source_message msg;
+	carmen_behavior_selector_set_task_message msg;
 
 	static int initialized = 0;
 
 	if (!initialized)
 	{
-		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_NAME);
+		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME, IPC_VARIABLE_LENGTH, CARMEN_BEHAVIOR_SELECTOR_SET_TASK_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME);
 		initialized = 1;
 	}
 
-	msg.goal_source = goal_source;
+	msg.task = task;
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_NAME, &msg);
-	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_NAME);
-
-}
-
-void carmen_behavior_selector_set_state(carmen_behavior_selector_state_t state)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-	carmen_behavior_selector_set_state_message msg;
-
-	static int initialized = 0;
-
-	if (!initialized)
-	{
-		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME, IPC_VARIABLE_LENGTH, CARMEN_BEHAVIOR_SELECTOR_SET_STATE_FMT);
-		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME);
-		initialized = 1;
-	}
-
-	msg.state = state;
-	msg.timestamp = carmen_get_time();
-	msg.host = carmen_get_host();
-
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME, &msg);
-	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME);
+	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME, &msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME);
 }
 
 void carmen_behavior_selector_add_goal(carmen_point_t goal)
@@ -152,7 +114,7 @@ void carmen_behavior_selector_remove_goal()
 }
 
 void
-carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm,  carmen_behavior_selector_state_t state)
+carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm,  carmen_behavior_selector_task_t task)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_behavior_selector_set_algorithm_message msg;
@@ -167,7 +129,7 @@ carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algo
 	}
 
 	msg.algorithm = algorithm;
-	msg.state = state;
+	msg.task = task;
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 
@@ -205,4 +167,59 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 	if (state == Stopped_At_Stop_Sign_S2) 			return ((char *) "Stopped_At_Stop_Sign_S2");
 
 	return ((char *) " ");
+}
+
+
+void
+carmen_behavior_selector_subscribe_path_goals_and_annotations_message(carmen_behavior_selector_path_goals_and_annotations_message *msg,
+		carmen_handler_t handler,
+		carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME,
+			CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_FMT,
+			msg, sizeof(carmen_behavior_selector_path_goals_and_annotations_message),
+			handler, subscribe_how);
+}
+
+
+void
+visit_message_fields(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
+{
+	carmen_behavior_selector_path_goals_and_annotations_message *m = path_goals_and_annotations_message;
+	for (int i = 0; i < m->number_of_poses; i++)
+	{
+		printf("poses %lf %lf %lf %lf %lf\n", m->poses[i].x, m->poses[i].y, m->poses[i].theta, m->poses[i].v, m->poses[i].phi);
+		printf("annotations %d\n", m->annotations[i]);
+		printf("annotations_codes %d\n", m->annotations_codes[i]);
+	}
+	for (int i = 0; i < m->number_of_poses_back; i++)
+	{
+		printf("poses_back %lf %lf %lf %lf %lf\n",
+				m->poses_back[i].x, m->poses_back[i].y, m->poses_back[i].theta, m->poses_back[i].v, m->poses_back[i].phi);
+	}
+	for (int i = 0; i < m->goal_list_size; i++)
+	{
+		printf("goal_list %lf %lf %lf %lf %lf\n",
+				m->goal_list[i].x, m->goal_list[i].y, m->goal_list[i].theta, m->goal_list[i].v, m->goal_list[i].phi);
+	}
+	printf("%lf %s\n", m->timestamp, m->host);
+}
+
+
+void
+carmen_behavior_selector_publish_path_goals_and_annotations_message(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static int initialized = 0;
+
+//	visit_message_fields(path_goals_and_annotations_message);
+	if (!initialized)
+	{
+		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME);
+		initialized = 1;
+	}
+
+	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME, path_goals_and_annotations_message);
+	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME);
 }

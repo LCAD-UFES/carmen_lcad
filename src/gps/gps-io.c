@@ -339,7 +339,8 @@ DEVICE_read_data(SerialDevice dev)
 	static char buffer[BUFFER_LENGTH];
 	char *temp_buffer;
 	static size_t buffer_pos = 0;
-	static size_t j, chars_available;
+	static size_t j;
+	int chars_available;
 	int start, end, data_ok;
 //	static double previous_time = 0.0;
 //	double time;
@@ -354,7 +355,6 @@ DEVICE_read_data(SerialDevice dev)
 			read(dev.fd, temp_buffer, chars_available);
 			free(temp_buffer);
 			buffer_pos = 0;
-
 			return (FALSE);
 		}
 				
@@ -362,36 +362,43 @@ DEVICE_read_data(SerialDevice dev)
 		if (chars_read > 0)
 		{
 			buffer_pos += chars_read;
+			data_ok = FALSE;
 
-			for (j = 0; j < buffer_pos; j++)
-				if (buffer[j] == '$') 
-					break;
-			start = j;
-
-			for ( ; j < buffer_pos; j++)
-				if (buffer[j] == '*') 
-					break;
-			end = j;
-			
-			if ((buffer[end] == '*') && ((end - start) > 0))
+			while (buffer_pos > 100) // 100 eh ~ tamanho de uma linha NMEA. Le e trata todas do buffer ateh este tamanho.
 			{
-				// buffer[end] = '\0';
-				// printf("%s   %d\n", &(buffer[start]), end-start);
+				for (j = 0; j < buffer_pos; j++)
+					if (buffer[j] == '$')
+						break;
+				start = j;
+
+				for ( ; j < buffer_pos; j++)
+					if (buffer[j] == '*')
+						break;
+				end = j;
 				
-				data_ok = carmen_gps_parse_data(&(buffer[start]), end - start);
-				for (j = (end + 1); j < buffer_pos; j++)
+				if ((buffer[end] == '*') && ((end - start) > 0))
 				{
-					buffer[j - (end + 1)] = buffer[j];
+//					 buffer[end] = '\0';
+//					 printf("%s   , %d, %d\n", &(buffer[start]), chars_available, buffer_pos);
+
+					if (carmen_gps_parse_data(&(buffer[start]), end - start))
+						data_ok = TRUE;
+					for (j = (end + 1); j < buffer_pos; j++)
+					{
+						buffer[j - (end + 1)] = buffer[j];
+					}
+					buffer_pos = j - (end + 1);
+
+	/*				time = carmen_get_time();
+					printf("delta_t %lf, time %lf, previous_time %lf, bp = %d\n", time - previous_time, time, previous_time, buffer_pos);
+					previous_time = time;
+	*/
 				}
-				buffer_pos = j - (end + 1);
-				
-/*				time = carmen_get_time();
-				printf("delta_t %lf, time %lf, previous_time %lf, bp = %d\n", time - previous_time, time, previous_time, buffer_pos);
-				previous_time = time;
-*/
-				return (data_ok);
 			}
+
+			return (data_ok);
 		}
 	}
-	return(FALSE);
+
+	return (FALSE);
 }

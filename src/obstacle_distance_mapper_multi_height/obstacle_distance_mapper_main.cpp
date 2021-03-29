@@ -27,7 +27,7 @@ carmen_obstacle_distance_mapper_compact_map_message *behaviour_selector_compact_
 
 carmen_point_t g_goal_position;
 carmen_point_t g_robot_position;
-carmen_point_t goal_list_message;
+carmen_point_t rddf;
 
 int height_level;
 

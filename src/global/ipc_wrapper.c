@@ -87,6 +87,9 @@ static int index_length = 0;
 
 MSG_INSTANCE current_msgRef;
 
+char carmen_module_name[1024];
+
+
 int
 carmen_ipc_connect_locked(char *module_name)
 {
@@ -151,6 +154,8 @@ carmen_ipc_connect(char *module_name)
   char ipc_name[200];
 
   module_name = carmen_extract_filename(module_name);
+  strcpy(carmen_module_name, module_name);
+
   carmen_print_version();
   snprintf(ipc_name, 200, "%s-%d", module_name, getpid());
 
@@ -481,6 +486,43 @@ carmen_unsubscribe_message(char *message_name, carmen_handler_t handler)
 	     " matching callback for %s\n", message_name);
 }
 
+char *carmen_get_host(void)
+{
+  // The return value of getenv() is a pointer to a static buffer, whose contents
+  // may be changed by later calls. Therefore it's safer to create a copy of
+  // the returned string.
+  //
+  // See: http://www.cplusplus.com/reference/cstdlib/getenv/
+  //
+  // "The pointer returned [by a getenv() call] points to an internal memory block,
+  // whose content or validity may be altered by further calls to getenv
+  // (but not by other library functions)."
+  static char hostname[1024];
+  FILE *bin_host;
+
+  if (getenv("HOST") == NULL) {
+    if (getenv("HOSTNAME") != NULL)
+      setenv("HOST", getenv("HOSTNAME"), 1);
+    else if (getenv("host") != NULL)
+      setenv("HOST", getenv("host"), 1);
+    else if (getenv("hostname") != NULL)
+      setenv("HOST", getenv("hostname"), 1);
+    else {
+      bin_host = popen("/bin/hostname", "r");
+      if (bin_host == NULL)
+	carmen_die("\n\tCan't get machine name from $HOST, $host, $hostname or /bin/hostname.\n"
+		   "\tPlease set one of these environment variables properly.\n\n");
+      fscanf(bin_host, "%s", hostname);
+      setenv("HOST", hostname, 1);
+      pclose(bin_host);
+    }
+  }
+
+  sprintf(hostname, "%s@%s", carmen_module_name, getenv("HOST"));
+//  strcpy(hostname, getenv("HOST"));
+  return hostname;
+}
+
 static double initialize_time = 0;
 
 void carmen_ipc_initialize(int argc, char **argv)
@@ -644,6 +686,15 @@ void carmen_ipc_dispatch(void)
       carmen_blogfile_handle_one_message();
     } while(!carmen_feof(infile));
     fprintf(stderr, "Logfile complete.\n");
+  }
+}
+
+void carmen_ipc_dispatch_nonblocking(void)
+{
+  if (IPC_listen(1) == IPC_Error) // wait 1 micro second for a message
+  {
+    /* If control reaches here, IPC_listen returned IPC_Error */
+    printf("Error while receiving IPC messages!\n");
   }
 }
 

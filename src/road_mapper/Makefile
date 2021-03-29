@@ -12,8 +12,8 @@ IFLAGS += \
 
 LFLAGS += \
 	-lparam_interface \
-	-lipc \
 	-lglobal \
+	-lipc \
 	-llocalize_ackerman_interface \
 	-lmap_server_interface \
 	-lgrid_mapping \

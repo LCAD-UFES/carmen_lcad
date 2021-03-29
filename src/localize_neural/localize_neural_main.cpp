@@ -17,8 +17,8 @@
 #include <string>
 #include <tf.h>
 #include "localize_neural_torch.h"
-#include "localize_neural_wnn.h"
-#include "localize_neural_util.h"
+//#include "localize_neural_wnn.h"
+//#include "localize_neural_util.h"
 
 using namespace std;
 

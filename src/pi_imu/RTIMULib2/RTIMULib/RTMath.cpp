@@ -141,6 +141,15 @@ void RTMath::convertToVector(unsigned char *rawData, RTVector3& vec, RTFLOAT sca
      }
 }
 
+void RTMath::convertToRTFLOAT(unsigned char *rawData, RTFLOAT *val, RTFLOAT scale, bool bigEndian)
+{
+    if (bigEndian) {
+        *val = ((RTFLOAT)((int16_t)(((uint16_t)rawData[0] << 8) | (uint16_t)rawData[1])) * scale);
+    } else {
+        *val = ((RTFLOAT)((int16_t)(((uint16_t)rawData[1] << 8) | (uint16_t)rawData[0])) * scale);
+    }
+}
+
 
 
 //----------------------------------------------------------
