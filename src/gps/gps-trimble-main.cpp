@@ -50,7 +50,7 @@
 #include "gps-ipc.h"
 #include "gps-io.h"
 
-#define TCP_IP_ADDRESS			"192.168.0.103"
+#define TCP_IP_ADDRESS			"192.168.1.103" //"192.168.0.103"
 #define TCP_IP_PORT				"5017"
 //#define TCP_IP_ADDRESS			"172.20.10.4"
 //#define TCP_IP_PORT				"5017"

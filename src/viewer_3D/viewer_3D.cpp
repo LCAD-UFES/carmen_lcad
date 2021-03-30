@@ -2603,7 +2603,7 @@ carmen_download_map_handler(carmen_download_map_message *message)
     new_map_has_been_received = 1;
 }
 
-static void
+void
 carmen_localize_neural_base_message_handler(carmen_localize_neural_imagepos_message *message)
 {
     if (!localize_imagepos_base_initialized)
@@ -2616,7 +2616,7 @@ carmen_localize_neural_base_message_handler(carmen_localize_neural_imagepos_mess
     memcpy(localize_imagepos_base_message.image_data, message->image_data, message->size * sizeof(char));
 }
 
-static void
+void
 carmen_localize_neural_curr_message_handler(carmen_localize_neural_imagepos_message *message)
 {
     if (!localize_imagepos_curr_initialized)
@@ -3677,13 +3677,13 @@ subscribe_ipc_messages(void)
 //                                          (carmen_handler_t) carmen_download_map_handler,
 //                                          CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
-                                          (carmen_handler_t) carmen_localize_neural_base_message_handler,
-                                          CARMEN_SUBSCRIBE_LATEST);
+//    carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
+//                                          (carmen_handler_t) carmen_localize_neural_base_message_handler,
+//                                          CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_neural_subscribe_imagepos_curframe_message(NULL,
-                                          (carmen_handler_t) carmen_localize_neural_curr_message_handler,
-                                          CARMEN_SUBSCRIBE_LATEST);
+//    carmen_localize_neural_subscribe_imagepos_curframe_message(NULL,
+//                                          (carmen_handler_t) carmen_localize_neural_curr_message_handler,
+//                                          CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
                                                   (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,

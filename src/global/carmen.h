@@ -186,6 +186,12 @@ extern "C" {
 #include <carmen/can_dump_messages.h>
 #include <carmen/can_dump_interface.h>
 
+#include <carmen/route_planner_messages.h>
+#include <carmen/route_planner_interface.h>
+
+#include <carmen/offroad_planner_messages.h>
+#include <carmen/offroad_planner_interface.h>
+
 
 #ifdef CARMEN_MEMORY_DEBUG
 #include <dmalloc.h>
