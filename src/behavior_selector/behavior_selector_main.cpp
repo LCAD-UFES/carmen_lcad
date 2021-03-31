@@ -622,24 +622,13 @@ publish_path_goals_and_annotations_message(carmen_rddf_road_profile_message *pat
 	path_goals_and_annotations_message.host = carmen_get_host();
 
 	carmen_behavior_selector_publish_path_goals_and_annotations_message(&path_goals_and_annotations_message);
+}
 
-//	IPC_RETURN_TYPE err;
-//	if (goal_list_road_profile_message == last_road_profile_message)
-//	{
-//		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &path_goals_and_annotations_message);
-//		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
-//	}
-//
-//	if (last_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
-//	{
-//		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, &goal_list_msg);
-//		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
-//	}
 
-//	FILE *caco = fopen("caco.txt", "a");
-//	fprintf(caco, "%lf %lf %lf\n", goal_list->v, distance_to_moving_obstacle_annotation(get_robot_pose()), carmen_get_time());
-//	fflush(caco);
-//	fclose(caco);
+void
+publish_set_of_paths_message(carmen_frenet_path_planner_set_of_paths *set_of_paths)
+{
+	carmen_frenet_path_planner_publish_set_of_paths_message(set_of_paths);
 }
 
 
@@ -675,74 +664,6 @@ publish_current_state(carmen_behavior_selector_state_message *msg)
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
 }
-
-
-//void
-//publish_behavior_selector_road_profile_message(carmen_rddf_road_profile_message *rddf_msg)
-//{
-//	if (param_rddf_num_poses_by_car_velocity && (last_rddf_message != NULL))
-//	{
-//		carmen_rddf_road_profile_message *last_rddf_resized;
-//
-//		last_rddf_resized = last_rddf_message;
-//		road_profile_message.number_of_poses = last_rddf_resized->number_of_poses;
-//
-//		road_profile_message.poses = (carmen_ackerman_traj_point_t *) realloc(road_profile_message.poses, sizeof(carmen_ackerman_traj_point_t) * road_profile_message.number_of_poses);
-//		road_profile_message.annotations = (int *) malloc(sizeof(int) * road_profile_message.number_of_poses);
-//
-//		if (last_rddf_resized->number_of_poses_back > 0)
-//		{
-//			road_profile_message.number_of_poses_back = last_rddf_resized->number_of_poses_back;
-//			road_profile_message.poses_back = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * road_profile_message.number_of_poses_back);
-//
-//			for (int j = 0; j < last_rddf_resized->number_of_poses_back; j++)
-//				road_profile_message.poses_back[j] = last_rddf_resized->poses_back[j];
-//		}
-//
-//		for (int i = 0; i < last_rddf_resized->number_of_poses; i++)
-//		{
-//			road_profile_message.annotations[i] = last_rddf_resized->annotations[i];
-//			road_profile_message.poses[i] = last_rddf_resized->poses[i];
-//		}
-//
-//		road_profile_message.timestamp = carmen_get_time();
-//		road_profile_message.host = carmen_get_host();
-//
-//		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &road_profile_message);
-//		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
-//
-//		free(road_profile_message.annotations);
-//		free(road_profile_message.poses_back);
-//	}
-//	else
-//	{
-//		road_profile_message.annotations = rddf_msg->annotations;
-//		road_profile_message.number_of_poses = rddf_msg->number_of_poses;
-//		road_profile_message.number_of_poses_back = rddf_msg->number_of_poses_back;
-//		road_profile_message.poses = (carmen_ackerman_traj_point_t *) realloc(road_profile_message.poses, sizeof(carmen_ackerman_traj_point_t) * road_profile_message.number_of_poses);
-//		for (int i = 0; i < rddf_msg->number_of_poses; i++)
-//			road_profile_message.poses[i] = rddf_msg->poses[i];
-//		road_profile_message.poses_back = rddf_msg->poses_back;
-//		road_profile_message.timestamp = carmen_get_time();
-//		road_profile_message.host = carmen_get_host();
-//
-//		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &road_profile_message);
-//		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
-//	}
-//}
-
-
-//void
-//behavior_selector_motion_planner_publish_path_message(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity)
-//{
-//	if (rddf_num_poses_by_velocity)
-//		last_rddf_message = copy_rddf_message_considering_velocity(last_rddf_message, rddf_msg);
-//	else
-//		last_rddf_message = copy_rddf_message(last_rddf_message, rddf_msg);
-//
-//	if ((get_current_algorithm() == CARMEN_BEHAVIOR_SELECTOR_RDDF) && (last_rddf_message) && (last_rddf_message->number_of_poses > 0))
-//		carmen_motion_planner_publish_path_message(last_rddf_message->poses, last_rddf_message->number_of_poses, CARMEN_BEHAVIOR_SELECTOR_RDDF);
-//}
 
 
 void
@@ -993,7 +914,7 @@ set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_a
 	if (behavior_selector_performs_path_planning)
 	{
 		set_of_paths.selected_path = selected_path_id;
-		carmen_frenet_path_planner_publish_set_of_paths_message(&set_of_paths);
+		publish_set_of_paths_message(&set_of_paths);
 
 		static carmen_rddf_road_profile_message rddf_msg;
 		rddf_msg.poses = &(set_of_paths.set_of_paths[set_of_paths.selected_path * set_of_paths.number_of_poses]);
@@ -1154,7 +1075,7 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 	if (behavior_selector_performs_path_planning)
 	{
 		set_of_paths.selected_path = selected_path_id;
-		carmen_frenet_path_planner_publish_set_of_paths_message(&set_of_paths);
+		publish_set_of_paths_message(&set_of_paths);
 
 		static carmen_rddf_road_profile_message rddf_msg;
 		rddf_msg.poses = &(set_of_paths.set_of_paths[set_of_paths.selected_path * set_of_paths.number_of_poses]);

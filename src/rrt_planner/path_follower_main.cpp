@@ -113,56 +113,6 @@ publish_navigator_ackerman_plan_message(list<RRT_Path_Edge> &path)
 
 	free(msg.path);
 }
-
-
-void
-publish_navigator_ackerman_status_message()
-{
-	if (!GlobalState::localize_pose)
-		return;
-
-	IPC_RETURN_TYPE err = IPC_OK;
-
-	static bool first_time = true;
-
-	if (first_time)
-	{
-		err = IPC_defineMsg(
-				(char *)CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME,
-				IPC_VARIABLE_LENGTH,
-				(char *)CARMEN_NAVIGATOR_ACKERMAN_STATUS_FMT);
-		carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME);
-	}
-
-	carmen_navigator_ackerman_status_message msg;
-	msg.autonomous = GlobalState::following_path;
-	msg.goal_set   = GlobalState::goal_pose != NULL;
-
-	if (msg.goal_set)
-	{
-		msg.goal.x = GlobalState::goal_pose->x;
-		msg.goal.y = GlobalState::goal_pose->y;
-		msg.goal.theta = GlobalState::goal_pose->theta;
-	}
-	else
-	{
-		msg.goal.theta = 0;
-		msg.goal.y	   = 0;
-		msg.goal.x	   = 0;
-	}
-
-	msg.host		= carmen_get_host();
-	msg.robot.x		= GlobalState::localize_pose->x;
-	msg.robot.y		= GlobalState::localize_pose->y;
-	msg.robot.theta = GlobalState::localize_pose->theta;
-	msg.robot.v		= GlobalState::last_odometry.v;
-	msg.robot.phi	= GlobalState::last_odometry.phi;
-	msg.timestamp	= carmen_get_time();
-
-	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME, &msg);
-
-	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -184,19 +134,8 @@ build_and_follow_path(carmen_point_t globalpos, double pose_timestamp)
 	*GlobalState::localize_pose = initial_robot_state.pose;
 
 	follower.update_path();
-	//printf("follower.update_path() - %lf\n", carmen_get_time() - t0);
-	//fflush(stdout);
-
 
 	follower.build_and_send_refined_path();
-	//printf("follower.build_and_send_refined_path() - %lf\n", carmen_get_time() - t0);
-	//fflush(stdout);
-
-//	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
-//	{
-//		publish_navigator_ackerman_plan_message(follower.get_path());
-////		publish_navigator_ackerman_status_message();
-//	}
 }
 
 
