@@ -3,7 +3,10 @@ include ../Makefile.conf
 MODULE_NAME = "LOCALIZE NEURAL"
 MODULE_COMMENT = "LOCALIZE NEURAL Module"
 
+CXXFLAGS = -std=c++11
+
 IFLAGS += -isystem /usr/include/bullet/
+IFLAGS += -I/usr/local/include/bullet/
 IFLAGS += -isystem $(CARMEN_HOME)/sharedlib/libtf/src 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lmovement
