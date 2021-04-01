@@ -300,7 +300,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
 		{
-			if(GlobalState::reverse_planning)
+			if (GlobalState::reverse_planning)
 				distance = dist(path.at(i),
 								my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
 			else
@@ -335,7 +335,7 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 //			continue;
 		carmen_ackerman_path_point_t axle;
 
-		if(GlobalState::reverse_planning) //mantem o eixo traseiro
+		if (GlobalState::reverse_planning) //mantem o eixo traseiro
 			axle = path.at(j);
 		else
 			axle = move_to_front_axle(path.at(j));
@@ -1420,10 +1420,12 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	params.use_lane = use_lane;
 
 	if (GlobalState::reverse_planning)
-		if(!detailed_lane.empty())
+	{
+		if (!detailed_lane.empty())
 			params.detailed_lane = detailed_lane;
 		else
 			params.use_lane = false;
+	}
 	else
 		params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
 

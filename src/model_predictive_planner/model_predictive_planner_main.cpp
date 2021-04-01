@@ -39,10 +39,6 @@ carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_anno
 
 static int update_lookup_table = 0;
 
-//extern double steering_delay;
-extern double steering_delay_queue_size;
-extern vector <steering_delay_t> steering_delay_queue;
-
 int use_unity_simulator = 0;
 
 
@@ -269,7 +265,6 @@ publish_plan_tree_for_navigator_gui(Tree tree)
 	if (GlobalState::publish_tree)
 		Publisher_Util::publish_plan_tree_message(tree);
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -308,9 +303,11 @@ compute_plan(Tree *tree)
 {
 	if (!path_goals_and_annotations_message || (path_goals_and_annotations_message->number_of_poses == 0))
 	{
-		printf("Error: trying to compute plan without rddf\n");
-		//		vector<carmen_ackerman_path_point_t> a;
-		//		return a;
+		tree->num_paths = 0;
+		tree->paths = NULL;
+		vector<carmen_ackerman_path_point_t> voidVector;
+
+		return (voidVector);
 	}
 
 	free_tree(tree);
@@ -322,25 +319,28 @@ compute_plan(Tree *tree)
 		tree->num_paths = 0;
 		tree->paths = NULL;
 		vector<carmen_ackerman_path_point_t> voidVector;
-		return(voidVector);
+
+		return (voidVector);
 	}
-
-	tree->num_paths = path.size();
-	tree->paths = (carmen_ackerman_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_ackerman_traj_point_t *));
-	tree->paths_sizes = (int *) malloc(tree->num_paths * sizeof(int));
-
-	for (unsigned int i = 0; i < path.size(); i++)
+	else
 	{
-		tree->paths[i] = (carmen_ackerman_traj_point_t *) malloc(path[i].size() * sizeof(carmen_ackerman_traj_point_t));
-		copy_path_to_traj(tree->paths[i], path[i]);
-		tree->paths_sizes[i] = path[i].size();
+		tree->num_paths = path.size();
+		tree->paths = (carmen_ackerman_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_ackerman_traj_point_t *));
+		tree->paths_sizes = (int *) malloc(tree->num_paths * sizeof(int));
+
+		for (unsigned int i = 0; i < path.size(); i++)
+		{
+			tree->paths[i] = (carmen_ackerman_traj_point_t *) malloc(path[i].size() * sizeof(carmen_ackerman_traj_point_t));
+			copy_path_to_traj(tree->paths[i], path[i]);
+			tree->paths_sizes[i] = path[i].size();
+		}
+
+		if (!GlobalState::last_plan_pose)
+			GlobalState::last_plan_pose = new Pose();
+		*GlobalState::last_plan_pose = *GlobalState::localizer_pose;
+
+		return (path[0]);
 	}
-
-	if (!GlobalState::last_plan_pose)
-		GlobalState::last_plan_pose = new Pose();
-	*GlobalState::last_plan_pose = *GlobalState::localizer_pose;
-
-	return (path[0]);
 }
 
 
@@ -394,16 +394,6 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-add_to_steering_delay_queue(double phi, double timestamp)
-{
-	steering_delay_t phi_command = {phi, timestamp};
-	steering_delay_queue.push_back(phi_command);
-	if (steering_delay_queue.size() > steering_delay_queue_size)
-		steering_delay_queue.erase(steering_delay_queue.begin());
-}
-
-
-void
 build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
@@ -418,39 +408,19 @@ build_and_follow_path(double timestamp)
 				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 			else
 				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
-
-			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 		}
 		else
 		{
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
-				add_to_steering_delay_queue(path[0].phi, timestamp);
-
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
-//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
-
-//				FILE *caco = fopen("caco2.txt", "a");
-//				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
-//						path_follower_path.begin()->command.v,
-//						GlobalState::behavior_selector_low_level_state);
-//				fflush(caco);
-//				fclose(caco);
 			}
-			//		else
-				//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			//		{
-			//			if (GlobalState::last_odometry.v == 0.0)
-			//				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
-			//			else
-			//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			//		}
 		}
-//		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
+		publish_plan_tree_for_navigator_gui(tree);
 	}
 }
 
@@ -476,100 +446,12 @@ build_and_follow_path_new(double timestamp)
 			{
 				publish_model_predictive_planner_motion_commands(path, timestamp);
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
-//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
-			//		else
-			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
-//		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
+//		publish_plan_tree_for_navigator_gui(tree);
 	}
 }
-
-/**
- * @brief      This function create discrete trajectory points for moving objects
- *
- * @param      new_msg             message containing the moving objects
- * @param  prediction_horizon  How many seconds in the future it will predict the trajectories
- * @param  time_interval       Interval of time between two points in the trajectory
- */
-//static void
-//construct_object_trajectories(carmen_moving_objects_point_clouds_message *new_msg, double prediction_horizon = 5, double time_interval = 0.15)
-//{
-//	GlobalState::moving_objects_trajectories.clear();
-//
-//	int num_objects = new_msg->num_point_clouds;
-//	/* Reserve the memory beforehand to optimize construction */
-//	GlobalState::moving_objects_trajectories.reserve(num_objects);
-//	/* Precomputing this to use when moving object to car reference */
-//    //TODO: check if this angle is correct or inverted
-//	double cos_car = cos(-GlobalState::localizer_pose->theta);
-//	double sin_car = sin(-GlobalState::localizer_pose->theta);
-//
-//	#ifdef DEBUG_OBJECTS_PLOT
-//	carmen_ackerman_traj_point_t* all_traj = (carmen_ackerman_traj_point_t*)malloc(num_objects * static_cast<int>(prediction_horizon / time_interval) * sizeof(carmen_ackerman_traj_point_t));
-//	#endif
-//
-//	for(int i = 0; i < num_objects; i++)
-//	{
-//		int num_trajectory_points = static_cast<int>(prediction_horizon / time_interval); //TODO: Checar esse time_interval
-//		carmen_ackerman_traj_point_t *trajectory;
-//		trajectory = (carmen_ackerman_traj_point_t*)malloc(num_trajectory_points * sizeof(carmen_ackerman_traj_point_t));
-//		carmen_test_alloc(trajectory);
-//
-//		/* Now let's calculate the trajectory for the ith object*/
-//		for(int j = 0; j < num_trajectory_points; j++)
-//		{
-//			carmen_ackerman_traj_point_t new_trajectory_point;
-//			/* EXTREMELY SIMPLE MOTION SIMULATION USING SIMPLIFIED ACKERMAN MODEL */
-//			/* X = X_0 + V * Cos(theta)*/
-//			new_trajectory_point.x = new_msg->point_clouds[i].object_pose.x + (time_interval * j) * new_msg->point_clouds[i].linear_velocity * cos(new_msg->point_clouds[i].orientation);
-//			/* Y = Y_0 + V * Sin(theta)*/
-//			new_trajectory_point.y = new_msg->point_clouds[i].object_pose.y + (time_interval * j) * new_msg->point_clouds[i].linear_velocity * sin(new_msg->point_clouds[i].orientation);
-//			/* Moving to car reference*/
-//			if(GlobalState::localizer_pose)
-//            {
-//				new_trajectory_point.x = new_trajectory_point.x - GlobalState::localizer_pose->x;
-//				new_trajectory_point.y = new_trajectory_point.y - GlobalState::localizer_pose->y;
-//
-//				//carmen_rotate_2d(&new_trajectory_point.x,&new_trajectory_point.y, GlobalState::localizer_pose->theta);
-//				double x2 = new_trajectory_point.x;
-//				new_trajectory_point.x = cos_car*(new_trajectory_point.x) - sin_car*(new_trajectory_point.y);
-//  				new_trajectory_point.y = sin_car*x2 + cos_car*(new_trajectory_point.y);
-//            }
-//
-//			/* We suppose the orientation remain constant */
-//			new_trajectory_point.theta = new_msg->point_clouds[i].orientation - GlobalState::localizer_pose->theta;
-//			new_trajectory_point.v = new_msg->point_clouds[i].linear_velocity;
-//
-//            /* We suppose no steering wheel angle, the car continue in the same direction forever */
-//			new_trajectory_point.phi = 0.0;
-//			//new_trajectory_point.time = new_msg->timestamp + j * time_interval;
-//
-//
-//			trajectory[j] = new_trajectory_point;
-//
-//			#ifdef DEBUG_OBJECTS_PLOT
-//			all_traj[i + num_objects*j] = new_trajectory_point;
-//            carmen_rotate_2d(&all_traj[i + num_objects*j].x, &all_traj[i + num_objects*j].y, GlobalState::localizer_pose->theta);
-//            all_traj[i + num_objects*j].x += GlobalState::localizer_pose->x;
-//            all_traj[i + num_objects*j].y += GlobalState::localizer_pose->y;
-//            all_traj[i + num_objects*j].theta += GlobalState::localizer_pose->theta;
-//			#endif
-//
-//		} /* End of trajectory for one object */
-//
-//		GlobalState::moving_objects_trajectories.push_back(trajectory);
-//
-//	} /* End of pass through all objects*/
-//
-//	#ifdef DEBUG_OBJECTS_PLOT
-//		carmen_rddf_publish_road_profile_around_end_point_message(all_traj, num_objects * static_cast<int>(prediction_horizon / time_interval));
-//	#endif
-//
-//}
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 

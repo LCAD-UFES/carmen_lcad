@@ -156,7 +156,7 @@ get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_od
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
 	if (GlobalState::reverse_planning)
-		td.theta = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
+		td.theta = -carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
 	else
 		td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
 	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
@@ -195,9 +195,7 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_p
 			local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
 					path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
 			lane_in_local_pose->push_back(local_reference_lane_point);
-
 		}
-
 	}
 }
 
@@ -243,7 +241,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 		return false;
 
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
-	if (!GlobalState::reverse_planning)
+//	if (!GlobalState::reverse_planning)
 		move_poses_back_to_local_reference(robot_pose, path_goals_and_annotations_message, lane_in_local_pose);
 
 	move_poses_foward_to_local_reference(robot_pose, path_goals_and_annotations_message, lane_in_local_pose);
@@ -721,7 +719,7 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		tcp = search_lookup_table(tdd);
 		if (!tcp.valid)
 		{
-			printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
+//			printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
 			if (0)//(GlobalState::reverse_planning)
 			{
 				printf(KMAG "@@@@@@@@@@@ Trying a dummy_TCP\n");
@@ -992,7 +990,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		if (has_valid_path) // If could find a good path, break. Otherwise, try swerve
 			break;
 	}
-	//	}
 
 	int shorter_path = -1;
 	TrajectoryLookupTable::TrajectoryControlParameters best_otcp;
@@ -1042,8 +1039,8 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 	for (int i = 0; i < 1; i++)
 	{
 		Pose newPose = *goal_pose;
-		newPose.x += 0.3 * (double) magicSignals[i] * cos(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
-		newPose.y += 0.3 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
+		newPose.x += 0.5 * (double) magicSignals[i] * cos(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
+		newPose.y += 0.5 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
 		goalPoseVector.push_back(newPose);
 	}
 
