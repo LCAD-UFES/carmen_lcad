@@ -1,5 +1,11 @@
 (Contetudo anterior)
+This is a clean version of the neural_mapper repository, It is also update the pytorch from 0.4 to 1.10
+The development will go from here.
 
+TODO
+-Finish this README
+-Test with other computers
+-Get the utils code 
 
 ## Requirements:
  
