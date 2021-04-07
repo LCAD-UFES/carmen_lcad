@@ -273,7 +273,7 @@ void draw_car_outline(CarDrawer* carDrawer)
 	// Car
 	glPushMatrix();
 
-		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,0.0);
 //		glRotatef(90.0, 1.0, 0.0, 0.0);
 //		glRotatef(0.0, 0.0, 1.0, 0.0);
 
@@ -285,12 +285,12 @@ void draw_car_outline(CarDrawer* carDrawer)
 
 //	draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
 	glBegin(GL_LINES);
-		glVertex3d(0.0, -carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
-		glVertex3d(0.0, carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
-		glVertex3d(carDrawer->car_axis_distance, -carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
-		glVertex3d(carDrawer->car_axis_distance, carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
-		glVertex3d(carDrawer->car_axis_distance, 0.0, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
-		glVertex3d(carDrawer->car_size.x, 0.0, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glVertex3d(0.0, -carDrawer->car_size.y / 2, 0.0);
+		glVertex3d(0.0, carDrawer->car_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, -carDrawer->car_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, carDrawer->car_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, 0.0, 0.0);
+		glVertex3d(carDrawer->car_size.x, 0.0, 0.0);
 	glEnd();
 }
 
