@@ -356,8 +356,8 @@ user_param_t *user_pref_param_list;
 int user_pref_num_items;
 int user_pref_window_width  = WINDOW_WIDTH;
 int user_pref_window_height = WINDOW_HEIGHT;
-int user_pref_window_x = -1;
-int user_pref_window_y = -1;
+int user_pref_window_x = 0;
+int user_pref_window_y = 0;
 
 
 static carmen_vector_3D_t
