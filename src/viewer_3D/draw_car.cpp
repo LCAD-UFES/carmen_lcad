@@ -201,6 +201,23 @@ static void drawBox(double length_x, double length_y, double length_z)
 	glPopMatrix();
 }
 
+static void drawOutline(double length_x, double length_y)
+{
+	glPushMatrix();
+
+		glBegin(GL_LINE_STRIP);
+
+			glVertex3f(-length_x/2, -length_y/2, 0);
+			glVertex3f(length_x/2, -length_y/2, 0);
+			glVertex3f(length_x/2, length_y/2, 0);
+			glVertex3f(-length_x/2, length_y/2, 0);
+			glVertex3f(-length_x/2, -length_y/2, 0);
+
+		glEnd();
+
+	glPopMatrix();
+}
+
 void draw_axis(double length)
 {
 	length = 2*length;
@@ -248,6 +265,33 @@ void draw_axis(double length)
 		}
 
 	glPopMatrix();
+}
+
+
+void draw_car_outline(CarDrawer* carDrawer)
+{
+	// Car
+	glPushMatrix();
+
+		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+//		glRotatef(90.0, 1.0, 0.0, 0.0);
+//		glRotatef(0.0, 0.0, 1.0, 0.0);
+
+		glColor3f(0.3,0.3,0.3);
+
+		drawOutline(carDrawer->car_size.x, carDrawer->car_size.y);
+
+	glPopMatrix();
+
+//	draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
+	glBegin(GL_LINES);
+		glVertex3d(0.0, -carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glVertex3d(0.0, carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glVertex3d(carDrawer->car_axis_distance, -carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glVertex3d(carDrawer->car_axis_distance, carDrawer->car_size.y / 2, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glVertex3d(carDrawer->car_axis_distance, 0.0, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glVertex3d(carDrawer->car_size.x, 0.0, carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+	glEnd();
 }
 
 
@@ -369,6 +413,18 @@ void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
 		glRotatef(carmen_radians_to_degrees(pose.orientation.roll), 1.0f, 0.0f, 0.0f);
 
 		draw_car(carDrawer);
+	glPopMatrix();
+}
+
+void draw_car_outline_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
+{
+	glPushMatrix();
+		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.yaw), 0.0f, 0.0f, 1.0f);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.roll), 1.0f, 0.0f, 0.0f);
+
+		draw_car_outline(carDrawer);
 	glPopMatrix();
 }
 

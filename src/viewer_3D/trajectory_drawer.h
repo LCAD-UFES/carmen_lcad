@@ -17,6 +17,8 @@ typedef struct _trajectory_drawer
 
 	carmen_pose_3D_t *goals;
 	int goals_size;
+
+	carmen_vector_3D_t car_size;
 } trajectory_drawer;
 
 trajectory_drawer* create_trajectory_drawer(double r, double g, double b);

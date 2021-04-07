@@ -812,6 +812,8 @@ draw_everything()
 
     if (draw_car_flag)
         draw_car_at_pose(car_drawer, car_fused_pose);
+    else
+    	draw_car_outline_at_pose(car_drawer, car_fused_pose);
 
     if (draw_stereo_cloud_flag)
     {

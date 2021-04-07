@@ -39,7 +39,9 @@ CarDrawer* createCarDrawer(int argc, char** argv);
 void destroyCarDrawer(CarDrawer* carDrawer);
 
 void draw_car(CarDrawer* carDrawer);
+void draw_car_outline(CarDrawer* carDrawer);
 void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t position);
+void draw_car_outline_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t position);
 
 #ifdef __cplusplus
 }
