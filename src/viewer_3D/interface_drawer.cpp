@@ -186,7 +186,7 @@ static void init_buttons(interface_drawer* i_drawer)
 	i_drawer->butt[27].text = "Show Symotha";
 	i_drawer->butt[28].text = "Lidars";
 	i_drawer->butt[29].text = "Show Path Plans";
-	i_drawer->butt[30].text = "Empty";
+	i_drawer->butt[30].text = "Waypoints";
 	i_drawer->butt[31].text = "Empty";
 
 	//Annotations
@@ -560,6 +560,12 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
 					set_flag_viewer_3D(35, i_drawer->butt[i].state);
+				}
+				else if (i_drawer->butt[i].code == 30) // Waypoints
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(36, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 32) // Traffic Light
 				{

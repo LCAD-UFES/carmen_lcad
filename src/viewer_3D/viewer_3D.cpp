@@ -249,6 +249,7 @@ static int draw_annotation_flag;
 static int draw_moving_objects_flag;
 static int draw_gps_axis_flag;
 static int velodyne_remission_flag;
+static int draw_waypoints_flag;
 
 static int follow_car_flag;
 static int zero_z_flag;
@@ -949,16 +950,16 @@ draw_everything()
 
     if (draw_path_plan_flag)
     {
-        draw_trajectory(path_plan_drawer, get_position_offset());
+        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag);
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-    		draw_trajectory(t_drawerTree[i], get_position_offset());
+    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag);
     }
 
     if (draw_motion_plan_flag)
-        draw_trajectory(motion_plan_drawer, get_position_offset());
+        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
     if (draw_obstacle_avoider_plan_flag)
-        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset());
+        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
     if (draw_map_image_flag)
     {
@@ -1008,10 +1009,10 @@ draw_everything()
     if (show_path_plans_flag)
 	{
 		for (unsigned int i = 0; i < path_plans_frenet_drawer.size(); i++)
-			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset());
+			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset(), draw_waypoints_flag);
 
     	for (unsigned int i = 0; i < path_plans_nearby_lanes_drawer.size(); i++)
-    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset());
+    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset(), draw_waypoints_flag);
 	}
 
     if (!gps_fix_flag)
@@ -2962,6 +2963,7 @@ init_flags(void)
     draw_gps_axis_flag = 0;
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
+    draw_waypoints_flag = 1;
 #ifdef TEST_LANE_ANALYSIS
     draw_lane_analysis_flag = 1;
 #endif
@@ -3482,6 +3484,8 @@ draw_while_picking()
 
 	if (draw_car_flag)
 		draw_car_at_pose(car_drawer, car_fused_pose);
+	else
+		draw_car_outline_at_pose(car_drawer, car_fused_pose);
 
 	if (draw_stereo_cloud_flag)
 	{
@@ -3566,13 +3570,13 @@ draw_while_picking()
 	}
 
 	if (draw_path_plan_flag)
-		draw_trajectory(path_plan_drawer, get_position_offset());
+		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
 	if (draw_motion_plan_flag)
-		draw_trajectory(motion_plan_drawer, get_position_offset());
+		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
 	if (draw_obstacle_avoider_plan_flag)
-		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset());
+		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
 	if (draw_map_image_flag)
 	{
@@ -4028,6 +4032,9 @@ set_flag_viewer_3D(int flag_num, int value)
     case 35:
     	show_path_plans_flag = value;
     	break;
+    case 36:
+		draw_waypoints_flag = value;
+		break;
     }
 }
 
