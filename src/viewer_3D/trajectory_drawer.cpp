@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/behavior_selector_interface.h>
+#include <carmen/rrt_node.h>
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -62,11 +63,38 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->path_length * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->path_length;
 
-	int i;
-	for(i = 0; i < t_drawer->path_size; i++)
+	for (int i = 0; i < t_drawer->path_size; i++)
 	{
 		t_drawer->path[i].x = message->path[i].x;
 		t_drawer->path[i].y = message->path[i].y;
+		t_drawer->path[i].z = 0.0;
+
+		if ((i == t_drawer->path_size - 1) || (message->path[i + 1].v >= 0.0))
+		{
+			t_drawer->path_segment_color[i].x = t_drawer->r;
+			t_drawer->path_segment_color[i].y = t_drawer->g;
+			t_drawer->path_segment_color[i].z = t_drawer->b;
+		}
+		else
+		{
+			t_drawer->path_segment_color[i].x = 1.0;
+			t_drawer->path_segment_color[i].y = 0.0;
+			t_drawer->path_segment_color[i].z = 0.0;
+		}
+	}
+}
+
+void
+add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *message)
+{
+	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->size * sizeof(carmen_vector_3D_t));
+	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->size * sizeof(carmen_vector_3D_t));
+	t_drawer->path_size = message->size;
+
+	for (int i = 0; i < t_drawer->path_size; i++)
+	{
+		t_drawer->path[i].x = message->path[i].p1.x;
+		t_drawer->path[i].y = message->path[i].p1.y;
 		t_drawer->path[i].z = 0.0;
 
 		if ((i == t_drawer->path_size - 1) || (message->path[i + 1].v >= 0.0))
@@ -158,7 +186,7 @@ draw_goals_outline(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 }
 
 
-static void
+void
 draw_goals(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 {
 
