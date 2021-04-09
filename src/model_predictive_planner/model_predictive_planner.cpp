@@ -551,13 +551,13 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 			double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
 					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
 			if (circle_invasion > 0)
-					hit_points.push_back(path[i]); //pra plotar
+				hit_points.push_back(path[i]); //pra plotar
 
 			if (circle_invasion > max_circle_invasion)
 				max_circle_invasion = circle_invasion;
 		}
 	}
-	if(!hit_points.size())
+	if (!hit_points.size())
 		hit_points.push_back(path[0]);
 
 #ifdef PLOT_COLLISION
@@ -794,7 +794,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 
 	// Para evitar que o fim do path bata em obstáculos devido a atrazo na propagacao da posicao atual deles
-	remove_some_poses_at_the_end_of_the_path(path);
+//	remove_some_poses_at_the_end_of_the_path(path);
 
 //	if (GlobalState::use_mpc)
 //		apply_system_latencies(path);

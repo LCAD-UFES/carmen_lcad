@@ -911,7 +911,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	vector<carmen_ackerman_path_point_t> path;
 	if (!tcp.valid)
 	{
-		printf("Warning: invalid TrajectoryControlParameters tcp in simulate_car_from_parameters()\n");
+//		printf("Warning: invalid TrajectoryControlParameters tcp in simulate_car_from_parameters()\n");
 		return (path);
 	}
 

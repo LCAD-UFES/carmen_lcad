@@ -931,7 +931,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			}
 		}
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) ||  // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
-				  ((distance_from_car_to_rddf_point >= distance_between_waypoints / 2.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Trocando a constante que divide distance_between_waypoints pode-se alterar a distância entre waypoints em caso de reh
+				  ((distance_from_car_to_rddf_point >= distance_between_waypoints / 1.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Trocando a constante que divide distance_between_waypoints pode-se alterar a distância entre waypoints em caso de reh
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo
 				  !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
 		{

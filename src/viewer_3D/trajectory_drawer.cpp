@@ -196,8 +196,7 @@ draw_goals(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 	
 		glBegin(GL_LINES);	
 
-			int i;
-			for(i=0; i<t_drawer->goals_size; i++)
+			for (int i = 0; i < t_drawer->goals_size; i++)
 			{
 				double sinTheta = sin(t_drawer->goals[i].orientation.yaw);
 				double cosTheta = cos(t_drawer->goals[i].orientation.yaw);
@@ -209,10 +208,12 @@ draw_goals(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 		glEnd();
 
 	glPopMatrix();
+
+	t_drawer->goals_size = 0;	// Soh desenha novamente se chegar nova mensagem
 }
 
 static void
-draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
+draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 {
 	glPushMatrix();
 
@@ -220,8 +221,7 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 
 //			glColor3f(t_drawer->r, t_drawer->g, t_drawer->b);
 
-			int i;
-			for (i = 0; i < t_drawer->path_size; i++)
+			for (int i = 0; i < t_drawer->path_size; i++)
 			{
 				glColor3f(t_drawer->path_segment_color[i].x, t_drawer->path_segment_color[i].y, t_drawer->path_segment_color[i].z);
 				glVertex3d(t_drawer->path[i].x - offset.x, t_drawer->path[i].y - offset.y, t_drawer->path[i].z);
@@ -231,7 +231,7 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 
 		glPointSize (5.0);
 		glBegin (GL_POINTS);
-			for (i = 0; i < t_drawer->path_size; i++)
+			for (int i = 0; i < t_drawer->path_size; i++)
 			{
 				glColor3f(t_drawer->path_segment_color[i].x, t_drawer->path_segment_color[i].y, t_drawer->path_segment_color[i].z);
 				glVertex3d(t_drawer->path[i].x - offset.x, t_drawer->path[i].y - offset.y, t_drawer->path[i].z);
@@ -241,12 +241,11 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 
 	glPopMatrix();
 
-
-
+	t_drawer->path_size = 0;	// Soh desenha novamente se chegar nova mensagem
 }
 
 void
-draw_trajectory(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
+draw_trajectory(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 {
 	draw_path(t_drawer, offset);
 //	draw_goals(t_drawer, offset);

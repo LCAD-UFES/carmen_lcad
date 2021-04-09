@@ -233,8 +233,8 @@ publish_navigator_ackerman_status_message()
 		msg.goal.x = GlobalState::goal_pose->x;
 		msg.goal.y = GlobalState::goal_pose->y;
 		msg.goal.theta = GlobalState::goal_pose->theta;
-		msg.goal.v = GlobalState::robot_config.max_v;
-		msg.goal.phi = 0.0; // @@@ Alberto: terie que preencher isso...
+		msg.goal.v = (path_goals_and_annotations_message != NULL)? path_goals_and_annotations_message->goal_list->v: GlobalState::robot_config.max_v;
+		msg.goal.phi = 0.0; // @@@ Alberto: teria que preencher isso...
 	}
 	else
 	{
@@ -242,7 +242,7 @@ publish_navigator_ackerman_status_message()
 		msg.goal.y	   = 0.0;
 		msg.goal.x	   = 0.0;
 		msg.goal.v 	   = 0.0;
-		msg.goal.phi = 0.0; // @@@ Alberto: terie que preencher isso...
+		msg.goal.phi = 0.0; // @@@ Alberto: teria que preencher isso...
 	}
 
 	msg.host		= carmen_get_host();
@@ -400,9 +400,10 @@ build_and_follow_path(double timestamp)
 
 	if (GlobalState::goal_pose)
 	{
-		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
+		double distance_to_goal = DIST2D_P(GlobalState::goal_pose, GlobalState::localizer_pose);
 		// goal achieved!
-		if (distance_to_goal < 0.3 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
+//		printf("d %lf, max_v %lf, v %lf\n", distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v);
+		if (distance_to_goal < 1.0 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
 		{
 			if (GlobalState::following_path)
 				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
@@ -511,31 +512,44 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	goal_pose.y = msg->goal_list->y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
 
-	if (GlobalState::reverse_driving && msg->goal_list->v < 0.0)
+//	printf("@target_v %lf\n", msg->goal_list->v);
+
+	if (GlobalState::reverse_driving)
 	{
-		if (GlobalState::robot_config.max_v > 0.0)
-			GlobalState::robot_config.max_v = GlobalState::param_max_vel_reverse;
+		if (msg->goal_list->v < 0.0)
+		{
+//			if (GlobalState::robot_config.max_v > 0.0)
+//				GlobalState::robot_config.max_v = GlobalState::param_max_vel_reverse;
 
-		desired_v = fmax(msg->goal_list->v, GlobalState::param_max_vel_reverse);
+			desired_v = fmax(msg->goal_list->v, GlobalState::param_max_vel_reverse);
 
-		if (desired_v < GlobalState::robot_config.max_v)
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+			if (desired_v < GlobalState::robot_config.max_v)
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+			else
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+		}
 		else
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+		{
+//			if (GlobalState::robot_config.max_v < 0.0)	// Acaba de pedir inversao da velovidade de negativa para positiva
+//				GlobalState::robot_config.max_v = GlobalState::param_max_vel;
+
+			desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+			if (desired_v > GlobalState::robot_config.max_v)
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+			else
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+		}
 	}
 	else
 	{
-		if (GlobalState::robot_config.max_v < 0.0)
-			GlobalState::robot_config.max_v = GlobalState::param_max_vel;
-
 		desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
-		if (desired_v < GlobalState::robot_config.max_v)
+		if (desired_v > GlobalState::robot_config.max_v)
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
 		else
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 	}
 
-//	printf("v %lf\n", GlobalState::robot_config.max_v);
+//	printf("*target_v %lf\n", GlobalState::robot_config.max_v);
 
 	GlobalState::set_goal_pose(goal_pose);
 }

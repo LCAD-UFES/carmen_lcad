@@ -331,6 +331,7 @@ static int velodyne_active = -1;
 static int show_symotha_flag = 0;
 
 static int show_path_plans_flag = 0;
+static int show_plan_tree_flag = 0;
 
 // in degrees
 static double ouster64_azimuth_offsets[64];
@@ -948,17 +949,19 @@ draw_everything()
     }
 
     if (draw_path_plan_flag)
-    {
         draw_trajectory(path_plan_drawer, get_position_offset());
-    	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-    		draw_trajectory(t_drawerTree[i], get_position_offset());
-    }
 
     if (draw_motion_plan_flag)
         draw_trajectory(motion_plan_drawer, get_position_offset());
 
     if (draw_obstacle_avoider_plan_flag)
         draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset());
+
+    if (show_plan_tree_flag)
+    {
+    	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
+    		draw_trajectory(t_drawerTree[i], get_position_offset());
+    }
 
     if (draw_map_image_flag)
     {
@@ -2591,10 +2594,9 @@ plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 		tempMessage.path = msg->paths[i];
 		tempMessage.path_length = msg->path_size[i];
 
-		t_drawerTree[i] = create_trajectory_drawer(1.0, 1.0, 1.0);
+		t_drawerTree[i] = create_trajectory_drawer((double) i / (double) (msg->num_path - 1), 0.7, 0.7);
 		add_trajectory_message(t_drawerTree[i], &tempMessage);
 	}
-
 }
 
 
@@ -2952,7 +2954,7 @@ init_flags(void)
     follow_car_flag = 1;
     draw_map_flag = 1;
     zero_z_flag = 1;
-    draw_path_plan_flag = 1;
+    draw_path_plan_flag = 0;
     draw_motion_plan_flag = 1;
     draw_obstacle_avoider_plan_flag = 0;
     draw_xsens_orientation_flag = 0;
@@ -2962,6 +2964,7 @@ init_flags(void)
     draw_gps_axis_flag = 0;
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
+    show_plan_tree_flag = 0;
 #ifdef TEST_LANE_ANALYSIS
     draw_lane_analysis_flag = 1;
 #endif
@@ -3574,6 +3577,12 @@ draw_while_picking()
 	if (draw_obstacle_avoider_plan_flag)
 		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset());
 
+    if (show_plan_tree_flag)
+    {
+    	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
+    		draw_trajectory(t_drawerTree[i], get_position_offset());
+    }
+
 	if (draw_map_image_flag)
 	{
 		if (first_download_map_have_been_aquired)
@@ -4025,8 +4034,11 @@ set_flag_viewer_3D(int flag_num, int value)
     	if(value == 15)
     		draw_lidar15_flag = !draw_lidar15_flag;
     	break;
-    case 35:
+    case SHOW_PATH_PLANS_FLAG_CODE:
     	show_path_plans_flag = value;
+    	break;
+    case PLAN_TREE_FLAG_CODE:
+    	show_plan_tree_flag = value;
     	break;
     }
 }
