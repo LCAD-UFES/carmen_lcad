@@ -33,12 +33,11 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   moving_objects_simulator zed_camera2 graphslam pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer traffic_light \
 	   tracker_opentld  \
-	   velodyne_camera_calibration deep_vgl # neural_object_detector3
+	   velodyne_camera_calibration deep_vgl \
 	   
-	   # hypergraphsclam \ 
-	   # visual_tracker lane_detector voice_interface
+	   # hypergraphsclam neural_object_detector3
 
-PACKAGES_LIB = sensors/kinect visual_tracker lane_detector voice_interface  
+PACKAGES_LIB = sensors/kinect visual_tracker lane_detector voice_interface localize_neural
 
 ifndef NO_CPP
 PACKAGES += carmenpp
