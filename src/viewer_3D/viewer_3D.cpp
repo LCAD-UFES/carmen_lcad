@@ -299,6 +299,7 @@ window *w = NULL;
 void mouseFunc(int type, int button, int x, int y);
 void keyPress(int code);
 void keyRelease(int code);
+void resizeFunc(int width, int height);
 
 static int argc_g;
 static char** argv_g;
@@ -689,7 +690,7 @@ draw_everything()
 {
     double fps = 30.0;
 
-    if (!processWindow(w, mouseFunc, keyPress, keyRelease))
+    if (!processWindow(w, mouseFunc, keyPress, keyRelease, resizeFunc))
         return (0);
 
     double sleepTime = 1.0 / fps - (carmen_get_time() - lastDisplayTime);
@@ -3319,7 +3320,8 @@ read_parameters_and_init_stuff(int argc, char** argv)
 
     w = initWindow(window_width, window_height);
 	initGl(window_width, window_height);
-	XMoveWindow(w->g_pDisplay, w->g_window, window_x, window_y);
+	if (window_x >= 0 && window_y >= 0)
+		XMoveWindow(w->g_pDisplay, w->g_window, window_x, window_y);
 
 	magnetic_declination = carmen_degrees_to_radians(magnetic_declination);
 
@@ -4352,6 +4354,15 @@ void
 keyRelease(int code)
 {
     (void) code;
+}
+
+void
+resizeFunc(int width, int height)
+{
+	window_width = width;
+	window_height = height;
+
+	update_buttons_size(i_drawer, width, height);
 }
 
 
