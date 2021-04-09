@@ -22,7 +22,6 @@
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/rrt_node.h>
-#include <carmen/user_preferences.h>
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
@@ -66,6 +65,10 @@ static int odometry_size;
 static int gps_size;
 static int localize_ackerman_size;
 static int camera_square_size;
+static int window_width;
+static int window_height;
+static int window_x;
+static int window_y;
 
 static point_cloud *stereo_point_cloud;
 static int last_stereo_point_cloud;
@@ -163,6 +166,9 @@ static int rear_bullbar_right_corner_laser_id;
 
 static carmen_pose_3D_t car_fused_pose;
 
+static carmen_vector_3D_t car_size;
+static double distance_between_rear_car_and_rear_wheels;
+
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
 
 carmen_pose_3D_t* board_1_laser_hierarchy[BOARD_1_LASER_HIERARCHY_SIZE] = {&laser_pose, &sensor_board_1_pose, &car_pose, &car_fused_pose};
@@ -249,6 +255,7 @@ static int draw_annotation_flag;
 static int draw_moving_objects_flag;
 static int draw_gps_axis_flag;
 static int velodyne_remission_flag;
+static int draw_waypoints_flag;
 
 static int follow_car_flag;
 static int zero_z_flag;
@@ -351,16 +358,6 @@ float ***remission_calibration_table;
 int publish_map_view = 0;
 double publish_map_view_interval = 0.5;
 int verbose = 0;
-
-char *user_pref_filename = NULL;
-const char *user_pref_module;
-user_param_t *user_pref_param_list;
-int user_pref_num_items;
-int user_pref_window_width  = WINDOW_WIDTH;
-int user_pref_window_height = WINDOW_HEIGHT;
-int user_pref_window_x = 0;
-int user_pref_window_y = 0;
-
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -613,23 +610,6 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 	add_point_cloud(drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
     
     lidar_point_cloud_vector_index += 1;
-}
-
-
-void
-save_user_preferences()
-{
-	XWindowAttributes attr;
-	Window child_window;
-
-	XGetWindowAttributes(w->g_pDisplay, w->g_window, &attr);
-	XTranslateCoordinates(w->g_pDisplay, w->g_window, RootWindow(w->g_pDisplay, DefaultScreen(w->g_pDisplay)),
-			attr.x, attr.y, &user_pref_window_x, &user_pref_window_y, &child_window);
-
-	user_pref_window_width  = attr.width;
-	user_pref_window_height = attr.height;
-	user_pref_window_y -= 28;
-	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
 }
 
 
@@ -949,18 +929,18 @@ draw_everything()
     }
 
     if (draw_path_plan_flag)
-        draw_trajectory(path_plan_drawer, get_position_offset());
+        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
     if (draw_motion_plan_flag)
-        draw_trajectory(motion_plan_drawer, get_position_offset());
+        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
     if (draw_obstacle_avoider_plan_flag)
-        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset());
+        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
     if (show_plan_tree_flag)
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-    		draw_trajectory(t_drawerTree[i], get_position_offset());
+    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag);
     }
 
     if (draw_map_image_flag)
@@ -1011,10 +991,10 @@ draw_everything()
     if (show_path_plans_flag)
 	{
 		for (unsigned int i = 0; i < path_plans_frenet_drawer.size(); i++)
-			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset());
+			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset(), draw_waypoints_flag);
 
     	for (unsigned int i = 0; i < path_plans_nearby_lanes_drawer.size(); i++)
-    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset());
+    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset(), draw_waypoints_flag);
 	}
 
     if (!gps_fix_flag)
@@ -1027,7 +1007,7 @@ draw_everything()
     if (show_symotha_flag)
     	draw_symotha(symotha_drawer, car_fused_pose);
 
-    draw_interface(i_drawer);
+    draw_interface(i_drawer, window_width, window_height);
 
 	return (1);
 }
@@ -2573,7 +2553,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
-	add_path_goals_and_annotations_message(path_plan_drawer, path_goals_and_annotations_message);
+	add_path_goals_and_annotations_message(path_plan_drawer, path_goals_and_annotations_message, car_size, distance_between_rear_car_and_rear_wheels);
 }
 
 
@@ -2668,8 +2648,6 @@ shutdown_module(int sig)
 
 	if (!done)
 	{
-		save_user_preferences();
-
 		carmen_ipc_disconnect();
 		destroy_stuff();
 		destroyWindow(w);
@@ -2965,6 +2943,7 @@ init_flags(void)
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
     show_plan_tree_flag = 0;
+    draw_waypoints_flag = 1;
 #ifdef TEST_LANE_ANALYSIS
     draw_lane_analysis_flag = 1;
 #endif
@@ -3035,7 +3014,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     var_v_drawer = create_variable_velodyne_drawer(stereo_velodyne_flipped, stereo_velodyne_pose, stereo_velodyne_num_points_cloud, stereo_velodyne_vertical_resolution, camera, stereo_velodyne_vertical_roi_ini, stereo_velodyne_vertical_roi_end, stereo_velodyne_horizontal_roi_ini, stereo_velodyne_horizontal_roi_end, bumblebee_basic_width, bumblebee_basic_height);
     // *********************************************************************
 
-    i_drawer = create_interface_drawer();
+    i_drawer = create_interface_drawer(window_width, window_height);
     m_drawer = create_map_drawer(argc, argv);
     path_plan_drawer = create_trajectory_drawer(0.5, 0.5, 1.0);
     motion_plan_drawer = create_trajectory_drawer(0.0, 1.0, 0.0);
@@ -3121,6 +3100,10 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char*) "viewer_3D", (char*) "background_blue", CARMEN_PARAM_DOUBLE, &b_blue, 0, NULL},
             {(char*) "viewer_3D", (char*) "point_size", CARMEN_PARAM_INT, &point_size, 0, NULL},
             {(char*) "viewer_3D", (char*) "camera_square_size", CARMEN_PARAM_INT, &camera_square_size, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_width", CARMEN_PARAM_INT, &window_width, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_height", CARMEN_PARAM_INT, &window_height, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_x", CARMEN_PARAM_INT, &window_x, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_y", CARMEN_PARAM_INT, &window_y, 0, NULL},
 
             {(char*) "sensor_board_1", (char*) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 0, NULL},
             {(char*) "sensor_board_1", (char*) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 0, NULL},
@@ -3243,6 +3226,11 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char*) "velodyne0", (char*) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &ouster_time_spent_by_each_scan, 0, NULL},
             {(char*) "robot", (char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
             {(char*) "robot", (char*) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
+
+			{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(car_size.x), 0, NULL},
+			{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(car_size.y), 0, NULL},
+			{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(car_size.z), 0, NULL},
+			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
@@ -3270,6 +3258,10 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char*) "viewer_3D", (char*) "background_red", CARMEN_PARAM_DOUBLE, &b_red, 0, NULL},
             {(char*) "viewer_3D", (char*) "background_green", CARMEN_PARAM_DOUBLE, &b_green, 0, NULL},
             {(char*) "viewer_3D", (char*) "background_blue", CARMEN_PARAM_DOUBLE, &b_blue, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_width", CARMEN_PARAM_INT, &window_width, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_height", CARMEN_PARAM_INT, &window_height, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_x", CARMEN_PARAM_INT, &window_x, 0, NULL},
+			{(char*) "viewer_3D", (char*) "window_y", CARMEN_PARAM_INT, &window_y, 0, NULL},
 
             {(char*) "sensor_board_1", (char*) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 0, NULL},
             {(char*) "sensor_board_1", (char*) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 0, NULL},
@@ -3314,11 +3306,20 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char*) "velodyne", (char*) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
             {(char*) "velodyne", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
             {(char*) "velodyne", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+
+			{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(car_size.x), 0, NULL},
+			{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(car_size.y), 0, NULL},
+			{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(car_size.z), 0, NULL},
+			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
         carmen_param_install_params(argc, argv, param_list, num_items);
     }
+
+    w = initWindow(window_width, window_height);
+	initGl(window_width, window_height);
+	XMoveWindow(w->g_pDisplay, w->g_window, window_x, window_y);
 
 	magnetic_declination = carmen_degrees_to_radians(magnetic_declination);
 
@@ -3381,6 +3382,8 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	num_items = sizeof(param_publish_list) / sizeof(param_publish_list[0]);
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_install_params(argc, argv, param_publish_list, num_items);
+
+
 }
 
 
@@ -3485,6 +3488,8 @@ draw_while_picking()
 
 	if (draw_car_flag)
 		draw_car_at_pose(car_drawer, car_fused_pose);
+	else
+		draw_car_outline_at_pose(car_drawer, car_fused_pose);
 
 	if (draw_stereo_cloud_flag)
 	{
@@ -3569,18 +3574,18 @@ draw_while_picking()
 	}
 
 	if (draw_path_plan_flag)
-		draw_trajectory(path_plan_drawer, get_position_offset());
+		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
 	if (draw_motion_plan_flag)
-		draw_trajectory(motion_plan_drawer, get_position_offset());
+		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
 	if (draw_obstacle_avoider_plan_flag)
-		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset());
+		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag);
 
     if (show_plan_tree_flag)
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-    		draw_trajectory(t_drawerTree[i], get_position_offset());
+    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag);
     }
 
 	if (draw_map_image_flag)
@@ -4040,6 +4045,9 @@ set_flag_viewer_3D(int flag_num, int value)
     case PLAN_TREE_FLAG_CODE:
     	show_plan_tree_flag = value;
     	break;
+    case WAYPOINTS_CODE:
+		draw_waypoints_flag = value;
+		break;
     }
 }
 
@@ -4131,7 +4139,7 @@ mouseFunc(int type, int button, int x, int y)
     static int lastY = 0;
     static int pressed = 0;
 
-    interface_mouse_func(i_drawer, type, button, x, y);
+    interface_mouse_func(i_drawer, type, button, x, y, window_height);
 
     if (type == 4)
         pressed = 1;
@@ -4347,47 +4355,11 @@ keyRelease(int code)
 }
 
 
-void
-read_user_preferences(int argc, char** argv)
-{
-	static user_param_t param_list[] =
-	{
-		{"window_width",  USER_PARAM_TYPE_INT, &user_pref_window_width},
-		{"window_height", USER_PARAM_TYPE_INT, &user_pref_window_height},
-		{"window_x",      USER_PARAM_TYPE_INT, &user_pref_window_x},
-		{"window_y",      USER_PARAM_TYPE_INT, &user_pref_window_y},
-	};
-	user_pref_module = basename(argv[0]);
-	user_pref_param_list = param_list;
-	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
-	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
-	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
-}
-
-
-void
-set_user_preferences()
-{
-//	// User's preferred window size is already set by initWindow()
-//	if (user_pref_window_width > 0 && user_pref_window_height > 0)
-//		XResizeWindow(w->g_pDisplay, w->g_window, user_pref_window_width, user_pref_window_height);
-	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
-		XMoveWindow(w->g_pDisplay, w->g_window, user_pref_window_x, user_pref_window_y);
-}
-
-
 int
 main(int argc, char** argv)
 {
     argc_g = argc;
     argv_g = argv;
-
-    read_user_preferences(argc, argv);
-
-    w = initWindow(user_pref_window_width, user_pref_window_height);
-    initGl(user_pref_window_width, user_pref_window_height);
-
-    set_user_preferences();
 
     carmen_ipc_initialize(argc_g, argv_g);
     carmen_param_check_version(argv[0]);

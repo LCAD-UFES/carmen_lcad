@@ -28,7 +28,7 @@ struct interface_drawer
 	int num_buttons;
 };
 
-static void init_buttons(interface_drawer* i_drawer);
+static void init_buttons(interface_drawer* i_drawer, int window_width, int window_height);
 static void handle_mouse_movement(interface_drawer* i_drawer, int x, int y);
 static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y);
 static void handle_mouse_right_click(interface_drawer* i_drawer, int x, int y);
@@ -37,14 +37,14 @@ static void draw_button(button b);
 static void drawText(float x, float y, const char* msg, ...);
 
 interface_drawer*
-create_interface_drawer(void)
+create_interface_drawer(int window_width, int window_height)
 {
 	interface_drawer* i_drawer = (interface_drawer*) malloc(sizeof(interface_drawer));
 
 	i_drawer->num_buttons = 72;
 	i_drawer->butt = (button*) malloc(i_drawer->num_buttons * sizeof(button));
 
-	init_buttons(i_drawer);
+	init_buttons(i_drawer, window_width, window_height);
 
 	return i_drawer;
 }
@@ -54,9 +54,16 @@ void destroy_interface_drawer(interface_drawer* i_drawer)
 	free(i_drawer);
 }
 
-static void init_buttons(interface_drawer* i_drawer)
+static void init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 {
 	int i;
+
+	double base_x = 80.0 * window_width / 1000.0;
+	double base_y = 30.0 * window_height / 600.0;
+	double button_width = 100.0 * window_width / 1000.0;
+	double button_height = 20.0 * window_height / 600.0;
+	double horizontal_space = 120.0 * window_width / 1000.0;
+
 	for (i = 0; i < i_drawer->num_buttons; i++)
 	{
 		i_drawer->butt[i].code = i;
@@ -66,83 +73,83 @@ static void init_buttons(interface_drawer* i_drawer)
 
 		if (i < 8)
 		{
-			i_drawer->butt[i].x = 80 + i * 120;
-			i_drawer->butt[i].y = 30;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + i * horizontal_space;
+			i_drawer->butt[i].y = base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 		else if (i < 16)
 		{
-			i_drawer->butt[i].x = 80 + (i - 8) * 120;
-			i_drawer->butt[i].y = 60;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 8) * horizontal_space;
+			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 		else if (i < 24)
 		{
-			i_drawer->butt[i].x = 80 + (i - 16) * 120;
-			i_drawer->butt[i].y = 90;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 16) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 		else if (i < 32)
 		{
-			i_drawer->butt[i].x = 80 + (i - 24) * 120;
-			i_drawer->butt[i].y = 120;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 24) * horizontal_space;
+			i_drawer->butt[i].y = 4 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 		else if (i < 40)
 		{
-			i_drawer->butt[i].x = 80 + (i - 32) * 120;
-			i_drawer->butt[i].y = 60;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 32) * horizontal_space;
+			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 		else if (i < 48)
 		{
-			i_drawer->butt[i].x = 80 + (i - 40) * 120;
-			i_drawer->butt[i].y = 90;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 40) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 		else if (i < 56)
 		{
-			i_drawer->butt[i].x = 80 + (i - 48) * 120;
-			i_drawer->butt[i].y = 90;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 48) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 		else if (i < 64)
 		{
-			i_drawer->butt[i].x = 80 + (i - 56) * 120;
-			i_drawer->butt[i].y = 90;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 56) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 
 		else if (i < 72)
 		{
-			i_drawer->butt[i].x = 80 + (i - 64) * 120;
-			i_drawer->butt[i].y = 60;
-			i_drawer->butt[i].width = 100;
-			i_drawer->butt[i].height = 20;
+			i_drawer->butt[i].x = base_x + (i - 64) * horizontal_space;
+			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
@@ -187,7 +194,7 @@ static void init_buttons(interface_drawer* i_drawer)
 	i_drawer->butt[28].text = "Lidars";
 	i_drawer->butt[29].text = "Show Path Plans";
 	i_drawer->butt[30].text = "Plan Tree";
-	i_drawer->butt[31].text = "Empty";
+	i_drawer->butt[31].text = "Waypoints";
 
 	//Annotations
 	i_drawer->butt[32].text = "Traffic Light";
@@ -238,9 +245,9 @@ static void init_buttons(interface_drawer* i_drawer)
 
 }
 
-void interface_mouse_func(interface_drawer* i_drawer, int type, int button, int x, int y)
+void interface_mouse_func(interface_drawer* i_drawer, int type, int button, int x, int y, int window_height)
 {
-	y = 600 - y;
+	y = window_height - y;
 
 	//printf("mouse - type: %d, button: %d, x: %d, y: %d\n", type, button, x, y);
 	if (type == 0 && button == 0) // Mouse movement
@@ -567,6 +574,12 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(PLAN_TREE_FLAG_CODE, i_drawer->butt[i].state);
 				}
+				else if (i_drawer->butt[i].code == 31) // Waypoints
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WAYPOINTS_CODE, i_drawer->butt[i].state);
+				}
 				else if (i_drawer->butt[i].code == 32) // Traffic Light
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
@@ -723,14 +736,14 @@ static int test_mouse_over_button(button b, int x, int y)
 	return 0;
 }
 
-void draw_interface(interface_drawer * i_drawer)
+void draw_interface(interface_drawer * i_drawer, int window_width, int window_height)
 {
 	glPushMatrix();
 
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0, 1000.0, 0, 600.0);
+	gluOrtho2D(0, (double)window_width, 0, (double)window_height);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
