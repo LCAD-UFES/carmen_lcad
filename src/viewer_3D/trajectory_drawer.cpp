@@ -10,28 +10,11 @@
 #include "trajectory_drawer.h"
 
 
-double car_middle_to_rear_wheels = 4.437 / 2 - 0.96;
-
 trajectory_drawer*
 create_trajectory_drawer(double r, double g, double b)
 {
 
 	trajectory_drawer* t_drawer = (trajectory_drawer*)malloc(sizeof(trajectory_drawer));
-
-//	int num_items;
-//
-//	carmen_param_t param_list[] = {
-//	{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(t_drawer->car_size.x), 0, NULL},
-//	{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(t_drawer->car_size.y), 0, NULL},
-//	{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(t_drawer->car_size.z), 0, NULL}
-//	};
-//
-//	num_items = sizeof(param_list)/sizeof(param_list[0]);
-//	carmen_param_install_params(1, NULL, param_list, num_items);
-
-	t_drawer->car_size.x = 4.437;
-	t_drawer->car_size.y = 1.806;
-	t_drawer->car_size.y = 1.725;
 		
 	t_drawer->path = NULL;
 	t_drawer->path_segment_color = NULL;
@@ -113,11 +96,14 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 }
 
 void
-add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behavior_selector_path_goals_and_annotations_message *message)
+add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behavior_selector_path_goals_and_annotations_message *message, carmen_vector_3D_t car_size, double distance_between_rear_car_and_rear_wheels)
 {
 	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->number_of_poses * sizeof(carmen_vector_3D_t));
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->number_of_poses * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->number_of_poses;
+
+	t_drawer->car_size = car_size;
+	t_drawer->distance_between_rear_car_and_rear_wheels = distance_between_rear_car_and_rear_wheels;
 
 	int i;
 	for(i = 0; i < t_drawer->path_size; i++)
@@ -156,11 +142,12 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 }
 
 
-static void
+void
 draw_goals_outline(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 {
 	double length_x = t_drawer->car_size.x;
 	double length_y = t_drawer->car_size.y;
+	double car_middle_to_rear_wheels = length_x / 2.0 - t_drawer->distance_between_rear_car_and_rear_wheels;
 
 	int i;
 	for(i=0; i<t_drawer->goals_size; i++)

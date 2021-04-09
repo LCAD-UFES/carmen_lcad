@@ -166,6 +166,9 @@ static int rear_bullbar_right_corner_laser_id;
 
 static carmen_pose_3D_t car_fused_pose;
 
+static carmen_vector_3D_t car_size;
+static double distance_between_rear_car_and_rear_wheels;
+
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
 
 carmen_pose_3D_t* board_1_laser_hierarchy[BOARD_1_LASER_HIERARCHY_SIZE] = {&laser_pose, &sensor_board_1_pose, &car_pose, &car_fused_pose};
@@ -2547,7 +2550,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
-	add_path_goals_and_annotations_message(path_plan_drawer, path_goals_and_annotations_message);
+	add_path_goals_and_annotations_message(path_plan_drawer, path_goals_and_annotations_message, car_size, distance_between_rear_car_and_rear_wheels);
 }
 
 
@@ -3220,6 +3223,11 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char*) "velodyne0", (char*) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &ouster_time_spent_by_each_scan, 0, NULL},
             {(char*) "robot", (char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
             {(char*) "robot", (char*) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
+
+			{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(car_size.x), 0, NULL},
+			{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(car_size.y), 0, NULL},
+			{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(car_size.z), 0, NULL},
+			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
@@ -3295,6 +3303,11 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char*) "velodyne", (char*) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
             {(char*) "velodyne", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
             {(char*) "velodyne", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+
+			{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(car_size.x), 0, NULL},
+			{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(car_size.y), 0, NULL},
+			{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(car_size.z), 0, NULL},
+			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
