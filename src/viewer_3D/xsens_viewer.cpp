@@ -24,6 +24,7 @@ carmen_pose_3D_t camera_pose;
 void mouseFunc(int type, int button, int x, int y);
 void keyPress(int code);
 void keyRelease(int code);
+void resizeFunc(int width, int height);
 
 static void xsens_matrix_message_handler(void) 
 { 	
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
 
 	while(showWindow(gl_window))
 	{
-		if(!processWindow(gl_window, mouseFunc, keyPress, keyRelease))
+		if(!processWindow(gl_window, mouseFunc, keyPress, keyRelease, resizeFunc))
 		{
 			break;
 		}
@@ -221,5 +222,11 @@ void keyPress(int code)
 void keyRelease(int code)
 {
 	code = code; // just to make gcc happy
+}
+
+void
+resizeFunc(int width, int height)			// compatibilidade com callback do viewer_3D
+{
+
 }
 

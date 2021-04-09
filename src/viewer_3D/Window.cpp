@@ -4,7 +4,7 @@
 
 
 int
-processWindow (window* w, void (*mouseFunc)(int type, int button, int x, int y), void (*keyPress)(int code), void (*keyRelease)(int code))
+processWindow (window* w, void (*mouseFunc)(int type, int button, int x, int y), void (*keyPress)(int code), void (*keyRelease)(int code), void (*resizeFunc)(int width, int height))
 {
     XEvent event;
 
@@ -58,6 +58,7 @@ processWindow (window* w, void (*mouseFunc)(int type, int button, int x, int y),
         case ConfigureNotify:
         {
             glViewport (0, 0, event.xconfigure.width, event.xconfigure.height);
+            resizeFunc(event.xconfigure.width, event.xconfigure.height);
         }
         break;
 

@@ -49,12 +49,16 @@ create_interface_drawer(int window_width, int window_height)
 	return i_drawer;
 }
 
-void destroy_interface_drawer(interface_drawer* i_drawer)
+
+void
+destroy_interface_drawer(interface_drawer* i_drawer)
 {
 	free(i_drawer);
 }
 
-static void init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
+
+static void
+init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 {
 	int i;
 
@@ -245,7 +249,9 @@ static void init_buttons(interface_drawer* i_drawer, int window_width, int windo
 
 }
 
-void interface_mouse_func(interface_drawer* i_drawer, int type, int button, int x, int y, int window_height)
+
+void
+interface_mouse_func(interface_drawer* i_drawer, int type, int button, int x, int y, int window_height)
 {
 	y = window_height - y;
 
@@ -264,7 +270,89 @@ void interface_mouse_func(interface_drawer* i_drawer, int type, int button, int 
 	}
 }
 
-static void handle_mouse_movement(interface_drawer* i_drawer, int x, int y)
+
+void
+update_buttons_size(interface_drawer* i_drawer, int window_width, int window_height)
+{
+	int i;
+
+	double base_x = 80.0 * window_width / 1000.0;
+	double base_y = 30.0 * window_height / 600.0;
+	double button_width = 100.0 * window_width / 1000.0;
+	double button_height = 20.0 * window_height / 600.0;
+	double horizontal_space = 120.0 * window_width / 1000.0;
+
+	for (i = 0; i < i_drawer->num_buttons; i++)
+	{
+		if (i < 8)
+		{
+			i_drawer->butt[i].x = base_x + i * horizontal_space;
+			i_drawer->butt[i].y = base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 16)
+		{
+			i_drawer->butt[i].x = base_x + (i - 8) * horizontal_space;
+			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 24)
+		{
+			i_drawer->butt[i].x = base_x + (i - 16) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 32)
+		{
+			i_drawer->butt[i].x = base_x + (i - 24) * horizontal_space;
+			i_drawer->butt[i].y = 4 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 40)
+		{
+			i_drawer->butt[i].x = base_x + (i - 32) * horizontal_space;
+			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 48)
+		{
+			i_drawer->butt[i].x = base_x + (i - 40) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 56)
+		{
+			i_drawer->butt[i].x = base_x + (i - 48) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 64)
+		{
+			i_drawer->butt[i].x = base_x + (i - 56) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+		else if (i < 72)
+		{
+			i_drawer->butt[i].x = base_x + (i - 64) * horizontal_space;
+			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+		}
+	}
+}
+
+
+static void
+handle_mouse_movement(interface_drawer* i_drawer, int x, int y)
 {
 	int i;
 	for (i = 0; i < i_drawer->num_buttons; i++)
@@ -276,7 +364,8 @@ static void handle_mouse_movement(interface_drawer* i_drawer, int x, int y)
 	}
 }
 
-static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
+static void
+handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 {
 	int i;
 	for (i = 0; i < i_drawer->num_buttons; i++)
@@ -719,14 +808,18 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 	}
 }
 
-static void handle_mouse_right_click(interface_drawer* i_drawer, int x, int y)
+
+static void
+handle_mouse_right_click(interface_drawer* i_drawer, int x, int y)
 {
 	i_drawer = i_drawer;
 	x = x;
 	y = y;
 }
 
-static int test_mouse_over_button(button b, int x, int y)
+
+static int
+test_mouse_over_button(button b, int x, int y)
 {
 	if (x > b.x - b.width / 2 && x < b.x + b.width / 2 && y > b.y - b.height / 2 && y < b.y + b.height / 2)
 	{
@@ -736,14 +829,16 @@ static int test_mouse_over_button(button b, int x, int y)
 	return 0;
 }
 
-void draw_interface(interface_drawer * i_drawer, int window_width, int window_height)
+
+void
+draw_interface(interface_drawer * i_drawer, int window_width, int window_height)
 {
 	glPushMatrix();
 
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0, (double)window_width, 0, (double)window_height);
+	gluOrtho2D(0, window_width, 0, window_height);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -759,7 +854,9 @@ void draw_interface(interface_drawer * i_drawer, int window_width, int window_he
 	glPopMatrix();
 }
 
-static void draw_button(button b)
+
+static void
+draw_button(button b)
 {
 	glPushMatrix();
 
@@ -789,7 +886,9 @@ static void draw_button(button b)
 	glPopMatrix();
 }
 
-static void drawText(float x, float y, const char* msg, ...)
+
+static void
+drawText(float x, float y, const char* msg, ...)
 {
 	char buf[1024];
 	va_list args;
