@@ -3319,7 +3319,8 @@ read_parameters_and_init_stuff(int argc, char** argv)
 
     w = initWindow(window_width, window_height);
 	initGl(window_width, window_height);
-	XMoveWindow(w->g_pDisplay, w->g_window, window_x, window_y);
+	if (window_x >= 0 && window_y >= 0)
+		XMoveWindow(w->g_pDisplay, w->g_window, window_x, window_y);
 
 	magnetic_declination = carmen_degrees_to_radians(magnetic_declination);
 
