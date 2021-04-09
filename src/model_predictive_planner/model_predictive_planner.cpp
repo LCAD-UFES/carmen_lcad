@@ -250,40 +250,6 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 }
 
 
-void
-add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2,
-		vector<carmen_ackerman_path_point_t> &detailed_lane)
-{
-	double delta_x, delta_y, delta_theta, distance;
-	int i;
-
-	distance = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
-
-	double distance_between_goals = 0.1;
-	int num_points = distance / distance_between_goals;
-	if (num_points == 0)
-		return;
-
-	if (num_points > 10) // Safeguard
-		num_points = 10;
-
-	delta_x = (p2.x - p1.x) / num_points;
-	delta_y = (p2.y - p1.y) / num_points;
-	delta_theta = carmen_normalize_theta((p2.theta - p1.theta) / (double) num_points);
-
-	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0};
-//TODO o que que ta fazendo?
-	for (i = 0; i < num_points; i++)
-	{
-		new_point.x = p1.x + (double) i * delta_x;
-		new_point.y = p1.y + (double) i * delta_y;
-		new_point.theta = carmen_normalize_theta(p1.theta + (double) i * delta_theta);
-
-		detailed_lane.push_back(new_point);
-	}
-}
-
-
 bool
 make_detailed_lane_start_at_car_pose(vector<carmen_ackerman_path_point_t> &detailed_lane,
 		vector<carmen_ackerman_path_point_t> temp_detail, Pose *goal_pose)
@@ -324,10 +290,40 @@ make_detailed_lane_start_at_car_pose(vector<carmen_ackerman_path_point_t> &detai
 }
 
 
+void
+add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2,
+		vector<carmen_ackerman_path_point_t> &detailed_lane)
+{
+	double distance = DIST2D(p1, p2);
+
+	double distance_between_goals = 0.1;
+	int num_points = floor(distance / distance_between_goals);
+	if (num_points == 0)
+		return;
+
+	if (num_points > 10) // Safeguard
+		num_points = 10;
+
+	double delta_x = (p2.x - p1.x) / (double) num_points;
+	double delta_y = (p2.y - p1.y) / (double) num_points;
+	double delta_theta = carmen_normalize_theta((p2.theta - p1.theta) / (double) num_points);
+
+	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0}; // necessario para capturar v e phi
+	for (int i = 0; i < num_points; i++)
+	{
+		new_point.x = p1.x + (double) i * delta_x;
+		new_point.y = p1.y + (double) i * delta_y;
+		new_point.theta = carmen_normalize_theta(p1.theta + (double) i * delta_theta);
+
+		detailed_lane.push_back(new_point);
+	}
+}
+
+
 bool
 build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
-	if (lane_in_local_pose->size() > 2 && lane_in_local_pose->size() < 500)
+	if (lane_in_local_pose->size() > 1 && lane_in_local_pose->size() < 500)
 	{
 		for (unsigned int i = 0; i < (lane_in_local_pose->size() - 1); i++)
 		{
@@ -356,13 +352,13 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_ackerman_path_point_t> *
 		vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
 	bool goal_in_lane = false;
-	if (lane_in_local_pose->size() > 2)
+	if (lane_in_local_pose->size() > 1)
 	{
 		vector<carmen_ackerman_path_point_t> temp_detail;
 		for (unsigned int i = 0; i < (lane_in_local_pose->size() - 1); i++)
 			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), temp_detail);
-
 		temp_detail.push_back(lane_in_local_pose->back());
+
 		goal_in_lane = make_detailed_lane_start_at_car_pose(detailed_lane, temp_detail, goal_pose);
 	}
 	else
