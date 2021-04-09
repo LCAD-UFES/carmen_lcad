@@ -2933,7 +2933,7 @@ init_flags(void)
     follow_car_flag = 1;
     draw_map_flag = 1;
     zero_z_flag = 1;
-    draw_path_plan_flag = 0;
+    draw_path_plan_flag = 1;
     draw_motion_plan_flag = 1;
     draw_obstacle_avoider_plan_flag = 0;
     draw_xsens_orientation_flag = 0;

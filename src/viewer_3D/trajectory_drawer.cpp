@@ -10,7 +10,7 @@
 #include "trajectory_drawer.h"
 
 
-trajectory_drawer*
+trajectory_drawer *
 create_trajectory_drawer(double r, double g, double b)
 {
 
@@ -65,6 +65,8 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 			t_drawer->path_segment_color[i].z = 0.0;
 		}
 	}
+
+	t_drawer->availability_timestamp = carmen_get_time();
 }
 
 void
@@ -93,6 +95,8 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 			t_drawer->path_segment_color[i].z = 0.0;
 		}
 	}
+
+	t_drawer->availability_timestamp = carmen_get_time();
 }
 
 void
@@ -139,18 +143,19 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 		t_drawer->goals[i].orientation.pitch = 0.0;
 		t_drawer->goals[i].orientation.yaw = message->goal_list[i].theta;
 	}
+
+	t_drawer->availability_timestamp = carmen_get_time();
 }
 
 
 void
-draw_goals_outline(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
+draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 {
 	double length_x = t_drawer->car_size.x;
 	double length_y = t_drawer->car_size.y;
 	double car_middle_to_rear_wheels = length_x / 2.0 - t_drawer->distance_between_rear_car_and_rear_wheels;
 
-	int i;
-	for(i=0; i<t_drawer->goals_size; i++)
+	for(int i = 0; i < t_drawer->goals_size; i++)
 	{
 		glPushMatrix();
 
@@ -170,11 +175,14 @@ draw_goals_outline(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 
 		glPopMatrix();
 	}
+
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 
 void
-draw_goals(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
+draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 {
 
 	glPushMatrix();
@@ -196,12 +204,13 @@ draw_goals(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 
 	glPopMatrix();
 
-	t_drawer->goals_size = 0;	// Soh desenha novamente se chegar nova mensagem
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 
 static void
-draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag)
+draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag)
 {
 	glPushMatrix();
 
@@ -232,6 +241,9 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset, int draw_waypo
 		}
 
 	glPopMatrix();
+
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+		t_drawer->path_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 

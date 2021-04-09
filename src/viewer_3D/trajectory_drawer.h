@@ -20,7 +20,7 @@ typedef struct _trajectory_drawer
 
 	carmen_vector_3D_t car_size;
 	double distance_between_rear_car_and_rear_wheels;
-
+	double availability_timestamp;
 } trajectory_drawer;
 
 trajectory_drawer* create_trajectory_drawer(double r, double g, double b);
