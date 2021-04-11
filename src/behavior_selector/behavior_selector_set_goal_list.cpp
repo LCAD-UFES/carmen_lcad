@@ -904,27 +904,29 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 				 ((next_pose_change_direction_index != -1)))//	&&
 //				  (DIST2D(rddf->poses[rddf_pose_index], robot_pose) > 1.0)))
 		{
+//			static int count_v = 0;
 			static double keep_goal_time = 0.0;
-			if ((next_pose_change_direction_index > 2) || (fabs(robot_pose.v) > 0.05))
+			if ((next_pose_change_direction_index > 0) || (fabs(robot_pose.v) > 0.05))
 			{
-				if (goal_index == 0)
+				if ((goal_index == 0) && (fabs(robot_pose.v) > 0.05))
 					keep_goal_time = carmen_get_time();
 
 				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+//				printf("    aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+//				fflush(stdout);
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 			}
 			else
 			{
-//				if ((fabs(robot_pose.v) < 0.05) && (keep_goal_time == 0.0))
-//					keep_goal_time = carmen_get_time();
-
 				if ((carmen_get_time() - keep_goal_time) < 3.5)	// Espera parado um pouco
 				{
 					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+//					printf("*** aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+//					fflush(stdout);
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 
-					if (fabs(robot_pose.v) > 0.05)
-						keep_goal_time = carmen_get_time();
+//					if (fabs(robot_pose.v) > 0.05)	// nao tem que remover este if ???
+//						keep_goal_time = carmen_get_time();
 				}
 //				else
 //					keep_goal_time = 0.0;
@@ -961,6 +963,9 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 	first_goal = &(goal_list[0]);
 	first_goal_type = goal_type[0];
 	previous_first_goal = goal_list[0];
+
+//	printf("first_goal_type %d\n", first_goal_type);
+//	fflush(stdout);
 
 	return (goal_list);
 }

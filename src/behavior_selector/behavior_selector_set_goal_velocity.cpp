@@ -871,7 +871,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	{
 		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 
-		if ((path_dist < 1.5) || (initial_dist / 2.0 > path_dist))
+		if ((path_dist < 1.0) || (initial_dist / 2.0 > path_dist))
 		{
 			goal->v = 0.0;
 			initial_dist = 0.0;

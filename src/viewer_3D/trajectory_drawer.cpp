@@ -71,6 +71,37 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 }
 
 void
+add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ackerman_motion_command_message *message)
+{
+	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->num_motion_commands * sizeof(carmen_vector_3D_t));
+	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->num_motion_commands * sizeof(carmen_vector_3D_t));
+	t_drawer->path_size = message->num_motion_commands;
+
+	for (int i = 0; i < t_drawer->path_size; i++)
+	{
+		t_drawer->path[i].x = message->motion_command[i].x;
+		t_drawer->path[i].y = message->motion_command[i].y;
+		t_drawer->path[i].z = 0.0;
+
+		if (((i != t_drawer->path_size - 1) && (message->motion_command[i + 1].v >= 0.0)) ||
+			((i == t_drawer->path_size - 1) && (message->motion_command[i].v >= 0.0)))
+		{
+			t_drawer->path_segment_color[i].x = t_drawer->r;
+			t_drawer->path_segment_color[i].y = t_drawer->g;
+			t_drawer->path_segment_color[i].z = t_drawer->b;
+		}
+		else
+		{
+			t_drawer->path_segment_color[i].x = 1.0;
+			t_drawer->path_segment_color[i].y = 0.0;
+			t_drawer->path_segment_color[i].z = 0.0;
+		}
+	}
+
+	t_drawer->availability_timestamp = carmen_get_time();
+}
+
+void
 add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *message)
 {
 	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->size * sizeof(carmen_vector_3D_t));

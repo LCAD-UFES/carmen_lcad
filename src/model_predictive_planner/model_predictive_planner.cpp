@@ -306,7 +306,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 
 	double delta_x = (p2.x - p1.x) / (double) num_points;
 	double delta_y = (p2.y - p1.y) / (double) num_points;
-	double delta_theta = carmen_normalize_theta((p2.theta - p1.theta) / (double) num_points);
+	double delta_theta = carmen_normalize_theta(p2.theta - p1.theta) / (double) num_points;
 
 	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0}; // necessario para capturar v e phi
 	for (int i = 0; i < num_points; i++)
