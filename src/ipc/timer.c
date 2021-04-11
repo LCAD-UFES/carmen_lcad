@@ -9,19 +9,21 @@
  * ABSTRACT: Add and remove timers that invoke handler functions at 
  *           specified intervals.  Needed by JSC Aercam project.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: timer.c,v $
- * Revision 1.2  2006/02/26 03:35:25  nickr
- * Changes to address 64 bit warnings
+ * Revision 2.9  2011/08/16 16:01:57  reids
+ * Adding Python interface to IPC, plus some minor bug fixes
  *
- * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
- * Initial Import
+ * Revision 2.8  2009/02/07 18:36:19  reids
+ * Fixed compiler warnings
  *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.7  2009/01/12 15:54:57  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.6  2002/01/03 20:52:18  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -211,13 +213,8 @@ IPC_RETURN_TYPE IPC_addTimerGetRef(unsigned long tdelay, long count,
          for backwards compatibility */  
       timer = ipcGetTimer(handler);
       if (timer && timer->status != Timer_Deleted) {
-#if (defined(__x86_64__))
 	X_IPC_MOD_WARNING1("Replacing existing timer for handler (%#lx)\n",
 			   (long)handler);
-#else
-	X_IPC_MOD_WARNING1("Replacing existing timer for handler (%#x)\n",
-			   (int)handler);
-#endif
       } else {
 	timer = NEW(TIMER_TYPE);
 	LOCK_M_MUTEX;
@@ -300,4 +297,12 @@ IPC_RETURN_TYPE IPC_removeTimer(TIMER_HANDLER_TYPE handler)
     }
     return IPC_OK;
   }
+}
+
+// Return number of times timer can still be triggered
+// Needed by some of the FFI's
+unsigned int maxTriggers (TIMER_REF timerRef)
+{
+  TIMER_PTR timer = ipcGetTimerEq((TIMER_PTR) timerRef);
+  return (!timer ? 0 : timer->maxTrigger);
 }

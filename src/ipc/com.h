@@ -13,24 +13,24 @@
  * 
  * Module Communications
  *
- * $Source: /cvsroot/carmen/carmen/src/ipc/com.h,v $ 
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:14 $
- * $Author: tomkol $
+ * $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/src/com.h,v $ 
+ * $Revision: 2.4 $
+ * $Date: 2009/01/12 15:54:55 $
+ * $Author: reids $
+ *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
  *
  * REVISION HISTORY:
  *
  * $Log: com.h,v $
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
+ * Revision 2.4  2009/01/12 15:54:55  reids
+ * Added BSD Open Source license info
  *
- * Revision 1.6  2003/05/22 19:57:58  nickr
- * Patches to eliminate compile warnings.
- *
- * Revision 1.5  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.3  2003/07/23 20:25:04  reids
+ * Fixed bug in handling message that is received but already unsubscribed.
+ * Removed compiler warning.
  *
  * Revision 2.2  2000/07/03 17:03:21  hersh
  * Removed all instances of "tca" in symbols and messages, plus changed

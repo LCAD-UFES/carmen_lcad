@@ -9,22 +9,18 @@
  *
  * ABSTRACT: define globals and support routines.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: globalS.c,v $
- * Revision 1.2  2007/06/12 11:24:45  stachnis
- * fixed command line parameters
+ * Revision 2.5  2009/05/04 19:03:41  reids
+ * Changed to using snprintf to avoid corrupting the stack on overflow
  *
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/07/22 15:22:57  nickr
- * Turned -u to be on by default.
- *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.4  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.3  2000/07/27 16:59:10  reids
  * Added function IPC_setMsgQueueLength.
@@ -290,9 +286,9 @@
  * Revision 1.2  1993/05/19  17:23:57  fedor
  * Added Logging.
  *
- * $Revision: 1.2 $
- * $Date: 2007/06/12 11:24:45 $
- * $Author: stachnis $
+ * $Revision: 2.5 $
+ * $Date: 2009/05/04 19:03:41 $
+ * $Author: reids $
  *
  *
  *****************************************************************************/
@@ -475,10 +471,13 @@ void globalSInit(void)
 #ifndef NMP_IPC
   GET_S_GLOBAL(freed_flag) = (value_ptr)&GET_S_GLOBAL(free_flag_location);
 #endif
+  bzero(GET_S_GLOBAL(Log_File_Name), sizeof(GET_S_GLOBAL(Log_File_Name)));
 #if defined(VXWORKS)
-  sprintf(GET_S_GLOBAL(Log_File_Name), "x_ipc.log.%ld", tickGet());
+  snprintf(GET_S_GLOBAL(Log_File_Name), sizeof(GET_S_GLOBAL(Log_File_Name)),
+	   "x_ipc.log.%ld", tickGet());
 #else
-  sprintf(GET_S_GLOBAL(Log_File_Name), "x_ipc.log.%ld", (long)time(0));
+  snprintf(GET_S_GLOBAL(Log_File_Name), sizeof(GET_S_GLOBAL(Log_File_Name)),
+	   "x_ipc.log.%ld", (long)time(0));
 #endif
   
 #ifndef NMP_IPC
@@ -489,11 +488,7 @@ void globalSInit(void)
 #if defined(VXWORKS) || defined(_WINSOCK_) || defined(OS2)
   GET_S_GLOBAL(listenToStdin) = FALSE;
 #else
-  // Changed by Nick Roy, July 22, 2003
-  // Sets -u as default 
-  // Note by Boris Lau, June 11, 2007:
-  // -u now activates user input, no -u is default.
-  GET_S_GLOBAL(listenToStdin) = FALSE;
+  GET_S_GLOBAL(listenToStdin) = TRUE;
 #endif
   
   GET_S_GLOBAL(terminalLog).theFile = stdout;
@@ -504,8 +499,6 @@ void globalSInit(void)
   GET_S_GLOBAL(terminalLog).summary = FALSE;
   GET_S_GLOBAL(terminalLog).refId = FALSE;
   GET_S_GLOBAL(terminalLog).parentId = 0;
-  // Changed by Nick Roy
-  // Sets -s as default 
   GET_S_GLOBAL(terminalLog).quiet = TRUE;
   GET_S_GLOBAL(terminalLog).flush = TRUE;
   GET_S_GLOBAL(terminalLog).ignore = TRUE;

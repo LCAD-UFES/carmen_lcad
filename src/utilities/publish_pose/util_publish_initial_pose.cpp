@@ -53,10 +53,11 @@ main(int argc, char **argv)
 	define_messages();
 
 	sleep(time);
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		publish_starting_pose(pose);
-		usleep(10000);
+		carmen_ipc_sleep(0.1);
+//		usleep(10000);
 	}
 
 	while (1)

@@ -1518,33 +1518,32 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //		printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
 //			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
 
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_complete, target_td.v_i, target_td.phi_i, false);
-
-	if ((params.detailed_lane.size() > 0) && (path.size() > 0))
-	{
-		compute_path_points_nearest_to_lane(&params, path);
-		vector<carmen_ackerman_path_point_t> modified_path = compute_path_to_lane_distance_evaluation(&params, path);
-		Tree tree;
-		tree.num_paths = 2;
-		tree.num_edges = 0;
-		tree.p1 = NULL;
-		tree.p2 = NULL;
-		tree.paths = (carmen_ackerman_traj_point_t **) malloc(tree.num_paths * sizeof(carmen_ackerman_traj_point_t *));
-		tree.paths_sizes = (int *) malloc(tree.num_paths * sizeof(int));
-
-		move_path_to_current_robot_pose(modified_path, GlobalState::localizer_pose);
-		tree.paths[0] = (carmen_ackerman_traj_point_t *) malloc(modified_path.size() * sizeof(carmen_ackerman_traj_point_t));
-		copy_path_to_traj(tree.paths[0], modified_path);
-		tree.paths_sizes[0] = modified_path.size();
-
-		move_path_to_current_robot_pose(params.detailed_lane, GlobalState::localizer_pose);
-		tree.paths[1] = (carmen_ackerman_traj_point_t *) malloc(params.detailed_lane.size() * sizeof(carmen_ackerman_traj_point_t));
-		copy_path_to_traj(tree.paths[1], params.detailed_lane);
-		tree.paths_sizes[1] = params.detailed_lane.size();
-
-		Publisher_Util::publish_plan_tree_message(tree);
-	}
-
+//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_complete, target_td.v_i, target_td.phi_i, false);
+//
+//	if ((params.detailed_lane.size() > 0) && (path.size() > 0))
+//	{
+//		compute_path_points_nearest_to_lane(&params, path);
+//		vector<carmen_ackerman_path_point_t> modified_path = compute_path_to_lane_distance_evaluation(&params, path);
+//		Tree tree;
+//		tree.num_paths = 2;
+//		tree.num_edges = 0;
+//		tree.p1 = NULL;
+//		tree.p2 = NULL;
+//		tree.paths = (carmen_ackerman_traj_point_t **) malloc(tree.num_paths * sizeof(carmen_ackerman_traj_point_t *));
+//		tree.paths_sizes = (int *) malloc(tree.num_paths * sizeof(int));
+//
+//		move_path_to_current_robot_pose(modified_path, GlobalState::localizer_pose);
+//		tree.paths[0] = (carmen_ackerman_traj_point_t *) malloc(modified_path.size() * sizeof(carmen_ackerman_traj_point_t));
+//		copy_path_to_traj(tree.paths[0], modified_path);
+//		tree.paths_sizes[0] = modified_path.size();
+//
+//		move_path_to_current_robot_pose(params.detailed_lane, GlobalState::localizer_pose);
+//		tree.paths[1] = (carmen_ackerman_traj_point_t *) malloc(params.detailed_lane.size() * sizeof(carmen_ackerman_traj_point_t));
+//		copy_path_to_traj(tree.paths[1], params.detailed_lane);
+//		tree.paths_sizes[1] = params.detailed_lane.size();
+//
+//		Publisher_Util::publish_plan_tree_message(tree);
+//	}
 
 	return (tcp_complete);
 }

@@ -14,16 +14,21 @@
  * A datamsg represents the encoded form of a message and is used to perform
  * the actual sending and receiving of messages.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: datamsg.c,v $
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
+ * Revision 2.7  2010/12/17 19:20:23  reids
+ * Split IO mutex into separate read and write mutexes, to help minimize
+ *   probability of deadlock when reading/writing very big messages.
+ * Fixed a bug in multi-threaded version where a timeout is not reported
+ *   correctly (which could cause IPC_listenClear into a very long loop).
  *
- * Revision 1.4  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.6  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.5  2003/04/14 15:31:01  reids
  * Updated for Windows XP
@@ -410,9 +415,9 @@
  * 26-Apr-89 Christopher Fedor, School of Computer Science, CMU
  * Need to insure that central will not block on socket reads and writes. 
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:14 $
- * $Author: tomkol $
+ * $Revision: 2.7 $
+ * $Date: 2010/12/17 19:20:23 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -456,7 +461,7 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_readNBytes(int sd, char *buf, int32 nbytes)
   int32 amountRead, amountToRead;
   
   amountToRead = nbytes;
-  LOCK_IO_MUTEX;
+  LOCK_IO_READ_MUTEX;
   for(;;){
 #ifdef _WINSOCK_
     SAFE_IO(amountRead, recv(sd, buf, amountToRead, 0));
@@ -468,21 +473,21 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_readNBytes(int sd, char *buf, int32 nbytes)
 #endif
 #endif
     if (amountRead < 0) {
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       return StatError;
     }
     if (!amountRead) {
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       return StatEOF;
     }
     amountToRead -= amountRead;
     if (!amountToRead) {
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       return StatOK;
     }
     buf += amountRead;
   }
-  UNLOCK_IO_MUTEX;
+  UNLOCK_IO_READ_MUTEX;
 }
 
 #if defined(NEED_READV)
@@ -594,20 +599,20 @@ static X_IPC_RETURN_STATUS_TYPE x_ipc_read2Buffers(int sd,
   vec[1].iov_len = nbytes2;
   
   amountToRead = nbytes1 + nbytes2;
-  LOCK_IO_MUTEX;
+  LOCK_IO_READ_MUTEX;
   for(;;){
     SAFE_IO(amountRead, readv(sd, vec, numBuffers));
     if (amountRead < 0) {
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       return StatError;
     }
     if (!amountRead) {
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       return StatEOF;
     }
     amountToRead -= amountRead;
     if (!amountToRead) {
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       return StatOK;
     }
     /* Need to adjust buffers */
@@ -622,7 +627,7 @@ static X_IPC_RETURN_STATUS_TYPE x_ipc_read2Buffers(int sd,
       vec[0].iov_len -= amountRead;
     }
   }
-  UNLOCK_IO_MUTEX;
+  UNLOCK_IO_READ_MUTEX;
 }
 
 
@@ -900,11 +905,11 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_dataMsgRecv(int sd, DATA_MSG_PTR *dataMsg,
 
   *dataMsg = NULL;
   
-  LOCK_IO_MUTEX;
+  //LOCK_IO_READ_MUTEX;
   status = x_ipc_readNBytes(sd, (char *)&(header.classTotal), HEADER_SIZE());
   if (status != StatOK) {
     *dataMsg = NULL;
-    UNLOCK_IO_MUTEX;
+    //UNLOCK_IO_READ_MUTEX;
     return status;
   }
   
@@ -945,7 +950,7 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_dataMsgRecv(int sd, DATA_MSG_PTR *dataMsg,
   /*  For now, we only handle packed data. */
   if ((*dataMsg)->alignment != ALIGN_PACKED) {
     X_IPC_MOD_ERROR("ERROR: received message with data that is not packed.");
-    UNLOCK_IO_MUTEX;
+    //UNLOCK_IO_READ_MUTEX;
     return StatError;
   }
   
@@ -978,7 +983,7 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_dataMsgRecv(int sd, DATA_MSG_PTR *dataMsg,
   (*dataMsg)->vec[1].iov_base = NULL;
   (*dataMsg)->vec[1].iov_len = 0;
   
-  UNLOCK_IO_MUTEX;
+  //UNLOCK_IO_READ_MUTEX;
   return status;
 }
 
@@ -1008,7 +1013,7 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_dataMsgSend(int sd, DATA_MSG_PTR dataMsg)
   char *sendInfo;
   struct iovec *tmpVec;
   
-  LOCK_IO_MUTEX;
+  //  LOCK_IO_MUTEX;
   headerAmount = HEADER_SIZE();
   classAmount = dataMsg->classTotal;
   dataAmount = dataMsg->msgTotal;
@@ -1053,7 +1058,7 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_dataMsgSend(int sd, DATA_MSG_PTR dataMsg)
   
   dataMsg->classId = GET_CLASSID(dataMsg->classId);
   
-  UNLOCK_IO_MUTEX;
+  // UNLOCK_IO_MUTEX;
   return res;
 }
 

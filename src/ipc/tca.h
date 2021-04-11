@@ -15,21 +15,20 @@
  *
  *  Include File
  *
- * $Source: /cvsroot/carmen/carmen/src/ipc/tca.h,v $ 
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:16 $
- * $Author: tomkol $
+ * $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/src/tca.h,v $ 
+ * $Revision: 2.5 $
+ * $Date: 2009/01/12 15:54:57 $
+ * $Author: reids $
+ *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
  *
  * REVISION HISTORY:
  *
  * $Log: tca.h,v $
- * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.5  2009/01/12 15:54:57  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.4  2003/03/07 19:45:46  trey
  * added ability to silently close child copies of the connection to the central server

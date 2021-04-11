@@ -13,19 +13,18 @@
  * 
  * Module Communications
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY 
  *
  * $Log: com.c,v $
- * Revision 1.2  2006/06/04 19:55:49  nickr
- * Replaced CLK_TCK with CLOCKS_PER_SEC (CLK_TCK deprecated.)
+ * Revision 2.10  2009/05/04 19:03:41  reids
+ * Changed to using snprintf to avoid corrupting the stack on overflow
  *
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.9  2009/01/12 15:54:55  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.8  2003/02/13 20:41:10  reids
  * Fixed compiler warnings.
@@ -179,9 +178,9 @@
  * Forgot com.h and com.c.
  *
  *
- * $Revision: 1.2 $
- * $Date: 2006/06/04 19:55:49 $
- * $Author: nickr $
+ * $Revision: 2.10 $
+ * $Date: 2009/05/04 19:03:41 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -324,7 +323,8 @@ BOOLEAN x_ipc_connectAtSocket(const char *machine, int32 port,
   
   bzero((char *)&unix_server, sizeof(struct sockaddr_un));
   unix_server.sun_family = AF_UNIX;
-  sprintf(unix_server.sun_path,UNIX_SOCKET_NAME,port);
+  snprintf(unix_server.sun_path, sizeof(unix_server.sun_path)-1,
+	   UNIX_SOCKET_NAME, port);
   
   if ((*writeSd = *readSd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     return FALSE;
@@ -361,12 +361,15 @@ BOOLEAN x_ipc_connectAtSocket(const char *machine, int32 port,
   fd_set readMask; 
   
   LOCK_IO_MUTEX;
-  sprintf(socketName,UNIX_SOCKET_NAME,port);
+  bzero(portNum, sizeof(portNum));
+  bzero(socketName, sizeof(socketName));
+  snprintf(socketName, sizeof(socketName)-1, UNIX_SOCKET_NAME, port);
   acceptSd = open(socketName, O_RDWR, 0644);
   
-  sprintf(portNum,"%d",port);
+  snprintf(portNum, sizeof(portNum)-1, "%d", port);
   LOCK_M_MUTEX;
-  sprintf(socketName,VX_PIPE_NAME,portNum,GET_M_GLOBAL(modNameGlobal));
+  snprintf(socketName, sizeof(socketName)-1, VX_PIPE_NAME, portNum,
+	   GET_M_GLOBAL(modNameGlobal));
   UNLOCK_M_MUTEX;
   pipeDevCreate(socketName, VX_PIPE_NUM_BUF, VX_PIPE_BUFFER);
   *writeSd = open(socketName, O_WRONLY, 0644);
@@ -377,7 +380,8 @@ BOOLEAN x_ipc_connectAtSocket(const char *machine, int32 port,
   }
   
   LOCK_M_MUTEX;
-  sprintf(socketName,VX_PIPE_NAME,GET_M_GLOBAL(modNameGlobal),portNum);
+  snprintf(socketName, sizeof(socketName)-1, VX_PIPE_NAME,
+	   GET_M_GLOBAL(modNameGlobal),portNum);
   UNLOCK_M_MUTEX;
   pipeDevCreate(socketName, VX_PIPE_NUM_BUF, VX_PIPE_BUFFER);
   *readSd = open(socketName, O_RDONLY, 0644);
@@ -388,7 +392,7 @@ BOOLEAN x_ipc_connectAtSocket(const char *machine, int32 port,
   }
   
   LOCK_M_MUTEX;
-  sprintf(portNum, "%s",  GET_M_GLOBAL(modNameGlobal));
+  snprintf(portNum, sizeof(portNum)-1, "%s",  GET_M_GLOBAL(modNameGlobal));
   UNLOCK_M_MUTEX;
   x_ipc_writeNBytes(acceptSd, portNum, 80);
   
@@ -564,7 +568,8 @@ BOOLEAN x_ipc_listenAtSocket(int32 port, int *sd)
   
   bzero((char *)&unix_server, sizeof(struct sockaddr_un));
   unix_server.sun_family = AF_UNIX;
-  sprintf(unix_server.sun_path,UNIX_SOCKET_NAME,port);
+  snprintf(unix_server.sun_path, sizeof(unix_server.sun_path)-1,
+	   UNIX_SOCKET_NAME, port);
   
   /* Get rid of old links. */
   result = unlink(unix_server.sun_path);
@@ -657,7 +662,8 @@ void x_ipc_closeSocket(int port)
   
   bzero((char *)&unix_server, sizeof(struct sockaddr_un));
   unix_server.sun_family = AF_UNIX;
-  sprintf(unix_server.sun_path,UNIX_SOCKET_NAME,port);
+  snprintf(unix_server.sun_path, sizeof(unix_server.sun_path)-1,
+	   UNIX_SOCKET_NAME, port);
   
   /* Get rid of old links. */
   unlink(unix_server.sun_path);
@@ -685,7 +691,8 @@ BOOLEAN x_ipc_listenAtSocket(int32 port, int *sd)
   /* X_IPC_MOD_WARNING("pipeDrv\n");*/
   /* pipeDrv();*/
   
-  sprintf(socketName,UNIX_SOCKET_NAME,port);
+  bzero(socketName, sizeof(socketName));
+  snprintf(socketName, sizeof(socketName)-1, UNIX_SOCKET_NAME, port);
 #ifdef DEBUG
   X_IPC_MOD_WARNING1("pipeDevCreate %s, 3, 80\n", socketName);
 #endif
@@ -835,8 +842,8 @@ struct timeval *gettimeofday(struct timeval *daytime, void *dummy)
   clock_t theTime;
   
   theTime = clock();
-  daytime->tv_usec = (int)theTime % (int)CLOCKS_PER_SEC * 1000000 / (int)CLK_TCK;
-  daytime->tv_sec  = (int)theTime / (int)CLOCKS_PER_SEC;
+  daytime->tv_usec = (int)theTime % (int)CLK_TCK * 1000000 / (int)CLK_TCK;
+  daytime->tv_sec  = (int)theTime / (int)CLK_TCK;
   return (daytime);
 }
 #else

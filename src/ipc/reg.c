@@ -13,21 +13,23 @@
  * 
  * Register messages and handlers
  *
- * $Source: /cvsroot/carmen/carmen/src/ipc/reg.c,v $ 
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:16 $
- * $Author: tomkol $
+ * $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/src/reg.c,v $ 
+ * $Revision: 2.7 $
+ * $Date: 2009/05/04 19:03:41 $
+ * $Author: reids $
+ *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
  *
  * REVISION HISTORY:
  *
  * $Log: reg.c,v $
- * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
- * Initial Import
+ * Revision 2.7  2009/05/04 19:03:41  reids
+ * Changed to using snprintf to avoid corrupting the stack on overflow
  *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.6  2009/01/12 15:54:57  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.5  2002/01/03 20:52:17  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -867,13 +869,11 @@ void x_ipcRegisterNamedFormatter(const char *formatterName,
 
 void x_ipcRegisterLengthFormatter(const char *formatter, int32 length)
 {
-  int32 i;
   char s[11];
   
-  for(i=0;i<11;i++)
-    s[i] = '\0';
+  bzero(s, sizeof(s));
   
-  (void)sprintf(s, "%d", length);
+  (void)snprintf(s, sizeof(s), "%d", length);
   
   x_ipcRegisterNamedFormatter(formatter, s);
 }
