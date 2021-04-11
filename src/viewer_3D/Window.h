@@ -28,7 +28,7 @@ window* initWindow(int width, int height);
 // janela foi fechada
 int showWindow(window* w);
 
-int processWindow(window* w, void (*mouseFunc)(int type, int button, int x, int y), void (*keyPress)(int code), void (*keyRelease)(int code));
+int processWindow(window* w, void (*mouseFunc)(int type, int button, int x, int y), void (*keyPress)(int code), void (*keyRelease)(int code), void (*resizeFunc)(int width, int height));
 
 void destroyWindow(window* w);
 

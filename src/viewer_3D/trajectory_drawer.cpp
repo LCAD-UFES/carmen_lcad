@@ -52,7 +52,39 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 		t_drawer->path[i].y = message->path[i].y;
 		t_drawer->path[i].z = 0.0;
 
-		if ((i == t_drawer->path_size - 1) || (message->path[i + 1].v >= 0.0))
+		if (((i != t_drawer->path_size - 1) && (message->path[i + 1].v >= 0.0)) ||
+			((i == t_drawer->path_size - 1) && (message->path[i].v >= 0.0)))
+		{
+			t_drawer->path_segment_color[i].x = t_drawer->r;
+			t_drawer->path_segment_color[i].y = t_drawer->g;
+			t_drawer->path_segment_color[i].z = t_drawer->b;
+		}
+		else
+		{
+			t_drawer->path_segment_color[i].x = 1.0;
+			t_drawer->path_segment_color[i].y = 0.0;
+			t_drawer->path_segment_color[i].z = 0.0;
+		}
+	}
+
+	t_drawer->availability_timestamp = carmen_get_time();
+}
+
+void
+add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ackerman_motion_command_message *message)
+{
+	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->num_motion_commands * sizeof(carmen_vector_3D_t));
+	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->num_motion_commands * sizeof(carmen_vector_3D_t));
+	t_drawer->path_size = message->num_motion_commands;
+
+	for (int i = 0; i < t_drawer->path_size; i++)
+	{
+		t_drawer->path[i].x = message->motion_command[i].x;
+		t_drawer->path[i].y = message->motion_command[i].y;
+		t_drawer->path[i].z = 0.0;
+
+		if (((i != t_drawer->path_size - 1) && (message->motion_command[i + 1].v >= 0.0)) ||
+			((i == t_drawer->path_size - 1) && (message->motion_command[i].v >= 0.0)))
 		{
 			t_drawer->path_segment_color[i].x = t_drawer->r;
 			t_drawer->path_segment_color[i].y = t_drawer->g;
@@ -82,7 +114,8 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 		t_drawer->path[i].y = message->path[i].p1.y;
 		t_drawer->path[i].z = 0.0;
 
-		if ((i == t_drawer->path_size - 1) || (message->path[i + 1].v >= 0.0))
+		if (((i != t_drawer->path_size - 1) && (message->path[i + 1].v >= 0.0)) ||
+			((i == t_drawer->path_size - 1) && (message->path[i].v >= 0.0)))
 		{
 			t_drawer->path_segment_color[i].x = t_drawer->r;
 			t_drawer->path_segment_color[i].y = t_drawer->g;
@@ -109,14 +142,15 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 	t_drawer->car_size = car_size;
 	t_drawer->distance_between_rear_car_and_rear_wheels = distance_between_rear_car_and_rear_wheels;
 
-	int i;
-	for(i = 0; i < t_drawer->path_size; i++)
+//	FILE *arq = fopen("cacod.txt", "w");
+	for (int i = 0; i < t_drawer->path_size; i++)
 	{
 		t_drawer->path[i].x = message->poses[i].x;
 		t_drawer->path[i].y = message->poses[i].y;
 		t_drawer->path[i].z = 0.0;
 
-		if ((i == t_drawer->path_size - 1) || (message->poses[i + 1].v >= 0.0))
+		if (((i != t_drawer->path_size - 1) && (message->poses[i + 1].v >= 0.0)) ||
+			((i == t_drawer->path_size - 1) && (message->poses[i].v >= 0.0)))
 		{
 			t_drawer->path_segment_color[i].x = t_drawer->r;
 			t_drawer->path_segment_color[i].y = t_drawer->g;
@@ -128,12 +162,16 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 			t_drawer->path_segment_color[i].y = 0.0;
 			t_drawer->path_segment_color[i].z = 0.0;
 		}
+//		fprintf(arq, "%lf %lf %lf %lf %lf\n",
+//				message->poses[i].x, message->poses[i].y, message->poses[i].theta,
+//				message->poses[i].phi, message->poses[i].v);
 	}
+//	fclose(arq);
 
 	t_drawer->goals = (carmen_pose_3D_t *) realloc(t_drawer->goals, message->goal_list_size * sizeof(carmen_pose_3D_t));
 	t_drawer->goals_size = message->goal_list_size;
 
-	for(i = 0; i < t_drawer->goals_size; i++)
+	for (int i = 0; i < t_drawer->goals_size; i++)
 	{
 		t_drawer->goals[i].position.x = message->goal_list[i].x;
 		t_drawer->goals[i].position.y = message->goal_list[i].y;

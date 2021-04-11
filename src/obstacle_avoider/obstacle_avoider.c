@@ -103,6 +103,10 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi,
 				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time, *carmen_robot_ackerman_config);
 
+		motion_commands_vector[i].x = pose.x;
+		motion_commands_vector[i].y = pose.y;
+		motion_commands_vector[i].theta = pose.theta;
+
 		trajectory_vector_of_points[trajectory_vector_of_points_size] = pose;
 		trajectory_vector_of_points_size++;
 		if (trajectory_vector_of_points_size >= (MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE - 2))

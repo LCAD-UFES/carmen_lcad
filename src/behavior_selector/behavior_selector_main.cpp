@@ -1044,6 +1044,17 @@ print_road_network_behavior_selector(carmen_route_planner_road_network_message *
 }
 
 
+//static void
+//print_poses(carmen_ackerman_traj_point_t *poses, int number_of_poses, char *filename)
+//{
+//	FILE *arq = fopen(filename, "w");
+//	for (int i = 0; i < 10000 && i < number_of_poses; i++)
+//		fprintf(arq, "%lf %lf %lf %lf %lf\n",
+//				poses[i].x, poses[i].y, poses[i].theta, poses[i].phi, poses[i].v);
+//	fclose(arq);
+//}
+
+
 path_collision_info_t
 set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
@@ -1064,6 +1075,8 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 	}
 
 	distance_map_free_of_moving_objects = distance_map; // O distance_map vem sem objetos móveis do obstacle_distance_mapper
+
+//	print_poses(&(set_of_paths.set_of_paths[set_of_paths.selected_path * set_of_paths.number_of_poses]), rddf_msg.number_of_poses, (char *) "cacox0.txt");
 
 //	print_road_network_behavior_selector(road_network_message);
 	vector<path_collision_info_t> paths_collision_info;
@@ -1112,18 +1125,6 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 }
 
 
-void
-print_rddf(carmen_rddf_road_profile_message *rddf_message, carmen_ackerman_traj_point_t *first_goal, int goal_type)
-{
-	for (int i = 0; i < 10000 && i < rddf_message->number_of_poses; i++)
-		printf("%lf %lf %lf %lf\n",
-				rddf_message->poses[i].x, rddf_message->poses[i].y, rddf_message->poses[i].theta,
-				rddf_message->poses[i].v);
-	printf("first_goal %lf %lf %lf %lf, goal_type %d\n",
-			first_goal->x, first_goal->y, first_goal->theta, first_goal->v, goal_type);
-}
-
-
 int
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -1138,6 +1139,8 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 //	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
 
 //	printf("delta_t funcao %0.3lf\n", carmen_get_time() - t2);
+
+//	print_poses(last_rddf_message->poses, last_rddf_message->number_of_poses, (char *) "cacox0.txt");
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
@@ -1172,8 +1175,6 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 		publish_path_goals_and_annotations_message(last_rddf_message_copy, last_valid_goal_p, 1, timestamp);
 	}
-
-//	print_rddf(last_rddf_message, first_goal, goal_type);
 
 	publish_current_state(&behavior_selector_state_message);
 
