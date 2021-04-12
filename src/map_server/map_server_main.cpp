@@ -25,7 +25,7 @@
 //TODO: ler da lista de parâmetros se for ler imagens já baixadas
 #define google_maps_data_location "../data/google_maps"
 
-static double initial_waiting_time;
+static double initial_waiting_time = 3.0;
 static carmen_map_t *current_map;
 static carmen_map_t *current_sum_remission_map;
 static carmen_map_t *current_mean_remission_map;
@@ -792,14 +792,17 @@ main(int argc, char **argv)
 	int no_valid_map_on_file;
 	double timestamp;
 
+	usleep(initial_waiting_time * 1e6);	// Com a adocao da nova versao do IPC esta espera tem que ocorrer antes da conexao com o central.
+										// Se nao esperar aqui, os mapas iniciais nao sao recebidos pelo localize_ackerman para alguma razao...
+										// Assim, o parametro map_server_initial_waiting_time nao esta funcionando (esta fixo aqui com o valor
+										// que era empregado no carmen ini)...
+
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 	define_messages();
 
 	carmen_grid_mapping_init_parameters(map_grid_res, map_width);
-
-	usleep(initial_waiting_time * 1e6);
 
 	initialize_structures();
 	if (map_file_name != NULL)
@@ -831,10 +834,10 @@ main(int argc, char **argv)
 				current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
 
 		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
+
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
 		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
 		carmen_map_server_publish_localize_map_message(&localize_map);
-
 		if (publish_grid_mapping_map_at_startup)
 			carmen_mapper_publish_map_message(current_map, timestamp);
 	}
