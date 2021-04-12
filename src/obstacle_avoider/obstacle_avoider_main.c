@@ -96,7 +96,7 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerm
 
 	if (num_motion_commands > 0)
 	{
-		msg = build_navigator_ackerman_plan_message(motion_commands_vector, num_motion_commands, &carmen_robot_ackerman_config, timestamp);
+		msg = build_navigator_ackerman_plan_message(motion_commands_vector, &num_motion_commands, &carmen_robot_ackerman_config, timestamp);
 		carmen_obstacle_avoider_publish_path(msg);
 
 		free(msg.path);
@@ -112,7 +112,7 @@ publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman
 
 	if (num_motion_commands > 0)
 	{
-		msg = build_navigator_ackerman_plan_message(motion_commands_vector, num_motion_commands, &carmen_robot_ackerman_config, timestamp);
+		msg = build_navigator_ackerman_plan_message(motion_commands_vector, &num_motion_commands, &carmen_robot_ackerman_config, timestamp);
 		carmen_obstacle_avoider_publish_motion_planner_path(msg);
 
 		free(msg.path);
@@ -171,7 +171,7 @@ obstacle_avoider_timer_handler()
 //	consume_motion_command_time(motion_command_vetor);
 
 	if (ackerman_collision_avoidance)
-		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], num_motion_commands_in_vector[motion_command_vetor], &carmen_robot_ackerman_config);
+		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], &(num_motion_commands_in_vector[motion_command_vetor]), &carmen_robot_ackerman_config);
 
 	if (num_motion_commands_in_vector[motion_command_vetor] > 0)
 	{

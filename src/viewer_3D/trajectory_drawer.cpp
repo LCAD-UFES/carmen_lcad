@@ -77,6 +77,7 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->num_motion_commands * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->num_motion_commands;
 
+//	FILE *arq = fopen("cacod.txt", "w");
 	for (int i = 0; i < t_drawer->path_size; i++)
 	{
 		t_drawer->path[i].x = message->motion_command[i].x;
@@ -96,7 +97,11 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 			t_drawer->path_segment_color[i].y = 0.0;
 			t_drawer->path_segment_color[i].z = 0.0;
 		}
+//		fprintf(arq, "%lf %lf %lf %lf %lf\n",
+//				message->motion_command[i].x, message->motion_command[i].y, message->motion_command[i].theta,
+//				message->motion_command[i].phi, message->motion_command[i].v);
 	}
+//	fclose(arq);
 
 	t_drawer->availability_timestamp = carmen_get_time();
 }
