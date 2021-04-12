@@ -53,6 +53,7 @@ create_interface_drawer(int window_width, int window_height)
 void
 destroy_interface_drawer(interface_drawer* i_drawer)
 {
+	free(i_drawer->butt);
 	free(i_drawer);
 }
 

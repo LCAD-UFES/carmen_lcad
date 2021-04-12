@@ -78,6 +78,7 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 
 	glmScale(carDrawer->carModel, carDrawer->car_size.x/2.0);
 
+	free(model_file);
 	return carDrawer;
 }
 

@@ -3375,9 +3375,12 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			vc_64[i] = CLF_READ_DOUBLE(&v64);
 			ouster64_azimuth_offsets[i] = CLF_READ_DOUBLE(&h64);
 		}
+		free(v64);
+		free(h64);
 	}
 
 	remission_calibration_table = load_calibration_table(calibration_file);
+	free(calibration_file);
 
 	carmen_param_t param_publish_list[] =
 	{

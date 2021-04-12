@@ -230,6 +230,7 @@ initWindow (int width, int height)
     XMapWindow (w->g_pDisplay, w->g_window);
     XSetWMProtocols (w->g_pDisplay, w->g_window, &(w->wmDeleteMessage), 1);
 
+    XFree(visualInfo);
 
     return w;
 }
