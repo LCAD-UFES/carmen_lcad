@@ -18,7 +18,7 @@ typedef struct _trajectory_drawer
 	carmen_pose_3D_t *goals;
 	int goals_size;
 
-	carmen_vector_3D_t car_size;
+	carmen_vector_3D_t robot_size;
 	double distance_between_rear_car_and_rear_wheels;
 	double availability_timestamp;
 } trajectory_drawer;

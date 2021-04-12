@@ -15,6 +15,7 @@ extern "C"
 struct CarDrawer
 {
 	carmen_vector_3D_t car_size;
+	carmen_vector_3D_t robot_size;
 	carmen_pose_3D_t car_pose;
 	double car_axis_distance;
 	double car_wheel_radius;

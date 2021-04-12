@@ -138,13 +138,13 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 }
 
 void
-add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behavior_selector_path_goals_and_annotations_message *message, carmen_vector_3D_t car_size, double distance_between_rear_car_and_rear_wheels)
+add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behavior_selector_path_goals_and_annotations_message *message, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels)
 {
 	t_drawer->path = (carmen_vector_3D_t *) realloc(t_drawer->path, message->number_of_poses * sizeof(carmen_vector_3D_t));
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->number_of_poses * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->number_of_poses;
 
-	t_drawer->car_size = car_size;
+	t_drawer->robot_size = robot_size;
 	t_drawer->distance_between_rear_car_and_rear_wheels = distance_between_rear_car_and_rear_wheels;
 
 //	FILE *arq = fopen("cacod.txt", "w");
@@ -194,8 +194,8 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 void
 draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 {
-	double length_x = t_drawer->car_size.x;
-	double length_y = t_drawer->car_size.y;
+	double length_x = t_drawer->robot_size.x;
+	double length_y = t_drawer->robot_size.y;
 	double car_middle_to_rear_wheels = length_x / 2.0 - t_drawer->distance_between_rear_car_and_rear_wheels;
 
 	for(int i = 0; i < t_drawer->goals_size; i++)

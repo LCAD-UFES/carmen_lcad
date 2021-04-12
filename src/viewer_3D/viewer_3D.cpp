@@ -166,7 +166,7 @@ static int rear_bullbar_right_corner_laser_id;
 
 static carmen_pose_3D_t car_fused_pose;
 
-static carmen_vector_3D_t car_size;
+static carmen_vector_3D_t robot_size;
 static double distance_between_rear_car_and_rear_wheels;
 
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
@@ -2560,7 +2560,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
-	add_path_goals_and_annotations_message(path_plan_drawer, path_goals_and_annotations_message, car_size, distance_between_rear_car_and_rear_wheels);
+	add_path_goals_and_annotations_message(path_plan_drawer, path_goals_and_annotations_message, robot_size, distance_between_rear_car_and_rear_wheels);
 }
 
 
@@ -3234,9 +3234,8 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char*) "robot", (char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
             {(char*) "robot", (char*) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 
-			{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(car_size.x), 0, NULL},
-			{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(car_size.y), 0, NULL},
-			{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(car_size.z), 0, NULL},
+			{"robot", "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 0, NULL},
+			{"robot", "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 0, NULL},
 			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
         };
 
@@ -3314,9 +3313,8 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char*) "velodyne", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
             {(char*) "velodyne", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 
-			{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(car_size.x), 0, NULL},
-			{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(car_size.y), 0, NULL},
-			{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(car_size.z), 0, NULL},
+			{"robot", "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 0, NULL},
+			{"robot", "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 0, NULL},
 			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
         };
 

@@ -25,6 +25,8 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	{"carmodel", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.yaw), 0, NULL},
 	{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 0, NULL},
 	{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 0, NULL},
+	{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 0, NULL},
+	{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 0, NULL},
 	{"sensor_board_1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 0, NULL},
 	{"sensor_board_1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 0, NULL},
 	{"sensor_board_1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 0, NULL},
@@ -274,23 +276,20 @@ void draw_car_outline(CarDrawer* carDrawer)
 	glPushMatrix();
 
 		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,0.0);
-//		glRotatef(90.0, 1.0, 0.0, 0.0);
-//		glRotatef(0.0, 0.0, 1.0, 0.0);
 
 		glColor3f(0.3,0.3,0.3);
 
-		drawOutline(carDrawer->car_size.x, carDrawer->car_size.y);
+		drawOutline(carDrawer->robot_size.x, carDrawer->robot_size.y);
 
 	glPopMatrix();
 
-//	draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
 	glBegin(GL_LINES);
-		glVertex3d(0.0, -carDrawer->car_size.y / 2, 0.0);
-		glVertex3d(0.0, carDrawer->car_size.y / 2, 0.0);
-		glVertex3d(carDrawer->car_axis_distance, -carDrawer->car_size.y / 2, 0.0);
-		glVertex3d(carDrawer->car_axis_distance, carDrawer->car_size.y / 2, 0.0);
+		glVertex3d(0.0, -carDrawer->robot_size.y / 2, 0.0);
+		glVertex3d(0.0, carDrawer->robot_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, -carDrawer->robot_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, carDrawer->robot_size.y / 2, 0.0);
 		glVertex3d(carDrawer->car_axis_distance, 0.0, 0.0);
-		glVertex3d(carDrawer->car_size.x, 0.0, 0.0);
+		glVertex3d(carDrawer->robot_size.x, 0.0, 0.0);
 	glEnd();
 }
 
