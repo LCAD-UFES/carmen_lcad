@@ -571,6 +571,8 @@ int main(int argc, char **argv)
       printPrompt();
 #endif
 
+    fprintf(stderr, "central running...\n");
+
     listenLoop();
   }
 #ifdef _WINSOCK_
