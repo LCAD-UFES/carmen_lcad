@@ -14,7 +14,7 @@ trajectory_drawer *
 create_trajectory_drawer(double r, double g, double b)
 {
 
-	trajectory_drawer* t_drawer = (trajectory_drawer*)malloc(sizeof(trajectory_drawer));
+	trajectory_drawer *t_drawer = (trajectory_drawer *)malloc(sizeof(trajectory_drawer));
 		
 	t_drawer->path = NULL;
 	t_drawer->path_segment_color = NULL;
@@ -32,7 +32,7 @@ create_trajectory_drawer(double r, double g, double b)
 
 
 void
-destroy_trajectory_drawer(trajectory_drawer* t_drawer)
+destroy_trajectory_drawer(trajectory_drawer *t_drawer)
 {
 	free(t_drawer->path);
 	free(t_drawer->goals);
