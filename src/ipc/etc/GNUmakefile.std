@@ -1,7 +1,7 @@
 ######### Tell emacs this is a -*- Makefile -*- #######################
 #   $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/etc/GNUmakefile.std,v $
-# $Revision: 2.7 $
-#     $Date: 2009/01/12 15:54:55 $
+# $Revision: 2.8 $
+#     $Date: 2011/08/16 16:03:11 $
 #   $Author: reids $
 #    $State: Exp $
 #   $Locker:  $
@@ -31,6 +31,9 @@
 # HISTORY:
 #
 # $Log: GNUmakefile.std,v $
+# Revision 2.8  2011/08/16 16:03:11  reids
+# Adding Python interface to IPC
+#
 # Revision 2.7  2009/01/12 15:54:55  reids
 # Added BSD Open Source license info
 #
@@ -399,7 +402,8 @@ ifdef INS_PUBLIC_LIBS
 DONT_RANLIB = $(PUBLIC_LIB_DIR)/centralModule.o \
 		$(PUBLIC_LIB_DIR)/libipc_lisp.so \
 		$(PUBLIC_LIB_DIR)/libipc.so.% \
-		$(PUBLIC_LIB_DIR)/libipcjava.so
+		$(PUBLIC_LIB_DIR)/libipcjava.so \
+		$(PUBLIC_LIB_DIR)/_IPC.so
 
 ifneq ($(filter $(DONT_RANLIB),$(INS_PUBLIC_LIBS)),)
 $(filter $(DONT_RANLIB),$(INS_PUBLIC_LIBS)): $(PUBLIC_LIB_DIR)/%: $(LDIR)/%

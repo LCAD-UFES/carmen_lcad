@@ -1281,7 +1281,7 @@ draw_square(double x, double y, double z, double l)
 
 void
 draw_moving_objects_point_clouds(point_cloud *moving_objects_point_clouds, int cloud_size,
-		carmen_vector_3D_t offset, CarDrawer *car_drawer, map_drawer *m_drawer)
+		carmen_vector_3D_t offset, CarDrawer *car_drawer, double mapper_map_grid_res)
 {
 //    glPointSize (1.0);
 //    glBegin (GL_POINTS);
@@ -1294,7 +1294,7 @@ draw_moving_objects_point_clouds(point_cloud *moving_objects_point_clouds, int c
             draw_square(moving_objects_point_clouds[i].points[j].x - offset.x,
             		moving_objects_point_clouds[i].points[j].y - offset.y,
 					moving_objects_point_clouds[i].points[j].z - moving_objects_point_clouds[i].car_position.z - car_drawer->car_wheel_radius,
-					m_drawer->map_grid_resolution);
+					mapper_map_grid_res);
 //            glVertex3d (moving_objects_point_clouds[i].points[j].x - offset.x,
 //            		moving_objects_point_clouds[i].points[j].y - offset.y,
 //					moving_objects_point_clouds[i].points[j].z - moving_objects_point_clouds[i].car_position.z - car_drawer->car_wheel_radius);

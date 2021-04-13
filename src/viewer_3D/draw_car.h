@@ -15,6 +15,7 @@ extern "C"
 struct CarDrawer
 {
 	carmen_vector_3D_t car_size;
+	carmen_vector_3D_t robot_size;
 	carmen_pose_3D_t car_pose;
 	double car_axis_distance;
 	double car_wheel_radius;
@@ -39,7 +40,9 @@ CarDrawer* createCarDrawer(int argc, char** argv);
 void destroyCarDrawer(CarDrawer* carDrawer);
 
 void draw_car(CarDrawer* carDrawer);
+void draw_car_outline(CarDrawer* carDrawer);
 void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t position);
+void draw_car_outline_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t position);
 
 #ifdef __cplusplus
 }

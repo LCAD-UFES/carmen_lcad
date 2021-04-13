@@ -13,22 +13,30 @@
  * 
  * Communication Routines - Central Server
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: comServer.c,v $
- * Revision 1.2  2006/06/05 02:03:58  nickr
- * Fixed variable type problem.
+ * Revision 2.12  2011/04/21 18:17:48  reids
+ * IPC 3.9.0:
+ * Added NoListen options to IPC_connect, to indicate that module will not
+ *   periodically listen for messages.
+ * Bug where having a message id of 0 or 1 interfaces with direct message
+ *   functionality.
+ * Extended functionality of "ping" to handle race condition with concurrent
+ *   listens.
+ * Fixed bug in how IPC_listenWait was implemented (did not necessarily
+ *   respect the timeout).
+ * Fixed conditions under which module listens for handler updates.
  *
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
+ * Revision 2.11  2009/05/04 19:03:41  reids
+ * Changed to using snprintf to avoid corrupting the stack on overflow
  *
- * Revision 1.7  2003/05/22 19:57:58  nickr
- * Patches to eliminate compile warnings.
- *
- * Revision 1.6  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.10  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.9  2003/02/13 20:41:10  reids
  * Fixed compiler warnings.
@@ -626,9 +634,9 @@
  *  1-Dec-88 Christopher Fedor, School of Computer Science, CMU
  * created.
  *
- * $Revision: 1.2 $
- * $Date: 2006/06/05 02:03:58 $
- * $Author: nickr $
+ * $Revision: 2.12 $
+ * $Date: 2011/04/21 18:17:48 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -1192,6 +1200,20 @@ void parseMsg(MSG_PTR msg)
  *
  *****************************************************************************/
 
+// 11-Apr-2011: reids: msg id's cannot be 0 or 1 -- interferes with other
+// aspects of IPC (specifically, direct messages)
+static int32 insertMsgInTable (MSG_PTR msg)
+{
+  int32 msgId = x_ipc_idTableInsert((void *)msg, GET_C_GLOBAL(msgIdTable));
+  if (msgId < 2) {
+    idTableItem(msgId, GET_C_GLOBAL(msgIdTable)) = NULL; // Ignore this item
+    int32 newMsgId = insertMsgInTable(msg);
+    msgId = newMsgId;
+  }
+
+  return msgId;
+}
+
 static MSG_PTR selfRegisterMsg(const char *name, X_IPC_MSG_CLASS_TYPE msg_class)
 {
   int32 localId;
@@ -1211,7 +1233,13 @@ static MSG_PTR selfRegisterMsg(const char *name, X_IPC_MSG_CLASS_TYPE msg_class)
       /* 24-Jun-91: fedor: update refId because a HandlerRegClass
 	 did not get added to the msgIdTable - mostly to avoid the
 	 msgIdTable in modules. This needs more work and a rewrite! */
-      localId = x_ipc_idTableInsert((void *)msg, GET_C_GLOBAL(msgIdTable));
+      localId = insertMsgInTable(msg);
+      // If put this message on the broadcast list (due to a subscribed
+      //  handler), but turns out not really a broadcast, remove it from
+      //  the broadcast list (13-Apr-2011, reids)
+      if (msg_class != BroadcastClass) {
+	recordBroadcast(name, FALSE);
+      }
     }
     
     x_ipcFree((void *)msgData->name);
@@ -1261,7 +1289,7 @@ static MSG_PTR selfRegisterMsg(const char *name, X_IPC_MSG_CLASS_TYPE msg_class)
     msgData->resFormat = NULL;
 
     msg = x_ipc_msgCreate(msgData);
-    localId = x_ipc_idTableInsert((void *)msg, GET_C_GLOBAL(msgIdTable));
+    localId = insertMsgInTable(msg);
   }
   
   msgData->refId = localId;
@@ -1352,7 +1380,7 @@ void centralRegisterLengthFormatter(char *formatterName, int32 length)
   
   bzero(s, sizeof(s));
   
-  sprintf(s, "%d", length);
+  snprintf(s, sizeof(s)-1, "%d", length);
   
   centralRegisterNamedFormatter(formatterName, s);
 }
@@ -1435,6 +1463,14 @@ static void registerHandlerHnd(DISPATCH_PTR dispatch, HND_DATA_PTR hndData)
   
   hnd->resource = dispatch->org->impliedResource;
   
+  // There can a race condition with updating the list of broadcast messages
+  //  if the handler is subscribed before the message is defined.  Be 
+  //  conservative and record here, but may have to backtrack if the message
+  //  turns out to not be a broadcast (12-Apr-2011, reids)
+  if (!msg) {
+    recordBroadcast(hndData->msgName, TRUE);
+  }
+
 #if 0
   if ((dispatch->org->port != -1) && (msg != NULL) &&
       /* Not a "watch var" message */
@@ -2509,11 +2545,11 @@ int deny_severity  = 5;
 static const char *accessibleConnection (int moduleSd)
 {
   struct sockaddr_in peer;
-  socklen_t addrlen=sizeof(peer);
+  int addrlen=sizeof(peer);
   struct hostent *client;
   char *client_machine, *client_hostnum;
 
-  getpeername(moduleSd, (struct sockaddr *)&peer, &addrlen);
+  getpeername(moduleSd, (struct sockaddr *) &peer, (socklen_t *) &addrlen);
   /* Patch by Nick Roy, 11/02 */
   if (peer.sin_family != AF_INET) {
     return NULL;
@@ -2605,15 +2641,17 @@ static BOOLEAN acceptConnection(int sd)
     /* This is the vx pipe, just read the names of the pipes to open.  */
     x_ipc_readNBytes(GET_C_GLOBAL(x_ipcListenSocket),modName, 80);
 
-    sprintf(portNum,"%d",GET_S_GLOBAL(serverPortGlobal));
-    sprintf(socketName,VX_PIPE_NAME,portNum, modName);
+    bzero(portNum, sizeof(portNum));
+    bzero(socketName, sizeof(socketName));
+    snprintf(portNum, sizeof(portNum)-1, "%d", GET_S_GLOBAL(serverPortGlobal));
+    snprintf(socketName, sizeof(socketName)-1, VX_PIPE_NAME, portNum, modName);
     moduleReadSd = open(socketName, O_RDONLY, 0644);
     if (moduleReadSd < 0) {
       X_IPC_MOD_ERROR("Open pipe Failed\n");
       return FALSE;
     }
     
-    sprintf(socketName,VX_PIPE_NAME,modName, portNum);
+    snprintf(socketName, sizeof(socketName)-1, VX_PIPE_NAME, modName, portNum);
     moduleWriteSd = open(socketName, O_WRONLY, 0644);
     if (moduleWriteSd < 0) {
       X_IPC_MOD_ERROR("Open pipe Failed\n");
@@ -2696,8 +2734,9 @@ static void stdinHnd(void)
   char inputLine[81];
   
   bzero(inputLine,sizeof(inputLine));
-  char *e = fgets(inputLine, 80, stdin);
-  e = e; //removing fgets' compilation warning
+  char *caco = fgets(inputLine,80,stdin);
+  caco = caco; // para o compilador nao reclamar
+  
   /* Kill the \n at the end of the line */
   inputLine[strlen(inputLine)-1] = '\0';
   
@@ -2939,12 +2978,11 @@ static void recordBroadcast(const char *name, BOOLEAN active)
       centralSetVar(X_IPC_BROADCAST_MSG_VAR, 
 		    (char *)GET_C_GLOBAL(broadcastMsgs));
     }
-  } else {
-    if (x_ipc_strListMemberItem(name, GET_C_GLOBAL(broadcastMsgs))) {
-      x_ipc_strListDeleteItem(name, GET_C_GLOBAL(broadcastMsgs), TRUE);
-      centralSetVar(X_IPC_BROADCAST_MSG_VAR, 
-		    (char *)GET_C_GLOBAL(broadcastMsgs));
-    }
+  } else if (GET_C_GLOBAL(broadcastMsgs) &&
+	     x_ipc_strListMemberItem(name, GET_C_GLOBAL(broadcastMsgs))) {
+    x_ipc_strListDeleteItem(name, GET_C_GLOBAL(broadcastMsgs), TRUE);
+    centralSetVar(X_IPC_BROADCAST_MSG_VAR, 
+		  (char *)GET_C_GLOBAL(broadcastMsgs));
   }
 }
 

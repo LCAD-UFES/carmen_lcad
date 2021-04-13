@@ -25,6 +25,8 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	{"carmodel", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.yaw), 0, NULL},
 	{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 0, NULL},
 	{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 0, NULL},
+	{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 0, NULL},
+	{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 0, NULL},
 	{"sensor_board_1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 0, NULL},
 	{"sensor_board_1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 0, NULL},
 	{"sensor_board_1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 0, NULL},
@@ -76,6 +78,7 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 
 	glmScale(carDrawer->carModel, carDrawer->car_size.x/2.0);
 
+	free(model_file);
 	return carDrawer;
 }
 
@@ -201,6 +204,23 @@ static void drawBox(double length_x, double length_y, double length_z)
 	glPopMatrix();
 }
 
+static void drawOutline(double length_x, double length_y)
+{
+	glPushMatrix();
+
+		glBegin(GL_LINE_STRIP);
+
+			glVertex3f(-length_x/2, -length_y/2, 0);
+			glVertex3f(length_x/2, -length_y/2, 0);
+			glVertex3f(length_x/2, length_y/2, 0);
+			glVertex3f(-length_x/2, length_y/2, 0);
+			glVertex3f(-length_x/2, -length_y/2, 0);
+
+		glEnd();
+
+	glPopMatrix();
+}
+
 void draw_axis(double length)
 {
 	length = 2*length;
@@ -248,6 +268,30 @@ void draw_axis(double length)
 		}
 
 	glPopMatrix();
+}
+
+
+void draw_car_outline(CarDrawer* carDrawer)
+{
+	// Car
+	glPushMatrix();
+
+		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,0.0);
+
+		glColor3f(0.3,0.3,0.3);
+
+		drawOutline(carDrawer->robot_size.x, carDrawer->robot_size.y);
+
+	glPopMatrix();
+
+	glBegin(GL_LINES);
+		glVertex3d(0.0, -carDrawer->robot_size.y / 2, 0.0);
+		glVertex3d(0.0, carDrawer->robot_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, -carDrawer->robot_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, carDrawer->robot_size.y / 2, 0.0);
+		glVertex3d(carDrawer->car_axis_distance, 0.0, 0.0);
+		glVertex3d(carDrawer->robot_size.x, 0.0, 0.0);
+	glEnd();
 }
 
 
@@ -369,6 +413,18 @@ void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
 		glRotatef(carmen_radians_to_degrees(pose.orientation.roll), 1.0f, 0.0f, 0.0f);
 
 		draw_car(carDrawer);
+	glPopMatrix();
+}
+
+void draw_car_outline_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
+{
+	glPushMatrix();
+		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.yaw), 0.0f, 0.0f, 1.0f);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.roll), 1.0f, 0.0f, 0.0f);
+
+		draw_car_outline(carDrawer);
 	glPopMatrix();
 }
 

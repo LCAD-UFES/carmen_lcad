@@ -8,25 +8,39 @@
  *
  * ABSTRACT: Implementation of IPC, using (modified) X_IPC library
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: ipc.c,v $
- * Revision 1.4  2008/07/23 08:40:51  kuemmerl
- * - const char* for ipc functions
+ * Revision 2.19  2011/08/16 16:01:53  reids
+ * Adding Python interface to IPC, plus some minor bug fixes
  *
- * Revision 1.3  2006/02/26 03:35:25  nickr
- * Changes to address 64 bit warnings
+ * Revision 2.18  2011/04/21 18:17:48  reids
+ * IPC 3.9.0:
+ * Added NoListen options to IPC_connect, to indicate that module will not
+ *   periodically listen for messages.
+ * Bug where having a message id of 0 or 1 interfaces with direct message
+ *   functionality.
+ * Extended functionality of "ping" to handle race condition with concurrent
+ *   listens.
+ * Fixed bug in how IPC_listenWait was implemented (did not necessarily
+ *   respect the timeout).
+ * Fixed conditions under which module listens for handler updates.
  *
- * Revision 1.2  2005/12/12 23:51:36  nickr
- * Added support for PID access. Needed for java
+ * Revision 2.17  2009/05/04 19:03:41  reids
+ * Changed to using snprintf to avoid corrupting the stack on overflow
  *
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
+ * Revision 2.16  2009/02/07 18:36:19  reids
+ * Fixed compiler warnings
  *
- * Revision 1.8  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.15  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
+ *
+ * Revision 2.14  2008/07/16 00:09:03  reids
+ * Updates for newer (pickier) compiler gcc 4.x
  *
  * Revision 2.13  2003/03/11 23:39:00  trey
  * Event handling while not connected to central:
@@ -230,6 +244,7 @@ IPC_RETURN_TYPE IPC_initialize (void)
    so that it can be called by IPC_connectModule */
 IPC_RETURN_TYPE _IPC_connect (const char *taskName,
 			      const char *serverName,
+			      BOOLEAN willListen,
 			      BOOLEAN isLispModule)
 {
   const char *serverHost;
@@ -259,6 +274,7 @@ IPC_RETURN_TYPE _IPC_connect (const char *taskName,
       printf("  Trying again %s to connect with the central server on %s\n",
 		      taskName, serverHost);
     _IPC_initialize(isLispModule);
+    x_ipcWillListen(willListen);
     x_ipcConnectModule(taskName, serverHost);
     if (X_IPC_CONNECTED()) {
       x_ipcWaitUntilReady();
@@ -280,14 +296,25 @@ IPC_RETURN_TYPE _IPC_connect (const char *taskName,
 
 IPC_RETURN_TYPE IPC_connect (const char *taskName)
 {
-  return _IPC_connect(taskName, NULL, FALSE);
+  return _IPC_connect(taskName, NULL, TRUE, FALSE);
 }
 
 /* Added by TNgo, 5/22/97 */
 IPC_RETURN_TYPE IPC_connectModule (const char *taskName,
 				   const char *serverName)
 {
-  return _IPC_connect(taskName, serverName, FALSE);
+  return _IPC_connect(taskName, serverName, TRUE, FALSE);
+}
+
+IPC_RETURN_TYPE IPC_connectNoListen (const char *taskName)
+{
+  return _IPC_connect(taskName, NULL, FALSE, FALSE);
+}
+
+IPC_RETURN_TYPE IPC_connectModuleNoListen (const char *taskName,
+					   const char *serverName)
+{
+  return _IPC_connect(taskName, serverName, FALSE, FALSE);
 }
 
 IPC_RETURN_TYPE IPC_disconnect (void)
@@ -339,12 +366,13 @@ IPC_RETURN_TYPE IPC_defineMsg (const char *msgName, unsigned int length,
 	length != (unsigned int)x_ipc_dataStructureSize(ParseFormatString(formatString))) {
     RETURN_ERROR(IPC_Mismatched_Formatter);
   } else {
+    bzero(msgFormat, sizeof(msgFormat));
     if (length == IPC_VARIABLE_LENGTH) {
-      sprintf(msgFormat, "{int, <byte:1>}");
+      snprintf(msgFormat, sizeof(msgFormat)-1, "{int, <byte:1>}");
     } else if (length == 0) {
       msgFormat[0] = '\0';
     } else {
-      sprintf(msgFormat, "[byte:%d]", length);
+      snprintf(msgFormat, sizeof(msgFormat)-1, "[byte:%d]", length);
     }
     x_ipcRegisterMessage(msgName, BroadcastClass, msgFormat, formatString);
 
@@ -434,6 +462,10 @@ IPC_RETURN_TYPE _IPC_subscribe (const char *msgName, const char *hndName,
   } else if (!X_IPC_CONNECTED()) {
     RETURN_ERROR(IPC_Not_Connected);
   } else {
+    if (!GET_C_GLOBAL(willListen))
+      X_IPC_MOD_WARNING1("WARNING: Subscribing to %s, "
+			 "but have connected no-listen\n", msgName);
+
     x_ipcRegisterHandler(msgName, hndName, handler);
 
     /* Set the client data */
@@ -442,7 +474,8 @@ IPC_RETURN_TYPE _IPC_subscribe (const char *msgName, const char *hndName,
     hnd = GET_HANDLER(&hndKey);
     UNLOCK_CM_MUTEX;
     hnd->autoUnmarshall = autoUnmarshall;
-    if (hnd->isRegistered && hnd->clientData != NO_CLIENT_DATA) {
+    if (hnd->isRegistered && hnd->clientData != NO_CLIENT_DATA &&
+	hnd->clientData != clientData) {
       X_IPC_MOD_WARNING1("Resetting client data for handler %s\n", hndName);
     }
     hnd->isRegistered = TRUE;
@@ -452,12 +485,14 @@ IPC_RETURN_TYPE _IPC_subscribe (const char *msgName, const char *hndName,
   }
 }
 
+#define MAX_HND_NAME 200
+
 IPC_RETURN_TYPE IPC_subscribe (const char *msgName, HANDLER_TYPE handler,
 			       void *clientData)
 {
-  char hndName[100];
+  char hndName[MAX_HND_NAME];
 
-  ipcHandlerName(msgName, handler, hndName);
+  ipcHandlerName(msgName, handler, hndName, sizeof(hndName));
   return _IPC_subscribe(msgName, hndName, handler, clientData, FALSE);
 }
 
@@ -465,9 +500,9 @@ IPC_RETURN_TYPE IPC_subscribeData (const char *msgName,
 				   HANDLER_DATA_TYPE handler,
 				   void *clientData)
 {
-  char hndName[100];
+  char hndName[MAX_HND_NAME];
 
-  ipcHandlerName(msgName, handler, hndName);
+  ipcHandlerName(msgName, handler, hndName, sizeof(hndName));
   return _IPC_subscribe(msgName, hndName, handler, clientData, TRUE);
 }
 
@@ -485,15 +520,19 @@ IPC_RETURN_TYPE _IPC_unsubscribe (const char *msgName, const char *hndName)
 
 IPC_RETURN_TYPE IPC_unsubscribe (const char *msgName, HANDLER_TYPE handler)
 {
-  char hndName[100];
+  char hndName[MAX_HND_NAME];
 
-  ipcHandlerName(msgName, handler, hndName);
+  ipcHandlerName(msgName, handler, hndName, sizeof(hndName));
   return _IPC_unsubscribe(msgName, hndName);
 }
 
 IPC_RETURN_TYPE IPC_subscribeFD (int fd, FD_HANDLER_TYPE handler,
 			 	 void *clientData)
 {
+  if (!GET_C_GLOBAL(willListen))
+    X_IPC_MOD_WARNING1("WARNING: Subscribing to port %d, "
+		       "but have connected no-listen\n", fd);
+
   x_ipcAddEventHandler(fd, (X_IPC_FD_HND_FN)handler, clientData);
   return IPC_OK;
 }
@@ -542,7 +581,7 @@ IPC_RETURN_TYPE IPC_listenWait (unsigned int timeoutMSecs)
   endTime = x_ipc_timeInMsecs() + timeoutMSecs;
 
   do {
-    retVal = IPC_listenClear(timeoutMSecs);
+    retVal = IPC_listen(timeoutMSecs);
     now = x_ipc_timeInMsecs();
     timeoutMSecs = endTime - now;
   } while (retVal != IPC_Error && now <= endTime );
@@ -617,7 +656,7 @@ IPC_RETURN_TYPE IPC_setMsgPriority (const char *msgName, int priority)
     msg = x_ipc_findOrRegisterMessage(msgName);
     msg->priority = priority;
 
-    setMsgData.msgName = (char*)msgName;
+    setMsgData.msgName = msgName;
     setMsgData.priority = priority;
 
     return ipcReturnValue(x_ipcInform(IPC_SET_MSG_PRIORITY_INFORM,
@@ -887,13 +926,11 @@ IPC_RETURN_TYPE ipcReturnValue(X_IPC_RETURN_VALUE_TYPE retVal)
 
 /* Create a handler name from the message name and the handler function.
    Stick the handler name into the "hndName" string (already allocated!) */
-void ipcHandlerName (const char *msgName, HANDLER_TYPE handler, char *hndName)
+void ipcHandlerName (const char *msgName, HANDLER_TYPE handler, char *hndName,
+		     uint hndNameSize)
 {
-#if (defined(__x86_64__))
-  sprintf(hndName, "HND-%s%ld", msgName, (long)handler);
-#else
-  sprintf(hndName, "HND-%s%d", msgName, (int)handler);
-#endif
+  bzero(hndName, hndNameSize);
+  snprintf(hndName, hndNameSize-1, "HND-%s%ld", msgName, (long)handler);
 }
 
 void ipcSetError  (IPC_ERROR_TYPE error)
@@ -922,9 +959,4 @@ IPC_RETURN_TYPE IPC_setContext (IPC_CONTEXT_PTR context)
 IPC_CONTEXT_PTR IPC_getContext (void)
 {
   return (IPC_CONTEXT_PTR)x_ipcGetContext();
-}
-
-long IPC_getPID (void)
-{
-  return (long)getpid();
 }

@@ -432,6 +432,11 @@ void carmen_timestamp_index::add(
 	index_is_sorted = false;
 }
 
+void carmen_timestamp_index::remove(int element)
+{
+	index.erase(index.begin() + element);
+}
+
 long carmen_timestamp_index::size()
 {
 	return index.size();
@@ -1383,7 +1388,7 @@ carmen_rddf_index_save(char *rddf_filename)
 	carmen_write_index(rddf_filename);
 }
 
-carmen_timestamp_index*
+carmen_timestamp_index *
 get_timestamp_index()
 {
 	return &carmen_index_ordered_by_timestamp;

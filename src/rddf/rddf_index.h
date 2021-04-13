@@ -113,13 +113,13 @@ class carmen_timestamp_index
 		carmen_timestamp_index();
 		carmen_timestamp_index_element operator[](uint position);
 
-		void add(
-			double x, double y, double z,
+		void add(double x, double y, double z,
 			double roll, double pitch, double yaw,
 			double origin_x, double origin_y, double origin_z,
 			double velocity_x, double velocity_y, double velocity_z,
 			double angular_velocity_roll, double angular_velocity_pitch, double angular_velocity_yaw, double phi,
 			double timestamp, long rddf_file_offset, long rddf_data_length, int annotation);
+		void remove(int element);
 
 		long size();
 		void sort();

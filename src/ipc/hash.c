@@ -13,21 +13,20 @@
  * 
  * Generic hash table abstract data type.
  *
- * $Source: /cvsroot/carmen/carmen/src/ipc/hash.c,v $ 
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:15 $
- * $Author: tomkol $
+ * $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/src/hash.c,v $ 
+ * $Revision: 2.3 $
+ * $Date: 2009/01/12 15:54:56 $
+ * $Author: reids $
+ *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
  *
  * REVISION HISTORY:
  *
  * $Log: hash.c,v $
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
- *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.3  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.2  2000/07/03 17:03:24  hersh
  * Removed all instances of "tca" in symbols and messages, plus changed

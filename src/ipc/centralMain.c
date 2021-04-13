@@ -12,19 +12,15 @@
  *
  * This file contains the "main" of the central x_ipc server.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY:
  *
- * $Log: central.c,v $
- * Revision 1.2  2006/03/05 03:47:43  nickr
- * Added a line to printout "Central running"
- *
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
- *
- * Revision 1.4  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * $Log: centralMain.c,v $
+ * Revision 2.7  2009/01/12 15:54:55  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.6  2003/02/13 20:41:10  reids
  * Fixed compiler warnings.
@@ -309,9 +305,9 @@
  * 30-Mar-90 Christopher Fedor at School of Computer Science, CMU
  * Revised to software standards.
  *
- * $Revision: 1.2 $
- * $Date: 2006/03/05 03:47:43 $
- * $Author: nickr $
+ * $Revision: 2.7 $
+ * $Date: 2009/01/12 15:54:55 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
