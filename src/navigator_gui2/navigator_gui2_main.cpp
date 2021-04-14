@@ -30,8 +30,10 @@
 #include <carmen/dot_interface.h>
 #endif
 
-static carmen_robot_config_t	 robot_config;
-static carmen_polygon_config_t		poly_config;
+static carmen_robot_config_t	 	robot_config;
+static carmen_semi_trailer_config_t semi_trailer_config;
+static carmen_polygon_config_t		robot_poly_config;
+static carmen_polygon_config_t		semi_trailer_poly_config;
 static carmen_navigator_config_t nav_config;
 static carmen_navigator_panel_config_t nav_panel_config;
 static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
@@ -1281,39 +1283,57 @@ nav_shutdown(int signo __attribute__ ((unused)))
 
 
 void
-carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
+carmen_parse_polygon_file(carmen_polygon_config_t *poly_config, char *poly_file)
 {
-	FILE *poly;
-	poly = fopen(poly_file, "r");
+	FILE *poly = fopen(poly_file, "r");
 	if (poly == NULL)
-		printf("Deu Ruim\n");
-	fscanf(poly,"%lf\n",&(poly_config->displacement));
-	fscanf(poly,"%d\n",&(poly_config->n_points));
-	poly_config->points = (double*) malloc(poly_config->n_points*2*sizeof(double));
-	int i;
-	for (i=0; i<poly_config->n_points; i++)
 	{
-		fscanf(poly,"%lf %lf\n",&(poly_config->points[2*i]),&(poly_config->points[2*i+1]));
-		printf("%lf %lf\n",poly_config->points[2*i], poly_config->points[2*i+1]);
+		printf("Could not open polygon file %s\n", poly_file);
+		exit(1);
 	}
+
+	fscanf(poly,"%lf\n", &(poly_config->displacement));
+	fscanf(poly,"%d\n", &(poly_config->n_points));
+	poly_config->points = (double *) malloc(poly_config->n_points * 2 * sizeof(double));
+	for (int i = 0; i < poly_config->n_points; i++)
+	{
+		fscanf(poly,"%lf %lf\n", &(poly_config->points[2 * i]), &(poly_config->points[2 * i + 1]));
+		printf("%lf %lf\n", poly_config->points[2 * i], poly_config->points[2 * i + 1]);
+	}
+
 	fclose(poly);
 }
+
 
 static void
 read_parameters(int argc, char *argv[],
 		carmen_robot_config_t *robot_config,
-		carmen_polygon_config_t *poly_config,
+		carmen_semi_trailer_config_t *semi_trailer_config,
+		carmen_polygon_config_t *robot_poly_config,
+		carmen_polygon_config_t *semi_trailer_poly_config,
 		carmen_navigator_config_t *nav_config,
 		carmen_navigator_panel_config_t *navigator_panel_config)
 {
 	int num_items;
 
+	char *robot_poly_file;
+	char *semi_trailer_poly_file;
+
 	carmen_param_t param_list[] =
 	{
-		{(char *) "robot",			 (char *) "length",			CARMEN_PARAM_DOUBLE, &(robot_config->length),				0, NULL},
-		{(char *) "robot",			 (char *) "width",			CARMEN_PARAM_DOUBLE, &(robot_config->width),				0, NULL},
-		{(char *) "robot",			 (char *) "acceleration",	CARMEN_PARAM_DOUBLE, &(robot_config->acceleration),			1, NULL},
-		{(char *) "robot",			 (char *) "rectangular",		CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),			1, NULL},
+		{(char *) "robot",			 (char *) "length",					CARMEN_PARAM_DOUBLE, &(robot_config->length),						0, NULL},
+		{(char *) "robot",			 (char *) "width",					CARMEN_PARAM_DOUBLE, &(robot_config->width),						0, NULL},
+		{(char *) "robot",			 (char *) "acceleration",			CARMEN_PARAM_DOUBLE, &(robot_config->acceleration),					1, NULL},
+		{(char *) "robot",			 (char *) "rectangular",			CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),					1, NULL},
+		{(char *) "robot", 			 (char *) "polygon_file",			CARMEN_PARAM_STRING, &(robot_poly_file), 							0, NULL},
+		{(char *) "semi_trailer",	 (char *) "initial_type",			CARMEN_PARAM_INT, 	 &(semi_trailer_config->type), 					0, NULL},
+		{(char *) "semi_trailer1",	 (char *) "d",						CARMEN_PARAM_DOUBLE, &(semi_trailer_config->d),						0, NULL},
+		{(char *) "semi_trailer1",	 (char *) "M",						CARMEN_PARAM_DOUBLE, &(semi_trailer_config->M),						0, NULL},
+		{(char *) "semi_trailer1",	 (char *) "width",					CARMEN_PARAM_STRING, &(semi_trailer_config->width),					0, NULL},
+		{(char *) "semi_trailer1",	 (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_front),	0, NULL},
+		{(char *) "semi_trailer1",	 (char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_back),	0, NULL},
+		{(char *) "semi_trailer1",	 (char *) "polygon_file",			CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 			0, NULL},
+
 		{(char *) "navigator",		 (char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),		1, NULL},
 		{(char *) "navigator",		 (char *) "goal_size",				CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
 		{(char *) "navigator",		 (char *) "goal_theta_tolerance",	CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),	1, NULL},
@@ -1352,32 +1372,24 @@ read_parameters(int argc, char *argv[],
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	localize_std.theta = carmen_degrees_to_radians(localize_std.theta);
-	robot_config->rectangular = 1;
 
 	char polygon_file[1024];
-	bzero(polygon_file,1024);
-	strcat(polygon_file,getenv("CARMEN_HOME"));
+	strcpy(polygon_file, getenv("CARMEN_HOME"));
 	strcat(polygon_file,"/bin/");
 
-
-	char *poly_file = (char*) "ford_escape/ford_escape_poly.txt";
-
-	carmen_param_t param_ackerman_list[] =
-	{
-//		{(char *) "robot", (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_and_rear_axles),	 1, NULL},
-//		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_car_and_rear_wheels),	 1, NULL},
-//		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_car_and_front_wheels),	 1, NULL},
-//		{(char *) "robot", (char *) "distance_between_rear_wheels",					CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_wheels),				 1, NULL}
-		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
-	};
-
-	carmen_param_allow_unfound_variables(1);
-	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
-	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
-	carmen_param_allow_unfound_variables(0);
-	strcat(polygon_file, poly_file);
+	strcat(polygon_file, robot_poly_file);
 	printf("%s\n", polygon_file);
-	carmen_parse_polygon_file(poly_config, polygon_file);
+	carmen_parse_polygon_file(robot_poly_config, polygon_file);
+
+	if (semi_trailer_config->type)
+	{
+		strcpy(polygon_file, getenv("CARMEN_HOME"));
+		strcat(polygon_file,"/bin/");
+
+		strcat(polygon_file, semi_trailer_poly_file);
+		printf("%s\n", polygon_file);
+		carmen_parse_polygon_file(semi_trailer_poly_config, polygon_file);
+	}
 
 	carmen_param_t param_cmd_list[] =
 	{
@@ -1493,10 +1505,10 @@ subscribe_ipc_messages()
 
 
 void
-init_navigator_gui_variables(int argc, char* argv[])
+init_navigator_gui_variables(int argc, char *argv[])
 {
 	carmen_localize_ackerman_globalpos_message globalpos;
-	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &poly_config, &nav_config, &nav_panel_config);
+	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &semi_trailer_config, &robot_poly_config, &semi_trailer_poly_config, &nav_config, &nav_panel_config);
 
 	carmen_graphics_update_ipc_callbacks((GdkInputFunction) (handle_ipc));
 
@@ -1527,7 +1539,7 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, nav_shutdown);
 
-	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
+	read_parameters(argc, argv, &robot_config, &semi_trailer_config, &robot_poly_config, &semi_trailer_poly_config, &nav_config, &nav_panel_config);
 
 	read_user_preferences(argc, argv);
 

@@ -170,6 +170,7 @@ obstacle_avoider_timer_handler()
 	int motion_command_vetor = current_motion_command_vetor;
 //	consume_motion_command_time(motion_command_vetor);
 
+	double dt = carmen_get_time();
 	if (ackerman_collision_avoidance)
 		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], &(num_motion_commands_in_vector[motion_command_vetor]), &carmen_robot_ackerman_config);
 
@@ -178,8 +179,9 @@ obstacle_avoider_timer_handler()
 		obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
 				num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 
+		dt = dt - carmen_get_time();
 		//  Para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)
-		carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
+//		carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
 
 		// Apenas para visualizacao (path vermelho)
 		if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
@@ -518,15 +520,22 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_obstacle_avoider);
 
-	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) obstacle_avoider_timer_handler, NULL);
-	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) check_message_absence_timeout_timer_handler, NULL);
-
 //	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 //	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
 //	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
 //	virtual_laser_message.host = carmen_get_host();
 
-	carmen_ipc_dispatch();
+//	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) obstacle_avoider_timer_handler, NULL);
+//	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) check_message_absence_timeout_timer_handler, NULL);
+//
+//	carmen_ipc_dispatch();
+
+	while (1)
+	{
+		obstacle_avoider_timer_handler();
+		check_message_absence_timeout_timer_handler();
+		carmen_ipc_sleep(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency);
+	}
 
 	return 0;
 }

@@ -268,6 +268,16 @@ typedef struct {
 
 
 typedef struct {
+	int type;
+	double d;
+	double M;
+	double width;
+	double distance_between_axle_and_front;
+	double distance_between_axle_and_back;
+} carmen_semi_trailer_config_t;
+
+
+typedef struct {
 	double distance_between_rear_wheels;
 	double distance_between_front_and_rear_axles;
 	double distance_between_rear_car_and_rear_wheels;

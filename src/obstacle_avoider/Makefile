@@ -14,8 +14,8 @@ LFLAGS += -lglobal -lgeometry -lparam_interface -lipc -llocalize_ackerman_interf
 		-lmap_io -lmap_util -lmap_interface -lmapper_interface -lprob_models  -llocalize_ackerman_interface -lrotation_geometry \
 		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface
 		
-CFLAGS += -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -fopenmp -funroll-all-loops
-#CFLAGS += -std=c99
+#CFLAGS += -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -fopenmp -funroll-all-loops
+CFLAGS += -std=c99
 
 MODULE_NAME = OBSTACLE_AVOIDER_DAEMON
 MODULE_COMMENT = Module integrating all robot sensors and configuration

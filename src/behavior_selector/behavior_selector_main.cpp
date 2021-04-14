@@ -1085,7 +1085,7 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 				0, behavior_selector_state_message, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
 
-	if (behavior_selector_performs_path_planning)
+	if (behavior_selector_performs_path_planning && current_set_of_paths)
 	{
 		set_of_paths.selected_path = selected_path_id;
 		publish_set_of_paths_message(&set_of_paths);
@@ -1095,8 +1095,16 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		rddf_msg.poses_back = set_of_paths.poses_back;
 		rddf_msg.number_of_poses = set_of_paths.number_of_poses;
 		rddf_msg.number_of_poses_back = set_of_paths.number_of_poses_back;
-		rddf_msg.annotations = road_network_message->annotations;
-		rddf_msg.annotations_codes = road_network_message->annotations_codes;
+		if (!road_network_message->annotations && (set_of_paths.number_of_poses != 0))
+		{
+			rddf_msg.annotations = (int *) malloc(set_of_paths.number_of_poses * sizeof(int));
+			rddf_msg.annotations_codes = (int *) malloc(set_of_paths.number_of_poses * sizeof(int));
+		}
+		else
+		{
+			rddf_msg.annotations = road_network_message->annotations;
+			rddf_msg.annotations_codes = road_network_message->annotations_codes;
+		}
 		rddf_msg.timestamp = road_network_message->timestamp;
 		rddf_msg.host = carmen_get_host();
 
@@ -1105,6 +1113,11 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		else
 			last_rddf_message = copy_rddf_message(last_rddf_message, &rddf_msg);
 
+		if (!road_network_message->annotations && (set_of_paths.number_of_poses != 0))
+		{
+			free(rddf_msg.annotations);
+			free(rddf_msg.annotations_codes);
+		}
 //		carmen_rddf_publish_road_profile_message(rddf_msg.poses, rddf_msg.poses_back, rddf_msg.number_of_poses, rddf_msg.number_of_poses_back,
 //				rddf_msg.annotations, rddf_msg.annotations_codes);
 //
@@ -1141,6 +1154,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 //	printf("delta_t funcao %0.3lf\n", carmen_get_time() - t2);
 
 //	print_poses(last_rddf_message->poses, last_rddf_message->number_of_poses, (char *) "cacox0.txt");
+
+	if (!last_rddf_message)
+		return (NONE);
 
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);

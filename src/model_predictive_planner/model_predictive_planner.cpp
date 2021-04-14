@@ -532,7 +532,9 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance;
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
+#ifdef PLOT_COLLISION
 	vector<carmen_ackerman_path_point_t> hit_points;
+#endif
 
 	double max_circle_invasion = 0.0;
 	for (unsigned int i = 0; i < path.size(); i += 1)
@@ -546,23 +548,25 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 		{
 			double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
 					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
+#ifdef PLOT_COLLISION
 			if (circle_invasion > 0)
 				hit_points.push_back(path[i]); //pra plotar
+#endif
 
 			if (circle_invasion > max_circle_invasion)
 				max_circle_invasion = circle_invasion;
 		}
 	}
+#ifdef PLOT_COLLISION
 	if (!hit_points.size())
 		hit_points.push_back(path[0]);
 
-#ifdef PLOT_COLLISION
 	plot_path_and_colisions_points(path, hit_points);
 #endif
 
 	if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
 	{
-		printf("---------- PATH HIT OBSTACLE!!!!\n");
+		printf("---------- PATH HIT OBSTACLE!!!! -> %lf\n", carmen_get_time());
 		return (true);
 	}
 	else

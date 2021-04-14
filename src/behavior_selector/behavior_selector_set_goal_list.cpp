@@ -906,7 +906,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 		{
 //			static int count_v = 0;
 			static double keep_goal_time = 0.0;
-			if ((next_pose_change_direction_index > 0) || (fabs(robot_pose.v) > 0.05))
+			if ((next_pose_change_direction_index > 1) || (fabs(robot_pose.v) > 0.05))
 			{
 				if ((goal_index == 0) && (fabs(robot_pose.v) > 0.05))
 					keep_goal_time = carmen_get_time();

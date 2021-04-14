@@ -357,7 +357,8 @@ namespace View
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-			carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param,
+			carmen_robot_config_t *robot_conf_param, carmen_semi_trailer_config_t *semi_trailer_conf_param,
+			carmen_polygon_config_t *robot_poly_config_param, carmen_polygon_config_t *semi_trailer_poly_config_param,
 			carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param)
 	{
 		GdkGLConfig *glconfig;
@@ -630,7 +631,9 @@ namespace View
 		globalpos = msg;
 
 		robot_config = robot_conf_param;
-		poly_config	 = poly_config_param;
+		semi_trailer_config = semi_trailer_conf_param;
+		robot_poly_config = robot_poly_config_param;
+		semi_trailer_poly_config = semi_trailer_poly_config_param;
 		nav_config	 = nav_conf_param;
 
 		cursor_pos.map = NULL;
@@ -2476,10 +2479,10 @@ namespace View
 	GtkGui::draw_robot(GtkMapViewer *the_map_view)
 	{
 		if (!nav_panel_config->show_particles && !nav_panel_config->show_gaussians)
-			draw_robot_shape(the_map_view, &robot, TRUE, &robot_colour);
+			draw_robot_shape(the_map_view, &robot, TRUE, &robot_colour, true);
 
 		if (!nav_panel_config->show_gaussians)
-			draw_robot_shape(the_map_view, &robot, FALSE, &carmen_black);
+			draw_robot_shape(the_map_view, &robot, FALSE, &carmen_black, true);
 
 		draw_orientation_mark(the_map_view, &robot);
 	}
@@ -2616,8 +2619,8 @@ namespace View
 		if (!nav_panel_config->show_true_pos || (simulator_trueposition.map == NULL))
 			return;
 
-		draw_robot_shape(the_map_view, &simulator_trueposition, TRUE, &carmen_blue);
-		draw_robot_shape(the_map_view, &simulator_trueposition, FALSE, &carmen_black);
+		draw_robot_shape(the_map_view, &simulator_trueposition, TRUE, &carmen_blue, true);
+		draw_robot_shape(the_map_view, &simulator_trueposition, FALSE, &carmen_black, true);
 
 		draw_orientation_mark(the_map_view, &simulator_trueposition);
 	}
@@ -2849,7 +2852,7 @@ namespace View
 
 		for (int i = 0; i < rddf_annotation_msg.num_annotations; i++)
 		{
-			double displacement = poly_config->displacement;//car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
+			double displacement = robot_poly_config->displacement;//car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
 			world_point.pose.theta = rddf_annotation_msg.annotations[i].annotation_orientation;
 			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x + displacement * cos(world_point.pose.theta);
 			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y + displacement * sin(world_point.pose.theta);
@@ -3053,7 +3056,16 @@ namespace View
 		if (!robot_config->rectangular)
 			draw_differential_shape(the_map_view, location, filled, colour);
 		else
-			draw_ackerman_shape(the_map_view, location, filled, colour);
+			draw_ackerman_shape(the_map_view, location, filled, colour, false);
+	}
+
+	void
+	GtkGui::draw_robot_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour, bool draw_trailer)
+	{
+		if (!robot_config->rectangular)
+			draw_differential_shape(the_map_view, location, filled, colour);
+		else
+			draw_ackerman_shape(the_map_view, location, filled, colour, draw_trailer);
 	}
 
 	void
@@ -3112,29 +3124,12 @@ namespace View
 	}
 
 	void
-	GtkGui::draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour)
+	GtkGui::draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour, bool draw_trailer)
 	{
-//		double width2, length, dist_rear_car_rear_wheels;
-//
-//		dist_rear_car_rear_wheels = car_config->distance_between_rear_car_and_rear_wheels;
-//		width2 = robot_config->width / 2;
-//		length = robot_config->length;
-//
-//		wp[0].pose.x = x_coord(-dist_rear_car_rear_wheels, width2, location);
-//		wp[0].pose.y = y_coord(-dist_rear_car_rear_wheels, width2, location);
-//		wp[1].pose.x = x_coord(-dist_rear_car_rear_wheels, -width2, location);
-//		wp[1].pose.y = y_coord(-dist_rear_car_rear_wheels, -width2, location);
-//		wp[2].pose.x = x_coord(length - dist_rear_car_rear_wheels, -width2, location);
-//		wp[2].pose.y = y_coord(length - dist_rear_car_rear_wheels, -width2, location);
-//		wp[3].pose.x = x_coord(length - dist_rear_car_rear_wheels, width2, location);
-//		wp[3].pose.y = y_coord(length - dist_rear_car_rear_wheels, width2, location);
-//
-//		wp[0].map = wp[1].map = wp[2].map  = location->map;
-
 		if (nav_panel_config->show_collision_range)
 		{
 			carmen_collision_config_t *collision_config = carmen_get_global_collision_config();
-			for (int i=0; i < collision_config->n_markers; i++)
+			for (int i = 0; i < collision_config->n_markers; i++)
 			{
 				carmen_world_point_t center;
 				center.pose.x = x_coord(collision_config->markers[i].x, collision_config->markers[i].y, location);
@@ -3145,15 +3140,33 @@ namespace View
 		}
 		else
 		{
-			carmen_world_point_t wp[poly_config->n_points];
-			for (int i=0; i < poly_config->n_points; i++)
+			carmen_world_point_t wp[robot_poly_config->n_points];
+			for (int i = 0; i < robot_poly_config->n_points; i++)
 			{
-				wp[i].pose.x = x_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
-				wp[i].pose.y = y_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
+				wp[i].pose.x = x_coord(robot_poly_config->points[2*i], robot_poly_config->points[2*i+1], location);
+				wp[i].pose.y = y_coord(robot_poly_config->points[2*i], robot_poly_config->points[2*i+1], location);
 				wp[i].map = location->map;
 			}
 
-			carmen_map_graphics_draw_polygon(the_map_view, colour, wp, poly_config->n_points, filled);
+			carmen_map_graphics_draw_polygon(the_map_view, colour, wp, robot_poly_config->n_points, filled);
+
+			if (draw_trailer && globalpos->semi_trailer_engaged)
+			{
+				double semi_trailer_M = semi_trailer_config->M;
+				double semi_trailer_d = semi_trailer_config->d;
+				double beta = globalpos->beta;
+				carmen_world_point_t wp[semi_trailer_poly_config->n_points];
+				for (int i = 0; i < semi_trailer_poly_config->n_points; i++)
+				{
+					double trailer_x = semi_trailer_poly_config->points[2 * i] * cos(-beta) - semi_trailer_poly_config->points[2 * i + 1] * sin(-beta) - semi_trailer_d * cos(beta) - semi_trailer_M;
+					double trailer_y = semi_trailer_poly_config->points[2 * i] * sin(-beta) + semi_trailer_poly_config->points[2 * i + 1] * cos(-beta) + semi_trailer_d * sin(beta);
+					wp[i].pose.x = x_coord(trailer_x, trailer_y, location);
+					wp[i].pose.y = y_coord(trailer_x, trailer_y, location);
+					wp[i].map = location->map;
+				}
+
+				carmen_map_graphics_draw_polygon(the_map_view, colour, wp, semi_trailer_poly_config->n_points, filled);
+			}
 		}
 	}
 
