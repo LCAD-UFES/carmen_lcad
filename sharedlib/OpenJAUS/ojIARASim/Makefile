@@ -21,12 +21,27 @@ OBJECTS =	./Build/main.o \
 
 default : all
 
-all :  $(TARGETSO) $(TARGET)
+all :  $(TARGETSO) $(TARGET) download
 
 clean :
 	rm -f ./Build/*.o
 	rm -f $(TARGET)
 	rm -f $(TARGETSO)
+
+download :
+ifeq (,$(wildcard $(CARMEN_HOME)/bin/ford_escape/trailer-cargo.obj))
+	$(info )
+	$(info **************** **********************************************************************************************)
+	$(info *	Dowloading 3D model trailer-cargo.obj)
+	$(info * Dont worry if the trailer-cargo.mtl returns error, the gdown doesn't work properly wtth small files *)
+	$(info * Check the file and if necessary, download it direct from the link in this makefie *)
+	$(info ***************************************************************************************************************)
+	$(info )
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1nzTxAIa6XDspEGTdLzR143JpCNDJA2At/view?usp=sharing $(CARMEN_HOME)/bin/ford_escape/trailer-cargo.obj
+#	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1HR0jUa7_goJIRxe8cUxXshXmSH6jwJvL/view?usp=sharing $(CARMEN_HOME)/bin/ford_escape/trailer-cargo.mtl
+else
+	$(info * 3D model trailer-cargo.obj already exists *)
+endif
 
 $(TARGET) : $(OBJECTS)
 	g++ $(LFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
@@ -51,3 +66,4 @@ $(TARGETSO) : $(OBJECTS)
 
 ./Build/vss.o : ./src/vss.c
 	gcc $(CCFLAGS) -o ./Build/vss.o ./src/vss.c
+

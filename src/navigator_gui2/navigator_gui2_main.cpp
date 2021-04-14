@@ -14,7 +14,6 @@
 #include <carmen/lane_detector_interface.h>
 #include <carmen/model_predictive_planner_interface.h>
 #include <carmen/ford_escape_hybrid_interface.h>
-#include <carmen/user_preferences.h>
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
@@ -70,14 +69,10 @@ char previous_place_of_interest[2048];
 char predefined_route[2048];
 int predefined_route_code;
 
-char *user_pref_filename = NULL;
-const char *user_pref_module;
-user_param_t *user_pref_param_list;
-int user_pref_num_items;
-int user_pref_window_width  = -1;
-int user_pref_window_height = -1;
-int user_pref_window_x = -1;
-int user_pref_window_y = -1;
+int window_width  = -1;
+int window_height = -1;
+int window_x  = -1;
+int window_y = -1;
 
 std::vector <carmen_annotation_t> place_of_interest_list;
 std::vector <carmen_annotation_t> predefined_route_list;
@@ -508,45 +503,12 @@ get_active_maps_from_menu(char **map, char **superimposed_map)
 
 
 void
-read_user_preferences(int argc, char** argv)
+set_window_size_and_position()
 {
-	static user_param_t param_list[] =
-	{
-		{"window_width",     USER_PARAM_TYPE_INT,    &user_pref_window_width},
-		{"window_height",    USER_PARAM_TYPE_INT,    &user_pref_window_height},
-		{"window_x",         USER_PARAM_TYPE_INT,    &user_pref_window_x},
-		{"window_y",         USER_PARAM_TYPE_INT,    &user_pref_window_y},
-		{"initial_map_zoom", USER_PARAM_TYPE_DOUBLE, &(nav_panel_config.initial_map_zoom)},
-		{"map",              USER_PARAM_TYPE_STRING, &(nav_panel_config.map)},
-		{"superimposed_map", USER_PARAM_TYPE_STRING, &(nav_panel_config.superimposed_map)},
-		{"draw_waypoints",   USER_PARAM_TYPE_ONOFF,  &(nav_panel_config.draw_waypoints)},
-	};
-	user_pref_module = basename(argv[0]);
-	user_pref_param_list = param_list;
-	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
-	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
-	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
-}
-
-
-void
-set_user_preferences()
-{
-	if (user_pref_window_width > 0 && user_pref_window_height > 0)
-		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
-	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
-		gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
-}
-
-
-void
-save_user_preferences()
-{
-	gtk_window_get_size(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_width, &user_pref_window_height);
-	gtk_window_get_position(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_x, &user_pref_window_y);
-	nav_panel_config.initial_map_zoom = gui->controls_.map_view->zoom;
-	get_active_maps_from_menu(&(nav_panel_config.map), &(nav_panel_config.superimposed_map));
-	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+	if (window_width > 0 && window_height > 0)
+		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), window_width, window_height);
+	if (window_x >= 0 && window_y >= 0)
+		gtk_window_move(GTK_WINDOW(gui->controls_.main_window), window_x, window_y);
 }
 
 
@@ -1267,7 +1229,6 @@ nav_shutdown(int signo __attribute__ ((unused)))
 	{
 		done = 1;
 		carmen_ipc_disconnect();
-		save_user_preferences();
 		exit(1);
 	}
 }
@@ -1364,6 +1325,10 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "localize_std_theta",		CARMEN_PARAM_DOUBLE, &localize_std.theta,							1, NULL},
 		{(char *) "navigator_panel", (char *) "map",					CARMEN_PARAM_STRING, &(navigator_panel_config->map),				0, NULL},
 		{(char *) "navigator_panel", (char *) "superimposed_map",		CARMEN_PARAM_STRING, &(navigator_panel_config->superimposed_map),	0, NULL},
+		{(char *) "navigator_panel", (char *) "window_width",			CARMEN_PARAM_INT, &window_width,	0, NULL},
+		{(char *) "navigator_panel", (char *) "window_height",			CARMEN_PARAM_INT, &window_height,	0, NULL},
+		{(char *) "navigator_panel", (char *) "window_x",				CARMEN_PARAM_INT, &window_x,	0, NULL},
+		{(char *) "navigator_panel", (char *) "window_y",				CARMEN_PARAM_INT, &window_y,	0, NULL},
 		{(char *) "mapper",			 (char *) "height_max_level",		CARMEN_PARAM_INT, &height_max_level,								0, NULL},
 		{(char *) "route_planner",	 (char *) "in_graph_mode", 			CARMEN_PARAM_ONOFF,  &use_route_planner_in_graph_mode, 0, NULL},
 	};
@@ -1541,8 +1506,6 @@ main(int argc, char *argv[])
 
 	read_parameters(argc, argv, &robot_config, &semi_trailer_config, &robot_poly_config, &semi_trailer_poly_config, &nav_config, &nav_panel_config);
 
-	read_user_preferences(argc, argv);
-
 	carmen_grid_mapping_init_parameters(0.2, 210);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
@@ -1555,7 +1518,7 @@ main(int argc, char *argv[])
 
 	init_navigator_gui_variables(argc, argv);
 
- 	set_user_preferences();
+ 	set_window_size_and_position();
 
 	subscribe_ipc_messages();
 
