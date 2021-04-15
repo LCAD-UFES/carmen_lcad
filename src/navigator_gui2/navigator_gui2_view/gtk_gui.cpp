@@ -3166,6 +3166,19 @@ namespace View
 				}
 
 				carmen_map_graphics_draw_polygon(the_map_view, colour, wp, semi_trailer_poly_config->n_points, filled);
+
+				carmen_world_point_t hitching_point;
+				hitching_point.pose.x = x_coord(-semi_trailer_M, 0.0, location);
+				hitching_point.pose.y = y_coord(-semi_trailer_M, 0.0, location);
+				hitching_point.map = location->map;
+				GdkColor color = carmen_graphics_add_color_rgb(255, 0, 0);
+				carmen_map_graphics_draw_circle(the_map_view, &color, filled, &hitching_point, 0.1);
+
+				carmen_world_point_t semi_trailer_reference;
+				semi_trailer_reference.pose.x = x_coord(-semi_trailer_d * cos(beta) - semi_trailer_M, semi_trailer_d * sin(beta), location);
+				semi_trailer_reference.pose.y = y_coord(-semi_trailer_d * cos(beta) - semi_trailer_M, semi_trailer_d * sin(beta), location);
+				semi_trailer_reference.map = location->map;
+				carmen_map_graphics_draw_line(the_map_view, colour, &semi_trailer_reference, &hitching_point);
 			}
 		}
 	}
