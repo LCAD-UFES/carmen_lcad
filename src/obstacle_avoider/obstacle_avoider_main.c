@@ -181,7 +181,7 @@ obstacle_avoider_timer_handler()
 
 		dt = dt - carmen_get_time();
 		//  Para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)
-//		carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
+		carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
 
 		// Apenas para visualizacao (path vermelho)
 		if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
