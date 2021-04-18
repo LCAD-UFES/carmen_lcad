@@ -10,10 +10,11 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 
 	int num_items;
 
-	char* model_file = NULL;
+	char *carmodel_file = NULL;
+	char *semi_trailer_model_file = NULL;
 
 	carmen_param_t param_list[] = {
-	{"carmodel", "file_name", CARMEN_PARAM_STRING, &model_file, 0, NULL},
+	{"carmodel", "file_name", CARMEN_PARAM_STRING, &carmodel_file, 0, NULL},
 	{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.x), 0, NULL},
 	{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.y), 0, NULL},
 	{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.z), 0, NULL},
@@ -23,10 +24,26 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	{"carmodel", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.roll), 0, NULL},
 	{"carmodel", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.pitch), 0, NULL},
 	{"carmodel", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.yaw), 0, NULL},
+	{"semi_trailer_model1", "file_name", CARMEN_PARAM_STRING, &semi_trailer_model_file, 0, NULL},
+	{"semi_trailer_model1", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.x), 0, NULL},
+	{"semi_trailer_model1", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.y), 0, NULL},
+	{"semi_trailer_model1", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.z), 0, NULL},
+	{"semi_trailer_model1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.x), 0, NULL},
+	{"semi_trailer_model1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.y), 0, NULL},
+	{"semi_trailer_model1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.z), 0, NULL},
+	{"semi_trailer_model1", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.roll), 0, NULL},
+	{"semi_trailer_model1", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.pitch), 0, NULL},
+	{"semi_trailer_model1", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.yaw), 0, NULL},
 	{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 0, NULL},
 	{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 0, NULL},
 	{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 0, NULL},
 	{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 0, NULL},
+	{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.type), 0, NULL},
+	{"semi_trailer1", "d", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.d), 0, NULL},
+	{"semi_trailer1", "M", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.M), 0, NULL},
+	{"semi_trailer1", "width", CARMEN_PARAM_STRING, &(carDrawer->semi_trailer_config.width), 0, NULL},
+	{"semi_trailer1", "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+	{"semi_trailer1", "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_back), 0, NULL},
 	{"sensor_board_1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 0, NULL},
 	{"sensor_board_1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 0, NULL},
 	{"sensor_board_1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 0, NULL},
@@ -68,17 +85,26 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
-	printf("FILE: %s\n", model_file);
+	printf("FILE: %s\n", carmodel_file);
 
-	if (model_file == NULL)
+	if (carmodel_file == NULL)
 		carDrawer->carModel = glmReadOBJ("ford_escape_model.obj");
 	else
-		carDrawer->carModel = glmReadOBJ(model_file);
+		carDrawer->carModel = glmReadOBJ(carmodel_file);
 	glmUnitize(carDrawer->carModel);
 
 	glmScale(carDrawer->carModel, carDrawer->car_size.x/2.0);
 
-	free(model_file);
+	if (semi_trailer_model_file == NULL)
+		carDrawer->semiTrailerModel = glmReadOBJ("ford_escape_model.obj");
+	else
+		carDrawer->semiTrailerModel = glmReadOBJ(semi_trailer_model_file);
+	glmUnitize(carDrawer->semiTrailerModel);
+
+	glmScale(carDrawer->semiTrailerModel, carDrawer->car_size.x/2.0);
+
+	free(carmodel_file);
+	free(semi_trailer_model_file);
 	return carDrawer;
 }
 
@@ -295,7 +321,7 @@ void draw_car_outline(CarDrawer* carDrawer)
 }
 
 
-void draw_car(CarDrawer* carDrawer)
+void draw_car(CarDrawer* carDrawer, double beta, int semi_trailer_engaged)
 {
 	//draw_axis(500.0);
 
@@ -313,6 +339,26 @@ void draw_car(CarDrawer* carDrawer)
 		
 	glPopMatrix();
 	
+	if (semi_trailer_engaged)
+	{
+		// Semi-truck
+		glPushMatrix();
+
+			glRotatef(90.0, 1.0, 0.0, 0.0);
+			glRotatef(0.0, 0.0, 1.0, 0.0);
+			glRotatef(-carmen_radians_to_degrees(beta), 0.0, 1.0, 0.0);
+
+			glTranslatef(carDrawer->semi_trailer_pose.position.x - carDrawer->semi_trailer_config.d - carDrawer->semi_trailer_config.M * cos(beta),
+						 carDrawer->semi_trailer_pose.position.z,
+						 carDrawer->semi_trailer_pose.position.y + carDrawer->semi_trailer_config.M * sin(beta));
+
+			glColor3f(0.3,0.3,0.3);
+			//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
+			glmDraw(carDrawer->semiTrailerModel, GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
+
+		glPopMatrix();
+	}
+
 	
 	// Sensor Board
 	glPushMatrix();
@@ -404,7 +450,8 @@ void draw_car(CarDrawer* carDrawer)
 	
 }
 
-void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
+
+void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
 {
 	glPushMatrix();
 		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
@@ -412,9 +459,10 @@ void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
 		glRotatef(carmen_radians_to_degrees(pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
 		glRotatef(carmen_radians_to_degrees(pose.orientation.roll), 1.0f, 0.0f, 0.0f);
 
-		draw_car(carDrawer);
+		draw_car(carDrawer, beta, semi_trailer_engaged);
 	glPopMatrix();
 }
+
 
 void draw_car_outline_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
 {
