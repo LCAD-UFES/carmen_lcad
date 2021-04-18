@@ -140,7 +140,7 @@ int main(int argc, char** argv)
 		glRotatef(car_orientation.pitch, 0.0f, 1.0f, 0.0f);
 		glRotatef(car_orientation.roll, 1.0f, 0.0f, 0.0f);
 
-		draw_car(car_draw);
+		draw_car(car_draw, 0.0, 0);
 	}                                                                                 
 	
 	carmen_ipc_disconnect();  
@@ -227,6 +227,7 @@ void keyRelease(int code)
 void
 resizeFunc(int width, int height)			// compatibilidade com callback do viewer_3D
 {
-
+	width = width; // just to make gcc happy
+	height = height;
 }
 

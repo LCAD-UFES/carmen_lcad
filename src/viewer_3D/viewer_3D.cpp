@@ -294,6 +294,9 @@ static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
 static symotha_drawer_t *symotha_drawer;
 
+static double beta;
+static int semi_trailer_engaged;
+
 window *w = NULL;
 
 void mouseFunc(int type, int button, int x, int y);
@@ -812,7 +815,7 @@ draw_everything()
     }
 
     if (draw_car_flag)
-        draw_car_at_pose(car_drawer, car_fused_pose);
+        draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
     else
     	draw_car_outline_at_pose(car_drawer, car_fused_pose);
 
@@ -1199,6 +1202,8 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
     if (last_localize_ackerman_trail >= localize_ackerman_size)
         last_localize_ackerman_trail -= localize_ackerman_size;
 
+    beta = localize_ackerman_message->beta;
+    semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
     static double time_of_last_publish = carmen_get_time();
 	if (publish_map_view && ((carmen_get_time() - time_of_last_publish) >= publish_map_view_interval))
@@ -3522,7 +3527,7 @@ draw_while_picking()
     }
 
 	if (draw_car_flag)
-		draw_car_at_pose(car_drawer, car_fused_pose);
+		draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 	else
 		draw_car_outline_at_pose(car_drawer, car_fused_pose);
 
