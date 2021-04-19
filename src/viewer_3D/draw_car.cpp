@@ -101,7 +101,7 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 		carDrawer->semiTrailerModel = glmReadOBJ(semi_trailer_model_file);
 	glmUnitize(carDrawer->semiTrailerModel);
 
-	glmScale(carDrawer->semiTrailerModel, carDrawer->car_size.x/2.0);
+	glmScale(carDrawer->semiTrailerModel, carDrawer->semi_trailer_size.x/2.0);
 
 	free(carmodel_file);
 	free(semi_trailer_model_file);
