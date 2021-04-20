@@ -1288,12 +1288,6 @@ read_parameters(int argc, char *argv[],
 		{(char *) "robot",			 (char *) "rectangular",			CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),					1, NULL},
 		{(char *) "robot", 			 (char *) "polygon_file",			CARMEN_PARAM_STRING, &(robot_poly_file), 							0, NULL},
 		{(char *) "semi_trailer",	 (char *) "initial_type",			CARMEN_PARAM_INT, 	 &(semi_trailer_config->type), 					0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "d",						CARMEN_PARAM_DOUBLE, &(semi_trailer_config->d),						0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "M",						CARMEN_PARAM_DOUBLE, &(semi_trailer_config->M),						0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "width",					CARMEN_PARAM_STRING, &(semi_trailer_config->width),					0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_front),	0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_back),	0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "polygon_file",			CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 			0, NULL},
 
 		{(char *) "navigator",		 (char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),		1, NULL},
 		{(char *) "navigator",		 (char *) "goal_size",				CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
@@ -1335,6 +1329,22 @@ read_parameters(int argc, char *argv[],
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	char semi_trailer_string[256];
+
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config->type);
+
+	carmen_param_t param_list2[] = {
+	{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config->d),							  	0, NULL},
+	{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config->M),							  	0, NULL},
+	{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_STRING, &(semi_trailer_config->width),						  	0, NULL},
+	{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_front), 0, NULL},
+	{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_back),	0, NULL},
+	{semi_trailer_string, (char *) "polygon_file",					  CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 							  	0, NULL}
+	};
+
+	num_items = sizeof(param_list2)/sizeof(param_list2[0]);
+	carmen_param_install_params(argc, argv, param_list2, num_items);
 
 	localize_std.theta = carmen_degrees_to_radians(localize_std.theta);
 

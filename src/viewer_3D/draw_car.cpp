@@ -29,28 +29,12 @@ createCarDrawer(int argc, char** argv)
 	{"carmodel", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.roll), 0, NULL},
 	{"carmodel", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.pitch), 0, NULL},
 	{"carmodel", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.yaw), 0, NULL},
-	{"semi_trailer_model1", "file_name", CARMEN_PARAM_STRING, &semi_trailer_model_file, 0, NULL},
-	{"semi_trailer_model1", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.x), 0, NULL},
-	{"semi_trailer_model1", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.y), 0, NULL},
-	{"semi_trailer_model1", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.z), 0, NULL},
-	{"semi_trailer_model1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.x), 0, NULL},
-	{"semi_trailer_model1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.y), 0, NULL},
-	{"semi_trailer_model1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.z), 0, NULL},
-	{"semi_trailer_model1", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.roll), 0, NULL},
-	{"semi_trailer_model1", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.pitch), 0, NULL},
-	{"semi_trailer_model1", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.yaw), 0, NULL},
 	{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 0, NULL},
 	{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 0, NULL},
 	{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 0, NULL},
 	{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 0, NULL},
 	{"robot", "collision_file", CARMEN_PARAM_STRING, &robot_collision_file, 1, NULL},
 	{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.type), 0, NULL},
-	{"semi_trailer1", "d", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.d), 0, NULL},
-	{"semi_trailer1", "M", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.M), 0, NULL},
-	{"semi_trailer1", "width", CARMEN_PARAM_STRING, &(carDrawer->semi_trailer_config.width), 0, NULL},
-	{"semi_trailer1", "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-	{"semi_trailer1", "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_back), 0, NULL},
-	{"semi_trailer1", "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 1, NULL},
 	{"sensor_board_1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 0, NULL},
 	{"sensor_board_1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 0, NULL},
 	{"sensor_board_1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 0, NULL},
@@ -91,6 +75,34 @@ createCarDrawer(int argc, char** argv)
 	
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	char semi_trailer_string[256];
+	char semi_trailer_model_string[256];
+
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", carDrawer->semi_trailer_config.type);
+	sprintf(semi_trailer_model_string, "%s%d", "semi_trailer_model", carDrawer->semi_trailer_config.type);
+
+	carmen_param_t param_list2[] = {
+	{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.d), 0, NULL},
+	{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.M), 0, NULL},
+	{semi_trailer_string, "width", CARMEN_PARAM_STRING, &(carDrawer->semi_trailer_config.width), 0, NULL},
+	{semi_trailer_string, "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+	{semi_trailer_string, "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_back), 0, NULL},
+	{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 1, NULL},
+	{semi_trailer_model_string, "file_name", CARMEN_PARAM_STRING, &semi_trailer_model_file, 0, NULL},
+	{semi_trailer_model_string, "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.x), 0, NULL},
+	{semi_trailer_model_string, "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.y), 0, NULL},
+	{semi_trailer_model_string, "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.z), 0, NULL},
+	{semi_trailer_model_string, "x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.x), 0, NULL},
+	{semi_trailer_model_string, "y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.y), 0, NULL},
+	{semi_trailer_model_string, "z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.z), 0, NULL},
+	{semi_trailer_model_string, "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.roll), 0, NULL},
+	{semi_trailer_model_string, "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.pitch), 0, NULL},
+	{semi_trailer_model_string, "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.yaw), 0, NULL}
+	};
+
+	num_items = sizeof(param_list2)/sizeof(param_list2[0]);
+	carmen_param_install_params(argc, argv, param_list2, num_items);
 
 	printf("FILE: %s\n", carmodel_file);
 
