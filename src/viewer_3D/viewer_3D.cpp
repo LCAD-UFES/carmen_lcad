@@ -937,6 +937,8 @@ draw_everything()
         draw_particles(fused_odometry_particles_pos, fused_odometry_particles_weight, num_fused_odometry_particles, 0);
         draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
         draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
+
+        draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
     }
 
     if (draw_map_flag)
@@ -3604,6 +3606,8 @@ draw_while_picking()
 		draw_particles(fused_odometry_particles_pos, fused_odometry_particles_weight, num_fused_odometry_particles, 0);
 		draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
 		draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
+
+		draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 	}
 
 	if (draw_map_flag)

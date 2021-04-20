@@ -1,10 +1,12 @@
-
 #include "draw_car.h"
+#include <locale.h>
+
 
 static void drawBox(double length_x, double length_y, double length_z);
 
 
-CarDrawer* createCarDrawer(int argc, char** argv)
+CarDrawer *
+createCarDrawer(int argc, char** argv)
 {	
 	CarDrawer* carDrawer = (CarDrawer*)malloc(sizeof(CarDrawer));
 
@@ -12,6 +14,9 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 
 	char *carmodel_file = NULL;
 	char *semi_trailer_model_file = NULL;
+
+	char *robot_collision_file = NULL;
+	char *semi_trailer_collision_file = NULL;
 
 	carmen_param_t param_list[] = {
 	{"carmodel", "file_name", CARMEN_PARAM_STRING, &carmodel_file, 0, NULL},
@@ -38,12 +43,14 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 0, NULL},
 	{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 0, NULL},
 	{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 0, NULL},
+	{"robot", "collision_file", CARMEN_PARAM_STRING, &robot_collision_file, 1, NULL},
 	{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.type), 0, NULL},
 	{"semi_trailer1", "d", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.d), 0, NULL},
 	{"semi_trailer1", "M", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.M), 0, NULL},
 	{"semi_trailer1", "width", CARMEN_PARAM_STRING, &(carDrawer->semi_trailer_config.width), 0, NULL},
 	{"semi_trailer1", "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_front), 0, NULL},
 	{"semi_trailer1", "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_back), 0, NULL},
+	{"semi_trailer1", "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 1, NULL},
 	{"sensor_board_1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 0, NULL},
 	{"sensor_board_1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 0, NULL},
 	{"sensor_board_1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 0, NULL},
@@ -105,11 +112,53 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 
 	free(carmodel_file);
 	free(semi_trailer_model_file);
+
+	char *carmen_home = getenv("CARMEN_HOME");
+
+	if (carmen_home == NULL)
+		exit(printf("Could not get environment variable $CARMEN_HOME in createCarDrawer()\n"));
+
+	char collision_file_[2048];
+	strcpy(collision_file_, carmen_home);
+	strcat(collision_file_, "/bin/");
+	strcat(collision_file_, robot_collision_file);
+
+	FILE *collision_file_pointer = fopen(collision_file_, "r");
+	setlocale(LC_NUMERIC, "C");
+	fscanf(collision_file_pointer, "%d", &(carDrawer->robot_collision_config.n_markers));
+	int max_h_level;
+	fscanf(collision_file_pointer, "%d", &max_h_level);
+	carDrawer->robot_collision_config.markers = (carmen_collision_marker_t *) malloc(carDrawer->robot_collision_config.n_markers * sizeof(carmen_collision_marker_t));
+
+	for (int i = 0; i < carDrawer->robot_collision_config.n_markers; i++)
+		fscanf(collision_file_pointer,"%lf %lf %lf %d", &(carDrawer->robot_collision_config.markers[i].x) , &(carDrawer->robot_collision_config.markers[i].y),
+				&(carDrawer->robot_collision_config.markers[i].radius), &(carDrawer->robot_collision_config.markers[i].height_level));
+
+	fclose(collision_file_pointer);
+
+
+	strcpy(collision_file_, carmen_home);
+	strcat(collision_file_, "/bin/");
+	strcat(collision_file_, semi_trailer_collision_file);
+
+	collision_file_pointer = fopen(collision_file_, "r");
+	setlocale(LC_NUMERIC, "C");
+	fscanf(collision_file_pointer, "%d", &(carDrawer->semi_trailer_collision_config.n_markers));
+	fscanf(collision_file_pointer, "%d", &max_h_level);
+	carDrawer->semi_trailer_collision_config.markers = (carmen_collision_marker_t *) malloc(carDrawer->semi_trailer_collision_config.n_markers * sizeof(carmen_collision_marker_t));
+
+	for (int i = 0; i < carDrawer->semi_trailer_collision_config.n_markers; i++)
+		fscanf(collision_file_pointer,"%lf %lf %lf %d", &(carDrawer->semi_trailer_collision_config.markers[i].x) , &(carDrawer->semi_trailer_collision_config.markers[i].y),
+				&(carDrawer->semi_trailer_collision_config.markers[i].radius), &(carDrawer->semi_trailer_collision_config.markers[i].height_level));
+
+	fclose(collision_file_pointer);
+
 	return carDrawer;
 }
 
 
-void draw_wheel_axis(double wheel_diameter, double wheel_distance)
+void
+draw_wheel_axis(double wheel_diameter, double wheel_distance)
 {	
 	glPushMatrix();
 		
@@ -131,7 +180,8 @@ void draw_wheel_axis(double wheel_diameter, double wheel_distance)
 }
 
 
-void draw_cylinder(GLfloat radius, GLfloat height)
+void
+draw_cylinder(GLfloat radius, GLfloat height)
 {
     GLfloat x              = 0.0;
     GLfloat y              = 0.0;
@@ -141,18 +191,18 @@ void draw_cylinder(GLfloat radius, GLfloat height)
     /** Draw the tube */
     glPushMatrix();
 
-		glBegin(GL_QUAD_STRIP);
-		angle = 0.0;
-			while( angle < 2*M_PI ) {
-				x = radius * cos(angle);
-				y = radius * sin(angle);
-				glVertex3f(x, y , height);
-				glVertex3f(x, y , 0.0);
-				angle = angle + angle_stepsize;
-			}
-			glVertex3f(radius, 0.0, height);
-			glVertex3f(radius, 0.0, 0.0);
-		glEnd();
+//		glBegin(GL_QUAD_STRIP);
+//		angle = 0.0;
+//			while( angle < 2*M_PI ) {
+//				x = radius * cos(angle);
+//				y = radius * sin(angle);
+//				glVertex3f(x, y , height);
+//				glVertex3f(x, y , 0.0);
+//				angle = angle + angle_stepsize;
+//			}
+//			glVertex3f(radius, 0.0, height);
+//			glVertex3f(radius, 0.0, 0.0);
+//		glEnd();
 
 		/** Draw the circle on top of cylinder */
 		glBegin(GL_POLYGON);
@@ -169,6 +219,40 @@ void draw_cylinder(GLfloat radius, GLfloat height)
     glPopMatrix();
 }
 
+
+void
+draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
+{
+	glPushMatrix();
+		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.yaw), 0.0f, 0.0f, 1.0f);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
+		glRotatef(carmen_radians_to_degrees(pose.orientation.roll), 1.0f, 0.0f, 0.0f);
+		for (int i = 0; i < carDrawer->robot_collision_config.n_markers; i++)
+		{
+			glPushMatrix();
+				glTranslatef(carDrawer->robot_collision_config.markers[i].x, carDrawer->robot_collision_config.markers[i].y, 0.0);
+				draw_cylinder(carDrawer->robot_collision_config.markers[i].radius, 0.0);
+			glPopMatrix();
+		}
+
+		if (semi_trailer_engaged)
+		{
+			glTranslatef(-carDrawer->semi_trailer_config.M, 0.0, 0.0);
+			glRotatef(-carmen_radians_to_degrees(beta), 0.0f, 0.0f, 1.0f);
+			for (int i = 0; i < carDrawer->semi_trailer_collision_config.n_markers; i++)
+			{
+				glPushMatrix();
+					glTranslatef(carDrawer->semi_trailer_collision_config.markers[i].x - carDrawer->semi_trailer_config.d, carDrawer->semi_trailer_collision_config.markers[i].y, 0.0);
+					draw_cylinder(carDrawer->semi_trailer_collision_config.markers[i].radius, 0.0);
+				glPopMatrix();
+			}
+
+		}
+	glPopMatrix();
+}
+
+
 //static void drawCylinder(double length_x, double length_y, double length_z)
 //{
 //	glPushMatrix();
@@ -182,7 +266,9 @@ void draw_cylinder(GLfloat radius, GLfloat height)
 //
 //}
 
-static void drawBox(double length_x, double length_y, double length_z)
+
+static void
+drawBox(double length_x, double length_y, double length_z)
 {
 	glPushMatrix();
 
@@ -230,7 +316,9 @@ static void drawBox(double length_x, double length_y, double length_z)
 	glPopMatrix();
 }
 
-static void drawOutline(double length_x, double length_y)
+
+static void
+drawOutline(double length_x, double length_y)
 {
 	glPushMatrix();
 
@@ -247,7 +335,9 @@ static void drawOutline(double length_x, double length_y)
 	glPopMatrix();
 }
 
-void draw_axis(double length)
+
+void
+draw_axis(double length)
 {
 	length = 2*length;
 
@@ -297,7 +387,8 @@ void draw_axis(double length)
 }
 
 
-void draw_car_outline(CarDrawer* carDrawer)
+void
+draw_car_outline(CarDrawer *carDrawer)
 {
 	// Car
 	glPushMatrix();
@@ -321,7 +412,8 @@ void draw_car_outline(CarDrawer* carDrawer)
 }
 
 
-void draw_car(CarDrawer* carDrawer, double beta, int semi_trailer_engaged)
+void
+draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 {
 	//draw_axis(500.0);
 
@@ -446,12 +538,11 @@ void draw_car(CarDrawer* carDrawer, double beta, int semi_trailer_engaged)
 	glPopMatrix();
 
 	*/
-	
-	
 }
 
 
-void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
+void
+draw_car_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
 {
 	glPushMatrix();
 		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
@@ -464,7 +555,8 @@ void draw_car_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose, double beta, 
 }
 
 
-void draw_car_outline_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
+void
+draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose)
 {
 	glPushMatrix();
 		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
@@ -477,8 +569,11 @@ void draw_car_outline_at_pose(CarDrawer* carDrawer, carmen_pose_3D_t pose)
 }
 
 
-void destroyCarDrawer(CarDrawer* carDrawer)
+void
+destroyCarDrawer(CarDrawer *carDrawer)
 {
 	glmDelete(carDrawer->carModel);
+	free(carDrawer->robot_collision_config.markers);
+	free(carDrawer->semi_trailer_collision_config.markers);
 	free(carDrawer);
 }
