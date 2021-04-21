@@ -2,15 +2,13 @@
  * x_ipcModError.c
  * (c) Copyright 1991 Christopher Fedor and Reid Simmons. All rights reserved.
  * 
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
  *
  * $Log: tcModError.c,v $
- * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
- * Initial Import
- *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.4  2009/01/12 15:54:57  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.3  2002/01/03 20:52:17  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -163,9 +161,9 @@
  * Revision 1.2  1993/05/19  17:26:09  fedor
  * Added Logging.
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:16 $
- * $Author: tomkol $
+ * $Revision: 2.4 $
+ * $Date: 2009/01/12 15:54:57 $
+ * $Author: reids $
  *
  *
  * 27-Oct-92 Richard Goodwin, School of Computer Science, CMU

@@ -13,25 +13,50 @@
  * 
  * Module Communications
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY 
  *
  * $Log: comModule.c,v $
- * Revision 1.4  2008/07/23 08:39:56  kuemmerl
- * - fixed memleak regarding IPC queries
+ * Revision 2.23  2011/08/16 16:01:52  reids
+ * Adding Python interface to IPC, plus some minor bug fixes
  *
- * Revision 1.3  2006/02/26 03:35:25  nickr
- * Changes to address 64 bit warnings
+ * Revision 2.22  2011/04/21 18:17:48  reids
+ * IPC 3.9.0:
+ * Added NoListen options to IPC_connect, to indicate that module will not
+ *   periodically listen for messages.
+ * Bug where having a message id of 0 or 1 interfaces with direct message
+ *   functionality.
+ * Extended functionality of "ping" to handle race condition with concurrent
+ *   listens.
+ * Fixed bug in how IPC_listenWait was implemented (did not necessarily
+ *   respect the timeout).
+ * Fixed conditions under which module listens for handler updates.
  *
- * Revision 1.2  2006/01/15 21:22:33  nickr
- * Added support for Mac
+ * Revision 2.21  2010/12/17 19:20:23  reids
+ * Split IO mutex into separate read and write mutexes, to help minimize
+ *   probability of deadlock when reading/writing very big messages.
+ * Fixed a bug in multi-threaded version where a timeout is not reported
+ *   correctly (which could cause IPC_listenClear into a very long loop).
  *
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
+ * Revision 2.20  2009/11/09 17:51:52  reids
+ * Fixed invocation of timers -- previously, there were occasions where the
+ *   "wait time" provided by IPC_listen was not being honored when there were
+ *   timers being fired within the call.
  *
- * Revision 1.6  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.19  2009/09/04 19:13:32  reids
+ * Remove memory leak
+ *
+ * Revision 2.18  2009/05/04 19:03:41  reids
+ * Changed to using snprintf to avoid corrupting the stack on overflow
+ *
+ * Revision 2.17  2009/01/12 15:54:55  reids
+ * Added BSD Open Source license info
+ *
+ * Revision 2.16  2004/06/09 18:24:16  reids
+ * Fixed bug related to starting multiple centrals in the threaded version.
  *
  * Revision 2.15  2003/03/12 05:13:53  trey
  * fixed bug with IPC_connect() clobbering previous IPC_subscribeFD() calls
@@ -675,9 +700,9 @@
  * common communications between the two - actually i want to avoid 
  * differences - module and server should be alike as much as possible.
  *
- * $Revision: 1.4 $
- * $Date: 2008/07/23 08:39:56 $
- * $Author: kuemmerl $
+ * $Revision: 2.23 $
+ * $Date: 2011/08/16 16:01:52 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -1186,13 +1211,8 @@ void x_ipcHandleClosedConnection(int sd, CONNECTION_PTR connection)
     x_ipc_hashTableRemove((char *)&sd,
 			  (GET_C_GLOBAL(moduleConnectionTable)));
     /* Need to reset the direct info for messages */
-#if (defined(__x86_64__))
     x_ipc_hashTableIterate((HASH_ITER_FN)x_ipc_resetDirect,
-			   GET_C_GLOBAL(messageTable), (void *)(long)sd);
-#else
-    x_ipc_hashTableIterate((HASH_ITER_FN)x_ipc_resetDirect,
-			   GET_C_GLOBAL(messageTable), (void *)sd);
-#endif
+			   GET_C_GLOBAL(messageTable), (void *)(size_t)sd);
     x_ipcFree((char *)connection);
   }
   UNLOCK_CM_MUTEX;
@@ -1293,7 +1313,7 @@ static void x_ipcResetContext(void)
   GET_C_GLOBAL(listenSocket) = NO_FD;
   GET_C_GLOBAL(serverRead) = NO_SERVER_GLOBAL;
   GET_C_GLOBAL(serverWrite) = NO_SERVER_GLOBAL;
-  GET_C_GLOBAL(willListen) = -1;
+  GET_C_GLOBAL(willListen) = TRUE;
   GET_C_GLOBAL(tappedMsgs) = NULL;
   GET_C_GLOBAL(broadcastMsgs) = NULL;
   GET_C_GLOBAL(directDefault) = FALSE;
@@ -1650,7 +1670,7 @@ void x_ipcConnectModule(const char *modName, const char *serverHost)
     
     GET_C_GLOBAL(pendingReplies) = x_ipc_listCreate();
     GET_C_GLOBAL(queryNotificationList) = x_ipc_listCreate();
-    initMsgQueue(&GET_C_GLOBAL(msgQueue));
+    //initMsgQueue(&GET_C_GLOBAL(msgQueue)); Already done in globalMInit
     
     modData.modName = modName; /* No need to copy; not saved */
     modData.hostName = (char *)x_ipcMalloc(sizeof(char)*HOST_NAME_SIZE+1);
@@ -1829,8 +1849,6 @@ static BOOLEAN x_ipc_handleQueryNotification (DATA_MSG_PTR dataMsg)
     /* For IPC, need to use the message that was responded to, not the
        original message that was queried */
     queryNotif->ref->msg = getResponseMsg(dataMsg);
-    if (queryNotif->ref->name)
-      x_ipcFree((char*)queryNotif->ref->name);
     queryNotif->ref->name = strdup(queryNotif->ref->msg->msgData->name);
     decodeFormat = queryNotif->ref->msg->msgData->msgFormat;
 #else
@@ -1939,7 +1957,7 @@ static void x_ipc_acceptConnections(fd_set *readMask)
   char modName[80];
 #endif
 
-  LOCK_IO_MUTEX;
+  LOCK_IO_READ_MUTEX;
   LOCK_CM_MUTEX;
   if ((GET_M_GLOBAL(directFlagGlobal)) &&
       (GET_C_GLOBAL(listenPort) != NO_FD) &&
@@ -1947,7 +1965,7 @@ static void x_ipc_acceptConnections(fd_set *readMask)
     readSd = accept((GET_C_GLOBAL(listenPort)), &addr, (socklen_t *)&len);
     if (readSd <= 0) {
       X_IPC_MOD_ERROR("Accept Failed\n");
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       UNLOCK_CM_MUTEX;
       return;
     }
@@ -1975,7 +1993,7 @@ static void x_ipc_acceptConnections(fd_set *readMask)
 			      (socklen_t *)&len);
     if (readSd <= 0) {
       X_IPC_MOD_ERROR("Accept Failed\n");
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       UNLOCK_CM_MUTEX;
       return;
     }
@@ -1985,21 +2003,23 @@ static void x_ipc_acceptConnections(fd_set *readMask)
 #else
     /* Using Vx pipes for local communication. */
     x_ipc_readNBytes(GET_C_GLOBAL(listenSocket),modName, 80);
-    sprintf(portNum,"%d",GET_C_GLOBAL(listenPortNum));
-    sprintf(socketName,VX_PIPE_NAME,portNum,modName);
+    bzero(portNum, sizeof(portNum));
+    bzero(socketName, sizeof(socketName));
+    snprintf(portNum,sizeof(portNum)-1, "%d", GET_C_GLOBAL(listenPortNum));
+    snprintf(socketName, sizeof(socketName)-1, VX_PIPE_NAME, portNum, modName);
     readSd = open(socketName, O_RDONLY, 0644);
     if (readSd < 0) {
       X_IPC_MOD_ERROR("Open pipe Failed\n");
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       UNLOCK_CM_MUTEX;
       return;
     }
 
-    sprintf(socketName,VX_PIPE_NAME,modName,portNum);
+    snprintf(socketName, sizeof(socketName)-1, VX_PIPE_NAME, modName, portNum);
     writeSd = open(socketName, O_WRONLY, 0644);
     if (writeSd < 0) {
       X_IPC_MOD_ERROR("Open pipe Failed\n");
-      UNLOCK_IO_MUTEX;
+      UNLOCK_IO_READ_MUTEX;
       UNLOCK_CM_MUTEX;
       return;
     }
@@ -2023,7 +2043,7 @@ static void x_ipc_acceptConnections(fd_set *readMask)
     GET_C_GLOBAL(maxConnection) =  MAX(GET_C_GLOBAL(maxConnection), writeSd);
     /* 25-Jun-91: fedor: set sd in readMask as well? */
   }
-  UNLOCK_IO_MUTEX;
+  UNLOCK_IO_READ_MUTEX;
   UNLOCK_CM_MUTEX;
 }
 
@@ -2389,7 +2409,6 @@ X_IPC_RETURN_VALUE_TYPE x_ipc_waitForReplyFromTime(X_IPC_REF_PTR ref,
 	  }
 	  UNLOCK_CM_MUTEX;
 	}
-    
 	if (fd == NO_FD) {
 	  LOCK_CM_MUTEX;
 	  readMask = (GET_C_GLOBAL(x_ipcConnectionListGlobal));
@@ -2397,6 +2416,12 @@ X_IPC_RETURN_VALUE_TYPE x_ipc_waitForReplyFromTime(X_IPC_REF_PTR ref,
 	} else {
 	  FD_ZERO(&readMask);
 	  FD_SET(fd, &readMask);
+	}
+
+	/* Run any overdue triggers now */
+	if (nextTrigger != WAITFOREVER && nextTrigger <= x_ipc_timeInMsecs()) {
+	  ipcTriggerTimers();
+	  nextTrigger = ipcNextTime();
 	}
 
 	/* Determine how long to stay in the select -- 
@@ -2409,14 +2434,9 @@ X_IPC_RETURN_VALUE_TYPE x_ipc_waitForReplyFromTime(X_IPC_REF_PTR ref,
 	  time.tv_sec = WAITFOREVER; time.tv_usec = 0;
 	} else {
 	  now = x_ipc_timeInMsecs();
-	  if (nextTrigger <= waitTimeout) {
-	    if (nextTrigger <= now) {
-	      ipcTriggerTimers();
-	      nextTrigger = ipcNextTime();
-	      now = x_ipc_timeInMsecs();
-	    }
-	    relTimeout = (nextTrigger == WAITFOREVER
-			  ? WAITFOREVER : nextTrigger - now);
+	  if (waitTimeout == WAITFOREVER || nextTrigger <= waitTimeout) {
+	    /* If we get here, nextTrigger cannot be WAITFOREVER */
+	    relTimeout = nextTrigger - now;
 	    if (relTimeout < 0) relTimeout = 0;
 	  } else {
 	    /* If we get here, either nextTrigger or waitTimeout is not 
@@ -2508,6 +2528,7 @@ X_IPC_RETURN_VALUE_TYPE x_ipc_waitForReplyFromTime(X_IPC_REF_PTR ref,
 
       if (nextTrigger != WAITFOREVER) ipcTriggerTimers();
     } /* if (isPrimaryThread) */
+#ifdef THREADED
     else {
       if (CONNECTED_TO_CENTRAL && ref != NULL) {
 	LOCK_CM_MUTEX;
@@ -2524,10 +2545,10 @@ X_IPC_RETURN_VALUE_TYPE x_ipc_waitForReplyFromTime(X_IPC_REF_PTR ref,
 	UNLOCK_CM_MUTEX;
       }
       if (timeout != NULL && timeout->tv_sec == WAITFOREVER) timeout = NULL;
-#ifdef THREADED
-      waitForPing(&GET_M_GLOBAL(ping), timeout);
-#endif
+      status = (waitForPing(&GET_M_GLOBAL(ping), timeout) == Ping_Timeout 
+		? TimeOut : Success);
     }
+#endif
   } while (ref != NULL);
   if (isPrimaryThread) UNLOCK_SELECT_MUTEX;
   return status;
@@ -2880,6 +2901,10 @@ void x_ipcAddEventHandler(int fd, X_IPC_FD_HND_FN hnd, void *clientData)
       X_IPC_MOD_WARNING1("WARNING: Handler function replaced for fd %d\n", fd);
       fdHndData->hndProc = hnd;
     }
+    if (fdHndData->clientData != clientData) {
+      X_IPC_MOD_WARNING1("WARNING: Replacing client data for fd %d\n", fd);
+      fdHndData->clientData = clientData;
+    }
   } else {
     fdHndData = NEW(FD_HND_TYPE);
     fdHndData->fd = fd;
@@ -2974,7 +2999,7 @@ static int removeOldest (MSG_PTR msg, MSG_QUEUE_PTR msgQueue)
 static void resizeMsgQueue (MSG_QUEUE_PTR msgQueue)
 {
   msgQueue->queueSize += MSG_QUEUE_INCR;
-  msgQueue->messages  = (QUEUED_MSG_PTR)realloc(msgQueue->messages, /* check_alloc checked */
+  msgQueue->messages  = (QUEUED_MSG_PTR)realloc(msgQueue->messages,
 						(sizeof(QUEUED_MSG_TYPE)*
 						 msgQueue->queueSize));
 }

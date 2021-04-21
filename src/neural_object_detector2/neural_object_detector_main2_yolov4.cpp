@@ -64,7 +64,7 @@ carmen_pose_3D_t pose;
 carmen_ackerman_traj_point_t rddf_msg;
 bool goal_ready, use_rddf;
 
-carmen_behavior_selector_road_profile_message goal_list_message;
+carmen_behavior_selector_road_profile_message path_goals_and_annotations_message;
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
 carmen_behavior_selector_road_profile_message last_rddf_poses;

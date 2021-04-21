@@ -11,16 +11,15 @@
  * ABSTRACT:
  * Facilities for logging X_IPC data on the terminal or in a log file.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: logging.c,v $
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
- *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.3  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.2  2000/07/03 17:03:26  hersh
  * Removed all instances of "tca" in symbols and messages, plus changed
@@ -315,9 +314,9 @@
  *   BOOLEAN x_ipc_LogDataP () :
  *     Returns true if any of the logs have data logging turned on.
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:15 $
- * $Author: tomkol $
+ * $Revision: 2.3 $
+ * $Date: 2009/01/12 15:54:56 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -433,7 +432,7 @@ void Log_Time(int32 indent)
 {
   LOG_PTR *log;
 #if !defined(VXWORKS) && !defined(_WINSOCK_)
-  int milliseconds; /* hundredths */
+  int hundredths;
   struct timeval timeBlock;
   struct tm *localTime;
 #endif
@@ -452,11 +451,11 @@ void Log_Time(int32 indent)
 #else
       localTime = localtime((time_t *)&(timeBlock.tv_sec));
 #endif /* THINK_C || macintosh */
-      milliseconds = timeBlock.tv_usec/1000; /* hundredths = timeBlock.tv_usec/10000; */
+      hundredths = timeBlock.tv_usec/10000;
       
-      fprintf((*log)->theFile, "%*d:%02d:%02d.%03d", indent+2,   /* .%02d */
+      fprintf((*log)->theFile, "%*d:%02d:%02d.%02d", indent+2,
 	      localTime->tm_hour, localTime->tm_min,
-	      localTime->tm_sec, milliseconds /* hundredths */ );
+	      localTime->tm_sec, hundredths);
 #elif defined(VXWORKS)
       printTimeFromTicks((*log)->theFile, indent);
 #elif defined(_WINSOCK_)
@@ -606,9 +605,8 @@ static void add_comments_to_log_file(void)
   fflush(stdout);
   
   do {
-
-    char *e = fgets(comment_string, COMMENT_LENGTH, stdin);
-    e = e; //removing fgets' compilation warning
+    char *caco = fgets(comment_string, COMMENT_LENGTH, stdin);
+    caco = caco; // para o compilador nao reclamar
 
     last_line_p = (comment_string[0] == '\n'); /* the "newline" character */
     if (last_line_p) {

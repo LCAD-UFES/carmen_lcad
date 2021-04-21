@@ -432,6 +432,11 @@ void carmen_timestamp_index::add(
 	index_is_sorted = false;
 }
 
+void carmen_timestamp_index::remove(int element)
+{
+	index.erase(index.begin() + element);
+}
+
 long carmen_timestamp_index::size()
 {
 	return index.size();
@@ -951,7 +956,7 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 		{
 			// ignore points with incorrect orientation
 			if (test_orientation)
-				if (fabs(carmen_normalize_theta(carmen_index_ordered_by_timestamp[i].yaw - yaw)) > (M_PI / 2.0))
+				if (fabs(carmen_normalize_theta(carmen_index_ordered_by_timestamp[i].yaw - yaw)) > carmen_degrees_to_radians(110.0))
 					continue;
 
 			min_dist = dist;
@@ -1383,7 +1388,7 @@ carmen_rddf_index_save(char *rddf_filename)
 	carmen_write_index(rddf_filename);
 }
 
-carmen_timestamp_index*
+carmen_timestamp_index *
 get_timestamp_index()
 {
 	return &carmen_index_ordered_by_timestamp;

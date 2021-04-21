@@ -9,19 +9,15 @@
  * ABSTRACT: Implementation of the marshalling/unmarshalling functions of
  *           the IPC, using (modified) X_IPC library
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: marshall.c,v $
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/10/17 20:18:16  nickr
- * Upgraded to IPC 3.7.7, added Arm patches from Dirk Haehnel.
- *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.7  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.6  2002/01/03 20:52:13  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -273,8 +269,8 @@ static IPC_RETURN_TYPE _IPC_unmarshall (FORMATTER_PTR formatter,
       byteOrder = GET_M_GLOBAL(byteOrder);
       alignment = GET_M_GLOBAL(alignment);
       UNLOCK_M_MUTEX;
-      if ( (EASY_STRUCTURE_COPY) && (byteOrder == BYTE_ORDER) &&
-	   x_ipc_sameFixedSizeDataBuffer(formatter) ) {
+      if (byteOrder == BYTE_ORDER &&
+	  x_ipc_sameFixedSizeDataBuffer(formatter)) {
 	BCOPY(byteArray, *dataHandle, dataSize);
       } else {
 	x_ipc_decodeData(formatter, (char *)byteArray, 0, (char *)*dataHandle, 

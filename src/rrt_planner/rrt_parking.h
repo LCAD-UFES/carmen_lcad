@@ -16,6 +16,8 @@ public:
 
 	void build_rrt_path_from_robot_pose(Robot_State &robot_pose);
 
+	void reuse_previous_path();
+
 	void build_rrt_path();
 
 	void compute_x_new_alternatives_and_associated_commands_and_times(vector<RRT_Node *> &x_new_alternatives_computed,

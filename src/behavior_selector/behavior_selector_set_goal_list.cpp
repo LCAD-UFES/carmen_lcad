@@ -29,8 +29,7 @@ static int annotations[GOAL_LIST_SIZE];
 static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
 //static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARK;
-static carmen_behavior_selector_mission_t current_mission = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
-static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+static carmen_behavior_selector_task_t current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
 static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
@@ -66,7 +65,7 @@ get_current_algorithm()
 {
 	carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER;
 
-	switch(current_mission)
+	switch(current_task)
 	{
 	case BEHAVIOR_SELECTOR_FOLLOW_ROUTE:
 		current_algorithm = following_lane_planner;
@@ -84,23 +83,20 @@ get_current_algorithm()
 
 
 void
-change_mission(int rddf_annotation)
+change_task(int rddf_annotation)
 {
-	if (current_goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		return;
-
 	switch(rddf_annotation)
 	{
 	case RDDF_ANNOTATION_TYPE_NONE:
-		current_mission = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
+		current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 		break;
 
 	case RDDF_ANNOTATION_TYPE_END_POINT_AREA:
-		current_mission = BEHAVIOR_SELECTOR_PARK;
+		current_task = BEHAVIOR_SELECTOR_PARK;
 		break;
 
 	case RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION:
-		current_mission = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
+		current_task = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
 		carmen_navigator_ackerman_stop();
 		break;
 	}
@@ -301,7 +297,7 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 		carmen_rddf_road_profile_message *rddf, int rddf_pose_index, int goal_index,
 		carmen_ackerman_traj_point_t current_goal, int current_goal_rddf_index,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
-		double timestamp, int &first_pose_change_direction_index)
+		double timestamp, int &next_pose_change_direction_index)
 {
 	int rddf_pose_hit_obstacle = try_avoiding_obstacle(rddf_pose_index, robot_config.obstacle_avoider_obstacles_safe_distance, rddf);
 
@@ -326,9 +322,9 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 	if (behavior_selector_reverse_driving &&
 		(rddf_pose_index < (rddf->number_of_poses - 1)) &&
 		(carmen_sign(rddf->poses[rddf_pose_index].v) != carmen_sign(rddf->poses[rddf_pose_index + 1].v)))
-		first_pose_change_direction_index = rddf_pose_index;
+		next_pose_change_direction_index = rddf_pose_index;
 	else
-		first_pose_change_direction_index = -1;
+		next_pose_change_direction_index = -1;
 
 	return (rddf_pose_hit_obstacle);
 }
@@ -422,46 +418,31 @@ clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int ideal_rddf_pos
 
 
 int
-behavior_selector_set_mission(carmen_behavior_selector_mission_t mission)
+behavior_selector_set_task(carmen_behavior_selector_task_t task)
 {
-	if (mission == current_mission)
+	if (task == current_task)
 		return (0);
 
-	current_mission = mission;
+	current_task = task;
 
 	return (1);
 }
 
 
 void
-behavior_selector_get_full_state(carmen_behavior_selector_mission_t *current_mission_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
-		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out)
+behavior_selector_get_full_state(carmen_behavior_selector_task_t *current_task_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
+		carmen_behavior_selector_algorithm_t *parking_planner_out)
 {
-	*current_mission_out = current_mission;
+	*current_task_out = current_task;
 	*following_lane_planner_out = following_lane_planner;
 	*parking_planner_out = parking_planner;
-	*current_goal_source_out = current_goal_source;
 }
 
 
 int
-behavior_selector_get_mission()
+behavior_selector_get_task()
 {
-	return (current_mission);
-}
-
-
-int
-behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source)
-{
-	if (current_goal_source == goal_source)
-		return (0);
-
-	current_goal_source = goal_source;
-
-	goal_list_size = 0;
-
-	return (1);
+	return (current_task);
 }
 
 
@@ -520,9 +501,9 @@ behavior_selector_get_last_goal_type()
 
 
 void
-behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_mission_t mission)
+behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task)
 {
-	switch(mission)
+	switch(task)
 	{
 	case BEHAVIOR_SELECTOR_FOLLOW_ROUTE:
 		following_lane_planner = algorithm;
@@ -541,7 +522,7 @@ behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, 
 void
 behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t pose)
 {
-	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5 && current_goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5)
 		goal_list_size = 0; //provavelmente o robo foi reposicionado
 
 	robot_pose = pose;
@@ -694,7 +675,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
-	int first_pose_change_direction_index = -1;
+	int next_pose_change_direction_index = -1;
 
 	static carmen_ackerman_traj_point_t previous_first_goal;
 
@@ -733,7 +714,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(moving_object_in_front_index, last_obstacle_index,
 				last_obstacle_free_waypoint_index, distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation,
 				distance_to_last_obstacle_free_waypoint, rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index,
-				current_moving_objects, timestamp, first_pose_change_direction_index);
+				current_moving_objects, timestamp, next_pose_change_direction_index);
 
 		static double moving_obstacle_trasition = 0.0;
 		if (rddf_pose_hit_obstacle)
@@ -920,37 +901,39 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 		}
 		//parking se pose anterior foi em uma direcao, aguarda o carro terminar todo o path dessa direcao antes de mudar de direcao (reh/drive)
 		else if (behavior_selector_reverse_driving &&
-				 ((first_pose_change_direction_index != -1)))//	&&
+				 ((next_pose_change_direction_index != -1)))//	&&
 //				  (DIST2D(rddf->poses[rddf_pose_index], robot_pose) > 1.0)))
 		{
+//			static int count_v = 0;
 			static double keep_goal_time = 0.0;
-			if (first_pose_change_direction_index > 2)
+			if ((next_pose_change_direction_index > 1) || (fabs(robot_pose.v) > 0.05))
 			{
-				if (goal_index == 0)
-					keep_goal_time = 0.0;
+				if ((goal_index == 0) && (fabs(robot_pose.v) > 0.05))
+					keep_goal_time = carmen_get_time();
 
 				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+//				printf("    aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+//				fflush(stdout);
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 			}
 			else
 			{
-				if ((fabs(robot_pose.v) < 0.05) && (keep_goal_time == 0.0))
-					keep_goal_time = carmen_get_time();
+				if ((carmen_get_time() - keep_goal_time) < 3.5)	// Espera parado um pouco
+				{
+					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+//					printf("*** aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+//					fflush(stdout);
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 
-				if (keep_goal_time == 0.0)
-				{
-					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+//					if (fabs(robot_pose.v) > 0.05)	// nao tem que remover este if ???
+//						keep_goal_time = carmen_get_time();
 				}
-				else if ((carmen_get_time() - keep_goal_time) < 3.5)	// Espera parado um pouco
-				{
-					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-				}
+//				else
+//					keep_goal_time = 0.0;
 			}
 		}
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) ||  // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
-				  ((distance_from_car_to_rddf_point >= distance_between_waypoints / 2.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Trocando a constante que divide distance_between_waypoints pode-se alterar a distância entre waypoints em caso de reh
+				  ((distance_from_car_to_rddf_point >= distance_between_waypoints / 1.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Trocando a constante que divide distance_between_waypoints pode-se alterar a distância entre waypoints em caso de reh
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo
 				  !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
 		{
@@ -980,6 +963,9 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 	first_goal = &(goal_list[0]);
 	first_goal_type = goal_type[0];
 	previous_first_goal = goal_list[0];
+
+//	printf("first_goal_type %d\n", first_goal_type);
+//	fflush(stdout);
 
 	return (goal_list);
 }

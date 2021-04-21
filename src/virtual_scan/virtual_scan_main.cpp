@@ -8,6 +8,7 @@
 #include <carmen/moving_objects_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_transforms.h>
+#include <carmen/mapper_interface.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/collision_detection.h>
@@ -476,7 +477,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
 //		virtual_scan_publish_moving_objects(track_set, NULL);
 //		virtual_scan_publish_moving_objects(NULL, virtual_scan_box_model_hypotheses);
-//		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
+		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 

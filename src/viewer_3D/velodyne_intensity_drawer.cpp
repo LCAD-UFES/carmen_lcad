@@ -117,26 +117,28 @@ check_angle_in_range(double angle, double center, double range)
 static void
 normalize_intensity(point_cloud pcloud)
 {
-	double min = 1.0;
+	return;
+
+	double min = 100000.0;
 	double max = 0.0;
 
 	int i;
-	for(i=0; i<pcloud.num_points; i++)
+	for (i = 0; i < pcloud.num_points; i++)
 	{
 		double value = pcloud.point_color[i].x;
 
-		if(value < min)
+		if (value < min)
 			min = value;
 
-		if(value > max)
+		if (value > max)
 			max = value;
 	}
 
-	for(i=0; i<pcloud.num_points; i++)
+	for (i = 0; i < pcloud.num_points; i++)
 	{
 		double norm_value = (pcloud.point_color[i].x - min) / (max - min);
 
-		pcloud.point_color[i].x = 1.0;
+		pcloud.point_color[i].x = norm_value;
 		pcloud.point_color[i].y = norm_value;
 		pcloud.point_color[i].z = norm_value;
 	}

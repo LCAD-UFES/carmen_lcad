@@ -9,7 +9,7 @@ extern char predefined_route[2048];
 extern int predefined_route_code;
 extern std::vector <carmen_annotation_t> place_of_interest_list;
 extern std::vector <carmen_annotation_t> predefined_route_list;
-extern int use_route_planner_in_graph_mode;
+//extern int use_route_planner_in_graph_mode;
 extern int publish_map_view;
 extern double publish_map_view_interval;
 
@@ -357,7 +357,8 @@ namespace View
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-			carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param,
+			carmen_robot_config_t *robot_conf_param, carmen_semi_trailer_config_t *semi_trailer_conf_param,
+			carmen_polygon_config_t *robot_poly_config_param, carmen_polygon_config_t *semi_trailer_poly_config_param,
 			carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param)
 	{
 		GdkGLConfig *glconfig;
@@ -630,7 +631,9 @@ namespace View
 		globalpos = msg;
 
 		robot_config = robot_conf_param;
-		poly_config	 = poly_config_param;
+		semi_trailer_config = semi_trailer_conf_param;
+		robot_poly_config = robot_poly_config_param;
+		semi_trailer_poly_config = semi_trailer_poly_config_param;
 		nav_config	 = nav_conf_param;
 
 		cursor_pos.map = NULL;
@@ -821,10 +824,16 @@ namespace View
 
 			if (route_planner_route)
 			{
-				sprintf(buffer, "Route Planner State: %s", print_route_planner_feedback(route_planner_route->route_planner_feedback));
+				sprintf(buffer, "Route Planner State: %s", print_route_planner_state(route_planner_route->route_planner_state));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
-				sprintf(buffer, "Offroad Planner Request: %s", print_route_planner_request(route_planner_route->offroad_planner_request));
+				sprintf(buffer, "Offroad Planner Request: %s", print_offroad_planner_request(route_planner_route->offroad_planner_request));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest), buffer);
+				if (route_planner_route->route_planner_state == IDLE)
+				{
+					offroad_planner_plan = NULL;
+					sprintf(buffer, "Offroad Planner State: NO_REQUEST");
+					gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
+				}
 			}
 
 			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
@@ -1315,16 +1324,6 @@ namespace View
 		return code;
 	}
 
-//	int
-//	GtkGui::get_goal_source_code(char* goal_source_name)
-//	{
-//		if (strcmp(goal_source_name, "User Goal") == 0)
-//			return 0;
-//		else if(strcmp(goal_source_name, "Rddf Goal") == 0)
-//			return 1;
-//
-//		return -1;
-//	}
 
 	void GtkGui::get_navigator_map()
 	{
@@ -1455,13 +1454,13 @@ namespace View
 
 
 	int
-	GtkGui::get_mission_code(char *mission_name)
+	GtkGui::get_task_code(char *task_name)
 	{
-		if (strcmp(mission_name, "Follow Lane") == 0)
+		if (strcmp(task_name, "Follow Lane") == 0)
 			return 0;
-		else if(strcmp(mission_name, "Park") == 0)
+		else if(strcmp(task_name, "Park") == 0)
 			return 1;
-		else if(strcmp(mission_name, "Human Intervention") == 0)
+		else if(strcmp(task_name, "Human Intervention") == 0)
 			return 2;
 
 		return -1;
@@ -1471,24 +1470,20 @@ namespace View
 	GtkGui::navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message *msg)
 	{
 		this->behavior_selector_active = 1;
-		this->goal_source = msg->goal_source;
 
-		if((int) msg->following_lane_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboFollowRoute)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboFollowRoute, msg->following_lane_algorithm);
+		if ((int) msg->task != get_task_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
+			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->task);
 
-		if((int) msg->parking_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboParking)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboParking, msg->parking_algorithm);
-
-//		if((int)msg->goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
-//			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg->goal_source);
-
-//		if (msg->goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-//			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 1);
-//		else
-//			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 0);
-
-		if((int) msg->mission != get_mission_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboState)))
-			gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboState, msg->mission);
+		if (msg->task == BEHAVIOR_SELECTOR_FOLLOW_ROUTE)
+		{
+			if ((int) msg->algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboFollowRoute)))
+				gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboFollowRoute, msg->algorithm);
+		}
+		else if (msg->task == BEHAVIOR_SELECTOR_PARK)
+		{
+			if ((int) msg->algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox *) this->controls_.comboParking)))
+				gtk_combo_box_set_active((GtkComboBox *) this->controls_.comboParking, msg->algorithm);
+		}
 
 		static char buffer[2048];
 		strcpy(buffer, "Low Level State: ");
@@ -1978,14 +1973,7 @@ namespace View
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
-			if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-			{
-				add_goal_to_internal_list(goal_temp);
-			}
-			else
-			{
-				carmen_behavior_selector_add_goal(goal_temp.pose);
-			}
+			carmen_behavior_selector_add_goal(goal_temp.pose);
 
 			update_local_map = 1;
 
@@ -2328,19 +2316,19 @@ namespace View
 	int
 	GtkGui::received_robot_pose(void)
 	{
-		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		{
-			if ((queuePoints != NULL) && (queuePoints->begin != NULL) && (GTK_TOGGLE_BUTTON(controls_.buttonGo)->active))
-			{
-				pointers *reached = queuePoints->curr;
-
-				if ((reached != NULL) && (reached->next != NULL))
-				{
-					if (carmen_distance(&queuePoints->curr->point.pose, &robot.pose) < 0.5) // 0.5 m // @@@ Alberto: Isso deveria ser controlado pelo navigator, nao pela interface
-						update_point(reached);
-				}
-			}
-		}
+//		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//		{
+//			if ((queuePoints != NULL) && (queuePoints->begin != NULL) && (GTK_TOGGLE_BUTTON(controls_.buttonGo)->active))
+//			{
+//				pointers *reached = queuePoints->curr;
+//
+//				if ((reached != NULL) && (reached->next != NULL))
+//				{
+//					if (carmen_distance(&queuePoints->curr->point.pose, &robot.pose) < 0.5) // 0.5 m // @@@ Alberto: Isso deveria ser controlado pelo navigator, nao pela interface
+//						update_point(reached);
+//				}
+//			}
+//		}
 
 		return (robot.map != NULL);
 	}
@@ -2491,10 +2479,10 @@ namespace View
 	GtkGui::draw_robot(GtkMapViewer *the_map_view)
 	{
 		if (!nav_panel_config->show_particles && !nav_panel_config->show_gaussians)
-			draw_robot_shape(the_map_view, &robot, TRUE, &robot_colour);
+			draw_robot_shape(the_map_view, &robot, TRUE, &robot_colour, true);
 
 		if (!nav_panel_config->show_gaussians)
-			draw_robot_shape(the_map_view, &robot, FALSE, &carmen_black);
+			draw_robot_shape(the_map_view, &robot, FALSE, &carmen_black, true);
 
 		draw_orientation_mark(the_map_view, &robot);
 	}
@@ -2526,7 +2514,7 @@ namespace View
 	GtkGui::draw_goal_list(GtkMapViewer	*the_map_view,
 			carmen_world_point_t goal)
 	{
-		carmen_world_point_t new_goal;
+//		carmen_world_point_t new_goal;
 		int i;
 
 		//draw current navigator goal
@@ -2546,43 +2534,43 @@ namespace View
 		}
 
 		//draw goal list set by the interface
-		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		{
-			if ((queuePoints != NULL) && (queuePoints->begin != NULL))
-			{
-				pointers *lista;
-
-				lista = queuePoints->begin;
-
-				if (lista->next == NULL)
-				{
-					new_goal = goal;
-					new_goal.pose.x		= lista->point.pose.x;
-					new_goal.pose.y		= lista->point.pose.y;
-					new_goal.pose.theta = lista->point.pose.theta;
-
-					draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
-					draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
-					draw_orientation_mark(the_map_view, &new_goal);
-				}
-				else
-				{
-					while (lista != NULL)
-					{
-						new_goal = goal;
-						new_goal.pose.x		= lista->point.pose.x;
-						new_goal.pose.y		= lista->point.pose.y;
-						new_goal.pose.theta = lista->point.pose.theta;
-
-						draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
-						draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
-						draw_orientation_mark(the_map_view, &new_goal);
-
-						lista = lista->next;
-					}
-				}
-			}
-		}
+//		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//		{
+//			if ((queuePoints != NULL) && (queuePoints->begin != NULL))
+//			{
+//				pointers *lista;
+//
+//				lista = queuePoints->begin;
+//
+//				if (lista->next == NULL)
+//				{
+//					new_goal = goal;
+//					new_goal.pose.x		= lista->point.pose.x;
+//					new_goal.pose.y		= lista->point.pose.y;
+//					new_goal.pose.theta = lista->point.pose.theta;
+//
+//					draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
+//					draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
+//					draw_orientation_mark(the_map_view, &new_goal);
+//				}
+//				else
+//				{
+//					while (lista != NULL)
+//					{
+//						new_goal = goal;
+//						new_goal.pose.x		= lista->point.pose.x;
+//						new_goal.pose.y		= lista->point.pose.y;
+//						new_goal.pose.theta = lista->point.pose.theta;
+//
+//						draw_robot_shape(the_map_view, &new_goal, TRUE, &goal_colour);
+//						draw_robot_shape(the_map_view, &new_goal, FALSE, &carmen_black);
+//						draw_orientation_mark(the_map_view, &new_goal);
+//
+//						lista = lista->next;
+//					}
+//				}
+//			}
+//		}
 
 		//draw navigator goal list
 		for (i = 0; i < goal_list_size; i++)
@@ -2631,8 +2619,8 @@ namespace View
 		if (!nav_panel_config->show_true_pos || (simulator_trueposition.map == NULL))
 			return;
 
-		draw_robot_shape(the_map_view, &simulator_trueposition, TRUE, &carmen_blue);
-		draw_robot_shape(the_map_view, &simulator_trueposition, FALSE, &carmen_black);
+		draw_robot_shape(the_map_view, &simulator_trueposition, TRUE, &carmen_blue, true);
+		draw_robot_shape(the_map_view, &simulator_trueposition, FALSE, &carmen_black, true);
 
 		draw_orientation_mark(the_map_view, &simulator_trueposition);
 	}
@@ -2864,7 +2852,7 @@ namespace View
 
 		for (int i = 0; i < rddf_annotation_msg.num_annotations; i++)
 		{
-			double displacement = poly_config->displacement;//car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
+			double displacement = robot_poly_config->displacement;//car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
 			world_point.pose.theta = rddf_annotation_msg.annotations[i].annotation_orientation;
 			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x + displacement * cos(world_point.pose.theta);
 			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y + displacement * sin(world_point.pose.theta);
@@ -3068,7 +3056,16 @@ namespace View
 		if (!robot_config->rectangular)
 			draw_differential_shape(the_map_view, location, filled, colour);
 		else
-			draw_ackerman_shape(the_map_view, location, filled, colour);
+			draw_ackerman_shape(the_map_view, location, filled, colour, false);
+	}
+
+	void
+	GtkGui::draw_robot_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour, bool draw_trailer)
+	{
+		if (!robot_config->rectangular)
+			draw_differential_shape(the_map_view, location, filled, colour);
+		else
+			draw_ackerman_shape(the_map_view, location, filled, colour, draw_trailer);
 	}
 
 	void
@@ -3127,29 +3124,12 @@ namespace View
 	}
 
 	void
-	GtkGui::draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour)
+	GtkGui::draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour, bool draw_trailer)
 	{
-//		double width2, length, dist_rear_car_rear_wheels;
-//
-//		dist_rear_car_rear_wheels = car_config->distance_between_rear_car_and_rear_wheels;
-//		width2 = robot_config->width / 2;
-//		length = robot_config->length;
-//
-//		wp[0].pose.x = x_coord(-dist_rear_car_rear_wheels, width2, location);
-//		wp[0].pose.y = y_coord(-dist_rear_car_rear_wheels, width2, location);
-//		wp[1].pose.x = x_coord(-dist_rear_car_rear_wheels, -width2, location);
-//		wp[1].pose.y = y_coord(-dist_rear_car_rear_wheels, -width2, location);
-//		wp[2].pose.x = x_coord(length - dist_rear_car_rear_wheels, -width2, location);
-//		wp[2].pose.y = y_coord(length - dist_rear_car_rear_wheels, -width2, location);
-//		wp[3].pose.x = x_coord(length - dist_rear_car_rear_wheels, width2, location);
-//		wp[3].pose.y = y_coord(length - dist_rear_car_rear_wheels, width2, location);
-//
-//		wp[0].map = wp[1].map = wp[2].map  = location->map;
-
 		if (nav_panel_config->show_collision_range)
 		{
 			carmen_collision_config_t *collision_config = carmen_get_global_collision_config();
-			for (int i=0; i < collision_config->n_markers; i++)
+			for (int i = 0; i < collision_config->n_markers; i++)
 			{
 				carmen_world_point_t center;
 				center.pose.x = x_coord(collision_config->markers[i].x, collision_config->markers[i].y, location);
@@ -3160,15 +3140,46 @@ namespace View
 		}
 		else
 		{
-			carmen_world_point_t wp[poly_config->n_points];
-			for (int i=0; i < poly_config->n_points; i++)
+			carmen_world_point_t wp[robot_poly_config->n_points];
+			for (int i = 0; i < robot_poly_config->n_points; i++)
 			{
-				wp[i].pose.x = x_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
-				wp[i].pose.y = y_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
+				wp[i].pose.x = x_coord(robot_poly_config->points[2*i], robot_poly_config->points[2*i+1], location);
+				wp[i].pose.y = y_coord(robot_poly_config->points[2*i], robot_poly_config->points[2*i+1], location);
 				wp[i].map = location->map;
 			}
 
-			carmen_map_graphics_draw_polygon(the_map_view, colour, wp, poly_config->n_points, filled);
+			carmen_map_graphics_draw_polygon(the_map_view, colour, wp, robot_poly_config->n_points, filled);
+
+			if (draw_trailer && globalpos->semi_trailer_engaged)
+			{
+				double semi_trailer_M = semi_trailer_config->M;
+				double semi_trailer_d = semi_trailer_config->d;
+				double beta = globalpos->beta;
+				carmen_world_point_t wp[semi_trailer_poly_config->n_points];
+				for (int i = 0; i < semi_trailer_poly_config->n_points; i++)
+				{
+					double trailer_x = semi_trailer_poly_config->points[2 * i] * cos(-beta) - semi_trailer_poly_config->points[2 * i + 1] * sin(-beta) - semi_trailer_d * cos(beta) - semi_trailer_M;
+					double trailer_y = semi_trailer_poly_config->points[2 * i] * sin(-beta) + semi_trailer_poly_config->points[2 * i + 1] * cos(-beta) + semi_trailer_d * sin(beta);
+					wp[i].pose.x = x_coord(trailer_x, trailer_y, location);
+					wp[i].pose.y = y_coord(trailer_x, trailer_y, location);
+					wp[i].map = location->map;
+				}
+
+				carmen_map_graphics_draw_polygon(the_map_view, colour, wp, semi_trailer_poly_config->n_points, filled);
+
+				carmen_world_point_t hitching_point;
+				hitching_point.pose.x = x_coord(-semi_trailer_M, 0.0, location);
+				hitching_point.pose.y = y_coord(-semi_trailer_M, 0.0, location);
+				hitching_point.map = location->map;
+				GdkColor color = carmen_graphics_add_color_rgb(255, 0, 0);
+				carmen_map_graphics_draw_circle(the_map_view, &color, filled, &hitching_point, 0.1);
+
+				carmen_world_point_t semi_trailer_reference;
+				semi_trailer_reference.pose.x = x_coord(-semi_trailer_d * cos(beta) - semi_trailer_M, semi_trailer_d * sin(beta), location);
+				semi_trailer_reference.pose.y = y_coord(-semi_trailer_d * cos(beta) - semi_trailer_M, semi_trailer_d * sin(beta), location);
+				semi_trailer_reference.map = location->map;
+				carmen_map_graphics_draw_line(the_map_view, colour, &semi_trailer_reference, &hitching_point);
+			}
 		}
 	}
 
@@ -3241,38 +3252,38 @@ namespace View
 		gdk_window_set_cursor(this->controls_.map_view->image_widget->window, cursor);
 	}
 
-	void
-	GtkGui::execute_decrement_point()
-	{
-		if ((queuePoints != NULL) && (queuePoints->begin != NULL))
-		{
-			pointers *item	  = NULL;
-			pointers *itemAux = NULL;
-
-			item = queuePoints->begin;
-
-			while (item->next != NULL)
-			{
-				itemAux = item;
-				item	= item->next;
-			}
-
-			if (itemAux == NULL)
-			{
-//				navigator_stop_moving();
-				queuePoints->begin = NULL;
-				queuePoints->curr  = NULL;
-				queuePoints->end   = NULL;
-			}
-			else
-			{
-				queuePoints->end = itemAux;
-				queuePoints->end->next = NULL;
-			}
-
-			free(item);
-		}
-	}
+//	void
+//	GtkGui::execute_decrement_point()
+//	{
+//		if ((queuePoints != NULL) && (queuePoints->begin != NULL))
+//		{
+//			pointers *item	  = NULL;
+//			pointers *itemAux = NULL;
+//
+//			item = queuePoints->begin;
+//
+//			while (item->next != NULL)
+//			{
+//				itemAux = item;
+//				item	= item->next;
+//			}
+//
+//			if (itemAux == NULL)
+//			{
+////				navigator_stop_moving();
+//				queuePoints->begin = NULL;
+//				queuePoints->curr  = NULL;
+//				queuePoints->end   = NULL;
+//			}
+//			else
+//			{
+//				queuePoints->end = itemAux;
+//				queuePoints->end->next = NULL;
+//			}
+//
+//			free(item);
+//		}
+//	}
 
 	void
 	GtkGui::world_point_to_global_world_point(carmen_world_point_t *world_point)

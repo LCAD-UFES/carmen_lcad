@@ -10,23 +10,22 @@
  *
  * ABSTRACT:
  *
- * $Source: /cvsroot/carmen/carmen/src/ipc/libc.h,v $ 
- * $Revision: 1.2 $
- * $Date: 2006/01/15 21:22:33 $
- * $Author: nickr $
+ * $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/src/libc.h,v $ 
+ * $Revision: 2.13 $
+ * $Date: 2009/01/12 15:54:56 $
+ * $Author: reids $
+ *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
  *
  * REVISION HISTORY
  * $Log: libc.h,v $
- * Revision 1.2  2006/01/15 21:22:33  nickr
- * Added support for Mac
+ * Revision 2.13  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.12  2005/12/30 17:01:44  reids
+ * Support for Mac OSX
  *
  * Revision 2.11  2003/04/14 15:31:37  reids
  * Fixed bug in Cygwin version (wrong Endian);

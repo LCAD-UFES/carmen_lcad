@@ -24,6 +24,7 @@ carmen_pose_3D_t camera_pose;
 void mouseFunc(int type, int button, int x, int y);
 void keyPress(int code);
 void keyRelease(int code);
+void resizeFunc(int width, int height);
 
 static void xsens_matrix_message_handler(void) 
 { 	
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
 
 	while(showWindow(gl_window))
 	{
-		if(!processWindow(gl_window, mouseFunc, keyPress, keyRelease))
+		if(!processWindow(gl_window, mouseFunc, keyPress, keyRelease, resizeFunc))
 		{
 			break;
 		}
@@ -139,7 +140,7 @@ int main(int argc, char** argv)
 		glRotatef(car_orientation.pitch, 0.0f, 1.0f, 0.0f);
 		glRotatef(car_orientation.roll, 1.0f, 0.0f, 0.0f);
 
-		draw_car(car_draw);
+		draw_car(car_draw, 0.0, 0);
 	}                                                                                 
 	
 	carmen_ipc_disconnect();  
@@ -221,5 +222,12 @@ void keyPress(int code)
 void keyRelease(int code)
 {
 	code = code; // just to make gcc happy
+}
+
+void
+resizeFunc(int width, int height)			// compatibilidade com callback do viewer_3D
+{
+	width = width; // just to make gcc happy
+	height = height;
 }
 

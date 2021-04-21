@@ -2,38 +2,17 @@
 #define DBSCAN_H
 
 #include <vector>
+#include <carmen/velodyne_camera_calibration.h>
 
 using namespace std;
 
-namespace dbscan
-{
+vector<image_cartesian>
+get_biggest_cluster(vector<vector<image_cartesian>> &clusters);
 
-struct Point {
-	double x;
-	double y;
-};
+vector<vector<image_cartesian>>
+dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian> &points);
 
-typedef std::vector<Point> Cluster;
-
-typedef std::vector<Cluster> Clusters;
-
-/**
- * @brief Split a collection of points into clusters by distance.
- *
- * If a point has at least `density` neighbors with a squared distance no
- * larger than `d2`, then it will either be included on an existing cluster or
- * become the seed for a new one, depending on what is more appropriate. If it
- * doesn't make the density requirement, it may still be added to a cluster if
- * it's close enough to a point already assigned to a cluster (i.e. if its
- * squared distance to it is less than `d2`).
- */
-Clusters DBSCAN(double d2, std::size_t density, const Cluster &points);
-
-} // namespace dbscan
-
-
-vector<vector<carmen_vector_3D_t>>
-dbscan_compute_clusters(double max_distance, int density, vector<carmen_vector_3D_t> &points);
-
+vector<vector<image_cartesian>>
+filter_object_points_using_dbscan(vector<vector<image_cartesian>> &points_lists);
 
 #endif

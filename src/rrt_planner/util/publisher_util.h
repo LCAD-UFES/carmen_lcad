@@ -20,7 +20,7 @@ using namespace std;
 class Publisher_Util
 {
 public:
-	static void publish_plan_tree_message(Tree &t, const vector<RRT_Node *> &reaches_goal_nodes);
+	static void publish_plan_tree_message(Tree &t, const vector<RRT_Node *> reaches_goal_nodes);
 
 	static void publish_navigator_ackerman_plan_message(list<RRT_Edge> &path);
 
@@ -49,6 +49,7 @@ private:
 	static carmen_navigator_ackerman_plan_message	get_path(list<RRT_Edge> &path);
 	static carmen_navigator_ackerman_plan_message	get_path(list<RRT_Path_Edge> &path);
 	static carmen_rrt_planner_tree_message *get_tree_message(Tree &t);
+	static int get_path_or_old_path(const vector<RRT_Node *> reaches_goal_nodes, carmen_navigator_ackerman_plan_tree_message &plan_tree_msg);
 };
 
 

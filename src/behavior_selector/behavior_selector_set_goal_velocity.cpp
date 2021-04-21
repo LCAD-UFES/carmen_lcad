@@ -832,8 +832,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 
 	previous_v = goal->v; //Limita a velocidade quando o offroad eh acionado, tanto para frente quanto para reh
 	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
-	 	 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
-	 	(behavior_selector_get_mission() == BEHAVIOR_SELECTOR_PARK))
+	 	 (road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN)) ||
+	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK))
 	 	goal->v = (reversing_driving == 1)? -parking_speed_limit : parking_speed_limit;
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;

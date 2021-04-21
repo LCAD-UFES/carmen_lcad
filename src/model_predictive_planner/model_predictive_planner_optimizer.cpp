@@ -35,8 +35,6 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	if (fabs(target_td.v_i) == 0.0)
-		target_td.v_i = 0.0;
 	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
 	a = (-1)*a;
 	tcp_seed.tt = (target_v - target_td.v_i) / a;
@@ -54,10 +52,13 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		double v = fabs(target_td.v_i);
 		tcp_seed.tt = -(sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
 	}
-	else if (a == 0.0 && target_td.v_i != 0.0)
-		tcp_seed.tt = s/target_td.v_i;
+//	else if (a == 0.0 && target_td.v_i != 0.0)
+//		tcp_seed.tt = s/target_td.v_i;
 
-//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
+	if (tcp_seed.tt > 200.0)
+		tcp_seed.tt = 200.0;
+
+	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -153,11 +154,11 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		{
 			tcp.s = gsl_vector_get(x, 3);
 			double v = params->target_td->v_i;
-			if (tcp.a > 0.0)
+			if (tcp.a > 0.0001)
 			{
 				tcp.tt = (sqrt(2.0 * tcp.a * tcp.s + v * v) - v) / tcp.a;
 			}
-			else if (tcp.a < 0.0)
+			else if (tcp.a < -0.0001)
 			{
 				tcp.tt = -(sqrt(2.0 * tcp.a * tcp.s + v * v) + v) / tcp.a;
 			}
@@ -274,6 +275,8 @@ dist2(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
 carmen_ackerman_path_point_t
 move_to_front_axle(carmen_ackerman_path_point_t pose)
 {
+	return (pose);
+
 	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
 	carmen_ackerman_path_point_t pose_moved = pose;
 	pose_moved.x += L * cos(pose.theta);
@@ -300,7 +303,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
 		{
-			if(GlobalState::reverse_planning)
+			if (GlobalState::reverse_planning)
 				distance = dist(path.at(i),
 								my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
 			else
@@ -323,6 +326,50 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 }
 
 
+vector<carmen_ackerman_path_point_t>
+compute_path_to_lane_distance_evaluation(ObjectiveFunctionParams *my_params, vector<carmen_ackerman_path_point_t> &path)
+{
+//	double distance = 0.0;
+//	double total_distance = 0.0;
+//	double total_points = 0.0;
+
+	int increment;
+	if (use_unity_simulator)
+		increment = 1;
+	else
+		increment = 3;
+
+	vector<carmen_ackerman_path_point_t> modified_path;
+	for (unsigned int i = 0; i < path.size(); i += increment)
+	{
+		if ((i < my_params->path_point_nearest_to_lane.size()) &&
+			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
+		{
+			if (GlobalState::reverse_planning)
+//				distance = dist(path.at(i),
+//								my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
+				modified_path.push_back(path.at(i));
+			else
+//				distance = dist(move_to_front_axle(path.at(i)),
+//								my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
+				modified_path.push_back(move_to_front_axle(path.at(i)));
+//			total_points += 1.0;
+		}
+//		else
+//			distance = 0.0;
+//
+//		total_distance += distance * distance;
+	}
+
+	return (modified_path);
+
+//	if (total_points > 0.0)
+//		return (((total_distance / total_points) > 7.0)? 7.0: total_distance / total_points);
+//	else
+//		return (0.0);
+}
+
+
 void
 compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_ackerman_path_point_t> &path)
 {
@@ -335,7 +382,7 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 //			continue;
 		carmen_ackerman_path_point_t axle;
 
-		if(GlobalState::reverse_planning) //mantem o eixo traseiro
+		if (GlobalState::reverse_planning) //mantem o eixo traseiro
 			axle = path.at(j);
 		else
 			axle = move_to_front_axle(path.at(j));
@@ -1081,7 +1128,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	}
 
 //	printf("lane plan_cost = %lf\n", params.plan_cost);
-	if (params.plan_cost > 1.5)
+	if (params.plan_cost > 5.5)
 	{
 //		printf(">>>>>>>>>>>>>> lane plan_cost > 0.5\n");
 		tcp.valid = false;
@@ -1410,6 +1457,12 @@ limit_tcp_phi(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
 }
 
 
+#include "model/tree.h"
+#include "publisher_util.h"
+
+void
+copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_path_point_t> path);
+
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
@@ -1420,10 +1473,12 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	params.use_lane = use_lane;
 
 	if (GlobalState::reverse_planning)
-		if(!detailed_lane.empty())
+	{
+		if (!detailed_lane.empty())
 			params.detailed_lane = detailed_lane;
 		else
 			params.use_lane = false;
+	}
 	else
 		params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
 
@@ -1462,6 +1517,33 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	if (tcp_complete.tt < 0.0)
 //		printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
 //			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
+
+//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_complete, target_td.v_i, target_td.phi_i, false);
+//
+//	if ((params.detailed_lane.size() > 0) && (path.size() > 0))
+//	{
+//		compute_path_points_nearest_to_lane(&params, path);
+//		vector<carmen_ackerman_path_point_t> modified_path = compute_path_to_lane_distance_evaluation(&params, path);
+//		Tree tree;
+//		tree.num_paths = 2;
+//		tree.num_edges = 0;
+//		tree.p1 = NULL;
+//		tree.p2 = NULL;
+//		tree.paths = (carmen_ackerman_traj_point_t **) malloc(tree.num_paths * sizeof(carmen_ackerman_traj_point_t *));
+//		tree.paths_sizes = (int *) malloc(tree.num_paths * sizeof(int));
+//
+//		move_path_to_current_robot_pose(modified_path, GlobalState::localizer_pose);
+//		tree.paths[0] = (carmen_ackerman_traj_point_t *) malloc(modified_path.size() * sizeof(carmen_ackerman_traj_point_t));
+//		copy_path_to_traj(tree.paths[0], modified_path);
+//		tree.paths_sizes[0] = modified_path.size();
+//
+//		move_path_to_current_robot_pose(params.detailed_lane, GlobalState::localizer_pose);
+//		tree.paths[1] = (carmen_ackerman_traj_point_t *) malloc(params.detailed_lane.size() * sizeof(carmen_ackerman_traj_point_t));
+//		copy_path_to_traj(tree.paths[1], params.detailed_lane);
+//		tree.paths_sizes[1] = params.detailed_lane.size();
+//
+//		Publisher_Util::publish_plan_tree_message(tree);
+//	}
 
 	return (tcp_complete);
 }

@@ -11,16 +11,15 @@
  * 
  * A dispatch include file - needs work.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: dispatch.h,v $
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.3  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.2  2000/07/03 17:03:23  hersh
  * Removed all instances of "tca" in symbols and messages, plus changed
@@ -208,9 +207,9 @@
  * 20-Mar-89 Christopher Fedor, School of Computer Science, CMU
  * created.
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:14 $
- * $Author: tomkol $
+ * $Revision: 2.3 $
+ * $Date: 2009/01/12 15:54:56 $
+ * $Author: reids $
  *
  *****************************************************************************/
 

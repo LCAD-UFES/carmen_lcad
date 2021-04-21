@@ -5,6 +5,7 @@
  *      Author: romulo
  */
 
+//#include <fenv.h>
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
@@ -34,13 +35,9 @@
 Tree tree; //tree rooted on robot
 int g_teacher_mode = 0;
 TrajectoryLookupTable *g_trajectory_lookup_table;
-carmen_behavior_selector_road_profile_message goal_list_message;
+carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
 static int update_lookup_table = 0;
-
-extern double steering_delay;
-extern double steering_delay_queue_size;
-extern vector <steering_delay_t> steering_delay_queue;
 
 int use_unity_simulator = 0;
 
@@ -53,7 +50,7 @@ int use_unity_simulator = 0;
 
 
 void
-publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path, double timestamp)
+publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, double timestamp)
 {
 	int i = 0;
 	rrt_path_message msg;
@@ -188,7 +185,8 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 
-	publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+//	publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+	publish_path_follower_single_motion_command(0.0, phi, timestamp);
 }
 
 
@@ -235,8 +233,8 @@ publish_navigator_ackerman_status_message()
 		msg.goal.x = GlobalState::goal_pose->x;
 		msg.goal.y = GlobalState::goal_pose->y;
 		msg.goal.theta = GlobalState::goal_pose->theta;
-		msg.goal.v = GlobalState::robot_config.max_v;
-		msg.goal.phi = 0.0; // @@@ Alberto: terie que preencher isso...
+		msg.goal.v = (path_goals_and_annotations_message != NULL)? path_goals_and_annotations_message->goal_list->v: GlobalState::robot_config.max_v;
+		msg.goal.phi = 0.0; // @@@ Alberto: teria que preencher isso...
 	}
 	else
 	{
@@ -244,7 +242,7 @@ publish_navigator_ackerman_status_message()
 		msg.goal.y	   = 0.0;
 		msg.goal.x	   = 0.0;
 		msg.goal.v 	   = 0.0;
-		msg.goal.phi = 0.0; // @@@ Alberto: terie que preencher isso...
+		msg.goal.phi = 0.0; // @@@ Alberto: teria que preencher isso...
 	}
 
 	msg.host		= carmen_get_host();
@@ -264,12 +262,9 @@ publish_navigator_ackerman_status_message()
 void
 publish_plan_tree_for_navigator_gui(Tree tree)
 {
-	if ((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
-		(GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET))
-		if (GlobalState::publish_tree)
-			Publisher_Util::publish_plan_tree_message(tree);
+	if (GlobalState::publish_tree)
+		Publisher_Util::publish_plan_tree_message(tree);
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -306,41 +301,46 @@ copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_pat
 vector<carmen_ackerman_path_point_t>
 compute_plan(Tree *tree)
 {
-	if (goal_list_message.number_of_poses == 0)
+	if (!path_goals_and_annotations_message || (path_goals_and_annotations_message->number_of_poses == 0))
 	{
-		printf("Error: trying to compute plan without rddf\n");
-		//		vector<carmen_ackerman_path_point_t> a;
-		//		return a;
+		tree->num_paths = 0;
+		tree->paths = NULL;
+		vector<carmen_ackerman_path_point_t> voidVector;
+
+		return (voidVector);
 	}
 
 	free_tree(tree);
 	vector<vector<carmen_ackerman_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
-			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, &goal_list_message);
+			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, path_goals_and_annotations_message);
 
 	if (path.size() == 0)
 	{
 		tree->num_paths = 0;
 		tree->paths = NULL;
 		vector<carmen_ackerman_path_point_t> voidVector;
-		return(voidVector);
+
+		return (voidVector);
 	}
-
-	tree->num_paths = path.size();
-	tree->paths = (carmen_ackerman_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_ackerman_traj_point_t *));
-	tree->paths_sizes = (int *) malloc(tree->num_paths * sizeof(int));
-
-	for (unsigned int i = 0; i < path.size(); i++)
+	else
 	{
-		tree->paths[i] = (carmen_ackerman_traj_point_t *) malloc(path[i].size() * sizeof(carmen_ackerman_traj_point_t));
-		copy_path_to_traj(tree->paths[i], path[i]);
-		tree->paths_sizes[i] = path[i].size();
+		tree->num_paths = path.size();
+		tree->paths = (carmen_ackerman_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_ackerman_traj_point_t *));
+		tree->paths_sizes = (int *) malloc(tree->num_paths * sizeof(int));
+
+		for (unsigned int i = 0; i < path.size(); i++)
+		{
+			tree->paths[i] = (carmen_ackerman_traj_point_t *) malloc(path[i].size() * sizeof(carmen_ackerman_traj_point_t));
+			copy_path_to_traj(tree->paths[i], path[i]);
+			tree->paths_sizes[i] = path[i].size();
+		}
+
+		if (!GlobalState::last_plan_pose)
+			GlobalState::last_plan_pose = new Pose();
+		*GlobalState::last_plan_pose = *GlobalState::localizer_pose;
+
+		return (path[0]);
 	}
-
-	if (!GlobalState::last_plan_pose)
-		GlobalState::last_plan_pose = new Pose();
-	*GlobalState::last_plan_pose = *GlobalState::localizer_pose;
-
-	return (path[0]);
 }
 
 
@@ -394,61 +394,34 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-add_to_steering_delay_queue(double phi, double timestamp)
-{
-	steering_delay_t phi_command = {phi, timestamp};
-	steering_delay_queue.push_back(phi_command);
-	if (steering_delay_queue.size() > steering_delay_queue_size)
-		steering_delay_queue.erase(steering_delay_queue.begin());
-}
-
-
-void
 build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
 
-	if (GlobalState::goal_pose &&
-		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
-		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
+	if (GlobalState::goal_pose)
 	{
-		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
+		double distance_to_goal = DIST2D_P(GlobalState::goal_pose, GlobalState::localizer_pose);
 		// goal achieved!
-		if (distance_to_goal < 0.5 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
+//		printf("d %lf, max_v %lf, v %lf\n", distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v);
+		if (distance_to_goal < 1.0 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
 		{
-			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
+			if (GlobalState::following_path)
+				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			else
+				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
 		}
 		else
 		{
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
-				add_to_steering_delay_queue(path[0].phi, timestamp);
-
 				path_follower_path = build_path_follower_path(path);
-				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
-				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
-//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
-
-//				FILE *caco = fopen("caco2.txt", "a");
-//				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
-//						path_follower_path.begin()->command.v,
-//						GlobalState::behavior_selector_low_level_state);
-//				fflush(caco);
-//				fclose(caco);
+				publish_model_predictive_planner_rrt_path_message(path_follower_path, timestamp);
+//				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
-			//		else
-				//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			//		{
-			//			if (GlobalState::last_odometry.v == 0.0)
-			//				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
-			//			else
-			//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			//		}
 		}
-//		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
+//		publish_plan_tree_for_navigator_gui(tree);
 	}
 }
 
@@ -456,15 +429,16 @@ build_and_follow_path(double timestamp)
 void
 build_and_follow_path_new(double timestamp)
 {
-	if (GlobalState::goal_pose &&
-		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
-		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
+	if (GlobalState::goal_pose)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
-		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
+		if (distance_to_goal < 0.3 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
 		{
-			publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			if (GlobalState::following_path)
+				publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			else
+				publish_model_predictive_planner_single_motion_command(0.0, 0.0, timestamp);
 		}
 		else
 		{
@@ -473,100 +447,12 @@ build_and_follow_path_new(double timestamp)
 			{
 				publish_model_predictive_planner_motion_commands(path, timestamp);
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
-//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
-			//		else
-			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
-//		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
+//		publish_plan_tree_for_navigator_gui(tree);
 	}
 }
-
-/**
- * @brief      This function create discrete trajectory points for moving objects
- *
- * @param      new_msg             message containing the moving objects
- * @param  prediction_horizon  How many seconds in the future it will predict the trajectories
- * @param  time_interval       Interval of time between two points in the trajectory
- */
-//static void
-//construct_object_trajectories(carmen_moving_objects_point_clouds_message *new_msg, double prediction_horizon = 5, double time_interval = 0.15)
-//{
-//	GlobalState::moving_objects_trajectories.clear();
-//
-//	int num_objects = new_msg->num_point_clouds;
-//	/* Reserve the memory beforehand to optimize construction */
-//	GlobalState::moving_objects_trajectories.reserve(num_objects);
-//	/* Precomputing this to use when moving object to car reference */
-//    //TODO: check if this angle is correct or inverted
-//	double cos_car = cos(-GlobalState::localizer_pose->theta);
-//	double sin_car = sin(-GlobalState::localizer_pose->theta);
-//
-//	#ifdef DEBUG_OBJECTS_PLOT
-//	carmen_ackerman_traj_point_t* all_traj = (carmen_ackerman_traj_point_t*)malloc(num_objects * static_cast<int>(prediction_horizon / time_interval) * sizeof(carmen_ackerman_traj_point_t));
-//	#endif
-//
-//	for(int i = 0; i < num_objects; i++)
-//	{
-//		int num_trajectory_points = static_cast<int>(prediction_horizon / time_interval); //TODO: Checar esse time_interval
-//		carmen_ackerman_traj_point_t *trajectory;
-//		trajectory = (carmen_ackerman_traj_point_t*)malloc(num_trajectory_points * sizeof(carmen_ackerman_traj_point_t));
-//		carmen_test_alloc(trajectory);
-//
-//		/* Now let's calculate the trajectory for the ith object*/
-//		for(int j = 0; j < num_trajectory_points; j++)
-//		{
-//			carmen_ackerman_traj_point_t new_trajectory_point;
-//			/* EXTREMELY SIMPLE MOTION SIMULATION USING SIMPLIFIED ACKERMAN MODEL */
-//			/* X = X_0 + V * Cos(theta)*/
-//			new_trajectory_point.x = new_msg->point_clouds[i].object_pose.x + (time_interval * j) * new_msg->point_clouds[i].linear_velocity * cos(new_msg->point_clouds[i].orientation);
-//			/* Y = Y_0 + V * Sin(theta)*/
-//			new_trajectory_point.y = new_msg->point_clouds[i].object_pose.y + (time_interval * j) * new_msg->point_clouds[i].linear_velocity * sin(new_msg->point_clouds[i].orientation);
-//			/* Moving to car reference*/
-//			if(GlobalState::localizer_pose)
-//            {
-//				new_trajectory_point.x = new_trajectory_point.x - GlobalState::localizer_pose->x;
-//				new_trajectory_point.y = new_trajectory_point.y - GlobalState::localizer_pose->y;
-//
-//				//carmen_rotate_2d(&new_trajectory_point.x,&new_trajectory_point.y, GlobalState::localizer_pose->theta);
-//				double x2 = new_trajectory_point.x;
-//				new_trajectory_point.x = cos_car*(new_trajectory_point.x) - sin_car*(new_trajectory_point.y);
-//  				new_trajectory_point.y = sin_car*x2 + cos_car*(new_trajectory_point.y);
-//            }
-//
-//			/* We suppose the orientation remain constant */
-//			new_trajectory_point.theta = new_msg->point_clouds[i].orientation - GlobalState::localizer_pose->theta;
-//			new_trajectory_point.v = new_msg->point_clouds[i].linear_velocity;
-//
-//            /* We suppose no steering wheel angle, the car continue in the same direction forever */
-//			new_trajectory_point.phi = 0.0;
-//			//new_trajectory_point.time = new_msg->timestamp + j * time_interval;
-//
-//
-//			trajectory[j] = new_trajectory_point;
-//
-//			#ifdef DEBUG_OBJECTS_PLOT
-//			all_traj[i + num_objects*j] = new_trajectory_point;
-//            carmen_rotate_2d(&all_traj[i + num_objects*j].x, &all_traj[i + num_objects*j].y, GlobalState::localizer_pose->theta);
-//            all_traj[i + num_objects*j].x += GlobalState::localizer_pose->x;
-//            all_traj[i + num_objects*j].y += GlobalState::localizer_pose->y;
-//            all_traj[i + num_objects*j].theta += GlobalState::localizer_pose->theta;
-//			#endif
-//
-//		} /* End of trajectory for one object */
-//
-//		GlobalState::moving_objects_trajectories.push_back(trajectory);
-//
-//	} /* End of pass through all objects*/
-//
-//	#ifdef DEBUG_OBJECTS_PLOT
-//		carmen_rddf_publish_road_profile_around_end_point_message(all_traj, num_objects * static_cast<int>(prediction_horizon / time_interval));
-//	#endif
-//
-//}
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -607,22 +493,65 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 
 static void
-navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_message *msg)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
-	// Na mensagem atual não é possível representar um goal nulo. Coordenadas do mundo são grandes.
-	if (msg->x == -1 && msg->y == -1 && msg->theta == 0)
+	path_goals_and_annotations_message = msg;
+
+	Pose goal_pose;
+	double desired_v;
+
+	if ((msg->goal_list_size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
 	{
-		GlobalState::goal_pose = NULL;
+		printf("Empty goal list or localize not received\n");
 		return;
 	}
 
-	Pose goal_pose;
-	goal_pose.x		= msg->x;
-	goal_pose.y		= msg->y;
-	goal_pose.theta = carmen_normalize_theta(msg->theta);
-	GlobalState::set_goal_pose(goal_pose);
+	GlobalState::last_goal = (msg->goal_list_size == 1)? true: false;
 
-	GlobalState::last_goal = true;
+	goal_pose.x = msg->goal_list->x;
+	goal_pose.y = msg->goal_list->y;
+	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
+
+//	printf("@target_v %lf\n", msg->goal_list->v);
+
+	if (GlobalState::reverse_driving)
+	{
+		if (msg->goal_list->v < 0.0)
+		{
+//			if (GlobalState::robot_config.max_v > 0.0)
+//				GlobalState::robot_config.max_v = GlobalState::param_max_vel_reverse;
+
+			desired_v = fmax(msg->goal_list->v, GlobalState::param_max_vel_reverse);
+
+			if (desired_v < GlobalState::robot_config.max_v)
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+			else
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+		}
+		else
+		{
+//			if (GlobalState::robot_config.max_v < 0.0)	// Acaba de pedir inversao da velovidade de negativa para positiva
+//				GlobalState::robot_config.max_v = GlobalState::param_max_vel;
+
+			desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+			if (desired_v > GlobalState::robot_config.max_v)
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+			else
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+		}
+	}
+	else
+	{
+		desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+		if (desired_v > GlobalState::robot_config.max_v)
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+		else
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
+	}
+
+//	printf("*target_v %lf\n", GlobalState::robot_config.max_v);
+
+	GlobalState::set_goal_pose(goal_pose);
 }
 
 
@@ -635,57 +564,9 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 
 
 static void
-behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
-{
-	Pose goal_pose;
-	double desired_v;
-
-	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
-	{
-		printf("Empty goal list or localize not received\n");
-		return;
-	}
-
-	GlobalState::last_goal = (msg->size == 1)? true: false;
-
-	goal_pose.x = msg->goal_list->x;
-	goal_pose.y = msg->goal_list->y;
-	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
-
-	if (GlobalState::reverse_driving && msg->goal_list->v < 0.0)
-	{
-		if (GlobalState::robot_config.max_v > 0.0)
-			GlobalState::robot_config.max_v = GlobalState::param_max_vel_reverse;
-
-		desired_v = fmax(msg->goal_list->v, GlobalState::param_max_vel_reverse);
-
-		if (desired_v < GlobalState::robot_config.max_v)
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
-		else
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
-	}
-	else
-	{
-		if (GlobalState::robot_config.max_v < 0.0)
-			GlobalState::robot_config.max_v = GlobalState::param_max_vel;
-
-		desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
-		if (desired_v < GlobalState::robot_config.max_v)
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
-		else
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
-	}
-
-//	printf("v %lf\n", GlobalState::robot_config.max_v);
-
-	GlobalState::set_goal_pose(goal_pose);
-}
-
-
-static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
-	GlobalState::behavior_selector_mission = msg->mission;
+	GlobalState::behavior_selector_task = msg->task;
 	GlobalState::behavior_selector_low_level_state = msg->low_level_state;
 	GlobalState::current_algorithm = msg->algorithm;
 }
@@ -731,46 +612,6 @@ carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_
 }
 
 
-void
-ford_escape_status_handler(carmen_ford_escape_status_message *msg)
-{
-	//TODO tratar tambem comandos de ultrapassagem (ou talvez tratar no behavior selector)
-	GlobalState::ford_escape_status.g_XGV_turn_signal = msg->g_XGV_turn_signal;
-	//Tratando se o navegador esta em no modo real ou em modo simulacao
-	GlobalState::ford_escape_online = true;
-}
-
-
-void
-lane_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
-{
-
-#ifdef save_rddf_to_file
-	int static last_number_of_poses = 0;
-
-	if (message->number_of_poses != last_number_of_poses)
-	{
-		FILE *rddf_file = fopen("rddf_reh.txt", "a");
-		for (int i = 0; i < message->number_of_poses; i++)
-		{
-			fprintf(rddf_file, "%lf %lf %lf %lf %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i].theta, message->poses[i].v, message->poses[i].phi, carmen_get_time());
-		}
-		fprintf(rddf_file, "------------------------------------------------------\n");
-		fclose(rddf_file);
-
-		last_number_of_poses = message->number_of_poses;
-	}
-	//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
-	//
-	//	for (int i = 0; i < message->number_of_poses; i++)
-	//	{
-	//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
-	//		getchar();
-	//	}
-#endif
-}
-
-
 static void
 navigator_ackerman_go_message_handler()
 {
@@ -783,6 +624,65 @@ navigator_ackerman_stop_message_handler()
 {
 	stop();
 }
+
+
+void
+ford_escape_status_handler(carmen_ford_escape_status_message *msg)
+{
+	//TODO tratar tambem comandos de ultrapassagem (ou talvez tratar no behavior selector)
+	GlobalState::ford_escape_status.g_XGV_turn_signal = msg->g_XGV_turn_signal;
+	//Tratando se o navegador esta em no modo real ou em modo simulacao
+	GlobalState::ford_escape_online = true;
+}
+
+
+//void
+//lane_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
+//{
+//#ifdef save_rddf_to_file
+//	int static last_number_of_poses = 0;
+//
+//	if (message->number_of_poses != last_number_of_poses)
+//	{
+//		FILE *rddf_file = fopen("rddf_reh.txt", "a");
+//		for (int i = 0; i < message->number_of_poses; i++)
+//		{
+//			fprintf(rddf_file, "%lf %lf %lf %lf %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i].theta, message->poses[i].v, message->poses[i].phi, carmen_get_time());
+//		}
+//		fprintf(rddf_file, "------------------------------------------------------\n");
+//		fclose(rddf_file);
+//
+//		last_number_of_poses = message->number_of_poses;
+//	}
+//	//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+//	//
+//	//	for (int i = 0; i < message->number_of_poses; i++)
+//	//	{
+//	//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+//	//		getchar();
+//	//	}
+//#endif
+//}
+
+
+//void
+//navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_message *msg)
+//{
+//	// Na mensagem atual não é possível representar um goal nulo. Coordenadas do mundo são grandes.
+//	if (msg->x == -1 && msg->y == -1 && msg->theta == 0)
+//	{
+//		GlobalState::goal_pose = NULL;
+//		return;
+//	}
+//
+//	Pose goal_pose;
+//	goal_pose.x		= msg->x;
+//	goal_pose.y		= msg->y;
+//	goal_pose.theta = carmen_normalize_theta(msg->theta);
+//	GlobalState::set_goal_pose(goal_pose);
+//
+//	GlobalState::last_goal = true;
+//}
 
 
 static void
@@ -820,8 +720,6 @@ signal_handler(int sig)
 void
 register_handlers()
 {
-	signal(SIGINT, signal_handler);
-
 	if (!GlobalState::use_truepos)
 	{
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -832,10 +730,7 @@ register_handlers()
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-			&goal_list_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -853,12 +748,12 @@ register_handlers()
 			(carmen_handler_t)navigator_ackerman_stop_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_subscribe_message(
-			(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
-			(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_FMT,
-			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
-			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_subscribe_message(
+//			(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
+//			(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_FMT,
+//			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
+//			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
+//			CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_moving_objects_point_clouds_subscribe_message(NULL,
 //			(carmen_handler_t) carmen_moving_objects_point_clouds_message_handler,
@@ -950,13 +845,15 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-	carmen_ipc_initialize(argc, argv);
+//    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+
+    carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	memset(&goal_list_message, 0, sizeof(goal_list_message));
-
 	register_handlers();
+	signal(SIGINT, signal_handler);
+//	signal(SIGFPE, signal_handler);
 
 	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
 	memset((void *) &tree, 0, sizeof(Tree));

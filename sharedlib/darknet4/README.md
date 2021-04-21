@@ -1,3 +1,95 @@
+# CARMEN DARKNET INTERFACE
+
+## How to use
+
+### Include these lines in your Makefile:
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet4
+LFLAGS += -ldarknet4
+
+TARGETS += darknet 
+
+darknet:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4
+
+### In your implementation file:
+
+// //YOLO global variables
+char **classes_names;
+void *network_struct;
+
+/* run YOLO with track_id*/
+predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, 0.45);
+
+void
+initializer_YOLO()
+{
+	char* carmen_home = getenv("CARMEN_HOME");
+	char classes_names_path[1024];
+	char yolo_cfg_path[1024];
+	char yolo_weights_path[1024];
+
+	sprintf(classes_names_path, "%s/sharedlib/darknet4/data/coco.names", carmen_home);
+	sprintf(yolo_cfg_path, "%s/sharedlib/darknet4/cfg/yolov4.cfg", carmen_home);
+	sprintf(yolo_weights_path, "%s/sharedlib/darknet4/yolov4.weights", carmen_home);
+
+	classes_names = get_classes_names(classes_names_path);
+	network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 0);
+}
+
+## What was modified in Darknet4 Implementation:
+
+### Created bbox.h in /
+
+struct bbox_t {
+    unsigned int x, y, w, h;       // (x,y) - top-left corner, (w, h) - width & height of bounded box
+    float prob;                    // confidence - probability that the object was found correctly
+    unsigned int obj_id;           // class of object - from range [0, classes-1]
+    unsigned int track_id;         // tracking id for video (0 - untracked, 1 - inf - tracked object)
+    unsigned int frames_counter;   // counter of frames on which the object was detected
+    float x_3d, y_3d, z_3d;        // center of object (in Meters) if ZED 3D Camera is used
+};
+
+Included #include "bbox.h" in yolo_v2_class.hpp and carmen_darknet_interface.hpp
+
+### Carmen Darknet Interface HPP:
+
+char **
+get_classes_names(char *classes_names_file);
+
+void*
+load_yolo_network(char *cfg, char *weights, int clear);
+
+std::vector<bbox_t>
+run_YOLO(unsigned char *data, int w, int h, float threshold);
+
+### Carmen Darknet Interface using Yolo V2 Class "Detector" object:
+
+std::vector<bbox_t>
+run_YOLO(unsigned char *data, int w, int h, float threshold)
+{
+	image im = convert_image_msg_to_darknet_image(w, h, data);
+	image_t img;
+    img.c = im.c;
+    img.data = im.data;
+    img.h = im.h;
+    img.w = im.w;
+	
+	std::vector<bbox_t> bbox_vector = detector->detect(img, threshold);
+
+	free_image(im);
+	
+	return (bbox_vector);
+}
+
+
+### Yolo V2 Class detect function included in line 340:
+
+bbox_vec = tracking_id(bbox_vec); // For tracking objects.
+
+# Original README:
+
 # Yolo v4, v3 and v2 for Windows and Linux
 
 ## (neural networks for object detection)

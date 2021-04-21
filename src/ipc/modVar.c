@@ -13,16 +13,27 @@
  * 
  * Provides a system global variables.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: modVar.c,v $
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
+ * Revision 2.5  2011/04/21 18:17:49  reids
+ * IPC 3.9.0:
+ * Added NoListen options to IPC_connect, to indicate that module will not
+ *   periodically listen for messages.
+ * Bug where having a message id of 0 or 1 interfaces with direct message
+ *   functionality.
+ * Extended functionality of "ping" to handle race condition with concurrent
+ *   listens.
+ * Fixed bug in how IPC_listenWait was implemented (did not necessarily
+ *   respect the timeout).
+ * Fixed conditions under which module listens for handler updates.
  *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.4  2009/01/12 15:54:57  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.3  2002/01/03 20:52:14  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -175,9 +186,9 @@
  * alignment figured out automatically.
  *
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:15 $
- * $Author: tomkol $
+ * $Revision: 2.5 $
+ * $Date: 2011/04/21 18:17:49 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -501,10 +512,7 @@ void x_ipc_modVarInitialize(void)
   x_ipcGetVar(X_IPC_BROADCAST_MSG_VAR, GET_C_GLOBAL(broadcastMsgs));
 
   /* Only want to tap if the module is also listening for other messages. */
-  if (((GET_C_GLOBAL(willListen) > 0) ||
-       ((GET_C_GLOBAL(willListen) == -1) &&
-	(x_ipc_hashTableCount(GET_C_GLOBAL(handlerTable)) > 0))) &&
-      (GET_C_GLOBAL(directDefault))) {
+  if (GET_C_GLOBAL(willListen) && GET_C_GLOBAL(directDefault)) {
     x_ipcWatchVar(X_IPC_TERMINAL_LOG_VAR,X_IPC_LOG_VAR_FORMAT, x_ipc_terminalLogVarHnd);
     x_ipcWatchVar(X_IPC_FILE_LOG_VAR, X_IPC_LOG_VAR_FORMAT, x_ipc_fileLogVarHnd);
     x_ipcWatchVar(X_IPC_TAPPED_MSG_VAR,X_IPC_STR_LIST_FORMAT, x_ipc_tappedMsgVarHnd);
@@ -516,10 +524,8 @@ void x_ipc_modVarInitialize(void)
 			    GET_M_GLOBAL(modNameGlobal), 1);
   }
 
-  /* Only want to tap is the module is also listening for other messages. */
-  if ((GET_C_GLOBAL(willListen) > 0) ||
-      ((GET_C_GLOBAL(willListen) == -1) &&
-       (x_ipc_hashTableCount(GET_C_GLOBAL(handlerTable)) > 0))) {
+  /* Only want to tap if the module is also listening for other messages. */
+  if (GET_C_GLOBAL(willListen)) {
     x_ipcWatchVar(X_IPC_BROADCAST_MSG_VAR,X_IPC_STR_LIST_FORMAT, x_ipc_broadcastMsgVarHnd);
     x_ipcLimitPendingMessages(X_IPC_BROADCAST_MSG_VAR, 
 			    GET_M_GLOBAL(modNameGlobal), 1);

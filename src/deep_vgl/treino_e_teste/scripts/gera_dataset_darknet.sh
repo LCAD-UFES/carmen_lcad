@@ -6,8 +6,11 @@ if [ "$#" -ne 2 ]; then
 fi
 
 linhas=`cat $1| grep -v label | sed 's/\ /_/g'`
+total=`cat $1| grep -v label| wc -l`
 
+feitos=0
 for i in $linhas; do
+    feitos=$(( feitos + 1 ))
     declare -a lista
     lista=(`echo $i| sed 's/_/\ /g' | awk '{ print $1" "$2" "$NF}'`)
     arquivo=`echo ${lista[0]}`
@@ -20,7 +23,7 @@ for i in $linhas; do
     
     # apenas left
     ln -sf $arquivo_L $destino/$indice"_B"$rotulo"E.png"
-    
+    echo "$feitos / $total"
     # imagem left
     #ln -sf $arquivo_L $destino/$indice"L_B"$rotulo"E.png"
     

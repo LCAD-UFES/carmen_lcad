@@ -9,7 +9,7 @@ LINK = g++
 
 CXXFLAGS += -std=c++11
 
-CFLAGS += -fopenmp
+CFLAGS += # -fopenmp
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
@@ -32,8 +32,8 @@ LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lma
 LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 LFLAGS += -luser_preferences
 
-CFLAGS += -Wno-unknown-pragmas
-CXXFLAGS += -Wno-unknown-pragmas
+#CFLAGS += -Wno-unknown-pragmas
+#CXXFLAGS += -Wno-unknown-pragmas
 
 # Source code files (.c, .cpp) 
 SOURCES = navigator_gui2_main.cpp navigator_gui2_interface.c 2D_map_view.cpp

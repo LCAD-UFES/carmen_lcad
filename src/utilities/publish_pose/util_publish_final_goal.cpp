@@ -43,6 +43,7 @@ main(int argc, char **argv)
 
 	sleep(time);
 	publish_final_goal(pose);
+	carmen_ipc_sleep(0.1);
 
 	while (1)
 		sleep(10); // Para não morrer nunca e não gastar CPU

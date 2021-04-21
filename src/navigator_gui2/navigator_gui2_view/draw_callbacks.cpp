@@ -734,7 +734,7 @@ void on_comboState_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
-		carmen_behavior_selector_set_mission((carmen_behavior_selector_mission_t)global_gui->get_mission_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)));
+		carmen_behavior_selector_set_task((carmen_behavior_selector_task_t)global_gui->get_task_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)));
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -808,9 +808,9 @@ void on_buttonPlaceGoal_clicked(GtkWidget *widget __attribute__((unused)),
 void on_buttonRemoveGoal_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if (!global_gui->behavior_selector_active || global_gui->goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		global_gui->execute_decrement_point();
-	else
+	if (global_gui->behavior_selector_active)// || global_gui->goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//		global_gui->execute_decrement_point();
+//	else
 		carmen_behavior_selector_remove_goal();
 
 	global_gui->placement_status = PLACING_GOAL;
@@ -822,32 +822,32 @@ void on_buttonRemoveGoal_clicked(GtkWidget *widget __attribute__((unused)),
 void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if (!global_gui->behavior_selector_active || global_gui->goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		{
-			if (global_gui->queuePoints != NULL)
-			{
-				pointers *item = global_gui->queuePoints->begin;
-				pointers *itemAux;
-
-				while (item != NULL)
-				{
-					itemAux = item;
-					item	= item->next;
-					free(itemAux);
-				}
-
-				global_gui->queuePoints->begin = NULL;
-				global_gui->queuePoints->curr  = NULL;
-				global_gui->queuePoints->end   = NULL;
-
-				//navigator_unset_goal(item->pt.posiX, item->pt.posiY);
-				free(item);
-				navigator_set_goal(-1, -1, 0);
-//				navigator_stop_moving();
-			}
-		}
-		else
-			carmen_behavior_selector_clear_goal_list();
+	if (global_gui->behavior_selector_active)// || global_gui->goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//		{
+//			if (global_gui->queuePoints != NULL)
+//			{
+//				pointers *item = global_gui->queuePoints->begin;
+//				pointers *itemAux;
+//
+//				while (item != NULL)
+//				{
+//					itemAux = item;
+//					item	= item->next;
+//					free(itemAux);
+//				}
+//
+//				global_gui->queuePoints->begin = NULL;
+//				global_gui->queuePoints->curr  = NULL;
+//				global_gui->queuePoints->end   = NULL;
+//
+//				//navigator_unset_goal(item->pt.posiX, item->pt.posiY);
+//				free(item);
+//				navigator_set_goal(-1, -1, 0);
+////				navigator_stop_moving();
+//			}
+//		}
+//		else
+		carmen_behavior_selector_clear_goal_list();
 
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }

@@ -59,22 +59,18 @@
  * DFree:   Free the data structure if it was "malloc"ed while doing a
  *          "Decode" operation. 
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY:
  *
  * $Log: primFmttrs.c,v $
- * Revision 1.2  2005/09/15 22:39:27  dhaehnel
- * added support for x86_64 machines (almost untested)
+ * Revision 2.6  2009/05/04 19:02:53  reids
+ * Fixed bug in dealing with longs and doubles for 64 bit machines
  *
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/10/17 20:18:16  nickr
- * Upgraded to IPC 3.7.7, added Arm patches from Dirk Haehnel.
- *
- * Revision 1.4  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.5  2009/01/12 15:54:57  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.4  2003/02/13 20:41:11  reids
  * Fixed compiler warnings.
@@ -299,9 +295,9 @@
  * Revision 1.2  1993/05/19  17:24:57  fedor
  * Added Logging.
  *
- * $Revision: 1.2 $
- * $Date: 2005/09/15 22:39:27 $
- * $Author: dhaehnel $
+ * $Revision: 2.6 $
+ * $Date: 2009/05/04 19:02:53 $
+ * $Author: reids $
  *
  *
  *    Feb-93 Reid Simmons at School of Computer Science, CMU
@@ -1098,15 +1094,11 @@ static INLINE int32 Basic_Trans_Encode(CONST_GENERIC_DATA_PTR datastruct,
 				     int32 dstart, char *buffer,
 				     int32 bstart, int32 size)
 { 
-  if (size == sizeof(int16)) {
+  if (size == 2 /* bytes */) {
     shortToNetBytes(*(int16 *)(datastruct+dstart), (buffer+bstart));
-  } else if (size == sizeof(int32)) {
+  } else if (size == 4 /* bytes */) {
     intToNetBytes(*(int32 *)(datastruct+dstart), (buffer+bstart));
-#if !(defined(__osf__) || defined(__x86_64__))
-  } else if (size == sizeof(long)) {
-    longToNetBytes(*(long *)(datastruct+dstart), (buffer+bstart));
-#endif /* __osf__ */
-  } else if (size == sizeof(double)) {
+  } else if (size == 8 /* bytes */) {
     doubleToNetBytes(*(double *)(datastruct+dstart), (buffer+bstart));
   } else {
     BCOPY((datastruct+dstart), (buffer+bstart), size);
@@ -1124,15 +1116,11 @@ static INLINE int32 Basic_Trans_Decode(GENERIC_DATA_PTR datastruct,
 #ifdef UNUSED_PRAGMA
 #pragma unused(alignment)
 #endif
-  if (size == sizeof(int16)) {
-    netBytesToShort((buffer+bstart), (int16 *)(datastruct+dstart));
-  } else if (size == sizeof(int32)) {
-    netBytesToInt((buffer+bstart), (int32 *)(datastruct+dstart));
-#if !(defined(__osf__) || defined(__x86_64__))
-  } else if (size == sizeof(long)) {
-    netBytesToLong((buffer+bstart), (long *)(datastruct+dstart));
-#endif /* __osf__ */
-  } else if (size == sizeof(double)) {
+  if (size == 2 /* bytes */) {
+    netBytesToShort((buffer+bstart), (short *)(datastruct+dstart));
+  } else if (size == 4 /* bytes */) {
+    netBytesToInt((buffer+bstart), (int *)(datastruct+dstart));
+  } else if (size == 8 /* bytes */) {
     netBytesToDouble((buffer+bstart), (double *)(datastruct+dstart));
   } else {
     BCOPY((buffer+bstart), (datastruct+dstart), size);
@@ -1806,8 +1794,7 @@ static int32 Matrix_Trans_Decode(GENERIC_DATA_PTR datastruct, int32 dstart,
     X_IPC_MOD_ERROR("Matrix_Trans_Decode. Map cannot be allocated");
   } else { 
     mapElement = MATRIX_ELEMENT(*Map, lb1, lb2, x_ipc_elementSize);
-    if ( (EASY_STRUCTURE_COPY) &&
-	 (byteOrder == BYTE_ORDER || x_ipc_elementSize == 1) ) {
+    if (byteOrder == BYTE_ORDER || x_ipc_elementSize == 1) {
       length = matrixLength(x_ipc_elementSize, lb1, ub1, lb2, ub2);
       FROM_BUFFER_AND_ADVANCE(mapElement, buffer, current_byte, length);
     } else {

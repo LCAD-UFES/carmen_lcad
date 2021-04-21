@@ -94,7 +94,9 @@ rotation_matrix *sensor_board_1_to_car_matrix;
 int velodyne_viewer = 0;
 
 double robot_wheel_radius;
-carmen_robot_ackerman_config_t car_config;
+carmen_robot_ackerman_config_t 	car_config;
+carmen_semi_trailer_config_t 	semi_trailer_config;
+
 double highest_sensor;
 int robot_publish_odometry;
 
@@ -104,7 +106,7 @@ int robot_publish_odometry;
 sensor_parameters_t *spherical_sensor_params;
 sensor_data_t *spherical_sensor_data;
 
-carmen_localize_ackerman_globalpos_message globalpos;
+carmen_localize_ackerman_globalpos_message globalpos = {};
 
 //extern double laser_ranges[10000];
 int number_of_sensors;
@@ -189,6 +191,30 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	err = IPC_publishData(message_name, &pmsg);
 	carmen_test_ipc_exit(err, "Could not publish", message_name);
 }
+
+
+double
+compute_semi_trailer_beta(carmen_localize_ackerman_globalpos_message globalpos, double timestamp)
+{
+	static double last_timestamp = 0.0;
+
+	if (last_timestamp == 0.0)
+	{
+		last_timestamp = timestamp;
+		return (0.0);
+	}
+
+	double L = car_config.distance_between_front_and_rear_axles;
+	double dt = timestamp - last_timestamp;
+	double beta = globalpos.beta + dt *
+			globalpos.v * (tan(globalpos.phi) / L -
+						   sin(globalpos.beta) / semi_trailer_config.d +
+						   (semi_trailer_config.M / (L * semi_trailer_config.d)) * cos(globalpos.beta) * tan(globalpos.phi));
+
+	last_timestamp = timestamp;
+
+	return (beta);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -209,6 +235,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	if (g_reinitiaze_particles)
 	{
 		g_reinitiaze_particles--;
+		globalpos.beta = 0.0;
 //		return;
 	}
 		
@@ -221,6 +248,18 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.v = v;
 	globalpos.phi = phi;
 	globalpos.converged = summary->converged;
+
+	if (semi_trailer_config.type > 0)
+	{
+		globalpos.semi_trailer_engaged = 1;
+		globalpos.beta = compute_semi_trailer_beta(globalpos, timestamp);
+	}
+	else
+	{
+		globalpos.semi_trailer_engaged = 0;
+		globalpos.beta = 0.0;
+	}
+	globalpos.semi_trailer_type = semi_trailer_config.type;
 
 	if (g_fused_odometry_index == -1)
 	{
@@ -323,6 +362,8 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 	globalpos_ackerman_message.globalpos_xy_cov = 0.0;
 	globalpos_ackerman_message.phi = 0.0;
 	globalpos_ackerman_message.v = 0.0;
+
+	globalpos_ackerman_message.beta = 0.0;
 	
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos_ackerman_message);
 }
@@ -1578,14 +1619,10 @@ get_sensors_param(int argc, char **argv, int correction_type)
 			}
 
 			if (spherical_sensor_params[i].vertical_resolution > (roi_end - roi_ini))
-			{
 				carmen_die("The stereo_velodyne_vertical_resolution is bigger than stereo point cloud height");
-			}
 
 			if (max_range < spherical_sensor_params[i].range_max)
-			{
 				max_range = spherical_sensor_params[i].range_max;
-			}
 
 			spherical_sensor_params[i].current_range_max = spherical_sensor_params[i].range_max;
 
@@ -1628,8 +1665,10 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &car_config.length, 0, NULL},
 		{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &car_config.width, 0, NULL},
 		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &car_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
-		{(char *) "robot",  (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &car_config.distance_between_front_and_rear_axles, 1, NULL},
-		{(char *) "robot",  (char *) "publish_odometry", CARMEN_PARAM_DOUBLE, &robot_publish_odometry, 1, NULL},
+		{(char *) "robot", (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &car_config.distance_between_front_and_rear_axles, 1, NULL},
+		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_DOUBLE, &robot_publish_odometry, 1, NULL},
+
+		{(char *) "semi_trailer",	 (char *) "initial_type",						CARMEN_PARAM_INT, 	 &(semi_trailer_config.type), 					0, NULL},
 
 		{(char *) "robot", (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 
@@ -1712,6 +1751,23 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	if (semi_trailer_config.type > 0)
+	{
+		char semi_trailer_string[256];
+		sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+
+		carmen_param_t param_semi_trailer_list[] =
+		{
+			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   0, NULL},
+			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   0, NULL},
+			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_STRING, &(semi_trailer_config.width),						   0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
+		};
+
+		carmen_param_install_params(argc, argv, param_semi_trailer_list, sizeof(param_semi_trailer_list) / sizeof(param_semi_trailer_list[0]));
+	}
 
 	carmen_param_allow_unfound_variables(1);
 

@@ -31,7 +31,7 @@ void draw_laser_points(point_cloud *laser_points, int laser_size);
 void draw_laser_points_vbo(point_cloud *laser_points, int laser_size);
 void draw_laser_mesh(point_cloud *laser_readings, int laser_size);
 void draw_moving_objects_point_clouds (point_cloud *moving_objects_point_clouds, int cloud_size,
-		carmen_vector_3D_t offset, CarDrawer *car_drawer, map_drawer *m_drawer);
+		carmen_vector_3D_t offset, CarDrawer *car_drawer, double mapper_map_grid_res);
 void draw_velodyne_points(point_cloud *velodyne_points, int cloud_size);
 void draw_gps(carmen_vector_3D_t *gps_trail, int *gps_nr, int size);
 void draw_gps_xsens_xyz(carmen_vector_3D_t *gps_trail, int size);

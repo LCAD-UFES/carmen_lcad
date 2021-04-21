@@ -25,7 +25,7 @@
 //TODO: ler da lista de parâmetros se for ler imagens já baixadas
 #define google_maps_data_location "../data/google_maps"
 
-static double initial_waiting_time;
+static double initial_waiting_time = 3.0;
 static carmen_map_t *current_map;
 static carmen_map_t *current_sum_remission_map;
 static carmen_map_t *current_mean_remission_map;
@@ -389,7 +389,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 
 
 static void
-alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
+alloc_rddf_global_data(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	rddf_message = (carmen_rddf_road_profile_message *) calloc (1, sizeof(carmen_rddf_road_profile_message));
 
@@ -403,7 +403,7 @@ alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 
 
 static void
-realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
+realloc_rddf_global_data(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	if (message->number_of_poses != rddf_message->number_of_poses)
 	{
@@ -412,9 +412,7 @@ realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 	}
 
 	if (message->number_of_poses_back != rddf_message->number_of_poses_back)
-	{
 		rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
-	}
 
 	rddf_message->number_of_poses = message->number_of_poses;
 	rddf_message->number_of_poses_back = message->number_of_poses_back;
@@ -422,7 +420,7 @@ realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 
 
 static void
-copy_local_rddf_to_global_rddf(carmen_behavior_selector_road_profile_message *message)
+copy_local_rddf_to_global_rddf(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	memcpy(rddf_message->annotations, message->annotations, message->number_of_poses * sizeof(int));
 	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
@@ -494,7 +492,7 @@ localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize
 
 
 static void
-rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	static carmen_point_t pose_in_last_publish = {0.0, 0.0, 0.0};
 
@@ -715,8 +713,7 @@ register_handlers()
 	carmen_localize_ackerman_subscribe_initialize_message(NULL,
 			(carmen_handler_t) localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-                             NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) (path_goals_and_annotations_message_handler), CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_download_map_subscribe_message(NULL, (carmen_handler_t) download_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -795,14 +792,17 @@ main(int argc, char **argv)
 	int no_valid_map_on_file;
 	double timestamp;
 
+	usleep(initial_waiting_time * 1e6);	// Com a adocao da nova versao do IPC esta espera tem que ocorrer antes da conexao com o central.
+										// Se nao esperar aqui, os mapas iniciais nao sao recebidos pelo localize_ackerman para alguma razao...
+										// Assim, o parametro map_server_initial_waiting_time nao esta funcionando (esta fixo aqui com o valor
+										// que era empregado no carmen ini)...
+
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 	define_messages();
 
 	carmen_grid_mapping_init_parameters(map_grid_res, map_width);
-
-	usleep(initial_waiting_time * 1e6);
 
 	initialize_structures();
 	if (map_file_name != NULL)
@@ -834,10 +834,10 @@ main(int argc, char **argv)
 				current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
 
 		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
+
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
 		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
 		carmen_map_server_publish_localize_map_message(&localize_map);
-
 		if (publish_grid_mapping_map_at_startup)
 			carmen_mapper_publish_map_message(current_map, timestamp);
 	}

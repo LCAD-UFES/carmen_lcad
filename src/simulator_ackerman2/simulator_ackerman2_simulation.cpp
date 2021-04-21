@@ -294,11 +294,11 @@ find_two_closest_point_in_path(carmen_simulator_ackerman_config_t *simulator_con
 {                                                                                    // between the global_pos
 	double dist = 0.0, dist_1 = 9999.9, dist_2 = 9999.9;
 	unsigned int i = 0;
-	unsigned int number_of_poses = abs(simulator_config->rddf_lane_message->number_of_poses);
+	unsigned int number_of_poses = abs(simulator_config->path_goals_and_annotations->number_of_poses);
 
 	for (; i < number_of_poses; i++)
 	{
-		dist = carmen_distance_ackerman_traj(&simulator_config->rddf_lane_message->poses[i], &simulator_config->rddf_lane_message->poses[i + 1]);
+		dist = carmen_distance_ackerman_traj(&simulator_config->path_goals_and_annotations->poses[i], &simulator_config->path_goals_and_annotations->poses[i + 1]);
 		dist_2 = dist_1;
 		dist_1 = dist;
 
@@ -321,12 +321,12 @@ compute_lateral_and_heading_errors(carmen_simulator_ackerman_config_t *simulator
 
 	// The lateral error is the distance from the car pose (global_pos) to the line composed of the two closest points in the RDDF
 	lateral_error = distance_point_to_line(simulator_config->global_pos.globalpos.x, simulator_config->global_pos.globalpos.y,
-			simulator_config->rddf_lane_message->poses[closest_rddf_index].x, simulator_config->rddf_lane_message->poses[closest_rddf_index].y,
-			simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].x, simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].y);
+			simulator_config->path_goals_and_annotations->poses[closest_rddf_index].x, simulator_config->path_goals_and_annotations->poses[closest_rddf_index].y,
+			simulator_config->path_goals_and_annotations->poses[closest_rddf_index + 1].x, simulator_config->path_goals_and_annotations->poses[closest_rddf_index + 1].y);
 
 
-	heading_error = atan2(simulator_config->rddf_lane_message->poses[closest_rddf_index].y - simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].y,
-			simulator_config->rddf_lane_message->poses[closest_rddf_index].x - simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].x);
+	heading_error = atan2(simulator_config->path_goals_and_annotations->poses[closest_rddf_index].y - simulator_config->path_goals_and_annotations->poses[closest_rddf_index + 1].y,
+			simulator_config->path_goals_and_annotations->poses[closest_rddf_index].x - simulator_config->path_goals_and_annotations->poses[closest_rddf_index + 1].x);
 }
 
 

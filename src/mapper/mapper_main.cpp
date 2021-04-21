@@ -101,7 +101,7 @@ carmen_rddf_annotation_message last_rddf_annotation_message;
 int robot_near_strong_slow_down_annotation = 0;
 
 bool offline_map_available = false;
-int ok_to_publish = 0;
+int ok_to_publish = 1;
 int number_of_threads = 1;
 
 int camera3_ready = 0;

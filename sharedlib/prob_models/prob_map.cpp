@@ -2939,7 +2939,7 @@ copy_probabilistic_map_to_image_buffer(ProbabilisticMapParams map_config, Probab
 void
 carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map)
 {	// Os dois mapas tem que ser probabilisiticos
-	#pragma omp for
+//	#pragma omp for
 	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
 	{
 		if (snapshot_map->complete_map[i] > 0.0)
@@ -2954,7 +2954,7 @@ void
 carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map,
 		carmen_map_t *log_odds_snapshot_map, double log_odds_l0)
 {	// O current_map eh probabilistico e o snapshot_map log_odds
-	#pragma omp for
+//	#pragma omp for
 	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
 	{
 		if (log_odds_snapshot_map->complete_map[i] != log_odds_l0)
@@ -2997,7 +2997,7 @@ void
 carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map,
 		carmen_map_t *log_odds_snapshot_map, double log_odds_l0)
 {	// O current_map eh probabilistico e o snapshot_map log_odds
-	#pragma omp for
+//	#pragma omp for
 	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
 	{
 		if (log_odds_snapshot_map->complete_map[i] != log_odds_l0)

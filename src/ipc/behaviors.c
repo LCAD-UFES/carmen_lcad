@@ -13,25 +13,19 @@
  * 
  * x_ipc behavior level.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: behaviors.c,v $
- * Revision 1.3  2008/07/23 08:39:56  kuemmerl
- * - fixed memleak regarding IPC queries
+ * Revision 2.12  2009/01/12 15:54:55  reids
+ * Added BSD Open Source license info
  *
- * Revision 1.2  2006/01/15 21:22:33  nickr
- * Added support for Mac
- *
- * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
- * Initial Import
- *
- * Revision 1.5  2003/10/17 20:18:16  nickr
- * Upgraded to IPC 3.7.7, added Arm patches from Dirk Haehnel.
- *
- * Revision 1.4  2003/04/20 02:28:12  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.11  2003/07/23 20:25:03  reids
+ * Fixed bug in handling message that is received but already unsubscribed.
+ * Removed compiler warning.
  *
  * Revision 2.10  2003/04/14 15:30:43  reids
  * Fixed bug in use of IPC_delayResponse
@@ -506,9 +500,9 @@
  *  1-Dec-88 Christopher Fedor, School of Computer Science, CMU
  * created message cache.
  *
- * $Revision: 1.3 $
- * $Date: 2008/07/23 08:39:56 $
- * $Author: kuemmerl $
+ * $Revision: 2.12 $
+ * $Date: 2009/01/12 15:54:55 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -1130,7 +1124,9 @@ void x_ipc_execHnd(CONNECTION_PTR connection, DATA_MSG_PTR dataMsg)
       LOCK_CM_MUTEX;
       direct = DIRECT_CONNECTION(connection);
       UNLOCK_CM_MUTEX;
-      if (!direct) x_ipcSuccess(x_ipcRef); break;
+      if (!direct)
+    	  x_ipcSuccess(x_ipcRef);
+      break;
     }
 
     case UNKNOWN:
@@ -1533,7 +1529,6 @@ X_IPC_RETURN_VALUE_TYPE x_ipc_queryNotifySend (MSG_PTR msg, const char *name,
     x_ipc_listDeleteItem((void *)queryNotif,
 			 GET_C_GLOBAL(queryNotificationList));
     UNLOCK_CM_MUTEX;
-    x_ipcRefFree(queryNotif->ref);
     x_ipcFree((char *)queryNotif);
   }
   return returnValue;

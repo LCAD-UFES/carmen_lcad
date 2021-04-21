@@ -26,35 +26,41 @@ typedef enum
 	NO_REQUEST,
 	PLAN_FROM_POSE_TO_LANE,
 	PLAN_FROM_LANE_TO_FINAL_POSE,
-	PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE,
-	WITHIN_OFFROAD_PLAN
+	PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE
 } offroad_planner_request_t;
 
-#define print_route_planner_request(x) ( \
+#define print_offroad_planner_request(x) ( \
 	(x == NO_REQUEST)? "NO_REQUEST": \
 	(x == PLAN_FROM_POSE_TO_LANE)? "PLAN_FROM_POSE_TO_LANE": \
 	(x == PLAN_FROM_LANE_TO_FINAL_POSE)? "PLAN_FROM_LANE_TO_FINAL_POSE": \
-	(x == PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE)? "PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE": \
-	(x == WITHIN_OFFROAD_PLAN)? "WITHIN_OFFROAD_PLAN": "" )
+	(x == PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE)? "PLAN_FROM_CURRENT_POSE_TO_FINAL_POSE": "" )
 
 
-typedef enum ROUTE_PLANNER_FEEDBACK
+typedef enum ROUTE_PLANNER_STATE
 {
-	ROUTE_PLANNED,
+	IDLE,
 	ROUTE_PLANNER_IN_RDDF_MODE,
 	COULD_NOT_COMPUTE_THE_ROUTE,
 	PUBLISHING_ROUTE,
-	DESTINATION_REACHED,
-	IDLE
-} carmen_route_planner_feedback_t;
+	COMPUTING_ROUTE,
+	PLANNING_FROM_CURRENT_POSE_TO_FINAL_POSE,
+	PLANNING_FROM_POSE_TO_LANE,
+	PLANNING_FROM_LANE_TO_FINAL_POSE,
+	EXECUTING_OFFROAD_PLAN,
+	OFFROAD_PLANNER_ERROR
+} carmen_route_planner_state_t;
 
-#define print_route_planner_feedback(x) ( \
-	(x == ROUTE_PLANNED)? "ROUTE_PLANNED": \
+#define print_route_planner_state(x) ( \
+	(x == IDLE)? "IDLE": \
 	(x == ROUTE_PLANNER_IN_RDDF_MODE)? "ROUTE_PLANNER_IN_RDDF_MODE": \
 	(x == COULD_NOT_COMPUTE_THE_ROUTE)? "COULD_NOT_COMPUTE_THE_ROUTE": \
 	(x == PUBLISHING_ROUTE)? "PUBLISHING_ROUTE": \
-	(x == DESTINATION_REACHED)? "DESTINATION_REACHED": \
-	(x == IDLE)? "IDLE": ""	)
+	(x == COMPUTING_ROUTE)? "COMPUTING_ROUTE": \
+	(x == PLANNING_FROM_CURRENT_POSE_TO_FINAL_POSE)? "PLANNING_FROM_CURRENT_POSE_TO_FINAL_POSE": \
+	(x == PLANNING_FROM_POSE_TO_LANE)? "PLANNING_FROM_POSE_TO_LANE": \
+	(x == PLANNING_FROM_LANE_TO_FINAL_POSE)? "PLANNING_FROM_LANE_TO_FINAL_POSE": \
+	(x == EXECUTING_OFFROAD_PLAN)? "EXECUTING_OFFROAD_PLAN": \
+	(x == OFFROAD_PLANNER_ERROR)? "OFFROAD_PLANNER_ERROR": "")
 
 
 typedef struct
@@ -119,8 +125,8 @@ typedef struct
     //	nearby_lanes_size = 5+3+6 = 14
     //	nearby_lanes (p_lane_pose) -> p_0_0, p_0_1, p_0_2, p_0_3, p_0_4, p_1_0, p_1_1, p_1_2, p_2_0, p_2_1, p_2_2, p_2_3, p_2_4, p_2_5
 
-	int offroad_planner_request;
-	carmen_route_planner_feedback_t route_planner_feedback;
+	offroad_planner_request_t offroad_planner_request;
+	carmen_route_planner_state_t route_planner_state;
 
     double timestamp;
     char *host;

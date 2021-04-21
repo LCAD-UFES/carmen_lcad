@@ -11,16 +11,18 @@
  * ABSTRACT:
  * External declarations for message and status logging facilities.
  *
+ * Copyright (c) 2008, Carnegie Mellon University
+ *     This software is distributed under the terms of the 
+ *     Simplified BSD License (see ipc/LICENSE.TXT)
+ *
  * REVISION HISTORY
  *
  * $Log: logging.h,v $
- * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
- * Initial Import
+ * Revision 2.4  2009/05/04 19:03:41  reids
+ * Changed to using snprintf to avoid corrupting the stack on overflow
  *
- * Revision 1.5  2003/04/20 02:28:13  nickr
- * Upgraded to IPC 3.7.6.
- * Reversed meaning of central -s to be default silent,
- * -s turns silent off.
+ * Revision 2.3  2009/01/12 15:54:56  reids
+ * Added BSD Open Source license info
  *
  * Revision 2.2  2000/07/03 17:03:26  hersh
  * Removed all instances of "tca" in symbols and messages, plus changed
@@ -161,9 +163,9 @@
  *  2-Aug-89 Reid Simmons, School of Computer Science, CMU
  * Created.
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2004/10/15 14:33:15 $
- * $Author: tomkol $
+ * $Revision: 2.4 $
+ * $Date: 2009/05/04 19:03:41 $
+ * $Author: reids $
  *
  *****************************************************************************/
 
@@ -279,31 +281,35 @@ typedef struct {
 #define MAX_LOG 300
 #define LOG(description) Log(description)
 #define LOG1(description, arg1) \
-  { char str[MAX_LOG]; sprintf(str, description, arg1); Log(str); }
+  { char str[MAX_LOG]; snprintf(str, MAX_LOG, description, arg1); Log(str); }
 #define LOG2(description, arg1, arg2) \
-  { char str[MAX_LOG]; sprintf(str, description, arg1, arg2); Log(str); }
+  { char str[MAX_LOG];\
+    snprintf(str, MAX_LOG, description, arg1, arg2); Log(str); }
 #define LOG3(description, arg1, arg2, arg3) \
-  { char str[MAX_LOG]; sprintf(str, description, arg1, arg2, arg3); Log(str); }
+  { char str[MAX_LOG];\
+    snprintf(str, MAX_LOG, description, arg1, arg2, arg3); Log(str); }
 
 #define LOG_MESSAGE(description) Log_Message(description)
 #define LOG_MESSAGE1(description, arg1) \
-  { char str[MAX_LOG]; sprintf(str, description, arg1); Log_Message(str); }
+  { char str[MAX_LOG];\
+    snprintf(str, MAX_LOG, description, arg1); Log_Message(str); }
 #define LOG_MESSAGE2(description, arg1, arg2) \
   { char str[MAX_LOG]; \
-    sprintf(str, description, arg1, arg2); Log_Message(str); }
+    snprintf(str, MAX_LOG, description, arg1, arg2); Log_Message(str); }
 #define LOG_MESSAGE3(description, arg1, arg2, arg3) \
   { char str[MAX_LOG]; \
-    sprintf(str, description, arg1, arg2, arg3); Log_Message(str); }
+    snprintf(str, MAX_LOG, description, arg1, arg2, arg3); Log_Message(str); }
 
 #define LOG_STATUS(description) Log_Status(description)
 #define LOG_STATUS1(description, arg1) \
-  { char str[MAX_LOG]; sprintf(str, description, arg1); Log_Status(str); }
+  { char str[MAX_LOG];\
+    snprintf(str, MAX_LOG, description, arg1); Log_Status(str); }
 #define LOG_STATUS2(description, arg1, arg2) \
   { char str[MAX_LOG]; \
-    sprintf(str, description, arg1, arg2); Log_Status(str); }
+    snprintf(str, MAX_LOG, description, arg1, arg2); Log_Status(str); }
 #define LOG_STATUS3(description, arg1, arg2, arg3) \
   { char str[MAX_LOG]; \
-    sprintf(str, description, arg1, arg2, arg3); Log_Status(str); }
+    snprintf(str, MAX_LOG, description, arg1, arg2, arg3); Log_Status(str); }
 
 #endif /* !VXWORKS */
 

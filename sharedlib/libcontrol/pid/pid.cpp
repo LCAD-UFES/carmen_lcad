@@ -21,6 +21,8 @@ enum
 #define min_fuzzy_v 4.17 // = 20km/h Parameters start variation from this velocity
 #define max_fuzzy_v 9.72 // = 45km/h Parameters stop variation from twice this velocity
 
+#define NEAR_ZERO_V	0.03
+
 
 // Global variables
 static double g_steering_Kp;
@@ -197,9 +199,9 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
-	 fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-	 	atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
-	 fflush(stdout);
+//	 fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//	 	atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
+//	 fflush(stdout);
 
 	return u_t;
 }
@@ -261,9 +263,9 @@ carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
-	 fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-	 	atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
-	 fflush(stdout);
+//	 fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//	 	atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
+//	 fflush(stdout);
 
 	return u_t;
 }
@@ -280,11 +282,11 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 	static double	previous_t = 0.0;
 #define DERIVATIVE_HISTORY_SIZE 3
 	static double	previous_derivatives[DERIVATIVE_HISTORY_SIZE];
-	static double	initial_t = 0.0;
+//	static double	initial_t = 0.0;
 
 	if (previous_t == 0.0)
 	{
-		initial_t = previous_t = carmen_get_time();
+//		initial_t = previous_t = carmen_get_time();
 		for (int i = 0; i < DERIVATIVE_HISTORY_SIZE; i++)
 			previous_derivatives[i] = 0.0;
 		return (0.0);
@@ -328,9 +330,9 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
-	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t - initial_t);
-	fflush(stdout);
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t - initial_t);
+//	fflush(stdout);
 
 	return u_t;
 }
@@ -356,7 +358,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (fabs(desired_velocity) < 0.05) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
+	if (fabs(desired_velocity) < NEAR_ZERO_V) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
 	{
 		desired_velocity = 0.0;
 		g_velocity_PID_controler_state = STOP_CAR;
@@ -376,14 +378,14 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		*throttle_command = 0.0;
 		*brakes_command = g_max_brake_effort;
-//		*brakes_command = *brakes_command + 0.05 * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
+//		*brakes_command = *brakes_command + NEAR_ZERO_V * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
 
-		if ((desired_velocity > 0.0) && (current_velocity >= -0.05))
+		if ((desired_velocity > 0.0) && (current_velocity >= -NEAR_ZERO_V))
 		{
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
 			*gear_command = 1; // gear = Low // 2; //Drive gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 		}
-		if ((desired_velocity < 0.0) && (current_velocity <= 0.05))
+		if ((desired_velocity < 0.0) && (current_velocity <= NEAR_ZERO_V))
 		{
 			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_ACCELERATING;
 			*gear_command = 129; //Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
@@ -472,11 +474,11 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	*throttle_command = carmen_clamp(0.0, *throttle_command, 100.0);
 	*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
-	 fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-	 	g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
-	 	*throttle_command, *brakes_command,
-	 	integral_t, derivative_t, carmen_get_time());
-	 fflush(stdout);
+//	 fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//	 	g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
+//	 	*throttle_command, *brakes_command,
+//	 	integral_t, derivative_t, carmen_get_time());
+//	 fflush(stdout);
 }
 
 

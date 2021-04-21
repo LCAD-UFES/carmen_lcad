@@ -85,6 +85,7 @@ def get_indices_of_sampled_data(data, min_distance, max_rotation=math.pi):
         if last is None:
             distance = min_distance
             rotation = max_rotation
+            last_heading = current_heading
         else:
             distance = LA.norm(last - current)
             rotation = np.abs(last_heading - current_heading)
