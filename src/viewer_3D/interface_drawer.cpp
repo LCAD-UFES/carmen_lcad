@@ -167,7 +167,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 
 	i_drawer->butt[0].text = "Options";
 	i_drawer->butt[1].text = "Car";
-	i_drawer->butt[2].text = "Particles";
+	i_drawer->butt[2].text = "Collision Model";
 	i_drawer->butt[3].text = "Fused Odometry";
 	i_drawer->butt[4].text = "GPS XSENS";
 	i_drawer->butt[5].text = "Follow Car";

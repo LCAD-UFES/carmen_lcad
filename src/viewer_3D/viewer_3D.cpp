@@ -116,6 +116,9 @@ static int odometry_initialized;
 static carmen_vector_3D_t *localize_ackerman_trail;
 static int last_localize_ackerman_trail;
 
+static carmen_vector_3D_t *localize_ackerman_semi_trailer_trail;
+static int last_localize_ackerman_semi_trailer_trail;
+
 static carmen_vector_3D_t gps_initial_pos;
 static carmen_vector_3D_t *gps_trail;
 static int *gps_nr;
@@ -168,6 +171,8 @@ static carmen_pose_3D_t car_fused_pose;
 
 static carmen_vector_3D_t robot_size;
 static double distance_between_rear_car_and_rear_wheels;
+
+static carmen_semi_trailer_config_t semi_trailer_config;
 
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
 
@@ -293,6 +298,9 @@ static std::vector<trajectory_drawer*> t_drawerTree;
 static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
 static symotha_drawer_t *symotha_drawer;
+
+static double beta;
+static int semi_trailer_engaged;
 
 window *w = NULL;
 
@@ -812,7 +820,7 @@ draw_everything()
     }
 
     if (draw_car_flag)
-        draw_car_at_pose(car_drawer, car_fused_pose);
+        draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
     else
     	draw_car_outline_at_pose(car_drawer, car_fused_pose);
 
@@ -927,13 +935,20 @@ draw_everything()
         draw_odometry(odometry_trail, odometry_size);
 
     if (draw_localize_ackerman_flag)
+    {
         draw_localize_ackerman(localize_ackerman_trail, localize_ackerman_size);
+
+        if (semi_trailer_engaged)
+        	draw_localize_ackerman(localize_ackerman_semi_trailer_trail, localize_ackerman_size);
+    }
 
     if (draw_particles_flag)
     {
         draw_particles(fused_odometry_particles_pos, fused_odometry_particles_weight, num_fused_odometry_particles, 0);
         draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
         draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
+
+        draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
     }
 
     if (draw_map_flag)
@@ -1198,6 +1213,24 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 
     if (last_localize_ackerman_trail >= localize_ackerman_size)
         last_localize_ackerman_trail -= localize_ackerman_size;
+
+
+    beta = localize_ackerman_message->beta;
+	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
+
+
+	if(semi_trailer_engaged)
+	{
+		pos.x -= semi_trailer_config.M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.d * cos(localize_ackerman_message->globalpos.theta - beta);
+		pos.y -= semi_trailer_config.M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.d * sin(localize_ackerman_message->globalpos.theta - beta);
+
+		localize_ackerman_semi_trailer_trail[last_localize_ackerman_semi_trailer_trail] = pos;
+
+		last_localize_ackerman_semi_trailer_trail++;
+
+		if (last_localize_ackerman_semi_trailer_trail >= localize_ackerman_size)
+			last_localize_ackerman_semi_trailer_trail -= localize_ackerman_size;
+	}
 
 
     static double time_of_last_publish = carmen_get_time();
@@ -2897,6 +2930,13 @@ init_localize_ackerman_trail(void)
         localize_ackerman_trail[i] = init_pos;
 
     last_localize_ackerman_trail = 0;
+
+    localize_ackerman_semi_trailer_trail = (carmen_vector_3D_t*) malloc(localize_ackerman_size * sizeof (carmen_vector_3D_t));
+
+    for (int i = 0; i < localize_ackerman_size; i++)
+        localize_ackerman_semi_trailer_trail[i] = init_pos;
+
+    last_localize_ackerman_semi_trailer_trail = 0;
 }
 
 static void
@@ -3248,11 +3288,31 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 0, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
 
-			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &mapper_map_grid_res, 0, NULL},
+			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.type), 0, NULL},
+
+			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &mapper_map_grid_res, 0, NULL}
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
         carmen_param_install_params(argc, argv, param_list, num_items);
+
+        if (semi_trailer_config.type > 0)
+		{
+			char semi_trailer_string[256];
+
+			sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+
+			carmen_param_t param_semi_trailer_list[] = {
+			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							  	0, NULL},
+			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							  	0, NULL},
+			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						  	0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front),	0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),	0, NULL},
+			};
+
+			num_items = sizeof(param_semi_trailer_list)/sizeof(param_semi_trailer_list[0]);
+			carmen_param_install_params(argc, argv, param_semi_trailer_list, num_items);
+		}
 
         if (stereo_velodyne_vertical_resolution > (stereo_velodyne_vertical_roi_end - stereo_velodyne_vertical_roi_ini))
             carmen_die("The stereo_velodyne_vertical_resolution is bigger than stereo point cloud height");
@@ -3325,11 +3385,31 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 0, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
 
+			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.type), 0, NULL},
+
 			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &mapper_map_grid_res, 0, NULL},
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
         carmen_param_install_params(argc, argv, param_list, num_items);
+
+        if (semi_trailer_config.type > 0)
+		{
+			char semi_trailer_string[256];
+
+			sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+
+			carmen_param_t param_semi_trailer_list[] = {
+			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							  	0, NULL},
+			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							  	0, NULL},
+			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						  	0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front),	0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),	0, NULL},
+			};
+
+			num_items = sizeof(param_semi_trailer_list)/sizeof(param_semi_trailer_list[0]);
+			carmen_param_install_params(argc, argv, param_semi_trailer_list, num_items);
+		}
     }
 
     w = initWindow(window_width, window_height);
@@ -3522,7 +3602,7 @@ draw_while_picking()
     }
 
 	if (draw_car_flag)
-		draw_car_at_pose(car_drawer, car_fused_pose);
+		draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 	else
 		draw_car_outline_at_pose(car_drawer, car_fused_pose);
 
@@ -3592,13 +3672,20 @@ draw_while_picking()
 		draw_odometry(odometry_trail, odometry_size);
 
 	if (draw_localize_ackerman_flag)
+	{
 		draw_localize_ackerman(localize_ackerman_trail, localize_ackerman_size);
+
+		if (semi_trailer_engaged)
+			draw_localize_ackerman(localize_ackerman_semi_trailer_trail, localize_ackerman_size);
+	}
 
 	if (draw_particles_flag)
 	{
 		draw_particles(fused_odometry_particles_pos, fused_odometry_particles_weight, num_fused_odometry_particles, 0);
 		draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
 		draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
+
+		draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 	}
 
 	if (draw_map_flag)

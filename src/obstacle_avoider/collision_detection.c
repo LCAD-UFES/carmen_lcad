@@ -891,23 +891,22 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 //	return (distance);
 //}
 
+static char *collision_file;
+
 void
 check_collision_config_initialization()
 {
 	static int collision_config_initialized = 0;
-	char* collision_file;
-	int i;
-	FILE *collision_file_pointer;
 
 	if (collision_config_initialized)
 		return;
+	collision_config_initialized = 1;
 
-	carmen_param_allow_unfound_variables(0);
 	carmen_param_t param_list[] =
 	{
 		{"robot", "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
 	};
-	carmen_param_install_params(0, NULL, param_list, sizeof(param_list)/sizeof(param_list[0]));
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 	char *carmen_home = getenv("CARMEN_HOME");
 
@@ -917,19 +916,18 @@ check_collision_config_initialization()
 	char collision_file_[2048];
 	sprintf(collision_file_, "%s/bin/%s", carmen_home, collision_file);
 
-	collision_file_pointer = fopen(collision_file_, "r");
+	FILE *collision_file_pointer = fopen(collision_file_, "r");
 	setlocale(LC_NUMERIC, "C");
+	fscanf(collision_file_pointer, "%d", &(global_collision_config.n_markers));
 	int max_h_level;
-	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
-	fscanf(collision_file_pointer,"%d", &max_h_level);
-	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
+	fscanf(collision_file_pointer, "%d", &max_h_level);
+	global_collision_config.markers = (carmen_collision_marker_t *) malloc(global_collision_config.n_markers * sizeof(carmen_collision_marker_t));
 
-	for (i = 0; i < global_collision_config.n_markers; i++)
+	for (int i = 0; i < global_collision_config.n_markers; i++)
 		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
 				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].height_level);
 
 	fclose(collision_file_pointer);
-	collision_config_initialized = 1;
 }
 
 

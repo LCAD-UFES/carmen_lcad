@@ -249,9 +249,17 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.phi = phi;
 	globalpos.converged = summary->converged;
 
-	globalpos.semi_trailer_engaged = 1;
+	if (semi_trailer_config.type > 0)
+	{
+		globalpos.semi_trailer_engaged = 1;
+		globalpos.beta = compute_semi_trailer_beta(globalpos, timestamp);
+	}
+	else
+	{
+		globalpos.semi_trailer_engaged = 0;
+		globalpos.beta = 0.0;
+	}
 	globalpos.semi_trailer_type = semi_trailer_config.type;
-	globalpos.beta = compute_semi_trailer_beta(globalpos, timestamp);
 
 	if (g_fused_odometry_index == -1)
 	{
@@ -1661,11 +1669,6 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_DOUBLE, &robot_publish_odometry, 1, NULL},
 
 		{(char *) "semi_trailer",	 (char *) "initial_type",						CARMEN_PARAM_INT, 	 &(semi_trailer_config.type), 					0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "d",									CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),						0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "M",									CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),						0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "width",								CARMEN_PARAM_STRING, &(semi_trailer_config.width),					0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "distance_between_axle_and_front", 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front),	0, NULL},
-		{(char *) "semi_trailer1",	 (char *) "distance_between_axle_and_back",	 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),	0, NULL},
 
 		{(char *) "robot", (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 
@@ -1748,6 +1751,23 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	if (semi_trailer_config.type > 0)
+	{
+		char semi_trailer_string[256];
+		sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+
+		carmen_param_t param_semi_trailer_list[] =
+		{
+			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   0, NULL},
+			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   0, NULL},
+			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						   0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
+		};
+
+		carmen_param_install_params(argc, argv, param_semi_trailer_list, sizeof(param_semi_trailer_list) / sizeof(param_semi_trailer_list[0]));
+	}
 
 	carmen_param_allow_unfound_variables(1);
 

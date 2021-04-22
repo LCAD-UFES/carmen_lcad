@@ -885,6 +885,22 @@ robot_PID_velocity_backward_deccelerating_Kd		0.0 #-0.025 #-1.0
 robot_PID_velocity_brake_gap				17.0
 
 
+###############################
+# Semi-trailers parameters
+
+semi_trailer_initial_type						1  # se for zero, nao tem semi trailer
+
+semi_trailer1_d									4.690  # m
+semi_trailer1_M									1.076  # m
+semi_trailer1_width								1.535  # m
+semi_trailer1_distance_between_axle_and_front	4.690  # m
+semi_trailer1_distance_between_axle_and_back	0.970  # m
+semi_trailer1_max_beta							90.0 # degrees
+
+semi_trailer1_polygon_file 						ford_escape/semi_trailer1_poly.txt
+semi_trailer1_collision_file 					ford_escape/ford_escape_col.txt
+
+
 ################################
 #    road finding params
 ################################
@@ -2414,6 +2430,18 @@ carmodel_yaw		0.0
 carmodel_size_x		4.437
 carmodel_size_y		1.806
 carmodel_size_z		1.725
+
+
+semi_trailer_model1_file_name  	    ford_escape/trailer-cargo.obj
+semi_trailer_model1_x				1.85
+semi_trailer_model1_y				0.0
+semi_trailer_model1_z				0.2
+semi_trailer_model1_roll			0.0
+semi_trailer_model1_pitch			0.0
+semi_trailer_model1_yaw				0.0
+semi_trailer_model1_size_x			5.690
+semi_trailer_model1_size_y			1.535
+semi_trailer_model1_size_z			1.200
 
 
 ###############################

@@ -8,7 +8,7 @@ CFLAGS += -Wall -std=c++0x
 CXXFLAGS += -Wall -std=c++0x
 
 LFLAGS += \
-	-lglobal -lviso
+	-lglobal -lipc -lviso
 
 SOURCES = \
 	kalman.cpp \
