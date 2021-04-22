@@ -1169,8 +1169,8 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 
     carmen_vector_3D_t offset = get_position_offset();
 
-    pos.x = localize_ackerman_message->globalpos.x - offset.x;
-    pos.y = localize_ackerman_message->globalpos.y - offset.y;
+    pos.x = localize_ackerman_message->globalpos.x - offset.x - 1.076 * cos(localize_ackerman_message->globalpos.theta) - 4.69 * cos(localize_ackerman_message->globalpos.theta - localize_ackerman_message->beta);
+    pos.y = localize_ackerman_message->globalpos.y - offset.y - 1.076 * sin(localize_ackerman_message->globalpos.theta) - 4.69 * sin(localize_ackerman_message->globalpos.theta - localize_ackerman_message->beta);
     pos.z = 0.0 - offset.z;
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

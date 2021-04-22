@@ -46,6 +46,11 @@
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
+// TODO investigate the interference of this parameters in the results
+#define YOLO_TRASHOLD 0.5
+// #define HEIGHT_CLUSTERS_TRASHOLD 0.9 // Minimum height of the highest point of the cluster to be considered a valid cluster
+
+
 carmen_map_t offline_map;
 // TODO: @@@ Alberto: essa variavel eh definida como externa dentro da lib do mapper. Corrigir!
 carmen_localize_ackerman_globalpos_message *globalpos_history;
@@ -722,9 +727,9 @@ show_detections(cv::Mat image, vector<bbox_t> predictions)
     	case 5: //bus
     		color_mapped = 5;
     		break;
-    	case 6: //train
-    		color_mapped = 5;
-    		break;
+    	// case 6: //train (Yolo has problems detecting, generates a lot of false positives)
+			// 	contTrain++;
+			// 	break;
     	case 7: //truck
     		color_mapped = 4;
     		break;
@@ -758,7 +763,7 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 			predictions[i].obj_id == 2 ||  // car
 			predictions[i].obj_id == 3 ||  // motorbike
 			predictions[i].obj_id == 5 ||  // bus
-			predictions[i].obj_id == 6 ||  // train
+			// predictions[i].obj_id == 6 ||  // train (Yolo has problems detecting, generates a lot of false positives)
 			predictions[i].obj_id == 7) //||  // truck
 			//predictions[i].obj_id == 9)    // traffic light
 		{
@@ -932,6 +937,8 @@ compute_obstacle_points(sensor_parameters_t *sensor_params, sensor_data_t *senso
 				point.cartesian_x = velodyne_p3d.x();
 				point.cartesian_y = velodyne_p3d.y(); // Must be inverted because Velodyne angle is reversed with CARMEN angles
 				point.cartesian_z = velodyne_p3d.z();
+				// TODO por que nao funciona???
+				// point.cartesian_z = velodyne_p3d.z() + (robot_wheel_radius + sensor_board_1_pose.position.z + velodyne_pose.position.z);
 				
 				points.push_back(point);
 			}
@@ -1177,7 +1184,7 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 	open_cv_image = open_cv_image(myROI);
 		
 	if (!strcmp(neural_network, "yolo"))
-		predictions_vector = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5, 0.5);
+		predictions_vector = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, YOLO_TRASHOLD, YOLO_TRASHOLD);
 	if (!strcmp(neural_network, "efficientdet"))
 	 	predictions_vector = run_EfficientDet(open_cv_image.data, open_cv_image.cols, open_cv_image.rows);
 	
@@ -1431,6 +1438,7 @@ compute_mean_point_of_each_cluster(vector<vector<image_cartesian>> clusters_vect
 	return (clusters_poses_vector);
 }
 
+
 // ===================================================================================================================================================================================================================================
 // Parametro a ser movido para o local adequado de definição de parametros
 // ===================================================================================================================================================================================================================================
@@ -1472,6 +1480,40 @@ find_missing_movable_objects(vector<carmen_vector_2D_t> previous_filtered_cluste
 	return (recovered_clusters);
 }
 
+
+void
+remove_clusters_below_height_treshold(vector<vector<image_cartesian>> &clustered_points, double height_threshold)
+{
+	bool lower_cluster = true;
+	unsigned int i, size, j, c_size;
+
+	height_threshold -= (robot_wheel_radius + sensor_board_1_pose.position.z + velodyne_pose.position.z);
+
+	printf("CS %d\n", (int)clustered_points.size());
+
+	for (i = 0, size = clustered_points.size(); i < size; i++)
+	{
+		for (j = 0, c_size = clustered_points[i].size(); j < c_size; j++)
+		{
+			printf("%lf %lf\n", height_threshold, clustered_points[i][j].cartesian_z);
+
+			if (clustered_points[i][j].cartesian_z > height_threshold)
+			{
+				lower_cluster = false;
+			}
+			break;
+		}
+		if (lower_cluster == false)
+		{
+			clustered_points.erase(clustered_points.begin() + i);
+		}
+		lower_cluster = true;
+	}
+
+	printf("CS2 %d\n", (int)clustered_points.size());
+}
+
+
 int
 filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
@@ -1493,6 +1535,10 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 	points = compute_obstacle_points(sensor_params, sensor_data);
 
 	clustered_points = dbscan_compute_clusters(0.5, 1, points);
+
+#ifdef HEIGHT_CLUSTERS_TRASHOLD
+	remove_clusters_below_height_treshold(clustered_points, HEIGHT_CLUSTERS_TRASHOLD);
+#endif
 
 	if (points.size() == 0)
 		return 0;
@@ -1730,9 +1776,9 @@ filter_sensor_data_using_yolo_old(sensor_parameters_t *sensor_params, sensor_dat
 						case 5: //bus
 							contCar++;
 							break;
-						case 6: //train
-							contTrain++;
-							break;
+						// case 6: //train (Yolo has problems detecting, generates a lot of false positives)
+						// 	contTrain++;
+						// 	break;
 						case 7: //truck
 							contCar++;
 							break;
@@ -2076,9 +2122,9 @@ filter_sensor_data_using_efficientdet(sensor_parameters_t *sensor_params, sensor
 						case 5: //bus
 							contCar++;
 							break;
-						case 6: //train
-							contTrain++;
-							break;
+						// case 6: //train (Yolo has problems detecting, generates a lot of false positives)
+						// 	contTrain++;
+						// 	break;
 						case 7: //truck
 							contCar++;
 							break;

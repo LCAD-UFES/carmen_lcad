@@ -297,8 +297,8 @@ compute_metrics()
 
 	accuracy = (double) trues / total;
 
-	printf("Positives         (%8d) (%6.2lf%%)\n", gt_positives, (double) 100 * gt_positives / total);
-	printf("Negatives         (%8d) (%6.2lf%%)\n", gt_negatives, (double) 100 * gt_negatives / total);
+	printf("Positives         (%8d) (%6.4lf%%)\n", gt_positives, (double) 100 * gt_positives / total);
+	printf("Negatives         (%8d) (%6.4lf%%)\n", gt_negatives, (double) 100 * gt_negatives / total);
 
 	printf("\nTP                (%8d)\n", true_positives);
 	printf("TN                (%8d)\n", true_negatives);
@@ -307,7 +307,7 @@ compute_metrics()
 	printf("----------------------------\n");
 	printf("Total             (%8d)\n", total);
 
-	printf("\nPrecision %9.2lf%% \nRecall    %9.2lf%%\nAccuracy  %9.2lf%%\n\n", 100 * precision, 100 * recall, 100 * accuracy);
+	printf("\nPrecision %9.4lf%% \nRecall    %9.4lf%%\nAccuracy  %9.4lf%%\n\n", 100 * precision, 100 * recall, 100 * accuracy);
 }
 
 
