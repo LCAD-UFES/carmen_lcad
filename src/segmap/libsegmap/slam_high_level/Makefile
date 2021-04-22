@@ -13,7 +13,7 @@ IFLAGS += -std=c++11 -pg
 LFLAGS += -pg
 
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
-	-I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
+	-I /usr/include/vtk-5.10/ -I /usr/include/vtk-6* `pkg-config --cflags opencv`
 
 SOURCES = segmap_map_builder.cpp
 PUBLIC_INCLUDES = segmap_map_builder.h 
