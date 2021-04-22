@@ -122,7 +122,7 @@ createCarDrawer(int argc, char** argv)
 		carmen_param_t param_list2[] = {
 		{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.d), 0, NULL},
 		{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.M), 0, NULL},
-		{semi_trailer_string, "width", CARMEN_PARAM_STRING, &(carDrawer->semi_trailer_config.width), 0, NULL},
+		{semi_trailer_string, "width", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.width), 0, NULL},
 		{semi_trailer_string, "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_front), 0, NULL},
 		{semi_trailer_string, "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_back), 0, NULL},
 		{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 1, NULL},
@@ -166,6 +166,7 @@ createCarDrawer(int argc, char** argv)
 					&(carDrawer->semi_trailer_collision_config.markers[i].radius), &(carDrawer->semi_trailer_collision_config.markers[i].height_level));
 
 		fclose(collision_file_pointer);
+		free(semi_trailer_collision_file);
 	}
 
 	return carDrawer;

@@ -1340,6 +1340,8 @@ read_parameters(int argc, char *argv[],
 	printf("%s\n", polygon_file);
 	carmen_parse_polygon_file(robot_poly_config, polygon_file);
 
+	free(robot_poly_file);
+
 	if (semi_trailer_config->type > 0)
 	{
 		char semi_trailer_string[256];
@@ -1349,7 +1351,7 @@ read_parameters(int argc, char *argv[],
 		carmen_param_t param_list2[] = {
 		{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config->d),							  	0, NULL},
 		{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config->M),							  	0, NULL},
-		{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_STRING, &(semi_trailer_config->width),						  	0, NULL},
+		{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config->width),						  	0, NULL},
 		{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_front), 0, NULL},
 		{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config->distance_between_axle_and_back),	0, NULL},
 		{semi_trailer_string, (char *) "polygon_file",					  CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 							  	0, NULL}
@@ -1364,6 +1366,8 @@ read_parameters(int argc, char *argv[],
 		strcat(polygon_file, semi_trailer_poly_file);
 		printf("%s\n", polygon_file);
 		carmen_parse_polygon_file(semi_trailer_poly_config, polygon_file);
+
+		free(semi_trailer_poly_file);
 	}
 
 	carmen_param_t param_cmd_list[] =

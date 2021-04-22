@@ -1761,7 +1761,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{
 			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   0, NULL},
 			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   0, NULL},
-			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_STRING, &(semi_trailer_config.width),						   0, NULL},
+			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						   0, NULL},
 			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
 			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
 		};
