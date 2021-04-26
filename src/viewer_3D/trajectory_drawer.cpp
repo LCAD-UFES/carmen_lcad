@@ -39,6 +39,25 @@ destroy_trajectory_drawer(trajectory_drawer *t_drawer)
 	free(t_drawer);
 }
 
+
+void
+set_color(trajectory_drawer *t_drawer, int i, double v_i)
+{
+	if (((i == 0) && (v_i < 0.0)) || ((i == t_drawer->path_size - 1) && (v_i < 0.0)))
+	{
+		t_drawer->path_segment_color[i].x = 1.0;
+		t_drawer->path_segment_color[i].y = 0.0;
+		t_drawer->path_segment_color[i].z = 0.0;
+	}
+	else
+	{
+		t_drawer->path_segment_color[i].x = t_drawer->r;
+		t_drawer->path_segment_color[i].y = t_drawer->g;
+		t_drawer->path_segment_color[i].z = t_drawer->b;
+	}
+}
+
+
 void
 add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_plan_message *message)
 {
@@ -51,24 +70,12 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 		t_drawer->path[i].x = message->path[i].x;
 		t_drawer->path[i].y = message->path[i].y;
 		t_drawer->path[i].z = 0.0;
-
-		if (((i != t_drawer->path_size - 1) && (message->path[i + 1].v >= 0.0)) ||
-			((i == t_drawer->path_size - 1) && (message->path[i].v >= 0.0)))
-		{
-			t_drawer->path_segment_color[i].x = t_drawer->r;
-			t_drawer->path_segment_color[i].y = t_drawer->g;
-			t_drawer->path_segment_color[i].z = t_drawer->b;
-		}
-		else
-		{
-			t_drawer->path_segment_color[i].x = 1.0;
-			t_drawer->path_segment_color[i].y = 0.0;
-			t_drawer->path_segment_color[i].z = 0.0;
-		}
+		set_color(t_drawer, i, message->path[i].v);
 	}
 
 	t_drawer->availability_timestamp = carmen_get_time();
 }
+
 
 void
 add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ackerman_motion_command_message *message)
@@ -83,20 +90,7 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 		t_drawer->path[i].x = message->motion_command[i].x;
 		t_drawer->path[i].y = message->motion_command[i].y;
 		t_drawer->path[i].z = 0.0;
-
-		if (((i != t_drawer->path_size - 1) && (message->motion_command[i + 1].v >= 0.0)) ||
-			((i == t_drawer->path_size - 1) && (message->motion_command[i].v >= 0.0)))
-		{
-			t_drawer->path_segment_color[i].x = t_drawer->r;
-			t_drawer->path_segment_color[i].y = t_drawer->g;
-			t_drawer->path_segment_color[i].z = t_drawer->b;
-		}
-		else
-		{
-			t_drawer->path_segment_color[i].x = 1.0;
-			t_drawer->path_segment_color[i].y = 0.0;
-			t_drawer->path_segment_color[i].z = 0.0;
-		}
+		set_color(t_drawer, i, message->motion_command[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->motion_command[i].x, message->motion_command[i].y, message->motion_command[i].theta,
 //				message->motion_command[i].phi, message->motion_command[i].v);
@@ -105,6 +99,7 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 
 	t_drawer->availability_timestamp = carmen_get_time();
 }
+
 
 void
 add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *message)
@@ -118,24 +113,12 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 		t_drawer->path[i].x = message->path[i].p1.x;
 		t_drawer->path[i].y = message->path[i].p1.y;
 		t_drawer->path[i].z = 0.0;
-
-		if (((i != t_drawer->path_size - 1) && (message->path[i + 1].v >= 0.0)) ||
-			((i == t_drawer->path_size - 1) && (message->path[i].v >= 0.0)))
-		{
-			t_drawer->path_segment_color[i].x = t_drawer->r;
-			t_drawer->path_segment_color[i].y = t_drawer->g;
-			t_drawer->path_segment_color[i].z = t_drawer->b;
-		}
-		else
-		{
-			t_drawer->path_segment_color[i].x = 1.0;
-			t_drawer->path_segment_color[i].y = 0.0;
-			t_drawer->path_segment_color[i].z = 0.0;
-		}
+		set_color(t_drawer, i, message->path[i].v);
 	}
 
 	t_drawer->availability_timestamp = carmen_get_time();
 }
+
 
 void
 add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behavior_selector_path_goals_and_annotations_message *message, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels)
@@ -153,20 +136,7 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 		t_drawer->path[i].x = message->poses[i].x;
 		t_drawer->path[i].y = message->poses[i].y;
 		t_drawer->path[i].z = 0.0;
-
-		if (((i != t_drawer->path_size - 1) && (message->poses[i + 1].v >= 0.0)) ||
-			((i == t_drawer->path_size - 1) && (message->poses[i].v >= 0.0)))
-		{
-			t_drawer->path_segment_color[i].x = t_drawer->r;
-			t_drawer->path_segment_color[i].y = t_drawer->g;
-			t_drawer->path_segment_color[i].z = t_drawer->b;
-		}
-		else
-		{
-			t_drawer->path_segment_color[i].x = 1.0;
-			t_drawer->path_segment_color[i].y = 0.0;
-			t_drawer->path_segment_color[i].z = 0.0;
-		}
+		set_color(t_drawer, i, message->poses[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->poses[i].x, message->poses[i].y, message->poses[i].theta,
 //				message->poses[i].phi, message->poses[i].v);
