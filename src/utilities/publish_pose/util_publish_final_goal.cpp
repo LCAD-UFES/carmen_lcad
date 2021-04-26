@@ -42,8 +42,11 @@ main(int argc, char **argv)
 	define_messages();
 
 	sleep(time);
-	publish_final_goal(pose);
-	carmen_ipc_sleep(0.1);
+	for (int i = 0; i < 2; i++)
+	{
+		publish_final_goal(pose);
+		carmen_ipc_sleep(0.1);
+	}
 
 	while (1)
 		sleep(10); // Para não morrer nunca e não gastar CPU

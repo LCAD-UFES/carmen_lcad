@@ -546,9 +546,12 @@ void on_menuDisplay_ShowMPPMotionPlan_toggled (GtkCheckMenuItem* togglebutton __
 	global_gui->nav_panel_config->show_mpp_motion_plan = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_mpp_motion_plan)
-		carmen_model_predictive_planner_subscribe_motion_plan_message(&global_gui->mpp_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		carmen_subscribe_message((char *) RRT_PATH_NAME, (char *) RRT_PATH_FMT, &global_gui->mpp_motion_plan_msg_rrt, sizeof(rrt_path_message), NULL, CARMEN_SUBSCRIBE_LATEST);
 	else
-		carmen_model_predictive_planner_subscribe_motion_plan_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+		carmen_unsubscribe_message((char *) RRT_PATH_NAME, NULL);
+//		carmen_model_predictive_planner_subscribe_motion_plan_message(&global_gui->mpp_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+//	else
+//		carmen_model_predictive_planner_subscribe_motion_plan_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1407,40 +1410,6 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	temp_goal.map = the_map_view->internal_map;
 	global_gui->draw_goal_list(the_map_view, temp_goal);
 
-	if (global_gui->nav_panel_config->show_oa_motion_plan)
-	{
-		global_gui->oa_motion_plan_size = global_gui->oa_motion_plan_msg.path_length;
-		global_gui->oa_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->oa_motion_plan_size);
-
-		for (int i = 0; i < global_gui->oa_motion_plan_size; i++)
-		{
-			global_gui->oa_motion_plan[i].pose.x	   = global_gui->oa_motion_plan_msg.path[i].x;
-			global_gui->oa_motion_plan[i].pose.y	   = global_gui->oa_motion_plan_msg.path[i].y;
-			global_gui->oa_motion_plan[i].pose.theta  = global_gui->oa_motion_plan_msg.path[i].theta;
-			global_gui->oa_motion_plan[i].map 		   = global_gui->controls_.map_view->internal_map;
-		}
-
-		global_gui->draw_path(global_gui->oa_motion_plan, global_gui->oa_motion_plan_size, carmen_green, carmen_green, the_map_view);
-		free(global_gui->oa_motion_plan);
-	}
-
-	if (global_gui->nav_panel_config->show_mpp_motion_plan)
-	{
-		global_gui->mpp_motion_plan_size = global_gui->mpp_motion_plan_msg.plan_length;
-		global_gui->mpp_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->mpp_motion_plan_size);
-
-		for (int i = 0; i < global_gui->mpp_motion_plan_size; i++)
-		{
-			global_gui->mpp_motion_plan[i].pose.x	   = global_gui->mpp_motion_plan_msg.plan[i].x;
-			global_gui->mpp_motion_plan[i].pose.y	   = global_gui->mpp_motion_plan_msg.plan[i].y;
-			global_gui->mpp_motion_plan[i].pose.theta  = global_gui->mpp_motion_plan_msg.plan[i].theta;
-			global_gui->mpp_motion_plan[i].map 		   = global_gui->controls_.map_view->internal_map;
-		}
-
-		global_gui->draw_path(global_gui->mpp_motion_plan, global_gui->mpp_motion_plan_size, carmen_blue, carmen_green, the_map_view);
-		free(global_gui->mpp_motion_plan);
-	}
-
 	if (global_gui->nav_panel_config->show_command_plan)
 	{
 		global_gui->obstacle_avoider_path_size = global_gui->obstacle_avoider_msg.path_length;
@@ -1456,6 +1425,45 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 		global_gui->draw_path(global_gui->obstacle_avoider_path, global_gui->obstacle_avoider_path_size, carmen_red, carmen_red, the_map_view);
 		free(global_gui->obstacle_avoider_path);
+	}
+
+	if (global_gui->nav_panel_config->show_oa_motion_plan)
+	{
+		global_gui->oa_motion_plan_size = global_gui->oa_motion_plan_msg.path_length;
+		global_gui->oa_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->oa_motion_plan_size);
+
+		for (int i = 0; i < global_gui->oa_motion_plan_size; i++)
+		{
+			global_gui->oa_motion_plan[i].pose.x	   = global_gui->oa_motion_plan_msg.path[i].x;
+			global_gui->oa_motion_plan[i].pose.y	   = global_gui->oa_motion_plan_msg.path[i].y;
+			global_gui->oa_motion_plan[i].pose.theta  = global_gui->oa_motion_plan_msg.path[i].theta;
+			global_gui->oa_motion_plan[i].map 		   = global_gui->controls_.map_view->internal_map;
+		}
+
+		global_gui->draw_path(global_gui->oa_motion_plan, global_gui->oa_motion_plan_size, carmen_orange, carmen_orange, the_map_view);
+		free(global_gui->oa_motion_plan);
+	}
+
+	if (global_gui->nav_panel_config->show_mpp_motion_plan)
+	{
+//		global_gui->mpp_motion_plan_size = global_gui->mpp_motion_plan_msg.plan_length;
+		global_gui->mpp_motion_plan_size = global_gui->mpp_motion_plan_msg_rrt.size;
+		global_gui->mpp_motion_plan = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * global_gui->mpp_motion_plan_size);
+
+		for (int i = 0; i < global_gui->mpp_motion_plan_size; i++)
+		{
+//			global_gui->mpp_motion_plan[i].pose.x	   = global_gui->mpp_motion_plan_msg.plan[i].x;
+//			global_gui->mpp_motion_plan[i].pose.y	   = global_gui->mpp_motion_plan_msg.plan[i].y;
+//			global_gui->mpp_motion_plan[i].pose.theta  = global_gui->mpp_motion_plan_msg.plan[i].theta;
+//			global_gui->mpp_motion_plan[i].map 		   = global_gui->controls_.map_view->internal_map;
+			global_gui->mpp_motion_plan[i].pose.x	   = global_gui->mpp_motion_plan_msg_rrt.path[i].p1.x;
+			global_gui->mpp_motion_plan[i].pose.y	   = global_gui->mpp_motion_plan_msg_rrt.path[i].p1.y;
+			global_gui->mpp_motion_plan[i].pose.theta  = global_gui->mpp_motion_plan_msg_rrt.path[i].p1.theta;
+			global_gui->mpp_motion_plan[i].map 		   = global_gui->controls_.map_view->internal_map;
+		}
+
+		global_gui->draw_path(global_gui->mpp_motion_plan, global_gui->mpp_motion_plan_size, carmen_green, carmen_green, the_map_view);
+		free(global_gui->mpp_motion_plan);
 	}
 
 	if (global_gui->nav_panel_config->draw_path)

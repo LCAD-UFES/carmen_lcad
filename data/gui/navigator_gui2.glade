@@ -975,6 +975,21 @@
                                   </packing>
                                 </child>
                                 <child>
+                                  <object class="GtkLabel" id="labelVelocity">
+                                    <property name="selectable">True</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="xalign">0</property>
+                                    <property name="xpad">5</property>
+                                    <property name="label" translatable="yes">Velocity:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                                <child>
                                   <object class="GtkLabel" id="labelRobot">
                                     <property name="selectable">True</property>
                                     <property name="visible">True</property>
@@ -987,37 +1002,7 @@
                                   <packing>
                                     <property name="expand">True</property>
                                     <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="labelFusedOdometry">
-                                    <property name="selectable">True</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="xalign">0</property>
-                                    <property name="xpad">5</property>
-                                    <property name="label" translatable="yes">Fused Odom:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
                                     <property name="position">2</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="labelVelocity">
-                                    <property name="selectable">True</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="xalign">0</property>
-                                    <property name="xpad">5</property>
-                                    <property name="label" translatable="yes">Velocity:</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">3</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1028,6 +1013,21 @@
                                     <property name="xalign">0</property>
                                     <property name="xpad">5</property>
                                     <property name="label" translatable="yes">Goal:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">3</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="labelFusedOdometry">
+                                    <property name="selectable">True</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="xalign">0</property>
+                                    <property name="xpad">5</property>
+                                    <property name="label" translatable="yes">Fused Odom:</property>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>

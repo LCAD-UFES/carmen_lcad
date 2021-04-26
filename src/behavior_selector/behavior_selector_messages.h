@@ -40,7 +40,7 @@ typedef enum
 	Initializing,
 	Stopped,
 	Free_Running,
-	Following_Moving_Object,
+	Free_Reverse_Running,
 	Stopping_Behind_Moving_Object,
 	Stopped_Behind_Moving_Object_S0,
 	Stopped_Behind_Moving_Object_S1,
@@ -60,23 +60,17 @@ typedef enum
 	Stopping_At_Stop_Sign,
 	Stopped_At_Stop_Sign_S0,
 	Stopped_At_Stop_Sign_S1,
-	Stopped_At_Stop_Sign_S2
+	Stopped_At_Stop_Sign_S2,
+	Stopping_To_Reverse,
+	Stopped_At_Reverse_S0,
+	Stopped_At_Reverse_S1,
+	Stopped_At_Reverse_S2,
+	Stopping_To_Go_Forward,
+	Stopped_At_Go_Forward_S0,
+	Stopped_At_Go_Forward_S1,
+	Stopped_At_Go_Forward_S2,
+	Recovering_From_Error
 } carmen_behavior_selector_low_level_state_t;
-
-
-typedef enum
-{
-	none = 0,
-	stopped,
-	free_running,
-	following_moving_object,
-	stopping_behind_moving_object,
-	stopped_behind_moving_object,
-	stopping_at_red_light,
-	stopped_at_red_light,
-	stopping_at_stop_sign,
-	stopped_at_stop_sign,
-} carmen_behavior_selector_operation_mode_t;
 
 typedef enum
 {
@@ -115,14 +109,13 @@ typedef struct
 	carmen_behavior_selector_algorithm_t algorithm;
 
 	carmen_behavior_selector_low_level_state_t low_level_state;
-	carmen_behavior_selector_operation_mode_t behaviour_seletor_mode;
 
 	double timestamp;
 	char *host;
 } carmen_behavior_selector_state_message;
 
 #define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME		"carmen_behavior_selector_current_state_name"
-#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, double, string}"
+#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, double, string}"
 
 typedef struct
 {

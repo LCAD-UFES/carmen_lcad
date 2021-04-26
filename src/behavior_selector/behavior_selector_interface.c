@@ -141,10 +141,10 @@ carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algo
 char *
 get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 {
-	if (state == Initializing) 		return ((char *) "Initializing");
-	if (state == Stopped) 			return ((char *) "Stopped");
-	if (state == Free_Running) 		return ((char *) "Free_Running");
-	if (state == Following_Moving_Object) 			return ((char *) "Following_Moving_Object");
+	if (state == Initializing) 						return ((char *) "Initializing");
+	if (state == Stopped) 							return ((char *) "Stopped");
+	if (state == Free_Running) 						return ((char *) "Free_Running");
+	if (state == Free_Reverse_Running) 				return ((char *) "Free_Reverse_Running");
 	if (state == Stopping_Behind_Moving_Object) 	return ((char *) "Stopping_Behind_Moving_Object");
 	if (state == Stopped_Behind_Moving_Object_S0) 	return ((char *) "Stopped_Behind_Moving_Object_S0");
 	if (state == Stopped_Behind_Moving_Object_S1) 	return ((char *) "Stopped_Behind_Moving_Object_S1");
@@ -165,6 +165,15 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 	if (state == Stopped_At_Stop_Sign_S0) 			return ((char *) "Stopped_At_Stop_Sign_S0");
 	if (state == Stopped_At_Stop_Sign_S1) 			return ((char *) "Stopped_At_Stop_Sign_S1");
 	if (state == Stopped_At_Stop_Sign_S2) 			return ((char *) "Stopped_At_Stop_Sign_S2");
+	if (state == Stopping_To_Reverse) 				return ((char *) "Stopping_To_Reverse");
+	if (state == Stopped_At_Reverse_S0) 			return ((char *) "Stopped_At_Reverse_S0");
+	if (state == Stopped_At_Reverse_S1) 			return ((char *) "Stopped_At_Reverse_S1");
+	if (state == Stopped_At_Reverse_S2) 			return ((char *) "Stopped_At_Reverse_S2");
+	if (state == Stopping_To_Go_Forward) 			return ((char *) "Stopping_To_Go_Forward");
+	if (state == Stopped_At_Go_Forward_S0) 			return ((char *) "Stopped_At_Go_Forward_S0");
+	if (state == Stopped_At_Go_Forward_S1) 			return ((char *) "Stopped_At_Go_Forward_S1");
+	if (state == Stopped_At_Go_Forward_S2) 			return ((char *) "Stopped_At_Go_Forward_S2");
+	if (state == Recovering_From_Error) 			return ((char *) "Recovering_From_Error");
 
 	return ((char *) " ");
 }

@@ -899,39 +899,66 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, displacement);
 			moving_obstacle_trasition = 0.0;
 		}
-		//parking se pose anterior foi em uma direcao, aguarda o carro terminar todo o path dessa direcao antes de mudar de direcao (reh/drive)
 		else if (behavior_selector_reverse_driving &&
-				 ((next_pose_change_direction_index != -1)))//	&&
-//				  (DIST2D(rddf->poses[rddf_pose_index], robot_pose) > 1.0)))
+			 	 (
+			 		((next_pose_change_direction_index == rddf_pose_index) &&
+					  (
+//					   (behavior_selector_state_message.low_level_state == Free_Reverse_Running) ||
+//					   (behavior_selector_state_message.low_level_state == Free_Running) ||
+					   (behavior_selector_state_message.low_level_state == Stopping_To_Reverse) ||
+					   (behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S0) ||
+					   (behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S1) ||
+					   (behavior_selector_state_message.low_level_state == Stopping_To_Go_Forward) ||
+					   (behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S0) ||
+					   (behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S1)
+					  )
+					) ||
+					((next_pose_change_direction_index == rddf_pose_index) && (next_pose_change_direction_index > 0) &&
+					  (
+					   (behavior_selector_state_message.low_level_state == Free_Reverse_Running) ||
+					   (behavior_selector_state_message.low_level_state == Free_Running) ||
+					   (behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S2) ||
+					   (behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S2)
+					  )
+					)
+				 )
+				)
 		{
-//			static int count_v = 0;
-			static double keep_goal_time = 0.0;
-			if ((next_pose_change_direction_index > 1) || (fabs(robot_pose.v) > 0.05))
-			{
-				if ((goal_index == 0) && (fabs(robot_pose.v) > 0.05))
-					keep_goal_time = carmen_get_time();
-
-				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-//				printf("    aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
-//				fflush(stdout);
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-			}
-			else
-			{
-				if ((carmen_get_time() - keep_goal_time) < 3.5)	// Espera parado um pouco
-				{
-					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-//					printf("*** aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
-//					fflush(stdout);
-					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-
-//					if (fabs(robot_pose.v) > 0.05)	// nao tem que remover este if ???
-//						keep_goal_time = carmen_get_time();
-				}
-//				else
-//					keep_goal_time = 0.0;
-			}
+			goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 		}
+//		else if (behavior_selector_reverse_driving &&
+//				 ((next_pose_change_direction_index != -1)))//	&&
+////				  (DIST2D(rddf->poses[rddf_pose_index], robot_pose) > 1.0)))
+//		{
+////			static int count_v = 0;
+//			static double keep_goal_time = 0.0;
+//			if ((next_pose_change_direction_index > 1) || (fabs(robot_pose.v) > 0.05))
+//			{
+//				if ((goal_index == 0) && (fabs(robot_pose.v) > 0.05))
+//					keep_goal_time = carmen_get_time();
+//
+//				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+////				printf("    aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+////				fflush(stdout);
+//				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+//			}
+//			else
+//			{
+//				if ((carmen_get_time() - keep_goal_time) < 3.5)	// Espera parado um pouco
+//				{
+//					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
+////					printf("*** aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+////					fflush(stdout);
+//					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+//
+////					if (fabs(robot_pose.v) > 0.05)	// nao tem que remover este if ???
+////						keep_goal_time = carmen_get_time();
+//				}
+////				else
+////					keep_goal_time = 0.0;
+//			}
+//		}
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) ||  // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
 				  ((distance_from_car_to_rddf_point >= distance_between_waypoints / 1.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Trocando a constante que divide distance_between_waypoints pode-se alterar a distância entre waypoints em caso de reh
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo

@@ -122,9 +122,14 @@ extern "C" {
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 	
 	bool busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
-	
-	carmen_annotation_t*
-	get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi);
+
+	bool going_forward();
+
+	carmen_ackerman_traj_point_t *get_nearest_forward_waypoint_ahead();
+
+	carmen_ackerman_traj_point_t *get_nearest_reverse_waypoint_ahead();
+
+	carmen_annotation_t *get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi);
 	
 	bool must_yield(path_collision_info_t path_collision_info, double timestamp);
 	
@@ -145,9 +150,8 @@ extern "C" {
 	carmen_moving_objects_point_clouds_message *behavior_selector_moving_objects_tracking(carmen_frenet_path_planner_set_of_paths *set_of_paths,
 			carmen_obstacle_distance_mapper_map_message *distance_map);
 
-	int run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-			carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal, int goal_type,
-			path_collision_info_t path_collision_info, double timestamp);
+	int	run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
+			carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp);
 
 	carmen_annotation_t *get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
 			carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving);

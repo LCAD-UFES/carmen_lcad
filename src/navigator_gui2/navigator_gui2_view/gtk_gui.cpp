@@ -1,5 +1,6 @@
 #include "gtk_gui.h"
 #include <carmen/navigator_gui2_interface.h>
+#include <carmen/rrt_node.h>
 
 using namespace std;
 extern int record_screen;
@@ -344,7 +345,9 @@ namespace View
 			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&oa_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_mpp_motion_plan)
-			carmen_model_predictive_planner_subscribe_motion_plan_message(&mpp_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+			carmen_subscribe_message((char *) RRT_PATH_NAME, (char *) RRT_PATH_FMT, &mpp_motion_plan_msg_rrt, sizeof(rrt_path_message),
+						NULL, CARMEN_SUBSCRIBE_LATEST);
+//			carmen_model_predictive_planner_subscribe_motion_plan_message(&mpp_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_dynamic_points)
 			carmen_mapper_subscribe_virtual_laser_message(&virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);

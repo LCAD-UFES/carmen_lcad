@@ -186,9 +186,9 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	i_drawer->butt[16].text = "XSENS Axis";
 	i_drawer->butt[17].text = "Global Pos";
 	i_drawer->butt[18].text = "Intensity Vldyn";
-	i_drawer->butt[19].text = "Motion Plan";
-	i_drawer->butt[20].text = "Obst. Av. Plan";
-	i_drawer->butt[21].text = "Path Plan";
+	i_drawer->butt[19].text = "Path Plan";
+	i_drawer->butt[20].text = "Motion Plan";
+	i_drawer->butt[21].text = "Obst. Av. Plan";
 	i_drawer->butt[22].text = "Moving Objects";
 	i_drawer->butt[23].text = "GPS Axis";
 
@@ -562,23 +562,23 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(2, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 19) // Trajectory Plan
+				else if (i_drawer->butt[i].code == 19) // Path Plan
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(14, i_drawer->butt[i].state);
+				}
+				else if (i_drawer->butt[i].code == 20) // Trajectory Plan
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
 					set_flag_viewer_3D(17, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 20) // Obst. Av. Plan
+				else if (i_drawer->butt[i].code == 21) // Obst. Av. Plan
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
 					set_flag_viewer_3D(18, i_drawer->butt[i].state);
-				}
-				else if (i_drawer->butt[i].code == 21) // Path Plan
-				{
-					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
-
-					set_flag_viewer_3D(14, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 22) // Moving Objects
 				{

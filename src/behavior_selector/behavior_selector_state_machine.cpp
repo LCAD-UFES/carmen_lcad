@@ -11,6 +11,72 @@ extern bool autonomous;
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 extern carmen_robot_ackerman_config_t robot_config;
 
+static double wait_for_given_seconds_start_time = 0.0;
+
+
+bool
+forward_waypoint_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_ackerman_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
+
+	if (nearest_forward_waypoint_ahead == NULL)
+		return (false);
+
+	double distance_to_forward_waypoint = DIST2D_P(nearest_forward_waypoint_ahead, &current_robot_pose_v_and_phi);
+	double distance_to_act = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_forward_waypoint);
+
+	if (distance_to_act >= distance_to_forward_waypoint)
+		return (true);
+	else
+		return (false);
+}
+
+
+double
+distance_to_forward_waypoint(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_ackerman_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
+
+	if (nearest_forward_waypoint_ahead == NULL)
+		return (1000.0);
+
+	double distance_to_forward_waypoint = DIST2D_P(nearest_forward_waypoint_ahead, &current_robot_pose_v_and_phi);
+
+	return (distance_to_forward_waypoint);
+}
+
+
+bool
+reverse_waypoint_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_ackerman_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
+
+	if (nearest_reverse_waypoint_ahead == NULL)
+		return (false);
+
+	double distance_to_reverse_waypoint = DIST2D_P(nearest_reverse_waypoint_ahead, &current_robot_pose_v_and_phi);
+	double distance_to_act = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_reverse_waypoint);
+
+	if (distance_to_act >= distance_to_reverse_waypoint)
+		return (true);
+	else
+		return (false);
+}
+
+
+double
+distance_to_reverse_waypoint(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_ackerman_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
+
+	if (nearest_reverse_waypoint_ahead == NULL)
+		return (1000.0);
+
+	double distance_to_reverse_waypoint = DIST2D_P(nearest_reverse_waypoint_ahead, &current_robot_pose_v_and_phi);
+
+	return (distance_to_reverse_waypoint);
+}
+
 
 bool
 stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
@@ -54,21 +120,26 @@ distance_to_stop_sign(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 bool
 wait_for_given_seconds(double seconds)
 {
-	static double start_time = 0.0;
-
-	if (start_time == 0.0)
-		start_time = carmen_get_time();
+	if (wait_for_given_seconds_start_time == 0.0)
+		wait_for_given_seconds_start_time = carmen_get_time();
 
 	double t = carmen_get_time();
-	if (t - start_time < seconds)
+	if (t - wait_for_given_seconds_start_time < seconds)
 	{
 		return (false);
 	}
 	else
 	{
-		start_time = 0.0;
+		wait_for_given_seconds_start_time = 0.0;
 		return (true);
 	}
+}
+
+
+void
+clear_wait_for_given_seconds()
+{
+	wait_for_given_seconds_start_time = 0.0;
 }
 
 
@@ -184,16 +255,8 @@ distance_to_pedestrian_track_stop(carmen_ackerman_traj_point_t current_robot_pos
 }
 
 
-void
-clear_state_output(carmen_behavior_selector_state_message *decision_making_state_msg)
-{
-    decision_making_state_msg->behaviour_seletor_mode = none;
-}
-
-
 int
-perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg, carmen_ackerman_traj_point_t *goal __attribute__ ((unused)),
-		double timestamp __attribute__ ((unused)))
+perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg)
 {
 	switch (decision_making_state_msg->low_level_state)
 	{
@@ -201,12 +264,12 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 			break;
 		case Stopped:
 			break;
+
 		case Free_Running:
 			break;
-
-
-		case Following_Moving_Object:
+		case Free_Reverse_Running:
 			break;
+
 
 		case Stopping_At_Red_Traffic_Light:
 			break;
@@ -253,6 +316,32 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 			break;
 		case Stopped_At_Stop_Sign_S2:
 			break;
+
+
+		case Stopping_To_Reverse:
+			break;
+		case Stopped_At_Reverse_S0:
+			break;
+		case Stopped_At_Reverse_S1:
+			break;
+		case Stopped_At_Reverse_S2:
+			break;
+
+
+		case Stopping_To_Go_Forward:
+			break;
+		case Stopped_At_Go_Forward_S0:
+			break;
+		case Stopped_At_Go_Forward_S1:
+			break;
+		case Stopped_At_Go_Forward_S2:
+			break;
+
+
+		case Recovering_From_Error:
+			break;
+
+
 		default:
 			printf("Error: Unknown state in perform_state_action()\n");
 			return (1);
@@ -283,7 +372,7 @@ robot_reached_non_return_point(carmen_ackerman_traj_point_t current_robot_pose_v
 
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type __attribute__ ((unused)),
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		path_collision_info_t path_collision_info, double timestamp)
 {
 	switch (decision_making_state_msg->low_level_state)
@@ -292,13 +381,20 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			decision_making_state_msg->low_level_state = Stopped;
 			break;
 		case Stopped:
+			if (autonomous)
+			{
+				if (going_forward())
+					decision_making_state_msg->low_level_state = Free_Running;
+				else
+					decision_making_state_msg->low_level_state = Free_Reverse_Running;
+			}
+			break;
+
+
+		case Free_Running:
 			if (!autonomous)
 				decision_making_state_msg->low_level_state = Stopped;
-			else
-				decision_making_state_msg->low_level_state = Free_Running;
-			break;
-		case Free_Running:
-			if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
+			else if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
 			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) && !robot_reached_non_return_point(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Busy_Pedestrian_Track;
@@ -306,6 +402,24 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Yield;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
+			else if (reverse_waypoint_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Stopping_To_Reverse;
+			break;
+
+
+		case Free_Reverse_Running:
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
+			else if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
+			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) && !robot_reached_non_return_point(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Stopping_At_Busy_Pedestrian_Track;
+			else if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopping_At_Yield;
+			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
+			else if (forward_waypoint_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Stopping_To_Go_Forward;
 			break;
 
 
@@ -339,6 +453,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped_At_Red_Traffic_Light_S2:
 			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_traffic_light_stop(current_robot_pose_v_and_phi) > 2.0))
 				decision_making_state_msg->low_level_state = Free_Running;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
 			break;
 
 
@@ -374,6 +490,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Free_Running;
 			if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S0;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
 			break;
 
 
@@ -409,6 +527,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Free_Running;
 			if (must_yield(path_collision_info, timestamp))
 				decision_making_state_msg->low_level_state = Stopped_At_Yield_S0;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
 			break;
 
 
@@ -422,32 +542,150 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
 			break;
 		case Stopped_At_Stop_Sign_S1:
-		{
-			static bool wait_stopped = true;
+			{
+				static bool wait_stopped = true;
 
-			if (wait_stopped)
-			{
-				if (wait_for_given_seconds(5.0))
-					wait_stopped = false;
-			}
-			else
-			{
-				if (!must_yield(path_collision_info, timestamp))
+				if (wait_stopped)
 				{
-					wait_stopped = true;
-					decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S2;
+					if (wait_for_given_seconds(5.0))
+						wait_stopped = false;
+				}
+				else
+				{
+					if (!must_yield(path_collision_info, timestamp))
+					{
+						wait_stopped = true;
+						decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S2;
+					}
 				}
 			}
-		}
-		break;
-	case Stopped_At_Stop_Sign_S2:
-		if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_stop_sign(current_robot_pose_v_and_phi) > 1.0))
-			decision_making_state_msg->low_level_state = Free_Running;
-		if (must_yield(path_collision_info, timestamp))
-			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
-		break;
+			break;
+		case Stopped_At_Stop_Sign_S2:
+			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_stop_sign(current_robot_pose_v_and_phi) > 1.0))
+				decision_making_state_msg->low_level_state = Free_Running;
+			if (must_yield(path_collision_info, timestamp))
+				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
+			break;
 
-	default:
+
+		// Reverse handling
+		case Stopping_To_Reverse:
+			if ((fabs(current_robot_pose_v_and_phi.v) < 0.5) &&	(distance_to_reverse_waypoint(current_robot_pose_v_and_phi) < 2.0))
+			{
+				clear_wait_for_given_seconds();
+				decision_making_state_msg->low_level_state = Stopped_At_Reverse_S0;
+			}
+			else if ((fabs(current_robot_pose_v_and_phi.v) < 0.02) && wait_for_given_seconds(60.0))
+				decision_making_state_msg->low_level_state = Recovering_From_Error;
+			break;
+		case Stopped_At_Reverse_S0:
+			decision_making_state_msg->low_level_state = Stopped_At_Reverse_S1;
+			break;
+		case Stopped_At_Reverse_S1:
+			{
+				static bool wait_stopped = true;
+
+				if (wait_stopped)
+				{
+					if (wait_for_given_seconds(4.0))
+						wait_stopped = false;
+				}
+				else
+				{
+					if (autonomous && (fabs(current_robot_pose_v_and_phi.v) < 0.01))
+					{
+						wait_stopped = true;
+						clear_wait_for_given_seconds();
+						decision_making_state_msg->low_level_state = Stopped_At_Reverse_S2;
+					}
+					else if (!autonomous)
+					{
+						wait_stopped = true;
+						clear_wait_for_given_seconds();
+						decision_making_state_msg->low_level_state = Stopped;
+					}
+					else if (wait_for_given_seconds(3.0))
+					{
+						wait_stopped = true;
+						decision_making_state_msg->low_level_state = Recovering_From_Error;
+					}
+				}
+			}
+			break;
+		case Stopped_At_Reverse_S2:
+			if (autonomous && ((current_robot_pose_v_and_phi.v < -0.5) || (distance_to_reverse_waypoint(current_robot_pose_v_and_phi) > 1.0)))
+				decision_making_state_msg->low_level_state = Free_Reverse_Running;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
+			break;
+
+
+		// Reverse handling 2
+		case Stopping_To_Go_Forward:
+			if ((fabs(current_robot_pose_v_and_phi.v) < 0.5) && (distance_to_forward_waypoint(current_robot_pose_v_and_phi) < 2.0))
+			{
+				clear_wait_for_given_seconds();
+				decision_making_state_msg->low_level_state = Stopped_At_Go_Forward_S0;
+			}
+			else if ((fabs(current_robot_pose_v_and_phi.v) < 0.02) && wait_for_given_seconds(60.0))
+				decision_making_state_msg->low_level_state = Recovering_From_Error;
+			break;
+		case Stopped_At_Go_Forward_S0:
+			decision_making_state_msg->low_level_state = Stopped_At_Go_Forward_S1;
+			break;
+		case Stopped_At_Go_Forward_S1:
+			{
+				static bool wait_stopped = true;
+
+				if (wait_stopped)
+				{
+					if (wait_for_given_seconds(4.0))
+						wait_stopped = false;
+				}
+				else
+				{
+					if (autonomous && (fabs(current_robot_pose_v_and_phi.v) < 0.01))
+					{
+						wait_stopped = true;
+						clear_wait_for_given_seconds();
+						decision_making_state_msg->low_level_state = Stopped_At_Go_Forward_S2;
+					}
+					else if (!autonomous)
+					{
+						wait_stopped = true;
+						clear_wait_for_given_seconds();
+						decision_making_state_msg->low_level_state = Stopped;
+					}
+					else if (wait_for_given_seconds(3.0))
+					{
+						wait_stopped = true;
+						decision_making_state_msg->low_level_state = Recovering_From_Error;
+					}
+				}
+			}
+			break;
+		case Stopped_At_Go_Forward_S2:
+			if (autonomous && ((current_robot_pose_v_and_phi.v > 0.5) || (distance_to_forward_waypoint(current_robot_pose_v_and_phi) > 1.0)))
+				decision_making_state_msg->low_level_state = Free_Running;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
+			break;
+
+
+		case Recovering_From_Error:
+			if (wait_for_given_seconds(4.0))
+			{
+				carmen_navigator_ackerman_go();
+				decision_making_state_msg->low_level_state = Stopped;
+			}
+			else
+				carmen_navigator_ackerman_stop();
+			break;
+
+
+		default:
 			printf("Error: Unknown state in perform_state_transition()\n");
 			return (2);
 	}
@@ -458,20 +696,17 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 int
 run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal, int goal_type,
-		path_collision_info_t path_collision_info, double timestamp)
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp)
 {
 	int error;
 
-	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, goal_type, path_collision_info, timestamp);
+	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, path_collision_info, timestamp);
 	if (error != 0)
 		return (error);
 
-	error = perform_state_action(decision_making_state_msg, goal, timestamp);
+	error = perform_state_action(decision_making_state_msg);
 	if (error != 0)
 		return (error);
-
-	clear_state_output(decision_making_state_msg);
 
 	return (0);
 }

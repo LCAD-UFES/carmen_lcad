@@ -119,7 +119,8 @@ class carmen_timestamp_index
 			double velocity_x, double velocity_y, double velocity_z,
 			double angular_velocity_roll, double angular_velocity_pitch, double angular_velocity_yaw, double phi,
 			double timestamp, long rddf_file_offset, long rddf_data_length, int annotation);
-		void remove(int element);
+		void add_waypoint(carmen_timestamp_index_element waypoint);
+		void remove(int begin, int end);
 
 		long size();
 		void sort();

@@ -39,6 +39,7 @@
 
 #include <carmen/rddf_util.h>
 #include <carmen/carmen_gps_wrapper.h>
+#include <carmen/rrt_node.h>
 
 #include "draw_callbacks.h"
 
@@ -299,7 +300,8 @@ namespace View
 		carmen_world_point_t *oa_motion_plan;
 		int oa_motion_plan_size;
 
-		carmen_model_predictive_planner_motion_plan_message mpp_motion_plan_msg;
+//		carmen_model_predictive_planner_motion_plan_message mpp_motion_plan_msg;
+		rrt_path_message mpp_motion_plan_msg_rrt;
 		carmen_world_point_t *mpp_motion_plan;
 		int mpp_motion_plan_size;
 

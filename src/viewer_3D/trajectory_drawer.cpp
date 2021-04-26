@@ -255,6 +255,9 @@ draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 static void
 draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag)
 {
+	if (t_drawer->path_size == 0)
+		return;
+
 	glPushMatrix();
 
 		glBegin(GL_LINE_STRIP);
@@ -291,7 +294,7 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 
 
 void
-draw_trajectory(trajectory_drawer* t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag)
+draw_trajectory(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag)
 {
 	draw_path(t_drawer, offset, draw_waypoints_flag);
 //	draw_goals(t_drawer, offset);

@@ -961,6 +961,11 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
 
+	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
+			path_collision_info_t {}, timestamp);
+	if (error != 0)
+		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
+
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
@@ -968,11 +973,6 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 			path_collision_info_t {}, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
-
-	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			first_goal, goal_type, path_collision_info_t {}, timestamp);
-	if (error != 0)
-		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	int who_set_the_goal_v = NONE;
 	if (goal_list_size > 0)
@@ -1161,6 +1161,11 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
 
+	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
+			path_collision_info, timestamp);
+	if (error != 0)
+		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
+
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *first_goal;
 	int goal_type;
@@ -1168,11 +1173,6 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 			path_collision_info, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
-
-	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			first_goal, goal_type, path_collision_info, timestamp);
-	if (error != 0)
-		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	int who_set_the_goal_v = NONE;
 	if (goal_list_size > 0)

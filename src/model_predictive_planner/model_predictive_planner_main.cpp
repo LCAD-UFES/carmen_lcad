@@ -397,6 +397,7 @@ void
 build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
+	static double last_phi = 0.0;
 
 	if (GlobalState::goal_pose)
 	{
@@ -406,9 +407,15 @@ build_and_follow_path(double timestamp)
 		if (distance_to_goal < 1.0 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
 		{
 			if (GlobalState::following_path)
-				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			else
-				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
+			{
+				last_phi *= 0.95;
+				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
+			}
+			else	// Stop button
+			{
+				last_phi *= 0.9;
+				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
+			}
 		}
 		else
 		{
@@ -419,6 +426,7 @@ build_and_follow_path(double timestamp)
 				publish_model_predictive_planner_rrt_path_message(path_follower_path, timestamp);
 //				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
+			last_phi = GlobalState::last_odometry.phi;
 		}
 		publish_navigator_ackerman_status_message();
 //		publish_plan_tree_for_navigator_gui(tree);
@@ -429,6 +437,8 @@ build_and_follow_path(double timestamp)
 void
 build_and_follow_path_new(double timestamp)
 {
+	static double last_phi = 0.0;
+
 	if (GlobalState::goal_pose)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
@@ -436,9 +446,15 @@ build_and_follow_path_new(double timestamp)
 		if (distance_to_goal < 0.3 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
 		{
 			if (GlobalState::following_path)
-				publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-			else
-				publish_model_predictive_planner_single_motion_command(0.0, 0.0, timestamp);
+			{
+				last_phi *= 0.95;
+				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
+			}
+			else	// Stop button
+			{
+				last_phi *= 0.9;
+				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
+			}
 		}
 		else
 		{
@@ -448,6 +464,7 @@ build_and_follow_path_new(double timestamp)
 				publish_model_predictive_planner_motion_commands(path, timestamp);
 				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
+			last_phi = GlobalState::last_odometry.phi;
 		}
 		publish_navigator_ackerman_status_message();
 //		publish_plan_tree_for_navigator_gui(tree);

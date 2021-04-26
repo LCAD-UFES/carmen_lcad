@@ -432,9 +432,9 @@ void carmen_timestamp_index::add(
 	index_is_sorted = false;
 }
 
-void carmen_timestamp_index::remove(int element)
+void carmen_timestamp_index::add_waypoint(carmen_timestamp_index_element waypoint)
 {
-	index.erase(index.begin() + element);
+	index.push_back(waypoint);
 }
 
 long carmen_timestamp_index::size()
@@ -1403,4 +1403,15 @@ carmen_rddf_index_clear()
 	carmen_pose_index_ordered_by_y.index_is_sorted = false;
 	carmen_index_ordered_by_timestamp.index.clear();
 	carmen_index_ordered_by_timestamp.index_is_sorted = false;
+}
+
+void carmen_timestamp_index::remove(int begin, int end)
+{
+	index.erase(index.begin() + begin, index.begin() + end);
+
+	carmen_pose_index_ordered_by_x.index.clear();
+	carmen_pose_index_ordered_by_x.index_is_sorted = false;
+	carmen_pose_index_ordered_by_y.index.clear();
+	carmen_pose_index_ordered_by_y.index_is_sorted = false;
+	carmen_create_pose_index_from_timestamp_index();
 }

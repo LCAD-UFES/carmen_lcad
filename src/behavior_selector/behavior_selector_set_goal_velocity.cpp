@@ -41,7 +41,55 @@ displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
 }
 
 
-carmen_annotation_t*
+bool
+going_forward()
+{
+	if (last_rddf_message->poses[0].v >= 0.0)
+		return (true);
+	else
+		return (false);
+}
+
+
+carmen_ackerman_traj_point_t *
+get_nearest_forward_waypoint_ahead()
+{
+	// Ja esta em trecho com velocidade positiva
+	if (last_rddf_message->poses[0].v >= 0.0)
+		return (NULL);
+
+	// Encontra a primeira velocidade positiva a frente no tempo
+	int i;
+	for (i = 0; (i < last_rddf_message->number_of_poses) && (last_rddf_message->poses[i].v < 0.0); i++)
+		;
+
+	if (i < last_rddf_message->number_of_poses)
+		return (&(last_rddf_message->poses[i]));
+	else
+		return (NULL);
+}
+
+
+carmen_ackerman_traj_point_t *
+get_nearest_reverse_waypoint_ahead()
+{
+	// Ja esta em trecho com velocidade negativa
+	if (last_rddf_message->poses[0].v < 0.0)
+		return (NULL);
+
+	// Encontra a primeira velocidade negativa a frente no tempo
+	int i;
+	for (i = 0; (i < last_rddf_message->number_of_poses) && (last_rddf_message->poses[i].v >= 0.0); i++)
+		;
+
+	if (i < last_rddf_message->number_of_poses)
+		return (&(last_rddf_message->poses[i]));
+	else
+		return (NULL);
+}
+
+
+carmen_annotation_t *
 get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
@@ -551,9 +599,15 @@ double
 set_goal_velocity_according_to_state_machine(carmen_ackerman_traj_point_t *goal,
 		carmen_behavior_selector_state_message behavior_selector_state_message)
 {
-	if ((behavior_selector_state_message.low_level_state == Stopping_At_Yield) ||
+	if (
+		(behavior_selector_state_message.low_level_state == Stopping_At_Yield) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Yield_S0) ||
-		(behavior_selector_state_message.low_level_state == Stopped_At_Yield_S1))
+		(behavior_selector_state_message.low_level_state == Stopped_At_Yield_S1) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S0) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S1) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S0) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S1)
+	   )
 		return (0.0);
 	else
 		return (goal->v);
@@ -777,10 +831,10 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	double previous_v;
 	int reversing_driving = 0;
 
-	double static activate_intermediate_velocity = 0;
-	static double initial_dist = 0.0;
-	static double intermediate_velocity = 0.0;
-	double path_dist = 0.0;
+//	double static activate_intermediate_velocity = 0;
+//	static double initial_dist = 0.0;
+//	static double intermediate_velocity = 0.0;
+//	double path_dist = 0.0;
 
 	if (behavior_selector_reverse_driving && goal->v < 0.0)
 	{
@@ -831,8 +885,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		who_set_the_goal_v = KEEP_SPEED_LIMIT;
 
 	previous_v = goal->v; //Limita a velocidade quando o offroad eh acionado, tanto para frente quanto para reh
-	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
-	 	 (road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN)) ||
+	if (((road_network_message != NULL) && (road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) &&
+		 (goal->v > parking_speed_limit)) ||
 	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK))
 	 	goal->v = (reversing_driving == 1)? -parking_speed_limit : parking_speed_limit;
 	if (previous_v != goal->v)
@@ -850,44 +904,55 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
-	previous_v = goal->v;
-	if (behavior_selector_reverse_driving &&
-		(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL) &&
+	if ((goal->v == 0.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
 		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
-		(fabs(current_robot_pose_v_and_phi->v) < 0.2))
+		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 1.0))
 	{
-		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
-
-		if (initial_dist == 0.0)
-		{
-			initial_dist = path_dist;
-			intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
-			activate_intermediate_velocity = 1;
-		}
-	}
-
-	if (behavior_selector_reverse_driving && activate_intermediate_velocity &&
-	    (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
-	{
-		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
-
-		if ((path_dist < 1.0) || (initial_dist / 2.0 > path_dist))
-		{
-			goal->v = 0.0;
-			initial_dist = 0.0;
-			activate_intermediate_velocity = 0;
-		}
+		double path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
+		double intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
+		if (reversing_driving)
+			goal->v = -intermediate_velocity;
 		else
-		{
-			if (reversing_driving)
-				goal->v = -intermediate_velocity;
-			else
-				goal->v = intermediate_velocity;
-		}
-
-		if (previous_v != goal->v)
-			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
+			goal->v = intermediate_velocity;
 	}
+//	previous_v = goal->v;
+//	if (behavior_selector_reverse_driving &&
+//		(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL) &&
+//		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
+//		(fabs(current_robot_pose_v_and_phi->v) < 0.2))
+//	{
+//		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
+//
+//		if (initial_dist == 0.0)
+//		{
+//			initial_dist = path_dist;
+//			intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
+//			activate_intermediate_velocity = 1;
+//		}
+//	}
+//
+//	if (behavior_selector_reverse_driving && activate_intermediate_velocity &&
+//	    (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
+//	{
+//		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
+//
+//		if ((path_dist < 1.0) || (initial_dist / 2.0 > path_dist))
+//		{
+//			goal->v = 0.0;
+//			initial_dist = 0.0;
+//			activate_intermediate_velocity = 0;
+//		}
+//		else
+//		{
+//			if (reversing_driving)
+//				goal->v = -intermediate_velocity;
+//			else
+//				goal->v = intermediate_velocity;
+//		}
+//
+//		if (previous_v != goal->v)
+//			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
+//	}
 
 //	printf("who_set_the_goal_v %d\n", who_set_the_goal_v);
 //	fflush(stdout);
