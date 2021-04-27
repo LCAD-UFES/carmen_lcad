@@ -30,6 +30,8 @@ set_rl_control(double steering, double throttle, double brake)
 
 #endif
 
+extern carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
+
 
 static double
 get_acceleration(double v, double target_v, carmen_simulator_ackerman_config_t *simulator_config)
@@ -240,7 +242,10 @@ update_target_v_and_target_phi(carmen_simulator_ackerman_config_t *simulator_con
 	}
 	else
 	{
-		simulator_config->target_v = simulator_config->current_motion_command_vector[i].v;
+		if (behavior_selector_low_level_state != Stopped)
+			simulator_config->target_v = simulator_config->current_motion_command_vector[i].v;
+		else
+			simulator_config->target_v = 0.0;
 		simulator_config->target_phi = simulator_config->current_motion_command_vector[i].phi;
 		//printf("i = %d\n", i);
 	}

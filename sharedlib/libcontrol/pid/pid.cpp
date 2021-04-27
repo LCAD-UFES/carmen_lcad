@@ -383,12 +383,12 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		if ((desired_velocity > 0.0) && (current_velocity >= -NEAR_ZERO_V))
 		{
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
-			*gear_command = 1; // gear = Low // 2; //Drive gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+			*gear_command = 1; 		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 		}
 		if ((desired_velocity < 0.0) && (current_velocity <= NEAR_ZERO_V))
 		{
 			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_ACCELERATING;
-			*gear_command = 129; //Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+			*gear_command = 129; 	// 129 = Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 		}
 	}
 

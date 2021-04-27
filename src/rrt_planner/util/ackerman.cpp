@@ -173,7 +173,7 @@ Ackerman::predict_next_pose(const Pose &pose, const Command &command, double tra
 		*time_spend += time;
 		distance += last_pose.distance(new_pose);
 		last_pose = new_pose;
-	} while(distance < traveled_dist);
+	} while ((distance < traveled_dist) && (*time_spend < 5.0));
 
 	new_pose.theta = carmen_normalize_theta(new_pose.theta);
 
@@ -304,7 +304,7 @@ Ackerman::predict_next_pose_dist(const Robot_State &robot_state, const Command &
 	max_curvature_change = GlobalState::robot_config.desired_steering_command_rate * time;
 
 	//euler method
-	while (true) 
+	while (*time_spend < 5.0)
 	{
 		distance += predict_next_step(new_robot_state, command, time, new_curvature, curvature, max_curvature_change);
 
@@ -768,7 +768,7 @@ Ackerman::distance_from_robot_pose_to_curve_between_p1_and_p2(Pose robot_pose, R
 		Command command, double *traveled_dist, double *total_dist, Robot_State *closest_path_pose, double *time_spend)
 {
 	double interval_time = 0.01;
-	double total_time = 0;
+	double total_time = 0.0;
 	double dist_to_p2, new_dist_to_p2, dist_to_closest_pose, new_dist, dist;
 	Robot_State rs, new_rs;
 
@@ -783,7 +783,7 @@ Ackerman::distance_from_robot_pose_to_curve_between_p1_and_p2(Pose robot_pose, R
 	if (time_spend)
 		*time_spend = 0;
 
-	while (true)
+	while (total_time < 5.0)
 	{
 		new_rs = Ackerman::predict_next_pose_during_main_rrt_planning(rs, command, interval_time);
 		dist = new_rs.distance(rs);
@@ -874,7 +874,7 @@ Ackerman::get_stop_info(Robot_State robot_state, double phi_command, double *tra
 	max_curvature_change = GlobalState::robot_config.desired_steering_command_rate * time;
 
 	//euler method
-	while (true)
+	while (*time_spend < 5.0)
 	{
 		predict_next_step(new_robot_state, command, time, new_curvature, curvature, max_curvature_change);
 
@@ -1337,7 +1337,8 @@ Ackerman::find_command_rs(Robot_State &robot_state, Pose &p2, vector<Command> &c
 
 		c = raw_commands[i];
 		signal_v = Util::signal(c.v);
-		while (true)
+		int iter = 0;
+		while (iter < 5000)
 		{
 			new_robot_state.v_and_phi = c;
 			//obter a distancia que o robo percorre antes de parar com a velocidade c.v
@@ -1381,6 +1382,8 @@ Ackerman::find_command_rs(Robot_State &robot_state, Pose &p2, vector<Command> &c
 		last_robot_state = new_robot_state;
 		commands.push_back(c);
 		commands_time.push_back(time_to_stop);
+
+		iter++;
 	}
 }
 
@@ -1544,9 +1547,11 @@ Ackerman::search_command_improved_parking(RRT_Node &near, Pose &rand, RRT_Node *
 		}
 	}
 
-
-	while(!cost_list.empty())
+	int iter = 0;
+	while (!cost_list.empty() && (iter < 5000))
 	{
+		iter++;
+
 		command_cost = cost_list.top();
 
 		if (Obstacle_Detection::is_obstacle_path(near, command_cost.command, command_cost.command_time))
@@ -1739,8 +1744,11 @@ update_best_x_new_alternative_and_associated_command_and_time(
 {
 	Command_and_Cost command_and_cost;
 
-	while (!x_near_approved_commands_list.empty())
+	int iter = 0;
+	while (!x_near_approved_commands_list.empty() && (iter < 5000))
 	{
+		iter++;
+
 		command_and_cost = x_near_approved_commands_list.top();
 
 		if (command_and_cost.total_cost >= *min_cost)

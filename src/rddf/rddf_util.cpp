@@ -795,3 +795,10 @@ carmen_rddf_play_parse_input_command_line_parameters(int argc, char **argv)
 
 	return (carmen_annotation_filename);
 }
+
+
+void
+carmen_rddf_play_clear_rddf_loop_flag()
+{
+	carmen_rddf_perform_loop = 0;
+}

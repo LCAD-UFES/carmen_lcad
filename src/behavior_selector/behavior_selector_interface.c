@@ -173,6 +173,7 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 	if (state == Stopped_At_Go_Forward_S0) 			return ((char *) "Stopped_At_Go_Forward_S0");
 	if (state == Stopped_At_Go_Forward_S1) 			return ((char *) "Stopped_At_Go_Forward_S1");
 	if (state == Stopped_At_Go_Forward_S2) 			return ((char *) "Stopped_At_Go_Forward_S2");
+	if (state == End_Of_Path_Reached) 				return ((char *) "End_Of_Path_Reached");
 	if (state == Recovering_From_Error) 			return ((char *) "Recovering_From_Error");
 
 	return ((char *) " ");

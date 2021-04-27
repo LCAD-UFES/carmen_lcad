@@ -64,6 +64,25 @@ reverse_waypoint_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi
 }
 
 
+bool
+path_final_pose_reached(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_ackerman_traj_point_t *path_final_pose = get_path_final_pose();
+
+	if (path_final_pose == NULL)
+		return (false);
+
+	double distance_to_path_final_pose = DIST2D_P(path_final_pose, &current_robot_pose_v_and_phi);
+
+	if ((distance_to_path_final_pose < robot_config.distance_between_front_and_rear_axles) &&
+		(fabs(current_robot_pose_v_and_phi.v) < 0.07) &&
+		((distance_to_path_final_pose < 1.0) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
+		return (true);
+	else
+		return (false);
+}
+
+
 double
 distance_to_reverse_waypoint(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
@@ -338,6 +357,10 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 			break;
 
 
+		case End_Of_Path_Reached:
+			break;
+
+
 		case Recovering_From_Error:
 			break;
 
@@ -383,10 +406,13 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped:
 			if (autonomous)
 			{
-				if (going_forward())
-					decision_making_state_msg->low_level_state = Free_Running;
-				else
-					decision_making_state_msg->low_level_state = Free_Reverse_Running;
+				if (wait_for_given_seconds(3.0))
+				{
+					if (going_forward())
+						decision_making_state_msg->low_level_state = Free_Running;
+					else
+						decision_making_state_msg->low_level_state = Free_Reverse_Running;
+				}
 			}
 			break;
 
@@ -404,6 +430,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
 			else if (reverse_waypoint_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_To_Reverse;
+			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = End_Of_Path_Reached;
 			break;
 
 
@@ -420,6 +448,14 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
 			else if (forward_waypoint_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_To_Go_Forward;
+			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = End_Of_Path_Reached;
+			break;
+
+
+		case End_Of_Path_Reached:
+			if (wait_for_given_seconds(1.0))
+				decision_making_state_msg->low_level_state = Stopped;
 			break;
 
 

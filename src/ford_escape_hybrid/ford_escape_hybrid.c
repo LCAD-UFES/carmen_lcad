@@ -70,6 +70,8 @@ carmen_visual_odometry_pose6d_message visual_odometry_pose6d;
 
 int g_go_state = 0;
 
+carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = Stopped;
+
 
 
 static double
@@ -136,7 +138,7 @@ get_phi_from_curvature(double curvature, ford_escape_hybrid_config_t *ford_escap
 
 
 static void
-set_wrench_efforts_desired_v_and_curvature()
+set_wrench_efforts_desired_v_curvature_and_gear()
 {
 	int i;
 	double v, phi;
@@ -175,7 +177,15 @@ set_wrench_efforts_desired_v_and_curvature()
 	// that are sent to the car.
 	// This function is called when new info about the current velocity (g_XGV_velocity) arrives from the car via Jaus messages handled
 	// by the torc_report_velocity_state_message_handler() callback function.
-	g_desired_velocity = v;
+	if (g_desired_velocity < 0.0)
+		g_gear_command = 129;	// 129 = Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+	else
+		g_gear_command = 1;		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+
+	if (behavior_selector_low_level_state != Stopped)
+		g_desired_velocity = v;
+	else
+		g_desired_velocity = 0.0;
 }
 
 
@@ -510,8 +520,8 @@ navigator_ackerman_go_message_handler()
 {
 	change_control_mode_to_wrench_efforts(XGV_CCU);
 
-	g_gear_command = 1; // Drive forward
-	publish_ford_escape_gear_command(XGV_CCU);
+//	g_gear_command = 1; // 1 = Low
+//	publish_ford_escape_gear_command(XGV_CCU);
 
 	g_go_state = 1;
 	carmen_warn("go\n");
@@ -532,6 +542,13 @@ visual_odometry_handler(carmen_visual_odometry_pose6d_message *message)
 {
 	visual_odometry_pose6d = *message;
 	wait_visual_odometry_to_publish = 1;
+}
+
+
+static void
+behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
+{
+	behavior_selector_low_level_state = msg->low_level_state;
 }
 
 
@@ -624,10 +641,10 @@ void
 //static void // Se for static nao deixa compilar sem ser usada
 torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
 {
+	static int previous_gear_command = 128;	// 128 = Neutral
 	ReportCurvatureMessage reportCurvature;
 	double raw_phi;
 	double delta_t;
-	int previous_gear_command;
 
 	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
 	if (reportCurvature)
@@ -641,20 +658,21 @@ torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)
 						    g_XGV_velocity, raw_phi,
 						    0.0, v_multiplier, phi_bias, phi_multiplier);
 
-		set_wrench_efforts_desired_v_and_curvature();
+		set_wrench_efforts_desired_v_curvature_and_gear();
+
+		if (previous_gear_command != g_gear_command)
+			publish_ford_escape_gear_command(XGV_CCU);
+		previous_gear_command = g_gear_command;
+
 		delta_t = get_steering_delta_t();
 		g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
 				g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 
-		previous_gear_command = g_gear_command;
 
 		delta_t = get_velocity_delta_t();
 		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
 			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
-
-		if (previous_gear_command != g_gear_command)
-			publish_ford_escape_gear_command(XGV_CCU);
 
 		publish_ford_escape_throttle_and_brakes_command(XGV_CCU);
 
@@ -670,10 +688,10 @@ torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)
 static void
 torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
 {
+	static int previous_gear_command = 128;	// 128 = Neutral
 	ReportCurvatureMessage reportCurvature;
 	double raw_phi;
 	double delta_t;
-	int previous_gear_command;
 
 	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
 	if (reportCurvature)
@@ -706,7 +724,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 						    g_XGV_velocity, raw_phi, 
 						    0.0, v_multiplier, phi_bias, phi_multiplier);
 			
-		set_wrench_efforts_desired_v_and_curvature();
+		set_wrench_efforts_desired_v_curvature_and_gear();
+
+		if (previous_gear_command != g_gear_command)
+			publish_ford_escape_gear_command(XGV_CCU);
+		previous_gear_command = g_gear_command;
+
 		delta_t = get_steering_delta_t();
 
 		if (ford_escape_hybrid_config->use_mpc)
@@ -804,7 +827,6 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		//	fflush(stdout);
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		previous_gear_command = g_gear_command;
 
 		delta_t = get_velocity_delta_t();
 
@@ -816,9 +838,6 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			pid_plot_velocity(ford_escape_hybrid_config->filtered_v, g_desired_velocity, 15.0, "vel");
 		#endif
 
-		if (previous_gear_command != g_gear_command)
-			publish_ford_escape_gear_command(XGV_CCU);
-			
 		publish_ford_escape_throttle_and_brakes_command(XGV_CCU);
 
 		reportCurvatureMessageDestroy(reportCurvature);
@@ -1096,6 +1115,8 @@ subscribe_to_relevant_messages()
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	if (publish_combined_visual_and_car_odometry)
 		carmen_visual_odometry_subscribe_pose6d_message(NULL, (carmen_handler_t) visual_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1161,7 +1182,7 @@ send_default_signals_command()
 	g_headlights_status_command = 1; // TODO: usar #define
 	publish_ford_escape_turn_horn_and_headlight_signals(XGV_CCU);
 
-	g_gear_command = 1; // gear = Low // 2;
+	g_gear_command = 128; // 128 = Neutral;
 	publish_ford_escape_gear_command(XGV_CCU);
 }
 

@@ -9,10 +9,10 @@ extern "C" {
 #include "collision_detection.h"
 
 #define NUM_MOTION_COMMANDS_VECTORS	10
-#define	NUM_MOTION_COMMANDS_PER_VECTOR	500
+#define	NUM_MOTION_COMMANDS_PER_VECTOR	150
 #define NUM_POSES 20
 #define NUM_MAPS 5
-#define MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE 500
+#define MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE 150
 
 
 double carmen_obstacle_avoider_initialize(int argc, char **argv);

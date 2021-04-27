@@ -69,6 +69,8 @@ static double iron_bird_phi = 0.0;
 carmen_route_planner_road_network_message *road_network_message = NULL;
 int autonomous = 0;
 
+carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = Stopped;
+
 
 static void
 carmen_destroy_simulator_map(carmen_map_t *map)
@@ -711,6 +713,13 @@ carmen_navigator_ackerman_status_message_handler(carmen_navigator_ackerman_statu
 }
 
 
+static void
+behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
+{
+	behavior_selector_low_level_state = msg->low_level_state;
+}
+
+
 /* handles ctrl+c */
 static void
 shutdown_module(int x)
@@ -816,6 +825,7 @@ subscribe_to_relevant_messages()
 
 	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	return (0);
 }

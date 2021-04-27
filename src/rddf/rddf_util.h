@@ -44,6 +44,7 @@ bool carmen_rddf_play_annotation_is_forward(carmen_point_t robot_pose, carmen_ve
 
 void carmen_rddf_play_get_parameters(int argc, char** argv);
 char *carmen_rddf_play_parse_input_command_line_parameters(int argc, char **argv);
+void carmen_rddf_play_clear_rddf_loop_flag();
 
 void carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename);
 void carmen_rddf_play_load_index(char *rddf_filename);

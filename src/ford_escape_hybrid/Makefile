@@ -12,7 +12,7 @@ IFLAGS += -I$(CARMEN_HOME)/include/carmen/
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lmotion_planner_interface -lbase_ackerman_interface -lvisual_odometry_interface \
-	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface \
+	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface \
 	  -lopenJaus -ljaus -lojTorc -lcontrol -lcarmodel -lfann -lgsl -lgslcblas
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/lib/

@@ -128,6 +128,10 @@ extern "C" {
 	carmen_ackerman_traj_point_t *get_nearest_forward_waypoint_ahead();
 
 	carmen_ackerman_traj_point_t *get_nearest_reverse_waypoint_ahead();
+	carmen_ackerman_traj_point_t *get_path_final_pose();
+	carmen_ackerman_traj_point_t *get_final_goal();
+	bool nearest_pose_is_the_final_pose(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi);
+
 
 	carmen_annotation_t *get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi);
 	

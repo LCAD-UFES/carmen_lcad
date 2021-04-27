@@ -566,6 +566,9 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 	}
 
+//	if (fabs(GlobalState::robot_config.max_v) < 0.0005)	// Para evitar aproximacoes que nunca chegam a zero.
+//		GlobalState::robot_config.max_v = 0.0;
+
 //	printf("*target_v %lf\n", GlobalState::robot_config.max_v);
 
 	GlobalState::set_goal_pose(goal_pose);

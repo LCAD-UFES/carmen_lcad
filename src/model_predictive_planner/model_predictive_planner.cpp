@@ -175,13 +175,13 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_p
 
 	int index = 0;
 	if (path_goals_and_annotations_message->poses[0].x == path_goals_and_annotations_message->poses[1].x && path_goals_and_annotations_message->poses[0].y == path_goals_and_annotations_message->poses[1].y)
-		index = 1;
+		index = 1;	// @ ???
 
 	for (int k = index; k < path_goals_and_annotations_message->number_of_poses; k++)
 	{
 		SE2 lane_in_world_reference(path_goals_and_annotations_message->poses[k].x, path_goals_and_annotations_message->poses[k].y, path_goals_and_annotations_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-		if (GlobalState::reverse_planning)
+		if (GlobalState::reverse_planning)	// @ ???
 		{
 			 if (lane_in_car_reference[0] <= 0.0)
 			 {
@@ -219,7 +219,7 @@ move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_pat
 
 			poses_back.push_back(local_reference_lane_point);
 
-			// Assim que achar uma pose para tras, adiciona todas poses para frente
+			// @@@ ??? Assim que achar uma pose para tras, adiciona todas poses para frente
 			if (local_reference_lane_point.x <= 0)
 			{
 				for (int j = (poses_back.size() - 1); j >= 0 ; j--)
@@ -246,7 +246,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 
 	move_poses_foward_to_local_reference(robot_pose, path_goals_and_annotations_message, lane_in_local_pose);
 
-	return (goal_in_lane);
+	return (goal_in_lane);	// @ ??? Sempre falso?
 }
 
 

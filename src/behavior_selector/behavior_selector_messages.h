@@ -69,6 +69,7 @@ typedef enum
 	Stopped_At_Go_Forward_S0,
 	Stopped_At_Go_Forward_S1,
 	Stopped_At_Go_Forward_S2,
+	End_Of_Path_Reached,
 	Recovering_From_Error
 } carmen_behavior_selector_low_level_state_t;
 

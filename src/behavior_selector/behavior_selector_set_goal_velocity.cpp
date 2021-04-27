@@ -89,6 +89,37 @@ get_nearest_reverse_waypoint_ahead()
 }
 
 
+carmen_ackerman_traj_point_t *
+get_path_final_pose()
+{
+	if (!last_rddf_message)
+		return (NULL);
+
+	return (&(last_rddf_message->poses[last_rddf_message->number_of_poses - 1]));
+}
+
+
+bool
+nearest_pose_is_the_final_pose(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	double nearest_distance = DIST2D(current_robot_pose_v_and_phi, last_rddf_message->poses[0]);
+	int nearest_index = 0;
+	for (int i = 1; i < last_rddf_message->number_of_poses; i++)
+	{
+		double distance = DIST2D(current_robot_pose_v_and_phi, last_rddf_message->poses[i]);
+		if (distance < nearest_distance)
+		{
+			nearest_distance = distance;
+			nearest_index = i;
+		}
+	}
+	if (nearest_index == (last_rddf_message->number_of_poses - 1))
+		return (true);
+	else
+		return (false);
+}
+
+
 carmen_annotation_t *
 get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
@@ -229,7 +260,7 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 
 
 carmen_ackerman_traj_point_t *
-get_nearest_final_goal()
+get_final_goal()
 {
 	carmen_ackerman_traj_point_t *final_goal = NULL;
 
@@ -560,11 +591,11 @@ set_goal_velocity_according_to_final_goal(carmen_ackerman_traj_point_t *goal, in
 	if (!autonomous)
 		clearing_final_goal = false;
 
-	carmen_ackerman_traj_point_t *nearest_final_goal = get_nearest_final_goal();
+	carmen_ackerman_traj_point_t *final_goal = get_final_goal();
 
-	if (nearest_final_goal != NULL)
+	if (final_goal != NULL)
 	{
-		double distance_to_final_goal = DIST2D_P(nearest_final_goal, current_robot_pose_v_and_phi);
+		double distance_to_final_goal = DIST2D_P(final_goal, current_robot_pose_v_and_phi);
 		double velocity_at_final_goal = 0.0;
 		double distance_to_act_on_final_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_final_goal,
 				distance_to_final_goal);
@@ -575,7 +606,7 @@ set_goal_velocity_according_to_final_goal(carmen_ackerman_traj_point_t *goal, in
 			(distance_to_final_goal < distance_to_goal))
 		{
 			if (!clearing_final_goal)
-				previous_final_goal_point = *nearest_final_goal;
+				previous_final_goal_point = *final_goal;
 
 			clearing_final_goal = true;
 			//TODO tem que Certificar de que ou ta tudo negativo ou positivo (acho que deveria tratar tudo positivo)
@@ -587,7 +618,7 @@ set_goal_velocity_according_to_final_goal(carmen_ackerman_traj_point_t *goal, in
 				goal->v = 0.0;
 		}
 
-		if (DIST2D(previous_final_goal_point, *nearest_final_goal) > 0.0)
+		if (DIST2D(previous_final_goal_point, *final_goal) > 0.0)
 			clearing_final_goal = false;
 	}
 
@@ -905,8 +936,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
 	if ((goal->v == 0.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
-		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
-		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 1.0))
+//		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
+		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 0.5))
 	{
 		double path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 		double intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
