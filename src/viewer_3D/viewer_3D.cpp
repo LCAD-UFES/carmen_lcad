@@ -174,6 +174,8 @@ static double distance_between_rear_car_and_rear_wheels;
 
 static carmen_semi_trailer_config_t semi_trailer_config;
 
+static carmen_point_t final_goal;
+
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
 
 carmen_pose_3D_t* board_1_laser_hierarchy[BOARD_1_LASER_HIERARCHY_SIZE] = {&laser_pose, &sensor_board_1_pose, &car_pose, &car_fused_pose};
@@ -696,6 +698,32 @@ get_world_position(int graphSize, carmen_pose_3D_t* sceneGraph[])
 }
 
 
+void
+draw_final_goal()
+{
+	carmen_vector_3D_t offset = get_position_offset();
+	double length_x = robot_size.x;
+	double length_y = robot_size.y;
+	double car_middle_to_rear_wheels = length_x / 2.0 - distance_between_rear_car_and_rear_wheels;
+
+	glPushMatrix();
+
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glTranslated(final_goal.x - offset.x, final_goal.y - offset.y, -offset.z);
+		glRotated(carmen_radians_to_degrees(final_goal.theta), 0.0f, 0.0f, 1.0f);
+
+		glBegin(GL_LINE_STRIP);
+			glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
+			glVertex3d(car_middle_to_rear_wheels + length_x/2, -length_y/2, 0);
+			glVertex3d(car_middle_to_rear_wheels + length_x/2, length_y/2, 0);
+			glVertex3d(car_middle_to_rear_wheels - length_x/2, length_y/2, 0);
+			glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
+		glEnd();
+
+	glPopMatrix();
+}
+
+
 int
 draw_everything()
 {
@@ -722,6 +750,8 @@ draw_everything()
     }
 
     reset_camera();
+
+    draw_final_goal();
 
     if (draw_annotation_flag)
     {
@@ -2609,6 +2639,13 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 }
 
 
+void
+final_goal_message_handler(carmen_rddf_end_point_message *message)
+{
+	final_goal = message->point;
+}
+
+
 static void
 plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 {
@@ -3577,6 +3614,8 @@ draw_while_picking()
 
 	reset_camera();
 
+	draw_final_goal();
+
 	if (draw_xsens_orientation_flag)
 	{
 		glColor3f(0.4, 1.0, 0.4);
@@ -3880,6 +3919,8 @@ subscribe_ipc_messages(void)
 
 	carmen_localize_ackerman_subscribe_initialize_message(NULL,
 			(carmen_handler_t) carmen_localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) final_goal_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
