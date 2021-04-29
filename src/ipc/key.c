@@ -13,15 +13,16 @@
  * 
  * Collection of hash and key functions for table lookups.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: key.c,v $
- * Revision 2.4  2009/01/12 15:54:56  reids
- * Added BSD Open Source license info
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
+ *
+ * Revision 1.4  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.3  2003/02/13 20:41:10  reids
  * Fixed compiler warnings.
@@ -104,9 +105,9 @@
  * 16-Aug-90 Christopher Fedor, School of Computer Science, CMU
  * created.
  *
- * $Revision: 2.4 $
- * $Date: 2009/01/12 15:54:56 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:15 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 

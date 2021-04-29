@@ -9,27 +9,16 @@
  * ABSTRACT: Enable IPC to deal with multi-threaded programs.
  *           Mutexes loosely based on David Apfelbaum's THREADS package.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: multiThread.h,v $
- * Revision 2.3  2011/04/21 18:17:49  reids
- * IPC 3.9.0:
- * Added NoListen options to IPC_connect, to indicate that module will not
- *   periodically listen for messages.
- * Bug where having a message id of 0 or 1 interfaces with direct message
- *   functionality.
- * Extended functionality of "ping" to handle race condition with concurrent
- *   listens.
- * Fixed bug in how IPC_listenWait was implemented (did not necessarily
- *   respect the timeout).
- * Fixed conditions under which module listens for handler updates.
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
  *
- * Revision 2.2  2009/01/12 15:54:57  reids
- * Added BSD Open Source license info
+ * Revision 1.2  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.1  2002/01/03 20:52:14  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -37,9 +26,9 @@
  * Also some minor changes to support Java version of IPC.
  *
  *
- * $Revision: 2.3 $
- * $Date: 2011/04/21 18:17:49 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:15 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 
@@ -48,8 +37,6 @@
 
 #include <pthread.h>
 #include <sys/time.h>
-#include "tca.h"
-#include "hash.h"
 
 /* In between Red Hat 5.2 and Red Hat 6.2, the invocation format
  * for setting the mutex type changed.  While the pthreads library
@@ -75,7 +62,6 @@ typedef struct {
 typedef struct {
   pthread_cond_t pingVar;
   MUTEX_TYPE     mutex;
-  HASH_TABLE_PTR pinged; // Has a "ping" has been issued for a given thread
 } PING_THREAD_TYPE, *PING_THREAD_PTR;
 
 typedef enum { Mutex_Success, Mutex_Failure, 
@@ -92,6 +78,5 @@ MUTEX_STATUS tryLockMutex(MUTEX_PTR mutex);
 PING_STATUS initPing(PING_THREAD_PTR ping);
 PING_STATUS pingThreads(PING_THREAD_PTR ping);
 PING_STATUS waitForPing(PING_THREAD_PTR ping, struct timeval *timeout);
-PING_STATUS freePing(PING_THREAD_PTR ping);
 
 #endif /* INCmultiThread */

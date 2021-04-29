@@ -12,15 +12,19 @@
  *
  * This file contains i/o routines for central.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY:
  *
  * $Log: centralIO.c,v $
- * Revision 2.4  2009/01/12 15:54:55  reids
- * Added BSD Open Source license info
+ * Revision 1.2  2007/06/12 11:24:44  stachnis
+ * fixed command line parameters
+ *
+ * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
+ * Initial Import
+ *
+ * Revision 1.4  2003/04/20 02:28:12  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.3  2003/02/13 20:41:09  reids
  * Fixed compiler warnings.
@@ -218,9 +222,9 @@
  * Fixed GNUmakefile.
  *
  *
- * $Revision: 2.4 $
- * $Date: 2009/01/12 15:54:55 $
- * $Author: reids $
+ * $Revision: 1.2 $
+ * $Date: 2007/06/12 11:24:44 $
+ * $Author: stachnis $
  *
  *****************************************************************************/
 
@@ -438,7 +442,9 @@ void parseOption(char *option, BOOLEAN started)
 #endif
     break;
   case 'u':
-    GET_S_GLOBAL(listenToStdin) = FALSE;
+    // Changed by Boris Lau, June 11 2007
+    // -u now activates the interactive user interface.
+    GET_S_GLOBAL(listenToStdin) = TRUE;
     break;
   case 'c':
     GET_S_GLOBAL(directDefault) = TRUE;
@@ -512,7 +518,7 @@ void parseOpsFromStr(char *str, int *expectedMods, BOOLEAN started)
 static void displayOptions1 (BOOLEAN commandLineP)
 {
   printf(" -v: display server version info.\n");
-  printf(" -l: logging onto terminal.\n");
+  printf(" -l: logging onto terminal, use together with -s.\n");
   printf("     options are: m (message traffic)\n");
   printf("                  s (status of IPC)\n");
   printf("                  t (time messages are handled)\n");
@@ -542,8 +548,8 @@ static void displayOptions1 (BOOLEAN commandLineP)
   printf(" -q: test quantity lattice insertions for task tree nodes.\n");
   printf(" -d: flag random debugging.\n");
 #endif
-  printf(" -s: print info in the stdout.\n");
-  printf(" -u: Don't run the user interface (stdin).\n");
+  printf(" -s: disable silent running (activates printing to stdout).\n");
+  printf(" -u: activate interactive user interface (stdin), use together with -s.\n");
   printf(" -r: try resending non-completed messages when modules crash\n");
   fflush(stdout);
 }

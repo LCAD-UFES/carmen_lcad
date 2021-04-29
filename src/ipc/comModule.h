@@ -13,20 +13,21 @@
  * 
  * Module Communications
  *
- * $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/src/comModule.h,v $ 
- * $Revision: 2.7 $
- * $Date: 2009/01/12 15:54:55 $
- * $Author: reids $
- *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
+ * $Source: /cvsroot/carmen/carmen/src/ipc/comModule.h,v $ 
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:14 $
+ * $Author: tomkol $
  *
  * REVISION HISTORY:
  *
  * $Log: comModule.h,v $
- * Revision 2.7  2009/01/12 15:54:55  reids
- * Added BSD Open Source license info
+ * Revision 1.1.1.1  2004/10/15 14:33:14  tomkol
+ * Initial Import
+ *
+ * Revision 1.5  2003/04/20 02:28:12  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.6  2002/01/03 20:52:10  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only

@@ -9,30 +9,22 @@
  * ABSTRACT: External header file for IPC, defining API and 
  *           predefined constants.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: ipc.h,v $
- * Revision 2.13  2011/04/21 18:17:48  reids
- * IPC 3.9.0:
- * Added NoListen options to IPC_connect, to indicate that module will not
- *   periodically listen for messages.
- * Bug where having a message id of 0 or 1 interfaces with direct message
- *   functionality.
- * Extended functionality of "ping" to handle race condition with concurrent
- *   listens.
- * Fixed bug in how IPC_listenWait was implemented (did not necessarily
- *   respect the timeout).
- * Fixed conditions under which module listens for handler updates.
+ * Revision 1.3  2008/07/23 08:40:51  kuemmerl
+ * - const char* for ipc functions
  *
- * Revision 2.12  2009/01/12 15:54:56  reids
- * Added BSD Open Source license info
+ * Revision 1.2  2005/12/12 23:51:36  nickr
+ * Added support for PID access. Needed for java
  *
- * Revision 2.11  2008/07/16 00:09:03  reids
- * Updates for newer (pickier) compiler gcc 4.x
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
+ *
+ * Revision 1.6  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.10  2001/05/30 19:36:18  reids
  * Added conditional flag to re-enable compilation under Windows.
@@ -232,12 +224,6 @@ IPC_EXTERN_FUNCTION (IPC_RETURN_TYPE IPC_connectModule,
 		     (const char *taskName, const char *serverName));
 
 IPC_EXTERN_FUNCTION (IPC_RETURN_TYPE IPC_connect,
-		     (const char *taskName));
-
-IPC_EXTERN_FUNCTION (IPC_RETURN_TYPE IPC_connectModuleNoListen,
-		     (const char *taskName, const char *serverName));
-
-IPC_EXTERN_FUNCTION (IPC_RETURN_TYPE IPC_connectNoListen,
 		     (const char *taskName));
 
 IPC_EXTERN_FUNCTION (IPC_RETURN_TYPE IPC_disconnect,
@@ -500,6 +486,9 @@ IPC_EXTERN_FUNCTION (IPC_CONTEXT_PTR IPC_getContext,
 
 IPC_EXTERN_FUNCTION (IPC_RETURN_TYPE IPC_setContext,
 		     (IPC_CONTEXT_PTR context));
+
+IPC_EXTERN_FUNCTION (long IPC_getPID,
+                     (void));
 
 /*****************************************************************
  *                     TIMER FUNCTIONS

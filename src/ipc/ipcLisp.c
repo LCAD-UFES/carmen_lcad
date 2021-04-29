@@ -12,15 +12,16 @@
  *           necessary for Allegro, which depends on a function, lisp_value,
  *           that is found only in the Allegro CL environment.
  * 
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: ipcLisp.c,v $
- * Revision 2.5  2009/01/12 15:54:56  reids
- * Added BSD Open Source license info
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
+ *
+ * Revision 1.4  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.4  2002/01/03 20:52:12  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -71,9 +72,9 @@
  *   not be linked into C modules this way.
  *
 
- * $Revision: 2.5 $
- * $Date: 2009/01/12 15:54:56 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:15 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 

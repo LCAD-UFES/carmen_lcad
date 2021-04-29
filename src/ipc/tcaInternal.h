@@ -11,18 +11,19 @@
  * 
  * Common include items and defines.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: tcaInternal.h,v $
- * Revision 2.9  2009/01/12 15:54:57  reids
- * Added BSD Open Source license info
+ * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
+ * Initial Import
  *
- * Revision 2.8  2008/07/16 00:09:03  reids
- * Updates for newer (pickier) compiler gcc 4.x
+ * Revision 1.6  2003/10/17 20:18:16  nickr
+ * Upgraded to IPC 3.7.7, added Arm patches from Dirk Haehnel.
+ *
+ * Revision 1.5  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.7  2002/06/25 16:45:26  reids
  * Added casts to satisfy compiler.
@@ -672,9 +673,9 @@
  *    Dec-89 Christopher Fedor, School of Computer Science, CMU
  * Created.
  *
- * $Revision: 2.9 $
- * $Date: 2009/01/12 15:54:57 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:16 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 
@@ -687,7 +688,7 @@
 #define X_IPC_VERSION_MINOR      5
 #define X_IPC_VERSION_MICRO  8
 #define X_IPC_VERSION_DATE "Apr-24-96"
-#define X_IPC_COMMIT_DATE "$Date: 2009/01/12 15:54:57 $"
+#define X_IPC_COMMIT_DATE "$Date: 2004/10/15 14:33:16 $"
 #else
 #ifdef DOS_FILE_NAMES
 #include "formatte.h"
@@ -833,7 +834,7 @@ typedef struct _MSG {
 #define DEFAULT_PRIORITY -1
 
 typedef struct
-{ const char *msgName;
+{ char *msgName;
   int32 priority;
 } SET_MSG_PRIORITY_TYPE, *SET_MSG_PRIORITY_PTR;
 #endif

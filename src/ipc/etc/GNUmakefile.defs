@@ -1,7 +1,7 @@
 ######### Tell emacs this is a -*- Makefile -*- #######################
 #   $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/etc/GNUmakefile.defs,v $
-# $Revision: 2.15 $
-#     $Date: 2011/08/16 16:03:11 $
+# $Revision: 2.14 $
+#     $Date: 2009/01/19 00:49:49 $
 #   $Author: reids $
 #    $State: Exp $
 #   $Locker:  $
@@ -21,9 +21,6 @@
 # HISTORY:
 #
 # $Log: GNUmakefile.defs,v $
-# Revision 2.15  2011/08/16 16:03:11  reids
-# Adding Python interface to IPC
-#
 # Revision 2.14  2009/01/19 00:49:49  reids
 # Changed LIBS_Linux for newer OS
 #
@@ -162,10 +159,6 @@ endif
 ifeq ($(THIS_OS),CYGWIN32_NT)
 THIS_OS := wnt
 endif
-ifeq ($(THIS_OS),CYGWIN_NT-5.1)
-THIS_OS := wnt
-THIS_RELEASE := 5.1
-endif
 
 # Compiling with the VX flag signals to compile for vxworks
 ifdef VX
@@ -186,7 +179,7 @@ THIS_OS_BOTH := $(THIS_OS)-$(THIS_RELEASE)
 # Release configuration.
 #############################################################################
 
-VERSION_DEF = $(INSTALL_DIR)/src/ipcPriv.h
+VERSION_DEF = $(INSTALL_DIR)/ipcPriv.h
 IPC_VERSION_MAJOR := $(shell awk '/VERSION_MAJOR/ {print $$3}' $(VERSION_DEF) )
 IPC_VERSION_MINOR := $(shell awk '/VERSION_MINOR/ {print $$3}' $(VERSION_DEF) )
 IPC_VERSION_MICRO := $(shell awk '/VERSION_MICRO/ {print $$3}' $(VERSION_DEF) )
@@ -218,7 +211,7 @@ PWD 	:= $(shell /bin/pwd)
 # Standard directories
 #############################################################################
 
-PUBLIC_BIN_DIR		= $(INSTALL_DIR)/bin/$(THIS_OS_BOTH)
+PUBLIC_BIN_DIR		= $(INSTALL_DIR)/../../bin
 PUBLIC_INC_DIR 		= $(INSTALL_DIR)/include
 PUBLIC_LIB_DIR		= $(INSTALL_DIR)/lib/$(THIS_OS_BOTH)
 PUBLIC_LINT_DIR		= $(INSTALL_DIR)/lib/lint
@@ -283,7 +276,6 @@ LD		= ld
 LD_SHARED_Solaris= ld -G -dy
 LD_SHARED_SunOS	= ld -assert pure-text
 LD_SHARED_Linux	= ld -G -dy
-LD_SHARED_wnt	= gcc -shared
 LD_SHARED	= $(LD_SHARED_$(THIS_OS))
 CP		= /bin/cp
 CHMOD		= /bin/chmod
@@ -355,12 +347,12 @@ CFLAGS_sun4m	=
 CFLAGS_Sparc	= 
 CFLAGS_IP22	= -g3
 CFLAGS_		= 
-CFLAGSD_	= -O2
-CFLAGSD_NONE	= -O2
+CFLAGSD_	= -O0
+CFLAGSD_NONE	= -O0
 CFLAGSD_DEBUG	= -g -DDEBUG
 CFLAGSD_DEBUG3	= -ggdb3 -DDEBUG
-CFLAGSD_TEST	= -g -DTEST -O2
-CFLAGSD_PROF	= -pg -O2 -static
+CFLAGSD_TEST	= -g -DTEST -O0
+CFLAGSD_PROF	= -pg -O0 -static
 CFLAGSM_DBMALLOC= -DDBMALLOC
 CFLAGS_gcc	= -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations
 #CFLAGS_cc	= -ansi -fullwarn

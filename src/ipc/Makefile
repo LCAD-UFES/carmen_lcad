@@ -20,7 +20,7 @@ SOURCES = ipc.c queryResponse.c marshall.c timer.c list.c behaviors.c \
 	globalM.c globalMUtil.c strList.c modLogging.c modVar.c resMod.c \
 	parseFmttrs.c lex.c printData.c	comServer.c dispatch.c msgTap.c \
 	recvMsg.c res.c tcerror.c logging.c globalS.c centralIO.c \
-	globalVar.c test_generate.c test_receive.c multiThread.c centralMain.c
+	globalVar.c central.c test_generate.c test_receive.c multiThread.c
 
 PUBLIC_INCLUDES = ipc.h
 PUBLIC_LIBRARIES = libipc.a 
@@ -45,7 +45,7 @@ libipc.so.1: ipc.o queryResponse.o marshall.o timer.o list.o behaviors.o \
 	parseFmttrs.o lex.o printData.o 
 
 central: comServer.o dispatch.o msgTap.o recvMsg.o res.o tcerror.o logging.o \
-	globalS.o centralIO.o globalVar.o centralMain.o libipc.a
+	globalS.o centralIO.o globalVar.o central.o libipc.a
 
 test_generate: test_generate.o libipc.a
 test_receive: test_receive.o libipc.a

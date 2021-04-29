@@ -8,72 +8,22 @@
  *
  * ABSTRACT: Internal header file for IPC
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: ipcPriv.h,v $
- * Revision 2.42  2011/08/16 16:01:56  reids
- * Adding Python interface to IPC, plus some minor bug fixes
+ * Revision 1.2  2006/01/15 21:22:33  nickr
+ * Added support for Mac
  *
- * Revision 2.41  2011/04/21 18:17:49  reids
- * IPC 3.9.0:
- * Added NoListen options to IPC_connect, to indicate that module will not
- *   periodically listen for messages.
- * Bug where having a message id of 0 or 1 interfaces with direct message
- *   functionality.
- * Extended functionality of "ping" to handle race condition with concurrent
- *   listens.
- * Fixed bug in how IPC_listenWait was implemented (did not necessarily
- *   respect the timeout).
- * Fixed conditions under which module listens for handler updates.
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
  *
- * Revision 2.40  2010/12/17 19:20:23  reids
- * Split IO mutex into separate read and write mutexes, to help minimize
- *   probability of deadlock when reading/writing very big messages.
- * Fixed a bug in multi-threaded version where a timeout is not reported
- *   correctly (which could cause IPC_listenClear into a very long loop).
+ * Revision 1.7  2003/10/17 20:18:16  nickr
+ * Upgraded to IPC 3.7.7, added Arm patches from Dirk Haehnel.
  *
- * Revision 2.39  2009/11/09 17:51:53  reids
- * Fixed invocation of timers -- previously, there were occasions where the
- *   "wait time" provided by IPC_listen was not being honored when there were
- *   timers being fired within the call.
- *
- * Revision 2.38  2009/09/04 19:16:41  reids
- * Ooops -- wrong micro version
- *
- * Revision 2.37  2009/09/04 19:14:14  reids
- * Port to ARM; Remove memory leak in comModule.c.
- * Put IPC Java in separate package.
- *
- * Revision 2.36  2009/05/04 19:03:16  reids
- * Fixed bug in dealing with longs and doubles for 64 bit machines.
- * Changed to using snprintf to avoid corrupting the stack on overflow.
- *
- * Revision 2.35  2009/02/07 18:56:12  reids
- * Updates to java package for use on 64 bit machines;
- * Fixed several compiler warnings.
- *
- * Revision 2.34  2009/01/12 15:54:56  reids
- * Added BSD Open Source license info
- *
- * Revision 2.33  2008/07/16 00:09:03  reids
- * Updates for newer (pickier) compiler gcc 4.x
- *
- * Revision 2.32  2005/12/30 17:01:44  reids
- * Support for Mac OSX
- *
- * Revision 2.31  2004/06/09 18:24:17  reids
- * Fixed bug related to starting multiple centrals in the threaded version.
- *
- * Revision 2.30  2004/04/12 14:40:12  reids
- * Updates to xdrgen to work with newer version of bison.
- *
- * Revision 2.29  2003/07/23 20:25:04  reids
- * Fixed bug in handling message that is received but already unsubscribed.
- * Removed compiler warning.
+ * Revision 1.6  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.28  2003/04/14 15:32:00  reids
  * Fixed bug in use of IPC_delayResponse
@@ -373,10 +323,10 @@
 
 /* Interal version control */
 #define IPC_VERSION_MAJOR  3
-#define IPC_VERSION_MINOR  9
-#define IPC_VERSION_MICRO  1
-#define IPC_VERSION_DATE "Aug-16-11"
-#define IPC_COMMIT_DATE "$Date: 2011/08/16 16:01:56 $"
+#define IPC_VERSION_MINOR  7
+#define IPC_VERSION_MICRO  10
+#define IPC_VERSION_DATE "Dec-30-05"
+#define IPC_COMMIT_DATE "$Date: 2006/01/15 21:22:33 $"
 
 #define MAX_RECONNECT_TRIES (5)
 #define RECONNECT_WAIT      (1) /* seconds */
@@ -435,7 +385,6 @@ extern IPC_RETURN_TYPE _IPC_initialize (BOOLEAN isLispModule);
 /* Modified by TNgo, 5/22/97 */
 extern IPC_RETURN_TYPE _IPC_connect (const char *taskName,
 				     const char *serverName,
-				     BOOLEAN willListen,
 				     BOOLEAN isLispModule);
 
 extern IPC_RETURN_TYPE _IPC_subscribe (const char *msgName, const char *hndName,
@@ -457,7 +406,7 @@ extern IPC_RETURN_TYPE ipcDataToSend (CONST_FORMAT_PTR format,
 				      IPC_VARCONTENT_PTR varcontent);
 
 extern void ipcHandlerName (const char *msgName, HANDLER_TYPE handler, 
-			    char *hndName, uint hndNameSize);
+			    char *hndName);
 
 #ifdef macintosh
 #pragma export on
@@ -478,10 +427,6 @@ unsigned long ipcNextTime (void);
 
 void ipcTriggerTimers (void);
 
-// Return number of times timer can still be triggered
-// Needed by some of the FFI's
-unsigned int maxTriggers (TIMER_REF timerRef);
-
 /*****************************************************************
  *                     WINSOCK FUNCTIONS
  *****************************************************************/
@@ -489,10 +434,5 @@ unsigned int maxTriggers (TIMER_REF timerRef);
 #ifdef _WINSOCK_
 void startWinsock (void);
 #endif /* _WINSOCK_ */
-
-#ifdef WIN32
-typedef unsigned int uint;
-#define snprintf sprintf_s
-#endif
 
 #endif /* _IPC_PRIV_H */

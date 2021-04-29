@@ -12,21 +12,25 @@
  *
  * Data Format Routines.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY:
  *
  * $Log: formatters.c,v $
- * Revision 2.8  2009/09/04 19:12:57  reids
- * Port for ARM
+ * Revision 1.3  2006/01/15 21:22:33  nickr
+ * Added support for Mac
  *
- * Revision 2.7  2009/01/12 15:54:56  reids
- * Added BSD Open Source license info
+ * Revision 1.2  2005/09/15 22:39:27  dhaehnel
+ * added support for x86_64 machines (almost untested)
  *
- * Revision 2.6  2005/12/30 17:01:44  reids
- * Support for Mac OSX
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
+ *
+ * Revision 1.5  2003/10/17 20:18:16  nickr
+ * Upgraded to IPC 3.7.7, added Arm patches from Dirk Haehnel.
+ *
+ * Revision 1.4  2003/04/20 02:28:12  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.5  2002/01/03 20:52:11  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -426,9 +430,9 @@
  *    Dec-88 Christopher Fedor at School of Computer Science, CMU
  * created.
  *
- * $Revision: 2.8 $
- * $Date: 2009/09/04 19:12:57 $
- * $Author: reids $
+ * $Revision: 1.3 $
+ * $Date: 2006/01/15 21:22:33 $
+ * $Author: nickr $
  *
  *****************************************************************************/
 
@@ -1059,7 +1063,7 @@ static int32 x_ipc_varArraySize(FORMAT_ARRAY_PTR formatArray,
     }
     
     offset = sizeOffset - currentOffset;
-    
+
     BCOPY(dataStruct+dStart+offset, &size, sizeof(int32));
     arraySize *= size;
   }
@@ -1093,67 +1097,6 @@ int32 x_ipc_enumToInt (CONST_FORMAT_PTR format,
   *DStart += eSize;
   return eVal;
 }
-
-/*****************************************************************************
- *
- * FUNCTION: int32 x_ipc_elementSize(format) 
- *
- * DESCRIPTION:
- * Returns the size (ALength) of the format's element.
- * If the format is a structured type, returns 0 unless all the elements
- * have the same length.
- *
- * INPUTS: FORMAT_PTR format;
- *
- * OUTPUTS: int
- *
- *****************************************************************************/
-
-//int32 x_ipc_elementSize(CONST_FORMAT_PTR format)
-//{
-//  int32 firstSize, i;
-//
-//  switch (format->type) {
-//  case LengthFMT:
-//    return format->formatter.i;
-//  case PrimitiveFMT: {
-//    TRANSLATE_FN_ALENGTH trans;
-//    LOCK_M_MUTEX;
-//    trans = GET_M_GLOBAL(TransTable)[format->formatter.i].ALength;
-//    UNLOCK_M_MUTEX;
-//    return (*trans)();
-//  }
-//  case PointerFMT:
-//  case VarArrayFMT:
-//    return sizeof(GENERIC_DATA_PTR);
-//  case FixedArrayFMT:
-//    return x_ipc_elementSize(format->formatter.a[1].f);
-//  case StructFMT:
-//    firstSize = x_ipc_elementSize(format->formatter.a[1].f);
-//    if (firstSize != 0) {
-//      for (i=2; i<format->formatter.a[0].i; i++) {
-//	if (firstSize != x_ipc_elementSize(format->formatter.a[i].f))
-//	  return 0;
-//      }
-//    }
-//    return firstSize;
-//  case NamedFMT:
-//    return x_ipc_elementSize(x_ipc_fmtFind(format->formatter.name));
-//    break;
-//  case BadFormatFMT:
-//    return 0;
-//  case EnumFMT:
-//    return x_ipc_enumSize(format);
-//
-//#ifndef TEST_CASE_COVERAGE
-//  default:
-//    /* NOT REACHED */
-//    X_IPC_MOD_ERROR1("Internal Error: Unknown x_ipc_elementSize %d",format->type);
-//    break;
-//#endif
-//  }
-//  return 0;
-//}
 
 
 /*****************************************************************************
@@ -1429,66 +1372,6 @@ BOOLEAN formatsEqual(CONST_FORMAT_PTR format1, CONST_FORMAT_PTR format2)
     }
   }
 }
-
-/*****************************************************************************
- *
- * FUNCTION: BOOLEAN x_ipc_canVectorize(format) 
- *
- * DESCRIPTION:
- * Returns TRUE (1) if the Format can be read using iovec's
- *
- * INPUTS: FORMAT_PTR format;
- *
- * OUTPUTS: int
- *
- *****************************************************************************/
-
-//BOOLEAN x_ipc_canVectorize(CONST_FORMAT_PTR format)
-//{
-//  int32 i, offset=0;
-//
-//  switch(format->type) {
-//  case LengthFMT:
-//    return TRUE;
-//  case PrimitiveFMT: {
-//    BOOLEAN result;
-//    LOCK_M_MUTEX;
-//    result = GET_M_GLOBAL(TransTable)[format->formatter.i].SimpleType;
-//    UNLOCK_M_MUTEX;
-//    return result;
-//  }
-//  case PointerFMT:
-//  case VarArrayFMT:
-//    break;
-//  case FixedArrayFMT:
-//    return x_ipc_canVectorize(format->formatter.a[1].f);
-//  case StructFMT:
-//    for (i=1; i<format->formatter.a[0].i; i++) {
-//      if (!x_ipc_canVectorize(format->formatter.a[i].f)) {
-//	return FALSE;
-//      }
-//      /* Need to find out if there is any padding needed.*/
-//      offset = offset + x_ipc_dataStructureSize(format->formatter.a[i].f);
-//      if (x_ipc_alignField(format, i, offset) != offset)
-//	return FALSE;
-//    }
-//    return TRUE;
-//  case NamedFMT:
-//    return x_ipc_canVectorize(x_ipc_fmtFind(format->formatter.name));
-//  case BadFormatFMT:
-//    return FALSE;
-//  case EnumFMT:
-//    /* Some compilers allocate less space for short enums -- thus, cannot
-//       send directly unless they are long enough to *always* be ints */
-//    return ENUM_MAX_VAL(format) > MAX_SHORT;
-//#ifndef TEST_CASE_COVERAGE
-//  default:
-//    X_IPC_MOD_ERROR1("Internal Error: Unknown x_ipc_canVectorize Type %d",format->type);
-//    break;
-//#endif
-//  }
-//  return FALSE;
-//}
 
 
 /*****************************************************************************
@@ -1576,11 +1459,10 @@ struct iovec *x_ipc_copyVectorization(const struct iovec *vec, int32 space)
  *
  *****************************************************************************/
 
-#if ((ALIGN & ALIGN_LONGEST) || (ALIGN & ALIGN_INT) || (ALIGN & ALIGN_MAC_PPC)\
-     || (ALIGN & ALIGN_ARM))
+#if ((ALIGN & ALIGN_LONGEST) || (ALIGN & ALIGN_INT) || (ALIGN & ALIGN_MAC_PPC))
 static int32 x_ipc_mostRestrictiveElement(CONST_FORMAT_PTR format)
 {
-  int32 maxSize=0;
+  int32 maxSize=0, nextSize, i;
   
   switch (format->type) {
   case LengthFMT: return format->formatter.i;
@@ -1589,9 +1471,9 @@ static int32 x_ipc_mostRestrictiveElement(CONST_FORMAT_PTR format)
     LOCK_M_MUTEX;
     maxSize = (GET_M_GLOBAL(TransTable)[format->formatter.i].RLength)();
     UNLOCK_M_MUTEX;
-#if (ALIGN & ALIGN_LONGEST)
+#if ((ALIGN & ALIGN_LONGEST) || defined(__x86_64__))
     return maxSize;
-#elif (ALIGN & ALIGN_INT) || (ALIGN & ALIGN_MAC_PPC) || (ALIGN & ALIGN_ARM)
+#elif (ALIGN & ALIGN_INT) || (ALIGN & ALIGN_MAC_PPC)
     return (maxSize < (int32)sizeof(int32) ? maxSize : sizeof(int32));
 #else
     /* should never get here. */
@@ -1605,22 +1487,15 @@ static int32 x_ipc_mostRestrictiveElement(CONST_FORMAT_PTR format)
     return x_ipc_mostRestrictiveElement(format->formatter.a[1].f);
     
   case StructFMT:
-#if (ALIGN & ALIGN_ARM)
-    return (int32)sizeof(int32);
-#else
-    {
-      int32 nextSize, i;
-      maxSize = x_ipc_mostRestrictiveElement(format->formatter.a[1].f);
-      for (i=2; i<format->formatter.a[0].i; i++) {
-	nextSize = x_ipc_mostRestrictiveElement(format->formatter.a[i].f);
-	if (nextSize > maxSize) maxSize = nextSize;
-      }
-#if (ALIGN & ALIGN_LONGEST)
-      return maxSize;
-#elif (ALIGN & ALIGN_INT) || (ALIGN & ALIGN_MAC_PPC)
-      return (maxSize < (int32)sizeof(int32) ? maxSize : sizeof(int32));
-#endif
+    maxSize = x_ipc_mostRestrictiveElement(format->formatter.a[1].f);
+    for (i=2; i<format->formatter.a[0].i; i++) {
+      nextSize = x_ipc_mostRestrictiveElement(format->formatter.a[i].f);
+      if (nextSize > maxSize) maxSize = nextSize;
     }
+#if ((ALIGN & ALIGN_LONGEST) || defined(__x86_64__))
+    return maxSize;
+#elif (ALIGN & ALIGN_INT) || (ALIGN & ALIGN_MAC_PPC)
+    return (maxSize < (int32)sizeof(int32) ? maxSize : sizeof(int32));
 #endif
   case NamedFMT:
     return x_ipc_mostRestrictiveElement(x_ipc_fmtFind(format->formatter.name));
@@ -1663,6 +1538,7 @@ static int32 firstElementSize(CONST_FORMAT_PTR format)
     UNLOCK_M_MUTEX;
     return result;
   }
+
   case PointerFMT:
   case VarArrayFMT: 
     return sizeof(GENERIC_DATA_PTR);
@@ -1765,8 +1641,7 @@ int32 x_ipc_alignField(CONST_FORMAT_PTR format, int32 currentField,
 	      ? currentDataSize : currentDataSize + 1);
     }
   }
-#elif ((ALIGN & ALIGN_LONGEST) | (ALIGN & ALIGN_INT) | (ALIGN & ALIGN_MAC_PPC)\
-       | (ALIGN & ALIGN_ARM))
+#elif ((ALIGN & ALIGN_LONGEST) | (ALIGN & ALIGN_INT) | (ALIGN & ALIGN_MAC_PPC))
   int32 nextField, appropriateSize, rem;
   FORMAT_ARRAY_PTR formatArray;   
   
@@ -2124,7 +1999,8 @@ static SIZES_TYPE x_ipc_transferToBuffer(CONST_FORMAT_PTR format,
     }
     break;
   case StructFMT:
-    if (x_ipc_sameFixedSizeDataBuffer(format)) {
+    if ((EASY_STRUCTURE_COPY) &&
+	x_ipc_sameFixedSizeDataBuffer(format)) {
       sizes.data = x_ipc_dataStructureSize(format);
       TO_BUFFER_AND_ADVANCE(dataStruct+currentData, buffer, currentByte, 
 			    sizes.data);
@@ -2144,8 +2020,9 @@ static SIZES_TYPE x_ipc_transferToBuffer(CONST_FORMAT_PTR format,
     formatArray = format->formatter.a;
     arraySize = x_ipc_fixedArraySize(formatArray);
     nextFormat = formatArray[1].f;
-    if (x_ipc_sameFixedSizeDataBuffer(nextFormat)) {
-      elements = arraySize * x_ipc_dataStructureSize(nextFormat);
+    if ((EASY_STRUCTURE_COPY) &&
+	x_ipc_sameFixedSizeDataBuffer(nextFormat)) {
+      elements = arraySize * x_ipc_dataStructureSize(nextFormat); 
       BCOPY(dataStruct+currentData, buffer+currentByte, elements);
       currentByte += elements;
       currentData += elements;
@@ -2167,7 +2044,8 @@ static SIZES_TYPE x_ipc_transferToBuffer(CONST_FORMAT_PTR format,
     intToNetBytes(arraySize, buffer+currentByte);
     currentByte += sizeof(int32);
     structPtr = REF(GENERIC_DATA_PTR, dataStruct, currentData);
-    if (x_ipc_sameFixedSizeDataBuffer(nextFormat)) {
+    if ((EASY_STRUCTURE_COPY) &&
+	x_ipc_sameFixedSizeDataBuffer(nextFormat)) {
       elements = arraySize * x_ipc_dataStructureSize(nextFormat);
       BCOPY(structPtr, buffer+currentByte, elements);
       currentByte += elements;
@@ -2272,7 +2150,8 @@ static SIZES_TYPE x_ipc_transferToDataStructure(CONST_FORMAT_PTR format,
 			  sizeof(GENERIC_DATA_PTR));
     break;
   case StructFMT:
-    if ((byteOrder == BYTE_ORDER) &&
+    if ((EASY_STRUCTURE_COPY) &&
+	(byteOrder == BYTE_ORDER) &&
 	(x_ipc_sameFixedSizeDataBuffer(format))) {
       sizes.buffer = x_ipc_dataStructureSize(format);
       FROM_BUFFER_AND_ADVANCE(dataStruct+currentData, buffer, currentByte, 
@@ -2294,7 +2173,8 @@ static SIZES_TYPE x_ipc_transferToDataStructure(CONST_FORMAT_PTR format,
     formatArray = format->formatter.a;
     arraySize = x_ipc_fixedArraySize(formatArray);
     nextFormat = formatArray[1].f;
-    if ((byteOrder == BYTE_ORDER) &&
+    if ((EASY_STRUCTURE_COPY) &&
+	(byteOrder == BYTE_ORDER) &&
 	(x_ipc_sameFixedSizeDataBuffer(nextFormat))) {
       elements = arraySize * x_ipc_dataStructureSize(nextFormat);
       BCOPY(buffer+currentByte, dataStruct+currentData, elements);
@@ -2431,7 +2311,8 @@ static SIZES_TYPE x_ipc_transferToDataStructure(CONST_FORMAT_PTR format,
     TO_BUFFER_AND_ADVANCE(&newStruct, dataStruct, currentData, 
 			  sizeof(GENERIC_DATA_PTR));
     if (newStruct) {
-      if ((byteOrder == BYTE_ORDER) &&
+      if ((EASY_STRUCTURE_COPY) &&
+	  (byteOrder == BYTE_ORDER) &&
 	  (x_ipc_sameFixedSizeDataBuffer(nextFormat))) {
 	elements = arraySize * x_ipc_dataStructureSize(nextFormat);
 	BCOPY(buffer+currentByte, newStruct, elements);
@@ -2452,6 +2333,7 @@ static SIZES_TYPE x_ipc_transferToDataStructure(CONST_FORMAT_PTR format,
 	  simple = GET_M_GLOBAL(TransTable)[nextFormat->formatter.i].SimpleType;
 	  UNLOCK_M_MUTEX;
 	  alength = (* aLengthProc)();
+	  
 	  if (simple) {
 	    alength = (* aLengthProc)();
 	    switch (alength) {
@@ -2642,7 +2524,7 @@ void *x_ipc_decodeData(CONST_FORMAT_PTR Format, char *Buffer, int32 BStart,
     dataSize = x_ipc_dataStructureSize(Format);
     DataStruct = (char *)x_ipcMalloc((unsigned)dataSize);
   }
-  
+
   sizes = x_ipc_transferToDataStructure(Format, DataStruct, 0, Buffer, BStart,
 				  (FORMAT_PTR)NULL, byteOrder, alignment);
   /* Sanity checks (the "-1" is for IPC to work) */

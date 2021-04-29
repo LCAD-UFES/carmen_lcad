@@ -1,10 +1,5 @@
 /*****************************************************************************
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
- *
  * FUNCTION: startWinsock()
  *
  * DESCRIPTION: We must start up the Winsock before making any socket requests

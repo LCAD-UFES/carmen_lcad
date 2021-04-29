@@ -13,15 +13,16 @@
  * 
  * Module routines for initializing and using sendMsg/recvMsg pair.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: sendMsg.c,v $
- * Revision 2.9  2009/01/12 15:54:57  reids
- * Added BSD Open Source license info
+ * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
+ * Initial Import
+ *
+ * Revision 1.4  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.8  2002/01/03 20:52:17  reids
  * Version of IPC now supports multiple threads (Caveat: Currently only
@@ -330,9 +331,9 @@
  *  7-May-90 Christopher Fedor, School of Computer Science, CMU
  * Created.
  *
- * $Revision: 2.9 $
- * $Date: 2009/01/12 15:54:57 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:16 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 

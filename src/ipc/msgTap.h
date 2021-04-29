@@ -11,15 +11,16 @@
  *
  * ABSTRACT: Type definitions needed for the "wire tapping" mechanism
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: msgTap.h,v $
- * Revision 2.3  2009/01/12 15:54:57  reids
- * Added BSD Open Source license info
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
+ *
+ * Revision 1.5  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.2  2000/07/03 17:03:27  hersh
  * Removed all instances of "tca" in symbols and messages, plus changed
@@ -117,9 +118,9 @@
  * Revision 1.2  1993/05/19  17:24:49  fedor
  * Added Logging.
  *
- * $Revision: 2.3 $
- * $Date: 2009/01/12 15:54:57 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:15 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 

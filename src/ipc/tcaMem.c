@@ -13,15 +13,16 @@
  * 
  * Interface to memory management routines.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: tcaMem.c,v $
- * Revision 2.6  2009/01/12 15:54:57  reids
- * Added BSD Open Source license info
+ * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
+ * Initial Import
+ *
+ * Revision 1.4  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.5  2002/06/25 16:46:08  reids
  * "Insure" complained that malloc cannot be paired with cfree...
@@ -193,9 +194,9 @@
  * 25-Oct-90 Christopher Fedor, School of Computer Science, CMU
  * Created.
  *
- * $Revision: 2.6 $
- * $Date: 2009/01/12 15:54:57 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:16 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 
@@ -380,8 +381,10 @@ void *x_ipcMalloc(size_t amount)
     /* X_IPC_MOD_WARNING1("calling x_ipcMalloc(%d) before initialized\n", amount);*/
 #if defined(DBMALLOC)
     mem = malloc(file, line, amount);
+    /* check_alloc checked */
 #else
     mem = malloc(amount);
+    /* check_alloc checked */
 #endif
     if (!mem) 
       X_IPC_MOD_ERROR1("x_ipcMalloc: NULL returned from malloc for request: %d\n", 

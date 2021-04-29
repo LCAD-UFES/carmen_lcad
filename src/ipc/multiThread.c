@@ -9,36 +9,16 @@
  * ABSTRACT: Enable IPC to deal with multi-threaded programs.
  *           Mutexes loosely based on David Apfelbaum's THREADS package.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: multiThread.c,v $
- * Revision 2.6  2011/04/21 18:17:49  reids
- * IPC 3.9.0:
- * Added NoListen options to IPC_connect, to indicate that module will not
- *   periodically listen for messages.
- * Bug where having a message id of 0 or 1 interfaces with direct message
- *   functionality.
- * Extended functionality of "ping" to handle race condition with concurrent
- *   listens.
- * Fixed bug in how IPC_listenWait was implemented (did not necessarily
- *   respect the timeout).
- * Fixed conditions under which module listens for handler updates.
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
  *
- * Revision 2.5  2010/12/17 19:20:23  reids
- * Split IO mutex into separate read and write mutexes, to help minimize
- *   probability of deadlock when reading/writing very big messages.
- * Fixed a bug in multi-threaded version where a timeout is not reported
- *   correctly (which could cause IPC_listenClear into a very long loop).
- *
- * Revision 2.4  2009/01/12 15:54:57  reids
- * Added BSD Open Source license info
- *
- * Revision 2.3  2009/01/06 17:42:06  reids
- * Removed a compiler warning
+ * Revision 1.2  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.2  2003/04/14 15:31:01  reids
  * Updated for Windows XP
@@ -49,9 +29,9 @@
  * Also some minor changes to support Java version of IPC.
  *
  *
- * $Revision: 2.6 $
- * $Date: 2011/04/21 18:17:49 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:15 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 
@@ -59,22 +39,8 @@
 #include <errno.h>
 
 #ifdef THREADED
-#include <string.h>
 #include "multiThread.h"
-
-typedef enum { Data_None=0, Data_Waiting, Data_Ready } DATA_STATUS;
 
-static int32 pthreadHashFunc(pthread_t *i)
-{
-  int32 val = *i;
-  return (val < 0 ? -val : val);
-}
-
-static int32 pthreadKeyEqFunc(pthread_t *a, pthread_t *b)
-{
-  return (*a == *b);
-}
-
 MUTEX_STATUS initMutex(MUTEX_PTR mutex)
 {
   int result;
@@ -194,29 +160,15 @@ MUTEX_STATUS tryLockMutex(MUTEX_PTR mutex)
 
 PING_STATUS initPing(PING_THREAD_PTR ping)
 {
-  if (initMutex(&ping->mutex) == Mutex_Success &&
-      pthread_cond_init(&ping->pingVar, NULL) == 0) {
-    ping->pinged = x_ipc_hashTableCreate(11, (HASH_FN)pthreadHashFunc,
-					 (EQ_HASH_FN)pthreadKeyEqFunc);
-    return Ping_Success;
-  } else
-    return Ping_Failure;
-}
-
-static int32 setPinged (const void *key, const void *data, void *table)
-{
-  if ((DATA_STATUS)data != Data_Ready && *(long *)key != pthread_self()) {
-    x_ipc_hashTableInsert(key, sizeof(pthread_t),
-			  (void *)Data_Ready, table);
-  }
-  return 1;
+  return (initMutex(&ping->mutex) == Mutex_Success &&
+	  pthread_cond_init(&ping->pingVar, NULL) == 0
+	  ? Ping_Success : Ping_Failure);
 }
 
 PING_STATUS pingThreads(PING_THREAD_PTR ping)
 {
   lockMutex(&ping->mutex);
   //fprintf(stderr, "PINGING\n");
-  x_ipc_hashTableIterate(setPinged, ping->pinged, ping->pinged);
   pthread_cond_broadcast(&ping->pingVar);
   unlockMutex(&ping->mutex);
 
@@ -225,46 +177,28 @@ PING_STATUS pingThreads(PING_THREAD_PTR ping)
 
 PING_STATUS waitForPing(PING_THREAD_PTR ping, struct timeval *timeout)
 {
-  int retcode = 0;
+  int retcode;
   struct timeval now;
   struct timespec ptimeout;
 
   lockMutex(&ping->mutex);
-  pthread_t thread = pthread_self();
-  DATA_STATUS data = (DATA_STATUS)x_ipc_hashTableFind((void *)&thread,
-						      ping->pinged);
-  if (data == Data_None) 
-    x_ipc_hashTableInsert((void *)&thread, sizeof(pthread_t),
-			  (void *)Data_Waiting, ping->pinged);
-
-  while (data != Data_Ready && retcode != ETIMEDOUT) {
-    if (timeout == NULL) {
-      retcode = pthread_cond_wait(&ping->pingVar, &ping->mutex.mutexData);
-      //fprintf(stderr, "PINGED (%ld)!\n", pthread_self());
-    } else {
-      gettimeofday(&now, NULL);
-      ptimeout.tv_nsec = (now.tv_usec + timeout->tv_usec) * 1000;
-      if (ptimeout.tv_nsec >= 1000000000) {
-	now.tv_sec++;
-	ptimeout.tv_nsec -= 1000000000;
-      }
-      ptimeout.tv_sec = now.tv_sec + timeout->tv_sec;
-      retcode = pthread_cond_timedwait(&ping->pingVar, &ping->mutex.mutexData,
-				       &ptimeout);
-      //fprintf(stderr, "PINGED WAIT (%ld)!\n", pthread_self());
+  if (timeout == NULL) {
+    retcode = pthread_cond_wait(&ping->pingVar, &ping->mutex.mutexData);
+    //fprintf(stderr, "PINGED (%ld)!\n", pthread_self());
+  } else {
+    gettimeofday(&now, NULL);
+    ptimeout.tv_nsec = (now.tv_usec + timeout->tv_usec) * 1000;
+    if (ptimeout.tv_nsec >= 1000000000) {
+      now.tv_sec++;
+      ptimeout.tv_nsec -= 1000000000;
     }
-    data = (DATA_STATUS)x_ipc_hashTableFind((void *)&thread, ping->pinged);
+    ptimeout.tv_sec = now.tv_sec + timeout->tv_sec;
+    retcode = pthread_cond_timedwait(&ping->pingVar, &ping->mutex.mutexData,
+				     &ptimeout);
+    fprintf(stderr, "PINGED WAIT (%ld)!\n", pthread_self());
   }
-  x_ipc_hashTableInsert((void *)&thread, sizeof(pthread_t),
-			(void *)Data_Waiting, ping->pinged);
   unlockMutex(&ping->mutex);
   return (retcode == ETIMEDOUT ? Ping_Timeout : Ping_Success);
-}
-
-PING_STATUS freePing(PING_THREAD_PTR ping)
-{
-  x_ipc_hashTableFree(&ping->pinged, NULL, NULL);
-  return Ping_Success;
 }
 
 #endif /* THREADED */

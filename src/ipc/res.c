@@ -13,23 +13,24 @@
  * 
  * Resources
  *
- * $Source: /afs/cs.cmu.edu/project/TCA/Master/ipc/src/res.c,v $ 
- * $Revision: 2.6 $
- * $Date: 2009/01/12 15:54:57 $
- * $Author: reids $
- *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
+ * $Source: /cvsroot/carmen/carmen/src/ipc/res.c,v $ 
+ * $Revision: 1.2 $
+ * $Date: 2006/01/15 21:22:33 $
+ * $Author: nickr $
  *
  * REVISION HISTORY:
  *
  * $Log: res.c,v $
- * Revision 2.6  2009/01/12 15:54:57  reids
- * Added BSD Open Source license info
+ * Revision 1.2  2006/01/15 21:22:33  nickr
+ * Added support for Mac
  *
- * Revision 2.5  2005/12/30 17:01:44  reids
- * Support for Mac OSX
+ * Revision 1.1.1.1  2004/10/15 14:33:16  tomkol
+ * Initial Import
+ *
+ * Revision 1.4  2003/04/20 02:28:13  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.4  2000/12/11 16:09:56  reids
  * Renamed "modNameEq" to avoid confusion with another function of same name
@@ -937,7 +938,8 @@ static void deletePendingDispatch(DISPATCH_PTR dispatch)
     if (dispatch->refCount <= 0) {
       LOG_STATUS1("Deleted message %s", dispatch->msg->msgData->name);
       Log_RefId(dispatch, LOGGING_STATUS);
-      Log_Time(1); LOG_STATUS("\n");
+//      Log_Time(1); LOG_STATUS("\n");
+      LOG_STATUS("\n"); // @@@ Alberto: Era como na linha acima, mas acho que nao deve imprimir o tempo neste caso...
       dispatchFree(dispatch);
     } else {
       LOG_STATUS1("Will free %s", dispatch->msg->msgData->name);

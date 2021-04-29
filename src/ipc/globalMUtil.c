@@ -9,36 +9,16 @@
  *
  * ABSTRACT: define module global support routines.
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: globalMUtil.c,v $
- * Revision 2.11  2011/08/16 16:01:52  reids
- * Adding Python interface to IPC, plus some minor bug fixes
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
  *
- * Revision 2.10  2011/04/21 18:17:48  reids
- * IPC 3.9.0:
- * Added NoListen options to IPC_connect, to indicate that module will not
- *   periodically listen for messages.
- * Bug where having a message id of 0 or 1 interfaces with direct message
- *   functionality.
- * Extended functionality of "ping" to handle race condition with concurrent
- *   listens.
- * Fixed bug in how IPC_listenWait was implemented (did not necessarily
- *   respect the timeout).
- * Fixed conditions under which module listens for handler updates.
- *
- * Revision 2.9  2010/12/17 19:20:23  reids
- * Split IO mutex into separate read and write mutexes, to help minimize
- *   probability of deadlock when reading/writing very big messages.
- * Fixed a bug in multi-threaded version where a timeout is not reported
- *   correctly (which could cause IPC_listenClear into a very long loop).
- *
- * Revision 2.8  2009/01/12 15:54:56  reids
- * Added BSD Open Source license info
+ * Revision 1.4  2003/04/20 02:28:12  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.7  2002/06/25 16:44:59  reids
  * Fixed the way memory is freed when responses are handled;
@@ -394,9 +374,9 @@
  * Revision 1.2  1993/05/19  17:23:50  fedor
  * Added Logging.
  *
- * $Revision: 2.11 $
- * $Date: 2011/08/16 16:01:52 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:15 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 
@@ -471,7 +451,6 @@ void x_ipc_globalMInit(void)
   initMutex(&GET_M_GLOBAL(selectMutex));
   initPing(&GET_M_GLOBAL(ping));
   initMutex(&GET_C_GLOBAL(ioMutex));
-  initMutex(&GET_C_GLOBAL(readMutex));
   initMutex(&listMutex);
 #endif
   
@@ -481,7 +460,7 @@ void x_ipc_globalMInit(void)
   GET_M_GLOBAL(enableDistributedResponses) = FALSE;
 #endif
   
-  GET_C_GLOBAL(willListen) = TRUE;
+  GET_C_GLOBAL(willListen) = -1;
   GET_C_GLOBAL(valid) = FALSE;
   
   GET_M_GLOBAL(byteOrder) = BYTE_ORDER;
@@ -643,15 +622,6 @@ static void x_ipc_freeContextList (LIST_PTR *listPtr)
   *listPtr = NULL;
 }
 
-static void localMsgFree (char *name, MSG_PTR msg)
-{
-  /* Don't free the DIRECT_MSG_QUERY yet, since it is needed 
-     within freeDirectList, which is called by msgFreeMsg */
-  if (msg && !STREQ(msg->msgData->name, X_IPC_DIRECT_MSG_QUERY)) {
-    x_ipc_msgFree(name, msg);
-  }
-}
-
 static void x_ipc_freeContext(X_IPC_CONTEXT_PTR *context)
 {
   if (!*context) return;
@@ -672,14 +642,8 @@ static void x_ipc_freeContext(X_IPC_CONTEXT_PTR *context)
 		      x_ipc_hashItemsFree, NULL);
   x_ipc_hashTableFree(&((*context)->handlerTable),
 		      (HASH_ITER_FN) x_ipc_hndFree, NULL);
-
-  /* Need to treat DIRECT_MSG specially, freeing it separately at the end,
-     since it is needed within x_ipc_msgFree */
-  MSG_PTR directMsg = GET_MESSAGE(X_IPC_DIRECT_MSG_QUERY);
   x_ipc_hashTableFree(&((*context)->messageTable),
-		      (HASH_ITER_FN) localMsgFree, NULL);
-  if (directMsg) x_ipc_msgFree(X_IPC_DIRECT_MSG_QUERY, directMsg);
-
+		      (HASH_ITER_FN) x_ipc_msgFree, NULL);
   x_ipc_hashTableFree(&((*context)->resourceTable),x_ipc_hashItemsFree, NULL);
   x_ipc_idTableFree(&(*context)->hndIdTable);
   x_ipc_idTableFree(&(*context)->msgIdTable);
@@ -735,10 +699,6 @@ void x_ipc_globalMFree(void)
     GET_M_GLOBAL(logList)[1] = NULL;
 
     x_ipc_freeContext(&GET_M_GLOBAL(currentContext));
-
-#ifdef THREADED
-    freePing(&GET_M_GLOBAL(ping));
-#endif
 
     x_ipc_listCleanup();
     

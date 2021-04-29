@@ -9,21 +9,16 @@
  *
  * ABSTRACT: externs
  *
- * Copyright (c) 2008, Carnegie Mellon University
- *     This software is distributed under the terms of the 
- *     Simplified BSD License (see ipc/LICENSE.TXT)
- *
  * REVISION HISTORY
  *
  * $Log: globalM.h,v $
- * Revision 2.8  2010/12/17 19:20:23  reids
- * Split IO mutex into separate read and write mutexes, to help minimize
- *   probability of deadlock when reading/writing very big messages.
- * Fixed a bug in multi-threaded version where a timeout is not reported
- *   correctly (which could cause IPC_listenClear into a very long loop).
+ * Revision 1.1.1.1  2004/10/15 14:33:15  tomkol
+ * Initial Import
  *
- * Revision 2.7  2009/01/12 15:54:56  reids
- * Added BSD Open Source license info
+ * Revision 1.5  2003/04/20 02:28:12  nickr
+ * Upgraded to IPC 3.7.6.
+ * Reversed meaning of central -s to be default silent,
+ * -s turns silent off.
  *
  * Revision 2.6  2002/06/25 16:44:59  reids
  * Fixed the way memory is freed when responses are handled;
@@ -383,9 +378,9 @@
  * Revision 1.2  1993/05/19  17:23:55  fedor
  * Added Logging.
  *
- * $Revision: 2.8 $
- * $Date: 2010/12/17 19:20:23 $
- * $Author: reids $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2004/10/15 14:33:15 $
+ * $Author: tomkol $
  *
  *****************************************************************************/
 
@@ -473,10 +468,6 @@
  mutex = &GET_C_GLOBAL(ioMutex); UNLOCK_CM_MUTEX; lockMutex(mutex); }
 #define UNLOCK_IO_MUTEX \
 { LOCK_CM_MUTEX; unlockMutex(&GET_C_GLOBAL(ioMutex)); UNLOCK_CM_MUTEX; }
-#define   LOCK_IO_READ_MUTEX { MUTEX_PTR mutex; LOCK_CM_MUTEX; \
- mutex = &GET_C_GLOBAL(readMutex); UNLOCK_CM_MUTEX; lockMutex(mutex); }
-#define UNLOCK_IO_READ_MUTEX \
-{ LOCK_CM_MUTEX; unlockMutex(&GET_C_GLOBAL(readMutex)); UNLOCK_CM_MUTEX; }
 
 #define   LOCK_SELECT_MUTEX \
 { LOCK_M_MUTEX; lockMutex(&GET_M_GLOBAL(selectMutex)); UNLOCK_M_MUTEX; }
@@ -492,8 +483,6 @@
 #define UNLOCK_CM_MUTEX
 #define   LOCK_IO_MUTEX
 #define UNLOCK_IO_MUTEX
-#define   LOCK_IO_READ_MUTEX
-#define UNLOCK_IO_READ_MUTEX
 #define   LOCK_SELECT_MUTEX
 #define UNLOCK_SELECT_MUTEX
 #endif
@@ -561,7 +550,6 @@ typedef struct _X_IPC_CONTEXT {
 #ifdef THREADED
   MUTEX_TYPE mutex;
   MUTEX_TYPE ioMutex;
-  MUTEX_TYPE readMutex;
 #endif
 #ifdef LISPWORKS_FFI_HACK
   LISPWORKS_HACK_TYPE execHndState;
