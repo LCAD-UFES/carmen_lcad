@@ -935,7 +935,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
-	if ((goal->v == 0.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
+	if ((goal->v == 0.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.35) &&
 //		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
 		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 0.5))
 	{

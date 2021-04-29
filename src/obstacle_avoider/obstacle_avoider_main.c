@@ -37,39 +37,39 @@ static double last_behaviour_selector_compact_lane_contents_message_timestamp = 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
 //#define MAX_VIRTUAL_LASER_SAMPLES 10000
 
-//static void
-//consume_motion_command_time(int motion_command_vetor)
-//{
-//	int i, j;
-//	double current_time, time_consumed;
-//
-//	current_time = carmen_get_time();
-//	time_consumed = 0.0;
-//	for (i = 0; i < num_motion_commands_in_vector[motion_command_vetor]; i++)
-//	{
-//		time_consumed += motion_commands_vector[motion_command_vetor][i].time;
-//
-//		if ((time_consumed + carmen_robot_ackerman_motion_command_time_of_last_update) > current_time)
-//			break;
-//	}
-//
-//	if (i < num_motion_commands_in_vector[motion_command_vetor])
-//	{
-//		motion_commands_vector[motion_command_vetor][0] = motion_commands_vector[motion_command_vetor][i];
-//		motion_commands_vector[motion_command_vetor][0].time = (time_consumed + carmen_robot_ackerman_motion_command_time_of_last_update) - current_time;
-//		for (j = 1; (j + i) < num_motion_commands_in_vector[motion_command_vetor]; j++)
-//			motion_commands_vector[motion_command_vetor][j] = motion_commands_vector[motion_command_vetor][j + i];
-//
-//		num_motion_commands_in_vector[motion_command_vetor] = j;
-//		carmen_robot_ackerman_motion_command_time_of_last_update = current_time;
-//	}
-//	else
-//	{
-//		num_motion_commands_in_vector[motion_command_vetor] = 1;
-//		motion_commands_vector[motion_command_vetor][0].v = 0.0;
-//		motion_commands_vector[motion_command_vetor][0].time = 1.0;
-//	}
-//}
+static void
+consume_motion_command_time(int motion_command_vetor)
+{
+	int i, j;
+	double current_time, time_consumed;
+
+	current_time = carmen_get_time();
+	time_consumed = carmen_robot_ackerman_motion_command_time_of_last_update;
+	for (i = 0; i < num_motion_commands_in_vector[motion_command_vetor]; i++)
+	{
+		time_consumed += motion_commands_vector[motion_command_vetor][i].time;
+
+		if (time_consumed > current_time)
+			break;
+	}
+
+	if (i < num_motion_commands_in_vector[motion_command_vetor])
+	{
+		motion_commands_vector[motion_command_vetor][0] = motion_commands_vector[motion_command_vetor][i];
+		motion_commands_vector[motion_command_vetor][0].time = time_consumed - current_time;
+		for (j = 1; (j + i) < num_motion_commands_in_vector[motion_command_vetor]; j++)
+			motion_commands_vector[motion_command_vetor][j] = motion_commands_vector[motion_command_vetor][j + i];
+
+		num_motion_commands_in_vector[motion_command_vetor] = j;
+		carmen_robot_ackerman_motion_command_time_of_last_update = current_time;
+	}
+	else
+	{
+		num_motion_commands_in_vector[motion_command_vetor] = 1;
+		motion_commands_vector[motion_command_vetor][0].v = 0.0;
+		motion_commands_vector[motion_command_vetor][0].time = 1.0;
+	}
+}
 
 
 
@@ -168,9 +168,8 @@ obstacle_avoider_timer_handler()
 		return;
 
 	int motion_command_vetor = current_motion_command_vetor;
-//	consume_motion_command_time(motion_command_vetor);
+	consume_motion_command_time(motion_command_vetor);
 
-	double dt = carmen_get_time();
 	if (ackerman_collision_avoidance)
 		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], &(num_motion_commands_in_vector[motion_command_vetor]), &carmen_robot_ackerman_config);
 
@@ -179,7 +178,6 @@ obstacle_avoider_timer_handler()
 		obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
 				num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 
-		dt = dt - carmen_get_time();
 		//  Para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)
 		carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
 

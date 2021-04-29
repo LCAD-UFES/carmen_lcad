@@ -28,7 +28,6 @@
 #include "model_predictive_planner.h"
 #include "model_predictive_planner_interface.h"
 
-#define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
 //#define save_rddf_to_file
 
@@ -40,6 +39,9 @@ carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_anno
 static int update_lookup_table = 0;
 
 int use_unity_simulator = 0;
+int eliminate_path_follower = 0;
+double robot_time_delay = 0.36;
+double robot_min_distance_ahead = 0.15;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,6 +49,65 @@ int use_unity_simulator = 0;
 // Publishers                                                                                //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_point_t> path, double timestamp)
+{
+	if (!GlobalState::following_path)
+		return;
+
+	carmen_ackerman_motion_command_t *commands =
+			(carmen_ackerman_motion_command_t *) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
+	int i = 0;
+	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
+	{
+		commands[i].v = it->v;
+		commands[i].phi = it->phi;
+		commands[i].time = it->time;
+		commands[i].x = it->x;
+		commands[i].y = it->y;
+		commands[i].theta = it->theta;
+
+		i++;
+	}
+
+	int num_commands = path.size();
+	if (GlobalState::use_obstacle_avoider)
+	{
+		if (!g_teacher_mode)  // standard operation
+			carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
+		else  // mode to prevent sending mpp commands to the rest of the control hierarchy and interfaces.
+			carmen_robot_ackerman_publish_teacher_motion_command(commands, num_commands, timestamp);
+	}
+	else
+		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
+
+	free(commands);
+}
+
+
+void
+publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_ackerman_path_point_t> &path, double timestamp)
+{
+	double time_delay = 0.0;
+	double distance_travelled = 0.0;
+
+	while ((time_delay < robot_time_delay) && (path.size() > 1))
+	{
+		time_delay += path[0].time;
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+	}
+
+	while ((distance_travelled < robot_min_distance_ahead) && (path.size() > 1))
+	{
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+	}
+
+	publish_model_predictive_planner_motion_commands(path, timestamp);
+}
 
 
 void
@@ -105,42 +166,6 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 	Publisher_Util::publish_rrt_path_message(&msg);
 
 	free(msg.path);
-}
-
-
-void
-publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_point_t> path, double timestamp)
-{
-	if (!GlobalState::following_path)
-		return;
-
-	carmen_ackerman_motion_command_t *commands =
-			(carmen_ackerman_motion_command_t*) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
-	int i = 0;
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
-	{
-		commands[i].v = it->v;
-		commands[i].phi = it->phi;
-		commands[i].time = it->time;
-		commands[i].x = it->x;
-		commands[i].y = it->y;
-		commands[i].theta = it->theta;
-
-		i++;
-	}
-
-	int num_commands = path.size();
-	if (GlobalState::use_obstacle_avoider)
-	{
-		if (!g_teacher_mode)  // standard operation
-			carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
-		else  // mode to prevent sending mpp commands to the rest of the control hierarchy and interfaces.
-			carmen_robot_ackerman_publish_teacher_motion_command(commands, num_commands, timestamp);
-	}
-	else
-		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
-
-	free(commands);
 }
 
 
@@ -393,6 +418,47 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 }
 
 
+bool
+goal_crossed()
+{
+	bool reverse_planning;
+	if ((GlobalState::robot_config.max_v < 0.0) && GlobalState::reverse_driving_flag)
+		reverse_planning = true;
+	else
+		reverse_planning = false;
+
+	if (reverse_planning)
+	{
+		double angle_wrt_goal = carmen_normalize_theta(ANGLE2D_P(GlobalState::goal_pose, GlobalState::localizer_pose) - GlobalState::localizer_pose->theta);
+		if (angle_wrt_goal > M_PI_2)
+			return (true);
+		else
+			return (false);
+	}
+	else
+	{
+		double angle_wrt_goal = carmen_normalize_theta(ANGLE2D_P(GlobalState::localizer_pose, GlobalState::goal_pose) - GlobalState::localizer_pose->theta);
+		if (angle_wrt_goal > M_PI_2)
+			return (true);
+		else
+			return (false);
+	}
+}
+
+
+void
+print_path_(vector<carmen_ackerman_path_point_t> path)
+{
+	for (unsigned int i = 0; (i < path.size()) && (i < 10); i++)
+		printf("v %5.3lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
+				path[i].v, path[i].phi, path[i].time,
+				path[i].x - GlobalState::localizer_pose->x, path[i].y - GlobalState::localizer_pose->y,
+				path[i].theta);
+
+	printf("\n");
+}
+
+
 void
 build_and_follow_path(double timestamp)
 {
@@ -402,10 +468,15 @@ build_and_follow_path(double timestamp)
 	if (GlobalState::goal_pose)
 	{
 		double distance_to_goal = DIST2D_P(GlobalState::goal_pose, GlobalState::localizer_pose);
-		// goal achieved!
-//		printf("d %lf, max_v %lf, v %lf\n", distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v);
-		if (distance_to_goal < 1.0 && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03))
+		if (((distance_to_goal < 1.0) && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03)))// ||
+//			((distance_to_goal < 0.3) && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.5) &&
+//					(path_goals_and_annotations_message->number_of_poses == 1)))
 		{
+			printf("*np %d, gls %d, dtg %5.2lf, max_v %5.2lf, v %5.2lf\n",
+					path_goals_and_annotations_message->number_of_poses, path_goals_and_annotations_message->goal_list_size,
+					distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v);
+			fflush(stdout);
+
 			if (GlobalState::following_path)
 			{
 				last_phi *= 0.95;
@@ -420,12 +491,33 @@ build_and_follow_path(double timestamp)
 		else
 		{
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
-			if (tree.num_paths > 0 && path.size() > 0)
+			if ((tree.num_paths > 0) && (path.size() > 0))
 			{
+				if (eliminate_path_follower)
+					publish_robot_ackerman_motion_commands_eliminating_path_follower(path, timestamp);
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_planner_rrt_path_message(path_follower_path, timestamp);
 //				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
+			else
+			{
+				if (GlobalState::following_path)
+				{
+					last_phi *= 0.95;
+					publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
+				}
+				else	// Stop button
+				{
+					last_phi *= 0.9;
+					publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
+				}
+			}
+			printf(" np %d, gls %d, dtg %5.2lf, max_v %5.3lf, v %5.3lf, ps %d\n",
+					path_goals_and_annotations_message->number_of_poses, path_goals_and_annotations_message->goal_list_size,
+					distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v, (int) path.size());
+			print_path_(path);
+			fflush(stdout);
+
 			last_phi = GlobalState::last_odometry.phi;
 		}
 		publish_navigator_ackerman_status_message();
@@ -531,7 +623,7 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 
 //	printf("@target_v %lf\n", msg->goal_list->v);
 
-	if (GlobalState::reverse_driving)
+	if (GlobalState::reverse_driving_flag)
 	{
 		if (msg->goal_list->v < 0.0)
 		{
@@ -833,13 +925,16 @@ read_parameters(int argc, char **argv)
 		{(char *) "rddf",   (char *) "source_tracker", 								CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,									0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL},
-		{(char *) "behavior_selector", (char *) "reverse_driving", 					CARMEN_PARAM_ONOFF,  &GlobalState::reverse_driving, 											0, NULL},
-		{(char *) "model_predictive_planner", (char *) "w1_end_of_path_to_goal_distance",         CARMEN_PARAM_DOUBLE, &GlobalState::w1, 1, NULL},
-		{(char *) "model_predictive_planner", (char *) "w2_end_of_path_to_goal_angular_distance", CARMEN_PARAM_DOUBLE, &GlobalState::w2, 1, NULL},
-		{(char *) "model_predictive_planner", (char *) "w3_end_of_path_to_goal_delta_theta",      CARMEN_PARAM_DOUBLE, &GlobalState::w3, 1, NULL},
-		{(char *) "model_predictive_planner", (char *) "w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4, 1, NULL},
-		{(char *) "model_predictive_planner", (char *) "w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5, 1, NULL},
-		{(char *) "model_predictive_planner", (char *) "w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL},
+		{(char *) "behavior_selector", (char *) "reverse_driving", 					CARMEN_PARAM_ONOFF,  &GlobalState::reverse_driving_flag, 											0, NULL},
+		{(char *) "model", (char *) "predictive_planner_w1_end_of_path_to_goal_distance",         CARMEN_PARAM_DOUBLE, &GlobalState::w1, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_w2_end_of_path_to_goal_angular_distance", CARMEN_PARAM_DOUBLE, &GlobalState::w2, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_w3_end_of_path_to_goal_delta_theta",      CARMEN_PARAM_DOUBLE, &GlobalState::w3, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   			  CARMEN_PARAM_ONOFF, &eliminate_path_follower, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_robot_time_delay",                    	  CARMEN_PARAM_DOUBLE, &robot_time_delay, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_robot_min_distance_ahead",                CARMEN_PARAM_DOUBLE, &robot_min_distance_ahead, 1, NULL},
 
 		{(char *) "frenet_path_planner", 	  (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
 	};

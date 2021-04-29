@@ -294,7 +294,7 @@ get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_od
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
-	if (GlobalState::reverse_driving)
+	if (GlobalState::reverse_driving_flag)
 		td.theta = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
 	else
 		td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
@@ -976,9 +976,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	//	printf("traget v: %lf \n", target_v);
 //	if (target_v < 0.0)
 
-	GlobalState::reverse_driving = 1;
+	GlobalState::reverse_driving_flag = 1;
 //	//TODO:Delete after behavior selector reverse GOALs - Getting a new GOAL in poses back to don't need to change the behaviour selector
-	if (GlobalState::reverse_driving)
+	if (GlobalState::reverse_driving_flag)
 	{
 		target_v = (-1)* target_v;
 //		printf("Goal antes: %lf", goalPoseVector[0].x);

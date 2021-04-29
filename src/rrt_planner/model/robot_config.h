@@ -30,6 +30,7 @@ public:
 	double desired_acceleration;
 	double desired_decelaration_forward;
 	double desired_decelaration_reverse;
+	double maximum_steering_command_rate;
 };
 
 #endif /* ROBOT_CONFIG_H_ */

@@ -84,7 +84,7 @@ public:
 
 	static double obstacle_cost_distance;
 
-	static int reverse_driving;
+	static int reverse_driving_flag;
 	static int reverse_planning;
 	static double param_max_vel_reverse;
 

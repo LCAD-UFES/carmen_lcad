@@ -1219,7 +1219,7 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
 
-	if(semi_trailer_engaged)
+	if (semi_trailer_engaged)
 	{
 		pos.x -= semi_trailer_config.M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.d * cos(localize_ackerman_message->globalpos.theta - beta);
 		pos.y -= semi_trailer_config.M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.d * sin(localize_ackerman_message->globalpos.theta - beta);
@@ -2993,13 +2993,13 @@ init_flags(void)
     draw_motion_plan_flag = 1;
     draw_obstacle_avoider_plan_flag = 1;
     draw_xsens_orientation_flag = 0;
-    draw_localize_ackerman_flag = 1;
+    draw_localize_ackerman_flag = 0;
     draw_annotation_flag = 0;
     draw_moving_objects_flag = 1;
     draw_gps_axis_flag = 0;
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
-    show_plan_tree_flag = 0;
+    show_plan_tree_flag = 1;
     draw_waypoints_flag = 1;
 #ifdef TEST_LANE_ANALYSIS
     draw_lane_analysis_flag = 1;

@@ -11,6 +11,8 @@ CXXFLAGS += -std=c++0x
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/
 
 SUBDIRS += model message util path_follower
 LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface -lipc -lglobal -lmap_interface  -lprob_models -llocalize_ackerman_interface -lsimulator_ackerman_interface \
@@ -18,7 +20,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lmapper_interface -lrrt_planner_interface \
 		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
-		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
+		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core -lcarmodel \
 		-lcollision_detection -lgsl -lgslcblas -lm
 			
 			

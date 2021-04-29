@@ -18,6 +18,7 @@
 #include "model_predictive_planner_optimizer.h"
 
 extern int use_unity_simulator;
+extern int eliminate_path_follower;
 //TODO
 //#define DEBUG_LANE
 
@@ -793,7 +794,7 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	double distance_traveled = 0.0;
 	//double delta_t = 0.075;
 	int reduction_factor;
-	if (use_unity_simulator)
+	if (use_unity_simulator || eliminate_path_follower)
 		reduction_factor = 1;
 	else
 		reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
@@ -1151,12 +1152,12 @@ fill_in_trajectory_lookup_table()
 					{
 						if (i_v < 4)
 						{
-							GlobalState::reverse_driving = 1;
+							GlobalState::reverse_driving_flag = 1;
 							GlobalState::reverse_planning = 1;
 						}
 						else
 						{
-							GlobalState::reverse_driving = 0;
+							GlobalState::reverse_driving_flag = 0;
 							GlobalState::reverse_planning = 0;
 						}
 						//i_v = 7;

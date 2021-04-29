@@ -54,7 +54,7 @@ std::vector<carmen_ackerman_traj_point_t*> GlobalState::moving_objects_trajector
 int    GlobalState::use_truepos = 0;
 bool   GlobalState::following_path = false;
 
-int GlobalState::reverse_driving = 0;
+int GlobalState::reverse_driving_flag = 0;
 int GlobalState::reverse_planning = 0;
 
 double GlobalState::param_max_vel_reverse = 0;

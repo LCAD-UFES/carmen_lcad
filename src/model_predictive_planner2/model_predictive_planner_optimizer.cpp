@@ -93,7 +93,7 @@ compute_a_and_t_from_s(double s, double target_v,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
-	if (GlobalState::reverse_driving)
+	if (GlobalState::reverse_driving_flag)
 		compute_a_and_t_from_s_reverse(s, target_v, target_td, tcp_seed, params);
 	else
 		compute_a_and_t_from_s_foward(s, target_v, target_td, tcp_seed, params);
@@ -852,7 +852,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	// Se estou co velocidade vi e quero chagar a vt, sendo que vt < vi, a eh negativo. O tempo, tt, para
 	// ir de vi a vt pode ser derivado de dS/dt = Vo + a*t -> vt = vi + a*tt; a*tt = vt - vi; tt = (vt - vi) / a
 
-	if (!GlobalState::reverse_driving && target_v < 0.0)
+	if (!GlobalState::reverse_driving_flag && target_v < 0.0)
 		target_v = 0.0;
 	params.optimize_time = OPTIMIZE_DISTANCE;
 //	params.optimize_time = OPTIMIZE_TIME;
@@ -1371,7 +1371,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
 	ObjectiveFunctionParams params;
-	if (GlobalState::reverse_driving)
+	if (GlobalState::reverse_driving_flag)
 		params.detailed_lane = detailed_lane;
 	else
 		params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
