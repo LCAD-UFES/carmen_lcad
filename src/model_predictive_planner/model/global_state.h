@@ -30,6 +30,13 @@ public:
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.
 										// A velocidade de mudanca de phi nao pode ultrapassar este valor
 
+	// Robot delay
+	static int eliminate_path_follower;
+	static double robot_velocity_delay;
+	static double robot_min_v_distance_ahead;
+	static double robot_steering_delay;
+	static double robot_min_s_distance_ahead;
+
 	// Optimization weights
 	static double w1; // end_of_path_to_goal_distance
 	static double w2; // end_of_path_to_goal_angular_distance

@@ -28,7 +28,14 @@ double GlobalState::param_max_vel = 0.0;
 
 double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o volante todo para um lado (27.7 graus = 0.48 radianos) em 1 segundo.
 														// A velocidade de mudanca de phi nao pode ultrapassar este valor
+// Robot delay
+int GlobalState::eliminate_path_follower = 1;
+double GlobalState::robot_velocity_delay = 0.46;
+double GlobalState::robot_min_v_distance_ahead = 0.10;
+double GlobalState::robot_steering_delay = 0.20;
+double GlobalState::robot_min_s_distance_ahead = 0.10;
 
+// Optimization weights
 double GlobalState::w1 = 30.0  ; // end_of_path_to_goal_distance
 double GlobalState::w2 = 15.0  ; // end_of_path_to_goal_angular_distance
 double GlobalState::w3 = 15.0  ; // end_of_path_to_goal_delta_theta

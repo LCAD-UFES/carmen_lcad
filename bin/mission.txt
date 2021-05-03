@@ -9,57 +9,57 @@
 
 # Predio Eletrica logo depois do LCAD2
 set course to 7757732.73, -363563.71, -0.138
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7757732.73, -363563.71, -0.138   # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento da Cantina do CT
 set course to 7757856.47, -363577.52, -2.518
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7757856.47, -363577.52, -2.518  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento da Cantina do CT
 park at 7757870.73, -363601.35, -0.879
-go   # fica nesta task ateh o fim do curso 
+go after park at 7757870.73, -363601.35, -0.879  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento do NTI
-set course to  7757767.03, -363818.23, 2.298
-go   # fica nesta task ateh o fim do curso 
+set course to 7757767.03, -363818.23, 2.298
+go after set course to 7757767.03, -363818.23, 2.298 # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento do NTI
 park at 7757736.86, -363840.55, -2.467 
-go   # fica nesta task ateh o fim do curso 
+go after park at 7757736.86, -363840.55, -2.467  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento ICs
 set course to 7757628.18, -363928.71, -0.906
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7757628.18, -363928.71, -0.906  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento Reitoria
 set course to 7757417.94, -364068.89, 2.223
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7757417.94, -364068.89, 2.223  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Escadaria do Teatro
 set course to 7757266.70, -364084.30, 1.767
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7757266.70, -364084.30, 1.767  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento Cinema
 set course to 7757093.29, -364057.97, -1.718 
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7757093.29, -364057.97, -1.718  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento Caixa
 set course to 7756960.55, -363732.84, 1.435
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7756960.55, -363732.84, 1.435  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento CCJE
 set course to 7757421.69, -363565.91, -2.538
-go   # fica nesta task ateh o fim do curso 
+go after set course to 7757421.69, -363565.91, -2.538  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 

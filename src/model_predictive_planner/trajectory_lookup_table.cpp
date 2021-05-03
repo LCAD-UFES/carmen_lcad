@@ -18,7 +18,6 @@
 #include "model_predictive_planner_optimizer.h"
 
 extern int use_unity_simulator;
-extern int eliminate_path_follower;
 //TODO
 //#define DEBUG_LANE
 
@@ -783,6 +782,84 @@ convert_to_carmen_ackerman_path_point_t(const carmen_ackerman_traj_point_t robot
 }
 
 
+vector<carmen_ackerman_path_point_t>
+apply_robot_delays(vector<carmen_ackerman_path_point_t> &original_path)
+{
+	// Velocity delay
+	vector<carmen_ackerman_path_point_t> path = original_path;
+	double time_delay = 0.0;
+	double distance_travelled = 0.0;
+	int i = 0;
+	while ((time_delay < GlobalState::robot_velocity_delay) && (path.size() > 1))
+	{
+		time_delay += path[0].time;
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	while ((distance_travelled < GlobalState::robot_min_v_distance_ahead) && (path.size() > 1))
+	{
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	for (unsigned int j = 0; j < path.size(); j++)
+		original_path[j].v = path[j].v;
+
+	int size_decrease_due_to_velocity_delay = i;
+
+	// Steering delay
+	path = original_path;
+	time_delay = 0.0;
+	distance_travelled = 0.0;
+	i = 0;
+	while ((time_delay < GlobalState::robot_steering_delay) && (path.size() > 1))
+	{
+		time_delay += path[0].time;
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	while ((distance_travelled < GlobalState::robot_min_s_distance_ahead) && (path.size() > 1))
+	{
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	for (unsigned int j = 0; j < path.size(); j++)
+		original_path[j].phi = path[j].phi;
+
+	int size_decrease_due_to_steering_delay = i;
+
+	int size_decrease = (size_decrease_due_to_velocity_delay > size_decrease_due_to_steering_delay) ?
+							size_decrease_due_to_velocity_delay : size_decrease_due_to_steering_delay;
+
+	original_path.erase(original_path.begin() + original_path.size() - size_decrease, original_path.end());
+
+	path = original_path;
+
+	return (path);
+}
+
+
+//static void
+//print_path_(vector<carmen_ackerman_path_point_t> path)
+//{
+//	for (unsigned int i = 0; (i < path.size()) && (i < 15); i++)
+//		printf("v %5.3lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
+//				path[i].v, path[i].phi, path[i].time,
+//				path[i].x - GlobalState::localizer_pose->x, path[i].y - GlobalState::localizer_pose->y,
+//				path[i].theta);
+//
+//	printf("\n");
+//	fflush(stdout);
+//}
+
+
 double
 compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
@@ -794,7 +871,7 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	double distance_traveled = 0.0;
 	//double delta_t = 0.075;
 	int reduction_factor;
-	if (use_unity_simulator || eliminate_path_follower)
+	if (use_unity_simulator || GlobalState::eliminate_path_follower)
 		reduction_factor = 1;
 	else
 		reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
@@ -804,18 +881,13 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	robot_state.theta = 0.0;
 	robot_state.v = v0;
 	robot_state.phi = i_phi;
+
 	command.v = v0;
-	command.phi = gsl_spline_eval(phi_spline, 0.0, acc);
-	robot_state.v = command.v;
-	robot_state.phi = command.phi;
 	carmen_ackerman_traj_point_t last_robot_state = robot_state;
 	for (last_t = t = 0.0; t < (tcp.tt - delta_t); t += delta_t)
 	{
-		command.phi = gsl_spline_eval(phi_spline, t, acc);
 		command.v += tcp.a * delta_t;
-		// TODO: @@@ Alberto: Verificar efeitos colaterais do codigo abaixo e a adicao do teste (command.v > 0.0) no if abaixo, fora do for
-//		if (command.v < 0.0)
-//			break;
+		command.phi = gsl_spline_eval(phi_spline, t + delta_t, acc);
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
 		if ((i % reduction_factor) == 0)
@@ -829,16 +901,38 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 
 	if (((tcp.tt - t) > 0.0)) // && (command.v > 0.0))
 	{
-		delta_t = tcp.tt - t;
+		double final_delta_t = tcp.tt - t;
 		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
-		command.v += tcp.a * delta_t;
+		command.v += tcp.a * final_delta_t;
 
-		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi,
+				final_delta_t, &distance_traveled, final_delta_t, GlobalState::robot_config);
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
 		path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
 		// A ultima posicao nao tem proxima, logo, delta_t = 0.0
 		path.push_back(convert_to_carmen_ackerman_path_point_t(robot_state, 0.0));
 	}
+
+//	if (GlobalState::eliminate_path_follower)
+//	{
+//		path = apply_robot_delays(path);
+//
+////		robot_state.v = v0;
+////		robot_state.phi = i_phi;
+////		path[0] = convert_to_carmen_ackerman_path_point_t(robot_state, delta_t);
+//
+//		robot_state = {0.0, 0.0, 0.0, path[0].v, path[0].phi};
+////		robot_state = {path[0].x, path[0].y, path[0].theta, path[0].v, path[0].phi};
+//		distance_traveled = 0.0;
+//		for (unsigned int i = 1; i < path.size(); i++)
+//		{
+//			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, path[i].v, path[i].phi,
+//					path[i].time, &distance_traveled, path[i].time, GlobalState::robot_config);
+//			path[i] = convert_to_carmen_ackerman_path_point_t(robot_state, delta_t);
+//		}
+//	//	printf("Depois\n\n");
+//	//	print_path_(path);
+//	}
 
 	return (distance_traveled);
 }
@@ -958,15 +1052,6 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	carmen_ackerman_traj_point_t robot_state;
 
 	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, delta_t);
-
-	//TODO Fazer mais testes quanto ao impacto desse tratamento
-//	if (command.v < 0.0)
-//	{
-//		tcp.valid = false;
-//		//printf("Warning: invalid velocity tcp in simulate_car_from_parameters()\n");
-//		path.clear();
-//		return (path);
-//	}
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -1114,6 +1199,9 @@ compare_td(TrajectoryLookupTable::TrajectoryDimensions td1, TrajectoryLookupTabl
 bool
 path_has_loop(double dist, double sf)
 {
+	if (dist < 0.05)
+		return (false);
+
 	if (sf > (M_PI * dist * 1.1)) // se sf for maior que meio arco com diametro dist mais um pouco (1.1) tem loop
 		return (true);
 	return (false);

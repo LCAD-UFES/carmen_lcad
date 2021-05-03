@@ -29,7 +29,6 @@ int print_to_debug = 0;
 int plot_to_debug = 0;
 
 extern int use_unity_simulator;
-extern int eliminate_path_follower;
 
 //#define PLOT_COLLISION
 
@@ -525,42 +524,37 @@ write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimen
 
 
 bool
-path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
+path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> &path)
 {
 	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance;
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
-#ifdef PLOT_COLLISION
-	vector<carmen_ackerman_path_point_t> hit_points;
-#endif
-
-	double max_circle_invasion = 0.0;
-	for (unsigned int i = 0; i < path.size(); i += 1)
+	double max_circle_invasion;
+	for (int j = 0; j < 1; j++)
 	{
-		if ((path[i].phi > GlobalState::robot_config.max_phi) ||
-			(path[i].phi < -GlobalState::robot_config.max_phi))
-			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
-
-		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		if (GlobalState::distance_map != NULL)
+		max_circle_invasion = 0.0;
+		for (unsigned int i = 0; i < path.size(); i += 1)
 		{
-			double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
-#ifdef PLOT_COLLISION
-			if (circle_invasion > 0)
-				hit_points.push_back(path[i]); //pra plotar
-#endif
+			if ((path[i].phi > GlobalState::robot_config.max_phi) ||
+				(path[i].phi < -GlobalState::robot_config.max_phi))
+				printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
 
-			if (circle_invasion > max_circle_invasion)
-				max_circle_invasion = circle_invasion;
+			carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
+			if (GlobalState::distance_map != NULL)
+			{
+				double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
+						point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
+
+				if (circle_invasion > max_circle_invasion)
+					max_circle_invasion = circle_invasion;
+			}
 		}
-	}
-#ifdef PLOT_COLLISION
-	if (!hit_points.size())
-		hit_points.push_back(path[0]);
 
-	plot_path_and_colisions_points(path, hit_points);
-#endif
+		if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
+			path.erase(path.begin() + (int) (0.7 * (double) path.size()), path.begin() + path.size());
+		else
+			return (false);
+	}
 
 	if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
 	{
@@ -776,8 +770,8 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
 	else if (use_unity_simulator)
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
-	else if (eliminate_path_follower)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.09);
+	else if (GlobalState::eliminate_path_follower)
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
 	else
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
 	path_local = path;
@@ -808,7 +802,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 //		apply_system_latencies(path);
 //	else
 //		filter_path(path);
-	if (!GlobalState::use_mpc && !use_unity_simulator && !eliminate_path_follower)
+	if (!GlobalState::use_mpc && !use_unity_simulator && !GlobalState::eliminate_path_follower)
 		filter_path(path);
 
 	return (true);
@@ -861,15 +855,15 @@ goal_is_behind_car(Pose *localizer_pose, Pose *goal_pose)
 
 
 bool
-set_reverse_planning_global_state(double target_v, TrajectoryLookupTable::TrajectoryControlParameters &previous_good_tcp)
+set_reverse_planning_global_state(double target_v, double v_i, TrajectoryLookupTable::TrajectoryControlParameters &previous_good_tcp)
 {
-	if (!GlobalState::reverse_driving_flag && (target_v < 0.0))
+	if (!GlobalState::reverse_driving_flag && ((target_v < 0.0) || (v_i < 0.0)))
 	{
 		printf(KGRN "+++++++++++++ REVERSE DRIVING NAO ESTA ATIVO NOS PARAMETROS - LANE DESCARTADA!!!!\n" RESET);
 		return (false);
 	}
 
-	if ((target_v < 0.0) && GlobalState::reverse_driving_flag)
+	if (((target_v < 0.0) || (v_i < 0.0)) && GlobalState::reverse_driving_flag)
 	{
 		if (GlobalState::reverse_planning == 0)
 			previous_good_tcp.valid = false;
@@ -1091,7 +1085,7 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 	}
 
 	paths.resize(1);
-	if (!set_reverse_planning_global_state(target_v, previous_good_tcp))
+	if (!set_reverse_planning_global_state(target_v, last_odometry.v, previous_good_tcp))
 	{
 		paths.clear();
 		return (paths);

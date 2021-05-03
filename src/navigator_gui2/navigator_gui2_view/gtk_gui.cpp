@@ -718,12 +718,14 @@ namespace View
 		static char buffer[2048];
 		static bool first_time = true;
 		static double dist_traveled;
+		static double first_timestamp;
 		static carmen_point_t previous_robot_pose;
 
 		if (first_time)
 		{
 			dist_traveled = 0.0;
 			previous_robot_pose = robot_pose;
+			first_timestamp = carmen_get_time();
 			first_time = false;
 		}
 		else
@@ -735,7 +737,8 @@ namespace View
 			}
 		}
 
-		sprintf(buffer, "Dist. Traveled: %'.3lf (Km)", dist_traveled / 1000.0);
+		sprintf(buffer, "Dist. Traveled: %'.3lf (Km), (%'.3lf Km/h average)", dist_traveled / 1000.0,
+				(dist_traveled / 1000.0) / ((carmen_get_time() - first_timestamp + 0.01) / 3600));
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelDistTraveled), buffer);
 	}
 

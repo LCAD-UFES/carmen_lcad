@@ -47,35 +47,35 @@ int eliminate_path_follower = 1;
 void
 Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands, double timestamp)
 {
-	double x0 = path_msg->path[0].p1.x;
-	double y0 = path_msg->path[0].p1.y;
-	double theta0 = path_msg->path[0].p1.theta;
-	double t0 = path_msg->timestamp;
-	carmen_robot_ackerman_config_t robot_config;
-	robot_config.distance_between_front_and_rear_axles = GlobalState::robot_config.distance_between_front_and_rear_axles;
-	robot_config.maximum_steering_command_rate = GlobalState::robot_config.maximum_steering_command_rate;
-	robot_config.understeer_coeficient = GlobalState::robot_config.understeer_coeficient;
+//	double x0 = path_msg->path[0].p1.x;
+//	double y0 = path_msg->path[0].p1.y;
+//	double theta0 = path_msg->path[0].p1.theta;
+//	double t0 = path_msg->timestamp;
+//	carmen_robot_ackerman_config_t robot_config;
+//	robot_config.distance_between_front_and_rear_axles = GlobalState::robot_config.distance_between_front_and_rear_axles;
+//	robot_config.maximum_steering_command_rate = GlobalState::robot_config.maximum_steering_command_rate;
+//	robot_config.understeer_coeficient = GlobalState::robot_config.understeer_coeficient;
 
-	printf("timestamp - t0 %lf\n", timestamp - t0);
-	printf("* motion path\n");
-	for (int i = 0; (i < path_msg->size) && (i < 5); i++)
-	{
-		printf("v %2.2lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
-				path_msg->path[i].v, path_msg->path[i].phi, path_msg->path[i].time,
-				path_msg->path[i].p1.x - x0, path_msg->path[i].p1.y - y0, path_msg->path[i].p1.theta);
-	}
-	printf("* command path\n");
-	carmen_ackerman_traj_point_t pose = {x0, y0, theta0, path_msg->path[0].v, path_msg->path[0].phi};
-	for (int i = 0; (i < num_commands) && (i < 8); i++)
-	{
-		printf("v %2.2lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
-				commands[i].v, commands[i].phi, commands[i].time,
-				pose.x - x0, pose.y - y0, pose.theta);
-		double distance_traveled = 0.0;
-		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, commands[i].v, commands[i].phi,
-				commands[i].time, &distance_traveled, commands[i].time, robot_config);
-	}
-	fflush(stdout);
+//	printf("timestamp - t0 %lf\n", timestamp - t0);
+//	printf("* motion path\n");
+//	for (int i = 0; (i < path_msg->size) && (i < 5); i++)
+//	{
+//		printf("v %2.2lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
+//				path_msg->path[i].v, path_msg->path[i].phi, path_msg->path[i].time,
+//				path_msg->path[i].p1.x - x0, path_msg->path[i].p1.y - y0, path_msg->path[i].p1.theta);
+//	}
+//	printf("* command path\n");
+//	carmen_ackerman_traj_point_t pose = {x0, y0, theta0, path_msg->path[0].v, path_msg->path[0].phi};
+//	for (int i = 0; (i < num_commands) && (i < 8); i++)
+//	{
+//		printf("v %2.2lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
+//				commands[i].v, commands[i].phi, commands[i].time,
+//				pose.x - x0, pose.y - y0, pose.theta);
+//		double distance_traveled = 0.0;
+//		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, commands[i].v, commands[i].phi,
+//				commands[i].time, &distance_traveled, commands[i].time, robot_config);
+//	}
+//	fflush(stdout);
 
 	if (use_obstacle_avoider)
 	{
@@ -184,7 +184,8 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	if (g_teacher_mode)
 		Follower::go();
 
-	build_and_follow_path(msg->globalpos, msg->timestamp);
+	if (!eliminate_path_follower)
+		build_and_follow_path(msg->globalpos, msg->timestamp);
 
 	globalpos_message_received = true;
 }
@@ -266,6 +267,11 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 {
 	GlobalState::last_odometry.v = msg->v;
 	GlobalState::last_odometry.phi = msg->phi;
+
+	if (fabs(msg->v) < 4.16666)	// 15 km/h
+		eliminate_path_follower = 1;
+	else
+		eliminate_path_follower = 0;
 }
 
 
@@ -444,11 +450,11 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	if (eliminate_path_follower)
-	{
-		while (1)	// fica aqui pra sempre fazendo nada
-			sleep(5);
-	}
+//	if (eliminate_path_follower)
+//	{
+//		while (1)	// fica aqui pra sempre fazendo nada
+//			sleep(5);
+//	}
 	RRT_IPC::register_handlers();
 
 	carmen_ipc_dispatch();

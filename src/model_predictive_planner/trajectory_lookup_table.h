@@ -185,6 +185,7 @@ float get_d_yaw_by_index(int index);
 float get_theta_by_index(int index);
 float get_distance_by_index(int index);
 
+vector<carmen_ackerman_path_point_t> apply_robot_delays(vector<carmen_ackerman_path_point_t> &original_path);
 
 void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
 		  vector<carmen_ackerman_path_point_t> &pSeed, std::string titles[]);

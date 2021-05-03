@@ -39,9 +39,21 @@ carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_anno
 static int update_lookup_table = 0;
 
 int use_unity_simulator = 0;
-int eliminate_path_follower = 0;
-double robot_time_delay = 0.36;
-double robot_min_distance_ahead = 0.15;
+
+
+//static void
+//print_path_(vector<carmen_ackerman_path_point_t> path)
+//{
+//	for (unsigned int i = 0; (i < path.size()) && (i < 15); i++)
+//		printf("v %5.3lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
+//				path[i].v, path[i].phi, path[i].time,
+//				path[i].x - GlobalState::localizer_pose->x, path[i].y - GlobalState::localizer_pose->y,
+//				path[i].theta);
+//
+//	printf("\n");
+//	fflush(stdout);
+//}
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,23 +100,9 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 
 
 void
-publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_ackerman_path_point_t> &path, double timestamp)
+publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_ackerman_path_point_t> &original_path, double timestamp)
 {
-	double time_delay = 0.0;
-	double distance_travelled = 0.0;
-
-	while ((time_delay < robot_time_delay) && (path.size() > 1))
-	{
-		time_delay += path[0].time;
-		distance_travelled += DIST2D(path[0], path[1]);
-		path.erase(path.begin());
-	}
-
-	while ((distance_travelled < robot_min_distance_ahead) && (path.size() > 1))
-	{
-		distance_travelled += DIST2D(path[0], path[1]);
-		path.erase(path.begin());
-	}
+	vector<carmen_ackerman_path_point_t> path = apply_robot_delays(original_path);
 
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }
@@ -447,19 +445,6 @@ goal_crossed()
 
 
 void
-print_path_(vector<carmen_ackerman_path_point_t> path)
-{
-	for (unsigned int i = 0; (i < path.size()) && (i < 10); i++)
-		printf("v %5.3lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
-				path[i].v, path[i].phi, path[i].time,
-				path[i].x - GlobalState::localizer_pose->x, path[i].y - GlobalState::localizer_pose->y,
-				path[i].theta);
-
-	printf("\n");
-}
-
-
-void
 build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
@@ -472,11 +457,12 @@ build_and_follow_path(double timestamp)
 //			((distance_to_goal < 0.3) && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.5) &&
 //					(path_goals_and_annotations_message->number_of_poses == 1)))
 		{
-			printf("*np %d, gls %d, dtg %5.2lf, max_v %5.2lf, v %5.2lf\n",
-					path_goals_and_annotations_message->number_of_poses, path_goals_and_annotations_message->goal_list_size,
-					distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v);
-			fflush(stdout);
+//			printf("*np %d, gls %d, dtg %5.2lf, max_v %5.2lf, v %5.2lf\n",
+//					path_goals_and_annotations_message->number_of_poses, path_goals_and_annotations_message->goal_list_size,
+//					distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v);
+//			fflush(stdout);
 
+			GlobalState::robot_config.max_v = 0.0;
 			if (GlobalState::following_path)
 			{
 				last_phi *= 0.95;
@@ -493,7 +479,7 @@ build_and_follow_path(double timestamp)
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 			if ((tree.num_paths > 0) && (path.size() > 0))
 			{
-				if (eliminate_path_follower)
+				if (GlobalState::eliminate_path_follower)
 					publish_robot_ackerman_motion_commands_eliminating_path_follower(path, timestamp);
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_planner_rrt_path_message(path_follower_path, timestamp);
@@ -501,6 +487,7 @@ build_and_follow_path(double timestamp)
 			}
 			else
 			{
+				GlobalState::robot_config.max_v = 0.0;
 				if (GlobalState::following_path)
 				{
 					last_phi *= 0.95;
@@ -512,11 +499,11 @@ build_and_follow_path(double timestamp)
 					publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
 				}
 			}
-			printf(" np %d, gls %d, dtg %5.2lf, max_v %5.3lf, v %5.3lf, ps %d\n",
-					path_goals_and_annotations_message->number_of_poses, path_goals_and_annotations_message->goal_list_size,
-					distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v, (int) path.size());
-			print_path_(path);
-			fflush(stdout);
+//			printf(" np %d, gls %d, dtg %5.2lf, max_v %5.3lf, v %5.3lf, ps %d\n",
+//					path_goals_and_annotations_message->number_of_poses, path_goals_and_annotations_message->goal_list_size,
+//					distance_to_goal, GlobalState::robot_config.max_v, GlobalState::last_odometry.v, (int) path.size());
+//			print_path_(path);
+//			fflush(stdout);
 
 			last_phi = GlobalState::last_odometry.phi;
 		}
@@ -617,23 +604,23 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 
 	GlobalState::last_goal = (msg->goal_list_size == 1)? true: false;
 
-	goal_pose.x = msg->goal_list->x;
-	goal_pose.y = msg->goal_list->y;
-	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
+	goal_pose.x = msg->goal_list[0].x;
+	goal_pose.y = msg->goal_list[0].y;
+	goal_pose.theta = carmen_normalize_theta(msg->goal_list[0].theta);
 
-//	printf("@target_v %lf\n", msg->goal_list->v);
+//	printf("@target_v %lf\n", msg->goal_list[0].v);
 
 	if (GlobalState::reverse_driving_flag)
 	{
-		if (msg->goal_list->v < 0.0)
+		if (msg->goal_list[0].v < 0.0)
 		{
 //			if (GlobalState::robot_config.max_v > 0.0)
 //				GlobalState::robot_config.max_v = GlobalState::param_max_vel_reverse;
 
-			desired_v = fmax(msg->goal_list->v, GlobalState::param_max_vel_reverse);
+			desired_v = fmax(msg->goal_list[0].v, GlobalState::param_max_vel_reverse);
 
 			if (desired_v < GlobalState::robot_config.max_v)
-				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.5;
 			else
 				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 		}
@@ -642,18 +629,18 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 //			if (GlobalState::robot_config.max_v < 0.0)	// Acaba de pedir inversao da velovidade de negativa para positiva
 //				GlobalState::robot_config.max_v = GlobalState::param_max_vel;
 
-			desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+			desired_v = fmin(msg->goal_list[0].v, GlobalState::param_max_vel);
 			if (desired_v > GlobalState::robot_config.max_v)
-				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.5;
 			else
 				GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 		}
 	}
 	else
 	{
-		desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+		desired_v = fmin(msg->goal_list[0].v, GlobalState::param_max_vel);
 		if (desired_v > GlobalState::robot_config.max_v)
-			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.5;
 		else
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 	}
@@ -672,6 +659,11 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 {
 	GlobalState::last_odometry.v = msg->v;
 	GlobalState::last_odometry.phi = msg->phi;
+
+	if (fabs(msg->v) < 4.16666)	// 15 km/h
+		GlobalState::eliminate_path_follower = 1;
+	else
+		GlobalState::eliminate_path_follower = 0;
 }
 
 
@@ -932,9 +924,11 @@ read_parameters(int argc, char **argv)
 		{(char *) "model", (char *) "predictive_planner_w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   			  CARMEN_PARAM_ONOFF, &eliminate_path_follower, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_robot_time_delay",                    	  CARMEN_PARAM_DOUBLE, &robot_time_delay, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_robot_min_distance_ahead",                CARMEN_PARAM_DOUBLE, &robot_min_distance_ahead, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   			  CARMEN_PARAM_ONOFF, &GlobalState::eliminate_path_follower, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_robot_velocity_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_velocity_delay, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_robot_min_v_distance_ahead",              CARMEN_PARAM_DOUBLE, &GlobalState::robot_min_v_distance_ahead, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_robot_steering_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_steering_delay, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_robot_min_s_distance_ahead",              CARMEN_PARAM_DOUBLE, &GlobalState::robot_min_s_distance_ahead, 1, NULL},
 
 		{(char *) "frenet_path_planner", 	  (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
 	};

@@ -867,31 +867,43 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 }
 
 
-/*A funcao abaixo foi substituida pela funcao acima para atender casos mais geras*/
-//double
-//distance_from_traj_point_to_obstacle(carmen_point_t point,  carmen_point_t *localizer_pose,
-//		carmen_obstacle_distance_mapper_message *distance_map, double displacement, double min_dist)
-//{
-//	// Move path point to map coordinates
-//	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, localizer_pose, distance_map, displacement);
-//	int x_map_cell = (int) round(path_point_in_map_coords.x);
-//	int y_map_cell = (int) round(path_point_in_map_coords.y);
-//	if ((x_map_cell < 0 || x_map_cell >= distance_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map->config.y_size))
-//		return (min_dist);
-//
-//	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
-//	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
-//
-//	double dx = (double) distance_map->complete_x_offset[index] + (double) x_map_cell - path_point_in_map_coords.x;
-//	double dy = (double) distance_map->complete_y_offset[index] + (double) y_map_cell - path_point_in_map_coords.y;
-//
-//	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
-//	double distance = distance_in_map_coordinates * distance_map->config.resolution;
-//
-//	return (distance);
-//}
+void
+semi_trailer_collision_config_initialization(int semi_trailer_type)
+{
+	global_collision_config.semi_trailer_type = semi_trailer_type;
 
-static char *collision_file;
+	char semi_trailer_string[2048];
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_type);
+
+	char *semi_trailer_collision_file;
+	carmen_param_t param_list[] =
+	{
+		{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_d), 0, NULL},
+		{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_M), 0, NULL},
+		{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 0, NULL},
+	};
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	char *carmen_home = getenv("CARMEN_HOME");
+	char collision_file_[2048];
+	strcpy(collision_file_, carmen_home);
+	strcat(collision_file_, "/bin/");
+	strcat(collision_file_, semi_trailer_collision_file);
+
+	FILE *collision_file_pointer = fopen(collision_file_, "r");
+	setlocale(LC_NUMERIC, "C");
+	fscanf(collision_file_pointer, "%d", &(global_collision_config.n_semi_trailer_markers));
+	int max_h_level;
+	fscanf(collision_file_pointer, "%d", &max_h_level);	// Para compatibilidade multi height
+	global_collision_config.semi_trailer_markers = (carmen_collision_marker_t *) malloc(global_collision_config.n_semi_trailer_markers * sizeof(carmen_collision_marker_t));
+
+	for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+		fscanf(collision_file_pointer,"%lf %lf %lf %d", &(global_collision_config.semi_trailer_markers[i].x) , &(global_collision_config.semi_trailer_markers[i].y),
+				&(global_collision_config.semi_trailer_markers[i].radius), &(global_collision_config.semi_trailer_markers[i].height_level));
+
+	fclose(collision_file_pointer);
+}
+
 
 void
 check_collision_config_initialization()
@@ -902,9 +914,11 @@ check_collision_config_initialization()
 		return;
 	collision_config_initialized = 1;
 
+	char *collision_file;
 	carmen_param_t param_list[] =
 	{
-		{"robot", "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
+		{"robot", "collision_file", 		CARMEN_PARAM_STRING, 	&collision_file, 								1, NULL},
+		{"semi",  "trailer_initial_type", 	CARMEN_PARAM_INT, 		&(global_collision_config.semi_trailer_type), 	1, NULL},
 	};
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
@@ -920,7 +934,7 @@ check_collision_config_initialization()
 	setlocale(LC_NUMERIC, "C");
 	fscanf(collision_file_pointer, "%d", &(global_collision_config.n_markers));
 	int max_h_level;
-	fscanf(collision_file_pointer, "%d", &max_h_level);
+	fscanf(collision_file_pointer, "%d", &max_h_level);	// Para compatibilidade multi height
 	global_collision_config.markers = (carmen_collision_marker_t *) malloc(global_collision_config.n_markers * sizeof(carmen_collision_marker_t));
 
 	for (int i = 0; i < global_collision_config.n_markers; i++)
@@ -928,6 +942,9 @@ check_collision_config_initialization()
 				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].height_level);
 
 	fclose(collision_file_pointer);
+
+	if (global_collision_config.semi_trailer_type != 0)
+		semi_trailer_collision_config_initialization(global_collision_config.semi_trailer_type);
 }
 
 

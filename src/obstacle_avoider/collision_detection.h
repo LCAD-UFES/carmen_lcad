@@ -46,6 +46,13 @@ typedef struct
 {
 	int n_markers;
 	carmen_collision_marker_t *markers;
+
+	int semi_trailer_type;
+	double semi_trailer_d;
+	double semi_trailer_M;
+
+	int n_semi_trailer_markers;
+	carmen_collision_marker_t *semi_trailer_markers;
 } carmen_collision_config_t;
 
 double compute_collision_obb_obb(const carmen_oriented_bounding_box carmen_oriented_bounding_box1,

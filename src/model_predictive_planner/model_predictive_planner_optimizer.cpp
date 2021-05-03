@@ -36,6 +36,8 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
 	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	if (a == 0.0)
+		a = 0.000001;
 	a = (-1)*a;
 	tcp_seed.tt = (target_v - target_td.v_i) / a;
 	if (a < -GlobalState::robot_config.maximum_acceleration_reverse)
@@ -50,13 +52,15 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 	{
 		a = GlobalState::robot_config.maximum_deceleration_reverse;
 		double v = fabs(target_td.v_i);
-		tcp_seed.tt = -(sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
+		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
 	}
 //	else if (a == 0.0 && target_td.v_i != 0.0)
 //		tcp_seed.tt = s/target_td.v_i;
 
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
+	if (tcp_seed.tt < 0.05)
+		tcp_seed.tt = 0.05;
 
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
@@ -72,6 +76,8 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
 	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	if (a == 0.0)
+		a = 0.000001;
 	tcp_seed.tt = (target_v - target_td.v_i) / a;
 	if (a > GlobalState::robot_config.maximum_acceleration_forward)
 	{
@@ -87,8 +93,10 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 	}
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
+	if (tcp_seed.tt < 0.05)
+		tcp_seed.tt = 0.05;
 
-//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
+	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -128,6 +136,8 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		if (params->optimize_time == OPTIMIZE_DISTANCE)
 		{
 			tcp.s = gsl_vector_get(x, 3);
+			if (tcp.s < 0.01)
+				tcp.s = 0.01;
 			compute_a_and_t_from_s(tcp.s, params->target_v, *params->target_td, tcp, params);
 			tcp.a = params->suitable_acceleration;
 			tcp.tt = params->suitable_tt;
@@ -153,6 +163,8 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		if (params->optimize_time == OPTIMIZE_DISTANCE)
 		{
 			tcp.s = gsl_vector_get(x, 3);
+			if (tcp.s < 0.01)
+				tcp.s = 0.01;
 			double v = params->target_td->v_i;
 			if (tcp.a > 0.0001)
 			{
@@ -182,6 +194,8 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		if (params->optimize_time == OPTIMIZE_DISTANCE)
 		{
 			tcp.s = gsl_vector_get(x, 2);
+			if (tcp.s < 0.01)
+				tcp.s = 0.01;
 			compute_a_and_t_from_s(tcp.s, params->target_v, *params->target_td, tcp, params);
 			tcp.a = params->suitable_acceleration;
 			tcp.tt = params->suitable_tt;
@@ -195,12 +209,12 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 	tcp.vf = params->tcp_seed->vf;
 	tcp.sf = params->tcp_seed->sf;
 
-	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
-		tcp.tt = 0.2;
+	if (tcp.tt < 0.05) // o tempo nao pode ser pequeno demais
+		tcp.tt = 0.05;
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais//TODO
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
-	if (tcp.s < 0.2)
-		tcp.s = 0.2;
+	if (tcp.s < 0.01)
+		tcp.s = 0.01;
 //
 //	if (tcp.a > GlobalState::robot_config.maximum_acceleration_forward) // a aceleracao nao pode ser positiva demais
 //		tcp.a = GlobalState::robot_config.maximum_acceleration_forward;
@@ -968,8 +982,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 		if (tt > 15.0)
 			tt = 15.0;
-		else if (tt < 0.15)
-			tt = 0.15;
+		else if (tt < 0.05)
+			tt = 0.05;
 
 		params.suitable_tt = tcp_seed.tt = tt;
 		params.suitable_acceleration = tcp_seed.a = a;
@@ -1114,16 +1128,16 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
-	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
+	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 150));
 
 //	static int xx = 0;
 //	printf("iter = %02ld, %d\n", iter, xx++);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if (tcp.tt < 0.2)
+	if (tcp.tt < 0.05)
 	{
-//		printf(">>>>>>>>>>>>>> tt < 0.2\n");
+//		printf(">>>>>>>>>>>>>> tt < 0.05\n");
 		tcp.valid = false;
 	}
 
@@ -1217,13 +1231,13 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 		//	--
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
-	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
+	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 150));
 
 //	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if (tcp.tt < 0.2 || s->f > 20.0)
+	if (tcp.tt < 0.05 || s->f > 20.0)
 	{
 //		printf("Plano invalido>>>>>>>>>>>>>> tt: %lf s->f %lf\n",tcp.tt, s->f);
 		tcp.valid = false;
@@ -1291,11 +1305,11 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
 
-	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 30));
+	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 150));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if ((tcp.tt < 0.2) || (params.plan_cost > 0.25)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+	if ((tcp.tt < 0.05) || (params.plan_cost > 0.25)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
 	{
 //		printf("################## plan_cost = %lf\n", params.plan_cost);
 		tcp.valid = false;
@@ -1521,6 +1535,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	TrajectoryLookupTable::TrajectoryDimensions td = target_td;
 //	TrajectoryLookupTable::TrajectoryControlParameters tcp = tcp_complete;
 //	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, td.v_i, td.phi_i, false);
+//	vector<carmen_ackerman_path_point_t> path_prev = simulate_car_from_parameters(td, tcp_copy, td.v_i, td.phi_i, false);
 //
 //	ObjectiveFunctionParams params_copy = params;
 //	if ((params_copy.detailed_lane.size() > 0) && (path.size() > 0))
@@ -1528,7 +1543,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //		compute_path_points_nearest_to_lane(&params_copy, path);
 //		vector<carmen_ackerman_path_point_t> modified_path = compute_path_to_lane_distance_evaluation(&params_copy, path);
 //		Tree tree;
-//		tree.num_paths = 2;
+//		tree.num_paths = 3;
 //		tree.num_edges = 0;
 //		tree.p1 = NULL;
 //		tree.p2 = NULL;
@@ -1544,6 +1559,11 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //		tree.paths[1] = (carmen_ackerman_traj_point_t *) malloc(params_copy.detailed_lane.size() * sizeof(carmen_ackerman_traj_point_t));
 //		copy_path_to_traj(tree.paths[1], params_copy.detailed_lane);
 //		tree.paths_sizes[1] = params_copy.detailed_lane.size();
+//
+//		move_path_to_current_robot_pose(path_prev, GlobalState::localizer_pose);
+//		tree.paths[2] = (carmen_ackerman_traj_point_t *) malloc(path_prev.size() * sizeof(carmen_ackerman_traj_point_t));
+//		copy_path_to_traj(tree.paths[2], path_prev);
+//		tree.paths_sizes[2] = path_prev.size();
 //
 //		Publisher_Util::publish_plan_tree_message(tree);
 //	}
