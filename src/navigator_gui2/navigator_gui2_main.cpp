@@ -1342,8 +1342,6 @@ read_parameters(int argc, char *argv[],
 	printf("%s\n", polygon_file);
 	carmen_parse_polygon_file(robot_poly_config, polygon_file);
 
-	free(robot_poly_file);
-
 	if (semi_trailer_config->type > 0)
 	{
 		char semi_trailer_string[256];
@@ -1368,8 +1366,6 @@ read_parameters(int argc, char *argv[],
 		strcat(polygon_file, semi_trailer_poly_file);
 		printf("%s\n", polygon_file);
 		carmen_parse_polygon_file(semi_trailer_poly_config, polygon_file);
-
-		free(semi_trailer_poly_file);
 	}
 
 	carmen_param_t param_cmd_list[] =

@@ -86,8 +86,6 @@ createCarDrawer(int argc, char** argv)
 
 	glmScale(carDrawer->carModel, carDrawer->car_size.x/2.0);
 
-	free(carmodel_file);
-
 	char *carmen_home = getenv("CARMEN_HOME");
 
 	if (carmen_home == NULL)
@@ -149,8 +147,6 @@ createCarDrawer(int argc, char** argv)
 
 		glmScale(carDrawer->semiTrailerModel, carDrawer->semi_trailer_size.x/2.0);
 
-		free(semi_trailer_model_file);
-
 		strcpy(collision_file_, carmen_home);
 		strcat(collision_file_, "/bin/");
 		strcat(collision_file_, semi_trailer_collision_file);
@@ -166,7 +162,6 @@ createCarDrawer(int argc, char** argv)
 					&(carDrawer->semi_trailer_collision_config.markers[i].radius), &(carDrawer->semi_trailer_collision_config.markers[i].height_level));
 
 		fclose(collision_file_pointer);
-		free(semi_trailer_collision_file);
 	}
 
 	return carDrawer;
