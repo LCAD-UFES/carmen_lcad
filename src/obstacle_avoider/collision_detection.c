@@ -962,7 +962,7 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 
 
 carmen_position_t
-move_semi_trailer_marker_to_robot_coordinate_frame(double x, double, y, double beta)
+move_semi_trailer_marker_to_robot_coordinate_frame(double x, double y, double beta)
 {
 	carmen_position_t displaced_marker;
 
