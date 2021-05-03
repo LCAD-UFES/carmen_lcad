@@ -50,6 +50,7 @@ typedef struct
 	int semi_trailer_type;
 	double semi_trailer_d;
 	double semi_trailer_M;
+	double semi_trailer_max_beta;
 
 	int n_semi_trailer_markers;
 	carmen_collision_marker_t *semi_trailer_markers;

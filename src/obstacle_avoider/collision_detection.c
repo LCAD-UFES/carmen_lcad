@@ -880,6 +880,7 @@ semi_trailer_collision_config_initialization(int semi_trailer_type)
 	{
 		{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_d), 0, NULL},
 		{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_M), 0, NULL},
+		{semi_trailer_string, "max_beta", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_max_beta), 0, NULL},
 		{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 0, NULL},
 	};
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -959,6 +960,19 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 	*initial_displacement = circle_radius - (robot_config->distance_between_rear_car_and_rear_wheels + 0.8);
 }
 
+
+carmen_position_t
+move_semi_trailer_marker_to_robot_coordinate_frame(double x, double, y, double beta)
+{
+	carmen_position_t displaced_marker;
+
+	displaced_marker.x = (x - global_collision_config.semi_trailer_d) * cos(beta) - y * sin(beta) - global_collision_config.semi_trailer_M;
+	displaced_marker.y = (x - global_collision_config.semi_trailer_d) * sin(beta) + y * cos(beta);
+
+	return displaced_marker;
+}
+
+
 //This Function expected the points to check in local coordinates, if you need use global coordinates, just set localizer_pose as 0.0
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
@@ -981,6 +995,30 @@ carmen_robot_ackerman_config_t robot_config __attribute__ ((unused)), carmen_obs
 				proximity_to_obstacles += delta * delta;
 		}
 	}
+
+//	if (global_collision_config.semi_trailer_type > 0)
+//	{
+//		double beta = 0.52;
+//
+//		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+//		{
+//			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+//					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, beta);
+//
+//			carmen_point_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
+//					displaced_marker.x, displaced_marker.y);
+//			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+//			//distance equals to -1.0 when the coordinates are outside of map
+//			if (distance != -1.0)
+//			{
+//				double delta = distance - (global_collision_config.semi_trailer_markers[i].radius + safety_distance);
+//				if (delta < 0.0)
+//					proximity_to_obstacles += delta * delta;
+//			}
+//		}
+//	}
+
+
 	return (proximity_to_obstacles);
 }
 
@@ -1335,6 +1373,36 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 		else
 			return (2);
 	}
+
+//	if (global_collision_config.semi_trailer_type > 0)
+//	{
+//		double beta = 0.52;
+//
+//		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+//		{
+//			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+//					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, beta);
+//
+//			carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
+//					displaced_marker.x, displaced_marker.y);
+//			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+//			//distance equals to -1.0 when the coordinates are outside of map
+//			if (distance != -1.0)
+//			{
+//				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || beta > global_collision_config.semi_trailer_max_beta)
+//				{
+////				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+////				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+////				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+////				virtual_laser_message.num_positions++;
+//					return (1);
+//				}
+//			}
+//			else
+//				return (2);
+//		}
+//	}
+
 	return (0);
 }
 
