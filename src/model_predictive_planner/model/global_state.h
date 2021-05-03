@@ -32,6 +32,7 @@ public:
 
 	// Robot delay
 	static int eliminate_path_follower;
+	static double eliminate_path_follower_transition_v;
 	static double robot_velocity_delay;
 	static double robot_min_v_distance_ahead;
 	static double robot_steering_delay;

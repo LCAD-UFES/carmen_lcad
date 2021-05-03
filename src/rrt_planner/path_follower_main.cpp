@@ -35,6 +35,7 @@ double t0 = 0.0;
 rrt_path_message *path_msg;
 
 int eliminate_path_follower = 1;
+double eliminate_path_follower_transition_v = 4.16666;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -390,14 +391,14 @@ void
 read_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] = {
-		{(char *) "robot",	(char *) "length",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.length,								 			1, NULL},
-		{(char *) "robot",	(char *) "width",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.width,								 			1, NULL},
+		{(char *) "robot",	(char *) "length",								  			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.length,								 			1, NULL},
+		{(char *) "robot",	(char *) "width",								  			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.width,								 			1, NULL},
 		{(char *) "robot", 	(char *) "distance_between_rear_wheels",		  			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_wheels,			 		1, NULL},
-		{(char *) "robot", 	(char *) "distance_between_front_and_rear_axles", 		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_and_rear_axles, 			1, NULL},
-		{(char *) "robot", 	(char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_car_and_front_wheels,	1, NULL},
-		{(char *) "robot", 	(char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_car_and_rear_wheels,		1, NULL},
+		{(char *) "robot", 	(char *) "distance_between_front_and_rear_axles", 			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_and_rear_axles, 			1, NULL},
+		{(char *) "robot", 	(char *) "distance_between_front_car_and_front_wheels",		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_car_and_front_wheels,	1, NULL},
+		{(char *) "robot", 	(char *) "distance_between_rear_car_and_rear_wheels",		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_car_and_rear_wheels,		1, NULL},
 		{(char *) "robot", 	(char *) "max_velocity",						  			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_vel,								 		1, NULL},
-		{(char *) "robot", 	(char *) "max_steering_angle",					  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_phi,								 		1, NULL},
+		{(char *) "robot", 	(char *) "max_steering_angle",					  			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_phi,								 		1, NULL},
 		{(char *) "robot", 	(char *) "maximum_acceleration_forward",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_forward,					1, NULL},
 		{(char *) "robot", 	(char *) "maximum_acceleration_reverse",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_reverse,					1, NULL},
 		{(char *) "robot", 	(char *) "maximum_deceleration_forward",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_forward,					1, NULL},
@@ -405,11 +406,12 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", 	(char *) "desired_decelaration_forward",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_forward,					1, NULL},
 		{(char *) "robot", 	(char *) "desired_decelaration_reverse",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_reverse,					1, NULL},
 		{(char *) "robot", 	(char *) "desired_acceleration",							CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_acceleration,							1, NULL},
-		{(char *) "robot", 	(char *) "desired_steering_command_rate",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_steering_command_rate,					1, NULL},
-		{(char *) "robot", 	(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
-		{(char *) "robot", 	(char *) "maximum_steering_command_rate", 				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate, 					1, NULL},
-		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF, &GlobalState::use_truepos, 0, NULL},
-		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   CARMEN_PARAM_ONOFF, &eliminate_path_follower, 1, NULL}
+		{(char *) "robot", 	(char *) "desired_steering_command_rate",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_steering_command_rate,					1, NULL},
+		{(char *) "robot", 	(char *) "understeer_coeficient",							CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
+		{(char *) "robot", 	(char *) "maximum_steering_command_rate", 					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate, 					1, NULL},
+		{(char *) "behavior_selector", (char *) "use_truepos", 							CARMEN_PARAM_ONOFF, &GlobalState::use_truepos, 0, NULL},
+		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   	CARMEN_PARAM_ONOFF, &eliminate_path_follower, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower_transition_v", CARMEN_PARAM_DOUBLE, &eliminate_path_follower_transition_v, 1, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

@@ -30,6 +30,7 @@ double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o vol
 														// A velocidade de mudanca de phi nao pode ultrapassar este valor
 // Robot delay
 int GlobalState::eliminate_path_follower = 1;
+double GlobalState::eliminate_path_follower_transition_v = 4.16666;
 double GlobalState::robot_velocity_delay = 0.46;
 double GlobalState::robot_min_v_distance_ahead = 0.10;
 double GlobalState::robot_steering_delay = 0.20;

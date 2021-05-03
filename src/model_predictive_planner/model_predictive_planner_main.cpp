@@ -660,7 +660,7 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 	GlobalState::last_odometry.v = msg->v;
 	GlobalState::last_odometry.phi = msg->phi;
 
-	if (fabs(msg->v) < 4.16666)	// 15 km/h
+	if (fabs(msg->v) < GlobalState::eliminate_path_follower_transition_v)
 		GlobalState::eliminate_path_follower = 1;
 	else
 		GlobalState::eliminate_path_follower = 0;
@@ -925,6 +925,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "model", (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   			  CARMEN_PARAM_ONOFF, &GlobalState::eliminate_path_follower, 1, NULL},
+		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower_transition_v",    CARMEN_PARAM_DOUBLE, &GlobalState::eliminate_path_follower_transition_v, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_robot_velocity_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_velocity_delay, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_robot_min_v_distance_ahead",              CARMEN_PARAM_DOUBLE, &GlobalState::robot_min_v_distance_ahead, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_robot_steering_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_steering_delay, 1, NULL},
