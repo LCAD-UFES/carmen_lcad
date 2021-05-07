@@ -38,6 +38,9 @@ carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_anno
 
 static int update_lookup_table = 0;
 
+static int argc_global;
+static char **argv_global;
+
 int use_unity_simulator = 0;
 
 
@@ -552,6 +555,27 @@ build_and_follow_path_new(double timestamp)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+void
+read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
+{
+	GlobalState::semi_trailer_config.type = semi_trailer_type;
+
+	char semi_trailer_string[2048];
+
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", GlobalState::semi_trailer_config.type);
+
+	carmen_param_t semi_trailer_param_list[] = {
+	{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.d),							   0, NULL},
+	{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.M),							   0, NULL},
+	{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.width),						   0, NULL},
+	{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+	{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_back),  0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -563,7 +587,7 @@ static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	if (!GlobalState::localizer_pose)
-			GlobalState::localizer_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
+		GlobalState::localizer_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
 
 	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta, msg->beta};
 
@@ -571,6 +595,9 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		build_and_follow_path_new(msg->timestamp);
 	else
 		build_and_follow_path(msg->timestamp);
+
+	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.type)
+		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
 }
 
 
@@ -902,40 +929,41 @@ void
 read_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] = {
-		{(char *) "robot",	(char *) "length",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.length,								 			1, NULL},
-		{(char *) "robot",	(char *) "width",								  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.width,								 			1, NULL},
-		{(char *) "robot", 	(char *) "distance_between_rear_wheels",		  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_wheels,			 		1, NULL},
-		{(char *) "robot", 	(char *) "distance_between_front_and_rear_axles", 		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_and_rear_axles, 			1, NULL},
-		{(char *) "robot", 	(char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_car_and_front_wheels,	1, NULL},
-		{(char *) "robot", 	(char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_car_and_rear_wheels,		1, NULL},
-		{(char *) "robot", 	(char *) "max_velocity",						  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_v,									 		1, NULL},
-		{(char *) "robot", 	(char *) "max_steering_angle",					  		CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_phi,								 		1, NULL},
-		{(char *) "robot", 	(char *) "maximum_acceleration_forward",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_forward,					1, NULL},
-		{(char *) "robot", 	(char *) "maximum_acceleration_reverse",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_reverse,					1, NULL},
-		{(char *) "robot", 	(char *) "maximum_deceleration_forward",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_forward,					1, NULL},
-		{(char *) "robot", 	(char *) "maximum_deceleration_reverse",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_reverse,					1, NULL},
-		{(char *) "robot", 	(char *) "maximum_steering_command_rate",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate,					1, NULL},
-		{(char *) "robot", 	(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
-		{(char *) "robot", 	(char *) "max_centripetal_acceleration",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,							1, NULL},
-		{(char *) "robot", 	(char *) "max_velocity_reverse",						CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,								 		1, NULL},
-		{(char *) "rddf",   (char *) "source_tracker", 								CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,									0, NULL},
-		{(char *) "behavior_selector", (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL},
-		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL},
-		{(char *) "behavior_selector", (char *) "reverse_driving", 					CARMEN_PARAM_ONOFF,  &GlobalState::reverse_driving_flag, 											0, NULL},
-		{(char *) "model", (char *) "predictive_planner_w1_end_of_path_to_goal_distance",         CARMEN_PARAM_DOUBLE, &GlobalState::w1, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_w2_end_of_path_to_goal_angular_distance", CARMEN_PARAM_DOUBLE, &GlobalState::w2, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_w3_end_of_path_to_goal_delta_theta",      CARMEN_PARAM_DOUBLE, &GlobalState::w3, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   			  CARMEN_PARAM_ONOFF, &GlobalState::eliminate_path_follower, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower_transition_v",    CARMEN_PARAM_DOUBLE, &GlobalState::eliminate_path_follower_transition_v, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_robot_velocity_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_velocity_delay, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_robot_min_v_distance_ahead",              CARMEN_PARAM_DOUBLE, &GlobalState::robot_min_v_distance_ahead, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_robot_steering_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_steering_delay, 1, NULL},
-		{(char *) "model", (char *) "predictive_planner_robot_min_s_distance_ahead",              CARMEN_PARAM_DOUBLE, &GlobalState::robot_min_s_distance_ahead, 1, NULL},
+		{(char *) "robot",				 (char *) "length",														CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.length,										 1, NULL},
+		{(char *) "robot",				 (char *) "width",														CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.width,										 1, NULL},
+		{(char *) "robot",				 (char *) "distance_between_rear_wheels",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_wheels,				 1, NULL},
+		{(char *) "robot",				 (char *) "distance_between_front_and_rear_axles",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_and_rear_axles,		 1, NULL},
+		{(char *) "robot",				 (char *) "distance_between_front_car_and_front_wheels",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
+		{(char *) "robot",				 (char *) "distance_between_rear_car_and_rear_wheels",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.distance_between_rear_car_and_rear_wheels,	 1, NULL},
+		{(char *) "robot",				 (char *) "max_velocity",												CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_v,										 1, NULL},
+		{(char *) "robot",				 (char *) "max_steering_angle",											CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.max_phi,									 1, NULL},
+		{(char *) "robot",				 (char *) "maximum_acceleration_forward",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_forward,				 1, NULL},
+		{(char *) "robot",				 (char *) "maximum_acceleration_reverse",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_reverse,				 1, NULL},
+		{(char *) "robot",				 (char *) "maximum_deceleration_forward",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_forward,				 1, NULL},
+		{(char *) "robot",				 (char *) "maximum_deceleration_reverse",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_reverse,				 1, NULL},
+		{(char *) "robot",				 (char *) "maximum_steering_command_rate",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate,				 1, NULL},
+		{(char *) "robot",				 (char *) "understeer_coeficient",										CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,						 1, NULL},
+		{(char *) "robot",				 (char *) "max_centripetal_acceleration",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,						 1, NULL},
+		{(char *) "robot",				 (char *) "max_velocity_reverse",										CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,									 1, NULL},
+		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.type,								 0, NULL},
+		{(char *) "rddf",				 (char *) "source_tracker",												CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,								 0, NULL},
+		{(char *) "behavior_selector",	 (char *) "goal_source_path_planner",									CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner,										 0, NULL},
+		{(char *) "behavior_selector",	 (char *) "use_truepos",												CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos,												 0, NULL},
+		{(char *) "behavior_selector",	 (char *) "reverse_driving",											CARMEN_PARAM_ONOFF,  &GlobalState::reverse_driving_flag,									 0, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_w1_end_of_path_to_goal_distance",         CARMEN_PARAM_DOUBLE, &GlobalState::w1,														 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_w2_end_of_path_to_goal_angular_distance", CARMEN_PARAM_DOUBLE, &GlobalState::w2,														 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_w3_end_of_path_to_goal_delta_theta",      CARMEN_PARAM_DOUBLE, &GlobalState::w3,														 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4,														 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5,														 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6,														 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower",					CARMEN_PARAM_ONOFF,	 &GlobalState::eliminate_path_follower,									 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower_transition_v",    CARMEN_PARAM_DOUBLE, &GlobalState::eliminate_path_follower_transition_v,					 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_robot_velocity_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_velocity_delay,									 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_robot_min_v_distance_ahead",              CARMEN_PARAM_DOUBLE, &GlobalState::robot_min_v_distance_ahead,								 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_robot_steering_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_steering_delay,									 1, NULL},
+		{(char *) "model",				 (char *) "predictive_planner_robot_min_s_distance_ahead",              CARMEN_PARAM_DOUBLE, &GlobalState::robot_min_s_distance_ahead,								 1, NULL},
 
-		{(char *) "frenet_path_planner", 	  (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
+		{(char *) "frenet_path_planner", (char *) "use_unity_simulator",										CARMEN_PARAM_ONOFF,	 &use_unity_simulator,													 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -947,10 +975,13 @@ read_parameters(int argc, char **argv)
 	carmen_param_t param_optional_list[] =
 	{
 		{(char *) "commandline", (char *) "update_lookup_table", CARMEN_PARAM_ONOFF, &update_lookup_table, 0, NULL},
-		{(char *) "commandline", (char *) "teacher_mode", CARMEN_PARAM_ONOFF, &g_teacher_mode, 0, NULL}
+		{(char *) "commandline", (char *) "teacher_mode",		 CARMEN_PARAM_ONOFF, &g_teacher_mode,	   0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
+	if (GlobalState::semi_trailer_config.type > 0)
+		read_parameters_semi_trailer(argc, argv, GlobalState::semi_trailer_config.type);
 }
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
@@ -960,6 +991,9 @@ int
 main(int argc, char **argv)
 {
 //    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+
+	argc_global = argc;
+	argv_global = argv;
 
     carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
