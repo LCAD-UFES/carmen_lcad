@@ -14,358 +14,6 @@ carmen_collision_config_t global_collision_config;
 
 //carmen_mapper_virtual_laser_message virtual_laser_message;
 
-/**
- * @brief Computes unit vector representing local y-axis of the obb
- *
- * @details To better understand what unit local axis mean refer to Huynh, Johnny. "Separating Axis Theorem
- *          for Oriented Bounding Boxes.", figure at page 13, where Ay is the local y-axis of obb A and
- *          By is local y-axis of obb B.
- *
- * @param obb Oriented bounding box
- * @return 2D vector normalized representing the local y-axis of the box
- */
-carmen_vector_2D_t
-get_unit_local_axis_y(const carmen_oriented_bounding_box obb)
-{
-	carmen_vector_2D_t axis;
-
-//	axis.x = cos(obb.orientation);
-//	axis.y = sin(obb.orientation);
-	sincos(obb.orientation,&axis.y, &axis.x);
-
-	return axis;
-}
-
-/**
- * @brief Computes unit vector representing local x-axis of the obb
- *
- * @details To better understand what unit local axis mean refer to Huynh, Johnny. "Separating Axis Theorem
- *          for Oriented Bounding Boxes.", figure at page 13, where Ax is the local x-axis of obb A and
- *          By is local x-axis of obb B. Don't use this function if you already have the unit vector at the axis Y,
- *          just use the fact that the y-axis and x-axis are perpendicular (Ax.x = -Ay.x; Ax.y = Ay.x)
- *
- * @param obb Oriented bounding box
- *
- * @return 2D vector normalized representing the local x-axis of the box
- */
-carmen_vector_2D_t
-get_unit_local_axis_x(const carmen_oriented_bounding_box obb)
-{
-	carmen_vector_2D_t axis;
-	axis = get_unit_local_axis_y(obb);
-	double temp = axis.x;
-	axis.x = -axis.y;
-	axis.y = temp;
-	return axis;
-}
-
-/**
- * @brief Project vector T onto some arbitrary axis
- *
- * @param T Vector to be projected
- * @param Axis Vector representing the axis
- *
- * @return size of the projection of T at the axis
- */
-double
-project_T_at_axis(const carmen_vector_2D_t T, const carmen_vector_2D_t Axis)
-{
-	return fabs(DOT2D(T,Axis));
-}
-
-
-/**
- * @brief Project specific dimensions of an obb at an arbritary axis
- *
- * @details This function implements the operations c + |(d1*V2) dot V1| + |(d2*V3) dot V1|, where dot represent the
- *          scalar product between the two vectors. This is used during the test cases to the collision between two obb
- *          using the Separation axis theorem. For more information, check Huynh, Johnny. "Separating Axis Theorem
- *          for Oriented Bounding Boxes.", in the section "Separating Axis Theorem and Rectangles in 2D Space"
- *
- * @param V1 Axis of the first obb where the projection will occur
- * @param V2 unit x-axis of the second obb
- * @param V3 unit y-axis of the second obb
- * @param d1 half width of the second obb
- * @param d2 half length of the second obb
- * @param c half width/length of the first obb (depends on the test)
- * @return size of the projection of the dimensions of the two obb at the axis V1
- */
-double
-project_dimensions_at_axis(const carmen_vector_2D_t V1, carmen_vector_2D_t V2, carmen_vector_2D_t V3, double d1, double d2, double c)
-{
-	V2.x = d1 * V2.x;
-	V2.y = d1 * V2.y;
-	V3.x = d2 * V3.x;
-	V3.y = d2 * V3.y;
-	return c + fabs(DOT2D(V2,V1)) + fabs(DOT2D(V3, V1));
-}
-
-/**
- * @brief Compute collision between two obb's using the Separation axis theorem
- *
- * @details This function implements the scheme for obb collision as described in Huynh, Johnny. "Separating Axis Theorem
- *          for Oriented Bounding Boxes."
- *
- * @param obb1 first oriented bouding box
- * @param obb2 second oriented bouding box
- * @return 0.0 if no collision occurs between the two boxes, penetration distance of obb2 into obb1 otherwise.
- */
-double
-compute_collision_obb_obb(const carmen_oriented_bounding_box obb1, const carmen_oriented_bounding_box obb2)
-{
-	carmen_vector_2D_t T; // T is a vector extends from center of obb1 to center of obb2
-	T.x = obb2.object_pose.x - obb1.object_pose.x;
-	T.y = obb2.object_pose.y - obb1.object_pose.y;
-
-    /* Calculating unit local axis from the two obb's. Here A refers to obb1 and B refers to obb2 */
-	carmen_vector_2D_t Ay = get_unit_local_axis_y(obb1);
-	carmen_vector_2D_t Ax;
-	Ax.x = Ay.y; Ax.y = -Ay.x; // Ax is perpendicular to Ay
-
-	carmen_vector_2D_t By = get_unit_local_axis_y(obb2);
-	carmen_vector_2D_t Bx;
-	Bx.x = By.y; Bx.y = -By.x; // Bx is perpendicular to By
-
-    /* When computing the first two tests, the results are stored so we can later use it to calculate
-     * the penetration distance of obb2 into obb1. */
-
-    //Projection at Ay
-    double d1 = project_dimensions_at_axis(Ay, Bx, By, obb2.width*0.5, obb2.length*0.5, obb1.length*0.5);
-    double d2 = project_T_at_axis(T, Ay);
-    if(d2 > d1)
-        return 0;
-
-    //Projection at Ax
-    double d3 = project_dimensions_at_axis(Ax, Bx, By, obb2.width*0.5, obb2.length*0.5, obb1.width*0.5);
-    double d4 = project_T_at_axis(T, Ax);
-    if(d4 > d3)
-        return 0;
-
-    //Projection at By
-    if(project_T_at_axis(T, By) > project_dimensions_at_axis(By, Ax, Ay, obb1.width*0.5, obb1.length*0.5, obb2.width*0.5))
-        return 0;
-
-    //Projection at Bx
-    if(project_T_at_axis(T, Bx) > project_dimensions_at_axis(Bx, Ax, Ay, obb1.width*0.5, obb1.length*0.5, obb2.width*0.5))
-        return 0;
-
-    // If the code reaches here the two boxes have an interception.
-	double penetration_distance = carmen_square(d1 - d2) + carmen_square(d3 - d4);
-
-	return penetration_distance;
-
-}
-
-/**
- * @brief      Determines if it has collision between lines.
- *
- * @param[in]  line1  First line in point-angle form
- * @param[in]  line2  Second line in point-angle form
- * 
- * @return     Different from zero if has collision between lines, zero otherwise.
- */
-int
-has_collision_between_lines(carmen_point_t line1, carmen_point_t line2)
-{
-	// utilize as linhas em seu formato ponto-angulo, isto eh, contendo um ponto por onde a linha 
-    // atravesse e seu respectivo angulo.
-    // Por exemplo, para uma linha da forma y = a * x + b, escolhemos um valor de x, 
-    // como x = 1.0, e encontramos y = a * (1.0) + b = a + b. Além disso, sabemos que a inclinação
-    // dessa linha eh dado pelo coeficiente 'a'. Assim, teremos a representação:
-    // carmen_point_t line;
-    // line.x = 1.0;
-    // line.y = a + b;
-    // line.theta = a;
-
-	// Tratando linhas como caixas com largura zero e comprimento infinito, o codigo de colisao
-	// implementado eh bem robusto em relacao a casos degenerados como esse.
-	carmen_oriented_bounding_box obb1;
-	obb1.object_pose.x = line1.x;
-	obb1.object_pose.y = line1.y;
-	obb1.length = DBL_MAX;
-	obb1.width = 0.0;
-	obb1.orientation = line1.theta;
-	obb1.linear_velocity = 0.0;
-
-	carmen_oriented_bounding_box obb2;
-	obb2.object_pose.x = line2.x;
-	obb2.object_pose.y = line2.y;
-	obb2.length = DBL_MAX;
-	obb2.width = 0.0;
-	obb2.orientation = line2.theta;
-	obb2.linear_velocity = 0.0;
-
-	return (int) (compute_collision_obb_obb(obb1, obb2) + 0.5);
-}
-
-/**
- * @brief Get index number of set bit, a number 
- * 
- * @param x
- * @return int32_t log_2(v), i.e. n such that 2 ∧ n = v
- */
-uint32_t
-GetBitIndex(uint32_t x)
-{
-  double input = (double)x;
-  double answer = log2(input);
-  uint32_t converted = (uint32_t)floorf(answer);
-
-  return converted;
-}
-
-int
-clamp(int value, int min, int max)
-{
-  if (value < min)
-    return min;
-  else if (value > max)
-    return max;
-  return value;
-}
-
-/**
- * @brief Insert object defined by OBB pObject into grid.
- * 
- * @param pObject OBB that define the object
- * @param object_index relative number of the object into the grid. (N+1 if the grid already has N objects)
- * @param grid 
- */
-void
-InsertObjectIntoGrid(carmen_oriented_bounding_box pObject,
-                     int object_index,
-                     carmen_uniform_collision_grid* grid)
-{
-  carmen_test_alloc(grid); // sanity check
-
-  // Compute the extent of grid cells the bounding sphere of A overlaps.
-  // Test assumes objects have been inserted in all rows/columns overlapped
-  float ooCellWidth = 1.0f / grid->cell_width;
-  double radius = pObject.length + pObject.width;
-  
-  int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth + grid->grid_width/2);
-  int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth + grid->grid_width/2);
-  int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth + grid->grid_height/2);
-  int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth + grid->grid_height/2);
-
-  x1 = clamp(x1, 0, grid->grid_width-1);
-  x2 = clamp(x2, 0, grid->grid_width-1);
-  y1 = clamp(y1, 0, grid->grid_height-1);
-  y2 = clamp(y2, 0, grid->grid_height-1);
-
-  int i = object_index / 32;
-  // Compute the merged (bitwise-or) bit array of all overlapped grid rows.
-  // Ditto for all overlapped grid columns
-  for (int y = y1; y <= y2; y++)
-    grid->rowBitArray[y][i] |= (1 << object_index);
-  for (int x = x1; x <= x2; x++)
-    grid->columnBitArray[x][i] |= (1 << object_index);
-}
-
-/**
- * @brief Construct an uniform collision grid and insert an list of objects into it.
- * 
- * @param num_objects 
- * @param objects
- * @param grid_width 
- * @param grid_height 
- * @param cell_width 
- * @return carmen_uniform_collision_grid 
- */
-carmen_uniform_collision_grid
-construct_uniform_collision_grid(int num_objects, carmen_oriented_bounding_box *objects, int grid_width, int grid_height, double cell_width)
-{
-	carmen_uniform_collision_grid grid;
-
-	grid.num_objects = num_objects;
-	grid.cell_width = cell_width;
-	grid.grid_width = grid_width;
-	grid.grid_height = grid_height;
-
-	grid.num_objects_div_32 = (num_objects + 31) / 32;
-
-	grid.rowBitArray = (int32_t **)malloc(grid_height * sizeof(int32_t *));
-	for (int i = 0; i < grid_height; i++)
-		grid.rowBitArray[i] = (int32_t *)calloc(grid.num_objects_div_32, sizeof(int32_t));
-
-	grid.columnBitArray = (int32_t **)malloc(grid_width * sizeof(int32_t *));
-	for (int i = 0; i < grid_width; i++)
-		grid.columnBitArray[i] = (int32_t *)calloc(grid.num_objects_div_32, sizeof(int32_t));
-
-  grid.objects = (carmen_oriented_bounding_box *)malloc(num_objects * sizeof(carmen_oriented_bounding_box));
-  for (int i = 0; i < num_objects; i++) 
-  {
-		grid.objects[i] = objects[i];
-		InsertObjectIntoGrid(objects[i], i, &grid);
-	}
-
-	return grid;
-}
-
-/**
- * @brief Check the object pObject against the grid and return the sum of the penetration distance between pObject and all of the objects inside the grid. Implementation based on (Real Time Collision Detection - 2004)
- *
- * @param pObject 
- * @param grid 
- * @return double 
- */
-double
-TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_collision_grid *grid)
-{
-
-	// Allocate temporary bit arrays for all objects and clear them
-	int32_t *mergedRowArray = (int32_t *)calloc(grid->num_objects_div_32, sizeof(int32_t));
-	int32_t *mergedColumnArray = (int32_t *)calloc(grid->num_objects_div_32, sizeof(int32_t));
-
-	// Compute the extent of grid cells the bounding sphere of A overlaps.
-	// Test assumes objects have been inserted in all rows/columns overlapped
-	float ooCellWidth = 1.0f / grid->cell_width;
-	double radius = pObject.length + pObject.width;
-	
-	int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth + grid->grid_width/2);
-	int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth + grid->grid_width/2);
-	int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth + grid->grid_height/2);
-	int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth + grid->grid_height/2);
-
-	x1 = clamp(x1, 0, grid->grid_width-1);
-	x2 = clamp(x2, 0, grid->grid_width-1);
-	y1 = clamp(y1, 0, grid->grid_height-1);
-	y2 = clamp(y2, 0, grid->grid_height-1);
-
-	// Compute the merged (bitwise-or’ed) bit array of all overlapped grid rows.
-	// Ditto for all overlapped grid columns
-	for (int y = y1; y <= y2; y++)
-		for (int i = 0; i < grid->num_objects_div_32; i++)
-			mergedRowArray[i] |= grid->rowBitArray[y][i];
-	for (int x = x1; x <= x2; x++)
-		for (int i = 0; i < grid->num_objects_div_32; i++)
-			mergedColumnArray[i] |= grid->columnBitArray[x][i];
-
-	// Now go through the intersection of the merged bit arrays and collision test
-	// those objects having their corresponding bit set
-	double p_distance = 0;
-	for (int i = 0; i < grid->num_objects_div_32; i++)
-	{
-		int32_t objectsMask = mergedRowArray[i] & mergedColumnArray[i];
-		while (objectsMask)
-		{
-			// Clears all but lowest bit set (eg. 01101010 -> 00000010)
-			int32_t less = objectsMask - 1;
-			int32_t singleObjectMask = (less | objectsMask) ^ less;
-
-			// Get index number of set bit, test against corresponding object
-			// (GetBitIndex(v) returns log_2(v), i.e. n such that 2 ∧ n = v)
-      		uint32_t objectIndex = GetBitIndex(singleObjectMask) + i * 32;
-
-			p_distance += compute_collision_obb_obb(pObject, grid->objects[objectIndex]);
-			// Mask out tested object, and continue with any remaining objects
-			objectsMask ^= singleObjectMask;
-		}
-	}
-
-	return p_distance;
-}
-
 carmen_point_t
 to_carmen_point_t (carmen_ackerman_traj_point_t *p)
 {
@@ -629,27 +277,6 @@ carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot(const ca
 	return (max_occupancy);
 }
 
-
-int
-obstacle_avoider_pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config)
-{
-	if (carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot_border(&pose, map,
-			car_config->length, car_config->width, car_config->distance_between_rear_car_and_rear_wheels) > 0.5)
-		return 1;
-	else
-		return 0;
-}
-
-
-int
-pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config)
-{
-	if (carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot_border(&pose, map,
-			car_config->length, car_config->width, car_config->distance_between_rear_car_and_rear_wheels) > 0.5) //0.3
-		return 1;
-	else
-		return 0;
-}
 
 /* do the same of pose_hit_obstacle but it considers the map's blue region as obstacle. */
 int
@@ -975,8 +602,8 @@ move_semi_trailer_marker_to_robot_coordinate_frame(double x, double y, double be
 
 //This Function expected the points to check in local coordinates, if you need use global coordinates, just set localizer_pose as 0.0
 double
-carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
-carmen_robot_ackerman_config_t robot_config __attribute__ ((unused)), carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
+carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_robot_and_trailer_pose_t *localizer_pose,
+		carmen_point_t local_point_to_check, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
 {
 	check_collision_config_initialization();
 
@@ -996,28 +623,25 @@ carmen_robot_ackerman_config_t robot_config __attribute__ ((unused)), carmen_obs
 		}
 	}
 
-//	if (global_collision_config.semi_trailer_type > 0)
-//	{
-//		double beta = 0.52;
-//
-//		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
-//		{
-//			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-//					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, beta);
-//
-//			carmen_point_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
-//					displaced_marker.x, displaced_marker.y);
-//			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-//			//distance equals to -1.0 when the coordinates are outside of map
-//			if (distance != -1.0)
-//			{
-//				double delta = distance - (global_collision_config.semi_trailer_markers[i].radius + safety_distance);
-//				if (delta < 0.0)
-//					proximity_to_obstacles += delta * delta;
-//			}
-//		}
-//	}
+	if (global_collision_config.semi_trailer_type > 0)
+	{
+		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+		{
+			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, localizer_pose->beta);
 
+			carmen_point_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
+					displaced_marker.x, displaced_marker.y);
+			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+			//distance equals to -1.0 when the coordinates are outside of map
+			if (distance != -1.0)
+			{
+				double delta = distance - (global_collision_config.semi_trailer_markers[i].radius + safety_distance);
+				if (delta < 0.0)
+					proximity_to_obstacles += delta * delta;
+			}
+		}
+	}
 
 	return (proximity_to_obstacles);
 }
@@ -1066,55 +690,6 @@ add_line(carmen_point_t point1, carmen_point_t point2, int color)
 		virtual_laser_message.colors[virtual_laser_message.num_positions] = color;
 		virtual_laser_message.num_positions++;
 	}
-}
-
-
-int
-carmen_obstacle_avoider_car_collides_with_moving_object_old(carmen_point_t car_pose, carmen_point_t moving_object_pose,
-		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin)//,
-		//int obj_id, double obj_s, double obj_d)
-{
-	check_collision_config_initialization();
-
-//	if (add_virtual_laser_points)
-//	{
-//		printf("obj %d, s %lf, d %lf\n", obj_id, obj_s, obj_d);
-//		fflush(stdout);
-//	}
-
-	double l = moving_object->length + 2.0 * longitudinal_safety_magin;
-	double max_displacement = l / 2.0;
-	int collides = 0;
-	for (double displacement = -max_displacement; displacement < max_displacement; displacement += moving_object->width / 2.0)
-	{
-		carmen_ackerman_traj_point_t mop = {moving_object_pose.x, moving_object_pose.y, moving_object_pose.theta, 0.0, 0.0};
-		carmen_point_t displaced_moving_object_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&mop,
-				displacement);
-
-//		if (add_virtual_laser_points)
-//			add_circle(displaced_moving_object_pose, moving_object->width / 2.0, CARMEN_RED);
-
-		for (int i = 0; i < global_collision_config.n_markers; i++)
-		{
-			carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
-			carmen_point_t displaced_car_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&cp,
-					global_collision_config.markers[i].x, global_collision_config.markers[i].y);
-
-			double distance = DIST2D(displaced_car_pose, displaced_moving_object_pose);
-
-			if (distance <= (global_collision_config.markers[i].radius + (moving_object->width / 2.0) + lateral_safety_margin))
-			{
-				collides = 1;
-				if (add_virtual_laser_points)
-				{
-					add_circle(displaced_car_pose, global_collision_config.markers[i].radius, CARMEN_BLUE);
-	//				add_line(displaced_car_pose, displaced_moving_object_pose, CARMEN_GREEN);
-				}
-			}
-		}
-	}
-
-	return (collides);
 }
 
 
@@ -1230,86 +805,6 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose,
 }
 
 
-int
-carmen_obstacle_avoider_car_collides_with_moving_object_for_debug(carmen_point_t car_pose, carmen_point_t moving_object_pose,
-		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin)
-{
-	check_collision_config_initialization();
-
-	int collides = 0;
-	carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
-	carmen_position_t mo_points[1000];
-	int mo_points_size = compute_mo_points(mo_points, moving_object->width, moving_object->length, moving_object_pose.x, moving_object_pose.y, moving_object_pose.theta);
-
-	for (double displacement = -longitudinal_safety_magin; displacement <= longitudinal_safety_magin; displacement += 0.5)
-	{
-		carmen_point_t ldcp = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&cp, displacement);
-		carmen_ackerman_traj_point_t ldcp2 = {ldcp.x, ldcp.y, ldcp.theta, 0.0, 0.0};
-		for (int i = 0; i < global_collision_config.n_markers; i++)
-		{
-			carmen_point_t displaced_car_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&ldcp2,
-					global_collision_config.markers[i].x, global_collision_config.markers[i].y);
-
-			for (int j = 0; j < mo_points_size; j++)
-			{
-				double distance = DIST2D(displaced_car_pose, mo_points[j]);
-
-				if (distance <= (global_collision_config.markers[i].radius + lateral_safety_margin))
-				{
-					collides = 1;
-					if (add_virtual_laser_points)
-					{
-						virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_car_pose.x;
-						virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_car_pose.y;
-						virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-						virtual_laser_message.num_positions++;
-
-						virtual_laser_message.positions[virtual_laser_message.num_positions].x = mo_points[j].x;
-						virtual_laser_message.positions[virtual_laser_message.num_positions].y = mo_points[j].y;
-						virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
-						virtual_laser_message.num_positions++;
-
-//						add_circle(displaced_car_pose, global_collision_config.markers[i].radius, CARMEN_BLUE);
-//						add_line(displaced_car_pose, displaced_moving_object_pose, CARMEN_GREEN);
-					}
-					else
-						return (collides);
-				}
-			}
-		}
-	}
-
-	return (collides);
-}
-
-
-double
-carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_old(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
-		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double circle_radius)
-{
-	double initial_displacement, displacement_inc;
-	double number_of_point = 5.0;
-	get_initial_displacement_and_displacement_inc(&initial_displacement, &displacement_inc, circle_radius, number_of_point, &robot_config);
-
-	double proximity_to_obstacles = 0.0;
-	for (double i = 0; i < number_of_point; i += 1.0)
-	{
-		double displacement = initial_displacement + i * displacement_inc;
-		carmen_point_t displaced_point = carmen_collision_detection_displace_point_in_car_coordinate_frame(local_point_to_check, localizer_pose, displacement);
-		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-		//distance equals to -1.0 when the coordinates are outside of map
-		if (distance != -1.0)
-		{
-			double delta = distance - circle_radius;
-			if (delta < 0.0)
-				proximity_to_obstacles += delta * delta;
-		}
-	}
-
-	return (proximity_to_obstacles);
-}
-
-
 double
 carmen_obstacle_avoider_car_distance_to_nearest_obstacle(carmen_ackerman_traj_point_t trajectory_pose,
 carmen_obstacle_distance_mapper_map_message *distance_map)
@@ -1374,66 +869,33 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 			return (2);
 	}
 
-//	if (global_collision_config.semi_trailer_type > 0)
-//	{
-//		double beta = 0.52;
-//
-//		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
-//		{
-//			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-//					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, beta);
-//
-//			carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
-//					displaced_marker.x, displaced_marker.y);
-//			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-//			//distance equals to -1.0 when the coordinates are outside of map
-//			if (distance != -1.0)
-//			{
-//				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || beta > global_collision_config.semi_trailer_max_beta)
-//				{
-////				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
-////				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
-////				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-////				virtual_laser_message.num_positions++;
-//					return (1);
-//				}
-//			}
-//			else
-//				return (2);
-//		}
-//	}
-
-	return (0);
-}
-
-
-int
-trajectory_pose_hit_obstacle_old(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
-		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
-{
-	if (distance_map == NULL)
+	if (global_collision_config.semi_trailer_type > 0)
 	{
-		printf("distance_map == NULL in trajectory_pose_hit_obstacle()\n");
-		return (1);
-	}
+		double beta = 0.52;
 
-	double initial_displacement, displacement_inc;
-	double number_of_point = 5.0;
-	get_initial_displacement_and_displacement_inc(&initial_displacement, &displacement_inc, circle_radius, number_of_point, robot_config);
-
-	for (double i = 0; i < number_of_point; i += 1.0)
-	{
-		double displacement = initial_displacement + i * displacement_inc;
-		carmen_point_t displaced_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&trajectory_pose, displacement);
-		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-		//distance equals to -1.0 when the coordinates are outside of map
-		if (distance != -1.0)
+		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 		{
-			if (distance < circle_radius)
-				return (1);
+			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, beta);
+
+			carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
+					displaced_marker.x, displaced_marker.y);
+			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+			//distance equals to -1.0 when the coordinates are outside of map
+			if (distance != -1.0)
+			{
+				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || beta > global_collision_config.semi_trailer_max_beta)
+				{
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+//				virtual_laser_message.num_positions++;
+					return (1);
+				}
+			}
+			else
+				return (2);
 		}
-		else
-			return (2);
 	}
 
 	return (0);

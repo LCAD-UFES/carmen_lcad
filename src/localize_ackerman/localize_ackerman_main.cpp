@@ -36,6 +36,7 @@
 #include <carmen/stereo_velodyne_interface.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/xsens_interface.h>
+#include <carmen/car_model.h>
 
 #include <prob_measurement_model.h>
 #include <prob_map.h>
@@ -191,30 +192,6 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	err = IPC_publishData(message_name, &pmsg);
 	carmen_test_ipc_exit(err, "Could not publish", message_name);
 }
-
-
-double
-compute_semi_trailer_beta(carmen_localize_ackerman_globalpos_message globalpos, double timestamp)
-{
-	static double last_timestamp = 0.0;
-
-	if (last_timestamp == 0.0)
-	{
-		last_timestamp = timestamp;
-		return (0.0);
-	}
-
-	double L = car_config.distance_between_front_and_rear_axles;
-	double dt = timestamp - last_timestamp;
-	double beta = globalpos.beta + dt *
-			globalpos.v * (tan(globalpos.phi) / L -
-						   sin(globalpos.beta) / semi_trailer_config.d +
-						   (semi_trailer_config.M / (L * semi_trailer_config.d)) * cos(globalpos.beta) * tan(globalpos.phi));
-
-	last_timestamp = timestamp;
-
-	return (beta);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -249,10 +226,24 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.phi = phi;
 	globalpos.converged = summary->converged;
 
+
+	static double last_timestamp = 0.0;
+	if (last_timestamp == 0.0)
+		last_timestamp = timestamp;
 	if (semi_trailer_config.type > 0)
 	{
 		globalpos.semi_trailer_engaged = 1;
-		globalpos.beta = compute_semi_trailer_beta(globalpos, timestamp);
+		carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point =
+		{
+				globalpos.globalpos.x,
+				globalpos.globalpos.y,
+				globalpos.globalpos.theta,
+				globalpos.beta,
+				globalpos.v,
+				globalpos.phi
+		};
+		double delta_t = globalpos.timestamp - last_timestamp;
+		globalpos.beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
 	}
 	else
 	{
@@ -260,6 +251,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		globalpos.beta = 0.0;
 	}
 	globalpos.semi_trailer_type = semi_trailer_config.type;
+	last_timestamp = timestamp;
 
 	if (g_fused_odometry_index == -1)
 	{

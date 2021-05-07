@@ -782,6 +782,22 @@ convert_to_carmen_ackerman_path_point_t(const carmen_ackerman_traj_point_t robot
 }
 
 
+carmen_ackerman_path_point_t
+convert_to_carmen_ackerman_path_point_t(const carmen_robot_and_trailer_traj_point_t robot_state, const double time)
+{
+	carmen_ackerman_path_point_t path_point;
+
+	path_point.x = robot_state.x;
+	path_point.y = robot_state.y;
+	path_point.theta = robot_state.theta;
+	path_point.v = robot_state.v;
+	path_point.phi = robot_state.phi;
+	path_point.time = time;
+
+	return (path_point);
+}
+
+
 vector<carmen_ackerman_path_point_t>
 apply_robot_delays(vector<carmen_ackerman_path_point_t> &original_path)
 {
@@ -861,7 +877,7 @@ apply_robot_delays(vector<carmen_ackerman_path_point_t> &original_path)
 
 
 double
-compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &command,
+compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
@@ -883,13 +899,14 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	robot_state.phi = i_phi;
 
 	command.v = v0;
-	carmen_ackerman_traj_point_t last_robot_state = robot_state;
+	carmen_robot_and_trailer_traj_point_t last_robot_state = robot_state;
 	for (last_t = t = 0.0; t < (tcp.tt - delta_t); t += delta_t)
 	{
 		command.v += tcp.a * delta_t;
 		command.phi = gsl_spline_eval(phi_spline, t + delta_t, acc);
 
-		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
+				&distance_traveled, delta_t, GlobalState::robot_config, GlobalState::semi_trailer_config);
 		if ((i % reduction_factor) == 0)
 		{	// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
 			path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, t + delta_t - last_t));
@@ -906,7 +923,7 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 		command.v += tcp.a * final_delta_t;
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi,
-				final_delta_t, &distance_traveled, final_delta_t, GlobalState::robot_config);
+				final_delta_t, &distance_traveled, final_delta_t, GlobalState::robot_config, GlobalState::semi_trailer_config);
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
 		path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
 		// A ultima posicao nao tem proxima, logo, delta_t = 0.0
@@ -1049,7 +1066,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	print_phi_profile_temp(phi_spline, acc, tcp.tt, display_phi_profile);
 
 	Command command;
-	carmen_ackerman_traj_point_t robot_state;
+	carmen_robot_and_trailer_traj_point_t robot_state;
 
 	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, delta_t);
 

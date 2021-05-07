@@ -148,7 +148,7 @@ plot_state_goals(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_acke
 
 
 TrajectoryLookupTable::TrajectoryDimensions
-get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
+get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailer_pose_t *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
@@ -229,7 +229,7 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_p
 
 
 void
-move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
+move_lane_to_robot_reference_system(carmen_robot_and_trailer_pose_t *localizer_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 //	bool goal_in_lane = false;
@@ -527,7 +527,8 @@ bool
 path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> &path)
 {
 	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance;
-	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
+	carmen_robot_and_trailer_pose_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y,
+			GlobalState::localizer_pose->theta, GlobalState::localizer_pose->beta};
 
 	double max_circle_invasion;
 	for (int j = 0; j < 1; j++)
@@ -543,7 +544,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> &path)
 			if (GlobalState::distance_map != NULL)
 			{
 				double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-						point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
+						point_to_check, GlobalState::distance_map, circle_radius));
 
 				if (circle_invasion > max_circle_invasion)
 					max_circle_invasion = circle_invasion;
@@ -563,26 +564,6 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> &path)
 	}
 	else
 		return (false);
-}
-
-
-bool
-path_has_collision_old(vector<carmen_ackerman_path_point_t> path)
-{
-	carmen_point_t pose;
-
-	for (unsigned int j = 0; j < path.size(); j++)
-	{
-		pose.x = path[j].x;
-		pose.y = path[j].y;
-		pose.theta = path[j].theta;
-		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &GlobalState::robot_config))
-		{
-			printf("---------- PATH HIT OBSTACLE!!!!\n");
-			return (true);
-		}
-	}
-	return (false);
 }
 
 
@@ -764,7 +745,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		vector<carmen_ackerman_path_point_t> &path_local,
 		TrajectoryLookupTable::TrajectoryControlParameters otcp,
 		TrajectoryLookupTable::TrajectoryDimensions td,
-		Pose *localizer_pose)
+		carmen_robot_and_trailer_pose_t *localizer_pose)
 {
 	if (GlobalState::use_mpc)
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
@@ -1067,7 +1048,7 @@ set_reverse_planning_global_state(double target_v, double v_i, TrajectoryLookupT
 
 
 vector<vector<carmen_ackerman_path_point_t> >
-compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometry, double target_v,
+compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal_pose, Command last_odometry, double target_v,
 		carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
 	vector<vector<carmen_ackerman_path_point_t>> paths;

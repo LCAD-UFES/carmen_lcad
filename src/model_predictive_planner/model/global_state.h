@@ -23,6 +23,8 @@ class GlobalState
 {
 public:
 	static carmen_robot_ackerman_config_t robot_config;
+	static carmen_semi_trailer_config_t semi_trailer_config;
+
 	static double param_max_vel;
 
 	static double robot_max_centripetal_acceleration;
@@ -48,8 +50,8 @@ public:
 
 	static double time_to_change_gears;
 
-	static Pose *localizer_pose;
-	static Pose *last_plan_pose;
+	static carmen_robot_and_trailer_pose_t *localizer_pose;
+	static carmen_robot_and_trailer_pose_t *last_plan_pose;
 	static double localizer_pose_timestamp;
 
 	static Command last_odometry;

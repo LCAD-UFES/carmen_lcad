@@ -245,7 +245,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 
 
 void
-move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose)
+move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, carmen_robot_and_trailer_pose_t *localizer_pose)
 {
 	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
@@ -445,13 +445,12 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_po
 {
 	double proximity_to_obstacles_for_path = 0.0;
 	double safety_distance = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance;
-	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-				point_to_check, GlobalState::robot_config, GlobalState::distance_map, safety_distance);
+		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(GlobalState::localizer_pose,
+				point_to_check, GlobalState::distance_map, safety_distance);
 		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		getchar();

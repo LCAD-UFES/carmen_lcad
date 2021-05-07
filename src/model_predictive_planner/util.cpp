@@ -191,19 +191,6 @@ bool Util::can_reach(Pose robot, Pose goal)
 }
 
 
-Pose
-Util::convert_to_pose(const carmen_point_t carmen_pose)
-{
-	Pose p;
-
-	p.x = carmen_pose.x;
-	p.y = carmen_pose.y;
-	p.theta = carmen_pose.theta;
-
-	return p;
-}
-
-
 carmen_point_t
 Util::convert_to_carmen_point_t(const Pose pose)
 {

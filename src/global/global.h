@@ -222,6 +222,14 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
+	double beta;
+} carmen_robot_and_trailer_pose_t;
+
+
+typedef struct {
+	double x;
+	double y;
+	double theta;
 	double t_vel;
 	double r_vel;
 } carmen_traj_point_t, *carmen_traj_point_p;
@@ -234,6 +242,16 @@ typedef struct {
 	double v;
 	double phi;
 } carmen_ackerman_traj_point_t, *carmen_ackerman_traj_point_p;
+
+
+typedef struct {
+	double x;
+	double y;
+	double theta;
+	double beta;
+	double v;
+	double phi;
+} carmen_robot_and_trailer_traj_point_t;
 
 
 typedef struct {
@@ -270,16 +288,6 @@ typedef struct {
 	int rectangular;
 	int interpolate_odometry;
 } carmen_robot_config_t;
-
-
-typedef struct {
-	int type;
-	double d;
-	double M;
-	double width;
-	double distance_between_axle_and_front;
-	double distance_between_axle_and_back;
-} carmen_semi_trailer_config_t;
 
 
 typedef struct {
@@ -323,6 +331,17 @@ typedef struct {
 
 	double behaviour_selector_goal_velocity_tuning_factor; // Correct imperfections of the velocity control by modifying the braking starting point
 } carmen_robot_ackerman_config_t;
+
+
+typedef struct {
+	int type;
+	double d;
+	double M;
+	double width;
+	double distance_between_axle_and_front;
+	double distance_between_axle_and_back;
+} carmen_semi_trailer_config_t;
+
 
 typedef struct {
     double x;

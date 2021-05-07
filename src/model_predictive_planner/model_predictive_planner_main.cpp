@@ -359,7 +359,7 @@ compute_plan(Tree *tree)
 		}
 
 		if (!GlobalState::last_plan_pose)
-			GlobalState::last_plan_pose = new Pose();
+			GlobalState::last_plan_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
 		*GlobalState::last_plan_pose = *GlobalState::localizer_pose;
 
 		return (path[0]);
@@ -562,8 +562,10 @@ build_and_follow_path_new(double timestamp)
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	Pose pose = Util::convert_to_pose(msg->globalpos);
-	GlobalState::set_robot_pose(pose, msg->timestamp);
+	if (!GlobalState::localizer_pose)
+			GlobalState::localizer_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
+
+	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta, msg->beta};
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
@@ -578,8 +580,10 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	GlobalState::last_odometry.v = msg->v;
 	GlobalState::last_odometry.phi = msg->phi;
 
-	Pose pose = Util::convert_to_pose(msg->truepose);
-	GlobalState::set_robot_pose(pose, msg->timestamp);
+	if (!GlobalState::localizer_pose)
+			GlobalState::localizer_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
+
+	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, 0.0};
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
