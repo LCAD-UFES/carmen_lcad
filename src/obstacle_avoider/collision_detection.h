@@ -68,7 +68,7 @@ double carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot_b
 
 int pose_hit_obstacle_ultrasonic(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config);
 
-int trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double safety_distance,
+int trajectory_pose_hit_obstacle(carmen_robot_and_trailer_traj_point_t trajectory_pose, double safety_distance,
 		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config);
 
 double
@@ -99,7 +99,7 @@ carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_a
 		carmen_robot_ackerman_config_t robot_config, double circle_radius);
 
 carmen_point_t
-carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y);
+carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_robot_and_trailer_traj_point_t *car_pose, double x, double y);
 
 carmen_collision_config_t*
 carmen_get_global_collision_config();

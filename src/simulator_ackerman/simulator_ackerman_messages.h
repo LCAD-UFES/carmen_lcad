@@ -75,6 +75,7 @@ typedef struct {
 typedef struct {
   carmen_point_t truepose;
   carmen_point_t odometrypose;
+  double beta;
   double v;
   double phi;
   double timestamp;

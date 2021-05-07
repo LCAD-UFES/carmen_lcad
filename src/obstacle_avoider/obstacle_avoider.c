@@ -8,9 +8,9 @@ static int current_map = 0;
 static carmen_map_p map_vector[NUM_MAPS];
 
 static int current_pose = 0;
-static carmen_ackerman_traj_point_t pose_vector[NUM_POSES];
+static carmen_robot_and_trailer_traj_point_t pose_vector[NUM_POSES];
 
-static carmen_ackerman_traj_point_t trajectory_vector_of_points[MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE];
+static carmen_robot_and_trailer_traj_point_t trajectory_vector_of_points[MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE];
 
 static carmen_obstacle_distance_mapper_map_message *obstacle_distance_map = NULL;
 
@@ -53,7 +53,7 @@ get_current_map()
 }
 
 
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 get_current_pose()
 {
 	return(pose_vector[current_pose]);
@@ -61,7 +61,7 @@ get_current_pose()
 
 
 void
-add_pose_to_pose_vector(carmen_ackerman_traj_point_t pose)
+add_pose_to_pose_vector(carmen_robot_and_trailer_traj_point_t pose)
 {
 	if (current_pose < NUM_POSES - 1)
 	{
@@ -90,10 +90,10 @@ initialize_map_vector(int number_of_maps)
 
 static int
 build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vector, int *num_motion_commands,
-		carmen_ackerman_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
+		carmen_robot_and_trailer_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
 {
 	int i, trajectory_vector_of_points_size = 0;
-	carmen_ackerman_traj_point_t pose;
+	carmen_robot_and_trailer_traj_point_t pose;
 
 	pose = initial_pose;
 
@@ -101,7 +101,7 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 	{
 		double distance_traveled = 0.0;
 		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi,
-				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time, *carmen_robot_ackerman_config);
+				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time, *carmen_robot_ackerman_config, *carmen_semi_trailer_config);
 
 		motion_commands_vector[i].x = pose.x;
 		motion_commands_vector[i].y = pose.y;
@@ -120,12 +120,12 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 
 carmen_navigator_ackerman_plan_message
 build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_commands_vector, int *num_motion_commands,
-			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, double timestamp)
+			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config, double timestamp)
 {
 	int i, trajectory_vector_of_points_size;
 	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
 
-	trajectory_vector_of_points_size = build_predicted_trajectory(motion_commands_vector, num_motion_commands, pose_vector[current_pose], carmen_robot_ackerman_config);
+	trajectory_vector_of_points_size = build_predicted_trajectory(motion_commands_vector, num_motion_commands, pose_vector[current_pose], carmen_robot_ackerman_config, carmen_semi_trailer_config);
 
 	predicted_trajectory_message.path_length = trajectory_vector_of_points_size;
 	predicted_trajectory_message.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * (trajectory_vector_of_points_size));
@@ -274,7 +274,7 @@ velocity_recalculate(carmen_ackerman_motion_command_t *motion_commands_vector, i
 
 
 int
-obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int *num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
+obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int *num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
 {
 	int pose_index = current_pose;
 	int hit_obstacle = 0;
@@ -285,7 +285,7 @@ obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int *
 		do
 		{
 			hit_obstacle = 0;
-			*num_motion_commands = build_predicted_trajectory(motion_commands_vector, num_motion_commands, pose_vector[pose_index], carmen_robot_ackerman_config);
+			*num_motion_commands = build_predicted_trajectory(motion_commands_vector, num_motion_commands, pose_vector[pose_index], carmen_robot_ackerman_config, carmen_semi_trailer_config);
 
 			for (int i = 0; i < *num_motion_commands; i++)
 			{

@@ -15,6 +15,7 @@ static int num_motion_commands_in_vector[NUM_MOTION_COMMANDS_VECTORS];
 static double timestamp_of_motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS];
 
 static carmen_robot_ackerman_config_t carmen_robot_ackerman_config;
+static carmen_semi_trailer_config_t carmen_semi_trailer_config;
 static double carmen_robot_ackerman_collision_avoidance_frequency;
 static double carmen_robot_ackerman_sensor_time_of_last_update = -1.0;
 static double carmen_robot_ackerman_motion_command_time_of_last_update = -1.0;
@@ -33,6 +34,9 @@ static int use_truepos = 0;
 static int log_mode = 0;
 
 static double last_behaviour_selector_compact_lane_contents_message_timestamp = 0.0;
+
+static int argc_global;
+static char **argv_global;
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
 //#define MAX_VIRTUAL_LASER_SAMPLES 10000
@@ -96,7 +100,7 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerm
 
 	if (num_motion_commands > 0)
 	{
-		msg = build_navigator_ackerman_plan_message(motion_commands_vector, &num_motion_commands, &carmen_robot_ackerman_config, timestamp);
+		msg = build_navigator_ackerman_plan_message(motion_commands_vector, &num_motion_commands, &carmen_robot_ackerman_config, &carmen_semi_trailer_config, timestamp);
 		carmen_obstacle_avoider_publish_path(msg);
 
 		free(msg.path);
@@ -112,7 +116,7 @@ publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman
 
 	if (num_motion_commands > 0)
 	{
-		msg = build_navigator_ackerman_plan_message(motion_commands_vector, &num_motion_commands, &carmen_robot_ackerman_config, timestamp);
+		msg = build_navigator_ackerman_plan_message(motion_commands_vector, &num_motion_commands, &carmen_robot_ackerman_config, &carmen_semi_trailer_config, timestamp);
 		carmen_obstacle_avoider_publish_motion_planner_path(msg);
 
 		free(msg.path);
@@ -147,6 +151,26 @@ publish_base_ackerman_motion_command_message_to_stop_robot()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+void
+read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
+{
+	carmen_semi_trailer_config.type = semi_trailer_type;
+
+	char semi_trailer_string[2048];
+
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", carmen_semi_trailer_config.type);
+
+	carmen_param_t semi_trailer_param_list[] = {
+	{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.d),							   	 0, NULL},
+	{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.M),							   	 0, NULL},
+	{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.width),						   	 0, NULL},
+	{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+	{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.distance_between_axle_and_back),	 0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
@@ -171,7 +195,7 @@ obstacle_avoider_timer_handler()
 	consume_motion_command_time(motion_command_vetor);
 
 	if (ackerman_collision_avoidance)
-		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], &(num_motion_commands_in_vector[motion_command_vetor]), &carmen_robot_ackerman_config);
+		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], &(num_motion_commands_in_vector[motion_command_vetor]), &carmen_robot_ackerman_config, &carmen_semi_trailer_config);
 
 	if (num_motion_commands_in_vector[motion_command_vetor] > 0)
 	{
@@ -256,7 +280,7 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	carmen_ackerman_traj_point_t pose;
+	carmen_robot_and_trailer_traj_point_t pose;
 
 	if (!necessary_maps_available)
 		return;
@@ -264,19 +288,23 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	pose.x = msg->globalpos.x;
 	pose.y = msg->globalpos.y;
 	pose.theta = msg->globalpos.theta;
+	pose.beta = msg->beta;
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
 	add_pose_to_pose_vector(pose);
 
 	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
+
+	if (msg->semi_trailer_type != carmen_semi_trailer_config.type)
+		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
 }
 
 
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	carmen_ackerman_traj_point_t pose;
+	carmen_robot_and_trailer_traj_point_t pose;
 
 	if (!necessary_maps_available)
 		return;
@@ -284,6 +312,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	pose.x = msg->truepose.x;
 	pose.y = msg->truepose.y;
 	pose.theta = msg->truepose.theta;
+	pose.beta = msg->beta;
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -474,12 +503,16 @@ read_parameters(int argc, char **argv)
 		{"robot", "collision_avoidance", CARMEN_PARAM_ONOFF, &ackerman_collision_avoidance, 1, NULL},
 		{"robot", "collision_avoidance_frequency", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_collision_avoidance_frequency, 1, NULL},
 		{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL},
+		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.type, 0, NULL},
 		{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 		{"rrt", "log_mode", CARMEN_PARAM_ONOFF,	&log_mode, 1, NULL},
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+
+	read_parameters_semi_trailer(argc_global, argv_global, carmen_semi_trailer_config.type);
 
 	return 0;
 }
@@ -509,6 +542,9 @@ carmen_obstacle_avoider_initialize(int argc, char **argv)
 int 
 main(int argc, char **argv)
 {
+	argc_global = argc;
+	argv_global = argv;
+
 	double carmen_obstacle_avoider_collision_avoidance_frequency;
 
 	carmen_ipc_initialize(argc, argv);

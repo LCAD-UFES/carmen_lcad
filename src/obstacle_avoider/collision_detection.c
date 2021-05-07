@@ -390,7 +390,7 @@ carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen
 }
 
 carmen_point_t
-carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y)
+carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_robot_and_trailer_traj_point_t *car_pose, double x, double y)
 {
 	carmen_point_t displaced_car_pose;
 	double coss, sine;
@@ -837,7 +837,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 
 
 int
-trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double safety_distance,
+trajectory_pose_hit_obstacle(carmen_robot_and_trailer_traj_point_t trajectory_pose, double safety_distance,
 carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
 {
 	check_collision_config_initialization();
@@ -871,12 +871,10 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 
 	if (global_collision_config.semi_trailer_type > 0)
 	{
-		double beta = 0.52;
-
 		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 		{
 			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, beta);
+					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, trajectory_pose.beta);
 
 			carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 					displaced_marker.x, displaced_marker.y);
@@ -884,7 +882,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 			//distance equals to -1.0 when the coordinates are outside of map
 			if (distance != -1.0)
 			{
-				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || beta > global_collision_config.semi_trailer_max_beta)
+				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || trajectory_pose.beta > global_collision_config.semi_trailer_max_beta)
 				{
 //				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
 //				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
