@@ -4,7 +4,7 @@
     -sensor_id [0-9] -publish_imu [on | off]  -intensity_type [1 | 2 | 3]
 
 # example
-./ouster -sensor_ip 192.168.1.200 -host_ip 192.168.1.77 -sensor_id 0 -publish_imu off -intensity_type 1
+./ouster -sensor_ip 192.168.1.200 -host_ip 192.168.1.1 -sensor_id 0 -publish_imu off -intensity_type 1
 
 # how to run the viewer:
 ./ouster_viewer -sensor_id <ID TO ASSIGNED TO THE VARIABLE VELODYNE MESSAGE: [0-9]>

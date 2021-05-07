@@ -15,7 +15,7 @@ using namespace cv;
 
 namespace OS1 = ouster::OS1;
 
-#define INITIAL_MAX_NUM_SHOT 4000
+#define INITIAL_MAX_NUM_SHOT 2048 // TODO usar 2048
 
 char *ouster_ip = NULL;
 char *host_ip = NULL;
@@ -99,117 +99,6 @@ update_color(Mat &img, int row, int col, unsigned char intensity, unsigned char 
 
 
 void 
-build_and_publish_variable_velodyne_message_old(uint8_t* buf) 
-{
-    static carmen_velodyne_variable_scan_message *message = NULL;
-    static Mat viewer = Mat::zeros(3 * 64, W, CV_8UC1);
-
-    reallocate_message_if_necessary_old(&message, W);
-    
-    static int next_m_id = W;
-    static int64_t scan_ts = -1L;
-
-    int index = 0;
-    
-    // This is the solution used by ouster to store the packets until a complete
-    // scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
-    for (int icol = 0; icol < OS1::columns_per_buffer; icol++) 
-    {
-        const uint8_t* col_buf = OS1::nth_col(icol, buf);
-        const uint16_t m_id = OS1::col_measurement_id(col_buf);
-
-        // drop invalid / out-of-bounds data in case of misconfiguration
-        if (OS1::col_valid(col_buf) != 0xffffffff || m_id >= W) 
-            continue; // what to do in this case??
-
-        const uint64_t ts = OS1::col_timestamp(col_buf);
-        float h_angle_0 = OS1::col_h_angle(col_buf);    
-
-        if (m_id < next_m_id) 
-        {
-            // if not initializing with first packet
-            if (scan_ts != -1)
-            {
-                // zero out remaining missing columns
-                for (int i = index; i < W - next_m_id; i++, index++)
-                {
-                    message->partial_scan[i].angle = 0;
-                    message->partial_scan[i].shot_size = 0;
-
-                    for (int j = 0; j < H; j++)
-                    {
-                        message->partial_scan[i].distance[j] = (unsigned short) 0;
-                        message->partial_scan[i].intensity[j] = (unsigned short) 0;
-                        
-                        // update 1
-						update_color(viewer, j, i, 0, 0, 0);
-                    }
-                }
-
-                // publish
-                message->host = carmen_get_host();
-                message->timestamp = carmen_get_time(); // @filipe: use sensor timestamp
-                carmen_velodyne_publish_variable_scan_message(message, ouster_sensor_id);
-                imshow("viewer", viewer);
-                waitKey(1);
-                index = 0;
-            }
-
-            scan_ts = ts;
-            next_m_id = 0;
-        }
-
-        // fill zero out missing columns
-        for (int i = index; i < m_id - next_m_id; i++, index++)
-        {
-            message->partial_scan[i].angle = 0;
-            message->partial_scan[i].shot_size = 0;
-
-            for (int j = 0; j < H; j++)
-            {
-                message->partial_scan[i].distance[j] = (unsigned short) 0;
-                message->partial_scan[i].intensity[j] = (unsigned short) 0;
-                
-                // update 2
-                update_color(viewer, j, i, 0, 0, 0);
-            }
-        }
-
-        next_m_id = m_id + 1;
-
-        message->partial_scan[m_id].angle = h_angle_0;
-        // message->partial_scan[m_id].angle = carmen_radians_to_degrees(h_angle_0);
-        message->partial_scan[m_id].shot_size = H;
-
-        for (uint8_t ipx = 0; ipx < H; ipx++) 
-        {
-            const uint8_t* px_buf = OS1::nth_px(ipx, col_buf);
-            uint32_t range = OS1::px_range(px_buf); // in mm
-            uint16_t intensity = 0;
-            
-            if (ouster_intensity_type == INTENSITY) 
-                intensity = OS1::px_signal_photons(px_buf);
-            else if (ouster_intensity_type == REFLECTIVITY)
-                intensity = OS1::px_reflectivity(px_buf);
-            else if (ouster_intensity_type == NOISE)
-                intensity = OS1::px_noise_photons(px_buf);
-            else
-                fprintf(stderr, "Warning: Invalid intensity type: %d. Filling intensity with zeros.\n", intensity);
-
-            // the precision of the range and intensity returned by the sensor are higher 
-            // than what it is possible to store in the message.
-            message->partial_scan[m_id].distance[ipx] = (unsigned short) range;
-            message->partial_scan[m_id].intensity[ipx] = (unsigned char) intensity;
-
-	        // update 3
-	        update_color(viewer, ipx, m_id, OS1::px_signal_photons(px_buf), OS1::px_reflectivity(px_buf), OS1::px_noise_photons(px_buf));
-	        //update_color(viewer, ipx, m_id, 0, 0, 0);
-        }
-    }
-}
-
-
-void 
 build_and_publish_imu_message(uint8_t* buf __attribute__((unused))) 
 {
     float acc_x, acc_y, acc_z;
@@ -248,86 +137,174 @@ build_and_publish_imu_message(uint8_t* buf __attribute__((unused)))
 
 
 void
-build_and_publish_variable_velodyne_message(uint8_t* buf, carmen_velodyne_variable_scan_message &message1, carmen_velodyne_variable_scan_message &message2,
-    carmen_velodyne_variable_scan_message &message3, carmen_velodyne_variable_scan_message &message4)
+build_and_publish_variable_scan_message(uint8_t* buf, carmen_velodyne_variable_scan_message &message)
 {
-    static int next_m_id = W, number_of_shots = 0;
+    // static carmen_velodyne_variable_scan_message *message = NULL;
+    static int next_m_id = W;
     static int64_t scan_ts = -1L;
+    // int index = 0;
 
-    // This is the solution used by ouster to store the packets until a scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
+    // reallocate_message_if_necessary_old(&message, W);
+    
+    // This is the solution used by ouster to store the packets until a complete scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
     for (int icol = 0; icol < OS1::columns_per_buffer; icol++) 
     {
         const uint8_t* col_buf = OS1::nth_col(icol, buf);
         const uint16_t m_id = OS1::col_measurement_id(col_buf);
 
-        if (OS1::col_valid(col_buf) != 0xffffffff || m_id >= W) // Drop invalid, out-of-bounds, data in case of misconfiguration
-            continue;
+        // drop invalid / out-of-bounds data in case of misconfiguration
+        if (OS1::col_valid(col_buf) != 0xffffffff || m_id >= W) 
+            continue; // what to do in this case??
 
         const uint64_t ts = OS1::col_timestamp(col_buf);
         float h_angle_0 = OS1::col_h_angle(col_buf);    
 
         if (m_id < next_m_id) 
         {
+            // if not initializing with first packet
             if (scan_ts != -1)
             {
-                message1.timestamp = carmen_get_time(); // TODO use sensor timestamp
-                message2.timestamp = carmen_get_time();
-                message3.timestamp = carmen_get_time();
-                message4.timestamp = carmen_get_time();
+                // zero out remaining missing columns
+                // for (int i = index; i < W - next_m_id; i++, index++)
+                // {
+                //     message->partial_scan[i].angle = 0;
+                //     message->partial_scan[i].shot_size = 0;
 
-                message1.number_of_shots = number_of_shots;
-                message2.number_of_shots = number_of_shots;
-                message3.number_of_shots = number_of_shots;
-                message4.number_of_shots = number_of_shots;
+                //     for (int j = 0; j < H; j++)
+                //     {
+                //         message->partial_scan[i].distance[j] = (unsigned short) 0;
+                //         message->partial_scan[i].intensity[j] = (unsigned short) 0;
+                //     }
+                // }
 
-                carmen_velodyne_publish_variable_scan_message(&message1, 0);
-                carmen_velodyne_publish_variable_scan_message(&message2, 1);
-                carmen_velodyne_publish_variable_scan_message(&message3, 2);
-                carmen_velodyne_publish_variable_scan_message(&message4, 3);
-
-                number_of_shots = 0;
+                message.host = carmen_get_host();
+                message.timestamp = carmen_get_time(); // @filipe: use sensor timestamp
+                message.number_of_shots = next_m_id;
+     
+                // printf("NS %d\n", next_m_id);
+                carmen_velodyne_publish_variable_scan_message(&message, 4);
+                // index = 0;
             }
 
             scan_ts = ts;
             next_m_id = 0;
         }
+
         next_m_id = m_id + 1;
 
-        number_of_shots++;
+        // message->partial_scan[m_id].angle = h_angle_0;
+        message.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0));
 
-        message1.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 3.164);
-        message2.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 1.055);
-        message3.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 1.055);
-        message4.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 3.164);
+        message.partial_scan[m_id].shot_size = H;
 
-        for (uint8_t ipx = 0, r_index = 0; ipx < 16; ipx++, r_index += 4)
+        for (uint8_t ipx = 0; ipx < H; ipx++) 
         {
-            // WARNING the precision of the range and intensity returned by the sensor are higher than what is possible to store in the message.  Range [20 bits] - Range in millimeters, discretized to the nearest 12 millimeters.
-            message1.partial_scan[m_id].distance[ipx] = (unsigned short) OS1::px_range(OS1::nth_px(r_index,     col_buf));
-            message2.partial_scan[m_id].distance[ipx] = (unsigned short) OS1::px_range(OS1::nth_px(r_index + 1, col_buf));
-            message3.partial_scan[m_id].distance[ipx] = (unsigned short) OS1::px_range(OS1::nth_px(r_index + 2, col_buf));
-            message4.partial_scan[m_id].distance[ipx] = (unsigned short) OS1::px_range(OS1::nth_px(r_index + 3, col_buf));
+            const uint8_t* px_buf = OS1::nth_px(ipx, col_buf);
+            uint32_t range = OS1::px_range(px_buf); // in mm
+            uint16_t intensity = 0;
             
-            if (ouster_intensity_type == INTENSITY)
-            {
-                message1.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_signal_photons(OS1::nth_px(ipx,     col_buf));
-                message2.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_signal_photons(OS1::nth_px(ipx + 1, col_buf));
-                message3.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_signal_photons(OS1::nth_px(ipx + 2, col_buf));
-                message4.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_signal_photons(OS1::nth_px(ipx + 3, col_buf));
-            }
+            if (ouster_intensity_type == INTENSITY) 
+                intensity = OS1::px_signal_photons(px_buf);
             else if (ouster_intensity_type == REFLECTIVITY)
-            {
-                message1.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_reflectivity(OS1::nth_px(ipx,     col_buf));
-                message2.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_reflectivity(OS1::nth_px(ipx + 1, col_buf));
-                message3.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_reflectivity(OS1::nth_px(ipx + 2, col_buf));
-                message4.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_reflectivity(OS1::nth_px(ipx + 3, col_buf));
-            }
+                intensity = OS1::px_reflectivity(px_buf);
             else if (ouster_intensity_type == NOISE)
+                intensity = OS1::px_noise_photons(px_buf);
+            else
+                fprintf(stderr, "Warning: Invalid intensity type: %d. Filling intensity with zeros.\n", intensity);
+
+            message.partial_scan[m_id].distance[ipx] = (unsigned short) range;
+            message.partial_scan[m_id].intensity[ipx] = (unsigned char) intensity;
+        }
+    }
+}
+
+
+void
+build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_variable_scan_message &message0, carmen_velodyne_variable_scan_message &message1,
+    carmen_velodyne_variable_scan_message &message2, carmen_velodyne_variable_scan_message &message3)
+{
+    static int next_m_id = W;
+    static int64_t scan_ts = -1L;
+
+    // This is the solution used by ouster to store the packets until a complete scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
+    for (int icol = 0; icol < OS1::columns_per_buffer; icol++) 
+    {
+        const uint8_t* col_buf = OS1::nth_col(icol, buf);
+        const uint16_t m_id = OS1::col_measurement_id(col_buf);
+
+        // drop invalid / out-of-bounds data in case of misconfiguration
+        if (OS1::col_valid(col_buf) != 0xffffffff || m_id >= W) 
+            continue; // what to do in this case??
+
+        const uint64_t ts = OS1::col_timestamp(col_buf);
+        float h_angle_0 = OS1::col_h_angle(col_buf);    
+
+        if (m_id < next_m_id) 
+        {
+            // if not initializing with first packet
+            if (scan_ts != -1)
             {
-                message1.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_noise_photons(OS1::nth_px(ipx,     col_buf));
-                message2.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_noise_photons(OS1::nth_px(ipx + 1, col_buf));
-                message3.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_noise_photons(OS1::nth_px(ipx + 2, col_buf));
-                message4.partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_noise_photons(OS1::nth_px(ipx + 3, col_buf));
+                message0.timestamp = message1.timestamp = message2.timestamp = message3.timestamp = carmen_get_time(); // TODO use sensor timestamp
+
+                message0.number_of_shots = message1.number_of_shots = message2.number_of_shots = message3.number_of_shots = next_m_id;
+
+                // printf("Publicou\n");
+                carmen_velodyne_publish_variable_scan_message(&message0, 0);
+                carmen_velodyne_publish_variable_scan_message(&message1, 1);
+                carmen_velodyne_publish_variable_scan_message(&message2, 2);
+                carmen_velodyne_publish_variable_scan_message(&message3, 3);
+            }
+            scan_ts = ts;
+            next_m_id = 0;
+        }
+
+        next_m_id = m_id + 1;
+
+        message0.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 3.164);
+        message1.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 1.055);
+        message2.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 1.055);
+        message3.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 3.164);
+
+        for (uint8_t ipx = 0, j0 = 0, j1 = 0, j2 = 0, j3 = 0; ipx < H; ipx++) 
+        {
+            const uint8_t* px_buf = OS1::nth_px(ipx, col_buf);
+            uint32_t range = OS1::px_range(px_buf); // in mm
+            uint16_t intensity = 0;
+            
+            if (ouster_intensity_type == INTENSITY) 
+                intensity = OS1::px_signal_photons(px_buf);
+            else if (ouster_intensity_type == REFLECTIVITY)
+                intensity = OS1::px_reflectivity(px_buf);
+            else if (ouster_intensity_type == NOISE)
+                intensity = OS1::px_noise_photons(px_buf);
+            else
+                fprintf(stderr, "Warning: Invalid intensity type: %d. Filling intensity with zeros.\n", intensity);
+
+            switch (ipx % 4)
+            {
+            case 0:
+                message0.partial_scan[m_id].distance[j0] = (unsigned short)range;
+                message0.partial_scan[m_id].intensity[j0] = (unsigned char)intensity;
+                j0++;
+                break;
+
+            case 1:
+                message1.partial_scan[m_id].distance[j1] = (unsigned short)range;
+                message1.partial_scan[m_id].intensity[j1] = (unsigned char)intensity;
+                j1++;
+                break;
+
+            case 2:
+                message2.partial_scan[m_id].distance[j2] = (unsigned short)range;
+                message2.partial_scan[m_id].intensity[j2] = (unsigned char)intensity;
+                j2++;
+                break;
+
+            case 3:
+                message3.partial_scan[m_id].distance[j3] = (unsigned short)range;
+                message3.partial_scan[m_id].intensity[j3] = (unsigned char)intensity;
+                j3++;
+                break;
             }
         }
     }
@@ -340,7 +317,7 @@ shutdown_module(int signo)
 	if (signo == SIGINT)
 	{
 		carmen_ipc_disconnect();
-		printf("ouster sensor: disconnected.\n");
+		printf("\nOuster LiDAR disconnected!\n");
 		exit(0);
 	}
 }
@@ -374,15 +351,17 @@ read_parameters(int argc, char **argv)
 int 
 main(int argc, char** argv) 
 {
-    carmen_velodyne_variable_scan_message message1;  // 4 messages are published because of misalignment of the 64 beans in a shot
-    carmen_velodyne_variable_scan_message message2;  // Beans are alignment in groups of 16 beans
+    carmen_velodyne_variable_scan_message message;
+    carmen_velodyne_variable_scan_message message0;  // 4 messages are published because of misalignment of the 64 beans in a shot
+    carmen_velodyne_variable_scan_message message1;  // Beans are alignment in groups of 16 beans
+    carmen_velodyne_variable_scan_message message2;
     carmen_velodyne_variable_scan_message message3;
-    carmen_velodyne_variable_scan_message message4;
 
+    setup_message(message, INITIAL_MAX_NUM_SHOT, 64);
+    setup_message(message0, INITIAL_MAX_NUM_SHOT, 16);
     setup_message(message1, INITIAL_MAX_NUM_SHOT, 16);
     setup_message(message2, INITIAL_MAX_NUM_SHOT, 16);
     setup_message(message3, INITIAL_MAX_NUM_SHOT, 16);
-    setup_message(message4, INITIAL_MAX_NUM_SHOT, 16);
 
     carmen_ipc_initialize(argc, argv);
 
@@ -415,7 +394,7 @@ main(int argc, char** argv)
     while (true) 
     {
         OS1::client_state st = OS1::poll_client(*cli);
-        
+
         if (st & OS1::ERROR) 
         {
             return 1;
@@ -424,8 +403,8 @@ main(int argc, char** argv)
         {
             if (OS1::read_lidar_packet(*cli, lidar_buf))
             {
-                // build_and_publish_variable_velodyne_message_old(lidar_buf);
-                build_and_publish_variable_velodyne_message(lidar_buf, message1, message2, message3, message4);
+                build_and_publish_variable_scan_message(lidar_buf, message);
+                build_and_publish_variable_scan_message_4_lidars(lidar_buf, message0, message1, message2, message3);
             }
         }
         else if (st & OS1::IMU_DATA) 
