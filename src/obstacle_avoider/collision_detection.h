@@ -83,10 +83,10 @@ carmen_collision_detection_move_path_point_to_world_coordinates(const carmen_poi
 
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_robot_and_trailer_pose_t *localizer_pose,
-		carmen_point_t local_point_to_check, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance);
+		carmen_robot_and_trailer_pose_t local_point_to_check, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance);
 
 double
-carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *global_point, carmen_obstacle_distance_mapper_map_message *distance_map);
+carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_position_t *global_point, carmen_obstacle_distance_mapper_map_message *distance_map);
 
 carmen_point_t
 carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double displacement);
@@ -109,8 +109,9 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose,
 		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin);//,
 //		int obj_id, double obj_s, double obj_d);
 
-carmen_point_t
-carmen_collision_detection_in_car_coordinate_frame(const carmen_point_t point, carmen_point_t *localizer_pose, double x, double y);
+carmen_position_t
+carmen_collision_detection_in_car_coordinate_frame(const carmen_robot_and_trailer_pose_t point,
+		carmen_robot_and_trailer_pose_t *localizer_pose, double x, double y);
 
 carmen_point_t
 carmen_collision_detection_displace_car_on_its_frenet_frame(carmen_ackerman_traj_point_t *car_pose, double s, double d);

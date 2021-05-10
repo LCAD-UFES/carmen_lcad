@@ -191,6 +191,7 @@ publish_truepos(double timestamp)
 
 	truepos.truepose = simulator_config->true_pose;
 	truepos.odometrypose = simulator_config->odom_pose;
+	truepos.beta = 0.0;
 	truepos.v = simulator_config->v;
 	truepos.phi = simulator_config->phi;
 	truepos.timestamp = timestamp;
@@ -334,7 +335,10 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	// Existem duas versoes dessa funcao, uma em base_ackerman_simulation e
 	// outra em simulator_ackerman_simulation.
 	if (!use_external_true_pose)
+	{
 		carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn, connected_to_iron_bird, iron_bird_v, iron_bird_phi);
+		// update beta
+	}
 	else
 		update_target_v_and_target_phi(simulator_config);
 

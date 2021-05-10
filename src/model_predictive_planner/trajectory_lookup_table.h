@@ -168,7 +168,7 @@ TrajectoryLookupTable::TrajectoryDiscreteDimensions get_discrete_dimensions(Traj
 bool has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
 TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
 
-vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
+vector<carmen_robot_and_trailer_traj_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 		bool display_phi_profile, double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,

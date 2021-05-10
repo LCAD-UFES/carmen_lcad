@@ -524,7 +524,7 @@ write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimen
 
 
 bool
-path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> &path)
+path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailer_traj_point_t> &path)
 {
 	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance;
 	carmen_robot_and_trailer_pose_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y,
@@ -741,7 +741,7 @@ get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_t
 
 
 bool
-get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
+get_path_from_optimized_tcp(vector<carmen_robot_and_trailer_traj_point_t> &path,
 		vector<carmen_ackerman_path_point_t> &path_local,
 		TrajectoryLookupTable::TrajectoryControlParameters otcp,
 		TrajectoryLookupTable::TrajectoryDimensions td,
