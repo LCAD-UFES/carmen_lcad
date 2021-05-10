@@ -111,7 +111,7 @@ public:
 };
 
 //-----------Funcoes para extrair dados do Experimento------------------------
-double dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w);
+double dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w);
 double get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
         carmen_ackerman_path_point_t p2,
         carmen_ackerman_path_point_t robot);

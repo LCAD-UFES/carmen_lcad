@@ -67,7 +67,7 @@ int use_unity_simulator = 0;
 
 
 void
-publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_point_t> path, double timestamp)
+publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer_path_point_t> path, double timestamp)
 {
 	if (!GlobalState::following_path)
 		return;
@@ -75,7 +75,7 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 	carmen_ackerman_motion_command_t *commands =
 			(carmen_ackerman_motion_command_t *) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
 	int i = 0;
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
+	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
 	{
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;
@@ -103,9 +103,9 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 
 
 void
-publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_ackerman_path_point_t> &original_path, double timestamp)
+publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailer_path_point_t> &original_path, double timestamp)
 {
-	vector<carmen_ackerman_path_point_t> path = apply_robot_delays(original_path);
+	vector<carmen_robot_and_trailer_path_point_t> path = apply_robot_delays(original_path);
 
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }
@@ -201,9 +201,9 @@ publish_path_follower_single_motion_command(double v, double phi, double timesta
 void
 publish_model_predictive_planner_single_motion_command(double v, double phi, double timestamp)
 {
-	vector<carmen_ackerman_path_point_t> path;
+	vector<carmen_robot_and_trailer_path_point_t> path;
 
-	carmen_ackerman_path_point_t traj;
+	carmen_robot_and_trailer_path_point_t traj;
 	traj.v = v;
 	traj.phi = phi;
 	traj.time = 1.0;
@@ -310,53 +310,54 @@ free_tree(Tree *tree)
 
 
 void
-copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_path_point_t> path)
+copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_robot_and_trailer_path_point_t> path)
 {
 	int i = 0;
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin(); it != path.end(); ++it, ++i)
+	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it, ++i)
 	{
 		traj[i].x = it->x;
 		traj[i].y = it->y;
 		traj[i].theta = it->theta;
+		traj[i].beta = it->beta;
 		traj[i].v = it->v;
 		traj[i].phi = it->phi;
 	}
 }
 
 
-vector<carmen_ackerman_path_point_t>
+vector<carmen_robot_and_trailer_path_point_t>
 compute_plan(Tree *tree)
 {
 	if (!path_goals_and_annotations_message || (path_goals_and_annotations_message->number_of_poses == 0))
 	{
 		tree->num_paths = 0;
 		tree->paths = NULL;
-		vector<carmen_ackerman_path_point_t> voidVector;
+		vector<carmen_robot_and_trailer_path_point_t> voidVector;
 
 		return (voidVector);
 	}
 
 	free_tree(tree);
-	vector<vector<carmen_ackerman_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
+	vector<vector<carmen_robot_and_trailer_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
 			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, path_goals_and_annotations_message);
 
 	if (path.size() == 0)
 	{
 		tree->num_paths = 0;
 		tree->paths = NULL;
-		vector<carmen_ackerman_path_point_t> voidVector;
+		vector<carmen_robot_and_trailer_path_point_t> voidVector;
 
 		return (voidVector);
 	}
 	else
 	{
 		tree->num_paths = path.size();
-		tree->paths = (carmen_ackerman_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_ackerman_traj_point_t *));
+		tree->paths = (carmen_robot_and_trailer_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_robot_and_trailer_traj_point_t *));
 		tree->paths_sizes = (int *) malloc(tree->num_paths * sizeof(int));
 
 		for (unsigned int i = 0; i < path.size(); i++)
 		{
-			tree->paths[i] = (carmen_ackerman_traj_point_t *) malloc(path[i].size() * sizeof(carmen_ackerman_traj_point_t));
+			tree->paths[i] = (carmen_robot_and_trailer_traj_point_t *) malloc(path[i].size() * sizeof(carmen_robot_and_trailer_traj_point_t));
 			copy_path_to_traj(tree->paths[i], path[i]);
 			tree->paths_sizes[i] = path[i].size();
 		}
@@ -386,7 +387,7 @@ stop()
 
 
 list<RRT_Path_Edge>
-build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
+build_path_follower_path(vector<carmen_robot_and_trailer_path_point_t> path)
 {
 	list<RRT_Path_Edge> path_follower_path;
 	RRT_Path_Edge path_edge;
@@ -479,7 +480,7 @@ build_and_follow_path(double timestamp)
 		}
 		else
 		{
-			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
+			vector<carmen_robot_and_trailer_path_point_t> path = compute_plan(&tree);
 			if ((tree.num_paths > 0) && (path.size() > 0))
 			{
 				if (GlobalState::eliminate_path_follower)
@@ -540,7 +541,7 @@ build_and_follow_path_new(double timestamp)
 		}
 		else
 		{
-			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
+			vector<carmen_robot_and_trailer_path_point_t> path = compute_plan(&tree);
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
 				publish_model_predictive_planner_motion_commands(path, timestamp);

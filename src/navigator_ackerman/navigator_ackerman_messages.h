@@ -256,11 +256,11 @@ typedef enum{CARMEN_NAVIGATOR_ACKERMAN_GOAL_REACHED_v,
 typedef struct
 {
 	int	   num_edges;//int
-	carmen_ackerman_traj_point_t *p1;//<{double,double,double,double,double}:1>
-	carmen_ackerman_traj_point_t *p2;//<{double,double,double,double,double}:1>
+	carmen_robot_and_trailer_traj_point_t *p1;//<{double,double,double,double,double}:1>
+	carmen_robot_and_trailer_traj_point_t *p2;//<{double,double,double,double,double}:1>
 	int *mask;//<int:1>
 
-	carmen_ackerman_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE];//[{double,double,double,double,double}:100, 1000]
+	carmen_robot_and_trailer_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE];//[{double,double,double,double,double}:100, 1000]
 	int path_size[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS];//[int:100]
 	int num_path;//int
 
@@ -269,7 +269,7 @@ typedef struct
 } carmen_navigator_ackerman_plan_tree_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME "carmen_navigator_ackerman_plan_tree"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double}:1>,<{double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double}:100, 500],[int:100],int,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double,double}:1>,<{double,double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double.double}:100, 500],[int:100],int,double,string}"
 
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_NAME "carmen_navigator_ackerman_goal_plan_tree"
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_FMT CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT

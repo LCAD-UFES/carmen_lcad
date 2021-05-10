@@ -799,11 +799,11 @@ convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailer_
 }
 
 
-vector<carmen_ackerman_path_point_t>
-apply_robot_delays(vector<carmen_ackerman_path_point_t> &original_path)
+vector<carmen_robot_and_trailer_path_point_t>
+apply_robot_delays(vector<carmen_robot_and_trailer_path_point_t> &original_path)
 {
 	// Velocity delay
-	vector<carmen_ackerman_path_point_t> path = original_path;
+	vector<carmen_robot_and_trailer_path_point_t> path = original_path;
 	double time_delay = 0.0;
 	double distance_travelled = 0.0;
 	int i = 0;
@@ -1016,7 +1016,7 @@ get_max_distance_in_path(vector<carmen_robot_and_trailer_path_point_t> path, car
 }
 
 
-vector<carmen_robot_and_trailer_traj_point_t>
+vector<carmen_robot_and_trailer_path_point_t>
 simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 		bool display_phi_profile, double delta_t)
@@ -1096,14 +1096,14 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 
 
 void
-print_path(vector<carmen_ackerman_path_point_t> path)
+print_path(vector<carmen_robot_and_trailer_path_point_t> path)
 {
 	FILE *path_file = fopen("gnuplot_path.txt", "a");
 	int i = 0;
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
+	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
 		if ((i % 2) == 0)
-			fprintf(path_file, "%f %f %f %f\n", it->x, it->y, 1.0 * cos(it->theta), 1.0 * sin(it->theta));
+			fprintf(path_file, "%f %f %f %f %f\n", it->x, it->y, 1.0 * cos(it->theta), 1.0 * sin(it->theta), it->beta);
 		i++;
 	}
 	fclose(path_file);
@@ -1123,7 +1123,7 @@ print_lane(vector<carmen_ackerman_path_point_t> path, FILE *path_file)
 
 TrajectoryLookupTable::TrajectoryDimensions
 compute_trajectory_dimensions(TrajectoryLookupTable::TrajectoryControlParameters &tcp, int i_v0, int i_phi,
-		vector<carmen_ackerman_path_point_t> &path, bool print)
+		vector<carmen_robot_and_trailer_path_point_t> &path, bool print)
 {
 	double d_i_phi = get_i_phi_by_index(i_phi);
 	double d_i_v0 = get_initial_velocity_by_index(i_v0);
@@ -1268,7 +1268,7 @@ fill_in_trajectory_lookup_table()
 						}
 						//i_v = 7;
 						TrajectoryLookupTable::TrajectoryControlParameters tcp = generate_trajectory_control_parameters_sample(k2, k3, i_v, dist);
-						vector<carmen_ackerman_path_point_t> path;
+						vector<carmen_robot_and_trailer_path_point_t> path;
 						TrajectoryLookupTable::TrajectoryDimensions td = compute_trajectory_dimensions(tcp, i_v, i_phi, path, false);
 						//                        td = compute_trajectory_dimensions(tcp, i_v, i_phi, path, true);
 						//                        FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
