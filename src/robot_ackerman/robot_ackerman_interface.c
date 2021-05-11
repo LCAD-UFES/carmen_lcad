@@ -222,7 +222,7 @@ define_motion_command_message(const char *name, const char *fmt)
 
 
 void
-publish_motion_command_with_name(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp, const char *name)
+publish_motion_command_with_name(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp, const char *name)
 {
 	IPC_RETURN_TYPE err;
 
@@ -240,7 +240,7 @@ publish_motion_command_with_name(carmen_ackerman_motion_command_p motion_command
 
 
 void 
-carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+carmen_robot_ackerman_publish_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp)
 {
 	static int first_time = 1;
 
@@ -256,7 +256,7 @@ carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p mo
 
 
 void
-carmen_robot_ackerman_publish_teacher_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+carmen_robot_ackerman_publish_teacher_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp)
 {
 	static int first_time = 1;
 

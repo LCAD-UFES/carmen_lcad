@@ -191,7 +191,7 @@ get_point_aproximating_by_line(double x1, double y1, double x2, double y2, doubl
 
 
 MOTION_COMMAND
-get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message, double prediction_horizon)
+get_motion_commands_vector(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message, double prediction_horizon)
 {
 	MOTION_COMMAND commands;
 	double elapsed_time = carmen_get_time() - time_of_velodyne_message;
@@ -273,7 +273,7 @@ init_mpc(PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, double current_velocity
 
 void
 carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_command, int *gear_command,
-		carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands,
+		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands,
 		double current_velocity, double time_of_last_motion_command, carmen_robot_ackerman_config_t *robot_config)
 {
 	if (current_motion_command_vector == NULL || nun_motion_commands < 16)

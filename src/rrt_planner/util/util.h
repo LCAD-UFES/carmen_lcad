@@ -99,7 +99,7 @@ public:
 
 	static bool can_reach(Pose robot, Pose goal);
 
-	static Pose convert_to_pose(const carmen_point_t carmen_pose);
+	static Pose convert_to_pose(const carmen_point_t carmen_pose, double beta);
 
 	static carmen_point_t convert_to_carmen_point_t(const Pose pose);
 };

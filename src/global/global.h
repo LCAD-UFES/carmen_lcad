@@ -275,14 +275,15 @@ typedef struct {
 } carmen_robot_and_trailer_path_point_t;
 
 
-typedef struct { // Mudado para incluir x, y, e theta para testar novo mpc de posicao. Este tipo deve ser mudado para o tipo acima se der certo o novo mpc.
+typedef struct {
 	double x;
 	double y;
 	double theta;
+	double beta;
 	double v;
 	double phi;
 	double time;
-} carmen_ackerman_motion_command_t, *carmen_ackerman_motion_command_p;
+} carmen_robot_and_trailer_motion_command_t;
 
 
 typedef struct {

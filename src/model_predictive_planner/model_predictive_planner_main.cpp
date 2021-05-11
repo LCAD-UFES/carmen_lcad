@@ -72,8 +72,8 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 	if (!GlobalState::following_path)
 		return;
 
-	carmen_ackerman_motion_command_t *commands =
-			(carmen_ackerman_motion_command_t *) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
+	carmen_robot_and_trailer_motion_command_t *commands =
+			(carmen_robot_and_trailer_motion_command_t *) (malloc(path.size() * sizeof(carmen_robot_and_trailer_motion_command_t)));
 	int i = 0;
 	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
 	{
@@ -83,6 +83,7 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 		commands[i].x = it->x;
 		commands[i].y = it->y;
 		commands[i].theta = it->theta;
+		commands[i].beta = it->beta;
 
 		i++;
 	}
@@ -171,7 +172,7 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 
 
 void
-publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands, double timestamp)
+publish_path_follower_motion_commands(carmen_robot_and_trailer_motion_command_t *commands, int num_commands, double timestamp)
 {
 	if (GlobalState::use_obstacle_avoider)
 	{
@@ -188,7 +189,7 @@ publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands
 void
 publish_path_follower_single_motion_command(double v, double phi, double timestamp)
 {
-	carmen_ackerman_motion_command_t commands[2];
+	carmen_robot_and_trailer_motion_command_t commands[2];
 
 	commands[0].v = v;
 	commands[0].phi = phi;
@@ -207,6 +208,10 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 	traj.v = v;
 	traj.phi = phi;
 	traj.time = 1.0;
+	traj.x = GlobalState::localizer_pose->x;
+	traj.y = GlobalState::localizer_pose->y;
+	traj.theta = GlobalState::localizer_pose->theta;
+	traj.beta = GlobalState::localizer_pose->beta;
 	path.push_back(traj);
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
@@ -400,12 +405,14 @@ build_path_follower_path(vector<carmen_robot_and_trailer_path_point_t> path)
 		path_edge.p1.pose.x = path[i].x;
 		path_edge.p1.pose.y = path[i].y;
 		path_edge.p1.pose.theta = path[i].theta;
+		path_edge.p1.pose.beta = path[i].beta;
 		path_edge.p1.v_and_phi.v = path[i].v;
 		path_edge.p1.v_and_phi.phi = path[i].phi;
 
 		path_edge.p2.pose.x = path[i + 1].x;
 		path_edge.p2.pose.y = path[i + 1].y;
 		path_edge.p2.pose.theta = path[i + 1].theta;
+		path_edge.p2.pose.beta = path[i + 1].beta;
 		path_edge.p1.v_and_phi.v = path[i + 1].v;
 		path_edge.p1.v_and_phi.phi = path[i + 1].phi;
 
@@ -566,15 +573,16 @@ read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
 	sprintf(semi_trailer_string, "%s%d", "semi_trailer", GlobalState::semi_trailer_config.type);
 
 	carmen_param_t semi_trailer_param_list[] = {
-	{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.d),							   0, NULL},
-	{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.M),							   0, NULL},
-	{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.width),						   0, NULL},
-	{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-	{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_back),  0, NULL}
+		{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.d),							   0, NULL},
+		{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.M),							   0, NULL},
+		{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.width),						   0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_back),  0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -639,6 +647,7 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	goal_pose.x = msg->goal_list[0].x;
 	goal_pose.y = msg->goal_list[0].y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list[0].theta);
+	goal_pose.beta = 0.0;
 
 //	printf("@target_v %lf\n", msg->goal_list[0].v);
 

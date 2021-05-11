@@ -23,6 +23,8 @@ class GlobalState
 {
 public:
 	static Robot_Config robot_config;
+	static carmen_semi_trailer_config_t semi_trailer_config;
+
 	static double param_max_vel;
 
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.

@@ -84,14 +84,14 @@ typedef struct {
  */
 
 typedef struct {
-	carmen_ackerman_traj_point_t *path;
+	carmen_robot_and_trailer_traj_point_t *path;
 	int path_length;
 	double timestamp;
 	char *host;
 } carmen_navigator_ackerman_plan_message;
 
 #define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME       "carmen_navigator_ackerman_plan"
-#define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT        "{<{double, double, double, double, double}:2>,int,double,string}"
+#define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT        "{<{double, double, double, double, double, double}:2>,int,double,string}"
 
 
 /** This message is sent to the navigator by other programs wishing to plan

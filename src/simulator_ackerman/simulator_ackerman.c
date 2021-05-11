@@ -81,7 +81,7 @@ carmen_destroy_simulator_map(carmen_map_t *map)
 
 
 int
-apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
+apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
 	int i, j;
 

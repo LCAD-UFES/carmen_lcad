@@ -79,7 +79,7 @@ public:
 
 
 typedef struct {
-	carmen_ackerman_traj_point_t p1, p2;
+	carmen_robot_and_trailer_traj_point_t p1, p2;
 	double v, phi;
 	double time;
 } Edge_Struct;
@@ -96,7 +96,7 @@ typedef struct
 } rrt_path_message;
 
 #define RRT_PATH_NAME "rrt_path_message_name"
-#define RRT_PATH_FMT "{<{{double, double, double, double, double}, {double, double, double, double, double}, double, double, double}:2>, int, {double, double, double}, int, double, string}"
+#define RRT_PATH_FMT "{<{{double, double, double, double, double, double}, {double, double, double, double, double, double}, double, double, double}:2>, int, {double, double, double}, int, double, string}"
 
 
 

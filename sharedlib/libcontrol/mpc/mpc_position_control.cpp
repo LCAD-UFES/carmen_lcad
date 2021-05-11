@@ -5,14 +5,14 @@ using namespace std;
 
 
 double
-dist(carmen_ackerman_traj_point_t v, carmen_ackerman_motion_command_t w)
+dist(carmen_ackerman_traj_point_t v, carmen_robot_and_trailer_motion_command_t w)
 {
     return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 }
 
 
 double
-distance_point_to_line(carmen_ackerman_traj_point_t point, carmen_ackerman_motion_command_t line_a, carmen_ackerman_motion_command_t line_b)
+distance_point_to_line(carmen_ackerman_traj_point_t point, carmen_robot_and_trailer_motion_command_t line_a, carmen_robot_and_trailer_motion_command_t line_b)
 {
 	//printf("%lf %lf %lf %lf %lf %lf\n", point.x, point.y, line_a->x, line_a->y, line_b->x, line_b->y);
 	//yA - yB = a, xB - xA = b e xAyB - xByA=c
@@ -427,7 +427,7 @@ plot_position2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double under
 
 bool
 init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double atan_current_curvature,
-		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
+		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands,
 		double v, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks)
@@ -500,7 +500,7 @@ publish_mpc_plan_message(vector<carmen_ackerman_traj_point_t> pose_vector)
 
 double
 carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double atan_current_curvature,
-		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
+		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector,	int nun_motion_commands,
 		double v, double yp, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks)

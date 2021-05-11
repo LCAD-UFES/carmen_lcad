@@ -151,18 +151,18 @@ typedef struct {
 typedef struct 
 {
 	int num_motion_commands;
-	carmen_ackerman_motion_command_p motion_command;
+	carmen_robot_and_trailer_motion_command_t *motion_command;
 	double timestamp;
 	char *host;                 /**< The host from which this message was sent **/
 } carmen_robot_ackerman_motion_command_message;
 #define      CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME		"carmen_robot_ackerman_motion_command"
-#define      CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT		"{int,<{double,double,double,double,double,double}:1>,double,string}"
+#define      CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT		"{int,<{double,double,double,double,double,double,double}:1>,double,string}"
 
 // This message has the same structure and format of the traditional motion command message,
 // but a different name. It is used to send motion commands to some module, but not to the
 // rest of control hierarchy and interfaces.
 #define      CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_NAME		"carmen_robot_ackerman_teacher_motion_command"
-#define      CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT		"{int,<{double,double,double,double,double,double}:1>,double,string}"
+#define      CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT		"{int,<{double,double,double,double,double,double,double}:1>,double,string}"
 
 #define      CARMEN_OBSTACLE_AVOIDER_PATH_NAME			"carmen_obstacle_avoider_path"
 #define      CARMEN_OBSTACLE_AVOIDER_PATH_FMT			CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT

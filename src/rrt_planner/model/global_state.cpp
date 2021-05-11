@@ -25,6 +25,8 @@ bool GlobalState::last_goal = true;
 bool GlobalState::last_path_received_is_empty = false;
 
 Robot_Config GlobalState::robot_config;
+carmen_semi_trailer_config_t GlobalState::semi_trailer_config;
+
 double GlobalState::param_max_vel = 0.0;
 
 double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o volante todo para um lado (27.7 graus = 0.48 radianos) em 1 segundo.
@@ -93,7 +95,7 @@ GlobalState::predict_initial_robot_state(carmen_point_t robot_current_position, 
 	Robot_State initial_robot_pose;
 	double delta_t;
 
-	Pose pose = Util::convert_to_pose(robot_current_position);
+	Pose pose = Util::convert_to_pose(robot_current_position, 0.0);
 
 	GlobalState::rrt_planner_timestamp = carmen_get_time();// + GlobalState::plan_time;
 	if (!GlobalState::log_mode)
