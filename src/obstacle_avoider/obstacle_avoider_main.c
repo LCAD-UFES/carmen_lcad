@@ -10,7 +10,7 @@
 static int necessary_maps_available = 0;
 
 static int current_motion_command_vetor = 0;
-static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 static int num_motion_commands_in_vector[NUM_MOTION_COMMANDS_VECTORS];
 static double timestamp_of_motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS];
 
@@ -85,7 +85,7 @@ consume_motion_command_time(int motion_command_vetor)
 
 
 static void
-obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands,
+obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_motion_command_t *motion_commands,
 		int num_motion_commands, double timestamp)
 {
 	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands, num_motion_commands, timestamp);
@@ -93,7 +93,7 @@ obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_com
 
 
 static void
-publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_vector,
+publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
 	carmen_navigator_ackerman_plan_message msg;
@@ -109,7 +109,7 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerm
 
 
 void
-publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman_motion_command_t *motion_commands_vector,
+publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
 	carmen_navigator_ackerman_plan_message msg;
@@ -240,7 +240,7 @@ static void
 robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_command_message *motion_command_message)
 {
 	static double time_of_last_call = 0.0;
-	carmen_ackerman_motion_command_p next_motion_command_vector;
+	carmen_robot_and_trailer_motion_command_t *next_motion_command_vector;
 	int i, num_motion_commands;
 
 	if (motion_command_message->num_motion_commands < 1)

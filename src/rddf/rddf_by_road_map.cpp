@@ -74,7 +74,7 @@ find_direction_traffic_sign(carmen_point_t robot_pose, bool ahead)
 			annotation_point.y = annotation_read_from_file[annotation_index].annotation_point.y;
 			annotation_point.theta = annotation_read_from_file[annotation_index].annotation_orientation;
 			double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-			carmen_point_t actual_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, distance_car_pose_car_front);
+			carmen_point_t actual_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation((carmen_robot_and_trailer_traj_point_t *)&annotation_point, distance_car_pose_car_front);
 			if (is_in_the_zone_of_influence(robot_pose, actual_annotation_point, 70.0, default_search_radius  /*, 1.5 * rddf_min_distance_between_waypoints */ ))
 				break;
 		}

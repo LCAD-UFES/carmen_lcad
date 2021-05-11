@@ -472,7 +472,7 @@ carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, 
 
 
 bool
-carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
+carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
 {
 	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
 	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
@@ -535,7 +535,7 @@ displace_car_pose_according_to_car_orientation(carmen_annotation_t *annotation, 
 	annotation_point.theta = annotation->annotation_orientation;
 	double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
 	carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(
-			&annotation_point, distance_car_pose_car_front * direction);
+			(carmen_robot_and_trailer_traj_point_t *)&annotation_point, distance_car_pose_car_front * direction);
 	annotation->annotation_point.x = new_annotation_point.x;
 	annotation->annotation_point.y = new_annotation_point.y;
 }

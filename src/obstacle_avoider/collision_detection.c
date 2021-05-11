@@ -374,7 +374,7 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_robot_and_traile
 }
 
 carmen_point_t
-carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double displace)
+carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen_robot_and_trailer_traj_point_t *car_pose, double displace)
 {
 	carmen_point_t displaced_car_pose;
 	double coss, sine;

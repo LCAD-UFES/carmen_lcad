@@ -22,7 +22,7 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 							carmen_rddf_road_profile_message *rddf,
 							int goal_index,
 							int rddf_pose_index,
-							carmen_ackerman_traj_point_t robot_pose,
+							carmen_robot_and_trailer_traj_point_t robot_pose,
 							double timestamp);
 
 double udatmo_speed_front(void);

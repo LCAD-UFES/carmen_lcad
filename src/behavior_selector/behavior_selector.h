@@ -119,9 +119,9 @@ extern "C" {
 
 	double distance_between_waypoints_and_goals();
 
-	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+	bool red_traffic_light_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 	
-	bool busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+	bool busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 
 	bool going_forward();
 

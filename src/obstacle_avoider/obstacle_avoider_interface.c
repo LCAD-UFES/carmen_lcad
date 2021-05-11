@@ -3,7 +3,7 @@
 
 
 void 
-carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands,
+carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_motion_command_t *motion_commands,
 		int num_motion_commands, double timestamp)
 {
 	IPC_RETURN_TYPE err;

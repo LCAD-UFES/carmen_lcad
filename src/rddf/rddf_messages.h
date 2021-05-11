@@ -68,8 +68,8 @@ extern "C"
     {
         int number_of_poses;
         int number_of_poses_back;
-        carmen_ackerman_traj_point_t *poses;
-        carmen_ackerman_traj_point_t *poses_back;
+        carmen_robot_and_trailer_traj_point_t *poses;
+        carmen_robot_and_trailer_traj_point_t *poses_back;
         int *annotations;
         int *annotations_codes;
         double timestamp;
@@ -77,7 +77,7 @@ extern "C"
     } carmen_rddf_road_profile_message;
 
 	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME "carmen_rddf_road_profile_message"
-	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, double, string}"
+	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double, double}:1>, <{double, double, double, double, double, double}:2>, <int:1>, <int:1>, double, string}"
 
 
     typedef struct

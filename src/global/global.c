@@ -685,7 +685,7 @@ carmen_distance_traj(carmen_traj_point_p p1, carmen_traj_point_p p2)
 
 
 carmen_inline double
-carmen_distance_ackerman_traj(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
+carmen_distance_ackerman_traj(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2)
 {
 	long double sqr_ld, sqrt_ld;
 

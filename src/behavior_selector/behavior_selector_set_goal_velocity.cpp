@@ -28,12 +28,12 @@ extern carmen_route_planner_road_network_message *road_network_message;
 extern double parking_speed_limit;
 
 
-carmen_ackerman_traj_point_t
-displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
+carmen_robot_and_trailer_traj_point_t
+displace_pose(carmen_robot_and_trailer_traj_point_t robot_pose, double displacement)
 {
 	carmen_point_t displaced_robot_position = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&robot_pose, displacement);
 
-	carmen_ackerman_traj_point_t displaced_robot_pose = robot_pose;
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = robot_pose;
 	displaced_robot_pose.x = displaced_robot_position.x;
 	displaced_robot_pose.y = displaced_robot_position.y;
 
@@ -121,7 +121,7 @@ nearest_pose_is_the_final_pose(carmen_ackerman_traj_point_t current_robot_pose_v
 
 
 carmen_annotation_t *
-get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;
@@ -147,7 +147,7 @@ get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message 
 
 
 bool
-busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	static double last_pedestrian_track_busy_timestamp = 0.0;
 
@@ -159,7 +159,7 @@ busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_an
 //
 //	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
 //	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
 	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
 			last_rddf_annotation_message, &displaced_robot_pose);
@@ -226,7 +226,7 @@ must_yield_ahead(path_collision_info_t path_collision_info, carmen_ackerman_traj
 
 carmen_annotation_t *
 get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
-		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving)
+		carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;
@@ -309,7 +309,7 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 
 
 bool
-red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+red_traffic_light_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	static double last_red_timestamp = 0.0;
 
@@ -321,7 +321,7 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 
 	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
 	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
 			last_rddf_annotation_message, &displaced_robot_pose);

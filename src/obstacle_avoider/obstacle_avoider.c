@@ -89,7 +89,7 @@ initialize_map_vector(int number_of_maps)
 
 
 static int
-build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vector, int *num_motion_commands,
+build_predicted_trajectory(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int *num_motion_commands,
 		carmen_robot_and_trailer_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
 {
 	int i, trajectory_vector_of_points_size = 0;
@@ -106,6 +106,7 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 		motion_commands_vector[i].x = pose.x;
 		motion_commands_vector[i].y = pose.y;
 		motion_commands_vector[i].theta = pose.theta;
+		motion_commands_vector[i].beta = pose.beta;
 
 		trajectory_vector_of_points[trajectory_vector_of_points_size] = pose;
 		trajectory_vector_of_points_size++;
@@ -119,7 +120,7 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 
 
 carmen_navigator_ackerman_plan_message
-build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_commands_vector, int *num_motion_commands,
+build_navigator_ackerman_plan_message(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int *num_motion_commands,
 			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config, double timestamp)
 {
 	int i, trajectory_vector_of_points_size;
@@ -135,6 +136,7 @@ build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_co
 		predicted_trajectory_message.path[i].x 		= trajectory_vector_of_points[i].x;
 		predicted_trajectory_message.path[i].y 		= trajectory_vector_of_points[i].y;
 		predicted_trajectory_message.path[i].theta 	= trajectory_vector_of_points[i].theta;
+		predicted_trajectory_message.path[i].beta 	= trajectory_vector_of_points[i].beta;
 		predicted_trajectory_message.path[i].v 		= trajectory_vector_of_points[i].v;
 		predicted_trajectory_message.path[i].phi 	= trajectory_vector_of_points[i].phi;
 	}
@@ -217,7 +219,7 @@ copy_cost_map_to_map_vector(carmen_map_t *cost_map, int position)
 
 
 double
-get_last_motion_command_total_time(carmen_ackerman_motion_command_p motion_command_vector, int num_motion_commands)
+get_last_motion_command_total_time(carmen_robot_and_trailer_motion_command_t *motion_command_vector, int num_motion_commands)
 {
 	double motion_command_total_time;
 	int i;
@@ -245,7 +247,7 @@ identify_unstoppable_colision(double delta_time, double delta_velocity, carmen_r
 
 
 static void
-velocity_recalculate(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands)
+velocity_recalculate(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands)
 {
 	int i;
 	double reduction_factor;
@@ -274,7 +276,7 @@ velocity_recalculate(carmen_ackerman_motion_command_t *motion_commands_vector, i
 
 
 int
-obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int *num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
+obstacle_avoider(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int *num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
 {
 	int pose_index = current_pose;
 	int hit_obstacle = 0;
