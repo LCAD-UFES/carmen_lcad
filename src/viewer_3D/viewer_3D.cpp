@@ -2565,12 +2565,13 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 		for (int j = 0; j < number_of_paths; j++)
 		{
 			carmen_navigator_ackerman_plan_message *frenet_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
-			carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * message->number_of_poses);
+			carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
 			for (int i = 0; i < message->number_of_poses; i++)
 			{
 				path[i].x	  = message->set_of_paths[j * message->number_of_poses + i].x;
 				path[i].y	  = message->set_of_paths[j * message->number_of_poses + i].y;
 				path[i].theta = message->set_of_paths[j * message->number_of_poses + i].theta;
+				path[i].beta  = message->set_of_paths[j * message->number_of_poses + i].beta;
 				path[i].v	  = message->set_of_paths[j * message->number_of_poses + i].v;
 				path[i].phi	  = message->set_of_paths[j * message->number_of_poses + i].phi;
 			}
@@ -2601,7 +2602,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 		{
 			int lane_size = message->nearby_lanes_sizes[j];
 			carmen_navigator_ackerman_plan_message *nearby_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
-			carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * lane_size);
+			carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * lane_size);
 
 			int lane_start = message->nearby_lanes_indexes[j];
 			for (int i = 0; i < lane_size; i++)
@@ -2609,6 +2610,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				path[i].x	  	= message->nearby_lanes[lane_start + i].x;
 				path[i].y	  	= message->nearby_lanes[lane_start + i].y;
 				path[i].theta   = message->nearby_lanes[lane_start + i].theta;
+				path[i].beta   = message->nearby_lanes[lane_start + i].beta;
 				path[i].v		= 0;
 				path[i].phi		= 0;
 			}

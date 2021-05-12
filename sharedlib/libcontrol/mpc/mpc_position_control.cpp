@@ -478,13 +478,13 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double
 
 
 void
-publish_mpc_plan_message(vector<carmen_ackerman_traj_point_t> pose_vector)
+publish_mpc_plan_message(vector<carmen_robot_and_trailer_traj_point_t> pose_vector)
 {
 	int i;
 	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
 
 	predicted_trajectory_message.path_length = pose_vector.size();
-	predicted_trajectory_message.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * predicted_trajectory_message.path_length);
+	predicted_trajectory_message.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * predicted_trajectory_message.path_length);
 
 	for (i = 0; i < predicted_trajectory_message.path_length; i++)
 		predicted_trajectory_message.path[i] = pose_vector[i];

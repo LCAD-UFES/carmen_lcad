@@ -70,7 +70,7 @@ get_s_displacement_for_a_given_sample(int s, double v0, double a, double delta_t
 
 
 inline bool
-car_fits_in_path(int index, carmen_ackerman_traj_point_t *path, int size, double distance_added_due_to_map_update_delay,
+car_fits_in_path(int index, carmen_robot_and_trailer_traj_point_t *path, int size, double distance_added_due_to_map_update_delay,
 		double imperfection_of_robot_modeling_via_circles)
 {
 	double s_range = 0.0;
@@ -85,7 +85,7 @@ car_fits_in_path(int index, carmen_ackerman_traj_point_t *path, int size, double
 
 
 int
-last_path_pose_that_the_car_can_occupy(carmen_ackerman_traj_point_t *path, int size, double car_v)
+last_path_pose_that_the_car_can_occupy(carmen_robot_and_trailer_traj_point_t *path, int size, double car_v)
 {
 	double distance_added_due_to_map_update_delay = fabs(current_set_of_paths->timestamp - distance_map_free_of_moving_objects.timestamp) * fabs(car_v);
 	double imperfection_of_robot_modeling_via_circles = get_robot_config()->width / 2.0;
@@ -103,14 +103,14 @@ last_path_pose_that_the_car_can_occupy(carmen_ackerman_traj_point_t *path, int s
 }
 
 
-carmen_point_t
-get_car_pose_at_s_displacement(double s_displacement, carmen_ackerman_traj_point_t *path, int &i, int last_path_pose)
+carmen_robot_and_trailer_pose_t
+get_car_pose_at_s_displacement(double s_displacement, carmen_robot_and_trailer_traj_point_t *path, int &i, int last_path_pose)
 {
 	double s_range = 0.0;
 	for (i = 0; (s_range < s_displacement) && (i < (last_path_pose - 1)); i++)
 		s_range += DIST2D(path[i], path[i + 1]);
 
-	carmen_point_t car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&(path[i]),
+	carmen_robot_and_trailer_pose_t car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&(path[i]),
 			s_displacement - s_range);
 
 	return (car_pose);
@@ -120,10 +120,10 @@ get_car_pose_at_s_displacement(double s_displacement, carmen_ackerman_traj_point
 void
 collision_s_distance_to_static_object(path_collision_info_t &path_collision_info,
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
-		double delta_t, int num_samples, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		double delta_t, int num_samples, carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		double robot_acc, double distance_to_goal)
 {
-	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
+	carmen_robot_and_trailer_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
 
 	double min_collision_s_distance = (double) num_samples * delta_t;
 	int index_in_path;
@@ -138,11 +138,11 @@ collision_s_distance_to_static_object(path_collision_info_t &path_collision_info
 			double s_displacement = get_s_displacement_for_a_given_sample(s, v, robot_acc, delta_t);
 			if (s_displacement > max_distance_to_static_object_considered)
 				break;
-			carmen_point_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path, last_path_pose);
+			carmen_robot_and_trailer_pose_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path, last_path_pose);
 			if (index_in_path >= last_path_pose - 1)
 				break;
 
-			carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
+			carmen_robot_and_trailer_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.beta, 0.0, 0.0};
 			// Incluir um loop para testar colisão com objetos móveis lentos o suficiente, como em collision_s_distance_to_moving_object(), só que com o teste ao contrário.
 			if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance,
 					&distance_map_free_of_moving_objects, NULL) == 1)
@@ -228,7 +228,7 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 		return;
 	}
 
-	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
+	carmen_robot_and_trailer_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
 
 	double min_collision_s_distance = (double) num_samples * delta_t;
 	int index_in_path = current_set_of_paths->number_of_poses;
@@ -236,7 +236,7 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 	for (int s = 0; s < num_samples; s++)
 	{
 		double s_displacement = get_s_displacement_for_a_given_sample(s, current_robot_pose_v_and_phi.v, robot_acc, delta_t);
-		carmen_point_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path, last_path_pose);
+		carmen_robot_and_trailer_pose_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path, last_path_pose);
 		if (index_in_path >= last_path_pose - 1)
 			break;
 
@@ -275,10 +275,10 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 }
 
 
-carmen_ackerman_traj_point_t *
-get_rddf_displaced(carmen_ackerman_traj_point_t *rddf_poses_ahead, int number_of_poses, double path_displacement)
+carmen_robot_and_trailer_traj_point_t *
+get_rddf_displaced(carmen_robot_and_trailer_traj_point_t *rddf_poses_ahead, int number_of_poses, double path_displacement)
 {
-	carmen_ackerman_traj_point_t *displaced_rddf = (carmen_ackerman_traj_point_t *) malloc(number_of_poses * sizeof(carmen_ackerman_traj_point_t));
+	carmen_robot_and_trailer_traj_point_t *displaced_rddf = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
 	for (int i = 0; i < number_of_poses; i++)
 	{
 		displaced_rddf[i] = rddf_poses_ahead[i]; // para copiar os outros campos de carmen_ackerman_traj_point_t
@@ -308,7 +308,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 
 	double disp = frenet_path_planner_paths_displacement;
 	double path_displacement = disp * ((frenet_path_planner_num_paths / 2) - path_id);
-	carmen_ackerman_traj_point_t *path = get_rddf_displaced(current_set_of_paths->rddf_poses_ahead, current_set_of_paths->number_of_poses, path_displacement);
+	carmen_robot_and_trailer_traj_point_t *path = get_rddf_displaced(current_set_of_paths->rddf_poses_ahead, current_set_of_paths->number_of_poses, path_displacement);
 
 	double min_s_distance = (double) num_samples * delta_t;
 	int index_in_path;
@@ -317,7 +317,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 	for (int s = 0; s < num_samples; s++)
 	{
 		double s_displacement = get_s_displacement_for_a_given_sample(s, current_robot_pose_v_and_phi.v, robot_acc, delta_t);
-		carmen_point_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path, last_path_pose);
+		carmen_robot_and_trailer_pose_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path, last_path_pose);
 		if (index_in_path >= last_path_pose - 1)
 			break;
 
@@ -399,7 +399,7 @@ find_distance_to_near_pose(carmen_ackerman_traj_point_t *path, int path_size, ca
 }
 
 
-carmen_ackerman_traj_point_t *
+carmen_robot_and_trailer_traj_point_t *
 get_moving_object_lane(int &lane_size, double &d_distance_to_lane, double &s_distance_to_lane,
 		t_point_cloud_struct *moving_object, carmen_frenet_path_planner_set_of_paths *set_of_paths)
 {
@@ -422,7 +422,7 @@ get_moving_object_lane(int &lane_size, double &d_distance_to_lane, double &s_dis
 	if (lane_size <= moving_object->lane_index)
 		return (NULL);
 
-	carmen_ackerman_traj_point_t *moving_object_lane = &(set_of_paths->nearby_lanes[set_of_paths->nearby_lanes_indexes[j]]);
+	carmen_robot_and_trailer_traj_point_t *moving_object_lane = &(set_of_paths->nearby_lanes[set_of_paths->nearby_lanes_indexes[j]]);
 
 	int status;
 	int mo_index = moving_object->lane_index;
@@ -447,14 +447,14 @@ get_moving_object_lane(int &lane_size, double &d_distance_to_lane, double &s_dis
 }
 
 
-carmen_point_t
+carmen_robot_and_trailer_pose_t
 get_moving_obeject_pose_at_s_and_d_displacements(double s_displacement, double d_displacement,
-		double d_distance_to_lane, double s_distance_to_lane, carmen_ackerman_traj_point_t *movin_object_lane,
+		double d_distance_to_lane, double s_distance_to_lane, carmen_robot_and_trailer_traj_point_t *movin_object_lane,
 		int lane_size, int lane_index)
 {
 	double s_range = s_distance_to_lane;
 	int i;
-	carmen_point_t car_pose;
+	carmen_robot_and_trailer_pose_t car_pose;
 	if (s_displacement >= 0.0)
 	{
 		for (i = 0; (s_range < s_displacement) && (i < (lane_size - lane_index - 1)); i++)
@@ -477,15 +477,15 @@ get_moving_obeject_pose_at_s_and_d_displacements(double s_displacement, double d
 
 
 moving_object_pose_info_t
-simulate_moving_object_movement(t_point_cloud_struct *moving_object, carmen_ackerman_traj_point_t *movin_object_lane,
+simulate_moving_object_movement(t_point_cloud_struct *moving_object, carmen_robot_and_trailer_traj_point_t *movin_object_lane,
 		int lane_size, double d_distance_to_lane, double s_distance_to_lane, double t)
 {
-	carmen_ackerman_traj_point_t movin_object_pose = {moving_object->object_pose.x, moving_object->object_pose.y,
-			moving_object->orientation, moving_object->linear_velocity, 0.0};
+	carmen_robot_and_trailer_traj_point_t movin_object_pose = {moving_object->object_pose.x, moving_object->object_pose.y,
+			moving_object->orientation, 0.0, moving_object->linear_velocity, 0.0};
 
 	double s_displacement = moving_object->linear_velocity * t;
 	double d_displacement = moving_object->lateral_velocity * t;
-	carmen_point_t moving_object_pose_at_t;
+	carmen_robot_and_trailer_pose_t moving_object_pose_at_t;
 	if (movin_object_lane)
 		moving_object_pose_at_t = get_moving_obeject_pose_at_s_and_d_displacements(s_displacement, d_displacement,
 				d_distance_to_lane, s_distance_to_lane, movin_object_lane, lane_size, moving_object->lane_index);
@@ -516,7 +516,7 @@ compute_moving_objects_future_poses(vector<vector <moving_object_pose_info_t> > 
 		int lane_size;
 		double d_distance_to_lane, s_distance_to_lane;
 		t_point_cloud_struct *moving_object = &(current_moving_objects->point_clouds[i]);
-		carmen_ackerman_traj_point_t *movin_object_lane = get_moving_object_lane(lane_size, d_distance_to_lane, s_distance_to_lane,
+		carmen_robot_and_trailer_traj_point_t *movin_object_lane = get_moving_object_lane(lane_size, d_distance_to_lane, s_distance_to_lane,
 				moving_object, current_set_of_paths);
 		for (int s = 0; s < num_poses; s++)
 		{

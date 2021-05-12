@@ -273,7 +273,7 @@ int AstarAckerman::rs_get_astar_path(int rs_pathl, carmen_ackerman_traj_point_p 
 
 
 void
-AstarAckerman::astar_init_parameters(carmen_ackerman_traj_point_t goal)
+AstarAckerman::astar_init_parameters(carmen_robot_and_trailer_traj_point_t goal)
 {
 
 	DIRECTION[0] = astar_config.path_interval;
@@ -292,7 +292,7 @@ AstarAckerman::astar_init_parameters(carmen_ackerman_traj_point_t goal)
 
 
 void
-AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal, carmen_planner_path_p path, carmen_robot_ackerman_config_t *robot_conf)
+AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, carmen_planner_path_p path, carmen_robot_ackerman_config_t *robot_conf)
 {
 	carmen_ackerman_traj_point_t rs_points[5];
 	static carmen_planner_path_t rs_path = {NULL, 0, 0};
@@ -605,7 +605,7 @@ AstarAckerman::add_list_fh(carmen_astar_node_p new_node)
 }
 
 
-int  AstarAckerman::is_obstacle_new(carmen_ackerman_traj_point_t point)
+int  AstarAckerman::is_obstacle_new(carmen_robot_and_trailer_traj_point_t point)
 {
 	int vertical_size   = round((robot_conf_g.length + astar_config.robot_fat_space) / carmen_planner_map->config.resolution);
 	int horizontal_size = round(((robot_conf_g.width + astar_config.robot_fat_space) / carmen_planner_map->config.resolution) / 2.0);

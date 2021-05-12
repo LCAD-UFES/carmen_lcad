@@ -959,7 +959,7 @@ carmen_trajectory_to_map(carmen_traj_point_p traj_point,
 }
 
 carmen_inline int
-carmen_ackerman_trajectory_to_map(carmen_ackerman_traj_point_p traj_point,
+carmen_ackerman_trajectory_to_map(carmen_robot_and_trailer_traj_point_t *traj_point,
 		carmen_map_point_p carmen_map_point,
 		carmen_map_p map)
 {

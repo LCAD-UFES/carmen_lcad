@@ -175,8 +175,8 @@ void send_base_velocity_command(double tv, double rv)
 	IPC_RETURN_TYPE err;
 	static carmen_base_ackerman_velocity_message v;
 	int num_commands = 1;
-	carmen_ackerman_motion_command_t* message_pioneer =
-				(carmen_ackerman_motion_command_t*) (malloc(num_commands * sizeof(carmen_ackerman_motion_command_t)));
+	carmen_robot_and_trailer_motion_command_t *message_pioneer =
+				(carmen_robot_and_trailer_motion_command_t *) (malloc(num_commands * sizeof(carmen_robot_and_trailer_motion_command_t)));
 
 	v.v = tv;
 	v.phi = rv;
@@ -204,6 +204,7 @@ void send_base_velocity_command(double tv, double rv)
 	message_pioneer[0].x = 0.0;
 	message_pioneer[0].y = 0.0;
 	message_pioneer[0].theta = 0.0;
+	message_pioneer[0].beta = 0.0;
 	message_pioneer[0].time = 1.0;
 
 

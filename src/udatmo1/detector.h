@@ -18,7 +18,7 @@ class Detector
 	/**
 	 * @brief Update obstacle speed estimates across its history.
 	 */
-	void update_moving_object_velocity(carmen_robot_and_trailer_traj_point_t &robot_pose);
+	void update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose);
 
 	inline bool set_detected(bool value)
 	{
@@ -52,7 +52,7 @@ public:
 				carmen_rddf_road_profile_message *rddf,
 				int goal_index,
 				int rddf_pose_index,
-				carmen_ackerman_traj_point_t robot_pose,
+				carmen_robot_and_trailer_traj_point_t robot_pose,
 				double circle_radius,
 				double timestamp);
 

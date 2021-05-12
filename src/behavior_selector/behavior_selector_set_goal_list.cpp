@@ -130,7 +130,7 @@ add_goal_to_goal_list(int &goal_index, carmen_robot_and_trailer_traj_point_t &cu
 		carmen_rddf_road_profile_message *rddf, double displacement)
 {
 	carmen_robot_and_trailer_traj_point_t new_car_traj_point = rddf->poses[rddf_pose_index];
-	carmen_point_t new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&new_car_traj_point, displacement);
+	carmen_robot_and_trailer_pose_t new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&new_car_traj_point, displacement);
 	new_car_traj_point.x = new_car_pose.x;
 	new_car_traj_point.y = new_car_pose.y;
 	
@@ -236,7 +236,7 @@ datmo_speed_front()
 double mo_dist = 1000.0;
 
 double
-datmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config)
+datmo_get_moving_obstacle_distance(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config)
 {
 	if (behavior_selector_use_symotha)
 		return (udatmo_get_moving_obstacle_distance(robot_pose, robot_config));
@@ -474,7 +474,7 @@ behavior_selector_remove_goal()
 }
 
 
-carmen_ackerman_traj_point_t *
+carmen_robot_and_trailer_traj_point_t *
 behavior_selector_get_last_goal_list(int &last_goal_list_size)
 {
 	last_goal_list_size = goal_list_size;
@@ -483,7 +483,7 @@ behavior_selector_get_last_goal_list(int &last_goal_list_size)
 }
 
 
-carmen_ackerman_traj_point_t *
+carmen_robot_and_trailer_traj_point_t *
 behavior_selector_get_last_goals_and_types(int *&goals_types, int &last_goal_list_size)
 {
 	last_goal_list_size = goal_list_size;
@@ -653,8 +653,8 @@ behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_
 }
 
 
-carmen_ackerman_traj_point_t *
-set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type,
+carmen_robot_and_trailer_traj_point_t *
+set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t *&first_goal, int &first_goal_type,
 		carmen_rddf_road_profile_message *rddf, path_collision_info_t path_collision_info,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
@@ -677,7 +677,7 @@ set_goal_list(int &current_goal_list_size, carmen_ackerman_traj_point_t *&first_
 
 	int next_pose_change_direction_index = -1;
 
-	static carmen_ackerman_traj_point_t previous_first_goal;
+	static carmen_robot_and_trailer_traj_point_t previous_first_goal;
 
 
 #ifdef PRINT_UDATMO_LOG

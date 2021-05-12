@@ -208,7 +208,7 @@ udatmo_get_moving_obstacle_position_right(void)
 
 
 double
-udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
+udatmo_get_moving_obstacle_distance(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
 {
 	double distance = detector->get_moving_obstacle_distance(robot_pose);
 

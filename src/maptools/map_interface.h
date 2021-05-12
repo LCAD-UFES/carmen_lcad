@@ -107,7 +107,7 @@ int carmen_map_to_ackerman_trajectory(carmen_map_point_p carmen_map_point, carme
 
 int carmen_trajectory_to_map(carmen_traj_point_p traj_point, carmen_map_point_p carmen_map_point,
 				  carmen_map_p map);
-int carmen_ackerman_trajectory_to_map(carmen_ackerman_traj_point_p traj_point, carmen_map_point_p carmen_map_point,
+int carmen_ackerman_trajectory_to_map(carmen_robot_and_trailer_traj_point_t *traj_point, carmen_map_point_p carmen_map_point,
 				  carmen_map_p map);
 
 void carmen_map_copy(carmen_map_p new_map, carmen_map_p map);

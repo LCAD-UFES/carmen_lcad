@@ -27,11 +27,11 @@ void motion_planner_go();
 void motion_planner_stop();
 void motion_planner_set_algorithm(carmen_behavior_selector_algorithm_t new_algorithm, carmen_behavior_selector_task_t new_task);
 int motion_planner_read_parameters(int argc, char **argv);
-carmen_navigator_ackerman_plan_message build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands);
+carmen_navigator_ackerman_plan_message build_navigator_ackerman_plan_message(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands);
 
 void publish_astar_path(carmen_ackerman_traj_point_t *path, int path_size, carmen_ackerman_traj_point_t robot_position);
-void publish_motion_planner_path(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands);
-void publish_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands);
+void publish_motion_planner_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands);
+void publish_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands);
 void publish_status(void);
 void publish_plan(void);
 void copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int position);

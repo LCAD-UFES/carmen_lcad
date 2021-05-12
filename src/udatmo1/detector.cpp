@@ -18,7 +18,7 @@ Detector::Detector(const carmen_robot_ackerman_config_t &robot_config)
 
 
 void
-Detector::update_moving_object_velocity(carmen_robot_and_trailer_traj_point_t &robot_pose)
+Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose)
 {
 	int count = 0;
 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
@@ -49,17 +49,20 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
 				 int rddf_pose_index,
-				 carmen_robot_and_trailer_traj_point_t robot_pose,
+				 carmen_robot_and_trailer_traj_point_t robot_pose_,
 				 double circle_radius,
 				 double displacement,
 				 double timestamp)
 {
+	carmen_ackerman_traj_point_t robot_pose = {robot_pose_.x, robot_pose_.y, robot_pose_.theta, robot_pose_.v, robot_pose_.phi};
+
 //	printf("w %d, i %d\n", obstacle_already_detected, rddf_pose_index);
 	if (rddf_pose_index == 0)
 		obstacle_already_detected = false;
 
 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
-	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
+	carmen_robot_and_trailer_pose_t front_car_pose_ = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
+	carmen_point_t front_car_pose = {front_car_pose_.x, front_car_pose_.y, front_car_pose_.theta};
 	if (displacement > 0.0)
 	{
 		front_car_pose.x = front_car_pose.x + displacement * cos(rddf->poses[rddf_pose_index].theta + M_PI / 2.0);
@@ -143,7 +146,7 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
 				 int rddf_pose_index,
-				 carmen_ackerman_traj_point_t robot_pose,
+				 carmen_robot_and_trailer_traj_point_t robot_pose,
 				 double circle_radius,
 				 double timestamp)
 {

@@ -1692,7 +1692,7 @@ get_robot_acc(carmen_ackerman_traj_point_t pose)
 	if (last_goal_list_size == 0)
 		return (0.0);
 
-	carmen_ackerman_traj_point_t goal = path_goals_and_annotations_message->goal_list[0];
+	carmen_robot_and_trailer_traj_point_t goal = path_goals_and_annotations_message->goal_list[0];
 	double S = DIST2D(pose, goal);
 	double acc;
 	if (S < 0.1)

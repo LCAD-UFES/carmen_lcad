@@ -72,7 +72,7 @@ using namespace std;
 
 vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		int who_set_the_goal_v, carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 
@@ -178,7 +178,7 @@ double distance_car_pose_car_front;
 
 
 int
-compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
+compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_pose)
 {
 	int num_poses_ahead_by_velocity = param_rddf_num_poses_ahead_min;
 	//	s = vf*vf - v0*v0 / 2*a;
@@ -228,13 +228,13 @@ copy_rddf_message_considering_velocity(carmen_rddf_road_profile_message *last_rd
 	last_rddf_message->number_of_poses = carmen_rddf_num_poses_ahead;
 	last_rddf_message->number_of_poses_back = rddf_msg->number_of_poses_back;
 
-	last_rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_ackerman_traj_point_t) * carmen_rddf_num_poses_ahead);
-	last_rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
+	last_rddf_message->poses = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * carmen_rddf_num_poses_ahead);
+	last_rddf_message->poses_back = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
 	last_rddf_message->annotations = (int *) realloc(last_rddf_message->annotations, sizeof(int) * carmen_rddf_num_poses_ahead);
 	last_rddf_message->annotations_codes = (int *) realloc(last_rddf_message->annotations_codes, sizeof(int) * carmen_rddf_num_poses_ahead);
 
-	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_ackerman_traj_point_t) * carmen_rddf_num_poses_ahead);
-	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
+	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * carmen_rddf_num_poses_ahead);
+	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
 	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * carmen_rddf_num_poses_ahead);
 	memcpy(last_rddf_message->annotations_codes, rddf_msg->annotations_codes, sizeof(int) * carmen_rddf_num_poses_ahead);
 
@@ -260,13 +260,13 @@ copy_rddf_message(carmen_rddf_road_profile_message *last_rddf_message, carmen_rd
 	last_rddf_message->number_of_poses = rddf_msg->number_of_poses;
 	last_rddf_message->number_of_poses_back = rddf_msg->number_of_poses_back;
 
-	last_rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
-	last_rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
+	last_rddf_message->poses = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses);
+	last_rddf_message->poses_back = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
 	last_rddf_message->annotations = (int *) realloc(last_rddf_message->annotations, sizeof(int) * last_rddf_message->number_of_poses);
 	last_rddf_message->annotations_codes = (int *) realloc(last_rddf_message->annotations_codes, sizeof(int) * last_rddf_message->number_of_poses);
 
-	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
-	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
+	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses);
+	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
 	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * last_rddf_message->number_of_poses);
 	memcpy(last_rddf_message->annotations_codes, rddf_msg->annotations_codes, sizeof(int) * last_rddf_message->number_of_poses);
 
@@ -280,10 +280,10 @@ compute_simulated_objects(double timestamp)
 	if (!necessary_maps_available || !current_set_of_paths)
 		return (NULL);
 
-	carmen_ackerman_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
+	carmen_robot_and_trailer_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
 	int number_of_poses = current_set_of_paths->number_of_poses;
 
-	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
+	static carmen_robot_and_trailer_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0};
 	static double previous_timestamp = 0.0;
 	static double initial_time = 0.0; // Simulation start time.
 
@@ -310,7 +310,7 @@ compute_simulated_objects(double timestamp)
 	double dx = v * dt * cos(previous_pose.theta);
 	double dy = v * dt * sin(previous_pose.theta);
 
-	carmen_ackerman_traj_point_t pose_ahead;
+	carmen_robot_and_trailer_traj_point_t pose_ahead;
 	pose_ahead.x = previous_pose.x + dx;
 	pose_ahead.y = previous_pose.y + dy;
 
@@ -329,19 +329,19 @@ compute_simulated_objects(double timestamp)
 }
 
 
-carmen_ackerman_traj_point_t *
+carmen_robot_and_trailer_traj_point_t *
 compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	if (!necessary_maps_available || !current_set_of_paths || (current_set_of_paths->number_of_nearby_lanes == 0))
 		return (NULL);
 
-	carmen_ackerman_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
+	carmen_robot_and_trailer_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
 	int number_of_poses = current_set_of_paths->number_of_poses;
 	if (poses == NULL)
 		return (NULL);
 
-	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
-	static carmen_ackerman_traj_point_t returned_pose = {0, 0, 0, 0, 0};
+	static carmen_robot_and_trailer_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailer_traj_point_t returned_pose = {0, 0, 0, 0, 0, 0};
 	static double previous_timestamp = 0.0;
 	static double initial_time = 0.0; // Simulation start time.
 	static double disp = 2.5;
@@ -382,11 +382,11 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	double dx = v * dt * cos(previous_pose.theta);
 	double dy = v * dt * sin(previous_pose.theta);
 
-	carmen_ackerman_traj_point_t pose_ahead;
+	carmen_robot_and_trailer_traj_point_t pose_ahead;
 	pose_ahead.x = previous_pose.x + dx;
 	pose_ahead.y = previous_pose.y + dy;
 
-	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
+	static carmen_robot_and_trailer_traj_point_t next_pose = {0, 0, 0, 0, 0, 0};
 	for (int i = 0; i < number_of_poses - 1; i++)
 	{
 		int status;
@@ -538,7 +538,7 @@ add_object_to_map(double width, double length, double x, double y, double theta)
 
 void
 add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message *msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	if (!msg)
 		return;
@@ -604,7 +604,7 @@ clear_moving_obstacles_from_compact_lane_map(carmen_obstacle_distance_mapper_com
 
 static void
 publish_path_goals_and_annotations_message(carmen_rddf_road_profile_message *path_and_annotations,
-		carmen_ackerman_traj_point_t *goal_list,
+		carmen_robot_and_trailer_traj_point_t *goal_list,
 		int goal_list_size, double timestamp)
 {
 	carmen_behavior_selector_path_goals_and_annotations_message path_goals_and_annotations_message;
@@ -703,11 +703,11 @@ publish_new_best_path(int best_path, double timestamp)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-carmen_ackerman_traj_point_t *
-check_soft_stop(carmen_ackerman_traj_point_t *first_goal, carmen_ackerman_traj_point_t *goal_list, int &goal_type)
+carmen_robot_and_trailer_traj_point_t *
+check_soft_stop(carmen_robot_and_trailer_traj_point_t *first_goal, carmen_robot_and_trailer_traj_point_t *goal_list, int &goal_type)
 {
 	static bool soft_stop_in_progress = false;
-	static carmen_ackerman_traj_point_t soft_stop_goal;
+	static carmen_robot_and_trailer_traj_point_t soft_stop_goal;
 	static int soft_stop_goal_type;
 
 	if (soft_stop_on)
@@ -733,7 +733,7 @@ check_soft_stop(carmen_ackerman_traj_point_t *first_goal, carmen_ackerman_traj_p
 
 
 void
-set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 			&current_robot_pose_v_and_phi, wait_start_moving);
@@ -874,7 +874,7 @@ create_carmen_obstacle_distance_mapper_map_message(carmen_obstacle_distance_mapp
 
 
 void
-set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+set_path_using_symotha(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
@@ -947,10 +947,10 @@ set_path_using_symotha(const carmen_ackerman_traj_point_t current_robot_pose_v_a
 
 
 int
-select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+select_behaviour_using_symotha(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	static carmen_ackerman_traj_point_t last_valid_goal;
-	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
+	static carmen_robot_and_trailer_traj_point_t last_valid_goal;
+	static carmen_robot_and_trailer_traj_point_t *last_valid_goal_p = NULL;
 
 	carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, compact_lane_contents);
 
@@ -967,9 +967,9 @@ select_behaviour_using_symotha(carmen_ackerman_traj_point_t current_robot_pose_v
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	int goal_list_size;
-	carmen_ackerman_traj_point_t *first_goal;
+	carmen_robot_and_trailer_traj_point_t *first_goal;
 	int goal_type;
-	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
+	carmen_robot_and_trailer_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
 			path_collision_info_t {}, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
@@ -1056,7 +1056,7 @@ print_road_network_behavior_selector(carmen_route_planner_road_network_message *
 
 
 path_collision_info_t
-set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
@@ -1139,10 +1139,10 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 
 
 int
-select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	static carmen_ackerman_traj_point_t last_valid_goal;
-	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
+	static carmen_robot_and_trailer_traj_point_t last_valid_goal;
+	static carmen_robot_and_trailer_traj_point_t *last_valid_goal_p = NULL;
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
@@ -1167,9 +1167,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	int goal_list_size;
-	carmen_ackerman_traj_point_t *first_goal;
+	carmen_robot_and_trailer_traj_point_t *first_goal;
 	int goal_type;
-	carmen_ackerman_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
+	carmen_robot_and_trailer_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
 			path_collision_info, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
@@ -1237,11 +1237,12 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	if (behavior_selector_performs_path_planning && !road_network_message)
 		return;
 
-	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
+	carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi;
 
 	current_robot_pose_v_and_phi.x = msg->globalpos.x;
 	current_robot_pose_v_and_phi.y = msg->globalpos.y;
 	current_robot_pose_v_and_phi.theta = msg->globalpos.theta;
+	current_robot_pose_v_and_phi.beta = msg->beta;
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
@@ -1267,11 +1268,12 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	if (behavior_selector_performs_path_planning && !road_network_message)
 		return;
 
-	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
+	carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi;
 
 	current_robot_pose_v_and_phi.x = msg->truepose.x;
 	current_robot_pose_v_and_phi.y = msg->truepose.y;
 	current_robot_pose_v_and_phi.theta = msg->truepose.theta;
+	current_robot_pose_v_and_phi.beta = msg->beta;
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 

@@ -150,11 +150,12 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 //		return;
 	IPC_RETURN_TYPE err = IPC_OK;
 	static int roundValue = 2;
-	static carmen_ackerman_traj_point_t robot_position;
+	static carmen_robot_and_trailer_traj_point_t robot_position;
 
 	robot_position.x = round(msg->globalpos.x * roundValue) / roundValue;
 	robot_position.y = round(msg->globalpos.y * roundValue) / roundValue;
 	robot_position.theta = round(msg->globalpos.theta * roundValue) / roundValue;
+	robot_position.beta = round(msg->beta * roundValue) / roundValue;
 	robot_position.v = msg->v;
 	robot_position.phi = msg->phi;
 
@@ -283,11 +284,12 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
-	carmen_ackerman_traj_point_t point =
+	carmen_robot_and_trailer_traj_point_t point =
 	{
 		rddf_end_point_message->point.x,
 		rddf_end_point_message->point.y,
 		rddf_end_point_message->point.theta,
+		rddf_end_point_message->point.beta,
 		0.0,
 		0.0
 	};

@@ -83,7 +83,7 @@ extern "C"
     typedef struct
     {
         int number_of_poses;	// number of waypoints to consider near end_point (point)
-        carmen_point_t point;
+        carmen_robot_and_trailer_pose_t point;
         double timestamp;
         char *host;
     } carmen_rddf_end_point_message;

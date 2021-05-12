@@ -22,8 +22,8 @@ typedef struct {
 } carmen_navigator_ackerman_astar_goal_list_message;
 
 typedef struct {
-	carmen_ackerman_traj_point_t robot;
-	carmen_ackerman_traj_point_t goal;
+	carmen_robot_and_trailer_traj_point_t robot;
+	carmen_robot_and_trailer_traj_point_t goal;
 	carmen_planner_path_t path;
 	int goal_set;
 } carmen_planner_status_t, *carmen_planner_status_p;

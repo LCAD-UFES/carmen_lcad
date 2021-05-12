@@ -65,7 +65,7 @@ carmen_base_ackerman_subscribe_motion_command(carmen_base_ackerman_motion_comman
 
 
 void
-carmen_base_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+carmen_base_ackerman_publish_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	static carmen_base_ackerman_motion_command_message msg;
@@ -100,7 +100,7 @@ carmen_base_ackerman_subscribe_motion_command_2(carmen_base_ackerman_motion_comm
 
 
 void
-carmen_base_ackerman_publish_motion_command_2(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+carmen_base_ackerman_publish_motion_command_2(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	static carmen_base_ackerman_motion_command_message msg;

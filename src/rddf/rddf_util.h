@@ -40,6 +40,7 @@ void carmen_rddf_play_save_rddf_to_file(char *rddf_filename, carmen_rddf_waypoin
 
 bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_ackerman_traj_point_t annotation_point);
 bool carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
+bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
 bool carmen_rddf_play_annotation_is_forward(carmen_point_t robot_pose, carmen_vector_3D_t annotation_point);
 
 void carmen_rddf_play_get_parameters(int argc, char** argv);

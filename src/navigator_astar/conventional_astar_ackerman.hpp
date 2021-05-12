@@ -82,19 +82,19 @@ public:
 	double ***precomputed_cost_map;
 	struct fibheap* astar_queue;
 
-	carmen_ackerman_traj_point_t GOAL;
+	carmen_robot_and_trailer_traj_point_t GOAL;
 
 	double ORIENTATION[ORIENTATION_LENGHT];
 	double DIRECTION[DIRECTION_LENGHT];
 
 	int is_obstacle_cost(carmen_ackerman_traj_point_t point);
-	int is_obstacle_new(carmen_ackerman_traj_point_t point);
+	int is_obstacle_new(carmen_robot_and_trailer_traj_point_t point);
 
 
 
 	carmen_ackerman_traj_point_t carmen_conventional_astar_ackerman_kinematic(carmen_ackerman_traj_point_t point, double lenght, double phi, double v);
 	void open_node(carmen_astar_node_p tree);
-	void carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal,carmen_planner_path_p path, carmen_robot_ackerman_config_t *robot_conf);
+	void carmen_conventional_astar_ackerman_astar(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal,carmen_planner_path_p path, carmen_robot_ackerman_config_t *robot_conf);
 	void add_list_fh(carmen_astar_node_p new_state);
 	carmen_astar_node_p open_node_fh();
 	void get_astar_path(carmen_astar_node_p node, carmen_planner_path_p path);
@@ -114,7 +114,7 @@ private:
 	int get_astar_map_y(double y);
 	carmen_ackerman_traj_point_t carmen_conventional_astar_ackerman_kinematic_2(carmen_ackerman_traj_point_t point, float lenght, float phi, float v);
 	int rs_get_astar_path(int rs_pathl, carmen_ackerman_traj_point_p points, carmen_planner_path_p path);
-	void astar_init_parameters(carmen_ackerman_traj_point_t goal);
+	void astar_init_parameters(carmen_robot_and_trailer_traj_point_t goal);
 	int get_astar_map_theta(double theta);
 
 

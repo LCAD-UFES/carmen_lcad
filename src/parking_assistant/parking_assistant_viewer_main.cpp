@@ -75,10 +75,11 @@ carmen_plan_message_handler(carmen_navigator_ackerman_plan_message* msg)
 	if (!planned && msg->path_length) {
 
 		plan.host = carmen_get_host();
-		plan.path = (carmen_ackerman_traj_point_t *)malloc(sizeof(carmen_ackerman_traj_point_t)*(msg->path_length));
+		plan.path = (carmen_robot_and_trailer_traj_point_t *)malloc(sizeof(carmen_robot_and_trailer_traj_point_t)*(msg->path_length));
 		for (int i=0 ; i<msg->path_length ; i++) {
 			(plan.path+i)->phi = (msg->path+i)->phi;
 			(plan.path+i)->theta = (msg->path+i)->theta;
+			(plan.path+i)->beta = (msg->path+i)->beta;
 			(plan.path+i)->v = (msg->path+i)->v;
 			(plan.path+i)->x = (msg->path+i)->x;
 			(plan.path+i)->y = (msg->path+i)->y;
