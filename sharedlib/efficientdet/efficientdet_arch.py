@@ -30,7 +30,7 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 
 import hparams_config
-import utils
+import utils_2
 from backbone import backbone_factory
 from backbone import efficientnet_builder
 
@@ -120,7 +120,7 @@ def resample_feature_map(feat,
           padding='same',
           data_format=data_format)
       if apply_bn:
-        feat = utils.batch_norm_act(
+        feat = utils_2.batch_norm_act(
             feat,
             is_training_bn=is_training,
             act_type=None,
@@ -242,7 +242,7 @@ def class_net(images,
         activation=None,
         padding='same',
         name='class-%d' % i)
-    images = utils.batch_norm_act(
+    images = utils_2.batch_norm_act(
         images,
         is_training,
         act_type=act_type,
@@ -252,7 +252,7 @@ def class_net(images,
         name='class-%d-bn-%d' % (i, level))
 
     if i > 0 and survival_prob:
-      images = utils.drop_connect(images, is_training, survival_prob)
+      images = utils_2.drop_connect(images, is_training, survival_prob)
       images = images + orig_images
 
   classes = conv_op(
@@ -299,7 +299,7 @@ def box_net(images,
         bias_initializer=tf.zeros_initializer(),
         padding='same',
         name='box-%d' % i)
-    images = utils.batch_norm_act(
+    images = utils_2.batch_norm_act(
         images,
         is_training,
         act_type=act_type,
@@ -309,7 +309,7 @@ def box_net(images,
         name='box-%d-bn-%d' % (i, level))
 
     if i > 0 and survival_prob:
-      images = utils.drop_connect(images, is_training, survival_prob)
+      images = utils_2.drop_connect(images, is_training, survival_prob)
       images = images + orig_images
 
   boxes = conv_op(
@@ -394,7 +394,7 @@ def build_backbone(features, config):
   is_training_bn = config.is_training_bn
   if 'efficientnet' in backbone_name:
     override_params = {
-        'batch_norm': utils.batch_norm_class(is_training_bn, config.use_tpu),
+        'batch_norm': utils_2.batch_norm_class(is_training_bn, config.use_tpu),
     }
     if 'b0' in backbone_name:
       override_params['survival_prob'] = 0.0
@@ -430,7 +430,7 @@ def build_feature_network(features, config):
   Returns:
     A dict from levels to the feature maps processed after feature network.
   """
-  feat_sizes = utils.get_feat_sizes(config.image_size, config.max_level)
+  feat_sizes = utils_2.get_feat_sizes(config.image_size, config.max_level)
   feats = []
   if config.min_level not in features.keys():
     raise ValueError('features.keys ({}) should include min_level ({})'.format(
@@ -628,7 +628,7 @@ def build_bifpn_layer(feats, feat_sizes, config):
 
       with tf.variable_scope('op_after_combine{}'.format(len(feats))):
         if not p.conv_bn_act_pattern:
-          new_node = utils.activation_fn(new_node, p.act_type)
+          new_node = utils_2.activation_fn(new_node, p.act_type)
 
         if p.separable_conv:
           conv_op = functools.partial(
@@ -645,7 +645,7 @@ def build_bifpn_layer(feats, feat_sizes, config):
             data_format=config.data_format,
             name='conv')
 
-        new_node = utils.batch_norm_act(
+        new_node = utils_2.batch_norm_act(
             new_node,
             is_training_bn=p.is_training_bn,
             act_type=None if not p.conv_bn_act_pattern else p.act_type,
@@ -681,16 +681,16 @@ def efficientdet(features, model_name=None, config=None, **kwargs):
   # build backbone features.
   features = build_backbone(features, config)
   logging.info('backbone params/flops = {:.6f}M, {:.9f}B'.format(
-      *utils.num_params_flops()))
+      *utils_2.num_params_flops()))
 
   # build feature network.
   fpn_feats = build_feature_network(features, config)
   logging.info('backbone+fpn params/flops = {:.6f}M, {:.9f}B'.format(
-      *utils.num_params_flops()))
+      *utils_2.num_params_flops()))
 
   # build class and box predictions.
   class_outputs, box_outputs = build_class_and_box_outputs(fpn_feats, config)
   logging.info('backbone+fpn+box params/flops = {:.6f}M, {:.9f}B'.format(
-      *utils.num_params_flops()))
+      *utils_2.num_params_flops()))
 
   return class_outputs, box_outputs
