@@ -151,8 +151,8 @@ AstarAckerman::carmen_conventional_astar_ackerman_kinematic(carmen_ackerman_traj
 }
 
 
-carmen_ackerman_traj_point_t
-carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t point, double lenght, double phi, double v)
+carmen_robot_and_trailer_traj_point_t
+carmen_conventional_astar_ackerman_kinematic_3(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v)
 {
 
 	double	radcurv = lenght / tan(fabs(phi));
@@ -294,7 +294,7 @@ AstarAckerman::astar_init_parameters(carmen_robot_and_trailer_traj_point_t goal)
 void
 AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, carmen_planner_path_p path, carmen_robot_ackerman_config_t *robot_conf)
 {
-	carmen_ackerman_traj_point_t rs_points[5];
+	carmen_robot_and_trailer_traj_point_t rs_points[5];
 	static carmen_planner_path_t rs_path = {NULL, 0, 0};
 
 	robot_conf_g = *robot_conf;
@@ -508,7 +508,7 @@ AstarAckerman::open_node(carmen_astar_node_p node)
 
 
 double
-AstarAckerman::h_score(carmen_ackerman_traj_point_t point)
+AstarAckerman::h_score(carmen_robot_and_trailer_traj_point_t point)
 {
 	double obstacle_cost, precomputed_cost, euclidean_cost, h_score;
 	int x, y, theta;

@@ -456,7 +456,8 @@ double csc2_cb(double x, double y, double phi, double rs, double rc, double *t, 
 
 
 /***********************************************************/
-double reed_shepp(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal, int *numero, double *tr, double *ur, double *vr)
+double reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero,
+		double *tr, double *ur, double *vr)
 {
 	double x, y, phi;
 	double t, u, v, tn, un, vn;
@@ -1092,7 +1093,7 @@ int fct_curve(int ty, int orientation, double val, carmen_ackerman_traj_point_p 
 
 
 /***********************************************************/
-int constRS(int num, double t, double u, double v, carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_p points)
+int constRS(int num, double t, double u, double v, carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t *points)
 {
 	int left, right, straight, fwd, bwd;
 	int n = 0;

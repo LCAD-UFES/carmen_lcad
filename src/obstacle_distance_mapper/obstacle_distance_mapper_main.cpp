@@ -162,7 +162,7 @@ compute_orm_and_irm_occupancy_maps(carmen_map_t *orm_occupancy_map, carmen_map_t
 
 	for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
 	{
-		carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
+		carmen_robot_and_trailer_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
 		int *traffic_restrictions = &(road_network_message->traffic_restrictions[road_network_message->nearby_lanes_indexes[i]]);
 		int lane_size = road_network_message->nearby_lanes_sizes[i];
 		for (int j = 0; j < lane_size - 1; j++)

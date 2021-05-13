@@ -98,7 +98,7 @@ find_direction_traffic_sign(carmen_point_t robot_pose, bool ahead)
 
 
 void
-calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
+calculate_phi_ahead(carmen_robot_and_trailer_traj_point_t *path, int num_poses)
 {
 	double L = distance_between_front_and_rear_axles;
 
@@ -122,7 +122,7 @@ calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
 
 
 void
-calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
+calculate_phi_back(carmen_robot_and_trailer_traj_point_t *path, int num_poses)
 {
 	double L = distance_between_front_and_rear_axles;
 
@@ -146,7 +146,7 @@ calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
 
 
 void
-compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
+compute_theta(carmen_robot_and_trailer_traj_point_t *path, int num_poses)
 {
 	for (int i = 0; i < (num_poses - 1); i++)
 		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
@@ -156,7 +156,7 @@ compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 
 
 void
-calculate_theta_back(carmen_ackerman_traj_point_t *path, int num_poses)
+calculate_theta_back(carmen_robot_and_trailer_traj_point_t *path, int num_poses)
 {
 	for (int i = 1; i < num_poses; i++)
 //		path[i].theta = atan2(path[i - 1].y - path[i].y, path[i - 1].x - path[i].x);
@@ -165,8 +165,8 @@ calculate_theta_back(carmen_ackerman_traj_point_t *path, int num_poses)
 
 
 void
-calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
-		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
+calculate_theta_and_phi(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses_back)
 {
 	compute_theta(poses_ahead, num_poses_ahead);
 	poses_back[0].theta = poses_ahead[0].theta;
@@ -320,8 +320,8 @@ my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
 
 
 int
-smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
-		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
+smooth_rddf_using_conjugate_gradient(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses_back)
 {
 	int iter = 0;
 	int status, i = 0, j = 0, size;
@@ -331,8 +331,8 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	gsl_vector *v;
 	gsl_multimin_function_fdf my_func;
 
-	list<carmen_ackerman_traj_point_t>::iterator it;
-	list<carmen_ackerman_traj_point_t> path;
+	list<carmen_robot_and_trailer_traj_point_t>::iterator it;
+	list<carmen_robot_and_trailer_traj_point_t> path;
 
 	for (i = (num_poses_back - 1); i > 0; i--) // skip poses_back[0], because it is equal to poses_ahead[0]
 		path.push_back(poses_back[i]);
@@ -426,7 +426,7 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 
 
 void
-plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_traj_point_t *path2, int num_points2, bool display)
+plot_state(carmen_robot_and_trailer_traj_point_t *path, int num_points, carmen_robot_and_trailer_traj_point_t *path2, int num_points2, bool display)
 {
 	static bool first_time = true;
 	static FILE *gnuplot_pipeMP;
@@ -577,7 +577,7 @@ find_nearest_pose_by_road_map(carmen_point_t rddf_pose_candidate, carmen_map_p r
 
 
 double
-average_theta(carmen_ackerman_traj_point_t *poses, int curr_index, int num_poses_avg)
+average_theta(carmen_robot_and_trailer_traj_point_t *poses, int curr_index, int num_poses_avg)
 {
 	double sum_theta_x = 0.0, sum_theta_y = 0.0;
 	int num_poses = ((curr_index + 1) >= num_poses_avg) ? num_poses_avg : (curr_index + 1);
@@ -643,7 +643,7 @@ pose_out_of_map_coordinates(carmen_point_t pose, carmen_map_p map)
 
 int
 fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
-		carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired)
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_desired)
 {
 	carmen_point_t rddf_pose, previous_pose, rddf_pose_candidate;
 	int num_poses = 0;
@@ -705,7 +705,7 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_m
 
 int
 fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
-		carmen_ackerman_traj_point_t *poses_back, int num_poses_desired)
+		carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses_desired)
 {
 	carmen_point_t rddf_pose, previous_pose, rddf_pose_candidate;
 	int num_poses = 0;
@@ -764,7 +764,7 @@ fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_ma
 
 int
 carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
-		carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max)
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max)
 {
 	static int num_poses_ahead;
 

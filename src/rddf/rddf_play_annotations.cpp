@@ -76,7 +76,8 @@ clear_annotations(int *rddf_annotations, int num_annotations)
 
 
 int
-carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_ackerman_traj_point_t *poses_ahead, int num_poses, int nearest_end_waypoint_position, int *rddf_annotations)
+carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses,
+		int nearest_end_waypoint_position, int *rddf_annotations)
 {
 	int position_nearest_waypoint = nearest_end_waypoint_position;
 	int position_end_point = nearest_end_waypoint_position + 1;
@@ -107,7 +108,7 @@ carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_ackerman_tr
 
 
 int
-carmen_rddf_play_nearest_waypoint_reached(carmen_ackerman_traj_point_t pose)
+carmen_rddf_play_nearest_waypoint_reached(carmen_robot_and_trailer_traj_point_t pose)
 {
 	if (sqrt(pow(pose.x - carmen_rddf_nearest_waypoint_to_end_point.x, 2) + pow(pose.y - carmen_rddf_nearest_waypoint_to_end_point.y, 2)) < 2.0)
 		return 1;
@@ -117,7 +118,7 @@ carmen_rddf_play_nearest_waypoint_reached(carmen_ackerman_traj_point_t pose)
 
 
 int
-carmen_rddf_play_find_position_of_nearest_waypoint(carmen_ackerman_traj_point_t *poses_ahead, int num_poses)
+carmen_rddf_play_find_position_of_nearest_waypoint(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses)
 {
 	int i, position = -1;
 
@@ -135,7 +136,7 @@ carmen_rddf_play_find_position_of_nearest_waypoint(carmen_ackerman_traj_point_t 
 
 
 int
-carmen_rddf_play_check_if_end_point_is_reachable(carmen_ackerman_traj_point_t *poses_ahead, int num_poses, int *rddf_annotations)
+carmen_rddf_play_check_if_end_point_is_reachable(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses, int *rddf_annotations)
 {
 	if (carmen_rddf_nearest_waypoint_is_set)
 	{
@@ -171,7 +172,9 @@ carmen_rddf_play_check_if_end_point_is_reachable(carmen_ackerman_traj_point_t *p
 
 
 int
-carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double v, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max, int *rddf_annotations)
+carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double v, double timestamp /* only for debugging */,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back,
+		int num_poses_ahead_max, int *rddf_annotations)
 {
 	clear_annotations(rddf_annotations, num_poses_ahead_max);
 
@@ -506,7 +509,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 
 void
 carmen_check_for_annotations(carmen_point_t robot_pose,
-		carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back,
+		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back, double timestamp)
 {
 	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)

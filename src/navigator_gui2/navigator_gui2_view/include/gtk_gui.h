@@ -252,7 +252,7 @@ namespace View
 
 		carmen_traj_point_t	 robot_traj;
 		carmen_world_point_t	 robot;
-		carmen_ackerman_traj_point_t	 goal;
+		carmen_robot_and_trailer_traj_point_t	 goal;
 
 		double last_navigator_update;
 		GdkColor RedBlueGradient[GRADIENT_COLORS];
@@ -363,13 +363,14 @@ namespace View
 						carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param);
 
 		int navigator_graphics_update_map();
-		void navigator_graphics_update_display(carmen_traj_point_p new_robot, carmen_localize_ackerman_globalpos_message *current_globalpos, carmen_ackerman_traj_point_t *new_goal, int autonomous);
+		void navigator_graphics_update_display(carmen_traj_point_p new_robot, carmen_localize_ackerman_globalpos_message *current_globalpos,
+				carmen_robot_and_trailer_traj_point_t *new_goal, int autonomous);
 		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
-		void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size);
-		void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size);
+		void navigator_graphics_update_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int size);
+		void navigator_graphics_update_waypoint_list(carmen_robot_and_trailer_traj_point_t *waypoint_list, int size);
 		void navigator_graphics_update_path_plans(carmen_ackerman_traj_point_t **plans, int number_of_plans, int number_of_poses, int selected_plan);
-		void navigator_graphics_update_path(carmen_ackerman_traj_point_t* new_path, int path_length, int path_id);
-		void navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length);
+		void navigator_graphics_update_path(carmen_ackerman_traj_point_t *new_path, int path_length, int path_id);
+		void navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length);
 		void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
 		void navigator_graphics_set_flags(carmen_navigator_map_t type);
 
@@ -382,11 +383,11 @@ namespace View
 		void navigator_graphics_update_plan_to_draw(int path_size, carmen_ackerman_traj_point_t *path);
 
 		void navigator_graphics_update_plan_tree(
-				carmen_ackerman_traj_point_p p1,
-				carmen_ackerman_traj_point_p p2,
+				carmen_robot_and_trailer_traj_point_t *p1,
+				carmen_robot_and_trailer_traj_point_t *p2,
 				int *mask,
 				int plan_tree_length,
-				carmen_ackerman_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
+				carmen_robot_and_trailer_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
 				int path_size[100],
 				int num_path);
 

@@ -101,7 +101,7 @@ compute_particle_weight_color(carmen_localize_ackerman_particle_ipc_t *particles
 
 
 bool
-valid_carmen_ackerman_traj_point(carmen_ackerman_traj_point_t world_point, carmen_map_t *map)
+valid_robot_and_trailer_traj_point(carmen_robot_and_trailer_traj_point_t world_point, carmen_map_t *map)
 {
 	if (!map)
 		return (false);
@@ -745,7 +745,7 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_display(carmen_traj_point_p new_robot,
 			carmen_localize_ackerman_globalpos_message *current_globalpos,
-			carmen_ackerman_traj_point_t *new_goal,
+			carmen_robot_and_trailer_traj_point_t *new_goal,
 			int	autonomous)
 	{
 		static char   buffer[2048];
@@ -855,7 +855,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t *goal_list, int size)
+	GtkGui::navigator_graphics_update_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int size)
 	{
 //		int RDDF_MAX_SIZE = 10000;
 		if (this->navigator_goal_list != NULL)
@@ -869,7 +869,7 @@ namespace View
 
 		for (int i = 0; i < size; i++)
 		{
-			if (valid_carmen_ackerman_traj_point(goal_list[i], this->controls_.map_view->internal_map))
+			if (valid_robot_and_trailer_traj_point(goal_list[i], this->controls_.map_view->internal_map))
 			{
 				this->navigator_goal_list[i].pose.x = goal_list[i].x;
 				this->navigator_goal_list[i].pose.y = goal_list[i].y;
@@ -893,7 +893,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size)
+	GtkGui::navigator_graphics_update_waypoint_list(carmen_robot_and_trailer_traj_point_t *waypoint_list, int size)
 	{
 		int i;
 
@@ -918,7 +918,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length)
+	GtkGui::navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length)
 	{
 		if (this->controls_.map_view->internal_map == NULL)
 			return;
@@ -1208,11 +1208,11 @@ namespace View
 
 	void
 	GtkGui::navigator_graphics_update_plan_tree(
-			carmen_ackerman_traj_point_p p1,
-			carmen_ackerman_traj_point_p p2,
+			carmen_robot_and_trailer_traj_point_t *p1,
+			carmen_robot_and_trailer_traj_point_t *p2,
 			int *mask,
 			int plan_tree_length,
-			carmen_ackerman_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
+			carmen_robot_and_trailer_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
 			int path_size[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS],
 			int num_path)
 	{

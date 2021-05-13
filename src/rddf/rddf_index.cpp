@@ -996,10 +996,10 @@ find_timestamp_index_position_with_full_index_search_near_timestamp(double x, do
 	return min_dist_pos;
 }
 
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double yaw)
 {
-	carmen_ackerman_traj_point_t point;
+	carmen_robot_and_trailer_traj_point_t point;
 
 	point.x = x;
 	point.y = y;
@@ -1012,11 +1012,11 @@ create_ackerman_traj_point_struct(double x, double y, double velocity_x, double 
 
 
 int
-fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired, carmen_ackerman_traj_point_t *last_pose_acquired, int *annotations)
+fill_in_waypoints_array(long timestamp_index_position, carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_desired, carmen_robot_and_trailer_traj_point_t *last_pose_acquired, int *annotations)
 {
 	//double dist;
 	int i, num_poses_aquired;
-	carmen_ackerman_traj_point_t last_pose, current_pose;
+	carmen_robot_and_trailer_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
 
 	num_poses_aquired = 0;
@@ -1050,11 +1050,11 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_poin
 
 
 int
-fill_in_backward_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_point_t *poses_back, int num_poses_desired)
+fill_in_backward_waypoints_array(long timestamp_index_position, carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses_desired)
 {
 	//double dist;
 	int i, num_poses_aquired;
-	carmen_ackerman_traj_point_t last_pose, current_pose;
+	carmen_robot_and_trailer_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
 
 	num_poses_aquired = 0;
@@ -1104,11 +1104,13 @@ carmen_rddf_has_closed_loop()
 
 
 int
-get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_point_t* poses_ahead, carmen_ackerman_traj_point_t last_pose_acquired_at_end_of_index, int num_poses_acquired_before_end_of_index, int *annotations)
+get_more_more_poses_from_begining(int num_poses_desired, carmen_robot_and_trailer_traj_point_t *poses_ahead,
+		carmen_robot_and_trailer_traj_point_t last_pose_acquired_at_end_of_index, int num_poses_acquired_before_end_of_index,
+		int *annotations)
 {
 	double dist;
 	int i, num_poses_aquired;
-	carmen_ackerman_traj_point_t last_pose, current_pose;
+	carmen_robot_and_trailer_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
 
 	num_poses_aquired = 0;
@@ -1130,7 +1132,7 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 	while ((num_poses_aquired < num_poses_desired) && (i < carmen_index_ordered_by_timestamp.size()))
 	{
 		index_element = carmen_index_ordered_by_timestamp[i];
-		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
+		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		if (carmen_rddf_play_annotation_is_forward(last_pose, current_pose)) // Esta funcao foi feita para anotacoes mas funciona com quaisquer dois pontos
 		{
@@ -1149,7 +1151,9 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 
 
 int
-carmen_search_next_poses_index_old(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t* poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_desired, int *annotations, int perform_loop = 0)
+carmen_search_next_poses_index_old(double x, double y, double yaw, double timestamp /* only for debugging */,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back,
+		int num_poses_desired, int *annotations, int perform_loop = 0)
 {
 //	static int closed_loop = 0;
 //	//static double time_when_closed_loop = 0;
@@ -1158,7 +1162,7 @@ carmen_search_next_poses_index_old(double x, double y, double yaw, double timest
 //
 	long timestamp_index_position;
 	int num_poses_aquired = 0;
-	carmen_ackerman_traj_point_t last_pose_acquired;
+	carmen_robot_and_trailer_traj_point_t last_pose_acquired;
 	(void) timestamp; // to not warning. I use it sometimes to debug.
 
 //	//timestamp_index_position = find_timestamp_index_position(x, y, yaw, 1);
@@ -1193,11 +1197,13 @@ carmen_search_next_poses_index_old(double x, double y, double yaw, double timest
 
 
 int
-carmen_search_next_poses_index(double x, double y, double yaw, double v, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t* poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_desired, int *annotations, int perform_loop = 0)
+carmen_search_next_poses_index(double x, double y, double yaw, double v, double timestamp /* only for debugging */,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back,
+		int num_poses_desired, int *annotations, int perform_loop = 0)
 {
 	long timestamp_index_position;
 	int num_poses_aquired = 0;
-	carmen_ackerman_traj_point_t last_pose_acquired;
+	carmen_robot_and_trailer_traj_point_t last_pose_acquired;
 	(void) timestamp; // to not warning. I use it sometimes to debug.
 
 	timestamp_index_position = find_timestamp_index_position_with_full_index_search(x, y, yaw, 1, 0, 0, v, 1);
@@ -1213,11 +1219,11 @@ carmen_search_next_poses_index(double x, double y, double yaw, double v, double 
 
 
 int
-fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_traj_point_t* poses_ahead, int num_poses_desired)
+fill_in_waypoints_around_point(long timestamp_index_position, carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_desired)
 {
 	//double dist;
 	int i, num_poses_aquired = 0;
-	carmen_ackerman_traj_point_t last_pose, current_pose;
+	carmen_robot_and_trailer_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
 
 	i = timestamp_index_position;
@@ -1270,7 +1276,8 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_tr
 
 
 int
-carmen_find_poses_around(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t* poses_ahead, int num_poses_desired)
+carmen_find_poses_around(double x, double y, double yaw, double timestamp /* only for debugging */,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_desired)
 {
 	long timestamp_index_position;
 	int num_poses_aquired = 0;

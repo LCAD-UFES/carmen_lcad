@@ -35,7 +35,7 @@ add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_
     route_planner_road_network_message.nearby_lanes_sizes = (int *) malloc(route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
     route_planner_road_network_message.nearby_lanes_size = NUM_LANES *
     		(route_planner_road_network_message.number_of_poses_back + route_planner_road_network_message.number_of_poses - 1);	// a primeira pose do poses e poses back eh igual
-    route_planner_road_network_message.nearby_lanes = (carmen_ackerman_traj_point_t *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(carmen_ackerman_traj_point_t));
+    route_planner_road_network_message.nearby_lanes = (carmen_robot_and_trailer_traj_point_t *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(carmen_robot_and_trailer_traj_point_t));
     route_planner_road_network_message.traffic_restrictions =  (int *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(int));
 
     // Coloca o rddf como a lane 0, isto eh, a rota escolhida
@@ -72,7 +72,7 @@ free_lanes(carmen_route_planner_road_network_message route_planner_road_network_
 
 
 int
-get_index_of_nearest_pose_in_path(carmen_ackerman_traj_point_t *path, carmen_point_t globalpos, int path_length)
+get_index_of_nearest_pose_in_path(carmen_robot_and_trailer_traj_point_t *path, carmen_point_t globalpos, int path_length)
 {
 	int nearest_pose_index = 0;
 	double min_dist = DIST2D(path[nearest_pose_index], globalpos);
@@ -90,10 +90,10 @@ get_index_of_nearest_pose_in_path(carmen_ackerman_traj_point_t *path, carmen_poi
 }
 
 
-carmen_ackerman_traj_point_t *
-get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index)
+carmen_robot_and_trailer_traj_point_t *
+get_poses_back(carmen_robot_and_trailer_traj_point_t *path, int nearest_pose_index)
 {
-	carmen_ackerman_traj_point_t *poses_back = (carmen_ackerman_traj_point_t *) malloc((nearest_pose_index + 1) * sizeof(carmen_ackerman_traj_point_t));
+	carmen_robot_and_trailer_traj_point_t *poses_back = (carmen_robot_and_trailer_traj_point_t *) malloc((nearest_pose_index + 1) * sizeof(carmen_robot_and_trailer_traj_point_t));
 	for (int i = 0; i < (nearest_pose_index + 1); i++)
 		poses_back[i] = path[nearest_pose_index - i];
 

@@ -95,13 +95,13 @@ extern "C"
     typedef struct
     {
         int number_of_poses;
-        carmen_ackerman_traj_point_t *poses;
+        carmen_robot_and_trailer_traj_point_t *poses;
         double timestamp;
         char *host;
     } carmen_rddf_waypoints_around_end_point_message;
 
 	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_NAME "carmen_rddf_waypoints_around_end_point_message"
-	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT "{int, <{double,double,double,double,double}:1>, double, string}"
+	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT "{int, <{double,double,double,double,double,double}:1>, double, string}"
 
 
     // TODO: update this message to use carmen_annotation_t.

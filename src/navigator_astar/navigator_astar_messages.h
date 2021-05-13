@@ -9,13 +9,13 @@ extern "C" {
 #endif
 
 typedef struct {
-	carmen_ackerman_traj_point_p points;
+	carmen_robot_and_trailer_traj_point_t *points;
 	int length;
 	int capacity;
 } carmen_planner_path_t, *carmen_planner_path_p;
 
 typedef struct {
-	carmen_ackerman_traj_point_t *goal_list;
+	carmen_robot_and_trailer_traj_point_t *goal_list;
 	int size;
 	double timestamp;
 	char *host;
@@ -29,9 +29,8 @@ typedef struct {
 } carmen_planner_status_t, *carmen_planner_status_p;
 
 
-
 #define		CARMEN_ASTAR_GOAL_LIST_NAME		"carmen_navigator_ackerman_astar_goal_list"
-#define		CARMEN_ASTAR_GOAL_LIST_FMT		"{<{double, double, double, double, double}:2>,int,double,string}"
+#define		CARMEN_ASTAR_GOAL_LIST_FMT		"{<{double, double, double, double, double, double}:2>,int,double,string}"
 
 #ifdef __cplusplus
 }

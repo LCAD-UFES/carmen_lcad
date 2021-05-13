@@ -174,7 +174,7 @@ static double distance_between_rear_car_and_rear_wheels;
 
 static carmen_semi_trailer_config_t semi_trailer_config;
 
-static carmen_point_t final_goal;
+static carmen_robot_and_trailer_pose_t final_goal;
 
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
 

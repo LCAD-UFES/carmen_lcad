@@ -30,7 +30,7 @@ extern carmen_behavior_selector_algorithm_t current_algorithm;
  **********************************************************/
 
 void
-publish_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands)
+publish_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands)
 {
 	carmen_navigator_ackerman_plan_message msg;
 	
@@ -42,7 +42,7 @@ publish_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_
  
 
 void
-publish_motion_planner_path(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands)
+publish_motion_planner_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands)
 {
 	carmen_navigator_ackerman_plan_message msg;
 	

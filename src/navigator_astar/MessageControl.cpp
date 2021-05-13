@@ -25,7 +25,7 @@ MessageControl::carmen_planner_ackerman_regenerate_trajectory()
 		return;
 
 	this->path.capacity = 20;
-	this->path.points = (carmen_ackerman_traj_point_p)  calloc(path.capacity, sizeof(carmen_ackerman_traj_point_t));
+	this->path.points = (carmen_robot_and_trailer_traj_point_t *) calloc(path.capacity, sizeof(carmen_robot_and_trailer_traj_point_t));
 	carmen_test_alloc(path.points);
 
 	this->astarAckeman.carmen_planner_map =carmen_planner_map;
@@ -109,7 +109,7 @@ MessageControl::carmen_planner_ackerman_get_status(carmen_planner_status_p statu
 
 	if (status->path.length > 0)
 	{
-		status->path.points = (carmen_ackerman_traj_point_p) calloc(status->path.length, sizeof(carmen_ackerman_traj_point_t));
+		status->path.points = (carmen_robot_and_trailer_traj_point_t *) calloc(status->path.length, sizeof(carmen_robot_and_trailer_traj_point_t));
 		carmen_test_alloc(status->path.points);
 		for (index = 0; index < status->path.length; index++)
 			status->path.points[index] = path.points[index];

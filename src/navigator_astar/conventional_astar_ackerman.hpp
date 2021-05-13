@@ -37,8 +37,8 @@
 	    int astar_call_cont;
 	    double direction;
 	    struct fibheap_el* fh_node;
-	    carmen_ackerman_traj_point_t point;
-	    carmen_ackerman_traj_point_t prev_point;
+	    carmen_robot_and_trailer_traj_point_t point;
+	    carmen_robot_and_trailer_traj_point_t prev_point;
 	}carmen_astar_node_t, *carmen_astar_node_p;
 
 #define ORIENTATION_LENGHT 3
@@ -100,7 +100,7 @@ public:
 	void get_astar_path(carmen_astar_node_p node, carmen_planner_path_p path);
 	int is_obstacle(carmen_ackerman_traj_point_t point);
 	int is_obstacle_1d(carmen_ackerman_traj_point_t point);
-	double h_score(carmen_ackerman_traj_point_t point);
+	double h_score(carmen_robot_and_trailer_traj_point_t point);
 	double calc_delta_theta(double theta1, double theta2);
 	void free_astar_map();
 	void clean_astar_map();

@@ -1385,7 +1385,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 						double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions);
 						double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions);
 
-						carmen_ackerman_traj_point_t lane_point = global_gui->route_planner_route->nearby_lanes[lane_start + i];
+						carmen_robot_and_trailer_traj_point_t lane_point = global_gui->route_planner_route->nearby_lanes[lane_start + i];
 						lane_line_start.pose.x = lane_point.x + (lane_left_width * cos(lane_point.theta + M_PI / 2.0));
 						lane_line_start.pose.y = lane_point.y + (lane_left_width * sin(lane_point.theta + M_PI / 2.0));
 						lane_line_end.pose.x = lane_point.x;

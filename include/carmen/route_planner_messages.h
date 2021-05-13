@@ -67,7 +67,7 @@ typedef enum ROUTE_PLANNER_STATE
 
 typedef struct
 {
-	carmen_ackerman_traj_point_t pose;
+	carmen_robot_and_trailer_traj_point_t pose;
 	int node_id;
 	int lane_id;
 } carmen_route_planner_route_t;
@@ -86,8 +86,8 @@ typedef struct
 {
 	int number_of_poses;
 	int number_of_poses_back;
-	carmen_ackerman_traj_point_t *poses;
-	carmen_ackerman_traj_point_t *poses_back;
+	carmen_robot_and_trailer_traj_point_t *poses;
+	carmen_robot_and_trailer_traj_point_t *poses_back;
 	int *annotations;
 	int *annotations_codes;
 
@@ -96,7 +96,7 @@ typedef struct
 	int *nearby_lanes_sizes;	// O tamanho de cada lane.
 	int *nearby_lanes_ids;		// Cada id eh um codigo que identifica uma lane unicamente.
 	int nearby_lanes_size;		// Igual ao numero de poses de todas as lanes somado.
-	carmen_ackerman_traj_point_t *nearby_lanes;	// Todas as lanes (number_of_nearby_lanes), uma apos a outra. A primeira lane eh sempre a rota e sempre deve ter id = 0, jah que ela eh uma composicao de lanes do grafo
+	carmen_robot_and_trailer_traj_point_t *nearby_lanes;	// Todas as lanes (number_of_nearby_lanes), uma apos a outra. A primeira lane eh sempre a rota e sempre deve ter id = 0, jah que ela eh uma composicao de lanes do grafo
 	int *traffic_restrictions; 	// LANE_LEFT_WIDTH | LANE_RIGHT_WIDTH | LEFT_MARKING | RIGHT_MARKING | LEVEL | YIELD | BIFURCATION
 								//     6 bits      |      6 bits      |  3 bits enum |  3 bits enum  | 2 bits| 1 bit |   1 bit
 
