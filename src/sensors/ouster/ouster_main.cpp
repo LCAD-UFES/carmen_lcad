@@ -244,7 +244,8 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
             // if not initializing with first packet
             if (scan_ts != -1)
             {
-                message0.timestamp = message1.timestamp = message2.timestamp = message3.timestamp = carmen_get_time(); // TODO use sensor timestamp
+                message0.timestamp = carmen_get_time(); // TODO use sensor timestamp
+                message1.timestamp = message2.timestamp = message3.timestamp = message0.timestamp;
 
                 message0.number_of_shots = message1.number_of_shots = message2.number_of_shots = message3.number_of_shots = next_m_id;
 
