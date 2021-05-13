@@ -32,7 +32,7 @@ import anchors
 import dataloader
 import det_model_fn
 import hparams_config
-import utils
+import utils_2
 from visualize import vis_utils
 
 
@@ -135,11 +135,11 @@ def restore_ckpt(sess, ckpt_path, enable_ema=True, export_ckpt=None):
     ckpt_path = tf.train.latest_checkpoint(ckpt_path)
   if enable_ema:
     ema = tf.train.ExponentialMovingAverage(decay=0.0)
-    ema_vars = utils.get_ema_vars()
+    ema_vars = utils_2.get_ema_vars()
     var_dict = ema.variables_to_restore(ema_vars)
     ema_assign_op = ema.apply(ema_vars)
   else:
-    var_dict = utils.get_ema_vars()
+    var_dict = utils_2.get_ema_vars()
     ema_assign_op = None
   tf.train.get_or_create_global_step()
   sess.run(tf.global_variables_initializer())

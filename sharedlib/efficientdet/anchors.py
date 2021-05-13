@@ -27,7 +27,7 @@ import collections
 from absl import logging
 import numpy as np
 import tensorflow.compat.v1 as tf
-import utils
+import utils_2
 from object_detection import argmax_matcher
 from object_detection import box_list
 from object_detection import faster_rcnn_box_coder
@@ -458,7 +458,7 @@ class Anchors(object):
       self.image_size = (image_size, image_size)
     else:
       self.image_size = image_size
-    self.feat_sizes = utils.get_feat_sizes(image_size, max_level)
+    self.feat_sizes = utils_2.get_feat_sizes(image_size, max_level)
     self.config = self._generate_configs()
     self.boxes = self._generate_boxes()
 

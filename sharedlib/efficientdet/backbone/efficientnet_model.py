@@ -32,7 +32,7 @@ import six
 from six.moves import xrange
 import tensorflow.compat.v1 as tf
 
-import utils
+import utils_2
 
 GlobalParams = collections.namedtuple('GlobalParams', [
     'batch_norm_momentum', 'batch_norm_epsilon', 'dropout_rate', 'data_format',
@@ -199,7 +199,7 @@ class MBConvBlock(tf.keras.layers.Layer):
     self.endpoints = None
 
     self.conv_cls = tf.layers.Conv2D
-    self.depthwise_conv_cls = utils.DepthwiseConv2D
+    self.depthwise_conv_cls = utils_2.DepthwiseConv2D
     if self._block_args.condconv:
       raise ValueError('Condconv is not supported.')
 
@@ -391,7 +391,7 @@ class MBConvBlock(tf.keras.layers.Layer):
       ) and self._block_args.input_filters == self._block_args.output_filters:
         # Apply only if skip connection presents.
         if survival_prob:
-          x = utils.drop_connect(x, training, survival_prob)
+          x = utils_2.drop_connect(x, training, survival_prob)
         x = tf.add(x, inputs)
     logging.info('Project: %s shape: %s', x.name, x.shape)
     return x
@@ -464,7 +464,7 @@ class MBConvBlockWithoutDepthwise(MBConvBlock):
       ) and self._block_args.input_filters == self._block_args.output_filters:
         # Apply only if skip connection presents.
         if survival_prob:
-          x = utils.drop_connect(x, training, survival_prob)
+          x = utils_2.drop_connect(x, training, survival_prob)
         x = tf.add(x, inputs)
     logging.info('Project: %s shape: %s', x.name, x.shape)
     return x

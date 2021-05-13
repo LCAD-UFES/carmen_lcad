@@ -30,7 +30,7 @@ import anchors
 import dataloader
 import det_model_fn
 import hparams_config
-import utils
+import utils_2
 import inference
 from visualize import vis_utils
 import time
@@ -42,8 +42,8 @@ global model_name
 global ckpt_path
 global driver
 
-model_name = 'efficientdet-d0'
-ckpt_path = carmen_home + '/sharedlib/efficientdet/efficientdet-d0'
+model_name = 'efficientdet-d4'
+ckpt_path = carmen_home + '/sharedlib/efficientdet/efficientdet-d4'
 test_dir = carmen_home + "/sharedlib/efficientdet/testdata"
 image_size = None
 current_milli_time = lambda: int(round(time.time() * 1000))
@@ -95,7 +95,8 @@ def efficientdet_process_image(carmen_image):
     #start_time = current_milli_time()
     sess = driver.sess
     detections = sess.run('detections:0', {'image_arrays:0': raw_images})
-    #print(detections)
+    print("Deteccoes")
+    print(detections)
     #print('detection_process=', (current_milli_time() - start_time), ' FPS_detection=', (1000/(current_milli_time() - start_time)))
     predret = np.array(detections[0][:,1:7], dtype=np.float)
     predret[:,-1] -= 1
