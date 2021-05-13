@@ -193,7 +193,7 @@ build_and_publish_variable_scan_message(uint8_t* buf, carmen_velodyne_variable_s
         next_m_id = m_id + 1;
 
         // message->partial_scan[m_id].angle = h_angle_0;
-        message.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0));
+        message.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
 
         message.partial_scan[m_id].shot_size = H;
 
@@ -261,10 +261,10 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
 
         next_m_id = m_id + 1;
 
-        message0.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 3.164);
-        message1.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 1.055);
-        message2.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 1.055);
-        message3.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 3.164);
+        message0.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 3.164 + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
+        message1.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 1.055 + 180);
+        message2.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 1.055 + 180);
+        message3.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 3.164 + 180);
 
         for (uint8_t ipx = 0, j0 = 0, j1 = 0, j2 = 0, j3 = 0; ipx < H; ipx++) 
         {
