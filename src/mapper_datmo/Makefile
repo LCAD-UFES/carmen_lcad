@@ -85,14 +85,14 @@ LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkml
 SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper_interface.c compute_velodyne_calibration_table.cpp compute_maps_difference.cpp compute_maps_changes.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
-PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h mapper_main.h
+PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h
 
 # Public libraries, linked to 'carmen/lib'.
-PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a libmapper_main.a
+PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
-TARGETS = darknet convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a libmapper_main.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a libefficientdet.a #librangenet_inference.a librangenet.a 
+TARGETS = darknet convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a libefficientdet.a #librangenet_inference.a librangenet.a 
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -109,8 +109,6 @@ libmapper_interface.a:	mapper_interface.o
 libmapper.a: mapper.o
 
 libmapper_interface.so.1:	libmapper_interface.o
-
-libmapper_main.a: mapper.o mapper_main.o libmapper.a
 
 mapper_datmo: mapper.o mapper_main.o libmapper.a #$(CARMEN_HOME)/sharedlib/rangenet_lib/src/librangenet.a $(CARMEN_HOME)/sharedlib/rangenet_lib/librangenet_external.a $(CARMEN_HOME)/sharedlib/rangenet_lib/librangenet_lib.a $(CARMEN_HOME)/sharedlib/rangenet_lib/librangenet_inference.a 
 
