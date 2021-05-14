@@ -881,7 +881,7 @@ double
 compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, Command &command,
 		vector<carmen_robot_and_trailer_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
-		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
+		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double i_beta, double delta_t)
 {
 	int i = 0;
 	double t, last_t;
@@ -896,6 +896,7 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;
 	robot_state.theta = 0.0;
+	robot_state.beta = i_beta;
 	robot_state.v = v0;
 	robot_state.phi = i_phi;
 
@@ -1018,7 +1019,7 @@ get_max_distance_in_path(vector<carmen_robot_and_trailer_path_point_t> path, car
 
 vector<carmen_robot_and_trailer_path_point_t>
 simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi, double i_beta,
 		bool display_phi_profile, double delta_t)
 {
 	vector<carmen_robot_and_trailer_path_point_t> path;
@@ -1069,7 +1070,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	Command command;
 	carmen_robot_and_trailer_traj_point_t robot_state;
 
-	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, delta_t);
+	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, i_beta, delta_t);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -1110,15 +1111,25 @@ print_path(vector<carmen_robot_and_trailer_path_point_t> path)
 }
 
 void
-print_lane(vector<carmen_ackerman_path_point_t> path, FILE *path_file)
+print_lane(vector<carmen_robot_and_trailer_path_point_t> path, FILE *path_file)
 {
 	//	int i = 0;
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
+	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
 		//		if ((i % 2) == 0)
 		fprintf(path_file, "%f %f %f %f\n", it->x, it->y, 1.0 * cos(it->theta), 1.0 * sin(it->theta));
 		//		i++;
 	}
+}
+
+void
+print_lane(vector<carmen_robot_and_trailer_path_point_t> path, char *file_name)
+{
+	FILE *path_file = fopen(file_name, "w");
+	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
+		fprintf(path_file, "%f %f %f %f %f %f %f\n", it->x, it->y, it->theta, it->beta, it->v, it->phi, it->time);
+
+	fclose(path_file);
 }
 
 TrajectoryLookupTable::TrajectoryDimensions
@@ -1128,7 +1139,7 @@ compute_trajectory_dimensions(TrajectoryLookupTable::TrajectoryControlParameters
 	double d_i_phi = get_i_phi_by_index(i_phi);
 	double d_i_v0 = get_initial_velocity_by_index(i_v0);
 	TrajectoryLookupTable::TrajectoryDimensions td;
-	path = simulate_car_from_parameters(td, tcp, d_i_v0, d_i_phi, print);
+	path = simulate_car_from_parameters(td, tcp, d_i_v0, d_i_phi, 0.0, print); // beta = 0.0
 	if (tcp.valid && print)
 		print_path(path);
 

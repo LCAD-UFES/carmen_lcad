@@ -269,7 +269,7 @@ typedef struct
 } carmen_navigator_ackerman_plan_tree_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME "carmen_navigator_ackerman_plan_tree"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double,double}:1>,<{double,double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double.double}:100, 500],[int:100],int,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double,double}:1>,<{double,double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double,double}:100, 500],[int:100],int,double,string}"
 
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_NAME "carmen_navigator_ackerman_goal_plan_tree"
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_FMT CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT

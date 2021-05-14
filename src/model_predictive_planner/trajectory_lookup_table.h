@@ -119,6 +119,7 @@ public:
 		double theta;	// Angle in polar coordinates
 		double d_yaw;	// Displacement in yaw
 		double phi_i;	// Initial steering wheel angle
+		double beta_i;	// Initial semitrailer beta angle
 		double v_i;		// Initial velocity
 
 		struct TrajectoryControlParameters control_parameters;
@@ -169,7 +170,7 @@ bool has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimension
 TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
 
 vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi, double i_beta,
 		bool display_phi_profile, double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 //		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
@@ -191,5 +192,6 @@ vector<carmen_robot_and_trailer_path_point_t> apply_robot_delays(vector<carmen_r
 void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
 		  vector<carmen_ackerman_path_point_t> &pSeed, std::string titles[]);
 
+void print_lane(vector<carmen_robot_and_trailer_path_point_t> path, char *file_name);
 
 #endif /* TRAJECTORY_LOOKUP_TABLE_H_ */

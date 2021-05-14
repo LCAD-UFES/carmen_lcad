@@ -8,9 +8,9 @@
 	stop # tira de modo autonomo
 
 # Predio Eletrica logo depois do LCAD2
-set course to 7757732.73, -363563.71, -0.138
-go after set course to 7757732.73, -363563.71, -0.138   # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	set course to 7757732.73, -363563.71, -0.138
+	go after set course to 7757732.73, -363563.71, -0.138   # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
 # Estacionamento da Cantina do CT
 set course to 7757856.47, -363577.52, -2.518

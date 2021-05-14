@@ -160,6 +160,7 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailer_pose_t *loca
 		td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
 	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
 	td.phi_i = last_odometry.phi;
+	td.beta_i = localizer_pose->beta;
 	td.v_i = last_odometry.v;
 
 	return (td);
@@ -750,13 +751,13 @@ get_path_from_optimized_tcp(vector<carmen_robot_and_trailer_path_point_t> &path,
 		carmen_robot_and_trailer_pose_t *localizer_pose)
 {
 	if (GlobalState::use_mpc)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false, 0.025);
 	else if (use_unity_simulator)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false, 0.02);
 	else if (GlobalState::eliminate_path_follower)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false, 0.02);
 	else
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false);
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
