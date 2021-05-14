@@ -33,6 +33,8 @@ double L;
 int use_non_linear_phi;
 int n_params;
 double **limits;
+int use_variable_scan_message = -1;
+char variable_scan_message_name[64];
 
 gsl_interp_accel *acc;
 
@@ -101,6 +103,20 @@ read_velodyne_data(FILE *f)
 
 	memset(&velodyne_data, 0, sizeof(velodyne_data));
 	fscanf(f, "%s %d %lf", scan_file_name, &num_shots, &(velodyne_data.velodyne_timestamp));
+
+	return (velodyne_data);
+}
+
+
+VelodyneData
+read_velodyne_partial_scan_message_data(FILE *f)
+{
+	VelodyneData velodyne_data;
+	char scan_file_name[2048];
+	int num_shots, id, num_rays;
+
+	memset(&velodyne_data, 0, sizeof(velodyne_data));
+	fscanf(f, "%s %d %d %d %lf", scan_file_name, &id, &num_rays, &num_shots, &(velodyne_data.velodyne_timestamp));
 
 	return (velodyne_data);
 }
@@ -331,9 +347,15 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 				process_odometry_data(pso_data, m);
 			}
 		}
-		else if (!strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE") && (first_gps_timestamp != 0.0))
+		else if (use_variable_scan_message < 0 && !strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE") && (first_gps_timestamp != 0.0))
 		{
 			VelodyneData velodyne_data = read_velodyne_data(f);
+			if ((velodyne_data.velodyne_timestamp >= (first_gps_timestamp + initial_time)) && (velodyne_data.velodyne_timestamp <= (first_gps_timestamp + final_time)))
+				process_velodyne_data(pso_data, odoms, velodyne_data);
+		}
+		else if (use_variable_scan_message > -1 && !strcmp(tag, variable_scan_message_name) && (first_gps_timestamp != 0.0))
+		{
+			VelodyneData velodyne_data = read_velodyne_partial_scan_message_data(f);
 			if ((velodyne_data.velodyne_timestamp >= (first_gps_timestamp + initial_time)) && (velodyne_data.velodyne_timestamp <= (first_gps_timestamp + final_time)))
 				process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
@@ -719,6 +741,12 @@ find_nearest_time_to_gps(PsoData *pso_data, int id_gps, double latency)
 {
 	size_t i = 0;
 
+	if (pso_data->velodyne_data.size() == 0)
+	{
+		printf("\nNo Velodyne|LiDAR data found in the log .txt file!  \nThe Velodyne|LiDAR data is needed to produce poses_opt.txt file\n\n");
+		exit(1);
+	}
+
 	while (pso_data->velodyne_data[i].velodyne_timestamp < (pso_data->gps_data[id_gps].gps_timestamp + latency))
 		i++;
 
@@ -1020,12 +1048,34 @@ initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParam
 }
 
 
+void
+read_command_line_param_raw(int &argc, char **argv)
+{
+	for (int i = 0; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-use_lidar") == 0)
+		{
+			use_variable_scan_message = atoi(argv[i + 1]);
+			sprintf(variable_scan_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE%d", use_variable_scan_message);
+
+			for (i = i + 2; i  < argc; i++)
+				argv[i - 2] = argv[i];
+			
+			argc = argc - 2;
+		}
+	}
+}
+
+
 int 
 main(int argc, char **argv)
 {
+	read_command_line_param_raw(argc, argv);
+
 	CommandLineArguments args;
 
 	declare_and_parse_args(argc, argv, &args);
+
 	CarmenParamFile *carmen_ini_params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
 	PsoData pso_data;
 
