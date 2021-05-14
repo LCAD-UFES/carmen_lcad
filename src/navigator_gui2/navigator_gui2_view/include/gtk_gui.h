@@ -368,7 +368,7 @@ namespace View
 		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
 		void navigator_graphics_update_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int size);
 		void navigator_graphics_update_waypoint_list(carmen_robot_and_trailer_traj_point_t *waypoint_list, int size);
-		void navigator_graphics_update_path_plans(carmen_ackerman_traj_point_t **plans, int number_of_plans, int number_of_poses, int selected_plan);
+		void navigator_graphics_update_path_plans(carmen_robot_and_trailer_traj_point_t **plans, int number_of_plans, int number_of_poses, int selected_plan);
 		void navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t *new_path, int path_length, int path_id);
 		void navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length);
 		void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
@@ -380,7 +380,7 @@ namespace View
 		void navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list);
 		void navigator_graphics_update_moving_objects(int id, int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking);
 
-		void navigator_graphics_update_plan_to_draw(int path_size, carmen_ackerman_traj_point_t *path);
+		void navigator_graphics_update_plan_to_draw(int path_size, carmen_robot_and_trailer_traj_point_t *path);
 
 		void navigator_graphics_update_plan_tree(
 				carmen_robot_and_trailer_traj_point_t *p1,

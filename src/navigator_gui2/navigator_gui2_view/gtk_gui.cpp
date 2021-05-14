@@ -1170,7 +1170,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_plan_to_draw(int path_size, carmen_ackerman_traj_point_t *path)
+	GtkGui::navigator_graphics_update_plan_to_draw(int path_size, carmen_robot_and_trailer_traj_point_t *path)
 	{
 		static int first = 1;
 		static int allocated_size = 0;

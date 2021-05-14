@@ -277,13 +277,13 @@ typedef struct
 typedef struct
 {
 	int path_size;
-	carmen_ackerman_traj_point_t *path;
+	carmen_robot_and_trailer_traj_point_t *path;
 	double timestamp;//double
 	char  *host;//string
 } carmen_navigator_ackerman_plan_to_draw_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME "carmen_navigator_ackerman_plan_to_draw_message"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT "{int,<{double,double,double,double,double}:1>,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT "{int,<{double,double,double,double,double,double}:1>,double,string}"
 
 #ifdef __cplusplus
 }

@@ -214,7 +214,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 			return;
 		}
 		plan_tree_msg.num_path = 1;
-		memcpy(plan_tree_msg.paths[0], status.path.points, sizeof(carmen_ackerman_traj_point_t) * status.path.length);
+		memcpy(plan_tree_msg.paths[0], status.path.points, sizeof(carmen_robot_and_trailer_traj_point_t) * status.path.length);
 		plan_tree_msg.path_size[0] = status.path.length;
 		err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
 
@@ -245,7 +245,7 @@ state_handler(carmen_behavior_selector_state_message *msg)
 //	if (goal_source != msg->goal_source)
 //	{
 //		goal_source = msg->goal_source;
-//		carmen_ackerman_traj_point_t point;
+//		carmen_robot_and_trailer_traj_point_t point;
 //		point.x = -1;
 //		point.y = -1;
 //		point.theta = -1;

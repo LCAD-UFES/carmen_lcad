@@ -129,13 +129,13 @@ typedef struct {
 
 typedef struct {
   int trajectory_length;
-  carmen_ackerman_traj_point_t *trajectory;
-  carmen_ackerman_traj_point_t robot_position;
+  carmen_robot_and_trailer_traj_point_t *trajectory;
+  carmen_robot_and_trailer_traj_point_t robot_position;
   double timestamp;
   char *host;                 /**< The host from which this message was sent **/
 } carmen_robot_ackerman_follow_trajectory_message;
 #define      CARMEN_ROBOT_ACKERMAN_FOLLOW_TRAJECTORY_NAME         "carmen_robot_ackerman_follow_trajectory"
-#define      CARMEN_ROBOT_ACKERMAN_FOLLOW_TRAJECTORY_FMT          "{int,<{double,double,double,double,double}:1>,{double,double,double,double,double},double,string}"
+#define      CARMEN_ROBOT_ACKERMAN_FOLLOW_TRAJECTORY_FMT          "{int,<{double,double,double,double,double,double}:1>,{double,double,double,double,double,double},double,string}"
 
 
 typedef struct {

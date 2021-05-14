@@ -124,7 +124,7 @@ Publisher_Util::get_path_or_old_path(const vector<RRT_Node *> reaches_goal_nodes
 			printf("Error: msg.path_length > 100 in Publisher_Util::publish_plan_tree_message()\n");
 			exit(1);
 		}
-		memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_ackerman_traj_point_t) * msg.path_length);
+		memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_robot_and_trailer_traj_point_t) * msg.path_length);
 		free(msg.path);
 		plan_tree_msg.path_size[0] = msg.path_length;
 

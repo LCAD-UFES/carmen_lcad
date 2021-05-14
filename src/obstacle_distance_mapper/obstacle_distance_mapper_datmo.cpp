@@ -235,7 +235,7 @@ obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map, carmen_map_s
 
 
 static int
-get_index_of_the_nearest_lane_pose(carmen_ackerman_traj_point_t pose, lane_t *lane)
+get_index_of_the_nearest_lane_pose(carmen_robot_and_trailer_traj_point_t pose, lane_t *lane)
 {
 	int nearest_pose_index = 0;
 	double min_distance = DIST2D(pose, lane->lane_points[0]);

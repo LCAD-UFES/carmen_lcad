@@ -95,7 +95,7 @@ carmen_motion_planner_publish_path_message(
 }
 
 void
-send_base_ackerman_command(carmen_ackerman_traj_point_t *path, int size)
+send_base_ackerman_command(carmen_robot_and_trailer_traj_point_t *path, int size)
 {
 	int i;
 	for (i = 0; i < size; i++)

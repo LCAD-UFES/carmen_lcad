@@ -5,14 +5,14 @@ using namespace std;
 
 
 double
-dist(carmen_ackerman_traj_point_t v, carmen_robot_and_trailer_motion_command_t w)
+dist(carmen_robot_and_trailer_traj_point_t v, carmen_robot_and_trailer_motion_command_t w)
 {
     return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 }
 
 
 double
-distance_point_to_line(carmen_ackerman_traj_point_t point, carmen_robot_and_trailer_motion_command_t line_a, carmen_robot_and_trailer_motion_command_t line_b)
+distance_point_to_line(carmen_robot_and_trailer_traj_point_t point, carmen_robot_and_trailer_motion_command_t line_a, carmen_robot_and_trailer_motion_command_t line_b)
 {
 	//printf("%lf %lf %lf %lf %lf %lf\n", point.x, point.y, line_a->x, line_a->y, line_b->x, line_b->y);
 	//yA - yB = a, xB - xA = b e xAyB - xByA=c
@@ -386,7 +386,7 @@ plot_position2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double under
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, *it_effort, 1, 2);
 
 	// Dados futuros
-	vector<carmen_ackerman_traj_point_t> pose_vector;
+	vector<carmen_robot_and_trailer_traj_point_t> pose_vector;
 	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, p);
 	vector<double> future_effort_vector = get_effort_vector_from_spline_descriptors(seed, POSITION_PREDICTION_HORIZON);
 

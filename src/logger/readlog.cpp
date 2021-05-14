@@ -944,8 +944,8 @@ char *carmen_string_to_robot_ackerman_follow_trajectory_message(char *string, ca
 
 	if(msg->trajectory_length != length) {
 		msg->trajectory_length = length;
-		msg->trajectory = (carmen_ackerman_traj_point_t *)realloc(msg->trajectory, length *
-				sizeof(carmen_ackerman_traj_point_t));
+		msg->trajectory = (carmen_robot_and_trailer_traj_point_t *)realloc(msg->trajectory, length *
+				sizeof(carmen_robot_and_trailer_traj_point_t));
 		carmen_test_alloc(msg->trajectory);
 	}
 

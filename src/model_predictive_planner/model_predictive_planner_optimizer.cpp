@@ -1474,7 +1474,7 @@ limit_tcp_phi(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
 #include "publisher_util.h"
 
 void
-copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_path_point_t> path);
+copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_ackerman_path_point_t> path);
 
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
@@ -1546,21 +1546,21 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //		tree.num_edges = 0;
 //		tree.p1 = NULL;
 //		tree.p2 = NULL;
-//		tree.paths = (carmen_ackerman_traj_point_t **) malloc(tree.num_paths * sizeof(carmen_ackerman_traj_point_t *));
+//		tree.paths = (carmen_robot_and_trailer_traj_point_t **) malloc(tree.num_paths * sizeof(carmen_robot_and_trailer_traj_point_t *));
 //		tree.paths_sizes = (int *) malloc(tree.num_paths * sizeof(int));
 //
 //		move_path_to_current_robot_pose(modified_path, GlobalState::localizer_pose);
-//		tree.paths[0] = (carmen_ackerman_traj_point_t *) malloc(modified_path.size() * sizeof(carmen_ackerman_traj_point_t));
+//		tree.paths[0] = (carmen_robot_and_trailer_traj_point_t *) malloc(modified_path.size() * sizeof(carmen_robot_and_trailer_traj_point_t));
 //		copy_path_to_traj(tree.paths[0], modified_path);
 //		tree.paths_sizes[0] = modified_path.size();
 //
 //		move_path_to_current_robot_pose(params_copy.detailed_lane, GlobalState::localizer_pose);
-//		tree.paths[1] = (carmen_ackerman_traj_point_t *) malloc(params_copy.detailed_lane.size() * sizeof(carmen_ackerman_traj_point_t));
+//		tree.paths[1] = (carmen_robot_and_trailer_traj_point_t *) malloc(params_copy.detailed_lane.size() * sizeof(carmen_robot_and_trailer_traj_point_t));
 //		copy_path_to_traj(tree.paths[1], params_copy.detailed_lane);
 //		tree.paths_sizes[1] = params_copy.detailed_lane.size();
 //
 //		move_path_to_current_robot_pose(path_prev, GlobalState::localizer_pose);
-//		tree.paths[2] = (carmen_ackerman_traj_point_t *) malloc(path_prev.size() * sizeof(carmen_ackerman_traj_point_t));
+//		tree.paths[2] = (carmen_robot_and_trailer_traj_point_t *) malloc(path_prev.size() * sizeof(carmen_robot_and_trailer_traj_point_t));
 //		copy_path_to_traj(tree.paths[2], path_prev);
 //		tree.paths_sizes[2] = path_prev.size();
 //

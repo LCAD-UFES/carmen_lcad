@@ -57,7 +57,7 @@ typedef struct
 } carmen_collision_config_t;
 
 
-carmen_point_t to_carmen_point_t (carmen_ackerman_traj_point_t *p);
+carmen_point_t to_carmen_point_t (carmen_robot_and_trailer_traj_point_t *p);
 carmen_point_t to_map_pose(carmen_point_t world_pose, carmen_map_config_t *map_config);
 
 int colision_detection_is_valid_position(int x, int y, carmen_map_t *map);

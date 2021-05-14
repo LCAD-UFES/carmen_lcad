@@ -166,7 +166,7 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 //		// try moving goal left
 //		for (double displacement = 0.0; displacement < circle_radius; displacement += 0.2)
 //		{
-//			carmen_ackerman_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
+//			carmen_robot_and_trailer_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
 //			displaced_rddf_pose.x = displaced_rddf_pose.x + displacement * cos(displaced_rddf_pose.theta + M_PI / 2.0);
 //			displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta + M_PI / 2.0);
 //			if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
@@ -181,7 +181,7 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 //			// try moving goal right
 //			for (double displacement = 0.0; displacement < circle_radius; displacement += 0.2)
 //			{
-//				carmen_ackerman_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
+//				carmen_robot_and_trailer_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
 //				displaced_rddf_pose.x = displaced_rddf_pose.x + displacement * cos(displaced_rddf_pose.theta - M_PI / 2.0);
 //				displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta - M_PI / 2.0);
 //				if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
@@ -331,7 +331,7 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 
 
 bool
-recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose, carmen_ackerman_traj_point_t moving_obstacle_pose,
+recent_moving_object_near_this_rddf_pose(carmen_robot_and_trailer_traj_point_t pose, carmen_robot_and_trailer_traj_point_t moving_obstacle_pose,
 		double last_moving_obstacle_detection_timestamp, double timestamp)
 {
 //	printf("dist rddf-mo %lf\n", DIST2D(pose, moving_obstacle_pose));
@@ -682,13 +682,13 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 
 #ifdef PRINT_UDATMO_LOG
 
-	carmen_ackerman_traj_point_t front_obst = udatmo_get_moving_obstacle_position();
+	carmen_robot_and_trailer_traj_point_t front_obst = udatmo_get_moving_obstacle_position();
 	double front_obst_velocity = udatmo_speed_front();
 
-	carmen_ackerman_traj_point_t left_obst = udatmo_get_moving_obstacle_position_left();
+	carmen_robot_and_trailer_traj_point_t left_obst = udatmo_get_moving_obstacle_position_left();
 	double left_obst_velocity = udatmo_speed_left();
 
-	carmen_ackerman_traj_point_t right_obst = udatmo_get_moving_obstacle_position_right();
+	carmen_robot_and_trailer_traj_point_t right_obst = udatmo_get_moving_obstacle_position_right();
 	double right_obst_velocity = udatmo_speed_right();
 
 	printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", timestamp, robot_pose.x, robot_pose.y, robot_pose.v, robot_pose.theta, robot_pose.phi, robot_pose.beta,

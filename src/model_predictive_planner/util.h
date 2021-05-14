@@ -102,7 +102,7 @@ public:
 	static Pose convert_to_pose(const carmen_point_t carmen_pose);
 
 	static carmen_point_t convert_to_carmen_point_t(const Pose pose);
-	static carmen_ackerman_traj_point_t convert_to_carmen_ackerman_traj_point_t(const Robot_State robot_state);
+	static carmen_robot_and_trailer_traj_point_t convert_to_carmen_ackerman_traj_point_t(const Robot_State robot_state);
 	static carmen_ackerman_path_point_t convert_to_carmen_ackerman_path_point_t(const Robot_State robot_state, const double time);
 	static double distance(const Pose *pose1, const Pose *pose2);
 	static double distance(const Pose *pose1, const carmen_ackerman_path_point_t *pose2);

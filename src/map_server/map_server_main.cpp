@@ -198,7 +198,7 @@ to_map_pose(double x, double y, carmen_map_config_t *map_config, double *xout, d
 //	double distance_p1p2_map;
 //	double theta, delta_x, delta_y;
 //	carmen_vector_2D_t p1_map, p2_map;
-//	carmen_ackerman_traj_point_t p1, p2;
+//	carmen_robot_and_trailer_traj_point_t p1, p2;
 //	std::vector<carmen_vector_2D_t> lane_points_on_map;
 //
 //	for (i = 0; i < (message->number_of_poses - 1); i++)
@@ -423,8 +423,8 @@ static void
 copy_local_rddf_to_global_rddf(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	memcpy(rddf_message->annotations, message->annotations, message->number_of_poses * sizeof(int));
-	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
-	memcpy(rddf_message->poses_back, message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
+	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+	memcpy(rddf_message->poses_back, message->poses_back, message->number_of_poses_back * sizeof(carmen_robot_and_trailer_traj_point_t));
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

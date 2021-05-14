@@ -235,22 +235,22 @@ typedef struct {
 } carmen_traj_point_t, *carmen_traj_point_p;
 
 
+//typedef struct {
+//	double x;
+//	double y;
+//	double theta;
+//	double v;
+//	double phi;
+//} carmen_ackerman_traj_point_t, *carmen_ackerman_traj_point_p;
+
+
 typedef struct {
 	double x;
 	double y;
 	double theta;
 	double v;
 	double phi;
-} carmen_ackerman_traj_point_t, *carmen_ackerman_traj_point_p;
-
-
-typedef struct {
-	double x;
-	double y;
-	double theta;
 	double beta;
-	double v;
-	double phi;
 } carmen_robot_and_trailer_traj_point_t;
 
 
@@ -268,10 +268,10 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
-	double beta;
 	double v;
 	double phi;
 	double time;
+	double beta;
 } carmen_robot_and_trailer_path_point_t;
 
 
@@ -279,10 +279,10 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
-	double beta;
 	double v;
 	double phi;
 	double time;
+	double beta;
 } carmen_robot_and_trailer_motion_command_t;
 
 
@@ -652,10 +652,10 @@ extern carmen_inline double carmen_distance_ackerman_traj(carmen_robot_and_trail
 	return sqrt((p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y));
 }
 
-extern carmen_inline double carmen_ackerman_traj_distance2(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
-{
-	return (p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y);
-}
+//extern carmen_inline double carmen_ackerman_traj_distance2(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
+//{
+//	return (p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y);
+//}
 
 extern carmen_inline double carmen_angle_between(carmen_traj_point_p p1, carmen_traj_point_p p2)
 {

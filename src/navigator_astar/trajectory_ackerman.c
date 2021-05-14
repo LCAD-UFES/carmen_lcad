@@ -121,7 +121,7 @@ carmen_planner_util_insert_blank(int index, carmen_planner_path_p path)
 
 	num_to_move = path->length - index;
 	memmove(path->points+index+1, path->points+index,
-			num_to_move*sizeof(carmen_ackerman_traj_point_t));
+			num_to_move*sizeof(carmen_robot_and_trailer_traj_point_t));
 
 	path->length++;
 }
@@ -176,7 +176,7 @@ carmen_planner_util_delete_path_point(int index, carmen_planner_path_p path)
 
 	num_to_move = path->length - index - 1;
 	memmove(path->points+index,
-			path->points+index+1, num_to_move*sizeof(carmen_ackerman_traj_point_t));
+			path->points+index+1, num_to_move*sizeof(carmen_robot_and_trailer_traj_point_t));
 
 	path->length--;
 }
@@ -193,7 +193,7 @@ carmen_planner_util_test_trajectory(carmen_planner_path_p path)
 		carmen_die("Test failed: clear should set length to 0, but length is %d\n",
 				path->length);
 
-	memset(&point, 0, sizeof(carmen_ackerman_traj_point_t));
+	memset(&point, 0, sizeof(carmen_robot_and_trailer_traj_point_t));
 	for (index = 0; index < 100; index++)
 	{
 		point.x = index;

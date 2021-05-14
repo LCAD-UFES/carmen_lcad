@@ -18,7 +18,7 @@ Detector::Detector(const carmen_robot_ackerman_config_t &robot_config)
 
 
 void
-Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose)
+Detector::update_moving_object_velocity(carmen_robot_and_trailer_traj_point_t &robot_pose)
 {
 	int count = 0;
 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
@@ -54,7 +54,7 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 double displacement,
 				 double timestamp)
 {
-	carmen_ackerman_traj_point_t robot_pose = {robot_pose_.x, robot_pose_.y, robot_pose_.theta, robot_pose_.v, robot_pose_.phi};
+	carmen_robot_and_trailer_traj_point_t robot_pose = {robot_pose_.x, robot_pose_.y, robot_pose_.theta, 0.0, robot_pose_.v, robot_pose_.phi};
 
 //	printf("w %d, i %d\n", obstacle_already_detected, rddf_pose_index);
 	if (rddf_pose_index == 0)
@@ -195,7 +195,7 @@ Detector::speed_front()
 }
 
 
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 Detector::get_moving_obstacle_position()
 {
 	return (moving_object[0].pose);

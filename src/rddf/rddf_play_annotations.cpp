@@ -48,7 +48,7 @@ extern carmen_point_t carmen_rddf_end_point;
 extern carmen_point_t carmen_rddf_nearest_waypoint_to_end_point;
 extern int carmen_rddf_num_poses_ahead;
 extern int *annotations;
-extern carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead;
+extern carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead;
 
 
 void

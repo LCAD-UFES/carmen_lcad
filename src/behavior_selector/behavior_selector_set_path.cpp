@@ -36,7 +36,7 @@ bool print_path = false;
 
 
 void
-get_s_and_d_values(carmen_ackerman_traj_point_t *poses, int nearest_pose, t_point_cloud_struct *moving_object,
+get_s_and_d_values(carmen_robot_and_trailer_traj_point_t *poses, int nearest_pose, t_point_cloud_struct *moving_object,
 		double &estimated_s_v, double &estimated_d_t_0, double &estimated_d_v)
 {
 	double distance_moving_object_to_nearest_path_pose = DIST2D(poses[nearest_pose], moving_object->object_pose);
@@ -281,7 +281,7 @@ get_rddf_displaced(carmen_robot_and_trailer_traj_point_t *rddf_poses_ahead, int 
 	carmen_robot_and_trailer_traj_point_t *displaced_rddf = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
 	for (int i = 0; i < number_of_poses; i++)
 	{
-		displaced_rddf[i] = rddf_poses_ahead[i]; // para copiar os outros campos de carmen_ackerman_traj_point_t
+		displaced_rddf[i] = rddf_poses_ahead[i]; // para copiar os outros campos de carmen_robot_and_trailer_traj_point_t
 		displaced_rddf[i].x = rddf_poses_ahead[i].x + path_displacement * cos(rddf_poses_ahead[i].theta + (M_PI / 2.0));
 		displaced_rddf[i].y = rddf_poses_ahead[i].y + path_displacement * sin(rddf_poses_ahead[i].theta + (M_PI / 2.0));
 	}
@@ -364,7 +364,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 
 
 int
-find_nearest_pose(carmen_ackerman_traj_point_t *path, int path_size, carmen_vector_3D_t object_pose)
+find_nearest_pose(carmen_robot_and_trailer_traj_point_t *path, int path_size, carmen_vector_3D_t object_pose)
 {
 	int i = 0;
 	int nearest_pose = i;
@@ -384,7 +384,7 @@ find_nearest_pose(carmen_ackerman_traj_point_t *path, int path_size, carmen_vect
 
 
 double
-find_distance_to_near_pose(carmen_ackerman_traj_point_t *path, int path_size, carmen_point_t object_pose)
+find_distance_to_near_pose(carmen_robot_and_trailer_traj_point_t *path, int path_size, carmen_point_t object_pose)
 {
 	int i = 0;
 	double min_distance = DIST2D(path[i], object_pose);

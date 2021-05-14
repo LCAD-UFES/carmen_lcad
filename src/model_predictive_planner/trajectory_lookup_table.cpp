@@ -767,7 +767,7 @@ generate_random_trajectory_control_parameters_sample(int i_v, int dist)
 
 
 carmen_ackerman_path_point_t
-convert_to_carmen_ackerman_path_point_t(const carmen_ackerman_traj_point_t robot_state, const double time)
+convert_to_carmen_ackerman_path_point_t(const carmen_robot_and_trailer_traj_point_t robot_state, const double time)
 {
 	carmen_ackerman_path_point_t path_point;
 

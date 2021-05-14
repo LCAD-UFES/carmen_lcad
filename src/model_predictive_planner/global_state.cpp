@@ -58,7 +58,7 @@ bool GlobalState::use_mpc = false;
 
 carmen_moving_objects_point_clouds_message *GlobalState::objects_message = NULL;
 bool GlobalState::moving_objects_initialized = false;
-std::vector<carmen_ackerman_traj_point_t*> GlobalState::moving_objects_trajectories;
+std::vector<carmen_robot_and_trailer_traj_point_t*> GlobalState::moving_objects_trajectories;
 
 int    GlobalState::use_truepos = 0;
 bool   GlobalState::following_path = false;

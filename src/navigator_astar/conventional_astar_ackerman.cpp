@@ -76,8 +76,8 @@ get_astar_map_theta_2(double theta)
 }
 
 
-carmen_ackerman_traj_point_t
-AstarAckerman::carmen_conventional_astar_ackerman_kinematic_2(carmen_ackerman_traj_point_t point, float lenght, float phi, float v)
+carmen_robot_and_trailer_traj_point_t
+AstarAckerman::carmen_conventional_astar_ackerman_kinematic_2(carmen_robot_and_trailer_traj_point_t point, float lenght, float phi, float v)
 {
 	double interval_time = 1;
 	double time, rest;
@@ -138,8 +138,8 @@ AstarAckerman::carmen_conventional_astar_ackerman_kinematic_2(carmen_ackerman_tr
 	return point;
 }
 
-carmen_ackerman_traj_point_t
-AstarAckerman::carmen_conventional_astar_ackerman_kinematic(carmen_ackerman_traj_point_t point, double lenght, double phi, double v)
+carmen_robot_and_trailer_traj_point_t
+AstarAckerman::carmen_conventional_astar_ackerman_kinematic(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v)
 {
 	point.theta += v * ((tan(phi)) / lenght);
 	point.theta = carmen_normalize_theta(point.theta);
@@ -658,7 +658,7 @@ int  AstarAckerman::is_obstacle_new(carmen_robot_and_trailer_traj_point_t point)
 
 
 int
-AstarAckerman::is_obstacle(carmen_ackerman_traj_point_t point)
+AstarAckerman::is_obstacle(carmen_robot_and_trailer_traj_point_t point)
 {
 	double width_m = (robot_conf_g.width + astar_config.robot_fat_space) / carmen_planner_map->config.resolution;
 	double height_m = (robot_conf_g.length + astar_config.robot_fat_space) / carmen_planner_map->config.resolution;
@@ -710,7 +710,7 @@ AstarAckerman::is_obstacle(carmen_ackerman_traj_point_t point)
 
 
 int
-AstarAckerman::is_obstacle_1d(carmen_ackerman_traj_point_t point)
+AstarAckerman::is_obstacle_1d(carmen_robot_and_trailer_traj_point_t point)
 {
 	double x = (point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution;
 	double y = (point.y - carmen_planner_map->config.y_origin) / carmen_planner_map->config.resolution;
@@ -731,7 +731,7 @@ AstarAckerman::is_obstacle_1d(carmen_ackerman_traj_point_t point)
 
 
 int
-AstarAckerman::is_obstacle_cost(carmen_ackerman_traj_point_t point)
+AstarAckerman::is_obstacle_cost(carmen_robot_and_trailer_traj_point_t point)
 {
 	int obstacle_value = carmen_conventional_get_cost(
 			(point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution,

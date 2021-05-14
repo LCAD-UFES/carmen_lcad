@@ -18,7 +18,7 @@ class Detector
 	/**
 	 * @brief Update obstacle speed estimates across its history.
 	 */
-	void update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose);
+	void update_moving_object_velocity(carmen_robot_and_trailer_traj_point_t &robot_pose);
 
 	inline bool set_detected(bool value)
 	{
@@ -74,7 +74,7 @@ public:
 
 	double speed_front();
 
-	carmen_ackerman_traj_point_t get_moving_obstacle_position(void);
+	carmen_robot_and_trailer_traj_point_t get_moving_obstacle_position(void);
 	double get_moving_obstacle_distance(carmen_robot_and_trailer_traj_point_t robot_pose);
 };
 

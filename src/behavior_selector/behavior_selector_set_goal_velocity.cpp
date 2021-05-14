@@ -458,7 +458,7 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 
 
 double
-compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_ackerman_traj_point_t  current_robot_pose_v_and_phi)
+compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_robot_and_trailer_traj_point_t  current_robot_pose_v_and_phi)
 {
 	carmen_rddf_road_profile_message *rddf = last_rddf_message;
 
@@ -514,7 +514,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t 
 
 	if (nearest_velocity_related_annotation != NULL)
 	{
-//		carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(*current_robot_pose_v_and_phi,
+//		carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(*current_robot_pose_v_and_phi,
 //				get_robot_config()->distance_between_front_and_rear_axles +
 //				get_robot_config()->distance_between_front_car_and_front_wheels);
 
@@ -768,7 +768,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailer_traj_poi
 
 
 double
-compute_s_range(carmen_ackerman_traj_point_t *poses_ahead, int pose_index, int num_poses)
+compute_s_range(carmen_robot_and_trailer_traj_point_t *poses_ahead, int pose_index, int num_poses)
 {
 	double s_range = 0.0;
 	for (int i = 0; (i < (num_poses - 1)) && (i < pose_index); i++)

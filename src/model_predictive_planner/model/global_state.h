@@ -68,7 +68,7 @@ public:
 	static carmen_moving_objects_point_clouds_message *objects_message;
 	static bool moving_objects_initialized;
 
-	static std::vector<carmen_ackerman_traj_point_t*> moving_objects_trajectories;
+	static std::vector<carmen_robot_and_trailer_traj_point_t*> moving_objects_trajectories;
 
 	static bool	  following_path; // true if the path is being followed
 

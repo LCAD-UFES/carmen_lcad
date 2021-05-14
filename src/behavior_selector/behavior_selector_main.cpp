@@ -330,7 +330,7 @@ compute_simulated_objects(double timestamp)
 
 
 carmen_robot_and_trailer_traj_point_t *
-compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+compute_simulated_lateral_objects(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	if (!necessary_maps_available || !current_set_of_paths || (current_set_of_paths->number_of_nearby_lanes == 0))
 		return (NULL);
@@ -405,7 +405,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 
 
 void
-add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
+add_simulated_object(carmen_robot_and_trailer_traj_point_t *object_pose)
 {
 	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
 	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
@@ -426,7 +426,7 @@ add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
 
 
 void
-add_larger_simulated_object(carmen_ackerman_traj_point_t *object_pose)
+add_larger_simulated_object(carmen_robot_and_trailer_traj_point_t *object_pose)
 {
 	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
 	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
@@ -996,12 +996,12 @@ select_behaviour_using_symotha(carmen_robot_and_trailer_traj_point_t current_rob
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
 #ifdef SIMULATE_MOVING_OBSTACLE
-	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
+	carmen_robot_and_trailer_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
 	if (simulated_object_pose)
 		add_simulated_object(simulated_object_pose);
 #endif
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
-	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
+	carmen_robot_and_trailer_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose2)
 		add_larger_simulated_object(simulated_object_pose2);
 //		add_simulated_object(simulated_object_pose2);
@@ -1045,7 +1045,7 @@ print_road_network_behavior_selector(carmen_route_planner_road_network_message *
 
 
 //static void
-//print_poses(carmen_ackerman_traj_point_t *poses, int number_of_poses, char *filename)
+//print_poses(carmen_robot_and_trailer_traj_point_t *poses, int number_of_poses, char *filename)
 //{
 //	FILE *arq = fopen(filename, "w");
 //	for (int i = 0; i < 10000 && i < number_of_poses; i++)
@@ -1197,12 +1197,12 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
 #ifdef SIMULATE_MOVING_OBSTACLE
-	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
+	carmen_robot_and_trailer_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
 	if (simulated_object_pose)
 		add_simulated_object(simulated_object_pose);
 #endif
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
-	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
+	carmen_robot_and_trailer_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose2)
 		add_larger_simulated_object(simulated_object_pose2);
 //		add_simulated_object(simulated_object_pose2);

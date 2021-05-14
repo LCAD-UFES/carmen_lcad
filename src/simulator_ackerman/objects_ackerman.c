@@ -131,7 +131,7 @@ static int in_map(double x, double y, carmen_map_p map)
 	return 1;
 }
 
-carmen_ackerman_traj_point_t *search_old(carmen_ackerman_traj_point_t key, carmen_ackerman_traj_point_t *lane, int size)
+carmen_robot_and_trailer_traj_point_t *search_old(carmen_robot_and_trailer_traj_point_t key, carmen_robot_and_trailer_traj_point_t *lane, int size)
 {
 	int begin = 0;
 	int end = size - 1;

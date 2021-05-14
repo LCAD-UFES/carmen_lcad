@@ -38,10 +38,10 @@ int carmen_rddf_play_copy_kml(kmldom::PlacemarkPtr waypoint, carmen_fused_odomet
 carmen_rddf_waypoint * carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vector_size);
 void carmen_rddf_play_save_rddf_to_file(char *rddf_filename, carmen_rddf_waypoint *waypoint_vector, int size);
 
-bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_ackerman_traj_point_t annotation_point);
+//bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_ackerman_traj_point_t annotation_point);
 bool carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
 bool carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_robot_and_trailer_traj_point_t annotation_point);
-bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
+//bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
 bool carmen_rddf_play_annotation_is_forward(carmen_point_t robot_pose, carmen_vector_3D_t annotation_point);
 
 void carmen_rddf_play_get_parameters(int argc, char** argv);

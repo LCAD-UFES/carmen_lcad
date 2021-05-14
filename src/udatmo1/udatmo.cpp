@@ -186,21 +186,21 @@ udatmo_speed_center(void)
 }
 
 
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 udatmo_get_moving_obstacle_position(void)
 {
 	return (detector->get_moving_obstacle_position());
 }
 
 
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 udatmo_get_moving_obstacle_position_left(void)
 {
 	return (detector_left->get_moving_obstacle_position());
 }
 
 
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 udatmo_get_moving_obstacle_position_right(void)
 {
 	return (detector_right->get_moving_obstacle_position());

@@ -184,7 +184,7 @@ carmen_robot_ackerman_move_along_vector(double distance, double theta)
 
 
 void
-carmen_robot_ackerman_follow_trajectory(carmen_ackerman_traj_point_p trajectory, int trajectory_length, carmen_ackerman_traj_point_t *robot)
+carmen_robot_ackerman_follow_trajectory(carmen_robot_and_trailer_traj_point_t *trajectory, int trajectory_length, carmen_robot_and_trailer_traj_point_t *robot)
 {
 	IPC_RETURN_TYPE err;
 	static carmen_robot_ackerman_follow_trajectory_message msg;

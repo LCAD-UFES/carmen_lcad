@@ -69,7 +69,7 @@ find_direction_traffic_sign(carmen_point_t robot_pose, bool ahead)
 	{
 		if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN)
 		{
-			carmen_ackerman_traj_point_t annotation_point;
+			carmen_robot_and_trailer_traj_point_t annotation_point;
 			annotation_point.x = annotation_read_from_file[annotation_index].annotation_point.x;
 			annotation_point.y = annotation_read_from_file[annotation_index].annotation_point.y;
 			annotation_point.theta = annotation_read_from_file[annotation_index].annotation_orientation;
@@ -192,7 +192,7 @@ calculate_theta_and_phi(carmen_robot_and_trailer_traj_point_t *poses_ahead, int 
 double
 my_f(const gsl_vector *v, void *params)
 {
-	list<carmen_ackerman_traj_point_t> *p = (list<carmen_ackerman_traj_point_t> *) params;
+	list<carmen_robot_and_trailer_traj_point_t> *p = (list<carmen_robot_and_trailer_traj_point_t> *) params;
 	int i, j, size = (p->size() - 2);           //we have to discount the first and last point that wont be optimized
 	double a = 0.0, b = 0.0, sum = 0.0;
 
@@ -240,7 +240,7 @@ my_f(const gsl_vector *v, void *params)
 void
 my_df (const gsl_vector *v, void *params, gsl_vector *df)
 {
-	list<carmen_ackerman_traj_point_t> *p = (list<carmen_ackerman_traj_point_t> *) params;
+	list<carmen_robot_and_trailer_traj_point_t> *p = (list<carmen_robot_and_trailer_traj_point_t> *) params;
 	int i, j, size =(p->size() - 2);
 
 	double x_prev2= 0;

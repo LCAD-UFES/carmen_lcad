@@ -15,7 +15,7 @@ carmen_collision_config_t global_collision_config;
 //carmen_mapper_virtual_laser_message virtual_laser_message;
 
 carmen_point_t
-to_carmen_point_t (carmen_ackerman_traj_point_t *p)
+to_carmen_point_t (carmen_robot_and_trailer_traj_point_t *p)
 {
 	carmen_point_t point;
 

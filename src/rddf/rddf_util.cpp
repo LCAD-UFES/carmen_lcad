@@ -457,32 +457,32 @@ carmen_rddf_play_save_rddf_to_file(char *rddf_filename, carmen_rddf_waypoint *wa
 }
 
 
-bool
-carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_ackerman_traj_point_t annotation_point)
-{
-	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
-	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
-	SE2 annotation_in_car_reference = robot_pose_mat.inverse() * annotation_point_mat;
-
-	if (annotation_in_car_reference[0] > 0.0)
-		return (true);
-	else
-		return (false);
-}
-
-
-bool
-carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
-{
-	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
-	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
-	SE2 annotation_in_car_reference = robot_pose_mat.inverse() * annotation_point_mat;
-
-	if (annotation_in_car_reference[0] > 0.0)
-		return (true);
-	else
-		return (false);
-}
+//bool
+//carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_ackerman_traj_point_t annotation_point)
+//{
+//	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
+//	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
+//	SE2 annotation_in_car_reference = robot_pose_mat.inverse() * annotation_point_mat;
+//
+//	if (annotation_in_car_reference[0] > 0.0)
+//		return (true);
+//	else
+//		return (false);
+//}
+//
+//
+//bool
+//carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
+//{
+//	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
+//	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
+//	SE2 annotation_in_car_reference = robot_pose_mat.inverse() * annotation_point_mat;
+//
+//	if (annotation_in_car_reference[0] > 0.0)
+//		return (true);
+//	else
+//		return (false);
+//}
 
 
 bool
@@ -557,7 +557,7 @@ carmen_rddf_play_clear_annotation_vector()
 void
 displace_car_pose_according_to_car_orientation(carmen_annotation_t *annotation, int direction = -1)
 {
-	carmen_ackerman_traj_point_t annotation_point;
+	carmen_robot_and_trailer_traj_point_t annotation_point;
 	annotation_point.x = annotation->annotation_point.x;
 	annotation_point.y = annotation->annotation_point.y;
 	annotation_point.theta = annotation->annotation_orientation;
