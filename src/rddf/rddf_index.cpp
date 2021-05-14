@@ -1019,6 +1019,9 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_robot_and_trailer_
 	carmen_robot_and_trailer_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
 
+	if (carmen_index_ordered_by_timestamp.size() == 0)
+		return (0);
+
 	num_poses_aquired = 0;
 	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];
 	poses_ahead[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
@@ -1056,6 +1059,9 @@ fill_in_backward_waypoints_array(long timestamp_index_position, carmen_robot_and
 	int i, num_poses_aquired;
 	carmen_robot_and_trailer_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
+
+	if (carmen_index_ordered_by_timestamp.size() == 0)
+		return (0);
 
 	num_poses_aquired = 0;
 	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];

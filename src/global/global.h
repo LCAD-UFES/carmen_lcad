@@ -248,9 +248,9 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
+	double beta;
 	double v;
 	double phi;
-	double beta;
 } carmen_robot_and_trailer_traj_point_t;
 
 
@@ -268,10 +268,10 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
+	double beta;
 	double v;
 	double phi;
 	double time;
-	double beta;
 } carmen_robot_and_trailer_path_point_t;
 
 
@@ -279,10 +279,10 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
+	double beta;
 	double v;
 	double phi;
 	double time;
-	double beta;
 } carmen_robot_and_trailer_motion_command_t;
 
 

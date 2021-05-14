@@ -296,7 +296,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 
-	if (msg->semi_trailer_type != carmen_semi_trailer_config.type)
+	if ((msg->semi_trailer_type != carmen_semi_trailer_config.type) && (msg->semi_trailer_type > 0))
 		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
 }
 

@@ -154,7 +154,7 @@ typedef struct
 } carmen_behavior_selector_path_goals_and_annotations_message;
 
 #define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME "carmen_behavior_selector_path_goals_and_annotations_message"
-#define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, <{double, double, double, double, double, double}:7>, double, string}"
+#define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_FMT "{int, int, <{double, double, double, double, double, double}:1>, <{double, double, double, double, double, double}:2>, <int:1>, <int:1>, int, <{double, double, double, double, double, double}:7>, double, string}"
 
 #ifdef __cplusplus
 }

@@ -138,8 +138,8 @@ typedef struct
 #define		CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_FMT		\
 	"{int, \
 	int, \
-	<{double, double, double, double, double}:1>, \
-	<{double, double, double, double, double}:2>, \
+	<{double, double, double, double, double, double}:1>, \
+	<{double, double, double, double, double, double}:2>, \
 	<int:1>, \
 	<int:1>, \
 	int, \
@@ -147,7 +147,7 @@ typedef struct
 	<int:7>, \
 	<int:7>, \
 	int, \
-	<{double, double, double, double, double}:11>, \
+	<{double, double, double, double, double, double}:11>, \
 	<int:11>, \
 	<int:7>, \
 	<int:7>, \
@@ -163,7 +163,7 @@ typedef struct
 	<{int, int, int, int}:24>, \
 	<int:11>, \
 	int, \
-	<{{double, double, double, double, double}, int, int}:27>, \
+	<{{double, double, double, double, double, double}, int, int}:27>, \
 	int, \
 	int, \
 	double, \

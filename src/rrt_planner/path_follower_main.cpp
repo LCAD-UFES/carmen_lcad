@@ -217,7 +217,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	globalpos_message_received = true;
 
-	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.type)
+	if ((msg->semi_trailer_type != GlobalState::semi_trailer_config.type) && (msg->semi_trailer_type > 0))
 		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
 }
 
