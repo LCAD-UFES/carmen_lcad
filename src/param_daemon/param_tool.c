@@ -56,6 +56,7 @@ static int handle_options(int argc,  char *argv[])
     case 'h':
     case '?':
       main_usage(argv[0]);
+      break;
     default:
       carmen_warn("Unknown option character %c", optopt);
       main_usage(argv[0]);

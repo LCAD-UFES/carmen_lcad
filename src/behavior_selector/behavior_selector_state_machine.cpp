@@ -17,7 +17,7 @@ static double wait_for_given_seconds_start_time = 0.0;
 bool
 forward_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
 
 	if (nearest_forward_waypoint_ahead == NULL)
 		return (false);
@@ -35,7 +35,7 @@ forward_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_
 double
 distance_to_forward_waypoint(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
 
 	if (nearest_forward_waypoint_ahead == NULL)
 		return (1000.0);
@@ -49,7 +49,7 @@ distance_to_forward_waypoint(carmen_robot_and_trailer_traj_point_t current_robot
 bool
 reverse_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
 
 	if (nearest_reverse_waypoint_ahead == NULL)
 		return (false);
@@ -67,7 +67,7 @@ reverse_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_
 bool
 path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *path_final_pose = get_path_final_pose();
+	carmen_robot_and_trailer_traj_point_t *path_final_pose = get_path_final_pose();
 
 	if (path_final_pose == NULL)
 		return (false);
@@ -86,7 +86,7 @@ path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose
 double
 distance_to_reverse_waypoint(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
 
 	if (nearest_reverse_waypoint_ahead == NULL)
 		return (1000.0);
@@ -219,7 +219,7 @@ distance_to_busy_pedestrian_track(carmen_robot_and_trailer_traj_point_t current_
 
 
 double
-distance_to_must_yield(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+distance_to_must_yield(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		path_collision_info_t path_collision_info, double timestamp)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,

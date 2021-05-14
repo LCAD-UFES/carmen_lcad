@@ -452,7 +452,7 @@ main(int argc, char **argv)
 		NO_MAP_FILE,
 		MAP_SEQUENCE_OK,
 	} sequence, last_sequence = (sequence_type) -1;
-	carmen_point_t map_origin, last_map_origin;
+	carmen_point_t map_origin, last_map_origin = {};
 	double timestamp, last_timestamp, sequence_timestamp, map_index_timestamp;
 	int message, last_message = -1, sequence_message = 0, map_index_message = -1, pose_index, map_index, last_map_index = -1, count_files = 0;
 	for(message = 0; message <= logfile_index->num_messages; message++)

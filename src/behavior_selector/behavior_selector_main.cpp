@@ -274,7 +274,7 @@ copy_rddf_message(carmen_rddf_road_profile_message *last_rddf_message, carmen_rd
 }
 
 
-carmen_ackerman_traj_point_t *
+carmen_robot_and_trailer_traj_point_t *
 compute_simulated_objects(double timestamp)
 {
 	if (!necessary_maps_available || !current_set_of_paths)
@@ -314,7 +314,7 @@ compute_simulated_objects(double timestamp)
 	pose_ahead.x = previous_pose.x + dx;
 	pose_ahead.y = previous_pose.y + dy;
 
-	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
+	static carmen_robot_and_trailer_traj_point_t next_pose = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 	for (int i = 0, n = number_of_poses - 1; i < n; i++)
 	{
 		int status;
@@ -823,7 +823,7 @@ remove_moving_objects_from_distance_map_old(carmen_route_planner_road_network_me
 	virtual_laser_message.num_positions = 0;
 	for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
 	{
-		carmen_ackerman_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
+		carmen_robot_and_trailer_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
 		int *traffic_restrictions = &(road_network_message->traffic_restrictions[road_network_message->nearby_lanes_indexes[i]]);
 		int lane_size = road_network_message->nearby_lanes_sizes[i];
 		for (int j = 0; j < lane_size - 1; j++)

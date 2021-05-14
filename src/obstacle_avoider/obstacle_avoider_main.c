@@ -512,9 +512,10 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 
-	read_parameters_semi_trailer(argc_global, argv_global, carmen_semi_trailer_config.type);
+	if (carmen_semi_trailer_config.type > 0)
+		read_parameters_semi_trailer(argc, argv, carmen_semi_trailer_config.type);
 
-	return 0;
+	return (0);
 }
 
 

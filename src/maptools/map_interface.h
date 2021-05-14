@@ -103,7 +103,7 @@ int carmen_map_cmp(carmen_map_point_p p1, carmen_map_point_p p2);
 int carmen_world_cmp(carmen_world_point_p p1, carmen_world_point_p p2);
 
 int carmen_map_to_trajectory(carmen_map_point_p carmen_map_point, carmen_traj_point_p traj_point);
-int carmen_map_to_ackerman_trajectory(carmen_map_point_p carmen_map_point, carmen_ackerman_traj_point_p traj_point);
+int carmen_map_to_ackerman_trajectory(carmen_map_point_p carmen_map_point, carmen_robot_and_trailer_traj_point_t *traj_point);
 
 int carmen_trajectory_to_map(carmen_traj_point_p traj_point, carmen_map_point_p carmen_map_point,
 				  carmen_map_p map);

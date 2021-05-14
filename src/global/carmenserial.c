@@ -302,6 +302,7 @@ void carmen_serial_configure(int dev_fd, int baudrate, char *parity)
     break;
   case 115200:
     carmen_serial_setparms(dev_fd, "115200", parity, "8", 0, 0);
+    break;
   case 500000:
     carmen_serial_setparms(dev_fd, "500000", parity, "8", 0, 0);
     break;

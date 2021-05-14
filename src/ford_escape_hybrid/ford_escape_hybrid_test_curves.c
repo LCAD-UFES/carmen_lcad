@@ -1,16 +1,16 @@
 #include <carmen/carmen.h>
 
-static carmen_ackerman_traj_point_t points_vector[10000000];
-carmen_ackerman_motion_command_t motion_command_vector[10000000];
+static carmen_robot_and_trailer_traj_point_t points_vector[10000000];
+carmen_robot_and_trailer_motion_command_t motion_command_vector[10000000];
 static int points_vector_size = 0;
 static carmen_localize_ackerman_globalpos_message globalpos;
 static carmen_robot_ackerman_config_t car_config;
 static double delta_time = 0.05;
 
-static carmen_ackerman_traj_point_t
-predict_new_robot_position(carmen_ackerman_traj_point_t current_robot_position, double v, double phi, double time, carmen_robot_ackerman_config_t *car_config)
+static carmen_robot_and_trailer_traj_point_t
+predict_new_robot_position(carmen_robot_and_trailer_traj_point_t current_robot_position, double v, double phi, double time, carmen_robot_ackerman_config_t *car_config)
 {
-	carmen_ackerman_traj_point_t new_robot_position;
+	carmen_robot_and_trailer_traj_point_t new_robot_position;
 
 	new_robot_position = current_robot_position;
 	new_robot_position.x = new_robot_position.x + v * cos(new_robot_position.theta) * time;
@@ -23,7 +23,7 @@ predict_new_robot_position(carmen_ackerman_traj_point_t current_robot_position, 
 }
 
 static int
-build_points_vector(carmen_ackerman_traj_point_t *points_vector, int initial_index, double phi, double time, carmen_robot_ackerman_config_t *car_config)
+build_points_vector(carmen_robot_and_trailer_traj_point_t *points_vector, int initial_index, double phi, double time, carmen_robot_ackerman_config_t *car_config)
 {
 	double t;
 	int size = 0;
@@ -36,7 +36,7 @@ build_points_vector(carmen_ackerman_traj_point_t *points_vector, int initial_ind
 }
 
 void
-publish_navigator_ackerman_plan_message(carmen_ackerman_traj_point_t *points_vector, int size)
+publish_navigator_ackerman_plan_message(carmen_robot_and_trailer_traj_point_t *points_vector, int size)
 {
 	carmen_navigator_ackerman_plan_message msg;
 	static int		first_time = 1;
@@ -65,7 +65,7 @@ publish_navigator_ackerman_plan_message(carmen_ackerman_traj_point_t *points_vec
 #include <carmen/motion_planner_messages.h>
 static void
 carmen_motion_planner_publish_path_message(
-		carmen_ackerman_traj_point_t *path, int size, int algorithm)
+		carmen_robot_and_trailer_traj_point_t *path, int size, int algorithm)
 {
 	IPC_RETURN_TYPE err;
 	static int firsttime = 1;

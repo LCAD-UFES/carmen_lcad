@@ -113,7 +113,7 @@ private:
 	int get_astar_map_x(double x);
 	int get_astar_map_y(double y);
 	carmen_ackerman_traj_point_t carmen_conventional_astar_ackerman_kinematic_2(carmen_ackerman_traj_point_t point, float lenght, float phi, float v);
-	int rs_get_astar_path(int rs_pathl, carmen_ackerman_traj_point_p points, carmen_planner_path_p path);
+	int rs_get_astar_path(int rs_pathl, carmen_robot_and_trailer_traj_point_t *points, carmen_planner_path_p path);
 	void astar_init_parameters(carmen_robot_and_trailer_traj_point_t goal);
 	int get_astar_map_theta(double theta);
 

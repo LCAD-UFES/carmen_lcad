@@ -232,7 +232,7 @@ void merging_astar_path(carmen_planner_path_p path_start, carmen_planner_path_p 
 }
 
 
-int AstarAckerman::rs_get_astar_path(int rs_pathl, carmen_ackerman_traj_point_p points, carmen_planner_path_p path)
+int AstarAckerman::rs_get_astar_path(int rs_pathl, carmen_robot_and_trailer_traj_point_t *points, carmen_planner_path_p path)
 {
 	int i, j;
 	check_path_capacity(path);
@@ -454,7 +454,7 @@ AstarAckerman::open_node(carmen_astar_node_p node)
 {
 	int i, j;
 	double cost_weight;
-	carmen_ackerman_traj_point_t new_point;
+	carmen_robot_and_trailer_traj_point_t new_point;
 	carmen_astar_node_p new_node;
 
 	for (i = 0; i < DIRECTION_LENGHT; i++)
@@ -613,7 +613,7 @@ int  AstarAckerman::is_obstacle_new(carmen_robot_and_trailer_traj_point_t point)
 	double obstacle_value = 0;
 	int v, h, i;
 
-	carmen_ackerman_traj_point_t vertical_pose, horizontal_pose[2];
+	carmen_robot_and_trailer_traj_point_t vertical_pose, horizontal_pose[2];
 	double delta_vertical_x, delta_vertical_y, delta_horizontal_x, delta_horizontal_y;
 
 	point.x = (point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution;

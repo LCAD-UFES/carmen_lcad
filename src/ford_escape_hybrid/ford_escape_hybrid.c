@@ -45,7 +45,7 @@
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
-static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 static int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
 static int current_motion_command_vetor = 0;
 
@@ -414,7 +414,7 @@ publish_ford_escape_gear_command(OjCmpt XGV_CCU)
 
 
 int
-apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
+apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
 	int i, j;
 	double lat;
@@ -607,7 +607,7 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 
 
 void
-clear_current_motion_command_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
+clear_current_motion_command_vector(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
 	for (int i = 0; i < nun_motion_commands; i++)
 		current_motion_command_vector[i].phi = 0.0;

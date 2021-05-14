@@ -913,7 +913,7 @@ carmen_map_to_trajectory(carmen_map_point_p carmen_map_point, carmen_traj_point_
 
 carmen_inline int
 carmen_map_to_ackerman_trajectory(carmen_map_point_p carmen_map_point,
-		carmen_ackerman_traj_point_p traj_point)
+		carmen_robot_and_trailer_traj_point_t *traj_point)
 {
 	double x = (carmen_map_point->x * carmen_map_point->map->config.resolution) + carmen_map_point->map->config.x_origin;
 	double y = (carmen_map_point->y * carmen_map_point->map->config.resolution) + carmen_map_point->map->config.y_origin;

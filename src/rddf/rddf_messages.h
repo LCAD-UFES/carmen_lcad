@@ -89,7 +89,7 @@ extern "C"
     } carmen_rddf_end_point_message;
 
 	#define CARMEN_RDDF_END_POINT_MESSAGE_NAME "carmen_rddf_end_point_message"
-	#define CARMEN_RDDF_END_POINT_MESSAGE_FMT "{int, {double, double, double}, double, string}"
+	#define CARMEN_RDDF_END_POINT_MESSAGE_FMT "{int, {double, double, double, double}, double, string}"
 
 
     typedef struct

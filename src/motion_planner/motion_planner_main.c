@@ -16,7 +16,7 @@
 
 extern int autonomous_status;
 extern carmen_motion_planner_path_message path;
-extern carmen_ackerman_traj_point_t g_robot_position;
+extern carmen_robot_and_trailer_traj_point_t g_robot_position;
 
 extern int current_map;
 extern carmen_map_p map_vector[NUM_MAPS];

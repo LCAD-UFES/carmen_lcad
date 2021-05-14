@@ -129,7 +129,7 @@ build_navigator_ackerman_plan_message(carmen_robot_and_trailer_motion_command_t 
 	trajectory_vector_of_points_size = build_predicted_trajectory(motion_commands_vector, num_motion_commands, pose_vector[current_pose], carmen_robot_ackerman_config, carmen_semi_trailer_config);
 
 	predicted_trajectory_message.path_length = trajectory_vector_of_points_size;
-	predicted_trajectory_message.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * (trajectory_vector_of_points_size));
+	predicted_trajectory_message.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * (trajectory_vector_of_points_size));
 
 	for (i = 0; i < trajectory_vector_of_points_size; i++)
 	{
@@ -144,7 +144,7 @@ build_navigator_ackerman_plan_message(carmen_robot_and_trailer_motion_command_t 
 	predicted_trajectory_message.timestamp = timestamp;
 	predicted_trajectory_message.host = carmen_get_host();
 
-	return predicted_trajectory_message;
+	return (predicted_trajectory_message);
 }
 
 

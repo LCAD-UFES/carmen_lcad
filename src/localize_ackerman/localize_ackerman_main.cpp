@@ -342,7 +342,7 @@ publish_sensor(carmen_localize_ackerman_particle_filter_p filter, carmen_localiz
 static void
 publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_msg)
 {
-	carmen_localize_ackerman_globalpos_message globalpos_ackerman_message;
+	carmen_localize_ackerman_globalpos_message globalpos_ackerman_message = {};
 	globalpos_ackerman_message.globalpos = *initialize_msg->mean;
 	globalpos_ackerman_message.globalpos_std = *initialize_msg->std;
 	globalpos_ackerman_message.odometrypos = *initialize_msg->std;

@@ -213,7 +213,7 @@ collision_s_distance_to_moving_object(path_collision_info_t &path_collision_info
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects, int path_id,
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double robot_acc)
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double robot_acc)
 {
 	path_collision_info.mo_in_front = false;	// Estar atrás é bom. Não precisamos cuidar. Colisão por trás é culpa do moving object.
 	path_collision_info.moving_object_id = -1;
@@ -295,7 +295,7 @@ collision_s_distance_to_moving_object_in_parallel_lane(path_collision_info_t &pa
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects, int path_id,
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double robot_acc)
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double robot_acc)
 {
 	if (1)//current_moving_objects->num_point_clouds == 0)
 	{
@@ -426,8 +426,8 @@ get_moving_object_lane(int &lane_size, double &d_distance_to_lane, double &s_dis
 
 	int status;
 	int mo_index = moving_object->lane_index;
-	carmen_ackerman_traj_point_t mo_pose = {moving_object->object_pose.x, moving_object->object_pose.y, moving_object->orientation, 0.0, 0.0};
-	carmen_ackerman_traj_point_t mo_pose_projection_into_lane;
+	carmen_robot_and_trailer_traj_point_t mo_pose = {moving_object->object_pose.x, moving_object->object_pose.y, moving_object->orientation, 0.0, 0.0, 0.0};
+	carmen_robot_and_trailer_traj_point_t mo_pose_projection_into_lane;
 	if (mo_index < lane_size - 1)
 		mo_pose_projection_into_lane = carmen_get_point_nearest_to_trajectory(&status, moving_object_lane[mo_index], moving_object_lane[mo_index + 1], mo_pose, 0.1);
 	else
@@ -493,7 +493,7 @@ simulate_moving_object_movement(t_point_cloud_struct *moving_object, carmen_robo
 		moving_object_pose_at_t = carmen_collision_detection_displace_car_on_its_frenet_frame(&movin_object_pose, s_displacement, d_displacement);
 
 	moving_object_pose_info_t moving_object_pose_info;
-	moving_object_pose_info.pose = moving_object_pose_at_t;
+	moving_object_pose_info.pose = {moving_object_pose_at_t.x, moving_object_pose_at_t.y, moving_object_pose_at_t.theta};
 	moving_object_pose_info.s = s_displacement;
 	moving_object_pose_info.d = d_displacement;
 	moving_object_pose_info.sv = moving_object->linear_velocity;
@@ -555,7 +555,7 @@ path_with_collision_in_between(int path_id, vector<path_collision_info_t> path_c
 vector<path_collision_info_t>
 get_paths_collision_info(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
-		vector<vector <moving_object_pose_info_t> > moving_objects_data, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		vector<vector <moving_object_pose_info_t> > moving_objects_data, carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		double robot_acc, double delta_t, int num_samples)
 {
 	int number_of_paths = current_set_of_paths->set_of_paths_size / current_set_of_paths->number_of_poses;
@@ -563,7 +563,7 @@ get_paths_collision_info(carmen_frenet_path_planner_set_of_paths *current_set_of
 
 	int last_goal_list_size;
 	double distance_to_goal;
-	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
 	if (last_goal_list_size == 0)
 		distance_to_goal = 0.0;
 	else
@@ -738,18 +738,18 @@ print_mo(carmen_moving_objects_point_clouds_message *current_moving_objects, dou
 
 
 double
-get_robot_acc_from_pose_and_goal(double &requested_acc, carmen_ackerman_traj_point_t *pose,
+get_robot_acc_from_pose_and_goal(double &requested_acc, carmen_robot_and_trailer_traj_point_t *pose,
 		carmen_behavior_selector_state_message behavior_selector_state_message)
 {
 	int last_goal_list_size;
-	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
 	if (last_goal_list_size == 0)
 	{
 		requested_acc = 0.0;
 		return (0.0);
 	}
 
-	carmen_ackerman_traj_point_t *goal;
+	carmen_robot_and_trailer_traj_point_t *goal;
 	goal = &(goal_list[0]);
 	double S = DIST2D_P(pose, goal);
 	if (S < 0.1)
@@ -821,7 +821,7 @@ plot(double used_acc, double requested_acc, double v)
 vector<path_collision_info_t>
 set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		int who_set_the_goal_v, carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	if (!current_set_of_paths || behavior_selector_use_symotha)

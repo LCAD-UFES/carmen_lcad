@@ -36,14 +36,14 @@
 //#include <carmen/base_interface.h>
 
 
-static double min_max_tv = 0.0;// , min_max_rv = 0.0;
+//static double min_max_tv = 0.0;// , min_max_rv = 0.0;
 static double max_max_tv = 1.8, max_max_rv = 0.2;
 
-static double max_allowed_tv = 1.5, max_allowed_rv = 1.5;
+//static double max_allowed_tv = 1.5, max_allowed_rv = 1.5;
 
 static carmen_joystick_type joystick;
 static int joystick_activated=0;
-static int throttle_mode=0;
+//static int throttle_mode=0;
 carmen_robot_ackerman_config_t robot_config;
 static double
 get_acceleration(double v, double target_v, carmen_robot_ackerman_config_t *simulator_config)
@@ -172,7 +172,7 @@ void send_base_velocity_command(double tv, double rv)
 	// converting tv from meters to km/h
 	tv = tv * 3.6;
 	// New Message
-	IPC_RETURN_TYPE err;
+//	IPC_RETURN_TYPE err;
 	static carmen_base_ackerman_velocity_message v;
 	int num_commands = 1;
 	carmen_robot_and_trailer_motion_command_t *message_pioneer =
@@ -281,8 +281,9 @@ void read_parameters(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	double command_tv = 0, command_rv = 0;
-	double max_tv = 0;
+	double command_tv = 0.0;
+	double command_rv = 0.0;
+//	double max_tv = 0.0;
 	double f_timestamp;
 
 	carmen_ipc_initialize(argc, argv);
@@ -308,7 +309,7 @@ int main(int argc, char **argv)
 		carmen_ipc_sleep(0.1);
 		if(carmen_get_joystick_state(&joystick) >= 0) {
 
-			max_tv = min_max_tv + (-joystick.axes[2] + 32767.0) / (32767.0 * 2.0) * (max_max_tv - min_max_tv);
+//			max_tv = min_max_tv + (-joystick.axes[2] + 32767.0) / (32767.0 * 2.0) * (max_max_tv - min_max_tv);
 			double delta_t = carmen_get_time() - f_timestamp;
 			//double velocidade =  joystick.axes[1] + ((joystick.axes[1]<0)-(joystick.axes[1]>0))*4000;
 			//double angulo_roda =joystick.axes[3] +1000 + ((joystick.axes[3]<0)-(joystick.axes[3]>0))*4000;

@@ -222,7 +222,7 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 
 
 void
-publish_navigator_ackerman_plan_message(carmen_ackerman_traj_point_t *path, int path_size)
+publish_navigator_ackerman_plan_message(carmen_robot_and_trailer_traj_point_t *path, int path_size)
 {
 	carmen_navigator_ackerman_plan_message msg;
 

@@ -49,8 +49,8 @@ static carmen_map_t *true_map = NULL;
 static int have_plan = 0;
 
 static int allow_any_orientation = 0;
-static carmen_ackerman_traj_point_t requested_goal;
-static carmen_ackerman_traj_point_t *requested_goal_list = NULL;
+static carmen_robot_and_trailer_traj_point_t requested_goal;
+static carmen_robot_and_trailer_traj_point_t *requested_goal_list = NULL;
 static int goal_list_size = 0;
 static int current_goal_index = 0;
 static double change_goal_distance = 8.0;
@@ -58,7 +58,7 @@ static double change_goal_distance = 8.0;
 static carmen_point_t intermediate_goal;
 static int goal_is_accessible;
 
-static carmen_ackerman_traj_point_t robot;
+static carmen_robot_and_trailer_traj_point_t robot;
 static carmen_planner_path_t path = {NULL, 0, 0};
 
 static int goal_set = 0;
@@ -67,7 +67,7 @@ extern int steering_model;
 static int 
 extract_path_from_value_function(void) 
 {
-	carmen_ackerman_traj_point_t path_point;
+	carmen_robot_and_trailer_traj_point_t path_point;
 	carmen_map_point_t cur_point, prev_point, map_goal;
 
 	if (!have_plan)
@@ -111,8 +111,8 @@ static void
 compute_cost(int start_index, int end_index, double *cost_along_path, 
 		double *min_cost)
 {
-	carmen_ackerman_traj_point_p start_point;
-	carmen_ackerman_traj_point_p end_point;
+	carmen_robot_and_trailer_traj_point_t *start_point;
+	carmen_robot_and_trailer_traj_point_t *end_point;
 
 	carmen_map_point_t p1;
 	carmen_map_point_t p2;
@@ -313,7 +313,7 @@ carmen_planner_ackerman_regenerate_trajectory(carmen_navigator_config_t *nav_con
 	struct timeval start, end;
 	int sec, msec;
 	int index;
-	carmen_ackerman_traj_point_p path_point;
+	carmen_robot_and_trailer_traj_point_t *path_point;
 
 	gettimeofday(&start, NULL);
 	if (extract_path_from_value_function() < 0)
@@ -376,10 +376,10 @@ carmen_planner_ackerman_regenerate_trajectory(carmen_navigator_config_t *nav_con
 }
 
 int 
-carmen_planner_ackerman_update_robot(carmen_ackerman_traj_point_p new_position,
+carmen_planner_ackerman_update_robot(carmen_robot_and_trailer_traj_point_t *new_position,
 		carmen_navigator_config_t *nav_conf)
 {
-	static carmen_ackerman_traj_point_t old_position;
+	static carmen_robot_and_trailer_traj_point_t old_position;
 	static int first_time = 1;
 
 	if (!carmen_planner_map)
@@ -416,7 +416,7 @@ carmen_planner_ackerman_update_robot(carmen_ackerman_traj_point_p new_position,
 
 
 int 
-carmen_planner_ackerman_update_goal(carmen_ackerman_traj_point_p new_goal, int any_orientation,
+carmen_planner_ackerman_update_goal(carmen_robot_and_trailer_traj_point_t *new_goal, int any_orientation,
 		carmen_navigator_config_t *nav_conf)
 {
 	if (!carmen_planner_map)
@@ -440,7 +440,7 @@ carmen_planner_ackerman_update_goal(carmen_ackerman_traj_point_p new_goal, int a
 
 void
 carmen_planner_ackerman_update_grid(carmen_map_p new_map,
-		carmen_ackerman_traj_point_p new_position,
+		carmen_robot_and_trailer_traj_point_t *new_position,
 		carmen_robot_ackerman_config_t *robot_conf,
 		carmen_navigator_config_t *nav_conf)
 {
@@ -535,7 +535,7 @@ carmen_planner_ackerman_get_status(carmen_planner_status_p status)
 	status->path.length = path.length;
 	if (status->path.length > 0)
 	{
-		status->path.points = (carmen_ackerman_traj_point_p) calloc(status->path.length, sizeof(carmen_ackerman_traj_point_t));
+		status->path.points = (carmen_robot_and_trailer_traj_point_t *) calloc(status->path.length, sizeof(carmen_robot_and_trailer_traj_point_t));
 		carmen_test_alloc(status->path.points);
 		for (index = 0; index < status->path.length; index++)
 			status->path.points[index] = path.points[index];
@@ -551,12 +551,12 @@ carmen_planner_ackerman_get_status(carmen_planner_status_p status)
 // Add a check for planners with goals-- if we're just tracking'
 // then there is no goal
 int
-carmen_planner_ackerman_next_waypoint(carmen_ackerman_traj_point_p waypoint,
+carmen_planner_ackerman_next_waypoint(carmen_robot_and_trailer_traj_point_t *waypoint,
 		int* waypoint_index,
 		carmen_navigator_config_t *nav_conf)
 {
 
-	carmen_ackerman_traj_point_p point;
+	carmen_robot_and_trailer_traj_point_t *point;
 	int next_point;
 	double delta_dist, delta_theta;
 
@@ -728,7 +728,7 @@ int
 carmen_planner_ackerman_change_goal(carmen_navigator_config_t *nav_conf)
 {
 	double distance_to_goal;
-	carmen_ackerman_traj_point_t new_goal;
+	carmen_robot_and_trailer_traj_point_t new_goal;
 
 	if (!requested_goal_list || current_goal_index >= goal_list_size)
 	{
@@ -755,9 +755,9 @@ carmen_planner_ackerman_change_goal(carmen_navigator_config_t *nav_conf)
 }
 
 void
-carmen_planner_ackerman_set_goal_list(carmen_ackerman_traj_point_t *goal_list, int list_size, carmen_navigator_config_t *nav_conf)
+carmen_planner_ackerman_set_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int list_size, carmen_navigator_config_t *nav_conf)
 {
-	carmen_ackerman_traj_point_t goal;
+	carmen_robot_and_trailer_traj_point_t goal;
 
 	if (list_size <= 0)
 		return;
@@ -766,8 +766,8 @@ carmen_planner_ackerman_set_goal_list(carmen_ackerman_traj_point_t *goal_list, i
 		clear_goal_list();
 
 	goal_list_size = list_size;
-	requested_goal_list = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * goal_list_size);
-	memcpy(requested_goal_list, goal_list, sizeof(carmen_ackerman_traj_point_t) * goal_list_size);
+	requested_goal_list = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * goal_list_size);
+	memcpy(requested_goal_list, goal_list, sizeof(carmen_robot_and_trailer_traj_point_t) * goal_list_size);
 
 	if (list_size > 1)
 	{

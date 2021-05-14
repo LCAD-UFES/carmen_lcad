@@ -952,7 +952,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_path(carmen_ackerman_traj_point_t *new_path, int path_length, int path_id)
+	GtkGui::navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t *new_path, int path_length, int path_id)
 	{
 		int path_index;
 

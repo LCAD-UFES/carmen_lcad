@@ -1033,7 +1033,7 @@ double reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_
 }
 
 /***********************************************************/
-double min_length_rs(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal, int *numero, double *t, double *u, double *v)
+double min_length_rs(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *t, double *u, double *v)
 {
 	double length_rs;
 
@@ -1051,7 +1051,8 @@ double min_length_rs(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_po
 }
 
 /***********************************************************/
-int fct_curve(int ty, int orientation, double val, carmen_ackerman_traj_point_p start, carmen_ackerman_traj_point_p points, int n)
+int fct_curve(int ty, int orientation, double val, carmen_robot_and_trailer_traj_point_t *start,
+		carmen_robot_and_trailer_traj_point_t *points, int n)
 {
 	double va1, va2;
 	//todo verificar uma maneira mais correta de fazer essa verificação

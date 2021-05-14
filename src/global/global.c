@@ -1687,17 +1687,17 @@ carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry
 
 
 static double
-dist2(carmen_ackerman_traj_point_t v, carmen_ackerman_traj_point_t w)
+dist2(carmen_robot_and_trailer_traj_point_t v, carmen_robot_and_trailer_traj_point_t w)
 {
 	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
 }
 
 
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
-		carmen_ackerman_traj_point_t v,
-		carmen_ackerman_traj_point_t w,
-		carmen_ackerman_traj_point_t p, double min_segment_size)
+		carmen_robot_and_trailer_traj_point_t v,
+		carmen_robot_and_trailer_traj_point_t w,
+		carmen_robot_and_trailer_traj_point_t p, double min_segment_size)
 {
 	// Return minimum distance between line segment vw and point p
 	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
