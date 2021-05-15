@@ -1120,6 +1120,7 @@ namespace View
 			this->simulator_hidden = 0;
 
 		carmen_robot_and_trailer_pose_t truepose_with_beta = {truepose.x, truepose.y, truepose.theta, beta};
+		truepose_with_beta.beta = globalpos->beta;		// remover esta linha quando o beta da truepos estiver tratado!!
 		simulator_trueposition.pose = truepose_with_beta;
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
 		last_simulator_update  = carmen_get_time();
