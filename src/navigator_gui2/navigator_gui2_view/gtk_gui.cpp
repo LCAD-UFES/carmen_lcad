@@ -3039,7 +3039,7 @@ namespace View
 		if (path == NULL)
 			return;
 
-		for (index = 1; index < num_path_points; index++)
+		for (index = num_path_points - 1; index > 0; index--)
 		{
 			carmen_world_point_t path_point;
 			carmen_world_point_t previous_path_point;

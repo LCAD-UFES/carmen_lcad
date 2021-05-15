@@ -290,19 +290,19 @@ namespace View
 		carmen_frenet_path_planner_set_of_paths frenet_path_planer_set_of_paths_msg;
 		carmen_world_robot_and_trailer_pose_t *frenet_path_planer_path;
 		int frenet_path_planer_number_of_poses;
-		carmen_world_point_t *route_planer_lane;
+		carmen_world_robot_and_trailer_pose_t *route_planer_lane;
 
 		carmen_navigator_ackerman_plan_message obstacle_avoider_msg;
-		carmen_world_point_t *obstacle_avoider_path;
+		carmen_world_robot_and_trailer_pose_t *obstacle_avoider_path;
 		int obstacle_avoider_path_size;
 
 		carmen_navigator_ackerman_plan_message oa_motion_plan_msg;
-		carmen_world_point_t *oa_motion_plan;
+		carmen_world_robot_and_trailer_pose_t *oa_motion_plan;
 		int oa_motion_plan_size;
 
 //		carmen_model_predictive_planner_motion_plan_message mpp_motion_plan_msg;
 		rrt_path_message mpp_motion_plan_msg_rrt;
-		carmen_world_point_t *mpp_motion_plan;
+		carmen_world_robot_and_trailer_pose_t *mpp_motion_plan;
 		int mpp_motion_plan_size;
 
 		carmen_mapper_virtual_laser_message virtual_laser_msg;
