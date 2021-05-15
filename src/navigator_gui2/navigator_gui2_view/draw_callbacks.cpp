@@ -1284,7 +1284,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		if (global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses != 0)
 		{
 			global_gui->frenet_path_planer_number_of_poses = global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses;
-			global_gui->frenet_path_planer_path = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * global_gui->frenet_path_planer_number_of_poses);
+			global_gui->frenet_path_planer_path = (carmen_world_robot_and_trailer_pose_t *) malloc(sizeof(carmen_world_robot_and_trailer_pose_t) * global_gui->frenet_path_planer_number_of_poses);
 			int number_of_paths = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths_size / global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses;
 
 			for (int j = 0; j < number_of_paths; j++)
@@ -1294,6 +1294,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 					global_gui->frenet_path_planer_path[i].pose.x	  = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths[j * global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses + i].x;
 					global_gui->frenet_path_planer_path[i].pose.y	  = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths[j * global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses + i].y;
 					global_gui->frenet_path_planer_path[i].pose.theta = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths[j * global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses + i].theta;
+					global_gui->frenet_path_planer_path[i].pose.beta  = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths[j * global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses + i].beta;
 					global_gui->frenet_path_planer_path[i].map 	      = global_gui->controls_.map_view->internal_map;
 				}
 

@@ -230,7 +230,7 @@ namespace View
 		carmen_list_t *people;
 		carmen_list_t *moving_objects_list[6];
 
-		carmen_world_point_t simulator_trueposition;
+		carmen_world_robot_and_trailer_pose_t simulator_trueposition;
 		double time_of_simulator_update;
 		double simulator_hidden;
 
@@ -288,7 +288,7 @@ namespace View
 		int filming_timeout;
 
 		carmen_frenet_path_planner_set_of_paths frenet_path_planer_set_of_paths_msg;
-		carmen_world_point_t *frenet_path_planer_path;
+		carmen_world_robot_and_trailer_pose_t *frenet_path_planer_path;
 		int frenet_path_planer_number_of_poses;
 		carmen_world_point_t *route_planer_lane;
 
@@ -376,7 +376,7 @@ namespace View
 
 		void navigator_graphics_redraw_superimposed();
 		void navigator_graphics_change_map(carmen_map_p new_map);
-		void navigator_graphics_update_simulator_truepos(carmen_point_t truepose);
+		void navigator_graphics_update_simulator_truepos(carmen_point_t truepose, double beta);
 		void navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list);
 		void navigator_graphics_update_moving_objects(int id, int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking);
 
@@ -441,14 +441,16 @@ namespace View
 		void draw_annotations(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_placing_animation(GtkMapViewer *the_map_view);
 		void draw_path(carmen_world_point_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
+		void draw_path(carmen_world_robot_and_trailer_pose_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
 		void draw_road_velocity_control(GtkMapViewer *the_map_view);
 		void draw_path_vector(GtkMapViewer *the_map_view);
 		void draw_robot_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour);
-		void draw_robot_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour, bool draw_trailer);
+		void draw_robot_shape(GtkMapViewer *the_map_view, carmen_world_robot_and_trailer_pose_t *location, int filled, GdkColor *colour);
 		void draw_orientation_mark(GtkMapViewer *the_map_view, carmen_world_point_t *robot_pose);
 		void draw_path_color(GtkMapViewer *the_map_view, carmen_world_point_t* path, int size, GdkColor *color);
 		void draw_differential_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour);
-		void draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour, bool draw_trailer);
+		void draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour);
+		void draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_robot_and_trailer_pose_t *location, int filled, GdkColor *colour);
 		void draw_differential_orientation_mark(GtkMapViewer *the_map_view, carmen_world_point_t *robot_pose);
 		void draw_ackerman_orientation_mark(GtkMapViewer *the_map_view, carmen_world_point_t *robot_pose);
 
