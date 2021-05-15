@@ -928,7 +928,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 			//distance equals to -1.0 when the coordinates are outside of map
 			if (distance != -1.0)
 			{
-				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || trajectory_pose.beta > global_collision_config.semi_trailer_max_beta)
+				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || fabs(trajectory_pose.beta) > global_collision_config.semi_trailer_max_beta)
 				{
 //				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
 //				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
