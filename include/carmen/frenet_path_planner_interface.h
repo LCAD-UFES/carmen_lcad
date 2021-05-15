@@ -40,7 +40,8 @@ frenet_path_planner_get_parameters(int argc, char **argv);
 carmen_frenet_path_planner_set_of_paths
 frenet_path_planner_build_frenet_path_plan(carmen_robot_and_trailer_traj_point_t *poses_ahead,
 		carmen_robot_and_trailer_traj_point_t *poses_back,
-		int num_poses, int num_poses_back, double v, int *annotations, int *annotations_codes,
+		int num_poses, int num_poses_back, carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+		int *annotations, int *annotations_codes,
 		carmen_route_planner_road_network_message *road_network_message, double timestamp);
 
 #ifdef __cplusplus

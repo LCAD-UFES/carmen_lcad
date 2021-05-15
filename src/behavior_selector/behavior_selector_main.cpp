@@ -176,6 +176,10 @@ carmen_simulator_ackerman_objects_message *carmen_simulator_ackerman_simulated_o
 
 double distance_car_pose_car_front;
 
+carmen_semi_trailer_config_t   semi_trailer_config;
+static int argc_global;
+static char **argv_global;
+
 
 int
 compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_pose)
@@ -884,7 +888,7 @@ set_path_using_symotha(const carmen_robot_and_trailer_traj_point_t current_robot
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
 		{
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
-				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi.v,
+				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi,
 				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
@@ -1066,7 +1070,7 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
 		{
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
-				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi.v,
+				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi,
 				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
@@ -1218,7 +1222,25 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+static void
+read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
+{
+	semi_trailer_config.type = semi_trailer_type;
 
+	char semi_trailer_string[2048];
+
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+
+	carmen_param_t semi_trailer_param_list[] = {
+		{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   0, NULL},
+		{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   0, NULL},
+		{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						   0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -1256,6 +1278,9 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 //			carmen_get_time() - t, carmen_get_time() - t2);
 //
 //	t = carmen_get_time();
+
+	if ((msg->semi_trailer_type != semi_trailer_config.type) && (msg->semi_trailer_type > 0))
+		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
 }
 
 
@@ -1695,6 +1720,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "max_velocity_reverse", CARMEN_PARAM_DOUBLE, &robot_max_velocity_reverse, 1, NULL},
+		{(char *) "semi_trailer",	   (char *) "initial_type", CARMEN_PARAM_INT,	 &semi_trailer_config.type,								 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_symotha", CARMEN_PARAM_ONOFF, &behavior_selector_use_symotha, 1, NULL},
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
 		{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},
@@ -1762,12 +1788,18 @@ read_parameters(int argc, char **argv)
 	original_model_predictive_planner_obstacles_safe_distance = robot_config.model_predictive_planner_obstacles_safe_distance;
 
 	distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
+
+	if (semi_trailer_config.type > 0)
+		read_parameters_semi_trailer(argc, argv, semi_trailer_config.type);
 }
 
 
 int
 main(int argc, char **argv)
 {
+	argc_global = argc;
+	argv_global = argv;
+
 	sleep(2);	// Para aguardar o param_deamon carregar
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
