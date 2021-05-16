@@ -263,11 +263,12 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 									 -t_drawer->semi_trailer_config.M * sin(t_drawer->path[i].beta),
 									 0.0);
 
-						glBegin(GL_LINES);
-							glVertex3d(0.0, 0.0, 0.0);
-							glVertex3d(t_drawer->semi_trailer_config.d, 0.0, 0.0);
-							glVertex3d(0.0, t_drawer->semi_trailer_config.width / 2, 0.0);
-							glVertex3d(0.0, -t_drawer->semi_trailer_config.width / 2, 0.0);
+						glBegin(GL_LINE_STRIP);
+							glVertex3f(-t_drawer->semi_trailer_config.distance_between_axle_and_back, -t_drawer->semi_trailer_config.width / 2, 0);
+							glVertex3f(t_drawer->semi_trailer_config.distance_between_axle_and_front, -t_drawer->semi_trailer_config.width / 2, 0);
+							glVertex3f(t_drawer->semi_trailer_config.distance_between_axle_and_front, t_drawer->semi_trailer_config.width / 2, 0);
+							glVertex3f(-t_drawer->semi_trailer_config.distance_between_axle_and_back, t_drawer->semi_trailer_config.width / 2, 0);
+							glVertex3f(-t_drawer->semi_trailer_config.distance_between_axle_and_back, -t_drawer->semi_trailer_config.width / 2, 0);
 						glEnd();
 
 					glPopMatrix();
