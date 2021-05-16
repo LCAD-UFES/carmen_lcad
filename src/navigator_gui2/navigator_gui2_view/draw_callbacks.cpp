@@ -1301,7 +1301,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 				if (j != global_gui->frenet_path_planer_set_of_paths_msg.selected_path)
 					global_gui->draw_path(global_gui->frenet_path_planer_path, global_gui->frenet_path_planer_number_of_poses, carmen_light_green, carmen_light_green, the_map_view);
 				else
-					global_gui->draw_path(global_gui->frenet_path_planer_path, global_gui->frenet_path_planer_number_of_poses, carmen_blue, carmen_blue, the_map_view);
+					global_gui->draw_path(global_gui->frenet_path_planer_path, global_gui->frenet_path_planer_number_of_poses, carmen_light_blue, carmen_light_blue, the_map_view);
 			}
 			free(global_gui->frenet_path_planer_path);
 		}
@@ -1323,7 +1323,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 						global_gui->route_planer_lane[i].pose.x	  	= global_gui->route_planner_route->nearby_lanes[lane_start + i].x;
 						global_gui->route_planer_lane[i].pose.y	  	= global_gui->route_planner_route->nearby_lanes[lane_start + i].y;
 						global_gui->route_planer_lane[i].pose.theta = global_gui->route_planner_route->nearby_lanes[lane_start + i].theta;
-						global_gui->route_planer_lane[i].pose.beta = global_gui->route_planner_route->nearby_lanes[lane_start + i].beta;
+						global_gui->route_planer_lane[i].pose.beta  = global_gui->route_planner_route->nearby_lanes[lane_start + i].beta;
 						global_gui->route_planer_lane[i].map 	   	= global_gui->controls_.map_view->internal_map;
 					}
 
@@ -1340,7 +1340,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 						global_gui->route_planer_lane[i].pose.x	  	= global_gui->route_planner_route->poses[i].x;
 						global_gui->route_planer_lane[i].pose.y	  	= global_gui->route_planner_route->poses[i].y;
 						global_gui->route_planer_lane[i].pose.theta = global_gui->route_planner_route->poses[i].theta;
-						global_gui->route_planer_lane[i].pose.beta = global_gui->route_planner_route->poses[i].beta;
+						global_gui->route_planer_lane[i].pose.beta  = global_gui->route_planner_route->poses[i].beta;
 						global_gui->route_planer_lane[i].map 	   	= global_gui->controls_.map_view->internal_map;
 					}
 
@@ -1357,7 +1357,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 						global_gui->route_planer_lane[i].pose.x	  	= global_gui->route_planner_route->poses_back[i].x;
 						global_gui->route_planer_lane[i].pose.y	  	= global_gui->route_planner_route->poses_back[i].y;
 						global_gui->route_planer_lane[i].pose.theta = global_gui->route_planner_route->poses_back[i].theta;
-						global_gui->route_planer_lane[i].pose.beta = global_gui->route_planner_route->poses_back[i].beta;
+						global_gui->route_planer_lane[i].pose.beta  = global_gui->route_planner_route->poses_back[i].beta;
 						global_gui->route_planer_lane[i].map 	   	= global_gui->controls_.map_view->internal_map;
 					}
 

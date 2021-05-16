@@ -510,6 +510,7 @@ semi_trailer_collision_config_initialization(int semi_trailer_type)
 		{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 0, NULL},
 	};
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
+	global_collision_config.semi_trailer_max_beta = carmen_degrees_to_radians(global_collision_config.semi_trailer_max_beta);
 
 	char *carmen_home = getenv("CARMEN_HOME");
 	char collision_file_[2048];
