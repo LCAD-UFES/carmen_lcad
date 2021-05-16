@@ -151,11 +151,13 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 		msg.path[i].p1.x = it->p1.pose.x;
 		msg.path[i].p1.y = it->p1.pose.y;
 		msg.path[i].p1.theta = it->p1.pose.theta;
+		msg.path[i].p1.beta = it->p1.pose.beta;
 		msg.path[i].p1.v = it->p1.v_and_phi.v;
 		msg.path[i].p1.phi = it->p1.v_and_phi.phi;
 
 		msg.path[i].p2.x = it->p2.pose.x;
 		msg.path[i].p2.y = it->p2.pose.y;
+		msg.path[i].p2.beta = it->p2.pose.beta;
 		msg.path[i].p2.theta = it->p2.pose.theta;
 		msg.path[i].p2.v = it->p2.v_and_phi.v;
 		msg.path[i].p2.phi = it->p2.v_and_phi.phi;

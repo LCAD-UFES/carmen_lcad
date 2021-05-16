@@ -626,21 +626,26 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_robot_a
 
 	if (global_collision_config.semi_trailer_type > 0)
 	{
-		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+		if (fabs(local_point_to_check.beta) > global_collision_config.semi_trailer_max_beta)
+			return (pow(2.0, global_collision_config.semi_trailer_markers[0].radius + safety_distance));
+		else
 		{
-			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, local_point_to_check.beta);
-
-			// Pega local_point_to_check e coloca no sistema de coordenadas definido por localizer_pose
-			carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
-					displaced_marker.x, displaced_marker.y);
-			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-			//distance equals to -1.0 when the coordinates are outside of map
-			if (distance != -1.0)
+			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 			{
-				double delta = distance - (global_collision_config.semi_trailer_markers[i].radius + safety_distance);
-				if (delta < 0.0)
-					proximity_to_obstacles += delta * delta;
+				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, local_point_to_check.beta);
+
+				// Pega local_point_to_check e coloca no sistema de coordenadas definido por localizer_pose
+				carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
+						displaced_marker.x, displaced_marker.y);
+				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+				//distance equals to -1.0 when the coordinates are outside of map
+				if (distance != -1.0)
+				{
+					double delta = distance - (global_collision_config.semi_trailer_markers[i].radius + safety_distance);
+					if (delta < 0.0)
+						proximity_to_obstacles += delta * delta;
+				}
 			}
 		}
 	}
@@ -802,6 +807,7 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer
 					return (1);
 			}
 		}
+
 		if (global_collision_config.semi_trailer_type > 0)
 		{
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
@@ -861,20 +867,25 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 
 	if (global_collision_config.semi_trailer_type > 0)
 	{
-		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+		if (fabs(trajectory_pose.beta) > global_collision_config.semi_trailer_max_beta)
+			return (0.0);
+		else
 		{
-			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, trajectory_pose.beta);
+			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+			{
+				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, trajectory_pose.beta);
 
-			carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
-					displaced_marker.x, displaced_marker.y);
-			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-			//distance equals to -1.0 when the coordinates are outside of map
-			if (distance != -1.0)
-			{	// A fucao retorna valor negativo se o carro encobrir um obstaculo.
-				distance = distance - global_collision_config.semi_trailer_markers[i].radius;
-				if (distance < min_distance)
-					min_distance = distance;
+				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
+						displaced_marker.x, displaced_marker.y);
+				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+				//distance equals to -1.0 when the coordinates are outside of map
+				if (distance != -1.0)
+				{	// A fucao retorna valor negativo se o carro encobrir um obstaculo.
+					distance = distance - global_collision_config.semi_trailer_markers[i].radius;
+					if (distance < min_distance)
+						min_distance = distance;
+				}
 			}
 		}
 	}
@@ -918,28 +929,33 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 
 	if (global_collision_config.semi_trailer_type > 0)
 	{
-		for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+		if (fabs(trajectory_pose.beta) > global_collision_config.semi_trailer_max_beta)
+			return (1);
+		else
 		{
-			carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-					global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, trajectory_pose.beta);
-
-			carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
-					displaced_marker.x, displaced_marker.y);
-			double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-			//distance equals to -1.0 when the coordinates are outside of map
-			if (distance != -1.0)
+			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 			{
-				if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance || fabs(trajectory_pose.beta) > global_collision_config.semi_trailer_max_beta)
+				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, trajectory_pose.beta);
+
+				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
+						displaced_marker.x, displaced_marker.y);
+				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+				//distance equals to -1.0 when the coordinates are outside of map
+				if (distance != -1.0)
 				{
-//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
-//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
-//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-//				virtual_laser_message.num_positions++;
-					return (1);
+					if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance)
+					{
+	//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+	//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+	//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+	//				virtual_laser_message.num_positions++;
+						return (1);
+					}
 				}
+				else
+					return (2);
 			}
-			else
-				return (2);
 		}
 	}
 
