@@ -541,7 +541,14 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailer_path_point_t>
 		{
 			if ((path[i].phi > GlobalState::robot_config.max_phi) ||
 				(path[i].phi < -GlobalState::robot_config.max_phi))
-				printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
+			{
+				static double last_time = 0.0;
+				if ((carmen_get_time() - last_time) > 0.1)
+				{
+					printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
+					last_time = carmen_get_time();
+				}
+			}
 
 			carmen_robot_and_trailer_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].beta};
 			if (GlobalState::distance_map != NULL)
@@ -562,7 +569,12 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailer_path_point_t>
 
 	if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
 	{
-		printf("---------- PATH HIT OBSTACLE!!!! -> %lf\n", carmen_get_time());
+		static double last_time = 0.0;
+		if ((carmen_get_time() - last_time) > 0.1)
+		{
+			printf("---------- PATH HIT OBSTACLE!!!! -> %lf\n", carmen_get_time());
+			last_time = carmen_get_time();
+		}
 		return (true);
 	}
 	else
