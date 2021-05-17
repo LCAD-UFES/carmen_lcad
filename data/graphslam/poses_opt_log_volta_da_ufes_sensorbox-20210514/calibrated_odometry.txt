@@ -1,0 +1,1 @@
+v (multiplier bias): (1.006788 -0.000000),  phi (multiplier bias): (0.979170 0.000422),  Initial Angle: -0.581625, GPS to use: 1, GPS Latency: 0.000000, L: 2.625000

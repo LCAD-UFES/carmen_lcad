@@ -56,7 +56,6 @@ Compile os módulos graphslam e o odometry_calibration
      De pausa no playback control no segundo_inicial_1, copie a "globalpos timestamp:" (seção Indicators do navigator_gui2; para copiar, 
      marque o número com o mouse, clique com o botão da direita e ecolha copiar), e cole no process-volta_da_ufes_playback_viewer_3D_loopclosure.ini 
      como o parâmetro -save_globalpos_timestamp do localize_ackmerman.
-     
      Em seguida, encontre o momento inicial (campo Time do plaback_control) (segundo_inicial_2) e final (segundo_final_2) da segunda passada na mesma região (ESSA SERÁ A SEGUNDA PASSADA!). 
      Esse é o momento em que o carro passa novamente próximo ao segundo_inicial_1 até o fim do log (no caso de um log volta da UFES).
 
@@ -92,10 +91,13 @@ Compile os módulos graphslam e o odometry_calibration
 
 9. Para construir seu mapa no diretório ../data/mapper_teste2, rode o PubPoses e reinicie seu log no início do trecho de intesse. Rode o log por todo o trecho de 
    interesse em velocidade (Speed do playback control) compatível com o hardware onde você estiver trabalhando.
+
+9.1 Se deseja criar um arquivo RDDF, verifique se o rddf_build esta ligado, ele usa as poses para criar o arquivo rddf com o nome especificado dentro do process-volta_da_ufes_playback_viewer_3D_map_generation.ini
+
    Pronto. Seu mapa estará disponível em ../data/mapper_teste2. Mate o proccontrol e examine seu mapa com um proccontrol de playback_viewer_3D.ini apropriado.
 
 10. Finalmente se o mapa estiver em condições de produção, mova para o data usando o padrão de nome de pasta de mapas, e copie os arquivos da pasta tmp para a pasta $CARMEN_HOME/data/graphslam/ assim as poses originais do mapa serão preservadas
-        cp $CARMEN_HOME/bin/tmp  $CARMEN_HOME/data/graphslam/poses_opt_<log_usado>
+        cp -r $CARMEN_HOME/bin/tmp  $CARMEN_HOME/data/graphslam/poses_opt_<log_usado>
 
 ==============================================================================================================================================================================
 
