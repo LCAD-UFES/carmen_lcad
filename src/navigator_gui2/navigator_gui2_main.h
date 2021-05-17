@@ -23,6 +23,7 @@ typedef struct
 	int	   show_oa_motion_plan;
 	int	   show_mpp_motion_plan;
 	int	   show_command_plan;
+	int	   show_offroad_plan;
 	int	   show_dynamic_objects;
 	int	   show_dynamic_points;
 	int	   show_annotations;

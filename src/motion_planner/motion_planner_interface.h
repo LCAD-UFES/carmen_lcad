@@ -22,7 +22,7 @@ void carmen_motion_planner_subscribe_path_message(
 		carmen_subscribe_t subscribe_how);
 
 void carmen_motion_planner_publish_path_message(
-		carmen_ackerman_traj_point_t *path, int size, int algorithm);
+		carmen_robot_and_trailer_traj_point_t *path, int size, int algorithm);
 
 void carmen_motion_planner_define_path_message();
 

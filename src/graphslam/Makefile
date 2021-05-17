@@ -7,8 +7,8 @@ LINK = g++
 
 CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations
 
-CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CFLAGS += -std=c11 -Wno-comment
+CXXFLAGS += -std=c++11 -Wno-comment
 
 SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util
 

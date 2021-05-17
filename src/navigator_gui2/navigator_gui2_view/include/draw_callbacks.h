@@ -209,6 +209,10 @@ void on_menuDisplay_ShowCommandPlan_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowOffroadPlan_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
 void on_menuGoals_EditRddfGoals_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)));
 

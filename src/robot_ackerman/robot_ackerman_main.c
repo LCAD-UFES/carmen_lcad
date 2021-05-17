@@ -69,9 +69,9 @@ static double command_v = 0, command_phi = 0;
 static double time_of_last_command;
 
 static int aligning;
-static carmen_ackerman_traj_point_t last_goal;//TODO create trajectory point for ackerman?
-static carmen_ackerman_traj_point_t start_position;
-static carmen_ackerman_traj_point_t goal;
+static carmen_robot_and_trailer_traj_point_t last_goal;//TODO create trajectory point for ackerman?
+static carmen_robot_and_trailer_traj_point_t start_position;
+static carmen_robot_and_trailer_traj_point_t goal;
 static int goal_is_final = 1;
 static double vector_distance;
 static double vector_angle;

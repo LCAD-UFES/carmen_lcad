@@ -131,8 +131,11 @@ class carmen_timestamp_index
 };
 
 // void carmen_rddf_create_index_from_rddf_log(char *rddf_filename);
-int carmen_search_next_poses_index(double x, double y, double yaw, double v, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int n, int *annotations, int perform_loop);
-int carmen_find_poses_around(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t *poses_ahead, int n);
+int carmen_search_next_poses_index(double x, double y, double yaw, double v, double timestamp /* only for debugging */,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back, int n,
+		int *annotations, int perform_loop);
+int carmen_find_poses_around(double x, double y, double yaw, double timestamp /* only for debugging */,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, int n);
 void carmen_rddf_load_index(char *rddf_filename);
 int carmen_rddf_index_exists(char *rddf_filename);
 
@@ -142,7 +145,7 @@ void carmen_rddf_index_save(char *rddf_filename);
 long find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation,
 		double timestamp_ignore_neighborhood = 0, int search_only_in_the_begining = 0, double v = 0.0, int test_v = 0);
 carmen_timestamp_index* get_timestamp_index();
-carmen_ackerman_traj_point_t create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double yaw);
+carmen_robot_and_trailer_traj_point_t create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double yaw);
 
 void carmen_rddf_index_clear();
 

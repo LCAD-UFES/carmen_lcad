@@ -624,7 +624,7 @@ obstacle_avoider_message_handler(carmen_navigator_ackerman_plan_message *msg)
 }
 
 void
-navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length)
+navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length)
 {
 	int index;
 
@@ -3405,7 +3405,7 @@ void navigator_graphics_update_display(carmen_traj_point_p	new_robot,
 	do_redraw();
 }
 
-void navigator_graphics_update_path(carmen_ackerman_traj_point_t* new_path, int path_length, int path_id)
+void navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t* new_path, int path_length, int path_id)
 {
 	int i, path_index;
 
@@ -3440,7 +3440,7 @@ void navigator_graphics_update_path(carmen_ackerman_traj_point_t* new_path, int 
 	do_redraw();
 }
 
-void navigator_graphics_update_plan_tree(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2, int plan_tree_length)
+void navigator_graphics_update_plan_tree(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2, int plan_tree_length)
 {
 	int index;
 
@@ -3545,7 +3545,7 @@ void navigator_graphics_update_simulator_truepos(carmen_point_t truepose)
 	do_redraw();
 }
 
-void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size)
+void navigator_graphics_update_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int size)
 {
 	int i;
 	if(navigator_goal_list)
@@ -3566,7 +3566,7 @@ void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list
 	do_redraw();
 }
 
-void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size)
+void navigator_graphics_update_waypoint_list(carmen_robot_and_trailer_traj_point_t *waypoint_list, int size)
 {
 	int i;
 	if(navigator_waypoint_list)

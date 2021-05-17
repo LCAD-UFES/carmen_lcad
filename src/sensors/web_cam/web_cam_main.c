@@ -69,8 +69,8 @@ carmen_read_web_cam_parameters (int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{"web_cam", "width", CARMEN_PARAM_INT, &web_cam_width, 0, NULL},
-			{"web_cam", "height", CARMEN_PARAM_INT, &web_cam_height, 0, NULL},
+			{(char *) "web_cam", (char *) "width", CARMEN_PARAM_INT, &web_cam_width, 0, NULL},
+			{(char *) "web_cam", (char *) "height", CARMEN_PARAM_INT, &web_cam_height, 0, NULL},
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);

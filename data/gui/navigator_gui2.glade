@@ -600,6 +600,16 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowOffroadPlan">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Offroad Plan</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="on_menuDisplay_ShowOffroadPlan_toggled" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkCheckMenuItem" id="menuDisplay_ShowDynamicObjects">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>

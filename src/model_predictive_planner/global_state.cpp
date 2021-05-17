@@ -9,8 +9,8 @@
 #include "util.h"
 #include "trajectory_lookup_table.h"
 
-Pose *GlobalState::localizer_pose = 0;
-Pose *GlobalState::last_plan_pose = 0;
+carmen_robot_and_trailer_pose_t *GlobalState::localizer_pose = NULL;
+carmen_robot_and_trailer_pose_t *GlobalState::last_plan_pose = NULL;
 double GlobalState::localizer_pose_timestamp = 0;
 
 Command GlobalState::last_odometry;
@@ -21,6 +21,7 @@ bool GlobalState::last_goal = true;
 bool GlobalState::last_path_received_is_empty = false;
 
 carmen_robot_ackerman_config_t GlobalState::robot_config;
+carmen_semi_trailer_config_t GlobalState::semi_trailer_config;
 
 double GlobalState::robot_max_centripetal_acceleration = 0.0;
 
@@ -57,7 +58,7 @@ bool GlobalState::use_mpc = false;
 
 carmen_moving_objects_point_clouds_message *GlobalState::objects_message = NULL;
 bool GlobalState::moving_objects_initialized = false;
-std::vector<carmen_ackerman_traj_point_t*> GlobalState::moving_objects_trajectories;
+std::vector<carmen_robot_and_trailer_traj_point_t*> GlobalState::moving_objects_trajectories;
 
 int    GlobalState::use_truepos = 0;
 bool   GlobalState::following_path = false;
@@ -98,13 +99,3 @@ void GlobalState::set_goal_pose(Pose goal_pose)
 	*GlobalState::goal_pose = goal_pose;
 }
 
-void GlobalState::set_robot_pose(Pose robot_pose, double timestamp)
-{
-	if (!GlobalState::localizer_pose)
-	{
-		GlobalState::localizer_pose = new Pose();
-	}
-
-	*GlobalState::localizer_pose = robot_pose;
-	localizer_pose_timestamp = timestamp;
-}
