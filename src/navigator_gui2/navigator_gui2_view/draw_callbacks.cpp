@@ -555,6 +555,13 @@ void on_menuDisplay_ShowMPPMotionPlan_toggled (GtkCheckMenuItem* togglebutton __
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowOffroadPlan_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	global_gui->nav_panel_config->show_offroad_plan = gtk_check_menu_item_get_active(togglebutton);
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowCommandPlan_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -1471,6 +1478,29 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 		global_gui->draw_path(global_gui->mpp_motion_plan, global_gui->mpp_motion_plan_size, carmen_green, carmen_green, the_map_view);
 		free(global_gui->mpp_motion_plan);
+	}
+
+	if (global_gui->nav_panel_config->show_offroad_plan)
+	{
+		if (global_gui->route_planner_route != NULL && global_gui->offroad_planner_plan != NULL)
+		{
+			if (global_gui->route_planner_route->route_planner_state == EXECUTING_OFFROAD_PLAN && global_gui->offroad_planner_plan->number_of_poses != 0)
+			{
+				carmen_world_robot_and_trailer_pose_t *offroad_planner_path = (carmen_world_robot_and_trailer_pose_t *) malloc(sizeof(carmen_world_robot_and_trailer_pose_t) * global_gui->offroad_planner_plan->number_of_poses);
+
+				for (int i = 0; i < global_gui->offroad_planner_plan->number_of_poses; i++)
+				{
+					offroad_planner_path[i].pose.x	   = global_gui->offroad_planner_plan->poses[i].x;
+					offroad_planner_path[i].pose.y	   = global_gui->offroad_planner_plan->poses[i].y;
+					offroad_planner_path[i].pose.theta = global_gui->offroad_planner_plan->poses[i].theta;
+					offroad_planner_path[i].pose.beta  = global_gui->offroad_planner_plan->poses[i].beta;
+					offroad_planner_path[i].map		   = global_gui->controls_.map_view->internal_map;
+				}
+
+				global_gui->draw_path(offroad_planner_path, global_gui->offroad_planner_plan->number_of_poses, carmen_grey, carmen_grey, the_map_view);
+				free(offroad_planner_path);
+			}
+		}
 	}
 
 	if (global_gui->nav_panel_config->draw_path)

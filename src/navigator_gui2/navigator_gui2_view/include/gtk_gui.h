@@ -159,6 +159,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowOAMotionPlan;
 			GtkCheckMenuItem* menuDisplay_ShowMPPMotionPlan;
 			GtkCheckMenuItem* menuDisplay_ShowCommandPlan;
+			GtkCheckMenuItem* menuDisplay_ShowOffroadPlan;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicObjects;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicPoints;
 			GtkCheckMenuItem* menuDisplay_ShowAnnotations;

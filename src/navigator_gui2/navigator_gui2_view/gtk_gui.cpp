@@ -266,6 +266,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPlan), nav_panel_config->show_command_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMPPMotionPlan), nav_panel_config->show_mpp_motion_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowOAMotionPlan), nav_panel_config->show_oa_motion_plan);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowOffroadPlan), nav_panel_config->show_offroad_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicObjects), nav_panel_config->show_dynamic_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicPoints), nav_panel_config->show_dynamic_points);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowAnnotations), nav_panel_config->show_annotations);
@@ -511,6 +512,7 @@ namespace View
 		controls_.menuDisplay_ShowPathPlans = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowPathPlans" ));
 		controls_.menuDisplay_ShowOAMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowOAMotionPlan" ));
 		controls_.menuDisplay_ShowMPPMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowMPPMotionPlan" ));
+		controls_.menuDisplay_ShowOffroadPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowOffroadPlan" ));
 		controls_.menuDisplay_ShowParticles = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowParticles" ));
 
 		controls_.menuSimulatorShowTruePosition = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSimulatorShowTruePosition" ));
