@@ -18,9 +18,14 @@ extern "C" {
 #define NUM_STEERING_ANN_INPUTS 80
 
 
-carmen_ackerman_traj_point_t
-carmen_libcarmodel_recalc_pos_ackerman(carmen_ackerman_traj_point_t robot_state, double target_v, double target_phi,
-		double full_time_interval, double *distance_traveled, double delta_t, carmen_robot_ackerman_config_t robot_config);
+double
+compute_semi_trailer_beta(carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point, double dt,
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config);
+
+carmen_robot_and_trailer_traj_point_t
+carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailer_traj_point_t robot_state, double target_v, double target_phi,
+		double full_time_interval, double *distance_traveled, double delta_t,
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config);
 
 
 void carmen_libcarneuralmodel_init_steering_ann_input(fann_type *input);

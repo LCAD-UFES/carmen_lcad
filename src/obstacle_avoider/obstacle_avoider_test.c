@@ -5,7 +5,7 @@
 typedef double (*MotionControlFunction)(double v, double w, double t);
 
 
-static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_PER_VECTOR];
 
 
 void

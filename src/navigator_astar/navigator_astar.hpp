@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-  void carmen_navigator_ackerman_goal_triplet(carmen_ackerman_traj_point_p point);
+  void carmen_navigator_ackerman_goal_triplet(carmen_robot_and_trailer_traj_point_t *point);
   void carmen_navigator_ackerman_goal(double x, double y, double theta);
   int carmen_navigator_ackerman_goal_place(char *name);
   void carmen_navigator_ackerman_set_max_velocity(double vel);

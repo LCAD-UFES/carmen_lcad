@@ -25,6 +25,7 @@ public:
 	double x;
 	double y;
 	double theta;
+	double beta;
 };
 
 #endif /* POSE_H_ */

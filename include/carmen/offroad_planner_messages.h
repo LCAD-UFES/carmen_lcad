@@ -43,17 +43,17 @@ typedef struct
 {
 	carmen_offroad_planner_feedback_t offroad_planner_feedback;
 	int number_of_poses;
-	carmen_ackerman_traj_point_t *poses;
+	carmen_robot_and_trailer_traj_point_t *poses;
 	int pose_id;
-	carmen_ackerman_traj_point_t transition_pose;
-	carmen_ackerman_traj_point_t goal_pose;
+	carmen_robot_and_trailer_traj_point_t transition_pose;
+	carmen_robot_and_trailer_traj_point_t goal_pose;
 
     double timestamp;
     char *host;
 } carmen_offroad_planner_plan_message;
 
 #define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_NAME	"carmen_offroad_planner_plan_message"
-#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, double, double}:2>, int, {double, double, double, double, double}, {double, double, double, double, double}, double, string}"
+#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, double, double, double}:2>, int, {double, double, double, double, double, double}, {double, double, double, double, double, double}, double, string}"
 
 #ifdef __cplusplus
 }

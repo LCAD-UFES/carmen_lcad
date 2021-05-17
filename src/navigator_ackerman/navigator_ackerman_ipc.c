@@ -74,7 +74,7 @@ void carmen_navigator_ackerman_publish_autonomous_stopped(carmen_navigator_acker
 			CARMEN_NAVIGATOR_ACKERMAN_AUTONOMOUS_STOPPED_NAME);
 }
 
-void carmen_navigator_ackerman_publish_plan_tree(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2, int num_edges)
+void carmen_navigator_ackerman_publish_plan_tree(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2, int num_edges)
 {
 	static int first_time = 1;
 
@@ -144,7 +144,7 @@ static void navigator_status_query_handler(MSG_INSTANCE msgRef,
 static int paths_are_same(carmen_planner_path_p path1, 
 		carmen_planner_path_p path2)
 {
-	carmen_ackerman_traj_point_t point1, point2;
+	carmen_robot_and_trailer_traj_point_t point1, point2;
 	int index;
 
 	if (path1->length != path2->length)
@@ -166,7 +166,7 @@ void carmen_navigator_ackerman_publish_plan(void)
 	carmen_navigator_ackerman_plan_message plan_msg;
 	IPC_RETURN_TYPE err;
 	/* cyrill, 10.07.2003 */
-	static carmen_ackerman_traj_point_t prev_goal        = {-1.0, -1.0, -1.0, -1.0, -1.0};
+	static carmen_robot_and_trailer_traj_point_t prev_goal        = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
 
 	static carmen_planner_path_t prev_path = {NULL, 0, 0};
 

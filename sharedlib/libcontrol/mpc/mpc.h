@@ -53,7 +53,7 @@ typedef double (*get_vector_from_spline)(EFFORT_SPLINE_DESCRIPTOR *descriptors, 
 
 typedef struct
 {
-	carmen_ackerman_motion_command_t *motion_commands_vector;
+	carmen_robot_and_trailer_motion_command_t *motion_commands_vector;
 	unsigned int motion_commands_vector_size;
 
 	MOTION_COMMAND path;
@@ -102,7 +102,7 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 
 
 MOTION_COMMAND
-get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message, double prediction_horizon);
+get_motion_commands_vector(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message, double prediction_horizon);
 
 
 void

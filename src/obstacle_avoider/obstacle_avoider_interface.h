@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-void carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands, int num_motion_commands, double timestamp);
+void carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_motion_command_t *motion_commands, int num_motion_commands, double timestamp);
 
 void carmen_obstacle_avoider_publish_motion_planner_path(carmen_navigator_ackerman_plan_message msg);
 

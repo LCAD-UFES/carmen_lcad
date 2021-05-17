@@ -2,13 +2,13 @@
 #include "motion_planner.h"
 
 //static void teste_stop(double space_interval, double vel);
-static carmen_ackerman_traj_point_t trajectory_vector_of_points[MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE];
+static carmen_robot_and_trailer_traj_point_t trajectory_vector_of_points[MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE];
 
 int current_motion_command_vetor_index = 0;
-carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
 
-carmen_ackerman_traj_point_t g_robot_position;
+carmen_robot_and_trailer_traj_point_t g_robot_position;
 carmen_motion_planner_path_message path;
 int autonomous_status = 0;
 
@@ -23,17 +23,17 @@ int current_map = 0;
 carmen_map_p map_vector[NUM_MAPS];
 int necessary_maps_available = 0;
 
-carmen_ackerman_traj_point_t *g_current_trajectory = NULL;
+carmen_robot_and_trailer_traj_point_t *g_current_trajectory = NULL;
 int g_current_trajectory_length;
 
 static double phi_gain = 1.0;
 
 
 
-carmen_ackerman_traj_point_t
-predict_new_robot_position(carmen_ackerman_traj_point_t current_robot_position, double v, double phi, double time, carmen_robot_ackerman_config_t *car_config)
+carmen_robot_and_trailer_traj_point_t
+predict_new_robot_position(carmen_robot_and_trailer_traj_point_t current_robot_position, double v, double phi, double time, carmen_robot_ackerman_config_t *car_config)
 {
-	carmen_ackerman_traj_point_t new_robot_position;
+	carmen_robot_and_trailer_traj_point_t new_robot_position;
 	int i;
 	double delta_time;
 
@@ -54,11 +54,12 @@ predict_new_robot_position(carmen_ackerman_traj_point_t current_robot_position, 
 
 
 int
-build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands, carmen_ackerman_traj_point_t initial_pose)
+build_predicted_trajectory(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands,
+		carmen_robot_and_trailer_traj_point_t initial_pose)
 {
 	int i, trajectory_vector_of_points_size = 0;
 	double t;
-	carmen_ackerman_traj_point_t pose;
+	carmen_robot_and_trailer_traj_point_t pose;
 
 	pose = initial_pose;
 
@@ -78,7 +79,7 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 
 
 carmen_navigator_ackerman_plan_message 
-build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands)
+build_navigator_ackerman_plan_message(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands)
 {
 	int i, trajectory_vector_of_points_size;
 	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
@@ -86,7 +87,7 @@ build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_co
 	trajectory_vector_of_points_size = build_predicted_trajectory(motion_commands_vector, num_motion_commands, g_robot_position);
 
 	predicted_trajectory_message.path_length = trajectory_vector_of_points_size;
-	predicted_trajectory_message.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * (trajectory_vector_of_points_size));
+	predicted_trajectory_message.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * (trajectory_vector_of_points_size));
 
 	for (i = 0; i < trajectory_vector_of_points_size; i++)
 	{
@@ -104,8 +105,8 @@ build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_co
 }
 
 
-carmen_ackerman_traj_point_t
-carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t point, double lenght, double phi, double v)
+carmen_robot_and_trailer_traj_point_t
+carmen_conventional_astar_ackerman_kinematic_3(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v)
 {
 
 	double	radcurv = lenght / tan(fabs(phi));
@@ -170,7 +171,7 @@ delete_path_point(int index)
 
 
 static int
-next_waypoint_astar(carmen_ackerman_traj_point_p waypoint)
+next_waypoint_astar(carmen_robot_and_trailer_traj_point_t *waypoint)
 {
 	if (path.path == NULL)
 		return -1;
@@ -219,9 +220,9 @@ next_waypoint_astar(carmen_ackerman_traj_point_p waypoint)
 
 
 static int
-next_waypoint(carmen_ackerman_traj_point_p waypoint, int* waypoint_index)
+next_waypoint(carmen_robot_and_trailer_traj_point_t *waypoint, int* waypoint_index)
 {
-	carmen_ackerman_traj_point_p point;
+	carmen_robot_and_trailer_traj_point_t *point;
 	int next_point;
 	double delta_dist;
 
@@ -255,10 +256,10 @@ next_waypoint(carmen_ackerman_traj_point_p waypoint, int* waypoint_index)
 }
 
 
-static carmen_ackerman_traj_point_t
-get_center_of_the_car_front_axel(carmen_ackerman_traj_point_t current_robot_position)
+static carmen_robot_and_trailer_traj_point_t
+get_center_of_the_car_front_axel(carmen_robot_and_trailer_traj_point_t current_robot_position)
 {
-	carmen_ackerman_traj_point_t center_of_the_car_front_axel;
+	carmen_robot_and_trailer_traj_point_t center_of_the_car_front_axel;
 
 	center_of_the_car_front_axel.x = current_robot_position.x + carmen_robot_ackerman_config.distance_between_front_and_rear_axles * cos(current_robot_position.theta);
 	center_of_the_car_front_axel.y = current_robot_position.y + carmen_robot_ackerman_config.distance_between_front_and_rear_axles * sin(current_robot_position.theta);
@@ -268,17 +269,17 @@ get_center_of_the_car_front_axel(carmen_ackerman_traj_point_t current_robot_posi
 
 
 static double
-dist2(carmen_ackerman_traj_point_t v, carmen_ackerman_traj_point_t w) 
+dist2(carmen_robot_and_trailer_traj_point_t v, carmen_robot_and_trailer_traj_point_t w)
 { 
 	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
 }
 
 
-static carmen_ackerman_traj_point_t
+static carmen_robot_and_trailer_traj_point_t
 get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
-		carmen_ackerman_traj_point_t current_robot_position,
-		carmen_ackerman_traj_point_t waypoint,
-		carmen_ackerman_traj_point_t center_of_the_car_front_axel)
+		carmen_robot_and_trailer_traj_point_t current_robot_position,
+		carmen_robot_and_trailer_traj_point_t waypoint,
+		carmen_robot_and_trailer_traj_point_t center_of_the_car_front_axel)
 {
 
 #define	POINT_WITHIN_SEGMENT		0
@@ -288,7 +289,7 @@ get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
 
 	// Return minimum distance between line segment vw and point p
 	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-	carmen_ackerman_traj_point_t v, w, p;
+	carmen_robot_and_trailer_traj_point_t v, w, p;
 	double l2, t;
 
 	p.x = center_of_the_car_front_axel.x;
@@ -380,9 +381,10 @@ get_motion_command_v(double v, double desired_v, double time)
 
 
 static int
-phi_signal_negative(carmen_ackerman_traj_point_t origin, carmen_ackerman_traj_point_t source_v1, carmen_ackerman_traj_point_t source_v2)
+phi_signal_negative(carmen_robot_and_trailer_traj_point_t origin, carmen_robot_and_trailer_traj_point_t source_v1,
+		carmen_robot_and_trailer_traj_point_t source_v2)
 {
-	carmen_ackerman_traj_point_t v1, v2;
+	carmen_robot_and_trailer_traj_point_t v1, v2;
 	double signal;
 
 	v1.x = source_v1.x - origin.x;
@@ -400,7 +402,8 @@ phi_signal_negative(carmen_ackerman_traj_point_t origin, carmen_ackerman_traj_po
 
 
 static double
-get_motion_command_phi(double phi, double time, carmen_ackerman_traj_point_t current_robot_position, carmen_ackerman_traj_point_t center_of_the_car_front_axel, carmen_ackerman_traj_point_t point_in_trajectory)
+get_motion_command_phi(double phi, double time, carmen_robot_and_trailer_traj_point_t current_robot_position,
+		carmen_robot_and_trailer_traj_point_t center_of_the_car_front_axel, carmen_robot_and_trailer_traj_point_t point_in_trajectory)
 {
 	double desired_phi, new_phi, v, efa;
 	double max_phi;
@@ -440,7 +443,7 @@ get_motion_command_phi(double phi, double time, carmen_ackerman_traj_point_t cur
 
 
 static double
-get_motion_command_time(carmen_ackerman_traj_point_t current_robot_position __attribute__ ((unused)))
+get_motion_command_time(carmen_robot_and_trailer_traj_point_t current_robot_position __attribute__ ((unused)))
 {
 
 	return (0.05);
@@ -461,14 +464,14 @@ get_motion_command_time(carmen_ackerman_traj_point_t current_robot_position __at
 
 
 void
-print_motion_command(int i, carmen_ackerman_motion_command_t motion_command)
+print_motion_command(int i, carmen_robot_and_trailer_motion_command_t motion_command)
 {
 	printf("i = %d, v = %lf, phi = %lf, t = %lf\n", i, motion_command.v, motion_command.phi, motion_command.time);
 }
 
 
 void
-print_motion_command_vector(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands)
+print_motion_command_vector(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands)
 {
 	int i;
 
@@ -479,7 +482,8 @@ print_motion_command_vector(carmen_ackerman_motion_command_p motion_commands_vec
 
 
 int
-get_nearest_trajectory_point_index(carmen_ackerman_traj_point_t *trajectory, int trajectory_length, carmen_ackerman_traj_point_t *front_pose)
+get_nearest_trajectory_point_index(carmen_robot_and_trailer_traj_point_t *trajectory, int trajectory_length,
+		carmen_robot_and_trailer_traj_point_t *front_pose)
 {
 	int closest_index, i;
 	double min_distance, distance;
@@ -502,12 +506,12 @@ get_nearest_trajectory_point_index(carmen_ackerman_traj_point_t *trajectory, int
 }
 
 int
-motion_planner_compute_trajectory(carmen_ackerman_motion_command_p next_motion_commands_vector, 
-		carmen_ackerman_traj_point_t *trajectory, int trajectory_length, carmen_ackerman_traj_point_t current_robot_position,
+motion_planner_compute_trajectory(carmen_robot_and_trailer_motion_command_t *next_motion_commands_vector,
+		carmen_robot_and_trailer_traj_point_t *trajectory, int trajectory_length, carmen_robot_and_trailer_traj_point_t current_robot_position,
 		int num_motion_commands, double time_budget, double max_v)
 {
 	int trajectory_index, motion_command_index;
-	carmen_ackerman_traj_point_t center_of_the_car_front_axel, point_in_trajectory;
+	carmen_robot_and_trailer_traj_point_t center_of_the_car_front_axel, point_in_trajectory;
 	int nearest_point_index;
 
 	trajectory_index = motion_command_index = 0;
@@ -547,12 +551,12 @@ motion_planner_compute_trajectory(carmen_ackerman_motion_command_p next_motion_c
 
 
 int
-motion_planner_compute_trajectory_old(carmen_ackerman_motion_command_p next_motion_commands_vector,
-		carmen_ackerman_traj_point_t *trajectory, int trajectory_length, carmen_ackerman_traj_point_t current_robot_position,
+motion_planner_compute_trajectory_old(carmen_robot_and_trailer_motion_command_t *next_motion_commands_vector,
+		carmen_robot_and_trailer_traj_point_t *trajectory, int trajectory_length, carmen_robot_and_trailer_traj_point_t current_robot_position,
 		int num_motion_commands, double time_budget, double max_v)
 {
 	int trajectory_index, motion_command_index;
-	carmen_ackerman_traj_point_t center_of_the_car_front_axel, point_in_trajectory;
+	carmen_robot_and_trailer_traj_point_t center_of_the_car_front_axel, point_in_trajectory;
 	int point_in_trajectory_is;
 
 	trajectory_index = motion_command_index = 0;
@@ -598,7 +602,7 @@ motion_planner_compute_trajectory_old(carmen_ackerman_motion_command_p next_moti
 
 
 carmen_point_t
-to_carmen_point_t (carmen_ackerman_traj_point_t *p)
+to_carmen_point_t (carmen_robot_and_trailer_traj_point_t *p)
 {
 	carmen_point_t point;
 
@@ -720,16 +724,16 @@ stop_robot()
 void
 motion_planning_obstacle_avoiding_handler()
 {
-	carmen_ackerman_motion_command_p next_motion_commands_vector;
+	carmen_robot_and_trailer_motion_command_t *next_motion_commands_vector;
 	int next_motion_command_vector_index, motion_commands_trajectory_size;
 	double time_budget;
-	carmen_ackerman_traj_point_t current_robot_position;
+	carmen_robot_and_trailer_traj_point_t current_robot_position;
 	int hit_obstacle, i;
 	int trajectory_lenght;
 	double current_max_v;
-	carmen_ackerman_traj_point_t *trajectory;
+	carmen_robot_and_trailer_traj_point_t *trajectory;
 	int trajectory_length;
-	carmen_ackerman_traj_point_t robot_position;
+	carmen_robot_and_trailer_traj_point_t robot_position;
 	static int already_planning = 0;
 
 	if (current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT || current_task == BEHAVIOR_SELECTOR_PARK)
@@ -811,14 +815,14 @@ motion_planning_obstacle_avoiding_handler()
 
 
 static void
-send_trajectory_to_robot(carmen_ackerman_traj_point_t *trajectory, int trajectory_length)
+send_trajectory_to_robot(carmen_robot_and_trailer_traj_point_t *trajectory, int trajectory_length)
 {
 	int i;
 
 	if (g_current_trajectory != NULL)
 		free(g_current_trajectory);
 
-	g_current_trajectory = (carmen_ackerman_traj_point_t *) malloc(trajectory_length * sizeof(carmen_ackerman_traj_point_t));
+	g_current_trajectory = (carmen_robot_and_trailer_traj_point_t *) malloc(trajectory_length * sizeof(carmen_robot_and_trailer_traj_point_t));
 	g_current_trajectory_length = trajectory_length;
 
 	for (i = 0; i < g_current_trajectory_length; i++)
@@ -840,7 +844,7 @@ clear_current_trajectory()
 static void
 generate_next_motion_command(void)
 {
-	carmen_ackerman_traj_point_t waypoint;
+	carmen_robot_and_trailer_traj_point_t waypoint;
 	int waypoint_index = 0;
 	int waypoint_status = 0;
 
@@ -905,12 +909,11 @@ motion_planner_set_path(carmen_motion_planner_path_message *msg)
 			free(path.path);
 
 		path = *msg;
-		path.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * path.path_size);
-		memcpy(path.path, msg->path, sizeof(carmen_ackerman_traj_point_t) * path.path_size);
+		path.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * path.path_size);
+		memcpy(path.path, msg->path, sizeof(carmen_robot_and_trailer_traj_point_t) * path.path_size);
 		min_delta_d = INTMAX_MAX;
 		publish_plan();
 	}
-
 }
 
 
@@ -1036,9 +1039,9 @@ copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int positio
 
 
 void
-publish_astar_path(carmen_ackerman_traj_point_t *path, int path_size, carmen_ackerman_traj_point_t robot_position)
+publish_astar_path(carmen_robot_and_trailer_traj_point_t *path, int path_size, carmen_robot_and_trailer_traj_point_t robot_position)
 {
-	carmen_ackerman_motion_command_p next_motion_commands_vector;
+	carmen_robot_and_trailer_motion_command_t *next_motion_commands_vector;
 	int next_motion_command_vector_index;
 	if (path_size <= 0)
 	{
@@ -1062,7 +1065,7 @@ publish_astar_path(carmen_ackerman_traj_point_t *path, int path_size, carmen_ack
 	{
 		if (path[0].phi == path[i].phi)
 		{
-			carmen_ackerman_traj_point_t temp_point;
+			carmen_robot_and_trailer_traj_point_t temp_point;
 			temp_point = robot_position;
 
 			if(i == 0)

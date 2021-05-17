@@ -46,7 +46,7 @@ static int	  is_graphics_up = 0;
 int height_max_level = 0;
 
 static double last_v = 0, last_phi = 0;
-static carmen_ackerman_traj_point_t last_goal;
+static carmen_robot_and_trailer_traj_point_t last_goal;
 static int goal_set = 0, autonomous = 0;
 
 static char *map_path = NULL;
@@ -990,7 +990,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 static void
 carmen_simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	gui->navigator_graphics_update_simulator_truepos(msg->truepose);
+	gui->navigator_graphics_update_simulator_truepos(msg->truepose, msg->beta);
 }
 
 
@@ -1204,7 +1204,7 @@ void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
 	gui->final_goal.map = gui->controls_.map_view->internal_map;
-	gui->final_goal.pose = rddf_end_point_message->point;
+	gui->final_goal.pose = {rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta};
 	gui->final_goal_placed_and_oriented = 1;
 }
 

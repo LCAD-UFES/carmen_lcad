@@ -194,7 +194,7 @@ carmen_navigator_ackerman_set_goal(double x, double y, double theta)
 }
 
 int 
-carmen_navigator_ackerman_set_goal_triplet(carmen_ackerman_traj_point_p goal)
+carmen_navigator_ackerman_set_goal_triplet(carmen_robot_and_trailer_traj_point_t *goal)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_navigator_ackerman_set_goal_triplet_message msg;

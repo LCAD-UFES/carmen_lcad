@@ -102,7 +102,7 @@ public:
 	static Pose convert_to_pose(const carmen_point_t carmen_pose);
 
 	static carmen_point_t convert_to_carmen_point_t(const Pose pose);
-	static carmen_ackerman_traj_point_t convert_to_carmen_ackerman_traj_point_t(const Robot_State robot_state);
+	static carmen_robot_and_trailer_traj_point_t convert_to_carmen_ackerman_traj_point_t(const Robot_State robot_state);
 	static carmen_ackerman_path_point_t convert_to_carmen_ackerman_path_point_t(const Robot_State robot_state, const double time);
 	static double distance(const Pose *pose1, const Pose *pose2);
 	static double distance(const Pose *pose1, const carmen_ackerman_path_point_t *pose2);
@@ -111,7 +111,7 @@ public:
 };
 
 //-----------Funcoes para extrair dados do Experimento------------------------
-double dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w);
+double dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w);
 double get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
         carmen_ackerman_path_point_t p2,
         carmen_ackerman_path_point_t robot);

@@ -45,6 +45,7 @@ LFLAGS += \
 	-lvoice_interface_interface \
 	-lfrenet_path_planner_interface \
 	-lroute_planner_interface \
+	-lcarmodel \
 	-lgsl -lgslcblas \
 	`pkg-config --libs opencv`
 	

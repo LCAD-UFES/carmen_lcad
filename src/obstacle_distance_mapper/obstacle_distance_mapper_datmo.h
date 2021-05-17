@@ -14,7 +14,7 @@ typedef struct
 	int index;
 	double width;
 	double length;
-	carmen_ackerman_traj_point_t pose;
+	carmen_robot_and_trailer_traj_point_t pose;
 	double lateral_v;
 	vector <carmen_position_t> moving_object_points;
 	double timestamp;
@@ -27,7 +27,7 @@ typedef struct
 //	double v;
 	carmen_moving_average_c average_width;
 	carmen_moving_average_c average_length;
-	carmen_ackerman_traj_point_t pose;
+	carmen_robot_and_trailer_traj_point_t pose;
 	carmen_moving_average_c average_longitudinal_v;
 	carmen_moving_average_c average_lateral_v;
 	int non_detection_count;

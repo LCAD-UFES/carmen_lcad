@@ -15,9 +15,9 @@
 #include <carmen/navigator_gui_interface.h>
 
 #define MOTION_COMMAND_VECTOR_MAX_SIZE 500
-carmen_ackerman_motion_command_t motion_command_vector[MOTION_COMMAND_VECTOR_MAX_SIZE];
+carmen_robot_and_trailer_motion_command_t motion_command_vector[MOTION_COMMAND_VECTOR_MAX_SIZE];
 
-carmen_ackerman_motion_command_t path_motion_command[MOTION_COMMAND_VECTOR_MAX_SIZE];
+carmen_robot_and_trailer_motion_command_t path_motion_command[MOTION_COMMAND_VECTOR_MAX_SIZE];
 
 int Path_Follower_Ackerman::use_obstacle_avoider = 0;
 

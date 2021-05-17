@@ -1127,10 +1127,12 @@ NEURON_OUTPUT
 run_train(PARAM_LIST *pParamList __attribute__ ((unused)))
 {
 	NEURON_OUTPUT output;
+	output.ival = 0;
+
 	int i;
 	for (i = 0; i<32; i++){
 	tracker_train();
-}	
+	}
 	
 	return (output);
 }
@@ -1140,6 +1142,7 @@ NEURON_OUTPUT
 run_test(PARAM_LIST *pParamList __attribute__ ((unused)))
 {
 	NEURON_OUTPUT output;
+	output.ival = 0;
 
 	tracker_saccade(&in_saccade_current, MAX_NUMBER_OF_SACCADE, MIN_THRESHOLD_OF_SACCADE, NULL, NULL);
 

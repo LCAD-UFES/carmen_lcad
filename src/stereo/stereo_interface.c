@@ -33,8 +33,8 @@
 char *
 carmen_stereo_message_name(int camera)
 {
-  char *message_name = (char*)malloc(128 * sizeof(char));
-  sprintf(message_name, "%s%d", CARMEN_SIMPLE_STEREO_DISPARITY_NAME, camera);
+  char *message_name = (char *) malloc(128 * sizeof(char));
+  sprintf(message_name, "%s%d", (char *) CARMEN_SIMPLE_STEREO_DISPARITY_NAME, camera);
   return message_name;
 }
 
@@ -53,7 +53,7 @@ carmen_stereo_define_messages(int camera)
   IPC_RETURN_TYPE err;
 
   char *message_name = carmen_stereo_message_name(camera);
-  err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, CARMEN_SIMPLE_STEREO_DISPARITY_FMT);
+  err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, (char *) CARMEN_SIMPLE_STEREO_DISPARITY_FMT);
   carmen_test_ipc_exit(err, "Could not define", message_name);
   free(message_name);
   return err;
@@ -65,7 +65,7 @@ carmen_stereo_subscribe(int camera,
     carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
   char *message_name = carmen_stereo_message_name(camera);
-  carmen_subscribe_message(message_name, CARMEN_SIMPLE_STEREO_DISPARITY_FMT,
+  carmen_subscribe_message(message_name, (char *) CARMEN_SIMPLE_STEREO_DISPARITY_FMT,
       message, sizeof(carmen_simple_stereo_disparity_message),
       handler, subscribe_how);
   free(message_name);
@@ -81,7 +81,7 @@ carmen_stereo_publish_message(int camera,
   char *message_name = carmen_stereo_message_name(camera);
 
   err = IPC_publishData(message_name, message);
-  carmen_test_ipc_exit(err, "Could not publish", message_name);
+  carmen_test_ipc_exit(err, (char *) "Could not publish", message_name);
   free(message_name);
 
   return err;

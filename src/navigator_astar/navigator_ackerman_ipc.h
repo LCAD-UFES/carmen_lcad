@@ -41,7 +41,7 @@ extern "C" {
   void carmen_navigator_ackerman_publish_status(void);
   void carmen_navigator_ackerman_publish_plan(void);
   void carmen_navigator_ackerman_publish_autonomous_stopped(carmen_navigator_ackerman_reason_t reason);
-  void carmen_navigator_ackerman_publish_plan_tree(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2, int num_edges);
+  void carmen_navigator_ackerman_publish_plan_tree(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2, int num_edges);
   void carmen_navigator_initialize_ant(int port, char *module);
 
 

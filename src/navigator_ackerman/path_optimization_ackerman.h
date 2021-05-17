@@ -7,7 +7,7 @@
 
 #ifndef PATH_OPTIMIZATION_ACKERMAN_H_
 #define PATH_OPTIMIZATION_ACKERMAN_H_
-void carmen_path_optimization(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal,carmen_planner_path_p path);
+void carmen_path_optimization(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal,carmen_planner_path_p path);
 
 
 

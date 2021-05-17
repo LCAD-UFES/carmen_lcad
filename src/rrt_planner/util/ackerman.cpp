@@ -16,6 +16,7 @@
 #include <carmen/map_server_interface.h>
 #include "../rs.h"
 #include <carmen/navigator_gui_interface.h>
+#include <carmen/car_model.h>
 
 
 typedef struct {
@@ -562,6 +563,15 @@ Ackerman::predict_next_pose_during_main_rrt_planning_step(Robot_State &new_robot
 	new_robot_state.pose.x	   += move_x;
 	new_robot_state.pose.y	   += move_y;
 	new_robot_state.pose.theta += initial_robot_state.v_and_phi.v * delta_t * tan(initial_robot_state.v_and_phi.phi) / GlobalState::robot_config.distance_between_front_and_rear_axles;
+
+	carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point = {
+			new_robot_state.pose.x, new_robot_state.pose.y, new_robot_state.pose.theta, new_robot_state.pose.beta,
+			new_robot_state.v_and_phi.v, new_robot_state.v_and_phi.phi
+	};
+	carmen_robot_ackerman_config_t robot_config;
+	robot_config.distance_between_front_and_rear_axles = GlobalState::robot_config.distance_between_front_and_rear_axles;
+	new_robot_state.pose.beta  = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t,
+			robot_config, GlobalState::semi_trailer_config);
 
 	return sqrt(move_x * move_x + move_y * move_y);
 }

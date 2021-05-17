@@ -222,18 +222,36 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
-	double t_vel;
-	double r_vel;
-} carmen_traj_point_t, *carmen_traj_point_p;
+	double beta;
+} carmen_robot_and_trailer_pose_t;
 
 
 typedef struct {
 	double x;
 	double y;
 	double theta;
+	double t_vel;
+	double r_vel;
+} carmen_traj_point_t, *carmen_traj_point_p;
+
+
+//typedef struct {
+//	double x;
+//	double y;
+//	double theta;
+//	double v;
+//	double phi;
+//} carmen_ackerman_traj_point_t, *carmen_ackerman_traj_point_p;
+
+
+typedef struct {
+	double x;
+	double y;
+	double theta;
+	double beta;
 	double v;
 	double phi;
-} carmen_ackerman_traj_point_t, *carmen_ackerman_traj_point_p;
+} carmen_robot_and_trailer_traj_point_t;
 
 
 typedef struct {
@@ -246,14 +264,26 @@ typedef struct {
 } carmen_ackerman_path_point_t, *carmen_ackerman_path_point_p;
 
 
-typedef struct { // Mudado para incluir x, y, e theta para testar novo mpc de posicao. Este tipo deve ser mudado para o tipo acima se der certo o novo mpc.
+typedef struct {
 	double x;
 	double y;
 	double theta;
+	double beta;
 	double v;
 	double phi;
 	double time;
-} carmen_ackerman_motion_command_t, *carmen_ackerman_motion_command_p;
+} carmen_robot_and_trailer_path_point_t;
+
+
+typedef struct {
+	double x;
+	double y;
+	double theta;
+	double beta;
+	double v;
+	double phi;
+	double time;
+} carmen_robot_and_trailer_motion_command_t;
 
 
 typedef struct {
@@ -270,16 +300,6 @@ typedef struct {
 	int rectangular;
 	int interpolate_odometry;
 } carmen_robot_config_t;
-
-
-typedef struct {
-	int type;
-	double d;
-	double M;
-	double width;
-	double distance_between_axle_and_front;
-	double distance_between_axle_and_back;
-} carmen_semi_trailer_config_t;
 
 
 typedef struct {
@@ -323,6 +343,17 @@ typedef struct {
 
 	double behaviour_selector_goal_velocity_tuning_factor; // Correct imperfections of the velocity control by modifying the braking starting point
 } carmen_robot_ackerman_config_t;
+
+
+typedef struct {
+	int type;
+	double d;
+	double M;
+	double width;
+	double distance_between_axle_and_front;
+	double distance_between_axle_and_back;
+} carmen_semi_trailer_config_t;
+
 
 typedef struct {
     double x;
@@ -616,15 +647,15 @@ extern carmen_inline double carmen_distance_traj(carmen_traj_point_p p1, carmen_
 	return sqrt((p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y));
 }
 
-extern carmen_inline double carmen_distance_ackerman_traj(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
+extern carmen_inline double carmen_distance_ackerman_traj(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2)
 {
 	return sqrt((p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y));
 }
 
-extern carmen_inline double carmen_ackerman_traj_distance2(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
-{
-	return (p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y);
-}
+//extern carmen_inline double carmen_ackerman_traj_distance2(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
+//{
+//	return (p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y);
+//}
 
 extern carmen_inline double carmen_angle_between(carmen_traj_point_p p1, carmen_traj_point_p p2)
 {
@@ -739,11 +770,11 @@ carmen_vector_3D_t carmen_covert_sphere_to_cartesian_coord(carmen_sphere_coord_t
 void carmen_alloc_spherical_point_cloud(spherical_point_cloud *velodyne_points, int num_points, int spherical_point_cloud_index);
 void carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, 
 					    double v_bias, double v_multiplier, double phi_bias, double phi_multiplier);
-carmen_ackerman_traj_point_t
+carmen_robot_and_trailer_traj_point_t
 carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
-		carmen_ackerman_traj_point_t v,
-		carmen_ackerman_traj_point_t w,
-		carmen_ackerman_traj_point_t p, double min_segment_size);
+		carmen_robot_and_trailer_traj_point_t v,
+		carmen_robot_and_trailer_traj_point_t w,
+		carmen_robot_and_trailer_traj_point_t p, double min_segment_size);
 
 int
 carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle);

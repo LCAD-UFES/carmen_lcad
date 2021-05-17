@@ -100,7 +100,7 @@ Redraw(void)
   static GdkGC *Drawing_GC = NULL;
   static GdkPixmap *pixmap = NULL;
   GdkPoint *poly = NULL;
-  char str[20];
+  char str[2000];
   static double framerate = 0.0;
 
 

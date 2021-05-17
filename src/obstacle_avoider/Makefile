@@ -22,7 +22,6 @@ MODULE_COMMENT = Module integrating all robot sensors and configuration
 
 SOURCES = obstacle_avoider.c obstacle_avoider_interface.c \
 	obstacle_avoider_main.c collision_detection.c obstacle_avoider_test.c 
-	#collision_detection_test.cpp
 	
 PUBLIC_INCLUDES = obstacle_avoider_interface.h obstacle_avoider_messages.h collision_detection.h
 PUBLIC_LIBRARIES = libobstacle_avoider_interface.a libobstacle_avoider.a libcollision_detection.a
