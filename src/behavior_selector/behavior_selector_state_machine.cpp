@@ -15,9 +15,9 @@ static double wait_for_given_seconds_start_time = 0.0;
 
 
 bool
-forward_waypoint_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+forward_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
 
 	if (nearest_forward_waypoint_ahead == NULL)
 		return (false);
@@ -33,9 +33,9 @@ forward_waypoint_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi
 
 
 double
-distance_to_forward_waypoint(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+distance_to_forward_waypoint(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_forward_waypoint_ahead = get_nearest_forward_waypoint_ahead();
 
 	if (nearest_forward_waypoint_ahead == NULL)
 		return (1000.0);
@@ -47,9 +47,9 @@ distance_to_forward_waypoint(carmen_ackerman_traj_point_t current_robot_pose_v_a
 
 
 bool
-reverse_waypoint_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+reverse_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
 
 	if (nearest_reverse_waypoint_ahead == NULL)
 		return (false);
@@ -65,9 +65,9 @@ reverse_waypoint_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi
 
 
 bool
-path_final_pose_reached(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *path_final_pose = get_path_final_pose();
+	carmen_robot_and_trailer_traj_point_t *path_final_pose = get_path_final_pose();
 
 	if (path_final_pose == NULL)
 		return (false);
@@ -84,9 +84,9 @@ path_final_pose_reached(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 
 
 double
-distance_to_reverse_waypoint(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+distance_to_reverse_waypoint(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_ackerman_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *nearest_reverse_waypoint_ahead = get_nearest_reverse_waypoint_ahead();
 
 	if (nearest_reverse_waypoint_ahead == NULL)
 		return (1000.0);
@@ -98,7 +98,7 @@ distance_to_reverse_waypoint(carmen_ackerman_traj_point_t current_robot_pose_v_a
 
 
 bool
-stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+stop_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_stop_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_STOP,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
@@ -108,7 +108,7 @@ stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 
 	double distance_to_annotation = DIST2D(nearest_stop_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
 	if ((distance_to_act_on_annotation >= distance_to_annotation) &&
 		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_stop_annotation->annotation_point))
@@ -119,7 +119,7 @@ stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 
 
 double
-distance_to_stop_sign(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+distance_to_stop_sign(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, wait_start_moving);
@@ -163,7 +163,7 @@ clear_wait_for_given_seconds()
 
 
 double
-distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+distance_to_red_traffic_light(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, wait_start_moving);
@@ -182,7 +182,7 @@ distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_
 
 
 double
-distance_to_traffic_light_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+distance_to_traffic_light_stop(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, false);
@@ -200,7 +200,7 @@ distance_to_traffic_light_stop(carmen_ackerman_traj_point_t current_robot_pose_v
 
 
 double
-distance_to_busy_pedestrian_track(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+distance_to_busy_pedestrian_track(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, wait_start_moving);
@@ -219,7 +219,7 @@ distance_to_busy_pedestrian_track(carmen_ackerman_traj_point_t current_robot_pos
 
 
 double
-distance_to_must_yield(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+distance_to_must_yield(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		path_collision_info_t path_collision_info, double timestamp)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
@@ -239,7 +239,7 @@ distance_to_must_yield(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi
 
 
 double
-distance_to_yield(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+distance_to_yield(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, wait_start_moving);
@@ -257,7 +257,7 @@ distance_to_yield(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 
 
 double
-distance_to_pedestrian_track_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+distance_to_pedestrian_track_stop(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, false);
@@ -377,7 +377,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 
 
 bool
-robot_reached_non_return_point(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+robot_reached_non_return_point(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
@@ -397,7 +397,7 @@ robot_reached_non_return_point(carmen_ackerman_traj_point_t current_robot_pose_v
 
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		path_collision_info_t path_collision_info, double timestamp)
 {
 	switch (decision_making_state_msg->low_level_state)
@@ -740,7 +740,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 int
 run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp)
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp)
 {
 	int error;
 

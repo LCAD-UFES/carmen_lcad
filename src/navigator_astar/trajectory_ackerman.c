@@ -32,22 +32,23 @@
 void
 check_path_capacity(carmen_planner_path_p path)
 {
-	carmen_ackerman_traj_point_p new_points = NULL;
+	carmen_robot_and_trailer_traj_point_t *new_points = NULL;
 
-	if (path->capacity == 0) {
+	if (path->capacity == 0)
+	{
 		path->capacity = 20;
-		path->points = (carmen_ackerman_traj_point_p)
-    		  calloc(path->capacity, sizeof(carmen_ackerman_traj_point_t));
+		path->points = (carmen_robot_and_trailer_traj_point_t *) calloc(path->capacity, sizeof(carmen_robot_and_trailer_traj_point_t));
 		carmen_test_alloc(path->points);
 
-	} else
+	}
+	else
 	{
 		while(path->length >= path->capacity)
 		{
 			path->capacity *= 2;
 
-			new_points = (carmen_ackerman_traj_point_p)realloc
-					(path->points, sizeof(carmen_ackerman_traj_point_t)*path->capacity);
+			new_points = (carmen_robot_and_trailer_traj_point_t *) realloc(path->points,
+					sizeof(carmen_robot_and_trailer_traj_point_t) * path->capacity);
 			carmen_test_alloc(new_points);
 			path->points = new_points;
 		}
@@ -57,20 +58,19 @@ check_path_capacity(carmen_planner_path_p path)
 static void
 update_orientation(int index, carmen_planner_path_p path)
 {
-	carmen_ackerman_traj_point_p point, next_point;
+	carmen_robot_and_trailer_traj_point_t *point, *next_point;
 
 	if (index < 0 || index > path->length-2)
 		return;
 
-	point = path->points+index;
-	next_point = path->points+index+1;
+	point = path->points + index;
+	next_point = path->points + index + 1;
 
 	point->theta = atan2(next_point->y - point->y, next_point->x - point->x);
 }
 
 int
-carmen_planner_util_add_path_point(carmen_ackerman_traj_point_t point,
-		carmen_planner_path_p path)
+carmen_planner_util_add_path_point(carmen_robot_and_trailer_traj_point_t point, carmen_planner_path_p path)
 {
 	check_path_capacity(path);
 
@@ -80,10 +80,10 @@ carmen_planner_util_add_path_point(carmen_ackerman_traj_point_t point,
 
 	update_orientation(path->length-2, path);
 
-	return path->length-1;
+	return (path->length - 1);
 }
 
-carmen_ackerman_traj_point_p
+carmen_robot_and_trailer_traj_point_t *
 carmen_planner_util_get_path_point(int index, carmen_planner_path_p path)
 {
 	if (index >= path->length || index < 0)
@@ -93,11 +93,11 @@ carmen_planner_util_get_path_point(int index, carmen_planner_path_p path)
 		return NULL;
 	}
 
-	return path->points+index;
+	return (path->points + index);
 }
 
 void
-carmen_planner_util_set_path_point(int index, carmen_ackerman_traj_point_p path_point,
+carmen_planner_util_set_path_point(int index, carmen_robot_and_trailer_traj_point_t *path_point,
 		carmen_planner_path_p path)
 {
 	if (index >= path->length || index < 0)
@@ -106,11 +106,10 @@ carmen_planner_util_set_path_point(int index, carmen_ackerman_traj_point_p path_
 				__FUNCTION__, index, path->length-1);
 		return;
 	}
+
 	path->points[index] = *path_point;
 
-	update_orientation(index-1, path);
-
-	return;
+	update_orientation(index - 1, path);
 }
 
 void
@@ -122,14 +121,13 @@ carmen_planner_util_insert_blank(int index, carmen_planner_path_p path)
 
 	num_to_move = path->length - index;
 	memmove(path->points+index+1, path->points+index,
-			num_to_move*sizeof(carmen_ackerman_traj_point_t));
+			num_to_move*sizeof(carmen_robot_and_trailer_traj_point_t));
 
 	path->length++;
 }
 
 void
-carmen_planner_util_insert_path_point(int index,
-		carmen_ackerman_traj_point_t *current_point,
+carmen_planner_util_insert_path_point(int index, carmen_robot_and_trailer_traj_point_t *current_point,
 		carmen_planner_path_p path)
 {
 	carmen_planner_util_insert_blank(index, path);
@@ -178,7 +176,7 @@ carmen_planner_util_delete_path_point(int index, carmen_planner_path_p path)
 
 	num_to_move = path->length - index - 1;
 	memmove(path->points+index,
-			path->points+index+1, num_to_move*sizeof(carmen_ackerman_traj_point_t));
+			path->points+index+1, num_to_move*sizeof(carmen_robot_and_trailer_traj_point_t));
 
 	path->length--;
 }
@@ -187,15 +185,15 @@ void
 carmen_planner_util_test_trajectory(carmen_planner_path_p path)
 {
 	int index;
-	carmen_ackerman_traj_point_t point = {0,0,0,0,0};
-	carmen_ackerman_traj_point_p point_p;
+	carmen_robot_and_trailer_traj_point_t point = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	carmen_robot_and_trailer_traj_point_t *point_p;
 
 	carmen_planner_util_clear_path(path);
 	if (path->length != 0)
 		carmen_die("Test failed: clear should set length to 0, but length is %d\n",
 				path->length);
 
-	memset(&point, 0, sizeof(carmen_ackerman_traj_point_t));
+	memset(&point, 0, sizeof(carmen_robot_and_trailer_traj_point_t));
 	for (index = 0; index < 100; index++)
 	{
 		point.x = index;

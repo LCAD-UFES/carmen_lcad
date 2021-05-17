@@ -2384,7 +2384,7 @@ de(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_m
 			local_mean_remission_map, local_variance_remission_map, binary_map);
 	swarm_get_best_particle(filter);
 
-	for (i = 0; i < filter->param->de_num_iteration; i++);
+	for (i = 0; i < filter->param->de_num_iteration; i++)
 	{
 		calc_new_de_particle(filter, fused_odometry, map, local_map,
 				local_mean_remission_map, local_variance_remission_map);
@@ -2410,7 +2410,7 @@ hade(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman
 			local_mean_remission_map, local_variance_remission_map, binary_map);
 	swarm_get_best_particle(filter);
 
-	for (i = 0; i < filter->param->de_num_iteration; i++);
+	for (i = 0; i < filter->param->de_num_iteration; i++)
 	{
 		calc_new_de_particle(filter, fused_odometry, map, local_map,
 				local_mean_remission_map, local_variance_remission_map);

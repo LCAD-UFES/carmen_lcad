@@ -513,7 +513,7 @@ get_point_between_points_aproximating_with_line(double x1, double y1, double x2,
 
 bool
 init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, double atan_current_curvature,
-		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
+		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands,
 		double v, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
 		int initialize_neural_networks)
@@ -561,7 +561,7 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 
 double
 carmen_libmpc_get_optimized_steering_effort_using_MPC(double current_aoc,
-		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
+		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector,	int nun_motion_commands,
 		double v, double yp, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
 		int initialize_neural_networks)

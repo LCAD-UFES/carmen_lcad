@@ -6,8 +6,8 @@ MODULE_COMMENT = Visual Odometry Library
 LINK = g++
 CXXFLAGS += -msse3 -Wno-unused-parameter -Wno-unused-but-set-variable
 
-CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CFLAGS += -std=c11 -Wno-strict-overflow
+CXXFLAGS += -std=c++11 -Wno-strict-overflow
 
 LFLAGS += -lipc -lglobal
  

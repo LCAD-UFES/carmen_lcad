@@ -198,7 +198,7 @@ to_map_pose(double x, double y, carmen_map_config_t *map_config, double *xout, d
 //	double distance_p1p2_map;
 //	double theta, delta_x, delta_y;
 //	carmen_vector_2D_t p1_map, p2_map;
-//	carmen_ackerman_traj_point_t p1, p2;
+//	carmen_robot_and_trailer_traj_point_t p1, p2;
 //	std::vector<carmen_vector_2D_t> lane_points_on_map;
 //
 //	for (i = 0; i < (message->number_of_poses - 1); i++)
@@ -236,7 +236,7 @@ to_map_pose(double x, double y, carmen_map_config_t *map_config, double *xout, d
 //}
 
 static void
-add_points_interval_to_the_map(carmen_map_t *lane_map, double lane_probability, carmen_ackerman_traj_point_t p1, carmen_ackerman_traj_point_t p2)
+add_points_interval_to_the_map(carmen_map_t *lane_map, double lane_probability, carmen_robot_and_trailer_traj_point_t p1, carmen_robot_and_trailer_traj_point_t p2)
 {
 //	std::vector<carmen_vector_2D_t> lane_points_on_map;
 	carmen_vector_2D_t p1_map, p2_map;
@@ -394,10 +394,10 @@ alloc_rddf_global_data(carmen_behavior_selector_path_goals_and_annotations_messa
 	rddf_message = (carmen_rddf_road_profile_message *) calloc (1, sizeof(carmen_rddf_road_profile_message));
 
 	rddf_message->annotations = (int *) calloc (message->number_of_poses, sizeof(int));
-	rddf_message->poses = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses, sizeof(carmen_ackerman_traj_point_t));
+	rddf_message->poses = (carmen_robot_and_trailer_traj_point_t *) calloc (message->number_of_poses, sizeof(carmen_robot_and_trailer_traj_point_t));
 	rddf_message->number_of_poses = message->number_of_poses;
 
-	rddf_message->poses_back = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses_back, sizeof(carmen_ackerman_traj_point_t));
+	rddf_message->poses_back = (carmen_robot_and_trailer_traj_point_t *) calloc (message->number_of_poses_back, sizeof(carmen_robot_and_trailer_traj_point_t));
 	rddf_message->number_of_poses_back = message->number_of_poses_back;
 }
 
@@ -408,11 +408,11 @@ realloc_rddf_global_data(carmen_behavior_selector_path_goals_and_annotations_mes
 	if (message->number_of_poses != rddf_message->number_of_poses)
 	{
 		rddf_message->annotations = (int *) realloc (rddf_message->annotations, message->number_of_poses * sizeof(int));
-		rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
+		rddf_message->poses = (carmen_robot_and_trailer_traj_point_t *) realloc (rddf_message->poses, message->number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
 	}
 
 	if (message->number_of_poses_back != rddf_message->number_of_poses_back)
-		rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
+		rddf_message->poses_back = (carmen_robot_and_trailer_traj_point_t *) realloc (rddf_message->poses_back, message->number_of_poses_back * sizeof(carmen_robot_and_trailer_traj_point_t));
 
 	rddf_message->number_of_poses = message->number_of_poses;
 	rddf_message->number_of_poses_back = message->number_of_poses_back;
@@ -423,8 +423,8 @@ static void
 copy_local_rddf_to_global_rddf(carmen_behavior_selector_path_goals_and_annotations_message *message)
 {
 	memcpy(rddf_message->annotations, message->annotations, message->number_of_poses * sizeof(int));
-	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
-	memcpy(rddf_message->poses_back, message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
+	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+	memcpy(rddf_message->poses_back, message->poses_back, message->number_of_poses_back * sizeof(carmen_robot_and_trailer_traj_point_t));
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

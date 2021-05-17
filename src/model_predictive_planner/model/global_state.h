@@ -23,6 +23,8 @@ class GlobalState
 {
 public:
 	static carmen_robot_ackerman_config_t robot_config;
+	static carmen_semi_trailer_config_t semi_trailer_config;
+
 	static double param_max_vel;
 
 	static double robot_max_centripetal_acceleration;
@@ -48,8 +50,8 @@ public:
 
 	static double time_to_change_gears;
 
-	static Pose *localizer_pose;
-	static Pose *last_plan_pose;
+	static carmen_robot_and_trailer_pose_t *localizer_pose;
+	static carmen_robot_and_trailer_pose_t *last_plan_pose;
 	static double localizer_pose_timestamp;
 
 	static Command last_odometry;
@@ -66,7 +68,7 @@ public:
 	static carmen_moving_objects_point_clouds_message *objects_message;
 	static bool moving_objects_initialized;
 
-	static std::vector<carmen_ackerman_traj_point_t*> moving_objects_trajectories;
+	static std::vector<carmen_robot_and_trailer_traj_point_t*> moving_objects_trajectories;
 
 	static bool	  following_path; // true if the path is being followed
 

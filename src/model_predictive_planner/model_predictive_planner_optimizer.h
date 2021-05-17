@@ -20,7 +20,7 @@ struct ObjectiveFunctionParams
 	double d_yaw_by_index;
 	TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed;
 	TrajectoryLookupTable::TrajectoryDimensions *target_td;
-	vector<carmen_ackerman_path_point_t> detailed_lane;
+	vector<carmen_robot_and_trailer_path_point_t> detailed_lane;
 	vector<unsigned int> path_point_nearest_to_lane;
 	unsigned int path_size;
 	bool use_lane;

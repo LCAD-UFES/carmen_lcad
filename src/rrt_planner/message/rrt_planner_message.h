@@ -49,14 +49,14 @@ typedef struct
 
 typedef struct
 {
-	carmen_ackerman_traj_point_t *path;
+	carmen_robot_and_trailer_traj_point_t *path;
 	int	   path_length;
 	double timestamp;
 	char  *host;
 } carmen_rrt_planner_plan_message;
 
 #define CARMEN_RRT_PLANNER_PLAN_NAME "carmen_rrt_planner_plan"
-#define CARMEN_RRT_PLANNER_PLAN_FMT "{<{double, double, double, double, double}:2>,int,double,string}"
+#define CARMEN_RRT_PLANNER_PLAN_FMT "{<{double, double, double, double, double, double}:2>,int,double,string}"
 
 typedef carmen_default_message carmen_rrt_planner_go_message;
 #define CARMEN_RRT_PLANNER_GO "carmen_rrt_planner_go"

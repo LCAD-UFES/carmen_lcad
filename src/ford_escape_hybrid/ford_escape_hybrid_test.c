@@ -8,7 +8,7 @@ int
 main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
-	carmen_ackerman_motion_command_t motion_command;
+	carmen_robot_and_trailer_motion_command_t motion_command;
 
 	motion_command.time = 0.5;
 

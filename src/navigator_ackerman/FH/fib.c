@@ -54,7 +54,7 @@ ceillog2(unsigned int a)
 	i = 0;
 	while (b) {
 		i = (i << 1);
-		if (a >= (1 << b)) {
+		if (a >= (unsigned int) (1 << b)) {
 			a /= (1 << b);
 			i = i | 1;
 		} else
@@ -521,7 +521,7 @@ fh_consolidate(struct fibheap *h)
 }
 
 static void
-fh_heaplink(struct fibheap *h, struct fibheap_el *y, struct fibheap_el *x)
+fh_heaplink(struct fibheap *h __attribute__((unused)), struct fibheap_el *y, struct fibheap_el *x)
 {
 	/* make y a child of x */
 	if (x->fhe_child == NULL)

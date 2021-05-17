@@ -37,7 +37,7 @@
 #include "navigator_astar.hpp"
 
 
-void carmen_navigator_ackerman_publish_plan_tree(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2, int num_edges)
+void carmen_navigator_ackerman_publish_plan_tree(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2, int num_edges)
 {
 	static int first_time = 1;
 
@@ -57,10 +57,10 @@ void carmen_navigator_ackerman_publish_plan_tree(carmen_ackerman_traj_point_p p1
 		first_time = 0;
 	}
 
-	if(p1 == NULL)
+	if (p1 == NULL)
 		return;
 
-	if(p2 == NULL)
+	if (p2 == NULL)
 		return;
 	//msg.p1 = (carmen_point_p)calloc(num_edges,sizeof(carmen_point_t));
 	//msg.p2 = (carmen_point_p)calloc(num_edges,sizeof(carmen_point_t));

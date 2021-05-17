@@ -36,10 +36,10 @@ carmen_visual_tracker_subscribe_train(carmen_visual_tracker_train_message *messa
 			       carmen_handler_t handler,
 			       carmen_subscribe_t subscribe_how)
 {
-  carmen_subscribe_message(CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME,
-                           CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_FMT,
-                           message, sizeof(carmen_visual_tracker_train_message),
-			   handler, subscribe_how);
+  carmen_subscribe_message((char *) CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME,
+		  (char *) CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_FMT,
+          message, sizeof(carmen_visual_tracker_train_message),
+		  handler, subscribe_how);
   printf("\nSubscribe to Visual tracker ! - Trainning Mode\n");
 }
 
@@ -47,7 +47,7 @@ carmen_visual_tracker_subscribe_train(carmen_visual_tracker_train_message *messa
 void
 carmen_visual_tracker_unsubscribe_train(carmen_handler_t handler)
 {
-  carmen_unsubscribe_message(CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME, handler);
+  carmen_unsubscribe_message((char *) CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME, handler);
 }
 
 //subscribes to the test message
@@ -56,10 +56,10 @@ carmen_visual_tracker_subscribe_test(carmen_visual_tracker_test_message *message
 			       carmen_handler_t handler,
 			       carmen_subscribe_t subscribe_how)
 {
-  carmen_subscribe_message(CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME,
-                           CARMEN_VISUAL_TRACKER_TEST_MESSAGE_FMT,
-                           message, sizeof(carmen_visual_tracker_test_message),
-			   handler, subscribe_how);
+  carmen_subscribe_message((char *) CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME,
+		  (char *) CARMEN_VISUAL_TRACKER_TEST_MESSAGE_FMT,
+          message, sizeof(carmen_visual_tracker_test_message),
+		  handler, subscribe_how);
   printf("\nSubscribe to Visual tracker ! - Testing Mode\n");
 }
 
@@ -67,7 +67,7 @@ carmen_visual_tracker_subscribe_test(carmen_visual_tracker_test_message *message
 void
 carmen_visual_tracker_unsubscribe_test(carmen_handler_t handler)
 {
-  carmen_unsubscribe_message(CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME, handler);
+  carmen_unsubscribe_message((char *) CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME, handler);
 }
 
 //subscribes to the output message
@@ -76,10 +76,10 @@ carmen_visual_tracker_subscribe_output(carmen_visual_tracker_output_message *mes
 			       carmen_handler_t handler,
 			       carmen_subscribe_t subscribe_how)
 {
-  carmen_subscribe_message(CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME,
-                           CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_FMT,
-                           message, sizeof(carmen_visual_tracker_output_message),
-			   handler, subscribe_how);
+  carmen_subscribe_message((char *) CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME,
+		  (char *) CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_FMT,
+          message, sizeof(carmen_visual_tracker_output_message),
+		  handler, subscribe_how);
   printf("\nSubscribe to Visual tracker ! - output Mode\n");
 }
 
@@ -87,15 +87,15 @@ carmen_visual_tracker_subscribe_output(carmen_visual_tracker_output_message *mes
 void
 carmen_visual_tracker_unsubscribe_output(carmen_handler_t handler)
 {
-  carmen_unsubscribe_message(CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME, handler);
+  carmen_unsubscribe_message((char *) CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME, handler);
 }
 
 IPC_RETURN_TYPE
 carmen_visual_tracker_define_message_train(void)
 {
 	IPC_RETURN_TYPE err;
-	err = IPC_defineMsg(CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME);
+	err = IPC_defineMsg((char *) CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, (char *) CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", (char *) CARMEN_VISUAL_TRACKER_TRAIN_MESSAGE_NAME);
 	return(err);
 }
 
@@ -103,8 +103,8 @@ IPC_RETURN_TYPE
 carmen_visual_tracker_define_message_test(void)
 {
 	IPC_RETURN_TYPE err;
-	err = IPC_defineMsg(CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VISUAL_TRACKER_TEST_MESSAGE_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME);
+	err = IPC_defineMsg((char *) CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME, IPC_VARIABLE_LENGTH, (char *) CARMEN_VISUAL_TRACKER_TEST_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", (char *) CARMEN_VISUAL_TRACKER_TEST_MESSAGE_NAME);
 	return(err);
 }
 
@@ -112,7 +112,7 @@ IPC_RETURN_TYPE
 carmen_visual_tracker_define_message_output(void)
 {
 	IPC_RETURN_TYPE err;
-	err = IPC_defineMsg(CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME);
+	err = IPC_defineMsg((char *) CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, (char *) CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", (char *) CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME);
 	return(err);
 }

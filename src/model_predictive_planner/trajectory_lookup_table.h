@@ -119,6 +119,7 @@ public:
 		double theta;	// Angle in polar coordinates
 		double d_yaw;	// Displacement in yaw
 		double phi_i;	// Initial steering wheel angle
+		double beta_i;	// Initial semitrailer beta angle
 		double v_i;		// Initial velocity
 
 		struct TrajectoryControlParameters control_parameters;
@@ -168,27 +169,29 @@ TrajectoryLookupTable::TrajectoryDiscreteDimensions get_discrete_dimensions(Traj
 bool has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
 TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
 
-vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi, double i_beta,
 		bool display_phi_profile, double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 //		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 //		bool display_phi_profile, double delta_t = 0.1);
 
 bool path_has_loop(double dist, double sf);
-void move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose);
+void move_path_to_current_robot_pose(vector<carmen_robot_and_trailer_path_point_t> &path, carmen_robot_and_trailer_pose_t *localizer_pose);
+
 TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
 		bool use_lane, bool has_previous_good_tcp);
 
 float get_d_yaw_by_index(int index);
 float get_theta_by_index(int index);
 float get_distance_by_index(int index);
 
-vector<carmen_ackerman_path_point_t> apply_robot_delays(vector<carmen_ackerman_path_point_t> &original_path);
+vector<carmen_robot_and_trailer_path_point_t> apply_robot_delays(vector<carmen_robot_and_trailer_path_point_t> &original_path);
 
 void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
 		  vector<carmen_ackerman_path_point_t> &pSeed, std::string titles[]);
 
+void print_lane(vector<carmen_robot_and_trailer_path_point_t> path, char *file_name);
 
 #endif /* TRAJECTORY_LOOKUP_TABLE_H_ */

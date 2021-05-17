@@ -16,7 +16,7 @@ extern "C" {
 
 
 typedef struct {
-	carmen_ackerman_traj_point_t *path;
+	carmen_robot_and_trailer_traj_point_t *path;
 	int path_size;
 	int algorithm; //see carmen_navigator_ackerman_algorithm_t
 	double timestamp;
@@ -24,7 +24,7 @@ typedef struct {
 } carmen_motion_planner_path_message;
 
 #define CARMEN_MOTION_PLANNER_PATH_NAME "carmen_motion_planner_path"
-#define CARMEN_MOTION_PLANNER_PATH_FMT "{<{double, double, double, double, double}:2>, int, int, double, string}"
+#define CARMEN_MOTION_PLANNER_PATH_FMT "{<{double, double, double, double, double, double}:2>, int, int, double, string}"
 
 
 #ifdef __cplusplus

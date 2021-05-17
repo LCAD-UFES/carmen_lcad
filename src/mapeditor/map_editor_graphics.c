@@ -926,7 +926,7 @@ void start_drawing_window(int *argc, char **argv[])
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
-  g_signal_connect(GTK_OBJECT (window), "destroy", G_CALLBACK(gtk_main_quit), "WM destroy");
+  g_signal_connect(GTK_OBJECT (window), "destroy", G_CALLBACK(gtk_main_quit), (gpointer) "WM destroy");
 
   gtk_window_set_title (GTK_WINDOW (window), "Map");
   gtk_signal_connect (GTK_OBJECT (window), "delete_event", 

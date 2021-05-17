@@ -223,7 +223,7 @@ carmen_libcarneuralmodel_compute_new_velocity_with_ann(double desired_v, double 
 
 
 void
-update_target_v_and_target_phi(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double &target_v,
+update_target_v_and_target_phi(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands, double &target_v,
 								double &target_phi, double time_of_last_command, int &current_motion_command_vector_index)
 {
 	double time_elapsed_since_last_motion_command, motion_command_time_consumed;
@@ -269,7 +269,7 @@ update_target_v_and_target_phi(carmen_ackerman_motion_command_p current_motion_c
 
 
 void
-carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double &target_v,
+carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands, double &target_v,
 													double &current_v, double &target_phi, double &current_phi, double time_of_last_command,
 													int &current_motion_command_vector_index, double delta_t, double understeer_coeficient,
 													double distance_between_front_and_rear_axles, double max_phi, carmen_point_t &odom_pose, carmen_point_t &true_pose)

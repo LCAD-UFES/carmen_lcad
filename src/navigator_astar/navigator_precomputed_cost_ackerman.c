@@ -50,9 +50,9 @@ double interval = 0.01;
 
 carmen_astar_node_p ***astar_map;
 FH* heap_pcc = NULL;
-carmen_ackerman_traj_point_t msg_point[500];
-carmen_ackerman_traj_point_t GOAL;
-carmen_ackerman_traj_point_t START;
+carmen_robot_and_trailer_traj_point_t msg_point[500];
+carmen_robot_and_trailer_traj_point_t GOAL;
+carmen_robot_and_trailer_traj_point_t START;
 
 double RAIO;
 
@@ -151,8 +151,8 @@ static int to_ppm_trim_ration(char *output_filename, int theta)
 
 
 int cont = 0;
-static carmen_ackerman_traj_point_t
-carmen_precomputed_cost_ackerman_kinematic(carmen_ackerman_traj_point_t point, float lenght, float phi, float v)
+static carmen_robot_and_trailer_traj_point_t
+carmen_precomputed_cost_ackerman_kinematic(carmen_robot_and_trailer_traj_point_t point, float lenght, float phi, float v)
 {
 	phi = carmen_degrees_to_radians(phi);
 	point.theta += v * (tan(phi) / lenght);
@@ -341,7 +341,7 @@ static void open_node(carmen_astar_node_p node)
 	int i, j;
 	double k;
 	double x, y;
-	carmen_ackerman_traj_point_t new_point;
+	carmen_robot_and_trailer_traj_point_t new_point;
 	carmen_astar_node_p new_node;
 	for (i = 0; i < DIRECTION_LENGHT; i++)
 	{
@@ -380,7 +380,7 @@ carmen_precomputed_cost_ackerman_dijkstra()
 	ORIENTATION[1] = 0;
 	ORIENTATION[2] = carmen_radians_to_degrees(robot_config.max_phi);
 
-	carmen_ackerman_traj_point_t start;
+	carmen_robot_and_trailer_traj_point_t start;
 	start.x = (x_size / 2) * resolution;
 	start.y = (y_size / 2) * resolution;
 	start.theta = 0;

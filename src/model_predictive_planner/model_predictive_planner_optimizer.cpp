@@ -245,9 +245,9 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 
 
 void
-move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose)
+move_path_to_current_robot_pose(vector<carmen_robot_and_trailer_path_point_t> &path, carmen_robot_and_trailer_pose_t *localizer_pose)
 {
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
+	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
 		double x = localizer_pose->x + it->x * cos(localizer_pose->theta) - it->y * sin(localizer_pose->theta);
 		double y = localizer_pose->y + it->x * sin(localizer_pose->theta) + it->y * cos(localizer_pose->theta);
@@ -260,7 +260,7 @@ move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose
 
 inline
 double
-dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
+dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w)
 {
 	return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 }
@@ -286,13 +286,13 @@ dist2(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
 }
 
 
-carmen_ackerman_path_point_t
-move_to_front_axle(carmen_ackerman_path_point_t pose)
+carmen_robot_and_trailer_path_point_t
+move_to_front_axle(carmen_robot_and_trailer_path_point_t pose)
 {
 	return (pose);
 
 	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
-	carmen_ackerman_path_point_t pose_moved = pose;
+	carmen_robot_and_trailer_path_point_t pose_moved = pose;
 	pose_moved.x += L * cos(pose.theta);
 	pose_moved.y += L * sin(pose.theta);
 
@@ -301,7 +301,7 @@ move_to_front_axle(carmen_ackerman_path_point_t pose)
 
 
 double
-compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_ackerman_path_point_t> &path)
+compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailer_path_point_t> &path)
 {
 	double distance = 0.0;
 	double total_distance = 0.0;
@@ -340,8 +340,8 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 }
 
 
-vector<carmen_ackerman_path_point_t>
-compute_path_to_lane_distance_evaluation(ObjectiveFunctionParams *my_params, vector<carmen_ackerman_path_point_t> &path)
+vector<carmen_robot_and_trailer_path_point_t>
+compute_path_to_lane_distance_evaluation(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailer_path_point_t> &path)
 {
 //	double distance = 0.0;
 //	double total_distance = 0.0;
@@ -353,7 +353,7 @@ compute_path_to_lane_distance_evaluation(ObjectiveFunctionParams *my_params, vec
 	else
 		increment = 3;
 
-	vector<carmen_ackerman_path_point_t> modified_path;
+	vector<carmen_robot_and_trailer_path_point_t> modified_path;
 	for (unsigned int i = 0; i < path.size(); i += increment)
 	{
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
@@ -385,7 +385,7 @@ compute_path_to_lane_distance_evaluation(ObjectiveFunctionParams *my_params, vec
 
 
 void
-compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_ackerman_path_point_t> &path)
+compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path)
 {
 	param->path_point_nearest_to_lane.clear();
 	param->path_size = path.size();
@@ -394,7 +394,7 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 		// TODO: Alberto @@@ tratar disso quando estivermos dando reh tambem
 //		if (path.at(j).v < 0.0)
 //			continue;
-		carmen_ackerman_path_point_t axle;
+		carmen_robot_and_trailer_path_point_t axle;
 
 		if (GlobalState::reverse_planning) //mantem o eixo traseiro
 			axle = path.at(j);
@@ -441,17 +441,16 @@ move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t point, dou
 
 
 double
-compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
+compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_trailer_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
 	double safety_distance = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance;
-	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
-		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-				point_to_check, GlobalState::robot_config, GlobalState::distance_map, safety_distance);
+		carmen_robot_and_trailer_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].beta};
+		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(GlobalState::localizer_pose,
+				point_to_check, GlobalState::distance_map, safety_distance);
 		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		getchar();
@@ -514,7 +513,7 @@ my_f(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
+	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, my_params->target_td->beta_i, false);
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
@@ -595,7 +594,7 @@ my_g(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
+	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, my_params->target_td->beta_i, false);
 
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
@@ -731,7 +730,7 @@ my_h(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
+	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, my_params->target_td->beta_i, false);
 
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
@@ -1059,7 +1058,7 @@ TrajectoryLookupTable::TrajectoryControlParameters
 optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
 {
-	//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_seed, target_td.v_i, target_td.phi_i, false);
+	//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_seed, target_td.v_i, target_td.phi_i, target_td.beta_i, false);
 
 	//	FILE *lane_file = fopen("gnu_tests/gnuplot_lane.txt", "w");
 	//	print_lane(params.detailed_lane, lane_file);
@@ -1121,7 +1120,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//		char path_name[20];
 		//		sprintf(path_name, "path/%lu.txt", iter);
 		//		FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
-		//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.v_i, target_td.phi_i, true), path_file);
+		//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.v_i, target_td.phi_i, target_td.beta_i, true), path_file);
 		//		fclose(path_file);
 		//		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
 		//		getchar();
@@ -1163,7 +1162,7 @@ TrajectoryLookupTable::TrajectoryControlParameters
 optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
 {
-	//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_seed, target_td.v_i, target_td.phi_i, false);
+	//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_seed, target_td.v_i, target_td.phi_i, target_td.beta_i, false);
 
 	//	FILE *lane_file = fopen("gnu_tests/gnuplot_lane.txt", "w");
 	//	print_lane(params.detailed_lane, lane_file);
@@ -1224,7 +1223,7 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 		//		char path_name[20];
 		//		sprintf(path_name, "path/%lu.txt", iter);
 		//		FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
-		//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.v_i, target_td.phi_i, true), path_file);
+		//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.v_i, target_td.phi_i, target_td.beta_i, true), path_file);
 		//		fclose(path_file);
 		//		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
 		//		getchar();
@@ -1323,7 +1322,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 	//	if (tcp.valid)
 	//	{
-	//		print_path(simulate_car_from_parameters(target_td, tcp, target_td.v_i, target_td.phi_i, false));
+	//		print_path(simulate_car_from_parameters(target_td, tcp, target_td.v_i, target_td.phi_i, target_td.beta_i, false));
 	//		print_path(params.detailed_lane);
 	//		FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
 	//		fprintf(gnuplot_pipe, "set xrange [-15:45]\nset yrange [-15:15]\n"
@@ -1420,8 +1419,8 @@ verify_shift_option_for_k1(TrajectoryLookupTable::TrajectoryControlParameters& t
 }
 
 
-vector<carmen_ackerman_path_point_t>
-move_detailed_lane_to_front_axle(vector<carmen_ackerman_path_point_t> &detailed_lane)
+vector<carmen_robot_and_trailer_path_point_t>
+move_detailed_lane_to_front_axle(vector<carmen_robot_and_trailer_path_point_t> &detailed_lane)
 {
 	for (unsigned int i = 0; i < detailed_lane.size(); i++)
 		detailed_lane[i] = (move_to_front_axle(detailed_lane[i]));
@@ -1434,7 +1433,7 @@ double
 get_path_to_lane_distance(TrajectoryLookupTable::TrajectoryDimensions td,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp, ObjectiveFunctionParams *my_params)
 {
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
+	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, my_params->target_td->beta_i, false);
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
 	{
@@ -1475,11 +1474,11 @@ limit_tcp_phi(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
 #include "publisher_util.h"
 
 void
-copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_path_point_t> path);
+copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_robot_and_trailer_path_point_t> path);
 
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
 		bool use_lane, bool has_previous_good_tcp)
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
@@ -1534,36 +1533,37 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 
 //	TrajectoryLookupTable::TrajectoryDimensions td = target_td;
 //	TrajectoryLookupTable::TrajectoryControlParameters tcp = tcp_complete;
-//	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, td.v_i, td.phi_i, false);
-//	vector<carmen_ackerman_path_point_t> path_prev = simulate_car_from_parameters(td, tcp_copy, td.v_i, td.phi_i, false);
+//	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, td.v_i, td.phi_i, td.beta_i, false);
+//	print_lane(path, (char *) "caco.txt");
+//	vector<carmen_robot_and_trailer_path_point_t> path_prev = simulate_car_from_parameters(td, tcp_copy, td.v_i, td.phi_i, td.beta_i, false);
 //
 //	ObjectiveFunctionParams params_copy = params;
 //	if ((params_copy.detailed_lane.size() > 0) && (path.size() > 0))
 //	{
 //		compute_path_points_nearest_to_lane(&params_copy, path);
-//		vector<carmen_ackerman_path_point_t> modified_path = compute_path_to_lane_distance_evaluation(&params_copy, path);
+//		vector<carmen_robot_and_trailer_path_point_t> modified_path = compute_path_to_lane_distance_evaluation(&params_copy, path);
 //		Tree tree;
 //		tree.num_paths = 3;
 //		tree.num_edges = 0;
 //		tree.p1 = NULL;
 //		tree.p2 = NULL;
-//		tree.paths = (carmen_ackerman_traj_point_t **) malloc(tree.num_paths * sizeof(carmen_ackerman_traj_point_t *));
+//		tree.paths = (carmen_robot_and_trailer_traj_point_t **) malloc(tree.num_paths * sizeof(carmen_robot_and_trailer_traj_point_t *));
 //		tree.paths_sizes = (int *) malloc(tree.num_paths * sizeof(int));
 //
 //		move_path_to_current_robot_pose(modified_path, GlobalState::localizer_pose);
-//		tree.paths[0] = (carmen_ackerman_traj_point_t *) malloc(modified_path.size() * sizeof(carmen_ackerman_traj_point_t));
+//		tree.paths[0] = (carmen_robot_and_trailer_traj_point_t *) malloc(modified_path.size() * sizeof(carmen_robot_and_trailer_traj_point_t));
 //		copy_path_to_traj(tree.paths[0], modified_path);
-//		tree.paths_sizes[0] = modified_path.size();
+//		tree.paths_sizes[0] = (modified_path.size() >= CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)? CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE - 1: modified_path.size();
 //
 //		move_path_to_current_robot_pose(params_copy.detailed_lane, GlobalState::localizer_pose);
-//		tree.paths[1] = (carmen_ackerman_traj_point_t *) malloc(params_copy.detailed_lane.size() * sizeof(carmen_ackerman_traj_point_t));
+//		tree.paths[1] = (carmen_robot_and_trailer_traj_point_t *) malloc(params_copy.detailed_lane.size() * sizeof(carmen_robot_and_trailer_traj_point_t));
 //		copy_path_to_traj(tree.paths[1], params_copy.detailed_lane);
-//		tree.paths_sizes[1] = params_copy.detailed_lane.size();
+//		tree.paths_sizes[1] = (params_copy.detailed_lane.size() >= CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)? CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE - 1: params_copy.detailed_lane.size();
 //
 //		move_path_to_current_robot_pose(path_prev, GlobalState::localizer_pose);
-//		tree.paths[2] = (carmen_ackerman_traj_point_t *) malloc(path_prev.size() * sizeof(carmen_ackerman_traj_point_t));
+//		tree.paths[2] = (carmen_robot_and_trailer_traj_point_t *) malloc(path_prev.size() * sizeof(carmen_robot_and_trailer_traj_point_t));
 //		copy_path_to_traj(tree.paths[2], path_prev);
-//		tree.paths_sizes[2] = path_prev.size();
+//		tree.paths_sizes[2] = (path_prev.size() >= CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)? CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE - 1: path_prev.size();
 //
 //		Publisher_Util::publish_plan_tree_message(tree);
 //	}

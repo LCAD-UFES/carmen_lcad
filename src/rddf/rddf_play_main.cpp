@@ -29,13 +29,13 @@ int state_traffic_sign_code = RDDF_ANNOTATION_CODE_NONE;
 double state_traffic_sign_curvature = 0.0;
 
 static int carmen_rddf_end_point_is_set = 0;
-carmen_point_t carmen_rddf_end_point;
+carmen_robot_and_trailer_pose_t carmen_rddf_end_point;
 
 int carmen_rddf_nearest_waypoint_is_set = 0;
-carmen_point_t carmen_rddf_nearest_waypoint_to_end_point;
+carmen_robot_and_trailer_pose_t carmen_rddf_nearest_waypoint_to_end_point;
 
-carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead = NULL;
-static carmen_ackerman_traj_point_t *carmen_rddf_poses_back = NULL;
+carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead = NULL;
+static carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back = NULL;
 int carmen_rddf_num_poses_ahead = 0;
 static int carmen_rddf_num_poses_back = 0;
 int *annotations_codes;
@@ -140,9 +140,9 @@ void
 carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, double yaw, int num_poses_desired, double timestamp)
 {
 	int num_poses_acquired = 0;
-	carmen_ackerman_traj_point_t *poses_around_end_point;
+	carmen_robot_and_trailer_traj_point_t *poses_around_end_point;
 
-	poses_around_end_point = (carmen_ackerman_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_ackerman_traj_point_t));
+	poses_around_end_point = (carmen_robot_and_trailer_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_robot_and_trailer_traj_point_t));
 	carmen_test_alloc(poses_around_end_point);
 
 	num_poses_acquired = carmen_find_poses_around(x, y, yaw, timestamp, poses_around_end_point, num_poses_desired);
@@ -414,8 +414,8 @@ carmen_rddf_play_subscribe_messages()
 void
 carmen_rddf_play_initialize(void)
 {
-	carmen_rddf_poses_ahead = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
-	carmen_rddf_poses_back = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
+	carmen_rddf_poses_ahead = (carmen_robot_and_trailer_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_robot_and_trailer_traj_point_t));
+	carmen_rddf_poses_back = (carmen_robot_and_trailer_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_robot_and_trailer_traj_point_t));
 	annotations = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
 	annotations_codes = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
 	memset(&annotation_queue_message, 0, sizeof(annotation_queue_message));

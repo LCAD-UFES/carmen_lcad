@@ -399,7 +399,7 @@ draw_axis(double length)
 
 
 void
-draw_car_outline(CarDrawer *carDrawer)
+draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 {
 	// Car
 	glPushMatrix();
@@ -420,6 +420,26 @@ draw_car_outline(CarDrawer *carDrawer)
 		glVertex3d(carDrawer->car_axis_distance, 0.0, 0.0);
 		glVertex3d(carDrawer->robot_size.x, 0.0, 0.0);
 	glEnd();
+
+	if (semi_trailer_engaged)
+	{
+		glPushMatrix();
+			glRotatef(-carmen_radians_to_degrees(beta), 0.0, 0.0, 1.0);
+
+			glTranslatef(-carDrawer->semi_trailer_config.d - carDrawer->semi_trailer_config.M * cos(beta),
+						 -carDrawer->semi_trailer_config.M * sin(beta),
+						 0.0);
+
+			glBegin(GL_LINE_STRIP);
+				glVertex3f(-carDrawer->semi_trailer_config.distance_between_axle_and_back, -carDrawer->semi_trailer_config.width / 2, 0);
+				glVertex3f(carDrawer->semi_trailer_config.distance_between_axle_and_front, -carDrawer->semi_trailer_config.width / 2, 0);
+				glVertex3f(carDrawer->semi_trailer_config.distance_between_axle_and_front, carDrawer->semi_trailer_config.width / 2, 0);
+				glVertex3f(-carDrawer->semi_trailer_config.distance_between_axle_and_back, carDrawer->semi_trailer_config.width / 2, 0);
+				glVertex3f(-carDrawer->semi_trailer_config.distance_between_axle_and_back, -carDrawer->semi_trailer_config.width / 2, 0);
+			glEnd();
+
+		glPopMatrix();
+	}
 }
 
 
@@ -567,7 +587,7 @@ draw_car_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int s
 
 
 void
-draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose)
+draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
 {
 	glPushMatrix();
 		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
@@ -575,7 +595,7 @@ draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose)
 		glRotatef(carmen_radians_to_degrees(pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
 		glRotatef(carmen_radians_to_degrees(pose.orientation.roll), 1.0f, 0.0f, 0.0f);
 
-		draw_car_outline(carDrawer);
+		draw_car_outline(carDrawer, beta, semi_trailer_engaged);
 	glPopMatrix();
 }
 

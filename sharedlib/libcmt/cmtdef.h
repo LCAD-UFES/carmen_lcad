@@ -1138,7 +1138,7 @@ struct CmtPortInfo {
 	uint32_t m_baudrate;	//!< The baudrate at which an Xsens device was detected
 	uint32_t m_deviceId;	//!< The device Id of the detected Xsens device
 	uint16_t m_portNr;		//!< The port number
-	char m_portName[256];		//!< The port name
+	char m_portName[1024];		//!< The port name
 #ifdef __cplusplus
 #	ifdef _WIN32
 		//! greater than operator, used for sorting the list

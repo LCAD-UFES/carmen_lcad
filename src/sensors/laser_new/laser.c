@@ -548,7 +548,7 @@ int main(int argc, char **argv)
   int i;
   int result;
   int c=0;
-  pthread_t* laser_thread;
+  pthread_t *laser_thread;
   void * tresult;
   char* hostname;
   static carmen_laser_laser_message msg;
@@ -575,8 +575,9 @@ int main(int argc, char **argv)
     carmen_laser_define_laser_message(i);
     
   
-  laser_thread = calloc(num_laser_devices, sizeof(laser_thread));
+  laser_thread = (pthread_t *) malloc(num_laser_devices * sizeof(laser_thread));
   carmen_test_alloc(laser_thread);
+  memset(laser_thread, 0, num_laser_devices * sizeof(laser_thread));
 
   for(i=0; i<num_laser_devices;i++) {
     if (carmen_laser_pdevice[i]) {

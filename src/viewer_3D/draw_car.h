@@ -53,7 +53,7 @@ void destroyCarDrawer(CarDrawer *carDrawer);
 void draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged);
 void draw_car_outline(CarDrawer  *carDrawer);
 void draw_car_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t position, double beta, int semi_trailer_engaged);
-void draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t position);
+void draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t position, double beta, int semi_trailer_engaged);
 void draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged);
 
 #ifdef __cplusplus

@@ -94,6 +94,12 @@ typedef struct {
 } carmen_world_point_t, *carmen_world_point_p;
 
 typedef struct {
+  carmen_robot_and_trailer_pose_t pose;
+  carmen_map_p map;
+} carmen_world_robot_and_trailer_pose_t;
+
+
+typedef struct {
   int type;
   int x1, y1, x2, y2;
 } carmen_offlimits_t, *carmen_offlimits_p;
