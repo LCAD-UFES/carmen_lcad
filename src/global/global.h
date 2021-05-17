@@ -330,7 +330,12 @@ typedef struct {
 	double maximum_deceleration_reverse;
 	double maximum_acceleration_reverse;
 	double maximum_steering_command_rate;
+
+	double desired_acceleration;
+	double desired_decelaration_forward;
+	double desired_decelaration_reverse;
 	double understeer_coeficient;
+	double desired_steering_command_rate;
 
 	double obstacle_avoider_obstacles_safe_distance;
 	double model_predictive_planner_obstacles_safe_distance; /*< distance used for car collision radius */

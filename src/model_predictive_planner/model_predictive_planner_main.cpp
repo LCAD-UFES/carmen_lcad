@@ -953,10 +953,17 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot",				 (char *) "maximum_acceleration_reverse",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_acceleration_reverse,				 1, NULL},
 		{(char *) "robot",				 (char *) "maximum_deceleration_forward",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_forward,				 1, NULL},
 		{(char *) "robot",				 (char *) "maximum_deceleration_reverse",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_reverse,				 1, NULL},
-		{(char *) "robot",				 (char *) "maximum_steering_command_rate",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate,				 1, NULL},
-		{(char *) "robot",				 (char *) "understeer_coeficient",										CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,						 1, NULL},
+
+		{(char *) "robot", 				 (char *) "desired_decelaration_forward",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_forward,					1, NULL},
+		{(char *) "robot", 				 (char *) "desired_decelaration_reverse",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_decelaration_reverse,					1, NULL},
+		{(char *) "robot", 				 (char *) "desired_acceleration",										CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_acceleration,							1, NULL},
+		{(char *) "robot", 				 (char *) "desired_steering_command_rate",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_steering_command_rate,					1, NULL},
+		{(char *) "robot", 				 (char *) "understeer_coeficient",										CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
+		{(char *) "robot", 				 (char *) "maximum_steering_command_rate", 								CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate, 					1, NULL},
+
 		{(char *) "robot",				 (char *) "max_centripetal_acceleration",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,						 1, NULL},
 		{(char *) "robot",				 (char *) "max_velocity_reverse",										CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,									 1, NULL},
+
 		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.type,								 0, NULL},
 		{(char *) "rddf",				 (char *) "source_tracker",												CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,								 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "goal_source_path_planner",									CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner,										 0, NULL},
