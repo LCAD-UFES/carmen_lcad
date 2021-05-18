@@ -902,6 +902,7 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 
 	command.v = v0;
 	carmen_robot_and_trailer_traj_point_t last_robot_state = robot_state;
+	double multiple_delta_t = 3.0 * delta_t;
 	for (last_t = t = 0.0; t < (tcp.tt - delta_t); t += delta_t)
 	{
 		command.v += tcp.a * delta_t;
@@ -916,6 +917,8 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 			last_t = t + delta_t;
 		}
 		i++;
+		if (GlobalState::eliminate_path_follower && (i > 70))
+			delta_t = multiple_delta_t;
 	}
 
 	if (((tcp.tt - t) > 0.0)) // && (command.v > 0.0))
