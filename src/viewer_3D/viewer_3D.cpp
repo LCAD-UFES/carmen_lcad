@@ -835,20 +835,20 @@ draw_everything()
         draw_gps_orientation(gps_heading, gps_heading_valid, xsens_orientation, xsens_pose, sensor_board_1_pose, car_fused_pose);
     }
 
-    if (draw_path_plan_flag)
-        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
-
-    if (draw_motion_plan_flag)
-        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
-
-    if (draw_obstacle_avoider_plan_flag)
-        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
-
     if (show_plan_tree_flag)
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
     		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
     }
+
+    if (draw_obstacle_avoider_plan_flag)
+        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+
+    if (draw_motion_plan_flag)
+        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+
+    if (draw_path_plan_flag)
+        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
 
     if (draw_car_flag)
         draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
@@ -3625,20 +3625,20 @@ draw_while_picking()
 		draw_xsens_orientation(xsens_orientation, 0.0, xsens_pose, sensor_board_1_pose, car_fused_pose);
 	}
 
-	if (draw_path_plan_flag)
-		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
-
-	if (draw_motion_plan_flag)
-		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
-
-	if (draw_obstacle_avoider_plan_flag)
-		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
-
     if (show_plan_tree_flag)
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
     		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
     }
+
+	if (draw_obstacle_avoider_plan_flag)
+		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+
+	if (draw_motion_plan_flag)
+		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+
+	if (draw_path_plan_flag)
+		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
 
 	if (draw_car_flag)
 		draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);

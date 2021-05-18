@@ -76,6 +76,104 @@ consume_motion_command_time(int motion_command_vetor)
 }
 
 
+//static void
+//print_path(carmen_robot_and_trailer_motion_command_t *path, int size)
+//{
+//	FILE *caco = fopen("caco2.txt", "a");
+//
+//	printf("\n*** size %d, s %.3lf, timestamp %lf\n", size, DIST2D(path[0], path[size - 1]), carmen_get_time());
+//	fprintf(caco, "\n*** size %d, s %.3lf, timestamp %lf\n", size, DIST2D(path[0], path[size - 1]), carmen_get_time());
+//	for (int i = 0; i < size; i++)
+//	{
+//		if (i < ((size > 10)? 10: size))
+//			printf(" i %2d, x %.2f, y %.2f, phi %.2f, theta %.2f, v[i] %lf, dist_2D [i]->[i+1] %.2f, dt %.3lf\n", i,
+//				path[i].x, path[i].y, path[i].phi, //carmen_radians_to_degrees(path[i].phi),
+//				carmen_radians_to_degrees(path[i].theta),
+//				path[i].v,
+//				(i < size - 1)? DIST2D(path[i], path[i + 1]): 0.0, path[i].time); // O displacement eh o deslocamento para chegar ao proximo ponto.
+//
+//		fprintf(caco, " i %2d, x %.2f, y %.2f, phi %.2f, theta %.2f, v[i] %lf, dist_2D [i]->[i+1] %.2f, dt %.3lf\n", i,
+//				path[i].x, path[i].y, path[i].phi, //carmen_radians_to_degrees(path[i].phi),
+//				carmen_radians_to_degrees(path[i].theta),
+//				path[i].v,
+//				(i < size - 1)? DIST2D(path[i], path[i + 1]): 0.0, path[i].time);
+//	}
+//	fclose(caco);
+//}
+
+double robot_velocity_delay = 0.46;
+double robot_min_v_distance_ahead = 0.0;
+double robot_steering_delay = 0.26;
+double robot_min_s_distance_ahead = 0.1;
+
+int
+apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int original_size)
+{
+	carmen_robot_and_trailer_motion_command_t *path = original_path;
+	int size = original_size;
+
+	// Velocity delay
+	double time_delay = 0.0;
+	double distance_travelled = 0.0;
+	int i = 0;
+	while ((time_delay < robot_velocity_delay) && (size > 1))
+	{
+		time_delay += path[0].time;
+		distance_travelled += DIST2D(path[0], path[1]);
+		path = &(path[1]);
+		i++;
+		size--;
+	}
+
+	while ((distance_travelled < robot_min_v_distance_ahead) && (size > 1))
+	{
+		distance_travelled += DIST2D(path[0], path[1]);
+		path = &(path[1]);
+		i++;
+		size--;
+	}
+
+	for (int j = 0; j < size; j++)
+		original_path[j].v = path[j].v;
+
+	int size_decrease_due_to_velocity_delay = i;
+
+	// Steering delay
+	path = original_path;
+	size = original_size;
+	time_delay = 0.0;
+	distance_travelled = 0.0;
+	i = 0;
+	while ((time_delay < robot_steering_delay) && (size > 1))
+	{
+		time_delay += path[0].time;
+		distance_travelled += DIST2D(path[0], path[1]);
+		path = &(path[1]);
+		i++;
+		size--;
+	}
+
+	while ((distance_travelled < robot_min_s_distance_ahead) && (size > 1))
+	{
+		distance_travelled += DIST2D(path[0], path[1]);
+		path = &(path[1]);
+		i++;
+		size--;
+	}
+
+	for (int j = 0; j < size; j++)
+		original_path[j].phi = path[j].phi;
+
+	int size_decrease_due_to_steering_delay = i;
+
+	int size_decrease = (size_decrease_due_to_velocity_delay > size_decrease_due_to_steering_delay) ?
+							size_decrease_due_to_velocity_delay : size_decrease_due_to_steering_delay;
+
+	return (original_size - size_decrease);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
@@ -88,7 +186,13 @@ static void
 obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_motion_command_t *motion_commands,
 		int num_motion_commands, double timestamp)
 {
-	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands, num_motion_commands, timestamp);
+	carmen_robot_and_trailer_motion_command_t *motion_commands_copy = (carmen_robot_and_trailer_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
+	memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
+
+	int num_motion_commands_in_copy = apply_robot_delays(motion_commands_copy, num_motion_commands);
+	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_copy, num_motion_commands, timestamp);
+
+	free(motion_commands_copy);
 }
 
 
@@ -96,6 +200,7 @@ static void
 publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
+	return;
 	carmen_navigator_ackerman_plan_message msg;
 
 	if (num_motion_commands > 0)
@@ -112,6 +217,7 @@ void
 publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
+	return;
 	carmen_navigator_ackerman_plan_message msg;
 
 	if (num_motion_commands > 0)
@@ -170,6 +276,7 @@ read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
 
 	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -239,6 +346,8 @@ check_message_absence_timeout_timer_handler(void)
 static void
 robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_command_message *motion_command_message)
 {
+//	print_path(motion_command_message->motion_command, motion_command_message->num_motion_commands);
+
 	static double time_of_last_call = 0.0;
 	carmen_robot_and_trailer_motion_command_t *next_motion_command_vector;
 	int i, num_motion_commands;
