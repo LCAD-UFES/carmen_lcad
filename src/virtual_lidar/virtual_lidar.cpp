@@ -91,6 +91,14 @@ using namespace cv;
 
 vector<movable_object> movable_object_tracks;
 
+const static double sorted_vertical_angles[32] =
+{
+	-30.67, -29.33, -28.0, -26.67, -25.33, -24.0, -22.67, -21.33, -20.0,
+	-18.67, -17.33, -16.0, -14.67, -13.33, -12.0, -10.67, -9.3299999, -8.0,
+	-6.6700001, -5.3299999, -4.0, -2.6700001, -1.33, 0.0, 1.33, 2.6700001, 4.0,
+	5.3299999, 6.6700001, 8.0, 9.3299999, 10.67
+};
+
 carmen_velodyne_partial_scan_message
 find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
 {
@@ -157,7 +165,7 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*y += offset_y;
 }
 
-
+/** The goal is change this function from get point to generate points inside bounding boxes*/
 vector<vector<image_cartesian>>
 get_points_inside_bounding_boxes(vector<movable_object> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
@@ -361,22 +369,21 @@ show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> 
 		putText(image, info, Point(10, 45), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 	}
 	
-    for (unsigned int i = 0; i < predictions.size(); i++)
+    /*for (unsigned int i = 0; i < predictions.size(); i++)
 	{
 		distance_to_object = estimate_distance (image.rows, predictions[i].h, camera_index);
-		sprintf(info, "%s %.2f track_id %d", classes_names[predictions[i].obj_id], distance_to_object, predictions[i].track_id);
-		putText(image, info, Point(predictions[i].x, predictions[i].y - 4), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
-		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-				Scalar(255, 0, 255), 4);
-	}
+		// sprintf(info, "%s %.2f track_id %d", classes_names[predictions[i].obj_id], distance_to_object, predictions[i].track_id);
+		// putText(image, info, Point(predictions[i].x, predictions[i].y - 4), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+		//rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+		//		Scalar(255, 0, 255), 4);
+	}*/
 
     for (unsigned int i = 0; i < movable_object.size(); i++)
     {
-		
-		
-    	if (movable_object[i].active)
+		if (movable_object[i].active)
     	{
-			sprintf(info, "%.2f %d ", movable_object[i].velocity, movable_object[i].track_id, movable_object[i].obj_id);
+			distance_to_object = estimate_distance (image.rows, movable_object[i].h, camera_index);
+			sprintf(info, "%.2f %d %d %.2f", movable_object[i].velocity, movable_object[i].track_id, movable_object[i].obj_id, distance_to_object);
 
 			rectangle(image, Point(movable_object[i].x, movable_object[i].y), Point((movable_object[i].x + movable_object[i].w), (movable_object[i].y + movable_object[i].h)),
 							Scalar(255, 255, 0), 4);
@@ -400,6 +407,29 @@ show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> 
     waitKey(1);
 }
 
+char *
+model_name_from_yolo(int obj_id)
+{
+	switch(obj_id)
+	{
+		case 0:
+			return (char *) "pedestrian";
+		case 1:
+			return (char *) "bicycle";
+		case 2:
+			return (char *) "car";
+		case 3:
+			return (char *) "motorbike";
+		case 5:
+			return (char *) "bus";
+		case 6:
+			return (char *) "train";
+		case 7:
+			return (char *) "truck";
+		default:
+			return (char *) "movable_object";
+	}
+}
 
 carmen_moving_objects_point_clouds_message
 build_detected_objects_message(vector<movable_object> predictions, vector<vector<image_cartesian>> points_lists)
@@ -417,7 +447,7 @@ build_detected_objects_message(vector<movable_object> predictions, vector<vector
 
 	for (unsigned int i = 0, l = 0; i < tmp_predictions.size(); i++)
 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-		if ((get_movable_object_x(tmp_predictions[i]) != -999.0 || get_movable_object_y(tmp_predictions[i]) != -999.0)&&tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
+		if ((get_movable_object_x(tmp_predictions[i]) != -999.0 || get_movable_object_y(tmp_predictions[i]) != -999.0) && tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
 		{
 //			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], board_pose.position.x, board_pose.position.y);
 //			carmen_rotate_2d  (&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], carmen_normalize_theta(globalpos.theta));
@@ -448,7 +478,8 @@ build_detected_objects_message(vector<movable_object> predictions, vector<vector
 			msg.point_clouds[l].model_features.red = 1.0;
 			msg.point_clouds[l].model_features.green = 1.0;
 			msg.point_clouds[l].model_features.blue = 0.8;
-			msg.point_clouds[l].model_features.model_name = (char *) "movable_object";
+			
+			msg.point_clouds[l].model_features.model_name = model_name_from_yolo(tmp_predictions[i].obj_id);
 
 			msg.point_clouds[l].num_associated = tmp_predictions[i].track_id;
 
@@ -498,6 +529,7 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 	}
 	return (filtered_predictions);
 }
+
 
 
 void
@@ -581,24 +613,24 @@ insert_missing_movable_objects_in_the_track(vector<bbox_t> predictions)
 }
 
 
-double
-distance_to_movable_object_track_annotaion()
-{
-	if (rddf_annotation_message == NULL)
-		return (DBL_MAX);
+// double
+// distance_to_movable_object_track_annotaion()
+// {
+// 	if (rddf_annotation_message == NULL)
+// 		return (DBL_MAX);
 	
-	double min_dist_to_movable_object_track = DBL_MAX, dist_to_movable_object_track = DBL_MAX;
+// 	double min_dist_to_movable_object_track = DBL_MAX, dist_to_movable_object_track = DBL_MAX;
 
-	for (int i = 0, size = rddf_annotation_message->num_annotations; i < size; i++)
-	{
-		if (rddf_annotation_message->annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
-			dist_to_movable_object_track = DIST2D(globalpos_msg->globalpos, rddf_annotation_message->annotations[i].annotation_point);
+// 	for (int i = 0, size = rddf_annotation_message->num_annotations; i < size; i++)
+// 	{
+// 		if (rddf_annotation_message->annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
+// 			dist_to_movable_object_track = DIST2D(globalpos_msg->globalpos, rddf_annotation_message->annotations[i].annotation_point);
 		
-		if (dist_to_movable_object_track < min_dist_to_movable_object_track)
-			min_dist_to_movable_object_track = dist_to_movable_object_track;
-	}
-	return (min_dist_to_movable_object_track);
-}
+// 		if (dist_to_movable_object_track < min_dist_to_movable_object_track)
+// 			min_dist_to_movable_object_track = dist_to_movable_object_track;
+// 	}
+// 	return (min_dist_to_movable_object_track);
+// }
 
 void
 display_lidar_matrix(Mat &image, vector<vector<image_cartesian>> points, int r, int g, int b)
@@ -826,6 +858,87 @@ find_missing_movable_objects(vector<carmen_vector_2D_t> previous_filtered_cluste
 	return (recovered_clusters);
 }
 
+vector<image_cartesian>
+velodyne_camera_calibration_fuse_virtual_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+                                              carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose, unsigned int image_width,
+											  unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height,
+											  vector<movable_object> &predictions, int camera_index)
+{
+	std::vector<image_cartesian> points;
+	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
+	unsigned int image_x = 0, image_y = 0;
+
+	unsigned int max_x = crop_x + crop_width;
+	unsigned int max_y = crop_y + crop_height;
+
+	if (velodyne_message == NULL)
+		return (points);
+
+	double fx_meters = camera_parameters.fx_factor * camera_parameters.pixel_size * image_width;
+	double fy_meters = camera_parameters.fy_factor * camera_parameters.pixel_size * image_height;
+
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+
+	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
+	{
+		horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose.orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			continue;
+
+		previous_range = (((double) velodyne_message->partial_scan[j].distance[0]) / 500.0);
+		previous_vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[0]));
+
+		for (int i = 1; i < 32; i++)
+		{
+			for (int obj_index = 0; obj_index < predictions.size(); obj_index++)
+			{
+				// range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
+				range = estimate_distance (image_height, predictions[obj_index].h, camera_index);
+
+				/*if (range <= MIN_RANGE || range >= MAX_RANGE)
+					continue;
+				*/
+				vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
+
+				tf::Point p3d_velodyne_reference = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+				/*
+				tf::Point p3d_velodyne_reference_1 = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+				*/
+				/*
+				// Jose's method check if a point is obstacle
+				double delta_x = abs(p3d_velodyne_reference.x() - p3d_velodyne_reference_1.x());
+				double delta_z = abs(p3d_velodyne_reference.z() - p3d_velodyne_reference_1.z());
+				double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+				
+				if (!(line_angle > MIN_ANGLE_OBSTACLE) && (line_angle < MAX_ANGLE_OBSTACLE))
+					continue;
+				*/
+				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference, velodyne_pose, camera_pose);
+				image_x = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+				image_y = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+				
+				if (image_x >= crop_x && image_x <= max_x && image_y >= crop_y && image_y <= max_y)
+				{
+					image_cartesian point;
+					point.shot_number = j;
+					point.ray_number  = i;
+					point.image_x     = image_x - crop_x;
+					point.image_y     = image_y - crop_y;
+					point.cartesian_x = p3d_velodyne_reference.x();
+					point.cartesian_y = -p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+					point.cartesian_z = p3d_velodyne_reference.z();
+					points.push_back(point);
+				}
+				previous_range = range;
+				previous_vertical_angle = vertical_angle;
+			}
+		}
+	}
+	return points;
+}
+
 int 
 virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 {
@@ -871,10 +984,13 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 	predictions = filter_predictions_of_interest(predictions);
 
 	insert_missing_movable_objects_in_the_track(predictions);
+	/* Piumbini: Generate these points with virtual lidar, using estimated distance */
+	points = velodyne_camera_calibration_fuse_virtual_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
+				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, movable_object_tracks, camera_index);
 	
-	points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
-				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
-	//	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_params, &transformer_sick,
+	// points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
+	// 			original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
+	// //	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_params, &transformer_sick,
 	//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 	
 	points_inside_bbox = get_points_inside_bounding_boxes(movable_object_tracks, points); 
@@ -895,7 +1011,7 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 					movable_object_tracks[i].track_id, movable_object_tracks[i].velocity,movable_object_tracks[i].orientation,abs(movable_object_tracks[i].orientation - globalpos_msg->globalpos.theta));
 		}
 	}
-	clean_movable_objects(3.0);
+	clean_movable_objects(1.0);
 
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(movable_object_tracks, filtered_points);
 
