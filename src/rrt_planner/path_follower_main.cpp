@@ -301,7 +301,7 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 	GlobalState::last_odometry.v = msg->v;
 	GlobalState::last_odometry.phi = msg->phi;
 
-	if (fabs(msg->v) < 4.16666)	// 15 km/h
+	if (fabs(msg->v) < eliminate_path_follower_transition_v)	// 15 km/h
 		eliminate_path_follower = 1;
 	else
 		eliminate_path_follower = 0;

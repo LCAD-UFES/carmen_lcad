@@ -88,6 +88,32 @@ initialize_map_vector(int number_of_maps)
 }
 
 
+//static void
+//print_path(carmen_robot_and_trailer_motion_command_t *path, int size)
+//{
+//	FILE *caco = fopen("caco.txt", "a");
+//
+//	printf("\n** size %d, s %.3lf, timestamp %lf\n", size, DIST2D(path[0], path[size - 1]), carmen_get_time());
+//	fprintf(caco, "\n** size %d, s %.3lf, timestamp %lf\n", size, DIST2D(path[0], path[size - 1]), carmen_get_time());
+//	for (int i = 0; i < size; i++)
+//	{
+//		if (i < ((size > 10)? 10: size))
+//			printf(" i %2d, x %.2f, y %.2f, phi %.2f, theta %.2f, v[i] %lf, dist_2D [i]->[i+1] %.2f, dt %.3lf\n", i,
+//				path[i].x, path[i].y, path[i].phi, //carmen_radians_to_degrees(path[i].phi),
+//				carmen_radians_to_degrees(path[i].theta),
+//				path[i].v,
+//				(i < size - 1)? DIST2D(path[i], path[i + 1]): 0.0, path[i].time); // O displacement eh o deslocamento para chegar ao proximo ponto.
+//
+//		fprintf(caco, " i %2d, x %.2f, y %.2f, phi %.2f, theta %.2f, v[i] %lf, dist_2D [i]->[i+1] %.2f, dt %.3lf\n", i,
+//				path[i].x, path[i].y, path[i].phi, //carmen_radians_to_degrees(path[i].phi),
+//				carmen_radians_to_degrees(path[i].theta),
+//				path[i].v,
+//				(i < size - 1)? DIST2D(path[i], path[i + 1]): 0.0, path[i].time);
+//	}
+//	fclose(caco);
+//}
+
+
 static int
 build_predicted_trajectory(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int *num_motion_commands,
 		carmen_robot_and_trailer_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
@@ -97,11 +123,14 @@ build_predicted_trajectory(carmen_robot_and_trailer_motion_command_t *motion_com
 
 	pose = initial_pose;
 
+//	print_path(motion_commands_vector, *num_motion_commands);
+
 	for (i = 0; i < *num_motion_commands; i++)
 	{
 		double distance_traveled = 0.0;
 		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi,
-				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time, *carmen_robot_ackerman_config, *carmen_semi_trailer_config);
+				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time,
+				*carmen_robot_ackerman_config, *carmen_semi_trailer_config);
 
 		motion_commands_vector[i].x = pose.x;
 		motion_commands_vector[i].y = pose.y;

@@ -106,7 +106,7 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 void
 publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailer_path_point_t> &original_path, double timestamp)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path = apply_robot_delays(original_path);
+	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);
 
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }

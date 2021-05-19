@@ -859,7 +859,7 @@ set_reverse_planning_global_state(double target_v, double v_i, TrajectoryLookupT
 		return (false);
 	}
 
-	if (((target_v < 0.0) || (v_i < 0.0)) && GlobalState::reverse_driving_flag)
+	if (((target_v < 0.0) || (v_i < -0.005)) && GlobalState::reverse_driving_flag)
 	{
 		if (GlobalState::reverse_planning == 0)
 			previous_good_tcp.valid = false;
