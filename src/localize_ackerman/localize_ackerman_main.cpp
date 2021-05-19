@@ -1637,6 +1637,29 @@ get_sensors_param(int argc, char **argv, int correction_type)
 }
 
 
+static void
+read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
+{
+	semi_trailer_config.type = semi_trailer_type;
+
+	char semi_trailer_string[2048];
+
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+
+	carmen_param_t semi_trailer_param_list[] = {
+		{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   	  0, NULL},
+		{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   	  0, NULL},
+		{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),							  0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
+		{semi_trailer_string,(char *) "max_beta",						 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.max_beta),						  0, NULL}
+	};
+	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+
+	semi_trailer_config.max_beta = carmen_degrees_to_radians(semi_trailer_config.max_beta);
+}
+
+
 static void 
 read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, ProbabilisticMapParams *p_map_params)
 {
@@ -1745,21 +1768,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 	if (semi_trailer_config.type > 0)
-	{
-		char semi_trailer_string[256];
-		sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
-
-		carmen_param_t param_semi_trailer_list[] =
-		{
-			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   0, NULL},
-			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   0, NULL},
-			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						   0, NULL},
-			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
-		};
-
-		carmen_param_install_params(argc, argv, param_semi_trailer_list, sizeof(param_semi_trailer_list) / sizeof(param_semi_trailer_list[0]));
-	}
+		read_parameters_semi_trailer(argc, argv, semi_trailer_config.type);
 
 	carmen_param_allow_unfound_variables(1);
 
