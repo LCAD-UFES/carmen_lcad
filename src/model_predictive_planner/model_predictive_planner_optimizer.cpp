@@ -62,6 +62,9 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 	if (tcp_seed.tt < 0.05)
 		tcp_seed.tt = 0.05;
 
+	if (isnan(tcp_seed.tt) || isnan(a))
+		printf(" ");
+
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
@@ -97,6 +100,9 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 		tcp_seed.tt = 0.05;
 
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
+
+	if (isnan(tcp_seed.tt) || isnan(a))
+		printf(" ");
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -1099,7 +1105,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.01, 0.0001);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.005, 0.1);
 
 	size_t iter = 0;
 	int status;
@@ -1112,7 +1118,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
 			break;
 
-		status = gsl_multimin_test_gradient(s->gradient, 0.0016); // esta funcao retorna GSL_CONTINUE ou zero
+		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
 
 		//	--Debug with GNUPLOT
 

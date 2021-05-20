@@ -71,7 +71,7 @@ carmen_visual_odometry_pose6d_message visual_odometry_pose6d;
 int g_go_state = 0;
 
 carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = Stopped;
-
+int behavior_selector_going_backwards = 0;
 
 
 static double
@@ -177,7 +177,7 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	// that are sent to the car.
 	// This function is called when new info about the current velocity (g_XGV_velocity) arrives from the car via Jaus messages handled
 	// by the torc_report_velocity_state_message_handler() callback function.
-	if (g_desired_velocity < 0.0)
+	if (behavior_selector_going_backwards)
 		g_gear_command = 129;	// 129 = Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 	else
 		g_gear_command = 1;		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
@@ -549,6 +549,7 @@ static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
 	behavior_selector_low_level_state = msg->low_level_state;
+	behavior_selector_going_backwards = msg->going_backwards;
 }
 
 
@@ -726,8 +727,16 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			
 		set_wrench_efforts_desired_v_curvature_and_gear();
 
+//		printf("GEAR %d,  Previous gear %d, bh_state %s, back %d\n",
+//				g_gear_command, previous_gear_command,
+//				get_low_level_state_name(behavior_selector_low_level_state), behavior_selector_going_backwards);
 		if (previous_gear_command != g_gear_command)
+		{
+//			printf("** GEAR %d,  Previous gear %d\n", g_gear_command, previous_gear_command);
 			publish_ford_escape_gear_command(XGV_CCU);
+		}
+//		fflush(stdout);
+
 		previous_gear_command = g_gear_command;
 
 		delta_t = get_steering_delta_t();

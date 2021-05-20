@@ -112,12 +112,14 @@ typedef struct
 
 	carmen_behavior_selector_low_level_state_t low_level_state;
 
+	int going_backwards;
+
 	double timestamp;
 	char *host;
 } carmen_behavior_selector_state_message;
 
 #define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME		"carmen_behavior_selector_current_state_name"
-#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, double, string}"
+#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, double, string}"
 
 typedef struct
 {

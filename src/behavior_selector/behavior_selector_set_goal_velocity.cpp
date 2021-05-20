@@ -44,10 +44,15 @@ displace_pose(carmen_robot_and_trailer_traj_point_t robot_pose, double displacem
 bool
 going_forward()
 {
-	if (last_rddf_message->poses[0].v >= 0.0)
-		return (true);
+	if (last_rddf_message->number_of_poses > 0)
+	{
+		if (last_rddf_message->poses[last_rddf_message->number_of_poses / 2].v >= 0.0)
+			return (true);
+		else
+			return (false);
+	}
 	else
-		return (false);
+		return (true);
 }
 
 
