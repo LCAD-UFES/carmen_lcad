@@ -106,7 +106,7 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 void
 publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailer_path_point_t> &original_path, double timestamp)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);
+	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
 
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }
@@ -977,6 +977,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "model",				 (char *) "predictive_planner_w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6,														 1, NULL},
+
 		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower",					CARMEN_PARAM_ONOFF,	 &GlobalState::eliminate_path_follower,									 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower_transition_v",    CARMEN_PARAM_DOUBLE, &GlobalState::eliminate_path_follower_transition_v,					 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_robot_velocity_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_velocity_delay,									 1, NULL},

@@ -41,6 +41,14 @@ static char **argv_global;
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
 //#define MAX_VIRTUAL_LASER_SAMPLES 10000
 
+int eliminate_path_follower = 1;
+double eliminate_path_follower_transition_v = 4.16666;
+double robot_velocity_delay = 0.46;
+double robot_min_v_distance_ahead = 0.0;
+double robot_steering_delay = 0.26;
+double robot_min_s_distance_ahead = 0.1;
+
+
 static void
 consume_motion_command_time(int motion_command_vetor)
 {
@@ -101,10 +109,6 @@ consume_motion_command_time(int motion_command_vetor)
 //	fclose(caco);
 //}
 
-double robot_velocity_delay = 0.46;
-double robot_min_v_distance_ahead = 0.0;
-double robot_steering_delay = 0.26;
-double robot_min_s_distance_ahead = 0.1;
 
 int
 apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int original_size)
@@ -186,13 +190,18 @@ static void
 obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_motion_command_t *motion_commands,
 		int num_motion_commands, double timestamp)
 {
-	carmen_robot_and_trailer_motion_command_t *motion_commands_copy = (carmen_robot_and_trailer_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
-	memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
+	if (eliminate_path_follower)
+	{
+		carmen_robot_and_trailer_motion_command_t *motion_commands_copy = (carmen_robot_and_trailer_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
+		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
 
-	int num_motion_commands_in_copy = apply_robot_delays(motion_commands_copy, num_motion_commands);
-	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_copy, num_motion_commands, timestamp);
+		apply_robot_delays(motion_commands_copy, num_motion_commands);
+		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_copy, num_motion_commands, timestamp);
 
-	free(motion_commands_copy);
+		free(motion_commands_copy);
+	}
+	else
+		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands, num_motion_commands, timestamp);
 }
 
 
@@ -537,6 +546,16 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 }
 
 
+static void
+base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *msg)
+{
+	if (fabs(msg->v) < eliminate_path_follower_transition_v)
+		eliminate_path_follower = 1;
+	else
+		eliminate_path_follower = 0;
+}
+
+
 void
 shutdown_obstacle_avoider(int signo __attribute__ ((unused)))
 {
@@ -583,6 +602,8 @@ initialize_ipc(void)
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	return (err);
 }
 
@@ -623,6 +644,13 @@ read_parameters(int argc, char **argv)
 		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.type, 0, NULL},
 		{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 		{"rrt", "log_mode", CARMEN_PARAM_ONOFF,	&log_mode, 1, NULL},
+
+		{(char *) "model",	 (char *) "predictive_planner_eliminate_path_follower",					CARMEN_PARAM_ONOFF,	 &eliminate_path_follower,									 1, NULL},
+		{(char *) "model",	 (char *) "predictive_planner_eliminate_path_follower_transition_v",    CARMEN_PARAM_DOUBLE, &eliminate_path_follower_transition_v,					 1, NULL},
+		{(char *) "model",	 (char *) "predictive_planner_robot_velocity_delay",                    CARMEN_PARAM_DOUBLE, &robot_velocity_delay,									 1, NULL},
+		{(char *) "model",	 (char *) "predictive_planner_robot_min_v_distance_ahead",              CARMEN_PARAM_DOUBLE, &robot_min_v_distance_ahead,								 1, NULL},
+		{(char *) "model",	 (char *) "predictive_planner_robot_steering_delay",                    CARMEN_PARAM_DOUBLE, &robot_steering_delay,									 1, NULL},
+		{(char *) "model",	 (char *) "predictive_planner_robot_min_s_distance_ahead",              CARMEN_PARAM_DOUBLE, &robot_min_s_distance_ahead,								 1, NULL},
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
