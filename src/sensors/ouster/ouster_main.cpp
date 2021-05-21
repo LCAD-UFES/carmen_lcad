@@ -272,6 +272,9 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
             uint32_t range = OS1::px_range(px_buf); // in mm
             uint16_t intensity = 0;
             
+            if (range > 65535)
+            	range = 0;
+
             if (ouster_intensity_type == INTENSITY) 
                 intensity = OS1::px_signal_photons(px_buf);
             else if (ouster_intensity_type == REFLECTIVITY)
@@ -404,7 +407,7 @@ main(int argc, char** argv)
         {
             if (OS1::read_lidar_packet(*cli, lidar_buf))
             {
-                build_and_publish_variable_scan_message(lidar_buf, message);
+//                build_and_publish_variable_scan_message(lidar_buf, message);
                 build_and_publish_variable_scan_message_4_lidars(lidar_buf, message0, message1, message2, message3);
             }
         }
