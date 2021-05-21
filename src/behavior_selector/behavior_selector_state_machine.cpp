@@ -76,7 +76,7 @@ path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose
 
 	if ((distance_to_path_final_pose < robot_config.distance_between_front_and_rear_axles) &&
 		(fabs(current_robot_pose_v_and_phi.v) < 0.25) &&
-		((distance_to_path_final_pose < 1.5) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
+		((distance_to_path_final_pose < 0.8) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
 		return (true);
 	else
 		return (false);
@@ -406,7 +406,12 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			decision_making_state_msg->low_level_state = Stopped;
 			break;
 		case Stopped:
-			if (autonomous)
+			if (going_forward())
+				decision_making_state_msg->going_backwards = 0;
+			else
+				decision_making_state_msg->going_backwards = 1;
+
+			if (autonomous && !path_final_pose_reached(current_robot_pose_v_and_phi))
 			{
 				if (wait_for_given_seconds(2.0))
 				{
@@ -434,6 +439,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_To_Reverse;
 			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = End_Of_Path_Reached;
+
+			decision_making_state_msg->going_backwards = 0;
 			break;
 
 
@@ -452,6 +459,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_To_Go_Forward;
 			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = End_Of_Path_Reached;
+
+			decision_making_state_msg->going_backwards = 1;
 			break;
 
 

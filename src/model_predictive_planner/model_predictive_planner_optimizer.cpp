@@ -62,6 +62,9 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 	if (tcp_seed.tt < 0.05)
 		tcp_seed.tt = 0.05;
 
+	if (isnan(tcp_seed.tt) || isnan(a))
+		printf(" ");
+
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
@@ -97,6 +100,9 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 		tcp_seed.tt = 0.05;
 
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
+
+	if (isnan(tcp_seed.tt) || isnan(a))
+		printf(" ");
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -1112,7 +1118,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
 			break;
 
-		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
+		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
 
 		//	--Debug with GNUPLOT
 
@@ -1141,7 +1147,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	}
 
 //	printf("lane plan_cost = %lf\n", params.plan_cost);
-	if (params.plan_cost > 2.5) // 5.5) // 1.5)
+	if (params.plan_cost > 3.0) // 5.5) // 1.5)
 	{
 //		printf(">>>>>>>>>>>>>> lane plan_cost > 0.5\n");
 		tcp.valid = false;
@@ -1215,7 +1221,7 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
 			break;
 
-		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
+		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
 
 		//	--Debug with GNUPLOT
 
@@ -1302,13 +1308,13 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
 			break;
 
-		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
+		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
 
 	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 150));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if ((tcp.tt < 0.05) || (params.plan_cost > 0.25)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+	if ((tcp.tt < 0.05) || (params.plan_cost > 1.0))// 0.25)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
 	{
 //		printf("################## plan_cost = %lf\n", params.plan_cost);
 		tcp.valid = false;

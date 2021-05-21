@@ -139,6 +139,8 @@ createCarDrawer(int argc, char** argv)
 		num_items = sizeof(param_list2)/sizeof(param_list2[0]);
 		carmen_param_install_params(argc, argv, param_list2, num_items);
 
+		carDrawer->semi_trailer_config.max_beta = carmen_degrees_to_radians(carDrawer->semi_trailer_config.max_beta);
+
 		if (semi_trailer_model_file == NULL)
 			carDrawer->semiTrailerModel = glmReadOBJ("ford_escape_model.obj");
 		else

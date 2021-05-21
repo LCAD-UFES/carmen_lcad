@@ -106,7 +106,7 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 void
 publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailer_path_point_t> &original_path, double timestamp)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);
+	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
 
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }
@@ -579,10 +579,12 @@ read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
 		{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.M),							   0, NULL},
 		{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.width),						   0, NULL},
 		{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_back),  0, NULL}
+		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_back),  0, NULL},
+		{semi_trailer_string,(char *) "max_beta",	 					 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.max_beta),  0, NULL}
 	};
-
 	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+
+	GlobalState::semi_trailer_config.max_beta = carmen_degrees_to_radians(GlobalState::semi_trailer_config.max_beta);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -975,6 +977,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "model",				 (char *) "predictive_planner_w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6,														 1, NULL},
+
 		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower",					CARMEN_PARAM_ONOFF,	 &GlobalState::eliminate_path_follower,									 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower_transition_v",    CARMEN_PARAM_DOUBLE, &GlobalState::eliminate_path_follower_transition_v,					 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_robot_velocity_delay",                    CARMEN_PARAM_DOUBLE, &GlobalState::robot_velocity_delay,									 1, NULL},
