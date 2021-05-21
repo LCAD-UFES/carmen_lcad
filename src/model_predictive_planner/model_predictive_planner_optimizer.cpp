@@ -28,6 +28,16 @@ bool use_obstacles = true;
 extern int use_unity_simulator;
 
 
+bool
+bad_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
+{
+	if (isnan(tcp.tt) || isnan(tcp.a) || isnan(tcp.s))
+		return (true);
+	else
+		return (false);
+}
+
+
 void
 compute_a_and_t_from_s_reverse(double s, double target_v,
 		TrajectoryLookupTable::TrajectoryDimensions target_td,
@@ -63,7 +73,7 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		tcp_seed.tt = 0.05;
 
 	if (isnan(tcp_seed.tt) || isnan(a))
-		printf(" ");
+		printf("nan em compute_a_and_t_from_s_reverse()\n");
 
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
@@ -102,7 +112,8 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 
 	if (isnan(tcp_seed.tt) || isnan(a))
-		printf(" ");
+		printf("nan em compute_a_and_t_from_s_foward()\n");
+
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -519,6 +530,9 @@ my_f(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
+	if (bad_tcp(tcp))
+		return (1000000.0);
+
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, my_params->target_td->beta_i, false);
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
@@ -599,6 +613,9 @@ my_g(const gsl_vector *x, void *params)
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
+
+	if (bad_tcp(tcp))
+		return (1000000.0);
 
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, my_params->target_td->beta_i, false);
 
@@ -735,6 +752,9 @@ my_h(const gsl_vector *x, void *params)
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
+
+	if (bad_tcp(tcp))
+		return (1000000.0);
 
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, my_params->target_td->beta_i, false);
 
@@ -1105,7 +1125,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.005, 0.1);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.01, 0.0001);
 
 	size_t iter = 0;
 	int status;
@@ -1115,10 +1135,18 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 		status = gsl_multimin_fdfminimizer_iterate(s);
 
-		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
-			break;
+		if (status)
+		{
+			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+			{
+				printf("GSL g minimizer error - %s\n", gsl_strerror(status));
+				fflush(stdout);
+			}
 
-		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
+			break;
+		}
+
+		status = gsl_multimin_test_gradient(s->gradient, 0.0016); // esta funcao retorna GSL_CONTINUE ou zero
 
 		//	--Debug with GNUPLOT
 
@@ -1140,6 +1168,9 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
+	if (bad_tcp(tcp))
+		tcp.valid = false;
+
 	if (tcp.tt < 0.05)
 	{
 //		printf(">>>>>>>>>>>>>> tt < 0.05\n");
@@ -1147,7 +1178,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	}
 
 //	printf("lane plan_cost = %lf\n", params.plan_cost);
-	if (params.plan_cost > 3.0) // 5.5) // 1.5)
+	if (params.plan_cost > 2.5) // 5.5) // 1.5)
 	{
 //		printf(">>>>>>>>>>>>>> lane plan_cost > 0.5\n");
 		tcp.valid = false;
@@ -1218,8 +1249,16 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 
 		status = gsl_multimin_fdfminimizer_iterate(s);
 
-		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+		if (status)
+		{
+			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+			{
+				printf("GSL h minimizer error - %s\n", gsl_strerror(status));
+				fflush(stdout);
+			}
+
 			break;
+		}
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
 
@@ -1241,6 +1280,9 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 //	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
+
+	if (bad_tcp(tcp))
+		tcp.valid = false;
 
 	if (tcp.tt < 0.05 || s->f > 20.0)
 	{
@@ -1305,14 +1347,26 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		iter++;
 
 		status = gsl_multimin_fdfminimizer_iterate(s);
-		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+
+		if (status)
+		{
+			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+			{
+				printf("GSL f minimizer error - %s\n", gsl_strerror(status));
+				fflush(stdout);
+			}
+
 			break;
+		}
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
 
 	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 150));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
+
+	if (bad_tcp(tcp))
+		tcp.valid = false;
 
 	if ((tcp.tt < 0.05) || (params.plan_cost > 1.0))// 0.25)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
 	{
