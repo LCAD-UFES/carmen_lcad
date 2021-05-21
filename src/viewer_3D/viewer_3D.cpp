@@ -525,18 +525,18 @@ alloc_lidar_point_cloud_vector()
 
 
 int
-convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message, carmen_lidar_config lidar_config,
-		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
-		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_velodyne_variable_scan_message *lidar_message, carmen_lidar_config lidar_config,
+		rotation_matrix *lidar_to_board_matrix, rotation_matrix *board_to_car_matrix, 
+		carmen_vector_3D_t lidar_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
 {
     carmen_pose_3D_t car_interpolated_position;
     rotation_matrix r_matrix_car_to_global;
 	double dt;
 	int discarded_points = 0;
 
-    dt = velodyne_message->timestamp - car_fused_time - velodyne_message->number_of_shots * lidar_config.time_between_shots;
+    dt = lidar_message->timestamp - car_fused_time - lidar_message->number_of_shots * lidar_config.time_between_shots;
 	
-    for (int i = 0; i < velodyne_message->number_of_shots; i++, dt += lidar_config.time_between_shots)
+    for (int i = 0; i < lidar_message->number_of_shots; i++, dt += lidar_config.time_between_shots)
 	{
 		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi, distance_between_front_and_rear_axles);
         
@@ -544,20 +544,20 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 		
 		for (int j = 0; j < lidar_config.shot_size; j++)
 		{
-			if (velodyne_message->partial_scan[i].distance[j] == 0)
+			if (lidar_message->partial_scan[i].distance[j] == 0)
             {
 				discarded_points++;
 				continue;
 			}
-			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle),
-					carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) velodyne_message->partial_scan[i].distance[j] / lidar_config.range_division_factor,
-					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(lidar_message->partial_scan[i].angle),
+					carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) lidar_message->partial_scan[i].distance[j] / lidar_config.range_division_factor,
+					lidar_to_board_matrix, board_to_car_matrix, lidar_pose_position, sensor_board_1_pose_position);
 
             carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position, &r_matrix_car_to_global);
 
-			velodyne_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
+			lidar_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
 
-			velodyne_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
+			lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
 					car_interpolated_position.position);
 		}
 	}
@@ -605,7 +605,8 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 	{
 		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points, num_points * sizeof (carmen_vector_3D_t));
 		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color, num_points * sizeof (carmen_vector_3D_t));
-	}
+        lidar_point_cloud_vector_max_size = num_points;
+    }
 
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->num_points = num_points;
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->car_position = car_fused_pose.position;
