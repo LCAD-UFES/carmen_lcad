@@ -72,6 +72,20 @@ int autonomous = 0;
 carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = Stopped;
 
 
+//static void
+//print_path(carmen_robot_and_trailer_motion_command_t *path, int size)
+//{
+//	for (int i = 0; (i < size) && (i < 15); i++)
+//	{
+//		printf("v %5.3lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
+//				path[i].v, path[i].phi, path[i].time,
+//				path[i].x, path[i].y,
+//				path[i].theta);
+//	}
+//	printf("\n");
+//}
+
+
 static void
 carmen_destroy_simulator_map(carmen_map_t *map)
 {
@@ -411,7 +425,7 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 	if (!necessary_maps_available)
 		return;
 
-//	printf("delay %lf\n", carmen_get_time() - motion_command_message->timestamp);
+//	print_path(motion_command_message->motion_command, motion_command_message->num_motion_commands);
 
 	if (motion_command_message->num_motion_commands < NUM_MOTION_COMMANDS_PER_VECTOR)
 		num_motion_commands = motion_command_message->num_motion_commands;

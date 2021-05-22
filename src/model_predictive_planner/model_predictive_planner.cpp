@@ -572,7 +572,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailer_path_point_t>
 		static double last_time = 0.0;
 		if ((carmen_get_time() - last_time) > 0.1)
 		{
-			printf("---------- PATH HIT OBSTACLE!!!! -> %lf\n", carmen_get_time());
+//			printf("---------- PATH HIT OBSTACLE!!!! -> %lf\n", carmen_get_time());
 			last_time = carmen_get_time();
 		}
 		return (true);

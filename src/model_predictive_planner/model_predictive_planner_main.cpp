@@ -45,17 +45,43 @@ int use_unity_simulator = 0;
 
 
 //static void
-//print_path_(vector<carmen_ackerman_path_point_t> path)
+//print_path_(vector<carmen_robot_and_trailer_path_point_t> path)
 //{
 //	for (unsigned int i = 0; (i < path.size()) && (i < 15); i++)
 //		printf("v %5.3lf, phi %5.3lf, t %5.3lf, x %5.3lf, y %5.3lf, theta %5.3lf\n",
 //				path[i].v, path[i].phi, path[i].time,
-//				path[i].x - GlobalState::localizer_pose->x, path[i].y - GlobalState::localizer_pose->y,
+//				path[i].x, path[i].y,
 //				path[i].theta);
 //
 //	printf("\n");
 //	fflush(stdout);
 //}
+
+
+vector<carmen_robot_and_trailer_path_point_t>
+smooth_short_path(vector<carmen_robot_and_trailer_path_point_t> &original_path)
+{
+	// Velocity delay
+	vector<carmen_robot_and_trailer_path_point_t> path = original_path;
+
+	static double stable_phi = 0.0;
+	double distance_travelled = 0.0;
+	if (path.size() > 1)
+	{
+		distance_travelled = DIST2D(path[0], path[path.size() - 1]);
+		if (distance_travelled < 1.0)
+		{
+			for (unsigned int j = 0; j < path.size(); j++)
+				original_path[j].phi = stable_phi;
+		}
+		else
+			stable_phi = path[0].phi;
+	}
+
+	path = original_path;
+
+	return (path);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -106,8 +132,9 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 void
 publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailer_path_point_t> &original_path, double timestamp)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
-
+	vector<carmen_robot_and_trailer_path_point_t> path = smooth_short_path(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
+//	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
+//	print_path_(path);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }
 

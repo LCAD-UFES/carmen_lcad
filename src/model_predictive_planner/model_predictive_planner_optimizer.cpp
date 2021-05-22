@@ -72,8 +72,8 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 	if (tcp_seed.tt < 0.05)
 		tcp_seed.tt = 0.05;
 
-	if (isnan(tcp_seed.tt) || isnan(a))
-		printf("nan em compute_a_and_t_from_s_reverse()\n");
+//	if (isnan(tcp_seed.tt) || isnan(a))
+//		printf("nan em compute_a_and_t_from_s_reverse()\n");
 
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
@@ -111,8 +111,8 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 
 	//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 
-	if (isnan(tcp_seed.tt) || isnan(a))
-		printf("nan em compute_a_and_t_from_s_foward()\n");
+//	if (isnan(tcp_seed.tt) || isnan(a))
+//		printf("nan em compute_a_and_t_from_s_foward()\n");
 
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
@@ -1137,11 +1137,11 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 		if (status)
 		{
-			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
-			{
-				printf("GSL g minimizer error - %s\n", gsl_strerror(status));
-				fflush(stdout);
-			}
+//			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+//			{
+//				printf("GSL g minimizer error - %s\n", gsl_strerror(status));
+//				fflush(stdout);
+//			}
 
 			break;
 		}
@@ -1251,11 +1251,11 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 
 		if (status)
 		{
-			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
-			{
-				printf("GSL h minimizer error - %s\n", gsl_strerror(status));
-				fflush(stdout);
-			}
+//			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+//			{
+//				printf("GSL h minimizer error - %s\n", gsl_strerror(status));
+//				fflush(stdout);
+//			}
 
 			break;
 		}
@@ -1350,11 +1350,11 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 		if (status)
 		{
-			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
-			{
-				printf("GSL f minimizer error - %s\n", gsl_strerror(status));
-				fflush(stdout);
-			}
+//			if (status != GSL_ENOPROG) // GSL_ENOPROG means that the minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+//			{
+//				printf("GSL f minimizer error - %s\n", gsl_strerror(status));
+//				fflush(stdout);
+//			}
 
 			break;
 		}
