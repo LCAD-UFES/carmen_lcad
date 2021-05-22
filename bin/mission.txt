@@ -38,7 +38,7 @@ go after set course to 7757628.18, -363928.71, -0.906  # fica nesta task ateh o 
 stop # tira de modo autonomo
 
 # Estacionamento Reitoria
-set course to 7757417.94, -364068.89, 2.223
+set course to 7757417.14, -364068.89, 2.223
 go after set course to 7757417.94, -364068.89, 2.223  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
