@@ -134,6 +134,11 @@ class carmen_timestamp_index
 int carmen_search_next_poses_index(double x, double y, double yaw, double v, double timestamp /* only for debugging */,
 		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back, int n,
 		int *annotations, int perform_loop);
+
+int carmen_search_next_poses_index_and_test_orientation(double x, double y, double yaw, double v,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back,
+		int num_poses_desired, int *annotations, int test_orientation, int perform_loop);
+
 int carmen_find_poses_around(double x, double y, double yaw, double timestamp /* only for debugging */,
 		carmen_robot_and_trailer_traj_point_t *poses_ahead, int n);
 void carmen_rddf_load_index(char *rddf_filename);

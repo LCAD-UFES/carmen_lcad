@@ -1225,6 +1225,27 @@ carmen_search_next_poses_index(double x, double y, double yaw, double v, double 
 
 
 int
+carmen_search_next_poses_index_and_test_orientation(double x, double y, double yaw, double v,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back,
+		int num_poses_desired, int *annotations, int test_orientation, int perform_loop = 0)
+{
+	long timestamp_index_position;
+	int num_poses_aquired = 0;
+	carmen_robot_and_trailer_traj_point_t last_pose_acquired;
+
+	timestamp_index_position = find_timestamp_index_position_with_full_index_search(x, y, yaw, test_orientation, 0, 0, v, 1);
+
+	num_poses_aquired = fill_in_waypoints_array(timestamp_index_position, poses_ahead, num_poses_desired, &last_pose_acquired, annotations);
+	(*num_poses_back) = fill_in_backward_waypoints_array(timestamp_index_position, poses_back, num_poses_desired);
+	if (perform_loop)
+		if (num_poses_aquired < num_poses_desired)
+			num_poses_aquired += get_more_more_poses_from_begining(num_poses_desired - num_poses_aquired, poses_ahead, last_pose_acquired, num_poses_aquired, annotations);
+
+	return (num_poses_aquired);
+}
+
+
+int
 fill_in_waypoints_around_point(long timestamp_index_position, carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_desired)
 {
 	//double dist;
