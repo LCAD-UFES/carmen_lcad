@@ -9,6 +9,12 @@
 
 using namespace std;
 
+typedef struct
+{
+	carmen_robot_and_trailer_pose_t car_pose;
+	int index_in_path;
+} car_poses_and_indexes_in_path_t;
+
 
 extern carmen_frenet_path_planner_set_of_paths *current_set_of_paths;
 
@@ -118,7 +124,7 @@ get_car_pose_at_s_displacement(double s_displacement, carmen_robot_and_trailer_t
 
 
 void
-collision_s_distance_to_static_object(path_collision_info_t &path_collision_info,
+collision_s_distance_to_static_object_old(path_collision_info_t &path_collision_info,
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
 		double delta_t, int num_samples, carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		double robot_acc, double distance_to_goal)
@@ -143,6 +149,74 @@ collision_s_distance_to_static_object(path_collision_info_t &path_collision_info
 				break;
 
 			carmen_robot_and_trailer_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.beta, 0.0, 0.0};
+			// Incluir um loop para testar colisão com objetos móveis lentos o suficiente, como em collision_s_distance_to_moving_object(), só que com o teste ao contrário.
+			if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance,
+					&distance_map_free_of_moving_objects, NULL) == 1)
+			{
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+				virtual_laser_message.num_positions++;
+
+				if (((double) s * delta_t) < min_collision_s_distance)
+					min_collision_s_distance = (double) s * delta_t;
+
+				break;
+			}
+		}
+	}
+
+	path_collision_info.s_distance_without_collision_with_static_object = min_collision_s_distance;
+	if (min_collision_s_distance == (double) num_samples * delta_t)
+		path_collision_info.static_object_pose_index = current_set_of_paths->number_of_poses;
+	else
+		path_collision_info.static_object_pose_index = index_in_path;
+}
+
+
+void
+collision_s_distance_to_static_object(path_collision_info_t &path_collision_info,
+		carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
+		double delta_t, int num_samples, carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+		double robot_acc, double distance_to_goal)
+{
+	carmen_robot_and_trailer_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
+
+	double min_collision_s_distance = (double) num_samples * delta_t;
+	int index_in_path = 0;
+	int last_path_pose = last_path_pose_that_the_car_can_occupy(path, current_set_of_paths->number_of_poses, current_robot_pose_v_and_phi.v);
+	double max_distance_to_static_object_considered =
+			1.15 * ((distance_between_waypoints_and_goals() + distance_to_goal) / 2.0) + distance_car_pose_car_front;
+	if (last_path_pose != -1)
+	{
+		double v = get_max_v();
+		int last_s = 0;
+		vector<car_poses_and_indexes_in_path_t> car_poses_and_indexes_in_path;
+		double s_range = 0.0;
+		for (int s = 0; s < num_samples; s++)
+		{
+			double s_displacement = get_s_displacement_for_a_given_sample(s, v, robot_acc, delta_t);
+			if (s_displacement > max_distance_to_static_object_considered)
+				break;
+
+			for (; (s_range < s_displacement) && (index_in_path < (last_path_pose - 1)); index_in_path++)
+				s_range += DIST2D(path[index_in_path], path[index_in_path + 1]);
+
+			carmen_robot_and_trailer_pose_t car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&(path[index_in_path]),
+					s_displacement - s_range);
+
+			if (index_in_path >= last_path_pose - 1)
+				break;
+			car_poses_and_indexes_in_path_t cp_and_i = {car_pose, index_in_path};
+			car_poses_and_indexes_in_path.push_back(cp_and_i);
+			last_s = s;
+		}
+		
+		for (int s = 0; s < last_s; s++)
+		{
+			carmen_robot_and_trailer_pose_t car_pose = car_poses_and_indexes_in_path[s].car_pose;
+			carmen_robot_and_trailer_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.beta, 0.0, 0.0};
+			index_in_path = car_poses_and_indexes_in_path[s].index_in_path;
 			// Incluir um loop para testar colisão com objetos móveis lentos o suficiente, como em collision_s_distance_to_moving_object(), só que com o teste ao contrário.
 			if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance,
 					&distance_map_free_of_moving_objects, NULL) == 1)

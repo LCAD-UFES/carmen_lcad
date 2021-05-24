@@ -593,6 +593,7 @@ move_semi_trailer_marker_to_robot_coordinate_frame(double x, double y, double be
 {
 	carmen_position_t displaced_marker;
 
+	beta = -beta;
 	displaced_marker.x = (x - global_collision_config.semi_trailer_d) * cos(beta) - y * sin(beta) - global_collision_config.semi_trailer_M;
 	displaced_marker.y = (x - global_collision_config.semi_trailer_d) * sin(beta) + y * cos(beta);
 
@@ -946,10 +947,10 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 				{
 					if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance)
 					{
-	//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
-	//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
-	//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-	//				virtual_laser_message.num_positions++;
+					virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+					virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+					virtual_laser_message.num_positions++;
 						return (1);
 					}
 				}
