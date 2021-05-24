@@ -2609,9 +2609,9 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 			frenet_trajectory->host = message->host;
 
 			if (j == message->selected_path)
-				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0);
 			else
-				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0);
 			add_trajectory_message(path_plans_frenet_drawer[j], frenet_trajectory);
 		    free(path);
 		    free(frenet_trajectory);
@@ -3024,7 +3024,7 @@ init_particle_trail(void)
 static void
 init_flags(void)
 {
-    draw_particles_flag = 0;
+    draw_particles_flag = 1;
     draw_points_flag = 0;
     draw_velodyne_flag = 2;
     draw_lidar0_flag  = 1;

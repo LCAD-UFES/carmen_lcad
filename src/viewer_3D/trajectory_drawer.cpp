@@ -11,7 +11,8 @@
 
 
 trajectory_drawer *
-create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels, carmen_semi_trailer_config_t semi_trailer_config)
+create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels,
+		carmen_semi_trailer_config_t semi_trailer_config, double path_point_size)
 {
 
 	trajectory_drawer *t_drawer = (trajectory_drawer *)malloc(sizeof(trajectory_drawer));
@@ -19,6 +20,7 @@ create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_
 	t_drawer->path = NULL;
 	t_drawer->path_segment_color = NULL;
 	t_drawer->path_size = 0;
+	t_drawer->path_point_size = path_point_size;
 
 	t_drawer->goals = NULL;
 	t_drawer->goals_size = 0;
@@ -254,7 +256,7 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 					glVertex3f(-t_drawer->distance_between_rear_car_and_rear_wheels, -t_drawer->robot_size.y / 2, 0);
 				glEnd();
 
-				if(semi_trailer_engaged)
+				if (semi_trailer_engaged)
 				{
 					glPushMatrix();
 						glRotatef(-carmen_radians_to_degrees(t_drawer->path[i].beta), 0.0, 0.0, 1.0);
@@ -294,7 +296,7 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 
 			if (draw_waypoints_flag)
 			{
-				glPointSize (5.0);
+				glPointSize (t_drawer->path_point_size);
 
 				glBegin (GL_POINTS);
 					for (int i = 0; i < t_drawer->path_size; i++)

@@ -947,10 +947,10 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 				{
 					if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance)
 					{
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
-					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-					virtual_laser_message.num_positions++;
+//						virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+//						virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+//						virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+//						virtual_laser_message.num_positions++;
 						return (1);
 					}
 				}
