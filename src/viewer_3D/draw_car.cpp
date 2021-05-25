@@ -237,6 +237,7 @@ void
 draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
 {
 	glPushMatrix();
+		glColor3f (1.0, 0.0, 0.0);
 		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
 		glRotatef(carmen_radians_to_degrees(pose.orientation.yaw), 0.0f, 0.0f, 1.0f);
 		glRotatef(carmen_radians_to_degrees(pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
