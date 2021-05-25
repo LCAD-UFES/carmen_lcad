@@ -732,8 +732,8 @@ generate_trajectory_control_parameters_sample(double k2, double k3, int i_v, int
 	// a = (s - s0 - v0.t) / (t^2.1/2)
 	// s = distance; s0 = 0; v0 = tcp.v0; t = time
 	tcp.a = (distance - v0 * time) / (time * time * 0.5);
-	if (v0 < 0) //reverse mode
-		tcp.a = (-1)*tcp.a;
+	if (v0 < 0.0) //reverse mode
+		tcp.a = (-1.0) * tcp.a;
 
 	// v = v0 + a.t
 	tcp.vf = v0 + tcp.a * time;
@@ -1079,16 +1079,8 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	gsl_interp_accel_free(acc);
 	carmen_robot_and_trailer_path_point_t furthest_point;
 	td.dist = get_max_distance_in_path(path, furthest_point);
-	if (GlobalState::reverse_planning)
-	{
-		td.theta = -carmen_normalize_theta(atan2(furthest_point.y, furthest_point.x) - M_PI);
-		td.d_yaw = furthest_point.theta;
-	}
-	else
-	{
-		td.theta = atan2(furthest_point.y, furthest_point.x);
-		td.d_yaw = furthest_point.theta;
-	}
+	td.theta = atan2(furthest_point.y, furthest_point.x);
+	td.d_yaw = furthest_point.theta;
 	td.phi_i = i_phi;
 	td.v_i = v0;
 	tcp.vf = command.v;
