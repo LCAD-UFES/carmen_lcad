@@ -2979,7 +2979,12 @@ namespace View
 		{
 			draw_robot_shape(the_map_view, draw_point, TRUE, colour);
 			draw_robot_shape(the_map_view, draw_point, FALSE, &carmen_black);
-			carmen_map_graphics_draw_line(the_map_view, colour, draw_point,
+
+			carmen_world_point_t mirrored_cursor_pos = cursor_pos;
+			mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
+			mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
+
+			carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
 					&cursor_pos);
 			draw_orientation_mark(the_map_view, draw_point);
 		}
