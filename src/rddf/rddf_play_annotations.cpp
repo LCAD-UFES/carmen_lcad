@@ -6,6 +6,7 @@
 #include <gsl/gsl_math.h>
 #include <carmen/collision_detection.h>
 #include <carmen/traffic_light_messages.h>
+#include <carmen/rddf_interface.h>
 
 #include "g2o/types/slam2d/se2.h"
 
@@ -444,8 +445,12 @@ vector<carmen_robot_and_trailer_traj_point_t>
 compute_rectilinear_route_segment(carmen_annotation_t annotation)
 {
 	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment;
-	double size_front = 25.0;
-	double size_back = 25.0;
+
+	double size_front;
+	double size_back;
+
+	get_barrier_annotation_sizes(&annotation, &size_front, &size_back);
+
 	double step_size = 0.2;
 
 	double theta = annotation.annotation_orientation;

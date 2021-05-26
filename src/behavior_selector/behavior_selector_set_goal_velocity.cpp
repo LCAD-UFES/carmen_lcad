@@ -6,6 +6,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/rddf_util.h>
 #include <carmen/udatmo.h>
+#include <carmen/rddf_interface.h>
 #include "behavior_selector.h"
 
 extern bool wait_start_moving;
@@ -502,6 +503,27 @@ compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_robot_a
 
 
 double
+effective_distance_to_annotation(carmen_annotation_t *annotation, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+{
+	if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
+	{
+		double size_front;
+		double size_back;
+
+		get_barrier_annotation_sizes(annotation, &size_front, &size_back);
+
+		carmen_vector_2D_t effective_annotation_point;
+		effective_annotation_point.x = annotation->annotation_point.x + size_back * cos(carmen_normalize_theta(annotation->annotation_orientation + M_PI));
+		effective_annotation_point.y = annotation->annotation_point.y + size_back * sin(carmen_normalize_theta(annotation->annotation_orientation + M_PI));
+
+		return DIST2D(effective_annotation_point, *current_robot_pose_v_and_phi);
+	}
+	else
+		return DIST2D(annotation->annotation_point, *current_robot_pose_v_and_phi);
+}
+
+
+double
 set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t *goal, int goal_type,
 		carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi, path_collision_info_t path_collision_info,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
@@ -527,7 +549,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t 
 //				get_robot_config()->distance_between_front_and_rear_axles +
 //				get_robot_config()->distance_between_front_car_and_front_wheels);
 
-		double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
+		double distance_to_annotation = effective_distance_to_annotation(nearest_velocity_related_annotation, current_robot_pose_v_and_phi);
 //		double distance_to_annotation = compute_distance_within_rddf(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
 //		FILE *caco13 = fopen("caco13.txt", "a");
 //		fprintf(caco13, "%.2lf %.2lf\n", distance_to_annotation, DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi));

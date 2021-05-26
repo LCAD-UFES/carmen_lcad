@@ -336,3 +336,29 @@ get_traffic_sign_state_name(int state)
 
 	return ((char *) " ");
 }
+
+void
+get_barrier_annotation_sizes(carmen_annotation_t *annotation, double *size_front, double *size_back)
+{
+	switch (annotation->annotation_code)
+	{
+		case RDDF_ANNOTATION_CODE_BARRIER_25_25:
+			*size_front = 25.0;
+			*size_back = 25.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_15_15:
+			*size_front = 15.0;
+			*size_back = 15.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_20_10:
+			*size_front = 20.0;
+			*size_back = 10.0;
+			break;
+
+		default:
+			*size_front = 25.0;
+			*size_back = 25.0;
+	}
+}
