@@ -180,6 +180,10 @@ carmen_semi_trailer_config_t   semi_trailer_config;
 static int argc_global;
 static char **argv_global;
 
+double annotation_velocity_bump;
+double annotation_velocity_pedestrian_track_stop;
+double annotation_velocity_yield;
+double annotation_velocity_barrier;
 
 int
 compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_pose)
@@ -1727,6 +1731,11 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "desired_steering_command_rate", CARMEN_PARAM_DOUBLE, &robot_config.desired_steering_command_rate,					1, NULL},
 		{(char *) "robot", (char *) "understeer_coeficient",		 CARMEN_PARAM_DOUBLE, &robot_config.understeer_coeficient,							1, NULL},
 		{(char *) "robot", (char *) "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &robot_config.maximum_steering_command_rate, 					1, NULL},
+
+		{(char *) "robot", (char *) "annotation_velocity_bump",					 CARMEN_PARAM_DOUBLE, &annotation_velocity_bump,				  0, NULL},
+		{(char *) "robot", (char *) "annotation_velocity_pedestrian_track_stop", CARMEN_PARAM_DOUBLE, &annotation_velocity_pedestrian_track_stop, 0, NULL},
+		{(char *) "robot", (char *) "annotation_velocity_yield",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_yield,				  0, NULL},
+		{(char *) "robot", (char *) "annotation_velocity_barrier",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_barrier,				  0, NULL},
 
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "max_velocity_reverse", CARMEN_PARAM_DOUBLE, &robot_max_velocity_reverse, 1, NULL},

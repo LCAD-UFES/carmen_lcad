@@ -27,6 +27,11 @@ extern int behavior_selector_reverse_driving;
 extern carmen_route_planner_road_network_message *road_network_message;
 extern double parking_speed_limit;
 
+extern double annotation_velocity_bump;
+extern double annotation_velocity_pedestrian_track_stop;
+extern double annotation_velocity_yield;
+extern double annotation_velocity_barrier;
+
 
 carmen_robot_and_trailer_traj_point_t
 displace_pose(carmen_robot_and_trailer_traj_point_t robot_pose, double displacement)
@@ -378,13 +383,13 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
 		v = 0.0;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
-		v = 2.5;
+		v = annotation_velocity_bump;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP)
-		v = 2.5;
+		v = annotation_velocity_pedestrian_track_stop;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD)
-		v = 2.5;
+		v = annotation_velocity_yield;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = 0.6; //1.2 //2.0 reduzido pois as cancelas estao mais lentas para abrir
+		v = annotation_velocity_barrier;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 		v = 0.0;
