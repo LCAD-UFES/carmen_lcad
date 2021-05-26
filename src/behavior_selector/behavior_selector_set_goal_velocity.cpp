@@ -353,8 +353,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 		path_collision_info_t path_collision_info, carmen_behavior_selector_state_message behavior_selector_state_message,
 		double timestamp)
 {
-	//TODO Isso aqui nao deveria pegar o MAX_V?
-	double v = 60.0 / 3.6;
+	double v = get_max_v();
 
 	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
 		red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))

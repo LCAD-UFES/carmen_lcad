@@ -421,12 +421,83 @@ check_nearst_pedestrian_track_state()
 }
 
 
+void
+compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment,
+		double size_front, carmen_annotation_t annotation, double theta, double step_size)
+{
+	double distance = 0.0;
+	while (distance < size_front)
+	{
+		carmen_robot_and_trailer_traj_point_t point = { };
+		point.x = annotation.annotation_point.x + distance * cos(theta);
+		point.y = annotation.annotation_point.y + distance * sin(theta);
+		point.theta = annotation.annotation_orientation;
+		point.v = 1.0;
+		rectilinear_route_segment.push_back(point);
+
+		distance += step_size;
+	}
+}
+
+
+vector<carmen_robot_and_trailer_traj_point_t>
+compute_rectilinear_route_segment(carmen_annotation_t annotation)
+{
+	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment;
+	double size_front = 25.0;
+	double size_back = 25.0;
+	double step_size = 0.2;
+
+	double theta = annotation.annotation_orientation;
+	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_front, annotation, theta, step_size);
+	theta = carmen_normalize_theta(theta + M_PI);
+	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_back, annotation, theta, step_size);
+
+	return (rectilinear_route_segment);
+}
+
+
+void
+set_rectilinear_route_points(carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, int carmen_rddf_num_poses_ahead,
+		const vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment)
+{
+	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
+	{
+		unsigned int last_j = 0;
+		for (unsigned int j = last_j; j < rectilinear_route_segment.size() - 1; j++)
+		{
+			int point_in_trajectory_is;
+			carmen_get_point_nearest_to_trajectory(&point_in_trajectory_is, rectilinear_route_segment[j], rectilinear_route_segment[j + 1],
+					carmen_rddf_poses_ahead[i], 0.0);
+			if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
+			{
+				carmen_rddf_poses_ahead[i] = rectilinear_route_segment[j];
+				break;
+			}
+		}
+	}
+}
+
+
+void
+set_rectilinear_route_segment(carmen_annotation_t annotation,
+		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
+		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
+{
+	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment = compute_rectilinear_route_segment(annotation);
+	set_rectilinear_route_points(carmen_rddf_poses_ahead, carmen_rddf_num_poses_ahead, rectilinear_route_segment);
+	set_rectilinear_route_points(carmen_rddf_poses_back, carmen_rddf_num_poses_back, rectilinear_route_segment);
+}
+
+
 bool
-add_annotation(double x, double y, double theta, size_t annotation_index)
+add_annotation(double x, double y, double theta, size_t annotation_index,
+		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
+		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
 {
 	double dx = annotation_read_from_file[annotation_index].annotation_point.x - x;
 	double dy = annotation_read_from_file[annotation_index].annotation_point.y - y;
-	double dist = sqrt(pow(dx, 2) + pow(dy, 2));
+	double dist = sqrt(pow(dx, 2.0) + pow(dy, 2.0));
 	double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
 
 	if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
@@ -486,6 +557,20 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 			return (true);
 		}
 	}
+	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
+	{
+		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
+
+		if ((dist < 100.0) && orientation_ok)
+		{
+			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+			annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
+			annotations_to_publish.push_back(annotation_i);
+			set_rectilinear_route_segment(annotation_read_from_file[annotation_index],
+					carmen_rddf_poses_ahead, carmen_rddf_poses_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
+			return (true);
+		}
+	}
 	else if (annotation_read_from_file[annotation_index].annotation_code == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF)
 	{
 		if (dist < 20.0)
@@ -529,13 +614,15 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 {
 	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)
 	{
-		if (add_annotation(robot_pose.x, robot_pose.y, robot_pose.theta, annotation_index))
+		if (add_annotation(robot_pose.x, robot_pose.y, robot_pose.theta, annotation_index,
+				carmen_rddf_poses_ahead, carmen_rddf_poses_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back))
 			continue;
 
 		bool added = false;
 		for (int j = 0; j < carmen_rddf_num_poses_ahead; j++)
 		{
-			if (add_annotation(carmen_rddf_poses_ahead[j].x, carmen_rddf_poses_ahead[j].y, carmen_rddf_poses_ahead[j].theta, annotation_index))
+			if (add_annotation(carmen_rddf_poses_ahead[j].x, carmen_rddf_poses_ahead[j].y, carmen_rddf_poses_ahead[j].theta, annotation_index,
+					carmen_rddf_poses_ahead, carmen_rddf_poses_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back))
 			{
 				added = true;
 				break;
@@ -545,7 +632,8 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 		if (!added)
 		{
 			for (int j = 0; j < carmen_rddf_num_poses_back; j++)
-				if (add_annotation(carmen_rddf_poses_back[j].x, carmen_rddf_poses_back[j].y, carmen_rddf_poses_back[j].theta, annotation_index))
+				if (add_annotation(carmen_rddf_poses_back[j].x, carmen_rddf_poses_back[j].y, carmen_rddf_poses_back[j].theta, annotation_index,
+						carmen_rddf_poses_ahead, carmen_rddf_poses_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back))
 					break;
 		}
 	}

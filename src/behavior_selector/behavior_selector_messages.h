@@ -112,7 +112,7 @@ typedef struct
 
 	carmen_behavior_selector_low_level_state_t low_level_state;
 
-	int going_backwards;
+	int going_backwards;	// Informa ao ford_escape_hybrid para mudar a marcha para reh
 
 	double timestamp;
 	char *host;
