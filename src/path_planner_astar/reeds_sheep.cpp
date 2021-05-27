@@ -468,7 +468,7 @@ double csc2_cb(double x, double y, double phi, double rs, double rc, double *t, 
 }
 
 
-double reed_shepp(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal, int *numero, double *tr, double *ur, double *vr)
+double reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *tr, double *ur, double *vr)
 {
 	double x, y, phi;
 	double t, u, v, tn, un, vn;
@@ -1045,7 +1045,7 @@ double reed_shepp(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point
 
 
 double
-min_length_rs(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal, int *numero, double *t, double *u, double *v)
+min_length_rs(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *t, double *u, double *v)
 {
 	double length_rs;
 
@@ -1064,7 +1064,7 @@ min_length_rs(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t g
 
 
 int
-fct_curve(int ty, int orientation, double val, carmen_ackerman_traj_point_p start, carmen_ackerman_traj_point_p points, int n)
+fct_curve(int ty, int orientation, double val, carmen_robot_and_trailer_traj_point_t * start, carmen_robot_and_trailer_traj_point_t * points, int n)
 {
 	double va1, va2;
 	//todo verificar uma maneira mais correta de fazer essa verificação
@@ -1106,7 +1106,7 @@ fct_curve(int ty, int orientation, double val, carmen_ackerman_traj_point_p star
 
 
 int
-constRS(int num, double t, double u, double v, carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_p points)
+constRS(int num, double t, double u, double v, carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t * points)
 {
 	int left, right, straight, fwd, bwd;
 	int n = 0;

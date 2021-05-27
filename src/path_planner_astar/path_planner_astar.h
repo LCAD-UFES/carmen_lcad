@@ -43,23 +43,29 @@
 #define OBSTACLE_DISTANCE_MIN 0.2
 #define EXPAND_NODES_V 1.42
 
-#define PENALTIES_W1 10.0
-#define PENALTIES_W2 15.0
+//#define PENALTIES_W1 10.0
+//#define PENALTIES_W2 15.0
+
+#define PENALTIES_W1 2.0
+#define PENALTIES_W2 5.0
 
 #define SEND_MESSAGE_IN_PARTS 0
 
+//DNO = distance to nearest obstacle in penalties
+#define USE_DNO 0
+
 #define USE_SMOOTH 1
 
-#define SMOOTHNESS_WEIGHT 100.0
+#define SMOOTHNESS_WEIGHT 30.0
 #define OBSTACLE_WEIGHT 10.0
-#define CURVATURE_WEIGHT 1.0
+#define CURVATURE_WEIGHT 0.0
 
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
 
 #define LANE_WIDTH 	2.4
 #define NUM_LANES	1
 
-#define DELTA2D(x1,x2) ((carmen_ackerman_traj_point_t){x1.x - x2.x, x1.y - x2.y, 0.0, 0.0, 0.0})
+#define DELTA2D(x1,x2) ((carmen_robot_and_trailer_traj_point_t){x1.x - x2.x, x1.y - x2.y, 0.0, 0.0, 0.0})
 
 enum possible_states {Not_visited, Open, Closed};
 enum motion_direction {Forward, Backward};
@@ -76,11 +82,13 @@ static const char* heuristic_compare_message[] = {"Máximo das duas heurísticas
 #define DRAW_EXPANSION_TREE 0
 #define RUN_EXPERIMENT 0
 static carmen_point_t experiments_ICRA[][2] = {{{7757871.12, -363569.71, -0.713516}, {7757917.2, -363591.2, -2.245537}}, /* Primeiro Experimento RUN_EXPERIMENT = 1*/
-											  {{7757871.12, -363569.71, -0.713516},  {7757914.4, -363592.4, 0.904827 }},	/* Segundo Experimento RUN_EXPERIMENT = 2*/
+//											  {{7757871.12, -363569.71, -0.713516},  {7757914.4, -363592.4, 0.904827 }},	/* Segundo Experimento RUN_EXPERIMENT = 2*/
+											  {{7757871.12, -363569.71, -0.713516},  {7757910.0, -363586.2, 0.740983}},	/* Segundo Experimento RUN_EXPERIMENT = 2*/
 											  {{7757919.29, -363584.23, 0.798698},   {7757902.0, -363597.20, -0.772066}},	/* Terceiro Experimento RUN_EXPERIMENT = 3*/
 											  {{7757871.12, -363569.71, -0.742732},  {7757918.38, -363594.11, 0.848}}, /* Exp. Num. de expansões RUN_EXPERIMENT = 4*/
 											  {{6.406038, 200.798055, -0.013616},    {197.400100, 28.400100, -1.570796}}, /* Exp. 1 Dissertação RUN_EXPERIMENT = 5 (mapa = maze_path_planner_astar)*/
-											  {{14.279905, 198.104850, -0.082015},  {185.600100, 72.800100, -0.105666}}}; /* Exp. 2 Dissertação RUN_EXPERIMENT = 6 (mapa = maze_path_planner_astar) */
+//											  {{14.279905, 198.104850, -0.082015},  {185.600100, 72.800100, -0.105666}}}; /* Exp. 2 Dissertação RUN_EXPERIMENT = 6 (mapa = maze_path_planner_astar) */
+											  {{6.753765, 200.441449, 0.049777},  {187.600100, 70.200100, -0.110657}}}; /* Exp. 2 Dissertação RUN_EXPERIMENT = 6, melhor (mapa = maze_path_planner_astar) */
 
 typedef struct {
     double state_map_resolution;
@@ -135,7 +143,7 @@ typedef struct nonholonomic_heuristic_cost
 
 typedef struct param_otimization
 {
-	carmen_ackerman_traj_point_t *points;
+	carmen_robot_and_trailer_traj_point_t *points;
 	int *anchor_points;
 	int path_size;
 	int problem_size;
@@ -167,26 +175,26 @@ rs_move*
 rs_get_moves(int numero);
 
 int
-fct_curve(int ty, int orientation, double val, carmen_ackerman_traj_point_p start, double delta, carmen_ackerman_traj_point_p points, int n);
+fct_curve(int ty, int orientation, double val, carmen_robot_and_trailer_traj_point_t * start, double delta, carmen_robot_and_trailer_traj_point_t * points, int n);
 
 void
 rs_init_parameters(double max_phi, double distance_between_front_and_rear_axles);
 
 double
-reed_shepp(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal, int *numero, double *tr, double *ur, double *vr);
+reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *tr, double *ur, double *vr);
 
 int
-constRS(int num, double t, double u, double v, carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_p points);
+constRS(int num, double t, double u, double v, carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t * points);
 
 int
-get_index_of_nearest_pose_in_path(carmen_ackerman_traj_point_t *path, carmen_point_t globalpos, int path_length);
+get_index_of_nearest_pose_in_path(carmen_robot_and_trailer_traj_point_t *path, carmen_point_t globalpos, int path_length);
 
-carmen_ackerman_traj_point_t *
-get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index);
+carmen_robot_and_trailer_traj_point_t *
+get_poses_back(carmen_robot_and_trailer_traj_point_t *path, int nearest_pose_index);
 
 void
 add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_message,
-		carmen_ackerman_traj_point_t *path_copy);
+		carmen_robot_and_trailer_traj_point_t *path_copy);
 
 void
 free_lanes(carmen_route_planner_road_network_message route_planner_road_network_message);
@@ -194,16 +202,16 @@ free_lanes(carmen_route_planner_road_network_message route_planner_road_network_
 double *
 get_goal_distance_map(carmen_point_t goal_pose, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map);
 
-std::vector<carmen_ackerman_traj_point_t>
+std::vector<carmen_robot_and_trailer_traj_point_t>
 carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 		carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map, double *goal_distance_map,
 		nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map);
 
 int
-smooth_rddf_using_conjugate_gradient(std::vector<carmen_ackerman_traj_point_t> &astar_path);
+smooth_rddf_using_conjugate_gradient(std::vector<carmen_robot_and_trailer_traj_point_t> &astar_path);
 
 offroad_planner_plan_t
-astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goal_pose, std::vector<carmen_ackerman_traj_point_t> path_result);
+astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_robot_and_trailer_pose_t *goal_pose, std::vector<carmen_robot_and_trailer_traj_point_t> path_result);
 
 carmen_map_t *
 copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map);

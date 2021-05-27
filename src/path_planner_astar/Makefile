@@ -6,8 +6,8 @@ MODULE_NAME = Path Planner A-star
 MODULE_COMMENT = Path Planning using A-star algorithm
 
 LINK = g++
-CFLAGS += -Wall -g -O3
-CXXFLAGS = -std=c++11 -ggdb -O3
+CFLAGS += -Wall -g #-O3
+CXXFLAGS = -std=c++11 -ggdb # -O3
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/libcarmodel -I$(CARMEN_HOME)/sharedlib/libcontrol -I/home/lcad/carmen_lcad/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/libcarmodel -L$(CARMEN_HOME)/sharedlib/libcontrol
