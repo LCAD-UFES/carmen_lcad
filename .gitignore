@@ -1,3 +1,11 @@
+!bin/camera_drivers
+!bin/camera_viewer
+!bin/frenet_path_planner
+!bin/offroad_planner
+!bin/route_planner
+!lib/libfrenet_path_planner_interface.a
+!lib/liboffroad_planner_interface.a
+!lib/libroute_planner_interface.a
 sharedlib/libcyton/lib/*
 src/global/carmen-config.c
 bin/line_follower_main
