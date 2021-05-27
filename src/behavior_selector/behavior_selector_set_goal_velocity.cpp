@@ -505,21 +505,30 @@ compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_robot_a
 double
 effective_distance_to_annotation(carmen_annotation_t *annotation, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
 {
+	double distance = DIST2D(annotation->annotation_point, *current_robot_pose_v_and_phi);
+
 	if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
 	{
 		double size_front;
 		double size_back;
 
-		get_barrier_annotation_sizes(annotation, &size_front, &size_back);
+		carmen_rddf_get_barrier_alignment_segments_sizes(annotation, &size_front, &size_back);
 
 		carmen_vector_2D_t effective_annotation_point;
 		effective_annotation_point.x = annotation->annotation_point.x + size_back * cos(carmen_normalize_theta(annotation->annotation_orientation + M_PI));
 		effective_annotation_point.y = annotation->annotation_point.y + size_back * sin(carmen_normalize_theta(annotation->annotation_orientation + M_PI));
+		double distance2 = DIST2D(effective_annotation_point, *current_robot_pose_v_and_phi);
+		if (distance2 < distance)
+			distance = distance2;
 
-		return DIST2D(effective_annotation_point, *current_robot_pose_v_and_phi);
+		effective_annotation_point.x = annotation->annotation_point.x + size_back * cos(carmen_normalize_theta(annotation->annotation_orientation));
+		effective_annotation_point.y = annotation->annotation_point.y + size_back * sin(carmen_normalize_theta(annotation->annotation_orientation));
+		distance2 = DIST2D(annotation->annotation_point, *current_robot_pose_v_and_phi);
+		if (distance2 < distance)
+			distance = distance2;
 	}
-	else
-		return DIST2D(annotation->annotation_point, *current_robot_pose_v_and_phi);
+
+	return (distance);
 }
 
 
@@ -966,7 +975,7 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
-	if ((goal->v == 0.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
+	if ((fabs(goal->v) < 1.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
 //		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
 		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 0.5))
 	{

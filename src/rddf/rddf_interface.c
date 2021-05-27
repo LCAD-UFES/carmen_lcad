@@ -338,7 +338,7 @@ get_traffic_sign_state_name(int state)
 }
 
 void
-get_barrier_annotation_sizes(carmen_annotation_t *annotation, double *size_front, double *size_back)
+carmen_rddf_get_barrier_alignment_segments_sizes(carmen_annotation_t *annotation, double *size_front, double *size_back)
 {
 	switch (annotation->annotation_code)
 	{
@@ -347,8 +347,34 @@ get_barrier_annotation_sizes(carmen_annotation_t *annotation, double *size_front
 			*size_back = 25.0;
 			break;
 
-		case RDDF_ANNOTATION_CODE_BARRIER_15_15:
-			*size_front = 15.0;
+		case RDDF_ANNOTATION_CODE_BARRIER_25_20:
+			*size_front = 25.0;
+			*size_back = 20.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_25_15:
+			*size_front = 25.0;
+			*size_back = 15.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_25_10:
+			*size_front = 25.0;
+			*size_back = 10.0;
+			break;
+
+
+		case RDDF_ANNOTATION_CODE_BARRIER_20_25:
+			*size_front = 20.0;
+			*size_back = 25.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_20_20:
+			*size_front = 20.0;
+			*size_back = 20.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_20_15:
+			*size_front = 20.0;
 			*size_back = 15.0;
 			break;
 
@@ -357,8 +383,51 @@ get_barrier_annotation_sizes(carmen_annotation_t *annotation, double *size_front
 			*size_back = 10.0;
 			break;
 
-		default:
-			*size_front = 25.0;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_15_25:
+			*size_front = 15.0;
 			*size_back = 25.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_15_20:
+			*size_front = 15.0;
+			*size_back = 20.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_15_15:
+			*size_front = 15.0;
+			*size_back = 15.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_15_10:
+			*size_front = 15.0;
+			*size_back = 10.0;
+			break;
+
+
+		case RDDF_ANNOTATION_CODE_BARRIER_10_25:
+			*size_front = 10.0;
+			*size_back = 25.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_10_20:
+			*size_front = 10.0;
+			*size_back = 20.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_10_15:
+			*size_front = 10.0;
+			*size_back = 15.0;
+			break;
+
+		case RDDF_ANNOTATION_CODE_BARRIER_10_10:
+			*size_front = 10.0;
+			*size_back = 10.0;
+			break;
+
+
+		default:
+			*size_front = 0.0;
+			*size_back = 0.0;
 	}
 }

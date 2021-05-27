@@ -549,7 +549,7 @@ static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
 	behavior_selector_low_level_state = msg->low_level_state;
-	behavior_selector_going_backwards = msg->going_backwards;
+	behavior_selector_going_backwards = msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
 }
 
 

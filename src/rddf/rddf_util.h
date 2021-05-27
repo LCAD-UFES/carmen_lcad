@@ -2,6 +2,7 @@
 #ifndef RDDF_UTIL_H_
 #define RDDF_UTIL_H_
 
+#include <vector>
 #include <carmen/carmen.h>
 #include "rddf_messages.h"
 
@@ -9,6 +10,9 @@
 #include <kml/engine.h>
 #include <kml/dom.h>
 #include <kml/engine/kml_file.h>
+
+using namespace std;
+
 
 typedef struct
 {
@@ -66,5 +70,11 @@ void carmen_check_for_annotations(carmen_point_t robot_pose,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back, double timestamp);
 void carmen_rddf_play_updade_annotation_vector(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation);
 
+vector<carmen_robot_and_trailer_traj_point_t>
+carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back);
+
+int
+carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment,
+		carmen_robot_and_trailer_traj_point_t point);
 
 #endif

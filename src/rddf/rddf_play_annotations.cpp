@@ -423,63 +423,14 @@ check_nearst_pedestrian_track_state()
 
 
 void
-compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment,
-		double size_front, carmen_annotation_t annotation, double theta, double step_size)
-{
-	double distance = 0.0;
-	while (distance < size_front)
-	{
-		carmen_robot_and_trailer_traj_point_t point = { };
-		point.x = annotation.annotation_point.x + distance * cos(theta);
-		point.y = annotation.annotation_point.y + distance * sin(theta);
-		point.theta = annotation.annotation_orientation;
-		point.v = 1.0;
-		rectilinear_route_segment.push_back(point);
-
-		distance += step_size;
-	}
-}
-
-
-vector<carmen_robot_and_trailer_traj_point_t>
-compute_rectilinear_route_segment(carmen_annotation_t annotation)
-{
-	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment;
-
-	double size_front;
-	double size_back;
-
-	get_barrier_annotation_sizes(&annotation, &size_front, &size_back);
-
-	double step_size = 0.2;
-
-	double theta = annotation.annotation_orientation;
-	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_front, annotation, theta, step_size);
-	theta = carmen_normalize_theta(theta + M_PI);
-	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_back, annotation, theta, step_size);
-
-	return (rectilinear_route_segment);
-}
-
-
-void
 set_rectilinear_route_points(carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, int carmen_rddf_num_poses_ahead,
 		const vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment)
 {
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
 	{
-		unsigned int last_j = 0;
-		for (unsigned int j = last_j; j < rectilinear_route_segment.size() - 1; j++)
-		{
-			int point_in_trajectory_is;
-			carmen_get_point_nearest_to_trajectory(&point_in_trajectory_is, rectilinear_route_segment[j], rectilinear_route_segment[j + 1],
-					carmen_rddf_poses_ahead[i], 0.0);
-			if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
-			{
-				carmen_rddf_poses_ahead[i] = rectilinear_route_segment[j];
-				break;
-			}
-		}
+		int index = carmen_rddf_index_of_point_within_rectlinear_route_segment(rectilinear_route_segment, carmen_rddf_poses_ahead[i]);
+		if (index != -1)
+			carmen_rddf_poses_ahead[i] = rectilinear_route_segment[index];
 	}
 }
 
@@ -489,7 +440,14 @@ set_rectilinear_route_segment(carmen_annotation_t annotation,
 		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
 {
-	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment = compute_rectilinear_route_segment(annotation);
+	double size_front;
+	double size_back;
+
+	carmen_rddf_get_barrier_alignment_segments_sizes(&annotation, &size_front, &size_back);
+	if ((size_front == 0.0) && (size_back == 0.0))
+		return;
+
+	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment = carmen_rddf_compute_rectilinear_route_segment(annotation, size_front, size_back);
 	set_rectilinear_route_points(carmen_rddf_poses_ahead, carmen_rddf_num_poses_ahead, rectilinear_route_segment);
 	set_rectilinear_route_points(carmen_rddf_poses_back, carmen_rddf_num_poses_back, rectilinear_route_segment);
 }
@@ -569,7 +527,6 @@ add_annotation(double x, double y, double theta, size_t annotation_index,
 		if ((dist < 100.0) && orientation_ok)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-			annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
 			annotations_to_publish.push_back(annotation_i);
 			set_rectilinear_route_segment(annotation_read_from_file[annotation_index],
 					carmen_rddf_poses_ahead, carmen_rddf_poses_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
