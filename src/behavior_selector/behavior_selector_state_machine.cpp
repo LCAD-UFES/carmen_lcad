@@ -104,7 +104,7 @@ distance_to_reverse_waypoint(carmen_robot_and_trailer_traj_point_t current_robot
 bool
 stop_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_annotation_t *nearest_stop_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_STOP,
+	carmen_annotation_t *nearest_stop_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_STOP,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_stop_annotation == NULL)
@@ -383,7 +383,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 bool
 robot_reached_non_return_point(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
+	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_pedestrian_track_annotation == NULL)
@@ -800,6 +800,8 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 
 	if (within_narrow_passage(current_robot_pose_v_and_phi, last_valid_goal))
 		decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
+	else
+		decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
 
 	return (0);
 }

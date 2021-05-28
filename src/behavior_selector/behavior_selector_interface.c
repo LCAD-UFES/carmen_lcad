@@ -181,6 +181,20 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 }
 
 
+char *
+get_low_level_state_flag_name(int flag)
+{
+	static char str_flags[2048];
+
+	str_flags[0] = '\0';
+
+	if (flag & CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS)		strcat(str_flags, (char *) ", GOING_BACKWARDS");
+	if (flag & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)	strcat(str_flags, (char *) ", NARROW_PASSAGE");
+
+	return (str_flags);
+}
+
+
 void
 carmen_behavior_selector_subscribe_path_goals_and_annotations_message(carmen_behavior_selector_path_goals_and_annotations_message *msg,
 		carmen_handler_t handler,

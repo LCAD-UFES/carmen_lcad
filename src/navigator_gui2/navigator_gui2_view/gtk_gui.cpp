@@ -1498,8 +1498,8 @@ namespace View
 		static char buffer[2048];
 		strcpy(buffer, "Low Level State: ");
 		strcat(buffer, get_low_level_state_name(msg->low_level_state));
-
-//		strcpy(ndata.low_level_state_navigator,buffer);
+		if (msg->low_level_state_flags)
+			strcat(buffer, get_low_level_state_flag_name(msg->low_level_state_flags));
 
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelLowLevelState), buffer);
 	}

@@ -32,6 +32,8 @@ void carmen_behavior_selector_remove_goal();
 
 char *get_low_level_state_name(carmen_behavior_selector_low_level_state_t state);
 
+char *get_low_level_state_flag_name(int flag);
+
 void
 carmen_behavior_selector_publish_path_goals_and_annotations_message(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message);
 

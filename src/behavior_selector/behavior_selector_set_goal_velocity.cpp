@@ -132,7 +132,7 @@ nearest_pose_is_the_final_pose(carmen_robot_and_trailer_traj_point_t current_rob
 
 
 carmen_annotation_t *
-get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;
@@ -144,6 +144,31 @@ get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message 
 		if ((annotation_message.annotations[i].annotation_type == annotation) &&
 			(distance_to_annotation < distance_to_nearest_annotation) &&
 			carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point))
+		{
+			distance_to_nearest_annotation = distance_to_annotation;
+			nearest_annotation_index = i;
+		}
+	}
+
+	if (nearest_annotation_index != -1)
+		return (&(annotation_message.annotations[nearest_annotation_index]));
+	else
+		return (NULL);
+}
+
+
+carmen_annotation_t *
+get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+{
+	int nearest_annotation_index = -1;
+	double distance_to_nearest_annotation = 1000.0;
+
+	for (int i = 0; i < annotation_message.num_annotations; i++)
+	{
+		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
+
+		if ((annotation_message.annotations[i].annotation_type == annotation) &&
+			(distance_to_annotation < distance_to_nearest_annotation))
 		{
 			distance_to_nearest_annotation = distance_to_annotation;
 			nearest_annotation_index = i;
@@ -172,7 +197,7 @@ busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_
 //	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
 	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
-	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
+	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
 			last_rddf_annotation_message, &displaced_robot_pose);
 
 	if (nearest_pedestrian_track_annotation == NULL)
@@ -334,7 +359,7 @@ red_traffic_light_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
 	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
-	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
+	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
 			last_rddf_annotation_message, &displaced_robot_pose);
 
 	if (nearest_traffic_light_annotation == NULL)
@@ -546,7 +571,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t 
 	carmen_annotation_t *nearest_velocity_related_annotation;
 	//TODO Soh pega as anotacoes para frente. Precisamos tratar essas mesmas anotacao para tras?
 	if (goal_type == ANNOTATION_GOAL_STOP)
-		nearest_velocity_related_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_STOP, last_rddf_annotation_message,
+		nearest_velocity_related_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_STOP, last_rddf_annotation_message,
 			current_robot_pose_v_and_phi);
 	else
 		nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
