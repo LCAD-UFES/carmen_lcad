@@ -400,7 +400,8 @@ robot_reached_non_return_point(carmen_robot_and_trailer_traj_point_t current_rob
 
 
 bool
-within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+		carmen_robot_and_trailer_traj_point_t *last_valid_goal)
 {
 	carmen_annotation_t *barrier_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_BARRIER, last_rddf_annotation_message,
 			&current_robot_pose_v_and_phi);
@@ -417,7 +418,10 @@ within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v
 				carmen_rddf_compute_rectilinear_route_segment(*barrier_annotation, size_front, size_back);
 
 		int index = carmen_rddf_index_of_point_within_rectlinear_route_segment(rectilinear_route_segment, current_robot_pose_v_and_phi);
-		if (index != -1)
+		int index2 = -1;
+		if (last_valid_goal)
+			index2 = carmen_rddf_index_of_point_within_rectlinear_route_segment(rectilinear_route_segment, *last_valid_goal);
+		if ((index != -1) || (index2 != -1))
 			return (true);
 		else
 			return (false);
@@ -781,7 +785,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 int
 run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp)
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info,
+		carmen_robot_and_trailer_traj_point_t *last_valid_goal, double timestamp)
 {
 	int error;
 
@@ -793,7 +798,7 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 	if (error != 0)
 		return (error);
 
-	if (within_narrow_passage(current_robot_pose_v_and_phi))
+	if (within_narrow_passage(current_robot_pose_v_and_phi, last_valid_goal))
 		decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
 
 	return (0);

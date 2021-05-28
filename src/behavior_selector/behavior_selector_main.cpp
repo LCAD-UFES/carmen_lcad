@@ -743,35 +743,17 @@ check_soft_stop(carmen_robot_and_trailer_traj_point_t *first_goal, carmen_robot_
 void
 set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-			&current_robot_pose_v_and_phi, wait_start_moving);
-
-	if (nearest_velocity_related_annotation != NULL)
+	if (behavior_selector_state_message.low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
 	{
-		double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-		if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) && 	// Reduz o criterio dos obstaculos moveis se for barreira
-			(distance_to_annotation < 45.0))
+		get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance * behaviour_selector_annotation_safe_distance_multiplier;
+		get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance =
+				original_behaviour_selector_central_lane_obstacles_safe_distance -
+				original_model_predictive_planner_obstacles_safe_distance +
+				original_model_predictive_planner_obstacles_safe_distance * behaviour_selector_annotation_safe_distance_multiplier;
+		if (behavior_selector_use_symotha)
 		{
-			get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance * behaviour_selector_annotation_safe_distance_multiplier;
-			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance =
-					original_behaviour_selector_central_lane_obstacles_safe_distance -
-					original_model_predictive_planner_obstacles_safe_distance +
-					original_model_predictive_planner_obstacles_safe_distance * behaviour_selector_annotation_safe_distance_multiplier;
-			if (behavior_selector_use_symotha)
-			{
-				udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
-				udatmo_set_model_predictive_planner_obstacles_safe_distance(get_robot_config()->model_predictive_planner_obstacles_safe_distance);
-			}
-		}
-		else
-		{
-			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance = original_behaviour_selector_central_lane_obstacles_safe_distance;
-			get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance;
-			if (behavior_selector_use_symotha)
-			{
-				udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(original_behaviour_selector_central_lane_obstacles_safe_distance);
-				udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
-			}
+			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
+			udatmo_set_model_predictive_planner_obstacles_safe_distance(get_robot_config()->model_predictive_planner_obstacles_safe_distance);
 		}
 	}
 	else
@@ -970,7 +952,7 @@ select_behaviour_using_symotha(carmen_robot_and_trailer_traj_point_t current_rob
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
 
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			path_collision_info_t {}, timestamp);
+			path_collision_info_t {}, last_valid_goal_p, timestamp);
 	if (error != 0)
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
@@ -1170,7 +1152,7 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
 
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			path_collision_info, timestamp);
+			path_collision_info, last_valid_goal_p, timestamp);
 	if (error != 0)
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 

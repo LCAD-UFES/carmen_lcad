@@ -155,7 +155,8 @@ extern "C" {
 			carmen_obstacle_distance_mapper_map_message *distance_map);
 
 	int	run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-			carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp);
+			carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info,
+			carmen_robot_and_trailer_traj_point_t *last_valid_goal, double timestamp);
 
 	carmen_annotation_t *get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
 			carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving);
