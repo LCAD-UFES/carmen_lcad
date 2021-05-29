@@ -403,7 +403,7 @@ bool
 within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		carmen_robot_and_trailer_traj_point_t *last_valid_goal)
 {
-	carmen_annotation_t *barrier_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_BARRIER, last_rddf_annotation_message,
+	carmen_annotation_t *barrier_annotation = carmen_behavior_selector_get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_BARRIER, last_rddf_annotation_message,
 			&current_robot_pose_v_and_phi);
 
 	if (barrier_annotation)
@@ -798,10 +798,17 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 	if (error != 0)
 		return (error);
 
-	if (within_narrow_passage(current_robot_pose_v_and_phi, last_valid_goal))
-		decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
-	else
-		decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
+	static int counter = 0;
+	if (decision_making_state_msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
+		counter++;
+	if ((counter == 0) || (counter > 40))
+	{
+		if (within_narrow_passage(current_robot_pose_v_and_phi, last_valid_goal))
+			decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
+		else
+			decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
+		counter = 0;
+	}
 
 	return (0);
 }

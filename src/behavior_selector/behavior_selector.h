@@ -134,7 +134,6 @@ extern "C" {
 
 
 	carmen_annotation_t *get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi);
-	carmen_annotation_t *get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi);
 
 	bool must_yield(path_collision_info_t path_collision_info, double timestamp);
 	

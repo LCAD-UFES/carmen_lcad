@@ -42,6 +42,8 @@ carmen_behavior_selector_subscribe_path_goals_and_annotations_message(carmen_beh
 		carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how);
 
+carmen_annotation_t *carmen_behavior_selector_get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi);
+
 #ifdef __cplusplus
 }
 #endif

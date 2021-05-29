@@ -157,31 +157,6 @@ get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation
 }
 
 
-carmen_annotation_t *
-get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
-{
-	int nearest_annotation_index = -1;
-	double distance_to_nearest_annotation = 1000.0;
-
-	for (int i = 0; i < annotation_message.num_annotations; i++)
-	{
-		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
-
-		if ((annotation_message.annotations[i].annotation_type == annotation) &&
-			(distance_to_annotation < distance_to_nearest_annotation))
-		{
-			distance_to_nearest_annotation = distance_to_annotation;
-			nearest_annotation_index = i;
-		}
-	}
-
-	if (nearest_annotation_index != -1)
-		return (&(annotation_message.annotations[nearest_annotation_index]));
-	else
-		return (NULL);
-}
-
-
 bool
 busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
