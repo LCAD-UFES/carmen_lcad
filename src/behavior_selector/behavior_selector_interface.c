@@ -181,6 +181,20 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 }
 
 
+char *
+get_low_level_state_flag_name(int flag)
+{
+	static char str_flags[2048];
+
+	str_flags[0] = '\0';
+
+	if (flag & CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS)		strcat(str_flags, (char *) ", GOING_BACKWARDS");
+	if (flag & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)	strcat(str_flags, (char *) ", NARROW_PASSAGE");
+
+	return (str_flags);
+}
+
+
 void
 carmen_behavior_selector_subscribe_path_goals_and_annotations_message(carmen_behavior_selector_path_goals_and_annotations_message *msg,
 		carmen_handler_t handler,
@@ -233,4 +247,29 @@ carmen_behavior_selector_publish_path_goals_and_annotations_message(carmen_behav
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME, path_goals_and_annotations_message);
 	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME);
+}
+
+
+carmen_annotation_t *
+carmen_behavior_selector_get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+{
+	int nearest_annotation_index = -1;
+	double distance_to_nearest_annotation = 1000.0;
+
+	for (int i = 0; i < annotation_message.num_annotations; i++)
+	{
+		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
+
+		if ((annotation_message.annotations[i].annotation_type == annotation) &&
+			(distance_to_annotation < distance_to_nearest_annotation))
+		{
+			distance_to_nearest_annotation = distance_to_annotation;
+			nearest_annotation_index = i;
+		}
+	}
+
+	if (nearest_annotation_index != -1)
+		return (&(annotation_message.annotations[nearest_annotation_index]));
+	else
+		return (NULL);
 }

@@ -57,6 +57,8 @@ int use_unity_simulator = 0;
 //	fflush(stdout);
 //}
 
+double original_model_predictive_planner_obstacles_safe_distance;
+
 
 vector<carmen_robot_and_trailer_path_point_t>
 smooth_short_path(vector<carmen_robot_and_trailer_path_point_t> &original_path)
@@ -745,6 +747,11 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 	GlobalState::behavior_selector_task = msg->task;
 	GlobalState::behavior_selector_low_level_state = msg->low_level_state;
 	GlobalState::current_algorithm = msg->algorithm;
+
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
+		GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance = 0.0;
+	else
+		GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance;
 }
 
 
@@ -963,6 +970,8 @@ read_parameters_specific(int argc, char **argv)
 
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+
+	original_model_predictive_planner_obstacles_safe_distance = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance;
 }
 
 

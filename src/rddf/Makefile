@@ -44,7 +44,7 @@ TARGETS += librddf_interface.so.1
 endif
 
 librddf_index.a: rddf_index.o
-librddf_util.a: rddf_util.o rddf_index.o rddf_play_annotations.o rddf_by_road_map.o
+librddf_util.a: rddf_play_annotations.o rddf_util.o rddf_index.o rddf_by_road_map.o
 librddf_interface.a: rddf_interface.o
 librddf_interface.so.1: rddf_interface.o
 rddf_play: rddf_index.o rddf_play_main.o rddf_interface.o rddf_play_annotations.o rddf_by_road_map.o rddf_util.o

@@ -154,6 +154,7 @@ carmen_robot_and_trailer_traj_point_t create_ackerman_traj_point_struct(double x
 
 void carmen_rddf_index_clear();
 
+
 #ifdef __cplusplus
 }
 #endif

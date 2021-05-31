@@ -6,6 +6,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/rddf_util.h>
 #include <carmen/udatmo.h>
+#include <carmen/rddf_interface.h>
 #include "behavior_selector.h"
 
 extern bool wait_start_moving;
@@ -26,6 +27,11 @@ extern bool keep_speed_limit;
 extern int behavior_selector_reverse_driving;
 extern carmen_route_planner_road_network_message *road_network_message;
 extern double parking_speed_limit;
+
+extern double annotation_velocity_bump;
+extern double annotation_velocity_pedestrian_track_stop;
+extern double annotation_velocity_yield;
+extern double annotation_velocity_barrier;
 
 
 carmen_robot_and_trailer_traj_point_t
@@ -126,7 +132,7 @@ nearest_pose_is_the_final_pose(carmen_robot_and_trailer_traj_point_t current_rob
 
 
 carmen_annotation_t *
-get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;
@@ -166,7 +172,7 @@ busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_
 //	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
 	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
-	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
+	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
 			last_rddf_annotation_message, &displaced_robot_pose);
 
 	if (nearest_pedestrian_track_annotation == NULL)
@@ -328,7 +334,7 @@ red_traffic_light_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
 	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
-	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
+	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
 			last_rddf_annotation_message, &displaced_robot_pose);
 
 	if (nearest_traffic_light_annotation == NULL)
@@ -353,8 +359,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 		path_collision_info_t path_collision_info, carmen_behavior_selector_state_message behavior_selector_state_message,
 		double timestamp)
 {
-	//TODO Isso aqui nao deveria pegar o MAX_V?
-	double v = 60.0 / 3.6;
+	double v = get_max_v();
 
 	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
 		red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
@@ -379,13 +384,13 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
 		v = 0.0;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
-		v = 2.5;
+		v = annotation_velocity_bump;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP)
-		v = 2.5;
+		v = annotation_velocity_pedestrian_track_stop;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD)
-		v = 2.5;
+		v = annotation_velocity_yield;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = 0.6; //1.2 //2.0 reduzido pois as cancelas estao mais lentas para abrir
+		v = annotation_velocity_barrier;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 		v = 0.0;
@@ -498,6 +503,36 @@ compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_robot_a
 
 
 double
+effective_distance_to_annotation(carmen_annotation_t *annotation, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+{
+	double distance = DIST2D(annotation->annotation_point, *current_robot_pose_v_and_phi);
+
+	if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
+	{
+		double size_front;
+		double size_back;
+
+		carmen_rddf_get_barrier_alignment_segments_sizes(annotation, &size_front, &size_back);
+
+		carmen_vector_2D_t effective_annotation_point;
+		effective_annotation_point.x = annotation->annotation_point.x + size_back * cos(carmen_normalize_theta(annotation->annotation_orientation + M_PI));
+		effective_annotation_point.y = annotation->annotation_point.y + size_back * sin(carmen_normalize_theta(annotation->annotation_orientation + M_PI));
+		double distance2 = DIST2D(effective_annotation_point, *current_robot_pose_v_and_phi);
+		if (distance2 < distance)
+			distance = distance2;
+
+		effective_annotation_point.x = annotation->annotation_point.x + size_back * cos(carmen_normalize_theta(annotation->annotation_orientation));
+		effective_annotation_point.y = annotation->annotation_point.y + size_back * sin(carmen_normalize_theta(annotation->annotation_orientation));
+		distance2 = DIST2D(annotation->annotation_point, *current_robot_pose_v_and_phi);
+		if (distance2 < distance)
+			distance = distance2;
+	}
+
+	return (distance);
+}
+
+
+double
 set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t *goal, int goal_type,
 		carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi, path_collision_info_t path_collision_info,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
@@ -511,7 +546,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t 
 	carmen_annotation_t *nearest_velocity_related_annotation;
 	//TODO Soh pega as anotacoes para frente. Precisamos tratar essas mesmas anotacao para tras?
 	if (goal_type == ANNOTATION_GOAL_STOP)
-		nearest_velocity_related_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_STOP, last_rddf_annotation_message,
+		nearest_velocity_related_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_STOP, last_rddf_annotation_message,
 			current_robot_pose_v_and_phi);
 	else
 		nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
@@ -523,7 +558,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t 
 //				get_robot_config()->distance_between_front_and_rear_axles +
 //				get_robot_config()->distance_between_front_car_and_front_wheels);
 
-		double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
+		double distance_to_annotation = effective_distance_to_annotation(nearest_velocity_related_annotation, current_robot_pose_v_and_phi);
 //		double distance_to_annotation = compute_distance_within_rddf(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
 //		FILE *caco13 = fopen("caco13.txt", "a");
 //		fprintf(caco13, "%.2lf %.2lf\n", distance_to_annotation, DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi));
@@ -940,7 +975,7 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
-	if ((goal->v == 0.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
+	if ((fabs(goal->v) < 1.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
 //		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
 		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 0.5))
 	{
