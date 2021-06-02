@@ -814,7 +814,6 @@ velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *m
 static void
 localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *msg)
 {
-	// printf("entrou\n");
 	int odometry_index, fused_odometry_index, instanteneous_maps_ok = 0;
 
 	odometry_index = get_base_ackerman_odometry_index_by_timestamp(msg->timestamp);
@@ -1338,7 +1337,6 @@ get_alive_LIDARs_sensors(int argc, char **argv)
 
 		spherical_sensor_params[i].current_range_max = spherical_sensor_params[i].range_max;
 	}
-	printf("Entrou 2\n");
 }
 
 

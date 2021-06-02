@@ -32,8 +32,8 @@ setup_message(carmen_velodyne_variable_scan_message &msg, int number_of_shots, i
     for (int i = 0 ; i <= number_of_shots; i++)
 	{
 		msg.partial_scan[i].shot_size = shot_size;
-		msg.partial_scan[i].distance  = (unsigned short*) malloc (shot_size * sizeof(unsigned short));
-		msg.partial_scan[i].intensity = (unsigned char*)  malloc (shot_size * sizeof(unsigned char));
+		msg.partial_scan[i].distance  = (unsigned int*) malloc (shot_size * sizeof(unsigned int));
+		msg.partial_scan[i].intensity = (unsigned short*)  malloc (shot_size * sizeof(unsigned short));
 	}
 	msg.host = carmen_get_host();
 }
@@ -70,8 +70,8 @@ reallocate_message_if_necessary_old(carmen_velodyne_variable_scan_message **mess
 
         for (int i = 0; i < n_horizontal_readings; i++)
         {
-            message->partial_scan[i].distance = (unsigned short*) calloc (H, sizeof(unsigned short));
-            message->partial_scan[i].intensity = (unsigned char*) calloc (H, sizeof(unsigned char));
+            message->partial_scan[i].distance = (unsigned int*) calloc (H, sizeof(unsigned int));
+            message->partial_scan[i].intensity = (unsigned short*) calloc (H, sizeof(unsigned short));
         }
     }
 
