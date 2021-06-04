@@ -148,9 +148,9 @@ alloc_velodyne_shot_scan_vector(int horizontal_resolution_l, int vertical_resolu
 
 	for (i = 0; i < horizontal_resolution_l; i++)
 	{
-		vector[i].distance = (unsigned short *) calloc(vertical_resolution_l, sizeof(unsigned short));
+		vector[i].distance = (unsigned int *) calloc(vertical_resolution_l, sizeof(unsigned int));
 		carmen_test_alloc(vector[i].distance);
-		vector[i].intensity = (unsigned char *) calloc(vertical_resolution_l, sizeof(unsigned char));
+		vector[i].intensity = (unsigned short *) calloc(vertical_resolution_l, sizeof(unsigned short));
 		carmen_test_alloc(vector[i].distance);
 		vector[i].shot_size = vertical_resolution_l;
 	}

@@ -331,8 +331,8 @@ carmen_velodyne_alloc_variable_velodyne_message_and_shots(int n_shots)
 void
 carmen_velodyne_alloc_shot(carmen_velodyne_shot *shot, int shot_size)
 {
-	shot->distance = (unsigned short*) calloc (shot_size, sizeof(unsigned short));
-	shot->intensity = (unsigned char*) calloc (shot_size, sizeof(unsigned char));
+	shot->distance = (unsigned int*) calloc (shot_size, sizeof(unsigned int));
+	shot->intensity = (unsigned short*) calloc (shot_size, sizeof(unsigned short));
 }
 
 

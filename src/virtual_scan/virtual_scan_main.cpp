@@ -170,12 +170,12 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 
 
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
-carmen_ackerman_traj_point_t
-displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
+carmen_robot_and_trailer_traj_point_t
+displace_pose(carmen_robot_and_trailer_traj_point_t robot_pose, double displacement)
 {
 	carmen_point_t displaced_robot_position = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&robot_pose, displacement);
 
-	carmen_ackerman_traj_point_t displaced_robot_pose = robot_pose;
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = robot_pose;
 	displaced_robot_pose.x = displaced_robot_position.x;
 	displaced_robot_pose.y = displaced_robot_position.y;
 
@@ -183,8 +183,8 @@ displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
 }
 
 
-carmen_ackerman_traj_point_t *
-compute_simulated_lateral_objects(simulated_moving_object_initial_state_t *moving_object_state, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+carmen_robot_and_trailer_traj_point_t *
+compute_simulated_lateral_objects(simulated_moving_object_initial_state_t *moving_object_state, carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	if (!necessary_maps_available)
 		return (NULL);
@@ -227,11 +227,11 @@ compute_simulated_lateral_objects(simulated_moving_object_initial_state_t *movin
 	double dx = v * dt * cos(moving_object_state->previous_pose.theta);
 	double dy = v * dt * sin(moving_object_state->previous_pose.theta);
 
-	carmen_ackerman_traj_point_t pose_ahead;
+	carmen_robot_and_trailer_traj_point_t pose_ahead;
 	pose_ahead.x = moving_object_state->previous_pose.x + dx;
 	pose_ahead.y = moving_object_state->previous_pose.y + dy;
 
-	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
+	static carmen_robot_and_trailer_traj_point_t next_pose = {0, 0, 0, 0, 0};
 	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
 	{
 		int status;
@@ -513,7 +513,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 //	if ((val++ % 8) != 0) // pula
 //		return;
 
-	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
+	carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi;
 
 	current_robot_pose_v_and_phi.x = msg->globalpos.x;
 	current_robot_pose_v_and_phi.y = msg->globalpos.y;
@@ -525,7 +525,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 		{{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, 12.0, 4.5, 1.5},
 		 {{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, 12.0, 4.5, 1.5}};
 	carmen_rectangle_t simulated_objects[2];
-	carmen_ackerman_traj_point_t *simulated_object_pose;
+	carmen_robot_and_trailer_traj_point_t *simulated_object_pose;
 
 	int num_moving_objects = 0;
 	simulated_object_pose = compute_simulated_lateral_objects(&(simulated_moving_objects_initial_state[num_moving_objects]), current_robot_pose_v_and_phi, msg->timestamp);

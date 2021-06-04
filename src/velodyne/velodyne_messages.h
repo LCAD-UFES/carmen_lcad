@@ -69,8 +69,8 @@ typedef struct {
 typedef struct
 {
 	int shot_size;
-	unsigned short  *distance;
-	unsigned char *intensity;
+	unsigned int  *distance;
+	unsigned short *intensity;
 	double angle;              // In degrees
 }carmen_velodyne_shot;
 
@@ -83,7 +83,7 @@ typedef struct
 }carmen_velodyne_variable_scan_message;
 
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME       "carmen_velodyne_variable_scan_message"
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT        "{int, <{int, <short:1>, <byte:1>, double}:1>, double, string}"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT        "{int, <{int, <int:1>, <short:1>, double}:1>, double, string}"
 
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE0_NAME       "carmen_velodyne_variable_scan_message0"
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME       "carmen_velodyne_variable_scan_message1"

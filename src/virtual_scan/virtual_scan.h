@@ -273,8 +273,8 @@ typedef struct
 
 typedef struct
 {
-	carmen_ackerman_traj_point_t previous_pose;
-	carmen_ackerman_traj_point_t returned_pose;
+	carmen_robot_and_trailer_traj_point_t previous_pose;
+	carmen_robot_and_trailer_traj_point_t returned_pose;
 	double previous_timestamp;
 	double initial_time;
 	double lateral_disp;

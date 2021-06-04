@@ -1450,8 +1450,8 @@ char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velod
 
 		if (msg->partial_scan[i].distance == NULL)
 		{
-			msg->partial_scan[i].distance = (unsigned short *) calloc (shot_size, sizeof(unsigned short));
-			msg->partial_scan[i].intensity = (unsigned char *) calloc (shot_size, sizeof(unsigned char));
+			msg->partial_scan[i].distance = (unsigned int *) calloc (shot_size, sizeof(unsigned int));
+			msg->partial_scan[i].intensity = (unsigned short *) calloc (shot_size, sizeof(unsigned short));
 		}
 
 		for(j = 0; j < shot_size; j++)
@@ -1483,16 +1483,12 @@ char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velod
 }
 
 
-char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg)
+char* 
+carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg)
 {
 	int i, shot_size;
 	int velodyne_number;
 	char *current_pos = string;
-
-	/*if (strncmp(current_pos, "VELODYNE_VARIABLE_SCAN_IN_FILE1", 31) == 0 ||
-		strncmp(current_pos, "VELODYNE_VARIABLE_SCAN_IN_FILE2", 31) == 0 ||
-		strncmp(current_pos, "VELODYNE_VARIABLE_SCAN_IN_FILE3", 31) == 0)
-		current_pos += 31;*/
 
 	static char path[1024];
 	static char full_path[1024];
@@ -1513,41 +1509,20 @@ char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, car
 	shot_size = CLF_READ_INT(&current_pos);
 	msg->number_of_shots = CLF_READ_INT(&current_pos);
 
-	// store the number of laser shots allocated to avoid unecessary reallocs
-
-	//codigo comentado pois estava dando problema para dois velodynes devido a variavel num_laser_shots_allocated nao ser para cada velodyne para cada mensagem seguida, portanto, sempre recria a variavel msg
-	/*static int num_laser_shots_allocated = 0;
-
-	if(msg->partial_scan == NULL)
+	msg->partial_scan = (carmen_velodyne_shot*) realloc (msg->partial_scan, msg->number_of_shots * sizeof(carmen_velodyne_shot));
+	for (int i = 0; i < msg->number_of_shots; i++)
 	{
-		msg->partial_scan = (carmen_velodyne_shot*) malloc (msg->number_of_shots * sizeof(carmen_velodyne_shot));
-		for (int i=0; i<msg->number_of_shots; i++)
-		{
-			msg->partial_scan[i].distance = (unsigned short*)malloc(shot_size*sizeof(unsigned short));
-			msg->partial_scan[i].intensity = (unsigned char*)malloc(shot_size*sizeof(unsigned char));
-		}
-
-		num_laser_shots_allocated = msg->number_of_shots;
+		msg->partial_scan[i].distance = (unsigned int*)malloc(shot_size*sizeof(unsigned int));
+		msg->partial_scan[i].intensity = (unsigned short*)malloc(shot_size*sizeof(unsigned short));
 	}
-	else if (num_laser_shots_allocated != msg->number_of_shots)
-	{*/
-		//verificar se a recriacao do vetor esta correta
-		msg->partial_scan = (carmen_velodyne_shot*) realloc (msg->partial_scan, msg->number_of_shots * sizeof(carmen_velodyne_shot));
-		for (int i = 0; i < msg->number_of_shots; i++)
-		{
-			msg->partial_scan[i].distance = (unsigned short*)malloc(shot_size*sizeof(unsigned short));
-			msg->partial_scan[i].intensity = (unsigned char*)malloc(shot_size*sizeof(unsigned char));
-		}
-		//num_laser_shots_allocated = msg->number_of_shots;
-	//}
 
 	FILE *pointcloud_file = fopen(full_path, "rb");
 
 	for (i = 0; i < msg->number_of_shots; i++)
 	{
 		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
-		fread(msg->partial_scan[i].distance, sizeof(unsigned short), shot_size, pointcloud_file);
-		fread(msg->partial_scan[i].intensity, sizeof(unsigned char), shot_size, pointcloud_file);
+		fread(msg->partial_scan[i].distance, sizeof(unsigned int), shot_size, pointcloud_file);
+		fread(msg->partial_scan[i].intensity, sizeof(unsigned short), shot_size, pointcloud_file);
 		msg->partial_scan[i].shot_size = shot_size;
 	}
 
