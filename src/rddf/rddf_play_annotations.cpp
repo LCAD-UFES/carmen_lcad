@@ -447,7 +447,7 @@ set_rectilinear_route_segment(carmen_annotation_t annotation,
 	if ((size_front == 0.0) && (size_back == 0.0))
 		return;
 
-	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment = carmen_rddf_compute_rectilinear_route_segment(annotation, size_front, size_back);
+	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment = carmen_rddf_compute_rectilinear_route_segment(annotation, size_front, size_back, 0.2);
 	set_rectilinear_route_points(carmen_rddf_poses_ahead, carmen_rddf_num_poses_ahead, rectilinear_route_segment);
 	set_rectilinear_route_points(carmen_rddf_poses_back, carmen_rddf_num_poses_back, rectilinear_route_segment);
 }

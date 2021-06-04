@@ -262,13 +262,13 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
-	if (rddf_end_point_message->number_of_poses > 1)
+	if (rddf_end_point_message->half_meters_to_final_goal > 1)
 	{
 		carmen_rddf_play_find_and_publish_poses_around_end_point(
 				rddf_end_point_message->point.x,
 				rddf_end_point_message->point.y,
 				rddf_end_point_message->point.theta,
-				rddf_end_point_message->number_of_poses,
+				rddf_end_point_message->half_meters_to_final_goal,
 				rddf_end_point_message->timestamp
 		);
 
@@ -281,7 +281,7 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 				rddf_end_point_message->point.x,
 				rddf_end_point_message->point.y,
 				rddf_end_point_message->point.theta,
-				rddf_end_point_message->number_of_poses,
+				rddf_end_point_message->half_meters_to_final_goal,
 				rddf_end_point_message->timestamp
 		);
 

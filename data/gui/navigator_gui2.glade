@@ -50,6 +50,12 @@
       <row>
         <col id="0" translatable="yes">Park</col>
       </row>
+      <row>
+        <col id="0" translatable="yes">Move to Engage Pose</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Human Intervention</col>
+      </row>
     </data>
   </object>
   <object class="GtkListStore" id="listFollowRoute">

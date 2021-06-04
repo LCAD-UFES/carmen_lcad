@@ -186,12 +186,12 @@ carmen_rddf_define_messages()
 }
 
 void
-carmen_rddf_publish_end_point_message(int number_of_poses_considered_near_endpoint, carmen_point_t point)
+carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_point_t point)
 {
     IPC_RETURN_TYPE err;
     carmen_rddf_end_point_message rddf_end_point_message;
 
-    rddf_end_point_message.number_of_poses = number_of_poses_considered_near_endpoint;
+    rddf_end_point_message.half_meters_to_final_goal = half_meters_to_final_goal;
 
     carmen_robot_and_trailer_pose_t end_point;
     end_point.x = point.x;

@@ -71,7 +71,7 @@ void carmen_check_for_annotations(carmen_point_t robot_pose,
 void carmen_rddf_play_updade_annotation_vector(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation);
 
 vector<carmen_robot_and_trailer_traj_point_t>
-carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back);
+carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back, double step_size);
 
 int
 carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment,

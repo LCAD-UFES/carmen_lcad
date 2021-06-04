@@ -401,7 +401,7 @@ robot_reached_non_return_point(carmen_robot_and_trailer_traj_point_t current_rob
 
 bool
 within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
-		carmen_robot_and_trailer_traj_point_t *last_valid_goal)
+		carmen_robot_and_trailer_traj_point_t *last_valid_goal, carmen_behavior_selector_state_message *decision_making_state_msg)
 {
 	carmen_annotation_t *barrier_annotation = carmen_behavior_selector_get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_BARRIER, last_rddf_annotation_message,
 			&current_robot_pose_v_and_phi);
@@ -415,7 +415,7 @@ within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v
 			return (false);
 
 		vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment =
-				carmen_rddf_compute_rectilinear_route_segment(*barrier_annotation, size_front, size_back);
+				carmen_rddf_compute_rectilinear_route_segment(*barrier_annotation, size_front, size_back, 0.2);
 
 		int index = carmen_rddf_index_of_point_within_rectlinear_route_segment(rectilinear_route_segment, current_robot_pose_v_and_phi);
 		int index2 = -1;
@@ -426,6 +426,8 @@ within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v
 		else
 			return (false);
 	}
+	else if (decision_making_state_msg->task == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE)
+		return (true);
 	else
 		return (false);
 }
@@ -803,7 +805,7 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 		counter++;
 	if ((counter == 0) || (counter > 40))
 	{
-		if (within_narrow_passage(current_robot_pose_v_and_phi, last_valid_goal))
+		if (within_narrow_passage(current_robot_pose_v_and_phi, last_valid_goal, decision_making_state_msg))
 			decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
 		else
 			decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;

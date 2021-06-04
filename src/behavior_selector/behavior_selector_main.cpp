@@ -168,6 +168,7 @@ int behavior_selector_reverse_driving = 0;
 double robot_max_velocity_reverse = 0.0;
 
 double parking_speed_limit;
+double move_to_engage_pose_speed_limit;
 
 carmen_map_t occupancy_map;
 carmen_map_server_offline_map_message *offline_map = NULL;
@@ -1720,6 +1721,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "annotation_velocity_barrier",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_barrier,				  0, NULL},
 
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
+		{(char *) "robot", (char *) "move_to_engage_pose_speed_limit", CARMEN_PARAM_DOUBLE, &move_to_engage_pose_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "max_velocity_reverse", CARMEN_PARAM_DOUBLE, &robot_max_velocity_reverse, 1, NULL},
 		{(char *) "semi_trailer",	   (char *) "initial_type", CARMEN_PARAM_INT,	 &semi_trailer_config.type,								 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_symotha", CARMEN_PARAM_ONOFF, &behavior_selector_use_symotha, 1, NULL},

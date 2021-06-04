@@ -820,33 +820,50 @@ carmen_rddf_play_clear_rddf_loop_flag()
 
 void
 compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment,
-		double size_front, carmen_annotation_t annotation, double theta, double step_size)
+		double size, carmen_annotation_t annotation, double theta, double step_size, bool reverse)
 {
-	double distance = 0.0;
-	while (distance < size_front)
+	if (reverse)
 	{
-		carmen_robot_and_trailer_traj_point_t point = { };
-		point.x = annotation.annotation_point.x + distance * cos(theta);
-		point.y = annotation.annotation_point.y + distance * sin(theta);
-		point.theta = annotation.annotation_orientation;
-		point.v = 1.0;
-		rectilinear_route_segment.push_back(point);
+		double distance = size;
+		while (distance >= 0.0)
+		{
+			carmen_robot_and_trailer_traj_point_t point = { };
+			double theta = carmen_normalize_theta(annotation.annotation_orientation + M_PI);
+			point.x = annotation.annotation_point.x + distance * cos(theta);
+			point.y = annotation.annotation_point.y + distance * sin(theta);
+			point.theta = annotation.annotation_orientation;
+			point.v = 1.0;
+			rectilinear_route_segment.push_back(point);
 
-		distance += step_size;
+			distance -= step_size;
+		}
+	}
+	else
+	{
+		double distance = 0.0;
+		while (distance < size)
+		{
+			carmen_robot_and_trailer_traj_point_t point = { };
+			point.x = annotation.annotation_point.x + distance * cos(theta);
+			point.y = annotation.annotation_point.y + distance * sin(theta);
+			point.theta = annotation.annotation_orientation;
+			point.v = 1.0;
+			rectilinear_route_segment.push_back(point);
+
+			distance += step_size;
+		}
 	}
 }
 
 
 vector<carmen_robot_and_trailer_traj_point_t>
-carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back)
+carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back, double step_size)
 {
 	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment;
-	double step_size = 0.2;
 
 	double theta = annotation.annotation_orientation;
-	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_front, annotation, theta, step_size);
-	theta = carmen_normalize_theta(theta + M_PI);
-	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_back, annotation, theta, step_size);
+	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_back, annotation, theta, step_size, true);
+	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_front, annotation, theta, step_size, false);
 
 	return (rectilinear_route_segment);
 }

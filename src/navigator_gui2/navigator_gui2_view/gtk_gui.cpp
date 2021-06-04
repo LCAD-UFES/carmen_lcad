@@ -1466,12 +1466,14 @@ namespace View
 	int
 	GtkGui::get_task_code(char *task_name)
 	{
-		if (strcmp(task_name, "Follow Lane") == 0)
-			return 0;
+		if (strcmp(task_name, "Follow Route") == 0)
+			return (BEHAVIOR_SELECTOR_FOLLOW_ROUTE);
 		else if(strcmp(task_name, "Park") == 0)
-			return 1;
+			return (BEHAVIOR_SELECTOR_PARK);
+		else if(strcmp(task_name, "Move to Engage Pose") == 0)
+			return (BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE);
 		else if(strcmp(task_name, "Human Intervention") == 0)
-			return 2;
+			return (BEHAVIOR_SELECTOR_HUMAN_INTERVENTION);
 
 		return -1;
 	}
@@ -2278,9 +2280,9 @@ namespace View
 			angle = atan2(world_point->pose.y - final_goal.pose.y,
 					world_point->pose.x - final_goal.pose.x);
 			final_goal.pose.theta = angle;
-
+			int half_meters_to_goal = 2 * DIST2D(world_point->pose, final_goal.pose);
 //			if (use_route_planner_in_graph_mode == 0)
-				carmen_rddf_publish_end_point_message(50, final_goal.pose);
+				carmen_rddf_publish_end_point_message(half_meters_to_goal, final_goal.pose);
 
 			final_goal_placed_and_oriented = 1;
 

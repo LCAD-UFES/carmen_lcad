@@ -65,41 +65,26 @@ get_current_algorithm()
 {
 	carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER;
 
-	switch(current_task)
+	switch (current_task)
 	{
 	case BEHAVIOR_SELECTOR_FOLLOW_ROUTE:
 		current_algorithm = following_lane_planner;
 		break;
+
 	case BEHAVIOR_SELECTOR_PARK:
 		current_algorithm = parking_planner;
 		break;
+
+	case BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE:
+		current_algorithm = parking_planner;
+		break;
+
 	default:
 		current_algorithm = following_lane_planner;
 		break;
 	}
 
-	return current_algorithm;
-}
-
-
-void
-change_task(int rddf_annotation)
-{
-	switch(rddf_annotation)
-	{
-	case RDDF_ANNOTATION_TYPE_NONE:
-		current_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
-		break;
-
-	case RDDF_ANNOTATION_TYPE_END_POINT_AREA:
-		current_task = BEHAVIOR_SELECTOR_PARK;
-		break;
-
-	case RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION:
-		current_task = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
-		carmen_navigator_ackerman_stop();
-		break;
-	}
+	return (current_algorithm);
 }
 
 
@@ -512,6 +497,11 @@ behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, 
 	case BEHAVIOR_SELECTOR_PARK:
 		parking_planner = algorithm;
 		break;
+
+	case BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE:
+		parking_planner = algorithm;
+		break;
+
 	default:
 		following_lane_planner = algorithm;
 		break;

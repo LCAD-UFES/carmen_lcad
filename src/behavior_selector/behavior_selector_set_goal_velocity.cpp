@@ -27,6 +27,7 @@ extern bool keep_speed_limit;
 extern int behavior_selector_reverse_driving;
 extern carmen_route_planner_road_network_message *road_network_message;
 extern double parking_speed_limit;
+extern double move_to_engage_pose_speed_limit;
 
 extern double annotation_velocity_bump;
 extern double annotation_velocity_pedestrian_track_stop;
@@ -958,10 +959,19 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	previous_v = goal->v; //Limita a velocidade quando o offroad eh acionado, tanto para frente quanto para reh
 	if (((road_network_message != NULL) && (road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) &&
 		 (goal->v > parking_speed_limit)) ||
-	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK))
+	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK) ||
+	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE))
 	 	goal->v = (reversing_driving == 1)? -parking_speed_limit : parking_speed_limit;
 	if (previous_v != goal->v)
 		who_set_the_goal_v = PARKING_MANOUVER;
+
+	previous_v = goal->v;
+	if (((road_network_message != NULL) && (road_network_message->route_planner_state == IN_RECTLINEAR_ROUTE_SEGMENT) &&
+		 (goal->v > move_to_engage_pose_speed_limit)) ||
+	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE))
+	 	goal->v = (reversing_driving == 1)? -move_to_engage_pose_speed_limit : move_to_engage_pose_speed_limit;
+	if (previous_v != goal->v)
+		who_set_the_goal_v = MOVING_TO_ENGAGE_POSE_MANOUVER;
 
 	previous_v = goal->v;
 	if (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL)
