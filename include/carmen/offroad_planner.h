@@ -63,6 +63,8 @@ int carmen_navigator_ackerman_autonomous_status(void);
 void carmen_navigator_ackerman_start_autonomous(void);
 bool smooth_path_using_conjugate_gradient(carmen_robot_and_trailer_traj_point_t *input_path, int &num_poses,
 		carmen_obstacle_distance_mapper_map_message *obstacle_distance_map, double obstacles_safe_distance, double max_phi);
+bool smooth_path_using_conjugate_gradient_study(carmen_robot_and_trailer_traj_point_t *input_path, int &num_poses,
+		carmen_obstacle_distance_mapper_map_message *obstacle_distance_map, double obstacles_safe_distance, double max_phi, double w1, double w2, double w3, double w4, double w5);
 int update_distance_map(double *utility_map, double *cost_map, int x_size, int y_size, int goal_x, int goal_y);
 int update_distance_map_new(double *utility_map, double *cost_map, int x_size, int y_size, int goal_x, int goal_y);
 

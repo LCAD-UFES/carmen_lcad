@@ -70,9 +70,11 @@ public:
 
 	static std::vector<carmen_robot_and_trailer_traj_point_t*> moving_objects_trajectories;
 
-	static bool	  following_path; // true if the path is being followed
+	static bool following_path; // true if the path is being followed
 
-	static int	  use_truepos; // if true the algorithm will use the true pose, otherwise will use the localize pose
+	static int	use_truepos; // if true the algorithm will use the true pose, otherwise will use the localize pose
+
+	static bool path_has_collision_or_phi_exceeded;
 
 	static double obstacle_threshold;
 	static bool ford_escape_online;

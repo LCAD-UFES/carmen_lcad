@@ -1,9 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/moving_objects_messages.h>
 
-/*************
- * grid map *
- ************/
+
 void
 carmen_moving_objects_map_subscribe_message(carmen_moving_objects_map_message *message,
 	       carmen_handler_t handler, carmen_subscribe_t subscribe_how)

@@ -63,10 +63,9 @@ double original_model_predictive_planner_obstacles_safe_distance;
 vector<carmen_robot_and_trailer_path_point_t>
 smooth_short_path(vector<carmen_robot_and_trailer_path_point_t> &original_path)
 {
-	// Velocity delay
 	vector<carmen_robot_and_trailer_path_point_t> path = original_path;
 
-	static double stable_phi = 0.0;
+	static double stable_phi = 0.0;	// Ultimo phi de um path nao short
 	double distance_travelled = 0.0;
 	if (path.size() > 1)
 	{
@@ -519,13 +518,17 @@ build_and_follow_path(double timestamp)
 		else
 		{
 			vector<carmen_robot_and_trailer_path_point_t> path = compute_plan(&tree);
-			if ((tree.num_paths > 0) && (path.size() > 0))
+			if (!GlobalState::path_has_collision_or_phi_exceeded && (tree.num_paths > 0) && (path.size() > 0))
 			{
 				if (GlobalState::eliminate_path_follower)
 					publish_robot_ackerman_motion_commands_eliminating_path_follower(path, timestamp);
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_planner_rrt_path_message(path_follower_path, timestamp);
 //				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
+			}
+			else if (GlobalState::path_has_collision_or_phi_exceeded && (path.size() > 0) && (fabs(GlobalState::last_odometry.v) < 0.03))
+			{
+				publish_path_follower_single_motion_command(0.0, path[0].phi, timestamp);
 			}
 			else
 			{

@@ -879,7 +879,7 @@ carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_r
 	{
 		int point_in_trajectory_is;
 		carmen_get_point_nearest_to_trajectory(&point_in_trajectory_is, rectilinear_route_segment[j], rectilinear_route_segment[j + 1],
-				point, 0.0);
+				point, 0.001);
 		if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
 			break;
 	}
