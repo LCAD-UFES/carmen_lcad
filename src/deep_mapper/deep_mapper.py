@@ -112,11 +112,29 @@ class InferenceHelper:
         self.model = model.to(self.device)
     
     @torch.no_grad()
-    def predict_pil(self, pil_image):
+    def predict_pil(self, image):
         print("entrou em pil")
-        # pil_image = pil_image.resize((640, 480))
+        
+        height, width, layers = image.shape
+        resized_img = ''
+        cropped_img = ''
+        if height < width :
+            nw = (width * 640) / height
+            dim = (int(nw),480)
+            resized_img = cv2.resize(image,dim)
+            w1 = int(nw/2 - 320)
+            w2 = int(nw/2 + 320)
+            cropped_img = resized_img[:,w1:w2]
+        else:
+            nh = (height * 640) / width
+            dim = (640,int(nh))
+            resized_img = cv2.resize(image,dim)        
+            h1 = int(nh/2 - 240)
+            h2 = int(nh/2 + 240)
+            cropped_img = resized_img[h1:h2,:]
+
         #cv2.imwrite("/tmp/input2.png",pil_image)
-        img = np.asarray(pil_image) / 255.
+        img = np.asarray(cropped_img) / 255.
         img = self.toTensor(img).unsqueeze(0).float().to(self.device)
         bin_centers, pred = self.predict(img)
 
