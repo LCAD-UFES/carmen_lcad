@@ -42,8 +42,8 @@ Obs.: test_video.mp4 é algum vídeo de sua escolha.
 
  É necessário ajustar algum process.ini de sua preferência para carregar o DeepMapper. Para isso edite o process escolhido e adicione a sequinte linha:
 ```
- deep_map_ART		depth_map   0		0			./deep_mapper  -camera_id 1  # para utilização com o ART e Intelbras
- deep_map_IARA		depth_map	0		0			./deep_mapper  -camera_id 3  # para utilização com a IARA e Bumblebee 
+ deep_map_ART		 depth_map   0		0			./deep_mapper  -camera_id 1  # para utilização com o ART e Intelbras
+ deep_map_IARA		depth_map  	0		0			./deep_mapper  -camera_id 3  # para utilização com a IARA e Bumblebee 
 ```
 
 Inicie a central como de costume, o proccontrol com o process escolhido e na tela do PROCCONTROL GUI, inicie o DeepMapper relativo à câmera e veículo escolhidos.
