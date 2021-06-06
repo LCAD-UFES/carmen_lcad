@@ -34,7 +34,7 @@ Obs.: test_video.mp4 é algum vídeo de sua escolha.
  Uma vez que os pesos estejam salvos na pasta pretrained e o projeto CARMEN_LCAD compilado e com todas as dependencias instaladas,<br/>
  execute os comandos abaixo para habilitar a utilização do DeepMapper no Carmen.
  ```
- echo "export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/:$PYTHONPATH" >> ~/.bashrc
+ echo "export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/DeepMapper:$CARMEN_HOME/src/deep_mapper/DeepMapper/models/:$PYTHONPATH" >> ~/.bashrc
  source ~/.bashrc
 
  ```
