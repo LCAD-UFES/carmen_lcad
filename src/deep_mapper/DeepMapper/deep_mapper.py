@@ -7,7 +7,7 @@ import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
 import model_io
-from unet_adaptive_bins import UnetAdaptiveBins
+from models import UnetAdaptiveBins
 
 
 def activate_virtual_environment(environment_root):
@@ -17,7 +17,7 @@ def activate_virtual_environment(environment_root):
     exec(compile(open(activate_script, "rb").read(), activate_script, 'exec'), dict(__file__=activate_script))
 
 carmen_home = os.getenv("CARMEN_HOME")
-virtualenv_root = carmen_home + "/src/deep_mapper/venv"
+virtualenv_root = carmen_home + "/src/deep_mapper/DeepMapper/venv"
 activate_virtual_environment(virtualenv_root)
 #virtualenv activated
 
@@ -97,13 +97,13 @@ class InferenceHelper:
             self.max_depth = 10
             self.saving_factor = 1000  # used to save in 16 bit
             model = UnetAdaptiveBins.build(n_bins=256, min_val=self.min_depth, max_val=self.max_depth)
-            pretrained_path = carmen_home+"/src/deep_mapper/pretrained/AdaBins_nyu.pt"
+            pretrained_path = carmen_home+"/src/deep_mapper/DeepMapper/pretrained/AdaBins_nyu.pt"
         elif dataset == 'kitti':
             self.min_depth = 1e-3
             self.max_depth = 80
             self.saving_factor = 256
             model = UnetAdaptiveBins.build(n_bins=256, min_val=self.min_depth, max_val=self.max_depth)
-            pretrained_path = carmen_home+"/src/deep_mapper/pretrained/AdaBins_kitti.pt"
+            pretrained_path = carmen_home+"/src/deep_mapper/DeepMapper/pretrained/AdaBins_kitti.pt"
         else:
             raise ValueError("dataset can be either 'nyu' or 'kitti' but got {}".format(dataset))
 
