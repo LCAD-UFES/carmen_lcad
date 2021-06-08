@@ -1,6 +1,7 @@
 #include "path_planner_astar.h"
 
 carmen_robot_ackerman_config_t robot_config;
+
 carmen_path_planner_astar_t astar_config;
 static carmen_navigator_config_t nav_config;
 
@@ -12,8 +13,7 @@ carmen_map_p map_occupancy = NULL;
 nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map;
 int use_nonholonomic_heuristic_cost_map = 1;
 int heuristic_number = 0;
-
-carmen_point_t *final_goal = NULL;
+carmen_robot_and_trailer_pose_t *final_goal = NULL;
 int final_goal_received = 0;
 int path_sended = 0;
 
@@ -22,7 +22,7 @@ int grid_state_map_y_size;
 
 carmen_route_planner_road_network_message route_planner_road_network_message;
 offroad_planner_plan_t plan_path_poses;
-std::vector<carmen_ackerman_traj_point_t> astar_path;
+std::vector<carmen_robot_and_trailer_traj_point_t> astar_path;
 
 clock_t r_time;
 
@@ -44,7 +44,7 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 		annotations_codes[i] = RDDF_ANNOTATION_CODE_NONE;
 	}
 	int nearest_pose_index = get_index_of_nearest_pose_in_path(path.points, globalpos_message->globalpos, path.length);
-	carmen_ackerman_traj_point_t *path_copy = NULL;
+	carmen_robot_and_trailer_traj_point_t *path_copy = NULL;
 
 	// Por alguma razão, o route_planner_road_network_message só funciona corretamente se for global
 //	carmen_route_planner_road_network_message route_planner_road_network_message;
@@ -148,7 +148,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		double *goal_distance_map = get_goal_distance_map(goal_position, obstacle_distance_grid_map);
 
 		#if COMPARE_HEURISTIC
-		for (int i = 0; i < 2; i++)
+		for (int i = 0; i < 4; i++)
 		{
 			heuristic_number = i;
 			printf("%s\n", heuristic_compare_message[i]);
@@ -174,9 +174,10 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal, astar_path);
 			publish_plan(plan_path_poses.path, msg);
 	}
-//			for (int i = 0; i< astar_path.size(); i++)
-//				printf("Path: %f %f %f %f %f\n", astar_path[i].x, astar_path[i].y, astar_path[i].theta, astar_path[i].v, astar_path[i].phi);
-
+		double cont = 0.0;
+		for (int i = 1; i< astar_path.size(); i++)
+			cont += DIST2D(astar_path[i], astar_path[i-1]);
+		printf("Size of the path: %f\n", cont);
 
 		free(goal_distance_map);
 

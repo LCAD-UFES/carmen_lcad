@@ -18,6 +18,7 @@ typedef enum
 {
 	BEHAVIOR_SELECTOR_FOLLOW_ROUTE,
 	BEHAVIOR_SELECTOR_PARK,
+	BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE,
 	BEHAVIOR_SELECTOR_HUMAN_INTERVENTION
 } carmen_behavior_selector_task_t;
 
@@ -84,6 +85,13 @@ typedef enum
 	CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER
 } carmen_behavior_selector_algorithm_t;
 
+enum
+{
+	// Tem que ser potencia de dois, pois sao flags para or e and (|  &) binário
+	CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS = 1,
+	CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE = 2,
+};
+
 typedef struct
 {
 	carmen_behavior_selector_algorithm_t algorithm;  // algoritmo que será usado na missao
@@ -107,12 +115,11 @@ typedef struct
 
 typedef struct
 {
-	carmen_behavior_selector_task_t task;
-	carmen_behavior_selector_algorithm_t algorithm;
+	carmen_behavior_selector_task_t 		task;
+	carmen_behavior_selector_algorithm_t 	algorithm;
 
-	carmen_behavior_selector_low_level_state_t low_level_state;
-
-	int going_backwards;	// Informa ao ford_escape_hybrid para mudar a marcha para reh
+	carmen_behavior_selector_low_level_state_t 	low_level_state;
+	int 										low_level_state_flags;
 
 	double timestamp;
 	char *host;

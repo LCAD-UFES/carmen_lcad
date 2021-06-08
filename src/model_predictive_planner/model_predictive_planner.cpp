@@ -774,8 +774,12 @@ get_path_from_optimized_tcp(vector<carmen_robot_and_trailer_path_point_t> &path,
 		return (false);
 	}
 
+//	if (path_has_collision_or_phi_exceeded(path))
+//		return (false);
 	if (path_has_collision_or_phi_exceeded(path))
-		return (false);
+		GlobalState::path_has_collision_or_phi_exceeded = true;
+	else
+		GlobalState::path_has_collision_or_phi_exceeded = false;
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 

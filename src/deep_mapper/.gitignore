@@ -1,0 +1,6 @@
+.vscode/
+*.pt
+venv/
+deep_mapper
+*.o
+__pycache__

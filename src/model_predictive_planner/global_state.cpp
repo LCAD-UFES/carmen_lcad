@@ -60,8 +60,9 @@ carmen_moving_objects_point_clouds_message *GlobalState::objects_message = NULL;
 bool GlobalState::moving_objects_initialized = false;
 std::vector<carmen_robot_and_trailer_traj_point_t*> GlobalState::moving_objects_trajectories;
 
-int    GlobalState::use_truepos = 0;
-bool   GlobalState::following_path = false;
+int  GlobalState::use_truepos = 0;
+bool GlobalState::following_path = false;
+bool GlobalState::path_has_collision_or_phi_exceeded = false;
 
 int GlobalState::reverse_driving_flag = 0;
 int GlobalState::reverse_planning = 0;

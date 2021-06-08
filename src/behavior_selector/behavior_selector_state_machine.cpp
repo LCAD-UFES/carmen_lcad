@@ -1,8 +1,12 @@
+#include <vector>
 #include <carmen/collision_detection.h>
 #include <carmen/global_graphics.h>
 #include <carmen/rddf_util.h>
+#include <carmen/rddf_interface.h>
 
 #include "behavior_selector.h"
+
+using namespace std;
 
 
 extern bool wait_start_moving;
@@ -100,7 +104,7 @@ distance_to_reverse_waypoint(carmen_robot_and_trailer_traj_point_t current_robot
 bool
 stop_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_annotation_t *nearest_stop_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_STOP,
+	carmen_annotation_t *nearest_stop_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_STOP,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_stop_annotation == NULL)
@@ -379,7 +383,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 bool
 robot_reached_non_return_point(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
+	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_pedestrian_track_annotation == NULL)
@@ -395,6 +399,40 @@ robot_reached_non_return_point(carmen_robot_and_trailer_traj_point_t current_rob
 }
 
 
+bool
+within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+		carmen_robot_and_trailer_traj_point_t *last_valid_goal, carmen_behavior_selector_state_message *decision_making_state_msg)
+{
+	carmen_annotation_t *barrier_annotation = carmen_behavior_selector_get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_BARRIER, last_rddf_annotation_message,
+			&current_robot_pose_v_and_phi);
+
+	if (barrier_annotation)
+	{
+		double size_front;
+		double size_back;
+		carmen_rddf_get_barrier_alignment_segments_sizes(barrier_annotation, &size_front, &size_back);
+		if ((size_front == 0.0) && (size_back == 0.0))
+			return (false);
+
+		vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment =
+				carmen_rddf_compute_rectilinear_route_segment(*barrier_annotation, size_front, size_back, 0.2);
+
+		int index = carmen_rddf_index_of_point_within_rectlinear_route_segment(rectilinear_route_segment, current_robot_pose_v_and_phi);
+		int index2 = -1;
+		if (last_valid_goal)
+			index2 = carmen_rddf_index_of_point_within_rectlinear_route_segment(rectilinear_route_segment, *last_valid_goal);
+		if ((index != -1) || (index2 != -1))
+			return (true);
+		else
+			return (false);
+	}
+	else if (decision_making_state_msg->task == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE)
+		return (true);
+	else
+		return (false);
+}
+
+
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
 		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
@@ -407,9 +445,9 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			break;
 		case Stopped:
 			if (going_forward())
-				decision_making_state_msg->going_backwards = 0;
+				decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
 			else
-				decision_making_state_msg->going_backwards = 1;
+				decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
 
 			if (autonomous && !path_final_pose_reached(current_robot_pose_v_and_phi))
 			{
@@ -440,7 +478,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = End_Of_Path_Reached;
 
-			decision_making_state_msg->going_backwards = 0;
+			decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
 			break;
 
 
@@ -460,7 +498,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = End_Of_Path_Reached;
 
-			decision_making_state_msg->going_backwards = 1;
+			decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
 			break;
 
 
@@ -749,7 +787,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 int
 run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info, double timestamp)
+		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info,
+		carmen_robot_and_trailer_traj_point_t *last_valid_goal, double timestamp)
 {
 	int error;
 
@@ -760,6 +799,18 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 	error = perform_state_action(decision_making_state_msg);
 	if (error != 0)
 		return (error);
+
+	static int counter = 0;
+	if (decision_making_state_msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
+		counter++;
+	if ((counter == 0) || (counter > 40))
+	{
+		if (within_narrow_passage(current_robot_pose_v_and_phi, last_valid_goal, decision_making_state_msg))
+			decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
+		else
+			decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
+		counter = 0;
+	}
 
 	return (0);
 }

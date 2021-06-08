@@ -18,11 +18,12 @@ IFLAGS += -I/usr/include/python3.6 -I/usr/include/python3.5
 
 LFLAGS += \
 	-L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp \
-	$(INTERFACE_LIBS) \
 	-lglobal -lipc \
 	-lmap_interface \
-	-lparam_interface  \
+	-lparam_interface \
+	-lrddf_index \
 	-lrddf_interface \
+	-lrddf_util \
 	-lnavigator_ackerman_interface \
 	-llocalize_ackerman_interface \
 	-lmap_server_interface \
@@ -57,7 +58,7 @@ else
 	LFLAGS += `python3.6-config --libs`
 endif
 
-LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
+LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 ifeq ("$(CARMEN_LOGGING)","ON")
 CFLAGS += \
@@ -108,7 +109,7 @@ endif
 
 behavior_selector: behavior_selector_main.o behavior_selector_set_goal_list.o \
 	behavior_selector_set_goal_velocity.o behavior_selector_set_path.o behavior_selector_mot.o \
-	behavior_selector_state_machine.o SampleFilter.o libbehavior_selector_interface.a
+	behavior_selector_state_machine.o SampleFilter.o libbehavior_selector_interface.a 
 
 libbehavior_selector_interface.a: behavior_selector_interface.o
 

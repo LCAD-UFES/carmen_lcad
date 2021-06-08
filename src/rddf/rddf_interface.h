@@ -43,7 +43,7 @@ extern "C"
 
     char *get_traffic_sign_state_name(int state);
 
-    void get_barrier_annotation_sizes(carmen_annotation_t *annotation, double *size_front, double *size_back);
+    void carmen_rddf_get_barrier_alignment_segments_sizes(carmen_annotation_t *annotation, double *size_front, double *size_back);
 
 #ifdef __cplusplus
 }

@@ -749,13 +749,21 @@ free_to_run(int who_set_the_goal_v)
 
 void
 update_current_path(int best_path, int number_of_paths, carmen_frenet_path_planner_set_of_paths *current_set_of_paths, double *path_temporal_value,
-		int who_set_the_goal_v, double &last_update_timestamp, double timestamp)
+		int who_set_the_goal_v, double &last_update_timestamp, carmen_behavior_selector_state_message behavior_selector_state_message,
+		double timestamp)
 {
 	bool update_path;
 	if (use_unity_simulator)
 		update_path = !free_to_run(who_set_the_goal_v) && (best_path != -1);
 	else
 		update_path = (best_path != current_set_of_paths->selected_path) && (best_path != -1);
+
+	if (behavior_selector_state_message.low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
+	{
+		update_path = true;
+		best_path = number_of_paths / 2;
+		current_set_of_paths->selected_path = best_path;
+	}
 
 	if (update_path)
 	{
@@ -938,7 +946,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 
 	int best_path = get_path_better_than_the_current_path(paths_collision_info, current_set_of_paths, path_temporal_value);
 	update_current_path(best_path, number_of_paths, current_set_of_paths, path_temporal_value,
-			who_set_the_goal_v, last_update_timestamp, timestamp);
+			who_set_the_goal_v, last_update_timestamp, behavior_selector_state_message, timestamp);
 
 	for (int i = 0; i < number_of_paths; i++)
 		path_temporal_value[i] *= exp(-0.1 * (timestamp - last_update_timestamp));

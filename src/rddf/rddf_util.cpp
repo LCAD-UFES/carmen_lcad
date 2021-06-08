@@ -16,7 +16,6 @@
 #include "rddf_index.h"
 
 #include <fstream>
-using namespace std;
 
 #include <kml/engine.h>
 #include <kml/dom.h>
@@ -25,6 +24,7 @@ using namespace std;
 
 #include <locale.h>
 
+using namespace std;
 using namespace g2o;
 
 kmldom::KmlFactory *factory;
@@ -469,20 +469,6 @@ carmen_rddf_play_save_rddf_to_file(char *rddf_filename, carmen_rddf_waypoint *wa
 //	else
 //		return (false);
 //}
-//
-//
-//bool
-//carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
-//{
-//	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
-//	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
-//	SE2 annotation_in_car_reference = robot_pose_mat.inverse() * annotation_point_mat;
-//
-//	if (annotation_in_car_reference[0] > 0.0)
-//		return (true);
-//	else
-//		return (false);
-//}
 
 
 bool
@@ -829,4 +815,77 @@ void
 carmen_rddf_play_clear_rddf_loop_flag()
 {
 	carmen_rddf_perform_loop = 0;
+}
+
+
+void
+compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment,
+		double size, carmen_annotation_t annotation, double theta, double step_size, bool reverse)
+{
+	if (reverse)
+	{
+		double distance = size;
+		while (distance >= 0.0)
+		{
+			carmen_robot_and_trailer_traj_point_t point = { };
+			double theta = carmen_normalize_theta(annotation.annotation_orientation + M_PI);
+			point.x = annotation.annotation_point.x + distance * cos(theta);
+			point.y = annotation.annotation_point.y + distance * sin(theta);
+			point.theta = annotation.annotation_orientation;
+			point.v = 1.0;
+			rectilinear_route_segment.push_back(point);
+
+			distance -= step_size;
+		}
+	}
+	else
+	{
+		double distance = 0.0;
+		while (distance < size)
+		{
+			carmen_robot_and_trailer_traj_point_t point = { };
+			point.x = annotation.annotation_point.x + distance * cos(theta);
+			point.y = annotation.annotation_point.y + distance * sin(theta);
+			point.theta = annotation.annotation_orientation;
+			point.v = 1.0;
+			rectilinear_route_segment.push_back(point);
+
+			distance += step_size;
+		}
+	}
+}
+
+
+vector<carmen_robot_and_trailer_traj_point_t>
+carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back, double step_size)
+{
+	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment;
+
+	double theta = annotation.annotation_orientation;
+	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_back, annotation, theta, step_size, true);
+	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_front, annotation, theta, step_size, false);
+
+	return (rectilinear_route_segment);
+}
+
+
+int
+carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment,
+		carmen_robot_and_trailer_traj_point_t point)
+{
+	int j;
+
+	for (j = 0; j < (int) (rectilinear_route_segment.size() - 1); j++)
+	{
+		int point_in_trajectory_is;
+		carmen_get_point_nearest_to_trajectory(&point_in_trajectory_is, rectilinear_route_segment[j], rectilinear_route_segment[j + 1],
+				point, 0.001);
+		if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
+			break;
+	}
+
+	if (j == (int) (rectilinear_route_segment.size() - 1))
+		return (-1);
+	else
+		return (j);
 }

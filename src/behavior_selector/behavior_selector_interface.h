@@ -32,6 +32,8 @@ void carmen_behavior_selector_remove_goal();
 
 char *get_low_level_state_name(carmen_behavior_selector_low_level_state_t state);
 
+char *get_low_level_state_flag_name(int flag);
+
 void
 carmen_behavior_selector_publish_path_goals_and_annotations_message(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message);
 
@@ -39,6 +41,8 @@ void
 carmen_behavior_selector_subscribe_path_goals_and_annotations_message(carmen_behavior_selector_path_goals_and_annotations_message *msg,
 		carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how);
+
+carmen_annotation_t *carmen_behavior_selector_get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi);
 
 #ifdef __cplusplus
 }
