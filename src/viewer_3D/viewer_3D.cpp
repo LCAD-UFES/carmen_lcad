@@ -3044,7 +3044,7 @@ init_flags(void)
     draw_lidar14_flag = 1;
     draw_lidar15_flag = 1;
     draw_stereo_cloud_flag = 0;
-    draw_car_flag = 0;
+    draw_car_flag = 1;
     draw_rays_flag = 0;
     draw_map_image_flag = 0;
     draw_localize_image_flag = 0;
@@ -3061,7 +3061,7 @@ init_flags(void)
     draw_xsens_orientation_flag = 0;
     draw_localize_ackerman_flag = 0;
     draw_annotation_flag = 0;
-    draw_moving_objects_flag = 1;
+    draw_moving_objects_flag = 0;
     draw_gps_axis_flag = 0;
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
