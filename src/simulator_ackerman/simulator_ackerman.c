@@ -172,6 +172,10 @@ publish_odometry(double timestamp)
 		odometry.phi   = simulator_config->phi;
 		odometry.timestamp = timestamp;
 
+		// Simula problema de odometria do MPW
+//		double mpw_v = round(odometry.v * 3.6) / 3.6;
+//		odometry.v = mpw_v;
+
 //		printf ("%lf %lf %lf %lf %lf\n", odometry.x, odometry.y, odometry.theta, odometry.v, odometry.phi);
 
 		err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
