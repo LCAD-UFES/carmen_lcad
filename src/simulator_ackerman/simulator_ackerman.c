@@ -173,8 +173,10 @@ publish_odometry(double timestamp)
 		odometry.timestamp = timestamp;
 
 		// Simula problema de odometria do MPW
-//		double mpw_v = round(odometry.v * 3.6) / 3.6;
-//		odometry.v = mpw_v;
+		double mpw_v = round(odometry.v * 3.6) / 3.6;
+		odometry.v = mpw_v;
+		double mpw_phi = carmen_degrees_to_radians(round(carmen_radians_to_degrees(odometry.phi) * (40.0 / 90.0)) / (90.0 / 40.0));
+		odometry.phi = mpw_phi;
 
 //		printf ("%lf %lf %lf %lf %lf\n", odometry.x, odometry.y, odometry.theta, odometry.v, odometry.phi);
 
