@@ -1,3 +1,3 @@
 plot "./results_pid-velocity.txt" using 12 with lines title "cv", "./results_pid-velocity.txt" using 13 with lines title "dv", "./results_pid-velocity.txt" using 14 with lines title "error", "./results_pid-velocity.txt" using ($15/10) with lines title "throt", "./results_pid-velocity.txt" using ($16/100) with lines title "breaks", "./results_pid-velocity.txt" using ($17/1) with lines title "integ", "./results_pid-velocity.txt" using ($18/10) with lines title "deriv"
-k=1510005763.204914
+k=1623365456.286556
 plot "./results_pid-steering.txt" using ($14-k):8 with lines title "cc", "./results_pid-steering.txt" using ($14-k):9 with lines title "dc", "./results_pid-steering.txt" using ($14-k):10 with lines title "e", "./results_pid-steering.txt" using ($14-k):11 with lines title "i", "./results_pid-steering.txt" using ($14-k):($12/10) with lines title "d", "./results_pid-steering.txt" using ($14-k):($13/1000) with lines title "s"

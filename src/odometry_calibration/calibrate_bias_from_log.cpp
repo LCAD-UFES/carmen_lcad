@@ -306,7 +306,7 @@ skip_first_lines(FILE *f, int initial_log_line, char line[])
 
 void
 read_data(const char *filename, int gps_to_use, int initial_log_line, int max_log_lines,
-		double initial_time, double final_time, PsoData *pso_data)
+		double initial_time, double final_time, int use_velodyne_timestamp_in_odometry, PsoData *pso_data)
 {
 	static char tag[256];
 	static char line[MAX_LINE_LENGTH];
@@ -326,6 +326,8 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 
 //	FILE *yaw_file = NULL;
 	num_lines = 0;
+	VelodyneData velodyne_data;
+	velodyne_data.velodyne_timestamp = -1;
 	while(!feof(f) && num_lines < max_log_lines)
 	{
 		fscanf(f, "\n%s", tag);
@@ -341,15 +343,30 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 		else if (!strcmp(tag, "ROBOTVELOCITY_ACK") && (first_gps_timestamp != 0.0))
 		{
 			carmen_robot_ackerman_velocity_message m = read_odometry(f);
-			if ((m.timestamp >= (first_gps_timestamp + initial_time)) && (m.timestamp <= (first_gps_timestamp + final_time)))
+			if (use_velodyne_timestamp_in_odometry)
 			{
-				odoms.push_back(m);
-				process_odometry_data(pso_data, m);
+				if (velodyne_data.velodyne_timestamp != -1)
+				{
+					m.timestamp = velodyne_data.velodyne_timestamp;
+					if ((m.timestamp >= (first_gps_timestamp + initial_time)) && (m.timestamp <= (first_gps_timestamp + final_time)))
+					{
+						odoms.push_back(m);
+						process_odometry_data(pso_data, m);
+					}
+				}
+			}
+			else
+			{
+				if ((m.timestamp >= (first_gps_timestamp + initial_time)) && (m.timestamp <= (first_gps_timestamp + final_time)))
+				{
+					odoms.push_back(m);
+					process_odometry_data(pso_data, m);
+				}
 			}
 		}
 		else if (use_variable_scan_message < 0 && !strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE") && (first_gps_timestamp != 0.0))
 		{
-			VelodyneData velodyne_data = read_velodyne_data(f);
+			velodyne_data = read_velodyne_data(f);
 			if ((velodyne_data.velodyne_timestamp >= (first_gps_timestamp + initial_time)) && (velodyne_data.velodyne_timestamp <= (first_gps_timestamp + final_time)))
 				process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
@@ -1012,6 +1029,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("max_k1", "Upper limit of k1 spline coefficient", 0.3);
 	args->add<double>("min_k2", "Lower limit of k2 spline coefficient", -0.15);
 	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
+	args->add<int>("use_velodyne_timestamp_in_odometry", "Use Velodyne timestamp in ROBOTVELOCITY_ACK messages", 0);
 	args->parse(argc, argv);
 }
 
@@ -1086,6 +1104,7 @@ main(int argc, char **argv)
 						args.get<int>("max_log_lines"),
 						args.get<double>("initial_time"),
 						args.get<double>("final_time"),
+						args.get<int>("use_velodyne_timestamp_in_odometry"),
 						&pso_data);
 
 	pso_data.view_active = args.get<int>("view");
