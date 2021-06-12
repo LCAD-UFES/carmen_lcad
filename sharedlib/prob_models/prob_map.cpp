@@ -1764,19 +1764,17 @@ carmen_parse_collision_file(double **polygon)
 
 
 int
-carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear_wheels __attribute__ ((unused)),
-		double robot_length __attribute__ ((unused)), double robot_width __attribute__ ((unused)),
-		double x, double y)
+carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_safe_distance, double x, double y)
 {
-	static int load_polygon = 1;
+	static int load_collision_model = 1;
 	static double *collision_model_circles;
 	static int col_n_points = 0;
 
-	if (load_polygon)
+	if (load_collision_model)
 	{
 		col_n_points = carmen_parse_collision_file(&collision_model_circles);
-		load_polygon = 0;
-		printf("Col Loaded\n");
+		printf("Collision model Loaded in carmen_prob_models_ray_hit_the_robot()\n");
+		load_collision_model = 0;
 	}
 
 	for (int i = 0; i < col_n_points; i++)
@@ -1786,7 +1784,7 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 		double radius = collision_model_circles[i * 4 + 2];
 
 		double distance = sqrt((x - center_x) * (x - center_x) + (y - center_y) * (y - center_y));
-		if (distance < (radius + 0.8))
+		if (distance < (radius + model_predictive_planner_obstacles_safe_distance))
 			return (1);
 	}
 
@@ -1821,7 +1819,7 @@ get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, 
 	*ax = sensor_position_in_the_world.x - x_origin;
 	*ay = sensor_position_in_the_world.y - y_origin;
 
-	*ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(car_config->distance_between_rear_car_and_rear_wheels, car_config->length, car_config->width, point_position_in_the_robot.x, point_position_in_the_robot.y);
+	*ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(car_config->model_predictive_planner_obstacles_safe_distance, point_position_in_the_robot.x, point_position_in_the_robot.y);
 
 	*bx = global_point_position_in_the_world.x - x_origin;
 	*by = global_point_position_in_the_world.y - y_origin;

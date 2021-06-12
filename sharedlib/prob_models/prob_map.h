@@ -252,7 +252,7 @@ void carmen_prob_models_uncompress_compact_map(carmen_map_t *map, carmen_compact
 void carmen_prob_models_clear_carmen_map_using_compact_map(carmen_map_t *map, carmen_compact_map_t *cmap, double value);
 
 
-int carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear_wheels , double robot_length, double robot_width, double x, double y);
+int carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_safe_distance, double x, double y);
 
 carmen_map_t *carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(carmen_map_t *snapshot_map, carmen_map_t *current_map);
 carmen_map_t *carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(carmen_map_t *log_odds_snapshot_map, carmen_map_t *current_map);

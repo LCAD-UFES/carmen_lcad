@@ -49,7 +49,6 @@ extern carmen_localize_ackerman_particle_filter_p filter;
 
 
 carmen_map_t local_map;
-carmen_robot_ackerman_config_t car_config;
 carmen_compact_map_t local_compacted_map;
 carmen_map_t local_sum_remission_map;
 carmen_map_t local_mean_remission_map;
@@ -78,6 +77,8 @@ carmen_pose_3D_t *corrected_pose;
 rotation_matrix *corrected_pose_rotation = NULL;
 
 pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> gicp;
+
+extern double model_predictive_planner_obstacles_safe_distance;
 
 
 void
@@ -198,9 +199,7 @@ point_is_valid(carmen_sphere_coord_t sphere_point, sensor_parameters_t *velodyne
 //	if ((sphere_point.horizontal_angle > M_PI / 2.0) || (sphere_point.horizontal_angle < -M_PI / 2.0))
 //		return 0;
 
-	int ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(
-			distance_between_rear_car_and_rear_wheels,
-			robot_length, robot_width, point_position_in_the_robot.x,
+	int ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(model_predictive_planner_obstacles_safe_distance, point_position_in_the_robot.x,
 			point_position_in_the_robot.y);
 
 	if (ray_hit_the_car || (range >= velodyne_params->range_max) || (point_position_in_the_robot.z >= highest_point))

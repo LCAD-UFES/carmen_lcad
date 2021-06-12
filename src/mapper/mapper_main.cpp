@@ -1524,6 +1524,9 @@ read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_r
 		{(char *) "robot",  (char *) "vertical_displacement_from_center", CARMEN_PARAM_DOUBLE, &robot_vertical_displacement_from_center, 0, NULL},
 		{(char *) "robot",  (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &(robot_wheel_radius), 0, NULL},
 
+		{(char *) "model", 		(char *) "predictive_planner_obstacles_safe_distance", 	CARMEN_PARAM_DOUBLE, &(p_car_config->model_predictive_planner_obstacles_safe_distance), 1, NULL},
+		{(char *) "obstacle", 	(char *) "avoider_obstacles_safe_distance", 			CARMEN_PARAM_DOUBLE, &(p_car_config->obstacle_avoider_obstacles_safe_distance), 1, NULL},
+
 		{(char *) "sensor",  (char *) "board_1_x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	1, get_sensors_param_pose_handler},
 		{(char *) "sensor",  (char *) "board_1_y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	1, get_sensors_param_pose_handler},
 		{(char *) "sensor",  (char *) "board_1_z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	1, get_sensors_param_pose_handler},

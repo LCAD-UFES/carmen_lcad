@@ -960,10 +960,10 @@ void
 read_parameters_specific(int argc, char **argv)
 {
 	carmen_param_t optional_param_list[] = {
-		{(char *) "model_predictive_planner", 	(char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance, 1, NULL},
-        {(char *) "model_predictive_planner", 	(char *) "obstacles_safe_length_distance", CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.model_predictive_planner_obstacles_safe_length_distance, 1, NULL},
-        {(char *) "model_predictive_planner", 	(char *) "max_square_distance_to_lane", CARMEN_PARAM_DOUBLE, &GlobalState::max_square_distance_to_lane, 1, NULL},
-		{(char *) "obstacle_avoider", 			(char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance, 1, NULL},
+        {(char *) "model", 		(char *) "predictive_planner_obstacles_safe_length_distance", CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.model_predictive_planner_obstacles_safe_length_distance, 1, NULL},
+        {(char *) "model", 		(char *) "predictive_planner_max_square_distance_to_lane", CARMEN_PARAM_DOUBLE, &GlobalState::max_square_distance_to_lane, 1, NULL},
+		{(char *) "model", 		(char *) "predictive_planner_obstacles_safe_distance", 	CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance, 1, NULL},
+		{(char *) "obstacle", 	(char *) "avoider_obstacles_safe_distance", 			CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance, 1, NULL},
 		{(char *) "rrt",	(char *) "use_obstacle_avoider", 	CARMEN_PARAM_ONOFF,		&GlobalState::use_obstacle_avoider, 	1, NULL},
 		{(char *) "rrt",	(char *) "use_mpc",					CARMEN_PARAM_ONOFF,		&GlobalState::use_mpc, 					0, NULL},
 		{(char *) "rrt",	(char *) "publish_tree",			CARMEN_PARAM_ONOFF,		&GlobalState::publish_tree,				1, NULL},
