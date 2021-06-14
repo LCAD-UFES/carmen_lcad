@@ -36,6 +36,8 @@ double initial_odometry_angle = 0.0;
 
 int number_of_threads = 1;
 
+double model_predictive_planner_obstacles_safe_distance;
+
 
 void
 init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intensity)
@@ -439,6 +441,8 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 			{(char *)"robot", (char*)"length", CARMEN_PARAM_DOUBLE, &robot_length, 0, NULL},
 			{(char *)"robot", (char*)"width", CARMEN_PARAM_DOUBLE, &robot_width, 0, NULL},
 			{(char *)"robot", (char*)"distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 1, NULL},
+
+			{(char *) "model", 		(char *) "predictive_planner_obstacles_safe_distance", 	CARMEN_PARAM_DOUBLE, &model_predictive_planner_obstacles_safe_distance, 1, NULL},
 
 			{(char *)"robot", (char*)"wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 			{(char *)"robot", (char*)"distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},

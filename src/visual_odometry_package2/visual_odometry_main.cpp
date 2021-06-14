@@ -657,7 +657,7 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 
 	if (previous_timestamp == 0.0)
 		previous_timestamp = message->timestamp;
-		
+
 	convert_image_rgb_to_gray(message->raw_left, left_image, message->raw_right, right_image, bumblebee_basic_width, bumblebee_basic_height, 0);
 
 	int32_t dims[] = {bumblebee_basic_width, bumblebee_basic_height, bumblebee_basic_width};
@@ -740,8 +740,8 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] = 
 	{
-		{bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
-		{bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
+		{(char *) bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
+		{(char *) bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
 		{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &maximum_acceleration_forward, 0, NULL},
 		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_ONOFF, &robot_publish_odometry, 0, NULL},
 		{(char *) camera_string, (char *) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},

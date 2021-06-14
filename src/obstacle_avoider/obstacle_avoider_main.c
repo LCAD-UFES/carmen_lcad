@@ -52,6 +52,9 @@ double robot_min_s_distance_ahead = 0.1;
 static void
 consume_motion_command_time(int motion_command_vetor)
 {
+	if (log_mode)
+		return;
+
 	int i, j;
 	double current_time, time_consumed;
 

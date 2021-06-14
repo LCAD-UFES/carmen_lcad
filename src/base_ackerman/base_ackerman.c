@@ -118,6 +118,7 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 	odometry.timestamp = timestamp;
 
 //	fprintf(graf, "v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
+//	printf("v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
 
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
@@ -135,6 +136,8 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 static void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
+//	printf("v_phi_time %lf %lf %lf\n", robot_ackerman_velocity_message->v, -robot_ackerman_velocity_message->phi, robot_ackerman_velocity_message->timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
+
 	if (simulate_legacy_500 && !connected_to_iron_bird)
 //		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
 //							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
