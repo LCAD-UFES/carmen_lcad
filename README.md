@@ -7,4 +7,5 @@ This software is being developed with the support of DI/LCAD/UFES and is finance
 - [Install for Ubuntu 14.04](doc/README_Installing_Carmen_LCAD_on_Ubuntu_14.04.md)
 - [Install for Ubuntu 16.04](https://github.com/LCAD-UFES/carmen_lcad/wiki/Installing-Carmen-LCAD-on-Ubuntu-16.04)
 - [Install for Ubuntu 18.04](https://github.com/LCAD-UFES/carmen_lcad/wiki/Installing-Carmen-LCAD-on-Ubuntu-18.04)
+- [Install for Ubuntu 20.04 (under construction)](https://github.com/LCAD-UFES/carmen_lcad/wiki/Installing-Carmen-on-Ubuntu-20.04)
 
