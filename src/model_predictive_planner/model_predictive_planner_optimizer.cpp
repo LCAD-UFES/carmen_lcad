@@ -537,17 +537,15 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	double result;
-	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-		result = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
-			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
-	else
-		result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
-			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
+	my_params->plan_cost = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+		(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
+		(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
 
-	my_params->plan_cost = result;
+	double result = sqrt(
+				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+				4.0 * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index
+				);
 
 	return (result);
 }
@@ -560,10 +558,7 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 
 	double f_x = my_f(v, params);
 
-	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-		h = 0.00005;
-	else
-		h = 0.0002;
+	h = 0.00005;
 
 	gsl_vector *x_h;
 	x_h = gsl_vector_alloc(3);
@@ -584,11 +579,7 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2) + h);
 	double f_z_h = my_f(x_h, params);
-	double d_f_z_h;
-	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-		d_f_z_h = 150.0 * (f_z_h - f_x) / h;
-	else
-		d_f_z_h = (f_z_h - f_x) / h;
+	double d_f_z_h = (f_z_h - f_x) / h;
 
 	gsl_vector_set(df, 0, d_f_x_h);
 	gsl_vector_set(df, 1, d_f_y_h);
@@ -652,32 +643,14 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2));
 
-	double result;
-	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-	{
-//		if (td.dist < 7.0)
-//			GlobalState::w2 *= exp(td.dist - 7.0);  // Tries to smooth the steering wheel behavior near to stop
-		result = (
-				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +   // Distance from the last pose of the path to the goal (in polar coordinates)
-				GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +  // Angular distance from the last pose of the path to the goal (in polar coordinates)
-				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +  // Angular distance from last pose of the path car orientation to the goal car orientation
-				GlobalState::w4 * path_to_lane_distance + // já é quandrática
-				GlobalState::w5 * proximity_to_obstacles + // já é quandrática
-				GlobalState::w6 * tcp.sf * tcp.sf); // + path_size // traveled_distance
-               // w7 * distance_to_moving_obstacles);
-	}
-	else
-	{
-//		if (td.dist < 7.0)
-//			GlobalState::w2 *= exp(td.dist - 7.0);
-		result = sqrt(
-				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+//	if (td.dist < 7.0)
+//		GlobalState::w2 *= exp(td.dist - 7.0);
+	double result = sqrt(
+				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
 				GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 				GlobalState::w4 * path_to_lane_distance + // já é quandrática
-				GlobalState::w5 * proximity_to_obstacles + // já é quandrática
-				GlobalState::w6 * tcp.sf * tcp.sf);
-	}
+				GlobalState::w5 * proximity_to_obstacles);
 
 //	printf("result %lf sf %.2lf, tdc %.2lf, tdd %.2f, a %.2lf delta_V %.2lf \n", result, tcp.sf, td.dist,
 //			my_params->target_td->dist, tcp.a, (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
@@ -721,11 +694,7 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
 	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
 	double g_w_h = my_g(x_h, params);
-	double d_g_w_h;
-	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-		d_g_w_h = 200.0 * (g_w_h - g_x) / h;
-	else
-		d_g_w_h = (g_w_h - g_x) / h;
+	double d_g_w_h = (g_w_h - g_x) / h;
 
 	gsl_vector_set(df, 0, d_g_x_h);
 	gsl_vector_set(df, 1, d_g_y_h);
@@ -868,11 +837,7 @@ my_dh(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
 	gsl_vector_set(x_h, 4, gsl_vector_get(v, 4));
 	double g_w_h = my_h(x_h, params);
-	double d_g_w_h;
-	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
-		d_g_w_h = 200.0 * (g_w_h - g_x) / h;
-	else
-		d_g_w_h = (g_w_h - g_x) / h;
+	double d_g_w_h = (g_w_h - g_x) / h;
 
 	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0));
 	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
@@ -1018,39 +983,37 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 
 void
-get_optimization_params(double target_v,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions &target_td,
-		ObjectiveFunctionParams &params)
+get_optimization_params(ObjectiveFunctionParams &params, double target_v,
+		TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions *target_td)
 {
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
 	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
 	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
-	params.target_td = &target_td;
-	params.tcp_seed = &tcp_seed;
+	params.target_td = target_td;
+	params.tcp_seed = tcp_seed;
 	params.target_v = target_v;
 	params.path_size = 0;
 }
 
 
 void
-get_missing_k1(const TrajectoryLookupTable::TrajectoryDimensions& target_td,
-		TrajectoryLookupTable::TrajectoryControlParameters& tcp_seed)
+get_missing_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp, TrajectoryLookupTable::TrajectoryDimensions target_td)
 {
-	double knots_x[3] = { 0.0, tcp_seed.tt / 2.0, tcp_seed.tt };
+	double knots_x[3] = { 0.0, tcp.tt / 2.0, tcp.tt };
 	double knots_y[3];
 	knots_y[0] = target_td.phi_i;
-	knots_y[1] = tcp_seed.k2;
-	knots_y[2] = tcp_seed.k3;
+	knots_y[1] = tcp.k2;
+	knots_y[2] = tcp.k3;
 	gsl_interp_accel* acc = gsl_interp_accel_alloc();
 	const gsl_interp_type* type = gsl_interp_cspline;
 	gsl_spline* phi_spline = gsl_spline_alloc(type, 3);
 	gsl_spline_init(phi_spline, knots_x, knots_y, 3);
-	if (tcp_seed.shift_knots)
-		tcp_seed.k1 = gsl_spline_eval(phi_spline, 3.0 * (tcp_seed.tt / 4.0), acc);
+	if (tcp.shift_knots)
+		tcp.k1 = gsl_spline_eval(phi_spline, 3.0 * (tcp.tt / 4.0), acc);
 	else
-		tcp_seed.k1 = gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc);
-	tcp_seed.has_k1 = true;
+		tcp.k1 = gsl_spline_eval(phi_spline, tcp.tt / 4.0, acc);
+	tcp.has_k1 = true;
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
 }
@@ -1096,7 +1059,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	//	fclose(path_file);
 	//	getchar();
 
-	get_optimization_params(target_v, tcp_seed, target_td, params);
+	get_optimization_params(params, target_v, &tcp_seed, &target_td);
 	//print_tcp(tcp_seed);
 	//print_td(target_td);
 	//printf("tv = %lf\n", target_v);
@@ -1211,7 +1174,7 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 	//	fclose(path_file);
 	//	getchar();
 
-	get_optimization_params(target_v, tcp_seed, target_td, params);
+	get_optimization_params(params, target_v, &tcp_seed, &target_td);
 	//print_tcp(tcp_seed);
 	//print_td(target_td);
 	//printf("tv = %lf\n", target_v);
@@ -1307,15 +1270,8 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 
 TrajectoryLookupTable::TrajectoryControlParameters
 get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams &params,
-		bool has_previous_good_tcp)
+		TrajectoryLookupTable::TrajectoryDimensions target_td, ObjectiveFunctionParams &params)
 {
-	get_optimization_params(target_v, tcp_seed, target_td, params);
-	compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
-
-	if (has_previous_good_tcp)
-		return (tcp_seed);
-
 	gsl_multimin_function_fdf my_func;
 
 	my_func.n = 3;
@@ -1405,26 +1361,29 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	ObjectiveFunctionParams params;
 
 	TrajectoryLookupTable::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, false);
+	get_optimization_params(params, target_v, &tcp_seed, &target_td);
+	compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
+
+	TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, params);
 
 	return (tcp);
 }
 
 
 void
-shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const TrajectoryLookupTable::TrajectoryDimensions target_td)
+shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp, TrajectoryLookupTable::TrajectoryDimensions target_td)
 {
-	double knots_x[4] = { 0.0, tcp_seed.tt / 4.0, tcp_seed.tt / 2.0, tcp_seed.tt };
+	double knots_x[4] = { 0.0, tcp.tt / 4.0, tcp.tt / 2.0, tcp.tt };
 	double knots_y[4];
 	knots_y[0] = target_td.phi_i;
-	knots_y[1] = tcp_seed.k1;
-	knots_y[2] = tcp_seed.k2;
-	knots_y[3] = tcp_seed.k3;
-	gsl_interp_accel* acc = gsl_interp_accel_alloc();
-	const gsl_interp_type* type = gsl_interp_cspline;
-	gsl_spline* phi_spline = gsl_spline_alloc(type, 4);
+	knots_y[1] = tcp.k1;
+	knots_y[2] = tcp.k2;
+	knots_y[3] = tcp.k3;
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	const gsl_interp_type *type = gsl_interp_cspline;
+	gsl_spline *phi_spline = gsl_spline_alloc(type, 4);
 	gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-	tcp_seed.k1 = gsl_spline_eval(phi_spline, 3.0 * (tcp_seed.tt / 4.0), acc);
+	tcp.k1 = gsl_spline_eval(phi_spline, 3.0 * (tcp.tt / 4.0), acc);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -1432,19 +1391,19 @@ shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const Tra
 
 
 void
-un_shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const TrajectoryLookupTable::TrajectoryDimensions target_td)
+un_shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp, TrajectoryLookupTable::TrajectoryDimensions target_td)
 {
-	double knots_x[4] = { 0.0, tcp_seed.tt / 2.0, 3.0 * (tcp_seed.tt / 4.0), tcp_seed.tt };
+	double knots_x[4] = { 0.0, tcp.tt / 2.0, 3.0 * (tcp.tt / 4.0), tcp.tt };
 	double knots_y[4];
 	knots_y[0] = target_td.phi_i;
-	knots_y[1] = tcp_seed.k2;
-	knots_y[2] = tcp_seed.k1;
-	knots_y[3] = tcp_seed.k3;
-	gsl_interp_accel* acc = gsl_interp_accel_alloc();
-	const gsl_interp_type* type = gsl_interp_cspline;
-	gsl_spline* phi_spline = gsl_spline_alloc(type, 4);
+	knots_y[1] = tcp.k2;
+	knots_y[2] = tcp.k1;
+	knots_y[3] = tcp.k3;
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	const gsl_interp_type *type = gsl_interp_cspline;
+	gsl_spline *phi_spline = gsl_spline_alloc(type, 4);
 	gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-	tcp_seed.k1 = gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc);
+	tcp.k1 = gsl_spline_eval(phi_spline, tcp.tt / 4.0, acc);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -1452,28 +1411,24 @@ un_shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const 
 
 
 void
-verify_shift_option_for_k1(TrajectoryLookupTable::TrajectoryControlParameters& tcp_seed,
-		const TrajectoryLookupTable::TrajectoryDimensions& target_td,
-		TrajectoryLookupTable::TrajectoryControlParameters& tcp_complete)
+verify_shift_option_for_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
+		TrajectoryLookupTable::TrajectoryDimensions target_td)
 {
-	if (!tcp_seed.has_k1)
-		get_missing_k1(target_td, tcp_seed);
-
 	if (((target_td.v_i > (18.0 / 3.6)) && (target_td.dist < 20.0))	||
 		((target_td.v_i < (5.0 / 3.6)) && (target_td.dist < 10.0)))
 	{
-		if (!tcp_complete.shift_knots)
+		if (!tcp.shift_knots)
 		{
-			shift_k1(tcp_complete, target_td);
-			tcp_complete.shift_knots = true;
+			shift_k1(tcp, target_td);
+			tcp.shift_knots = true;
 		}
 	}
 	else
 	{
-		if (tcp_complete.shift_knots)
+		if (tcp.shift_knots)
 		{
-			un_shift_k1(tcp_complete, target_td);
-			tcp_complete.shift_knots = false;
+			un_shift_k1(tcp, target_td);
+			tcp.shift_knots = false;
 		}
 	}
 }
@@ -1530,6 +1485,101 @@ limit_tcp_phi(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
 }
 
 
+TrajectoryLookupTable::TrajectoryControlParameters
+get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
+{
+	TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
+	//type = 1 reh reto/ 2- reh curva a direita 2- reh curva a esquerda
+	int tcp_type;
+	if (td.theta > 0.3)
+		tcp_type = 2;
+	else if (td.theta < -0.3)
+		tcp_type = 3;
+	else
+		tcp_type = 1;
+
+	if (tcp_type == 1)
+	{
+		dummy_tcp.valid = true;
+		dummy_tcp.tt = 2.5;;
+		dummy_tcp.k1 = 0.0;
+		dummy_tcp.k2 = 0.01;
+		dummy_tcp.k3 = 0.02;
+		dummy_tcp.has_k1 = true;
+		dummy_tcp.shift_knots = false;
+		dummy_tcp.a = -0.7;
+		dummy_tcp.vf = -2.0;
+		dummy_tcp.sf = td.dist;
+		dummy_tcp.s = td.dist;
+	}
+	else if (tcp_type == 2)
+	{
+		dummy_tcp.valid = true;
+		dummy_tcp.tt = 2.5;//4.2252857989082688;
+		dummy_tcp.k1 = -0.17769236781390979;
+		dummy_tcp.k2 = -1.3001704239163896;
+		dummy_tcp.k3 = -0.20967541493688466;
+		dummy_tcp.has_k1 = true;
+		dummy_tcp.shift_knots = false;
+		dummy_tcp.a = -0.71001114309832969;
+		dummy_tcp.vf = -2.9999999999999991;
+		dummy_tcp.sf = 6.3379786983624049;
+		dummy_tcp.s = 6.3379286983624015;
+	}
+	else if (tcp_type == 3)
+	{
+		dummy_tcp.valid = true;
+		dummy_tcp.tt = 2.5;//4.2252857989082688;
+		dummy_tcp.k1 = 0.17769236781390979;
+		dummy_tcp.k2 = 1.3001704239163896;
+		dummy_tcp.k3 = 0.20967541493688466;
+		dummy_tcp.has_k1 = true;
+		dummy_tcp.shift_knots = false;
+		dummy_tcp.a = -0.71001114309832969;
+		dummy_tcp.vf = -2.9999999999999991;
+		dummy_tcp.sf = 6.3379786983624049;
+		dummy_tcp.s = 6.3379286983624015;
+	}
+
+	return dummy_tcp;
+}
+
+
+bool
+get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
+		TrajectoryLookupTable::TrajectoryControlParameters previous_tcp,
+		TrajectoryLookupTable::TrajectoryDimensions td)
+{
+	if (!previous_tcp.valid)
+	{
+		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
+		if (!has_valid_discretization(tdd))
+		{
+			printf("Invalid discretization!!!!\n");
+			return (false);
+		}
+
+		tcp = search_lookup_table(tdd);
+		if (!tcp.valid)
+		{
+//			printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
+			if (0)//(GlobalState::reverse_planning)
+			{
+				printf(KMAG "@@@@@@@@@@@ Trying a dummy_TCP\n");
+				tcp = get_dummy_tcp(td);
+				return (true);
+			}
+			return (false);
+		}
+		tcp.s = td.dist;
+	}
+	else
+		tcp = previous_tcp;
+
+	return (true);
+}
+
+
 #include "model/tree.h"
 #include "publisher_util.h"
 
@@ -1537,14 +1587,14 @@ void
 copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_robot_and_trailer_path_point_t> path);
 
 TrajectoryLookupTable::TrajectoryControlParameters
-get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
-		bool use_lane, bool has_previous_good_tcp)
+get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters previous_tcp,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v,
+		vector<carmen_robot_and_trailer_path_point_t> detailed_lane, bool use_lane)
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
+	//	virtual_laser_message.num_positions = 0;
+
 	ObjectiveFunctionParams params;
 	params.use_lane = use_lane;
-
 	if (detailed_lane.size() > 1)
 	{
 		if (GlobalState::reverse_planning)
@@ -1555,16 +1605,31 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	else
 		params.use_lane = false;
 
-	bool optmize_time_and_acc = false;
+	TrajectoryLookupTable::TrajectoryControlParameters tcp_seed;
+	get_optimization_params(params, target_v, &tcp_seed, &target_td);
+	compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 
-//	virtual_laser_message.num_positions = 0;
+	if (!get_tcp_from_td(tcp_seed, previous_tcp, target_td))
+	{
+		tcp_seed.valid = false;
+		return (tcp_seed);
+	}
 
-	tcp_copy = tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
+	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
+	if (0)//previous_tcp.valid)
+		tcp_copy = tcp_complete = previous_tcp;
+	else
+	{
+		tcp_copy = tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, params);
+		// A funcaoacima nao usa k1
+		get_missing_k1(tcp_complete, target_td);
+	}
 
-//	verify_shift_option_for_k1(tcp_seed, target_td, tcp_complete);
-	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
+//	verify_shift_option_for_k1(tcp_complete, target_td);
 
 	limit_tcp_phi(tcp_complete);
+
+	bool optmize_time_and_acc = false;
 	if (optmize_time_and_acc)
 		tcp_complete = optimized_lane_trajectory_control_parameters_new(tcp_complete, target_td, target_v, params);
 	else
