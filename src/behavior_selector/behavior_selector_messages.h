@@ -13,6 +13,8 @@ extern "C" {
 #endif
 
 #include <carmen/carmen.h>
+#include <carmen/route_planner_messages.h>
+
 
 typedef enum
 {
@@ -121,12 +123,15 @@ typedef struct
 	carmen_behavior_selector_low_level_state_t 	low_level_state;
 	int 										low_level_state_flags;
 
+	carmen_route_planner_state_t				route_planner_state;
+	offroad_planner_request_t 					offroad_planner_request;
+
 	double timestamp;
 	char *host;
 } carmen_behavior_selector_state_message;
 
 #define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME		"carmen_behavior_selector_current_state_name"
-#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, double, string}"
+#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, int, int, double, string}"
 
 typedef struct
 {

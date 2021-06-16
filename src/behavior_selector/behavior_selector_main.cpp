@@ -667,6 +667,17 @@ publish_current_state(carmen_behavior_selector_state_message *msg)
 	msg->task = current_task;
 	msg->algorithm = get_current_algorithm();
 
+	if (road_network_message)
+	{
+		msg->route_planner_state = road_network_message->route_planner_state;
+		msg->offroad_planner_request = road_network_message->offroad_planner_request;
+	}
+	else
+	{
+		msg->route_planner_state = IDLE;
+		msg->offroad_planner_request = NO_REQUEST;
+	}
+
 	msg->timestamp = carmen_get_time();
 	msg->host = carmen_get_host();
 

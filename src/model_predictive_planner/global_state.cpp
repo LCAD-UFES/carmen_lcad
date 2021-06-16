@@ -77,6 +77,8 @@ carmen_ford_escape_status_message GlobalState::ford_escape_status;
 int GlobalState::current_algorithm = CARMEN_BEHAVIOR_SELECTOR_FRENET;
 int GlobalState::behavior_selector_task = BEHAVIOR_SELECTOR_FOLLOW_ROUTE;
 int GlobalState::behavior_selector_low_level_state = Initializing;
+int GlobalState::route_planner_state = IDLE;
+int GlobalState::offroad_planner_request = NO_REQUEST;
 
 int GlobalState::publish_tree = 1;
 int GlobalState::reuse_last_path = 0;

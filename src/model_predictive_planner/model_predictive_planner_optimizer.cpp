@@ -1088,7 +1088,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.01, 0.0001);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.05, 0.1);
 
 	size_t iter = 0;
 	int status;
@@ -1109,7 +1109,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 			break;
 		}
 
-		status = gsl_multimin_test_gradient(s->gradient, 0.0016); // esta funcao retorna GSL_CONTINUE ou zero
+		status = gsl_multimin_test_gradient(s->gradient, 0.016); // esta funcao retorna GSL_CONTINUE ou zero
 
 		//	--Debug with GNUPLOT
 
@@ -1124,10 +1124,16 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
-	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
+	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 25));
 
-//	static int xx = 0;
-//	printf("iter = %02ld, %d\n", iter, xx++);
+//	static double last_timstamp = 0.0;
+//	static int count = 0;
+//	if (iter == 50)
+//		count++;
+//	printf("* iter = %02ld, cost = %lf, %lf - %d\n", iter, params.plan_cost,
+//			(!last_timstamp)? 0.0: carmen_get_time() - last_timstamp, count);
+//	last_timstamp = carmen_get_time();
+//	fflush(stdout);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -1202,7 +1208,7 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 5);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.005, 0.1);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.05, 0.1);
 
 	size_t iter = 0;
 	int status;
@@ -1294,7 +1300,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 3);
 
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.005, 0.1);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.05, 0.1);
 
 	size_t iter = 0;
 	int status;
@@ -1320,6 +1326,15 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 50));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
+
+//	static double last_timstamp = 0.0;
+//	static int count = 0;
+//	if (iter == 50)
+//		count++;
+//	printf("  iter = %02ld, cost = %lf, %lf - %d\n", iter, params.plan_cost,
+//			(!last_timstamp)? 0.0: carmen_get_time() - last_timstamp, count);
+//	last_timstamp = carmen_get_time();
+//	fflush(stdout);
 
 	if (bad_tcp(tcp))
 		tcp.valid = false;
