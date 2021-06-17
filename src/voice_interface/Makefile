@@ -7,12 +7,22 @@ MODULE_COMMENT = Allows voice interaction with IARA
 LINK = g++
 CFLAGS += -Wall -g
 
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --libs`
+endif
+
 # Application specific include directories.
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += `python3.6-config --libs` -lparam_interface -lipc -lglobal -lvoice_interface_interface -lpv_porcupine -lasound \
+LFLAGS += -lparam_interface -lipc -lglobal -lvoice_interface_interface -lpv_porcupine -lasound \
 			-lnavigator_ackerman_interface -lcurl -ljsoncpp
 			
 # Source code files (.c, .cpp) 

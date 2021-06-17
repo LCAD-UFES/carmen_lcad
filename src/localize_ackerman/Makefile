@@ -22,7 +22,7 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -lmoving_objects_interface -lxsens_interface \
 	  `pkg-config --libs opencv`
 
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 ifeq ($(UBUNTU_VERSION),"16.04")
@@ -30,10 +30,17 @@ ifeq ($(UBUNTU_VERSION),"16.04")
 	VTK_INC1 = $(wildcard /usr/local/include/vtk-5*)
 	VTK_INC2 = $(wildcard /usr/include/vtk-*)
 	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC1) -I $(VTK_INC2)
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	PCL_INC = $(wildcard /usr/include/pcl-*)
+	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
 else
 	PCL_INC = $(wildcard /usr/include/pcl-*)
 	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+	LFLAGS += -lboost_thread -lrt -lboost_signals -lboost_system
 endif
 
 LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization

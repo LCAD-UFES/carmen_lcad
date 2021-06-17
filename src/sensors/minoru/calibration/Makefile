@@ -24,6 +24,12 @@ LFLAGS += -lminoru -lminorucalib -lelas
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"20.04")
+	CXXFLAGS += -DUBUNTU_20_04
+endif
+
 # Source code files (.c, .cpp) 
 SOURCES = main.cpp anyoption.cpp drawing.cpp fast.cpp gridmap3d.cpp linefit.cpp motionmodel.cpp pointcloud.cpp polynomial.cpp stereo.cpp stereodense.cpp
 

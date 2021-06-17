@@ -186,7 +186,6 @@ void cvexPutText(
     IplImage* render,
     char* text,
     CvPoint orign,
-    CvScalar color,
     double amp,
     double shear,
     int fontType,
@@ -194,6 +193,6 @@ void cvexPutText(
 {
     CvFont font;
     cvInitFont(&font,fontType,amp,amp,shear,thickness);
-    cvPutText(render,text,orign,&font, color);
+    cvPutText(render,text,orign,&font, cvScalar(255,255,255));
 }
 

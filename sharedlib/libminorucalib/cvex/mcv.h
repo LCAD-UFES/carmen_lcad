@@ -83,7 +83,6 @@ IplImage* cvexConnectMulti(
 
 void cvexPutText(
     IplImage* render, char* text, CvPoint orign,
-    CvScalar color = CV_RGB(255, 255, 255),
     double amp=1.0, double shear=0.0,
     int fontType=CV_FONT_HERSHEY_SIMPLEX, int thickcness=1);
 

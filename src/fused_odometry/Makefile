@@ -16,7 +16,16 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -lglobal -lipc -lparam_interface 
 LFLAGS += -llocalize_ackerman_interface -llocalize_ackerman_motion -lvisual_odometry_interface \
 		  -lxsens_mtig_interface -lbase_ackerman_interface -lgps_nmea_interface \
 		  -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics \
-		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lm -pthread
+		  -lBulletSoftBody -lLinearMath -lrt -lm -pthread
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else
+	LFLAGS += -lboost_thread -lrt -lboost_signals -lboost_system
+endif
 
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`

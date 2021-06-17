@@ -21,7 +21,16 @@ endif
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface -lglobal -lipc -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-			-lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv` -luser_preferences
+			`pkg-config --libs opencv` -luser_preferences
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else
+	LFLAGS += -lboost_thread -lrt -lboost_signals -lboost_system
+endif
 
 SOURCES = logger.c playback_interface.c playback.cpp writelog.cpp readlog.cpp log_timestamp_repair.c logger_interface.c print_binary_log.cpp
 

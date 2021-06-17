@@ -14,7 +14,7 @@ IFLAGS += \
 	-I/usr/local/include/EXTERNAL/csparse/ \
 	-I/usr/local/include/g2o/
 
-IFLAGS += -I/usr/include/python3.6 -I/usr/include/python3.5
+IFLAGS += -I/usr/include/python3.6 -I/usr/include/python3.5 -I/usr/include/python3.8
 
 LFLAGS += \
 	-L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp \
@@ -54,8 +54,10 @@ UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
 	LFLAGS += `python3.5-config --libs`
-else
+else ifeq ($(UBUNTU_VERSION),"18.04")
 	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --embed --libs`
 endif
 
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper

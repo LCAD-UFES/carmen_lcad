@@ -7,8 +7,17 @@ CFLAGS += #-DPARSE_DEBUG
 IFLAGS += 
 LFLAGS += -L../../sharedlib/libtf/src
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lxsens_mtig_interface -lvelodyne_interface -lgps_nmea_interface \
-		  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt \
-		  -lboost_signals -lboost_system -lstdc++ -pthread
+		  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lrt \
+		  -lstdc++ -pthread
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else
+	LFLAGS += -lboost_thread -lrt -lboost_signals -lboost_system
+endif
 
 SOURCES = gps_xyz_interface.c gps_xyz-test.cpp gps_xyz.cpp
 

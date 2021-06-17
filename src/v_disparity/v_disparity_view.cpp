@@ -197,7 +197,11 @@ disparity_map_handler(carmen_simple_stereo_disparity_message *message)
   {
     CvPoint h_start = cvPoint(0, horizon_line);
     CvPoint h_end = cvPoint(right_image->width - 1, horizon_line);
-    cvLine(right_image, h_start, h_end, CV_RGB(255,0,0), 1, 4, 0);
+    #ifdef UBUNTU_20_04
+      cvLine(right_image, h_start, h_end, cvScalar(255,0,0), 1, 4, 0);
+    #else
+      cvLine(right_image, h_start, h_end, CV_RGB(255,0,0), 1, 4, 0);
+    #endif
   }
 
   redraw_viewer();

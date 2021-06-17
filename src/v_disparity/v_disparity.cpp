@@ -392,7 +392,11 @@ int draw_road_profile_lines_in_v_disparity(IplImage *road_profile_image, IplImag
 	}
 
 	resize_line(1.2, &road_profile_line.A, &road_profile_line.B, instance);
-	cvLine(road_profile_image, road_profile_line.A, road_profile_line.B, CV_RGB(0,255,0), 3, 4, 0);
+	#ifdef UBUNTU_20_04
+		cvLine(road_profile_image, road_profile_line.A, road_profile_line.B, cvScalar(0,255,0), 3, 4, 0);
+	#else
+		cvLine(road_profile_image, road_profile_line.A, road_profile_line.B, CV_RGB(0,255,0), 3, 4, 0);
+	#endif
 
 	return n_road_lines;
 }

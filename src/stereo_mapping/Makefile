@@ -19,6 +19,13 @@ LFLAGS += -lglobal -lparam_interface -lipc -lprob_models \
 MODULE_NAME = STEREO_MAPPING
 MODULE_COMMENT = Generate a Map based on Computer Vision 
 
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"20.04")
+	CXXFLAGS += -DUBUNTU_20_04
+	CFLAGS += -DUBUNTU_20_04
+endif
+
 SOURCES = stereo_mapping.cpp stereo_mapping_interface.c  stereo_mapping_map.c stereo_mapping_kalman_filter.cpp
 PUBLIC_INCLUDES = stereo_mapping_messages.h stereo_mapping_interface.h stereo_mapping_map.h stereo_mapping_kalman_filter.h
 

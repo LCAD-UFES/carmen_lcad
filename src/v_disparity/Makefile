@@ -8,12 +8,18 @@ LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	  -lstereo_interface -lbumblebee_basic_interface \
 	  `pkg-config --libs opencv`
 
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"20.04")
+	CXXFLAGS += -DUBUNTU_20_04
+endif
+
 MODULE_NAME = V_DISPARITY
 MODULE_COMMENT = V-Disparity Library and Viewer
 
 SOURCES = v_disparity.cpp
 PUBLIC_INCLUDES = v_disparity.h
- 
+
 ifndef NO_CUDA
 SOURCES += v_disparity_GPU.cu
 endif

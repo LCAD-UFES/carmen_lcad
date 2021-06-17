@@ -55,8 +55,11 @@ void inverse_perspective_mapping(ProbabilisticMapParams map_params, IplImage *ds
   double den, u, v;
   int x, y, x_map, y_map;
 
-  // clear the map
-  cvSet(dst, CV_RGB(127,127,127), NULL);
+  #ifdef UBUNTU_20_04
+    cvSet(dst, cvScalar(127,127,127), NULL);// clear the map
+  #else
+    cvSet(dst, CV_RGB(127,127,127), NULL);
+  #endif
 
   // clear the perceptual mask
   memset(perceptual_mask, 0, map_params.grid_sx * map_params.grid_sy * sizeof(int));
@@ -99,7 +102,11 @@ void reverse_inverse_perspective_mapping(ProbabilisticMapParams map_params, IplI
   float u_0 = stereo_util_instance.xc, v_0 = stereo_util_instance.yc;
   int x, y, x_map, y_map;
 
-  cvSet(dst, CV_RGB(127,127,127), NULL);
+  #ifdef UBUNTU_20_04
+    cvSet(dst, cvScalar(127,127,127), NULL); // clear the map
+  #else
+    cvSet(dst, CV_RGB(127,127,127), NULL);
+  #endif
 
   P_w.z = -height;
 
@@ -118,9 +125,21 @@ void reverse_inverse_perspective_mapping(ProbabilisticMapParams map_params, IplI
       {
         CvScalar pixel = cvGet2D(src, y_map, x_map);
         if (pixel.val[0] > 0)//is road?
-          cvSet2D(dst, y, x, CV_RGB(255, 255, 255));
+        {
+          #ifdef UBUNTU_20_04
+            cvSet2D(dst, y, x, cvScalar(255, 255, 255));
+          #else
+            cvSet2D(dst, y, x, CV_RGB(255, 255, 255));
+          #endif
+        }          
         else
-          cvSet2D(dst, y, x, CV_RGB(0, 0, 0));
+        {
+          #ifdef UBUNTU_20_04
+            cvSet2D(dst, y, x, cvScalar(0, 0, 0));
+          #else
+            cvSet2D(dst, y, x, CV_RGB(0, 0, 0));
+          #endif
+        }
       }
     }
   }
@@ -296,10 +315,19 @@ void draw_lateral_offset(ProbabilisticMapParams map_params, IplImage *dst_image)
     if (start_index >= 0 && start_index < n_end_y)
     {
       CvRect rect_ri = cvRect(x_offset + j * rect_size_x, start_index * rect_size_y, rect_size_x, rect_size_y);
-      cvRectangle(dst_image, cvPoint(rect_ri.x, rect_ri.y), cvPoint(rect_ri.x + rect_ri.width, rect_ri.y - rect_ri.height), CV_RGB(0,255,0), 1, 8, 0);
+      #ifdef UBUNTU_20_04
+        cvRectangle(dst_image, cvPoint(rect_ri.x, rect_ri.y), cvPoint(rect_ri.x + rect_ri.width, rect_ri.y - rect_ri.height), cvScalar(0,255,0), 1, 8, 0);
+      #else
+        cvRectangle(dst_image, cvPoint(rect_ri.x, rect_ri.y), cvPoint(rect_ri.x + rect_ri.width, rect_ri.y - rect_ri.height), CV_RGB(0,255,0), 1, 8, 0);
+      #endif
+      
 
       CvRect rect_ro = cvRect(x_offset + j * rect_size_x, (start_index + 1) * rect_size_y, rect_size_x, rect_size_y);
-      cvRectangle(dst_image, cvPoint(rect_ro.x, rect_ro.y), cvPoint(rect_ro.x + rect_ro.width, rect_ro.y - rect_ro.height), CV_RGB(255,0,0), 1, 8, 0);
+      #ifdef UBUNTU_20_04
+        cvRectangle(dst_image, cvPoint(rect_ro.x, rect_ro.y), cvPoint(rect_ro.x + rect_ro.width, rect_ro.y - rect_ro.height), cvScalar(0,0,255), 1, 8, 0);
+      #else
+        cvRectangle(dst_image, cvPoint(rect_ro.x, rect_ro.y), cvPoint(rect_ro.x + rect_ro.width, rect_ro.y - rect_ro.height), CV_RGB(255,0,0), 1, 8, 0);
+      #endif
     }
   }
 }

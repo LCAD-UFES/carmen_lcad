@@ -2019,10 +2019,17 @@ bool pointcloud::join_surfaces(
             int no_of_points = (int)pts.size();
             CvPoint * points = new CvPoint[no_of_points];
             int * hull = new int[no_of_points];
-                        
-            for (int k = 0; k < (int)pts.size(); k++) {
-                points[k] = pts[k];
-            }
+
+            #ifdef UBUNTU_20_04
+                for (int k = 0; k < (int)pts.size(); k++) {
+                    points[k].x = pts[k].x;
+                    points[k].y = pts[k].y;
+                }
+            #else     
+                for (int k = 0; k < (int)pts.size(); k++) {
+                    points[k] = pts[k];
+                }
+            #endif
 
             CvMat pointMat = cvMat(1, no_of_points, CV_32SC2, points);
             CvMat hullMat = cvMat(1, no_of_points, CV_32SC1, hull);
@@ -2096,7 +2103,12 @@ void pointcloud::find_horizontal_surfaces(
 
                         float tx=0,ty=0,bx=0,by=0;
                         for (int i = 0; i < (int)surface_points.size(); i++) {
-                            points[i] = surface_points[i];
+                            #ifdef UBUNTU_20_04
+                                points[i].x = surface_points[i].x;
+                                points[i].y = surface_points[i].y;
+                            #else
+                                points[i] = surface_points[i];
+                            #endif
                             if (i>0) {
                                 if (points[i].x < tx) tx = points[i].x;
                                 if (points[i].y < ty) ty = points[i].y;
