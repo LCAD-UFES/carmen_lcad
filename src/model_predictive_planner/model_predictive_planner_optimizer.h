@@ -38,8 +38,8 @@ TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_cont
 TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, double target_v);
 
-TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
-		bool use_lane, bool has_previous_good_tcp);
+TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
+		bool use_lane);
 
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */

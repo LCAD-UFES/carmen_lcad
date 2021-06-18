@@ -1,5 +1,5 @@
-#ifndef __DARKNET_INTERFACE_H__
-#define __DARKNET_INTERFACE_H__
+#ifndef __DARKNET4_INTERFACE_H__
+#define __DARKNET4_INTERFACE_H__
 
 #include <vector>
 #include "bbox.h"

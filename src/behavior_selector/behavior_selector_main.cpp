@@ -667,6 +667,17 @@ publish_current_state(carmen_behavior_selector_state_message *msg)
 	msg->task = current_task;
 	msg->algorithm = get_current_algorithm();
 
+	if (road_network_message)
+	{
+		msg->route_planner_state = road_network_message->route_planner_state;
+		msg->offroad_planner_request = road_network_message->offroad_planner_request;
+	}
+	else
+	{
+		msg->route_planner_state = IDLE;
+		msg->offroad_planner_request = NO_REQUEST;
+	}
+
 	msg->timestamp = carmen_get_time();
 	msg->host = carmen_get_host();
 
@@ -777,6 +788,11 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 		if ((distance_between_waypoints_with_v_multiplier * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
 			change_goal_distance = distance_between_waypoints_with_v_multiplier * fabs(current_robot_pose_v_and_phi.v);
 	}
+//	else if ((road_network_message != NULL) && (road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN))
+//	{
+//		distance_between_waypoints = param_distance_between_waypoints * (1.0 / 2.0);
+//		change_goal_distance = param_change_goal_distance * (1.0 / 2.0);
+//	}
 	change_distance_between_waypoints_and_goals(distance_between_waypoints, change_goal_distance);
 
 	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi);

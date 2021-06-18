@@ -340,6 +340,7 @@ clear_cells_below_robot(carmen_robot_and_trailer_traj_point_t pose)
 
 	vertical_size = ceil((robot_config.length) / current_map->config.resolution);
 	horizontal_size = ceil(robot_config.model_predictive_planner_obstacles_safe_distance / current_map->config.resolution);
+	horizontal_size = ceil((robot_config.width + 2.0 * robot_config.obstacle_avoider_obstacles_safe_distance) / current_map->config.resolution);
 
 	delta_vertical_x = cos(pose.theta);
 	delta_vertical_y = sin(pose.theta);

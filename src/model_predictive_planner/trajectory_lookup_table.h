@@ -179,10 +179,6 @@ vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(Traje
 bool path_has_loop(double dist, double sf);
 void move_path_to_current_robot_pose(vector<carmen_robot_and_trailer_path_point_t> &path, carmen_robot_and_trailer_pose_t *localizer_pose);
 
-TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
-		bool use_lane, bool has_previous_good_tcp);
-
 float get_d_yaw_by_index(int index);
 float get_theta_by_index(int index);
 float get_distance_by_index(int index);

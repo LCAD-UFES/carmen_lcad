@@ -40,7 +40,7 @@ SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp traject
 		model_predictive_planner_interface.c
 
 PUBLIC_BINARIES = model_predictive_planner
-PUBLIC_LIBRARIES = libmodel_predictive_planner_interface.a
+PUBLIC_LIBRARIES = libmodel_predictive_planner_interface.a libmodel_predictive_planner_optimizer.a
 PUBLIC_INCLUDES = model_predictive_planner_interface.h model_predictive_planner_message.h rrt_node.h robot_state.h command.h pose.h
 PUBLIC_OTHERS = trajectory_lookup_table.bin
 
@@ -57,6 +57,8 @@ model_predictive_planner: model_predictive_planner_main.o model_predictive_plann
 
 
 libmodel_predictive_planner_interface.a: model_predictive_planner_interface.o
+
+libmodel_predictive_planner_optimizer.a: model_predictive_planner_optimizer.o
 
 trajectory_lookup_table: trajectory_lookup_table.o
 

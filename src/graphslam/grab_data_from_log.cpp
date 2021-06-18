@@ -47,6 +47,8 @@ static const int ODOMETRY_QUEUE_MAX_SIZE = 100;
 
 double distance_between_front_and_rear_axles;
 
+int use_velodyne_timestamp_in_odometry = 0;
+
 
 template<class message_type> int
 find_nearest_message(vector<message_type> &queue, double reference_sensor_time, const char *sensor_name)
@@ -315,6 +317,7 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 
 	int num_gps_messages = 0;
 	double first_velodyne_timestamp = 0.0;
+	double velodyne_timestamp = -1.0;
 	while(!feof(f))
 	{
 		fscanf(f, "\n%s", tag);
@@ -328,11 +331,13 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 		else if (!strcmp(tag, "ROBOTVELOCITY_ACK"))
 		{
 			carmen_robot_ackerman_velocity_message m = read_odometry(f);
+			if (use_velodyne_timestamp_in_odometry && (velodyne_timestamp != -1.0))
+				m.timestamp = velodyne_timestamp;
 			robot_ackerman_handler(&m, v_multiplier, phi_multiplier, phi_bias);
 		}
 		else if (!strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE"))
 		{
-			double velodyne_timestamp = read_velodyne_timestamp(f);
+			velodyne_timestamp = read_velodyne_timestamp(f);
 			if (first_velodyne_timestamp == 0.0)
 				first_velodyne_timestamp = velodyne_timestamp;
 			velodyne_handler(velodyne_timestamp, first_velodyne_timestamp + initial_time, first_velodyne_timestamp + final_time,
