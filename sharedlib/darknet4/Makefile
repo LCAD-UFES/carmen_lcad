@@ -1,6 +1,6 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = DARKNET
+MODULE_NAME = DARKNET 4
 MODULE_COMMENT = Darknet Neural Network Framework YoloV4 version 4
 
 ifneq (, $(shell which nvcc))
@@ -166,7 +166,7 @@ endif
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
-PUBLIC_INCLUDES = bbox.h carmen_darknet_interface.hpp
+PUBLIC_INCLUDES = bbox.h carmen_darknet4_interface.hpp
 
 PUBLIC_LIBRARIES = libdarknet4.a
 
@@ -175,8 +175,8 @@ all: $(OBJDIR) LIBDIR $(EXEC) carmen $(LIBNAMESO) libdarknet4.a #$(APPNAMESO)
 ifeq ($(LIBSO), 1)
 CFLAGS+= -fPIC
 
-$(LIBNAMESO): $(OBJDIR) $(OBJS) obj/carmen_darknet_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
-	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
+$(LIBNAMESO): $(OBJDIR) $(OBJS) obj/carmen_darknet4_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
+	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet4_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
 
 # $(APPNAMESO): $(LIBNAMESO) obj/carmen_darknet_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
 # 	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
@@ -200,10 +200,10 @@ $(OBJDIR):
 LIBDIR:
 	mkdir -p lib
 
-libdarknet4.a: $(OBJDIR) $(OBJS) obj/carmen_darknet_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
-	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
+libdarknet4.a: $(OBJDIR) $(OBJS) obj/carmen_darknet4_interface.o include/yolo_v2_class.hpp src/yolo_v2_class.cpp
+	$(CPP) -shared -std=c++11 -fvisibility=hidden -DLIB_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) obj/carmen_darknet4_interface.o src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
 
-carmen: src/carmen_darknet_interface.cpp carmen_darknet_interface.hpp include/yolo_v2_class.hpp $(DEPS)
+carmen: src/carmen_darknet4_interface.cpp carmen_darknet4_interface.hpp include/yolo_v2_class.hpp $(DEPS)
 	$(CPP) -std=c++11 $(COMMON) $(CFLAGS) -c $< -o $@
 
 clean: clean_darknet
