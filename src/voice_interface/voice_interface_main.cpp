@@ -137,6 +137,11 @@ get_rasa_server_response(char *query)
 void
 speek_sentence(char *sentence)
 {
+	if (sentence == nullptr)
+	{
+		printf("null sentence\n");
+		return;
+	}
 	char *voice_interface_speak_error = carmen_voice_interface_speak(sentence);
 	if (voice_interface_speak_error)
 		printf("%s \n", voice_interface_speak_error);
@@ -340,18 +345,18 @@ carmen_voice_interface_initialize(/*char *language_code*/)
 	char *porcupine_error = initialize_porcupine();
 	if (porcupine_error != NULL)
 	{
-		printf("Updating Porcupine...");
-		char *update_porcupine_path[2];
-		update_porcupine_path[0] = (char*)"$CARMEN_HOME/src/voice_interface/update_porcupine_files.sh";
-		update_porcupine_path[1] = NULL;
-		execve(update_porcupine_path[0], update_porcupine_path, NULL);
+		// printf("Updating Porcupine...");
+		// char *update_porcupine_path[2];
+		// update_porcupine_path[0] = (char*)"$CARMEN_HOME/src/voice_interface/update_porcupine_files.sh";
+		// update_porcupine_path[1] = NULL;
+		// execve(update_porcupine_path[0], update_porcupine_path, NULL);
 
-		char *retrying_porcupine = initialize_porcupine();
-		if (retrying_porcupine != NULL)
-		{
+		// char *retrying_porcupine = initialize_porcupine();
+		// if (retrying_porcupine != NULL)
+		// {
 			printf("Error: could not initialize porcupine.\n%s\n", porcupine_error);
 			exit(1);
-		}
+		// }
 	}
 }
 
@@ -395,7 +400,6 @@ main (int argc, char **argv)
 			system("mpg123 $CARMEN_HOME/data/voice_interface_data/computerbeep_4.mp3"); // http://www.trekcore.com/audio/
 
 			printf("Awaiting for command: \n\n");
-
 			
 			char *voice_command = carmen_voice_interface_listen();
 			execute_voice_command(voice_command);

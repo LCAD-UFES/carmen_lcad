@@ -55,12 +55,16 @@ carmen_voice_interface_create_new_audio_file(FILE *list_of_speechs, char *speech
 
 	new_number = atoi (last_number_used);
 	new_number++;
-	char speech_audio_name[LENGTH_SPEECH_WORD + LENGTH_NUMBER_AS_STRING + 1];
-	sprintf (speech_audio_name, "%s%.5d", "speech", new_number);
+	char speech_file_name[LENGTH_SPEECH_WORD + LENGTH_NUMBER_AS_STRING + 1];
+	sprintf (speech_file_name, "%s%.5d", "speech", new_number);
 
-	speak((char *) speech, speech_audio_name);
-	fprintf (list_of_speechs, "%s %s\n", speech_audio_name, speech);
-	printf("Audio content created.\n");
+	if (speak(speech, speech_file_name) == 0)
+	{
+		fprintf (list_of_speechs, "%s %s\n", speech_file_name, speech);
+		printf("Audio content created.\n");
+	}
+	else
+		printf("Unable to create audio content for speech '%s'.\n", speech);
 }
 
 
@@ -76,12 +80,15 @@ carmen_voice_interface_speak(char *speech)
 	if (list_of_speechs == NULL)
 	{
 		char *speech_file_name = (char *) "speech00001";
-		speak(speech, speech_file_name);
-
-		list_of_speechs = fopen(list_of_speechs_filename, "w");
-		fprintf(list_of_speechs, "%s %s\n", speech_file_name, speech);
-		printf("Audio content created.\n");
-		fclose(list_of_speechs);
+		if (speak(speech, speech_file_name) == 0)
+		{
+			list_of_speechs = fopen(list_of_speechs_filename, "w");
+			fprintf(list_of_speechs, "%s %s\n", speech_file_name, speech);
+			printf("Audio content created.\n");
+			fclose(list_of_speechs);
+		}
+		else
+			printf("Unable to create audio content for speech '%s'.\n", speech);
 	}
 	else
 	{

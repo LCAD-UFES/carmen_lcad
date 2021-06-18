@@ -99,13 +99,19 @@ set_language(char *language_to_set)
 int
 speak(char *speech, char *speech_file_name)
 {
+	int ret = -1; // NOK
+
 	// Saves the speech fine in $CARMEN_HOME/data/voice_interface_speechs/ (see listen_speak.py))
 	PyObject *python_function_arguments = Py_BuildValue("(ss)", speech, speech_file_name);
 	PyObject *python_speak_function_output = PyObject_CallObject(python_speak_function, python_function_arguments);
 	Py_DECREF(python_function_arguments);
-	Py_DECREF(python_speak_function_output);
+	if (python_speak_function_output)
+	{
+		Py_XDECREF(python_speak_function_output);
+		ret = 0; // OK
+	}
 
-	return (0); // OK
+	return ret;
 }
 
 
