@@ -79,8 +79,8 @@ Examples of the Text-to-Speech and Speech-to-Text APIs:
 
 Using Python3 (3.5.2 or greater)
 ```sh
- pip3 install --upgrade google-cloud-texttospeech
- pip3 install --upgrade google-cloud-speech
+ pip3 install google-cloud-texttospeech==2.4.0
+ pip3 install google-cloud-speech==2.4.0
  sudo apt-get install portaudio19-dev
  pip3 install pyaudio
 ```
@@ -89,34 +89,37 @@ Using Python3 (3.5.2 or greater)
 
 https://github.com/GoogleCloudPlatform/python-docs-samples
 
-# 6. Using Porcupine by PicoVoice
+# 6. Using Porcupine wake word engine by PicoVoice
+
+### 6.1 Create the hotword/wake-word
+
+Create a Picovoice Console account at [Picovoice/Console](https://console.picovoice.ai/)
+Login and select the Porcupine Wake Word Engine;
+Enter the Phrase="ok e ara", select the Language=English and click on Train Wake Word...
+Download the Custom Wake Word and move it to $CARMEN_HOME/data/voice_interface_data/hotword_ok_iara.ppn
+
+### 6.2 Clone the Porcupine repository
 [Github/Picovoice/Porcupine](https://github.com/Picovoice/Porcupine)
 
 ```sh
- cd ~
- git clone https://github.com/Picovoice/Porcupine.git
+ cd ~/packages_carmen
+ git clone --branch v1.9 https://github.com/Picovoice/Porcupine.git
  cd Porcupine
- ./tools/optimizer/linux/x86_64/pv_porcupine_optimizer -r resources/optimizer_data/ -p linux -o . -w "ok e ara"
- export SYSTEM=linux
- export MACHINE=x86_64
- cd demo/alsa
- g++ -O3 -o alsademo -I../../include -L../../lib/${SYSTEM}/$MACHINE -Wl,-rpath ../../lib/${SYSTEM}/$MACHINE main.cpp -lpv_porcupine -lasound
- cp ../../ok\ e\ ara_linux.ppn ../../resources/keyword_files/pineapple_linux.ppn
- ./alsademo
+ gcc -std=c99 -O3 -o demo/c/porcupine_demo_mic -I include/ demo/c/porcupine_demo_mic.c -ldl -lasound
+ ./demo/c/porcupine_demo_mic lib/linux/x86_64/libpv_porcupine.so lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_data/hotword_ok_iara.ppn 0.5 default
 ```
 
  - Teste dizendo a hotword/wake-word: "Ok, Iara!"
 
 "Hotword detected!"
 
-### 6.1 Para uso no CARMEN
+### 6.3 Para uso no CARMEN
 
 ```sh
- cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_data/hotword_oi_iara.ppn
  cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_data/
+ cp ~/carmen_packages/Porcupine/include/pv_porcupine.h $CARMEN_HOME/src/voice_interface/
  cp ~/carmen_packages/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
- cp ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a
- ln -s ~/carmen_packages/Porcupine/libpv_porcupine.a $CARMEN_HOME/lib/libpv_porcupine.a
+ ln -s ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.so $CARMEN_HOME/lib/libpv_porcupine.so
 ```
 
 # 7. Using RASA
@@ -126,7 +129,6 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 #### Tensorflow
 
 	-- Tensorflow == 1.5
-
 
 - Installation:
 ```sh
