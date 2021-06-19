@@ -31,12 +31,12 @@ init_voice(/*char *language_code*/)
 
 	PyObject *python_program_path = PyUnicode_FromString(voice_interface_path);
 	PyList_Append(sysPath, python_program_path);
-	Py_DECREF(python_program_path);
+	Py_XDECREF(python_program_path);
 
 	PyObject *python_module_name = PyUnicode_FromString((char *) "listen_speak");
 
 	PyObject *python_module = PyImport_Import(python_module_name);
-	Py_DECREF(python_module_name);
+	Py_XDECREF(python_module_name);
 
 	if (python_module == NULL)
 	{
@@ -47,7 +47,7 @@ init_voice(/*char *language_code*/)
 	/*python_language_function = PyObject_GetAttrString(python_module, (char *) "language");
 	if (python_language_function == NULL || !PyCallable_Check(python_language_function))
 	{
-		Py_DECREF(python_module);
+		Py_XDECREF(python_module);
 		Py_Finalize();
 		return ((char *) "Error: Could not load the python_module language function.\n");
 	}
@@ -57,7 +57,7 @@ init_voice(/*char *language_code*/)
 	python_speak_function = PyObject_GetAttrString(python_module, (char *) "speak");
 	if (python_speak_function == NULL || !PyCallable_Check(python_speak_function))
 	{
-		Py_DECREF(python_module);
+		Py_XDECREF(python_module);
 		Py_Finalize();
 		return ((char *) "Error: Could not load the python_module speak function.\n");
 	}
@@ -65,7 +65,7 @@ init_voice(/*char *language_code*/)
 	python_listen_function = PyObject_GetAttrString(python_module, (char *) "listen");
 	if (python_listen_function == NULL || !PyCallable_Check(python_listen_function))
 	{
-		Py_DECREF(python_module);
+		Py_XDECREF(python_module);
 		Py_Finalize();
 		return ((char *) "Error: Could not load the python_module listen function.\n");
 	}
@@ -81,7 +81,7 @@ finalize_voice()
 	Py_XDECREF(python_language_function);
 	Py_XDECREF(python_speak_function);
 	Py_XDECREF(python_listen_function);
-	Py_DECREF(python_module);
+	Py_XDECREF(python_module);
 	Py_Finalize();
 }
 /*
@@ -91,8 +91,8 @@ set_language(char *language_to_set)
 
 	PyObject *python_function_arguments = Py_BuildValue("s", language_to_set);
 	PyObject *python_language_function_output = PyObject_CallObject(python_language_function, python_function_arguments);
-	Py_DECREF(python_function_arguments);
-	//Py_DECREF(python_language_function_output);
+	Py_XDECREF(python_function_arguments);
+	//Py_XDECREF(python_language_function_output);
 }
  */
 
@@ -104,7 +104,7 @@ speak(char *speech, char *speech_file_name)
 	// Saves the speech fine in $CARMEN_HOME/data/voice_interface_speechs/ (see listen_speak.py))
 	PyObject *python_function_arguments = Py_BuildValue("(ss)", speech, speech_file_name);
 	PyObject *python_speak_function_output = PyObject_CallObject(python_speak_function, python_function_arguments);
-	Py_DECREF(python_function_arguments);
+	Py_XDECREF(python_function_arguments);
 	if (python_speak_function_output)
 	{
 		Py_XDECREF(python_speak_function_output);

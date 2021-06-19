@@ -207,42 +207,73 @@ start_porcupine()
 //	return 0;
 //}
 
-
+/**
+ * Reads an audio frame of the incoming audio stream and processes it to detect the hotword.
+ *
+ * @return Returns 1 if the hotword is detected, 0 if not and 2 on failure.
+ */
 int
 hotword_detection()
 {
-	int32_t keyword_index;
-	int err = 0;
+	int ret = 0; // OK
 
-	int buffer_size = pv_porcupine_frame_length();
-	short *wav_data = (short *) malloc(buffer_size * sizeof(short));
+	int32_t buffer_size = pv_porcupine_frame_length();
+	int16_t *wav_data = (int16_t *) malloc(buffer_size * sizeof(int16_t));
 
-	err = snd_pcm_readi(capture_handle, (void *) wav_data, buffer_size) != buffer_size;
-	if (err < 0)
+	try
 	{
-		cout << "read from audio interface failed (" << snd_strerror(err) << ", " << err << ")" << endl;
-		if (err == -32) // Broken pipe
+		//read data from PCM audio interface 
+		snd_pcm_sframes_t err = snd_pcm_readi(capture_handle, (void *) wav_data, buffer_size) != buffer_size;
+
+		if (err < 0)
 		{
-			if ((err = snd_pcm_prepare(capture_handle)) < 0)
+			cout << "read from audio interface failed (" << snd_strerror(err) << ", " << err << ")" << endl;
+			if (err == -32) // Broken pipe
 			{
-				cout << "cannot prepare audio interface for use (" << snd_strerror(err) << ", " << err << ")" << endl;
-				return (2); // Error
+				//restore PCM audio interface for use	
+				if ((err = snd_pcm_prepare(capture_handle)) < 0)
+				{
+					cout << "cannot prepare audio interface for use (" << snd_strerror(err) << ", " << err << ")" << endl;
+					ret = 2; // Error
+				}
+			}
+			else
+			{
+				ret = 2; // Error
 			}
 		}
 		else
 		{
-			return (2); // Error
+			int32_t keyword_index = -1;
+
+			//process data from PCM audio interface	
+			pv_status_t status = pv_porcupine_process(porcupineObject, wav_data, &keyword_index);
+
+			if (status == PV_STATUS_SUCCESS)
+			{
+				ret = (keyword_index >= 0) ? 1 : 0;				
+			}
+			else
+			{
+				cout << "cannot process audio data (" << pv_status_to_string(status) << ", " << status << ")" << endl;
+				ret = 2; // Error
+			}	
 		}
 	}
-	else
-		pv_porcupine_process(porcupineObject, wav_data, &keyword_index);
+	catch(const std::exception& e)
+	{
+		cout <<  __func__ << ">> exception raised: " << e.what() << endl;
+		ret = 2; // Error
+	}
+	catch(...) 
+	{
+		cout <<  __func__ << ">> unknown exception raised." << endl;
+		ret = 2; // Error
+	}
 
 	free(wav_data);
 
-	if (keyword_index >= 0)
-		return (1);
-	else
-		return (0);
+	return ret;
 }
 
 
