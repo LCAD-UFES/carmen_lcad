@@ -70,7 +70,7 @@ smooth_short_path(vector<carmen_robot_and_trailer_path_point_t> &original_path)
 	if (path.size() > 1)
 	{
 		distance_travelled = DIST2D(path[0], path[path.size() - 1]);
-		if (distance_travelled < 1.0)
+		if (distance_travelled < 0.6)
 		{
 			for (unsigned int j = 0; j < path.size(); j++)
 				original_path[j].phi = stable_phi;

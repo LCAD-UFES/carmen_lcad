@@ -159,21 +159,9 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavi
 	{
 		SE2 lane_in_world_reference(path_goals_and_annotations_message->poses[k].x, path_goals_and_annotations_message->poses[k].y, path_goals_and_annotations_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-//		if (GlobalState::reverse_planning)	// @ ???
-//		{
-//			 if (lane_in_car_reference[0] <= 0.0)
-//			 {
-//				 local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-//				 							path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
-//				 lane_in_local_pose->push_back(local_reference_lane_point);
-//			 }
-//		}
-//		else
-		{
-			local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], beta,
-					path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
-			lane_in_local_pose->push_back(local_reference_lane_point);
-		}
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], beta,
+				path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
+		lane_in_local_pose->push_back(local_reference_lane_point);
 	}
 }
 
@@ -213,18 +201,8 @@ void
 move_lane_to_robot_reference_system(carmen_robot_and_trailer_pose_t *localizer_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_robot_and_trailer_path_point_t> *lane_in_local_pose)
 {
-//	bool goal_in_lane = false;
-
-//	if ((path_goals_and_annotations_message->number_of_poses < 2 || path_goals_and_annotations_message->number_of_poses > 250))
-//		return false;
-
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
-//	if (!GlobalState::reverse_planning)
-//		move_poses_back_to_local_reference(robot_pose, path_goals_and_annotations_message, lane_in_local_pose);
-
 	move_poses_foward_to_local_reference(robot_pose, localizer_pose->beta, path_goals_and_annotations_message, lane_in_local_pose);
-
-//	return (goal_in_lane);	// @ ??? Sempre falso?
 }
 
 
@@ -259,11 +237,13 @@ make_detailed_lane_start_at_car_pose(vector<carmen_robot_and_trailer_path_point_
 		}
 	}
 
+	nearest_i_to_goal += 20;	// Para o tamanho da detailed lane ir um pouco alem do goal.
+	if (nearest_i_to_goal > temp_detail.size())
+		nearest_i_to_goal = temp_detail.size();
+
 	for (unsigned int j = nearest_i_to_car; j < nearest_i_to_goal; j++)
 		detailed_lane.push_back(temp_detail.at(j));
 
-	//	printf("\nGoal_in_lane: %d Goal_X: %lf Detailed_X: %lf \t Goal_Y: %lf Detailed_Y: %lf \n", goal_in_lane, goal_x, detailed_lane.back().x,
-//			goal_y, detailed_lane.back().y);
 	return (true);
 }
 
