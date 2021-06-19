@@ -35,6 +35,7 @@ typedef struct
 	double pixel_size;
 	double baseline;
 	double fov;
+	double focal_length;
 } carmen_camera_parameters;
 
 

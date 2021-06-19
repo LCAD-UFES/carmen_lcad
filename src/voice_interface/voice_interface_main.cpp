@@ -18,6 +18,7 @@
 using namespace std;
 
 extern snd_pcm_t* capture_handle;
+static bool g_bExitRequest = false;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,16 +51,28 @@ publish_voice_interface_command_message(const char *command, int command_id)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void
-shutdown_module(int signo)
+void signal_handler(int signo)
 {
-	if (signo == SIGINT)
+	switch (signo)
 	{
-		printf("voice interface: disconnected.\n");
-		finalize_voice();
-		finalize_porcupine();
+		case SIGINT:
+		{
+			g_bExitRequest = true;
+			cout << "signal SIGINT captured: trying to shutting down voice_interface smoothly."<< endl;
+			break;
+		}
 
-		exit(0);
+		case SIGTERM:
+		{
+			cout << "signal SIGTERM captured: exiting voice_interface immediately." << endl;
+			exit(0);
+		}
+		
+		default:
+		{
+			cout << "signal" << strsignal(signo) << " captured: nothing to do." << endl;
+			break;
+		}
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,6 +150,11 @@ get_rasa_server_response(char *query)
 void
 speek_sentence(char *sentence)
 {
+	if (sentence == nullptr)
+	{
+		printf("null sentence\n");
+		return;
+	}
 	char *voice_interface_speak_error = carmen_voice_interface_speak(sentence);
 	if (voice_interface_speak_error)
 		printf("%s \n", voice_interface_speak_error);
@@ -313,7 +331,7 @@ execute_voice_command(char *voice_command)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
-// Initializations                                                                           //
+// Initializations & shutting down                                                                          //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -340,19 +358,28 @@ carmen_voice_interface_initialize(/*char *language_code*/)
 	char *porcupine_error = initialize_porcupine();
 	if (porcupine_error != NULL)
 	{
-		printf("Updating Porcupine...");
-		char *update_porcupine_path[2];
-		update_porcupine_path[0] = (char*)"$CARMEN_HOME/src/voice_interface/update_porcupine_files.sh";
-		update_porcupine_path[1] = NULL;
-		execve(update_porcupine_path[0], update_porcupine_path, NULL);
+		// printf("Updating Porcupine...");
+		// char *update_porcupine_path[2];
+		// update_porcupine_path[0] = (char*)"$CARMEN_HOME/src/voice_interface/update_porcupine_files.sh";
+		// update_porcupine_path[1] = NULL;
+		// execve(update_porcupine_path[0], update_porcupine_path, NULL);
 
-		char *retrying_porcupine = initialize_porcupine();
-		if (retrying_porcupine != NULL)
-		{
+		// char *retrying_porcupine = initialize_porcupine();
+		// if (retrying_porcupine != NULL)
+		// {
 			printf("Error: could not initialize porcupine.\n%s\n", porcupine_error);
 			exit(1);
-		}
+		// }
 	}
+}
+
+
+void
+carmen_voice_interface_shutdown()
+{
+	finalize_voice();
+	finalize_porcupine();
+	cout << "voice_interface was successfully disconnected." << endl;
 }
 
 
@@ -361,7 +388,8 @@ main (int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 //	carmen_param_check_version(argv[0]);
-	signal(SIGINT, shutdown_module);
+	signal(SIGINT, signal_handler);
+	signal(SIGTERM, signal_handler);
 	voice_interface_define_messages();
 	carmen_voice_interface_initialize();
 
@@ -382,7 +410,7 @@ main (int argc, char **argv)
 	}
 	*/
 
-	while (true)
+	while (!g_bExitRequest)
 	{
 		int hotword_detection_result = hotword_detection();
 		if (hotword_detection_result == 1) // hotword detected
@@ -395,7 +423,6 @@ main (int argc, char **argv)
 			system("mpg123 $CARMEN_HOME/data/voice_interface_data/computerbeep_4.mp3"); // http://www.trekcore.com/audio/
 
 			printf("Awaiting for command: \n\n");
-
 			
 			char *voice_command = carmen_voice_interface_listen();
 			execute_voice_command(voice_command);
@@ -410,6 +437,8 @@ main (int argc, char **argv)
 
 		carmen_ipc_sleep(0.0);
 	}
+
+	carmen_voice_interface_shutdown();
 
 	return (0);
 }

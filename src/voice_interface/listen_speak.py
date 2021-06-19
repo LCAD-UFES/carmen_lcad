@@ -8,8 +8,9 @@ import re
 import sys
 import pyaudio
 
-from google.cloud import speech, texttospeech
-from google.cloud.speech import enums, types
+from google.cloud import speech_v1 as speech
+from google.cloud import texttospeech_v1 as texttospeech
+
 from six.moves import queue
 
 # [END import_libraries]
@@ -105,21 +106,21 @@ def speak(text, speech_file):
     client = texttospeech.TextToSpeechClient()
 
     # Set the text input to be synthesized
-    synthesis_input = texttospeech.types.SynthesisInput(text=text)
+    input = texttospeech.SynthesisInput(text=text)
 
     # Build the voice request, select the language code ("pt-BR") and the ssml
     # voice gender ("neutral")
-    voice = texttospeech.types.VoiceSelectionParams(
+    voice = texttospeech.VoiceSelectionParams(
         language_code='pt-BR',
-        ssml_gender=texttospeech.enums.SsmlVoiceGender.NEUTRAL)
+        ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
 
     # Select the type of audio file you want returned
-    audio_config = texttospeech.types.AudioConfig(
-        audio_encoding=texttospeech.enums.AudioEncoding.LINEAR16)
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16)
 
     # Perform the text-to-speech request on the text input with the selected
     # voice parameters and audio file type
-    response = client.synthesize_speech(synthesis_input, voice, audio_config)
+    response = client.synthesize_speech(input=input, voice=voice, audio_config=audio_config)
 
     # The response's audio_content is binary.
     carmen_home = os.environ["CARMEN_HOME"]
@@ -192,14 +193,13 @@ def listen():
     client = speech.SpeechClient()
 
     language_code='pt-BR' #global variable
-    config = types.RecognitionConfig(
-        encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=RATE,
-        language_code=language_code,
-        enable_automatic_punctuation=True)
 
-    streaming_config = types.StreamingRecognitionConfig(
-        config=config,
+    streaming_config = speech.StreamingRecognitionConfig(
+        config=speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=RATE,
+            language_code=language_code,
+            enable_automatic_punctuation=True),
         single_utterance=True,
         interim_results=False)
 
@@ -207,13 +207,13 @@ def listen():
 
     with MicrophoneStream(RATE, CHUNK) as stream:
         audio_generator = stream.generator()
-        requests = (types.StreamingRecognizeRequest(audio_content=content)
+        requests = (speech.StreamingRecognizeRequest(audio_content=content)
                     for content in audio_generator)
-
-        responses = client.streaming_recognize(streaming_config, requests, timeout=7.0)
 
         # Now, put the transcription responses to use.
         try:
+            responses = client.streaming_recognize(streaming_config, requests, timeout=7.0)
+
             mytest = listen_print_loop(responses, stream).encode('utf-8')
         except:
             mytest = b'timeout'

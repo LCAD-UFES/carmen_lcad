@@ -3062,7 +3062,7 @@ init_flags(void)
     draw_localize_ackerman_flag = 0;
     draw_annotation_flag = 0;
     draw_moving_objects_flag = 0;
-    draw_gps_axis_flag = 0;
+    draw_gps_axis_flag = 1;
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
     show_plan_tree_flag = 1;
