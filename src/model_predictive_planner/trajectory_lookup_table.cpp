@@ -1010,26 +1010,12 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	gsl_spline *phi_spline;
 	if (tcp.has_k1)
 	{
-		if (tcp.shift_knots)
-		{
-			double knots_x[4] = {0.0, tcp.tt / 2.0, 3.0 * (tcp.tt / 4.0), tcp.tt};
-			double knots_y[4] = {i_phi, tcp.k2, tcp.k1, tcp.k3};
-			acc = gsl_interp_accel_alloc();
-			const gsl_interp_type *type = gsl_interp_cspline;
-			phi_spline = gsl_spline_alloc(type, 4);
-			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-//			static int i = 0;
-//			printf("%d ENTREI!!!\n\n", i++);
-		}
-		else
-		{
-			double knots_x[4] = {0.0, tcp.tt / 4.0, tcp.tt / 2.0, tcp.tt};
-			double knots_y[4] = {i_phi, tcp.k1, tcp.k2, tcp.k3};
-			acc = gsl_interp_accel_alloc();
-			const gsl_interp_type *type = gsl_interp_cspline;
-			phi_spline = gsl_spline_alloc(type, 4);
-			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-		}
+		double knots_x[4] = {0.0, tcp.tt / 4.0, tcp.tt / 2.0, tcp.tt};
+		double knots_y[4] = {i_phi, tcp.k1, tcp.k2, tcp.k3};
+		acc = gsl_interp_accel_alloc();
+		const gsl_interp_type *type = gsl_interp_cspline;
+		phi_spline = gsl_spline_alloc(type, 4);
+		gsl_spline_init(phi_spline, knots_x, knots_y, 4);
 	}
 	else
 	{
