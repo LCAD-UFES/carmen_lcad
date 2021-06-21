@@ -2693,7 +2693,7 @@ plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 		tempMessage.path = msg->paths[i];
 		tempMessage.path_length = msg->path_size[i];
 
-		t_drawerTree[i] = create_trajectory_drawer((double) i / (double) (msg->num_path - 1), 0.7, 0.7, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+		t_drawerTree[i] = create_trajectory_drawer((double) i / (double) (msg->num_path - 1), 0.7, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
 		add_trajectory_message(t_drawerTree[i], &tempMessage);
 	}
 }
@@ -3062,7 +3062,7 @@ init_flags(void)
     draw_localize_ackerman_flag = 0;
     draw_annotation_flag = 0;
     draw_moving_objects_flag = 0;
-    draw_gps_axis_flag = 0;
+    draw_gps_axis_flag = 1;
     velodyne_remission_flag = 0;
     show_path_plans_flag = 0;
     show_plan_tree_flag = 1;

@@ -70,7 +70,7 @@ smooth_short_path(vector<carmen_robot_and_trailer_path_point_t> &original_path)
 	if (path.size() > 1)
 	{
 		distance_travelled = DIST2D(path[0], path[path.size() - 1]);
-		if (distance_travelled < 1.0)
+		if (distance_travelled < 0.6)
 		{
 			for (unsigned int j = 0; j < path.size(); j++)
 				original_path[j].phi = stable_phi;
@@ -491,7 +491,7 @@ build_and_follow_path(double timestamp)
 	list<RRT_Path_Edge> path_follower_path;
 	static double last_phi = 0.0;
 
-	if (GlobalState::goal_pose)
+	if (GlobalState::goal_pose && (GlobalState::route_planner_state != PLANNING_FROM_POSE_TO_LANE))
 	{
 		double distance_to_goal = DIST2D_P(GlobalState::goal_pose, GlobalState::localizer_pose);
 		if (((distance_to_goal < 1.0) && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03)))// ||
@@ -750,6 +750,8 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 	GlobalState::behavior_selector_task = msg->task;
 	GlobalState::behavior_selector_low_level_state = msg->low_level_state;
 	GlobalState::current_algorithm = msg->algorithm;
+	GlobalState::route_planner_state = msg->route_planner_state;
+	GlobalState::offroad_planner_request = msg->offroad_planner_request;
 
 	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
 		GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance = 0.0;

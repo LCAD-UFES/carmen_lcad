@@ -25,7 +25,7 @@
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
 //#include <carmen/librange.h>
-#include <carmen/carmen_darknet_interface.hpp>
+#include <carmen/carmen_darknet4_interface.hpp>
 #include <omp.h>
 #include <carmen/mapper.h>
 #include <sys/stat.h>

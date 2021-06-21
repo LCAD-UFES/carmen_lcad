@@ -79,8 +79,8 @@ Examples of the Text-to-Speech and Speech-to-Text APIs:
 
 Using Python3 (3.5.2 or greater)
 ```sh
- pip3 install --upgrade google-cloud-texttospeech
- pip3 install --upgrade google-cloud-speech
+ pip3 install google-cloud-texttospeech==2.4.0
+ pip3 install google-cloud-speech==2.4.0
  sudo apt-get install portaudio19-dev
  pip3 install pyaudio
 ```
@@ -89,34 +89,46 @@ Using Python3 (3.5.2 or greater)
 
 https://github.com/GoogleCloudPlatform/python-docs-samples
 
-# 6. Using Porcupine by PicoVoice
-[Github/Picovoice/Porcupine](https://github.com/Picovoice/Porcupine)
+# 6. Setup Porcupine wake-word engine by PicoVoice
+
+### 6.1 Creating the hotword/wake-word
+Follow the steps below to create a hotword/wake-word file with .ppn extension:
+
+- Create a Picovoice Console account at [Picovoice/Console](https://console.picovoice.ai/);
+- Login and select the Porcupine Wake Word Engine at the dashboard;
+- Enter the Phrase="ok e ara", select the Language="English" and click on "Train Wake Word..." button;
+- Download the .ppn file containing Custom Wake Word model (it might take several minutes to finish); and
+- Move the download .ppn file to $CARMEN_HOME/data/voice_interface_data/hotword_ok_iara.ppn.
+
+Note that the generated file has a 30-day temporary license. Please create another .ppn file after license expiration.
+
+### 6.2 Cloning the Porcupine repository
+
+Clone the [Github/Picovoice/Porcupine](https://github.com/Picovoice/Porcupine) repository as follows:
 
 ```sh
- cd ~
- git clone https://github.com/Picovoice/Porcupine.git
- cd Porcupine
- ./tools/optimizer/linux/x86_64/pv_porcupine_optimizer -r resources/optimizer_data/ -p linux -o . -w "ok e ara"
- export SYSTEM=linux
- export MACHINE=x86_64
- cd demo/alsa
- g++ -O3 -o alsademo -I../../include -L../../lib/${SYSTEM}/$MACHINE -Wl,-rpath ../../lib/${SYSTEM}/$MACHINE main.cpp -lpv_porcupine -lasound
- cp ../../ok\ e\ ara_linux.ppn ../../resources/keyword_files/pineapple_linux.ppn
- ./alsademo
+ cd ~/packages_carmen
+ git clone --branch v1.9 https://github.com/Picovoice/Porcupine.git
 ```
 
- - Teste dizendo a hotword/wake-word: "Ok, Iara!"
+In the sequel, execute the commands below and test `Porcupine` by saying the hotword/wake-word: *"Ok, Iara!"*
+ 
+```sh
+ cd Porcupine
+ gcc -std=c99 -O3 -o demo/c/porcupine_demo_mic -I include/ demo/c/porcupine_demo_mic.c -ldl -lasound
+ ./demo/c/porcupine_demo_mic lib/linux/x86_64/libpv_porcupine.so lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_data/hotword_ok_iara.ppn 0.5 default
+```
+The following message is expected: *"Hotword detected!"*
 
-"Hotword detected!"
+### 6.3 Using Porcupine at CARMEN
 
-### 6.1 Para uso no CARMEN
+Execute the commands below to enable Carmen to use the `Porcupine` wake-word engine:
 
 ```sh
- cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_data/hotword_oi_iara.ppn
  cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_data/
+ cp ~/carmen_packages/Porcupine/include/pv_porcupine.h $CARMEN_HOME/src/voice_interface/
  cp ~/carmen_packages/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
- cp ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a
- ln -s ~/carmen_packages/Porcupine/libpv_porcupine.a $CARMEN_HOME/lib/libpv_porcupine.a
+ ln -s ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.so $CARMEN_HOME/lib/libpv_porcupine.so
 ```
 
 # 7. Using RASA
@@ -126,7 +138,6 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 #### Tensorflow
 
 	-- Tensorflow == 1.5
-
 
 - Installation:
 ```sh
@@ -184,7 +195,7 @@ You'll need a microphone and a speaker.
 	- Billing account? The same json can be used for everybody? 
 		- A: To use the Google API you need a billing account. Using the same Google account you can create multiple service keys and designate roles to which one.
 	- Try to make the system work with Python3. (SOLVED)
-	- Add a timeout to the listen function.
+	- Add a timeout to the listen function. (SOLVED)
 	- Make sure the packages required by python-pyaudio don't break stuff like the nvidia driver (some 'mesa' related packages are installed).
 	- Change the speak function to send the audio to the speakers without having to save the file in the disk. (SOLVED)
 	- Make the speak function synchronous: the function should only finish after the speakers played the sentence.

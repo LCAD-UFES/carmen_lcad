@@ -20,6 +20,7 @@
 #include "util.h"
 
 #include "model_predictive_planner.h"
+#include "model_predictive_planner_optimizer.h"
 
 #include "g2o/types/slam2d/se2.h"
 
@@ -146,24 +147,6 @@ plot_state_goals(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_acke
 }
 
 
-
-TrajectoryLookupTable::TrajectoryDimensions
-get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailer_pose_t *localizer_pose, Command last_odometry,	Pose *goal_pose)
-{
-	TrajectoryLookupTable::TrajectoryDimensions td;
-
-	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
-			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
-	td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
-	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
-	td.phi_i = last_odometry.phi;
-	td.beta_i = localizer_pose->beta;
-	td.v_i = last_odometry.v;
-
-	return (td);
-}
-
-
 void
 move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_robot_and_trailer_path_point_t> *lane_in_local_pose)
@@ -176,21 +159,9 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavi
 	{
 		SE2 lane_in_world_reference(path_goals_and_annotations_message->poses[k].x, path_goals_and_annotations_message->poses[k].y, path_goals_and_annotations_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-//		if (GlobalState::reverse_planning)	// @ ???
-//		{
-//			 if (lane_in_car_reference[0] <= 0.0)
-//			 {
-//				 local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-//				 							path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
-//				 lane_in_local_pose->push_back(local_reference_lane_point);
-//			 }
-//		}
-//		else
-		{
-			local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], beta,
-					path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
-			lane_in_local_pose->push_back(local_reference_lane_point);
-		}
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], beta,
+				path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
+		lane_in_local_pose->push_back(local_reference_lane_point);
 	}
 }
 
@@ -230,18 +201,8 @@ void
 move_lane_to_robot_reference_system(carmen_robot_and_trailer_pose_t *localizer_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_robot_and_trailer_path_point_t> *lane_in_local_pose)
 {
-//	bool goal_in_lane = false;
-
-//	if ((path_goals_and_annotations_message->number_of_poses < 2 || path_goals_and_annotations_message->number_of_poses > 250))
-//		return false;
-
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
-//	if (!GlobalState::reverse_planning)
-//		move_poses_back_to_local_reference(robot_pose, path_goals_and_annotations_message, lane_in_local_pose);
-
 	move_poses_foward_to_local_reference(robot_pose, localizer_pose->beta, path_goals_and_annotations_message, lane_in_local_pose);
-
-//	return (goal_in_lane);	// @ ??? Sempre falso?
 }
 
 
@@ -276,11 +237,13 @@ make_detailed_lane_start_at_car_pose(vector<carmen_robot_and_trailer_path_point_
 		}
 	}
 
+	nearest_i_to_goal += 20;	// Para o tamanho da detailed lane ir um pouco alem do goal.
+	if (nearest_i_to_goal > temp_detail.size())
+		nearest_i_to_goal = temp_detail.size();
+
 	for (unsigned int j = nearest_i_to_car; j < nearest_i_to_goal; j++)
 		detailed_lane.push_back(temp_detail.at(j));
 
-	//	printf("\nGoal_in_lane: %d Goal_X: %lf Detailed_X: %lf \t Goal_Y: %lf Detailed_Y: %lf \n", goal_in_lane, goal_x, detailed_lane.back().x,
-//			goal_y, detailed_lane.back().y);
 	return (true);
 }
 
@@ -344,6 +307,19 @@ build_detailed_path_lane(vector<carmen_robot_and_trailer_path_point_t> *lane_in_
 }
 
 
+void
+compute_path_phis(vector<carmen_robot_and_trailer_path_point_t> *lane_in_local_pose)
+{
+	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
+	for (unsigned int i = 0; i < lane_in_local_pose->size() - 1; i++)
+	{
+		double delta_theta = carmen_normalize_theta(lane_in_local_pose->at(i + 1).theta - lane_in_local_pose->at(i).theta);
+		double l = DIST2D(lane_in_local_pose->at(i), lane_in_local_pose->at(i + 1));
+		lane_in_local_pose->at(i).phi = atan(L * (delta_theta / l));
+	}
+}
+
+
 bool
 build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_robot_and_trailer_path_point_t> *lane_in_local_pose,
 		vector<carmen_robot_and_trailer_path_point_t> &detailed_lane)
@@ -357,6 +333,8 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_robot_and_trailer_path_p
 		temp_detail.push_back(lane_in_local_pose->back());
 
 		goal_in_lane = make_detailed_lane_start_at_car_pose(detailed_lane, temp_detail, goal_pose);
+
+		compute_path_phis(lane_in_local_pose);
 	}
 	else
 	{
@@ -624,105 +602,6 @@ get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-get_dummy_tcp(const TrajectoryLookupTable::TrajectoryDimensions& td)
-{
-	TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
-	//type = 1 reh reto/ 2- reh curva a direita 2- reh curva a esquerda
-	int tcp_type;
-	if (td.theta > 0.3)
-		tcp_type = 2;
-	else if (td.theta < -0.3)
-		tcp_type = 3;
-	else
-		tcp_type = 1;
-
-	if (tcp_type == 1)
-	{
-		dummy_tcp.valid = true;
-		dummy_tcp.tt = 2.5;;
-		dummy_tcp.k1 = 0.0;
-		dummy_tcp.k2 = 0.01;
-		dummy_tcp.k3 = 0.02;
-		dummy_tcp.has_k1 = true;
-		dummy_tcp.shift_knots = false;
-		dummy_tcp.a = -0.7;
-		dummy_tcp.vf = -2.0;
-		dummy_tcp.sf = td.dist;
-		dummy_tcp.s = td.dist;
-	}
-	else if (tcp_type == 2)
-	{
-		dummy_tcp.valid = true;
-		dummy_tcp.tt = 2.5;//4.2252857989082688;
-		dummy_tcp.k1 = -0.17769236781390979;
-		dummy_tcp.k2 = -1.3001704239163896;
-		dummy_tcp.k3 = -0.20967541493688466;
-		dummy_tcp.has_k1 = true;
-		dummy_tcp.shift_knots = false;
-		dummy_tcp.a = -0.71001114309832969;
-		dummy_tcp.vf = -2.9999999999999991;
-		dummy_tcp.sf = 6.3379786983624049;
-		dummy_tcp.s = 6.3379286983624015;
-	}
-	else if (tcp_type == 3)
-	{
-		dummy_tcp.valid = true;
-		dummy_tcp.tt = 2.5;//4.2252857989082688;
-		dummy_tcp.k1 = 0.17769236781390979;
-		dummy_tcp.k2 = 1.3001704239163896;
-		dummy_tcp.k3 = 0.20967541493688466;
-		dummy_tcp.has_k1 = true;
-		dummy_tcp.shift_knots = false;
-		dummy_tcp.a = -0.71001114309832969;
-		dummy_tcp.vf = -2.9999999999999991;
-		dummy_tcp.sf = 6.3379786983624049;
-		dummy_tcp.s = 6.3379286983624015;
-	}
-
-	return dummy_tcp;
-}
-
-
-bool
-get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
-		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
-		TrajectoryLookupTable::TrajectoryDimensions td)
-{
-	if (0) //(GlobalState::reverse_planning && !previous_good_tcp.valid && td.v_i == 0.0) //Just for tests
-		tcp = get_dummy_tcp(td);
-
-	else if (!previous_good_tcp.valid)
-	{
-		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
-		if (!has_valid_discretization(tdd))
-		{
-			printf("Invalid discretization!!!!\n");
-			return (false);
-		}
-
-		tcp = search_lookup_table(tdd);
-		if (!tcp.valid)
-		{
-//			printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
-			if (0)//(GlobalState::reverse_planning)
-			{
-				printf(KMAG "@@@@@@@@@@@ Trying a dummy_TCP\n");
-				tcp = get_dummy_tcp(td);
-				return (true);
-			}
-			return (false);
-		}
-		tcp.s = td.dist;
-	}
-	else
-		tcp = previous_good_tcp;
-
-
-	return (true);
-}
-
-
 double
 get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_to_goal, double dist_to_curve)
 {
@@ -879,6 +758,23 @@ set_reverse_planning_global_state(double target_v, double v_i, TrajectoryLookupT
 }
 
 
+TrajectoryLookupTable::TrajectoryDimensions
+get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailer_pose_t *localizer_pose, Command last_odometry,	Pose *goal_pose)
+{
+	TrajectoryLookupTable::TrajectoryDimensions td;
+
+	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
+			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
+	td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
+	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
+	td.phi_i = last_odometry.phi;
+	td.beta_i = localizer_pose->beta;
+	td.v_i = last_odometry.v;
+
+	return (td);
+}
+
+
 vector<vector<carmen_robot_and_trailer_path_point_t> >
 compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal_pose, Command last_odometry, double target_v,
 		carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
@@ -917,17 +813,10 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 			detailed_lane.clear();
 	}
 
-	TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, last_odometry, goal_pose);
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
-	if (!get_tcp_from_td(tcp, previous_good_tcp, td))
-	{
-		paths.clear();
-		return (paths);
-	}
-
 	TrajectoryLookupTable::TrajectoryControlParameters otcp;
 	bool use_lane = true;
-	otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane, use_lane, previous_good_tcp.valid);
+	TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, last_odometry, goal_pose);
+	otcp = get_complete_optimized_trajectory_control_parameters(previous_good_tcp, td, target_v, detailed_lane, use_lane);
 	if (otcp.valid)
 	{
 		vector<carmen_robot_and_trailer_path_point_t> path;

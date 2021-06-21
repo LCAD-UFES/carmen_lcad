@@ -82,6 +82,8 @@ public:
 	static int current_algorithm;//which algorithm is running, define at carmen_navigator_ackerman_algorithm_t
 	static int behavior_selector_task;
 	static int behavior_selector_low_level_state;
+	static int route_planner_state;
+	static int offroad_planner_request;
 
 	static bool use_obstacle_avoider;
 	static bool use_mpc;

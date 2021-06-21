@@ -1,7 +1,7 @@
 include ../Makefile.conf
 
 # Module name and description
-MODULE_NAME = Virtual LiDAR
+MODULE_NAME = Virtual Depth Estimation
 MODULE_COMMENT = Creates maps using camera image detection of moving objects
 
 #CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
@@ -11,6 +11,15 @@ CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 #CFLAGS += -g -pg
 LINK = g++
+
+# AdaBins
+# IFLAGS += -I/usr/include/python2.7
+# LFLAGS += `python2.7-config --libs` -ladabins
+
+# DPT
+IFLAGS += -I/usr/include/python3.7
+LFLAGS += `python3.7-config --libs` -ldpt
+
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
@@ -60,7 +69,7 @@ endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 # Source code files (.c, .cpp) 
-SOURCES = virtual_lidar.cpp dbscan.cpp movable_object.cpp
+SOURCES = virtual_lidar.cpp dbscan.cpp movable_object.cpp virtual_dpt.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -69,8 +78,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = libvirtual_lidar.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = virtual_lidar 
-TARGETS = darknet libprob_models.a virtual_lidar dbscan movable_object
+PUBLIC_BINARIES = virtual_lidar virtual_dpt
+TARGETS = darknet mapper_datmo libprob_models.a virtual_lidar dbscan movable_object libdpt.a virtual_dpt 
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -90,12 +99,20 @@ libvirtual_lidar.a:	virtual_lidar.o
 
 virtual_lidar: virtual_lidar.o dbscan.o movable_object.o
 
+virtual_dpt: virtual_dpt.o $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/libdpt.a
+
 # rules
+libdpt.a: 
+	$(MAKE) -C $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
+
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4
+
+mapper_datmo: 
+	$(MAKE) -C $(CARMEN_HOME)/src/mapper_datmo/
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/

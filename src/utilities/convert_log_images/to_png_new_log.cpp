@@ -36,53 +36,57 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, char* lo
 	FILE *image_file = fopen(path, "rb");
 
 	if (image_file == NULL)
-		exit(printf("ERROR: file '%s' not found!\n", path));
-
-	printf ("Saving image: %s%s\n", dir, timestamp);
-
-	static unsigned char *raw_left = (unsigned char*) malloc (img_size * sizeof(unsigned char));
-	static unsigned char *raw_right = (unsigned char*) malloc (img_size * sizeof(unsigned char));
-	fread(raw_left, img_size, sizeof(unsigned char), image_file);
-	fread(raw_right, img_size, sizeof(unsigned char), image_file);
-
-	Mat img_l;
-	Mat img_r;
-
-	if (camera_side == 0 || camera_side == INT_MAX)
 	{
-		img_l = Mat(h, w, CV_8UC3, raw_left, 0);
-		cvtColor(img_l, img_l, COLOR_RGB2BGR);
+		printf("ERROR: file '%s' not found!\n", path);
+	} else {
 
-		char out_name_l[1024];
-		sprintf(out_name_l, "%s/%s-l.png", dir, timestamp);
-		imwrite(out_name_l, img_l, {CV_IMWRITE_PNG_COMPRESSION, 9});
+		printf ("Saving image: %s%s\n", dir, timestamp);
+
+		static unsigned char *raw_left = (unsigned char*) malloc (img_size * sizeof(unsigned char));
+		static unsigned char *raw_right = (unsigned char*) malloc (img_size * sizeof(unsigned char));
+		fread(raw_left, img_size, sizeof(unsigned char), image_file);
+		fread(raw_right, img_size, sizeof(unsigned char), image_file);
+
+		Mat img_l;
+		Mat img_r;
+
+		if (camera_side == 0 || camera_side == INT_MAX)
+		{
+			img_l = Mat(h, w, CV_8UC3, raw_left, 0);
+			cvtColor(img_l, img_l, COLOR_RGB2BGR);
+
+			char out_name_l[1024];
+			sprintf(out_name_l, "%s/%s-l.png", dir, timestamp);
+			imwrite(out_name_l, img_l, {CV_IMWRITE_PNG_COMPRESSION, 9});
+		}
+
+		if (camera_side == 1 || camera_side == INT_MAX)
+		{
+			img_r = Mat(h, w, CV_8UC3, raw_right, 0);
+			cvtColor(img_r, img_r, COLOR_RGB2BGR);
+
+			char out_name_r[1024];
+			sprintf(out_name_r, "%s/%s-r.png", dir, timestamp);
+			imwrite(out_name_r, img_r, {CV_IMWRITE_PNG_COMPRESSION, 9});
+		}
+
+		if (show_image)
+		{
+			Mat display_image;
+			if (camera_side == 0)
+				display_image = img_l;
+			else if (camera_side == 1)
+				display_image = img_r;
+			else
+				hconcat(img_l, img_r, display_image);
+
+			imshow("Image", display_image);
+			waitKey(1);
+		}
+
+
+		fclose(image_file);
 	}
-
-	if (camera_side == 1 || camera_side == INT_MAX)
-	{
-		img_r = Mat(h, w, CV_8UC3, raw_right, 0);
-		cvtColor(img_r, img_r, COLOR_RGB2BGR);
-
-		char out_name_r[1024];
-		sprintf(out_name_r, "%s/%s-r.png", dir, timestamp);
-		imwrite(out_name_r, img_r, {CV_IMWRITE_PNG_COMPRESSION, 9});
-	}
-
-	if (show_image)
-	{
-		Mat display_image;
-		if (camera_side == 0)
-			display_image = img_l;
-		else if (camera_side == 1)
-			display_image = img_r;
-		else
-			hconcat(img_l, img_r, display_image);
-
-		imshow("Image", display_image);
-		waitKey(1);
-	}
-
-	fclose(image_file);
 	return 1;
 }
 

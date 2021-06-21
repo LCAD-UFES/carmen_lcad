@@ -24,10 +24,10 @@ using namespace std;
 
 // Change these to match your environment!
 const char MODEL_PATH[] = "/data/voice_interface_data/porcupine_params.pv";
-const char KEYWORD_PATH[] = "/data/voice_interface_data/hotword_oi_iara.ppn";
+const char KEYWORD_PATH[] = "/data/voice_interface_data/hotword_ok_iara.ppn";
 float sensitivity = 0.5f;
 
-static pv_porcupine_object_t *porcupineObject;
+static pv_porcupine_t *porcupineObject;
 
 const char snd_device[] = "default";
 
@@ -121,7 +121,7 @@ start_porcupine()
 	char model_path[1024];
 	char keyword_path[1024];
 
-	//connect to porcupine
+	//retrieve the base path to Carmen home directory
 	char *home_dir = getenv("CARMEN_HOME");
 	if (home_dir == NULL)
 	{
@@ -129,13 +129,21 @@ start_porcupine()
 		return (ERROR);
 	}
 
+	//build model and keyword absolute paths	
 	strcpy(model_path, home_dir);
 	strcpy(keyword_path, home_dir);
 	strcat(model_path, MODEL_PATH);
 	strcat(keyword_path, KEYWORD_PATH);
 	printf("*** %s *** \n", model_path);
+	printf("*** %s *** \n", keyword_path);
 
-	pv_status_t status = pv_porcupine_init(model_path, keyword_path, sensitivity, &porcupineObject);
+	//initialize Porcupine wake word engine using the API version 1.9
+	int32_t num_keywords = 1;
+	const char *keyword_path_1 = (const char *) &keyword_path[0];
+	const char *const *keyword_paths = &keyword_path_1;
+	const float *sensitivities = (const float *) &sensitivity;
+
+	pv_status_t status = pv_porcupine_init(model_path, num_keywords, keyword_paths, sensitivities, &porcupineObject);
 	if (status == PV_STATUS_SUCCESS)
 	{
 		cout << "Porcupine initialized" << endl;
@@ -199,42 +207,73 @@ start_porcupine()
 //	return 0;
 //}
 
-
+/**
+ * Reads an audio frame of the incoming audio stream and processes it to detect the hotword.
+ *
+ * @return Returns 1 if the hotword is detected, 0 if not and 2 on failure.
+ */
 int
 hotword_detection()
 {
-	bool detected;
-	int err = 0;
+	int ret = 0; // OK
 
-	int buffer_size = pv_porcupine_frame_length();
-	short *wav_data = (short *) malloc(buffer_size * sizeof(short));
+	int32_t buffer_size = pv_porcupine_frame_length();
+	int16_t *wav_data = (int16_t *) malloc(buffer_size * sizeof(int16_t));
 
-	err = snd_pcm_readi(capture_handle, (void *) wav_data, buffer_size) != buffer_size;
-	if (err < 0)
+	try
 	{
-		cout << "read from audio interface failed (" << snd_strerror(err) << ", " << err << ")" << endl;
-		if (err == -32) // Broken pipe
+		//read data from PCM audio interface 
+		snd_pcm_sframes_t err = snd_pcm_readi(capture_handle, (void *) wav_data, buffer_size) != buffer_size;
+
+		if (err < 0)
 		{
-			if ((err = snd_pcm_prepare(capture_handle)) < 0)
+			cout << "read from audio interface failed (" << snd_strerror(err) << ", " << err << ")" << endl;
+			if (err == -32) // Broken pipe
 			{
-				cout << "cannot prepare audio interface for use (" << snd_strerror(err) << ", " << err << ")" << endl;
-				return (2); // Error
+				//restore PCM audio interface for use	
+				if ((err = snd_pcm_prepare(capture_handle)) < 0)
+				{
+					cout << "cannot prepare audio interface for use (" << snd_strerror(err) << ", " << err << ")" << endl;
+					ret = 2; // Error
+				}
+			}
+			else
+			{
+				ret = 2; // Error
 			}
 		}
 		else
 		{
-			return (2); // Error
+			int32_t keyword_index = -1;
+
+			//process data from PCM audio interface	
+			pv_status_t status = pv_porcupine_process(porcupineObject, wav_data, &keyword_index);
+
+			if (status == PV_STATUS_SUCCESS)
+			{
+				ret = (keyword_index >= 0) ? 1 : 0;				
+			}
+			else
+			{
+				cout << "cannot process audio data (" << pv_status_to_string(status) << ", " << status << ")" << endl;
+				ret = 2; // Error
+			}	
 		}
 	}
-	else
-		pv_porcupine_process(porcupineObject, wav_data, &detected);
+	catch(const std::exception& e)
+	{
+		cout <<  __func__ << ">> exception raised: " << e.what() << endl;
+		ret = 2; // Error
+	}
+	catch(...) 
+	{
+		cout <<  __func__ << ">> unknown exception raised." << endl;
+		ret = 2; // Error
+	}
 
 	free(wav_data);
 
-	if (detected)
-		return (1);
-	else
-		return (0);
+	return ret;
 }
 
 

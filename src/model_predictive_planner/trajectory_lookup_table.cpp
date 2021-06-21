@@ -883,16 +883,6 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double i_beta, double delta_t)
 {
-	int i = 0;
-	double t, last_t;
-	double distance_traveled = 0.0;
-	//double delta_t = 0.075;
-	int reduction_factor;
-	if (use_unity_simulator || GlobalState::eliminate_path_follower)
-		reduction_factor = 1;
-	else
-		reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
-
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;
 	robot_state.theta = 0.0;
@@ -901,60 +891,42 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 	robot_state.phi = i_phi;
 
 	command.v = v0;
-	carmen_robot_and_trailer_traj_point_t last_robot_state = robot_state;
 	double multiple_delta_t = 3.0 * delta_t;
-	for (last_t = t = 0.0; t < (tcp.tt - delta_t); t += delta_t)
+	int i = 0;
+	double t;
+	double distance_traveled = 0.0;
+	// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
+	path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
+	for (t = delta_t; t < tcp.tt; t += delta_t)
 	{
-		command.v += tcp.a * delta_t;
-		command.phi = gsl_spline_eval(phi_spline, t + delta_t, acc);
+		command.v = v0 + tcp.a * t;
+		command.phi = gsl_spline_eval(phi_spline, t, acc);
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
 				&distance_traveled, delta_t, GlobalState::robot_config, GlobalState::semi_trailer_config);
-		if ((i % reduction_factor) == 0)
-		{	// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
-			path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(last_robot_state, t + delta_t - last_t));
-			last_robot_state = robot_state;
-			last_t = t + delta_t;
-		}
-		i++;
+
+		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
+		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
+
 		if (GlobalState::eliminate_path_follower && (i > 70))
 			delta_t = multiple_delta_t;
+
+		i++;
 	}
 
-	if (((tcp.tt - t) > 0.0)) // && (command.v > 0.0))
+	if ((tcp.tt - (t -  delta_t)) > 0.0)
 	{
-		double final_delta_t = tcp.tt - t;
-		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
-		command.v += tcp.a * final_delta_t;
+		double final_delta_t = tcp.tt - (t -  delta_t);
 
-		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi,
-				final_delta_t, &distance_traveled, final_delta_t, GlobalState::robot_config, GlobalState::semi_trailer_config);
+		command.v = v0 + tcp.a * tcp.tt;
+		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
+
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, final_delta_t,
+				&distance_traveled, final_delta_t, GlobalState::robot_config, GlobalState::semi_trailer_config);
+
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
-		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(last_robot_state, tcp.tt - last_t));
-		// A ultima posicao nao tem proxima, logo, delta_t = 0.0
 		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, 0.0));
 	}
-
-//	if (GlobalState::eliminate_path_follower)
-//	{
-//		path = apply_robot_delays(path);
-//
-////		robot_state.v = v0;
-////		robot_state.phi = i_phi;
-////		path[0] = convert_to_carmen_ackerman_path_point_t(robot_state, delta_t);
-//
-//		robot_state = {0.0, 0.0, 0.0, path[0].v, path[0].phi};
-////		robot_state = {path[0].x, path[0].y, path[0].theta, path[0].v, path[0].phi};
-//		distance_traveled = 0.0;
-//		for (unsigned int i = 1; i < path.size(); i++)
-//		{
-//			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, path[i].v, path[i].phi,
-//					path[i].time, &distance_traveled, path[i].time, GlobalState::robot_config);
-//			path[i] = convert_to_carmen_ackerman_path_point_t(robot_state, delta_t);
-//		}
-//	//	printf("Depois\n\n");
-//	//	print_path_(path);
-//	}
 
 	return (distance_traveled);
 }
@@ -1038,26 +1010,12 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	gsl_spline *phi_spline;
 	if (tcp.has_k1)
 	{
-		if (tcp.shift_knots)
-		{
-			double knots_x[4] = {0.0, tcp.tt / 2.0, 3.0 * (tcp.tt / 4.0), tcp.tt};
-			double knots_y[4] = {i_phi, tcp.k2, tcp.k1, tcp.k3};
-			acc = gsl_interp_accel_alloc();
-			const gsl_interp_type *type = gsl_interp_cspline;
-			phi_spline = gsl_spline_alloc(type, 4);
-			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-//			static int i = 0;
-//			printf("%d ENTREI!!!\n\n", i++);
-		}
-		else
-		{
-			double knots_x[4] = {0.0, tcp.tt / 4.0, tcp.tt / 2.0, tcp.tt};
-			double knots_y[4] = {i_phi, tcp.k1, tcp.k2, tcp.k3};
-			acc = gsl_interp_accel_alloc();
-			const gsl_interp_type *type = gsl_interp_cspline;
-			phi_spline = gsl_spline_alloc(type, 4);
-			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-		}
+		double knots_x[4] = {0.0, tcp.tt / 4.0, tcp.tt / 2.0, tcp.tt};
+		double knots_y[4] = {i_phi, tcp.k1, tcp.k2, tcp.k3};
+		acc = gsl_interp_accel_alloc();
+		const gsl_interp_type *type = gsl_interp_cspline;
+		phi_spline = gsl_spline_alloc(type, 4);
+		gsl_spline_init(phi_spline, knots_x, knots_y, 4);
 	}
 	else
 	{
