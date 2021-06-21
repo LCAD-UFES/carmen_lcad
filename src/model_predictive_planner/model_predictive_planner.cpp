@@ -334,7 +334,7 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_robot_and_trailer_path_p
 
 		goal_in_lane = make_detailed_lane_start_at_car_pose(detailed_lane, temp_detail, goal_pose);
 
-		compute_path_phis(lane_in_local_pose);
+//		compute_path_phis(lane_in_local_pose);
 	}
 	else
 	{
