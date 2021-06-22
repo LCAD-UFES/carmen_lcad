@@ -81,14 +81,14 @@ initialize_python_context()
 	if (PyErr_Occurred())
 		        PyErr_Print();
 
-	printf("Success: Loaded dpt\n");
+	printf("Success: Loaded DPT\n");
 
 }
 
 float*
 libdpt_process_image(int width, int height, unsigned char *image, double timestamp)
 {
-	printf("libdpt_process_image\n");
+	// printf("libdpt_process_image\n");
 	//create shape for numpy array
 	npy_intp dims[3] = {height, width, 3};
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);

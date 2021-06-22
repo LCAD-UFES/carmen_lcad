@@ -32,6 +32,9 @@ struct movable_object
 	double x_world[P_BUFF_SIZE];
 	double y_world[P_BUFF_SIZE];
 	unsigned int circular_idx;// should be changed only for update_world_position function
+	double estimated_range;
+	double lidar_range;
+	double depth_range;
 };
 
 double 
