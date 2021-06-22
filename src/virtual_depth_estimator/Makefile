@@ -53,8 +53,9 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface \
 	-lmapper -lmapper_interface
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+# LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
@@ -78,17 +79,19 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = libvirtual_lidar.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = virtual_lidar virtual_dpt
-TARGETS = darknet mapper_datmo libprob_models.a virtual_lidar dbscan movable_object libdpt.a virtual_dpt 
+PUBLIC_BINARIES = virtual_depth
+TARGETS = darknet libprob_models.a virtual_lidar dbscan movable_object libdpt.a virtual_dpt virtual_depth
 
-# If you set graphics support in configure.
+# # If you set graphics support in configure.
 ifndef NO_GRAPHICS
-#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+# #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
 LFLAGS += -lglobal_graphics
-IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
-IFLAGS += `pkg-config --cflags gtkglext-1.0`
-LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
-LFLAGS += `pkg-config --libs gtkglext-1.0`
+IFLAGS += `pkg-config --cflags gtk+-3.0`
+LFLAGS += `pkg-config --libs gtk+-3.0`
+# IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
+# IFLAGS += `pkg-config --cflags gtkglext-1.0`
+# LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
+# LFLAGS += `pkg-config --libs gtkglext-1.0`
 endif
 
 dbscan: dbscan.o
@@ -100,6 +103,8 @@ libvirtual_lidar.a:	virtual_lidar.o
 virtual_lidar: virtual_lidar.o dbscan.o movable_object.o
 
 virtual_dpt: virtual_dpt.o $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/libdpt.a
+
+virtual_depth: virtual_depth.o $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/libdpt.a dbscan.o movable_object.o
 
 # rules
 libdpt.a: 

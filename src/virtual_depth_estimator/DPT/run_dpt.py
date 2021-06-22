@@ -21,6 +21,7 @@ import torch
 import cv2
 import argparse
 
+
 import util.io
 
 from torchvision.transforms import Compose
@@ -102,7 +103,7 @@ def dpt_process_image(carmen_image, timestamp):
     global device
     global transform
     # converter a imagem
-    print ("opaaaa!! entrou no dpt_process_image")
+    # print ("opaaaa!! entrou no dpt_process_image")
     img = carmen_image
     # Convert RGB to BGR 
     img = img[:, :, ::-1].copy() 
