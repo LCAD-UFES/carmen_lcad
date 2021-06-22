@@ -334,7 +334,7 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_robot_and_trailer_path_p
 
 		goal_in_lane = make_detailed_lane_start_at_car_pose(detailed_lane, temp_detail, goal_pose);
 
-//		compute_path_phis(lane_in_local_pose);
+		compute_path_phis(lane_in_local_pose);
 	}
 	else
 	{
@@ -486,6 +486,21 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 }
 
 
+void
+write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, string label)
+{
+	fprintf(problems, "tdd: %s dist: %d, theta: %d, phi_i: %d, v_i: %d, d_yaw: %d\n", label.c_str(),
+			tdd.dist, tdd.theta, tdd.phi_i, tdd.v_i, tdd.d_yaw);
+
+	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	TrajectoryLookupTable::TrajectoryDimensions td = convert_to_trajectory_dimensions(tdd, tcp);
+	fprintf(problems, "td: %s dist: %lf, theta: %lf, phi_i: %lf, v_i: %lf, d_yaw: %lf\n", label.c_str(),
+			td.dist, td.theta, td.phi_i, td.v_i, td.d_yaw);
+
+	fflush(problems);
+}
+
+
 bool
 path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailer_path_point_t> &path)
 {
@@ -624,13 +639,13 @@ get_path_from_optimized_tcp(vector<carmen_robot_and_trailer_path_point_t> &path,
 		carmen_robot_and_trailer_pose_t *localizer_pose)
 {
 	if (GlobalState::use_mpc)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i, 0.025);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false, 0.025);
 	else if (use_unity_simulator)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false, 0.02);
 	else if (GlobalState::eliminate_path_follower)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false, 0.02);
 	else
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, td.beta_i, false);
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
@@ -766,7 +781,7 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 {
 	vector<vector<carmen_robot_and_trailer_path_point_t>> paths;
 	vector<carmen_robot_and_trailer_path_point_t> lane_in_local_pose, detailed_lane;
-	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp = {};
+	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp;
 	static bool first_time = true;
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;

@@ -12,10 +12,6 @@
 #include "carmen/rddf_interface.h"
 #include "model/global_state.h"
 #include <string>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
-#include <gsl/gsl_multimin.h>
-#include <car_model.h>
 
 
 #define N_DIST			21	//15 or 21	// Number of Distances traveled in polar coordinates
@@ -102,7 +98,7 @@ public:
 		double s;
 	};
 
-	struct TrajectoryControlParameters_old2
+	struct TrajectoryControlParameters
 	{
 		bool valid;
 		double tt;
@@ -115,17 +111,6 @@ public:
 		double vf;
 		double sf;
 		double s;
-	};
-
-	struct TrajectoryControlParameters
-	{
-		bool valid;
-		vector<double> k;	// nos do spline de phi
-		double s;	// comprimento da trajetoria ajustado no processo de otimizacao
-		double tt;	// tempo total da trajetoria ajustado no processo de otimizacao (eh dirivado de s)
-		double a;	// aceleracao ajustada durante a otimizacao (eh dirivado de s)
-		double vf;	// velocidade final apos a otimizacao
-		double sf;	// comprimento final apos a otimizacao
 	};
 
 	struct TrajectoryDimensions
@@ -185,8 +170,8 @@ bool has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimension
 TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
 
 vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_beta,
-		double delta_t = 0.15);
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi, double i_beta,
+		bool display_phi_profile, double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 //		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 //		bool display_phi_profile, double delta_t = 0.1);
@@ -197,9 +182,6 @@ void move_path_to_current_robot_pose(vector<carmen_robot_and_trailer_path_point_
 float get_d_yaw_by_index(int index);
 float get_theta_by_index(int index);
 float get_distance_by_index(int index);
-
-gsl_spline *get_phi_spline(TrajectoryLookupTable::TrajectoryControlParameters tcp);
-
 
 vector<carmen_robot_and_trailer_path_point_t> apply_robot_delays(vector<carmen_robot_and_trailer_path_point_t> &original_path);
 
