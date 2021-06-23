@@ -106,7 +106,7 @@ libdpt_process_image(int width, int height, unsigned char *image, double timesta
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	float *result_array = (float*)PyArray_DATA(python_result_array);
+	float*result_array = (float*)PyArray_DATA(python_result_array);
 
 	if (PyErr_Occurred())
         PyErr_Print();

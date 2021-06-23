@@ -70,7 +70,7 @@ endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 # Source code files (.c, .cpp) 
-SOURCES = virtual_lidar.cpp dbscan.cpp movable_object.cpp virtual_dpt.cpp
+SOURCES = virtual_lidar.cpp dbscan.cpp movable_object.cpp virtual_depth.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -80,7 +80,7 @@ PUBLIC_LIBRARIES = libvirtual_lidar.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = virtual_depth
-TARGETS = darknet libprob_models.a virtual_lidar dbscan movable_object libdpt.a virtual_dpt virtual_depth
+TARGETS = darknet libprob_models.a virtual_lidar dbscan movable_object libdpt.a virtual_depth
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
