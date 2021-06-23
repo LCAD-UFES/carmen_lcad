@@ -7,7 +7,6 @@
 
 #include "model/global_state.h"
 #include "util.h"
-#include "trajectory_lookup_table.h"
 
 carmen_robot_and_trailer_pose_t *GlobalState::localizer_pose = NULL;
 carmen_robot_and_trailer_pose_t *GlobalState::last_plan_pose = NULL;
