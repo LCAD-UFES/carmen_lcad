@@ -2692,8 +2692,11 @@ plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 		carmen_navigator_ackerman_plan_message tempMessage;
 		tempMessage.path = msg->paths[i];
 		tempMessage.path_length = msg->path_size[i];
-
-		t_drawerTree[i] = create_trajectory_drawer((double) i / (double) (msg->num_path - 1), 0.7, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+		double r, g, b;
+		r = ((i % 3) == 0)? 1.0: 0.0;
+		g = ((i % 3) == 1)? 1.0: 0.0;
+		b = ((i % 3) == 2)? 1.0: 0.0;
+		t_drawerTree[i] = create_trajectory_drawer(r, g, b, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
 		add_trajectory_message(t_drawerTree[i], &tempMessage);
 	}
 }
@@ -3056,8 +3059,8 @@ init_flags(void)
     draw_map_flag = 1;
     zero_z_flag = 1;
     draw_path_plan_flag = 1;
-    draw_motion_plan_flag = 1;
-    draw_obstacle_avoider_plan_flag = 1;
+    draw_motion_plan_flag = 0;
+    draw_obstacle_avoider_plan_flag = 0;
     draw_xsens_orientation_flag = 0;
     draw_localize_ackerman_flag = 0;
     draw_annotation_flag = 0;
