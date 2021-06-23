@@ -107,6 +107,7 @@ def dpt_process_image(carmen_image, timestamp):
     img = carmen_image
     # Convert RGB to BGR 
     img = img[:, :, ::-1].copy() 
+    # print(img.shape)
     if img.ndim == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
@@ -131,7 +132,9 @@ def dpt_process_image(carmen_image, timestamp):
         )
     filename = output_path + str(timestamp.item(0))
     absolute_depth=False
-    util.io.write_depth(filename, prediction, bits=2, absolute_depth=absolute_depth)
+    print(prediction)
+    out = util.io.write_depth(filename, prediction, bits=2, absolute_depth=absolute_depth)
+    # print(prediction.shape)
     return prediction
 
 # if __name__ == "__main__":
