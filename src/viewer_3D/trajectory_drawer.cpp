@@ -200,8 +200,8 @@ draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 		glPopMatrix();
 	}
 
-//	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
-//		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 
@@ -228,8 +228,8 @@ draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 
 	glPopMatrix();
 
-//	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
-//		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 
@@ -311,8 +311,8 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 		glPopMatrix();
 	}
 
-//	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
-//		t_drawer->path_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+		t_drawer->path_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 

@@ -33,7 +33,7 @@
 
 Tree tree; //tree rooted on robot
 int g_teacher_mode = 0;
-TrajectoryLookupTable *g_trajectory_lookup_table;
+//TrajectoryLookupTable *g_trajectory_lookup_table;
 carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
 static int update_lookup_table = 0;
@@ -877,11 +877,11 @@ static void
 signal_handler(int sig)
 {
 	printf("Signal %d received, exiting program ...\n", sig);
-	if (update_lookup_table)
-	{
-		save_trajectory_lookup_table();
-		printf("New trajectory_lookup_table.bin saved.\n");
-	}
+//	if (update_lookup_table)
+//	{
+//		save_trajectory_lookup_table();
+//		printf("New trajectory_lookup_table.bin saved.\n");
+//	}
 	system("pkill gnuplot");
 	carmen_ipc_disconnect();
 	exit(1);
@@ -1066,7 +1066,7 @@ main(int argc, char **argv)
 	signal(SIGINT, signal_handler);
 //	signal(SIGFPE, signal_handler);
 
-	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
+//	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
 	memset((void *) &tree, 0, sizeof(Tree));
 
 //	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
