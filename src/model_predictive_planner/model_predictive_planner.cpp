@@ -567,12 +567,12 @@ put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &paths, 
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
+MPP::TrajectoryControlParameters
 get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman_path_point_t> > paths,
-		const vector<TrajectoryLookupTable::TrajectoryControlParameters> otcps)
+		const vector<MPP::TrajectoryControlParameters> otcps)
 {
 	double shorter_path_size = 1000.0;
-	TrajectoryLookupTable::TrajectoryControlParameters best_otcp;
+	MPP::TrajectoryControlParameters best_otcp;
 
 	for (int i = 0; i < num_paths; i++)
 	{
@@ -619,8 +619,8 @@ get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_t
 bool
 get_path_from_optimized_tcp(vector<carmen_robot_and_trailer_path_point_t> &path,
 		vector<carmen_robot_and_trailer_path_point_t> &path_local,
-		TrajectoryLookupTable::TrajectoryControlParameters otcp,
-		TrajectoryLookupTable::TrajectoryDimensions td,
+		MPP::TrajectoryControlParameters otcp,
+		MPP::TrajectoryDimensions td,
 		carmen_robot_and_trailer_pose_t *localizer_pose)
 {
 	if (GlobalState::use_mpc)
@@ -716,7 +716,7 @@ goal_is_behind_car(Pose *localizer_pose, Pose *goal_pose)
 
 
 bool
-set_reverse_planning_global_state(double target_v, double v_i, TrajectoryLookupTable::TrajectoryControlParameters &previous_good_tcp)
+set_reverse_planning_global_state(double target_v, double v_i, MPP::TrajectoryControlParameters &previous_good_tcp)
 {
 	if (!GlobalState::reverse_driving_flag && ((target_v < 0.0) || (v_i < 0.0)))
 	{
@@ -743,10 +743,10 @@ set_reverse_planning_global_state(double target_v, double v_i, TrajectoryLookupT
 }
 
 
-TrajectoryLookupTable::TrajectoryDimensions
+MPP::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailer_pose_t *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
-	TrajectoryLookupTable::TrajectoryDimensions td;
+	MPP::TrajectoryDimensions td;
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
@@ -766,7 +766,7 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 {
 	vector<vector<carmen_robot_and_trailer_path_point_t>> paths;
 	vector<carmen_robot_and_trailer_path_point_t> lane_in_local_pose, detailed_lane;
-	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp = {};
+	static MPP::TrajectoryControlParameters previous_good_tcp = {};
 	static bool first_time = true;
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
@@ -798,9 +798,9 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 			detailed_lane.clear();
 	}
 
-	TrajectoryLookupTable::TrajectoryControlParameters otcp;
+	MPP::TrajectoryControlParameters otcp;
 	bool use_lane = true;
-	TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, last_odometry, goal_pose);
+	MPP::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, last_odometry, goal_pose);
 	otcp = get_complete_optimized_trajectory_control_parameters(previous_good_tcp, td, target_v, detailed_lane, use_lane);
 	if (otcp.valid)
 	{

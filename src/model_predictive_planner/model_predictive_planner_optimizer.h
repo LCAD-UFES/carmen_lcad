@@ -83,38 +83,9 @@ typedef enum
 #define PROFILE_TIME 			5.0
 
 
-class TrajectoryLookupTable
+class MPP
 {
 public:
-
-	struct TrajectoryControlParameters_old
-	{
-		bool valid;
-		double tt;
-		double k2;
-		double k3;
-		double k1;
-		bool has_k1;
-		double a;
-		double vf;
-		double sf;
-		double s;
-	};
-
-	struct TrajectoryControlParameters_old2
-	{
-		bool valid;
-		double tt;
-		double k2;
-		double k3;
-		double k1;
-		bool has_k1;
-		bool shift_knots;
-		double a;
-		double vf;
-		double sf;
-		double s;
-	};
 
 	struct TrajectoryControlParameters
 	{
@@ -139,9 +110,6 @@ public:
 		struct TrajectoryControlParameters control_parameters;
 	};
 
-	//typedef struct _TrajectoryDimensions TrajectoryDimensions;
-
-
 	struct TrajectoryDiscreteDimensions
 	{
 		unsigned int dist;		// Distance traveled in polar coordinates
@@ -151,15 +119,7 @@ public:
 		unsigned int v_i;		// Initial velocity
 	};
 
-	//typedef struct _TrajectoryDiscreteDimensions TrajectoryDiscreteDimensions;
-
-	struct Plan
-	{
-		vector<carmen_ackerman_path_point_t> path;
-		double timestamp;
-	};
-
-	TrajectoryLookupTable(int update_lookup_table);
+	MPP(int update_lookup_table);
 
 	bool load_trajectory_lookup_table_old();
 	bool load_trajectory_lookup_table();
@@ -182,8 +142,8 @@ struct ObjectiveFunctionParams
 	double distance_by_index;
 	double theta_by_index;
 	double d_yaw_by_index;
-	TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed;
-	TrajectoryLookupTable::TrajectoryDimensions *target_td;
+	MPP::TrajectoryControlParameters *tcp_seed;
+	MPP::TrajectoryDimensions *target_td;
 	vector<carmen_robot_and_trailer_path_point_t> detailed_lane;
 	vector<unsigned int> path_point_nearest_to_lane;
 	unsigned int path_size;
@@ -194,14 +154,14 @@ struct ObjectiveFunctionParams
 
 
 void save_trajectory_lookup_table();
-TrajectoryLookupTable::TrajectoryDimensions convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp);
-TrajectoryLookupTable::TrajectoryDiscreteDimensions get_discrete_dimensions(TrajectoryLookupTable::TrajectoryDimensions td);
-bool has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
-TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
+MPP::TrajectoryDimensions convert_to_trajectory_dimensions(MPP::TrajectoryDiscreteDimensions tdd,
+		MPP::TrajectoryControlParameters tcp);
+MPP::TrajectoryDiscreteDimensions get_discrete_dimensions(MPP::TrajectoryDimensions td);
+bool has_valid_discretization(MPP::TrajectoryDiscreteDimensions tdd);
+MPP::TrajectoryControlParameters search_lookup_table(MPP::TrajectoryDiscreteDimensions tdd);
 
-vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_beta,
+vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(MPP::TrajectoryDimensions &td,
+		MPP::TrajectoryControlParameters &tcp, double v0, double i_beta,
 		double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 //		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
@@ -214,7 +174,7 @@ float get_d_yaw_by_index(int index);
 float get_theta_by_index(int index);
 float get_distance_by_index(int index);
 
-gsl_spline *get_phi_spline(TrajectoryLookupTable::TrajectoryControlParameters tcp);
+gsl_spline *get_phi_spline(MPP::TrajectoryControlParameters tcp);
 
 
 vector<carmen_robot_and_trailer_path_point_t> apply_robot_delays(vector<carmen_robot_and_trailer_path_point_t> &original_path);
@@ -224,14 +184,14 @@ void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_acker
 
 void print_lane(vector<carmen_robot_and_trailer_path_point_t> path, char *file_name);
 
-TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDiscreteDimensions &tdd, double target_v, vector<carmen_ackerman_path_point_t> optimized_path);
+MPP::TrajectoryControlParameters get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed,
+		MPP::TrajectoryDiscreteDimensions &tdd, double target_v, vector<carmen_ackerman_path_point_t> optimized_path);
 
-TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, double target_v);
+MPP::TrajectoryControlParameters get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed,
+		MPP::TrajectoryDiscreteDimensions tdd, double target_v);
 
-TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
+MPP::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters previous_good_tcp,
+		MPP::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
 		bool use_lane);
 
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */

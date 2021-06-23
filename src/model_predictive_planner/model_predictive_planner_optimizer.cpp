@@ -47,7 +47,7 @@ extern int use_unity_simulator;
 
 
 void
-plot_phi_profile(TrajectoryLookupTable::TrajectoryControlParameters tcp)
+plot_phi_profile(MPP::TrajectoryControlParameters tcp)
 {
 	static bool first_time = true;
 	static FILE *gnuplot_pipeMP;
@@ -117,7 +117,7 @@ plot_phi_profile(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 
 
 void
-print_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
+print_tcp(MPP::TrajectoryControlParameters tcp)
 {
 	printf("v %d, tt %3.8lf, a %3.8lf, vf %3.8lf, sf %3.8lf, s %3.8lf\n",
 			tcp.valid, tcp.tt, tcp.a, tcp.vf, tcp.sf, tcp.s);
@@ -130,7 +130,7 @@ print_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 
 
 bool
-has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+has_valid_discretization(MPP::TrajectoryDiscreteDimensions tdd)
 {
 	if ((tdd.dist < N_DIST) &&
 			(tdd.theta < N_THETA) &&
@@ -221,11 +221,11 @@ get_d_yaw_by_index(int index)
 }
 
 
-TrajectoryLookupTable::TrajectoryDimensions
-convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp)
+MPP::TrajectoryDimensions
+convert_to_trajectory_dimensions(MPP::TrajectoryDiscreteDimensions tdd,
+		MPP::TrajectoryControlParameters tcp)
 {
-	TrajectoryLookupTable::TrajectoryDimensions td;
+	MPP::TrajectoryDimensions td;
 
 	td.d_yaw = get_d_yaw_by_index(tdd.d_yaw);
 	td.dist = get_distance_by_index(tdd.dist);
@@ -276,10 +276,10 @@ binary_search_linear_progression(double value,
 }
 
 
-TrajectoryLookupTable::TrajectoryDiscreteDimensions
-get_discrete_dimensions(TrajectoryLookupTable::TrajectoryDimensions td)
+MPP::TrajectoryDiscreteDimensions
+get_discrete_dimensions(MPP::TrajectoryDimensions td)
 {
-	TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
+	MPP::TrajectoryDiscreteDimensions tdd;
 
 	tdd.dist = binary_search_geometric_progression(td.dist, N_DIST, FIRST_DIST, RATIO_DIST, ZERO_DIST_I);
 	tdd.theta = binary_search_linear_progression(td.theta, N_THETA, COMMON_THETA, ZERO_THETA_I);
@@ -311,7 +311,7 @@ convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailer_
 double
 compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, Command &command,
 		vector<carmen_robot_and_trailer_path_point_t> &path,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp,
+		MPP::TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, double v0, double i_beta, double delta_t)
 {
 	gsl_interp_accel *acc = gsl_interp_accel_alloc();
@@ -409,7 +409,7 @@ get_max_distance_in_path(vector<carmen_robot_and_trailer_path_point_t> path, car
 
 
 gsl_spline *
-get_phi_spline(TrajectoryLookupTable::TrajectoryControlParameters tcp)
+get_phi_spline(MPP::TrajectoryControlParameters tcp)
 {
 	// Create phi profile
 	vector<double> knots_x;
@@ -438,8 +438,8 @@ get_phi_spline(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 
 
 vector<carmen_robot_and_trailer_path_point_t>
-simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_beta, double delta_t)
+simulate_car_from_parameters(MPP::TrajectoryDimensions &td,
+		MPP::TrajectoryControlParameters &tcp, double v0, double i_beta, double delta_t)
 {
 	vector<carmen_robot_and_trailer_path_point_t> path = {};
 	if (!tcp.valid)
@@ -517,7 +517,7 @@ path_has_loop(double dist, double sf)
 
 
 bool
-bad_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
+bad_tcp(MPP::TrajectoryControlParameters tcp)
 {
 	if (isnan(tcp.tt) || isnan(tcp.a) || isnan(tcp.s))
 		return (true);
@@ -528,8 +528,8 @@ bad_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 
 void
 compute_a_and_t_from_s_reverse(double s, double target_v,
-		TrajectoryLookupTable::TrajectoryDimensions target_td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		MPP::TrajectoryDimensions target_td,
+		MPP::TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
@@ -568,8 +568,8 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 
 void
 compute_a_and_t_from_s_foward(double s, double target_v,
-		TrajectoryLookupTable::TrajectoryDimensions target_td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		MPP::TrajectoryDimensions target_td,
+		MPP::TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
@@ -604,8 +604,8 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 
 void
 compute_a_and_t_from_s(double s, double target_v,
-		TrajectoryLookupTable::TrajectoryDimensions target_td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		MPP::TrajectoryDimensions target_td,
+		MPP::TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
 	if (GlobalState::reverse_planning)
@@ -616,7 +616,7 @@ compute_a_and_t_from_s(double s, double target_v,
 
 
 void
-limit_tcp_phi(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
+limit_tcp_phi(MPP::TrajectoryControlParameters &tcp)
 {
 	double max_phi_during_planning = 1.0 * GlobalState::robot_config.max_phi;
 
@@ -630,10 +630,10 @@ limit_tcp_phi(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
+MPP::TrajectoryControlParameters
 fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = {};
+	MPP::TrajectoryControlParameters tcp = {};
 
 	tcp.s = gsl_vector_get(x, 0);
 	if (tcp.s < 0.01)
@@ -826,12 +826,12 @@ double
 my_f(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
+	MPP::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 
 	if (bad_tcp(tcp))
 		return (1000000.0);
 
-	TrajectoryLookupTable::TrajectoryDimensions td;
+	MPP::TrajectoryDimensions td;
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->beta_i);
 
 	my_params->plan_cost = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
@@ -895,12 +895,12 @@ double
 my_g(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
+	MPP::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 
 	if (bad_tcp(tcp))
 		return (1000000.0);
 
-	TrajectoryLookupTable::TrajectoryDimensions td;
+	MPP::TrajectoryDimensions td;
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->beta_i);
 
 	double path_to_lane_distance = 0.0;
@@ -990,8 +990,8 @@ my_gdf(const gsl_vector *x, void *params, double *g, gsl_vector *dg)
 
 void
 compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
+		MPP::TrajectoryControlParameters &tcp_seed,
+		MPP::TrajectoryDimensions target_td, double target_v)
 {
 	// (i) S = Vo*t + 1/2*a*t^2
 	// (ii) dS/dt = Vo + a*t
@@ -1016,8 +1016,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 void
 get_optimization_params(ObjectiveFunctionParams &params, double target_v,
-		TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions *target_td)
+		MPP::TrajectoryControlParameters *tcp_seed,
+		MPP::TrajectoryDimensions *target_td)
 {
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
 	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
@@ -1030,7 +1030,7 @@ get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 
 
 void
-get_missing_knots(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
+get_missing_knots(MPP::TrajectoryControlParameters &tcp)
 {
 	gsl_spline *phi_spline = get_phi_spline(tcp);
 
@@ -1044,9 +1044,9 @@ get_missing_knots(TrajectoryLookupTable::TrajectoryControlParameters &tcp)
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
+MPP::TrajectoryControlParameters
+optimized_lane_trajectory_control_parameters(MPP::TrajectoryControlParameters &tcp_seed,
+		MPP::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
 {
 	get_optimization_params(params, target_v, &tcp_seed, &target_td);
 
@@ -1091,7 +1091,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		status = gsl_multimin_test_gradient(s->gradient, G_EPSABS); // esta funcao retorna GSL_CONTINUE ou zero
 	} while ((status == GSL_CONTINUE) && (iter < 50));
 
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
+	MPP::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
 	if (bad_tcp(tcp))
 		tcp.valid = false;
@@ -1112,8 +1112,8 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params)
+MPP::TrajectoryControlParameters
+get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params)
 {
 	gsl_multimin_function_fdf my_func;
 
@@ -1152,7 +1152,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 	} while ((status == GSL_CONTINUE) && (iter < 50));
 
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
+	MPP::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
 	if (bad_tcp(tcp))
 		tcp.valid = false;
@@ -1167,17 +1167,17 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, double target_v)
+MPP::TrajectoryControlParameters
+get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed,
+		MPP::TrajectoryDiscreteDimensions tdd, double target_v)
 {
 	ObjectiveFunctionParams params;
 
-	TrajectoryLookupTable::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
+	MPP::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
 	get_optimization_params(params, target_v, &tcp_seed, &target_td);
 	compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, params);
+	MPP::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, params);
 
 	return (tcp);
 }
@@ -1194,8 +1194,8 @@ move_detailed_lane_to_front_axle(vector<carmen_robot_and_trailer_path_point_t> &
 
 
 double
-get_path_to_lane_distance(TrajectoryLookupTable::TrajectoryDimensions td,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp, ObjectiveFunctionParams *my_params)
+get_path_to_lane_distance(MPP::TrajectoryDimensions td,
+		MPP::TrajectoryControlParameters tcp, ObjectiveFunctionParams *my_params)
 {
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->beta_i);
 	double path_to_lane_distance = 0.0;
@@ -1208,10 +1208,10 @@ get_path_to_lane_distance(TrajectoryLookupTable::TrajectoryDimensions td,
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-get_tcp_from_detailed_lane(TrajectoryLookupTable::TrajectoryControlParameters tcp,
+MPP::TrajectoryControlParameters
+get_tcp_from_detailed_lane(MPP::TrajectoryControlParameters tcp,
 		vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
-		TrajectoryLookupTable::TrajectoryDimensions target_td)
+		MPP::TrajectoryDimensions target_td)
 {
 	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
 
@@ -1283,9 +1283,9 @@ get_tcp_from_detailed_lane(TrajectoryLookupTable::TrajectoryControlParameters tc
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters previous_tcp,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v,
+MPP::TrajectoryControlParameters
+get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters previous_tcp,
+		MPP::TrajectoryDimensions target_td, double target_v,
 		vector<carmen_robot_and_trailer_path_point_t> detailed_lane, bool use_lane)
 {
 	GlobalState::eliminate_path_follower = 0;
@@ -1303,7 +1303,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	else
 		params.use_lane = false;
 
-	TrajectoryLookupTable::TrajectoryControlParameters tcp_seed;
+	MPP::TrajectoryControlParameters tcp_seed;
 	if (!previous_tcp.valid)
 	{
 		get_optimization_params(params, target_v, &tcp_seed, &target_td);
@@ -1321,12 +1321,12 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	}
 
 #ifdef PUBLISH_PLAN_TREE
-	TrajectoryLookupTable::TrajectoryControlParameters  tcp_copy;
+	MPP::TrajectoryControlParameters  tcp_copy;
 #endif
 
 	// Precisa chamar o otimizador abaixo porque o seguinte (optimized_lane_trajectory_control_parameters()) pode ficar preso em minimo local
 	// quando de obstaculos. O otimizador abaixo nao considera obstaculos ou a detailed_lane.
-	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, params);
+	MPP::TrajectoryControlParameters tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, params);
 #ifdef PUBLISH_PLAN_TREE
 	tcp_copy = tcp_complete;
 #endif
@@ -1338,8 +1338,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	plot_phi_profile(tcp_complete);
 
 #ifdef PUBLISH_PLAN_TREE
-	TrajectoryLookupTable::TrajectoryDimensions td = target_td;
-	TrajectoryLookupTable::TrajectoryControlParameters tcp = tcp_complete;
+	MPP::TrajectoryDimensions td = target_td;
+	MPP::TrajectoryControlParameters tcp = tcp_complete;
 	tcp.valid = true;
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, td.v_i, td.beta_i);
 	print_lane(path, (char *) "caco.txt");

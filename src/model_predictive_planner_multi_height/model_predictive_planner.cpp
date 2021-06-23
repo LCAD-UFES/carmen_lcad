@@ -224,10 +224,10 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 	fflush(gnuplot_pipeMP);
 }
 
-TrajectoryLookupTable::TrajectoryDimensions
+MPP::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
-	TrajectoryLookupTable::TrajectoryDimensions td;
+	MPP::TrajectoryDimensions td;
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
@@ -575,13 +575,13 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 
 
 void
-write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, string label)
+write_tdd_to_file(FILE *problems, MPP::TrajectoryDiscreteDimensions tdd, string label)
 {
 	fprintf(problems, "tdd: %s dist: %d, theta: %d, phi_i: %d, v_i: %d, d_yaw: %d\n", label.c_str(),
 			tdd.dist, tdd.theta, tdd.phi_i, tdd.v_i, tdd.d_yaw);
 
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
-	TrajectoryLookupTable::TrajectoryDimensions td = convert_to_trajectory_dimensions(tdd, tcp);
+	MPP::TrajectoryControlParameters tcp;
+	MPP::TrajectoryDimensions td = convert_to_trajectory_dimensions(tdd, tcp);
 	fprintf(problems, "td: %s dist: %lf, theta: %lf, phi_i: %lf, v_i: %lf, d_yaw: %lf\n", label.c_str(),
 			td.dist, td.theta, td.phi_i, td.v_i, td.d_yaw);
 
@@ -679,12 +679,12 @@ put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &paths, 
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
+MPP::TrajectoryControlParameters
 get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman_path_point_t> > paths,
-		const vector<TrajectoryLookupTable::TrajectoryControlParameters> otcps)
+		const vector<MPP::TrajectoryControlParameters> otcps)
 {
 	double shorter_path_size = 1000.0;
-	TrajectoryLookupTable::TrajectoryControlParameters best_otcp;
+	MPP::TrajectoryControlParameters best_otcp;
 
 	for (int i = 0; i < num_paths; i++)
 	{
@@ -700,13 +700,13 @@ get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman
 
 
 bool
-get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
-		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
-		TrajectoryLookupTable::TrajectoryDimensions td)
+get_tcp_from_td(MPP::TrajectoryControlParameters &tcp,
+		MPP::TrajectoryControlParameters previous_good_tcp,
+		MPP::TrajectoryDimensions td)
 {
 	if (!previous_good_tcp.valid)
 	{
-		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
+		MPP::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
 		if (!has_valid_discretization(tdd))
 		{
 			printf("Invalid discretization!!!!\n");
@@ -760,8 +760,8 @@ get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_t
 bool
 get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		vector<carmen_ackerman_path_point_t> &path_local,
-		TrajectoryLookupTable::TrajectoryControlParameters otcp,
-		TrajectoryLookupTable::TrajectoryDimensions td,
+		MPP::TrajectoryControlParameters otcp,
+		MPP::TrajectoryDimensions td,
 		Pose *localizer_pose)
 {
 	if (GlobalState::use_mpc)
@@ -846,8 +846,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		carmen_behavior_selector_road_profile_message *goal_list_message)
 {
 	vector<carmen_ackerman_path_point_t> lane_in_local_pose, detailed_lane;
-	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp;
-	vector<TrajectoryLookupTable::TrajectoryControlParameters> otcps;
+	static MPP::TrajectoryControlParameters previous_good_tcp;
+	vector<MPP::TrajectoryControlParameters> otcps;
 	static bool first_time = true;
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
@@ -908,13 +908,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			else
 				use_lane = false;
 
-			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
-			TrajectoryLookupTable::TrajectoryControlParameters tcp;
+			MPP::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
+			MPP::TrajectoryControlParameters tcp;
 			// previous_good_tcp.valid = false;
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
-			TrajectoryLookupTable::TrajectoryControlParameters otcp;
+			MPP::TrajectoryControlParameters otcp;
 			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
 					use_lane, previous_good_tcp.valid);
 			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
@@ -957,7 +957,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	//	}
 
 	int shorter_path = -1;
-	TrajectoryLookupTable::TrajectoryControlParameters best_otcp;
+	MPP::TrajectoryControlParameters best_otcp;
 	best_otcp =	get_shorter_path(shorter_path, (lastOdometryVector.size() * goalPoseVector.size()), paths, otcps);
 
 	if (shorter_path >= 0)
