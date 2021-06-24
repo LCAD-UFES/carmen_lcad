@@ -85,7 +85,7 @@ initialize_python_context()
 
 }
 
-float*
+unsigned char*
 libdpt_process_image(int width, int height, unsigned char *image, double timestamp)
 {
 	// printf("libdpt_process_image\n");
@@ -106,7 +106,7 @@ libdpt_process_image(int width, int height, unsigned char *image, double timesta
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	float*result_array = (float*)PyArray_DATA(python_result_array);
+	unsigned char*result_array = (unsigned char*)PyArray_DATA(python_result_array);
 
 	if (PyErr_Occurred())
         PyErr_Print();

@@ -195,7 +195,7 @@ def write_depth(path, depth, bits=1, absolute_depth=False):
     elif bits == 2:
         cv2.imwrite(path + ".png", out.astype("uint16"), [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
-    return
+    return out.astype("uint16")
 
 
 def write_segm_img(path, image, labels, palette="detail", alpha=0.5):

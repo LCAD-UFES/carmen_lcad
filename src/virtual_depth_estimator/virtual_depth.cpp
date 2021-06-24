@@ -168,12 +168,18 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*y += offset_y;
 }
 
+double median(vector<double> &v)
+{
+    size_t n = v.size() / 2;
+    nth_element(v.begin(), v.begin()+n, v.end());
+    return v[n];
+}
 /** The goal is change this function from get point to generate points inside bounding boxes*/
 vector<vector<image_cartesian>>
 get_points_inside_bounding_boxes(vector<movable_object> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
 	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
-
+	
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
 		vector<image_cartesian> lasers_points_inside_bounding_box;
@@ -184,8 +190,10 @@ get_points_inside_bounding_boxes(vector<movable_object> &predictions, vector<ima
 	{
 		double min_dist = 0.0;
 		int min_dist_index = -1;
+		
 		for (unsigned int i = 0; i < predictions.size(); i++)
 		{
+			vector<double> mediana;
 			if (predictions[i].active && (	(unsigned int) velodyne_points_vector[j].image_x >  predictions[i].x &&
 											(unsigned int) velodyne_points_vector[j].image_x < (predictions[i].x + predictions[i].w) &&
 											(unsigned int) velodyne_points_vector[j].image_y >  predictions[i].y &&
@@ -194,6 +202,7 @@ get_points_inside_bounding_boxes(vector<movable_object> &predictions, vector<ima
 				double delta_x =  get_movable_object_x(predictions[i]);
 				double delta_y =  get_movable_object_y(predictions[i]);
 				double actual_dist = sqrt(delta_x*delta_x+delta_y*delta_y);
+				mediana.push_back(predictions[i].lidar_range);
 				if ( actual_dist < min_dist || min_dist_index==-1)
 				{
 					min_dist = actual_dist;
@@ -201,9 +210,17 @@ get_points_inside_bounding_boxes(vector<movable_object> &predictions, vector<ima
 				}
 				//laser_list_inside_each_bounding_box[i].push_back(velodyne_points_vector[j]);
 			}
+			if(mediana.size()>0)
+			{
+				predictions[i].lidar_range = median(mediana);
+			}
+			else{
+				// predictions[i].lidar_range = -1.0;
+			}
 		}
 		if (min_dist_index > -1)
 		{
+			
 			laser_list_inside_each_bounding_box[min_dist_index].push_back(velodyne_points_vector[j]);
 		}
 	}
@@ -357,24 +374,21 @@ estimate_distance(double image_height, double object_height, int camera_index)
 }
 
 double
-depth_distance(double u, double v, double d, int camera_index)
+depth_distance(double disparity, int camera_index)
 {
-	double x, y;
-	x = (u - camera_params[camera_index].cu_factor) * d / camera_params[camera_index].fx_factor;
-	y = (v - camera_params[camera_index].cv_factor) * d / camera_params[camera_index].fy_factor;
-	double distance = sqrt(x*x+y*y);
+	double distance = (camera_params[camera_index].baseline * camera_params[camera_index].focal_length)/disparity;
 	return distance;
 }
 
 void
 show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, 
-		unsigned int crop_width, unsigned int crop_height, double dist_to_movable_object_track, int camera_index)
+		unsigned int crop_width, unsigned int crop_height, double dist_to_movable_object_track, unsigned char*depth_pred, int camera_index)
 {
 	char info[128];
 	double distance_to_object;
-
-
+	cv::Mat imgdepth = cv::Mat(image.rows, image.cols, CV_16U, depth_pred);
+	
     cvtColor(image, image, COLOR_RGB2BGR);
 
 	sprintf(info, "%dx%d", image.cols, image.rows);
@@ -402,13 +416,18 @@ show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> 
     {
 		if (movable_object[i].active)
     	{
-			distance_to_object = estimate_distance (image.rows, movable_object[i].h, camera_index);
-			sprintf(info, "%.2f %d %d %lf", movable_object[i].velocity, movable_object[i].track_id, movable_object[i].obj_id, distance_to_object);
+			// distance_to_object = estimate_distance (image.rows, movable_object[i].h, camera_index);
+			sprintf(info, "[%d] %.2lf", movable_object[i].track_id, movable_object[i].estimated_range);
 
 			rectangle(image, Point(movable_object[i].x, movable_object[i].y), Point((movable_object[i].x + movable_object[i].w), (movable_object[i].y + movable_object[i].h)),
 							Scalar(255, 255, 0), 4);
+			
+			rectangle(imgdepth, Point(movable_object[i].x, movable_object[i].y), Point((movable_object[i].x + movable_object[i].w), (movable_object[i].y + movable_object[i].h)),
+							Scalar(255, 255, 0), 4);
 
 			putText(image, info, Point(movable_object[i].x + 1, movable_object[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+
+			putText(imgdepth, info, Point(movable_object[i].x + 1, movable_object[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     	}
 	}
 
@@ -422,7 +441,11 @@ show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> 
 	// display_lidar(image, points, 0, 255, 0);
 
 	resize(image, image, Size(image.cols * resize_factor, image.rows * resize_factor));
-    imshow("Virtual LiDAR Object Detector", image);
+    imshow("Virtual Object Detector", image);
+
+	imshow("Depth Object Detector", imgdepth);
+
+	// cvtColor(image, image, COLOR_RGB2BGR);
     //imwrite("Image.jpg", image);
     waitKey(1);
 }
@@ -732,11 +755,13 @@ vector<image_cartesian>
 velodyne_camera_calibration_fuse_virtual_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
                                               carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose, unsigned int image_width,
 											  unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height,
-											  vector<movable_object> &predictions, int camera_index, float *preds)
+											  vector<movable_object> &predictions, int camera_index, unsigned char *depth_pred)
 {
 	std::vector<image_cartesian> points;
 	double horizontal_angle = 0.0, vertical_angle = 0.0, range = 0.0;
 	unsigned int image_x = 0, image_y = 0;
+
+	cv::Mat imgdepth = cv::Mat(image_height, image_width, CV_16U, depth_pred);
 
 	unsigned int max_x = crop_x + crop_width;
 	unsigned int max_y = crop_y + crop_height;
@@ -769,8 +794,9 @@ velodyne_camera_calibration_fuse_virtual_lidar(carmen_velodyne_partial_scan_mess
 				predictions[obj_index].estimated_range = estimate_distance (image_height, predictions[obj_index].h, camera_index);
 
 				// Out of LiDAR range, trust in camera
-				if (range < 0.0 || range >= 80.0) {
+				if (range < 0.5 || range >= 80.0) {
 					range = predictions[obj_index].estimated_range;
+					predictions[obj_index].lidar_range = 0.0;
 				}
 				
 				// if (range <= MIN_RANGE || range >= MAX_RANGE)
@@ -797,9 +823,9 @@ velodyne_camera_calibration_fuse_virtual_lidar(carmen_velodyne_partial_scan_mess
 				/*DPT*/
 				unsigned int pred_x = (predictions[obj_index].x + (predictions[obj_index].w/2));
 				unsigned int pred_y = (predictions[obj_index].y + (predictions[obj_index].h/2));
-				float scale = 0.0305;
 				//printf("x: %d y: %d pred_x: %d pred_y: %d pred: %.2f\n", predictions[obj_index].x, predictions[obj_index].y, pred_x, pred_y, preds[pred_x * image_width + pred_y * image_height]);
-				predictions[obj_index].depth_range = preds[pred_x * image_width + pred_y * image_height] * scale;
+				double disparity = (double) imgdepth.at<unsigned char>(pred_x,pred_y);
+				predictions[obj_index].depth_range =  disparity; //depth_distance(disparity, camera_index);
 
 				// predictions[obj_index].depth_range = depth_distance(predictions[obj_index].x, predictions[obj_index].y, preds[predictions[obj_index].y][predictions[obj_index].x], camera_index);
 				/*End DPT*/
@@ -871,15 +897,15 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 	predictions = filter_predictions_of_interest(predictions);
 
 	/*DPT*/
-	float *preds;
-	preds = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, timestamp);
+	unsigned char *depth_pred;
+	depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, timestamp);
 	/*End of DPT*/
 	
 	insert_missing_movable_objects_in_the_track(predictions);
 	
 	/* Piumbini: Generate these points with virtual lidar, using estimated distance */
 	points = velodyne_camera_calibration_fuse_virtual_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
-				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, movable_object_tracks, camera_index, preds);
+				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, movable_object_tracks, camera_index, depth_pred);
 	
 	// points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
 	// 			original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
@@ -900,11 +926,11 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
 			update_world_position(&movable_object_tracks[i], positions[i].cartesian_x,positions[i].cartesian_y, timestamp);
-			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f - LiDAR %lf | Estimated %lf | Depth %lf\n",
+			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.2f | %.2f - LiDAR %.2lf | Estimated %.2lf | Depth %.2lf\n",
 					movable_object_tracks[i].track_id, movable_object_tracks[i].velocity,movable_object_tracks[i].orientation,abs(movable_object_tracks[i].orientation - globalpos_msg->globalpos.theta), movable_object_tracks[i].lidar_range, movable_object_tracks[i].estimated_range, movable_object_tracks[i].depth_range );
 		}
 	}
-	clean_movable_objects(1.0);
+	clean_movable_objects(0.6);
 
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(movable_object_tracks, filtered_points);
 
@@ -912,7 +938,7 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
-	show_detections(open_cv_image, movable_object_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_movable_object_track, camera_index);
+	show_detections(open_cv_image, movable_object_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_movable_object_track, depth_pred, camera_index);
 	
 	return 0;
 }
