@@ -798,10 +798,9 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 			detailed_lane.clear();
 	}
 
-	MPP::TrajectoryControlParameters otcp;
 	bool use_lane = true;
 	MPP::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, last_odometry, goal_pose);
-	otcp = get_complete_optimized_trajectory_control_parameters(previous_good_tcp, td, target_v, detailed_lane, use_lane);
+	MPP::TrajectoryControlParameters otcp = get_complete_optimized_trajectory_control_parameters(previous_good_tcp, td, target_v, detailed_lane, use_lane);
 	if (otcp.valid)
 	{
 		vector<carmen_robot_and_trailer_path_point_t> path;

@@ -43,7 +43,7 @@ PUBLIC_BINARIES = model_predictive_planner
 PUBLIC_LIBRARIES = libmodel_predictive_planner_interface.a libmodel_predictive_planner_optimizer.a
 PUBLIC_INCLUDES = model_predictive_planner_interface.h model_predictive_planner_message.h rrt_node.h robot_state.h command.h pose.h
 
-TARGETS = libcarmodel model_predictive_planner libmodel_predictive_planner_interface.a
+TARGETS = libcarmodel model_predictive_planner libmodel_predictive_planner_interface.a libmodel_predictive_planner_optimizer.a
 
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
@@ -64,7 +64,6 @@ global_state: global_state.o
 publisher_util: publisher_util.o
 
 util: util.o
-
 
 pose: pose.o
 

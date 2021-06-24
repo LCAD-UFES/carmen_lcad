@@ -29,15 +29,12 @@ copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_rob
 
 #define G_STEP_SIZE	0.001
 #define F_STEP_SIZE	G_STEP_SIZE
-#define H_STEP_SIZE	G_STEP_SIZE
 
 #define G_TOL		0.01
 #define F_TOL		G_TOL
-#define H_TOL		G_TOL
 
 #define G_EPSABS	0.016
 #define F_EPSABS	G_EPSABS
-#define H_EPSABS	G_EPSABS
 
 bool use_obstacles = true;
 
@@ -868,11 +865,11 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_memcpy(x_h, v);
 
 	double h = 0.00005;
-	double f_x = my_f(v, params);
+	double f_x = my_params->my_f(v, params);
 	for (int i = 0; i < size; i++)
 	{
 		gsl_vector_set(x_h, i, gsl_vector_get(v, i) + h);
-		double f_x_h = my_f(x_h, params);
+		double f_x_h = my_params->my_f(x_h, params);
 		double d_f_x_h = (f_x_h - f_x) / h;
 		gsl_vector_set(df, i, d_f_x_h);
 		gsl_vector_set(x_h, i, gsl_vector_get(v, i));
@@ -885,7 +882,8 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 void
 my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 {
-	*f = my_f(x, params);
+	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
+	*f = my_params->my_f(x, params);
 	my_df(x, params, df);
 }
 
@@ -956,39 +954,6 @@ my_g(const gsl_vector *x, void *params)
 
 
 void
-my_dg(const gsl_vector *v, void *params, gsl_vector *df)
-{
-	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
-	int size = my_params->tcp_seed->k.size();
-
-	gsl_vector *x_h;
-	x_h = gsl_vector_alloc(size);
-	gsl_vector_memcpy(x_h, v);
-
-	double g_x = my_g(v, params);
-	double h = 0.00005;
-	for (int i = 0; i < size; i++)
-	{
-		gsl_vector_set(x_h, i, gsl_vector_get(v, i) + h);
-		double g_x_h = my_g(x_h, params);
-		double d_g_x_h = (g_x_h - g_x) / h;
-		gsl_vector_set(df, i, d_g_x_h);
-		gsl_vector_set(x_h, i, gsl_vector_get(v, i));
-	}
-
-	gsl_vector_free(x_h);
-}
-
-
-void
-my_gdf(const gsl_vector *x, void *params, double *g, gsl_vector *dg)
-{
-	*g = my_g(x, params);
-	my_dg(x, params, dg);
-}
-
-
-void
 compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 		MPP::TrajectoryControlParameters &tcp_seed,
 		MPP::TrajectoryDimensions target_td, double target_v)
@@ -1017,7 +982,9 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 void
 get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 		MPP::TrajectoryControlParameters *tcp_seed,
-		MPP::TrajectoryDimensions *target_td)
+		MPP::TrajectoryDimensions *target_td,
+		double max_plan_cost,
+		double (* my_f) (const gsl_vector  *x, void *params))
 {
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
 	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
@@ -1026,6 +993,11 @@ get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 	params.tcp_seed = tcp_seed;
 	params.target_v = target_v;
 	params.path_size = 0;
+	params.my_f = my_f;
+	params.max_plan_cost = max_plan_cost;
+	params.o_step_size = F_STEP_SIZE;
+	params.o_tol = F_TOL;
+	params.o_epsabs = F_EPSABS;
 }
 
 
@@ -1058,74 +1030,6 @@ get_tcp_with_n_knots(MPP::TrajectoryControlParameters &tcp, int n)
 
 
 MPP::TrajectoryControlParameters
-optimized_lane_trajectory_control_parameters(MPP::TrajectoryControlParameters &tcp_seed,
-		MPP::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
-{
-	get_optimization_params(params, target_v, &tcp_seed, &target_td);
-
-	gsl_multimin_function_fdf my_func;
-
-	// O phi inicial, que eh guardado em tcp_seed.k[0], nao eh otimizado, mas usamos o tamanho de k aqui
-	// pois as variaveis otimizadas incluem o s. Logo, o tamanho do problema fica igual ao numero de nos mais o phi
-	// inicial, que eh guardado em k[0].
-	my_func.n = tcp_seed.k.size();
-	my_func.f = my_g;
-	my_func.df = my_dg;
-	my_func.fdf = my_gdf;
-	my_func.params = &params;
-
-	/* Starting point, x */
-	gsl_vector *x = gsl_vector_alloc(tcp_seed.k.size());
-	gsl_vector_set(x, 0, tcp_seed.s);
-	for (unsigned int i = 1; i < tcp_seed.k.size(); i++)
-		gsl_vector_set(x, i, tcp_seed.k[i]);
-
-	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
-	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, tcp_seed.k.size());
-
-	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, G_STEP_SIZE, G_TOL);
-
-	int iter = 0;
-	int status;
-	do
-	{
-		iter++;
-
-		status = gsl_multimin_fdfminimizer_iterate(s);
-
-//		print_ws = 1;
-//		my_g(s->x, &params);
-//		print_ws = 0;
-
-		if (status)
-			break;
-
-		status = gsl_multimin_test_gradient(s->gradient, G_EPSABS); // esta funcao retorna GSL_CONTINUE ou zero
-	} while ((status == GSL_CONTINUE) && (iter < 50));
-
-	MPP::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
-
-	if (bad_tcp(tcp))
-		tcp.valid = false;
-
-	if (tcp.tt < 0.05)
-		tcp.valid = false;
-
-	if (params.plan_cost > 2.5) // 5.5) // 1.5)
-		tcp.valid = false;
-
-//	printf("iter %d, r %lf, cost %lf, dls %d, status %d, valid %d\n", iter, s->f, params.plan_cost, (int) params.detailed_lane.size(), status, tcp.valid);
-//	fflush(stdout);
-
-	gsl_multimin_fdfminimizer_free(s);
-	gsl_vector_free(x);
-
-	return (tcp);
-}
-
-
-MPP::TrajectoryControlParameters
 get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params)
 {
 	gsl_multimin_function_fdf my_func;
@@ -1134,7 +1038,7 @@ get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp
 	// pois as variaveis otimizadas incluem o s. Logo, o tamanho do problema fica igual ao numero de nos mais o phi
 	// inicial, que eh guardado em k[0].
 	my_func.n = tcp_seed.k.size();
-	my_func.f = my_f;
+	my_func.f = params.my_f;
 	my_func.df = my_df;
 	my_func.fdf = my_fdf;
 	my_func.params = &params;
@@ -1148,7 +1052,7 @@ get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, tcp_seed.k.size());
 
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, F_STEP_SIZE, F_TOL);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, params.o_step_size, params.o_tol);
 
 	int iter = 0;
 	int status;
@@ -1161,7 +1065,7 @@ get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp
 		if (status)
 			break;
 
-		status = gsl_multimin_test_gradient(s->gradient, F_EPSABS); // esta funcao retorna GSL_CONTINUE ou zero
+		status = gsl_multimin_test_gradient(s->gradient, params.o_epsabs); // esta funcao retorna GSL_CONTINUE ou zero
 
 	} while ((status == GSL_CONTINUE) && (iter < 50));
 
@@ -1170,27 +1074,11 @@ get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp
 	if (bad_tcp(tcp))
 		tcp.valid = false;
 
-	if ((tcp.tt < 0.05) || (params.plan_cost > 1.0))// 0.25)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+	if ((tcp.tt < 0.05) || (params.plan_cost > params.max_plan_cost)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
 		tcp.valid = false;
 
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
-
-	return (tcp);
-}
-
-
-MPP::TrajectoryControlParameters
-get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed,
-		MPP::TrajectoryDiscreteDimensions tdd, double target_v)
-{
-	ObjectiveFunctionParams params;
-
-	MPP::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
-	get_optimization_params(params, target_v, &tcp_seed, &target_td);
-	compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
-
-	MPP::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, params);
 
 	return (tcp);
 }
@@ -1347,7 +1235,7 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 	MPP::TrajectoryControlParameters tcp_seed;
 	if (!previous_tcp.valid)
 	{
-		get_optimization_params(params, target_v, &tcp_seed, &target_td);
+		get_optimization_params(params, target_v, &tcp_seed, &target_td, 1.0, my_f);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 		tcp_seed = get_n_knots_tcp_from_detailed_lane(detailed_lane, 3,
 				target_td.v_i, target_td.phi_i, target_td.d_yaw, tcp_seed.a,  tcp_seed.s, tcp_seed.tt);	// computa tcp com tres nos
@@ -1355,7 +1243,7 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 	else
 	{
 		tcp_seed = reduce_tcp_to_3_knots(previous_tcp);
-		get_optimization_params(params, target_v, &tcp_seed, &target_td);
+		get_optimization_params(params, target_v, &tcp_seed, &target_td, 1.0, my_f);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 	}
 
@@ -1372,7 +1260,8 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 
 	// A funcao acima soh usa tcps com tres nos
 	get_tcp_with_n_knots(tcp_complete, 4);
-	tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
+	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, my_g);
+	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
 
 //	plot_phi_profile(tcp_complete);
 

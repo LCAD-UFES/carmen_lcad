@@ -150,6 +150,11 @@ struct ObjectiveFunctionParams
 	bool use_lane;
 	int optimize_time;
 	double plan_cost;
+	double max_plan_cost;
+	double (* my_f) (const gsl_vector  *x, void *params);
+	double o_step_size;
+	double o_tol;
+	double o_epsabs;
 };
 
 
@@ -184,14 +189,11 @@ void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_acker
 
 void print_lane(vector<carmen_robot_and_trailer_path_point_t> path, char *file_name);
 
-MPP::TrajectoryControlParameters get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed,
-		MPP::TrajectoryDiscreteDimensions &tdd, double target_v, vector<carmen_ackerman_path_point_t> optimized_path);
-
-MPP::TrajectoryControlParameters get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed,
-		MPP::TrajectoryDiscreteDimensions tdd, double target_v);
-
 MPP::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters previous_good_tcp,
 		MPP::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
 		bool use_lane);
+
+MPP::TrajectoryControlParameters
+get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params);
 
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */
