@@ -4,7 +4,7 @@
 void
 initialize_python_context();
 
-float*
+unsigned char*
 libdpt_process_image(int width, int height, unsigned char *image, double timestamp);
 
 #endif
