@@ -416,7 +416,7 @@ get_phi_spline(MPP::TrajectoryControlParameters tcp)
 	vector<double> knots_y;
 	for (unsigned int i = 0; i < tcp.k.size(); i++)
 	{
-		double x = (tcp.tt / (double) ((tcp.k.size() - 1))) * (double) (i);
+		double x = (tcp.tt / (double) (tcp.k.size() - 1)) * (double) (i);
 		double y = tcp.k[i];
 		knots_x.push_back(x);
 		knots_y.push_back(y);
@@ -1030,15 +1030,28 @@ get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 
 
 void
-get_missing_knots(MPP::TrajectoryControlParameters &tcp)
+get_tcp_with_n_knots(MPP::TrajectoryControlParameters &tcp, int n)
 {
 	gsl_spline *phi_spline = get_phi_spline(tcp);
-
-	tcp.k.push_back(tcp.k[2]);
-	tcp.k[2] = tcp.k[1];
 	gsl_interp_accel *acc = gsl_interp_accel_alloc();
-	tcp.k[1] = gsl_spline_eval(phi_spline, tcp.tt / 4.0, acc);
 
+	if (n == 4)
+	{
+		tcp.k.push_back(tcp.k[2]);
+		tcp.k[2] = tcp.k[1];
+		tcp.k[1] = gsl_spline_eval(phi_spline, tcp.tt / 4.0, acc);
+	}
+	else
+	{
+		tcp.k = {};
+		for (int i = 0; i < (n - 1); i++)
+		{
+			double t = (tcp.tt / (double) (n - 1)) * (double) (i);
+			tcp.k.push_back(gsl_spline_eval(phi_spline, t, acc));
+		}
+		tcp.k.push_back(gsl_spline_eval(phi_spline, tcp.tt, acc));
+
+	}
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
 }
@@ -1208,17 +1221,22 @@ get_path_to_lane_distance(MPP::TrajectoryDimensions td,
 }
 
 
+
+
 MPP::TrajectoryControlParameters
-get_tcp_from_detailed_lane(MPP::TrajectoryControlParameters tcp,
-		vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
-		MPP::TrajectoryDimensions target_td)
+get_n_knots_tcp_from_detailed_lane(vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
+		int n, double v_i, double phi_i, double d_yaw, double a, double s, double tt)
 {
+	MPP::TrajectoryControlParameters tcp = {};
 	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
 
 	tcp.valid = true;
-	tcp.vf = target_td.v_i + tcp.a * tcp.tt;
+	tcp.a = a;
+	tcp.s = s;
+	tcp.tt = tt;
+	tcp.vf = v_i + tcp.a * tcp.tt;
 
-	unsigned int size = 3;
+	unsigned int size = n;
 
 	vector<double> knots_x;
 	for (unsigned int i = 0; i < size; i++)
@@ -1229,7 +1247,7 @@ get_tcp_from_detailed_lane(MPP::TrajectoryControlParameters tcp,
 	knots_x[size - 1] = tcp.tt; // Para evitar que erros de arredondamento na conta de x, acima, atrapalhe a leitura do ultimo ponto no spline
 
 	tcp.k = {};
-	tcp.k.push_back(target_td.phi_i);
+	tcp.k.push_back(phi_i);
 	if (detailed_lane.size() >= 3)
 	{
 		unsigned int j = 1;
@@ -1237,7 +1255,7 @@ get_tcp_from_detailed_lane(MPP::TrajectoryControlParameters tcp,
 		for (unsigned int i = 1; i < size; i++)
 		{
 			double t = knots_x[i];
-			double s = fabs(target_td.v_i * t + 0.5 * tcp.a * t * t);
+			double s = fabs(v_i * t + 0.5 * tcp.a * t * t);
 			unsigned int j_ini = j;
 			double s_ini = s_consumed;
 			for ( ; j < detailed_lane.size() - 1; j++)
@@ -1260,12 +1278,12 @@ get_tcp_from_detailed_lane(MPP::TrajectoryControlParameters tcp,
 	else
 	{
 		double s_ini = 0.0;
-		double s;
+		double s = 0.0;
 		for (unsigned int i = 1; i < size; i++)
 		{
 			double t = knots_x[i];
-			s = fabs(target_td.v_i * t + 0.5 * tcp.a * t * t);
-			double delta_theta = carmen_normalize_theta((target_td.d_yaw / tcp.tt) * t);
+			s = fabs(v_i * t + 0.5 * tcp.a * t * t);
+			double delta_theta = carmen_normalize_theta((d_yaw / tcp.tt) * t);
 			double phi = atan((L * delta_theta) / (s - s_ini));
 
 			if (GlobalState::reverse_planning)
@@ -1277,6 +1295,29 @@ get_tcp_from_detailed_lane(MPP::TrajectoryControlParameters tcp,
 		}
 
 		tcp.sf = s;
+	}
+
+	return (tcp);
+}
+
+
+MPP::TrajectoryControlParameters
+reduce_tcp_to_3_knots(MPP::TrajectoryControlParameters previous_tcp)
+{
+	MPP::TrajectoryControlParameters tcp = previous_tcp;
+
+	if (previous_tcp.k.size() == 4)
+	{
+		tcp.k[1] = tcp.k[2];
+		tcp.k[2] = tcp.k[3];
+		tcp.k.pop_back();
+	}
+	else
+	{
+		tcp.k = {};
+		tcp.k.push_back(previous_tcp.k[0]);
+		tcp.k.push_back(previous_tcp.k[tcp.k.size() / 2]);
+		tcp.k.push_back(previous_tcp.k[tcp.k.size() - 1]);
 	}
 
 	return (tcp);
@@ -1308,14 +1349,12 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 	{
 		get_optimization_params(params, target_v, &tcp_seed, &target_td);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
-		tcp_seed = get_tcp_from_detailed_lane(tcp_seed, detailed_lane, target_td);
+		tcp_seed = get_n_knots_tcp_from_detailed_lane(detailed_lane, 3,
+				target_td.v_i, target_td.phi_i, target_td.d_yaw, tcp_seed.a,  tcp_seed.s, tcp_seed.tt);	// computa tcp com tres nos
 	}
 	else
 	{
-		tcp_seed = previous_tcp;
-		tcp_seed.k[1] = tcp_seed.k[2];
-		tcp_seed.k[2] = tcp_seed.k[3];
-		tcp_seed.k.pop_back();
+		tcp_seed = reduce_tcp_to_3_knots(previous_tcp);
 		get_optimization_params(params, target_v, &tcp_seed, &target_td);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 	}
@@ -1330,9 +1369,9 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 #ifdef PUBLISH_PLAN_TREE
 	tcp_copy = tcp_complete;
 #endif
-	// A funcao acima nao usa k1
-	get_missing_knots(tcp_complete);
 
+	// A funcao acima soh usa tcps com tres nos
+	get_tcp_with_n_knots(tcp_complete, 4);
 	tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
 //	plot_phi_profile(tcp_complete);
