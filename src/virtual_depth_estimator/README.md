@@ -26,7 +26,7 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
 3) Criando a virtualenv para instalar as dependências:
 ``` cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
 ```
-``` make virtualenv
+``` ./create_env.sh
 ```
 
 4) Compilando
