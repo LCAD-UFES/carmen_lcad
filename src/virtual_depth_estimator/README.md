@@ -54,16 +54,16 @@ Terminal 2
     ```
 
 Terminal 3:
-4.1) Ative a venv
+4.1) Ative a venv:
     ```shell
         source $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/venv/bin/activate
     ```
-4.2)  Executando o código
+4.2)  Execute o código
     ```shell
         (venv) > ./virtual_depth -camera3 1
     ```
 
 
-Vídeo com a execução:
+**Vídeo com a execução:**
 https://www.youtube.com/watch?v=0iY1kU2bWpI&t=761s
 
