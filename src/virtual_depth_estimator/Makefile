@@ -17,7 +17,7 @@ LINK = g++
 # LFLAGS += `python2.7-config --libs` -ladabins
 
 # DPT
-IFLAGS += -I/usr/include/python3.7
+IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
 LFLAGS += `python3.7-config --libs` -ldpt
 
 
