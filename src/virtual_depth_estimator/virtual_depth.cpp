@@ -5,37 +5,42 @@
 #include <vector>
 #include <algorithm>
 #include <carmen/libdpt.h>
-#include <prob_measurement_model.h>
-#include <prob_map.h>
-#include <prob_interface.h>
-#include <prob_measurement_model.h>
-#include <prob_transforms.h>
-#include <carmen/fused_odometry_interface.h>
+#include <carmen/carmen_darknet4_interface.hpp>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_camera_calibration.h>
-#include <carmen/laser_ldmrs_interface.h>
-#include <carmen/laser_ldmrs_utils.h>
-#include <carmen/rotation_geometry.h>
-#include <carmen/mapper_interface.h>
-#include <carmen/stereo_velodyne.h>
-#include <carmen/stereo_velodyne_interface.h>
-#include <carmen/grid_mapping.h>
-#include <carmen/stereo_mapping_interface.h>
-#include <carmen/map_server_interface.h>
-#include <carmen/rddf_messages.h>
-#include <carmen/rddf_interface.h>
-#include <carmen/rddf_util.h>
-#include <carmen/ultrasonic_filter_interface.h>
-#include <carmen/parking_assistant_interface.h>
-//#include <carmen/librange.h>
-#include <carmen/carmen_darknet4_interface.hpp>
+#include <carmen/moving_objects_messages.h>
+#include <carmen/moving_objects_interface.h>
+#include "dbscan.h"
+#include "movable_object.h"
+
+// #include <prob_measurement_model.h>
+// #include <prob_map.h>
+// #include <prob_interface.h>
+// #include <prob_measurement_model.h>
+// #include <prob_transforms.h>
+// #include <carmen/fused_odometry_interface.h>
+// #include <carmen/laser_ldmrs_interface.h>
+// #include <carmen/laser_ldmrs_utils.h>
+// #include <carmen/rotation_geometry.h>
+// #include <carmen/mapper_interface.h>
+// #include <carmen/stereo_velodyne.h>
+// #include <carmen/stereo_velodyne_interface.h>
+// #include <carmen/grid_mapping.h>
+// #include <carmen/stereo_mapping_interface.h>
+// #include <carmen/map_server_interface.h>
+// #include <carmen/rddf_messages.h>
+// #include <carmen/rddf_interface.h>
+// #include <carmen/rddf_util.h>
+// #include <carmen/ultrasonic_filter_interface.h>
+// #include <carmen/parking_assistant_interface.h>
+// #include <carmen/librange.h>
+
 #include <omp.h>
-#include <carmen/mapper.h>
+// #include <carmen/mapper.h>
 #include <sys/stat.h>
 
 // #include "message_interpolation.cpp"
-#include "dbscan.h"
-#include "movable_object.h"
+
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -44,9 +49,6 @@
 #include <fstream> //Para salvar arquivos
 #include <list> 
 #include <iterator> 
-
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-
 
 // //YOLO global variables
 char **classes_names;
@@ -242,7 +244,6 @@ compute_detected_objects_poses(vector<vector<image_cartesian>> filtered_points)
 			point.cartesian_x = -999.0;    // This error code is set, probably the object is out of the LiDAR's range
 			point.cartesian_y = -999.0;
 			point.cartesian_z = -999.0;
-			point.lidar_range = -999.0;
 			//printf("Empty Bbox\n");
 		}
 		else
@@ -250,25 +251,22 @@ compute_detected_objects_poses(vector<vector<image_cartesian>> filtered_points)
 			point.cartesian_x = 0.0;
 			point.cartesian_y = 0.0;
 			point.cartesian_z = 0.0;
-			point.lidar_range = 0.0;
-			point.estimated_range = 0.0;
-			point.depth_range = 0.0;
 
 			for(j = 0; j < filtered_points[i].size(); j++)
 			{
 				point.cartesian_x += filtered_points[i][j].cartesian_x;
 				point.cartesian_y += filtered_points[i][j].cartesian_y;
 				point.cartesian_z += filtered_points[i][j].cartesian_z;
-				point.lidar_range += filtered_points[i][j].lidar_range;
-				point.estimated_range += filtered_points[i][j].estimated_range;
-				point.depth_range += filtered_points[i][j].depth_range;
+				// point.lidar_range += filtered_points[i][j].lidar_range;
+				// point.estimated_range += filtered_points[i][j].estimated_range;
+				// point.depth_range += filtered_points[i][j].depth_range;
 			}
 			point.cartesian_x = point.cartesian_x / j;
 			point.cartesian_y = point.cartesian_y / j;
 			point.cartesian_z = point.cartesian_z / j;
-			point.lidar_range = point.lidar_range / j;
-			point.estimated_range = point.estimated_range / j;
-			point.depth_range = point.depth_range / j;
+			// point.lidar_range = point.lidar_range / j;
+			// point.estimated_range = point.estimated_range / j;
+			// point.depth_range = point.depth_range / j;
 		}
 		objects_positions.push_back(point);
 	}
@@ -381,17 +379,15 @@ depth_distance(double disparity, int camera_index)
 }
 
 void
-show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
-		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, 
-		unsigned int crop_width, unsigned int crop_height, double dist_to_movable_object_track, unsigned char*depth_pred, int camera_index)
+show_detections(Mat image, vector<movable_object> movable_object, vector<vector<image_cartesian>> points_inside_bbox,
+		vector<vector<image_cartesian>> filtered_points, double fps, double dist_to_movable_object_track, unsigned char*depth_pred, int camera_index)
 {
 	char info[128];
-	double distance_to_object;
 	cv::Mat imgdepth = cv::Mat(image.rows, image.cols, CV_16U, depth_pred);
 	
     cvtColor(image, image, COLOR_RGB2BGR);
 
-	sprintf(info, "%dx%d", image.cols, image.rows);
+	sprintf(info, "%dx%d %d", image.cols, image.rows, camera_index);
     putText(image, info, Point(10, 15), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 
     sprintf(info, "FPS %.2f", fps);
@@ -443,7 +439,7 @@ show_detections(Mat image, vector<movable_object> movable_object,vector<bbox_t> 
 	resize(image, image, Size(image.cols * resize_factor, image.rows * resize_factor));
     imshow("Virtual Object Detector", image);
 
-	imshow("Depth Object Detector", imgdepth);
+	imshow("Depth Prediction Transformer", imgdepth);
 
 	// cvtColor(image, image, COLOR_RGB2BGR);
     //imwrite("Image.jpg", image);
@@ -637,9 +633,9 @@ insert_missing_movable_objects_in_the_track(vector<bbox_t> predictions)
 			p.h = movable_object_tracks[j].h;
 			p.obj_id = movable_object_tracks[j].obj_id;
 			p.track_id = movable_object_tracks[j].track_id;
-			p.estimated_range = movable_object_tracks[j].estimated_range;
-			p.lidar_range = movable_object_tracks[j].lidar_range;
-			p.depth_range = movable_object_tracks[j].depth_range;
+			// p.estimated_range = movable_object_tracks[j].estimated_range;
+			// p.lidar_range = movable_object_tracks[j].lidar_range;
+			// p.depth_range = movable_object_tracks[j].depth_range;
 
 			if (intersectionOverUnion(predictions[i], p) > 0.1)
 				break;
@@ -652,9 +648,9 @@ insert_missing_movable_objects_in_the_track(vector<bbox_t> predictions)
 			new_p.w = predictions[i].w;
 			new_p.h = predictions[i].h;
 			new_p.obj_id = predictions[i].obj_id;
-			new_p.estimated_range = predictions[i].estimated_range;
-			new_p.lidar_range = predictions[i].lidar_range;
-			new_p.depth_range = predictions[i].depth_range;
+			// new_p.estimated_range = predictions[i].estimated_range;
+			// new_p.lidar_range = predictions[i].lidar_range;
+			// new_p.depth_range = predictions[i].depth_range;
 			new_p.last_timestamp = carmen_get_time();
 			movable_object_tracks.push_back(new_p);
 		}
@@ -839,9 +835,9 @@ velodyne_camera_calibration_fuse_virtual_lidar(carmen_velodyne_partial_scan_mess
 					point.cartesian_x = p3d_velodyne_reference.x();
 					point.cartesian_y = -p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
 					point.cartesian_z = p3d_velodyne_reference.z();
-					point.estimated_range = predictions[obj_index].estimated_range;
-					point.lidar_range = predictions[obj_index].lidar_range;
-					point.depth_range = predictions[obj_index].depth_range;
+					// point.estimated_range = predictions[obj_index].estimated_range;
+					// point.lidar_range = predictions[obj_index].lidar_range;
+					// point.depth_range = predictions[obj_index].depth_range;
 					points.push_back(point);
 				}
 				// previous_range = range;
@@ -938,7 +934,7 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
-	show_detections(open_cv_image, movable_object_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_movable_object_track, depth_pred, camera_index);
+	show_detections(open_cv_image, movable_object_tracks, points_inside_bbox, filtered_points, fps, dist_to_movable_object_track, depth_pred, camera_index);
 	
 	return 0;
 }

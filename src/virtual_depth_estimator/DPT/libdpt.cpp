@@ -1,10 +1,9 @@
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include "libdpt.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h> /* getenv */
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
-// #include <iostream>
 #define NUMPY_IMPORT_ARRAY_RETVAL
 
 PyObject *python_libdpt_process_image_function;

@@ -31,6 +31,9 @@ PUBLIC_LIBRARIES_SO =
 
 libdpt.a: libdpt.o
 
+download:
+	$(CARMEN_HOME)/bin/gdown.pl https://github.com/intel-isl/DPT/releases/download/1_0/dpt_hybrid-midas-501f0c75.pt weights/dpt_hybrid-midas-501f0c75.pt
+
 # https://stackoverflow.com/questions/7369145/activating-a-virtualenv-using-a-shell-script-doesnt-seem-to-work
 virtualenv:
 	. create_env.sh

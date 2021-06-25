@@ -1,32 +1,57 @@
-Módulo: Virtual LiDAR
+Virtual Depth Estimator
 
 Objetivo do módulo:
-Mapa online a ser produzido pelo Virtual LiDAR da mesma forma que seria pelo LiDAR, diminuindo custos para produção de um mapa preciso.
+Mapa online a ser produzido pelo Virtual DPT da mesma forma que seria pelo LiDAR, diminuindo custos para produção de um mapa preciso.
 
 Como?
-Através das câmeras, identificando objetos móveis e criando uma mensagem virtual para que o sistema possa tratar no behavior selector.
+Através das câmeras, identificando objetos móveis e criando uma mensagem virtual para que o sistema possa tratar.
 
 Surgiu após verificar a distância dos objetos móveis através da câmera, viu-se que o erro médio é de 8% após análise de um grande conjunto de amostras.
 
-Exemplo de uso:
-./central
-./proccontrol process-playback-fovea.ini 
-./virtual_lidar -camera3 1 -croph 780
+
+### Setup - Instruções para instalação
+
+1) Download dos pesos da YoloV4
+```cd $(CARMEN_HOME)/sharedlib/darknet4
+```
+```make download
+```
+
+2) Download dos pesos da DPT
+``` cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
+```
+``` make download
+```
+
+3) Criando a virtualenv para instalar as dependências:
+``` cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
+```
+``` make virtualenv
+```
+
+4) Compilando
+``` cd $(CARMEN_HOME)/src/virtual_depth_estimator/
+```
+``` make
+```
+
+4) Exemplo de execução
+Terminal 1 - 
+```./central
+```
+Terminal 2 
+```./proccontrol process-playback-fovea.ini 
+```
+
+Terminal 3:
+4.1 . Ative a venv
+``` source $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/venv/bin/activate
+```
+4.2 . Executando o código
+```(venv) > ./virtual_depth -camera3 1
+```
 
 
-https://github.com/microsoft/AirSim/issues/1907
-If you are using the DepthPlanner image, the depth value at each pixel is the depth of the object in the camera frame. For every pixel (u,v) in the DepthPlanner image, the true point (x, y, z) in the world in the camera frame of reference can be calculated as
-x = (u - cx) * d / fx
-y = (v - cy) * d / fy
-z = d
+Vídeo com a execução:
+https://www.youtube.com/watch?v=0iY1kU2bWpI&t=761s
 
-where
-d is the value at the pixel (u,v) in the DepthPlanner image,
-(cx, cy) is the principal point,
-fx, fy are the focal lengths.
-
-For the values (cx, cy, fx, fy) refer to your settings.json file.
-cx = width / 2
-cy = height / 2
-fx = cx / (tan(FOV / 2))
-fy = fx

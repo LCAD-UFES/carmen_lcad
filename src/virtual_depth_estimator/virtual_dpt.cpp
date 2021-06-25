@@ -28,7 +28,7 @@ void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	double img_timestamp = image_msg->timestamp;
-	float *preds;
+	unsigned char *preds;
 	preds = libdpt_process_image(image_msg->width, image_msg->height, image_msg->raw_right, img_timestamp);
     // printf("%f, %f, %f, %f\n",preds[0], preds[1], preds[2], preds[3]);
 }
