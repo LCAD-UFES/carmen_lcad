@@ -50,11 +50,11 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
     ```shell
         ./proccontrol process-playback-fovea.ini 
     ```
-4.1) Ative a venv:
+5) Ative a venv:
     ```shell
         source $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/venv/bin/activate
     ```
-4.2)  Execute o código
+6)  Execute o código
     ```shell
         (venv) > ./virtual_depth -camera3 1
     ```
