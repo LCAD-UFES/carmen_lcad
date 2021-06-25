@@ -12,44 +12,56 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
 ### Setup - Instruções para instalação
 
 1) Download dos pesos da YoloV4
-```cd $(CARMEN_HOME)/sharedlib/darknet4
-```
-```make download
-```
+    ```shell
+        cd $(CARMEN_HOME)/sharedlib/darknet4
+    ```
+    ```shell
+        make download
+    ```
 
 2) Download dos pesos da DPT
-``` cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
-```
-``` make download
-```
+    ```shell
+        cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
+    ```
+    ```shell
+        make download
+    ```
 
 3) Criando a virtualenv para instalar as dependências:
-``` cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
-```
-``` ./create_env.sh
-```
+    ```shell
+        cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
+    ```
+    ```shell
+        ./create_env.sh
+    ```
 
 4) Compilando
-``` cd $(CARMEN_HOME)/src/virtual_depth_estimator/
-```
-``` make
-```
+    ```shell
+        cd $(CARMEN_HOME)/src/virtual_depth_estimator/
+    ```
+    ```shell
+        make
+    ```
 
 4) Exemplo de execução
-Terminal 1 - 
-```./central
-```
+Terminal 1 
+    ```shell
+        ./central
+    ```
 Terminal 2 
-```./proccontrol process-playback-fovea.ini 
-```
+    ```shell
+        ./proccontrol process-playback-fovea.ini 
+    ```
 
 Terminal 3:
-4.1 . Ative a venv
-``` source $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/venv/bin/activate
-```
-4.2 . Executando o código
-```(venv) > ./virtual_depth -camera3 1
-```
+4.1) Ative a venv
+    ```shell
+        source $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/venv/bin/activate
+    ```
+4.2)  Executando o código
+    ```shell
+        (venv) > ./virtual_depth -camera3 1
+    ```
 
 
 Vídeo com a execução:
