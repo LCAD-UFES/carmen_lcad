@@ -35,7 +35,7 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
         ./create_env.sh
     ```
 
-4) Compilando
+4) Compilando:
     ```shell
         cd $(CARMEN_HOME)/src/virtual_depth_estimator/
     ```
@@ -43,17 +43,13 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
         make
     ```
 
-4) Exemplo de execução
-Terminal 1 
+4) Exemplo de execução:
     ```shell
         ./central
     ```
-Terminal 2 
     ```shell
         ./proccontrol process-playback-fovea.ini 
     ```
-
-Terminal 3:
 4.1) Ative a venv:
     ```shell
         source $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/venv/bin/activate
@@ -62,7 +58,6 @@ Terminal 3:
     ```shell
         (venv) > ./virtual_depth -camera3 1
     ```
-
 
 **Vídeo com a execução:**
 https://www.youtube.com/watch?v=0iY1kU2bWpI&t=761s
