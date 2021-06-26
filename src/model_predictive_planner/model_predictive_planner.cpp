@@ -166,37 +166,6 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavi
 }
 
 
-//void
-//move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
-//		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
-//{
-//	vector<carmen_ackerman_path_point_t> poses_back;
-//	carmen_ackerman_path_point_t local_reference_lane_point;
-//
-//	if ((path_goals_and_annotations_message->number_of_poses_back > 2))
-//	{
-//		for (int i = 0; i < path_goals_and_annotations_message->number_of_poses_back; i++)
-//		{
-//			SE2 lane_back_in_world_reference(path_goals_and_annotations_message->poses_back[i].x, path_goals_and_annotations_message->poses_back[i].y, path_goals_and_annotations_message->poses_back[i].theta);
-//			SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
-//
-//			local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
-//					path_goals_and_annotations_message->poses_back[i].v, path_goals_and_annotations_message->poses_back[i].phi, 0.0};
-//
-//			poses_back.push_back(local_reference_lane_point);
-//
-//			// @@@ ??? Assim que achar uma pose para tras, adiciona todas poses para frente
-//			if (local_reference_lane_point.x <= 0)
-//			{
-//				for (int j = (poses_back.size() - 1); j >= 0 ; j--)
-//					lane_in_local_pose->push_back(poses_back.at(j));
-//				break;
-//			}
-//		}
-//	}
-//}
-
-
 void
 move_lane_to_robot_reference_system(carmen_robot_and_trailer_pose_t *localizer_pose, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_robot_and_trailer_path_point_t> *lane_in_local_pose)

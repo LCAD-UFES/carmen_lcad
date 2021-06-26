@@ -193,7 +193,16 @@ MPP::TrajectoryControlParameters get_complete_optimized_trajectory_control_param
 		MPP::TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
 		bool use_lane);
 
-MPP::TrajectoryControlParameters
-get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params);
+MPP::TrajectoryControlParameters get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params);
+
+void get_optimization_params(ObjectiveFunctionParams &params, double target_v,
+		MPP::TrajectoryControlParameters *tcp_seed,
+		MPP::TrajectoryDimensions *target_td,
+		double max_plan_cost,
+		double (* my_f) (const gsl_vector  *x, void *params));
+
+void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
+		MPP::TrajectoryControlParameters &tcp_seed,
+		MPP::TrajectoryDimensions target_td, double target_v);
 
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */
