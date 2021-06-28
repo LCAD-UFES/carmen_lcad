@@ -23,6 +23,8 @@ typedef struct _trajectory_drawer
 	double distance_between_rear_car_and_rear_wheels;
 	double availability_timestamp;
 
+	double persistence_time;
+
 	carmen_semi_trailer_config_t semi_trailer_config;
 } trajectory_drawer;
 

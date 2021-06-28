@@ -200,7 +200,7 @@ draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 		glPopMatrix();
 	}
 
-	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
 		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
