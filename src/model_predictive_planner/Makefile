@@ -36,7 +36,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 			
 			
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp \
-		model_predictive_planner_optimizer.cpp global_state.cpp publisher_util.cpp util.cpp pose.cpp command.cpp\
+		model_predictive_planner_optimizer.cpp global_state.cpp publisher_util.cpp util.cpp pose.cpp \
 		model_predictive_planner_interface.c
 
 PUBLIC_BINARIES = model_predictive_planner
@@ -58,7 +58,7 @@ model_predictive_planner: model_predictive_planner_main.o model_predictive_plann
 
 libmodel_predictive_planner_interface.a: model_predictive_planner_interface.o
 
-libmodel_predictive_planner_optimizer.a: model_predictive_planner_optimizer.o
+libmodel_predictive_planner_optimizer.a: model_predictive_planner_optimizer.o command.o
 
 global_state: global_state.o
 

@@ -205,4 +205,15 @@ void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 		MPP::TrajectoryControlParameters &tcp_seed,
 		MPP::TrajectoryDimensions target_td, double target_v);
 
+MPP::TrajectoryControlParameters fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params);
+
+void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
+		MPP::TrajectoryControlParameters &tcp_seed,
+		MPP::TrajectoryDimensions target_td, double target_v);
+
+bool bad_tcp(MPP::TrajectoryControlParameters tcp);
+
+MPP::TrajectoryControlParameters get_n_knots_tcp_from_detailed_lane(vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
+		int n, double v_i, double phi_i, double d_yaw, double a, double s, double tt);
+
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */
