@@ -12,7 +12,7 @@
 
 trajectory_drawer *
 create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels,
-		carmen_semi_trailer_config_t semi_trailer_config, double path_point_size)
+		carmen_semi_trailer_config_t semi_trailer_config, double path_point_size, double persistence_time)
 {
 
 	trajectory_drawer *t_drawer = (trajectory_drawer *)malloc(sizeof(trajectory_drawer));
@@ -33,6 +33,8 @@ create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_
 	t_drawer->distance_between_rear_car_and_rear_wheels = distance_between_rear_car_and_rear_wheels;
 
 	t_drawer->semi_trailer_config = semi_trailer_config;
+
+	t_drawer->persistence_time = persistence_time;
 
 	return t_drawer;
 }
@@ -200,7 +202,7 @@ draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 		glPopMatrix();
 	}
 
-	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
 		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
@@ -228,7 +230,7 @@ draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 
 	glPopMatrix();
 
-	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
 		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
@@ -311,7 +313,7 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 		glPopMatrix();
 	}
 
-	if ((carmen_get_time() - t_drawer->availability_timestamp) > 0.1)
+	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
 		t_drawer->path_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
