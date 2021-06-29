@@ -531,11 +531,15 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
 	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	a = (-1.0) * a;
 	if (a == 0.0)
-		a = 0.000001;
-	a = (-1)*a;
-	tcp_seed.tt = (target_v - target_td.v_i) / a;
-	if (a < -GlobalState::robot_config.maximum_acceleration_reverse)
+	{
+		if (target_v != 0.0)
+			tcp_seed.tt = fabs(s / target_v);
+		else
+			tcp_seed.tt = 0.05;
+	}
+	else if (a < -GlobalState::robot_config.maximum_acceleration_reverse)
 	{
 		a = GlobalState::robot_config.maximum_acceleration_reverse;
 		double v = fabs(target_td.v_i);
@@ -549,6 +553,8 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		double v = fabs(target_td.v_i);
 		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
 	}
+	else
+		tcp_seed.tt = (target_v - target_td.v_i) / a;
 
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
@@ -572,9 +578,13 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
 	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
 	if (a == 0.0)
-		a = 0.000001;
-	tcp_seed.tt = (target_v - target_td.v_i) / a;
-	if (a > GlobalState::robot_config.maximum_acceleration_forward)
+	{
+		if (target_v != 0.0)
+			tcp_seed.tt = s / target_v;
+		else
+			tcp_seed.tt = 0.05;
+	}
+	else if (a > GlobalState::robot_config.maximum_acceleration_forward)
 	{
 		a = GlobalState::robot_config.maximum_acceleration_forward;
 		double v = target_td.v_i;
@@ -586,6 +596,9 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 		double v = target_td.v_i;
 		tcp_seed.tt = -(sqrt(2.0 * a * s + v * v) + v) / a;
 	}
+	else
+		tcp_seed.tt = (target_v - target_td.v_i) / a;
+
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
 	if (tcp_seed.tt < 0.05)
