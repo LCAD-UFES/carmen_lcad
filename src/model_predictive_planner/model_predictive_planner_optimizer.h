@@ -222,5 +222,11 @@ double compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and
 
 void compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path);
 
+double mpp_optimization_function_g(const gsl_vector *x, void *params);
+
+double mpp_optimization_function_f(const gsl_vector *x, void *params);
+
+void get_tcp_with_n_knots(MPP::TrajectoryControlParameters &tcp, int n);
+
 
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */
