@@ -5,6 +5,9 @@ double
 compute_semi_trailer_beta(carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point, double dt,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
 {
+	if (semi_trailer_config.type == 0)
+		return (0.0);
+
 	double L = robot_config.distance_between_front_and_rear_axles;
 	double beta = robot_and_trailer_traj_point.beta + dt *
 			robot_and_trailer_traj_point.v * (tan(robot_and_trailer_traj_point.phi) / L -

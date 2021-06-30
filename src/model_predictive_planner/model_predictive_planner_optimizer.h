@@ -155,6 +155,7 @@ struct ObjectiveFunctionParams
 	double o_step_size;
 	double o_tol;
 	double o_epsabs;
+	int max_iterations;
 };
 
 
@@ -198,7 +199,7 @@ MPP::TrajectoryControlParameters get_optimized_trajectory_control_parameters(MPP
 void get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 		MPP::TrajectoryControlParameters *tcp_seed,
 		MPP::TrajectoryDimensions *target_td,
-		double max_plan_cost,
+		double max_plan_cost, int max_iterations,
 		double (* my_f) (const gsl_vector  *x, void *params));
 
 void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
@@ -221,6 +222,12 @@ double compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<
 double compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_trailer_path_point_t> path);
 
 void compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path);
+
+double mpp_optimization_function_g(const gsl_vector *x, void *params);
+
+double mpp_optimization_function_f(const gsl_vector *x, void *params);
+
+void get_tcp_with_n_knots(MPP::TrajectoryControlParameters &tcp, int n);
 
 
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */
