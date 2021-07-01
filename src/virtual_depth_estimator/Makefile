@@ -81,7 +81,7 @@ PUBLIC_LIBRARIES =
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = virtual_depth
-TARGETS = darknet moving_objects libdpt.a libprob_models.a dbscan movable_object virtual_depth
+TARGETS = darknet libtf moving_objects libdpt.a libprob_models.a dbscan movable_object virtual_depth
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -108,6 +108,9 @@ movable_object: movable_object.o
 virtual_depth: virtual_depth.o $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/libdpt.a dbscan.o movable_object.o
 
 # rules
+libtf:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libtf/src
+
 libdpt.a: 
 	$(MAKE) -C $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
 
