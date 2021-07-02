@@ -1136,7 +1136,7 @@ shutdown_module(int signo)
 	if (signo == SIGINT)
 	{
 		carmen_ipc_disconnect();
-		fprintf(stderr, "Virtual LiDAR: disconnected.\n");
+		fprintf(stderr, "Virtual Depth: disconnected.\n");
 
 		exit(0);
 	}
@@ -1229,7 +1229,7 @@ read_camera_parameters(int argc, char **argv)
 		get_camera_param(argc, argv, i);
 	}
 	if (active_cameras == 0)
-		fprintf(stderr, "No cameras active for virtual_lidar\n\n");
+		fprintf(stderr, "No cameras active for virtual_depth\n\n");
 	
 }
 
@@ -1237,7 +1237,7 @@ void
 read_parameters(int argc, char **argv)
 {
 	if ((argc < 3))
-		carmen_die("%s: Wrong number of parameters. virtual_depth requires 2 parameter and received %d. \n Usage: %s <camera_model> <message_number>\n", argv[0], argc - 1, argv[0]);
+		carmen_die("%s: Wrong number of parameters. virtual_depth requires min 2 parameter and received %d. \n Usage: %s -camera<camera_number> <camera_side(left or right)>\n", argv[0], argc - 1, argv[0]);
 
 	read_camera_parameters(argc, argv);
 
