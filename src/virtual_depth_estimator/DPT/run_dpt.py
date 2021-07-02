@@ -21,6 +21,7 @@ import torch
 import cv2
 import argparse
 
+
 import util.io
 
 from torchvision.transforms import Compose
@@ -102,10 +103,11 @@ def dpt_process_image(carmen_image, timestamp):
     global device
     global transform
     # converter a imagem
-    print ("opaaaa!! entrou no dpt_process_image")
+    # print ("opaaaa!! entrou no dpt_process_image")
     img = carmen_image
     # Convert RGB to BGR 
     img = img[:, :, ::-1].copy() 
+    # print(img.shape)
     if img.ndim == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
@@ -130,8 +132,8 @@ def dpt_process_image(carmen_image, timestamp):
         )
     filename = output_path + str(timestamp.item(0))
     absolute_depth=False
-    util.io.write_depth(filename, prediction, bits=2, absolute_depth=absolute_depth)
-    return prediction
+    out = util.io.write_depth(filename, prediction, bits=2, absolute_depth=absolute_depth)
+    return out
 
 # if __name__ == "__main__":
 #     main()

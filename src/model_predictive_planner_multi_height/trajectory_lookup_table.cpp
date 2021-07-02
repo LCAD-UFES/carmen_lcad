@@ -20,11 +20,11 @@
 //#define DEBUG_LANE
 
 
-TrajectoryLookupTable::TrajectoryControlParameters_old trajectory_lookup_table_old[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
-TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
+MPP::TrajectoryControlParameters_old trajectory_lookup_table_old[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
+MPP::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
 
-TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
+MPP::MPP(int update_lookup_table)
 {
 	// Codigo para gerar nova tabela a partir de uma tabela velha quando de mudancas na estrutura da seed. Quando usar, rodar o model_predictive_planner no seu diretorio.
 //	load_trajectory_lookup_table_old();
@@ -42,7 +42,7 @@ TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 
 
 bool
-has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+has_valid_discretization(MPP::TrajectoryDiscreteDimensions tdd)
 {
 	if ((tdd.dist < N_DIST) &&
 			(tdd.theta < N_THETA) &&
@@ -55,12 +55,12 @@ has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+MPP::TrajectoryControlParameters
+search_lookup_table(MPP::TrajectoryDiscreteDimensions tdd)
 {
 	// TODO: pegar a media de todas as leituras ponderada pela distancia para o td.
 	// Tem que passar o td ao inves do tdd.
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	MPP::TrajectoryControlParameters tcp;
 	tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
 	if (tcp.valid)
 		return (tcp);
@@ -151,13 +151,13 @@ search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
-search_lookup_table_loop(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+MPP::TrajectoryControlParameters
+search_lookup_table_loop(MPP::TrajectoryDiscreteDimensions tdd)
 {
 	// @@@ Alberto: Esta função é muito lenta... Voltei para a search_lookup_table().
 	// TODO: pegar a media de todas as leituras ponderada pela distancia para o td.
 	// Tem que passar o td ao inves do tdd.
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	MPP::TrajectoryControlParameters tcp;
 	tcp.valid = false;
 	vector<int> signalSum = {0 ,-1, 2, -2, 4};
 
@@ -186,7 +186,7 @@ search_lookup_table_loop(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd
 
 
 void
-TrajectoryLookupTable::evaluate_trajectory_lookup_table()
+MPP::evaluate_trajectory_lookup_table()
 {
 	double parameter_count[6][100];
 	double parameter_valid[6][100];
@@ -223,13 +223,13 @@ TrajectoryLookupTable::evaluate_trajectory_lookup_table()
 						}
 						else
 						{
-							TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
+							MPP::TrajectoryDiscreteDimensions tdd;
 							tdd.d_yaw = k;
 							tdd.dist = i;
 							tdd.phi_i = l;
 							tdd.theta = j;
 							tdd.v_i = m;
-							TrajectoryLookupTable::TrajectoryControlParameters tcp = search_lookup_table(tdd);
+							MPP::TrajectoryControlParameters tcp = search_lookup_table(tdd);
 							if (tcp.valid)
 							{
 								parameter_valid[0][i] += 1.0;
@@ -265,7 +265,7 @@ TrajectoryLookupTable::evaluate_trajectory_lookup_table()
 void
 init_trajectory_lookup_table()
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	MPP::TrajectoryControlParameters tcp;
 
 	tcp.valid = false;
 	tcp.tt = 0.0;
@@ -301,13 +301,13 @@ save_trajectory_lookup_table()
 				for (int l = 0; l < N_I_PHI; l++)
 					for (int m = 0; m < N_I_V; m++)
 						fwrite((const void *) &(trajectory_lookup_table[i][j][k][l][m]),
-								sizeof(TrajectoryLookupTable::TrajectoryControlParameters), 1, tlt_f);
+								sizeof(MPP::TrajectoryControlParameters), 1, tlt_f);
 	fclose(tlt_f);
 }
 
 
 bool
-TrajectoryLookupTable::load_trajectory_lookup_table_old()
+MPP::load_trajectory_lookup_table_old()
 {
 	struct stat buffer;
 
@@ -324,7 +324,7 @@ TrajectoryLookupTable::load_trajectory_lookup_table_old()
 						for (int m = 0; m < N_I_V; m++)
 						{
 							fread((void *) &(trajectory_lookup_table_old[i][j][k][l][m]),
-									sizeof(TrajectoryLookupTable::TrajectoryControlParameters_old), 1, tlt_f);
+									sizeof(MPP::TrajectoryControlParameters_old), 1, tlt_f);
 							trajectory_lookup_table[i][j][k][l][m].valid = trajectory_lookup_table_old[i][j][k][l][m].valid;
 							trajectory_lookup_table[i][j][k][l][m].tt = trajectory_lookup_table_old[i][j][k][l][m].tt;
 							trajectory_lookup_table[i][j][k][l][m].k2 = trajectory_lookup_table_old[i][j][k][l][m].k2;
@@ -348,7 +348,7 @@ TrajectoryLookupTable::load_trajectory_lookup_table_old()
 
 
 bool
-TrajectoryLookupTable::load_trajectory_lookup_table()
+MPP::load_trajectory_lookup_table()
 {
 	struct stat buffer;
 
@@ -364,7 +364,7 @@ TrajectoryLookupTable::load_trajectory_lookup_table()
 					for (int l = 0; l < N_I_PHI; l++)
 						for (int m = 0; m < N_I_V; m++)
 							fread((void *) &(trajectory_lookup_table[i][j][k][l][m]),
-									sizeof(TrajectoryLookupTable::TrajectoryControlParameters), 1, tlt_f);
+									sizeof(MPP::TrajectoryControlParameters), 1, tlt_f);
 		fclose(tlt_f);
 
 		return (true);
@@ -459,11 +459,11 @@ get_d_yaw_by_index(int index)
 }
 
 
-TrajectoryLookupTable::TrajectoryDimensions
-convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp)
+MPP::TrajectoryDimensions
+convert_to_trajectory_dimensions(MPP::TrajectoryDiscreteDimensions tdd,
+		MPP::TrajectoryControlParameters tcp)
 {
-	TrajectoryLookupTable::TrajectoryDimensions td;
+	MPP::TrajectoryDimensions td;
 
 	td.d_yaw = get_d_yaw_by_index(tdd.d_yaw);
 	td.dist = get_distance_by_index(tdd.dist);
@@ -514,10 +514,10 @@ binary_search_linear_progression(double value,
 }
 
 
-TrajectoryLookupTable::TrajectoryDiscreteDimensions
-get_discrete_dimensions(TrajectoryLookupTable::TrajectoryDimensions td)
+MPP::TrajectoryDiscreteDimensions
+get_discrete_dimensions(MPP::TrajectoryDimensions td)
 {
-	TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
+	MPP::TrajectoryDiscreteDimensions tdd;
 
 	tdd.dist = binary_search_geometric_progression(td.dist, N_DIST, FIRST_DIST, RATIO_DIST, ZERO_DIST_I);
 	tdd.theta = binary_search_linear_progression(td.theta, N_THETA, COMMON_THETA, ZERO_THETA_I);
@@ -529,10 +529,10 @@ get_discrete_dimensions(TrajectoryLookupTable::TrajectoryDimensions td)
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
+MPP::TrajectoryControlParameters
 generate_trajectory_control_parameters_sample(int k2, int k3, int i_v, int dist)
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	MPP::TrajectoryControlParameters tcp;
 
 	tcp.valid = true;
 
@@ -553,10 +553,10 @@ generate_trajectory_control_parameters_sample(int k2, int k3, int i_v, int dist)
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
+MPP::TrajectoryControlParameters
 generate_trajectory_control_parameters_sample(double k2, double k3, int i_v, int dist)
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	MPP::TrajectoryControlParameters tcp;
 
 	tcp.valid = true;
 
@@ -587,10 +587,10 @@ generate_trajectory_control_parameters_sample(double k2, double k3, int i_v, int
 }
 
 
-TrajectoryLookupTable::TrajectoryControlParameters
+MPP::TrajectoryControlParameters
 generate_random_trajectory_control_parameters_sample(int i_v, int dist)
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	MPP::TrajectoryControlParameters tcp;
 
 	double v0 = get_initial_velocity_by_index(i_v);
 	float distance = get_distance_by_index(dist);
@@ -628,7 +628,7 @@ convert_to_carmen_ackerman_path_point_t(const carmen_ackerman_traj_point_t robot
 double
 compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp,
+		MPP::TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
 {
 	int i = 0;
@@ -743,8 +743,8 @@ get_max_distance_in_path(vector<carmen_ackerman_path_point_t> path, carmen_acker
 
 
 vector<carmen_ackerman_path_point_t>
-simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+simulate_car_from_parameters(MPP::TrajectoryDimensions &td,
+		MPP::TrajectoryControlParameters &tcp, double v0, double i_phi,
 		bool display_phi_profile, double delta_t)
 {
 	vector<carmen_ackerman_path_point_t> path;
@@ -848,13 +848,13 @@ print_lane(vector<carmen_ackerman_path_point_t> path, FILE *path_file)
 	}
 }
 
-TrajectoryLookupTable::TrajectoryDimensions
-compute_trajectory_dimensions(TrajectoryLookupTable::TrajectoryControlParameters &tcp, int i_v0, int i_phi,
+MPP::TrajectoryDimensions
+compute_trajectory_dimensions(MPP::TrajectoryControlParameters &tcp, int i_v0, int i_phi,
 		vector<carmen_ackerman_path_point_t> &path, bool print)
 {
 	double d_i_phi = get_i_phi_by_index(i_phi);
 	double d_i_v0 = get_initial_velocity_by_index(i_v0);
-	TrajectoryLookupTable::TrajectoryDimensions td;
+	MPP::TrajectoryDimensions td;
 	path = simulate_car_from_parameters(td, tcp, d_i_v0, d_i_phi, print);
 	if (tcp.valid && print)
 		print_path(path);
@@ -864,7 +864,7 @@ compute_trajectory_dimensions(TrajectoryLookupTable::TrajectoryControlParameters
 
 
 bool
-same_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp1, TrajectoryLookupTable::TrajectoryControlParameters tcp2)
+same_tcp(MPP::TrajectoryControlParameters tcp1, MPP::TrajectoryControlParameters tcp2)
 {
 	bool result = true;
 
@@ -908,7 +908,7 @@ same_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp1, TrajectoryLook
 
 
 bool
-compare_td(TrajectoryLookupTable::TrajectoryDimensions td1, TrajectoryLookupTable::TrajectoryDimensions td2)
+compare_td(MPP::TrajectoryDimensions td1, MPP::TrajectoryDimensions td2)
 {
 	bool result = true;
 
@@ -981,9 +981,9 @@ fill_in_trajectory_lookup_table()
 						// visualizacao ja implementadas.
 					{
 						//i_v = 7;
-						TrajectoryLookupTable::TrajectoryControlParameters tcp = generate_trajectory_control_parameters_sample(k2, k3, i_v, dist);
+						MPP::TrajectoryControlParameters tcp = generate_trajectory_control_parameters_sample(k2, k3, i_v, dist);
 						vector<carmen_ackerman_path_point_t> path;
-						TrajectoryLookupTable::TrajectoryDimensions td = compute_trajectory_dimensions(tcp, i_v, i_phi, path, false);
+						MPP::TrajectoryDimensions td = compute_trajectory_dimensions(tcp, i_v, i_phi, path, false);
 						//                        td = compute_trajectory_dimensions(tcp, i_v, i_phi, path, true);
 						//                        FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
 						//                        fprintf(gnuplot_pipe, "plot './gnuplot_path.txt' using 1:2:3:4 w vec size  0.3, 10 filled\n");
@@ -992,7 +992,7 @@ fill_in_trajectory_lookup_table()
 						//                        getchar();
 						//                        system("pkill gnuplot");
 
-						TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
+						MPP::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
 						//                        TrajectoryLookupTable::TrajectoryDimensions ntd = convert_to_trajectory_dimensions(tdd, tcp);
 						//                        std::cout << "td.phi_i = " << td.phi_i << std::endl;
 						//                        compare_td(td, ntd);
@@ -1000,13 +1000,13 @@ fill_in_trajectory_lookup_table()
 						if (has_valid_discretization(tdd))
 						{
 							// vector<carmen_ackerman_path_point_t> optimized_path;
-							TrajectoryLookupTable::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);//, optimized_path);
+							MPP::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);//, optimized_path);
 							//	                        if (!ntcp.valid)
 							//	                        	printf("dist = %lf, i_phi = %lf, k2 = %lf, k3 = %lf, i_v = %lf\n",
 							//	                        			get_distance_by_index(dist), get_i_phi_by_index(i_phi), k2, k3, get_initial_velocity_by_index(i_v));
 							if (ntcp.valid && has_valid_discretization(tdd) && !path_has_loop(get_distance_by_index(tdd.dist), ntcp.sf))
 							{
-								TrajectoryLookupTable::TrajectoryControlParameters ptcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+								MPP::TrajectoryControlParameters ptcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
 								if (!ptcp.valid || (ntcp.sf < ptcp.sf))
 								{
 									trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] = ntcp;
@@ -1037,7 +1037,7 @@ fill_in_trajectory_lookup_table()
 
 
 void
-TrajectoryLookupTable::update_lookup_table_entries()
+MPP::update_lookup_table_entries()
 {
 	int num_new_entries = 1;
 
@@ -1059,12 +1059,12 @@ TrajectoryLookupTable::update_lookup_table_entries()
 						{
 							if (!trajectory_lookup_table[i][j][k][l][m].valid)
 							{
-								TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
+								MPP::TrajectoryDiscreteDimensions tdd;
 								tdd.dist = i; tdd.theta = j; tdd.d_yaw = k; tdd.phi_i = l; tdd.v_i = m;
-								TrajectoryLookupTable::TrajectoryControlParameters tcp = search_lookup_table(tdd);
+								MPP::TrajectoryControlParameters tcp = search_lookup_table(tdd);
 								if (tcp.valid)
 								{
-									TrajectoryLookupTable::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);
+									MPP::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);
 									if (ntcp.valid && !path_has_loop(get_distance_by_index(tdd.dist), ntcp.sf))
 									{
 										trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] = ntcp;
@@ -1083,7 +1083,7 @@ TrajectoryLookupTable::update_lookup_table_entries()
 
 
 void
-TrajectoryLookupTable::build_trajectory_lookup_table()
+MPP::build_trajectory_lookup_table()
 {
 	init_trajectory_lookup_table();
 	fill_in_trajectory_lookup_table();

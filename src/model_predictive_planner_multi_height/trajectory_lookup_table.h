@@ -79,7 +79,7 @@ typedef enum
 #define PROFILE_TIME 			5.0
 
 
-class TrajectoryLookupTable
+class MPP
 {
 public:
 
@@ -143,7 +143,7 @@ public:
 		double timestamp;
 	};
 
-	TrajectoryLookupTable(int update_lookup_table);
+	MPP(int update_lookup_table);
 
 	bool load_trajectory_lookup_table_old();
 	bool load_trajectory_lookup_table();
@@ -154,20 +154,20 @@ public:
 
 
 void save_trajectory_lookup_table();
-TrajectoryLookupTable::TrajectoryDimensions convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp);
-TrajectoryLookupTable::TrajectoryDiscreteDimensions get_discrete_dimensions(TrajectoryLookupTable::TrajectoryDimensions td);
-bool has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
-TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
+MPP::TrajectoryDimensions convert_to_trajectory_dimensions(MPP::TrajectoryDiscreteDimensions tdd,
+		MPP::TrajectoryControlParameters tcp);
+MPP::TrajectoryDiscreteDimensions get_discrete_dimensions(MPP::TrajectoryDimensions td);
+bool has_valid_discretization(MPP::TrajectoryDiscreteDimensions tdd);
+MPP::TrajectoryControlParameters search_lookup_table(MPP::TrajectoryDiscreteDimensions tdd);
 
-vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
-		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(MPP::TrajectoryDimensions &td,
+		MPP::TrajectoryControlParameters &tcp, double v0, double i_phi,
 		bool display_phi_profile, double delta_t = 0.15);
 
 bool path_has_loop(double dist, double sf);
 void move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose);
-TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
+MPP::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed,
+		MPP::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
 		bool use_lane, bool has_previous_good_tcp);
 
 float get_d_yaw_by_index(int index);

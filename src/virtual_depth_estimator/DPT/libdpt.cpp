@@ -1,10 +1,9 @@
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include "libdpt.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h> /* getenv */
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
-// #include <iostream>
 #define NUMPY_IMPORT_ARRAY_RETVAL
 
 PyObject *python_libdpt_process_image_function;
@@ -81,14 +80,14 @@ initialize_python_context()
 	if (PyErr_Occurred())
 		        PyErr_Print();
 
-	printf("Success: Loaded dpt\n");
+	printf("Success: Loaded DPT\n");
 
 }
 
-float*
+unsigned char*
 libdpt_process_image(int width, int height, unsigned char *image, double timestamp)
 {
-	printf("libdpt_process_image\n");
+	// printf("libdpt_process_image\n");
 	//create shape for numpy array
 	npy_intp dims[3] = {height, width, 3};
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);
@@ -106,7 +105,7 @@ libdpt_process_image(int width, int height, unsigned char *image, double timesta
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	float *result_array = (float*)PyArray_DATA(python_result_array);
+	unsigned char*result_array = (unsigned char*)PyArray_DATA(python_result_array);
 
 	if (PyErr_Occurred())
         PyErr_Print();

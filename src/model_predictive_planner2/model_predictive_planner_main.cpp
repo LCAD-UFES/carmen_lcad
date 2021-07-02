@@ -30,7 +30,7 @@
 
 Tree tree; //tree rooted on robot
 int g_teacher_mode = 0;
-TrajectoryLookupTable *g_trajectory_lookup_table;
+MPP *g_trajectory_lookup_table;
 carmen_behavior_selector_road_profile_message path_goals_and_annotations_message;
 
 static int update_lookup_table = 0;
@@ -884,7 +884,7 @@ main(int argc, char **argv)
 
 	register_handlers();
 
-	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
+	g_trajectory_lookup_table = new MPP(update_lookup_table);
 	memset((void *) &tree, 0, sizeof(Tree));
 //	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 //	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));

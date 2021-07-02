@@ -21,6 +21,7 @@
 #include <carmen/laser_ldmrs_utils.h>
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/offroad_planner_interface.h>
 #include <carmen/rrt_node.h>
 #include <GL/glew.h>
 #include <iostream>
@@ -295,6 +296,7 @@ static map_drawer* m_drawer;
 static trajectory_drawer *path_plan_drawer;
 static trajectory_drawer *motion_plan_drawer;
 static trajectory_drawer *obstacle_avoider_plan_drawer;
+static trajectory_drawer *offroad_plan_drawer;
 static std::vector<trajectory_drawer*> path_plans_frenet_drawer;
 static std::vector<trajectory_drawer*> path_plans_nearby_lanes_drawer;
 static std::vector<trajectory_drawer*> t_drawerTree;
@@ -840,6 +842,8 @@ draw_everything()
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
     		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+
+    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
     }
 
     if (draw_obstacle_avoider_plan_flag)
@@ -2692,10 +2696,43 @@ plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 		carmen_navigator_ackerman_plan_message tempMessage;
 		tempMessage.path = msg->paths[i];
 		tempMessage.path_length = msg->path_size[i];
-
-		t_drawerTree[i] = create_trajectory_drawer((double) i / (double) (msg->num_path - 1), 0.7, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+		double r, g, b;
+		r = ((i % 3) == 0)? 1.0: 0.0;
+		g = ((i % 3) == 1)? 1.0: 0.0;
+		b = ((i % 3) == 2)? 1.0: 0.0;
+		t_drawerTree[i] = create_trajectory_drawer(r, g, b, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
 		add_trajectory_message(t_drawerTree[i], &tempMessage);
 	}
+}
+
+
+static void
+offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
+{
+	if (!show_plan_tree_flag)
+		return;
+
+	carmen_navigator_ackerman_plan_message *offroad_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
+	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
+	for (int i = 0; i < message->number_of_poses; i++)
+	{
+		path[i].x	  = message->poses[i].x;
+		path[i].y	  = message->poses[i].y;
+		path[i].theta = message->poses[i].theta;
+		path[i].beta  = message->poses[i].beta;
+		path[i].v	  = message->poses[i].v;
+		path[i].phi	  = message->poses[i].phi;
+	}
+
+	offroad_trajectory->path = path;
+	offroad_trajectory->path_length = message->number_of_poses;
+	offroad_trajectory->timestamp = message->timestamp;
+	offroad_trajectory->host = message->host;
+
+	add_trajectory_message(offroad_plan_drawer, offroad_trajectory);
+
+	free(path);
+	free(offroad_trajectory);
 }
 
 
@@ -3142,6 +3179,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     path_plan_drawer = create_trajectory_drawer(0.5, 0.5, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
     motion_plan_drawer = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
     obstacle_avoider_plan_drawer = create_trajectory_drawer(0.7, 0.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+    offroad_plan_drawer = create_trajectory_drawer(0.5, 0.5, 0.5, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
     v_int_drawer = create_velodyne_intensity_drawer(velodyne_pose, sensor_board_1_pose);
     annotation_drawer = createAnnotationDrawer(argc, argv);
 #ifdef TEST_LANE_ANALYSIS
@@ -3640,6 +3678,8 @@ draw_while_picking()
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
     		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+
+    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
     }
 
 	if (draw_obstacle_avoider_plan_flag)
@@ -3932,6 +3972,8 @@ subscribe_ipc_messages(void)
 			(carmen_handler_t) carmen_localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) final_goal_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) offroad_planner_plan_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
