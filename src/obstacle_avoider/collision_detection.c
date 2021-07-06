@@ -469,7 +469,7 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_position_t
 	int x_map_cell = (int) round(global_point_in_map_coords.x);
 	int y_map_cell = (int) round(global_point_in_map_coords.y);
 	if ((x_map_cell < 0 || x_map_cell >= distance_map->config.x_size) || (y_map_cell < 0 || y_map_cell >= distance_map->config.y_size))
-		return (-1.0);
+		return (-1000.0);
 
 	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
 	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
@@ -616,8 +616,8 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_robot_a
 		carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-		//distance equals to -1.0 when the coordinates are outside of map
-		if (distance != -1.0)
+		// distance equals to -1000.0 when the coordinates are outside of map
+		if (distance != -1000.0)
 		{
 			double delta = distance - (global_collision_config.markers[i].radius + safety_distance);
 			if (delta < 0.0)
@@ -640,8 +640,8 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_robot_a
 				carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
 						displaced_marker.x, displaced_marker.y);
 				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-				//distance equals to -1.0 when the coordinates are outside of map
-				if (distance != -1.0)
+				// distance equals to -1000.0 when the coordinates are outside of map
+				if (distance != -1000.0)
 				{
 					double delta = distance - (global_collision_config.semi_trailer_markers[i].radius + safety_distance);
 					if (delta < 0.0)
@@ -857,8 +857,8 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 		carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-		//distance equals to -1.0 when the coordinates are outside of map
-		if (distance != -1.0)
+		//distance equals to -1000.0 when the coordinates are outside of map
+		if (distance != -1000.0)
 		{	// A fucao retorna valor negativo se o carro encobrir um obstaculo.
 			distance = distance - global_collision_config.markers[i].radius;
 			if (distance < min_distance)
@@ -880,8 +880,8 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);
 				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-				//distance equals to -1.0 when the coordinates are outside of map
-				if (distance != -1.0)
+				//distance equals to -1000.0 when the coordinates are outside of map
+				if (distance != -1000.0)
 				{	// A fucao retorna valor negativo se o carro encobrir um obstaculo.
 					distance = distance - global_collision_config.semi_trailer_markers[i].radius;
 					if (distance < min_distance)
@@ -912,8 +912,8 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 		carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-		//distance equals to -1.0 when the coordinates are outside of map
-		if (distance != -1.0)
+		//distance equals to -1000.0 when the coordinates are outside of map
+		if (distance != -1000.0)
 		{
 			if (distance < global_collision_config.markers[i].radius + safety_distance)
 			{
@@ -942,8 +942,8 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);
 				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-				//distance equals to -1.0 when the coordinates are outside of map
-				if (distance != -1.0)
+				//distance equals to -1000.0 when the coordinates are outside of map
+				if (distance != -1000.0)
 				{
 					if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance)
 					{

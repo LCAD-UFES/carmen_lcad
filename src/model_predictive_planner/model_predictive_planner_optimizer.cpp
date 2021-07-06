@@ -1046,6 +1046,9 @@ get_tcp_with_n_knots(MPP::TrajectoryControlParameters &tcp, int n)
 MPP::TrajectoryControlParameters
 get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params)
 {
+	int current_eliminate_path_follower_value = GlobalState::eliminate_path_follower;
+	GlobalState::eliminate_path_follower = 0;
+
 	gsl_multimin_function_fdf my_func;
 
 	// O phi inicial, que eh guardado em tcp_seed.k[0], nao eh otimizado, mas usamos o tamanho de k aqui
@@ -1093,6 +1096,8 @@ get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp
 
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
+
+	GlobalState::eliminate_path_follower = current_eliminate_path_follower_value;
 
 	return (tcp);
 }
