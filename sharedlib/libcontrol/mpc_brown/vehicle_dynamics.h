@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 typedef struct {
-    double δ;
+    double delta_;
     double Fxf;
     double Fxr;
 }BicycleControl;
@@ -33,9 +33,9 @@ typedef struct {
     double Izz;  // yaw moment of inertia
 
     // Tire model parameters
-    double μ;    // coefficient of friction
-    double Cαf;  // front tire (pair) cornering stiffness
-    double Cαr;  // rear tire (pair) cornering stiffness
+    double mi;    // coefficient of friction
+    double c_alphaf;  // front tire (pair) cornering stiffness
+    double c_alphar;  // rear tire (pair) cornering stiffness
 
     // Longitudinal Drag Force Parameters (FxDrag = Cd0 + Cd1*Ux + Cd2*Ux^2)
     double Cd0;  // rolling resistance
@@ -46,34 +46,34 @@ typedef struct {
 typedef struct {
     double E;    // world frame "x" position of CM
     double N;    // world frame "y" position of CM
-    double ψ;    // world frame heading of vehicle
+    double phi;    // world frame heading of vehicle
     double Ux;   // body frame longitudinal speed
     double Uy;   // body frame lateral speed
-    double r;   // yaw rate (dψ/dt)
+    double r;   // yaw rate (dphi/dt)
 }BicycleState;
 
 typedef struct{
-    double ψ;    // nominal trajectory heading
-    double κ;    // nominal trajectory (local) curvature
-    double θ;    // nominal trajectory (local) pitch grade
-    double ϕ;    // nominal trajectory (local) roll grade
+    double phi;    // nominal trajectory heading
+    double k;    // nominal trajectory (local) curvature
+    double theta;    // nominal trajectory (local) pitch grade
+    double Phi;    // nominal trajectory (local) roll grade
 }LocalRoadGeometry;
 
 
 typedef struct {
-    double Δs;   // longitudinal error (w.r.t. nominal trajectory)
+    double delta_s;   // longitudinal error (w.r.t. nominal trajectory)
     double Ux;   // body frame longitudinal speed
     double Uy;   // body frame lateral speed
     double r;    // yaw rate
-    double Δψ;   // heading error (w.r.t. nominal trajectory)
+    double delta_phi;   // heading error (w.r.t. nominal trajectory)
     double e;    // lateral error (w.r.t. nominal trajectory)
 }TrackingBicycleState;
 
 typedef struct{ 
     double V;    // nominal trajectory speed
-    double κ;    // nominal trajectory (local) curvature
-    double θ;    // nominal trajectory (local) pitch grade
-    double ϕ;    // nominal trajectory (local) roll grade
+    double k;    // nominal trajectory (local) curvature
+    double theta;    // nominal trajectory (local) pitch grade
+    double Phi;    // nominal trajectory (local) roll grade
 }TrackingBicycleParams;
 
 
@@ -81,19 +81,19 @@ typedef struct{
 typedef struct {
     double Uy;   // body frame lateral speed
     double r;    // yaw rate
-    double Δψ;   // heading error (w.r.t. nominal trajectory)
+    double delta_phi;   // heading error (w.r.t. nominal trajectory)
     double e;    // lateral error (w.r.t. nominal trajectory)
 }LateralTrackingBicycleState;
 
 typedef struct {
     double Ux;   // body frame lateral speed
     double k;    // yaw rate
-    double θ;   // heading error (w.r.t. nominal trajectory)
-    double ϕ;    // lateral error (w.r.t. nominal trajectory)
+    double theta;   // heading error (w.r.t. nominal trajectory)
+    double theta_1;    // lateral error (w.r.t. nominal trajectory)
 }LateralTrackingBicycleParams;
 
 typedef struct {
-    double δ;
+    double _delta;
     double Fx;
 }BicycleControl2;
 
@@ -109,8 +109,8 @@ typedef struct {
     double Fx_max;
     double Fx_min;
     double Px_max;
-    double δ_max;
-    double κ_max;
+    double _delta_max;
+    double k_max;
 }ControlLimits;
 
 typedef struct {
@@ -119,30 +119,30 @@ typedef struct {
     ControlLimits control_limits;
 }VehicleModel;
 
-double _fialatiremodel(double tanα, double Cα, double Fy_max);
+double _fialatiremodel(double tan_alpha, double c_alpha, double Fy_max);
 
-double fialatiremodel(double α, double Cα, double μ, double Fx, double Fz);
-
-
-double _invfialatiremodel(double Fy, double Cα, double Fy_max);
+double fialatiremodel(double alpha, double c_alpha, double mi, double Fx, double Fz);
 
 
-double invfialatiremodel(double Fy, double Cα, double μ, double Fx, double Fz);
+double _invfialatiremodel(double Fy, double c_alpha, double Fy_max);
 
-vector<double> lateral_tire_forces( BicycleModelParams B, double αf, double αr, double Fxf, double Fxr, double sδ, double cδ, int num_iters = 3);
 
-void _lateral_tire_forces(BicycleModelParams B, vector<double> q, vector<double> u, int num_iters=3);
+double invfialatiremodel(double Fy, double c_alpha, double mi, double Fx, double Fz);
 
-vector <double> aaa(BicycleModelParams B, double E, double  N, double ψ, double Ux , double Uy, double r, 
-double δ, double Fxf, double Fxr, double  ψᵣ, double κ, double θ, double ϕ);
+vector<double> lateral_tire_forces( BicycleModelParams B, double alpha_f, double alpha_r, double Fxf, double Fxr, double s_delta, double c_delta, int num_iters);
 
-vector <double> make_TrackingBicycleState(BicycleModelParams B, double Δs, double Ux, double Uy, double r, double Δψ, double e,
-                              double δ, double Fxf, double Fxr,
-                              double V, double κ, double θ, double ϕ);
+void _lateral_tire_forces(BicycleModelParams B, vector<double> q, vector<double> u, int num_iters);
 
-vector <double> make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r, double Δψ, double e,
-                              double δ, double Fxf, double Fxr,
-                              double Ux, double κ, double θ, double ϕ);
+vector <double> aaa(BicycleModelParams B, double E, double  N, double phi, double Ux , double Uy, double r, 
+double delta_, double Fxf, double Fxr, double  _phi_r, double k, double theta, double Phi);
+
+vector <double> make_TrackingBicycleState(BicycleModelParams B, double delta_s, double Ux, double Uy, double r, double delta_phi, double e,
+                              double delta_, double Fxf, double Fxr,
+                              double V, double k, double theta, double Phi);
+
+vector <double> make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r, double delta_phi, double e,
+                              double delta_, double Fxf, double Fxr,
+                              double Ux, double k, double theta, double Phi);
 
 vector <double> stable_limits(BicycleModelParams B, double Ux, double Fxf, double Fxr);
 
@@ -154,8 +154,8 @@ double clamp (double x, double lo , double hi);
 BicycleControl2 apply_control_limits(ControlLimits CL, vector <double> vec, double Ux);
 
 
-map<string, double> steady_state_estimates(VehicleModel X, double V, double A_tan, double κ,
-                                int num_iters=4, double r, double β0, double δ0, double Fyf0);
+map<string, double> steady_state_estimates(VehicleModel X, double V, double A_tan, double k,
+                                int num_iters, double r, double beta_zero, double _delta_zero, double Fyf_zero);
 
 #ifdef __cplusplus
 }
