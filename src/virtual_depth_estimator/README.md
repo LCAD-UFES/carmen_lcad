@@ -13,50 +13,50 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
 
 1) Download dos pesos da YoloV4
     ```shell
-        cd $(CARMEN_HOME)/sharedlib/darknet4
+    cd $CARMEN_HOME/sharedlib/darknet4
     ```
     ```shell
-        make download
+    make download
     ```
 
 2) Download dos pesos da DPT
     ```shell
-        cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
+    cd $CARMEN_HOME/src/virtual_depth_estimator/DPT
     ```
     ```shell
-        make download
+    make download
     ```
 
 3) Criando a virtualenv para instalar as dependências:
     ```shell
-        cd $(CARMEN_HOME)/src/virtual_depth_estimator/DPT
+    cd $CARMEN_HOME/src/virtual_depth_estimator/DPT
     ```
     ```shell
-        ./create_env.sh
+    ./create_env.sh
     ```
 
 4) Compilando:
     ```shell
-        cd $(CARMEN_HOME)/src/virtual_depth_estimator/
+    cd $CARMEN_HOME/src/virtual_depth_estimator/
     ```
     ```shell
-        make
+    make
     ```
 
 4) Exemplo de execução:
     ```shell
-        ./central
+    ./central
     ```
     ```shell
-        ./proccontrol process-playback-fovea.ini 
+    ./proccontrol process-playback-fovea.ini 
     ```
 5) Ative a venv:
     ```shell
-        source $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/venv/bin/activate
+    source $CARMEN_HOME/src/virtual_depth_estimator/DPT/venv/bin/activate
     ```
 6)  Execute o código
     ```shell
-        (venv) > ./virtual_depth -camera3 1
+    (venv) > ./virtual_depth -camera3 1
     ```
 
 **Vídeo com a execução:**
