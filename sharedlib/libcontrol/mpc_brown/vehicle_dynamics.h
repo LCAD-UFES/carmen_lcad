@@ -133,16 +133,16 @@ vector<double> lateral_tire_forces( BicycleModelParams B, double alpha_f, double
 
 void _lateral_tire_forces(BicycleModelParams B, vector<double> q, vector<double> u, int num_iters);
 
-vector <double> aaa(BicycleModelParams B, double E, double  N, double phi, double Ux , double Uy, double r, 
-double delta_, double Fxf, double Fxr, double  _phi_r, double k, double theta, double Phi);
+vector <double> aaa(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
+double _delta, double Fxf, double Fxr);
 
-vector <double> make_TrackingBicycleState(BicycleModelParams B, double delta_s, double Ux, double Uy, double r, double delta_phi, double e,
-                              double delta_, double Fxf, double Fxr,
-                              double V, double k, double theta, double Phi);
+vector <double> make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, double _delta_phi,
+                              double _delta, double Fxf, double Fxr,
+                              double V, double k);
 
-vector <double> make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r, double delta_phi, double e,
-                              double delta_, double Fxf, double Fxr,
-                              double Ux, double k, double theta, double Phi);
+vector <double> make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
+                              double _delta, double Fxf, double Fxr,
+                              double Ux, double k, double _delta_phi);
 
 vector <double> stable_limits(BicycleModelParams B, double Ux, double Fxf, double Fxr);
 

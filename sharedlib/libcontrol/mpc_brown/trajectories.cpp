@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <boost/math/interpolators/cubic_b_spline.hpp>
 #include "trajectories.h"
+#include "vehicle_dynamics.h"
 
 using namespace std;
 
@@ -21,12 +22,12 @@ int
 searchsortedfirst (vector<double> t, double num)
 {
     vector<double> aux;
-    for(int i = 0; i < t.size(); i++)
+    for(unsigned int i = 0; i < t.size(); i++)
     {
         aux.insert(aux.end(), t[i]);
     }
     sort(aux.begin(), aux.end());
-    for(int i = 0; i < t.size(); i++) 
+    for(unsigned int i = 0; i < t.size(); i++) 
     {
         if (num >= aux[i])
         {
@@ -36,6 +37,7 @@ searchsortedfirst (vector<double> t, double num)
     return t.size();
 }
 
+/*
 int
 clamp (int x, int lo , int hi){
     if(x < lo) 
@@ -52,7 +54,7 @@ clamp (int x, int lo , int hi){
         }
     }
 }
-
+*/
 void 
 t_function (TrajectoryTube traj, double t)
 {

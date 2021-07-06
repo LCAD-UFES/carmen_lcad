@@ -43,7 +43,7 @@ compute_time_steps(MPCTimeSteps TS, double t0)
 {
     //TS.prev_ts = TS.ts;
     TS.prev_ts.clear();
-    for (int i = 0 ; i < TS.prev_ts.size(); i ++ )
+    for (unsigned int i = 0 ; i < TS.prev_ts.size(); i ++ )
     {
         TS.prev_ts.push_back(TS.ts[i]);
     }

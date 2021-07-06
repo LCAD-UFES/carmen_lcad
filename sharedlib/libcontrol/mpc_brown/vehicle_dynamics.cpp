@@ -67,7 +67,7 @@ lateral_tire_forces( BicycleModelParams B, double alpha_f, double alpha_r, doubl
     {
         double Fzf = (B.m * B.G * B.b - B.h * Fx) / B.L;
         double Fyf = fialatiremodel(alpha_f, B.c_alphaf, B.mi, Fxf, Fzf);
-        double Fx = Fxf*c_delta - Fyf*s_delta + Fxr;
+        Fx = Fxf * c_delta - Fyf*s_delta + Fxr;
     }
     double Fzr = (B.m * B.G * B.a + B.h * Fx) / B.L;
     double Fyr = fialatiremodel(alpha_r, B.c_alphar, B.mi, Fxr, Fzr);
@@ -97,14 +97,15 @@ _lateral_tire_forces(BicycleModelParams B, vector<double> q, vector<double> u, i
 
 
 vector <double>
-aaa(BicycleModelParams B, double E, double  N, double _phi, double Ux , double Uy, double r, 
-double _delta, double Fxf, double Fxr, double  _phi_r, double k, double theta, double Phi)
+aaa(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
+double _delta, double Fxf, double Fxr)
 {
     double s_phi = sin(_phi), c_phi = cos(_phi);
     double s_delta = sin(_delta), c_delta = cos(_delta);
     double alpha_f = atan2(Uy + B.a * r, Ux) - _delta;
     double alpha_r = atan2(Uy - B.b*r, Ux);
-    vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta);
+    int num = 0;
+    vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta, num);
     double Fx_drag = -B.Cd0 - Ux *(B.Cd1 + B.Cd2 * Ux);
     double Fx_grade = 0;    // TODO: figure out how roll/pitch are ordered
     double Fy_grade = 0;
@@ -122,15 +123,16 @@ double _delta, double Fxf, double Fxr, double  _phi_r, double k, double theta, d
 
 
 vector <double>
-make_TrackingBicycleState(BicycleModelParams B, double _deltas, double Ux, double Uy, double r, double _delta_phi, double e,
+make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, double _delta_phi,
                               double _delta, double Fxf, double Fxr,
-                              double V, double k, double theta, double Phi)
+                              double V, double k)
 {
     double s_delta_phi = sin(_delta_phi), c_delta_phi = cos(_delta_phi);
     double s_delta = sin(_delta), c_delta = cos(_delta);
     double alpha_f = atan2(Uy + B.a * r, Ux) - _delta;
     double alpha_r = atan2(Uy - B.b * r, Ux);
-    vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta);
+    int num = 0;
+    vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta, num);
     double Fx_drag = -B.Cd0 - Ux * (B.Cd1 + B.Cd2 * Ux);
     double Fx_grade = 0;    // TODO: figure out how roll/pitch are ordered
     double Fy_grade = 0;
@@ -149,15 +151,16 @@ make_TrackingBicycleState(BicycleModelParams B, double _deltas, double Ux, doubl
 
 
 vector <double>
-make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r, double _delta_phi, double e,
+make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
                               double _delta, double Fxf, double Fxr,
-                              double Ux, double k, double theta, double Phi)
+                              double Ux, double k, double _delta_phi)
 {
     double s_delta_phi = sin(_delta_phi), c_delta_phi = cos(_delta_phi);
     double s_delta = sin(_delta), c_delta = cos(_delta);
     double alpha_f = atan2(Uy + B.a * r, Ux) - _delta;
     double alpha_r = atan2(Uy - B.b * r, Ux);
-    vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta);
+    int num = 0;
+    vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta, num);
     double Fy_grade = 0;
     double F_til_yf = Fy[0] * c_delta + Fxf * s_delta;
     vector <double> vec;
@@ -197,6 +200,18 @@ stable_limits(BicycleModelParams B, double Ux, double Fxf, double Fxr)
     double rF  = (-B.mi * B.G + Fy_grade / B.m) / Ux;
     double UyF = Ux * tan_alphar_slide + B.b * rF;
     double mEF = (rF - rE) / (UyF - UyE);
+    vector<double> G_veh;
+    G_veh.push_back(alpha_r_slide);
+    G_veh.push_back(alpha_r_slide);
+    G_veh.push_back(rC - UyC * mCD);
+    G_veh.push_back(-rF + UyF * mEF);
+    return G_veh;
+    /*H_veh = @SMatrix [ 1/Ux -b/Ux;    # β max (≈Uy/Ux)
+                      -1/Ux  b/Ux;    # β min (≈Uy/Ux)
+                       -mCD     1;    # r max
+                        mEF    -1]    # r min
+    G_veh = SVector(αr_slide, αr_slide, rC - UyC*mCD, -rF + UyF*mEF)
+    δ_min, δ_max, H_veh, G_veh*/
 
 }
 
@@ -243,7 +258,9 @@ apply_control_limits(ControlLimits CL, vector <double> vec, double Ux)
     //double Ux = ForwardDiff.value(Ux)    // important for ForwardDiff/linearization, since Ux is technically a state variable
     BicycleControl2 BC2;
     BC2._delta = clamp(vec[0], -_delta_max, _delta_max);
-    BC2.Fx = max(min(vec[1], Fx_max, Px_max/Ux), Fx_min);
+    double min_num = min(vec[1], Fx_max);
+    min_num = min(min_num, Px_max/Ux);
+    BC2.Fx = max(min_num, Fx_min);
     return BC2;
 }
 
@@ -260,7 +277,7 @@ steady_state_estimates(VehicleModel X, double V, double A_tan, double k,
         if(abs(A_rad) > A_max)    // nominal trajectory lateral acceleration exceeds friction limit
         {
             A_rad = A_max*sign(A_rad);
-            double A_tan = 0.0;
+            A_tan = 0.0;
             // error("TODO: case when nominal trajectory lateral acceleration exceeds friction limit")
         }else    // prioritize radial acceleration for path tracking; reduce intended acceleration along path to compensate
         {       
@@ -313,7 +330,7 @@ steady_state_estimates(VehicleModel X, double V, double A_tan, double k,
         Fyf = F_til_yf * c_delta - F_til_xf * s_delta;
         double Fyf_max = sqrt(Ff_max * Ff_max - Fxf * Fxf);
         double alpha_f = atan(_invfialatiremodel(Fyf, X.bicycle_model.c_alphaf, Fyf_max));
-        double _delta = atan2(Uy + X.bicycle_model.a * r, Ux) - alpha_f;
+        _delta = atan2(Uy + X.bicycle_model.a * r, Ux) - alpha_f;
 
         if(i == num_iters)
         {

@@ -46,7 +46,7 @@ TrajectoryNode construct_TrajectoryNode();
 
 int searchsortedfirst (vector<double> t, double num);
 
-int clamp (int x, int lo , int hi);
+//int clamp (int x, int lo , int hi);
 
 void  t_function (TrajectoryTube traj, double t);
 

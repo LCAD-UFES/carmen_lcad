@@ -10,9 +10,9 @@ trajectories.o: trajectories.cpp
 	g++ -c trajectories.cpp -W -Wall -ansi -pedantic -std=c++11
 
 coupled_lat_long.o: coupled_lat_long.cpp
-	g++ -c trajectories.cpp -W -Wall -ansi -pedantic -std=c++11
+	g++ -c coupled_lat_long.cpp -W -Wall -ansi -pedantic -std=c++11
 	
-decoupled_lat_long.o:decoupled_lat_long.cpp
+decoupled_lat_long.o: decoupled_lat_long.cpp
 	g++ -c decoupled_lat_long.cpp -W -Wall -ansi -pedantic -std=c++11
 
 math.o: math.cpp
