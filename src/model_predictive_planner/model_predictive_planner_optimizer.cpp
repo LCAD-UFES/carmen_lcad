@@ -101,8 +101,8 @@ plot_phi_profile(MPP::TrajectoryControlParameters tcp)
 
 	if (tcp.k.size() == 4)
 	{
-		knots_x[2] = tcp.tt / 2.0;
 		knots_x[1] = tcp.tt / 4.0;
+		knots_x[2] = tcp.tt / 2.0;
 	}
 	// **************
 
@@ -422,8 +422,8 @@ get_phi_spline(MPP::TrajectoryControlParameters tcp)
 
 	if (tcp.k.size() == 4)
 	{
-		knots_x[2] = tcp.tt / 2.0;
 		knots_x[1] = tcp.tt / 4.0;
+		knots_x[2] = tcp.tt / 2.0;
 	}
 
 	const gsl_interp_type *type = gsl_interp_cspline;
