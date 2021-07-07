@@ -821,7 +821,7 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		carmen_robot_and_trailer_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].beta};
-		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(GlobalState::localizer_pose,
+		double proximity_point = carmen_obstacle_avoider_proximity_to_obstacles(GlobalState::localizer_pose,
 				point_to_check, GlobalState::distance_map, safety_distance);
 		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());

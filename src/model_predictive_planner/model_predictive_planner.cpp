@@ -482,7 +482,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailer_path_point_t>
 			carmen_robot_and_trailer_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].beta};
 			if (GlobalState::distance_map != NULL)
 			{
-				double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
+				double circle_invasion = sqrt(carmen_obstacle_avoider_proximity_to_obstacles(&localizer,
 						point_to_check, GlobalState::distance_map, circle_radius));
 
 				if (circle_invasion > max_circle_invasion)

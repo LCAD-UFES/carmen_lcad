@@ -603,7 +603,7 @@ move_semi_trailer_marker_to_robot_coordinate_frame(double x, double y, double be
 
 //This Function expected the points to check in local coordinates, if you need use global coordinates, just set localizer_pose as 0.0
 double
-carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_robot_and_trailer_pose_t *localizer_pose,
+carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailer_pose_t *localizer_pose,
 		carmen_robot_and_trailer_pose_t local_point_to_check, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
 {
 	check_collision_config_initialization();
