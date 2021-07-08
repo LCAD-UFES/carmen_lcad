@@ -813,6 +813,7 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 	{
 		last_not_autonomous_timestamp = timestamp;
 		wait_start_moving = true;
+		selected_path_id = frenet_path_planner_num_paths / 2;
 	}
 	else if (carmen_get_time() - last_not_autonomous_timestamp < 3.0)
 		wait_start_moving = true;

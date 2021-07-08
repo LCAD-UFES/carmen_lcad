@@ -101,8 +101,8 @@ plot_phi_profile(MPP::TrajectoryControlParameters tcp)
 
 	if (tcp.k.size() == 4)
 	{
-		knots_x[2] = tcp.tt / 2.0;
 		knots_x[1] = tcp.tt / 4.0;
+		knots_x[2] = tcp.tt / 2.0;
 	}
 	// **************
 
@@ -422,8 +422,8 @@ get_phi_spline(MPP::TrajectoryControlParameters tcp)
 
 	if (tcp.k.size() == 4)
 	{
-		knots_x[2] = tcp.tt / 2.0;
 		knots_x[1] = tcp.tt / 4.0;
+		knots_x[2] = tcp.tt / 2.0;
 	}
 
 	const gsl_interp_type *type = gsl_interp_cspline;
@@ -821,7 +821,7 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		carmen_robot_and_trailer_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].beta};
-		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(GlobalState::localizer_pose,
+		double proximity_point = carmen_obstacle_avoider_proximity_to_obstacles(GlobalState::localizer_pose,
 				point_to_check, GlobalState::distance_map, safety_distance);
 		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
@@ -996,7 +996,7 @@ void
 get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 		MPP::TrajectoryControlParameters *tcp_seed,
 		MPP::TrajectoryDimensions *target_td,
-		double max_plan_cost,
+		double max_plan_cost, int max_iterations,
 		double (* my_f) (const gsl_vector  *x, void *params))
 {
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
@@ -1011,6 +1011,7 @@ get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 	params.o_step_size = F_STEP_SIZE;
 	params.o_tol = F_TOL;
 	params.o_epsabs = F_EPSABS;
+	params.max_iterations = max_iterations;
 }
 
 
@@ -1045,6 +1046,9 @@ get_tcp_with_n_knots(MPP::TrajectoryControlParameters &tcp, int n)
 MPP::TrajectoryControlParameters
 get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params)
 {
+	int current_eliminate_path_follower_value = GlobalState::eliminate_path_follower;
+	GlobalState::eliminate_path_follower = 0;
+
 	gsl_multimin_function_fdf my_func;
 
 	// O phi inicial, que eh guardado em tcp_seed.k[0], nao eh otimizado, mas usamos o tamanho de k aqui
@@ -1080,7 +1084,7 @@ get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp
 
 		status = gsl_multimin_test_gradient(s->gradient, params.o_epsabs); // esta funcao retorna GSL_CONTINUE ou zero
 
-	} while ((status == GSL_CONTINUE) && (iter < 50));
+	} while ((status == GSL_CONTINUE) && (iter < params.max_iterations));
 
 	MPP::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -1092,6 +1096,8 @@ get_optimized_trajectory_control_parameters(MPP::TrajectoryControlParameters tcp
 
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
+
+	GlobalState::eliminate_path_follower = current_eliminate_path_follower_value;
 
 	return (tcp);
 }
@@ -1248,7 +1254,7 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 	MPP::TrajectoryControlParameters tcp_seed;
 	if (!previous_tcp.valid)
 	{
-		get_optimization_params(params, target_v, &tcp_seed, &target_td, 1.0, mpp_optimization_function_f);
+		get_optimization_params(params, target_v, &tcp_seed, &target_td, 1.0, 50, mpp_optimization_function_f);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 		tcp_seed = get_n_knots_tcp_from_detailed_lane(detailed_lane, 3,
 				target_td.v_i, target_td.phi_i, target_td.d_yaw, tcp_seed.a,  tcp_seed.s, tcp_seed.tt);	// computa tcp com tres nos
@@ -1256,7 +1262,7 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 	else
 	{
 		tcp_seed = reduce_tcp_to_3_knots(previous_tcp);
-		get_optimization_params(params, target_v, &tcp_seed, &target_td, 1.0, mpp_optimization_function_f);
+		get_optimization_params(params, target_v, &tcp_seed, &target_td, 1.0, 50, mpp_optimization_function_f);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 	}
 
@@ -1273,7 +1279,7 @@ get_complete_optimized_trajectory_control_parameters(MPP::TrajectoryControlParam
 
 	// A funcao acima soh usa tcps com tres nos
 	get_tcp_with_n_knots(tcp_complete, 4);
-	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, mpp_optimization_function_g);
+	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, 50, mpp_optimization_function_g);
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
 
 //	plot_phi_profile(tcp_complete);

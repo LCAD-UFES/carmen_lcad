@@ -62,7 +62,7 @@ SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from
 		  test_diff_map.cpp #neural_mapper_dataset_check.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
-PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h
+PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h neural_mapper_io.h
 
 # Public libraries, linked to 'carmen/lib'.
 PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a

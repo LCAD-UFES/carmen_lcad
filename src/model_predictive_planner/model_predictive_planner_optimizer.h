@@ -155,6 +155,7 @@ struct ObjectiveFunctionParams
 	double o_step_size;
 	double o_tol;
 	double o_epsabs;
+	int max_iterations;
 };
 
 
@@ -198,7 +199,7 @@ MPP::TrajectoryControlParameters get_optimized_trajectory_control_parameters(MPP
 void get_optimization_params(ObjectiveFunctionParams &params, double target_v,
 		MPP::TrajectoryControlParameters *tcp_seed,
 		MPP::TrajectoryDimensions *target_td,
-		double max_plan_cost,
+		double max_plan_cost, int max_iterations,
 		double (* my_f) (const gsl_vector  *x, void *params));
 
 void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
