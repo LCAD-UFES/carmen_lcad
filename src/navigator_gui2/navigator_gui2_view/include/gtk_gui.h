@@ -70,6 +70,7 @@ typedef enum
 	SELECTING_FINAL_REGION,
 	PLACING_FINAL_GOAL,
 	ORIENTING_FINAL_GOAL,
+	ORIENTING_FINAL_GOAL_SEMI_TRAILER,
 	SELECTING_NEAR_WAYPOINT,
 	EDITING_NEAR_RDDF
 } placement_t;
@@ -278,7 +279,7 @@ namespace View
 		carmen_world_point_t	 new_person;
 		carmen_world_point_t	 new_simulator;
 
-		carmen_world_point_t	 final_goal;
+		carmen_world_robot_and_trailer_pose_t	 final_goal;
 		int final_goal_placed_and_oriented = 0;
 		carmen_point_t destination;
 
@@ -412,6 +413,7 @@ namespace View
 		int selecting_final_region_action(GtkMapViewer *the_map_view __attribute__ ((unused)), carmen_world_point_t *world_point);
 		int placing_final_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
 		int orienting_final_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
+		int orienting_final_goal_semi_trailer_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
 		int selecting_near_waypoint_action(GtkMapViewer *the_map_view __attribute__ ((unused)), carmen_world_point_t *world_point);
 		carmen_rddf_waypoint* find_near_rddf_point(carmen_world_point_t *world_point);
 		int select_near_rddf_point(GtkMapViewer *the_map_view __attribute__ ((unused)), carmen_world_point_t *world_point);
