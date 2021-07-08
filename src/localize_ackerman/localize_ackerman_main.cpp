@@ -1930,6 +1930,7 @@ subscribe_to_ipc_message()
 	
 	//-------------------------------------------------------------------------------------------------------------------------------------//
 	// LIDARS
+	/*
 	if (spherical_sensor_params[10].alive)
 		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
 
@@ -1977,6 +1978,7 @@ subscribe_to_ipc_message()
 
 	if (spherical_sensor_params[25].alive)
 		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 2);
+		*/
 }
 
 
