@@ -403,7 +403,12 @@ static int selecting_near_waypoint_action(GtkMapViewer *the_map_view __attribute
 
 	if ( (placement_status == SELECTING_NEAR_WAYPOINT) )
 	{
-		carmen_rddf_publish_end_point_message(1, world_point->pose);
+		carmen_robot_and_trailer_pose_t pose_with_beta;
+		pose_with_beta.x = world_point->pose.x;
+		pose_with_beta.y = world_point->pose.y;
+		pose_with_beta.theta = world_point->pose.theta;
+		pose_with_beta.beta = 0.0;
+		carmen_rddf_publish_end_point_message(1, pose_with_beta);
 
 		placement_status = NO_PLACEMENT;
 
@@ -2287,7 +2292,12 @@ orienting_final_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *wo
 				world_point->pose.x - final_goal.pose.x);
 		final_goal.pose.theta = angle;
 
-		carmen_rddf_publish_end_point_message(50, final_goal.pose);
+		carmen_robot_and_trailer_pose_t pose_with_beta;
+		pose_with_beta.x = final_goal.pose.x;
+		pose_with_beta.y = final_goal.pose.y;
+		pose_with_beta.theta = final_goal.pose.theta;
+		pose_with_beta.beta = 0.0;
+		carmen_rddf_publish_end_point_message(50, pose_with_beta);
 
 		cursor = gdk_cursor_new(GDK_LEFT_PTR);
 		gdk_window_set_cursor(the_map_view->image_widget->window, cursor);

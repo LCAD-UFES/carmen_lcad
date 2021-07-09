@@ -1405,7 +1405,10 @@ namespace View
 			destination.x = place_of_interest_list[destination_index].annotation_point.x;
 			destination.y = place_of_interest_list[destination_index].annotation_point.y;
 			destination.theta = place_of_interest_list[destination_index].annotation_orientation;
-			final_goal.pose = destination;
+			final_goal.pose.x = destination.x;
+			final_goal.pose.y = destination.y;
+			final_goal.pose.theta = destination.theta;
+			final_goal.pose.beta = 0.0;
 			final_goal.map = this->controls_.map_view->internal_map;
 			carmen_rddf_publish_end_point_message(50, final_goal.pose);
 
@@ -2256,7 +2259,11 @@ namespace View
 
 		if (placement_status == PLACING_FINAL_GOAL)
 		{
-			final_goal = *world_point;
+			final_goal.map = world_point->map;
+			final_goal.pose.x = world_point->pose.x;
+			final_goal.pose.y = world_point->pose.y;
+			final_goal.pose.theta = world_point->pose.theta;
+			final_goal.pose.beta = 0.0;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 			placement_status = ORIENTING_FINAL_GOAL;
@@ -2275,25 +2282,61 @@ namespace View
 
 		if (placement_status == ORIENTING_FINAL_GOAL)
 		{
-			placement_status = NO_PLACEMENT;
-
 			angle = atan2(world_point->pose.y - final_goal.pose.y,
 					world_point->pose.x - final_goal.pose.x);
 			final_goal.pose.theta = angle;
+
+			if (globalpos->semi_trailer_engaged)
+			{
+				placement_status = ORIENTING_FINAL_GOAL_SEMI_TRAILER;
+
+				return TRUE;
+			}
+			else
+			{
+				placement_status = NO_PLACEMENT;
+
+				int half_meters_to_goal = 2 * DIST2D(world_point->pose, final_goal.pose);
+	//			if (use_route_planner_in_graph_mode == 0)
+					carmen_rddf_publish_end_point_message(half_meters_to_goal, final_goal.pose);
+
+				final_goal_placed_and_oriented = 1;
+
+				cursor = gdk_cursor_new(GDK_LEFT_PTR);
+				gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
+
+				update_local_map = 1;
+
+				return TRUE;
+			}
+		}
+
+		return FALSE;
+	}
+
+	int
+	GtkGui::orienting_final_goal_semi_trailer_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point)
+	{
+		if (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER)
+		{
+			placement_status = NO_PLACEMENT;
+
+			final_goal.pose.beta = final_goal.pose.theta - atan2(world_point->pose.y - (final_goal.pose.y - semi_trailer_config->M * sin(final_goal.pose.theta)),
+					world_point->pose.x - (final_goal.pose.x - semi_trailer_config->M * cos(final_goal.pose.theta)));
+
 			int half_meters_to_goal = 2 * DIST2D(world_point->pose, final_goal.pose);
 //			if (use_route_planner_in_graph_mode == 0)
 				carmen_rddf_publish_end_point_message(half_meters_to_goal, final_goal.pose);
 
 			final_goal_placed_and_oriented = 1;
 
-			cursor = gdk_cursor_new(GDK_LEFT_PTR);
+			GdkCursor *cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
 			update_local_map = 1;
 
 			return TRUE;
 		}
-
 		return FALSE;
 	}
 
@@ -2303,7 +2346,12 @@ namespace View
 
 		if ( (placement_status == SELECTING_NEAR_WAYPOINT) )
 		{
-			carmen_rddf_publish_end_point_message(1, world_point->pose);
+			carmen_robot_and_trailer_pose_t pose_with_beta;
+			pose_with_beta.x = world_point->pose.x;
+			pose_with_beta.y = world_point->pose.y;
+			pose_with_beta.theta = world_point->pose.theta;
+			pose_with_beta.beta = 0.0;
+			carmen_rddf_publish_end_point_message(1, pose_with_beta);
 
 			placement_status = NO_PLACEMENT;
 			return TRUE;
@@ -2546,7 +2594,12 @@ namespace View
 		{
 			draw_robot_shape(the_map_view, &final_goal, TRUE, &carmen_red);
 			draw_robot_shape(the_map_view, &final_goal, FALSE, &carmen_black);
-			draw_orientation_mark(the_map_view, &final_goal);
+			carmen_world_point_t final_goal_without_beta;
+			final_goal_without_beta.map = final_goal.map;
+			final_goal_without_beta.pose.x = final_goal.pose.x;
+			final_goal_without_beta.pose.y = final_goal.pose.y;
+			final_goal_without_beta.pose.theta = final_goal.pose.theta;
+			draw_orientation_mark(the_map_view, &final_goal_without_beta);
 		}
 
 		//draw goal list set by the interface
@@ -2933,13 +2986,11 @@ namespace View
 	void
 	GtkGui::draw_placing_animation(GtkMapViewer *the_map_view)
 	{
-		GdkColor *colour = &carmen_black;
-		carmen_world_point_t *draw_point = NULL;
-
 		if ((placement_status != ORIENTING_ROBOT) &&
 				(placement_status != ORIENTING_GOAL) &&
 				(placement_status != ORIENTING_PERSON) &&
 				(placement_status != ORIENTING_FINAL_GOAL) &&
+				(placement_status != ORIENTING_FINAL_GOAL_SEMI_TRAILER) &&
 				(placement_status != ORIENTING_SIMULATOR))
 			return;
 
@@ -2949,36 +3000,18 @@ namespace View
 		     feature has changed.
 		 */
 
-		if (placement_status == ORIENTING_ROBOT)
+		if ((placement_status == ORIENTING_FINAL_GOAL) || (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER))
 		{
-			draw_point = &robot_temp;
-			colour = &carmen_red;
-		}
-		else if (placement_status == ORIENTING_PERSON)
-		{
-			draw_point = &new_person;
-			colour	   = &carmen_orange;
-		}
-		else if (placement_status == ORIENTING_SIMULATOR)
-		{
-			draw_point = &new_simulator;
-			colour	   = &carmen_blue;
-		}
-		else if (placement_status == ORIENTING_GOAL)
-		{
-			draw_point = &goal_temp;
-			colour	   = &carmen_yellow;
-		}
-		else if (placement_status == ORIENTING_FINAL_GOAL)
-		{
-			draw_point = &final_goal;
-			colour	   = &carmen_red;
-		}
+			GdkColor *colour = &carmen_red;
+			carmen_world_robot_and_trailer_pose_t *draw_point = &final_goal;
 
-		draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
+			if (placement_status == ORIENTING_FINAL_GOAL)
+				draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
+			else if (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER)
+				draw_point->pose.beta = final_goal.pose.theta - atan2(cursor_pos.pose.y - (final_goal.pose.y - semi_trailer_config->M * sin(final_goal.pose.theta)),
+						cursor_pos.pose.x - (final_goal.pose.x - semi_trailer_config->M * cos(final_goal.pose.theta)));
 
-		if (1) // @@@ Alberto: o teste era if (placement_status != ORIENTING_PERSON), mas as pessoas ficavam gigantes no momento da colocacao...
-		{
+
 			draw_robot_shape(the_map_view, draw_point, TRUE, colour);
 			draw_robot_shape(the_map_view, draw_point, FALSE, &carmen_black);
 
@@ -2988,13 +3021,60 @@ namespace View
 
 			carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
 					&cursor_pos);
-			draw_orientation_mark(the_map_view, draw_point);
+			carmen_world_point_t draw_point_without_beta;
+			draw_point_without_beta.map = draw_point->map;
+			draw_point_without_beta.pose.x = draw_point->pose.x;
+			draw_point_without_beta.pose.y = draw_point->pose.y;
+			draw_point_without_beta.pose.theta = draw_point->pose.theta;
+			draw_orientation_mark(the_map_view, &draw_point_without_beta);
 		}
 		else
 		{
-			carmen_map_graphics_draw_circle(the_map_view, colour, TRUE, draw_point, 1);
-			carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE, draw_point, 1);
-			carmen_map_graphics_draw_line(the_map_view, colour, draw_point, &cursor_pos);
+			GdkColor *colour = &carmen_black;
+			carmen_world_point_t *draw_point = NULL;
+
+			if (placement_status == ORIENTING_ROBOT)
+			{
+				draw_point = &robot_temp;
+				colour = &carmen_red;
+			}
+			else if (placement_status == ORIENTING_PERSON)
+			{
+				draw_point = &new_person;
+				colour	   = &carmen_orange;
+			}
+			else if (placement_status == ORIENTING_SIMULATOR)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_GOAL)
+			{
+				draw_point = &goal_temp;
+				colour	   = &carmen_yellow;
+			}
+
+			draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
+
+			if (1) // @@@ Alberto: o teste era if (placement_status != ORIENTING_PERSON), mas as pessoas ficavam gigantes no momento da colocacao...
+			{
+				draw_robot_shape(the_map_view, draw_point, TRUE, colour);
+				draw_robot_shape(the_map_view, draw_point, FALSE, &carmen_black);
+
+				carmen_world_point_t mirrored_cursor_pos = cursor_pos;
+				mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
+				mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
+
+				carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
+						&cursor_pos);
+				draw_orientation_mark(the_map_view, draw_point);
+			}
+			else
+			{
+				carmen_map_graphics_draw_circle(the_map_view, colour, TRUE, draw_point, 1);
+				carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE, draw_point, 1);
+				carmen_map_graphics_draw_line(the_map_view, colour, draw_point, &cursor_pos);
+			}
 		}
 	}
 

@@ -1266,7 +1266,7 @@ void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
 	gui->final_goal.map = gui->controls_.map_view->internal_map;
-	gui->final_goal.pose = {rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta};
+	gui->final_goal.pose = {rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta, rddf_end_point_message->point.beta};
 	gui->final_goal_placed_and_oriented = 1;
 }
 

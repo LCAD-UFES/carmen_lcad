@@ -724,7 +724,11 @@ void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 {
 	if (global_gui->final_goal_placed_and_oriented == 1)
 	{
-		carmen_route_planner_set_destination(place_of_interest, global_gui->final_goal.pose);
+		carmen_point_t final_goal_pose;
+		final_goal_pose.x = global_gui->final_goal.pose.x;
+		final_goal_pose.y = global_gui->final_goal.pose.y;
+		final_goal_pose.theta = global_gui->final_goal.pose.theta;
+		carmen_route_planner_set_destination(place_of_interest, final_goal_pose);
 		global_gui->final_goal_placed_and_oriented = 0;
 	}
 	else
@@ -1113,6 +1117,10 @@ int button_release_handler(GtkMapViewer		   *the_map_view,
 		return TRUE;
 
 	rtr = global_gui->orienting_final_goal_action(the_map_view, world_point);
+	if (rtr)
+		return TRUE;
+
+	rtr = global_gui->orienting_final_goal_semi_trailer_action(the_map_view, world_point);
 	if (rtr)
 		return TRUE;
 

@@ -5,7 +5,12 @@
 void
 publish_final_goal(carmen_point_t pose)
 {
-	carmen_rddf_publish_end_point_message(50, pose);
+	carmen_robot_and_trailer_pose_t pose_with_beta;
+	pose_with_beta.x = pose.x;
+	pose_with_beta.y = pose.y;
+	pose_with_beta.theta = pose.theta;
+	pose_with_beta.beta = 0.0;
+	carmen_rddf_publish_end_point_message(50, pose_with_beta);
 }
 
 
