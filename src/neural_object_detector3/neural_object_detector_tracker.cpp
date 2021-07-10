@@ -19,6 +19,7 @@ int crop_w  = -1;     // Width of crop
 int crop_h = -1;     // Heigth of crop
 int original_img_width = -1;
 int original_img_height = -1;
+double max_dist_to_pedestrian_track = -1.0; // The system will process the inmage only if the distance to the crosswalk is smaller than this value; negative number indicates to ignore the distanec and process all images
 
 carmen_localize_ackerman_globalpos_message *globalpos_msg = NULL;
 carmen_velodyne_partial_scan_message *velodyne_msg = NULL;
@@ -1078,7 +1079,9 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 
 	dist_to_pedestrian_track = distance_to_pedestrian_track_annotaion();
 
-	if (dist_to_pedestrian_track < 70.0)        // 70 meter is above the range of velodyne
+	// printf("Dist %lf\n", max_dist_to_pedestrian_track);
+
+	if (max_dist_to_pedestrian_track < 0.0 || dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
 	{
 		//////// Yolo
 		predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
@@ -1385,6 +1388,7 @@ read_parameters(int argc, char **argv)
    		{(char *) "commandline", (char *) "cropy",  CARMEN_PARAM_INT, &crop_y, 0, NULL},
    		{(char *) "commandline", (char *) "cropw",  CARMEN_PARAM_INT, &crop_w, 0, NULL},
    		{(char *) "commandline", (char *) "croph", CARMEN_PARAM_INT, &crop_h, 0, NULL},
+		{(char *) "commandline", (char *) "distance", CARMEN_PARAM_DOUBLE, &max_dist_to_pedestrian_track, 0, NULL},
    	};
    	carmen_param_install_params(argc, argv, optional_commandline_param_list, sizeof(optional_commandline_param_list) / sizeof(optional_commandline_param_list[0]));
 
