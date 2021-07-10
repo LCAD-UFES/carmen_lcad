@@ -124,11 +124,14 @@ extern "C" {
 	
 	bool busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 
+	bool pedestrian_near_pose_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi);
+
 	bool going_forward();
 
 	carmen_robot_and_trailer_traj_point_t *get_nearest_forward_waypoint_ahead();
-
 	carmen_robot_and_trailer_traj_point_t *get_nearest_reverse_waypoint_ahead();
+	carmen_robot_and_trailer_traj_point_t *get_waypoint_near_to_nearest_pedestrian_ahead();
+
 	carmen_robot_and_trailer_traj_point_t *get_path_final_pose();
 	carmen_robot_and_trailer_traj_point_t *get_final_goal();
 	bool nearest_pose_is_the_final_pose(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi);

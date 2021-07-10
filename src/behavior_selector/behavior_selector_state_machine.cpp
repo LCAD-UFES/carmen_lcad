@@ -69,6 +69,24 @@ reverse_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_
 
 
 bool
+pedestrian_near_pose_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_robot_and_trailer_traj_point_t *waypoint_near_to_nearest_pedestrian_ahead = get_waypoint_near_to_nearest_pedestrian_ahead();
+
+	if (waypoint_near_to_nearest_pedestrian_ahead == NULL)
+		return (false);
+
+	double distance_to_waypoint_near_to_nearest_pedestrian_ahead = DIST2D_P(waypoint_near_to_nearest_pedestrian_ahead, &current_robot_pose_v_and_phi);
+	double distance_to_act = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_waypoint_near_to_nearest_pedestrian_ahead);
+
+	if (distance_to_act >= distance_to_waypoint_near_to_nearest_pedestrian_ahead)
+		return (true);
+	else
+		return (false);
+}
+
+
+bool
 path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_robot_and_trailer_traj_point_t *path_final_pose = get_path_final_pose();
@@ -98,6 +116,20 @@ distance_to_reverse_waypoint(carmen_robot_and_trailer_traj_point_t current_robot
 	double distance_to_reverse_waypoint = DIST2D_P(nearest_reverse_waypoint_ahead, &current_robot_pose_v_and_phi);
 
 	return (distance_to_reverse_waypoint);
+}
+
+
+double
+distance_to_waypoint_near_to_nearest_pedestrian_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_robot_and_trailer_traj_point_t *waypoint_near_to_nearest_pedestrian_ahead = get_waypoint_near_to_nearest_pedestrian_ahead();
+
+	if (waypoint_near_to_nearest_pedestrian_ahead == NULL)
+		return (false);
+
+	double distance_to_waypoint_near_to_nearest_pedestrian_ahead = DIST2D_P(waypoint_near_to_nearest_pedestrian_ahead, &current_robot_pose_v_and_phi);
+
+	return (distance_to_waypoint_near_to_nearest_pedestrian_ahead);
 }
 
 
@@ -351,6 +383,16 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 			break;
 
 
+		case Stopping_To_Pedestrian:
+			break;
+		case Stopped_At_Pedestrian_S0:
+			break;
+		case Stopped_At_Pedestrian_S1:
+			break;
+		case Stopped_At_Pedestrian_S2:
+			break;
+
+
 		case Stopping_To_Go_Forward:
 			break;
 		case Stopped_At_Go_Forward_S0:
@@ -473,6 +515,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Yield;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
+			else if (pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Stopping_To_Pedestrian;
 			else if (reverse_waypoint_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_To_Reverse;
 			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
@@ -566,7 +610,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 				if (steps2 > 3)
 				{
-					if (!busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) || autonomous)
+					if (!busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 					{
 						steps2 = 0;
 						decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S2;
@@ -760,6 +804,43 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped_At_Go_Forward_S2:
 			if (autonomous && ((current_robot_pose_v_and_phi.v > 0.5) || (distance_to_forward_waypoint(current_robot_pose_v_and_phi) > 1.0)))
 				decision_making_state_msg->low_level_state = Free_Running;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
+			break;
+
+
+		// Pedestrian near RDDF handling
+		case Stopping_To_Pedestrian:
+			if ((current_robot_pose_v_and_phi.v < 0.15) &&
+				(distance_to_waypoint_near_to_nearest_pedestrian_ahead(current_robot_pose_v_and_phi) < 2.0))
+				decision_making_state_msg->low_level_state = Stopped_At_Pedestrian_S0;
+			else if (!pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Free_Running;
+			break;
+		case Stopped_At_Pedestrian_S0:
+			decision_making_state_msg->low_level_state = Stopped_At_Pedestrian_S1;
+			break;
+		case Stopped_At_Pedestrian_S1:
+			{
+				static int steps2 = 0;
+
+				if (steps2 > 3)
+				{
+					if (!pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+					{
+						steps2 = 0;
+						decision_making_state_msg->low_level_state = Stopped_At_Pedestrian_S2;
+					}
+				}
+				else
+					steps2++;
+			}
+			break;
+		case Stopped_At_Pedestrian_S2:
+			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))
+				decision_making_state_msg->low_level_state = Free_Running;
+			if (pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Stopped_At_Pedestrian_S0;
 			if (!autonomous)
 				decision_making_state_msg->low_level_state = Stopped;
 			break;

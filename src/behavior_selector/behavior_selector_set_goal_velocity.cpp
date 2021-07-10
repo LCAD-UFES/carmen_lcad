@@ -34,6 +34,11 @@ extern double annotation_velocity_pedestrian_track_stop;
 extern double annotation_velocity_yield;
 extern double annotation_velocity_barrier;
 
+extern carmen_moving_objects_point_clouds_message *pedestrians_tracked;
+extern int behavior_selector_check_pedestrian_near_path;
+extern double behavior_pedestrian_near_path_min_lateral_distance;
+extern double behavior_selector_pedestrian_near_path_min_longitudinal_distance;
+
 
 carmen_robot_and_trailer_traj_point_t
 displace_pose(carmen_robot_and_trailer_traj_point_t robot_pose, double displacement)
@@ -96,6 +101,49 @@ get_nearest_reverse_waypoint_ahead()
 
 	if (i < last_rddf_message->number_of_poses)
 		return (&(last_rddf_message->poses[i]));
+	else
+		return (NULL);
+}
+
+
+carmen_robot_and_trailer_traj_point_t *
+get_waypoint_near_to_nearest_pedestrian_ahead()
+{
+	if (!pedestrians_tracked || !behavior_selector_check_pedestrian_near_path)
+		return (NULL);
+
+	double distance_to_nearest_pedestrian_ahead = 100000.0;
+	int index_of_waypoint = -1;
+	for (int i = 0; i < pedestrians_tracked->num_point_clouds; i++)
+	{
+		if (strcmp(pedestrians_tracked->point_clouds[i].model_features.model_name, "pedestrian") == 0)
+		{
+			for (int j = 0; j < last_rddf_message->number_of_poses; j++)
+			{
+				double distance = DIST2D(pedestrians_tracked->point_clouds[i].object_pose, last_rddf_message->poses[j]);
+				if ((distance < behavior_pedestrian_near_path_min_lateral_distance) && (distance < distance_to_nearest_pedestrian_ahead))
+				{
+					distance_to_nearest_pedestrian_ahead = distance;
+					index_of_waypoint = j;
+				}
+			}
+		}
+	}
+
+	if (index_of_waypoint != -1)
+	{
+		double safe_distance = robot_config.distance_between_front_and_rear_axles +
+							   robot_config.distance_between_front_car_and_front_wheels +
+							   behavior_selector_pedestrian_near_path_min_longitudinal_distance;
+		double distance = 0.0;
+		while ((distance < safe_distance) && (index_of_waypoint > 0))
+		{
+			distance += DIST2D(last_rddf_message->poses[index_of_waypoint], last_rddf_message->poses[index_of_waypoint - 1]);
+			index_of_waypoint--;
+		}
+
+		return (&(last_rddf_message->poses[index_of_waypoint]));
+	}
 	else
 		return (NULL);
 }
