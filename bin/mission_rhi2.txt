@@ -1,4 +1,4 @@
-# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas. Caracteres apos # sao ignorados.
 #
 
 # Missao 1
@@ -20,7 +20,7 @@ go
 stop
 
 set route planner graph to data/graphs/graph-rddf-poc-rhi-20210709-percurso-3.gr
-set course to 7757127.010337, -364053.960934, 0.589534
+set course to 7757131.375791, -364050.012881, 1.437968
 go 
 stop # tira de modo autonomo
 

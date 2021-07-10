@@ -76,7 +76,6 @@ vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of
 		int who_set_the_goal_v, carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 
-
 static int necessary_maps_available = 0;
 static bool obstacle_avoider_active_recently = false;
 static int activate_tracking = 0;
@@ -814,6 +813,7 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 		last_not_autonomous_timestamp = timestamp;
 		wait_start_moving = true;
 		selected_path_id = frenet_path_planner_num_paths / 2;
+		localize_ackerman_initialize_message_timestamp = carmen_get_time(); // isso forcca o frenet a reiniciar os paths na pose do robot
 	}
 	else if (carmen_get_time() - last_not_autonomous_timestamp < 3.0)
 		wait_start_moving = true;
