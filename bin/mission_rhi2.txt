@@ -1,0 +1,27 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+
+# Missao 1
+set route planner graph to data/graphs/graph-rddf-poc-rhi-20210709-percurso-1.gr
+
+# Forno 1
+set course to 7757127.010337, -364053.960934, 0.589534
+go 
+stop # tira de modo autonomo
+
+if previous task failed, execute task at label outro_caminho # isso eh um goto para a task de label <label>
+
+fim: # um label tem que ficar sozinho numa linha e marca a task da linha seguinte
+mission completed
+
+outro_caminho:
+park at 7757097.93, -364058.91, 0.131
+go
+stop
+
+set route planner graph to data/graphs/graph-rddf-poc-rhi-20210709-percurso-3.gr
+set course to 7757127.010337, -364053.960934, 0.589534
+go 
+stop # tira de modo autonomo
+
+execute task at label fim
