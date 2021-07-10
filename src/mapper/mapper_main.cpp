@@ -1390,9 +1390,7 @@ get_lidars_sensor_params()
 		sensors_params[i + 10].vertical_resolution = lidar_config[i].shot_size;
 		sensors_params[i + 10].ray_order = lidar_config[i].ray_order;
 		sensors_params[i + 10].vertical_correction = lidar_config[i].vertical_angles;
-		// sensors_params[i + 10].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();       // Ninguem sabe para que servem estes valores e aparentemente nao sao usados para nada
-		// sensors_params[i + 10].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
-		sensors_params[i + 10].range_max = mapper_velodyne_range_max;
+		sensors_params[i + 10].range_max = lidar_config[i].max_range;
 		sensors_params[i + 10].range_max_factor = mapper_range_max_factor;
 		sensors_params[i + 10].range_division_factor = lidar_config[i].range_division_factor;
 		sensors_params[i + 10].time_spent_by_each_scan = lidar_config[i].time_between_shots;
