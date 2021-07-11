@@ -209,6 +209,8 @@ get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation
 bool
 busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
+//	return (false);
+
 	static double last_pedestrian_track_busy_timestamp = 0.0;
 
 //	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,

@@ -5,7 +5,7 @@
 set route planner graph to data/graphs/graph-rddf-poc-rhi-20210710-percurso-1.gr
 
 # Forno 1
-set course to 7757131.63, -364048.23, 1.393
+set course to 7757131.502098, -364049.124379, 1.403787
 go 
 stop # tira de modo autonomo
 

@@ -69,8 +69,10 @@ reverse_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_
 
 
 bool
-pedestrian_near_pose_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+pedestrian_near_pose_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
+	static double last_pedestrian_near_pose_ahead_timestamp = 0.0;
+
 	carmen_robot_and_trailer_traj_point_t *waypoint_near_to_nearest_pedestrian_ahead = get_waypoint_near_to_nearest_pedestrian_ahead();
 
 	if (waypoint_near_to_nearest_pedestrian_ahead == NULL)
@@ -80,6 +82,9 @@ pedestrian_near_pose_ahead(carmen_robot_and_trailer_traj_point_t current_robot_p
 	double distance_to_act = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_waypoint_near_to_nearest_pedestrian_ahead);
 
 	if (distance_to_act >= distance_to_waypoint_near_to_nearest_pedestrian_ahead)
+		last_pedestrian_near_pose_ahead_timestamp = timestamp;
+
+	if (timestamp - last_pedestrian_near_pose_ahead_timestamp < 1.5)
 		return (true);
 	else
 		return (false);
@@ -515,7 +520,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Yield;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
-			else if (pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+			else if (pedestrian_near_pose_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_To_Pedestrian;
 			else if (reverse_waypoint_ahead(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_To_Reverse;
@@ -814,7 +819,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			if ((current_robot_pose_v_and_phi.v < 0.15) &&
 				(distance_to_waypoint_near_to_nearest_pedestrian_ahead(current_robot_pose_v_and_phi) < 2.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Pedestrian_S0;
-			else if (!pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+			else if (!pedestrian_near_pose_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Stopped_At_Pedestrian_S0:
@@ -826,7 +831,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 				if (steps2 > 3)
 				{
-					if (!pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+					if (!pedestrian_near_pose_ahead(current_robot_pose_v_and_phi, timestamp))
 					{
 						steps2 = 0;
 						decision_making_state_msg->low_level_state = Stopped_At_Pedestrian_S2;
@@ -839,7 +844,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped_At_Pedestrian_S2:
 			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))
 				decision_making_state_msg->low_level_state = Free_Running;
-			if (pedestrian_near_pose_ahead(current_robot_pose_v_and_phi))
+			if (pedestrian_near_pose_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopped_At_Pedestrian_S0;
 			if (!autonomous)
 				decision_making_state_msg->low_level_state = Stopped;
