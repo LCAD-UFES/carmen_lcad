@@ -727,6 +727,9 @@ set_goal_velocity_according_to_state_machine(carmen_robot_and_trailer_traj_point
 		(behavior_selector_state_message.low_level_state == Stopped_At_Yield_S1) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S0) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S1) ||
+		(behavior_selector_state_message.low_level_state == Stopping_To_Pedestrian) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Pedestrian_S0) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Pedestrian_S1) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S0) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S1)
 	   )
@@ -941,7 +944,12 @@ set_goal_velocity_according_to_last_speed_limit_annotation(carmen_robot_and_trai
 double
 compute_max_v_using_torricelli(double v_init, double aceleration, double distance)
 {
-	return (sqrt((v_init * v_init) + (2.0 * aceleration * distance)));
+	double max_v = sqrt((v_init * v_init) + (2.0 * aceleration * distance));
+
+	if (max_v > parking_speed_limit)
+		max_v = parking_speed_limit;
+
+	return (max_v);
 }
 
 

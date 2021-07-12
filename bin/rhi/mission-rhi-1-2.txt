@@ -9,5 +9,5 @@ set course to 7757131.502098, -364049.124379, 1.403787
 go 
 stop # tira de modo autonomo
 
-# mission completed
+mission completed
 

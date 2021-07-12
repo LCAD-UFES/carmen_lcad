@@ -765,20 +765,22 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 	
     for (unsigned int i = 0; i < predictions.size(); i++)
 	{
+		sprintf(info, "prob %.2f", predictions[i].prob);
 		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
 				Scalar(255, 0, 255), 4);
+		putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 	}
 
     for (unsigned int i = 0; i < pedestrian.size(); i++)
     {
     	if (pedestrian[i].active)
     	{
-			sprintf(info, "%.2f %d Person", pedestrian[i].velocity, pedestrian[i].track_id);
+//			sprintf(info, "v %.2f, Person %d", pedestrian[i].velocity, pedestrian[i].track_id);
 
 			rectangle(image, Point(pedestrian[i].x, pedestrian[i].y), Point((pedestrian[i].x + pedestrian[i].w), (pedestrian[i].y + pedestrian[i].h)),
 							Scalar(255, 255, 0), 4);
 
-			putText(image, info, Point(pedestrian[i].x + 1, pedestrian[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+//			putText(image, info, Point(pedestrian[i].x + 1, pedestrian[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     	}
 	}
 
@@ -1084,7 +1086,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	if (max_dist_to_pedestrian_track < 0.0 || dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
 	{
 		//////// Yolo
-		predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
+		predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8);
 		
 		predictions = filter_predictions_of_interest(predictions);
 
