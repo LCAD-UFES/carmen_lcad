@@ -215,9 +215,10 @@ carmen_get_parameters(int argc, char** argv)
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_size", 				CARMEN_PARAM_INT, 	 &precomputed_cost_size, 										1, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_theta_size", 		CARMEN_PARAM_INT, 	 &precomputed_cost_theta_size, 									1, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_resolution", 		CARMEN_PARAM_DOUBLE, &precomputed_cost_resolution,									1, NULL},
-			{(char *) "offroad",			(char *) "planner_precomputed_cost_file_name", 			CARMEN_PARAM_STRING, &precomputed_cost_file_name,									1, NULL},
+//			{(char *) "offroad",			(char *) "planner_precomputed_cost_file_name", 			CARMEN_PARAM_STRING, &precomputed_cost_file_name,									1, NULL},
 		};
 
+	precomputed_cost_file_name = (char *) "cost_matrix_02_101x101x72.data";
 	robot_config.max_phi *= 0.6;
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
