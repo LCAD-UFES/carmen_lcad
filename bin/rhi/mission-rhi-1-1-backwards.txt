@@ -1,0 +1,13 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas. Caracteres apos # sao ignorados.
+#
+
+# Missao 1
+set route planner graph to data/graphs/graph-rddf-poc-rhi-20210710-percurso-1.gr
+
+# Forno 1
+park at 7757090.49, -364059.26, -0.133
+go
+stop
+
+mission completed
+
