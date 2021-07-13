@@ -74,3 +74,21 @@ compute_time_steps(MPCTimeSteps TS, double t0)
     }
 }
 
+TrajectoryTrackingMPC 
+make_TrajectoryTrackingMPC(TrajectoryTube trajectory,VehicleModel dynamics,CoupledControlParams control_params,
+                          BicycleState current_state, BicycleControl current_control, int heartbeat =  0, double time_offset = 0,
+                          MPCTimeSteps time_steps,
+                          vector<LateralTrackingBicycleState> qs, vector<BicycleControl2> us,vector<LateralTrackingBicycleParams> ps)
+{
+    TrajectoryTrackingMPC aux;
+    aux.trajectory = trajectory;
+    aux.dynamics = dynamics;
+    aux.current_state = current_state;
+    aux.current_control = current_control;
+    aux.time_steps = time_steps;
+    aux.qs = qs;
+    aux.us = us;
+    aux.ps = ps;
+    return aux;
+}
+

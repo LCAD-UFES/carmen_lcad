@@ -7,7 +7,9 @@
 #include <vector>
 #include <string>
 #include <map>
-
+#include "trajectories.h"
+#include "vehicle_dynamics.h"
+#include "coupled_lat_long.h"
 using namespace std;
 
 #ifdef __cplusplus
@@ -35,10 +37,24 @@ compute_time_steps(MPCTimeSteps TS, double t0);
 typedef struct
 {
     map<string, double> vehicle;
+    TrajectoryTube trajectory;
+    VehicleModel dynamics;
+    BicycleState current_state;
+    BicycleControl current_control;
     int heartbeat;
     double time_offset;
+    MPCTimeSteps time_steps;
     bool solved;
+    VehicleModel tracking_dynamics;
+    vector<LateralTrackingBicycleState> qs;
+    vector<BicycleControl2> us;
+    vector<LateralTrackingBicycleParams> ps;
 }TrajectoryTrackingMPC;
+
+TrajectoryTrackingMPC make_TrajectoryTrackingMPC(TrajectoryTube trajectory,VehicleModel dynamics,CoupledControlParams control_params,
+                          BicycleState current_state, BicycleControl current_control, int heartbeat , double time_offset,
+                          MPCTimeSteps time_steps,
+                          vector<LateralTrackingBicycleState> qs, vector<BicycleControl2> us,vector<LateralTrackingBicycleParams> ps);
 
 #ifdef __cplusplus
 }
