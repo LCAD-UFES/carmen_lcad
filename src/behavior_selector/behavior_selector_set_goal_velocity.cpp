@@ -34,6 +34,11 @@ extern double annotation_velocity_pedestrian_track_stop;
 extern double annotation_velocity_yield;
 extern double annotation_velocity_barrier;
 
+extern carmen_moving_objects_point_clouds_message *pedestrians_tracked;
+extern int behavior_selector_check_pedestrian_near_path;
+extern double behavior_pedestrian_near_path_min_lateral_distance;
+extern double behavior_selector_pedestrian_near_path_min_longitudinal_distance;
+
 
 carmen_robot_and_trailer_traj_point_t
 displace_pose(carmen_robot_and_trailer_traj_point_t robot_pose, double displacement)
@@ -102,6 +107,49 @@ get_nearest_reverse_waypoint_ahead()
 
 
 carmen_robot_and_trailer_traj_point_t *
+get_waypoint_near_to_nearest_pedestrian_ahead()
+{
+	if (!pedestrians_tracked || !behavior_selector_check_pedestrian_near_path)
+		return (NULL);
+
+	double distance_to_nearest_pedestrian_ahead = 100000.0;
+	int index_of_waypoint = -1;
+	for (int i = 0; i < pedestrians_tracked->num_point_clouds; i++)
+	{
+		if (strcmp(pedestrians_tracked->point_clouds[i].model_features.model_name, "pedestrian") == 0)
+		{
+			for (int j = 0; j < last_rddf_message->number_of_poses; j++)
+			{
+				double distance = DIST2D(pedestrians_tracked->point_clouds[i].object_pose, last_rddf_message->poses[j]);
+				if ((distance < behavior_pedestrian_near_path_min_lateral_distance) && (distance < distance_to_nearest_pedestrian_ahead))
+				{
+					distance_to_nearest_pedestrian_ahead = distance;
+					index_of_waypoint = j;
+				}
+			}
+		}
+	}
+
+	if (index_of_waypoint != -1)
+	{
+		double safe_distance = robot_config.distance_between_front_and_rear_axles +
+							   robot_config.distance_between_front_car_and_front_wheels +
+							   behavior_selector_pedestrian_near_path_min_longitudinal_distance;
+		double distance = 0.0;
+		while ((distance < safe_distance) && (index_of_waypoint > 0))
+		{
+			distance += DIST2D(last_rddf_message->poses[index_of_waypoint], last_rddf_message->poses[index_of_waypoint - 1]);
+			index_of_waypoint--;
+		}
+
+		return (&(last_rddf_message->poses[index_of_waypoint]));
+	}
+	else
+		return (NULL);
+}
+
+
+carmen_robot_and_trailer_traj_point_t *
 get_path_final_pose()
 {
 	if (!last_rddf_message)
@@ -161,6 +209,8 @@ get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation
 bool
 busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
+//	return (false);
+
 	static double last_pedestrian_track_busy_timestamp = 0.0;
 
 //	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
@@ -677,6 +727,9 @@ set_goal_velocity_according_to_state_machine(carmen_robot_and_trailer_traj_point
 		(behavior_selector_state_message.low_level_state == Stopped_At_Yield_S1) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S0) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S1) ||
+		(behavior_selector_state_message.low_level_state == Stopping_To_Pedestrian) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Pedestrian_S0) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Pedestrian_S1) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S0) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S1)
 	   )
@@ -891,7 +944,12 @@ set_goal_velocity_according_to_last_speed_limit_annotation(carmen_robot_and_trai
 double
 compute_max_v_using_torricelli(double v_init, double aceleration, double distance)
 {
-	return (sqrt((v_init * v_init) + (2.0 * aceleration * distance)));
+	double max_v = sqrt((v_init * v_init) + (2.0 * aceleration * distance));
+
+	if (max_v > parking_speed_limit)
+		max_v = parking_speed_limit;
+
+	return (max_v);
 }
 
 

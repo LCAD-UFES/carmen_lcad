@@ -23,6 +23,8 @@ double obstacle_cost_distance 			= 1.0;
 double min_moving_object_velocity 		= 0.3;
 double max_moving_object_velocity 		= 150.0 / 3.6; // 150 km/h
 double moving_object_merge_distance		= 1.0; // m
+int obstacle_distance_mapper_publish_moving_objects = 0;
+
 int behavior_selector_use_symotha 		= 0;
 
 double distance_car_pose_car_front;
@@ -196,6 +198,9 @@ compute_orm_and_irm_occupancy_maps(carmen_map_t *orm_occupancy_map, carmen_map_t
 void 
 moving_objects_detection_tracking_publishing_and_occupancy_map_removal(carmen_map_t &occupancy_map, double timestamp)
 {
+	if (!obstacle_distance_mapper_publish_moving_objects)
+		return;
+
 	carmen_moving_objects_point_clouds_message *moving_objects = obstacle_distance_mapper_datmo(road_network_message,
 			occupancy_map, offline_map, timestamp);
 	if (moving_objects)
@@ -398,6 +403,8 @@ read_parameters(int argc, char **argv)
 	{
 		{(char *) "rrt",						(char *) "obstacle_cost_distance",			CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,			1, NULL},
 		{(char *) "rrt",						(char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL},
+
+		{(char *) "obstacle_distance_mapper",	(char *) "publish_moving_objects",			CARMEN_PARAM_ONOFF,		&obstacle_distance_mapper_publish_moving_objects,		1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "min_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&min_moving_object_velocity,		1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "max_moving_object_velocity",		CARMEN_PARAM_DOUBLE,	&max_moving_object_velocity,		1, NULL},
 		{(char *) "obstacle_distance_mapper",	(char *) "moving_object_merge_distance",	CARMEN_PARAM_DOUBLE,	&moving_object_merge_distance,		1, NULL},

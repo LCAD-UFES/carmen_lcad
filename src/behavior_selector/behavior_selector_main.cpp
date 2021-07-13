@@ -76,7 +76,6 @@ vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of
 		int who_set_the_goal_v, carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 
-
 static int necessary_maps_available = 0;
 static bool obstacle_avoider_active_recently = false;
 static int activate_tracking = 0;
@@ -185,6 +184,12 @@ double annotation_velocity_bump;
 double annotation_velocity_pedestrian_track_stop;
 double annotation_velocity_yield;
 double annotation_velocity_barrier;
+
+carmen_moving_objects_point_clouds_message *pedestrians_tracked = NULL;
+int behavior_selector_check_pedestrian_near_path = 0;
+double behavior_pedestrian_near_path_min_lateral_distance = 4.0;
+double behavior_selector_pedestrian_near_path_min_longitudinal_distance = 5.0;
+
 
 int
 compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_pose)
@@ -814,6 +819,7 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 		last_not_autonomous_timestamp = timestamp;
 		wait_start_moving = true;
 		selected_path_id = frenet_path_planner_num_paths / 2;
+		localize_ackerman_initialize_message_timestamp = carmen_get_time(); // isso forcca o frenet a reiniciar os paths na pose do robot
 	}
 	else if (carmen_get_time() - last_not_autonomous_timestamp < 3.0)
 		wait_start_moving = true;
@@ -1571,6 +1577,13 @@ carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_ini
 
 
 static void
+moving_objects_point_clouds_message_handler_0(carmen_moving_objects_point_clouds_message *msg)
+{
+	pedestrians_tracked = msg;
+}
+
+
+static void
 shutdown_module(int signo)
 {
 	if (signo == SIGINT)
@@ -1670,6 +1683,8 @@ register_handlers()
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_map_server_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (carmen_simulator_ackerman_objects_message_handler), CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message_generic(0, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_0, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1766,6 +1781,10 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints_with_v_multiplier", CARMEN_PARAM_DOUBLE, &distance_between_waypoints_with_v_multiplier, 0, NULL},
 		{(char *) "behavior_selector", (char *) "performs_path_planning", CARMEN_PARAM_ONOFF, &behavior_selector_performs_path_planning, 0, NULL},
 		{(char *) "behavior_selector", (char *) "reverse_driving", CARMEN_PARAM_ONOFF, &behavior_selector_reverse_driving, 0, NULL},
+		{(char *) "behavior_selector", (char *) "check_pedestrian_near_path", CARMEN_PARAM_ONOFF, &behavior_selector_check_pedestrian_near_path, 1, NULL},
+		{(char *) "behavior_selector", (char *) "pedestrian_near_path_min_lateral_distance", CARMEN_PARAM_DOUBLE, &behavior_pedestrian_near_path_min_lateral_distance, 1, NULL},
+		{(char *) "behavior_selector", (char *) "pedestrian_near_path_min_longitudinal_distance", CARMEN_PARAM_DOUBLE, &behavior_selector_pedestrian_near_path_min_longitudinal_distance, 1, NULL},
+
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "rrt",						(char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},

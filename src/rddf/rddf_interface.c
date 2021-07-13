@@ -186,7 +186,7 @@ carmen_rddf_define_messages()
 }
 
 void
-carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_point_t point)
+carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_robot_and_trailer_pose_t point)
 {
     IPC_RETURN_TYPE err;
     carmen_rddf_end_point_message rddf_end_point_message;
@@ -197,7 +197,7 @@ carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_poin
     end_point.x = point.x;
     end_point.y = point.y;
     end_point.theta = point.theta;
-    end_point.beta = 0.0;
+    end_point.beta = point.beta;
 
     rddf_end_point_message.point = end_point;
     rddf_end_point_message.timestamp = carmen_get_time();

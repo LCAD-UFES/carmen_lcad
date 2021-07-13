@@ -82,7 +82,7 @@ carmen_point_t
 carmen_collision_detection_move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement);
 
 double
-carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_robot_and_trailer_pose_t *localizer_pose,
+carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailer_pose_t *localizer_pose,
 		carmen_robot_and_trailer_pose_t local_point_to_check, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance);
 
 double

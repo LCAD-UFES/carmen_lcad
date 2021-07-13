@@ -15,6 +15,7 @@ extern "C" {
 
 #define SET_COURSE 	1
 #define SET_SPEED	2
+#define SET_GRAPH	3
 
 typedef struct
 {

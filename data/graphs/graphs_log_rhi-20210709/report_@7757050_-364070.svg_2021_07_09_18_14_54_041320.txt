@@ -1,0 +1,31 @@
+
+Graph Summary Report
+--------------
+SVG file: '@7757050_-364070.svg'
+
+RDDF file #1: '../data/rndf/rddf-poc-rhi-20210709-percurso-1.txt'
+ 87 waypoints in 47.91 meters
+     [ 0]  start point                       (x,y)  7757088.583000	-364059.188000	 (   38.58,    10.81)  
+     [86]  finish point                      (x,y)  7757131.579000	-364047.374000	 (   81.58,    22.63)  
+     [ 8]  inexact fork          RDDF #3     (x,y)  7757092.915606	-364059.605168	 (   42.92,    10.39)  
+     [85]  inexact merge         RDDF #2     (x,y)  7757131.455862	-364047.877099	 (   81.46,    22.12)  
+
+RDDF file #2: '../data/rndf/rddf-poc-rhi-20210709-percurso-2.txt'
+ 97 waypoints in 52.46 meters
+     [ 0]  start point                       (x,y)  7757085.361000	-364045.494000	 (   35.36,    24.51)  
+     [96]  finish point                      (x,y)  7757131.530000	-364047.994000	 (   81.53,    22.01)  
+     [96]  inexact merge         RDDF #1     (x,y)  7757131.530000	-364047.994000	 (   81.53,    22.01)  
+     [96]  inexact merge         RDDF #1     (x,y)  7757131.530000	-364047.994000	 (   81.53,    22.01)  
+
+RDDF file #3: '../data/rndf/rddf-poc-rhi-20210709-percurso-3.txt'
+ 78 waypoints in 41.36 meters
+     [ 0]  start point                       (x,y)  7757093.016000	-364059.603000	 (   43.02,    10.40)  
+     [77]  finish point                      (x,y)  7757130.909000	-364057.687000	 (   80.91,    12.31)  
+     [ 0]  inexact fork          RDDF #1     (x,y)  7757093.016000	-364059.603000	 (   43.02,    10.40)  
+
+Command for re-editing the RDDFs:
+./edit_graph_inkscape.py  -i ../data/graphs/graphs_log_rhi-20210709/  -o ../data/graphs/graphs_log_rhi-20210709/  --window  7757050.0  -364070.0  140.0  70.0  '../data/rndf/rddf-poc-rhi-20210709-percurso-1.txt'  '../data/rndf/rddf-poc-rhi-20210709-percurso-2.txt'  '../data/rndf/rddf-poc-rhi-20210709-percurso-3.txt' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="../data/graphs/graphs_log_rhi-20210709//graph-poc-rhi-20210709-percurso-1_150m.gr";  RANGE="150";  echo -e '/data/rndf/rddf-poc-rhi-20210709-percurso-1.txt\n/data/rndf/rddf-poc-rhi-20210709-percurso-2.txt\n/data/rndf/rddf-poc-rhi-20210709-percurso-3.txt' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE

@@ -837,6 +837,11 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 					(behavior_selector_state_message.low_level_state == Stopping_At_Red_Traffic_Light) ||
 					(behavior_selector_state_message.low_level_state == Stopped_At_Red_Traffic_Light_S0) ||
 					(behavior_selector_state_message.low_level_state == Stopped_At_Red_Traffic_Light_S1))) ||
+				  (pedestrian_near_pose_ahead(robot_pose, timestamp) && (DIST2D(rddf->poses[rddf_pose_index], *(get_waypoint_near_to_nearest_pedestrian_ahead())) == 0.0) &&
+				   (pedestrian_near_pose_ahead(robot_pose, timestamp) ||
+					(behavior_selector_state_message.low_level_state == Stopping_To_Pedestrian) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Pedestrian_S0) ||
+					(behavior_selector_state_message.low_level_state == Stopped_At_Pedestrian_S2))) ||
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 				   (busy_pedestrian_track_ahead(robot_pose, timestamp) ||
 					(behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) ||

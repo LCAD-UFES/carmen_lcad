@@ -3101,7 +3101,7 @@ init_flags(void)
     draw_moving_objects_flag = 0;
     draw_gps_axis_flag = 1;
     velodyne_remission_flag = 0;
-    show_path_plans_flag = 0;
+    show_path_plans_flag = 1;
     show_plan_tree_flag = 1;
     draw_waypoints_flag = 1;
 #ifdef TEST_LANE_ANALYSIS
