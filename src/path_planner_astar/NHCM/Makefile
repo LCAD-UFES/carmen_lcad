@@ -26,12 +26,12 @@ LFLAGS += \
 	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
 	`pkg-config --libs gtkglext-1.0`
 
-SOURCES = ../reeds_sheep.cpp cost_matrix.cpp cost_matrix_visualizer.cpp 
-PUBLIC_BINARIES = cost_matrix cost_matrix_visualizer 
-TARGETS = cost_matrix cost_matrix_visualizer 
+SOURCES = ../reeds_sheep.cpp cost_matrix.cpp #cost_matrix_visualizer.cpp 
+PUBLIC_BINARIES = cost_matrix #cost_matrix_visualizer 
+TARGETS = cost_matrix #cost_matrix_visualizer 
 
 cost_matrix: cost_matrix.o ../reeds_sheep.o
-cost_matrix_visualizer: cost_matrix_visualizer.o ../reeds_sheep.o
+#cost_matrix_visualizer: cost_matrix_visualizer.o ../reeds_sheep.o
 
 include ../../Makefile.rules
 
