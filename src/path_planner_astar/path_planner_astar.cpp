@@ -595,13 +595,20 @@ free_lanes(carmen_route_planner_road_network_message route_planner_road_network_
 
 
 int
-get_astar_map_theta(double theta, double map_theta_size)
+get_astar_map_theta(double theta, int map_theta_resolution)
 {
-	theta = theta < 0 ? (2 * M_PI + theta) : theta;
-	int resolution = (int) round(360/map_theta_size);
+	double new_theta = (double) (map_theta_resolution - 1) * ((carmen_normalize_theta(theta) + M_PI) / (2.0 * M_PI)); // computa um novo theta entre 0 e map_theta_resolution - 1
+	int int_theta = (int) round(carmen_clamp(0.0, new_theta, (double) (map_theta_resolution - 1)));
 
-	return  (int)round((carmen_radians_to_degrees(theta) / resolution)) % (int)round(360 / resolution);
+	return (int_theta);
+
+//	theta = (theta < 0.0)? (2.0 * M_PI + theta): theta;
+//	int resolution = (int) round(360.0 / map_theta_resolution);
+//	int int_theta = (int) round((carmen_radians_to_degrees(theta) / resolution)) % (int) round(360.0 / resolution);
+//
+//	return (int_theta);
 }
+
 
 
 int
@@ -795,8 +802,8 @@ get_goal_distance_map(carmen_point_t goal_pose, carmen_obstacle_distance_mapper_
 		{
 			pos_x = get_distance_map_x(x, obstacle_distance_grid_map);
 			pos_y = get_distance_map_y(y, obstacle_distance_grid_map);
-//			if (is_valid_grid_value(x, y, astar_config.state_map_resolution) == 0 || obstacle_distance(pos_x, pos_y, obstacle_distance_grid_map) <= (astar_config.state_map_resolution + 0.1)){
-			if (is_valid_grid_value(x, y, astar_config.state_map_resolution) == 0 || obstacle_distance(pos_x, pos_y, obstacle_distance_grid_map) <= OBSTACLE_DISTANCE_MIN){
+			if (is_valid_grid_value(x, y, astar_config.state_map_resolution) == 0 || obstacle_distance(pos_x, pos_y, obstacle_distance_grid_map) <= (astar_config.state_map_resolution + 0.1)){
+//			if (is_valid_grid_value(x, y, astar_config.state_map_resolution) == 0 || obstacle_distance(pos_x, pos_y, obstacle_distance_grid_map) <= OBSTACLE_DISTANCE_MIN){
 				cost_map[y + x * y_size] = 1.0; // Espaco ocupado eh representado como 1.0
 			}
 		}
@@ -1115,7 +1122,7 @@ h(state_node *current_pose, state_node *goal_pose, grid_state_p**** grid_state_m
 		}
 	}
 
-//	printf("NH = %f HO = %f\n", nh, ho);
+	printf("NH = %f HO = %f\n", nh, ho);
 
 	double return_h;
 
