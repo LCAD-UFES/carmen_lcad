@@ -10,8 +10,7 @@ Para utilizar o algoritmo é necessário ter a matriz para a heurística sem obs
 Caso não deseje utilizar a matriz, pode-se alterar o parâmetro path_planner_astar_use_matrix_cost_heuristic para off no carmen-ford-escape.ini. Isso faz com que o algoritmo utilize o reed shepp, que é um pouco mais lento mas é uma heurística aceitável para um teste.
 
 Faça o download da matriz da heurística sem obstáculos nesse link:
-https://drive.google.com/file/d/1BqqAVreRr5M87O2lU2iZQT77I8FhTOfE/view?usp=sharing
-
+https://drive.google.com/file/d/1KfE1eFW8KbLvfgw1gKXzq842yavSNyqe/view?usp=sharing
 
 Uma explicação de cada parâmetro que o código utiliza
 

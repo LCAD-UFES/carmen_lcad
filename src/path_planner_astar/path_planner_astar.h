@@ -54,7 +54,7 @@
 //DNO = distance to nearest obstacle in penalties
 #define USE_DNO 0
 
-#define USE_SMOOTH 1
+#define USE_SMOOTH 0
 
 #define SMOOTHNESS_WEIGHT 30.0
 #define OBSTACLE_WEIGHT 10.0
