@@ -31,7 +31,7 @@ typedef struct
 MPCTimeSteps
 make_MPCTimeSteps(int N_short, int N_long, double dt_short, double dt_long, bool use_correction_step);
 
-void
+MPCTimeSteps
 compute_time_steps(MPCTimeSteps TS, double t0);
 
 typedef struct
@@ -46,15 +46,16 @@ typedef struct
     MPCTimeSteps time_steps;
     bool solved;
     VehicleModel tracking_dynamics;
-    vector<LateralTrackingBicycleState> qs;
+    vector<TrackingBicycleState> qs;
     vector<BicycleControl2> us;
-    vector<LateralTrackingBicycleParams> ps;
+    vector<TrackingBicycleParams>  ps;
 }TrajectoryTrackingMPC;
 
-TrajectoryTrackingMPC make_TrajectoryTrackingMPC(TrajectoryTube trajectory,VehicleModel dynamics,CoupledControlParams control_params,
-                          BicycleState current_state, BicycleControl current_control, int heartbeat , double time_offset,
+TrajectoryTrackingMPC 
+make_TrajectoryTrackingMPC(TrajectoryTube trajectory,VehicleModel dynamics,CoupledControlParams control_params,
+                          BicycleState current_state, BicycleControl current_control, int heartbeat, double time_offset ,
                           MPCTimeSteps time_steps,
-                          vector<LateralTrackingBicycleState> qs, vector<BicycleControl2> us,vector<LateralTrackingBicycleParams> ps);
+                          vector<TrackingBicycleState> qs, vector<BicycleControl2> us,vector<TrackingBicycleParams>  ps);
 
 #ifdef __cplusplus
 }

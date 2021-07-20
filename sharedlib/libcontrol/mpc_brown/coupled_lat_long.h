@@ -8,9 +8,6 @@
 #include <string>
 #include <cmath>
 #include <map>
-#include "trajectories.h"
-#include "vehicle_dynamics.h"
-#include "model_predictive_control.h"
 using namespace std;
 
 #ifdef __cplusplus

@@ -4,8 +4,11 @@
 #include <string>
 #include <map>
 #include "coupled_lat_long.h"
+#include "model_predictive_control.h"
+#include "vehicle_dynamics.h"
 
-CoupledControlParams make_CoupledControlParams()
+CoupledControlParams 
+make_CoupledControlParams()
 {
     CoupledControlParams CCP_m;
     CCP_m.CoupledControlParams_map["V_min"] = 1.0;
@@ -27,7 +30,8 @@ CoupledControlParams make_CoupledControlParams()
     return CCP_m;
 }
 
-void CoupledTrajectoryTrackingMPC(  TrajectoryTube trajectory, CoupledControlParams control_params,
+TrajectoryTrackingMPC
+CoupledTrajectoryTrackingMPC( TrajectoryTube trajectory, CoupledControlParams control_params,
                                      int N_short = 10, int N_long = 20, double dt_short = (0.01), double dt_long = (0.2), bool use_correction_step=true)
 {
     VehicleModel dynamics;
@@ -39,16 +43,18 @@ void CoupledTrajectoryTrackingMPC(  TrajectoryTube trajectory, CoupledControlPar
     vector<TrackingBicycleState> qs; //= rand(TrackingBicycleState{T}, N)    # not zeros so that construct_lateral_tracking_QP below works
     vector<BicycleControl2> us; //= rand(BicycleControl2{T}, N)
     vector<TrackingBicycleParams> ps; //= zeros(TrackingBicycleParams{T}, N)
-    //VehicleModel tracking_dynamics = VehicleModel(VehicleModel vehicle, TrackingBicycleState(vehicle));
+    VehicleModel tracking_dynamics; // = VehicleModel(VehicleModel vehicle, TrackingBicycleState(vehicle));
     //model, variables, parameters = construct_coupled_tracking_QP(tracking_dynamics, control_params, time_steps, qs, us, ps)
     int aux = 0;
     double caco = 0.0;
-    TrajectoryTrackingMPC mc = make_TrajectoryTrackingMPC(trajectory, dynamics, control_params,
-                          current_state, current_control, aux, caco,
+    TrajectoryTrackingMPC mpc = make_TrajectoryTrackingMPC(trajectory, dynamics, control_params,
+                          current_state, current_control, aux, caco ,
                           time_steps,
-                          qs, us, ps);
+                          qs,  us, ps);
+    return mpc;
 }
 
+/*
 void construct_coupled_tracking_QP( VehicleModel dynamics, CoupledControlParams control_params, double time_steps, vector<TrackingBicycleState> qs, 
 vector<BicycleControl2> us, double ps, double N_short, double N_long, double dt )
 {
@@ -91,9 +97,9 @@ vector<BicycleControl2> us, double ps, double N_short, double N_long, double dt 
         @constraint(m, Δδt <= Δδ_maxt)
         @constraint(m, Δδt >= Δδ_mint)
     end
-    */
+    
 }
-
+*/
 typedef struct{
     vector<vector<double>> Q_delta_s;
     vector<vector<double>> Q_delta_phi;
@@ -123,13 +129,25 @@ typedef struct{
     vector<vector<double>> delta_delta_max;
 }TrackingQPParams;
 
+typedef struct{
+    vector<vector<double>> q;
+    vector<vector<double>> u;
+    vector<vector<double>> delta;
+    vector<double> delta_HJI;
+}TrackingQPVariables;
+
+/*
 void update_QP(TrackingBicycleState dynamics, TrackingQPParams QPP, MPCTimeSteps mpc)
 {
     //dynamics = mpc.
    
     double  N_short = mpc.N_short, N_long = mpc.N_long; 
     vector <double> dt = mpc.dt;
-    for(int i = 0 ; i < dynamics.delta_s.size())
+    for(int i = 0 ; i < dynamics.delta_s.size(); i++)
+    {
+        dynamics.
+    }
 }
 
 get_next_control(mpc::TrajectoryTrackingMPC, variables::TrackingQPVariables)
+*/
