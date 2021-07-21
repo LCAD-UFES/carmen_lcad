@@ -38,7 +38,7 @@ make_MPCTimeSteps(int N_short, int N_long, double dt_short, double dt_long, bool
     return MPCts;
 }
 
-void
+MPCTimeSteps
 compute_time_steps(MPCTimeSteps TS, double t0)
 {
     //TS.prev_ts = TS.ts;
@@ -72,15 +72,18 @@ compute_time_steps(MPCTimeSteps TS, double t0)
     {
         TS.dt.push_back(TS.ts[i+1] - TS.ts[i]);
     }
+    return TS;
 }
 
 TrajectoryTrackingMPC 
 make_TrajectoryTrackingMPC(TrajectoryTube trajectory,VehicleModel dynamics,CoupledControlParams control_params,
-                          BicycleState current_state, BicycleControl current_control, int heartbeat =  0, double time_offset = 0,
+                          BicycleState current_state, BicycleControl current_control, int heartbeat, double time_offset ,
                           MPCTimeSteps time_steps,
-                          vector<LateralTrackingBicycleState> qs, vector<BicycleControl2> us,vector<LateralTrackingBicycleParams> ps)
+                          vector<TrackingBicycleState> qs, vector<BicycleControl2> us,vector<TrackingBicycleParams>  ps)
 {
     TrajectoryTrackingMPC aux;
+    time_offset = 0;
+    heartbeat = 0;
     aux.trajectory = trajectory;
     aux.dynamics = dynamics;
     aux.current_state = current_state;

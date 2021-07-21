@@ -31,7 +31,7 @@ fialatiremodel(double alpha, double c_alpha, double mi, double Fx, double Fz)
 {
     double F_max = mi * Fz;
     double aux;
-    abs(Fx) >= F_max ? aux = 0.0 : aux = _fialatiremodel(tan(alpha), c_alpha, sqrt(F_max*F_max - Fx*Fx));
+    abs(Fx) >= F_max ? aux = 0.0 : aux = _fialatiremodel(tan(alpha), c_alpha, sqrt(F_max * F_max - Fx * Fx));
     return aux;
 }
 
@@ -89,40 +89,40 @@ _lateral_tire_forces(BicycleModelParams B, vector<double> q, vector<double> u, i
     double Fxr =  u[2];
     double a = B.a, b = B.b;
     double s_delta = sin(_delta), c_delta = cos(_delta);
-    double alpha_f = atan2(Uy + a*r, Ux) - _delta;
-    double alpha_r = atan2(Uy - b*r, Ux);
+    double alpha_f = atan2(Uy + a * r, Ux) - _delta;
+    double alpha_r = atan2(Uy - b * r, Ux);
     lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta, num_iters);
 }
 
 
 
-vector <double>
-aaa(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
+BicycleState
+make_BicycleState(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
 double _delta, double Fxf, double Fxr)
 {
     double s_phi = sin(_phi), c_phi = cos(_phi);
     double s_delta = sin(_delta), c_delta = cos(_delta);
     double alpha_f = atan2(Uy + B.a * r, Ux) - _delta;
-    double alpha_r = atan2(Uy - B.b*r, Ux);
+    double alpha_r = atan2(Uy - B.b * r, Ux);
     int num = 0;
     vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta, num);
-    double Fx_drag = -B.Cd0 - Ux *(B.Cd1 + B.Cd2 * Ux);
+    double Fx_drag = -B.Cd0 - Ux * (B.Cd1 + B.Cd2 * Ux);
     double Fx_grade = 0;    // TODO: figure out how roll/pitch are ordered
     double Fy_grade = 0;
     double F_til_xf = Fxf * c_delta - Fy[0] * s_delta;
     double F_til_yf = Fy[0] * c_delta + Fxf * s_delta;
-    vector <double> vec;
-    vec.push_back(-Ux * s_phi - Uy * c_phi); // Ux*c_phi - Uy*s_phi (_phi measured from N))
-    vec.push_back( Ux * c_phi - Uy * s_phi);
-    vec.push_back(r);
-    vec.push_back((F_til_xf + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
-    vec.push_back((F_til_yf + Fy[1] + Fy_grade) / B.m - r * Ux);
-    vec.push_back((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
+    BicycleState vec;
+    vec.E = (-Ux * s_phi - Uy * c_phi); // Ux*c_phi - Uy*s_phi (_phi measured from N))
+    vec.N = ( Ux * c_phi - Uy * s_phi);
+    vec.phi = (r);
+    vec.r = ((F_til_xf + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
+    vec.Ux = ((F_til_yf + Fy[1] + Fy_grade) / B.m - r * Ux);
+    vec.Uy = ((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
     return vec;
 }
 
 
-vector <double>
+TrackingBicycleState
 make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, double _delta_phi,
                               double _delta, double Fxf, double Fxr,
                               double V, double k)
@@ -136,21 +136,20 @@ make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, 
     double Fx_drag = -B.Cd0 - Ux * (B.Cd1 + B.Cd2 * Ux);
     double Fx_grade = 0;    // TODO: figure out how roll/pitch are ordered
     double Fy_grade = 0;
-    double F_til_xf = Fxf*c_delta - Fy[0]*s_delta;
-    double F_til_yf = Fy[0] *c_delta + Fxf*s_delta;
-    vector <double> vec;
-    vec.push_back(Ux*c_delta_phi - Uy*s_delta_phi - V); // Ux*c_phi - Uy*s_phi (_phi measured from N))
-    vec.push_back((F_til_xf + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
-    vec.push_back((F_til_xf + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
-    vec.push_back((F_til_yf + Fy[1] + Fy_grade)/B.m - r*Ux);
-    vec.push_back((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
-    vec.push_back(r - (Ux*c_delta_phi - Uy*s_delta_phi) * k);
-    vec.push_back(Ux*s_delta_phi + Uy*c_delta_phi);
+    double F_til_xf = Fxf * c_delta - Fy[0] * s_delta;
+    double F_til_yf = Fy[0] * c_delta + Fxf * s_delta;
+    TrackingBicycleState  vec;
+    vec.delta_phi = (Ux * c_delta_phi - Uy * s_delta_phi - V); // Ux*c_phi - Uy*s_phi (_phi measured from N))
+    vec.delta_s = ((F_til_xf + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
+    vec.e = ((F_til_yf + Fy[1] + Fy_grade) / B.m - r * Ux);
+    vec.r = ((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
+    vec.Ux = (r - (Ux * c_delta_phi - Uy*s_delta_phi) * k);
+    vec.Uy = (Ux * s_delta_phi + Uy * c_delta_phi);
     return vec;
 }   
 
 
-vector <double>
+LateralTrackingBicycleState
 make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
                               double _delta, double Fxf, double Fxr,
                               double Ux, double k, double _delta_phi)
@@ -163,11 +162,11 @@ make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
     vector <double> Fy = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta, num);
     double Fy_grade = 0;
     double F_til_yf = Fy[0] * c_delta + Fxf * s_delta;
-    vector <double> vec;
-    vec.push_back((F_til_yf + Fy[1] + Fy_grade) / B.m - r * Ux); // Ux*c_phi - Uy*s_phi (_phi measured from N))
-    vec.push_back((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
-    vec.push_back(r - Ux * k);
-    vec.push_back(Ux * s_delta_phi + Uy * c_delta_phi);
+    LateralTrackingBicycleState vec;
+    vec.delta_phi = ((F_til_yf + Fy[1] + Fy_grade) / B.m - r * Ux); // Ux*c_phi - Uy*s_phi (_phi measured from N))
+    vec.e = ((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
+    vec.r = (r - Ux * k);
+    vec.Uy = (Ux * s_delta_phi + Uy * c_delta_phi);
     return vec;
 }
 
@@ -221,12 +220,12 @@ longitudinal_tire_forces(LongitudinalActuationParams LP, double Fx)
     vector <double> aux;
     if (Fx > 0) 
     { 
-        aux.push_back(Fx*LP.fwd_frac);
-        aux.push_back(Fx*LP.rwd_frac);
+        aux.push_back(Fx * LP.fwd_frac);
+        aux.push_back(Fx * LP.rwd_frac);
     }else
     {
-        aux.push_back(Fx*LP.fwb_frac);
-        aux.push_back(Fx*LP.rwb_frac);
+        aux.push_back(Fx * LP.fwb_frac);
+        aux.push_back(Fx * LP.rwb_frac);
     }
     return aux;
 }
@@ -248,18 +247,32 @@ clamp (double x, double lo , double hi){
     }
 }
 
+double ForwardDiff(vector<double> Ux)
+{
+    /*double a = Ux[Ux.size()- 1];
+    double b = Ux[Ux.size()- 2];
+    for (unsigned int i = 2; i < Ux.size(); i ++)
+    {*/
+    int i = 2;
+    double a = (3 * Ux[i] - 4 * Ux[i-1] + Ux[i - 2])/ (2 * abs(Ux[i] - Ux[i - 1]));
+    /*}
+    Ux[0] = b;
+    Ux[1] = a;*/
+    return a;
+}
+
 BicycleControl2
-apply_control_limits(ControlLimits CL, vector <double> vec, double Ux)
+apply_control_limits(ControlLimits CL, vector <double> vec, vector<double>  Ux)
 {
     double Fx_max = CL.Fx_max;
     double Px_max = CL.Px_max;
     double Fx_min = CL.Fx_min;
     double _delta_max = CL._delta_max;
-    //double Ux = ForwardDiff.value(Ux)    // important for ForwardDiff/linearization, since Ux is technically a state variable
+    double Ux_new = ForwardDiff(Ux);    // important for ForwardDiff/linearization, since Ux is technically a state variable
     BicycleControl2 BC2;
     BC2._delta = clamp(vec[0], -_delta_max, _delta_max);
     double min_num = min(vec[1], Fx_max);
-    min_num = min(min_num, Px_max/Ux);
+    min_num = min(min_num, Px_max / Ux_new);
     BC2.Fx = max(min_num, Fx_min);
     return BC2;
 }
