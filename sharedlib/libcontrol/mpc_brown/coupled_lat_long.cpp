@@ -54,6 +54,15 @@ CoupledTrajectoryTrackingMPC( TrajectoryTube trajectory, CoupledControlParams co
     return mpc;
 }
 
+
+TrajectoryTrackingMPC
+compute_linearization_nodes( TrajectoryTrackingMPC mpc,
+                                    vector<TrackingBicycleState>  qs,
+                                    vector<BicycleControl2>  us,
+                                    vector<TrackingBicycleParams>  ps)
+{
+    
+}
 /*
 void construct_coupled_tracking_QP( VehicleModel dynamics, CoupledControlParams control_params, double time_steps, vector<TrackingBicycleState> qs, 
 vector<BicycleControl2> us, double ps, double N_short, double N_long, double dt )
