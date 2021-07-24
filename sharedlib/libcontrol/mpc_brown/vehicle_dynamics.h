@@ -133,14 +133,14 @@ vector<double> lateral_tire_forces( BicycleModelParams B, double alpha_f, double
 
 void _lateral_tire_forces(BicycleModelParams B, vector<double> q, vector<double> u, int num_iters);
 
-vector <double> aaa(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
+BicycleState make_BicycleState(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
 double _delta, double Fxf, double Fxr);
 
-vector <double> make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, double _delta_phi,
+TrackingBicycleState make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, double _delta_phi,
                               double _delta, double Fxf, double Fxr,
                               double V, double k);
 
-vector <double> make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
+LateralTrackingBicycleState make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
                               double _delta, double Fxf, double Fxr,
                               double Ux, double k, double _delta_phi);
 
@@ -150,8 +150,9 @@ vector <double> longitudinal_tire_forces(LongitudinalActuationParams LP, double 
 
 double clamp (double x, double lo , double hi);
 
+double ForwardDiff(vector<double> Ux);
 
-BicycleControl2 apply_control_limits(ControlLimits CL, vector <double> vec, double Ux);
+BicycleControl2 apply_control_limits(ControlLimits CL, vector <double> vec, vector<double> Ux);
 
 
 map<string, double> steady_state_estimates(VehicleModel X, double V, double A_tan, double k,
