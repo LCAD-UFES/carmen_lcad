@@ -6,6 +6,7 @@
 #include "coupled_lat_long.h"
 #include "model_predictive_control.h"
 #include "vehicle_dynamics.h"
+#include "trajectories.h"
 
 CoupledControlParams 
 make_CoupledControlParams()
@@ -61,7 +62,35 @@ compute_linearization_nodes( TrajectoryTrackingMPC mpc,
                                     vector<BicycleControl2>  us,
                                     vector<TrackingBicycleParams>  ps)
 {
-    
+    TrajectoryTube traj = mpc.trajectory;
+    MPCTimeSteps TS = mpc.time_steps;
+    vector<double> ts = TS.ts;
+    BicycleState q0 = mpc.current_state;
+    vector<vector<double>> matrix = path_coordinates(traj, q0);
+    vector<double> s0 = matrix[0];
+    vector<double> e0 = matrix[1];
+    vector<double> t0 = matrix[2];
+    vector<double> delta_s;
+    TrajectoryNode tn = Traj_getindex_s(traj, ts[1]);
+    /*for(unsigned int i = 0; i < s0.size(); i++)
+    {
+        delta_s.push_back(s0[i] - tn.);
+    }*/
+    vector<double> delta_phi;
+    for(int i = 0; i < tn.si.phi.size(); i++ )
+    {
+        delta_phi.push_back(q0.phi[0] - tn.si.phi[i]);
+    }
+    BicycleState q;
+    q.N = delta_s;
+    q.E = e0;
+    q.Ux = q0.Ux;
+    q.Uy = q0.Uy;
+    q.r = q0.r;
+    q.phi = q0.phi;
+    TrackingBicycleParams p;
+    p.V = tn.ti.TimeInterpolants_map["V"];
+    p.k = tn.si.k;
 }
 /*
 void construct_coupled_tracking_QP( VehicleModel dynamics, CoupledControlParams control_params, double time_steps, vector<TrackingBicycleState> qs, 

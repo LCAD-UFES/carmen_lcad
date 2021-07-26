@@ -44,12 +44,12 @@ typedef struct {
 }BicycleModelParams;
 
 typedef struct {
-    double E;    // world frame "x" position of CM
-    double N;    // world frame "y" position of CM
-    double phi;    // world frame heading of vehicle
-    double Ux;   // body frame longitudinal speed
-    double Uy;   // body frame lateral speed
-    double r;   // yaw rate (dphi/dt)
+    vector<double> E;    // world frame "x" position of CM
+    vector<double> N;    // world frame "y" position of CM
+    vector<double> phi;    // world frame heading of vehicle
+    vector<double> Ux;   // body frame longitudinal speed
+    vector<double> Uy;   // body frame lateral speed
+    vector<double> r;   // yaw rate (dphi/dt)
 }BicycleState;
 
 typedef struct{
@@ -71,7 +71,7 @@ typedef struct {
 
 typedef struct{ 
     double V;    // nominal trajectory speed
-    double k;    // nominal trajectory (local) curvature
+    vector<double> k;    // nominal trajectory (local) curvature
     double theta;    // nominal trajectory (local) pitch grade
     double Phi;    // nominal trajectory (local) roll grade
 }TrackingBicycleParams;

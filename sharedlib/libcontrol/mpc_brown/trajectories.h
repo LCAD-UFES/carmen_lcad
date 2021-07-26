@@ -6,15 +6,23 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "vehicle_dynamics.h"
 using namespace std;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct {
-    map<string ,double> TrajectoryNode_map;
-}TrajectoryNode;
+typedef struct{
+    vector<double> E;
+    vector<double> N;
+    vector<double> phi;
+    vector<double> k;
+    vector<double> theta;
+    vector<double> psi;
+    vector<double> edge_L;
+    vector<double> edge_R;
+}SpatialInterpolants;
 
 typedef struct {
     /* data */
@@ -22,8 +30,11 @@ typedef struct {
 }TimeInterpolants;
 
 typedef struct {
-    map<string ,double> SpatialInterpolants_map;
-}SpatialInterpolants;
+    double t;
+    TimeInterpolants ti;
+    SpatialInterpolants si;
+}TrajectoryNode;
+
 
 typedef struct 
 {
@@ -44,6 +55,9 @@ typedef struct
 
 TrajectoryNode construct_TrajectoryNode();
 
+TrajectoryNode
+Traj_getindex_s(TrajectoryTube traj, double s);
+
 int searchsortedfirst (vector<double> t, double num);
 
 //int clamp (int x, int lo , int hi);
@@ -51,6 +65,9 @@ int searchsortedfirst (vector<double> t, double num);
 void  t_function (TrajectoryTube traj, double t);
 
 void Base_getindex(TrajectoryTube traj, double s);
+
+vector<vector<double>>
+path_coordinates(TrajectoryTube traj, BicycleState x);
 
 #ifdef __cplusplus
 }

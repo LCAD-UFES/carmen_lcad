@@ -112,12 +112,12 @@ double _delta, double Fxf, double Fxr)
     double F_til_xf = Fxf * c_delta - Fy[0] * s_delta;
     double F_til_yf = Fy[0] * c_delta + Fxf * s_delta;
     BicycleState vec;
-    vec.E = (-Ux * s_phi - Uy * c_phi); // Ux*c_phi - Uy*s_phi (_phi measured from N))
-    vec.N = ( Ux * c_phi - Uy * s_phi);
-    vec.phi = (r);
-    vec.r = ((F_til_xf + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
-    vec.Ux = ((F_til_yf + Fy[1] + Fy_grade) / B.m - r * Ux);
-    vec.Uy = ((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
+    vec.E.push_back(-Ux * s_phi - Uy * c_phi); // Ux*c_phi - Uy*s_phi (_phi measured from N))
+    vec.N.push_back( Ux * c_phi - Uy * s_phi);
+    vec.phi.push_back(r);
+    vec.r.push_back((F_til_xf + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
+    vec.Ux.push_back((F_til_yf + Fy[1] + Fy_grade) / B.m - r * Ux);
+    vec.Uy.push_back((B.a * F_til_yf - B.b * Fy[1]) / B.Izz);
     return vec;
 }
 

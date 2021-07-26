@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <boost/math/interpolators/cubic_b_spline.hpp>
 #include "trajectories.h"
-#include "vehicle_dynamics.h"
 
 using namespace std;
 
@@ -21,40 +20,17 @@ construct_TrajectoryNode()
 int
 searchsortedfirst (vector<double> t, double num)
 {
-    vector<double> aux;
     for(unsigned int i = 0; i < t.size(); i++)
     {
-        aux.insert(aux.end(), t[i]);
-    }
-    sort(aux.begin(), aux.end());
-    for(unsigned int i = 0; i < t.size(); i++) 
-    {
-        if (num >= aux[i])
+        if(t[i] >= num)
         {
             return i;
         }
-    }
-    return t.size();
+    } 
+    return -1;
 }
 
-/*
-int
-clamp (int x, int lo , int hi){
-    if(x < lo) 
-    {
-        return lo;
-    }else
-    {
-        if(x > hi)
-        {
-            return hi;
-        }else
-        {
-            return x;
-        }
-    }
-}
-*/
+
 void 
 t_function (TrajectoryTube traj, double t)
 {
@@ -70,32 +46,48 @@ t_function (TrajectoryTube traj, double t)
     //construct_TrajectoryNode(t, ti, si)*/
 
 }
-/*
-void
-Base_getindex(TrajectoryTube traj, double s)
+
+TrajectoryNode
+Traj_getindex_s(TrajectoryTube traj, double s)
 {
-    i = clamp(searchsortedfirst(traj.s, s, 1, length(traj), Base.Order.ForwardOrdering()) - 1, 1, length(traj)-1)
+    int i = int(clamp(searchsortedfirst(traj.s, s) - 1, 1, traj.s.size() - 1));
+    double A = (traj.V[i + 1] - traj.V[i]) / (traj.t[i + 1] - traj.t[i]);    // potentially different from traj.A[i]
+    double ds = s - traj.s[i]; 
+    double dt;
+    if(abs(A) < 1e-3 || s > traj.s[traj.s.size()]){
+        dt = ds/traj.V[i];
+    }else{
+        dt = (sqrt(2 * A * ds + pow(traj.V[i], 2)) - traj.V[i]) / A;
+    }
+    double t = traj.t[i] + dt;
+    TimeInterpolants ti;
+    ti.TimeInterpolants_map["s"] = s;
+    ti.TimeInterpolants_map["V"] = traj.V[i] + A * dt;
+    ti.TimeInterpolants_map["A"] = A;
+    TrajectoryNode tn;
+    tn.t = t;
+    tn.ti = ti;
+    //si = traj.interp_by_s(s)
+    return tn;
 }
-*/
-/*function Base.getindex(traj::TrajectoryTube, s)
-    i = clamp(searchsortedfirst(traj.s, s, 1, length(traj), Base.Order.ForwardOrdering()) - 1, 1, length(traj)-1)
-    A = (traj.V[i+1] - traj.V[i])/(traj.t[i+1] - traj.t[i])    # potentially different from traj.A[i]
-    ds = s - traj.s[i]
-    if abs(A) < 1e-3 || s > traj.s[end]
-        dt = ds/traj.V[i]
-    else
-        dt = (sqrt(2*A*ds + traj.V[i]^2) - traj.V[i])/A
-    end
-    t = traj.t[i] + dt
-    ti = TimeInterpolants(s, traj.V[i] + A*dt, A)
-    si = traj.interp_by_s(s)
-    TrajectoryNode(t, ti, si)
-end*/
+
+
 vector<double> 
+operator*(const vector<double>& v1, const vector<double>& v2)
+{
+    vector<double> aux;
+    for(unsigned int i = 0; i < v1.size(); i++)
+    {
+        aux.push_back(v1[i] * v2[i]);
+    }
+    return aux;
+}
+
+vector <double> 
 operator-(const vector<double>& v1, const vector<double>& v2)
 {
     vector<double> aux;
-    for(int i = 0; i < v1.size(); i++)
+    for(unsigned int i = 0; i < v1.size(); i++)
     {
         aux.push_back(v1[i] - v2[i]);
     }
@@ -106,23 +98,14 @@ vector<double>
 operator+(const vector<double>& v1, const vector<double>& v2)
 {
     vector<double> aux;
-    for(int i = 0; i < v1.size(); i++)
+    for(unsigned int i = 0; i < v1.size(); i++)
     {
         aux.push_back(v1[i] + v2[i]);
     }
     return aux;
 }
 
-vector<double> 
-operator*(const vector<double>& v1, const vector<double>& v2)
-{
-    vector<double> aux;
-    for(int i = 0; i < v1.size(); i++)
-    {
-        aux.push_back(v1[i] * v2[i]);
-    }
-    return aux;
-}
+
 
 vector <double> 
 distance2(double a, double b, double c, double d, BicycleState x)
@@ -131,8 +114,8 @@ distance2(double a, double b, double c, double d, BicycleState x)
     double v1 = c - a; 
     vector<double> lambda;
     
-    lambda.push_back(clamp(v1 * (x.E - a) / (v1 * v1), 0, 1));
-    lambda.push_back(clamp(v * (x.N - b) / (v * v), 0, 1));
+    lambda.push_back(clamp(v1 * (x.E[0] - a) / (v1 * v1), 0, 1));
+    lambda.push_back(clamp(v * (x.N[0] - b) / (v * v), 0, 1));
 
     vector<double> aux;
     for (unsigned int i = 0 ; i< lambda.size(); i ++)
@@ -148,17 +131,17 @@ distance2(double a, double b, double c, double d, BicycleState x)
     {
         if (i% 2 == 0)
         {
-            result.push_back((p[i] - x.E) * (p[i] - x.E));
+            result.push_back((p[i] - x.E[0]) * (p[i] - x.E[0]));
         }else
         {
-            result.push_back((p[i] - x.N) * (p[i] - x.E));
+            result.push_back((p[i] - x.N[0]) * (p[i] - x.E[0]));
         }
         
     }
     return result;
 }
 
-void
+vector<vector<double>>
 path_coordinates(TrajectoryTube traj, BicycleState x)
 {
     int imin = 0;
@@ -185,15 +168,15 @@ path_coordinates(TrajectoryTube traj, BicycleState x)
     v.push_back(traj.E[i+1] - traj.E[i]);
     v.push_back(traj.N[i+1] - traj.N[i]);
     vector<double> w;
-    w.push_back(x.E - traj.E[i]);
-    w.push_back(x.N - traj.N[i]);
+    w.push_back(x.E[0] - traj.E[i]);
+    w.push_back(x.N[0] - traj.N[i]);
     vector<double> ds; 
     for (unsigned int j = 0; j < d2min.size(); j++)
     {
         ds.push_back(sqrt(w[j]*w[j] - d2min[j]));
     }
     vector<double> s;
-    for (int j = 0; j < ds.size(); j++)
+    for (unsigned int j = 0; j < ds.size(); j++)
     {
         s.push_back(traj.s[i] + ds[j]);
     }
@@ -226,4 +209,9 @@ path_coordinates(TrajectoryTube traj, BicycleState x)
     {
         t.push_back(traj.t[i] + dt[j]);
     }
+    vector<vector<double>> matrix;
+    matrix.push_back(s);
+    matrix.push_back(e);
+    matrix.push_back(t);
+    return matrix;
 }
