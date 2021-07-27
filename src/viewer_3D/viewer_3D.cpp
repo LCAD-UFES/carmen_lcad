@@ -297,6 +297,7 @@ static trajectory_drawer *path_plan_drawer;
 static trajectory_drawer *motion_plan_drawer;
 static trajectory_drawer *obstacle_avoider_plan_drawer;
 static trajectory_drawer *offroad_plan_drawer;
+static trajectory_drawer *offroad_semi_trailer_plan_drawer;
 static std::vector<trajectory_drawer*> path_plans_frenet_drawer;
 static std::vector<trajectory_drawer*> path_plans_nearby_lanes_drawer;
 static std::vector<trajectory_drawer*> t_drawerTree;
@@ -724,6 +725,20 @@ draw_final_goal()
 			glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 		glEnd();
 
+		if (semi_trailer_config.type > 0)
+		{
+			glTranslated(-semi_trailer_config.M - semi_trailer_config.d * cos(final_goal.beta), semi_trailer_config.d * sin(final_goal.beta), 0.0);
+			glRotated(carmen_radians_to_degrees(-final_goal.beta), 0.0f, 0.0f, 1.0f);
+
+			glBegin(GL_LINE_STRIP);
+				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, -semi_trailer_config.width / 2, 0);
+				glVertex3d(semi_trailer_config.distance_between_axle_and_front, -semi_trailer_config.width / 2, 0);
+				glVertex3d(semi_trailer_config.distance_between_axle_and_front, semi_trailer_config.width / 2, 0);
+				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, semi_trailer_config.width / 2, 0);
+				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, -semi_trailer_config.width / 2, 0);
+			glEnd();
+		}
+
 	glPopMatrix();
 }
 
@@ -844,6 +859,8 @@ draw_everything()
     		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
 
     	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    	if (semi_trailer_engaged)
+    		draw_trajectory(offroad_semi_trailer_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
     }
 
     if (draw_obstacle_avoider_plan_flag)
@@ -2714,6 +2731,7 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 
 	carmen_navigator_ackerman_plan_message *offroad_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
 	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
+
 	for (int i = 0; i < message->number_of_poses; i++)
 	{
 		path[i].x	  = message->poses[i].x;
@@ -2733,6 +2751,32 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 
 	free(path);
 	free(offroad_trajectory);
+
+	if (semi_trailer_engaged)
+	{
+		carmen_navigator_ackerman_plan_message *offroad_semi_trailer_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
+		carmen_robot_and_trailer_traj_point_t *semi_trailer_path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
+
+		for (int i = 0; i < message->number_of_poses; i++)
+		{
+			semi_trailer_path[i].x	  = message->poses[i].x - semi_trailer_config.M * cos(message->poses[i].theta) - semi_trailer_config.d * cos(message->poses[i].theta - message->poses[i].beta);
+			semi_trailer_path[i].y	  = message->poses[i].y- semi_trailer_config.M * sin(message->poses[i].theta) - semi_trailer_config.d * sin(message->poses[i].theta - message->poses[i].beta);
+			semi_trailer_path[i].theta = message->poses[i].theta - message->poses[i].beta;
+			semi_trailer_path[i].beta  = message->poses[i].beta;
+			semi_trailer_path[i].v	  = message->poses[i].v;
+			semi_trailer_path[i].phi	  = message->poses[i].phi;
+		}
+
+		offroad_semi_trailer_trajectory->path = semi_trailer_path;
+		offroad_semi_trailer_trajectory->path_length = message->number_of_poses;
+		offroad_semi_trailer_trajectory->timestamp = message->timestamp;
+		offroad_semi_trailer_trajectory->host = message->host;
+
+		add_trajectory_message(offroad_semi_trailer_plan_drawer, offroad_semi_trailer_trajectory);
+
+		free(semi_trailer_path);
+		free(offroad_semi_trailer_trajectory);
+	}
 }
 
 
@@ -3179,7 +3223,8 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     path_plan_drawer = create_trajectory_drawer(0.5, 0.5, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
     motion_plan_drawer = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
     obstacle_avoider_plan_drawer = create_trajectory_drawer(0.7, 0.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
-    offroad_plan_drawer = create_trajectory_drawer(0.5, 0.5, 0.5, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
+    offroad_plan_drawer = create_trajectory_drawer(0.9, 0.9, 0.9, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
+    offroad_semi_trailer_plan_drawer = create_trajectory_drawer(0.2, 0.2, 0.2, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
     v_int_drawer = create_velodyne_intensity_drawer(velodyne_pose, sensor_board_1_pose);
     annotation_drawer = createAnnotationDrawer(argc, argv);
 #ifdef TEST_LANE_ANALYSIS
@@ -3680,6 +3725,8 @@ draw_while_picking()
     		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
 
     	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    	if (semi_trailer_engaged)
+    		draw_trajectory(offroad_semi_trailer_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
     }
 
 	if (draw_obstacle_avoider_plan_flag)
