@@ -724,6 +724,20 @@ draw_final_goal()
 			glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 		glEnd();
 
+		if (semi_trailer_config.type > 0)
+		{
+			glTranslated(-semi_trailer_config.M - semi_trailer_config.d * cos(final_goal.beta), semi_trailer_config.d * sin(final_goal.beta), 0.0);
+			glRotated(carmen_radians_to_degrees(-final_goal.beta), 0.0f, 0.0f, 1.0f);
+
+			glBegin(GL_LINE_STRIP);
+				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, -semi_trailer_config.width / 2, 0);
+				glVertex3d(semi_trailer_config.distance_between_axle_and_front, -semi_trailer_config.width / 2, 0);
+				glVertex3d(semi_trailer_config.distance_between_axle_and_front, semi_trailer_config.width / 2, 0);
+				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, semi_trailer_config.width / 2, 0);
+				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, -semi_trailer_config.width / 2, 0);
+			glEnd();
+		}
+
 	glPopMatrix();
 }
 
