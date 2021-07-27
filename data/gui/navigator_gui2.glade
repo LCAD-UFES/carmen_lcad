@@ -51,6 +51,12 @@
         <col id="0" translatable="yes">Park</col>
       </row>
       <row>
+        <col id="0" translatable="yes">Park Semi-trailer</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Park Truck and Semi-trailer</col>
+      </row>
+      <row>
         <col id="0" translatable="yes">Move to Engage Pose</col>
       </row>
       <row>

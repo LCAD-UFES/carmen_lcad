@@ -1473,6 +1473,10 @@ namespace View
 			return (BEHAVIOR_SELECTOR_FOLLOW_ROUTE);
 		else if(strcmp(task_name, "Park") == 0)
 			return (BEHAVIOR_SELECTOR_PARK);
+		else if(strcmp(task_name, "Park Semi-trailer") == 0)
+			return (BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER);
+		else if(strcmp(task_name, "Park Truck and Semi-trailer") == 0)
+			return (BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER);
 		else if(strcmp(task_name, "Move to Engage Pose") == 0)
 			return (BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE);
 		else if(strcmp(task_name, "Human Intervention") == 0)
