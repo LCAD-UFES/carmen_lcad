@@ -272,8 +272,8 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
             uint32_t range = OS1::px_range(px_buf); // in mm
             uint16_t intensity = 0;
             
-            if (range > 65535)
-            	range = 0;
+//            if (range > 65535)
+//            	range = 0;
 
             if (ouster_intensity_type == INTENSITY) 
                 intensity = OS1::px_signal_photons(px_buf);
@@ -287,26 +287,26 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
             switch (ipx % 4)
             {
             case 0:
-                message0.partial_scan[m_id].distance[j0] = (unsigned short)range;
-                message0.partial_scan[m_id].intensity[j0] = (unsigned char)intensity;
+                message0.partial_scan[m_id].distance[j0] = range;
+                message0.partial_scan[m_id].intensity[j0] = intensity;
                 j0++;
                 break;
 
             case 1:
-                message1.partial_scan[m_id].distance[j1] = (unsigned short)range;
-                message1.partial_scan[m_id].intensity[j1] = (unsigned char)intensity;
+                message1.partial_scan[m_id].distance[j1] = range;
+                message1.partial_scan[m_id].intensity[j1] = intensity;
                 j1++;
                 break;
 
             case 2:
-                message2.partial_scan[m_id].distance[j2] = (unsigned short)range;
-                message2.partial_scan[m_id].intensity[j2] = (unsigned char)intensity;
+                message2.partial_scan[m_id].distance[j2] = range;
+                message2.partial_scan[m_id].intensity[j2] = intensity;
                 j2++;
                 break;
 
             case 3:
-                message3.partial_scan[m_id].distance[j3] = (unsigned short)range;
-                message3.partial_scan[m_id].intensity[j3] = (unsigned char)intensity;
+                message3.partial_scan[m_id].distance[j3] = range;
+                message3.partial_scan[m_id].intensity[j3] = intensity;
                 j3++;
                 break;
             }
