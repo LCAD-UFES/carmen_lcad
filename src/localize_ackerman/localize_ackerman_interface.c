@@ -175,7 +175,7 @@ carmen_localize_ackerman_unsubscribe_initialize_placename_message(carmen_handler
 
 
 void 
-carmen_localize_ackerman_initialize_gaussian_command(carmen_point_t mean, carmen_point_t std)
+carmen_localize_ackerman_initialize_gaussian_command(carmen_point_t mean, carmen_point_t std, double beta)
 {
 	static carmen_localize_ackerman_initialize_message init;
 	static int first = 1;
@@ -194,6 +194,7 @@ carmen_localize_ackerman_initialize_gaussian_command(carmen_point_t mean, carmen
 	init.num_modes = 1;
 	init.mean = &mean;
 	init.std = &std;
+	init.beta = beta;
 
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, &init);
 	carmen_test_ipc(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
