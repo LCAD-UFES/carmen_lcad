@@ -1096,6 +1096,10 @@ int button_release_handler(GtkMapViewer		   *the_map_view,
 	if (rtr)
 		return TRUE;
 
+	rtr = global_gui->orienting_robot_semi_trailer_action(the_map_view, world_point, event);
+	if (rtr)
+		return TRUE;
+
 	rtr = global_gui->orienting_goal_action(the_map_view, world_point);
 	if (rtr)
 		return TRUE;

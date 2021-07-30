@@ -12,7 +12,7 @@ publish_starting_pose(carmen_point_t pose)
 	std.y = 0.001;
 	std.theta = carmen_degrees_to_radians(0.01);
 
-	carmen_localize_ackerman_initialize_gaussian_command(pose, std);
+	carmen_localize_ackerman_initialize_gaussian_command(pose, std, 0.0);
 
 	return pose;
 }

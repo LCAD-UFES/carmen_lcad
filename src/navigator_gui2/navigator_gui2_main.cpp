@@ -552,7 +552,7 @@ update_moving_objects_list(int id, carmen_moving_objects_point_clouds_message *m
 
 
 void
-navigator_update_robot(carmen_world_point_p robot)
+navigator_update_robot(carmen_world_robot_and_trailer_pose_t *robot)
 {
 	if (robot == NULL)
 	{
@@ -566,7 +566,8 @@ navigator_update_robot(carmen_world_point_p robot)
 				carmen_round(robot->pose.y),
 				carmen_radians_to_degrees(robot->pose.theta));
 
-		carmen_localize_ackerman_initialize_gaussian_command(robot->pose, localize_std);
+		carmen_point_t pose_without_beta = {robot->pose.x,robot->pose.y, robot->pose.theta};
+		carmen_localize_ackerman_initialize_gaussian_command(pose_without_beta, localize_std, robot->pose.beta);
 		IPC_listen(50);
 	}
 }

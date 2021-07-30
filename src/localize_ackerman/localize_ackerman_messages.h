@@ -53,12 +53,13 @@ typedef struct {
   int distribution;
   int num_modes;
   carmen_point_t *mean, *std;
+  double beta;
   double timestamp;
   char *host;
 } carmen_localize_ackerman_initialize_message;
 
 #define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME  "carmen_localize_ackerman_initialize"
-#define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT   "{int,int,<{double,double,double}:2>,<{double,double,double}:2>,double,string}"
+#define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT   "{int,int,<{double,double,double}:2>,<{double,double,double}:2>,double,double,string}"
 
   /* initialize by map placename */
 
