@@ -19,42 +19,43 @@ publish_fused(double x, double y, double theta, double timestamp)
 		first = 0;
 	}
 
-	odometry_message.angular_velocity.pitch = 0;
-	odometry_message.angular_velocity.roll = 0;
-	odometry_message.angular_velocity.yaw = 0;
+	odometry_message.angular_velocity.pitch = 0.0;
+	odometry_message.angular_velocity.roll = 0.0;
+	odometry_message.angular_velocity.yaw = 0.0;
 
 	odometry_message.gps_position_at_turn_on.x = x;
 	odometry_message.gps_position_at_turn_on.y = y;
-	odometry_message.gps_position_at_turn_on.z = 0;
+	odometry_message.gps_position_at_turn_on.z = 0.0;
 
 	odometry_message.host = carmen_get_host();
 	odometry_message.num_particles = 1;
 
 	odometry_message.particle_pos[0].x = x;
 	odometry_message.particle_pos[0].y = y;
-	odometry_message.particle_pos[0].z = 0;
+	odometry_message.particle_pos[0].z = 0.0;
 
-	odometry_message.phi = 0;
+	odometry_message.phi = 0.0;
 	odometry_message.pose.position.x = x;
 	odometry_message.pose.position.y = y;
-	odometry_message.pose.position.z = 0;
+	odometry_message.pose.position.z = 0.0;
 	odometry_message.pose.orientation.yaw = theta;
-	odometry_message.pose.orientation.roll = 0;
-	odometry_message.pose.orientation.pitch = 0;
+	odometry_message.pose.orientation.roll = 0.0;
+	odometry_message.pose.orientation.pitch = 0.0;
 
 	odometry_message.timestamp = timestamp;
 
-	odometry_message.velocity.x = 0;
-	odometry_message.velocity.y = 0;
-	odometry_message.velocity.z = 0;
+	odometry_message.velocity.x = 0.0;
+	odometry_message.velocity.y = 0.0;
+	odometry_message.velocity.z = 0.0;
 
 	odometry_message.weight_type = 0;
 	odometry_message.weights[0] = 1.0;
-	odometry_message.xsens_yaw_bias = 0;
+	odometry_message.xsens_yaw_bias = 0.0;
 
 	err = IPC_publishData(CARMEN_FUSED_ODOMETRY_PARTICLE_NAME, &odometry_message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
 }
+
 
 void
 publish_globalpos(double x, double y, double theta, double timestamp)
@@ -62,30 +63,37 @@ publish_globalpos(double x, double y, double theta, double timestamp)
 	IPC_RETURN_TYPE err;
 	carmen_localize_ackerman_globalpos_message globalpos;
 
-	globalpos.timestamp = timestamp;
-	globalpos.host = carmen_get_host();
 	globalpos.globalpos.x = x;
 	globalpos.globalpos.y = y;
 	globalpos.globalpos.theta = theta;
-	globalpos.globalpos_std.x = 0.001;
-	globalpos.globalpos_std.y = 0.001;
-	globalpos.globalpos_std.theta = 0.001;
-	globalpos.odometrypos.x = x;
-	globalpos.odometrypos.y = y;
-	globalpos.odometrypos.theta = theta;
-	globalpos.globalpos_xy_cov = 0.001;
-	globalpos.v = 0.0;
-	globalpos.phi = 0.0;
-	globalpos.converged = 1;
-
-	globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = globalpos.pose.position.z = 0.0;
-	globalpos.velocity.x = globalpos.velocity.y = globalpos.velocity.z = 0.0;
-	globalpos.pose.orientation.yaw = globalpos.globalpos.theta;
 
 	globalpos.pose.position.x = globalpos.globalpos.x;
 	globalpos.pose.position.y = globalpos.globalpos.y;
 	globalpos.pose.position.z = 0.0;
-	globalpos.velocity.x = 0.0;
+	globalpos.pose.orientation.yaw = globalpos.globalpos.theta;
+	globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = 0.0;
+
+	globalpos.v = 0.0;
+	globalpos.phi = 0.0;
+
+	globalpos.velocity.x = globalpos.velocity.y = globalpos.velocity.z = 0.0;
+
+	globalpos.globalpos_std.x = 0.001;
+	globalpos.globalpos_std.y = 0.001;
+	globalpos.globalpos_std.theta = 0.001;
+	globalpos.globalpos_xy_cov = 0.001;
+
+	globalpos.odometrypos.x = x;
+	globalpos.odometrypos.y = y;
+	globalpos.odometrypos.theta = theta;
+
+	globalpos.converged = 1;
+
+	globalpos.semi_trailer_type = 0;
+	globalpos.semi_trailer_engaged = 0;
+
+	globalpos.timestamp = timestamp;
+	globalpos.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, &globalpos);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
@@ -138,6 +146,6 @@ main(int argc, char **argv)
 		printf("Published globalpos(%lf, %lf, %lf) at timestamp %lf\n", x, y, theta, timestamp);
 	}
 
-	return 0;
+	return (0);
 }
 
