@@ -212,7 +212,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	if (g_reinitiaze_particles)
 	{
 		g_reinitiaze_particles--;
-		globalpos.beta = 0.0;
+//		globalpos.beta = 0.0;
 //		return;
 	}
 		
@@ -355,7 +355,8 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 	globalpos_ackerman_message.phi = 0.0;
 	globalpos_ackerman_message.v = 0.0;
 
-	globalpos_ackerman_message.beta = 0.0;
+	globalpos_ackerman_message.beta = initialize_msg->beta;
+	globalpos.beta = initialize_msg->beta;
 	
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos_ackerman_message);
 }

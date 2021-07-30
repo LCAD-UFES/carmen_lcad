@@ -39,7 +39,7 @@ typedef struct
 	char   *superimposed_map;
 } carmen_navigator_panel_config_t;
 
-void navigator_update_robot(carmen_world_point_p robot);
+void navigator_update_robot(carmen_world_robot_and_trailer_pose_t *robot);
 void navigator_set_goal(double x, double y, double theta);
 void navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task);
 void navigator_set_goal_by_place(carmen_place_p place);

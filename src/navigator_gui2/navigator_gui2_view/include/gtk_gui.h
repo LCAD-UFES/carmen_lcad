@@ -61,6 +61,7 @@ typedef enum
 	NO_PLACEMENT,
 	PLACING_ROBOT,
 	ORIENTING_ROBOT,
+	ORIENTING_ROBOT_SEMI_TRAILER,
 	PLACING_GOAL,
 	ORIENTING_GOAL,
 	PLACING_PERSON,
@@ -273,7 +274,7 @@ namespace View
 		fpointers *queuePoints;
 		int global_view;
 
-		carmen_world_point_t	 robot_temp;
+		carmen_world_robot_and_trailer_pose_t	 robot_temp;
 		carmen_world_point_t	 goal_temp;
 
 		carmen_world_point_t	 new_person;
@@ -407,6 +408,7 @@ namespace View
 		int placing_person_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
 		int placing_simulator_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
 		int orienting_robot_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event);
+		int orienting_robot_semi_trailer_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event);
 		int orienting_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
 		int orienting_person_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
 		int orienting_simulator_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point);
