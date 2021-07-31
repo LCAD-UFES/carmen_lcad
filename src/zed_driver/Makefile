@@ -5,7 +5,7 @@ MODULE_NAME = ZED_CAMERA
 MODULE_COMMENT = Zed Camera Driver
 
 LINK = g++
-CXXFLAGS = -std=c++11
+CXXFLAGS = -std=c++11 -Wno-cpp
 
 IFLAGS += -std=c++11 -I/usr/local/zed/include -I/usr/local/cuda/include
 

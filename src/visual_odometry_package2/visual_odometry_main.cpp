@@ -61,6 +61,8 @@ static int mono = 0;
 static int compare_odometries = 0;
 static int publish_base_ackerman_odometry = 0;
 
+static FILE *graf = NULL;
+
 
 void 
 convert_image_rgb_to_gray(unsigned char *lsrc, unsigned char *ldst, unsigned char *rsrc, unsigned char *rdst, int width, int height, int cutline)
@@ -559,7 +561,6 @@ publish_base_ackerman_odometry_message(carmen_visual_odometry_pose6d_message *vi
 	static carmen_base_ackerman_odometry_message odometry;
 	static int first = 1;
 	static double first_timestamp;
-	static FILE *graf;
 
 	if (first)
 	{
@@ -700,6 +701,9 @@ shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
+		if (graf)
+			fclose(graf);
+
 		carmen_ipc_disconnect();
 		printf("visual_odometry: disconnected.\n");
 		exit(0);
@@ -778,7 +782,6 @@ read_parameters(int argc, char **argv)
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
-
 }
 
 

@@ -7,6 +7,11 @@ using namespace std;
 using namespace sl;
 using namespace cv;
 
+int camera_id;
+int zed_camera_sensor_fps;
+int param_width;
+int param_height;
+
 
 void
 check_parameters(int argc, char **argv)
@@ -21,7 +26,9 @@ check_parameters(int argc, char **argv)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+//																							 //
 // Handlers																					 //
+//																							 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -38,28 +45,62 @@ shutdown_module(int signo)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+//																							 //
 // Initializations																		     //
+//																							 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-int
-read_parameters(int argc, char **argv, int &camera_id, int &fps)
+static int
+read_parameters(int argc, char **argv)
 {
-	char camera_name[64];
+	int num_items;
     camera_id = atoi(argv[1]);
-    int width, height;
+	char bb_name[1024];
 
-	sprintf(camera_name, "ZED%d", camera_id);
+	sprintf(bb_name, "bumblebee_basic%d", camera_id);
 
 	carmen_param_t param_list[] =
 	{
-		{camera_name, (char*) "height", CARMEN_PARAM_INT, &height, 0, NULL},
-		{camera_name, (char*) "width",  CARMEN_PARAM_INT, &width, 0, NULL},
-        {camera_name, (char*) "fps",    CARMEN_PARAM_INT, &fps, 0, NULL},
+		{bb_name, (char *) "zed_fps", CARMEN_PARAM_INT, &zed_camera_sensor_fps, 0, NULL},
+		{bb_name, (char *) "height", CARMEN_PARAM_INT, &param_height, 0, NULL},
+		{bb_name, (char *) "width", CARMEN_PARAM_INT, &param_width, 0, NULL}
 	};
-	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
+
+	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	return 0;
+}
+
+
+sl::RESOLUTION
+define_zed_resolution()
+{
+	//2208*1242 => HD2K: 0; 1920*1080 => HD1080: 1; 1280*720 => HD720: 2, 672*376 => VGA: 3
+	sl::RESOLUTION zed_camera_sensor_quality;
+
+	int param_size = param_width + param_height;
+	switch (param_size)
+	{
+	case (2208 + 1242):
+		zed_camera_sensor_quality = RESOLUTION::HD2K;
+		break;
+	case (1920 + 1080):
+		zed_camera_sensor_quality = RESOLUTION::HD1080;
+		break;
+	case (1280 + 720):
+		zed_camera_sensor_quality = RESOLUTION::HD720;
+		break;
+	case (672 + 376):
+		zed_camera_sensor_quality = RESOLUTION::VGA;
+		break;
+	default:
+		std::cout << "Error: invalid resolution : " << std::endl;
+		exit(1);
+	}
+
+	return (zed_camera_sensor_quality);
 }
 
 
@@ -67,8 +108,8 @@ void
 set_ZED_stream(Camera &zed)
 {
     InitParameters init_parameters;
-    init_parameters.camera_resolution = RESOLUTION::VGA; //2208*1242 => HD2K: 0; 1920*1080 => HD1080: 1; 1280*720 => HD720: 2, 672*376 => VGA: 3
-    init_parameters.camera_fps = 15;                        // Set fps at 30
+    init_parameters.camera_resolution = define_zed_resolution(); //2208*1242 => HD2K: 0; 1920*1080 => HD1080: 1; 1280*720 => HD720: 2, 672*376 => VGA: 3
+    init_parameters.camera_fps = zed_camera_sensor_fps;                        // Set fps at 30
 
     ERROR_CODE state = zed.open(init_parameters);
     if (state != ERROR_CODE::SUCCESS)
@@ -100,7 +141,6 @@ main(int argc, char **argv)
     sl::Mat left_image, right_image;
     cv::Mat cv_left_image, cv_right_image;
     carmen_bumblebee_basic_stereoimage_message msg;
-    int camera_id, fps;
 
     check_parameters(argc, argv);
     
@@ -110,11 +150,11 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_module);
 
-    read_parameters(argc, argv, camera_id, fps);
+    read_parameters(argc, argv);
 
     carmen_bumblebee_basic_define_messages(camera_id);
 
-    setup_bumblebee_basic_message(msg, 672, 376);
+    setup_bumblebee_basic_message(msg, param_width, param_height);
 
     set_ZED_stream(zed);
 
