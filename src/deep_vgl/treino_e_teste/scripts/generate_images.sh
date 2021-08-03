@@ -32,6 +32,8 @@ for i in "${!dirs[@]}"; do
         msg="BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE"
     elif [ ${fmts[$i]} -eq 2 ]; then
         msg="CAMERA"
+    elif [ ${fmts[$i]} -eq 3 ]; then
+        msg="VELODYNE_PARTIAL_SCAN_IN_FILE"
     fi
     
     fgrep ${msg}${cams[$i]} ${logs[$i]} > /dados/log2png${i}.txt

@@ -4,7 +4,7 @@ import cv2
 import argparse
 import threading
 import numpy as np
-
+import struct
 
 def check_setup(input_list, output_dir):
     if not os.path.isfile(input_list):
@@ -92,6 +92,70 @@ def save_new_img2(image, output_dir, camera_id, dst_size=None, max_height=None, 
 
     save_one_img(img, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height, ignore_top)
 
+def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, max_height=None, ignore_top=0):
+    pointcloud_file = open(image['path'],'rb')
+    shot_angle = ''
+    shot_distance =''
+    shot_intensity = ''
+    #for i in xrange(0, int(image['shots'])): 
+    line = pointcloud_file.read(8)
+    col = 0
+    blank_image = np.zeros((32,int(image['shots']),3), np.uint8)
+    #maxval =30
+    while line: 
+        shot_angle = struct.unpack('d',line)
+        shot_distance = struct.unpack('H'*32,pointcloud_file.read(64))
+        shot_intensity = struct.unpack('B'*32,pointcloud_file.read(32))
+        shot_distance = np.asarray(shot_distance)/500
+        #maxval = 70 if np.amax(shot_distance) < maxval else np.amax(shot_distance)
+        for i in range(0, 32):
+            distancia = int(float(shot_distance[i]*10))
+            B = 0 if distancia < 511 else distancia - 510
+            G = 255 if distancia > 510 else distancia - 255
+            R = 255 if distancia > 255 else distancia
+            if(i%2==0):
+                blank_image[31-int(i/2),col] = (B,G,R)        
+            else:
+                blank_image[16-int(i/2),col] = (B,G,R)
+        col+=1
+        line = pointcloud_file.read(8)
+        print(shot_distance)
+    step = int(int(image['shots'])/8)
+    partial_image_one = blank_image[:,-step:]
+    partial_image_two = blank_image[:,:step]
+    partial_image = np.hstack((partial_image_one, partial_image_two))
+    resized = cv2.resize(blank_image, (1084,320) , interpolation = cv2.INTER_AREA)
+    cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
+
+def read_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, max_height=None, ignore_top=0):
+    total = 0
+    mythreads = []
+    f = open(input_list, 'rb')
+    line = f.readline()
+        
+    while line and total < max_lines:
+        item = line.strip().split()
+        
+        timestamp = float(item[3])
+        path = log + item[1]
+        
+        image = {
+            'path': path,
+            'shots': (int(item[2])),
+            'timestamp': timestamp
+        }
+
+        line = f.readline()
+        t = threading.Thread(target=save_point_cloud_as_img, args=(image, output_dir, camera_id, dst_size, max_height, ignore_top))
+        mythreads.append(t)
+        t.start()
+        total += 1
+        if (len(mythreads) >= max_threads) or not (line and total < max_lines):
+            for t in mythreads:
+                t.join()
+            mythreads[:] = []  # clear the thread's list
+            print('Saved {} point cloud already...'.format(total))
+    f.close()
 
 def read_old_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, max_height=None, ignore_top=0):
     total = 0
@@ -213,6 +277,8 @@ if __name__ == '__main__':
         read_old_log(argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
     elif argv['log_format'] == 1:  # 1-New Log Format
         read_new_log(argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
-    else:
+    elif argv['log_format'] == 2:
         read_new2_log(argv['log'], argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
+    else:
+        read_point_cloud_log(argv['log'], argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
     print('out')
