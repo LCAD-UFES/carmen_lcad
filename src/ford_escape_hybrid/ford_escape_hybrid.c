@@ -63,7 +63,6 @@ static double v_multiplier;
 
 int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
 
-unsigned int publish_combined_visual_and_car_odometry = 0;
 int wait_visual_odometry_to_publish = 0;
 
 carmen_visual_odometry_pose6d_message visual_odometry_pose6d;
@@ -189,7 +188,8 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 }
 
 
-void build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
+void
+build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
 	//TODO verificar se tem que sicronizar com o visual de alguma outra forma
 	if (wait_visual_odometry_to_publish)
@@ -235,6 +235,8 @@ void build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_messa
 		wait_visual_odometry_to_publish = 0;
 	}
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //

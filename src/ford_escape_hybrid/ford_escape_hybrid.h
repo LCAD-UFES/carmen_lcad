@@ -39,6 +39,7 @@
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
 
+int publish_combined_visual_and_car_odometry = 0;
 int combine_visual_and_car_odometry_phi;
 int combine_visual_and_car_odometry_vel;
 //combine_visual_and_car_odometry options
