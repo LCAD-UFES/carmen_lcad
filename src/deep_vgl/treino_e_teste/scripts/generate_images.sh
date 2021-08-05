@@ -34,10 +34,15 @@ for i in "${!dirs[@]}"; do
         msg="CAMERA"
     elif [ ${fmts[$i]} -eq 3 ]; then
         msg="VELODYNE_PARTIAL_SCAN_IN_FILE"
+        cams=""
     fi
     
-    fgrep ${msg}${cams[$i]} ${logs[$i]} > /dados/log2png${i}.txt
+    #fgrep ${msg}${cams[$i]} ${logs[$i]} > /dados/log2png${i}.txt
     echo "python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}"
-    python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}
+    if [ ${fmts[$i]} -eq 3 ]; then
+        python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -f ${fmts[$i]} -al ${crops[$i]} -ar ${ignore_top[$i]}
+    else
+        python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}
+    fi
 done
 
