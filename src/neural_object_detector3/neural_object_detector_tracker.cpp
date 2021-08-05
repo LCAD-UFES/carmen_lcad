@@ -1084,7 +1084,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	if (max_dist_to_pedestrian_track < 0.0 || dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
 	{
 		//////// Yolo
-		predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8);
+		predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
 		
 		predictions = filter_predictions_of_interest(predictions);
 
@@ -1423,13 +1423,21 @@ initializer()
 	char yolo_cfg_path[1024];
 	char yolo_weights_path[1024];
 
-	sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
-	sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
-	sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
+	// sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
+	// sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
+	// sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
+
+	sprintf(classes_names_path, "%s/sharedlib/darknet3/data/coco.names", carmen_home);
+	sprintf(yolo_cfg_path, "%s/sharedlib/darknet3/cfg/yolov4.cfg", carmen_home);
+	sprintf(yolo_weights_path, "%s/sharedlib/darknet3/yolov4.weights", carmen_home);
+
+	// classes_names = get_classes_names(classes_names_path);
+
+	// network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
 
 	classes_names = get_classes_names(classes_names_path);
 
-	network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
+	network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
 }
 
 
