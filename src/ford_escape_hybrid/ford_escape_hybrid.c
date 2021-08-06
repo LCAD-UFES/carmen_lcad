@@ -63,14 +63,14 @@ static double v_multiplier;
 
 int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
 
-int wait_visual_odometry_to_publish = 0;
-
 carmen_visual_odometry_pose6d_message visual_odometry_pose6d;
 
 int g_go_state = 0;
 
 carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = Stopped;
 int behavior_selector_going_backwards = 0;
+
+double g_XGV_velocity_temp = 0.0;
 
 
 static double
@@ -111,13 +111,10 @@ get_velocity_delta_t()
 
 
 double
-get_curvature_from_phi(double phi, ford_escape_hybrid_config_t *ford_escape_hybrid_config)
+get_curvature_from_phi(double phi, double v, ford_escape_hybrid_config_t *ford_escape_hybrid_config)
 {	// See Torc, "ByWire XGVTM User Manual", page 42
-	double v;
 	double curvature;
 	
-	v = ford_escape_hybrid_config->filtered_v;
-
 	curvature = tan(phi / (1.0 + v * v * ford_escape_hybrid_config->understeer_coeficient2)) / ford_escape_hybrid_config->distance_between_front_and_rear_axles;
 	
 	return (curvature);
@@ -170,7 +167,7 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	// The function carmen_ford_escape_hybrid_steering_PID_controler() uses g_atan_desired_curvature to compute the g_steering_command that is sent to the car.
 	// This function is called when new info about the current measured velocity (g_XGV_velocity) arrives from the car via Jaus messages handled
 	// by the torc_report_velocity_state_message_handler() callback function.
-	g_atan_desired_curvature = -atan(get_curvature_from_phi(phi, ford_escape_hybrid_config)); // @@@ Alberto: a curvatura do carro ee ao contrario de carmen
+	g_atan_desired_curvature = -atan(get_curvature_from_phi(phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)); // @@@ Alberto: a curvatura do carro ee ao contrario de carmen
 
 	// The function carmen_ford_escape_hybrid_velocity_PID_controler() uses g_desired_velocity to compute the g_throttle_command, g_brakes_command and g_gear_command
 	// that are sent to the car.
@@ -181,58 +178,45 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	else
 		g_gear_command = 1;		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 
-	if (behavior_selector_low_level_state != Stopped)
+//	if (behavior_selector_low_level_state != Stopped)
 		g_desired_velocity = v;
-	else
-		g_desired_velocity = 0.0;
+//	else
+//		g_desired_velocity = 0.0;
 }
 
 
 void
-build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
+build_combined_visual_and_car_odometry()
 {
-	//TODO verificar se tem que sicronizar com o visual de alguma outra forma
-	if (wait_visual_odometry_to_publish)
+	switch (combine_visual_and_car_odometry_vel)
 	{
-		switch (combine_visual_and_car_odometry_phi)
-		{
-		case VISUAL_ODOMETRY_PHI:
-			robot_ackerman_velocity_message->phi = visual_odometry_pose6d.phi;
-			break;
-		case CAR_ODOMETRY_PHI:
-			robot_ackerman_velocity_message->phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-			break;
-		case VISUAL_CAR_ODOMETRY_PHI:
-			//TODO
-			robot_ackerman_velocity_message->phi = carmen_normalize_theta(((get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config) + visual_odometry_pose6d.phi) / 2.0));
-			break;
-		default:
-			break;
-		}
+	case VISUAL_ODOMETRY_VEL:
+		g_XGV_velocity = visual_odometry_pose6d.v;
+		break;
+	case CAR_ODOMETRY_VEL:
+		break;
 
-		switch (combine_visual_and_car_odometry_vel)
-		{
-		case VISUAL_ODOMETRY_VEL:
-			robot_ackerman_velocity_message->v = visual_odometry_pose6d.v;
-			break;
-		case CAR_ODOMETRY_VEL:
-			robot_ackerman_velocity_message->v = g_XGV_velocity;
-			break;
+	case VISUAL_CAR_ODOMETRY_VEL:
+		//TODO
+		g_XGV_velocity = (g_XGV_velocity + visual_odometry_pose6d.v) / 2.0;
+		break;
+	default:
 
-		case VISUAL_CAR_ODOMETRY_VEL:
-			//TODO
-			robot_ackerman_velocity_message->v = (g_XGV_velocity + visual_odometry_pose6d.v)/2.0;
-			break;
-		default:
+		break;
+	}
 
-			break;
-		}
-
-
-		robot_ackerman_velocity_message->timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
-		robot_ackerman_velocity_message->host = carmen_get_host();
-
-		wait_visual_odometry_to_publish = 0;
+	switch (combine_visual_and_car_odometry_phi)
+	{
+	case VISUAL_ODOMETRY_PHI:
+		g_XGV_atan_curvature = get_curvature_from_phi(visual_odometry_pose6d.phi, g_XGV_velocity, ford_escape_hybrid_config);
+		break;
+	case CAR_ODOMETRY_PHI:
+		break;
+	case VISUAL_CAR_ODOMETRY_PHI:
+		g_XGV_atan_curvature = (g_XGV_atan_curvature + get_curvature_from_phi(visual_odometry_pose6d.phi, g_XGV_velocity, ford_escape_hybrid_config)) / 2.0;
+		break;
+	default:
+		break;
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -328,17 +312,10 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 //	printf("%lf %lf %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
 	if (ford_escape_hybrid_config->publish_odometry)
 	{
-		//TODO COnstruindo fusao de odometria e visual odometry
-
-		if (publish_combined_visual_and_car_odometry)
-			build_combined_visual_and_car_odometry(&robot_ackerman_velocity_message);
-		else
-		{
-			robot_ackerman_velocity_message.v = g_XGV_velocity;
-			robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-			robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
-			robot_ackerman_velocity_message.host = carmen_get_host();
-		}
+		robot_ackerman_velocity_message.v = g_XGV_velocity;
+		robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
+		robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
+		robot_ackerman_velocity_message.host = carmen_get_host();
 
 		err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
 		carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
@@ -543,7 +520,6 @@ static void
 visual_odometry_handler(carmen_visual_odometry_pose6d_message *message)
 {
 	visual_odometry_pose6d = *message;
-	wait_visual_odometry_to_publish = 1;
 }
 
 
@@ -591,8 +567,7 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 	if (reportVelocityState)
 	{
 		// A media da velocidade das radas trazeiras ee mais correta. A velocidade abaixo ee a media das rodas dianteiras mais um ruido estranho...
-//		printf("g_XGV_velocity %lf   g_XGV_left_rear_wheel_speed %lf\n", g_XGV_velocity, g_XGV_left_rear_wheel_speed);
-		// g_XGV_velocity = reportVelocityState->velocityXMps;
+		// g_XGV_velocity_temp = reportVelocityState->velocityXMps;
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 		FILE *caco = fopen("ford_dump.txt", "a");
 		fprintf(caco, "%lf velocityXMps %lf\n", carmen_get_time(), reportVelocityState->velocityXMps);
@@ -640,54 +615,6 @@ print_values_to_train_simulator(double atan_desired_curvature, double atan_curre
 }
 
 
-void
-//static void // Se for static nao deixa compilar sem ser usada
-torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
-{
-	static int previous_gear_command = 128;	// 128 = Neutral
-	ReportCurvatureMessage reportCurvature;
-	double raw_phi;
-	double delta_t;
-
-	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
-	if (reportCurvature)
-	{
-		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
-
-		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
-
-		raw_phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-		carmen_add_bias_and_multiplier_to_v_and_phi(&(ford_escape_hybrid_config->filtered_v), &(ford_escape_hybrid_config->filtered_phi),
-						    g_XGV_velocity, raw_phi,
-						    0.0, v_multiplier, phi_bias, phi_multiplier);
-
-		set_wrench_efforts_desired_v_curvature_and_gear();
-
-		if (previous_gear_command != g_gear_command)
-			publish_ford_escape_gear_command(XGV_CCU);
-		previous_gear_command = g_gear_command;
-
-		delta_t = get_steering_delta_t();
-		g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
-				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
-				g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
-
-
-		delta_t = get_velocity_delta_t();
-		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
-			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
-
-		publish_ford_escape_throttle_and_brakes_command(XGV_CCU);
-
-		reportCurvatureMessageDestroy(reportCurvature);
-	}
-	else
-	{
-		carmen_warn("In torc_report_curvature_message_handler(): Error unpacking %s message.\n", jausMessageCommandCodeString(curvature_message));
-	}
-}
-
-
 static void
 torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
 {
@@ -718,7 +645,10 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		fclose(caco);
 #endif
 		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
-		//g_XGV_atan_curvature += get_curvature_from_phi(carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05)), ford_escape_hybrid_config);
+		g_XGV_velocity = g_XGV_velocity_temp;
+
+		if (publish_combined_visual_and_car_odometry)
+			build_combined_visual_and_car_odometry();
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
@@ -755,12 +685,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 			// TODO Tentar usar o phi cru direto da tork pra ver raw_phi
 			g_steering_command = -carmen_libmpc_get_optimized_steering_effort_using_MPC(
-					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
 					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
 					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->time_of_last_command,
 					&robot_config, 0);
 
-			//print_values_to_train_simulator(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t, g_steering_command);
+			//print_values_to_train_simulator(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)), delta_t, g_steering_command);
 
 
 			///////////////////////// So para guardar os phi s para medir erro no modelo do carro
@@ -799,12 +729,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			if (ford_escape_hybrid_config->use_rlpid)
 			{
 				// RL_PID
-				g_steering_command = carmen_librlpid_compute_effort(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, delta_t);
+				g_steering_command = carmen_librlpid_compute_effort(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)), g_atan_desired_curvature, delta_t);
 			}
 			else
 			{   // PID
 				//g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
-				//		-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
+				//		-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)), delta_t,
 				//		g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 
 				if (robot_model_name == ROBOT_NAME_FORD_ESCAPE)
@@ -812,13 +742,13 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 					// FUZZY
 					// TODO Tentar usar o angulo direto da torc pra ver se melhora g_XGV_atan_curvature
 					g_steering_command = carmen_libpid_steering_PID_controler_FUZZY(g_atan_desired_curvature,
-							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
 							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
 				}
 				else if (robot_model_name == ROBOT_NAME_ECOTECH4)
 				{
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
-							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
 							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 				}
 				else
@@ -831,10 +761,10 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		}
 
 		//Printf para testar a diferença das curvaturas original e modificada
-		//printf(cc %lf cc2 %lf\n", g_XGV_atan_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)));
+		//printf(cc %lf cc2 %lf\n", g_XGV_atan_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)));
 
 		//////////////////////////////////////////  PRINTS VALUES TO FILE TO VERIFICATIONS  //////////////////////////////////////////
-		//	fprintf(stdout, "(cc dc s v t) %lf %lf %lf %lf %lf\n", -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, g_steering_command, ford_escape_hybrid_config->filtered_v, carmen_get_time());
+		//	fprintf(stdout, "(cc dc s v t) %lf %lf %lf %lf %lf\n", -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)), g_atan_desired_curvature, g_steering_command, ford_escape_hybrid_config->filtered_v, carmen_get_time());
 		//	fflush(stdout);
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -880,7 +810,7 @@ torc_report_wheels_speed_message_handler(OjCmpt XGV_CCU __attribute__ ((unused))
 		fflush(caco);
 		fclose(caco);
 #endif
-		g_XGV_velocity = (g_XGV_right_rear_wheel_speed + g_XGV_left_rear_wheel_speed) / 2.0;
+		g_XGV_velocity_temp = (g_XGV_right_rear_wheel_speed + g_XGV_left_rear_wheel_speed) / 2.0;
 
 //		printf("WHEELS (RF, LF, RR, LR, ts): %lf, %lf, %lf, %lf, %lf\n",
 //				g_XGV_right_front_wheel_speed, g_XGV_left_front_wheel_speed,
@@ -1182,6 +1112,8 @@ initialize_structures()
 	ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
 	memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS * sizeof(int));
+
+	memset(&visual_odometry_pose6d, 0, sizeof(carmen_visual_odometry_pose6d_message));
 }
 
 

@@ -81,7 +81,7 @@ add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double
 }
 
 
-void
+int
 build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message,
 		double *odometry_v, double *odometry_phi)
 {
@@ -90,15 +90,18 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 	static double last_robot_phi = 0.0;
 	static double last_visual_odometry_phi = 0.0;
 
+	int ok_to_publish;
 	if (strstr(robot_ackerman_velocity_message->host, "visual_odometry") != NULL)
 	{
 		last_visual_odometry_v = robot_ackerman_velocity_message->v;
 		last_visual_odometry_phi = robot_ackerman_velocity_message->phi;
+		ok_to_publish = 0;
 	}
 	else
 	{
 		last_robot_v = robot_ackerman_velocity_message->v;
 		last_robot_phi = robot_ackerman_velocity_message->phi;
+		ok_to_publish = 1;
 	}
 
 	switch (combine_visual_and_car_odometry_phi)
@@ -136,6 +139,8 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 	carmen_add_bias_and_multiplier_to_v_and_phi(odometry_v, odometry_phi,
 						robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
 						0.0, v_multiplier, phi_bias, phi_multiplier);
+
+	return (ok_to_publish);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -196,21 +201,25 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 static void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
+	int ok_to_publish = 1;
+
 	if (simulate_legacy_500 && !connected_to_iron_bird)
 		add_legacy_adometry_limitations(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
 							robot_ackerman_velocity_message->timestamp);
 	else if (publish_combined_visual_and_car_odometry)
-		build_combined_visual_and_car_odometry(robot_ackerman_velocity_message,
+		ok_to_publish = build_combined_visual_and_car_odometry(robot_ackerman_velocity_message,
 							&(car_config->v), &(car_config->phi));
 	else
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
 							0.0, v_multiplier, phi_bias, phi_multiplier);
 
-	carmen_simulator_ackerman_recalc_pos(car_config);
-
-	publish_carmen_base_ackerman_odometry_message(robot_ackerman_velocity_message->timestamp);
+	if (ok_to_publish)
+	{
+		carmen_simulator_ackerman_recalc_pos(car_config);
+		publish_carmen_base_ackerman_odometry_message(robot_ackerman_velocity_message->timestamp);
+	}
 }
 
 
@@ -250,7 +259,7 @@ read_parameters(int argc, char *argv[], carmen_base_ackerman_config_t *config)
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 1, NULL},
 		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
-		{"robot", "publish_combined_visual_and_car_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_visual_and_car_odometry), 0, NULL},
+		{"base_ackerman", "publish_combined_visual_and_car_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_visual_and_car_odometry), 0, NULL},
 		{"robot", "combine_visual_and_car_odometry_phi", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_phi), 0, NULL},
 		{"robot", "combine_visual_and_car_odometry_vel", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_vel), 0, NULL},
 
