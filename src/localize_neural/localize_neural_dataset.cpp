@@ -10,7 +10,6 @@
 #include <string.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-
 #include <carmen/carmen.h>
 #include <carmen/gps_nmea_interface.h>
 #include <carmen/fused_odometry_interface.h>
@@ -29,7 +28,7 @@
 tf::Transformer transformer(false);
 
 static int camera;
-static int camera_type;	// 0 - Bumblebee, 1 - Intelbras
+static int camera_type;	// 0 - Bumblebee, 1 - Intelbras, 2 - velodyne, 3 - lidar
 static int bumblebee_basic_width;
 static int bumblebee_basic_height;
 static carmen_pose_3D_t car_pose_g;
@@ -39,7 +38,9 @@ static double between_axis_distance = 0.0;
 
 static char* output_dir_name;
 static char* image_pose_output_filename;
+static char* log_filename;
 static FILE* image_pose_output_file = NULL;
+carmen_FILE *outfile = NULL;
 static int globalpos_message_index = 0;
 static carmen_localize_ackerman_globalpos_message globalpos_message_buffer[100];
 
@@ -50,12 +51,12 @@ find_nearest_globalpos_message(double timestamp)
 	int nearest_index = -1;
 	double shortest_interval = MAXDOUBLE;
 
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 10000; i++)
 	{
 		if (globalpos_message_buffer[i].host != NULL)
 		{
 			double delta_t = timestamp - globalpos_message_buffer[i].timestamp;
-			if ((delta_t > 0.0) && (delta_t < shortest_interval))
+			if ((delta_t >= 0.0) && (delta_t < shortest_interval))
 			{
 				shortest_interval = delta_t;
 				nearest_index = i;
@@ -65,6 +66,45 @@ find_nearest_globalpos_message(double timestamp)
 	return nearest_index;
 }
 
+
+void create_lidar_filename_from_timestamp(double timestamp, char **pointcloud_filename, int camera_type)
+{
+	//const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	//const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+
+	int high_level_subdir = ((int) (timestamp / HIGH_LEVEL_SUBDIR_TIME))
+			* HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (timestamp / LOW_LEVEL_SUBDIR_TIME))
+			* LOW_LEVEL_SUBDIR_TIME;
+
+	int i;
+	static char directory[1024];
+	static char subdir[1024];
+	static char path[1024];
+
+	/**
+	 * TODO: @Filipe: Check if the mkdir call is time consuming.
+	 */
+	if(camera_type==2)
+		sprintf(directory, "%s_velodyne", log_filename);
+	else
+		sprintf(directory, "%s_lidar", log_filename);
+	//mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d", directory, high_level_subdir);
+	///mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
+	//mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+	
+	sprintf(path, "%s/%lf.pointcloud", subdir, timestamp);
+	
+	*pointcloud_filename = (char *) malloc (
+			(strlen(path) + 2 /* 1 for '\0' e 1 for the '/' between <dirname>/<filename> */) * sizeof(char));
+
+	sprintf((*pointcloud_filename),"%s",path);
+
+}
 
 void
 compose_output_path(char *dirname, char *filename, char **composed_path)
@@ -187,6 +227,43 @@ get_interpolated_pose_at_time(carmen_pose_3D_t robot_pose, double dt, double v, 
 	return pose;
 }
 
+void
+save_pose_to_file(carmen_velodyne_partial_scan_message *lidar)
+{
+	char *lidar_filename;
+
+	if ((lidar == NULL) || (image_pose_output_file == NULL))
+		carmen_die("no lidar received\n");
+	
+	int nearest_message_index = find_nearest_globalpos_message(lidar->timestamp);
+
+	if (nearest_message_index < 0)
+	{
+		carmen_warn("nearest_message_index < 0\n");
+		return;
+	}
+
+	carmen_localize_ackerman_globalpos_message globalpos_message = globalpos_message_buffer[nearest_message_index];
+	carmen_pose_3D_t globalpos = globalpos_message.pose;
+	globalpos.position.x = globalpos_message.globalpos.x;
+	globalpos.position.y = globalpos_message.globalpos.y;
+	globalpos.orientation.yaw = globalpos_message.globalpos.theta;
+
+	double dt = lidar->timestamp - globalpos_message.timestamp;
+	if (dt >= 0.0)
+		globalpos = get_interpolated_pose_at_time(globalpos, dt, globalpos_message.v, globalpos_message.phi);
+	else
+		carmen_die("dt < 0\n");
+
+	create_lidar_filename_from_timestamp(lidar->timestamp, &lidar_filename, camera_type);
+	//printf("linha: %s\n", lidar_filename);
+	fprintf(image_pose_output_file, "%lf %lf %lf %lf %lf %lf %lf %s\n",
+			globalpos.position.x, globalpos.position.y, globalpos.position.z,	//tx, ty, tz
+			globalpos.orientation.roll, globalpos.orientation.pitch, globalpos.orientation.yaw,		//rx, ry, rz,
+			lidar->timestamp,
+			lidar_filename);
+	fflush(image_pose_output_file);
+}
 
 void
 save_pose_to_file(camera_message *image, int camera)
@@ -237,7 +314,7 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 	{
 		carmen_die("no image received\n");
 	}
-
+	
 	int nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
 	
 	if (nearest_message_index < 0)
@@ -314,11 +391,16 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
+void velodyne_partial_scan_handler( carmen_velodyne_partial_scan_message* lidar)
+{
+	//printf("CHEGOU VELODYNE \n");
+	save_pose_to_file(lidar);
+}
 
 void
 bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
+	//printf("CHEGOU IMAGEM BB\n");
 	save_pose_to_file(stereo_image, camera);
 	//use log2png.py for newer logs instead
 	//save_image_to_file(stereo_image, camera);
@@ -328,6 +410,7 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 void
 camera_drivers_message_handler(camera_message *image)
 {
+	// printf("CHEGOU IMAGEM INTELBRAS\n");
 	save_pose_to_file(image, camera);
 }
 
@@ -335,7 +418,8 @@ camera_drivers_message_handler(camera_message *image)
 void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *message)
 {
-	printf("CHEGOU LOCALIZE ACKERMAN %lf %lf %lf\n",message->globalpos.x,message->globalpos.y,message->globalpos.theta);
+	//printf("CHEGOU LOCALIZE ACKERMAN %lf %lf %lf\n",message->globalpos.x,message->globalpos.y,message->globalpos.theta);
+	// printf("CHEGOU LOCALIZE ACKERMAN \n");
 	globalpos_message_buffer[globalpos_message_index] = *message;
 	globalpos_message_index = (globalpos_message_index + 1) % 100;
 }
@@ -351,7 +435,6 @@ shutdown_module(int signo)
 
 		if (image_pose_output_file != NULL)
 			fclose(image_pose_output_file);
-
 		exit(0);
 	}
 }
@@ -377,7 +460,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
 		{(char *) "commandline", (char *) "camera_type", CARMEN_PARAM_INT, &camera_type, 0, NULL},
 		{(char *) "commandline", (char *) "output_dir", CARMEN_PARAM_STRING, &output_dir_name, 0, NULL},
-		{(char *) "commandline", (char *) "output_txt", CARMEN_PARAM_STRING, &image_pose_output_filename, 0, NULL}
+		{(char *) "commandline", (char *) "output_txt", CARMEN_PARAM_STRING, &image_pose_output_filename, 0, NULL},
+		{(char *) "commandline", (char *) "log_filename", CARMEN_PARAM_STRING, &log_filename, 0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_cmd_list, sizeof(param_cmd_list)/sizeof(param_cmd_list[0]));
@@ -460,8 +544,8 @@ initialize_structures()
 	image_pose_output_file = fopen(image_pose_output_filename, "w");
 	if (camera_type == 0)	// Bumblebee
 		fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image right_image\n");
-	else					// Intelbras
-		fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image\n");
+	else
+		fprintf(image_pose_output_file, "x y z rx ry rz timestamp left_image\n"); // Intelbras ou lidar
 	memset(globalpos_message_buffer, 0, 100 * sizeof(carmen_localize_ackerman_globalpos_message));
 }
 
@@ -470,8 +554,15 @@ void
 subscribe_messages()
 {
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
-    camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) camera_drivers_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	//if (camera_type>=2)
+	//{
+		carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_handler, CARMEN_SUBSCRIBE_LATEST);
+	//}
+	//else
+	//{
+		carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
+		camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) camera_drivers_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	//}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
