@@ -51,7 +51,7 @@ find_nearest_globalpos_message(double timestamp)
 	int nearest_index = -1;
 	double shortest_interval = MAXDOUBLE;
 
-	for (int i = 0; i < 10000; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		if (globalpos_message_buffer[i].host != NULL)
 		{
