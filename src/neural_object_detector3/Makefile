@@ -8,38 +8,48 @@ CXXFLAGS = -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src  -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
+#IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
+#LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
+
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet3/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
-LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
+#LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
 		  -lmoving_objects_interface -ldarknet2 `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
 		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
 		  -lcamera_drivers
 
-SOURCES = neural_object_detector_main.cpp neural_object_detector_simulator.cpp neural_object_detector_traffic_light.cpp neural_object_detector_test.cpp neural_object_detector_tracker.cpp
+LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
+		  -lmoving_objects_interface -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
+		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
+		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
+		  -lcamera_drivers
 
-PUBLIC_BINARIES = neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light neural_object_detector_tracker
+#SOURCES = neural_object_detector_main.cpp neural_object_detector_simulator.cpp neural_object_detector_traffic_light.cpp neural_object_detector_test.cpp neural_object_detector_tracker.cpp
 
-TARGETS = darknet2 neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light  neural_object_detector_test neural_object_detector_tracker
+#PUBLIC_BINARIES = neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light neural_object_detector_tracker
 
-neural_object_detector: neural_object_detector_main.o
+#TARGETS = darknet3 neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light  neural_object_detector_test neural_object_detector_tracker
+
+SOURCES = neural_object_detector_simulator.cpp neural_object_detector_tracker.cpp
+
+PUBLIC_BINARIES = neural_object_detector neural_object_detector_simulator neural_object_detector_tracker
+
+TARGETS = darknet3 neural_object_detector_simulator neural_object_detector_tracker
 
 neural_object_detector_simulator: neural_object_detector_simulator.o
 
-neural_object_detector_traffic_light: neural_object_detector_traffic_light.o
-
-neural_object_detector_test: neural_object_detector_test.o
+#neural_object_detector_traffic_light: neural_object_detector_traffic_light.o
 
 neural_object_detector_tracker: neural_object_detector_tracker.o
 
-darknet2:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
+darknet3:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet3
 
 download:
 	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1rE0lY4d4wyMp4mvcx23y4qGK97bvzTnC/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet2/yolov3.weights
