@@ -50,13 +50,12 @@ find_nearest_globalpos_message(double timestamp)
 {
 	int nearest_index = -1;
 	double shortest_interval = MAXDOUBLE;
-
 	for (int i = 0; i < 100; i++)
 	{
 		if (globalpos_message_buffer[i].host != NULL)
 		{
 			double delta_t = timestamp - globalpos_message_buffer[i].timestamp;
-			if ((delta_t >= 0.0) && (delta_t < shortest_interval))
+			if ((delta_t > 0.0) && (delta_t < shortest_interval))
 			{
 				shortest_interval = delta_t;
 				nearest_index = i;
@@ -66,6 +65,28 @@ find_nearest_globalpos_message(double timestamp)
 	return nearest_index;
 }
 
+int
+find_nearest_globalpos_message_lidar(double timestamp)
+{
+	int nearest_index = -1;
+	double shortest_interval = MAXDOUBLE;
+	for (int i = 0; i < 100; i++)
+	{
+		// printf(" %lf ",timestamp);
+		if (globalpos_message_buffer[i].host != NULL)
+		{
+			double delta_t = timestamp - globalpos_message_buffer[i].timestamp;
+			if ((abs(delta_t) >= 0.0) && (abs(delta_t) < shortest_interval))
+			{
+				// printf("%lf - ",delta_t);
+				shortest_interval = delta_t;
+				nearest_index = i;
+			}
+		}
+		// printf(" %lf \n",globalpos_message_buffer[i].timestamp);
+	}
+	return nearest_index;
+}
 
 void create_lidar_filename_from_timestamp(double timestamp, char **pointcloud_filename, int camera_type)
 {
@@ -235,8 +256,8 @@ save_pose_to_file(carmen_velodyne_partial_scan_message *lidar)
 	if ((lidar == NULL) || (image_pose_output_file == NULL))
 		carmen_die("no lidar received\n");
 	
-	int nearest_message_index = find_nearest_globalpos_message(lidar->timestamp);
-
+	int nearest_message_index = find_nearest_globalpos_message_lidar(lidar->timestamp);
+	printf(" nearest: %d \n ", nearest_message_index);
 	if (nearest_message_index < 0)
 	{
 		carmen_warn("nearest_message_index < 0\n");
@@ -250,10 +271,10 @@ save_pose_to_file(carmen_velodyne_partial_scan_message *lidar)
 	globalpos.orientation.yaw = globalpos_message.globalpos.theta;
 
 	double dt = lidar->timestamp - globalpos_message.timestamp;
-	if (dt >= 0.0)
+	// if (dt >= 0.0)
 		globalpos = get_interpolated_pose_at_time(globalpos, dt, globalpos_message.v, globalpos_message.phi);
-	else
-		carmen_die("dt < 0\n");
+	// else
+	// 	carmen_die("dt < 0\n");
 
 	create_lidar_filename_from_timestamp(lidar->timestamp, &lidar_filename, camera_type);
 	//printf("linha: %s\n", lidar_filename);
