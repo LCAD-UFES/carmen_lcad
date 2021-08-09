@@ -40,8 +40,10 @@
 //#define PLOT_PHI
 //#define PLOT_VELOCITY
 
-#define ROBOT_NAME_FORD_ESCAPE 0
-#define ROBOT_NAME_ECOTECH4 1
+#define ROBOT_NAME_FORD_ESCAPE 	0
+#define ROBOT_NAME_ECOTECH4 	1
+#define ROBOT_NAME_MPW700 		2
+
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
@@ -178,10 +180,17 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	else
 		g_gear_command = 1;		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 
-//	if (behavior_selector_low_level_state != Stopped)
+//	static double last_time_with_desired_velocity_not_zero = 0.0;
+//	if (v != 0.0)
+//		last_time_with_desired_velocity_not_zero = carmen_get_time();
+
+//	if ((robot_model_name == ROBOT_NAME_MPW700) && ((carmen_get_time() - last_time_with_desired_velocity_not_zero) > 0.3))
+//		g_gear_command = 128;	// 128 = Neutral
+
+	if (behavior_selector_low_level_state != Stopped)
 		g_desired_velocity = v;
-//	else
-//		g_desired_velocity = 0.0;
+	else
+		g_desired_velocity = 0.0;
 }
 
 
@@ -232,6 +241,8 @@ build_combined_visual_and_car_odometry()
 static void
 publish_car_status()
 {
+//	printf("cambio %d\n", g_XGV_gear);
+
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_ford_escape_status_message msg;
 
@@ -745,7 +756,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
 							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
 				}
-				else if (robot_model_name == ROBOT_NAME_ECOTECH4)
+				else if ((robot_model_name == ROBOT_NAME_ECOTECH4) || (robot_model_name == ROBOT_NAME_MPW700))
 				{
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),

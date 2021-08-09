@@ -106,6 +106,16 @@ Character::draw(int number, polygon polygons[], int width, colors color[])
 
         length = 6;
         break;
+    case 'N':
+        polygons[0] = buildPolygon(0.0, 0.0, 0.0, -1.1, 0.0, 0.0);
+        polygons[1] = buildPolygon(0.0, 0.0, 0.0, -1.1, -1.1, 0.0);
+        polygons[2] = buildPolygon(25.0, 0.0, 0.0, -0.4, 0.0, 0.0);
+        polygons[3] = buildPolygon(25.0, 0.0, 0.0, -0.3, -1.1, 0.0);
+        polygons[4] = buildPolygon(0.0, 0.0, 0.0, 0.4, 0.0, 0.0);
+        polygons[5] = buildPolygon(0.0, 0.0, 0.0, 0.4, -1.1, 0.0);
+
+        length = 6;
+        break;
     case 'L':
         polygons[0] = buildPolygon(0.0, 0.0, 0.0, -1.1, 0.0, 0.0);
         polygons[1] = buildPolygon(0.0, 0.0, 0.0, -1.1, -1.1, 0.0);

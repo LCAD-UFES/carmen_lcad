@@ -16,7 +16,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -lglobal -lGLU -lipc -lz -lparam_interface -lmap_interface -llocalize_ackerman_interface -lsimulator_ackerman_interface \
 	  -lobstacle_avoider_interface -lprob_models -llaser_interface -lmapper_interface -lnavigator_ackerman_interface \
 	  -lglobal_graphics_qt -lrrt_planner_interface -lGL -lglut -lGLEW -lQtCore -lpthread -lfused_odometry_interface -lobstacle_avoider_interface \
-	  -lmotion_planner_interface -lrobot_ackerman_interface -lbase_ackerman_interface
+	  -lmotion_planner_interface -lrobot_ackerman_interface -lbase_ackerman_interface -lford_escape_hybrid_interface
 
 # Source code files (.c, .cpp) 
 SOURCES	= 	character.cpp \

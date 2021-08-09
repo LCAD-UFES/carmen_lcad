@@ -25,7 +25,6 @@ void
 Speedometer::draw(void)
 {
     drawCambio();
-    countCambio();
 
     colorVelocimeter[0] = character->buildColor(1.0f, 0.0f, 0.0f);
     colorVelocimeter[1] = character->buildColor(1.0f, 0.0f, 0.0f);
@@ -111,6 +110,13 @@ Speedometer::draw(void)
    	drawLabelsVelocimeter();
 
     glTranslatef(100, 0, 0);
+}
+
+
+void
+Speedometer::set_cambio(int cambio)
+{
+    this->cambio = cambio;
 }
 
 
@@ -310,34 +316,4 @@ Speedometer::drawMargin(void)
     glEnd();
     glRotatef(105, 0, 0, 1);
     glTranslatef(-225, 0, 0);
-}
-
-
-void
-Speedometer::countCambio(void)
-{
-    if (speed > 100)
-    {
-        cambio = 5;
-    }
-    else if ((speed > 70) & (speed < 100))
-    {
-        cambio = 4;
-    }
-    else if ((speed >= 40) & (speed < 70))
-    {
-        cambio = 3;
-    }
-    else if ((speed > 5) & (speed < 40))
-    {
-        cambio = 2;
-    }
-    else if ((speed > 0) & (speed <= 5))
-    {
-        cambio = 1;
-    }
-    else
-    {
-        cambio = 0;
-    }
 }

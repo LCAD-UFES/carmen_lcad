@@ -788,15 +788,11 @@ ford_escape_status_handler(carmen_ford_escape_status_message *message)
 {
 	int yellow_button = message->g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG;//carmen_get_bit_value(message->g_XGV_component_status, 0);
 
-	if(yellow_button)
-	{
+	if (yellow_button)
 		record_screen = 0;
-	}
 
-	if(!yellow_button && (autonomous_record_screen == 1))
-	{
+	if (!yellow_button && (autonomous_record_screen == 1))
 		record_screen = 1;
-	}
 }
 
 
