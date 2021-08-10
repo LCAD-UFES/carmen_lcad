@@ -14,6 +14,7 @@ public:
     ~Speedometer();
     void draw(void);
     void update(float speed);
+    void set_cambio(int cambio);
 
 private:
 

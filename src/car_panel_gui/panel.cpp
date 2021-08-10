@@ -173,7 +173,23 @@ reshape(GLsizei w, GLsizei h)
 }
 
 
-void
+static void
+ford_escape_status_handler(carmen_ford_escape_status_message *message)
+{
+//	printf("cambio %d, %s\n", message->g_XGV_gear, message->host);
+
+	if (message->g_XGV_gear == 128)
+		speedometer->set_cambio('N');
+	else if (message->g_XGV_gear == 1)
+		speedometer->set_cambio('L');
+	else if (message->g_XGV_gear == 129)
+		speedometer->set_cambio('R');
+	else
+		speedometer->set_cambio(0);
+}
+
+
+static void
 fused_dometry_handler(carmen_fused_odometry_message *fused_odometry)
 {
 	if (handler_message == fused_odometry_t)
@@ -185,7 +201,7 @@ fused_dometry_handler(carmen_fused_odometry_message *fused_odometry)
 }
 
 
-void
+static void
 robot_ackerman_motion_command_handler(carmen_robot_ackerman_motion_command_message *motion_command)
 {
 	if (handler_message == robot_ackerman_motion_command_t && motion_command->num_motion_commands > 0)
@@ -197,7 +213,7 @@ robot_ackerman_motion_command_handler(carmen_robot_ackerman_motion_command_messa
 }
 
 
-void
+static void
 base_ackerman_motion_command_handler(carmen_robot_ackerman_motion_command_message *motion_command)
 {
 	if (handler_message == base_ackerman_motion_command_t && motion_command->num_motion_commands > 0)
@@ -209,7 +225,7 @@ base_ackerman_motion_command_handler(carmen_robot_ackerman_motion_command_messag
 }
 
 
-void
+static void
 base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *base_ackerman_odometry)
 {
 	if (handler_message == base_ackerman_odometry_t)
@@ -221,7 +237,7 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *base_acker
 }
 
 
-void
+static void
 localize_ackerman_globalpos_handler(carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos)
 {
 	if (handler_message == localize_ackerman_globalpos_t)
@@ -233,7 +249,7 @@ localize_ackerman_globalpos_handler(carmen_localize_ackerman_globalpos_message *
 }
 
 
-void
+static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *simulator_ackerman_truepos)
 {
 	if (handler_message == localize_ackerman_globalpos_t)
@@ -253,6 +269,13 @@ subscribe_messages(int msg_type)
 	static bool not_subscribed_to_motion_command = true;
 	static bool not_subscribed_to_odometry = true;
 	static bool not_subscribed_to_globalpos = true;
+	static bool not_subscribed_to_ford_escape_status = true;
+
+	if (not_subscribed_to_ford_escape_status)
+	{
+		carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
+		not_subscribed_to_ford_escape_status = false;
+	}
 
 	switch (msg_type)
 	{
