@@ -50,7 +50,7 @@ double distance_between_front_and_rear_axles;
 
 int use_velodyne_timestamp_in_odometry = 0;
 
-int calibrate_combined_visual_and_car_odometry = 1;
+int calibrate_combined_visual_and_car_odometry = 0;
 
 
 template<class message_type> int
