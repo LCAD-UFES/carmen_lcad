@@ -4,7 +4,7 @@ import cv2
 import argparse
 import threading
 import numpy as np
-
+import struct
 
 def check_setup(input_list, output_dir):
     if not os.path.isfile(input_list):
@@ -92,6 +92,72 @@ def save_new_img2(image, output_dir, camera_id, dst_size=None, max_height=None, 
 
     save_one_img(img, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height, ignore_top)
 
+def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_left=180, angle_right=180):
+    pointcloud_file = open(image['path'],'rb')
+    shot_angle = ''
+    shot_distance =''
+    shot_intensity = ''
+    #for i in xrange(0, int(image['shots'])): 
+    line = pointcloud_file.read(8)
+    col = 0
+    blank_image = np.zeros((32,int(image['shots']),3), np.uint8)
+    while line: 
+        shot_angle = struct.unpack('d',line)
+        shot_distance = struct.unpack('H'*32,pointcloud_file.read(64))
+        shot_intensity = struct.unpack('B'*32,pointcloud_file.read(32))
+        shot_distance = np.asarray(shot_distance)/500
+        linha = 0
+        for i in [31,29,27,25,23,21,19,17,15,13,11,9,7,5,3,1,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0]:
+            distancia = int(float(shot_distance[i]*765/25))
+            B = 0 if distancia < 511 else distancia - 510
+            G = 0 if distancia < 256 else distancia - B - 255
+            R = 255 if distancia > 255 else distancia
+            if distancia == 0:
+                B = G = R = 255
+            blank_image[linha,col] = (B,G,R)
+            linha+=1
+        col+=1
+        line = pointcloud_file.read(8)
+        print(shot_distance)
+    ini = int(float(image['shots']/360)*(180-abs(angle_left)))
+    end = int(float(image['shots']/360)*(180+abs(angle_right)))
+    partial_image = blank_image[:,ini:end]
+    # partial_image_one = blank_image[:,-step:]
+    # partial_image_two = blank_image[:,:step]
+    # partial_image = np.hstack((partial_image_one, partial_image_two))
+    resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
+    cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
+
+def read_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, angle_left=180, angle_right=180):
+
+    total = 0
+    mythreads = []
+    f = open(input_list, 'rb')
+    line = f.readline()
+        
+    while line and total < max_lines:
+        item = line.strip().split()
+        
+        timestamp = item[3]
+        path = log + item[1]
+        
+        image = {
+            'path': path,
+            'shots': (int(item[2])),
+            'timestamp': timestamp
+        }
+
+        line = f.readline()
+        t = threading.Thread(target=save_point_cloud_as_img, args=(image, output_dir, camera_id, dst_size, angle_left, angle_right))
+        mythreads.append(t)
+        t.start()
+        total += 1
+        if (len(mythreads) >= max_threads) or not (line and total < max_lines):
+            for t in mythreads:
+                t.join()
+            mythreads[:] = []  # clear the thread's list
+            print('Saved {} point cloud already...'.format(total))
+    f.close()
 
 def read_old_log(input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, max_height=None, ignore_top=0):
     total = 0
@@ -192,13 +258,15 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input_list', type=str, required=True)
     parser.add_argument('-g', '--log', type=str, required=True)
     parser.add_argument('-o', '--output_dir', type=str, required=True)
-    parser.add_argument('-c', '--camera_id', type=int, required=True)
+    parser.add_argument('-c', '--camera_id', type=int, required=False, default=1)
     parser.add_argument('-f', '--log_format', type=int, required=True)
     parser.add_argument('-l', '--max_lines', type=int, required=False, default=10000000)
     parser.add_argument('-t', '--max_threads', type=int, required=False, default=10)
     parser.add_argument('-m', '--max_height', type=int, required=False, default=0)
     parser.add_argument('-s', '--image_size', type=str, required=False, default='none')
     parser.add_argument('-p', '--ignore_top', type=int, required=False, default=0)
+    parser.add_argument('-al', '--angle_left', type=int, required=False, default=180)
+    parser.add_argument('-ar', '--angle_right', type=int, required=False, default=180)
     argv = vars(parser.parse_args())
 
     check_setup(argv['input_list'], argv['output_dir'])
@@ -213,6 +281,8 @@ if __name__ == '__main__':
         read_old_log(argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
     elif argv['log_format'] == 1:  # 1-New Log Format
         read_new_log(argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
-    else:
+    elif argv['log_format'] == 2:
         read_new2_log(argv['log'], argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, max_height, ignore_top)
+    else:
+        read_point_cloud_log(argv['log'], argv['input_list'], argv['output_dir'], argv['max_threads'], argv['max_lines'], argv['camera_id'], dst_size, argv['angle_left'], argv['angle_right'])
     print('out')

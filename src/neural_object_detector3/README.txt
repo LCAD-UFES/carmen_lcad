@@ -1,3 +1,9 @@
+Download weights from Darknet3:
+
+yolov4.cfg: https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg (save in $CARMEN_HOME/sharedlib/darknet3/cfg)
+yolov4.weights: https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights (save in $CARMEN_HOME/sharedlib/darknet3)
+
+
 ## NOD3_tracker
 Create a virtualenv with python2.7
  sudo apt install virtualenv
