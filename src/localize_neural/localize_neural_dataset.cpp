@@ -257,7 +257,7 @@ save_pose_to_file(carmen_velodyne_partial_scan_message *lidar)
 		carmen_die("no lidar received\n");
 	
 	int nearest_message_index = find_nearest_globalpos_message_lidar(lidar->timestamp);
-	printf(" nearest: %d \n ", nearest_message_index);
+	//printf(" nearest: %d \n ", nearest_message_index);
 	if (nearest_message_index < 0)
 	{
 		carmen_warn("nearest_message_index < 0\n");
@@ -276,13 +276,14 @@ save_pose_to_file(carmen_velodyne_partial_scan_message *lidar)
 	// else
 	// 	carmen_die("dt < 0\n");
 
-	create_lidar_filename_from_timestamp(lidar->timestamp, &lidar_filename, camera_type);
+	//create_lidar_filename_from_timestamp(lidar->timestamp, &lidar_filename, camera_type);
 	//printf("linha: %s\n", lidar_filename);
-	fprintf(image_pose_output_file, "%lf %lf %lf %lf %lf %lf %lf %s\n",
+	fprintf(image_pose_output_file, "%lf %lf %lf %lf %lf %lf %lf %s/%lf.png\n",
 			globalpos.position.x, globalpos.position.y, globalpos.position.z,	//tx, ty, tz
 			globalpos.orientation.roll, globalpos.orientation.pitch, globalpos.orientation.yaw,		//rx, ry, rz,
 			lidar->timestamp,
-			lidar_filename);
+			(char *)output_dir_name,
+			lidar->timestamp);
 	fflush(image_pose_output_file);
 }
 
