@@ -1,0 +1,5 @@
+# Estacionamento
+set course to 7471676.96, -681583.50, 0.600
+go after set course to 7471676.96, -681583.50, 0.600   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
