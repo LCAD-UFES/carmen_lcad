@@ -41,6 +41,7 @@ typedef struct
     VehicleModel dynamics;
     BicycleState current_state;
     BicycleControl current_control;
+    CoupledControlParams control_params;
     int heartbeat;
     double time_offset;
     MPCTimeSteps time_steps;
