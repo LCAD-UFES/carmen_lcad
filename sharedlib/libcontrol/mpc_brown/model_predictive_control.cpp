@@ -92,6 +92,7 @@ make_TrajectoryTrackingMPC(TrajectoryTube trajectory,VehicleModel dynamics,Coupl
     aux.qs = qs;
     aux.us = us;
     aux.ps = ps;
+    aux.control_params = control_params;
     return aux;
 }
 

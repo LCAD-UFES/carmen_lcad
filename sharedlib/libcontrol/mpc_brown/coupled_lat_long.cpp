@@ -55,7 +55,7 @@ CoupledTrajectoryTrackingMPC( TrajectoryTube trajectory, CoupledControlParams co
     return mpc;
 }
 
-
+///Não sei se terminei essa função abaixo
 TrajectoryTrackingMPC
 compute_linearization_nodes( TrajectoryTrackingMPC mpc,
                                     vector<TrackingBicycleState>  qs,
@@ -66,6 +66,7 @@ compute_linearization_nodes( TrajectoryTrackingMPC mpc,
     MPCTimeSteps TS = mpc.time_steps;
     vector<double> ts = TS.ts;
     BicycleState q0 = mpc.current_state;
+    BicycleControl u0 = mpc.current_control;
     vector<vector<double>> matrix = path_coordinates(traj, q0);
     vector<double> s0 = matrix[0];
     vector<double> e0 = matrix[1];
@@ -77,7 +78,7 @@ compute_linearization_nodes( TrajectoryTrackingMPC mpc,
         delta_s.push_back(s0[i] - tn.);
     }*/
     vector<double> delta_phi;
-    for(int i = 0; i < tn.si.phi.size(); i++ )
+    for(unsigned int i = 0; i < tn.si.phi.size(); i++ )
     {
         delta_phi.push_back(q0.phi[0] - tn.si.phi[i]);
     }
@@ -91,53 +92,120 @@ compute_linearization_nodes( TrajectoryTrackingMPC mpc,
     TrackingBicycleParams p;
     p.V = tn.ti.TimeInterpolants_map["V"];
     p.k = tn.si.k;
-}
-/*
-void construct_coupled_tracking_QP( VehicleModel dynamics, CoupledControlParams control_params, double time_steps, vector<TrackingBicycleState> qs, 
-vector<BicycleControl2> us, double ps, double N_short, double N_long, double dt )
-{
-    double δ_max_  = dynamics.control_limits._delta_max, delta_l_max   = control_params.CoupledControlParams_map["delta_max"];
-    double Fx_max_ = dynamics.control_limits.Fx_max, Px_max =  dynamics.control_limits.Px_max;
-    double Uxt, Fxft, Fxrt, Uy_r;
-    vector<double> Uy_r, delta_t, ltf_vector, delta_s;
-    for (double i = 0; i < N_short+N_long; i++ )
+    if(mpc.solved)
     {
-        Uxt = qs[i+1].Ux;
-        ltf_vector = longitudinal_tire_forces(dynamics.longitudinal_params, us[i+1].Fx);
-        δ_mint, δ_maxt, Ht, Gt = stable_limits(dynamics.bicycle_model, Uxt, Fxft, Fxrt);
-        Uy_r.push_back(q[3][i + 1]);
-        Uy_r.push_back(q[4][i + 1]);
-        delta_t.push_back(delta[1][i]);
-        delta_t.push_back(delta[1][i]);
-        delta_t.push_back(delta[2][i]);
-        delta_t.push_back(delta[2][i]);
+        for (unsigned int i = 1; i < TS.N_short + TS.N_long + 1; i++)
+        {
+            double t = TS.ts[i];
+            if(t  < TS.prev_ts[TS.prev_ts.size() - 1])
+            {
+                
+            }
+        }
+    }else
+    {
+        vector<double> s_delta_phi, c_delta_phi;
+        for(unsigned int i = 0; i < delta_phi.size(); i++)
+        {
+            s_delta_phi.push_back(sin(delta_phi[i]));
+            c_delta_phi.push_back(cos(delta_phi[i]));
+        }
+        vector<double> V, V_aux, V_aux_1, beta0, A_des;
+        for(unsigned int i = 0; i < q0.Ux.size(); i++)
+        {
+            V.push_back(q0.Ux[i] * c_delta_phi[i] - q0.Uy[i] * s_delta_phi[i]); 
+            beta0.push_back(atan2(q0.Ux[i], q0.Uy[i]));
+        }
+        vector<vector<double>> matrix_f = _lateral_tire_forces(mpc.tracking_dynamics.bicycle_model, q0, u0, 0);
+        double tau;
+        BicycleControl2 u;
+        for(unsigned int i = 0; i < TS.N_short + TS.N_long + 1; i++)
+        {
+            (i == TS.N_short + TS.N_long + 1) ? tau = TS.dt[i - 1] : tau = TS.dt[i];
+            TrajectoryNode aux = Traj_getindex_s(traj, ts[1]);
+            for(int j = 0; j < V.size(); j ++)
+            {
+                A_des.push_back(aux.ti.TimeInterpolants_map["A"] + mpc.control_params.CoupledControlParams_map["k_V"]
+                * (aux.ti.TimeInterpolants_map["V"] - V[j]) / tau);
+                V_aux.push_back((mpc.control_params.CoupledControlParams_map["V_min"] - V[j]) / tau);
+                V_aux_1.push_back((mpc.control_params.CoupledControlParams_map["V_max"] - V[j]) / tau);
+            }
+            A_des = min(max(A_des, V_aux),V_aux_1);
+            vector<double> A;
+            map<string, vector<double>> map_aux;
+            if(i == 0)
+            {
+                for(unsigned int j = 0; j < q0.Ux.size(); j++)
+                {
+                    A.push_back((q0.Ux[j] - q0.r[j] * q0.Uy[j]) * c_delta_phi[j] - (q0.r[j] + q0.r[j] * q0.Ux[j]) * s_delta_phi[j]);
+                }
+            }else
+            {
+                if(i < TS.N_short + 1)
+                {
+                    map_aux = steady_state_estimates(mpc.tracking_dynamics, V, A_des, aux.ti.TimeInterpolants_map["k"], 1, 
+                        q0.r, beta0, u0.delta_, matrix_f[0]);
+                    q.Ux = q0.Ux;
+                    q.Uy = q0.Uy;
+                    q.r = q0.r;
+                    q.E = e0;
+                    for(unsigned int j = 0; j < q0.phi.size(); j++)
+                    {
+                        q.phi.push_back(q0.phi[j] - aux.si.phi[j]);
+                    }
+                    u._delta = map_aux["_delta"];
+                    for(unsigned int j = 0; j < map_aux["Fxf"].size(); j++)
+                    {
+                        u.Fx.push_back(map_aux["Fxf"][j] + map_aux["Fxr"][j]);
+                    }
+                    TrackingBicycleParams p;
+                    p.V = aux.ti.TimeInterpolants_map["V"];
+                    p.k = aux.si.k;
+                }else
+                {
+                    map_aux = steady_state_estimates(mpc.tracking_dynamics, V, A_des, aux.ti.TimeInterpolants_map["k"], 1, 
+                        q0.r, beta0, u0.delta_, matrix_f[0]);
+                    q.Ux = map_aux["Ux"];
+                    q.Uy = map_aux["Uy"];
+                    q.r = map_aux["r"];
+                    for(unsigned int j = 0; j < map_aux["beta_"].size(); j++)
+                    {
+                        q.phi.push_back(-map_aux["beta_"][j]);
+                    }
+                    u._delta = map_aux["_delta"];
+                    for(unsigned int j = 0; j < map_aux["Fxf"].size(); j++)
+                    {
+                        u.Fx.push_back(map_aux["Fxf"][j] + map_aux["Fxr"][j]);
+                    }
+                    TrackingBicycleParams p;
+                    p.V = aux.ti.TimeInterpolants_map["V"];
+                    p.k = aux.si.k;
+                }
+            }
+            vector<BicycleState> qs;
+            qs.push_back(q);
+            vector<BicycleControl2> us;
+            us.push_back(u);
+            vector<TrackingBicycleParams> ps;
+            ps.push_back(p);
+            if(i == TS.N_short + TS.N_long)
+            {
+                break;
+            }
+            for(unsigned int j = 0; j < V.size(); j++)
+            {
+                V[j] = V[j] + map_aux["A"][j] * tau;
+            }
+            for(unsigned int j = 0; j < s0.size(); j++)
+            {
+                s0[j] = s0[j] + V[j] * tau + map_aux["A"][j] * tau * tau / 2;
+            }
+        }
+       
     }
-
-    /*
-    for t in 1:N_short+N_long
-        Uxt = qs[t+1].Ux
-        Fxft, Fxrt = longitudinal_tire_forces(dynamics.longitudinal_params, us[t+1].Fx)
-        δ_mint, δ_maxt, Ht, Gt = stable_limits(dynamics.bicycle_model, Uxt, Fxft, Fxrt)
-        Ht = push!(H, Parameter(Array(Ht), m))[end]
-        Gt = push!(G, Parameter(Array(Gt), m))[end]
-        δ_mint  = push!(δ_min,  Parameter([max(δ_mint, -δ_max_) / u_normalization[1]], m))[end]
-        δ_maxt  = push!(δ_max,  Parameter([min(δ_maxt, δ_max_)  / u_normalization[1]], m))[end]
-        Fx_maxt = push!(Fx_max, Parameter([min(Px_max/Uxt, Fx_max_) / u_normalization[2]], m))[end]
-        Uy_r = q[3:4,t+1]
-        σt   = [σ[1,t],σ[1,t],σ[2,t],σ[2,t]]
-        Δδt  = [Δδ[t]]
-        Δδ_mint = push!(Δδ_min, Parameter([-δ̇_max*dt[t] / u_normalization[1]], m))[end]
-        Δδ_maxt = push!(Δδ_max, Parameter([ δ̇_max*dt[t] / u_normalization[1]], m))[end]
-        @constraint(m, [δ[t+1]] <= δ_maxt)
-        @constraint(m, [δ[t+1]] >= δ_mint)
-        @constraint(m, [Fx[t+1]] <= Fx_maxt)
-        @constraint(m, Ht*Uy_r - Gt <= σt)
-        @constraint(m, Δδt <= Δδ_maxt)
-        @constraint(m, Δδt >= Δδ_mint)
-    end
-    
+    return mpc;
 }
-*/
+
 typedef struct{
     vector<vector<double>> Q_delta_s;
     vector<vector<double>> Q_delta_phi;
@@ -172,20 +240,14 @@ typedef struct{
     vector<vector<double>> u;
     vector<vector<double>> delta;
     vector<double> delta_HJI;
+    vector<double> u_normalization;
 }TrackingQPVariables;
 
 /*
-void update_QP(TrackingBicycleState dynamics, TrackingQPParams QPP, MPCTimeSteps mpc)
+TrackingQPVariables
+make_TrackingQPVariables(vector<vector<double>> q, vector<vector<double>> u, vector<vector<double>> delta, vector<double> delta_HJI, 
+    vector<double> u_normalization)
 {
-    //dynamics = mpc.
-   
-    double  N_short = mpc.N_short, N_long = mpc.N_long; 
-    vector <double> dt = mpc.dt;
-    for(int i = 0 ; i < dynamics.delta_s.size(); i++)
-    {
-        dynamics.
-    }
-}
 
-get_next_control(mpc::TrajectoryTrackingMPC, variables::TrackingQPVariables)
+}
 */
