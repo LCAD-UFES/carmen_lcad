@@ -28,10 +28,11 @@
 
 #include <carmen/carmen.h>
 #include <carmen/robot_ackerman_interface.h>
+#include <control.h>
+#include <carmen/ford_escape_hybrid.h>
 #include "base_ackerman.h"
 #include "base_ackerman_simulation.h"
 #include "base_ackerman_messages.h"
-#include <control.h>
 
 
 // Global variables
@@ -80,6 +81,70 @@ add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double
 }
 
 
+int
+build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message,
+		double *odometry_v, double *odometry_phi)
+{
+	static double last_robot_v = 0.0;
+	static double last_visual_odometry_v = 0.0;
+	static double last_robot_phi = 0.0;
+	static double last_visual_odometry_phi = 0.0;
+
+	int ok_to_publish;
+	if (strstr(robot_ackerman_velocity_message->host, "visual_odometry") != NULL)
+	{
+		last_visual_odometry_v = robot_ackerman_velocity_message->v;
+		last_visual_odometry_phi = robot_ackerman_velocity_message->phi;
+		ok_to_publish = 0;
+	}
+	else
+	{
+		last_robot_v = robot_ackerman_velocity_message->v;
+		last_robot_phi = robot_ackerman_velocity_message->phi;
+		ok_to_publish = 1;
+	}
+
+	switch (combine_visual_and_car_odometry_phi)
+	{
+	case VISUAL_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = last_visual_odometry_phi;
+		break;
+	case CAR_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = last_robot_phi;
+		break;
+	case VISUAL_CAR_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = carmen_normalize_theta((last_visual_odometry_phi + last_robot_phi) / 2.0);
+		break;
+	default:
+		break;
+	}
+
+	switch (combine_visual_and_car_odometry_vel)
+	{
+	case VISUAL_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = last_visual_odometry_v;
+		break;
+	case CAR_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = last_robot_v;
+		break;
+
+	case VISUAL_CAR_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = (last_visual_odometry_v + last_robot_v) / 2.0;
+		break;
+	default:
+
+		break;
+	}
+
+	carmen_add_bias_and_multiplier_to_v_and_phi(odometry_v, odometry_phi,
+						robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
+						0.0, v_multiplier, phi_bias, phi_multiplier);
+
+	return (ok_to_publish);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //																								//
 // Publishers																					//
@@ -93,8 +158,8 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 	IPC_RETURN_TYPE err = IPC_OK;
 	static carmen_base_ackerman_odometry_message odometry;
 	static int first = 1;
-//	static double first_timestamp;
-//	static FILE *graf;
+	static double first_timestamp;
+	static FILE *graf;
 
 	if (first)
 	{
@@ -104,9 +169,9 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 		odometry.theta = 0;
 
 		odometry.v = odometry.phi = 0;
-//		first_timestamp = timestamp;
+		first_timestamp = timestamp;
 
-//		graf = fopen("odometry_graph.txt", "w");
+		graf = fopen("odometry_graph.txt", "w");
 		first = 0;
 	}
 
@@ -117,8 +182,8 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 	odometry.phi = car_config->phi;
 	odometry.timestamp = timestamp;
 
-//	fprintf(graf, "v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
-//	printf("v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
+	fprintf(graf, "v_phi_time %lf %lf %lf\n", odometry.v, odometry.phi, odometry.timestamp - first_timestamp);
+//	printf("v_phi_time %lf %lf %lf\n", odometry.v, odometry.phi, odometry.timestamp);
 
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
@@ -136,25 +201,25 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 static void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
-//	printf("v_phi_time %lf %lf %lf\n", robot_ackerman_velocity_message->v, -robot_ackerman_velocity_message->phi, robot_ackerman_velocity_message->timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
+	int ok_to_publish = 1;
 
 	if (simulate_legacy_500 && !connected_to_iron_bird)
-//		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
-//							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
-//							0.0, 1.0, 0.0, 1.0);
 		add_legacy_adometry_limitations(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
 							robot_ackerman_velocity_message->timestamp);
+	else if (publish_combined_visual_and_car_odometry)
+		ok_to_publish = build_combined_visual_and_car_odometry(robot_ackerman_velocity_message,
+							&(car_config->v), &(car_config->phi));
 	else
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
 							0.0, v_multiplier, phi_bias, phi_multiplier);
-	// Filipe: Nao deveria ter um normalize theta nessa atualizacao do phi? Sugestao abaixo:
-	// car_config->phi = carmen_normalize_theta(robot_ackerman_velocity_message->phi * phi_multiplier + phi_bias);
 
-	carmen_simulator_ackerman_recalc_pos(car_config);
-
-	publish_carmen_base_ackerman_odometry_message(robot_ackerman_velocity_message->timestamp);
+	if (ok_to_publish)
+	{
+		carmen_simulator_ackerman_recalc_pos(car_config);
+		publish_carmen_base_ackerman_odometry_message(robot_ackerman_velocity_message->timestamp);
+	}
 }
 
 
@@ -193,7 +258,11 @@ read_parameters(int argc, char *argv[], carmen_base_ackerman_config_t *config)
 		{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1,NULL},
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 1, NULL},
-		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL}
+		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
+		{"base_ackerman", "publish_combined_visual_and_car_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_visual_and_car_odometry), 0, NULL},
+		{"robot", "combine_visual_and_car_odometry_phi", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_phi), 0, NULL},
+		{"robot", "combine_visual_and_car_odometry_vel", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_vel), 0, NULL},
+
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);

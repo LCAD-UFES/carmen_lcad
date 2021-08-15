@@ -288,8 +288,8 @@ compute_v_and_phi(carmen_visual_odometry_pose6d_message *visual_odometry_message
 	{
 		visual_odometry_message->v += 0.5 * ((sqrt(delta_pose.position.x * delta_pose.position.x + delta_pose.position.y * delta_pose.position.y) / delta_t) - visual_odometry_message->v);
 				
-		if (fabs(carmen_normalize_theta(current_pose.orientation.yaw - yaw2)) > M_PI/4.0)
-			visual_odometry_message->v = -visual_odometry_message->v;	//@@@ Isso parou de funcionar com o visual odometry novo. Mas acho que consertei.. Checar.
+//		if (fabs(carmen_normalize_theta(current_pose.orientation.yaw - yaw2)) > M_PI/4.0)
+//			visual_odometry_message->v = -visual_odometry_message->v;	//@@@ Isso parou de funcionar com o visual odometry novo. Mas acho que consertei.. Checar.
 
 		double yaw_velocity_raw = delta_pose.orientation.yaw / delta_t;
 //		yaw_velocity += 0.25 * (yaw_velocity_raw - yaw_velocity);

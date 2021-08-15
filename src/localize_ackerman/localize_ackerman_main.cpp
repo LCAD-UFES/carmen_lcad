@@ -370,6 +370,7 @@ publish_globalpos_on_mapping_mode(carmen_fused_odometry_message *msg, double tim
 		IPC_RETURN_TYPE err;
 		carmen_pose_3D robot_pose = msg->pose;
 		double dt = timestamp - msg->timestamp;
+		// TODO @@@ Alberto: se dt for grande nao era o caso de nao publicar?
 		robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, msg->velocity.x, msg->phi,
 				car_config.distance_between_front_and_rear_axles);
 

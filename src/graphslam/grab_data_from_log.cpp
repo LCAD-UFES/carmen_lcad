@@ -7,6 +7,7 @@
 #include <carmen/Gdc_Coord_3d.h>
 #include <carmen/Utm_Coord_3d.h>
 #include <carmen/Gdc_To_Utm_Converter.h>
+#include <carmen/ford_escape_hybrid.h>
 
 #include "velodyne_util.h"
 
@@ -48,6 +49,8 @@ static const int ODOMETRY_QUEUE_MAX_SIZE = 100;
 double distance_between_front_and_rear_axles;
 
 int use_velodyne_timestamp_in_odometry = 0;
+
+int calibrate_combined_visual_and_car_odometry = 0;
 
 
 template<class message_type> int
@@ -155,7 +158,7 @@ velodyne_handler(double velodyne_timestamp, double initial_timestamp, double fin
 
 
 void
-gps_xyz_message_handler(carmen_gps_xyz_message *message, int gps_to_use, double gps_latency)
+gps_xyz_message_handler(carmen_gps_xyz_message *message, int gps_to_use, double gps_latency, double hdt_yaw, double hdt_timestamp)
 {
 	if (message->nr != gps_to_use)
 		return;
@@ -167,7 +170,12 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message, int gps_to_use, double 
 	pose.pose.orientation.roll = 0.0;
 	pose.pose.orientation.pitch = 0.0;
 	if (gps_queue.size() > 0)
-		pose.pose.orientation.yaw = atan2(message->y - gps_queue[gps_queue.size() - 1].pose.position.y, message->x - gps_queue[gps_queue.size() - 1].pose.position.x);
+	{
+		if (fabs(hdt_timestamp - message->timestamp) < 1.0)
+			pose.pose.orientation.yaw = hdt_yaw;
+		else
+			pose.pose.orientation.yaw = atan2(message->y - gps_queue[gps_queue.size() - 1].pose.position.y, message->x - gps_queue[gps_queue.size() - 1].pose.position.x);
+	}
 	else
 		pose.pose.orientation.yaw = 0.0; // A primeira mensagem nao é usada em velodyne_handler()
 	pose.time = message->timestamp - gps_latency;
@@ -303,6 +311,84 @@ read_gps(FILE *f, int gps_to_use)
 
 
 void
+gps_hdt_handler(FILE *f, double &hdt_yaw, double &hdt_timestamp)
+{
+	int gps_id;
+	int valid;
+
+	fscanf(f, "%d %lf %d %lf", &gps_id, &hdt_yaw, &valid, &hdt_timestamp);
+
+	if (!valid)
+		hdt_timestamp = 0.0;
+}
+
+
+bool
+build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message, FILE *f)
+{
+	static double last_robot_v = 0.0;
+	static double last_visual_odometry_v = 0.0;
+	static double last_robot_phi = 0.0;
+	static double last_visual_odometry_phi = 0.0;
+
+	carmen_robot_ackerman_velocity_message read_message = {};
+	char host[2048];
+	read_message.host = host;
+
+	fscanf(f, "%lf %lf %lf %s", &read_message.v, &read_message.phi,
+			&read_message.timestamp, read_message.host);
+
+	bool ok_to_process;
+	if (strstr(read_message.host, "visual_odometry") != NULL)
+	{
+		last_visual_odometry_v = read_message.v;
+		last_visual_odometry_phi = read_message.phi;
+		ok_to_process = false;
+	}
+	else
+	{
+		last_robot_v = read_message.v;
+		last_robot_phi = read_message.phi;
+		ok_to_process = true;
+	}
+
+	switch (combine_visual_and_car_odometry_phi)
+	{
+	case VISUAL_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = last_visual_odometry_phi;
+		break;
+	case CAR_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = last_robot_phi;
+		break;
+	case VISUAL_CAR_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = carmen_normalize_theta((last_visual_odometry_phi + last_robot_phi) / 2.0);
+		break;
+	default:
+		break;
+	}
+
+	switch (combine_visual_and_car_odometry_vel)
+	{
+	case VISUAL_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = last_visual_odometry_v;
+		break;
+	case CAR_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = last_robot_v;
+		break;
+
+	case VISUAL_CAR_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = (last_visual_odometry_v + last_robot_v) / 2.0;
+		break;
+	default:
+
+		break;
+	}
+
+	return (ok_to_process);
+}
+
+
+void
 generate_sync_file(const char *filename, int gps_to_use, double gps_latency, double initial_time, double final_time,
 		double v_multiplier, double phi_multiplier, double phi_bias, double distance_between_front_and_rear_axles,
 		double initial_odometry_angle)
@@ -318,6 +404,8 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 	int num_gps_messages = 0;
 	double first_velodyne_timestamp = 0.0;
 	double velodyne_timestamp = -1.0;
+	double hdt_yaw = 0.0;
+	double hdt_timestamp = 0.0;
 	while(!feof(f))
 	{
 		fscanf(f, "\n%s", tag);
@@ -325,15 +413,25 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 		if (!strcmp(tag, "NMEAGGA"))
 		{
 			carmen_gps_xyz_message m = read_gps(f, gps_to_use);
-			gps_xyz_message_handler(&m, gps_to_use, gps_latency);
+			gps_xyz_message_handler(&m, gps_to_use, gps_latency, hdt_yaw, hdt_timestamp);
 			num_gps_messages++;
+		}
+		else if (!strcmp(tag, "NMEAHDT"))
+		{
+			gps_hdt_handler(f, hdt_yaw, hdt_timestamp);
 		}
 		else if (!strcmp(tag, "ROBOTVELOCITY_ACK"))
 		{
-			carmen_robot_ackerman_velocity_message m = read_odometry(f);
+			bool ok_to_process = true;
+			carmen_robot_ackerman_velocity_message m;
+			if (calibrate_combined_visual_and_car_odometry)
+				ok_to_process = build_combined_visual_and_car_odometry(&m, f);
+			else
+				m = read_odometry(f);
 			if (use_velodyne_timestamp_in_odometry && (velodyne_timestamp != -1.0))
 				m.timestamp = velodyne_timestamp;
-			robot_ackerman_handler(&m, v_multiplier, phi_multiplier, phi_bias);
+			if (ok_to_process)
+				robot_ackerman_handler(&m, v_multiplier, phi_multiplier, phi_bias);
 		}
 		else if (!strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE"))
 		{
@@ -369,6 +467,12 @@ main(int argc, char **argv)
 	{
 		initial_time = atof(argv[4]);
 		final_time = atof(argv[5]);
+	}
+
+	if (calibrate_combined_visual_and_car_odometry)
+	{
+		combine_visual_and_car_odometry_phi = 2;
+		combine_visual_and_car_odometry_vel= 1;
 	}
 
 	FILE *odometry_calibration_file = safe_fopen(argv[2], "r");

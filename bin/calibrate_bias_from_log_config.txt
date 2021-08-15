@@ -4,6 +4,9 @@ gps_to_use = 1
 board_to_use = 1
 # 0 - linear phi; 1 - use a spline to map phi to a new phi
 use_non_linear_phi = 0
+# 0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)
+# Change the options in your carmen.ini (robot_combine_visual_and_car_odometry_phi and robot_combine_visual_and_car_odometry_phi parameters)
+calibrate_combined_visual_and_car_odometry = 0
 # Number of particles
 n_particles = 500
 # Number of iterations

@@ -19,6 +19,7 @@
 #include <carmen/carmen_param_file.h>
 #include <carmen/util_io.h>
 #include <carmen/tf.h>
+#include <carmen/ford_escape_hybrid.h>
 
 using namespace std;
 using namespace tf;
@@ -35,6 +36,8 @@ int n_params;
 double **limits;
 int use_variable_scan_message = -1;
 char variable_scan_message_name[64];
+
+int calibrate_combined_visual_and_car_odometry = 0;
 
 gsl_interp_accel *acc;
 
@@ -305,6 +308,67 @@ skip_first_lines(FILE *f, int initial_log_line, char line[])
 
 
 void
+build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message, FILE *f)
+{
+	static double last_robot_v = 0.0;
+	static double last_visual_odometry_v = 0.0;
+	static double last_robot_phi = 0.0;
+	static double last_visual_odometry_phi = 0.0;
+
+	carmen_robot_ackerman_velocity_message read_message = {};
+	char host[2048];
+	read_message.host = host;
+
+	fscanf(f, "%lf %lf %lf %s", &read_message.v, &read_message.phi,
+			&read_message.timestamp, read_message.host);
+
+	if (strstr(read_message.host, "visual_odometry") != NULL)
+	{
+		last_visual_odometry_v = read_message.v;
+		last_visual_odometry_phi = read_message.phi;
+	}
+	else
+	{
+		last_robot_v = read_message.v;
+		last_robot_phi = read_message.phi;
+	}
+
+	switch (combine_visual_and_car_odometry_phi)
+	{
+	case VISUAL_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = last_visual_odometry_phi;
+		break;
+	case CAR_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = last_robot_phi;
+		break;
+	case VISUAL_CAR_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = carmen_normalize_theta((last_visual_odometry_phi + last_robot_phi) / 2.0);
+		break;
+	default:
+		break;
+	}
+
+	switch (combine_visual_and_car_odometry_vel)
+	{
+	case VISUAL_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = last_visual_odometry_v;
+		break;
+	case CAR_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = last_robot_v;
+		break;
+
+	case VISUAL_CAR_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = (last_visual_odometry_v + last_robot_v) / 2.0;
+		break;
+	default:
+
+		break;
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
 read_data(const char *filename, int gps_to_use, int initial_log_line, int max_log_lines,
 		double initial_time, double final_time, int use_velodyne_timestamp_in_odometry, PsoData *pso_data)
 {
@@ -342,7 +406,13 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 		}
 		else if (!strcmp(tag, "ROBOTVELOCITY_ACK") && (first_gps_timestamp != 0.0))
 		{
-			carmen_robot_ackerman_velocity_message m = read_odometry(f);
+			carmen_robot_ackerman_velocity_message m;
+
+			if (calibrate_combined_visual_and_car_odometry)
+				build_combined_visual_and_car_odometry(&m, f);
+			else
+				m = read_odometry(f);
+
 			if (use_velodyne_timestamp_in_odometry)
 			{
 				if (velodyne_data.velodyne_timestamp != -1)
@@ -1008,6 +1078,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
 	args->add<int>("board_to_use", "Id of the sensor board that will be used for the calibration", 1);
 	args->add<int>("use_non_linear_phi", "0 - linear phi; 1 - use a spline to map phi to a new phi", 0);
+	args->add<int>("calibrate_combined_visual_and_car_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
 	args->add<int>("n_particles,n", "Number of particles", 500);
 	args->add<int>("n_iterations,i", "Number of iterations", 300);
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
@@ -1063,6 +1134,12 @@ initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParam
 		pso_data.tf_transformer[i] = new tf::Transformer(false);
 		initialize_car_objects_poses_in_transformer(carmen_ini_params, &pso_data, gps_to_use, board_to_use, i);
 	}
+
+	//parameters to chose robot_ackerman message from visual_odometry and ford_escape
+	calibrate_combined_visual_and_car_odometry = args->get<int>("calibrate_combined_visual_and_car_odometry");
+	combine_visual_and_car_odometry_phi = carmen_ini_params->get<int>("robot_combine_visual_and_car_odometry_phi");
+	combine_visual_and_car_odometry_vel = carmen_ini_params->get<int>("robot_combine_visual_and_car_odometry_vel");
+
 }
 
 

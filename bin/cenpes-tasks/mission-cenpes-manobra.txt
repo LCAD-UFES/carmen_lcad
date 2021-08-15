@@ -1,0 +1,13 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas. Caracteres apos # sao ignorados.
+# Exemplo missao simples
+
+# Missao 1-2
+set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-manobra.gr
+
+# Forno 1
+set course to 7471649.678045, -681506.188442, 3.053808
+go 
+stop # tira de modo autonomo
+
+mission completed
+
