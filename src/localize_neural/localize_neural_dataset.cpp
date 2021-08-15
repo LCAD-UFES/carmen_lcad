@@ -576,15 +576,15 @@ void
 subscribe_messages()
 {
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	//if (camera_type>=2)
-	//{
+	if (camera_type>=2)
+	{
 		carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_handler, CARMEN_SUBSCRIBE_LATEST);
-	//}
-	//else
-	//{
+	}
+	else
+	{
 		carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
 		camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) camera_drivers_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	//}
+	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

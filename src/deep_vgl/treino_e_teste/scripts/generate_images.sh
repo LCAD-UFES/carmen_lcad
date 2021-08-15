@@ -23,26 +23,28 @@ declare -a imgsize=(`cat $LOGTXT | awk '{ print $6 }'`)
 
 declare -a ignore_top=(`cat $LOGTXT | awk '{ print $7 }'`)
 
+echo ${fmts[@]}
+
 for i in "${!dirs[@]}"; do
     mkdir -p ${dirs[$i]}
     echo "Saving at ${dirs[$i]}"
-    
+    cam_or_lidar=${cams[$i]}
     msg="BUMBLEBEE_BASIC_STEREOIMAGE"
     if [ ${fmts[$i]} -eq 1 ]; then
         msg="BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE"
     elif [ ${fmts[$i]} -eq 2 ]; then
         msg="CAMERA"
-    elif [ ${fmts[$i]} -eq 3 ]; then
+    elif [ ${fmts[$i]} -eq "3" ]; then
         msg="VELODYNE_PARTIAL_SCAN_IN_FILE"
-        cams=""
+        cam_or_lidar=""
     fi
     
-    #fgrep ${msg}${cams[$i]} ${logs[$i]} > /dados/log2png${i}.txt
-    echo "python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}"
+    #fgrep ${msg}${cam_or_lidar} ${logs[$i]} > /dados/log2png${i}.txt
+    echo "python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cam_or_lidar} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}"
     if [ ${fmts[$i]} -eq 3 ]; then
-        python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -f ${fmts[$i]} -al ${crops[$i]} -ar ${ignore_top[$i]}
+       python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -f ${fmts[$i]} -al ${crops[$i]} -ar ${ignore_top[$i]}
     else
-        python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}
+       python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cams[$i]} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}
     fi
 done
 
