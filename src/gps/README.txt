@@ -2,6 +2,10 @@ Usuario e Senha da interface web do Trimble:
 Username: admin
 Password: novo senhor das ...
 
+BX992
+Usuario: admin
+Password: Qu3Dr0g@desenha
+
 Manuais em docs
 Utilitario ntripclient no src/utilities/ntripclient
 Comando util:

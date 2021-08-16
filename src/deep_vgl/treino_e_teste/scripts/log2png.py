@@ -97,7 +97,6 @@ def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_l
     shot_angle = ''
     shot_distance =''
     shot_intensity = ''
-    #for i in xrange(0, int(image['shots'])): 
     line = pointcloud_file.read(8)
     col = 0
     blank_image = np.zeros((32,int(image['shots']),3), np.uint8)
@@ -118,13 +117,9 @@ def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_l
             linha+=1
         col+=1
         line = pointcloud_file.read(8)
-        print(shot_distance)
     ini = int(float(image['shots']/360)*(180-abs(angle_left)))
     end = int(float(image['shots']/360)*(180+abs(angle_right)))
     partial_image = blank_image[:,ini:end]
-    # partial_image_one = blank_image[:,-step:]
-    # partial_image_two = blank_image[:,:step]
-    # partial_image = np.hstack((partial_image_one, partial_image_two))
     resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
     cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
 

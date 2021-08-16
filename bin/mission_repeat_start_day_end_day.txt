@@ -1,0 +1,22 @@
+# Fica no loop das tres linhas abaixo ate o inicio do dia, com hora e minuto indicados no comando "if time past hora:minuto...", abaixo
+wait_start_day:
+if time past 21:35, execute task at label start_day
+execute task at label wait_start_day
+
+start_day:
+# Tarefa do dia. Note que a tarefa tem que demorar mais de um minito, senao, ela vai excutar mais de uma vez no loop principal
+park at 7471665.94, -681525.88, -0.996
+go
+stop
+park at 7471659.64, -681516.09, -0.988
+go
+stop
+# Fim da tarefa do dia
+
+# Fica no loop das duas linhas abaixo ate a hora voltar a zero (passar da meia noite)
+end_day:
+if time past 21:45, execute task at label end_day
+
+# Volta para a tarefa do dia ou espera o inicio do dia
+repeat at every 5 minutes
+
