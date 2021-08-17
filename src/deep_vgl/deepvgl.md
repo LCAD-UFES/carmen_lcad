@@ -1,4 +1,4 @@
-Juntando logs em um mesmo log base, ou de referência# DeepVGL
+# DeepVGL
 
 ## Utilizando o módulo 
 
@@ -43,10 +43,23 @@ cd $CARMEN_HOME/bin
 Depois disso é só rodar o módulo com seus parâmetros:
 
 ```bash
- ./deep_vgl /dados/ufes/deepvgl.cfg $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights config/poses_and_labels.txt 2 -camera_id 1
+ ./deep_vgl /dados/ufes/deepvgl.cfg $CARMEN_HOME/sharedlib/darknet4/backup/deepvgl_final.weights config/poses_and_labels.txt 2 0 0 640 480 1 45 45 -camera_id 1
 ```
 
 (Lembre-se de colocar o id da câmera utilizada no log, nesse exemplo é 1)
+
+Acima, temos:
+01- a configuração da rede;
+02- são os pesos da rede;
+03- são as poses e labels
+04- crop_width;
+05- crop_height;
+06- width da imagem;
+07- height da imagem;
+08- use_lidar: 0 para não utilizar lidar e 1 para utilizar lidar
+09- angle_left: um bom valor é 45, mas outras opções estão sendo estudadas;
+10- angle_right: um bom valor é 45, mas outras opções estão sendo estudadas;
+11- camera_id. Seguindo o mesmo raciocínio utilizado na etapa de treinamento.
 
 O módulo dnn_visual_gl vai publicar mensagens gps_xyz e gps gphdt que permitirão localização global.
 Use bin/gps_xyz-test se quiser examinar (só as informações essenciais à localização global são incluídas nas mensagens).

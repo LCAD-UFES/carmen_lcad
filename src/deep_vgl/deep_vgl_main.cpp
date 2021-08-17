@@ -135,22 +135,22 @@ infer_pose(carmen_point_t *pose, double width, double height,
 	top_k(predictions, net.outputs, 1, &selected_pose_label);
 
 	//verifica se é a primeira pose detectada
-	if (last_correct_prediction == -1)
-	{
-		last_correct_prediction = selected_pose_label; //inicializa last_correct_prediction
-	}
-	else if ((selected_pose_label >= last_correct_prediction) && (selected_pose_label <= (last_correct_prediction + 10)))
-	{												   //verifica se está dentro da MAE
-		last_correct_prediction = selected_pose_label; //atualiza last_correct_prediction
-		contador = 0;
-	}
-	else
-	{
-		selected_pose_label = last_correct_prediction; // caso negativo, pega a última pose
-		contador++;
-		if (contador > 10)
-			last_correct_prediction = -1;
-	}
+	// if (last_correct_prediction == -1)
+	// {
+	// 	last_correct_prediction = selected_pose_label; //inicializa last_correct_prediction
+	// }
+	// else if ((selected_pose_label >= last_correct_prediction) && (selected_pose_label <= (last_correct_prediction + 10)))
+	// {												   //verifica se está dentro da MAE
+	// 	last_correct_prediction = selected_pose_label; //atualiza last_correct_prediction
+	// 	contador = 0;
+	// }
+	// else
+	// {
+	// 	selected_pose_label = last_correct_prediction; // caso negativo, pega a última pose
+	// 	contador++;
+	// 	if (contador > 10)
+	// 		last_correct_prediction = -1;
+	// }
 
 	char predicted_image_file_name[2048];
 	sscanf(learned_poses[selected_pose_label], "%lf %lf %lf %s", &(pose->x), &(pose->y), &(pose->theta), predicted_image_file_name);
@@ -293,7 +293,7 @@ void velodyne_partial_scan_handler(carmen_velodyne_partial_scan_message *lidar)
 	
 	//resize de (shots x 32) para o (crop_width x crop_height)
 	Mat resized_image;
-	cv::resize(synthetic_image,resized_image,Size(crop_width, crop_height), INTER_NEAREST);
+	cv::resize(synthetic_image,resized_image,Size(crop_width, crop_height), 1, 1, CV_INTER_AREA);
 	
 	// inferir pose
 	double confidence = infer_pose(&pose, crop_width, crop_height,

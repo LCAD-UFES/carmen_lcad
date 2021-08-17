@@ -50,14 +50,14 @@ Acima, cada linha possui:
 
 3 - a câmera utilizada no log.
 
-4 - o crop height (Para eliminar áreas indesejadas da imagem; no caso da Bumblebee, este valor deve ser 380 para pegar apenas as 380
-primeiras linhas das 480 linhas da imagem. No Art toda a imagem pode ser aproveitada).
+4 - Se utilizando cameras: o crop height (Para eliminar áreas indesejadas da imagem; no caso da Bumblebee, este valor deve ser 380 para pegar apenas as 380
+primeiras linhas das 480 linhas da imagem. No Art toda a imagem pode ser aproveitada). Se utilizando o lidar: o angulo à esquerda a partir do zero (sempre positivo). Imagine que utilizará um range de -45° até 60° da esquerda para direita, sendo a frente do veículo o zero. Logo esse parâmetro será 45.
 
-5 - log format (0, 1 ou 2; 0 para logs antigos, onde a imagem fica dentro do arquivo .txt de log; 1 para logs novos, onde a imagem é salvada à parte; e 2 para logs com imagens de câmeras Intelbras).
+5 - log format (0, 1, 2 ou 3; 0 para logs antigos, onde a imagem fica dentro do arquivo .txt de log; 1 para logs novos, onde a imagem é salvada à parte; 2 para logs com imagens de câmeras Intelbras; e 3 para lidar).
 
 6 - as dimensões das imagens que devem ser salvas
 
-7 - o total de linhas a serem ignoradas a partir do topo da imagem (0 nas câmeras do Art e em câmeras bumblebee da Iara)
+7 - Se utilizando cameras: o total de linhas a serem ignoradas a partir do topo da imagem (0 nas câmeras do Art e em câmeras bumblebee da Iara). Se utilizando lidar: o angulo à direita a partir do zero (sempre positivo). Imagine que utilizará um range de -45° até 60° da esquerda para direita, sendo a frente do veículo o zero. Logo esse parâmetro será 60.
 
 
 ## STEP 1.2
@@ -91,10 +91,11 @@ playback           gt_log	    1       0           ./playback /dados/log_volta_da
 Acima, troque o log para um dos logs do STEP 1.1.
 
 ```bash
- exporter           gt_generator    1       0           ./localize_neural_dataset -camera_id 1 -camera_type 1 -output_dir /dados/ufes/20210131 -output_txt /dados/ufes/camerapos-20210131.txt 
+ exporter           gt_generator    1       0           ./localize_neural_dataset -camera_id 1 -camera_type 1 -output_dir /dados/ufes/20210131 -output_txt /dados/ufes/camerapos-20210131.txt  -log_filename /dados/log_volta_da_ufes_art-20210131.txt
+ 
 ```
 
-Acima, troque a data do log (em dois lugares), o camera_id, e o camera_type (0 - Bumblebee, 1 - Intelbras).
+Acima, troque a data do log (em dois lugares), o camera_id, e o camera_type (0 - Bumblebee, 1 - Intelbras, 2 - Lidar) e ajuste o path do log no último parâmetro.
 
 ```bash
  map_server         support         1       0           ./map_server -map_path ../data/map_volta_da_ufes-20210131-art2 -map_x 7757721.8 -map_y -363569.5 -block_map on 
