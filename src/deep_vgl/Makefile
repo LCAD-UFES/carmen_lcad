@@ -11,7 +11,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/
 
 CFLAGS += `pkg-config --cflags opencv` -I/usr/include/gflags
 
-LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface -lcamera_drivers
+LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface -lcamera_drivers -lvelodyne_interface
 LFLAGS += -fPIC -lgflags -ldarknet4 -lstdc++ `pkg-config --libs opencv` 
 
 SOURCES = deep_vgl-test.cpp deep_vgl-eval.cpp deep_vgl_main.cpp

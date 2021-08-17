@@ -1,0 +1,37 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas. Caracteres apos # sao ignorados.
+#
+
+# Missao 1
+set route planner graph to data/graphs/graph_cenpes-20210815.gr
+set course to 7471655.89, -681511.28, 2.137
+go
+stop
+
+# Missao 2
+set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-manobra.gr
+
+# Entra na esquerda para fazer a manobra
+set course to 7471648.60, -681506.46, -2.879
+#set course to 7471649.678045, -681506.188442, 3.053808
+go 
+stop # tira de modo autonomo
+
+#Manobra de Reh
+#set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-reh.gr
+#park at 7471656.225675, -681499.563945, -2.411189
+set course to 7471656.225675, -681499.563945, -2.411189
+go
+stop
+
+#Volta para pista principal
+#set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-manobra.gr
+set course to 7471657.224916, -681513.417999, -0.943692
+#set course to 7471659.64, -681516.09, -0.987
+go 
+stop # tira de modo autonomo
+
+restart
+#fim: # um label tem que ficar sozinho numa linha e marca a task da linha seguinte
+#mission completed
+
+# execute task at label fim
