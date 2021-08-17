@@ -2,7 +2,7 @@
 #
 
 # Missao 1
-set route planner graph to data/graphs/graph_cenpes-20210815.gr
+set route planner graph to data/graphs/graph_cenpes-20210817.gr
 #set course to 7471669.72, -681587.87, 0.538
 #go
 #stop
@@ -23,38 +23,38 @@ go
 stop
 
 # Missao 4
-set route planner graph to data/graphs/graph_cenpes-20210815.gr
+set route planner graph to data/graphs/graph_cenpes-20210817.gr
 set course to 7471943.70, -681362.55, -1.321
 go
 stop
 
-# Missao 2
-#set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-manobra.gr
+# Missao 5
+set route planner graph to data/graphs/graph_reh_ala_i-20210816.gr
+set course to 7471926.92, -681276.72, -0.851
+go
+stop
+set course to  7471940.54, -681276.70, 0.083 
+go
+stop
 
-# Entra na esquerda para fazer a manobra
-#set course to 7471648.60, -681506.46, -2.879
-#set course to 7471649.678045, -681506.188442, 3.053808
-#go 
-#stop # tira de modo autonomo
+# Missao 6
+set route planner graph to data/graphs/graph_cenpes-20210817.gr
+set course to 7471657.64, -681512.67, 2.178
+go
+stop
 
-#Manobra de Reh
-#set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-reh.gr
-#park at 7471656.225675, -681499.563945, -2.411189
-#set course to 7471656.225675, -681499.563945, -2.411189
-#go
-#stop
-
-#Volta para pista principal
-#set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-manobra.gr
-#set course to 7471657.224916, -681513.417999, -0.943692
-#set course to 7471659.64, -681516.09, -0.987
-#go 
-#stop # tira de modo autonomo
+# Missao 7
+set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-manobra.gr
+set course to 7471648.60, -681506.46, -2.879
+go 
+stop # tira de modo autonomo
+set course to 7471656.225675, -681499.563945, -2.411189
+go
+stop
+set course to 7471657.224916, -681513.417999, -0.943692
+go 
+stop # tira de modo autonomo
 
 #restart
 fim: # um label tem que ficar sozinho numa linha e marca a task da linha seguinte
 mission completed
-
-# execute task at label fim
-
-7471726,41, -681562,10, -0,030
