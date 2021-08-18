@@ -1,6 +1,6 @@
 all: mpc_brown
  
-mpc_brown: main.o trajectories.o   math.o model_predictive_control.o vehicle_dynamics.o vehicles.o coupled_lat_long.o
+mpc_brown: main.o trajectories.o   math.o model_predictive_control.o vehicle_dynamics.o vehicles.o coupled_lat_long.o decoupled_lat_long.o
 	g++ -o mpc_brown main.o trajectories.o   math.o model_predictive_control.o vehicle_dynamics.o vehicles.o -W -Wall -ansi -pedantic -std=c++11
  
 main.o: main.cpp
@@ -24,6 +24,9 @@ vehicles.o: vehicles.cpp
 
 coupled_lat_long.o: coupled_lat_long.cpp 
 	g++ -c coupled_lat_long.cpp -W -Wall -ansi -pedantic -std=c++11
+
+decoupled_lat_long.o: decoupled_lat_long.cpp 
+	g++ -c decoupled_lat_long.cpp -W -Wall -ansi -pedantic -std=c++11
 
 clean:
 	rm -rf *.o mpc_brown
