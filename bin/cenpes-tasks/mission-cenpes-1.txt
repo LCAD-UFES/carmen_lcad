@@ -3,9 +3,9 @@
 
 # Missao 1
 set route planner graph to data/graphs/graph_cenpes-20210818-2.gr
-set course to 7471669.72, -681587.87, 0.538
-go
-stop
+#set course to 7471669.72, -681587.87, 0.538
+#go
+#stop
 
 # Missao 2
 #set course to 7471736.90, -681434.85, 1.599
