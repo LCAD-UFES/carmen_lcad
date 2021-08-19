@@ -96,3 +96,23 @@ make_TrajectoryTrackingMPC(TrajectoryTube trajectory,VehicleModel dynamics,Coupl
     return aux;
 }
 
+LateralTrajectoryTrackingMPC 
+make_TrajectoryTrackingMPC_lateral(TrajectoryTube trajectory,VehicleModel dynamics,DecoupledControlParams control_params,
+                          BicycleState current_state, BicycleControl current_control, int heartbeat, double time_offset ,
+                          MPCTimeSteps time_steps,
+                          vector<LateralTrackingBicycleState> qs, vector<BicycleControl2> us,vector<LateralTrackingBicycleParams>  ps)
+{
+    LateralTrajectoryTrackingMPC aux;
+    time_offset = 0;
+    heartbeat = 0;
+    aux.trajectory = trajectory;
+    aux.dynamics = dynamics;
+    aux.current_state = current_state;
+    aux.current_control = current_control;
+    aux.time_steps = time_steps;
+    aux.qs = qs;
+    aux.us = us;
+    aux.ps = ps;
+    aux.control_params = control_params;
+    return aux;
+}
