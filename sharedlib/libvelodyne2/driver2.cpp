@@ -43,8 +43,8 @@ VelodyneDriver::VelodyneDriver(carmen_velodyne_variable_scan_message &variable_s
 		variable_scan.partial_scan = (carmen_velodyne_shot*)malloc(2 * velodyne_max_laser_shots_per_revolution * sizeof(carmen_velodyne_shot));
 		for (int i=0; i<(2 * velodyne_max_laser_shots_per_revolution); i++)
 		{
-			variable_scan.partial_scan[i].distance = (unsigned short*)malloc(velodyne_num_lasers*sizeof(unsigned short));
-			variable_scan.partial_scan[i].intensity = (unsigned char*)malloc(velodyne_num_lasers*sizeof(unsigned char));
+			variable_scan.partial_scan[i].distance = (unsigned int*)malloc(velodyne_num_lasers*sizeof(unsigned int));
+			variable_scan.partial_scan[i].intensity = (short unsigned int*)malloc(velodyne_num_lasers*sizeof(short unsigned int));
 		}
 	}
 	else if (velodyne_num_lasers == 32)
@@ -52,8 +52,8 @@ VelodyneDriver::VelodyneDriver(carmen_velodyne_variable_scan_message &variable_s
 		variable_scan.partial_scan = (carmen_velodyne_shot*)malloc(velodyne_max_laser_shots_per_revolution * sizeof(carmen_velodyne_shot));
 		for (int i=0; i<velodyne_max_laser_shots_per_revolution; i++)
 		{
-			variable_scan.partial_scan[i].distance = (unsigned short*)malloc(velodyne_num_lasers*sizeof(unsigned short));
-			variable_scan.partial_scan[i].intensity = (unsigned char*)malloc(velodyne_num_lasers*sizeof(unsigned char));
+			variable_scan.partial_scan[i].distance = (unsigned int*)malloc(velodyne_num_lasers*sizeof(unsigned int));
+			variable_scan.partial_scan[i].intensity = (short unsigned int*)malloc(velodyne_num_lasers*sizeof(short unsigned int));
 		}
 	}
 
