@@ -35,8 +35,8 @@ setup_message(carmen_lidar_config lidar_config)
     for (int i = 0 ; i <= INITIAL_MAX_NUM_SHOT; i++)
 	{
 		variable_scan_msg.partial_scan[i].shot_size = lidar_config.shot_size;
-		variable_scan_msg.partial_scan[i].distance = (unsigned short*) malloc (lidar_config.shot_size * sizeof(unsigned short));
-		variable_scan_msg.partial_scan[i].intensity = (unsigned char*) malloc (lidar_config.shot_size * sizeof(unsigned char));
+		variable_scan_msg.partial_scan[i].distance = (unsigned int*) malloc (lidar_config.shot_size * sizeof(unsigned int));
+		variable_scan_msg.partial_scan[i].intensity = (short unsigned int*) malloc (lidar_config.shot_size * sizeof(short unsigned int));
 	}
 	variable_scan_msg.host = carmen_get_host();
 }
