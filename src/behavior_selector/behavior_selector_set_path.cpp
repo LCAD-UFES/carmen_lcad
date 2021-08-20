@@ -649,7 +649,7 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 		}
 		else
 		{
-			lateral_value = 10.0 * (paths.size() - abs((int) i - ((int) paths.size() / 2)));
+			lateral_value = 75.0 * (paths.size() - abs((int) i - ((int) paths.size() / 2)));
 			if (behavior_selector_use_symotha)
 				longitudinal_value = 1000.0 * paths[i].s_distance_without_collision_with_static_object;
 			else

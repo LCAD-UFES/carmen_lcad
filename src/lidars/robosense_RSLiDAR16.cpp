@@ -136,8 +136,8 @@ realloc_message(carmen_velodyne_variable_scan_message &msg, int actual_size)
 	{
 		// TODO Should free the memory before alloc new block?
 		msg.partial_scan[i].shot_size = msg.partial_scan[actual_size].shot_size;
-		msg.partial_scan[i].distance = (unsigned short*) malloc (msg.partial_scan[actual_size].shot_size * sizeof(unsigned short));
-		msg.partial_scan[i].intensity = (unsigned char*) malloc (msg.partial_scan[actual_size].shot_size * sizeof(unsigned char));
+		msg.partial_scan[i].distance = (unsigned int*) malloc (msg.partial_scan[actual_size].shot_size * sizeof(unsigned int));
+		msg.partial_scan[i].intensity = (short unsigned int*) malloc (msg.partial_scan[actual_size].shot_size * sizeof(short unsigned int));
 	}
 	return (msg.partial_scan);
 }
