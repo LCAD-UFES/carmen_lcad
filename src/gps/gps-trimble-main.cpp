@@ -58,7 +58,7 @@
 //http://bd982.com/ -> site de teste do gps Trimble bd982
 //#define TCP_IP_ADDRESS			"155.63.160.20"
 //#define TCP_IP_PORT				"5018"
-#define INCOME_DATA_BUFFER_SIZE	1000
+#define INCOME_DATA_BUFFER_SIZE	2048
 
 #define GPS_REACH1 2
 #define GPS_REACH2 3
@@ -81,11 +81,11 @@ print_usage()
 
 
 int
-get_data_from_socket(char *incomming_data_buffer, int socketfd)
+get_data_from_socket(char *incomming_data_buffer, int socketfd, int max_buffer_size)
 {
     ssize_t bytes_received;
 
-    bytes_received = recv(socketfd, incomming_data_buffer, INCOME_DATA_BUFFER_SIZE - 1, 0);
+    bytes_received = recv(socketfd, incomming_data_buffer, max_buffer_size - 1, 0);
     if (bytes_received == 0)
         std::cout << "host shut down?" << std::endl;
     if (bytes_received == -1)
@@ -93,7 +93,7 @@ get_data_from_socket(char *incomming_data_buffer, int socketfd)
 
     incomming_data_buffer[bytes_received] = '\0';
 
-    return(bytes_received);
+    return (bytes_received);
 }
 
 
@@ -366,31 +366,55 @@ main(int argc, char **argv)
 	print_usage();
 
 	int gps_number = try_to_establish_socket_with_gps(argc, argv);
+	char incomming_data_buffer[INCOME_DATA_BUFFER_SIZE];
+	int incomming_data_buffer_head = 0;
 
 	while (TRUE)
 	{
-		char incomming_data_buffer[INCOME_DATA_BUFFER_SIZE];
-		char *first_nmea_string_end;
+		char socket_buffer[INCOME_DATA_BUFFER_SIZE / 2];
 
-		get_data_from_socket(incomming_data_buffer, socketfd);
+		int chars_read = get_data_from_socket(socket_buffer, socketfd, INCOME_DATA_BUFFER_SIZE / 2);
+		if ((chars_read + incomming_data_buffer_head) >= INCOME_DATA_BUFFER_SIZE)
+			incomming_data_buffer_head = 0;	// buffer encheu, descarta todo ele
+		memcpy(&(incomming_data_buffer[incomming_data_buffer_head]), socket_buffer, chars_read);
 
-//		printf("%s\n", incomming_data_buffer);
-		carmen_extern_gpgga_ptr->timestamp = carmen_get_time();
-		carmen_extern_gphdt_ptr->timestamp = carmen_extern_gpgga_ptr->timestamp;
-
-		if ((first_nmea_string_end = parse_gga_info(incomming_data_buffer)) != NULL)
-			publish_carmen_gps_gpgga_message(gps_number);
-
-		if (first_nmea_string_end)
+		bool message_available = true;
+		while (message_available)
 		{
-			// strcpy(first_nmea_string_end, "$GPHDT,333.694,T*3D");
-			if (parse_hdt_info(first_nmea_string_end))
+			// Find the end of the first NMEA string
+			char *first_nmea_string_end = strchr(incomming_data_buffer + incomming_data_buffer_head, '*');
+			if (first_nmea_string_end)
 			{
-				if (gps_number == 1) // Only the Trimble GPS knows a suitable orientation at the moment in this point.
+				int size = first_nmea_string_end - (incomming_data_buffer + incomming_data_buffer_head);
+
+				int message_type = carmen_gps_parse_data(incomming_data_buffer + incomming_data_buffer_head, size);
+				if (message_type == GGA_MESSAGE)
+				{
+					carmen_extern_gpgga_ptr->timestamp = carmen_get_time();
+					publish_carmen_gps_gpgga_message(gps_number);
+				}
+				else if ((message_type == HDT_MESSAGE) && (gps_number == 1))
+				{
+					carmen_extern_gphdt_ptr->timestamp = carmen_extern_gpgga_ptr->timestamp;
 					publish_carmen_gps_gphdt_message(gps_number);
+				}
+
+				incomming_data_buffer_head += size + 1;
+				for (int i = 0; i < num_chars - 1; i++)
+				{
+					if (line[i] == '$' || line[i] == '*')
+						return (FALSE);
+				}
+
+			}
+			else
+			{
+				for (int i = incomming_data_buffer_head; i < INCOME_DATA_BUFFER_SIZE; i++)
+					incomming_data_buffer[i - incomming_data_buffer_head] = incomming_data_buffer[i];
+				incomming_data_buffer_head = incomming_data_buffer_head - chars_read;
+				message_available = false;
 			}
 		}
-		usleep(50000);
 	}
 
 	return (0);
