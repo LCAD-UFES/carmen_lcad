@@ -390,6 +390,7 @@ main(int argc, char **argv)
 					publish_carmen_gps_gphdt_message(gps_number);
 			}
 		}
+		usleep(50000);
 	}
 
 	return (0);
