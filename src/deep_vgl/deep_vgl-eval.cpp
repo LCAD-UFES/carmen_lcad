@@ -134,10 +134,10 @@ void predict_classifier(char *labels, int classes_qtd,char *cfgfile, char *weigh
             std::cout<< i <<" / "<<img_qtd<<"\r" <<std::flush;
 
             free_image(cropped);
-            //if (resized.data != im.data) {
-            free_image(resized);
-            //}
-            //free_image(im);
+            if (resized.data != im.data) {
+                free_image(resized);
+            }
+            free_image(im);
         }
     }
     else

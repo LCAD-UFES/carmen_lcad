@@ -231,19 +231,24 @@ carmen_gps_parse_data(char *line, int num_chars)
   {
     if ((strncmp("$GPGGA", line, 6) == 0) || (strncmp("$GNGGA", line, 6) == 0))
     {
-      return(gps_parse_gga(line, num_chars));
+      if (gps_parse_gga(line, num_chars))
+    	  return (GGA_MESSAGE);
+      else
+    	  return (FALSE);
     }
-    else if (strncmp("$GNHDT", line, 6) == 0)
+    else if ((strncmp("$GNHDT", line, 6) == 0) || (strncmp("$GPHDT", line, 6)))
     {
-      return(gps_parse_hdt(line, num_chars));
-    }
-    else if (strncmp("$GPHDT", line, 6) == 0)
-    {
-      return(gps_parse_hdt(line, num_chars));
+      if (gps_parse_hdt(line, num_chars))
+    	  return (HDT_MESSAGE);
+      else
+    	  return (FALSE);
     }
     else if ((strncmp("$GPRMC", line, 6) == 0) || (strncmp("$GNRMC", line, 6) == 0))
     {
-      return(gps_parse_rmc(line, num_chars));
+      if (gps_parse_rmc(line, num_chars))
+    	  return (RMC_MESSAGE);
+      else
+    	  return (FALSE);
     }
   }
   return(FALSE);
