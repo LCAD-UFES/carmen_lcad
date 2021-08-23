@@ -50,6 +50,8 @@
 #include "gps-ipc.h"
 #include "gps-io.h"
 
+//#define TEST_MODE
+
 #define TCP_IP_ADDRESS			"192.168.1.103" //"192.168.0.103"
 #define TCP_IP_PORT				"5017"
 //#define TCP_IP_ADDRESS			"172.20.10.4"
@@ -65,6 +67,29 @@
 
 
 int socketfd;
+
+int
+get_data_from_file_for_testing(char *socket_buffer, char *file_name)
+{
+	static FILE *file = NULL;
+
+	if (!file)
+		file = fopen(file_name, "r");
+
+	int chars_read = 0;
+	do
+	{
+		socket_buffer[chars_read] = fgetc(file);
+		if (socket_buffer[chars_read] == EOF)
+			rewind(file);
+		else
+			chars_read++;
+	} while (chars_read < 107);
+
+	usleep((int) ((1.0 / 20.0) * 1000000.0)); // 20Hz
+
+	return (chars_read);
+}
 
 
 void
@@ -348,7 +373,6 @@ try_to_establish_socket_with_gps(int argc, char **argv)
 
 	return (gps_number);
 }
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -365,55 +389,72 @@ main(int argc, char **argv)
 
 	print_usage();
 
+#ifdef TEST_MODE
+	int gps_number = 1;
+#else
 	int gps_number = try_to_establish_socket_with_gps(argc, argv);
+#endif
 	char incomming_data_buffer[INCOME_DATA_BUFFER_SIZE];
 	int incomming_data_buffer_head = 0;
+	int incomming_data_buffer_tail = 0;
 
 	while (TRUE)
 	{
 		char socket_buffer[INCOME_DATA_BUFFER_SIZE / 2];
 
+#ifdef TEST_MODE
+		int chars_read = get_data_from_file_for_testing(socket_buffer, (char *) "/home/alberto/carmen_lcad/src/gps/input_example-BX992.txt");
+#else
 		int chars_read = get_data_from_socket(socket_buffer, socketfd, INCOME_DATA_BUFFER_SIZE / 2);
-		if ((chars_read + incomming_data_buffer_head) >= INCOME_DATA_BUFFER_SIZE)
+#endif
+		if ((chars_read + incomming_data_buffer_tail) >= INCOME_DATA_BUFFER_SIZE)
+		{
 			incomming_data_buffer_head = 0;	// buffer encheu, descarta todo ele
-		memcpy(&(incomming_data_buffer[incomming_data_buffer_head]), socket_buffer, chars_read);
+			incomming_data_buffer_tail = 0;
+		}
+		memcpy(&(incomming_data_buffer[incomming_data_buffer_tail]), socket_buffer, chars_read);
+		incomming_data_buffer_tail += chars_read;
 
+		int previous_head = incomming_data_buffer_head;
 		bool message_available = true;
 		while (message_available)
 		{
-			// Find the end of the first NMEA string
-			char *first_nmea_string_end = strchr(incomming_data_buffer + incomming_data_buffer_head, '*');
-			if (first_nmea_string_end)
+			// Find the begining of the first NMEA string
+			char *first_nmea_string_begin = strchr(incomming_data_buffer + incomming_data_buffer_head, '$');
+			if (first_nmea_string_begin)
 			{
-				int size = first_nmea_string_end - (incomming_data_buffer + incomming_data_buffer_head);
-
-				int message_type = carmen_gps_parse_data(incomming_data_buffer + incomming_data_buffer_head, size);
-				if (message_type == GGA_MESSAGE)
+				incomming_data_buffer_head = first_nmea_string_begin - incomming_data_buffer;
+				// Find the end of the first NMEA string
+				char *first_nmea_string_end = strchr(incomming_data_buffer + incomming_data_buffer_head, '*');
+				if (first_nmea_string_end)
 				{
-					carmen_extern_gpgga_ptr->timestamp = carmen_get_time();
-					publish_carmen_gps_gpgga_message(gps_number);
-				}
-				else if ((message_type == HDT_MESSAGE) && (gps_number == 1))
-				{
-					carmen_extern_gphdt_ptr->timestamp = carmen_extern_gpgga_ptr->timestamp;
-					publish_carmen_gps_gphdt_message(gps_number);
-				}
+					int size = first_nmea_string_end - (incomming_data_buffer + incomming_data_buffer_head);
 
-				incomming_data_buffer_head += size + 1;
-				for (int i = 0; i < num_chars - 1; i++)
-				{
-					if (line[i] == '$' || line[i] == '*')
-						return (FALSE);
-				}
+					int message_type = carmen_gps_parse_data(incomming_data_buffer + incomming_data_buffer_head, size);
+					if (message_type == GGA_MESSAGE)
+					{
+						carmen_extern_gpgga_ptr->timestamp = carmen_get_time();
+						publish_carmen_gps_gpgga_message(gps_number);
+					}
+					else if ((message_type == HDT_MESSAGE) && (gps_number == 1))
+					{
+						carmen_extern_gphdt_ptr->timestamp = carmen_extern_gpgga_ptr->timestamp;
+						publish_carmen_gps_gphdt_message(gps_number);
+					}
 
+					incomming_data_buffer_head += size + 1;
+				}
+				else
+				{
+					for (int i = incomming_data_buffer_head; i < incomming_data_buffer_tail; i++)
+						incomming_data_buffer[i - incomming_data_buffer_head + previous_head] = incomming_data_buffer[i];
+					incomming_data_buffer_tail = incomming_data_buffer_tail - (incomming_data_buffer_head - previous_head);
+					incomming_data_buffer_head = previous_head;
+					message_available = false;
+				}
 			}
 			else
-			{
-				for (int i = incomming_data_buffer_head; i < INCOME_DATA_BUFFER_SIZE; i++)
-					incomming_data_buffer[i - incomming_data_buffer_head] = incomming_data_buffer[i];
-				incomming_data_buffer_head = incomming_data_buffer_head - chars_read;
 				message_available = false;
-			}
 		}
 	}
 
