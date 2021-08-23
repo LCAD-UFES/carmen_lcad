@@ -97,6 +97,7 @@ ipc_gps_gpgga_handler(carmen_gps_gpgga_message *message)
 
 	fprintf(stderr, "===================================\n");
 	fprintf(stderr, "\n");
+	fflush(stderr);
 }
 
 
@@ -111,7 +112,8 @@ ipc_gps_gphdt_handler(carmen_gps_gphdt_message *message)
 	fprintf(stderr, " heading:           %f\n", message->heading);
 	fprintf(stderr, " timestamp:         %f\n", message->timestamp);
 	fprintf(stderr, "===================================\n");
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n\n");
+	fflush(stderr);
 }
 
 
@@ -138,6 +140,7 @@ ipc_gps_gprmc_handler(carmen_gps_gprmc_message *message)
 	fprintf(stderr, " timestamp:         %f\n", message->timestamp);
 	fprintf(stderr, "===================================\n");
 	fprintf(stderr, "\n");
+	fflush(stderr);
 }
 
 
