@@ -509,7 +509,9 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 		new_p.stop_time = 9915703060.0;
 		new_p.x = message->annotations[nearst_annotation_index].annotation_point.x;
 		new_p.y = message->annotations[nearst_annotation_index].annotation_point.y;
-		DISPLACE2D(new_p, 3.5, message->annotations[nearst_annotation_index].annotation_orientation);
+		// Aumente o displacement abaixo para o pedestre aparacer mais a frente ou ateh fora do circulo da faixa
+		double displacement = 3.5;
+		DISPLACE2D(new_p, displacement, message->annotations[nearst_annotation_index].annotation_orientation);
 		DISPLACE2D(new_p, message->annotations[nearst_annotation_index].annotation_point.z, carmen_normalize_theta(message->annotations[nearst_annotation_index].annotation_orientation - M_PI_2));  // annotation_point.z stores the radius of the crosswalk circle
 		
 		new_p.active = false;
