@@ -45,6 +45,11 @@ extern "C"
 #define WRONG                            0
 #define OK                               1
 
+#define GGA_MESSAGE 1
+#define HDT_MESSAGE 2
+#define RMC_MESSAGE 3
+
+
 
 enum PARITY_TYPE   { NO, EVEN, ODD };
 

@@ -283,9 +283,9 @@ Use o zoom e mova o carro no viewer_3D se precisar.
 # Visualize the pi_imu module on your computer
 
 ```bash
- $ cd $CARMEN_HOME/src/pi_imu_viewer <pi_imu | no_pi_imu>
+ $ cd $CARMEN_HOME/src/pi_imu_viewer 
  $ make
- $ $CARMEN_HOME/bin/imu_viewer 
+ $ $CARMEN_HOME/bin/imu_viewer <pi_imu | no_pi_imu>
 ```
 
 The pi_imu_viewer program will display the image of a box representing the state of the IMU.
@@ -349,4 +349,19 @@ mensagens de apenas uma sejam publicadas).
 ```
 
  The eth0 inet addr must be 192.168.1.15
+
+# Para permitir rodar comandos remotamente no Raspberry Pi siga os passos abaixo:
+
+1- Se você ainda não tem uma chave pública no computador que vai acessar o Pi, execute os comando abaixo 
+  para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+ cd
+ ssh-keygen -t rsa
+
+2- Copie a chave pública do computador que vai acessar o Pi para o Pi com os comando abaixo
+ cd
+ ssh pi@192.168.1.15 mkdir -p .ssh
+ cat ~/.ssh/id_rsa.pub | ssh pi@192.168.1.15 'cat >> .ssh/authorized_keys'
+
+3- Teste se funcionou com o comando abaixo
+ ssh pi@192.168.1.15 'ls'
 
