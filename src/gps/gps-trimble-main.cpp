@@ -416,9 +416,11 @@ main(int argc, char **argv)
 		incomming_data_buffer_tail += chars_read;
 
 		int previous_head = incomming_data_buffer_head;
+//		int previous_head = 0;
 		bool message_available = true;
 		while (message_available)
 		{
+			incomming_data_buffer[incomming_data_buffer_tail] = '\0';
 			// Find the begining of the first NMEA string
 			char *first_nmea_string_begin = strchr(incomming_data_buffer + incomming_data_buffer_head, '$');
 			if (first_nmea_string_begin)
