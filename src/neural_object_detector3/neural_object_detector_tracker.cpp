@@ -1054,7 +1054,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 
 	if (first_time)
 	{
-		init_python(open_cv_image.cols, open_cv_image.rows);
+//		init_python(open_cv_image.cols, open_cv_image.rows);
 
 		original_img_width = open_cv_image.cols;
 		original_img_height = open_cv_image.rows;
@@ -1438,25 +1438,27 @@ initializer()
 	classes_names = get_classes_names(classes_names_path);
 
 	network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
+
+	init_python(640, 480);
 }
 
 
 int
 main(int argc, char **argv)
 {
+	initializer();
+
 	carmen_ipc_initialize(argc, argv);
 
 	read_parameters(argc, argv);
-
-	subscribe_messages();
 
 	carmen_moving_objects_point_clouds_define_messages_generic(0);
 
 	signal(SIGINT, shutdown_module);
 
-	initializer();
-
 	setlocale(LC_ALL, "C");
+
+	subscribe_messages();
 
 	carmen_ipc_dispatch();
 
