@@ -307,6 +307,7 @@ obstacle_avoider_timer_handler()
 {
 	// Este eh o handler principal: ele realiza a funcionalidade do modulo
 	static double time_of_last_call = 0.0;
+	static double time_of_last_heartbeat = 0.0;
 	static int robot_hit_obstacle = 0;
 
 	if (!necessary_maps_available)
@@ -333,6 +334,12 @@ obstacle_avoider_timer_handler()
 			publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(motion_commands_vector[motion_command_vetor],
 					num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 			time_of_last_call = carmen_get_time();
+		}
+
+		if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_heartbeat) > 0.1))
+		{
+			carmen_publish_heartbeat("obstacle_avoider");
+			time_of_last_heartbeat = carmen_get_time();
 		}
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		virtual_laser_message.num_positions = 0;
