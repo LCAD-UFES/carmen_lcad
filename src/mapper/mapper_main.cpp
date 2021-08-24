@@ -939,7 +939,7 @@ sensors_params_handler(char *module, char *variable, __attribute__((unused)) cha
 }
 
 
-void
+static void
 read_alive_lidars_configs(int argc, char **argv)
 {
 	char locc_string[64], lfree_string[64], l0_string[64], unexpeted_delta_range_sigma_string[64];
@@ -1322,7 +1322,7 @@ get_sensors_param(int argc, char **argv)
 }
 
 
-void
+static void
 sort_ray_order_by_vertical_correction_angles(sensor_parameters_t params)
 {
 	int aux = 0;
@@ -1342,7 +1342,7 @@ sort_ray_order_by_vertical_correction_angles(sensor_parameters_t params)
 }
 
 
-void
+static void
 sort_vertical_correction_angles(sensor_parameters_t params)
 {
 	double aux[params.vertical_resolution];
