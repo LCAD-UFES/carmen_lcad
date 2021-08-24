@@ -10,7 +10,6 @@
 *.lib
 *.dylib
 mnist/
-data/
 caffe/
 grasp/
 images/
