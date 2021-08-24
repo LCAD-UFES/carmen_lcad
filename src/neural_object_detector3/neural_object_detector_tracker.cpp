@@ -784,8 +784,8 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
     	}
 	}
 
-	// show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);                             // All points of the LiDAR projected to the image
-	// vector<vector<image_cartesian>> lidar_points; lidar_points.push_back(points); show_LIDAR(image, lidar_points, 255, 0, 0);  // All points except for the points that hit the ground
+	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);                             // All points of the LiDAR projected to the image
+	//vector<vector<image_cartesian>> lidar_points; lidar_points.push_back(points); show_LIDAR(image, lidar_points, 255, 0, 0);  // All points except for the points that hit the ground
 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
@@ -1077,11 +1077,11 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-	dist_to_pedestrian_track = distance_to_pedestrian_track_annotaion();
-
+	//dist_to_pedestrian_track = distance_to_pedestrian_track_annotaion();
+	
 	// printf("Dist %lf\n", max_dist_to_pedestrian_track);
 
-	if (max_dist_to_pedestrian_track < 0.0 || dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
+	if (max_dist_to_pedestrian_track < 0.0 )//|| dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
 	{
 		//////// Yolo
 		predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
@@ -1356,12 +1356,12 @@ read_parameters(int argc, char **argv)
 		{camera_model, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL},
 		{camera_model, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL},
 		{camera_model, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL},
-		{camera_model, (char*) "x",     CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
-		{camera_model, (char*) "y",     CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
-		{camera_model, (char*) "z",     CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},
-		{camera_model, (char*) "roll",  CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL},
-		{camera_model, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL},
-		{camera_model, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL},
+		{camera_model, (char*) "x",     CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 1, NULL},
+		{camera_model, (char*) "y",     CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 1, NULL},
+		{camera_model, (char*) "z",     CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 1, NULL},
+		{camera_model, (char*) "roll",  CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 1, NULL},
+		{camera_model, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 1, NULL},
+		{camera_model, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 1, NULL},
 
 		{(char *) "velodyne", (char *) "x",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
 		{(char *) "velodyne", (char *) "y",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
