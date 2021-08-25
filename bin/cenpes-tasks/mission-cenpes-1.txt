@@ -2,7 +2,7 @@
 #
 
 # Missao 1
-set route planner graph to data/graphs/graph_cenpes-20210818-2.gr
+set route planner graph to data/graphs/graph_cenpes-20210819.gr
 #set course to 7471669.72, -681587.87, 0.538
 #go
 #stop
@@ -25,24 +25,25 @@ go
 stop
 
 # Missao 4
-set route planner graph to data/graphs/graph_cenpes-20210818-2.gr
-set course to 7471943.70, -681362.55, -1.321
+set route planner graph to data/graphs/graph_cenpes-20210820-1.gr
+set course to 7471928.36, -681353.77, -1.653
 go
 stop
 
 if previous task failed, execute task at label missao_5
 
+#Missao 5 reverse ala i
 missao_5:
-set route planner graph to data/graphs/graph_reh_ala_i-20210816.gr
-set course to 7471926.92, -681276.72, -0.851
+set route planner graph to data/graphs/graph_cenpes_ala_i_reh-20210823.gr
+set course to 7471928.549348, -681274.502821, -0.702043
 go
 stop
-set course to  7471940.54, -681276.70, 0.083 
+set course to 7471952.575222, -681275.105181, -0.012456 
 go
 stop
 
 # Missao 6
-set route planner graph to data/graphs/graph_cenpes-20210818-2.gr
+set route planner graph to data/graphs/graph_cenpes-20210820-1.gr
 set course to 7471657.64, -681512.67, 2.178
 go
 stop

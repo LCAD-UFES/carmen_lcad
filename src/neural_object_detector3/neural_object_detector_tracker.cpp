@@ -4,6 +4,11 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
+#define CAM_DELAY 0.25
+#define MAX_POSITIONS 10
+
+#define IMAGE_HEIGHT_CROP 0.82
+
 // int camera;
 // int camera_side = 0;
 char **classes_names;
@@ -37,10 +42,8 @@ tf::Transformer transformer_sick;
 vector<carmen_velodyne_partial_scan_message> velodyne_vector; //used to correct camera delay
 vector<carmen_laser_ldmrs_new_message> sick_vector; //used to correct camera delay
 
-#define CAM_DELAY 0.25
-#define MAX_POSITIONS 10
-
-#define IMAGE_HEIGHT_CROP 0.82
+int camera_width;
+int camera_height;
 
 
 // This function find the closest velodyne message with the camera message
@@ -784,8 +787,8 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
     	}
 	}
 
-	// show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);                             // All points of the LiDAR projected to the image
-	// vector<vector<image_cartesian>> lidar_points; lidar_points.push_back(points); show_LIDAR(image, lidar_points, 255, 0, 0);  // All points except for the points that hit the ground
+	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);                             // All points of the LiDAR projected to the image
+	//vector<vector<image_cartesian>> lidar_points; lidar_points.push_back(points); show_LIDAR(image, lidar_points, 255, 0, 0);  // All points except for the points that hit the ground
 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
@@ -1054,7 +1057,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 
 	if (first_time)
 	{
-		init_python(open_cv_image.cols, open_cv_image.rows);
+//		init_python(open_cv_image.cols, open_cv_image.rows);
 
 		original_img_width = open_cv_image.cols;
 		original_img_height = open_cv_image.rows;
@@ -1077,11 +1080,11 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-	dist_to_pedestrian_track = distance_to_pedestrian_track_annotaion();
-
+	//dist_to_pedestrian_track = distance_to_pedestrian_track_annotaion();
+	
 	// printf("Dist %lf\n", max_dist_to_pedestrian_track);
 
-	if (max_dist_to_pedestrian_track < 0.0 || dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
+	if (max_dist_to_pedestrian_track < 0.0 )//|| dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
 	{
 		//////// Yolo
 		predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
@@ -1268,77 +1271,8 @@ shutdown_module(int signo)
         exit(0);
     }
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void
-read_parameters_old(int argc, char **argv)
-{
-	if ((argc != 3))
-		carmen_die("%s: Wrong number of parameters. neural_object_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
-
-	int camera = atoi(argv[1]);             // Define the camera to be used
-    int camera_side = atoi(argv[2]);        // 0 For left image 1 for right image
-
-    int num_items;
-
-    char bumblebee_string[256];
-    char camera_string[256];
-    char bullbar_string[256];
-    char sick_string[256];
-
-    sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // Geather the cameri ID
-    sprintf(camera_string, "%s%d", "camera", camera);
-    sprintf(bullbar_string, "%s", "front_bullbar");
-    sprintf(sick_string, "%s", "laser_ldmrs");
-
-    carmen_param_t param_list[] =
-    {
-		{bumblebee_string, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL },
-		{bumblebee_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL },
-		{bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
-		{bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
-		{bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
-
-		{camera_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL },
-		{camera_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL },
-		{camera_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL },
-		{camera_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL },
-		{camera_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL },
-		{camera_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL },
-
-		{(char *) "velodyne", (char *) "x",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
-		{(char *) "velodyne", (char *) "y",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
-		{(char *) "velodyne", (char *) "z",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
-		{(char *) "velodyne", (char *) "roll",  CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
-		{(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
-		{(char *) "velodyne", (char *) "yaw",   CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
-
-		{(char *) "sensor_board_1", (char*) "x",     CARMEN_PARAM_DOUBLE, &board_pose.position.x, 0, NULL },
-		{(char *) "sensor_board_1", (char*) "y",     CARMEN_PARAM_DOUBLE, &board_pose.position.y, 0, NULL },
-		{(char *) "sensor_board_1", (char*) "z",     CARMEN_PARAM_DOUBLE, &board_pose.position.z, 0, NULL },
-		{(char *) "sensor_board_1", (char*) "roll",  CARMEN_PARAM_DOUBLE, &board_pose.orientation.roll, 0, NULL },
-		{(char *) "sensor_board_1", (char*) "pitch", CARMEN_PARAM_DOUBLE, &board_pose.orientation.pitch, 0, NULL },
-		{(char *) "sensor_board_1", (char*) "yaw",   CARMEN_PARAM_DOUBLE, &board_pose.orientation.yaw, 0, NULL },
-
-		{bullbar_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.x, 0, NULL },
-		{bullbar_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.y, 0, NULL },
-		{bullbar_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.z, 0, NULL },
-		{bullbar_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.roll, 0, NULL },
-		{bullbar_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.pitch, 0, NULL },
-		{bullbar_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.yaw, 0, NULL },
-
-		{sick_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &sick_pose.position.x, 0, NULL },
-		{sick_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &sick_pose.position.y, 0, NULL },
-		{sick_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &sick_pose.position.z, 0, NULL },
-		{sick_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &sick_pose.orientation.roll, 0, NULL },
-		{sick_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &sick_pose.orientation.pitch, 0, NULL },
-		{sick_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &sick_pose.orientation.yaw, 0, NULL }
-    };
-    num_items = sizeof(param_list) / sizeof(param_list[0]);
-    carmen_param_install_params(argc, argv, param_list, num_items);
-}
 
 void
 read_parameters(int argc, char **argv)
@@ -1351,17 +1285,19 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
     {
+        {camera_model, (char*) "width_1",  CARMEN_PARAM_INT, &camera_width, 0, NULL},
+	    {camera_model, (char*) "height_1", CARMEN_PARAM_INT, &camera_height, 0, NULL},
 		{camera_model, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL},
 		{camera_model, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL},
 		{camera_model, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL},
 		{camera_model, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL},
 		{camera_model, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL},
-		{camera_model, (char*) "x",     CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
-		{camera_model, (char*) "y",     CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
-		{camera_model, (char*) "z",     CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},
-		{camera_model, (char*) "roll",  CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL},
-		{camera_model, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL},
-		{camera_model, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL},
+		{camera_model, (char*) "x",     CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 1, NULL},
+		{camera_model, (char*) "y",     CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 1, NULL},
+		{camera_model, (char*) "z",     CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 1, NULL},
+		{camera_model, (char*) "roll",  CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 1, NULL},
+		{camera_model, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 1, NULL},
+		{camera_model, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 1, NULL},
 
 		{(char *) "velodyne", (char *) "x",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
 		{(char *) "velodyne", (char *) "y",     CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
@@ -1438,25 +1374,27 @@ initializer()
 	classes_names = get_classes_names(classes_names_path);
 
 	network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
+
+	init_python(camera_width, camera_height);
 }
 
 
 int
 main(int argc, char **argv)
 {
+	setlocale(LC_ALL, "C");
+
 	carmen_ipc_initialize(argc, argv);
 
 	read_parameters(argc, argv);
 
-	subscribe_messages();
+	initializer();
 
 	carmen_moving_objects_point_clouds_define_messages_generic(0);
 
 	signal(SIGINT, shutdown_module);
 
-	initializer();
-
-	setlocale(LC_ALL, "C");
+	subscribe_messages();
 
 	carmen_ipc_dispatch();
 

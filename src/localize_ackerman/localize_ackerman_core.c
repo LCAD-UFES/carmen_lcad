@@ -1891,7 +1891,9 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 			// The localize_map used in this function must be in log_odds and the local_map in probabilities
 //			localize_map_correlation_correction(filter, localize_map, local_map);
 			localize_map_correlation_correction_with_outlier_rejection(filter, localize_map, local_map);
-			// para ver este mapa no navigator_gui2 coloque CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT na linha 930 de gtk_gui.cpp
+// 			Para ver o mapa de referencia usado na localizacao no navigator_gui2, coloque flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT
+//			no case CARMEN_MOVING_OBJECTS_MAP_v da funcao GtkGui::navigator_graphics_set_flags() de gtk_gui.cpp,
+//			descomente as 8 linhas abaixo, compile este codigo e o navigator_gui2. Use o mapa de Moving Objects no navigator_gui2. Nao se esquecca de reverter tudo ao original!
 //			carmen_moving_objects_map_message moving_objects_map_message;
 //			moving_objects_map_message.complete_map = localize_map->complete_prob;
 //			moving_objects_map_message.size = localize_map->config.x_size * localize_map->config.y_size;
@@ -1900,9 +1902,12 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 //			moving_objects_map_message.host = carmen_get_host();
 //			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
 
+// 			Para ver o mapa instantaneo usado na localizacao no navigator_gui2, coloque flags = 0
+//			no case CARMEN_MOVING_OBJECTS_MAP_v da funcao GtkGui::navigator_graphics_set_flags() de gtk_gui.cpp,
+//			descomente as 13 linhas abaixo, compile este codigo e o navigator_gui2. Use o mapa de Moving Objects no navigator_gui2. Nao se esquecca de reverter tudo ao original!
 //			carmen_moving_objects_map_message moving_objects_map_message;
 //			carmen_map_t temp_map;
-//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
+//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution, 'm');
 //			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
 //			carmen_prob_models_uncompress_compact_map(&temp_map, local_map);
 //			moving_objects_map_message.complete_map = temp_map.complete_map;
@@ -1946,7 +1951,7 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 
 //			carmen_moving_objects_map_message moving_objects_map_message;
 //			carmen_map_t temp_map;
-//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
+//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution, 'm');
 //			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
 //			carmen_prob_models_uncompress_compact_map(&temp_map, local_mean_remission_map);
 //			moving_objects_map_message.complete_map = temp_map.complete_map;
@@ -2016,7 +2021,7 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 //
 //		//			carmen_moving_objects_map_message moving_objects_map_message;
 //		//			carmen_map_t temp_map;
-//		//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
+//		//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution, 'm');
 //		//			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
 //		//			carmen_prob_models_uncompress_compact_map(&temp_map, local_map);
 //		//			moving_objects_map_message.complete_map = temp_map.complete_map;

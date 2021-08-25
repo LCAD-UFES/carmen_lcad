@@ -166,7 +166,7 @@ void process_timer(void *clientdata __attribute__ ((unused)),
 				/* check for last heartbeat */
 				current_time = carmen_get_time();
 				if(process[i].watch_heartbeats &&
-						current_time - process[i].last_heartbeat > 2.0)
+						current_time - process[i].last_heartbeat > 0.5)
 				{
 					snprintf(warning_msg, 2000, "PROCCONTROL (%d): %s (%d) lost heartbeats\n",
 							my_pid, process[i].command_line, process[i].pid);
