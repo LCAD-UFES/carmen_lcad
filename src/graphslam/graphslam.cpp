@@ -57,6 +57,8 @@ class LoopRestriction
 		int to;
 };
 
+DlWrapper dlSolverWrapper;
+
 vector<Line> input_data;
 vector<LoopRestriction> loop_data;
 
@@ -68,6 +70,8 @@ char input_file[1024];
 char loops_file[1024];
 char carmen_ini_file[1024];
 char out_file[1024];
+
+FILE *gnuplot_pipe;
 
 
 void
@@ -527,7 +531,6 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 	tf::Transformer *transformer = new tf::Transformer(false);
 	initialize_tf_transfoms(params, transformer, gps_id);
 
-	DlWrapper dlSolverWrapper;
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 
 	Factory *factory = Factory::instance();
@@ -551,11 +554,6 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 	save_corrected_vertices(optimizer, transformer);
 
 	cerr << "OutputSaved!" << endl;
-
-	printf("Programa concluído normalmente. Tecle Ctrl+C para terminar\n");
-	fflush(stdout);
-	getchar();
-	fprintf(stderr, "\n\n **** IGNORE O SEG FAULT ABAIXO. ELE EH CAUSADO PELO DESTRUTOR DO DLWRAPPER DO G2O!\n");
 }
 
 
@@ -576,6 +574,17 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 
 	args->parse(argc, argv);
 	args->save_config_file("graphslam_config_default.txt");
+}
+
+
+static void
+plot_graph()
+{
+	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+
+	fprintf(gnuplot_pipe, "set size square; set size ratio -1; plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', 'tmp/poses_opt.txt' u 1:2 w l t 'car'\n");
+
+	fflush(gnuplot_pipe);
 }
 
 
@@ -606,6 +615,13 @@ main(int argc, char **argv)
 	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
 
 	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
+
+	plot_graph();
 	
+	printf("Programa concluído normalmente. Tecle qualquer tecla para terminar.\n");
+	fflush(stdout);
+	getchar();
+	fclose(gnuplot_pipe);
+
 	return (0);
 }
