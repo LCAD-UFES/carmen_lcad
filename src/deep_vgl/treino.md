@@ -18,9 +18,11 @@ pode ser usando para treino) e um para treino.
 
 O log base pode ser, também, uma composição de logs (um trecho de interesse pode ser adicionado ao log base, por exemplo).
 
+(logs do ART: https://drive.google.com/drive/folders/1G3uugLXros_OXDL25HTEyPGzmwRDQyuf?usp=sharing)
+
 ## STEP 1
 
-Escolha os logs que serão utilizados. Neste tutorial, utilizaremos três logs:
+Escolha os logs que serão utilizados. Neste tutorial, utilizaremos três logs para treino:
 
 ```bash
 /dados/log_volta_da_ufes_art-20210131.txt
@@ -28,8 +30,15 @@ Escolha os logs que serão utilizados. Neste tutorial, utilizaremos três logs:
 /dados/log_saida_lcad3_art-20210212.txt
 ```
 
+
 Os dois primeiros logs acima são da volta da Ufes completa, equanto que o terceiro é apenas do Art saindo no Lcad3.
 Este terceiro log será juntado ao primeiro, como veremos abaixo, para o DeepVGL permitir a localização dentro do Lcad3 também.
+
+Utilizaremos este outro log para teste/validação 
+
+```bash
+/dados/log_volta_da_ufes_art-20210305.txt
+```
 
 ## STEP 1.1
 
@@ -40,6 +49,7 @@ logs mencionados no passo anterior):
 /dados/log_volta_da_ufes_art-20210131.txt   /dados/ufes/20210131    1   0     2   640x480     0
 /dados/log_volta_da_ufes_art-20210120.txt   /dados/ufes/20210120    1   0     2   640x480     0
 /dados/log_saida_lcad3_art-20210212.txt     /dados/ufes/20210212    1   0     2   640x480     0
+/dados/log_volta_da_ufes_art-20210305.txt   /dados/ufes/20210305    1   0     2   640x480     0
 ```
 
 Acima, cada linha possui:
