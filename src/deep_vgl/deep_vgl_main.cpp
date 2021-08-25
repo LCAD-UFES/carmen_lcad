@@ -122,9 +122,9 @@ infer_pose(carmen_point_t *pose, double width, double height,
 	printf("infering pose\n");
 	image img = convert_image_msg_to_darknet_image(width, height, image_raw);
 	image img_without_car_hood = crop_image(img, dx, dy, w, h); // crop_image() nao faz free()
-	image resized_img_without_car_hood = resize_min(img_without_car_hood, net.w);
+	int min = net.h < net.w ? net.h : net.w;
+	image resized_img_without_car_hood = resize_min(img_without_car_hood, min);
 	image cropped_resized_img_without_car_hood = crop_image(resized_img_without_car_hood, (resized_img_without_car_hood.w - net.w) / 2, (resized_img_without_car_hood.h - net.h) / 2, net.w, net.h);
-
 	cv::Mat mat = convert_darknet_image_to_cv_mat(cropped_resized_img_without_car_hood);
 	cv::namedWindow("Cropped Image", cv::WINDOW_NORMAL);
 	cv::imshow("Cropped Image", mat);
