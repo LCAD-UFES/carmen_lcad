@@ -43,7 +43,6 @@ int server_fd;
 int file;
 
 
-
 int
 connect_with_client()
 {
@@ -140,6 +139,9 @@ main()
 
 	//  this is a convenient place to change fusion parameters
 
+	//  The slerp power valule controls the influence of the measured state to correct the predicted state
+	//  0 = measured state ignored (just gyros), 1 = measured state overrides predicted state.
+	//  In between 0 and 1 mixes the two conditions
 	imu->setSlerpPower(0.1);
 	imu->setGyroEnable(true);
 	imu->setAccelEnable(true);
