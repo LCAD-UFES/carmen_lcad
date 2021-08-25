@@ -1,10 +1,16 @@
 
 # how to run the driver: 
-./ouster -sensor_ip <SENSOR IP> -host_ip<IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS>
+./ouster -sensor_ip <SENSOR IP> -host_ip<IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -mode<512x10|512x20|1024x10|1024x20|2048x10>
     -sensor_id [0-9] -publish_imu [on | off]  -intensity_type [1 | 2 | 3]
 
+# if intensity_type == 1 -> INTENSITY 
+# if intensity_type == 2 -> REFLECTIVITY
+# if intensity_type == 3 -> NOISE
+
+# if mode == 1024x20 -> horizontal resolution 1024, frequency 20Hz
+
 # example
-./ouster -sensor_ip 192.168.1.200 -host_ip 192.168.1.1 -sensor_id 0 -publish_imu off -intensity_type 1
+./ouster -sensor_ip 192.168.1.200 -host_ip 192.168.1.1 -sensor_id 0 -mode 1024x20 -publish_imu off -intensity_type 1
 
 # how to run the viewer:
 ./ouster_viewer -sensor_id <ID TO ASSIGNED TO THE VARIABLE VELODYNE MESSAGE: [0-9]>
