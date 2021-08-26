@@ -49,7 +49,7 @@ neural_object_detector_simulator: neural_object_detector_simulator.o
 neural_object_detector_tracker: neural_object_detector_tracker.o
 
 darknet3:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet3
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet3 
 
 download:
 #	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1rE0lY4d4wyMp4mvcx23y4qGK97bvzTnC/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet3/yolov3.weights
