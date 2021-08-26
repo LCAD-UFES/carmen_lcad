@@ -442,7 +442,7 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 		}
 		else if (use_variable_scan_message > -1 && !strcmp(tag, variable_scan_message_name) && (first_gps_timestamp != 0.0))
 		{
-			VelodyneData velodyne_data = read_velodyne_partial_scan_message_data(f);
+			velodyne_data = read_velodyne_partial_scan_message_data(f);
 			if ((velodyne_data.velodyne_timestamp >= (first_gps_timestamp + initial_time)) && (velodyne_data.velodyne_timestamp <= (first_gps_timestamp + final_time)))
 				process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
@@ -958,7 +958,7 @@ print_optimization_report(FILE *f_calibration, FILE *f_report, ParticleSwarmOpti
 }
 
 
-void
+static void
 plot_graph(ParticleSwarmOptimization *optimizer, void *data, int particle_id)
 {
 	static bool first_time = true;

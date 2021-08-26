@@ -230,7 +230,7 @@ ficam no fim do aquivo):
 
     m_imuData.compass.setX(-m_imuData.compass.x());
     m_imuData.compass.setY(-m_imuData.compass.y());
-//    m_imuData.compass.setZ(-m_imuData.compass.z());
+	//    m_imuData.compass.setZ(-m_imuData.compass.z());
 
     //  now do standard processing
 

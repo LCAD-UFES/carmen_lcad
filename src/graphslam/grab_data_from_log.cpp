@@ -52,6 +52,9 @@ int use_velodyne_timestamp_in_odometry = 0;
 
 int calibrate_combined_visual_and_car_odometry = 0;
 
+int use_variable_scan_message = -1;
+char variable_scan_message_name[64];
+
 
 template<class message_type> int
 find_nearest_message(vector<message_type> &queue, double reference_sensor_time, const char *sensor_name)
@@ -235,6 +238,19 @@ read_velodyne_timestamp(FILE *f)
 	int num_shots;
 
 	fscanf(f, "%s %d %lf", scan_file_name, &num_shots, &velodyne_timestamp);
+
+	return (velodyne_timestamp);
+}
+
+
+double
+read_velodyne_partial_scan_message_data(FILE *f)
+{
+	double velodyne_timestamp;
+	char scan_file_name[2048];
+	int num_shots, id, num_rays;
+
+	fscanf(f, "%s %d %d %d %lf", scan_file_name, &id, &num_rays, &num_shots, &velodyne_timestamp);
 
 	return (velodyne_timestamp);
 }
@@ -441,6 +457,14 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 			velodyne_handler(velodyne_timestamp, first_velodyne_timestamp + initial_time, first_velodyne_timestamp + final_time,
 					distance_between_front_and_rear_axles, initial_odometry_angle); // This function generates the sync file.
 		}
+		else if (!strcmp(tag, variable_scan_message_name))
+		{
+			velodyne_timestamp = read_velodyne_partial_scan_message_data(f);
+			if (first_velodyne_timestamp == 0.0)
+				first_velodyne_timestamp = velodyne_timestamp;
+			velodyne_handler(velodyne_timestamp, first_velodyne_timestamp + initial_time, first_velodyne_timestamp + final_time,
+					distance_between_front_and_rear_axles, initial_odometry_angle); // This function generates the sync file.
+		}
 
 		fscanf(f, "%[^\n]\n", line);
 	}
@@ -453,9 +477,30 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 }
 
 
+void
+read_command_line_param_raw(int &argc, char **argv)
+{
+	for (int i = 0; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-use_lidar") == 0)
+		{
+			use_variable_scan_message = atoi(argv[i + 1]);
+			sprintf(variable_scan_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE%d", use_variable_scan_message);
+
+			for (i = i + 2; i  < argc; i++)
+				argv[i - 2] = argv[i];
+
+			argc = argc - 2;
+		}
+	}
+}
+
+
 int
 main(int argc, char **argv)
 {
+	read_command_line_param_raw(argc, argv);
+
 	if (argc < 4)
 		exit(printf("Number of parameters invalid!\n Usage %s <log_file> <odometry_calibration_file> <sync_file> [<initial_time> <final_time>]\n", argv[0]));
 

@@ -19,6 +19,7 @@ namespace OS1 = ouster::OS1;
 
 char *ouster_ip = NULL;
 char *host_ip = NULL;
+char *string_mode = NULL;
 int ouster_sensor_id = 0;
 int ouster_publish_imu = 0;
 int ouster_intensity_type = 0;
@@ -99,7 +100,7 @@ update_color(Mat &img, int row, int col, unsigned char intensity, unsigned char 
 
 
 void 
-build_and_publish_imu_message(uint8_t* buf __attribute__((unused))) 
+build_and_publish_imu_message(uint8_t *buf __attribute__((unused)))
 {
     float acc_x, acc_y, acc_z;
     float gyro_x, gyro_y, gyro_z;
@@ -332,12 +333,36 @@ shutdown_module(int signo)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+ouster::OS1::lidar_mode
+get_mode_code(char *mode_string)
+{
+	ouster::OS1::lidar_mode mode_code = ouster::OS1::MODE_1024x20; // default
+
+	if (!mode_string)
+		return (mode_code);
+
+	if (strcmp(mode_string, "MODE_512x10") == 0)
+		mode_code = ouster::OS1::MODE_512x10;
+	if (strcmp(mode_string, "MODE_512x20") == 0)
+		mode_code = ouster::OS1::MODE_512x20;
+	if (strcmp(mode_string, "MODE_1024x10") == 0)
+		mode_code = ouster::OS1::MODE_1024x10;
+	if (strcmp(mode_string, "MODE_1024x20") == 0)
+		mode_code = ouster::OS1::MODE_1024x20;
+	if (strcmp(mode_string, "MODE_2048x10") == 0)
+		mode_code = ouster::OS1::MODE_2048x10;
+
+	return (mode_code);
+}
+
+
 void 
 read_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] = {
 		{(char*) "commandline", (char*) "sensor_ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL},
 		{(char*) "commandline", (char*) "host_ip", CARMEN_PARAM_STRING, &host_ip, 0, NULL},
+		{(char*) "commandline", (char*) "mode", CARMEN_PARAM_STRING, &string_mode, 0, NULL},
         {(char*) "commandline", (char*) "sensor_id", CARMEN_PARAM_INT, &ouster_sensor_id, 0, NULL},
         {(char*) "commandline", (char*) "intensity_type", CARMEN_PARAM_INT, &ouster_intensity_type, 0, NULL}, 
 		{(char*) "commandline", (char*) "publish_imu", CARMEN_PARAM_ONOFF, &ouster_publish_imu, 0, NULL},
@@ -379,7 +404,9 @@ main(int argc, char** argv)
 
     fprintf(stderr, "Intensity type: '%s'\n", intensity_type_to_string(ouster_intensity_type));
 
-    std::shared_ptr<OS1::client> cli = OS1::init_client(ouster_ip, host_ip);
+    ouster::OS1::lidar_mode mode_code = get_mode_code(string_mode);
+
+    std::shared_ptr<OS1::client> cli = OS1::init_client(ouster_ip, host_ip, mode_code);
 
     if (!cli) 
     {
@@ -414,7 +441,7 @@ main(int argc, char** argv)
         else if (st & OS1::IMU_DATA) 
         {
             // The IMU is running in a smaller frequency than it should be. TODO: fix it!
-            if (OS1::read_imu_packet(*cli, imu_buf)) 
+            if (OS1::read_imu_packet(*cli, imu_buf) && ouster_publish_imu)
                 build_and_publish_imu_message(imu_buf);
         }
     }
