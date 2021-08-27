@@ -1,0 +1,17 @@
+# Missao 2
+#set course to 7471736.90, -681434.85, 1.599
+set course to 7471742.50, -681531.95, 1.62
+go
+stop
+
+if previous task failed, execute task at label missao_3 # isso eh um goto para a task de label <label>
+
+#missao_3:
+set route planner graph to data/graphs/graph_reh_ala_a.gr
+set course to 7471741.92, -681560.69, 0.847
+go
+stop
+set course to  7471754.15, -681556.50, 0.366 
+go
+stop
+
