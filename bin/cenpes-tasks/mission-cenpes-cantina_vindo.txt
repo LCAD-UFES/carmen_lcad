@@ -1,0 +1,6 @@
+# Missao 6
+set route planner graph to data/graphs/graph_cenpes-20210820-1.gr
+set course to 7471657.64, -681512.67, 2.178
+go
+stop
+mission completed
