@@ -958,7 +958,7 @@ print_optimization_report(FILE *f_calibration, FILE *f_report, ParticleSwarmOpti
 }
 
 
-void
+static void
 plot_graph(ParticleSwarmOptimization *optimizer, void *data, int particle_id)
 {
 	static bool first_time = true;
