@@ -63,7 +63,7 @@ Acima, cada linha possui:
 4 - Se utilizando cameras: o crop height (Para eliminar áreas indesejadas da imagem; no caso da Bumblebee, este valor deve ser 380 para pegar apenas as 380
 primeiras linhas das 480 linhas da imagem. No Art toda a imagem pode ser aproveitada). Se utilizando o lidar: o angulo à esquerda a partir do zero (sempre positivo). Imagine que utilizará um range de -45° até 60° da esquerda para direita, sendo a frente do veículo o zero. Logo esse parâmetro será 45.
 
-5 - log format (0, 1, 2 ou 3; 0 para logs antigos, onde a imagem fica dentro do arquivo .txt de log; 1 para logs novos, onde a imagem é salvada à parte; 2 para logs com imagens de câmeras Intelbras; e 3 para lidar).
+5 - log format (0, 1, 2, 3 ou 4; 0 para logs antigos, onde a imagem fica dentro do arquivo .txt de log; 1 para logs novos, onde a imagem é salvada à parte; 2 para logs com imagens de câmeras Intelbras; 3 para lidar em arquivo; e 4 para lidar no log).
 
 6 - as dimensões das imagens que devem ser salvas
 

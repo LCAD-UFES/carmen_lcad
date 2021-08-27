@@ -37,6 +37,9 @@ for i in "${!dirs[@]}"; do
     elif [ ${fmts[$i]} -eq "3" ]; then
         msg="VELODYNE_PARTIAL_SCAN_IN_FILE"
         cam_or_lidar=""
+    else
+        msg="VELODYNE_PARTIAL_SCAN"
+        cam_or_lidar=""
     fi
     
     fgrep ${msg}${cam_or_lidar} ${logs[$i]} > /dados/log2png${i}.txt
