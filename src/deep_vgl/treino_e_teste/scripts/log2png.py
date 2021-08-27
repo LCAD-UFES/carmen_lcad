@@ -92,7 +92,7 @@ def save_new_img2(image, output_dir, camera_id, dst_size=None, max_height=None, 
 
     save_one_img(img, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height, ignore_top)
 
-#para logs cuja nuvem de pontos está salva em arquivo separado
+#para logs cuja nuvem de pontos esta salva em arquivo separado
 def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_left=180, angle_right=180):
     pointcloud_file = open(image['path'],'rb')
     shot_angle = ''
@@ -124,7 +124,7 @@ def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_l
     resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
     cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
 
-#para logs cuja nuvem de pontos está salva no proprio log
+#para logs cuja nuvem de pontos esta salva no proprio log
 def save_old_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_left=180, angle_right=180):
     pointcloud_file = open(image['path'],'rb')
     shot_angle = ''
@@ -156,7 +156,7 @@ def save_old_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, ang
     resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
     cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
 
-#para logs cuja nuvem de pontos está salva em arquivo separado
+#para logs cuja nuvem de pontos esta salva em arquivo separado
 def read_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, angle_left=180, angle_right=180):
 
     total = 0
@@ -188,7 +188,7 @@ def read_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, ca
             print('Saved {} point cloud already...'.format(total))
     f.close()
 
-#para logs cuja nuvem de pontos está salva no proprio log
+#para logs cuja nuvem de pontos esta salva no proprio log
 def read_old_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, angle_left=180, angle_right=180):
 
     total = 0
