@@ -1174,8 +1174,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 void
 camera_image_handler(camera_message *msg)
 {
-	if (image_index > msg->number_of_images)
-		carmen_die("Image index %d exceeds the camera number of images %d!\n", image_index, msg->number_of_images);
+	image_msg = msg;
+//	yolo_timer_handler();
+}
+
+
+void
+image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
+{
+	unsigned char *img;
 
 	Mat open_cv_image = Mat(msg->images[image_index].height, msg->images[image_index].width, CV_8UC3, msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
