@@ -6,6 +6,7 @@
 #include "obstacle_avoider_interface.h"
 #include "obstacle_avoider.h"
 
+//#define USE_MAIN_LOOP_TO_PUBLISH
 
 static int necessary_maps_available = 0;
 
@@ -353,11 +354,11 @@ check_message_absence_timeout_timer_handler(void)
 	if (log_mode)
 		return;
 
-	if ((carmen_robot_ackerman_sensor_time_of_last_update >= 0) &&
+	if ((carmen_robot_ackerman_sensor_time_of_last_update >= 0.0) &&
 	    (carmen_get_time() - carmen_robot_ackerman_sensor_time_of_last_update) > robot_sensor_timeout)
 		publish_base_ackerman_motion_command_message_to_stop_robot();
 
-	if ((carmen_robot_ackerman_motion_command_time_of_last_update >= 0) &&
+	if ((carmen_robot_ackerman_motion_command_time_of_last_update >= 0.0) &&
 	    ((carmen_get_time() - carmen_robot_ackerman_motion_command_time_of_last_update) - last_motion_command_total_time) > command_timeout)
 		publish_base_ackerman_motion_command_message_to_stop_robot();
 }
@@ -404,6 +405,10 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 	carmen_robot_ackerman_motion_command_time_of_last_update = motion_command_message->timestamp;
 
 	last_motion_command_total_time = get_last_motion_command_total_time(next_motion_command_vector, num_motion_commands);
+
+#ifndef USE_MAIN_LOOP_TO_PUBLISH
+	obstacle_avoider_timer_handler();
+#endif
 }
 
 
@@ -701,14 +706,27 @@ main(int argc, char **argv)
 	argc_global = argc;
 	argv_global = argv;
 
-	double carmen_obstacle_avoider_collision_avoidance_frequency;
-
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
+	signal(SIGINT, shutdown_obstacle_avoider);
+
+#ifdef USE_MAIN_LOOP_TO_PUBLISH
+	double carmen_obstacle_avoider_collision_avoidance_frequency;
 	carmen_obstacle_avoider_collision_avoidance_frequency = carmen_obstacle_avoider_initialize(argc, argv);
 
-	signal(SIGINT, shutdown_obstacle_avoider);
+	while (1)
+	{
+		obstacle_avoider_timer_handler();
+		check_message_absence_timeout_timer_handler();
+		carmen_ipc_sleep(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency);
+	}
+
+#else
+	carmen_obstacle_avoider_initialize(argc, argv);
+
+//	double carmen_obstacle_avoider_collision_avoidance_frequency;
+//	carmen_obstacle_avoider_collision_avoidance_frequency = carmen_obstacle_avoider_initialize(argc, argv);
 
 //	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 //	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
@@ -717,15 +735,9 @@ main(int argc, char **argv)
 
 //	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) obstacle_avoider_timer_handler, NULL);
 //	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) check_message_absence_timeout_timer_handler, NULL);
-//
-//	carmen_ipc_dispatch();
 
-	while (1)
-	{
-		obstacle_avoider_timer_handler();
-		check_message_absence_timeout_timer_handler();
-		carmen_ipc_sleep(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency);
-	}
+	carmen_ipc_dispatch();
+#endif
 
 	return 0;
 }
