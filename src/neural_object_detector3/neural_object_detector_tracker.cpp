@@ -45,8 +45,6 @@ vector<carmen_laser_ldmrs_new_message> sick_vector; //used to correct camera del
 int camera_width;
 int camera_height;
 
-camera_message *image_msg = NULL;
-
 
 // This function find the closest velodyne message with the camera message
 carmen_velodyne_partial_scan_message
@@ -1157,29 +1155,6 @@ publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void
-yolo_timer_handler()
-{
-	if (image_msg == NULL)
-		return;
-
-	if (image_index > image_msg->number_of_images)
-		carmen_die("Image index %d exceeds the camera number of images %d!\n", image_index, image_msg->number_of_images);
-
-	Mat open_cv_image = Mat(image_msg->images[image_index].height, image_msg->images[image_index].width, CV_8UC3, image_msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-
-	track_pedestrians(open_cv_image, image_msg->timestamp);
-}
-
-
-void
-camera_image_handler(camera_message *msg)
-{
-	image_msg = msg;
-}
-
-
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 {
@@ -1191,6 +1166,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 		img = msg->raw_left;
 
 	Mat open_cv_image = Mat(msg->height, msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+
+	track_pedestrians(open_cv_image, msg->timestamp);
+}
+
+
+void
+camera_image_handler(camera_message *msg)
+{
+	if (image_index > msg->number_of_images)
+		carmen_die("Image index %d exceeds the camera number of images %d!\n", image_index, msg->number_of_images);
+
+	Mat open_cv_image = Mat(msg->images[image_index].height, msg->images[image_index].width, CV_8UC3, msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
 	track_pedestrians(open_cv_image, msg->timestamp);
 }
@@ -1409,7 +1396,6 @@ main(int argc, char **argv)
 
 	subscribe_messages();
 
-    carmen_ipc_addPeriodicTimer(1.0 / 5.0, (TIMER_HANDLER_TYPE) yolo_timer_handler, NULL);
 	carmen_ipc_dispatch();
 
 	return 0;
