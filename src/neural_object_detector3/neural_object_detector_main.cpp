@@ -13,8 +13,6 @@ carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
 
-carmen_bumblebee_basic_stereoimage_message *image_msg = NULL;
-
 
 void
 carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
@@ -22,7 +20,6 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*x += offset_x;
 	*y += offset_y;
 }
-
 
 void
 display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
@@ -509,31 +506,43 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
 void
-yolo_timer_handler()
+image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	if (image_msg == NULL)
 		return;
+
+	double fps;
+	static double start_time = 0.0;
+	unsigned char *img;
+
+	if (camera_side == 0)
+		img = image_msg->raw_left;
+	else
+		img = image_msg->raw_right;
+
+	//	int crop_x = image_msg->width * 0.25;
+	//	int crop_y = image_msg->height * 0.25;
+	//	int crop_w = image_msg->width * 0.50;
+	//	int crop_h = image_msg->height * 0.5;
 
 	int crop_x = 0;
 	int crop_y = 0;
 	int crop_w = image_msg->width;// 1280;
 	int crop_h = image_msg->height;//400; // 500;
-	double timestamp = image_msg->timestamp;
-	double fps;
-	static double start_time = 0.0;
-	unsigned char *img = (unsigned char *) malloc(image_msg->image_size);
 
-	if (camera_side == 0)
-		memcpy(img, image_msg->raw_left, image_msg->image_size);
-	else
-		memcpy(img, image_msg->raw_left, image_msg->image_size);
+	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
+
+	//Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, cropped_img, 0);
+	//imshow("Neural Object Detector", open_cv_image);
+    //waitKey(1);
 
 	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 	predictions = filter_predictions_of_interest(predictions);
 
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-			crop_w, crop_h, crop_x, crop_y, crop_w, crop_h);
+			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
 	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
 
@@ -545,7 +554,7 @@ yolo_timer_handler()
 
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
 
-	publish_moving_objects_message(timestamp, &msg);
+	publish_moving_objects_message(image_msg->timestamp, &msg);
 
 	Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
 
@@ -559,18 +568,11 @@ yolo_timer_handler()
 			globalpos_msg->pose.orientation.roll, globalpos_msg->pose.orientation.pitch, globalpos_msg->pose.orientation.yaw);
 
 	carmen_position_t object_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
-			world_to_camera_pose, camera_parameters, crop_w, crop_h);
+			world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
 
 	circle(open_cv_image, Point((int)object_on_image.x, (int)object_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
 
 	display(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, crop_w, crop_h);
-}
-
-
-void
-image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
-{
-	image_msg = msg;
 }
 
 
@@ -681,9 +683,9 @@ initializer()
 	sprintf(yoloweights, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
 
 
-	classes_names = get_classes_names((char *) str_classes_names);
+	classes_names = get_classes_names((char*) str_classes_names);
 
-	network_struct = initialize_YOLO((char *) yolocfg, (char *) yoloweights);
+	network_struct = initialize_YOLO((char*) yolocfg, (char*) yoloweights);
 }
 
 
@@ -702,7 +704,6 @@ main(int argc, char **argv)
 
 	setlocale(LC_ALL, "C");
 
-    carmen_ipc_addPeriodicTimer(1.0 / 5.0, (TIMER_HANDLER_TYPE) yolo_timer_handler, NULL);
 	carmen_ipc_dispatch();
 
 	return 0;
