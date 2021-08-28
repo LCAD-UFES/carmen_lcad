@@ -1,15 +1,16 @@
 include ../Makefile.conf
 
-CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -O3 -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 -g
+#CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -O3 -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 -g
+CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71
 
-ifeq ($(PROCESSOR),x86_64)
-CFLAGS += -fPIC
-endif
+#ifeq ($(PROCESSOR),x86_64)
+#CFLAGS += -fPIC
+#endif
 
-ifndef NO_TCPD
-CFLAGS += -DACCESS_CONTROL
-LFLAGS = -lnsl -lwrap
-endif
+#ifndef NO_TCPD
+#CFLAGS += -DACCESS_CONTROL
+#LFLAGS = -lnsl -lwrap
+#endif
 
 MODULE_NAME = IPC
 MODULE_COMMENT = Flexible communications package written by Reid Simmons

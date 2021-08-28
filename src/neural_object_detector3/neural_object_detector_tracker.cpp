@@ -1177,7 +1177,7 @@ void
 camera_image_handler(camera_message *msg)
 {
 	image_msg = msg;
-	yolo_timer_handler();
+//	yolo_timer_handler();
 }
 
 
@@ -1410,7 +1410,7 @@ main(int argc, char **argv)
 
 	subscribe_messages();
 
-//    carmen_ipc_addPeriodicTimer(1.0 / 5.0, (TIMER_HANDLER_TYPE) yolo_timer_handler, NULL);
+    carmen_ipc_addPeriodicTimer(1.0 / 5.0, (TIMER_HANDLER_TYPE) yolo_timer_handler, NULL);
 	carmen_ipc_dispatch();
 
 	return 0;

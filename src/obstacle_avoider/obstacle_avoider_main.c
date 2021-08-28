@@ -353,11 +353,11 @@ check_message_absence_timeout_timer_handler(void)
 	if (log_mode)
 		return;
 
-	if ((carmen_robot_ackerman_sensor_time_of_last_update >= 0) &&
+	if ((carmen_robot_ackerman_sensor_time_of_last_update >= 0.0) &&
 	    (carmen_get_time() - carmen_robot_ackerman_sensor_time_of_last_update) > robot_sensor_timeout)
 		publish_base_ackerman_motion_command_message_to_stop_robot();
 
-	if ((carmen_robot_ackerman_motion_command_time_of_last_update >= 0) &&
+	if ((carmen_robot_ackerman_motion_command_time_of_last_update >= 0.0) &&
 	    ((carmen_get_time() - carmen_robot_ackerman_motion_command_time_of_last_update) - last_motion_command_total_time) > command_timeout)
 		publish_base_ackerman_motion_command_message_to_stop_robot();
 }
