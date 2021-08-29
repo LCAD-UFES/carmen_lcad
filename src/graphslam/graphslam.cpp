@@ -57,8 +57,6 @@ class LoopRestriction
 		int to;
 };
 
-DlWrapper dlSolverWrapper;
-
 vector<Line> input_data;
 vector<LoopRestriction> loop_data;
 
@@ -72,6 +70,10 @@ char carmen_ini_file[1024];
 char out_file[1024];
 
 FILE *gnuplot_pipe;
+
+char protecao0[10000];
+DlWrapper dlSolverWrapper;
+char protecao1[10000];
 
 
 void
@@ -92,7 +94,8 @@ read_data(char *filename)
 
 	SE2 last_icp(0, 0, 0);
 
-	while(!feof(f))
+//	int line = 0;
+	while (!feof(f))
 	{
 		// x, y, theta da odometria (pos base_ackerman)
 		// x, y, theta do gps_xyz
@@ -108,6 +111,15 @@ read_data(char *filename)
 			&time, &gps_std,
 			&gps_yaw, &gps_orientation_valid
 		);
+//		printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d\n",
+//					ox, oy, otheta,
+//					gx, gy, gtheta,
+//					ix, iy, itheta,
+//					time, gps_std,
+//					gps_yaw, gps_orientation_valid
+//				);
+//		printf("linhe %d, n %d\n", line++, n);
+//		fflush(stdout);
 
 		if (n == 13) // se o num de campos lidos do scanf foi correto
 		{
