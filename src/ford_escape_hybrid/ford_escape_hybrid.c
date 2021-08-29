@@ -358,7 +358,7 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 
 
 void
-publish_ford_escape_throttle_and_brakes_command(OjCmpt XGV_CCU)
+publish_ford_escape_steering_throttle_and_brakes_command(OjCmpt XGV_CCU)
 {
 	send_set_wrench_efforts_message(XGV_CCU);
 
@@ -790,7 +790,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			pid_plot_velocity(ford_escape_hybrid_config->filtered_v, g_desired_velocity, 15.0, "vel");
 		#endif
 
-		publish_ford_escape_throttle_and_brakes_command(XGV_CCU);
+		publish_ford_escape_steering_throttle_and_brakes_command(XGV_CCU);
 
 		reportCurvatureMessageDestroy(reportCurvature);
 	}

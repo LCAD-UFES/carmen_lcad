@@ -4,6 +4,8 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
+//#define USE_TIMER_HANDLER
+
 #define CAM_DELAY 0.25
 #define MAX_POSITIONS 10
 
@@ -1158,6 +1160,7 @@ publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+#ifdef USE_TIMER_HANDLER
 void
 yolo_timer_handler()
 {
@@ -1171,13 +1174,21 @@ yolo_timer_handler()
 
 	track_pedestrians(open_cv_image, image_msg->timestamp);
 }
-
+#endif
 
 void
 camera_image_handler(camera_message *msg)
 {
 	image_msg = msg;
-	yolo_timer_handler();
+
+#ifndef USE_TIMER_HANDLER
+	if (image_index > image_msg->number_of_images)
+		carmen_die("Image index %d exceeds the camera number of images %d!\n", image_index, image_msg->number_of_images);
+
+	Mat open_cv_image = Mat(image_msg->images[image_index].height, image_msg->images[image_index].width, CV_8UC3, image_msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+
+	track_pedestrians(open_cv_image, image_msg->timestamp);
+#endif
 }
 
 
@@ -1410,7 +1421,9 @@ main(int argc, char **argv)
 
 	subscribe_messages();
 
-//    carmen_ipc_addPeriodicTimer(1.0 / 5.0, (TIMER_HANDLER_TYPE) yolo_timer_handler, NULL);
+#ifdef USE_TIMER_HANDLER
+    carmen_ipc_addPeriodicTimer(1.0 / 5.0, (TIMER_HANDLER_TYPE) yolo_timer_handler, NULL);
+#endif
 	carmen_ipc_dispatch();
 
 	return 0;
