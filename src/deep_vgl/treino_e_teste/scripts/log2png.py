@@ -1,3 +1,4 @@
+from os import system
 import os.path
 import sys
 import cv2
@@ -5,6 +6,15 @@ import argparse
 import threading
 import numpy as np
 import struct
+import binascii
+
+def GETINDEX(a):
+    ret = int(a,base=16)
+    return ret
+
+def HEX_TO_SHORT(fourth,third,second,first):
+    hex = ( fourth << 12 | (third << 8 | (second << 4 | first)))
+    return hex
 
 def check_setup(input_list, output_dir):
     if not os.path.isfile(input_list):
@@ -92,7 +102,7 @@ def save_new_img2(image, output_dir, camera_id, dst_size=None, max_height=None, 
 
     save_one_img(img, image['size'], dst_size, image['timestamp'], camera_id, output_dir, max_height, ignore_top)
 
-#para logs cuja nuvem de pontos está salva em arquivo separado
+#para logs cuja nuvem de pontos esta salva em arquivo separado
 def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_left=180, angle_right=180):
     pointcloud_file = open(image['path'],'rb')
     shot_angle = ''
@@ -124,23 +134,24 @@ def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_l
     resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
     cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
 
-#para logs cuja nuvem de pontos está salva no proprio log
+#para logs cuja nuvem de pontos esta salva no proprio log
 def save_old_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_left=180, angle_right=180):
-    pointcloud_file = open(image['path'],'rb')
+    pointcloud_data = image['data'] 
     shot_angle = ''
     shot_distance =''
     shot_intensity = ''
-    line = pointcloud_file.read(8)
     col = 0
     blank_image = np.zeros((32,int(image['shots']),3), np.uint8)
-    while line: 
-        shot_angle = struct.unpack('d',line)
-        shot_distance = struct.unpack('H'*32,pointcloud_file.read(64))
-        shot_intensity = struct.unpack('B'*32,pointcloud_file.read(32))
-        shot_distance = np.asarray(shot_distance)/500
+    for j in range(0,len(pointcloud_data),2):
         linha = 0
-        for i in [31,29,27,25,23,21,19,17,15,13,11,9,7,5,3,1,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0]:
-            distancia = int(float(shot_distance[i]*765/25))
+        distance=[]
+        for k in range(32):
+            distance.append(HEX_TO_SHORT(GETINDEX(pointcloud_data[j+1][(k*6)+3]),GETINDEX(pointcloud_data[j+1][(k*6)+2]),GETINDEX(pointcloud_data[j+1][(k*6)+1]),GETINDEX(pointcloud_data[j+1][(k*6)])))
+        
+        distance = np.asarray(distance)/500
+        
+        for i in [31,29,27,25,23,21,19,17,15,13,11,9,7,5,3,1,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0]:            
+            distancia = int(float(distance[i])*765/25)
             B = 0 if distancia < 511 else distancia - 510
             G = 0 if distancia < 256 else distancia - B - 255
             R = 255 if distancia > 255 else distancia
@@ -148,15 +159,16 @@ def save_old_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, ang
                 B = G = R = 255
             blank_image[linha,col] = (B,G,R)
             linha+=1
+        
+        
         col+=1
-        line = pointcloud_file.read(8)
     ini = int(float(image['shots']/360)*(180-abs(angle_left)))
     end = int(float(image['shots']/360)*(180+abs(angle_right)))
     partial_image = blank_image[:,ini:end]
     resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
     cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
 
-#para logs cuja nuvem de pontos está salva em arquivo separado
+#para logs cuja nuvem de pontos esta salva em arquivo separado
 def read_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, angle_left=180, angle_right=180):
 
     total = 0
@@ -169,13 +181,15 @@ def read_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, ca
         
         timestamp = item[3]
         path = log + item[1]
+        if item[1].find("/dados/") >=0 :
+            path = item[1]
         
         image = {
             'path': path,
             'shots': (int(item[2])),
             'timestamp': timestamp
         }
-
+        
         line = f.readline()
         t = threading.Thread(target=save_point_cloud_as_img, args=(image, output_dir, camera_id, dst_size, angle_left, angle_right))
         mythreads.append(t)
@@ -188,7 +202,7 @@ def read_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, ca
             print('Saved {} point cloud already...'.format(total))
     f.close()
 
-#para logs cuja nuvem de pontos está salva no proprio log
+#para logs cuja nuvem de pontos esta salva no proprio log
 def read_old_point_cloud_log(log, input_list, output_dir, max_threads, max_lines, camera_id, dst_size=None, angle_left=180, angle_right=180):
 
     total = 0
@@ -207,17 +221,17 @@ def read_old_point_cloud_log(log, input_list, output_dir, max_threads, max_lines
             'shots': (int(item[1])),
             'timestamp': timestamp
         }
-
-        #line = f.readline()
-        #t = threading.Thread(target=save_old_point_cloud_as_img, args=(image, output_dir, camera_id, dst_size, angle_left, angle_right))
-        #mythreads.append(t)
-        #t.start()
-        #total += 1
-        #if (len(mythreads) >= max_threads) or not (line and total < max_lines):
-        #    for t in mythreads:
-        #        t.join()
-        #    mythreads[:] = []  # clear the thread's list
-        #    print('Saved {} point cloud already...'.format(total))
+        
+        line = f.readline()
+        t = threading.Thread(target=save_old_point_cloud_as_img, args=(image, output_dir, camera_id, dst_size, angle_left, angle_right))
+        mythreads.append(t)
+        t.start()
+        total += 1
+        if (len(mythreads) >= max_threads) or not (line and total < max_lines):
+            for t in mythreads:
+                t.join()
+            mythreads[:] = []  # clear the thread's list
+            print('Saved {} point cloud already...'.format(total))
     f.close()
 
 
