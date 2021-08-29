@@ -16,7 +16,7 @@ Install the requirements inside the virtualenv
 
 Modify the make file to compile cuda to your device capability archtecture
 open the file make.sh at:
- gedit neural_object_detector3/pedestrian_tracker/models/psroi_pooling/make.sh
+ gedit $CARMEN_HOME/src/neural_object_detector3/pedestrian_tracker/models/psroi_pooling/make.sh
 Change the flag -arch=sm_35 for -arch=sm_XX where XX is your CUDA Capability.
 to check your CUDA Capability, compile and run the deviceQuery
   sudo make -C /usr/local/cuda/samples/1_Utilities/deviceQuery
@@ -44,15 +44,12 @@ add at the end of file
  export PYTHONPATH=$CARMEN_HOME/src/neural_object_detector3/pedestrian_tracker:$PYTHONPATH
 ```
 
-
-Create data folder inside pedestrian_tracker:
-cd $CARMEN_HOME/src/neural_object_detector3/pedestrian_tracker/
-mkdir data
-
-Download the neural network weights to the folder /neural_object_detector3/pedestrian_tracker/data, run:
-  make download
+Download necessary data:
+ cd $CARMEN_HOME/src/neural_object_detector3/
+ make download
 
 Compile the neural_object_detector3
+ make
 
 Run it:
 ./neural_object_detector_tracker 3 1
