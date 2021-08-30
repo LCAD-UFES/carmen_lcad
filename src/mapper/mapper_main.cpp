@@ -1747,43 +1747,43 @@ subscribe_to_ipc_messages()
 		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_2, CARMEN_SUBSCRIBE_LATEST, 2);
 
 	if (sensors_params[13].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_3, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_3, CARMEN_SUBSCRIBE_LATEST, 3);
 
 	if (sensors_params[14].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_4, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_4, CARMEN_SUBSCRIBE_LATEST, 4);
 
 	if (sensors_params[15].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_5, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_5, CARMEN_SUBSCRIBE_LATEST, 5);
 
 	if (sensors_params[16].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_6, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_6, CARMEN_SUBSCRIBE_LATEST, 6);
 
 	if (sensors_params[17].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_7, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_7, CARMEN_SUBSCRIBE_LATEST, 7);
 
 	if (sensors_params[18].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 8);
 
 	if (sensors_params[19].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_9, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_9, CARMEN_SUBSCRIBE_LATEST, 9);
 
 	if (sensors_params[20].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_10, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_10, CARMEN_SUBSCRIBE_LATEST, 10);
 
 	if (sensors_params[21].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_11, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_11, CARMEN_SUBSCRIBE_LATEST, 11);
 
 	if (sensors_params[22].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_12, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_12, CARMEN_SUBSCRIBE_LATEST, 12);
 
 	if (sensors_params[23].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_13, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_13, CARMEN_SUBSCRIBE_LATEST, 13);
 
 	if (sensors_params[24].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_14, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_14, CARMEN_SUBSCRIBE_LATEST, 14);
 
 	if (sensors_params[25].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 15);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
