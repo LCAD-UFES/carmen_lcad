@@ -793,10 +793,10 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
     	}
 	}
 
+//	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);                             // All points of the LiDAR projected to the image
 #ifdef CALIBRATE_CAMERA_LIDAR_ALIGMENT
-	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);                             // All points of the LiDAR projected to the image
-#endif
     vector<vector<image_cartesian>> lidar_points; lidar_points.push_back(points); show_LIDAR(image, lidar_points, 255, 0, 0);  // All points except for the points that hit the ground
+#endif
 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
