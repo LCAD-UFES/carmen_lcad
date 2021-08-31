@@ -1,0 +1,18 @@
+#Missao entrar na ala B e reverse ala b
+
+# Missao 6
+set route planner graph to data/graphs/graph_cenpes-20210830.gr
+set course to 7471789.36, -681431.49, 1.567
+go
+stop
+
+missao_5:
+set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-20210830-ala-b-reh.gr
+#set course to 7471928.549348, -681274.502821, -0.702043
+set course to 7471784.374771, -681538.533386, -2.659438 
+go after set course to 7471784.374771, -681538.533386, -2.659438
+stop
+
+
+mission completed
+

@@ -1,0 +1,11 @@
+[Unit]
+Description=restore_iptables_save run
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/restore-iptable.sh
+StartLimitInterval=60
+StartLimitBurst=10
+
+[Install]
+WantedBy=default.target
