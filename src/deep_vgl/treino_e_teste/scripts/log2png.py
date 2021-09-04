@@ -318,6 +318,7 @@ def read_old_point_cloud_log(log, input_list, output_dir, max_threads, max_lines
         }
         if image['shots'] > 1030:
             line = f.readline()
+        
             t = threading.Thread(target=save_old_point_cloud_as_img2, args=(image, output_dir, camera_id, dst_size, angle_left, angle_right))
             mythreads.append(t)
             t.start()
