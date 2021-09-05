@@ -182,12 +182,12 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 
 	tf::StampedTransform gps_to_car;
 	transformer->lookupTransform("/gps", "/car", tf::Time(0), gps_to_car);
-//	printf("gps with respect to car: x: %lf, y: %lf, z: %lf\n", gps_to_car.getOrigin().x(), gps_to_car.getOrigin().y(), gps_to_car.getOrigin().z());
+//	printf("***car with respect to gps: x: %lf, y: %lf, z: %lf\n", gps_to_car.getOrigin().x(), gps_to_car.getOrigin().y(), gps_to_car.getOrigin().z());
 
 	double x_ = gps_to_car.getOrigin().x();
 	double y_ = gps_to_car.getOrigin().y();
 
-//	FILE *caco = fopen("caco.txt", "w");
+	FILE *caco = fopen("caco.txt", "w");
 	for (i = 0; i < input_data.size(); i++)
 	{
 		double gps_yaw = input_data[i].gps[2];
@@ -196,8 +196,8 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 		double car_pose_in_the_world_x = x_ * cos(gps_yaw) - y_ * sin(gps_yaw) + gps_x;
 		double car_pose_in_the_world_y = x_ * sin(gps_yaw) + y_ * cos(gps_yaw) + gps_y;
 
-//		fprintf(caco, "%lf %lf %lf %lf\n", gps_x + input_data[0].gps[0], gps_y + input_data[0].gps[1],
-//				car_pose_in_the_world_x + input_data[0].gps[0], car_pose_in_the_world_y + input_data[0].gps[1]);
+		fprintf(caco, "%lf %lf %lf %lf\n", gps_x + input_data[0].gps[0], gps_y + input_data[0].gps[1],
+				car_pose_in_the_world_x + input_data[0].gps[0], car_pose_in_the_world_y + input_data[0].gps[1]);
 
 		// Cada estimate é o valor inicial de um vértice que representa (é) uma pose do carro quando a núvem de pontos do Velodyne i foi capturada.
 		SE2 estimate(car_pose_in_the_world_x, car_pose_in_the_world_y, gps_yaw);
@@ -207,7 +207,7 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 		vertex->setEstimate(estimate);
 		optimizer->addVertex(vertex);
 	}
-//	fclose(caco);
+	fclose(caco);
 }
 
 
@@ -415,33 +415,21 @@ build_optimization_graph(SparseOptimizer *optimizer,
 
 
 void
-save_corrected_vertices(SparseOptimizer *optimizer, tf::Transformer *transformer)
+save_corrected_vertices(SparseOptimizer *optimizer)
 {
 	FILE *f = fopen(out_file, "w");
 
 	if (f == NULL)
 		exit(printf("File '%s' couldn't be opened!\n", out_file));
 
-	VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertex(0));
-	SE2 car_pose_0 = v->estimate();
-
-	tf::StampedTransform gps_to_car;
-	transformer->lookupTransform("/gps", "/car", tf::Time(0), gps_to_car);
-//	printf("gps with respect to car: x: %lf, y: %lf, z: %lf\n", gps_to_car.getOrigin().x(), gps_to_car.getOrigin().y(), gps_to_car.getOrigin().z());
-
-	double x_ = gps_to_car.getOrigin().x();
-	double y_ = gps_to_car.getOrigin().y();
-	double yaw = car_pose_0[2];
-	double car_pose_0_in_the_world_x = x_ * cos(yaw) - y_ * sin(yaw) + input_data[0].gps[0];
-	double car_pose_0_in_the_world_y = x_ * sin(yaw) + y_ * cos(yaw) + input_data[0].gps[1];
-//	printf("car_pose_0_in_the_world (%lf, %lf)\n", car_pose_0_in_the_world_x, car_pose_0_in_the_world_y);
+	VertexSE2 *v;
 
 	for (size_t i = 0; i < optimizer->vertices().size(); i++)
 	{
 		v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
 		SE2 pose = v->estimate();
 
-		pose.setTranslation(Vector2d(v->estimate()[0] + car_pose_0_in_the_world_x, v->estimate()[1] + car_pose_0_in_the_world_y));
+		pose.setTranslation(Vector2d(v->estimate()[0] + input_data[0].gps[0], v->estimate()[1] + input_data[0].gps[1]));
 		pose.setRotation(Rotation2Dd(v->estimate()[2]));
 
 		fprintf(f, "%lf %lf %lf %lf\n", pose.toVector().data()[0], pose.toVector().data()[1], pose.toVector().data()[2], input_data[i].time);
@@ -527,7 +515,7 @@ initialize_tf_transfoms(CarmenParamFile *params, Transformer *transformer, int g
 //	transformer->lookupTransform("/board", "/gps", tf::Time(0), a_to_b);
 //	printf("gps with respect to board: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
 //	transformer->lookupTransform("/car", "/gps", tf::Time(0), a_to_b);
-//	printf("gps with respect to car: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
+//	printf("*gps with respect to car: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
 }
 
 
@@ -558,12 +546,7 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 	optimizer->optimize(50);
 	cerr << "OptimizationDone!" << endl;
 
-	delete (transformer);
-	transformer = new tf::Transformer(false);
-	delete (params);
-	params = new CarmenParamFile(carmen_ini_file);
-	initialize_tf_transfoms(params, transformer, gps_id);
-	save_corrected_vertices(optimizer, transformer);
+	save_corrected_vertices(optimizer);
 
 	cerr << "OutputSaved!" << endl;
 }
@@ -589,12 +572,61 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 }
 
 
-static void
-plot_graph()
+void
+get_gps_pose_given_car_pose(double &gps_x, double &gps_y, double &gps_yaw, double x, double y, double yaw, Transformer *tf_transformer)
 {
+	tf::Transform world_to_car;
+	world_to_car.setOrigin(tf::Vector3(x, y, 0.0));
+	world_to_car.setRotation(tf::Quaternion(yaw, 0.0, 0.0));
+	tf_transformer->setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
+
+	tf::StampedTransform world_to_gps;
+	tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), world_to_gps);
+
+	gps_x = world_to_gps.getOrigin().x();
+	gps_y = world_to_gps.getOrigin().y();
+	double gps_pitch, gps_roll;
+	tf::Matrix3x3(world_to_gps.getRotation()).getEulerYPR(gps_yaw, gps_pitch, gps_roll);
+}
+
+
+void
+generate_poses_in_gps_coordinates(char *filename, char *filename_in_gps_coordinates, int gps_id)
+{
+	FILE *f, *f2;
+	double x, y, theta, timestamp;
+
+	if ((f = fopen(filename, "r")) == NULL)
+		exit(printf("Error: Unable to open file '%s'!\n", filename));
+
+	if ((f2 = fopen(filename_in_gps_coordinates, "w")) == NULL)
+		exit(printf("Error: Unable to open file '%s' for wrinting!\n", filename_in_gps_coordinates));
+
+	CarmenParamFile *params = new CarmenParamFile(carmen_ini_file);
+	tf::Transformer *transformer = new tf::Transformer(false);
+	initialize_tf_transfoms(params, transformer, gps_id);
+
+	while (!feof(f))
+	{
+		fscanf(f, "%lf %lf %lf %lf\n", &x, &y, &theta, &timestamp);
+		double gps_x, gps_y, gps_theta;
+		get_gps_pose_given_car_pose(gps_x, gps_y, gps_theta, x, y, theta, transformer);
+		fprintf(f2, "%lf %lf %lf %lf\n", gps_x, gps_y, gps_theta, timestamp);
+	}
+
+	fclose(f);
+	fclose(f2);
+}
+
+
+static void
+plot_graph(int gps_id)
+{
+	generate_poses_in_gps_coordinates((char *) "tmp/poses_opt.txt", (char *) "tmp/poses_opt_in_gps_coordinates.txt", gps_id);
+
 	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 
-	fprintf(gnuplot_pipe, "set size square; set size ratio -1; plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', 'tmp/poses_opt.txt' u 1:2 w l t 'car'\n");
+	fprintf(gnuplot_pipe, "set size square; set size ratio -1; plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', 'tmp/poses_opt.txt' u 1:2 w l t 'car', 'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'car in gps coords'\n");
 
 	fflush(gnuplot_pipe);
 }
@@ -628,7 +660,7 @@ main(int argc, char **argv)
 
 	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
 
-	plot_graph();
+	plot_graph(gps_id);
 	
 	printf("Programa concluído normalmente. Tecle qualquer tecla para terminar.\n");
 	fflush(stdout);

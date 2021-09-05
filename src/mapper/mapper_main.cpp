@@ -1430,8 +1430,11 @@ get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute
 	if (sensors_params[0].alive && strcmp(sensors_params[0].name, "velodyne") == 0)
 	{
 		sensors_params[0].pose = velodyne_pose;
-		free(sensors_params[0].sensor_to_support_matrix);
-		sensors_params[0].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
+		sensors_params[0].sensor_support_pose = sensor_board_1_pose;
+		sensors_params[0].support_to_car_matrix = create_rotation_matrix(sensors_params[0].sensor_support_pose.orientation);
+		sensors_params[0].sensor_robot_reference = carmen_change_sensor_reference(
+				sensors_params[0].sensor_support_pose.position, sensors_params[0].pose.position, sensors_params[0].support_to_car_matrix);
+		sensors_params[0].height = sensors_params[0].sensor_robot_reference.z + robot_wheel_radius;
 	}
 	else if (sensors_params[1].alive && strcmp(sensors_params[1].name, "laser_ldmrs") != 0)
 	{
@@ -1442,19 +1445,6 @@ get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute
 				sensors_params[1].sensor_support_pose.position, sensors_params[1].pose.position, sensors_params[1].support_to_car_matrix);
 		sensors_params[1].height = sensors_params[1].sensor_robot_reference.z + robot_wheel_radius;
 	} 
-
-	// for (int i = 0; i < number_of_sensors; i++)
-	// {
-	// 	if (sensors_params[i].alive && strncmp(sensors_params[i].name, "lidar", 5) == 0)
-	// 	{
-	// 		int lidar_index = i-first_lidar_number;
-	// 		sensors_params[i].pose = lidar_config[lidar_index].pose;
-	// 		free(sensors_params[i].sensor_to_support_matrix);
-	// 		sensors_params[i].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
-	// 	}
-	// }
-
-	// get_highest_sensor();
 }
 
 

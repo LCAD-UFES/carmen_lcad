@@ -50,7 +50,7 @@ double distance_between_front_and_rear_axles;
 
 int use_velodyne_timestamp_in_odometry = 0;
 
-int calibrate_combined_visual_and_car_odometry = 0;
+int combined_visual_and_car_odometry = 1;
 
 int use_variable_scan_message = -1;
 char variable_scan_message_name[64];
@@ -440,7 +440,7 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 		{
 			bool ok_to_process = true;
 			carmen_robot_ackerman_velocity_message m;
-			if (calibrate_combined_visual_and_car_odometry)
+			if (combined_visual_and_car_odometry)
 				ok_to_process = build_combined_visual_and_car_odometry(&m, f);
 			else
 				m = read_odometry(f);
@@ -487,10 +487,25 @@ read_command_line_param_raw(int &argc, char **argv)
 			use_variable_scan_message = atoi(argv[i + 1]);
 			sprintf(variable_scan_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE%d", use_variable_scan_message);
 
-			for (i = i + 2; i  < argc; i++)
+			for (i = i + 2; i < argc; i++)
 				argv[i - 2] = argv[i];
 
 			argc = argc - 2;
+		}
+	}
+
+	for (int i = 0; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-combined_visual_and_car_odometry") == 0)
+		{
+			combined_visual_and_car_odometry = 1;
+			combine_visual_and_car_odometry_phi = atoi(argv[i + 1]);
+			combine_visual_and_car_odometry_vel = atoi(argv[i + 2]);
+
+			for (i = i + 3; i < argc; i++)
+				argv[i - 3] = argv[i];
+
+			argc = argc - 3;
 		}
 	}
 }
@@ -512,12 +527,6 @@ main(int argc, char **argv)
 	{
 		initial_time = atof(argv[4]);
 		final_time = atof(argv[5]);
-	}
-
-	if (calibrate_combined_visual_and_car_odometry)
-	{
-		combine_visual_and_car_odometry_phi = 2;
-		combine_visual_and_car_odometry_vel= 1;
 	}
 
 	FILE *odometry_calibration_file = safe_fopen(argv[2], "r");
