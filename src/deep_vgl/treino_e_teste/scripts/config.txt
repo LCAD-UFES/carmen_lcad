@@ -1,5 +1,5 @@
 #!/bin/bash
-image_path="/dados/ufes/"
-output_path="/dados/ufes_gt/"
+image_path="/dados/ternium/"
+output_path="/dados/ternium_gt/"
 base_offset=5
-live_offset=1
+live_offset=0.5

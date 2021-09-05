@@ -3,11 +3,13 @@
 ## Para testar a rede (precisa do python2.7 instalado)
 
 Para avaliar o quanto a rede está acertando precisaremos dos seguintes arquivos (gerados na etapa de treino):
+
 ```bash
 deepvgl.cfg               # as configurações da rede
 labels.txt                # os labels gerados para o dataset de treino
 deepvgl_final.weights     # os pesos da rede, gerados durante a execução do treino da darknet (vários serão gerados e podem ser avaliados)
 ```
+
 Precisamos também de uma lista de imagens para validação, que devem ter o mesmo formado da lista utilizada para treino.
 Podemos utilizar a mesma lista de imagens usada para treinamento da rede (/dados/ufes/train.list). 
 
@@ -47,14 +49,14 @@ e o timestamp.
 Esse arquivo foi gerado na etapa de treinamento e está salvo (em nosso exemplo) na pasta "/dados/ufes_gt" com o nome:
 
 ```bash
-/dados/ufes_gt/basepos-20210131-20210120-5m-1m.txt
+/dados/ufes_gt/basepos-20210131-20210120-5.0m-1.0m.txt
 ```
 
 O comando abaixo gera o arquivo poses_and_labels.txt a partir do arquivo "/dados/ufes_gt/basepos-20210131-20210120-5m-1m.txt".
 
 ```bash
 cd $CARMEN_HOME/src/deep_vgl
-cat /dados/ufes_gt/basepos-20210131-20210120-5m-1m.txt |grep -v label| awk '{print $3 " " $4 " " $8 " " $1}' > config/poses_and_labels.txt
+cat /dados/ufes_gt/basepos-20210131-20210120-5.0m-1.0m.txt |grep -v label| awk '{print $3 " " $4 " " $8 " " $1}' > config/poses_and_labels.txt
 ```
 Agora é só executar o comando abaixo para visualizar exatamente o que o deep_vgl está vendo:
 

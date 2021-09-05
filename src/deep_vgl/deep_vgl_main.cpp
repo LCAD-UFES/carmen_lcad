@@ -61,6 +61,7 @@ int delta_x, delta_y, crop_width, crop_height;
 
 int use_lidar, angle_left, angle_right;
 
+
 cv::Mat
 convert_darknet_image_to_cv_mat(image img)
 {
@@ -90,7 +91,9 @@ convert_darknet_image_to_cv_mat(image img)
 	return mat;
 }
 
-image convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char *data)
+
+image
+convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char *data)
 {
 	unsigned int c = 3; // Number of channels
 	image image = make_image(w, h, c);
@@ -113,6 +116,7 @@ image convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigne
 
 	return (image);
 }
+
 
 double
 infer_pose(carmen_point_t *pose, double width, double height,
@@ -170,7 +174,9 @@ infer_pose(carmen_point_t *pose, double width, double height,
 	return (predictions[selected_pose_label]);
 }
 
-void carmen_gps_xyz_publish_message(carmen_gps_xyz_message gps_xyz_message)
+
+void
+carmen_gps_xyz_publish_message(carmen_gps_xyz_message gps_xyz_message)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 
@@ -178,7 +184,9 @@ void carmen_gps_xyz_publish_message(carmen_gps_xyz_message gps_xyz_message)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_GPS_XYZ_MESSAGE_NAME);
 }
 
-void publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gphdt_ptr)
+
+void
+publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gphdt_ptr)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 
@@ -190,13 +198,16 @@ void publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gp
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void publish_gps_xyz(double x, double y, double theta, double confidence, double timestamp)
+
+void
+publish_gps_xyz(double x, double y, double theta, double confidence, double timestamp)
 {
 	carmen_gps_xyz_message gps_xyz_message = {};
 
@@ -246,13 +257,16 @@ void publish_gps_xyz(double x, double y, double theta, double confidence, double
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void velodyne_partial_scan_handler(carmen_velodyne_partial_scan_message *lidar)
+
+void
+velodyne_partial_scan_handler(carmen_velodyne_partial_scan_message *lidar)
 {
 	printf("acquiring velodyne message...\n");
 	carmen_point_t pose;
@@ -260,6 +274,9 @@ void velodyne_partial_scan_handler(carmen_velodyne_partial_scan_message *lidar)
 	double timestamp = lidar->timestamp;
 	//total de colunas
 	int shots = lidar->number_of_32_laser_shots;
+	if (shots < 1000)
+		return;
+
 	// coletar a partir da coluna ini
 	int ini = (int)((float)(shots / 360) * (180 - abs(angle_left)));
 	// coletar ate a coluna end
@@ -275,7 +292,7 @@ void velodyne_partial_scan_handler(carmen_velodyne_partial_scan_message *lidar)
 
 	Mat synthetic_image = Mat::zeros(Size((end - ini), 32), CV_8UC3);
 	int ray_order[32] = {31,29,27,25,23,21,19,17,15,13,11,9,7,5,3,1,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0};
-	for (int r=0; r < 32; r++)
+	for (int r = 0; r < 32; r++)
 	{
 		cv::Vec3b* ptr = synthetic_image.ptr<cv::Vec3b>(r);
 		for (int i = ini; i < end; i++)
@@ -305,7 +322,9 @@ void velodyne_partial_scan_handler(carmen_velodyne_partial_scan_message *lidar)
 	//free(synthetic_image.data);
 }
 
-void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+
+void
+bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
 	carmen_point_t pose;
 	double confidence = infer_pose(&pose, stereo_image->width, stereo_image->height,
@@ -315,7 +334,9 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	publish_gps_xyz(pose.x, pose.y, pose.theta, confidence, stereo_image->timestamp);
 }
 
-void camera_drivers_message_handler(camera_message *msg)
+
+void
+camera_drivers_message_handler(camera_message *msg)
 {
 	carmen_point_t pose;
 	double confidence = infer_pose(&pose, msg->images[0].width, msg->images[0].height,
@@ -325,7 +346,9 @@ void camera_drivers_message_handler(camera_message *msg)
 	publish_gps_xyz(pose.x, pose.y, pose.theta, confidence, msg->timestamp);
 }
 
-void shutdown_module(int signo)
+
+void
+shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
@@ -336,21 +359,24 @@ void shutdown_module(int signo)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
 // Initializations                                                                              //
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void read_parameters(int argc, char **argv)
+
+void
+read_parameters(int argc, char **argv)
 {
 	char bumblebee_string[256];
 	char camera_string[256];
 
 	carmen_param_t param_cmd_list[] =
-		{
-			{(char *)"commandline", (char *)"camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
-		};
+	{
+		{(char *)"commandline", (char *)"camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+	};
 
 	carmen_param_install_params(argc, argv, param_cmd_list, sizeof(param_cmd_list) / sizeof(param_cmd_list[0]));
 
@@ -358,15 +384,17 @@ void read_parameters(int argc, char **argv)
 	sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
 
 	carmen_param_t param_list[] =
-		{
-			{bumblebee_string, (char *)"width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
-			{bumblebee_string, (char *)"height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
-		};
+	{
+		{bumblebee_string, (char *)"width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
+		{bumblebee_string, (char *)"height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
+	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 }
 
-void initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename, int dx, int dy, int w, int h, int use_ldr, int angle_lft, int angle_rgt)
+
+void
+initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_filename, int dx, int dy, int w, int h, int use_ldr, int angle_lft, int angle_rgt)
 {
 	delta_x = dx;
 	delta_y = dy;
@@ -389,7 +417,9 @@ void initialize_structures(char *cfgfile, char *weightfile, char *learned_poses_
 	printf("all done on darknet\n");
 }
 
-void subscribe_messages()
+
+void
+subscribe_messages()
 {
 	if (use_lidar == 1)
 	{
@@ -404,7 +434,9 @@ void subscribe_messages()
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+
+int
+main(int argc, char *argv[])
 {
 	if (argc != 13)
 	{

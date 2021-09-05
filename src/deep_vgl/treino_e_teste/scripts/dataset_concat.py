@@ -76,13 +76,15 @@ if __name__ == '__main__':
 
     print 'running script with those arguments:\n\timages path:',input_dir,'\n\toutput directory:',output_dir,'\n\toffset base:',offset_base,'\n\toffset live:',offset_curr
 
-    datasets = np.loadtxt(args.input_images_directories, comments="#", delimiter=",", unpack=False, dtype=int)
+#    datasets = np.loadtxt(args.input_images_directories, comments="#", delimiter=",", unpack=False, dtype=int)
+    datasets = np.genfromtxt(args.input_images_directories, dtype='str')
     
     dataset_train_name = 'TRAIN'
     
     if datasets.size < 2:
         datasets = [datasets]
-        concat_dataset(output_dir, datasets[0], dataset_train_name, datasets[0], offset_base, offset_curr)
+        print datasets
+        concat_dataset(output_dir, datasets[0], dataset_train_name, datasets, offset_base, offset_curr)
     else:
         print datasets  
         dataset_valid_name = 'VALID'

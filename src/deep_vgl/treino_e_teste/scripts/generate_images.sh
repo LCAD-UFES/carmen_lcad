@@ -43,7 +43,7 @@ for i in "${!dirs[@]}"; do
         cam_or_lidar=""
     fi
     
-    #fgrep ${msg}${cam_or_lidar} ${logs[$i]} > /dados/log2png${i}.txt
+    fgrep ${msg}${cam_or_lidar} ${logs[$i]} > /dados/log2png${i}.txt
     echo "python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -c ${cam_or_lidar} -f ${fmts[$i]} -m ${crops[$i]} -t ${ignore_top[$i]}"
     if [ ${fmts[$i]} -gt 2 ]; then
        python2.7 $SCRIPTPATH/log2png.py -i /dados/log2png${i}.txt -g ${logs[$i]} -o ${dirs[$i]} -s ${imgsize[$i]} -f ${fmts[$i]} -al ${crops[$i]} -ar ${ignore_top[$i]}

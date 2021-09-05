@@ -4,6 +4,7 @@ Para treinar a rede neural do DeepVGL você precisa ter o python2.7 instalado. A
 
 ```bash
 pip install scipy
+pip install matplotlib
 ```
 
 ## Para treinar a rede
@@ -54,20 +55,19 @@ logs mencionados no passo anterior):
 
 Acima, cada linha possui:
 
-1 - o caminho absoluto para o arquivo de log.
+1 - O caminho absoluto para o arquivo de log.
 
-2 - o caminho absoluto para a pasta onde serão salvas as imagens extraídas do log.
+2 - O caminho absoluto para a pasta onde serão salvas as imagens (quando usando lidar, salva imagens também) extraídas do log.
 
-3 - a câmera utilizada no log.
+3 - A câmera utilizada no log (quando for lidar, este número não importa, mas é conveniente colocar o número de uma câmera existente).
 
-4 - Se utilizando cameras: o crop height (Para eliminar áreas indesejadas da imagem; no caso da Bumblebee, este valor deve ser 380 para pegar apenas as 380
-primeiras linhas das 480 linhas da imagem. No Art toda a imagem pode ser aproveitada). Se utilizando o lidar: o angulo à esquerda a partir do zero (sempre positivo). Imagine que utilizará um range de -45° até 60° da esquerda para direita, sendo a frente do veículo o zero. Logo esse parâmetro será 45.
+4 - Se utilizando cameras: o crop height ou o angle left do lidar (Serve para eliminar áreas indesejadas da imagem ou do sweep do lidar. No caso da Bumblebee, este valor deve ser 380 para pegar apenas as 380 primeiras linhas das 480 linhas da imagem. No Art toda a imagem pode ser aproveitada. Se utilizando o lidar: o angulo à esquerda a partir do zero (sempre positivo). Imagine que utilizará um range de -45° até 60° da esquerda para direita, sendo a frente do veículo o zero. Logo esse parâmetro será 45. Use 180 se for usar todo o sweep do lidar).
 
-5 - log format (0, 1, 2, 3 ou 4; 0 para logs antigos, onde a imagem fica dentro do arquivo .txt de log; 1 para logs novos, onde a imagem é salvada à parte; 2 para logs com imagens de câmeras Intelbras; 3 para lidar em arquivo; e 4 para lidar no log).
+5 - Log format (0, 1, 2, 3 ou 4; 0 para logs antigos, onde a imagem fica dentro do arquivo .txt de log; 1 para logs novos, onde a imagem é salvada à parte; 2 para logs com imagens de câmeras Intelbras; 3 para lidar em arquivo; e 4 para lidar no log).
 
-6 - as dimensões das imagens que devem ser salvas
+6 - As dimensões das imagens que devem ser salvas. Se for lidar, salva nas dimensões informadas também.
 
-7 - Se utilizando cameras: o total de linhas a serem ignoradas a partir do topo da imagem (0 nas câmeras do Art e em câmeras bumblebee da Iara). Se utilizando lidar: o angulo à direita a partir do zero (sempre positivo). Imagine que utilizará um range de -45° até 60° da esquerda para direita, sendo a frente do veículo o zero. Logo esse parâmetro será 60.
+7 - Similar ao 4, acima. Se utilizando cameras: o total de linhas a serem ignoradas a partir do topo da imagem (0 nas câmeras do Art e em câmeras bumblebee da Iara. Se utilizando lidar: o angulo à direita a partir do zero (sempre positivo). Imagine que utilizará um range de -45° até 60° da esquerda para direita, sendo a frente do veículo o zero. Logo esse parâmetro será 60. Se for usar todo o sweep, 180).
 
 
 ## STEP 1.2
@@ -229,7 +229,7 @@ Em nosso exemplo, salvamos os arquivos em "/dados/ufes_gt". O comando a seguir g
 darknet no treinamento e teste.
 
 ```bash
-cat `ls /dados/ufes_gt/basepos-*-5m-1m.txt | awk '{print $1}'| tail -n 1` | grep -v label | awk '{print "B"$2"E"}' > $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt 
+cat `ls /dados/ufes_gt/basepos-*-5.0m-1.0m.txt | awk '{print $1}'| tail -n 1` | grep -v label | awk '{print "B"$2"E"}' > $CARMEN_HOME/src/deep_vgl/treino_e_teste/darknet_cfg/labels.txt 
 ```
 
 Agora temos um arquivo com a lista de labels num formato que a darknet possa interpretar corretamente.

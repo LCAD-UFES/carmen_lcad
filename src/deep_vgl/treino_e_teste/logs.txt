@@ -1,3 +1,2 @@
-/dados/log_volta_da_ufes_art-20210131.txt   /dados/ufes/20210131    1   0     2   640x480     0
-/dados/log_volta_da_ufes_art-20210120.txt   /dados/ufes/20210120    1   0     2   640x480     0
-
+/dados/log_mpw700-ternium-20210804-2.txt /dados/ternium/20210804-2    1   100     3   640x480     100
+/dados/log_mpw700-ternium-20210804-3.txt /dados/ternium/20210804-3    1   100     3   640x480     100

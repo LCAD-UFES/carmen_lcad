@@ -1,6 +1,6 @@
-classes=658
-train  = /dados/ufes/train.list
-valid  = /dados/ufes/train.list
-labels = /dados/ufes/labels.txt
+classes=73
+train  = /dados/ternium/train.list
+valid  = /dados/ternium/train.list
+labels = /dados/ternium/labels.txt
 backup = backup/
 top=1

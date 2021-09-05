@@ -110,29 +110,30 @@ def save_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_l
     shot_intensity = ''
     line = pointcloud_file.read(8)
     col = 0
-    blank_image = np.zeros((32,int(image['shots']),3), np.uint8)
-    while line: 
-        shot_angle = struct.unpack('d',line)
-        shot_distance = struct.unpack('H'*32,pointcloud_file.read(64))
-        shot_intensity = struct.unpack('B'*32,pointcloud_file.read(32))
-        shot_distance = np.asarray(shot_distance)/500
-        linha = 0
-        for i in [31,29,27,25,23,21,19,17,15,13,11,9,7,5,3,1,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0]:
-            distancia = int(float(shot_distance[i]*765/25))
-            B = 0 if distancia < 511 else distancia - 510
-            G = 0 if distancia < 256 else distancia - B - 255
-            R = 255 if distancia > 255 else distancia
-            if distancia == 0:
-                B = G = R = 255
-            blank_image[linha,col] = (B,G,R)
-            linha+=1
-        col+=1
-        line = pointcloud_file.read(8)
-    ini = int(float(image['shots']/360)*(180-abs(angle_left)))
-    end = int(float(image['shots']/360)*(180+abs(angle_right)))
-    partial_image = blank_image[:,ini:end]
-    resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
-    cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
+    if image['shots'] > 1000:
+        blank_image = np.zeros((32,int(image['shots']),3), np.uint8)
+        while line: 
+            shot_angle = struct.unpack('d',line)
+            shot_distance = struct.unpack('H'*32,pointcloud_file.read(64))
+            shot_intensity = struct.unpack('B'*32,pointcloud_file.read(32))
+            shot_distance = np.asarray(shot_distance)/500
+            linha = 0
+            for i in [31,29,27,25,23,21,19,17,15,13,11,9,7,5,3,1,30,28,26,24,22,20,18,16,14,12,10,8,6,4,2,0]:
+                distancia = int(float(shot_distance[i]*765/25))
+                B = 0 if distancia < 511 else distancia - 510
+                G = 0 if distancia < 256 else distancia - B - 255
+                R = 255 if distancia > 255 else distancia
+                if distancia == 0:
+                    B = G = R = 255
+                blank_image[linha,col] = (B,G,R)
+                linha+=1
+            col+=1
+            line = pointcloud_file.read(8)
+        ini = int(float(image['shots']/360)*(180-abs(angle_left)))
+        end = int(float(image['shots']/360)*(180+abs(angle_right)))
+        partial_image = blank_image[:,ini:end]
+        resized = cv2.resize(partial_image, dst_size , interpolation = cv2.INTER_AREA)
+        cv2.imwrite(output_dir+'/'+str(image['timestamp'])+'.png',resized)
 
 #para logs cuja nuvem de pontos esta salva no proprio log
 def save_old_point_cloud_as_img(image, output_dir, camera_id, dst_size=None, angle_left=180, angle_right=180):

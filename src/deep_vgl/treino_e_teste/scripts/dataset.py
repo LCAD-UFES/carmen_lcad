@@ -175,7 +175,8 @@ if __name__ == '__main__':
         else:
             print ("Successfully created the directory %s " % args.output_dir)
 
-    datasets = np.loadtxt(args.input_images_directories, comments="#", delimiter=",", unpack=False, dtype=int)
+#    datasets = np.loadtxt(args.input_images_directories, comments="#", delimiter=",", unpack=False, dtype=int)
+    datasets = np.genfromtxt(args.input_images_directories, dtype='str')
     
     if datasets.size < 2:
         datasets = [datasets]
