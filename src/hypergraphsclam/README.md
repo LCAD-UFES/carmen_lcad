@@ -22,6 +22,7 @@ Responsável por ler o arquivo contendo o grafo gerado pelo Parser, remontar o g
 
 # Sumário dos Comandos para Criação de Mapas
 
+```bash
 cd bin
 mkdir log_do_dia
 gedit VoltaUFESAmbiental.txt&
@@ -46,6 +47,7 @@ cd ../poses
 {
 É conveniente pegar os valores de 
 }
+```
 
 # Tutorial
 

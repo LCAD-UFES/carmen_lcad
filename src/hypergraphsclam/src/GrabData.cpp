@@ -981,7 +981,7 @@ void GrabData::BuildLidarMeasuresMT()
 {
     // this thread iterators
     StampedLidarPtrVector::iterator begin = point_cloud_lidar_messages->begin();
-    StampedLidarPtrVector::iterator end = point_cloud_lidar_messages->end();
+//    StampedLidarPtrVector::iterator end = point_cloud_lidar_messages->end();
 
     // the pcl point cloud ICP solver
     GeneralizedICP gicp;

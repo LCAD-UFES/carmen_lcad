@@ -51,7 +51,7 @@ ifeq ($(UBUNTU_VERSION),"16.04")
 endif
 
 # the carmen libraries
-LFLAGS += -lglobal
+LFLAGS += -lglobal -lipc
 
 # the png files
 LFLAGS += -lpng
