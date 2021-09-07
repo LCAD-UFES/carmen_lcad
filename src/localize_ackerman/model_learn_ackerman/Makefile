@@ -6,7 +6,7 @@ SUBDIRS = learn_model_ackerman
 LINK = $(CXX)
 
 CFLAGS += 
-IFLAGS += 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -lreadlog -lkinect_interface -lglobal -lparam_interface -lipc `pkg-config --libs opencv`
 
 MODULE_NAME = MODEL-LEARN ACKERMAN

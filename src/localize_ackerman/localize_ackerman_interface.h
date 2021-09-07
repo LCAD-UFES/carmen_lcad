@@ -138,6 +138,7 @@ carmen_localize_ackerman_publish_particles_message(carmen_localize_ackerman_part
 void
 carmen_localize_ackerman_publish_sensor_message(carmen_localize_ackerman_sensor_message *message);
 
+
 #ifdef __cplusplus
 }
 #endif

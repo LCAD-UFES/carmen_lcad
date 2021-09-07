@@ -6,9 +6,6 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include <carmen/carmen.h>
-#include <stdbool.h>
-#include "prob_measurement_model.h"
 
 #define      DISTANCE_MAP_HUGE_DISTANCE     20
 #define      HUGE_DISTANCE     				32000

@@ -15,6 +15,7 @@ MODULE_NAME = PROB_MODELS
 MODULE_COMMENT = Probabilistic Models LIB 
 
 SOURCES = prob_map.cpp prob_measurement_model.cpp prob_motion_model.cpp prob_monte_carlo.cpp prob_interface.c prob_transforms.cpp
+PUBLIC_INCLUDES = prob_map.h prob_measurement_model.h
 #PUBLIC_INCLUDES = prob_map.h prob_measurement_model.h prob_motion_model.h prob_monte_carlo.h prob_interface.h prob_messages.h prob_transforms.h \
 	prob_types.h
 

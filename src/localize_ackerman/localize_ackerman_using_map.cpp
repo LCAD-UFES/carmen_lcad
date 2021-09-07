@@ -3,7 +3,7 @@
 #include <prob_transforms.h>
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
-
+#include "localize_ackerman_velodyne.h"
 #include "localize_ackerman_using_map.h"
 
 #define	UPDATE_CELLS_CROSSED_BY_RAYS		1

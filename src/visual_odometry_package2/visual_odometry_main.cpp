@@ -275,7 +275,7 @@ compute_v_and_phi(carmen_visual_odometry_pose6d_message *visual_odometry_message
 	carmen_pose_3D_t current_pose = get_carmen_pose_from_visual_odometry_message(visual_odometry_message);
 	carmen_pose_3D_t delta_pose = calculate_delta_pose(current_pose, previous_pose);
 
-	double yaw2 = atan2(delta_pose.position.y, delta_pose.position.x);
+//	double yaw2 = atan2(delta_pose.position.y, delta_pose.position.x);
 
 	static double yaw_velocity = 0.0;
 

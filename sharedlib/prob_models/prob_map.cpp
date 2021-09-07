@@ -1,9 +1,9 @@
+#include <locale.h>
+#include <vector>
 #include <carmen/global.h>
 #include <carmen/carmen.h>
-#include <locale.h>
 #include "prob_measurement_model.h"
 #include "prob_map.h"
-#include <vector>
 
 #define MAX_LOG_ODDS_POSSIBLE	37.0
 

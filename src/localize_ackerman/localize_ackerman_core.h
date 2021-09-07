@@ -40,21 +40,24 @@
 #ifndef CARMEN_LOCALIZE_ACKERMAN_CORE_H
 #define CARMEN_LOCALIZE_ACKERMAN_CORE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <carmen/map.h>
 #include <omp.h>
 #include <carmen/robot_ackerman_messages.h>
 #include <carmen/robot_ackerman_interface.h>
 #include <carmen/base_ackerman_messages.h>
 #include <carmen/fused_odometry_messages.h>
 #include "localize_ackerman_motion.h"
+#include <carmen/fused_odometry_interface.h>
+#include <carmen/velodyne_interface.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define      SMALL_PROB        0.01
-#define      MAX_BEAMS_PER_SCAN   10000
+#define 	MAX_NUMBER_OF_LIDARS 16   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
+#define 	STEREO_MAPPING_SENSOR_INDEX 	10
+
+#define     SMALL_PROB        0.01
+#define     MAX_BEAMS_PER_SCAN   10000
 
 /* #define      LOCALIZECORE_TRACKING_MINLIKELIHOOD        (0.5) */
 /* #define      LOCALIZECORE_GLOBAL_MINLIKELIHOOD          (0.9) */
@@ -363,6 +366,9 @@ calc_global_cell_coordinate(cell_coords_t *local, carmen_map_config_t *local_map
 
 void
 calc_posible_particle_position(carmen_localize_ackerman_particle_filter_p filter, carmen_pose_3D_t pose);
+
+void
+carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, ProbabilisticMapParams *p_map_params);
 
 #ifdef __cplusplus
 }

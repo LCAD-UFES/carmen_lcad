@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-SUBDIRS = model_learn_ackerman
+#SUBDIRS = model_learn_ackerman
 
 CFLAGS += -std=c11 -fopenmp
 CXXFLAGS += -std=c++11 -fopenmp
@@ -41,7 +41,7 @@ LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -l
 MODULE_NAME = LOCALIZE ACKERMAN
 MODULE_COMMENT = Markov Localization Module
 
-SOURCES = localize_ackerman_main.cpp localize_ackerman_using_map.cpp localize_ackerman_likelihood_map.c localize_ackerman_core.c localize_ackerman_interface.c \
+SOURCES = localize_ackerman_main.cpp localize_ackerman_using_map.cpp localize_ackerman_likelihood_map.c localize_ackerman_core.cpp localize_ackerman_interface.c \
 	  localize_ackerman_initialize.c localize_ackerman_motion.c localize_ackerman_velodyne.cpp localize_ackerman_particle_viewer.c
 	  
 PUBLIC_INCLUDES = localize_ackerman_messages.h localize_ackerman_interface.h localize_ackerman_core.h \

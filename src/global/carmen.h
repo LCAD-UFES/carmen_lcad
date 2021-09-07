@@ -175,10 +175,15 @@ extern "C" {
 #include <carmen/velodyne_messages.h>
 #include <carmen/velodyne_interface.h>
 
+#include <carmen/rotation_geometry.h>
+
+#include <carmen/mapper_messages.h>
+
+#include <carmen/prob_measurement_model.h>
+#include <carmen/prob_map.h>
+
 #include <carmen/map_server_messages.h>
 #include <carmen/map_server_interface.h>
-
-#include <carmen/rotation_geometry.h>
 
 #include <carmen/base_ackerman_messages.h>
 #include <carmen/base_ackerman_interface.h>
