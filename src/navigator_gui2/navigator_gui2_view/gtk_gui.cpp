@@ -30,6 +30,7 @@ build_color_gradient()
 	static GdkColor gradient[256];
 	int i;
 	
+	// Vermelho é bom (particula pesada); verde é ruim
 	for (i = 0; i < 256; i++)
 		gradient[i] = carmen_graphics_add_color_rgb(i, 255 - i, 0);
 	
@@ -80,6 +81,7 @@ compute_particle_weight_color(carmen_localize_ackerman_particle_ipc_t *particles
 	}
 	for (index = 0; index < num_particles; index++)
 	{
+		// Vermelho é bom (particula pesada); verde é ruim
 		if ((max_log_prob_weight - min_log_prob_weight) > 0.0)
 			weight_color[index] = (int) (255.0 * ((log_prob_weight[index] - min_log_prob_weight) / (max_log_prob_weight - min_log_prob_weight)));
 		else if (max_log_prob_weight == 0.0)
@@ -1046,8 +1048,8 @@ namespace View
 			break;
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
-			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT /* | CARMEN_GRAPHICS_RESCALE */ | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
-//			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
+//			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT /* | CARMEN_GRAPHICS_RESCALE */ | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 //			flags = 0;
 			break;
 
@@ -2471,6 +2473,7 @@ namespace View
 
 		if (particle_msg.particles != NULL)
 		{
+			// Vermelho é bom (particula pesada); verde é ruim
 			int *weight_color = compute_particle_weight_color(particle_msg.particles, particle_msg.num_particles);
 			
 			for (index = 0; index < particle_msg.num_particles; index++)

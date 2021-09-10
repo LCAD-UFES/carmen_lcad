@@ -176,7 +176,7 @@ carmen_localize_ackerman_create_stretched_probability_map(double **prob, carmen_
 }
 
 
-static void
+void
 carmen_localize_ackerman_create_stretched_log_likelihood_map(double **prob, carmen_localize_ackerman_map_p lmap, double std,
 		double min_likelihood, double max_likelihood, int use_log_odds)
 {

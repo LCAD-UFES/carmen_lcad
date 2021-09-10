@@ -121,6 +121,8 @@ typedef struct {
 #define      CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME         "carmen_robot_ackerman_vel"
 #define      CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT          "{double,double,double,string}"
 
+#define      CARMEN_LIDAR_VELOCITY_NAME         "carmen_lidar_vel"
+#define      CARMEN_LIDAR_VELOCITY_FMT          "{double,double,double,string}"
 
 // Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
 #define      CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME         "carmen_robot_ackerman_vel_2"

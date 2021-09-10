@@ -320,7 +320,7 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
 	static int heartbeat = 0;
 
-//	printf("%lf %lf %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
+//	printf("v %lf, phi %lf, status %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
 	if (ford_escape_hybrid_config->publish_odometry)
 	{
 		robot_ackerman_velocity_message.v = g_XGV_velocity;
@@ -506,6 +506,14 @@ ford_escape_signals_message_handler(carmen_ford_escape_signals_message *msg)
 
 
 static void
+carmen_lidar_velocity_message_handler(carmen_robot_ackerman_velocity_message *message)
+{
+	visual_odometry_pose6d.v = message->v;
+	visual_odometry_pose6d.phi = message->phi;
+}
+
+
+static void
 navigator_ackerman_go_message_handler()
 {
 	change_control_mode_to_wrench_efforts(XGV_CCU);
@@ -660,6 +668,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		if (publish_combined_visual_and_car_odometry)
 			build_combined_visual_and_car_odometry();
+//		printf("*v %lf, phi %lf, status %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
@@ -1037,6 +1046,14 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 static void
 subscribe_to_relevant_messages()
 {
+	if (publish_combined_visual_and_car_odometry)
+		carmen_subscribe_message(
+			(char *) CARMEN_LIDAR_VELOCITY_NAME,
+			(char *) CARMEN_LIDAR_VELOCITY_FMT,
+			NULL, sizeof(carmen_robot_ackerman_velocity_message),
+			(carmen_handler_t) carmen_lidar_velocity_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_subscribe_message(
 			(char *) CARMEN_NAVIGATOR_ACKERMAN_GO_NAME,
 			(char *) CARMEN_DEFAULT_MESSAGE_FMT,

@@ -1479,12 +1479,24 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_free);
+		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
+		{
+			obstacle_evidence = (delta_ray - expected_delta_ray) / expected_delta_ray;
+			if (obstacle_evidence > 1.0)
+				return (sensor_params->log_odds.log_odds_l0);
+		}
 		sigma = sensor_params->unexpeted_delta_range_sigma / 2.0;
 	}
 	else
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_l0);
+		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
+		{
+			obstacle_evidence = (delta_ray - expected_delta_ray) / expected_delta_ray;
+			if (obstacle_evidence > 1.0)
+				return (sensor_params->log_odds.log_odds_l0);
+		}
 		sigma = sensor_params->unexpeted_delta_range_sigma;
 	}
 

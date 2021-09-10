@@ -322,7 +322,7 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 	fscanf(f, "%lf %lf %lf %s", &read_message.v, &read_message.phi,
 			&read_message.timestamp, read_message.host);
 
-	if (strstr(read_message.host, "visual_odometry") != NULL)
+	if ((strstr(read_message.host, "visual_odometry") != NULL) || (strstr(read_message.host, "lidar_odometry") != NULL))
 	{
 		last_visual_odometry_v = read_message.v;
 		last_visual_odometry_phi = read_message.phi;

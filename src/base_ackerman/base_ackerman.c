@@ -91,7 +91,7 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 	static double last_visual_odometry_phi = 0.0;
 
 	int ok_to_publish;
-	if (strstr(robot_ackerman_velocity_message->host, "visual_odometry") != NULL)
+	if ((strstr(robot_ackerman_velocity_message->host, "visual_odometry") != NULL) || (strstr(robot_ackerman_velocity_message->host, "lidar_odometry") != NULL))
 	{
 		last_visual_odometry_v = robot_ackerman_velocity_message->v;
 		last_visual_odometry_phi = robot_ackerman_velocity_message->phi;

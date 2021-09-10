@@ -29,7 +29,7 @@
 #ifndef CARMEN_LIKELIHOOD_ACKERMAN_MAP_H
 #define CARMEN_LIKELIHOOD_ACKERMAN_MAP_H
 
-#include "localize_ackerman_core.h"
+//#include "localize_ackerman_core.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +65,9 @@ void carmen_localize_ackerman_write_distance_map_to_ppm(char *filename,
 void carmen_localize_ackerman_write_likelihood_map_to_ppm(char *filename, 
 						 carmen_localize_ackerman_map_p map,
 						 double **prob);
+
+void carmen_localize_ackerman_create_stretched_log_likelihood_map(double **prob, carmen_localize_ackerman_map_p lmap, double std,
+		double min_likelihood, double max_likelihood, int use_log_odds);
 
 #ifdef __cplusplus
 }
