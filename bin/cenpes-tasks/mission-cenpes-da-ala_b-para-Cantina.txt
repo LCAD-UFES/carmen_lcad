@@ -1,14 +1,24 @@
 #Missao reverse ala b para cantina
 
-
-missao_5:
+missao_1:
 set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-20210830-ala-b-reh.gr
-set course to 7471798.511733, -681535.110586, -2.976039
-go after set course to 7471798.511733, -681535.110586, -2.976039
+#set course to 7471792.10, -681523.06, 1.668
+#go after set course to 7471792.10, -681523.06, 1.668
+#stop
+
+set course to 7471786.406112, -681540.297326, -2.657210
+go after set course to 7471786.406112, -681540.297326, -2.657210
 stop
 
+#missao_2:
+#set route planner graph to data/graphs/graph-rddf-log-ecotech-cenpes-20210831-ala-b-reh-2.gr
+#set course to 7471786.406112, -681540.297326, -2.657210
+#go after set course to 7471786.406112, -681540.297326, -2.657210
+#stop
+
+
 # Missao 6
-set route planner graph to data/graphs/graph_cenpes-20210830.gr
+set route planner graph to data/graphs/graph_cenpes-20210830-1.gr
 set course to 7471657.64, -681512.67, 2.178
 go
 stop
