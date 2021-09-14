@@ -11,10 +11,16 @@ Compile os módulos graphslam e o odometry_calibration
    botão CalibOdo e ecolhendo Start Program. 
 	Notas:
 		- Você DEVE delimitar o "tempo inicial" e "final" a ser considerado no log verificando o tempo no playback control e escolhendo apropriadamente (TEMPO, não timestamp).
-		- Alternativamente, use as flags -l <linha inicial>  e -m <numero de linhas a partir da linha inicial> do arquivo $CARMEN_HOME/bin/calibrate_bias_from_log_config.txt
+		- Ajuste as flags "initial_time" e "final_time" de acordo no arquivo $CARMEN_HOME/bin/calibrate_bias_from_log_config.txt, que é parâmetro do programa de calibração.
 		- Existem outras opções importantes no $CARMEN_HOME/bin/calibrate_bias_from_log_config.txt
 		- Rode mais de uma vez e observe qual a melhor calibração no gráfico final.
 
+3.1. Você pode combinar a odometria do robô com odometrias alternativas no carmen_lcad. Correntemente temos os módulos visual_odometry2 e lidarodom que podem
+     publicar odometrias alternativas. Para isso, existem as seguintes parâmetros no carmen ini:
+	- base_ackerman_publish_combined_odometry <on/off>
+		- Este parâmetro afeta todos os módulos que usam a odometria publicada pelo módulo base_ackerman (todos morro acima). 
+		- Quando ativado, ele combina as mensagens de odometria do robô com as dos módulos que publicam odometrias alternativas.
+		- Ele tem que estar em sintonia com o parâmetro robot_publish_combined_odometry. Para calibracao de odometria de logs esta flags pode ser ativada para misturar odometria visual com a do robo
 3.1. Altere as variaveis abaixo no carmen-ford-escape.ini de acordo com os Resultados do calibrate_bias_from_log (tmp/calibrated_odometry.txt):
 	robot_phi_multiplier				1.056087
 	robot_phi_bias					1.065384

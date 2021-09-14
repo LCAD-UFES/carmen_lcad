@@ -230,6 +230,9 @@ add_odometry_edges(SparseOptimizer *optimizer, double odom_xy_std, double odom_o
 	information = cov.inverse();
 
 	double total_dist = 0.0;
+	if (input_data.size() == 0)
+		exit(printf("Error: input_data.size() == 0 in add_odometry_edges()\n"));
+
 	for (size_t i = 0; i < (input_data.size() - 1); i++)
 	{
 		// Na linha abaixo, o "*" é um overload do * que calcula a delta_odometria (delta_x, delta_y, delta_theta) entre a odometria i + 1 e i.

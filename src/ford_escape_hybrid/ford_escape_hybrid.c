@@ -65,7 +65,7 @@ static double v_multiplier;
 
 int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
 
-carmen_visual_odometry_pose6d_message visual_odometry_pose6d;
+carmen_robot_ackerman_velocity_message alternative_odometry;
 
 int g_go_state = 0;
 
@@ -197,32 +197,32 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 void
 build_combined_visual_and_car_odometry()
 {
-	switch (combine_visual_and_car_odometry_vel)
+	switch (combine_odometry_vel)
 	{
-	case VISUAL_ODOMETRY_VEL:
-		g_XGV_velocity = visual_odometry_pose6d.v;
+	case ALTENATIVE_ODOMETRY_VEL:
+		g_XGV_velocity = alternative_odometry.v;
 		break;
 	case CAR_ODOMETRY_VEL:
 		break;
 
-	case VISUAL_CAR_ODOMETRY_VEL:
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_VEL:
 		//TODO
-		g_XGV_velocity = (g_XGV_velocity + visual_odometry_pose6d.v) / 2.0;
+		g_XGV_velocity = (g_XGV_velocity + alternative_odometry.v) / 2.0;
 		break;
 	default:
 
 		break;
 	}
 
-	switch (combine_visual_and_car_odometry_phi)
+	switch (combine_odometry_phi)
 	{
-	case VISUAL_ODOMETRY_PHI:
-		g_XGV_atan_curvature = get_curvature_from_phi(visual_odometry_pose6d.phi, g_XGV_velocity, ford_escape_hybrid_config);
+	case ALTERNATIVE_ODOMETRY_PHI:
+		g_XGV_atan_curvature = get_curvature_from_phi(alternative_odometry.phi, g_XGV_velocity, ford_escape_hybrid_config);
 		break;
 	case CAR_ODOMETRY_PHI:
 		break;
-	case VISUAL_CAR_ODOMETRY_PHI:
-		g_XGV_atan_curvature = (g_XGV_atan_curvature + get_curvature_from_phi(visual_odometry_pose6d.phi, g_XGV_velocity, ford_escape_hybrid_config)) / 2.0;
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_PHI:
+		g_XGV_atan_curvature = (g_XGV_atan_curvature + get_curvature_from_phi(alternative_odometry.phi, g_XGV_velocity, ford_escape_hybrid_config)) / 2.0;
 		break;
 	default:
 		break;
@@ -508,8 +508,8 @@ ford_escape_signals_message_handler(carmen_ford_escape_signals_message *msg)
 static void
 carmen_lidar_velocity_message_handler(carmen_robot_ackerman_velocity_message *message)
 {
-	visual_odometry_pose6d.v = message->v;
-	visual_odometry_pose6d.phi = message->phi;
+	alternative_odometry.v = message->v;
+	alternative_odometry.phi = message->phi;
 }
 
 
@@ -538,7 +538,8 @@ navigator_ackerman_stop_message_handler()
 static void
 visual_odometry_handler(carmen_visual_odometry_pose6d_message *message)
 {
-	visual_odometry_pose6d = *message;
+	alternative_odometry.v = message->v;
+	alternative_odometry.phi = message->phi;
 }
 
 
@@ -666,7 +667,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
 		g_XGV_velocity = g_XGV_velocity_temp;
 
-		if (publish_combined_visual_and_car_odometry)
+		if (publish_combined_odometry)
 			build_combined_visual_and_car_odometry();
 //		printf("*v %lf, phi %lf, status %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
 
@@ -1022,9 +1023,9 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 
 		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(config->publish_odometry), 0, NULL},
 
-		{"robot", "publish_combined_visual_and_car_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_visual_and_car_odometry), 0, NULL},
-		{"robot", "combine_visual_and_car_odometry_phi", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_phi), 0, NULL},
-		{"robot", "combine_visual_and_car_odometry_vel", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_vel), 0, NULL},
+		{"robot", "publish_combined_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_odometry), 0, NULL},
+		{"robot", "combine_odometry_phi", CARMEN_PARAM_INT, &(combine_odometry_phi), 0, NULL},
+		{"robot", "combine_odometry_vel", CARMEN_PARAM_INT, &(combine_odometry_vel), 0, NULL},
 
 		{"rrt",   "use_mpc",          CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
 		{"rrt",   "use_rlpid",        CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL}
@@ -1046,7 +1047,7 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 static void
 subscribe_to_relevant_messages()
 {
-	if (publish_combined_visual_and_car_odometry)
+	if (publish_combined_odometry)
 		carmen_subscribe_message(
 			(char *) CARMEN_LIDAR_VELOCITY_NAME,
 			(char *) CARMEN_LIDAR_VELOCITY_FMT,
@@ -1082,7 +1083,7 @@ subscribe_to_relevant_messages()
 
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_message_handler,	CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	if (publish_combined_visual_and_car_odometry)
+	if (publish_combined_odometry)
 		carmen_visual_odometry_subscribe_pose6d_message(NULL, (carmen_handler_t) visual_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1141,7 +1142,7 @@ initialize_structures()
 
 	memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS * sizeof(int));
 
-	memset(&visual_odometry_pose6d, 0, sizeof(carmen_visual_odometry_pose6d_message));
+	memset(&alternative_odometry, 0, sizeof(carmen_robot_ackerman_velocity_message));
 }
 
 

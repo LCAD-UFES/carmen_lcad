@@ -37,7 +37,7 @@ double **limits;
 int use_variable_scan_message = -1;
 char variable_scan_message_name[64];
 
-int calibrate_combined_visual_and_car_odometry = 0;
+int combined_odometry = 0;
 
 gsl_interp_accel *acc;
 
@@ -322,7 +322,7 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 	fscanf(f, "%lf %lf %lf %s", &read_message.v, &read_message.phi,
 			&read_message.timestamp, read_message.host);
 
-	if ((strstr(read_message.host, "visual_odometry") != NULL) || (strstr(read_message.host, "lidar_odometry") != NULL))
+	if ((strstr(read_message.host, "visual_odometry") != NULL) || (strstr(read_message.host, "lidarodom") != NULL))
 	{
 		last_visual_odometry_v = read_message.v;
 		last_visual_odometry_phi = read_message.phi;
@@ -333,31 +333,31 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 		last_robot_phi = read_message.phi;
 	}
 
-	switch (combine_visual_and_car_odometry_phi)
+	switch (combine_odometry_phi)
 	{
-	case VISUAL_ODOMETRY_PHI:
+	case ALTERNATIVE_ODOMETRY_PHI:
 		robot_ackerman_velocity_message->phi = last_visual_odometry_phi;
 		break;
 	case CAR_ODOMETRY_PHI:
 		robot_ackerman_velocity_message->phi = last_robot_phi;
 		break;
-	case VISUAL_CAR_ODOMETRY_PHI:
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_PHI:
 		robot_ackerman_velocity_message->phi = carmen_normalize_theta((last_visual_odometry_phi + last_robot_phi) / 2.0);
 		break;
 	default:
 		break;
 	}
 
-	switch (combine_visual_and_car_odometry_vel)
+	switch (combine_odometry_vel)
 	{
-	case VISUAL_ODOMETRY_VEL:
+	case ALTENATIVE_ODOMETRY_VEL:
 		robot_ackerman_velocity_message->v = last_visual_odometry_v;
 		break;
 	case CAR_ODOMETRY_VEL:
 		robot_ackerman_velocity_message->v = last_robot_v;
 		break;
 
-	case VISUAL_CAR_ODOMETRY_VEL:
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_VEL:
 		robot_ackerman_velocity_message->v = (last_visual_odometry_v + last_robot_v) / 2.0;
 		break;
 	default:
@@ -408,7 +408,7 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 		{
 			carmen_robot_ackerman_velocity_message m;
 
-			if (calibrate_combined_visual_and_car_odometry)
+			if (combined_odometry)
 				build_combined_visual_and_car_odometry(&m, f);
 			else
 				m = read_odometry(f);
@@ -1067,7 +1067,7 @@ set_limits(int dim, CommandLineArguments *args)
 }
 
 
-void
+static void
 declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 {
 	args->add_positional<string>("log_path", "Path to a log");
@@ -1078,7 +1078,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
 	args->add<int>("board_to_use", "Id of the sensor board that will be used for the calibration", 1);
 	args->add<int>("use_non_linear_phi", "0 - linear phi; 1 - use a spline to map phi to a new phi", 0);
-	args->add<int>("calibrate_combined_visual_and_car_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
+	args->add<int>("combined_visual_and_car_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
 	args->add<int>("n_particles,n", "Number of particles", 500);
 	args->add<int>("n_iterations,i", "Number of iterations", 300);
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
@@ -1105,7 +1105,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 }
 
 
-void
+static void
 initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParamFile *carmen_ini_params)
 {
 	gps_to_use = args->get<int>("gps_to_use");
@@ -1135,15 +1135,14 @@ initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParam
 		initialize_car_objects_poses_in_transformer(carmen_ini_params, &pso_data, gps_to_use, board_to_use, i);
 	}
 
-	//parameters to chose robot_ackerman message from visual_odometry and ford_escape
-	calibrate_combined_visual_and_car_odometry = args->get<int>("calibrate_combined_visual_and_car_odometry");
-	combine_visual_and_car_odometry_phi = carmen_ini_params->get<int>("robot_combine_visual_and_car_odometry_phi");
-	combine_visual_and_car_odometry_vel = carmen_ini_params->get<int>("robot_combine_visual_and_car_odometry_vel");
-
+	combined_odometry = args->get<int>("combined_odometry");
+	// See the carmen ini file
+	combine_odometry_phi = carmen_ini_params->get<int>("robot_combine_odometry_phi");
+	combine_odometry_vel = carmen_ini_params->get<int>("robot_combine_odometry_vel");
 }
 
 
-void
+static void
 read_command_line_param_raw(int &argc, char **argv)
 {
 	for (int i = 0; i < argc; i++)
@@ -1168,7 +1167,6 @@ main(int argc, char **argv)
 	read_command_line_param_raw(argc, argv);
 
 	CommandLineArguments args;
-
 	declare_and_parse_args(argc, argv, &args);
 
 	CarmenParamFile *carmen_ini_params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());

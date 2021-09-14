@@ -8,6 +8,8 @@
 #include <carmen/Utm_Coord_3d.h>
 #include <carmen/Gdc_To_Utm_Converter.h>
 #include <carmen/ford_escape_hybrid.h>
+#include <carmen/command_line.h>
+#include <carmen/carmen_param_file.h>
 
 #include "velodyne_util.h"
 
@@ -50,10 +52,13 @@ double distance_between_front_and_rear_axles;
 
 int use_velodyne_timestamp_in_odometry = 0;
 
-int combined_visual_and_car_odometry = 1;
+int combined_odometry = 0;
 
 int use_variable_scan_message = -1;
 char variable_scan_message_name[64];
+
+double initial_time;
+double final_time;
 
 
 template<class message_type> int
@@ -355,7 +360,7 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 			&read_message.timestamp, read_message.host);
 
 	bool ok_to_process;
-	if ((strstr(read_message.host, "visual_odometry") != NULL) || (strstr(read_message.host, "lidar_odometry") != NULL))
+	if ((strstr(read_message.host, "visual_odometry") != NULL) || (strstr(read_message.host, "lidarodom") != NULL))
 	{
 		last_visual_odometry_v = read_message.v;
 		last_visual_odometry_phi = read_message.phi;
@@ -368,31 +373,31 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 		ok_to_process = true;
 	}
 
-	switch (combine_visual_and_car_odometry_phi)
+	switch (combine_odometry_phi)
 	{
-	case VISUAL_ODOMETRY_PHI:
+	case ALTERNATIVE_ODOMETRY_PHI:
 		robot_ackerman_velocity_message->phi = last_visual_odometry_phi;
 		break;
 	case CAR_ODOMETRY_PHI:
 		robot_ackerman_velocity_message->phi = last_robot_phi;
 		break;
-	case VISUAL_CAR_ODOMETRY_PHI:
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_PHI:
 		robot_ackerman_velocity_message->phi = carmen_normalize_theta((last_visual_odometry_phi + last_robot_phi) / 2.0);
 		break;
 	default:
 		break;
 	}
 
-	switch (combine_visual_and_car_odometry_vel)
+	switch (combine_odometry_vel)
 	{
-	case VISUAL_ODOMETRY_VEL:
+	case ALTENATIVE_ODOMETRY_VEL:
 		robot_ackerman_velocity_message->v = last_visual_odometry_v;
 		break;
 	case CAR_ODOMETRY_VEL:
 		robot_ackerman_velocity_message->v = last_robot_v;
 		break;
 
-	case VISUAL_CAR_ODOMETRY_VEL:
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_VEL:
 		robot_ackerman_velocity_message->v = (last_visual_odometry_v + last_robot_v) / 2.0;
 		break;
 	default:
@@ -440,7 +445,7 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 		{
 			bool ok_to_process = true;
 			carmen_robot_ackerman_velocity_message m;
-			if (combined_visual_and_car_odometry)
+			if (combined_odometry)
 				ok_to_process = build_combined_visual_and_car_odometry(&m, f);
 			else
 				m = read_odometry(f);
@@ -477,7 +482,7 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 }
 
 
-void
+static void
 read_command_line_param_raw(int &argc, char **argv)
 {
 	for (int i = 0; i < argc; i++)
@@ -493,21 +498,33 @@ read_command_line_param_raw(int &argc, char **argv)
 			argc = argc - 2;
 		}
 	}
+}
 
-	for (int i = 0; i < argc; i++)
-	{
-		if (strcmp(argv[i], "-combined_visual_and_car_odometry") == 0)
-		{
-			combined_visual_and_car_odometry = 1;
-			combine_visual_and_car_odometry_phi = atoi(argv[i + 1]);
-			combine_visual_and_car_odometry_vel = atoi(argv[i + 2]);
 
-			for (i = i + 3; i < argc; i++)
-				argv[i - 3] = argv[i];
+static void
+declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
+{
+	args->add_positional<string>("log_path", "Path to a log");
+	args->add_positional<string>("odometry_calibration_path", "Path to the odometry calibration file");
+	args->add_positional<string>("sync_path", "Path to the output sync file");
+	args->add_positional<string>("carmen_ini", "Path to a file containing system parameters");
+	args->add<int>("calibrate_combined_visual_and_car_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
+	args->add<double>("initial_time", "Initial time to consider for odometry calibration", 0.0);
+	args->add<double>("final_time", "Final time to consider for odometry calibration", 9999999999999.0);
+	args->parse(argc, argv);
+}
 
-			argc = argc - 3;
-		}
-	}
+
+static void
+initialize_parameters(CommandLineArguments *args, CarmenParamFile *carmen_ini_params)
+{
+	initial_time = args->get<double>("initial_time");
+	final_time = args->get<double>("final_time");
+
+	combined_odometry = args->get<int>("combined_odometry");
+	// See the carmen ini file
+	combine_odometry_phi = carmen_ini_params->get<int>("robot_combine_odometry_phi");
+	combine_odometry_vel = carmen_ini_params->get<int>("robot_combine_odometry_vel");
 }
 
 
@@ -516,20 +533,13 @@ main(int argc, char **argv)
 {
 	read_command_line_param_raw(argc, argv);
 
-	if (argc < 4)
-		exit(printf("Number of parameters invalid!\n Usage %s <log_file> <odometry_calibration_file> <sync_file> [<initial_time> <final_time>]\n", argv[0]));
+	CommandLineArguments args;
+	declare_and_parse_args(argc, argv, &args);
 
-	double initial_time = 0.0;
-	double final_time = 9999999999999.0;
-	if (argc == 5)
-		initial_time = atof(argv[4]);
-	if (argc == 6)
-	{
-		initial_time = atof(argv[4]);
-		final_time = atof(argv[5]);
-	}
+	CarmenParamFile *carmen_ini_params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
+	initialize_parameters(&args, carmen_ini_params);
 
-	FILE *odometry_calibration_file = safe_fopen(argv[2], "r");
+	FILE *odometry_calibration_file = safe_fopen(args.get<string>("odometry_calibration_path").c_str(), "r");
 	double v_multiplier, v_bias, phi_multiplier, phi_bias, initial_angle, gps_latency, L;
 	int gps_to_use;
 	fscanf(odometry_calibration_file, "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf, GPS to use: %d, GPS Latency: %lf, L: %lf",
@@ -537,9 +547,9 @@ main(int argc, char **argv)
 //	printf("v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf, GPS to use: %d, GPS Latency: %lf, L: %lf\n",
 //			v_multiplier, v_bias, phi_multiplier, phi_bias, initial_angle, gps_to_use, gps_latency, L);
 
-	output_file = safe_fopen(argv[3], "w");
+	output_file = safe_fopen(args.get<string>("sync_path").c_str(), "w");
 
-	generate_sync_file(argv[1], gps_to_use, gps_latency, initial_time, final_time,
+	generate_sync_file(args.get<string>("log_path").c_str(), gps_to_use, gps_latency, initial_time, final_time,
 			v_multiplier, phi_multiplier, phi_bias, L, initial_angle);
 
 	fclose(output_file);

@@ -6,7 +6,7 @@ board_to_use = 1
 use_non_linear_phi = 0
 # 0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)
 # Change the options in your carmen.ini (robot_combine_visual_and_car_odometry_phi and robot_combine_visual_and_car_odometry_phi parameters)
-calibrate_combined_visual_and_car_odometry = 0
+combined_visual_and_car_odometry = 0
 # Number of particles
 n_particles = 500
 # Number of iterations
@@ -18,7 +18,7 @@ max_log_lines = -1
 # Flag indicating if the visualization should run or not.
 view = 1
 # Initial time to consider for odometry calibration
-initial_time = 0
+initial_time = 26
 # Final time to consider for odometry calibration
 final_time = 500
 # Lower limit of velocity multiplier

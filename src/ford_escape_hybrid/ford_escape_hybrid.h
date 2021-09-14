@@ -39,17 +39,17 @@
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
 
-int publish_combined_visual_and_car_odometry = 0;
-int combine_visual_and_car_odometry_phi;
-int combine_visual_and_car_odometry_vel;
-//combine_visual_and_car_odometry options
-#define VISUAL_ODOMETRY_PHI 1
+int publish_combined_odometry = 0;
+int combine_odometry_phi;
+int combine_odometry_vel;
+//combine_odometry options
+#define ALTERNATIVE_ODOMETRY_PHI 1
 #define CAR_ODOMETRY_PHI 2
-#define VISUAL_CAR_ODOMETRY_PHI 3
+#define ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_PHI 3
 
-#define VISUAL_ODOMETRY_VEL 1
+#define ALTENATIVE_ODOMETRY_VEL 1
 #define CAR_ODOMETRY_VEL 2
-#define VISUAL_CAR_ODOMETRY_VEL 3
+#define ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_VEL 3
 
 
 

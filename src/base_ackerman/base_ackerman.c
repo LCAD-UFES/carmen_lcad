@@ -82,19 +82,19 @@ add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double
 
 
 int
-build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message,
+build_combined_odometry(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message,
 		double *odometry_v, double *odometry_phi)
 {
 	static double last_robot_v = 0.0;
-	static double last_visual_odometry_v = 0.0;
+	static double last_alternative_odometry_v = 0.0;
 	static double last_robot_phi = 0.0;
-	static double last_visual_odometry_phi = 0.0;
+	static double last_alternative_odometry_phi = 0.0;
 
 	int ok_to_publish;
-	if ((strstr(robot_ackerman_velocity_message->host, "visual_odometry") != NULL) || (strstr(robot_ackerman_velocity_message->host, "lidar_odometry") != NULL))
+	if ((strstr(robot_ackerman_velocity_message->host, "visual_odometry") != NULL) || (strstr(robot_ackerman_velocity_message->host, "lidarodom") != NULL))
 	{
-		last_visual_odometry_v = robot_ackerman_velocity_message->v;
-		last_visual_odometry_phi = robot_ackerman_velocity_message->phi;
+		last_alternative_odometry_v = robot_ackerman_velocity_message->v;
+		last_alternative_odometry_phi = robot_ackerman_velocity_message->phi;
 		ok_to_publish = 0;
 	}
 	else
@@ -104,32 +104,32 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 		ok_to_publish = 1;
 	}
 
-	switch (combine_visual_and_car_odometry_phi)
+	switch (combine_odometry_phi)
 	{
-	case VISUAL_ODOMETRY_PHI:
-		robot_ackerman_velocity_message->phi = last_visual_odometry_phi;
+	case ALTERNATIVE_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = last_alternative_odometry_phi;
 		break;
 	case CAR_ODOMETRY_PHI:
 		robot_ackerman_velocity_message->phi = last_robot_phi;
 		break;
-	case VISUAL_CAR_ODOMETRY_PHI:
-		robot_ackerman_velocity_message->phi = carmen_normalize_theta((last_visual_odometry_phi + last_robot_phi) / 2.0);
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_PHI:
+		robot_ackerman_velocity_message->phi = carmen_normalize_theta((last_alternative_odometry_phi + last_robot_phi) / 2.0);
 		break;
 	default:
 		break;
 	}
 
-	switch (combine_visual_and_car_odometry_vel)
+	switch (combine_odometry_vel)
 	{
-	case VISUAL_ODOMETRY_VEL:
-		robot_ackerman_velocity_message->v = last_visual_odometry_v;
+	case ALTENATIVE_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = last_alternative_odometry_v;
 		break;
 	case CAR_ODOMETRY_VEL:
 		robot_ackerman_velocity_message->v = last_robot_v;
 		break;
 
-	case VISUAL_CAR_ODOMETRY_VEL:
-		robot_ackerman_velocity_message->v = (last_visual_odometry_v + last_robot_v) / 2.0;
+	case ALTERNATIVE_COMBINED_WITH_CAR_ODOMETRY_VEL:
+		robot_ackerman_velocity_message->v = (last_alternative_odometry_v + last_robot_v) / 2.0;
 		break;
 	default:
 
@@ -207,8 +207,8 @@ robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ac
 		add_legacy_adometry_limitations(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
 							robot_ackerman_velocity_message->timestamp);
-	else if (publish_combined_visual_and_car_odometry)
-		ok_to_publish = build_combined_visual_and_car_odometry(robot_ackerman_velocity_message,
+	else if (publish_combined_odometry)
+		ok_to_publish = build_combined_odometry(robot_ackerman_velocity_message,
 							&(car_config->v), &(car_config->phi));
 	else
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
@@ -259,9 +259,9 @@ read_parameters(int argc, char *argv[], carmen_base_ackerman_config_t *config)
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 1, NULL},
 		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
-		{"base_ackerman", "publish_combined_visual_and_car_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_visual_and_car_odometry), 0, NULL},
-		{"robot", "combine_visual_and_car_odometry_phi", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_phi), 0, NULL},
-		{"robot", "combine_visual_and_car_odometry_vel", CARMEN_PARAM_INT, &(combine_visual_and_car_odometry_vel), 0, NULL},
+		{"base_ackerman", "publish_combined_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_odometry), 0, NULL},
+		{"robot", "combine_odometry_phi", CARMEN_PARAM_INT, &(combine_odometry_phi), 0, NULL},
+		{"robot", "combine_odometry_vel", CARMEN_PARAM_INT, &(combine_odometry_vel), 0, NULL},
 
 	};
 
