@@ -15,6 +15,7 @@
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/route_planner_interface.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/rddf_messages.h>
 #include "obstacle_distance_mapper_datmo.h"
 
 
@@ -195,6 +196,23 @@ compute_orm_and_irm_occupancy_maps(carmen_map_t *orm_occupancy_map, carmen_map_t
 }
 
 
+bool
+near_barrier()
+{
+	if (!path_goals_and_annotations_message)
+		return (false);
+
+	for (int i = 0; i < path_goals_and_annotations_message->number_of_poses; i++)
+	{
+		if ((path_goals_and_annotations_message->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER) &&
+			(DIST2D(path_goals_and_annotations_message->poses[i], path_goals_and_annotations_message->poses[0]) < 8.0))
+			return (true);
+	}
+
+	return (false);
+}
+
+
 void 
 moving_objects_detection_tracking_publishing_and_occupancy_map_removal(carmen_map_t &occupancy_map, double timestamp)
 {
@@ -203,10 +221,15 @@ moving_objects_detection_tracking_publishing_and_occupancy_map_removal(carmen_ma
 
 	carmen_moving_objects_point_clouds_message *moving_objects = obstacle_distance_mapper_datmo(road_network_message,
 			occupancy_map, offline_map, timestamp);
+
 	if (moving_objects)
 	{
+		int num_moving_objects = moving_objects->num_point_clouds;
+		if (near_barrier())
+			moving_objects->num_point_clouds = 0;
 		carmen_moving_objects_point_clouds_publish_message(moving_objects);
 		obstacle_distance_mapper_remove_moving_objects_from_occupancy_map(&occupancy_map, moving_objects);
+		moving_objects->num_point_clouds = num_moving_objects;
 		obstacle_distance_mapper_free_moving_objects_message(moving_objects);
 	}
 }
