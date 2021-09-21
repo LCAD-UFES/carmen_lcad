@@ -1,5 +1,54 @@
 ## Vision Transformers for Dense Prediction
 
+#### Como usar no carmen_lcad
+
+1. Faça o Download dos pesos da rede DPT
+    ```shell
+    cd $CARMEN_HOME/src/virtual_depth_estimator/DPT
+    ```
+    ```shell
+    make download
+    ```
+
+1. Crie a virtualenv para instalar as dependências:
+    ```shell
+    cd $CARMEN_HOME/src/virtual_depth_estimator/DPT
+    ```
+    ```shell
+    ./create_env.sh
+    ```
+
+1. Compile:
+    ```shell
+    cd $CARMEN_HOME/src/virtual_depth_estimator/
+    ```
+    ```shell
+    make
+    ```
+
+1. Exemplo de execução:
+    ```shell
+    ./central
+    ```
+
+1. LOG utilizado: log_ufes_aeroporto-20200325.txt
+    ```shell
+    ./proccontrol process-playback-fovea.ini 
+    ```
+
+1. Ative a venv:
+    ```shell
+    source $CARMEN_HOME/src/virtual_depth_estimator/DPT/venv/bin/activate
+    ```
+1.  Execute o código
+    ```shell
+    (venv) > ./virtual_depth -camera3 1
+    ```
+
+
+
+### Readme Original DPT:
+
 This repository contains code and models for our [paper](https://arxiv.org/abs/2103.13413):
 
 > Vision Transformers for Dense Prediction  
