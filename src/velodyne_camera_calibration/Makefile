@@ -15,7 +15,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/loc
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
 		  `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-		  -lboost_thread-mt -lrt -lboost_signals -lboost_system 
+		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lparam_interface
 LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 			-lpcl_segmentation # -lvtkRendering -lvtkFiltering -lvtkCommon
 
@@ -26,13 +26,19 @@ PUBLIC_INCLUDES = velodyne_camera_calibration.h
 PUBLIC_LIBRARIES = libvelodyne_camera_calibration.a
 PUBLIC_BINARIES = 
 #TARGETS = velodyne_camera_calibration_main velodyne_camera_calibration_manual velodyne_camera_publish_range save_velodyne_txt libvelodyne_camera_calibration.a
-TARGETS = velodyne_camera_calibration_main velodyne_camera_publish_range libvelodyne_camera_calibration.a #save_velodyne_txt
+TARGETS = velodyne_interface visual_tracker velodyne_camera_calibration_main velodyne_camera_publish_range libvelodyne_camera_calibration.a #save_velodyne_txt
 #TARGETS += visual_tracker
 
-#visual_tracker:
-#	$(MAKE) -C $(CARMEN_HOME)/src/visual_tracker
+velodyne_interface:
+	$(MAKE) -C $(CARMEN_HOME)/src/velodyne
 
-clean: clean_visual_tracker
+visual_tracker:
+	$(MAKE) -C $(CARMEN_HOME)/src/visual_tracker
+
+clean: clean_velodyne_interface clean_visual_tracker
+
+clean_velodyne_interface:
+	$(MAKE) clean -C $(CARMEN_HOME)/src/velodyne
 
 clean_visual_tracker:
 	$(MAKE) clean -C $(CARMEN_HOME)/src/visual_tracker

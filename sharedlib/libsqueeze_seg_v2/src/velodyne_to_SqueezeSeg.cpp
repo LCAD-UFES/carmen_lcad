@@ -35,8 +35,17 @@ void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message
 
     ofstream point_cloud_file;
     char *pPath = getenv ("CARMEN_HOME");
-    point_cloud_file.open( std::string(pPath) + "/sharedlib/libsqueeze_seg_v2/data/samples_IARA/" + std::to_string(timestamp) + ".txt");
-    point_cloud_file << "# Array shape: (32, " << velodyne_message->number_of_32_laser_shots << ", 5)\n";
+    point_cloud_file.open( std::string(pPath) + "/sharedlib/libsqueeze_seg_v2/data/samples_IARA/" + std::to_string(timestamp) + ".pcd");
+    // point_cloud_file << "# Array shape: (32, " << velodyne_message->number_of_32_laser_shots << ", 5)\n";
+    point_cloud_file << "# .PCD v.7 - Point Cloud Data file format\n";
+    point_cloud_file << "VERSION .7\nFIELDS x y z intensity range\nSIZE 4 4 4 4 4\n";
+    point_cloud_file << "TYPE F F F F F\nCOUNT 1 1 1 1 1\n";
+    point_cloud_file << "WIDTH " + std::to_string(velodyne_message->number_of_32_laser_shots) + "\n";
+    point_cloud_file << "HEIGHT " + std::to_string(vertical_resolution) + "\n";
+    point_cloud_file << "VIEWPOINT 0 0 0 1 0 0 0\n";
+    point_cloud_file << "POINTS " + std::to_string(vertical_resolution * velodyne_message->number_of_32_laser_shots) +"\n";
+    point_cloud_file << "DATA ascii\n";
+
     //std::cout << "SqueezeSeg: pointCloud file in $CARMEN_HOME/sharedlib/salsanet/data/" << std::to_string(timestamp) << ".txt" << std::endl;
     for (j = vertical_resolution, line = 0; j > 0; j--)
     {

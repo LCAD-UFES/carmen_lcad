@@ -18,7 +18,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/loc
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lvelodyne_camera_calibration
 LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
 		  `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration
+		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration -lvelodyne_interface -lparam_interface
 
 SOURCES = libsqueeze_seg.cpp velodyne_to_SqueezeSeg.cpp
  
@@ -26,7 +26,7 @@ PUBLIC_INCLUDES = libsqueeze_seg.h
 PUBLIC_LIBRARIES = libsqueeze_seg.a
 PUBLIC_BINARIES = velodyne_to_SqueezeSeg
 
-TARGETS = libprob_models.a velodyne_camera_calibration libsqueeze_seg.a # velodyne_to_SqueezeSeg
+TARGETS = libprob_models.a libsqueeze_seg.a libvelodyne_interface.a velodyne_camera_calibration velodyne_to_SqueezeSeg 
 PUBLIC_LIBRARIES_SO =
 
 libprob_models.a: 
@@ -35,6 +35,9 @@ libprob_models.a:
 libsqueeze_seg.a: libsqueeze_seg.o
 
 velodyne_to_SqueezeSeg: libsqueeze_seg.o velodyne_to_SqueezeSeg.o
+
+libvelodyne_interface.a:
+	$(MAKE) -C $(CARMEN_HOME)/src/velodyne
 
 velodyne_camera_calibration:
 	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
