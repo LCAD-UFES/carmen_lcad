@@ -1078,7 +1078,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
 	args->add<int>("board_to_use", "Id of the sensor board that will be used for the calibration", 1);
 	args->add<int>("use_non_linear_phi", "0 - linear phi; 1 - use a spline to map phi to a new phi", 0);
-	args->add<int>("combined_visual_and_car_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
+	args->add<int>("combined_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
 	args->add<int>("n_particles,n", "Number of particles", 500);
 	args->add<int>("n_iterations,i", "Number of iterations", 300);
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
