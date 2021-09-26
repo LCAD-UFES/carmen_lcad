@@ -43,10 +43,18 @@ non_linear_range(double x, double non_linear_factor)
 
 	return (exp(non_linear_factor * x) - 1.0) / (exp(non_linear_factor) - 1.0);
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Publishers																					//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
-send_base_velocity_command(double tv, double rv)
+publish_base_velocity_command(double tv, double rv)
 {
 	static carmen_base_ackerman_velocity_message v;
 	int num_commands = 1;
@@ -70,14 +78,6 @@ send_base_velocity_command(double tv, double rv)
 
 	free(msg);
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//																								//
-// Publishers																					//
-//																								//
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -119,7 +119,7 @@ direct_v_and_phi_joystick_mode(double *command_v, double *command_phi)
 	{
 		publish_behavior_selector_current_state(&behavior_selector_state_message);
 		fprintf(stderr, "V %.2f   Phi %.2f\n", *command_v, *command_phi);
-		send_base_velocity_command(*command_v, *command_phi);
+		publish_base_velocity_command(*command_v, *command_phi);
 	}
 
 	if (joystick.buttons[8])
@@ -132,7 +132,7 @@ direct_v_and_phi_joystick_mode(double *command_v, double *command_phi)
 			fprintf(stderr, "Joystick deactivated!\n");
 			*command_v = 0.0;
 			*command_phi = 0.0;
-			send_base_velocity_command(0.0, 0.0);
+			publish_base_velocity_command(0.0, 0.0);
 		}
 		carmen_ipc_sleep(0.3);
 	}
@@ -202,7 +202,7 @@ default_joystick_mode(double *command_v, double *command_phi)
 	if (joystick_activated)
 	{
 		fprintf(stderr, "V %.2f   Phi %.2f\n", *command_v, *command_phi);
-		send_base_velocity_command(*command_v, *command_phi);
+		publish_base_velocity_command(*command_v, *command_phi);
 	}
 	if (joystick.buttons[8])
 	{
@@ -214,7 +214,7 @@ default_joystick_mode(double *command_v, double *command_phi)
 			fprintf(stderr, "Joystick deactivated!\n");
 			*command_v = 0.0;
 			*command_phi = 0.0;
-			send_base_velocity_command(0.0, 0.0);
+			publish_base_velocity_command(0.0, 0.0);
 		}
 		carmen_ipc_sleep(0.3);
 	}
@@ -234,7 +234,7 @@ sig_handler(int x)
 {
 	if (x == SIGINT)
 	{
-		send_base_velocity_command(0, 0);
+		publish_base_velocity_command(0, 0);
 		carmen_close_joystick(&joystick);
 		carmen_ipc_disconnect();
 		printf("Disconnected from robot.\n");
