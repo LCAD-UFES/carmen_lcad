@@ -899,7 +899,8 @@ set_path_using_symotha(const carmen_robot_and_trailer_traj_point_t current_robot
 		{
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
 				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi,
-				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
+				road_network_message->annotations, road_network_message->annotations_codes, road_network_message,
+				&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
 		else
@@ -1081,7 +1082,8 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 		{
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
 				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi,
-				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
+				road_network_message->annotations, road_network_message->annotations_codes, road_network_message,
+				&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
 		else

@@ -42,7 +42,8 @@ frenet_path_planner_build_frenet_path_plan(carmen_robot_and_trailer_traj_point_t
 		carmen_robot_and_trailer_traj_point_t *poses_back,
 		int num_poses, int num_poses_back, carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
 		int *annotations, int *annotations_codes,
-		carmen_route_planner_road_network_message *road_network_message, double timestamp);
+		carmen_route_planner_road_network_message *road_network_message,
+		carmen_behavior_selector_state_message *behavior_selector_state_message, double timestamp);
 
 #ifdef __cplusplus
 }
