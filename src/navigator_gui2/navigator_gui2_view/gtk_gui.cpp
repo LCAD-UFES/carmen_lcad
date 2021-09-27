@@ -3050,10 +3050,13 @@ namespace View
 		if ((placement_status == ORIENTING_FINAL_GOAL) || (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER) ||
 				(placement_status == ORIENTING_ROBOT) || (placement_status == ORIENTING_ROBOT_SEMI_TRAILER))
 		{
+			carmen_world_robot_and_trailer_pose_t *draw_point;
+			GdkColor *colour;
+
 			if ((placement_status == ORIENTING_FINAL_GOAL) || (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER))
 			{
-				GdkColor *colour = &carmen_red;
-				carmen_world_robot_and_trailer_pose_t *draw_point = &final_goal;
+				colour = &carmen_red;
+				draw_point = &final_goal;
 
 				if (placement_status == ORIENTING_FINAL_GOAL)
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
@@ -3065,11 +3068,19 @@ namespace View
 				draw_robot_shape(the_map_view, draw_point, FALSE, &carmen_black);
 
 				carmen_world_point_t mirrored_cursor_pos = cursor_pos;
-				mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
-				mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
-
+				if (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER)
+				{
+					mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (draw_point->pose.x - semi_trailer_config->M * cos(draw_point->pose.theta)));
+					mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (draw_point->pose.y - semi_trailer_config->M * sin(draw_point->pose.theta)));
+				}
+				else
+				{
+					mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
+					mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
+				}
 				carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
 						&cursor_pos);
+
 				carmen_world_point_t draw_point_without_beta;
 				draw_point_without_beta.map = draw_point->map;
 				draw_point_without_beta.pose.x = draw_point->pose.x;
@@ -3079,8 +3090,8 @@ namespace View
 			}
 			else
 			{
-				GdkColor *colour = &carmen_red;
-				carmen_world_robot_and_trailer_pose_t *draw_point = &robot_temp;
+				colour = &carmen_red;
+				draw_point = &robot_temp;
 
 				if (placement_status == ORIENTING_ROBOT)
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
@@ -3091,12 +3102,8 @@ namespace View
 				draw_robot_shape(the_map_view, draw_point, TRUE, colour);
 				draw_robot_shape(the_map_view, draw_point, FALSE, &carmen_black);
 
-				carmen_world_point_t mirrored_cursor_pos = cursor_pos;
-				mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
-				mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
 
-				carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
-						&cursor_pos);
+
 				carmen_world_point_t draw_point_without_beta;
 				draw_point_without_beta.map = draw_point->map;
 				draw_point_without_beta.pose.x = draw_point->pose.x;
@@ -3104,6 +3111,20 @@ namespace View
 				draw_point_without_beta.pose.theta = draw_point->pose.theta;
 				draw_orientation_mark(the_map_view, &draw_point_without_beta);
 			}
+
+			carmen_world_point_t mirrored_cursor_pos = cursor_pos;
+			if ((placement_status == ORIENTING_ROBOT_SEMI_TRAILER) || (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER))
+			{
+				mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (draw_point->pose.x - semi_trailer_config->M * cos(draw_point->pose.theta)));
+				mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (draw_point->pose.y - semi_trailer_config->M * sin(draw_point->pose.theta)));
+			}
+			else
+			{
+				mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
+				mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
+			}
+			carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
+					&cursor_pos);
 		}
 		else
 		{
