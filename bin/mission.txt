@@ -18,9 +18,9 @@ go after set course to 7757856.47, -363577.52, -2.518  # fica nesta task ateh o 
 stop # tira de modo autonomo
 
 # Estacionamento da Cantina do CT
-	park at 7757870.73, -363601.35, -0.879
-	go after park at 7757870.73, -363601.35, -0.879  # fica nesta task ateh o fim do curso 
-	stop # tira de modo autonomo
+park at 7757870.73, -363601.35, -0.879
+go after park at 7757870.73, -363601.35, -0.879  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
 
 # Estacionamento do NTI
 set course to 7757767.03, -363818.23, 2.298
