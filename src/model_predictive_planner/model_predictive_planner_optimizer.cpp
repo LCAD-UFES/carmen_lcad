@@ -449,8 +449,9 @@ simulate_car_from_parameters(TrajectoryDimensions &td,
 	gsl_spline_free(phi_spline);
 
 	carmen_robot_and_trailer_path_point_t furthest_point;
-	td.dist = get_max_distance_in_path(path, furthest_point);
+	td.dist = get_max_distance_in_path(path, furthest_point);	// @@@ Alberto: Por que nao o ultimo do ponto do path?
 	td.theta = atan2(furthest_point.y, furthest_point.x);
+	td.beta = furthest_point.beta;
 	td.d_yaw = furthest_point.theta;
 	td.phi_i = tcp.k[0];
 	td.v_i = v0;
@@ -831,6 +832,29 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 
 
 double
+get_distance_dependent_activation_factor(double threshold, ObjectiveFunctionParams *my_params)
+{
+	double activation_factor = 1.0;
+	if (my_params->target_td->dist < threshold)
+	{
+		if (my_params->target_td->dist > (threshold - 1.0))
+			activation_factor = my_params->target_td->dist - (threshold - 1.0);
+		else
+			activation_factor = 0.0;
+	}
+
+	return (activation_factor);
+}
+
+
+double
+get_beta_activation_factor()
+{
+	return ((GlobalState::semi_trailer_config.type == 0)? 0.0: 10.0);
+}
+
+
+double
 mpp_optimization_function_f(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
@@ -846,18 +870,12 @@ mpp_optimization_function_f(const gsl_vector *x, void *params)
 		(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
 		(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
 
-	double activate_factor = 1.0;
-	if (my_params->target_td->dist < 4.0)
-	{
-		if (my_params->target_td->dist > 3.0)
-			activate_factor = my_params->target_td->dist - 3.0;
-		else
-			activate_factor = 0.0;
-	}
-
+	double w1_activation_factor = get_distance_dependent_activation_factor(2.0, my_params);
+	double beta_activation_factor = get_beta_activation_factor();
 	double result = sqrt(
 				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				activate_factor * 4.0 * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
+				w1_activation_factor * 4.0 * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index
 				);
 
@@ -928,31 +946,20 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 	if (use_obstacles && GlobalState::distance_map != NULL && path.size() > 0)
 		proximity_to_obstacles = compute_proximity_to_obstacles_using_distance_map(path);
 
+	double beta_activation_factor = get_beta_activation_factor();
 	my_params->plan_cost = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2) +
+			beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2));
 
-	double activate_factor1 = 1.0;
-	if (my_params->target_td->dist < 2.0)
-	{
-		if (my_params->target_td->dist > 1.0)
-			activate_factor1 = my_params->target_td->dist - 1.0;
-		else
-			activate_factor1 = 0.0;
-	}
-	double activate_factor2 = 1.0;
-	if (my_params->target_td->dist < 6.0)
-	{
-		if (my_params->target_td->dist > 5.0)
-			activate_factor2 = my_params->target_td->dist - 5.0;
-		else
-			activate_factor2 = 0.0;
-	}
+	double w1_activation_factor = get_distance_dependent_activation_factor(2.0, my_params);
+	double w4_activation_factor = get_distance_dependent_activation_factor(6.0, my_params);
 	double result = sqrt(
 				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
-				activate_factor1 * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				w1_activation_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-				activate_factor2 * GlobalState::w4 * path_to_lane_distance + // já é quandrática
+				w4_activation_factor * GlobalState::w4 * path_to_lane_distance + // já é quandrática
+				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 				GlobalState::w5 * proximity_to_obstacles);// +
 //				GlobalState::w6 * (tcp.k1 * tcp.k1 + tcp.k2 * tcp.k2 + tcp.k3 * tcp.k3));
 

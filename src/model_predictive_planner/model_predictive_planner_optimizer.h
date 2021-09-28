@@ -88,6 +88,7 @@ typedef struct
 {
 	double dist;	// Distance traveled in polar coordinates
 	double theta;	// Angle in polar coordinates
+	double beta;	// Angle of the trailer with respect to the robot
 	double d_yaw;	// Displacement in yaw
 	double phi_i;	// Initial steering wheel angle
 	double beta_i;	// Initial semitrailer beta angle
