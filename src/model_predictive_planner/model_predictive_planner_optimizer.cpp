@@ -932,19 +932,27 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2));
 
-	double activate_factor = 1.0;
-	if (my_params->target_td->dist < 4.0)
+	double activate_factor1 = 1.0;
+	if (my_params->target_td->dist < 2.0)
 	{
-		if (my_params->target_td->dist > 3.0)
-			activate_factor = my_params->target_td->dist - 3.0;
+		if (my_params->target_td->dist > 1.0)
+			activate_factor1 = my_params->target_td->dist - 1.0;
 		else
-			activate_factor = 0.0;
+			activate_factor1 = 0.0;
+	}
+	double activate_factor2 = 1.0;
+	if (my_params->target_td->dist < 6.0)
+	{
+		if (my_params->target_td->dist > 5.0)
+			activate_factor2 = my_params->target_td->dist - 5.0;
+		else
+			activate_factor2 = 0.0;
 	}
 	double result = sqrt(
 				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
-				activate_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				activate_factor1 * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-				activate_factor * GlobalState::w4 * path_to_lane_distance + // já é quandrática
+				activate_factor2 * GlobalState::w4 * path_to_lane_distance + // já é quandrática
 				GlobalState::w5 * proximity_to_obstacles);// +
 //				GlobalState::w6 * (tcp.k1 * tcp.k1 + tcp.k2 * tcp.k2 + tcp.k3 * tcp.k3));
 
@@ -1244,6 +1252,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 
 	ObjectiveFunctionParams params;
 	params.use_lane = use_lane;
+//	detailed_lane = {};
 	if (detailed_lane.size() > 1)
 	{
 		if (GlobalState::reverse_planning)
