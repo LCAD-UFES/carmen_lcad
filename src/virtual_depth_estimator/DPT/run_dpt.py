@@ -130,11 +130,15 @@ def dpt_process_image(carmen_image, timestamp):
             .cpu()
             .numpy()
         )
-    return prediction
-    # filename = output_path + str(timestamp.item(0))
-    # absolute_depth=False
-    # out = util.io.write_depth(filename, prediction, bits=2, absolute_depth=absolute_depth)
-    # return out
+    
+    filename = output_path + str(timestamp.item(0))
+    absolute_depth=False
+    out = util.io.depth_to_img(filename, prediction, bits=2, absolute_depth=absolute_depth)
+    # Window name in which image is displayed
+    # window_name = 'DPT'
+    # cv2.imshow(window_name, out)
+    # cv2.waitKey(0) 
+    return out
 
 # if __name__ == "__main__":
 #     main()
