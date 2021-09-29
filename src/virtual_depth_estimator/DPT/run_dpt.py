@@ -130,10 +130,11 @@ def dpt_process_image(carmen_image, timestamp):
             .cpu()
             .numpy()
         )
-    filename = output_path + str(timestamp.item(0))
-    absolute_depth=False
-    out = util.io.write_depth(filename, prediction, bits=2, absolute_depth=absolute_depth)
-    return out
+    return prediction
+    # filename = output_path + str(timestamp.item(0))
+    # absolute_depth=False
+    # out = util.io.write_depth(filename, prediction, bits=2, absolute_depth=absolute_depth)
+    # return out
 
 # if __name__ == "__main__":
 #     main()
