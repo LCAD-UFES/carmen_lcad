@@ -42,7 +42,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	cv::Mat imgdepth = cv::Mat(image_msg->height, image_msg->width, CV_16U, depth_pred);
 	fps = 1.0 / (carmen_get_time() - start_time);
 	sprintf(info, "FPS %.2f", fps);
-    putText(imgdepth, info, cv::Point(10, 30), cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+    putText(imgdepth, info, cv::Point(320, 450), cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0, 255), 1);
 	cv::imshow("Depth Prediction Transformer", imgdepth);
 	cv::waitKey(1);
 }
