@@ -32,10 +32,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	double img_timestamp = image_msg->timestamp;
 	unsigned char *depth_pred;
+	double fps;
+	static double start_time = 0.0;
+	start_time = carmen_get_time();
+
 	depth_pred = libdpt_process_image(image_msg->width, image_msg->height, image_msg->raw_right, img_timestamp);
     // printf("%f, %f, %f, %f\n",preds[0], preds[1], preds[2], preds[3]);
+	char info[128];
 	cv::Mat imgdepth = cv::Mat(image_msg->height, image_msg->width, CV_16U, depth_pred);
-	
+	fps = 1.0 / (carmen_get_time() - start_time);
+	sprintf(info, "FPS %.2f", fps);
+    putText(imgdepth, info, cv::Point(10, 30), cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 	cv::imshow("Depth Prediction Transformer", imgdepth);
 	cv::waitKey(1);
 }
