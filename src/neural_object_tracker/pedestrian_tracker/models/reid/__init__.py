@@ -15,7 +15,7 @@ def load_reid_model():
     carmen_home = os.getenv("CARMEN_HOME")
     model = Model(n_parts=8)
     model.inp_size = (80, 160)
-    ckpt = carmen_home+'/src/neural_object_detector3/pedestrian_tracker/data/googlenet_part8_all_xavier_ckpt_56.h5'
+    ckpt = carmen_home+'/src/neural_object_tracker/pedestrian_tracker/data/googlenet_part8_all_xavier_ckpt_56.h5'
 
     net_utils.load_net(ckpt, model)
     logger.info('Load ReID model from {}'.format(ckpt))

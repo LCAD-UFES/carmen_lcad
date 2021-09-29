@@ -51,6 +51,8 @@ int camera_height;
 
 camera_message *image_msg = NULL;
 
+Mat open_cv_image;
+
 
 // This function find the closest velodyne message with the camera message
 carmen_velodyne_partial_scan_message
@@ -1015,8 +1017,8 @@ publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg);
 void
 track_pedestrians(Mat open_cv_image, double timestamp)
 {
-	if (globalpos_msg == NULL)
-		return;
+	// if (globalpos_msg == NULL)
+	// 	return;
 
 	static bool first_time = true;
 	double fps;
@@ -1154,9 +1156,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 	else
 		img = msg->raw_left;
 
-	Mat open_cv_image = Mat(msg->height, msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-
-	track_pedestrians(open_cv_image, msg->timestamp);
+	open_cv_image = Mat(msg->height, msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 }
 
 
@@ -1209,6 +1209,8 @@ void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	globalpos_msg = msg;
+	if(globalpos_msg != NULL)
+		track_pedestrians(open_cv_image, msg->timestamp);
 }
 
 

@@ -43,7 +43,7 @@ class PatchClassifier(object):
         self.gpu = gpu
 
 	carmen_home = os.getenv("CARMEN_HOME")
-        ckpt = carmen_home+'/src/neural_object_detector3/pedestrian_tracker/data/squeezenet_small40_coco_mot16_ckpt_10.h5'
+        ckpt = carmen_home+'/src/neural_object_tracker/pedestrian_tracker/data/squeezenet_small40_coco_mot16_ckpt_10.h5'
         model = CLSModel(extractor='squeezenet')
 
         # from mcmtt.network.experiments.rfcn_cls2 import Model as CLSModel
