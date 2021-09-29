@@ -99,7 +99,6 @@ libdpt_process_image(int width, int height, unsigned char *image, double timesta
 
 	if (PyErr_Occurred())
 		        PyErr_Print();
-	//PyArrayObject* python_result_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_libsqueeze_seg_save_npy, numpyArray, numpyTimestamp, NULL);
 	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libdpt_process_image_function, numpyArray, numpyTimestamp, NULL);
 
 	if (PyErr_Occurred())
