@@ -508,7 +508,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add_positional<string>("odometry_calibration_path", "Path to the odometry calibration file");
 	args->add_positional<string>("sync_path", "Path to the output sync file");
 	args->add_positional<string>("carmen_ini", "Path to a file containing system parameters");
-	args->add<int>("calibrate_combined_visual_and_car_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
+	args->add<int>("combined_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
 	args->add<double>("initial_time", "Initial time to consider for odometry calibration", 0.0);
 	args->add<double>("final_time", "Final time to consider for odometry calibration", 9999999999999.0);
 	args->parse(argc, argv);
