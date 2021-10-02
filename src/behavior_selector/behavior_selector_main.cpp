@@ -1111,6 +1111,12 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 		rddf_msg.poses_back = set_of_paths.poses_back;
 		rddf_msg.number_of_poses = set_of_paths.number_of_poses;
 		rddf_msg.number_of_poses_back = set_of_paths.number_of_poses_back;
+
+//		rddf_msg.poses = road_network_message->poses;
+//		rddf_msg.poses_back = road_network_message->poses_back;
+//		rddf_msg.number_of_poses = road_network_message->number_of_poses;
+//		rddf_msg.number_of_poses_back = road_network_message->number_of_poses_back;
+
 		if (!road_network_message->annotations && (set_of_paths.number_of_poses != 0))
 		{
 			rddf_msg.annotations = (int *) malloc(set_of_paths.number_of_poses * sizeof(int));

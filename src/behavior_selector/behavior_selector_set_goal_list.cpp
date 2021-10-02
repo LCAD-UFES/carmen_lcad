@@ -438,6 +438,7 @@ behavior_selector_add_goal(carmen_point_t goal)
 	goal_list[goal_list_size].x = goal.x;
 	goal_list[goal_list_size].y = goal.y;
 	goal_list[goal_list_size].theta = goal.theta;
+	goal_list[goal_list_size].beta = 0.0;
 	goal_list[goal_list_size].v = 0.0;
 
 	goal_list_size++;

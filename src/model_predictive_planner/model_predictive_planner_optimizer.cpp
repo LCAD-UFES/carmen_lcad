@@ -850,7 +850,7 @@ get_distance_dependent_activation_factor(double threshold, ObjectiveFunctionPara
 double
 get_beta_activation_factor()
 {
-	return ((GlobalState::semi_trailer_config.type == 0)? 0.0: 10.0);
+	return ((GlobalState::semi_trailer_config.type == 0)? 0.0: 100.0);
 }
 
 
@@ -866,12 +866,13 @@ mpp_optimization_function_f(const gsl_vector *x, void *params)
 	TrajectoryDimensions td;
 	vector<carmen_robot_and_trailer_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->beta_i);
 
+	double beta_activation_factor = get_beta_activation_factor();
 	my_params->plan_cost = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+		beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 		(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
 		(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
 
 	double w1_activation_factor = get_distance_dependent_activation_factor(2.0, my_params);
-	double beta_activation_factor = get_beta_activation_factor();
 	double result = sqrt(
 				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
