@@ -30,6 +30,19 @@
 #include "joyctrl.h"
 
 
+void
+print_joystick_state(carmen_joystick_type joystick)
+{
+	for (int i = 0; i < joystick.nb_axes; i++)
+		printf("axis[%d] %d  ", i, joystick.axes[i]);
+	printf("\n");
+
+	for (int i = 0; i < joystick.nb_buttons; i++)
+		printf("button[%d] %d  ", i, joystick.buttons[i]);
+	printf("\n\n");
+}
+
+
 int
 carmen_initialize_joystick(carmen_joystick_type *joystick)
 {

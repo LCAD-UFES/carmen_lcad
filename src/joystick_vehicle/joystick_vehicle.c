@@ -19,19 +19,6 @@ static int direct_v_and_phi_mode = 0;
 static int show_state = 0;
 
 
-void
-print_joystick_state()
-{
-	for (int i = 0; i < joystick.nb_axes; i++)
-		printf("axis[%d] %d  ", i, joystick.axes[i]);
-	printf("\n");
-
-	for (int i = 0; i < joystick.nb_buttons; i++)
-		printf("button[%d] %d  ", i, joystick.buttons[i]);
-	printf("\n\n");
-}
-
-
 double
 non_linear_range(double x, double non_linear_factor)
 {
@@ -321,7 +308,7 @@ main(int argc, char **argv)
 
 		carmen_get_joystick_state(&joystick);
 		if (show_state)
-			print_joystick_state();
+			print_joystick_state(joystick);
 
 		if (!direct_v_and_phi_mode)
 			default_joystick_mode(&command_v, &command_phi);
