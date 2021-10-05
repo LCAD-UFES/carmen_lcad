@@ -39,7 +39,7 @@ _fialatiremodel(vector<double> tan_alpha, double c_alpha, vector<double> Fy_max)
 
 //Coupled Tire Forces - Simplified Model
 vector<double>
-fialatiremodel(vector<double> alpha, double c_alpha, double mi, vector<double> Fx, vector<double> Fz)
+fialatiremodel(vector<double> alpha, double c_alpha, double mi, double Fx, vector<double> Fz)
 {
     vector<double> F_max, vec;
     for(unsigned int i = 0; i < Fz.size(); i ++)
@@ -49,25 +49,24 @@ fialatiremodel(vector<double> alpha, double c_alpha, double mi, vector<double> F
     vector<double> aux, tan_alpha;
     for(unsigned int i = 0; i < F_max.size(); i ++)
     {
-        vec.push_back(sqrt(F_max[i] * F_max[i] - Fx[i] * Fx[i]));
+        vec.push_back(sqrt(F_max[i] * F_max[i] - Fx * Fx));
     }
-    for(unsigned int i = 0; i < Fx.size(); i++)
+    
+    if(abs(Fx) >= F_max[0])
     {
-        if(abs(Fx[i]) >= F_max[0])
+        for(unsigned int i = 0; i < alpha.size(); i ++)
         {
-            for(unsigned int i = 0; i < alpha.size(); i ++)
-            {
-                aux.push_back(0.0);
-            }
-        }else
-        {
-            for(unsigned int i = 0; i < alpha.size(); i ++)
-            {
-                tan_alpha.push_back(tan(alpha[i]));
-            }
-            aux = _fialatiremodel(tan_alpha, c_alpha, vec);
+            aux.push_back(0.0);
         }
-    } 
+    }else
+    {
+        for(unsigned int i = 0; i < alpha.size(); i ++)
+        {
+            tan_alpha.push_back(tan(alpha[i]));
+        }
+        aux = _fialatiremodel(tan_alpha, c_alpha, vec);
+    }
+     
     
     return aux;
 }
@@ -97,12 +96,12 @@ invfialatiremodel(double Fy, double c_alpha, double mi, double Fx, double Fz)
 
 vector<vector<double>>
 lateral_tire_forces( BicycleModelParams B, vector<double> alpha_f, vector<double> alpha_r, 
-vector<double> Fxf,vector<double> Fxr, vector<double> s_delta, vector<double> c_delta, int num_iters)
+double Fxf,double Fxr, vector<double> s_delta, vector<double> c_delta, int num_iters)
 {
     vector<double> Fyf, Fx, Fzr, Fzf;
     for(unsigned int i = 0; i < alpha_f.size(); i++)
     { 
-        Fx.push_back(Fxf[i] * c_delta[i] - Fyf[i] * s_delta[i] + Fxr[i]);
+        Fx.push_back(Fxf * c_delta[i] - Fyf[i] * s_delta[i] + Fxr);
     }
     for (int i = 0; i < num_iters; i++)
     {
@@ -113,7 +112,7 @@ vector<double> Fxf,vector<double> Fxr, vector<double> s_delta, vector<double> c_
         Fyf = fialatiremodel(alpha_f, B.c_alphaf, B.mi, Fxf, Fzf);
         for(unsigned int j = 0; j < Fyf.size(); j ++)
         {
-            Fx.push_back(Fxf[j] * c_delta[j] - Fyf[j] * s_delta[j] + Fxr[j]);
+            Fx.push_back(Fxf* c_delta[j] - Fyf[j] * s_delta[j] + Fxr);
         }
     }
     for(unsigned int i = 0; i < Fyf.size(); i ++)
@@ -134,20 +133,18 @@ _lateral_tire_forces(BicycleModelParams B, BicycleState q, BicycleControl u, int
     vector<double> Ux = q.Ux;
     vector<double> Uy = q.Uy;
     vector<double> r = q.r;
-    vector<double> _delta = u.delta_;
-    vector<double> Fxf = u.Fxf;
-    vector<double> Fxr =  u.Fxr;
+    double _delta = u.delta_;
+    double Fxf = u.Fxf;
+    double Fxr =  u.Fxr;
     double a = B.a, b = B.b;
     vector<double> s_delta, c_delta; 
-    for(unsigned int i = 0; i < _delta.size(); i++)
-    {
-        s_delta.push_back(sin(_delta[i]));
-        c_delta.push_back(cos(_delta[i]));
-    }
+    
+        s_delta.push_back(sin(_delta));
+        c_delta.push_back(cos(_delta));
     vector<double> alpha_f,   alpha_r;
     for (unsigned int i = 0; i < Uy.size(); i++)
     {
-        alpha_f.push_back(atan2(Uy[i] + a * r[i], Ux[i]) - _delta[i]);
+        alpha_f.push_back(atan2(Uy[i] + a * r[i], Ux[i]) - _delta);
         alpha_r.push_back(atan2(Uy[i] - b * r[i], Ux[i]));
     }
     vector<vector<double>> matrix_f = lateral_tire_forces(B, alpha_f, alpha_r, Fxf, Fxr, s_delta, c_delta, num_iters);
@@ -158,7 +155,7 @@ _lateral_tire_forces(BicycleModelParams B, BicycleState q, BicycleControl u, int
 
 BicycleState
 make_BicycleState(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
-vector<double> _delta, vector<double> Fxf, vector<double> Fxr)
+vector<double> _delta, double Fxf, double Fxr)
 {
     double s_phi = sin(_phi), c_phi = cos(_phi);
     vector<double> s_delta, c_delta;
@@ -179,8 +176,8 @@ vector<double> _delta, vector<double> Fxf, vector<double> Fxr)
     vector<double> F_til_xf, F_til_yf;
     for(unsigned int i = 0; i < Fy[0].size(); i++)
     {
-        F_til_xf.push_back(Fxf[i] * c_delta[i] - Fy[0][i] * s_delta[i]);
-        F_til_yf.push_back(Fy[0][i] * c_delta[i] + Fxf[i] * s_delta[i]);
+        F_til_xf.push_back(Fxf * c_delta[i] - Fy[0][i] * s_delta[i]);
+        F_til_yf.push_back(Fy[0][i] * c_delta[i] + Fxf * s_delta[i]);
     }
     BicycleState vec;
     vec.E.push_back(-Ux * s_phi - Uy * c_phi); // Ux*c_phi - Uy*s_phi (_phi measured from N))
@@ -188,7 +185,7 @@ vector<double> _delta, vector<double> Fxf, vector<double> Fxr)
     vec.phi.push_back(r);
     for(unsigned int i = 0; i < Fy[1].size(); i++)
     {
-        vec.r.push_back((F_til_xf[i] + Fxr[i] + Fx_drag + Fx_grade) / B.m + r * Uy);
+        vec.r.push_back((F_til_xf[i] + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
         vec.Ux.push_back((F_til_yf[i] + Fy[1][i] + Fy_grade) / B.m - r * Ux);
         vec.Uy.push_back((B.a * F_til_yf[i] - B.b * Fy[1][i]) / B.Izz);
     }
@@ -199,7 +196,7 @@ vector<double> _delta, vector<double> Fxf, vector<double> Fxr)
 
 TrackingBicycleState
 make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, double _delta_phi,
-                              vector<double> _delta, vector<double> Fxf, vector<double> Fxr,
+                              vector<double> _delta, double Fxf, double Fxr,
                               double V, double k)
 {
     double s_delta_phi = sin(_delta_phi), c_delta_phi = cos(_delta_phi);
@@ -222,14 +219,14 @@ make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, 
     vector<double> F_til_xf, F_til_yf;
     for(unsigned int i = 0; i < Fy[0].size(); i++)
     {
-        F_til_xf.push_back(Fxf[i] * c_delta[i] - Fy[0][i] * s_delta[i]);
-        F_til_yf.push_back(Fy[0][i] * c_delta[i] + Fxf[i] * s_delta[i]);
+        F_til_xf.push_back(Fxf * c_delta[i] - Fy[0][i] * s_delta[i]);
+        F_til_yf.push_back(Fy[0][i] * c_delta[i] + Fxf * s_delta[i]);
     }
     TrackingBicycleState  vec;
     vec.delta_phi = (Ux * c_delta_phi - Uy * s_delta_phi - V); // Ux*c_phi - Uy*s_phi (_phi measured from N))
     for(unsigned int i =0; i < F_til_xf.size(); i++)
     {
-        vec.delta_s.push_back((F_til_xf[i] + Fxr[i] + Fx_drag + Fx_grade) / B.m + r * Uy);
+        vec.delta_s.push_back((F_til_xf[i] + Fxr + Fx_drag + Fx_grade) / B.m + r * Uy);
     }
     
     for(unsigned int i = 0; i < Fy[1].size(); i ++)
@@ -246,7 +243,7 @@ make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, 
 
 LateralTrackingBicycleState
 make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
-                              vector<double> _delta, vector<double> Fxf, vector<double> Fxr,
+                              vector<double> _delta, double Fxf, double Fxr,
                               double Ux, double k, double _delta_phi)
 {
     double s_delta_phi = sin(_delta_phi), c_delta_phi = cos(_delta_phi);
@@ -267,7 +264,7 @@ make_LateralTrackingBicycleState(BicycleModelParams B, double Uy, double r,
     vector<double> F_til_yf;
     for(unsigned int i = 0; i < Fy[0].size(); i ++)
     { 
-        F_til_yf.push_back(Fy[0][i] * c_delta[i] + Fxf[i] * s_delta[i]);
+        F_til_yf.push_back(Fy[0][i] * c_delta[i] + Fxf * s_delta[i]);
     }
     LateralTrackingBicycleState vec;
     for(unsigned int i = 0; i < Fy[1].size(); i ++)
@@ -389,7 +386,7 @@ apply_control_limits(ControlLimits CL, vector <double> vec, vector<double>  Ux)
 
 map<string, vector<double>>
 steady_state_estimates(VehicleModel X, vector<double> V, vector<double> A_tan, double k,
-                                int num_iters, vector<double> r, vector<double> beta_zero, vector<double> _delta_zero, vector<double> Fyf_zero)
+                                int num_iters, vector<double> r, vector<double> beta_zero, double _delta_zero, vector<double> Fyf_zero)
 {
     vector<double> A_rad;
     for(int j = 0; j <= V.size(); j++)
@@ -422,14 +419,14 @@ steady_state_estimates(VehicleModel X, vector<double> V, vector<double> A_tan, d
 
         double i = 1;
         beta_.push_back(beta_zero[j]);
-        vector<double> _delta = _delta_zero;
+        double _delta = _delta_zero;
         vector<double> s_delta, c_delta; 
         Fyf.push_back(Fyf_zero[j]);
         while(true)
         {
             double sbeta_ = sin(beta_[j]), cbeta_ = cos(beta_[j]);
-            s_delta.push_back(sin(_delta[j]));
-            c_delta.push_back(cos(_delta[j]));
+            s_delta.push_back(sin(_delta));
+            c_delta.push_back(cos(_delta));
             double Ux = V[j] * cbeta_, Uy = V[j] * sbeta_;
             double Fx_drag = -X.bicycle_model.Cd0 - Ux * (X.bicycle_model.Cd1 + X.bicycle_model.Cd2 * Ux);
             double Fx_grade = 0;    // TODO: figure out how roll/pitch are ordered
@@ -466,7 +463,7 @@ steady_state_estimates(VehicleModel X, vector<double> V, vector<double> A_tan, d
             Fyf[j] = F_til_yf * c_delta[j] - F_til_xf * s_delta[j];
             double Fyf_max = sqrt(Ff_max * Ff_max - Fxf * Fxf);
             double alpha_f = atan(_invfialatiremodel(Fyf[j], X.bicycle_model.c_alphaf, Fyf_max));
-            _delta.push_back(atan2(Uy + X.bicycle_model.a * r[j], Ux) - alpha_f);
+            _delta = (atan2(Uy + X.bicycle_model.a * r[j], Ux) - alpha_f);
 
             if(i == num_iters)
             {
