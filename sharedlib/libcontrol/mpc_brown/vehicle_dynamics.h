@@ -8,16 +8,18 @@
 #include <string>
 #include <map>
 
-using namespace std;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+using namespace std;
+
+
 typedef struct {
-    vector<double> delta_;
-    vector<double> Fxf;
-    vector<double> Fxr;
+    double delta_;
+    double Fxf;
+    double Fxr;
 }BicycleControl;
 
 typedef struct {
@@ -123,7 +125,7 @@ vector<double>
 _fialatiremodel(vector<double> tan_alpha, double c_alpha, vector<double> Fy_max);
 
 vector<double>
-fialatiremodel(vector<double> alpha, double c_alpha, double mi, vector<double> Fx, vector<double> Fz);
+fialatiremodel(vector<double> alpha, double c_alpha, double mi, double Fx, vector<double> Fz);
 
 double
 _invfialatiremodel(double Fy, double c_alpha, double Fy_max);
@@ -134,18 +136,18 @@ invfialatiremodel(double Fy, double c_alpha, double mi, double Fx, double Fz);
 
 vector<vector<double>>
 lateral_tire_forces( BicycleModelParams B, vector<double> alpha_f, vector<double> alpha_r, 
-vector<double> Fxf,vector<double> Fxr, vector<double> s_delta, vector<double> c_delta, int num_iters);
+double Fxf,double Fxr, vector<double> s_delta, vector<double> c_delta, int num_iters);
 
 vector<vector<double>>
 _lateral_tire_forces(BicycleModelParams B, BicycleState q, BicycleControl u, int num_iters);
 
 BicycleState
 make_BicycleState(BicycleModelParams B, double _phi, double Ux , double Uy, double r, 
-vector<double> _delta, vector<double> Fxf, vector<double> Fxr);
+vector<double> _delta, double Fxf, double Fxr);
 
 TrackingBicycleState
 make_TrackingBicycleState(BicycleModelParams B, double Ux, double Uy, double r, double _delta_phi,
-                              vector<double> _delta, vector<double> Fxf, vector<double> Fxr,
+                              vector<double> _delta, double Fxf, double Fxr,
                               double V, double k);
 
 LateralTrackingBicycleState
@@ -170,7 +172,7 @@ apply_control_limits(ControlLimits CL, vector <double> vec, vector<double>  Ux);
 
 map<string, vector<double>>
 steady_state_estimates(VehicleModel X, vector<double> V, vector<double> A_tan, double k,
-                                int num_iters, vector<double> r, vector<double> beta_zero, vector<double> _delta_zero, vector<double> Fyf_zero);
+                                int num_iters, vector<double> r, vector<double> beta_zero, double _delta_zero, vector<double> Fyf_zero);
 
 #ifdef __cplusplus
 }
