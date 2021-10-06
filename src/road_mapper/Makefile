@@ -10,14 +10,22 @@ CXXFLAGS += -Wno-ignored-qualifiers -O3
 IFLAGS += \
 	`pkg-config --cflags opencv` \
 
+# Application specific include directories.
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+
 LFLAGS += \
 	-lparam_interface \
 	-lglobal \
 	-lipc \
+	-lgrid_mapping \
+	-lprob_models \
+	-lz \
+	-lrotation_geometry \
+	-lmap_io \
+	-lmap_util \
 	-llocalize_ackerman_interface \
 	-lmap_server_interface \
-	-lgrid_mapping \
-	-lmap_io \
 	-lmap_interface \
 	-lpng \
 	-lreadlog \
@@ -61,6 +69,7 @@ PUBLIC_OTHERS = \
 TARGETS = \
 	libroad_mapper_interface.a \
 	libroad_mapper.a \
+	libprob_models.a \
 	road_mapper \
 	road_mapper_save_remission_map_images \
 	road_mapper_sampling \
@@ -120,6 +129,15 @@ road_mapper_image_splitter: road_mapper_image_splitter.o
 road_mapper_display_map: road_mapper_display_map.o road_mapper.o road_mapper_utils.o
 road_mapper_log_tracker: road_mapper_log_tracker.o
 save_map_images: save_map_images.o road_mapper.o road_mapper_utils.o
+
+
+libprob_models.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
+
+clean: clean_prob_models
+
+clean_prob_models:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
 
 ifneq (, $(shell which nvcc))
 ifdef CAFFE_ENET_HOME
