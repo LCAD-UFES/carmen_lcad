@@ -3,7 +3,75 @@
 char **classes_names;
 void *network_struct;
 int camera_in_use[MAX_CAMERA_ID + 1];
+#define SHOW_DETECTIONS 1
 
+
+void shutdown_module(int signo)
+{
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		cvDestroyAllWindows();
+
+		printf("Digit_Locomotive_Detector: Disconnected.\n");
+		exit(0);
+	}
+}
+
+
+
+/////////////////////PUBLISHERS////////////////
+
+void
+build_and_publish_detections(vector<bbox_t> &predictions, int cam_number)
+{
+	yolo_detector_message msg;
+	msg.cam_id = cam_number;
+	msg.qtd_bboxes = predictions.size();
+	msg.bounding_boxes = (bboxes*) malloc(msg.qtd_bboxes*sizeof(bboxes));
+
+	for(unsigned int i = 0; i < predictions.size(); i++)
+	{
+		msg.bounding_boxes[i].x = predictions[i].x;
+		msg.bounding_boxes[i].y = predictions[i].y;
+		msg.bounding_boxes[i].w = predictions[i].w;
+		msg.bounding_boxes[i].h = predictions[i].h;
+		msg.bounding_boxes[i].obj_id = predictions[i].obj_id;
+		msg.bounding_boxes[i].prob = predictions[i].prob;
+		msg.bounding_boxes[i].track_id = predictions[i].track_id;
+	}
+
+	yolo_detector_publish_yolo_detector_message(&msg);
+}
+
+///////////////////////////////////////////////
+
+
+void
+show_detections(Mat image, vector<bbox_t> predictions, double fps)
+{
+	char info[128];
+
+    cvtColor(image, image, COLOR_RGB2BGR);
+
+	sprintf(info, "%dx%d", image.cols, image.rows);
+    putText(image, info, Point(10, 15), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+
+    sprintf(info, "FPS %.2f", fps);
+    putText(image, info, Point(10, 30), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+	
+    for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		sprintf(info, "prob %.2f", predictions[i].prob);
+		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+				Scalar(255, 0, 255), 4);
+		putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+	}
+
+	// resize(image, image, Size(image.cols * resize_factor, image.rows * resize_factor));
+    imshow("Yolo_Detector", image);
+    waitKey(1);
+}
 
 
 void
@@ -49,15 +117,6 @@ Mat convert_message_image_to_opencv_image(bool *first_time, camera_image *image)
 }
 
 
-/////////////////////PUBLISHERS////////////////
-
-
-
-///////////////////////////////////////////////
-
-
-
-
 ////////////////////HANDLERS//////////////////
 
 void
@@ -66,9 +125,18 @@ image_handler(int cam_number, camera_message *msg)
     vector<bbox_t> predictions_vector;
     Mat open_cv_image;
     bool first_time = true;
+	static double start_time = 0.0;
+
     open_cv_image = convert_message_image_to_opencv_image(&first_time, &msg->images[0]);
     get_yolo_detections(open_cv_image, predictions_vector);
-
+	double fps = 1.0 / (carmen_get_time() - start_time);
+	start_time = carmen_get_time();
+	if (SHOW_DETECTIONS)
+		show_detections(open_cv_image, predictions_vector, fps);
+	if(predictions_vector.size() > 0)
+	{
+		build_and_publish_detections(predictions_vector, cam_number);
+	}
 }
 
 
@@ -287,7 +355,8 @@ read_parameters(int argc, char **argv)
 		int message_id = -999;
 		if (current_param.find("intelbras") != string::npos)
 		{
-            string cam_id = current_param.substr(8,1);
+            string cam_id = current_param.substr(9,1);
+			// cout<<cam_id<<endl;
             camera_in_use[stoi(cam_id)] = 1;
         }
     }
@@ -297,11 +366,19 @@ int main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 
-	// initialize_cameras_variables();
-
 	read_parameters(argc, argv);
 
     initialize_yolo();
 
+	yolo_detector_define_messages();
+
     subscribe_messages();
+
+	signal(SIGINT, shutdown_module);
+
+	setlocale(LC_ALL, "C");
+
+	carmen_ipc_dispatch();
+
+	return 0;
 }

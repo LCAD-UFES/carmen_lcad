@@ -4,7 +4,7 @@
 
 
 #include <carmen/carmen.h>
-#include <carmen/yolo_detector_interface.h>
+#include <carmen/yolo_detector_messages.h>
 
 #ifdef __cplusplus
 extern "C"

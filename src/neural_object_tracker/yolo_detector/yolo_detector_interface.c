@@ -31,6 +31,6 @@ yolo_detector_publish_yolo_detector_message(yolo_detector_message *yolo_detector
 {
     IPC_RETURN_TYPE err;
 
-    err = IPC_publishData(YOLO_DETECTOR_MESSAGE_NAME, route_planner_road_network_message);
-    carmen_test_ipc_exit(err, "Could not publish", CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_NAME);
+    err = IPC_publishData(YOLO_DETECTOR_MESSAGE_NAME, yolo_detector_yolo_detector_message);
+    carmen_test_ipc_exit(err, "Could not publish", YOLO_DETECTOR_MESSAGE_NAME);
 }

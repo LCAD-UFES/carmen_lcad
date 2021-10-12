@@ -2,6 +2,7 @@
 #define YOLO_DETECTOR_HPP_
 
 #include <carmen/carmen.h>
+#include <carmen/yolo_detector_interface.h>
 #include <carmen/carmen_darknet_interface.hpp>
 #include <carmen/camera_drivers_interface.h>
 #include <carmen/camera_drivers_messages.h>

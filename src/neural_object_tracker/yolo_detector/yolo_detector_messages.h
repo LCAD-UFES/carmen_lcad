@@ -24,13 +24,13 @@ typedef struct
     double prob;
     int obj_id;
     int track_id;
-} bbox;
+} bboxes;
 
 typedef struct
 {
     int cam_id;
     int qtd_bboxes;
-    bbox *bounding_boxes;
+    bboxes *bounding_boxes;
 } yolo_detector_message;
 
 #define		YOLO_DETECTOR_MESSAGE_NAME		"yolo_detector_message"
