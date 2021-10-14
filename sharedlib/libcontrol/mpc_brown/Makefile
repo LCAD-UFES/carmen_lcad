@@ -1,32 +1,27 @@
-all: mpc_brown
- 
-mpc_brown: main.o trajectories.o   math.o model_predictive_control.o vehicle_dynamics.o vehicles.o coupled_lat_long.o decoupled_lat_long.o
-	g++ -o mpc_brown main.o trajectories.o   math.o model_predictive_control.o vehicle_dynamics.o vehicles.o -W -Wall -ansi -pedantic -std=c++11
- 
-main.o: main.cpp
-	g++ -c main.cpp -W -Wall -ansi -pedantic -std=c++11
- 
-trajectories.o: trajectories.cpp
-	g++ -c trajectories.cpp -W -Wall -ansi -pedantic -std=c++11
+
+include $(CARMEN_HOME)/src/Makefile.conf
+
+LINK = g++
+CXXFLAGS += -std=c++0x
+
+MODULE_NAME = MPC_BROWN
+MODULE_COMMENT = mpc_brown
+
+IFLAGS += -I$(CARMEN_HOME)/include/carmen
+
+LFLAGS += -lglobal -lipc
+SOURCES = main.cpp trajectories.cpp   math.cpp model_predictive_control.cpp vehicle_dynamics.cpp vehicles.cpp coupled_lat_long.cpp decoupled_lat_long.cpp mpc_brown_interface.cpp
 
 
-math.o: math.cpp
-	g++ -c math.cpp -W -Wall -ansi -pedantic -std=c++11
+PUBLIC_INCLUDES = mpc_brown_interface.h mpc_brown_messages.h
+PUBLIC_LIBRARIES = mpc_brown_interface.a
+PUBLIC_BINARIES = mpc_brown
 
-model_predictive_control.o: model_predictive_control.cpp
-	g++ -c model_predictive_control.cpp -W -Wall -ansi -pedantic -std=c++11
+TARGETS = mpc_brown mpc_brown_interface.a
 
-vehicle_dynamics.o: vehicle_dynamics.cpp
-	g++ -c vehicle_dynamics.cpp -W -Wall -ansi -pedantic -std=c++11
 
-vehicles.o: vehicles.cpp
-	g++ -c vehicles.cpp -W -Wall -ansi -pedantic -std=c++11
 
-coupled_lat_long.o: coupled_lat_long.cpp 
-	g++ -c coupled_lat_long.cpp -W -Wall -ansi -pedantic -std=c++11
+mpc_brown: main.o trajectories.o   math.o model_predictive_control.o vehicle_dynamics.o vehicles.o coupled_lat_long.o decoupled_lat_long.o mpc_brown_interface.o
 
-decoupled_lat_long.o: decoupled_lat_long.cpp 
-	g++ -c decoupled_lat_long.cpp -W -Wall -ansi -pedantic -std=c++11
-
-clean:
-	rm -rf *.o mpc_brown
+mpc_brown_interface.a: mpc_brown_interface.o 
+include $(CARMEN_HOME)/src/Makefile.rules

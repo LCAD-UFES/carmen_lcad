@@ -165,7 +165,7 @@ void define_messages()
 	
 }
 
-void send_base_velocity_command(double tv, double rv)
+void publish_base_velocity_command(double tv, double rv)
 {
 
 
@@ -248,7 +248,7 @@ void send_base_velocity_command(double tv, double rv)
 void sig_handler(int x)
 {
 	if(x == SIGINT) {
-		send_base_velocity_command(0, 0);
+		publish_base_velocity_command(0, 0);
 		carmen_close_joystick(&joystick);
 		carmen_ipc_disconnect();
 		printf("Disconnected from robot.\n");
@@ -365,7 +365,7 @@ int main(int argc, char **argv)
 //				if(command_rv < 0.13 && command_rv > -0.13)
 //					command_rv = 0;
 				fprintf(stderr,"%.2f, %.2f\n", command_tv, command_rv);
-				send_base_velocity_command(command_tv, command_rv);
+				publish_base_velocity_command(command_tv, command_rv);
 			}
 
 /*
@@ -394,12 +394,12 @@ int main(int argc, char **argv)
 					fprintf(stderr,"Joystick activated!\n");
 				else {
 					fprintf(stderr,"Joystick deactivated!\n");
-					send_base_velocity_command(0, 0);
+					publish_base_velocity_command(0, 0);
 				}
 			}
 		}
 		else if(joystick_activated && carmen_get_time() - f_timestamp > 0.5) {
-			send_base_velocity_command(command_tv, command_rv);
+			publish_base_velocity_command(command_tv, command_rv);
 			f_timestamp = carmen_get_time();
 		}
 	}

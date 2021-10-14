@@ -1004,9 +1004,11 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 	}
 
 	if ((global_gui->placement_status == ORIENTING_ROBOT) ||
+			(global_gui->placement_status == ORIENTING_ROBOT_SEMI_TRAILER) ||
 			(global_gui->placement_status == ORIENTING_GOAL) ||
 			(global_gui->placement_status == ORIENTING_SIMULATOR) ||
 			(global_gui->placement_status == ORIENTING_FINAL_GOAL) ||
+			(global_gui->placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER) ||
 			(global_gui->placement_status == ORIENTING_PERSON))
 	{
 		global_gui->cursor_pos = *world_point;

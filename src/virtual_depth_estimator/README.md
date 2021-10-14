@@ -11,7 +11,7 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
 
 ### Setup - Instruções para instalação
 
-1) Download dos pesos da YoloV4
+1. Download dos pesos da YoloV4
     ```shell
     cd $CARMEN_HOME/sharedlib/darknet4
     ```
@@ -19,7 +19,7 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
     make download
     ```
 
-2) Download dos pesos da DPT
+1. Download dos pesos da DPT
     ```shell
     cd $CARMEN_HOME/src/virtual_depth_estimator/DPT
     ```
@@ -27,7 +27,7 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
     make download
     ```
 
-3) Criando a virtualenv para instalar as dependências:
+1. Criando a virtualenv para instalar as dependências:
     ```shell
     cd $CARMEN_HOME/src/virtual_depth_estimator/DPT
     ```
@@ -35,7 +35,7 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
     ./create_env.sh
     ```
 
-4) Compilando:
+1. Compilando:
     ```shell
     cd $CARMEN_HOME/src/virtual_depth_estimator/
     ```
@@ -43,21 +43,27 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
     make
     ```
 
-4) Exemplo de execução:
+1. Exemplo de execução:
     ```shell
     ./central
     ```
     ```shell
     ./proccontrol process-playback-fovea.ini 
     ```
-5) Ative a venv:
+1. Ative a venv:
     ```shell
     source $CARMEN_HOME/src/virtual_depth_estimator/DPT/venv/bin/activate
     ```
-6)  Execute o código
+1.  Para visualizar SOMENTE a rede DPT, execute:
+    ```shell
+    (venv) > ./virtual_dpt 3
+    ```
+
+1.  Para visualizar a Yolo com a rede DPT, execute:
     ```shell
     (venv) > ./virtual_depth -camera3 1
     ```
+
 
 **Vídeo com a execução:**
 https://www.youtube.com/watch?v=0iY1kU2bWpI&t=761s

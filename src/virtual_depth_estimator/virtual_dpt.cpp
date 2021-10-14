@@ -4,6 +4,9 @@
 #include <fstream>
 #include <carmen/libdpt.h>
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 int camera;
 carmen_localize_ackerman_globalpos_message ackerman_message;
 carmen_point_t globalpos;
@@ -28,9 +31,20 @@ void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	double img_timestamp = image_msg->timestamp;
-	unsigned char *preds;
-	preds = libdpt_process_image(image_msg->width, image_msg->height, image_msg->raw_right, img_timestamp);
+	unsigned char *depth_pred;
+	double fps;
+	static double start_time = 0.0;
+	start_time = carmen_get_time();
+
+	depth_pred = libdpt_process_image(image_msg->width, image_msg->height, image_msg->raw_right, img_timestamp);
     // printf("%f, %f, %f, %f\n",preds[0], preds[1], preds[2], preds[3]);
+	char info[128];
+	cv::Mat imgdepth = cv::Mat(image_msg->height, image_msg->width, CV_16U, depth_pred);
+	fps = 1.0 / (carmen_get_time() - start_time);
+	sprintf(info, "FPS %.2f", fps);
+    putText(imgdepth, info, cv::Point(320, 450), cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0, 255), 1);
+	cv::imshow("Depth Prediction Transformer", imgdepth);
+	cv::waitKey(1);
 }
 
 void
@@ -69,7 +83,7 @@ main(int argc , char **argv)
 {
 	if(argc!=2)
 	{
-		printf("É necessário passar o ID da câmera como parâmetro.");
+		printf("É necessário passar o ID da câmera como parâmetro.\nExemplo: ./virtual_dpt 3\n");
 		exit(1);
 	}
 

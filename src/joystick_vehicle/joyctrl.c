@@ -29,7 +29,22 @@
 #include <carmen/global.h>
 #include "joyctrl.h"
 
-int carmen_initialize_joystick(carmen_joystick_type *joystick)
+
+void
+print_joystick_state(carmen_joystick_type joystick)
+{
+	for (int i = 0; i < joystick.nb_axes; i++)
+		printf("axis[%d] %d  ", i, joystick.axes[i]);
+	printf("\n");
+
+	for (int i = 0; i < joystick.nb_buttons; i++)
+		printf("button[%d] %d  ", i, joystick.buttons[i]);
+	printf("\n\n");
+}
+
+
+int
+carmen_initialize_joystick(carmen_joystick_type *joystick)
 {
 	if ((joystick->fd = open(CARMEN_JOYSTICK_DEVICE, O_RDONLY | O_NONBLOCK)) < 0)
 	{
@@ -44,8 +59,6 @@ int carmen_initialize_joystick(carmen_joystick_type *joystick)
 	if (ioctl(joystick->fd, JSIOCGNAME(sizeof(name)), name) < 0)
 		strncpy(name, "Unknown", sizeof(name));
 	printf("Name: %s\n", name);
-
-
 
 	if (strstr(name,"RumblePad 2")!=NULL)
 	{
@@ -65,17 +78,21 @@ int carmen_initialize_joystick(carmen_joystick_type *joystick)
 	carmen_test_alloc(joystick->buttons);
 	joystick->initialized = 1;
 
-	return 0;
+	return (0);
 }
 
-void carmen_set_deadspot(carmen_joystick_type *joystick, 
+
+void
+carmen_set_deadspot(carmen_joystick_type *joystick,
 		int on_off, double size)
 {
 	joystick->deadspot = on_off;
 	joystick->deadspot_size = size;
 }
 
-int carmen_get_joystick_state(carmen_joystick_type *joystick)
+
+int
+carmen_get_joystick_state(carmen_joystick_type *joystick)
 {
 	struct js_event mybuffer[64];
 	int n, i;
@@ -97,31 +114,35 @@ int carmen_get_joystick_state(carmen_joystick_type *joystick)
 			{
 				joystick->axes[mybuffer[i].number] = mybuffer[i].value;
 
-				if(mybuffer[i].number == 0 || mybuffer[i].number == 1)
+				if (mybuffer[i].number == 0 || mybuffer[i].number == 1)
 				{
-					if(joystick->deadspot)
+					if (joystick->deadspot)
 					{
-						if(abs(joystick->axes[mybuffer[i].number]) < joystick->deadspot_size * 32767)
+						if (abs(joystick->axes[mybuffer[i].number]) < joystick->deadspot_size * 32767)
 							joystick->axes[mybuffer[i].number] = 0;
-						else if(joystick->axes[mybuffer[i].number] > 0)
+						else if (joystick->axes[mybuffer[i].number] > 0)
 							joystick->axes[mybuffer[i].number] = (joystick->axes[mybuffer[i].number] -
 											joystick->deadspot_size * 32767) / ((1-joystick->deadspot_size) * 32767) * 32767.0;
-						else if(joystick->axes[mybuffer[i].number] < 0)
+						else if (joystick->axes[mybuffer[i].number] < 0)
 							joystick->axes[mybuffer[i].number] =
 									(joystick->axes[mybuffer[i].number] +
 											joystick->deadspot_size * 32767) / ((1-joystick->deadspot_size) * 32767) * 32767.0;
-					} else
+					}
+					else
 						joystick->axes[mybuffer[i].number] = joystick->axes[mybuffer[i].number];
 				}
-				if(mybuffer[i].number == 1 || mybuffer[i].number == 5)
+				if (mybuffer[i].number == 1 || mybuffer[i].number == 5)
 					joystick->axes[mybuffer[i].number] *= -1;
 			}
 		}
 	}
-	return n;
+
+	return (n);
 }
 
-void carmen_close_joystick(carmen_joystick_type *joystick)
+
+void
+carmen_close_joystick(carmen_joystick_type *joystick)
 {
 	if (joystick->initialized == 0)
 		return;
@@ -129,45 +150,4 @@ void carmen_close_joystick(carmen_joystick_type *joystick)
 	close(joystick->fd);
 	free(joystick->axes);
 	free(joystick->buttons);
-}
-
-void carmen_joystick_control(carmen_joystick_type *joystick, double max_right_analogic_button_value, 
-		double max_left_analogic_button_value, double *right_analogic_button_value, double *left_analogic_button_value)
-{
-	if (joystick->initialized == 0)
-		return;
-
-	//printfs just for debug propose
-	/*int i;
-	printf("\nJOYSTICK AXES\n");
-	for(i=0; i<joystick->nb_axes;i++) {
-		printf("axes[%d] %d\n", i, joystick->axes[i]);
-	}
-
-	printf("\nJOYSTICK Buttons\n");
-	for(i=0; i<joystick->nb_buttons;i++) {
-		printf("buttons[%d] %d\n", i, joystick->buttons[i]);
-	}
-
-	printf("deadspot %d\n", joystick->deadspot);
-	printf("deadspot_size %f\n", joystick->deadspot_size);
-	printf("fd %d\n", joystick->fd);
-	printf("initialized %d\n", joystick->initialized);
-	printf("type %d\n", joystick->type);*/
-
-	*right_analogic_button_value = -1* (joystick->axes[4] / 32767.0) * max_right_analogic_button_value;
-
-	//X
-	if(joystick->buttons[2]) {
-		*right_analogic_button_value = max_right_analogic_button_value;
-	}
-
-	//quadrado
-	if(joystick->buttons[3]) {
-		*right_analogic_button_value = -max_right_analogic_button_value;
-	}
-
-	*left_analogic_button_value = -1 * (joystick->axes[0] / 32767.0) * max_left_analogic_button_value;
-	carmen_verbose("axes[0]: %d axes[1]: %d tv: %f rv: %f\n",
-			joystick->axes[0], joystick->axes[0], *right_analogic_button_value, *left_analogic_button_value);
 }

@@ -97,6 +97,8 @@ void carmen_close_joystick(carmen_joystick_type *joystick);
 void carmen_joystick_control(carmen_joystick_type *joystick, double max_tv, 
 			     double max_rv, double *tv, double *rv);
 
+void print_joystick_state(carmen_joystick_type joystick);
+
 #ifdef __cplusplus
 }
 #endif
