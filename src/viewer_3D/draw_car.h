@@ -41,8 +41,7 @@ struct CarDrawer
 	GLMmodel *carModel;
 	GLMmodel *semiTrailerModel;
 
-	carmen_collision_config_t robot_collision_config;
-	carmen_collision_config_t semi_trailer_collision_config;
+	carmen_collision_config_t *robot_collision_config;
 };
 
 typedef struct CarDrawer CarDrawer;

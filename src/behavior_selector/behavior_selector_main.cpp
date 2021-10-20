@@ -22,6 +22,8 @@
 #include <carmen/mapper_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/obstacle_distance_mapper_datmo.h>
+#include <carmen/task_manager_messages.h>
+#include <carmen/task_manager_interface.h>
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -1592,6 +1594,18 @@ moving_objects_point_clouds_message_handler_0(carmen_moving_objects_point_clouds
 
 
 static void
+task_manager_set_collision_geometry_message_handler(carmen_task_manager_set_collision_geometry_message *msg)
+{
+	if (msg->geometry == ENGAGE_GEOMETRY)
+		behavior_selector_state_message.low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY;
+	else if (msg->geometry == DEFAULT_GEOMETRY)
+		behavior_selector_state_message.low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY;
+
+	carmen_collision_detection_set_global_collision_config(msg->geometry);
+}
+
+
+static void
 shutdown_module(int signo)
 {
 	if (signo == SIGINT)
@@ -1693,6 +1707,8 @@ register_handlers()
 	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (carmen_simulator_ackerman_objects_message_handler), CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_moving_objects_point_clouds_subscribe_message_generic(0, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_0, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_task_manager_subscribe_set_collision_geometry_message(NULL, (carmen_handler_t) task_manager_set_collision_geometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

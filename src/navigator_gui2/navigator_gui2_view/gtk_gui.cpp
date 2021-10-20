@@ -3380,7 +3380,7 @@ namespace View
 	{
 		if (nav_panel_config->show_collision_range)
 		{
-			carmen_collision_config_t *collision_config = carmen_get_global_collision_config();
+			carmen_collision_config_t *collision_config = carmen_collision_detection_get_global_collision_config();
 			for (int i = 0; i < collision_config->n_markers; i++)
 			{
 				carmen_world_point_t center;
@@ -3421,7 +3421,7 @@ namespace View
 
 			if (nav_panel_config->show_collision_range)
 			{
-				carmen_collision_config_t *collision_config = carmen_get_global_collision_config();
+				carmen_collision_config_t *collision_config = carmen_collision_detection_get_global_collision_config();
 
 				for (int i = 0; i < collision_config->n_semi_trailer_markers; i++)
 				{

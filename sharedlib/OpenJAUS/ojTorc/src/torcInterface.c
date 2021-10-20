@@ -138,7 +138,7 @@ unsigned int g_XGV_component_status = 0;
 double g_wheels_speed_update_freq = 0.0;
 double g_atan_curvature_update_freq = 0.0;
 
-double factor = 1.0;
+double factor = 0.5;
 
 
 void
@@ -570,6 +570,9 @@ user_interface(OjCmpt XGV_CCU)
 					if (g_steering_command > MAX_STEERING)
 						g_steering_command = MAX_STEERING;
 
+//					if (g_steering_command == 0)
+//						g_steering_command = 1.0;
+
 					g_atan_curvature_command += factor * (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
 					if (g_atan_curvature_command > MAX_ARCTAN_DESIRED_CURVATURE)
 						g_atan_curvature_command = MAX_ARCTAN_DESIRED_CURVATURE;
@@ -579,6 +582,9 @@ user_interface(OjCmpt XGV_CCU)
 					g_steering_command -= factor * (MAX_STEERING - MIN_STEERING) / 100.0;
 					if (g_steering_command < MIN_STEERING)
 						g_steering_command = MIN_STEERING;
+
+//					if (g_steering_command == 0)
+//						g_steering_command = -1.0;
 					
 					g_atan_curvature_command -= factor * (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
 					if (g_atan_curvature_command < MIN_ARCTAN_DESIRED_CURVATURE)

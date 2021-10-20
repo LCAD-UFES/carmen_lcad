@@ -43,15 +43,16 @@
 extern "C" {
 #endif
 
-//typedef struct {
-//	double x, y, theta;
-//	double v, phi;
-//	double timestamp;
-//	char *host;
-//} carmen_base_ackerman_odometry_message;
-//
-//#define	CARMEN_BASE_ACKERMAN_ODOMETRY_NAME	"carmen_base_ackerman_odometry"
-//#define	CARMEN_BASE_ACKERMAN_ODOMETRY_FMT	"{double,double,double,double,double,double,string}"
+typedef struct
+{
+	int geometry;
+	double timestamp;
+	char *host;
+} carmen_task_manager_set_collision_geometry_message;
+
+#define	CARMEN_TASK_MANAGER_SET_GEOMETRY_MESSAGE_NAME	"carmen_task_manager_set_collision_geometry"
+#define	CARMEN_TASK_MANAGER_SET_GEOMETRY_MESSAGE_FMT	"{int,double,string}"
+
 //
 //// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
 //#define	CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME	"carmen_base_ackerman_odometry_2"

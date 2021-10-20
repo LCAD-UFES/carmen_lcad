@@ -1,0 +1,39 @@
+# Sequencia de tasks para engatar em um trailer
+engage_trailer_mission:
+
+# A task abaixo invoca o módulo que computa a pose que deve ser alcançada pelo truck para o exato engate no semi trailer 1 (1 é o ID, não o tipo). 
+# Ela também salva internamente no task_manager a engage_pose e o tipo do semi trailer 1 em semi_trailer_type.
+# Se o módulo não publicar a engage_pose dentro do tempo de timeout do task_manager (9 segundos), o comando falha.
+get semi trailer 1 engage_pose and semi_trailer_type # pede os dados do módulo cargo
+if previous task failed, execute task at label exit_with_error # isso eh um goto para a task de label <label>
+
+# Modifica a geometria de colisão para permitir o engate no trailer
+set colision geometry to engage
+
+# A task abaixo é equivalente à park at, mas o goal é a variável interna engage_pose
+move to engage_pose
+if previous task failed, execute task at label exit_with_error # isso eh um goto para a task de label <label>
+
+# A task abaixo demanda a execução do processo de engate no semi trailer. Se o ford_escape_hybrid (ou o simulator_ackerman) não publicar
+# a mensagem indicando que o engate ocorreu com sucesso dentro do tempo de timeout do task_manager (9 segundos), o comando falha.
+engage semi trailer
+if previous task failed, execute task at label move_back_to_pre_engage_pose
+set semi trailer type to semi_trailer_type # Muda o semi trailer type no sistema todo. Usa a variável semi_trailer_type capturada por get semi trailer 1 engage_pose.
+set colision geometry to default
+
+# Missão terminada com sucesso
+exit_with_sucess:
+mission completed
+
+
+# Retorna à posição inicial e tenta tudo de novo
+move_back_to_pre_engage_pose:
+# Move à frente o número de metros necessário para se afastar do semi trailer
+move away from engage_pose
+set colision geometry to default
+execute task at label engage_trailer_mission
+
+# Missão terminada com erro
+exit_with_error:
+mission completed
+

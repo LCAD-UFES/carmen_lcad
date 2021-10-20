@@ -85,7 +85,7 @@ draw_symotha(symotha_drawer_t *symotha_drawer, carmen_pose_3D_t car_fused_pose)
 	drawHollowCircle(pose.x, pose.y, pose.z, symotha_drawer->symotha_params.main_central_lane_obstacles_safe_distance, 0.0, 0.0, 1.0);
 
 	// Draw robot collision profile
-	carmen_collision_config_t *robot_collision_profile = carmen_get_global_collision_config();
+	carmen_collision_config_t *robot_collision_profile = carmen_collision_detection_get_global_collision_config();
 	theta = car_fused_pose.orientation.yaw;
 	for (int i = 0; i < robot_collision_profile->n_markers; i++)
 	{

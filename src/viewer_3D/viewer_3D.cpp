@@ -22,6 +22,7 @@
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/offroad_planner_interface.h>
+#include <carmen/task_manager_interface.h>
 #include <carmen/rrt_node.h>
 #include <GL/glew.h>
 #include <iostream>
@@ -269,29 +270,29 @@ static int draw_robot_waypoints_flag;
 static int follow_car_flag;
 static int zero_z_flag;
 
-static CarDrawer* car_drawer;
-static point_cloud_drawer* ldmrs_drawer;
-static point_cloud_drawer* laser_drawer;
-static point_cloud_drawer* velodyne_drawer;
-static point_cloud_drawer* lidar0_drawer;
-static point_cloud_drawer* lidar1_drawer;
-static point_cloud_drawer* lidar2_drawer;
-static point_cloud_drawer* lidar3_drawer;
-static point_cloud_drawer* lidar4_drawer;
-static point_cloud_drawer* lidar5_drawer;
-static point_cloud_drawer* lidar6_drawer;
-static point_cloud_drawer* lidar7_drawer;
-static point_cloud_drawer* lidar8_drawer;
-static point_cloud_drawer* lidar9_drawer;
-static point_cloud_drawer* lidar10_drawer;
-static point_cloud_drawer* lidar11_drawer;
-static point_cloud_drawer* lidar12_drawer;
-static point_cloud_drawer* lidar13_drawer;
-static point_cloud_drawer* lidar14_drawer;
-static point_cloud_drawer* lidar15_drawer;
-static velodyne_360_drawer* v_360_drawer;
-static variable_velodyne_drawer* var_v_drawer;
-static interface_drawer* i_drawer;
+static CarDrawer *car_drawer;
+static point_cloud_drawer *ldmrs_drawer;
+static point_cloud_drawer *laser_drawer;
+static point_cloud_drawer *velodyne_drawer;
+static point_cloud_drawer *lidar0_drawer;
+static point_cloud_drawer *lidar1_drawer;
+static point_cloud_drawer *lidar2_drawer;
+static point_cloud_drawer *lidar3_drawer;
+static point_cloud_drawer *lidar4_drawer;
+static point_cloud_drawer *lidar5_drawer;
+static point_cloud_drawer *lidar6_drawer;
+static point_cloud_drawer *lidar7_drawer;
+static point_cloud_drawer *lidar8_drawer;
+static point_cloud_drawer *lidar9_drawer;
+static point_cloud_drawer *lidar10_drawer;
+static point_cloud_drawer *lidar11_drawer;
+static point_cloud_drawer *lidar12_drawer;
+static point_cloud_drawer *lidar13_drawer;
+static point_cloud_drawer *lidar14_drawer;
+static point_cloud_drawer *lidar15_drawer;
+static velodyne_360_drawer *v_360_drawer;
+static variable_velodyne_drawer *var_v_drawer;
+static interface_drawer *i_drawer;
 static map_drawer* m_drawer;
 static trajectory_drawer *path_plan_drawer;
 static trajectory_drawer *motion_plan_drawer;
@@ -1108,15 +1109,16 @@ read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
 
 	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
 
-	carmen_param_t semi_trailer_param_list[] = {
-	{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   	 0, NULL},
-	{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   	 0, NULL},
-	{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						   	 0, NULL},
-	{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-	{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),	 0, NULL},
-	{semi_trailer_string,(char *) "max_beta",						 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.max_beta),	 					 0, NULL}
+	carmen_param_t semi_trailer_param_list[] =
+	{
+		{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   	 0, NULL},
+		{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   	 0, NULL},
+		{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						   	 0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),	 0, NULL},
+		{semi_trailer_string,(char *) "max_beta",						 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.max_beta),	 					 0, NULL}
 	};
-	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list) / sizeof(semi_trailer_param_list[0]));
 
 	semi_trailer_config.max_beta = carmen_degrees_to_radians(semi_trailer_config.max_beta);
 }
@@ -2734,6 +2736,16 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 }
 
 
+static void
+behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
+{
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_global_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_global_collision_config(DEFAULT_GEOMETRY);
+}
+
+
 void
 final_goal_message_handler(carmen_rddf_end_point_message *message)
 {
@@ -4040,7 +4052,9 @@ subscribe_ipc_messages(void)
                                                          (carmen_handler_t) path_goals_and_annotations_message_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
                                                          (carmen_handler_t) localize_ackerman_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
     carmen_rddf_subscribe_annotation_message(NULL,

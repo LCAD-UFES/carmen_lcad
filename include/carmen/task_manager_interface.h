@@ -46,8 +46,13 @@ extern "C" {
 #include <carmen/carmen.h>
 #include "task_manager_messages.h"
 
-//int carmen_simulator_ackerman_set_truepose(carmen_point_t *point);
-//
+void
+carmen_task_manager_subscribe_set_collision_geometry_message(carmen_task_manager_set_collision_geometry_message *msg,
+				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_publish_set_collision_geometry_message(int geometry, double timestamp);
+
 //void carmen_simulator_ackerman_subscribe_truepos_message(carmen_simulator_ackerman_truepos_message
 //					   *truepos, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 //
