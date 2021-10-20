@@ -1268,6 +1268,16 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 }
 
 
+static void
+behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
+{
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_global_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_global_collision_config(DEFAULT_GEOMETRY);
+}
+
+
 static gint
 handle_ipc(gpointer			*data __attribute__ ((unused)),
 		gint				 source __attribute__ ((unused)),
@@ -1431,6 +1441,7 @@ subscribe_ipc_messages()
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) (fused_odometry_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) (odometry_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_gui_subscribe_path_message(NULL, (carmen_handler_t) (carmen_navigator_gui_path_message_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_FMT);
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME);

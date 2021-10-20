@@ -29,6 +29,8 @@
 #include <carmen/carmen.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/route_planner_interface.h>
+#include <carmen/collision_detection.h>
+
 #include <control.h>
 
 #include "simulator_ackerman.h"
@@ -739,6 +741,11 @@ static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
 	behavior_selector_low_level_state = msg->low_level_state;
+
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_global_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_global_collision_config(DEFAULT_GEOMETRY);
 }
 
 

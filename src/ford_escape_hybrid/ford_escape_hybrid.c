@@ -28,6 +28,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/fused_odometry_interface.h>
+#include <carmen/collision_detection.h>
 #include <jaus.h>				// Header file for JAUS types, structs and messages
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
@@ -548,6 +549,11 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 {
 	behavior_selector_low_level_state = msg->low_level_state;
 	behavior_selector_going_backwards = msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
+
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_global_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_global_collision_config(DEFAULT_GEOMETRY);
 }
 
 

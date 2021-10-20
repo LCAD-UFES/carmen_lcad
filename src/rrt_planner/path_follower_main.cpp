@@ -13,6 +13,8 @@
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
 
+#include <carmen/collision_detection.h>
+
 #include <car_model.h>
 
 #include "model/robot_config.h"
@@ -331,6 +333,11 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 {
 	GlobalState::behavior_selector_task = msg->task;
 	GlobalState::current_algorithm = msg->algorithm;
+
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_global_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_global_collision_config(DEFAULT_GEOMETRY);
 }
 
 

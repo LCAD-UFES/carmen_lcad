@@ -558,6 +558,11 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 {
 	current_algorithm = msg->algorithm;
 	current_task = msg->task;
+
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_global_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_global_collision_config(DEFAULT_GEOMETRY);
 }
 
 
