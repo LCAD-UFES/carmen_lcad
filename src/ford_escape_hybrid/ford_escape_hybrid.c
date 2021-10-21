@@ -29,6 +29,8 @@
 #include <carmen/carmen.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/collision_detection.h>
+#include <carmen/task_manager_interface.h>
+#include <carmen/task_manager_messages.h>
 #include <jaus.h>				// Header file for JAUS types, structs and messages
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
@@ -74,6 +76,8 @@ carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = S
 int behavior_selector_going_backwards = 0;
 
 double g_XGV_velocity_temp = 0.0;
+
+carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
 
 
 static double
@@ -480,7 +484,6 @@ fused_odometry_message_handler(carmen_fused_odometry_message *fused_odometry_mes
 }
 
 
-carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
@@ -503,6 +506,16 @@ ford_escape_signals_message_handler(carmen_ford_escape_signals_message *msg)
 			g_headlights_status_command ^= 0x10;
 
 	publish_ford_escape_turn_horn_and_headlight_signals(XGV_CCU);
+}
+
+
+static void
+task_manager_desired_engage_state_message_handler(carmen_task_manager_desired_engage_state_message *message)
+{
+	if (message->desired_engage_state == ENGAGED)
+		g_horn_status_command &= ~0x02;
+	else if (message->desired_engage_state == DISENGAGED)
+		g_horn_status_command |= 0x02;
 }
 
 
@@ -1093,6 +1106,8 @@ subscribe_to_relevant_messages()
 		carmen_visual_odometry_subscribe_pose6d_message(NULL, (carmen_handler_t) visual_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_task_manager_subscribe_desired_engage_state_message(NULL, (carmen_handler_t) task_manager_desired_engage_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

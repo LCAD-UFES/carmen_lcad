@@ -43,6 +43,10 @@
 extern "C" {
 #endif
 
+#define ENGAGED		1
+#define DISENGAGED	0
+
+
 typedef struct
 {
 	int geometry;
@@ -53,35 +57,25 @@ typedef struct
 #define	CARMEN_TASK_MANAGER_SET_GEOMETRY_MESSAGE_NAME	"carmen_task_manager_set_collision_geometry"
 #define	CARMEN_TASK_MANAGER_SET_GEOMETRY_MESSAGE_FMT	"{int,double,string}"
 
-//
-//// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
-//#define	CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME	"carmen_base_ackerman_odometry_2"
-//#define	CARMEN_BASE_ACKERMAN_ODOMETRY_2_FMT	"{double,double,double,double,double,double,string}"
-//
-//typedef struct {
-//	double v, phi;
-//	double timestamp;
-//	char *host;
-//} carmen_base_ackerman_velocity_message;
-//
-//#define	CARMEN_BASE_ACKERMAN_VELOCITY_NAME	"carmen_base_ackerman_velocity"
-//#define	CARMEN_BASE_ACKERMAN_VELOCITY_FMT	"{double,double,double,string}"
-//
-//typedef struct
-//{
-//	int num_motion_commands;
-//	carmen_ackerman_motion_command_p motion_command;
-//	double timestamp;
-//	char *host;                 /**< The host from which this message was sent **/
-//} carmen_base_ackerman_motion_command_message;
-//
-//#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME         "carmen_base_ackerman_motion_command"
-//#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT          "{int,<{double,double,double,double,double,double}:1>,double,string}"
-//
-//// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
-//#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME         "carmen_base_ackerman_motion_command_2"
-//#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_FMT          "{int,<{double,double,double,double,double,double}:1>,double,string}"
-//
+typedef struct
+{
+	int desired_engage_state;
+	double timestamp;
+	char *host;
+} carmen_task_manager_desired_engage_state_message;
+
+#define	CARMEN_TASK_MANAGER_DESIRED_ENGAGE_STATE_MESSAGE_NAME	"carmen_task_manager_desired_engage_state"
+#define	CARMEN_TASK_MANAGER_DESIRED_ENGAGE_STATE_MESSAGE_FMT	"{int,double,string}"
+
+typedef struct
+{
+	int semi_trailer_type;
+	double timestamp;
+	char *host;
+} carmen_task_manager_set_semi_trailer_type_message;
+
+#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_MESSAGE_NAME	"carmen_task_manager_set_semi_trailer_type"
+#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_MESSAGE_FMT	"{int,double,string}"
 
 #ifdef __cplusplus
 }

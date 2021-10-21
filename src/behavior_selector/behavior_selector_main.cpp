@@ -1180,8 +1180,10 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 //	print_poses(last_rddf_message->poses, last_rddf_message->number_of_poses, (char *) "cacox0.txt");
 
 	if (!last_rddf_message)
+	{
+		publish_current_state(&behavior_selector_state_message);
 		return (NONE);
-
+	}
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
 
@@ -1239,7 +1241,6 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 
 	return (who_set_the_goal_v);
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -1263,6 +1264,9 @@ read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
 
 	semi_trailer_config.max_beta = carmen_degrees_to_radians(semi_trailer_config.max_beta);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //

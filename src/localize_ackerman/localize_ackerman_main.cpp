@@ -36,6 +36,8 @@
 #include <carmen/grid_mapping.h>
 #include <carmen/xsens_interface.h>
 #include <carmen/car_model.h>
+#include <carmen/task_manager_interface.h>
+#include <carmen/task_manager_messages.h>
 
 #include <prob_measurement_model.h>
 #include <prob_map.h>
@@ -1165,6 +1167,13 @@ map_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __a
 
 
 static void
+carmen_task_manager_set_semi_trailer_type_message_handler(carmen_task_manager_set_semi_trailer_type_message *message)
+{
+	semi_trailer_config.type = message->semi_trailer_type;
+}
+
+
+static void
 shutdown_localize(int x)
 {
 	if (x == SIGINT)
@@ -1354,8 +1363,10 @@ subscribe_to_ipc_message()
 
 		// lidar0
 		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
 	}
+
+	carmen_task_manager_subscribe_set_semi_trailer_type_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
