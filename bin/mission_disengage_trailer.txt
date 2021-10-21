@@ -16,6 +16,7 @@ go
 if previous task failed, execute task at label exit_with_error2
 
 # Missão terminada com sucesso
+stop
 exit_with_sucess:
 set colision geometry to default
 mission completed
@@ -28,6 +29,7 @@ mission completed
 
 # Missão terminada com erro 2, não conseguiu se afastar depois de detectar que desengatou
 exit_with_error2:
+stop
 set colision geometry to default
 mission completed
 

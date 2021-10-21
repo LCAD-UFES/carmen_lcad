@@ -448,7 +448,7 @@ robot_reached_non_return_point(carmen_robot_and_trailer_traj_point_t current_rob
 
 bool
 within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
-		carmen_robot_and_trailer_traj_point_t *last_valid_goal, carmen_behavior_selector_state_message *decision_making_state_msg)
+		carmen_robot_and_trailer_traj_point_t *last_valid_goal, carmen_behavior_selector_state_message *decision_making_state_msg __attribute__((unused)))
 {
 	carmen_annotation_t *barrier_annotation = carmen_behavior_selector_get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_BARRIER, last_rddf_annotation_message,
 			&current_robot_pose_v_and_phi);
@@ -473,8 +473,8 @@ within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v
 		else
 			return (false);
 	}
-	else if (decision_making_state_msg->task == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE)
-		return (true);
+//	else if (decision_making_state_msg->task == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE)
+//		return (true);
 	else
 		return (false);
 }
