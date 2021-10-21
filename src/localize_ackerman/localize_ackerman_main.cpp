@@ -343,6 +343,9 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 	globalpos_ackerman_message.beta = initialize_msg->beta;
 	globalpos.beta = initialize_msg->beta;
 	
+	globalpos_ackerman_message.semi_trailer_engaged = globalpos.semi_trailer_engaged;
+	globalpos_ackerman_message.semi_trailer_type = globalpos.semi_trailer_type;
+
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos_ackerman_message);
 }
 

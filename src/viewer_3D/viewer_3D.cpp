@@ -2817,7 +2817,7 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 		for (int i = 0; i < message->number_of_poses; i++)
 		{
 			semi_trailer_path[i].x	  = message->poses[i].x - semi_trailer_config.M * cos(message->poses[i].theta) - semi_trailer_config.d * cos(message->poses[i].theta - message->poses[i].beta);
-			semi_trailer_path[i].y	  = message->poses[i].y- semi_trailer_config.M * sin(message->poses[i].theta) - semi_trailer_config.d * sin(message->poses[i].theta - message->poses[i].beta);
+			semi_trailer_path[i].y	  = message->poses[i].y - semi_trailer_config.M * sin(message->poses[i].theta) - semi_trailer_config.d * sin(message->poses[i].theta - message->poses[i].beta);
 			semi_trailer_path[i].theta = message->poses[i].theta - message->poses[i].beta;
 			semi_trailer_path[i].beta  = message->poses[i].beta;
 			semi_trailer_path[i].v	  = message->poses[i].v;
