@@ -10,23 +10,24 @@ disengage semi trailer
 if previous task failed, execute task at label exit_with_error1
 set semi trailer type to 0 # Tipo 0 indica sistema sem semi trailer
 
-	# Move à frente o número de metros necessário para se afastar do semi trailer
-	move away from engage_pose
-	if previous task failed, execute task at label exit_with_error2
+# Move à frente o número de metros necessário para se afastar do semi trailer
+move away from engage_pose
+go
+if previous task failed, execute task at label exit_with_error2
 
-	# Missão terminada com sucesso
-	exit_with_sucess:
-	set colision geometry to default
-	mission completed
+# Missão terminada com sucesso
+exit_with_sucess:
+set colision geometry to default
+mission completed
 
 
-	# Missão terminada com erro 1, não desengatou
-	exit_with_error1:
-	set colision geometry to default
-	mission completed
+# Missão terminada com erro 1, não desengatou
+exit_with_error1:
+set colision geometry to default
+mission completed
 
-	# Missão terminada com erro 2, não conseguiu se afastar depois de detectar que desengatou
-	exit_with_error2:
-	set colision geometry to default
+# Missão terminada com erro 2, não conseguiu se afastar depois de detectar que desengatou
+exit_with_error2:
+set colision geometry to default
 mission completed
 
