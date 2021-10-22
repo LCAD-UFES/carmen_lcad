@@ -45,6 +45,7 @@
 #include "trajectory_drawer.h"
 #include "velodyne_intensity_drawer.h"
 #include "annotation_drawer.h"
+#include "cargo_drawer.h"
 
 // #define TEST_LANE_ANALYSIS
 #ifdef TEST_LANE_ANALYSIS
@@ -305,6 +306,7 @@ static std::vector<trajectory_drawer*> t_drawerTree;
 static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
 static symotha_drawer_t *symotha_drawer;
+static CargoDrawer *cargoDrawer;
 
 static double beta;
 static int semi_trailer_engaged;
@@ -785,6 +787,9 @@ draw_everything()
     reset_camera();
 
     draw_final_goal();
+
+    carmen_vector_3D_t cargos_offset = get_position_offset();
+    draw_cargos(cargoDrawer, cargos_offset);
 
     if (draw_annotation_flag)
     {
@@ -2887,6 +2892,13 @@ carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_ini
 }
 
 
+static void
+cargos_message_handler(carmen_cargo_cargos_message *msg)
+{
+	add_cargos_message(cargoDrawer, msg);
+}
+
+
 #ifdef TEST_LANE_ANALYSIS
 static void lane_analysis_handler(carmen_elas_lane_analysis_message * message) {
 	carmen_vector_3D_t position_offset = get_position_offset();
@@ -3288,6 +3300,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     lane_drawer = create_lane_analysis_drawer();
 #endif
     symotha_drawer = create_symotha_drawer(argc, argv);
+    cargoDrawer = createCargoDrawer(argc, argv);
 }
 
 void
@@ -3767,6 +3780,9 @@ draw_while_picking()
 
 	draw_final_goal();
 
+	carmen_vector_3D_t cargos_offset = get_position_offset();
+	draw_cargos(cargoDrawer, cargos_offset);
+
 	if (draw_xsens_orientation_flag)
 	{
 		glColor3f(0.4, 1.0, 0.4);
@@ -4080,6 +4096,8 @@ subscribe_ipc_messages(void)
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) final_goal_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) offroad_planner_plan_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_cargo_subscribe_cargos_message(NULL, (carmen_handler_t) cargos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

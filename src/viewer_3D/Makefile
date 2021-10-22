@@ -22,7 +22,7 @@ LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11
 		-llocalize_ackerman_interface -lobstacle_avoider_interface -lmotion_planner_interface -lrddf_interface \
 		-lmoving_objects_interface -lgps_nmea_interface -llaser_ldmrs_utils -llaser_ldmrs_interface \
 		-lmapper_interface -lmap_server_interface -lprob_models -lgrid_mapping -lmap_interface -lmap_io -lfrenet_path_planner_interface \
-		-lviewer_3D_interface -lbase_ackerman_interface -loffroad_planner_interface -ltask_manager_interface #-llane_analysis_interface
+		-lviewer_3D_interface -lbase_ackerman_interface -loffroad_planner_interface -ltask_manager_interface -lcargo_interface #-llane_analysis_interface
 		
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -ljpeg
 
@@ -47,7 +47,7 @@ MODULE_COMMENT = This module implements a viewer_3D filter for fusing IMU and GP
 
 SOURCES = viewer_3D.cpp Window.cpp GLDraw.cpp xsens_viewer.cpp draw_car.cpp point_cloud_drawer.cpp variable_velodyne_drawer.cpp \
 	velodyne_360_drawer.cpp interface_drawer.cpp map_drawer.cpp download_map.cpp texture_loader.cpp trajectory_drawer.cpp \
-	velodyne_intensity_drawer.cpp annotation_drawer.cpp symotha_drawer.cpp viewer_3D_interface.c 3D_map_view.cpp #lane_analysis_drawer.cpp
+	velodyne_intensity_drawer.cpp annotation_drawer.cpp symotha_drawer.cpp cargo_drawer.cpp viewer_3D_interface.c 3D_map_view.cpp #lane_analysis_drawer.cpp
 	
 PUBLIC_INCLUDES = velodyne_360_drawer.h viewer_3D_messages.h viewer_3D_interface.h
 PUBLIC_LIBRARIES = libvelodyne_360_drawer.a libviewer_3D_interface.a
@@ -62,7 +62,7 @@ libvelodyne_360_drawer.a: velodyne_360_drawer.o
 
 viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o velodyne_360_drawer.o \
 	interface_drawer.o map_drawer.o texture_loader.o download_map.o trajectory_drawer.o velodyne_intensity_drawer.o \
-	annotation_drawer.o symotha_drawer.o libviewer_3D_interface.a #lane_analysis_drawer.o
+	annotation_drawer.o symotha_drawer.o cargo_drawer.o libviewer_3D_interface.a #lane_analysis_drawer.o
 
 xsens_viewer: xsens_viewer.o Window.o draw_car.o texture_loader.o download_map.o
 
