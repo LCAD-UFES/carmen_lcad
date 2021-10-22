@@ -742,9 +742,9 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 		GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance;
 
 	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
-		carmen_collision_detection_set_global_collision_config(ENGAGE_GEOMETRY);
+		carmen_collision_detection_set_robot_collision_config(ENGAGE_GEOMETRY);
 	else
-		carmen_collision_detection_set_global_collision_config(DEFAULT_GEOMETRY);
+		carmen_collision_detection_set_robot_collision_config(DEFAULT_GEOMETRY);
 }
 
 

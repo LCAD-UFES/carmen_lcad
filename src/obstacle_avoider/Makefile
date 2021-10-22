@@ -39,8 +39,6 @@ LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
 LFLAGS += `pkg-config --libs gtkglext-1.0`
 endif
 
-PUBLIC_LIBRARIES_SO = libobstacle_avoider_interface.so
-
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
 clean: clean_libcarmodel

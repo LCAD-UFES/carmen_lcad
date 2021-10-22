@@ -111,7 +111,7 @@ carmen_collision_config_t*
 carmen_collision_detection_get_global_collision_config();
 
 void
-carmen_collision_detection_set_global_collision_config(int collision_geometry);
+carmen_collision_detection_set_robot_collision_config(int collision_geometry);
 
 int
 carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer_pose_t car_pose, carmen_point_t moving_object_pose,

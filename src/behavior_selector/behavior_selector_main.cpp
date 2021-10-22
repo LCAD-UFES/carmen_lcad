@@ -1585,7 +1585,7 @@ task_manager_set_collision_geometry_message_handler(carmen_task_manager_set_coll
 	else if (msg->geometry == DEFAULT_GEOMETRY)
 		behavior_selector_state_message.low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY;
 
-	carmen_collision_detection_set_global_collision_config(msg->geometry);
+	carmen_collision_detection_set_robot_collision_config(msg->geometry);
 }
 
 
