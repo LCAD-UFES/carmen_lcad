@@ -497,6 +497,8 @@ void
 semi_trailer_collision_config_initialization(int semi_trailer_type)
 {
 	global_collision_config.semi_trailer_type = semi_trailer_type;
+	if (semi_trailer_type == 0)
+		return;
 
 	char semi_trailer_string[2048];
 	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_type);
@@ -571,8 +573,7 @@ init_global_colision_config(carmen_collision_config_t *global_collision_config)
 
 	fclose(collision_file_pointer);
 
-	if (global_collision_config->semi_trailer_type != 0)
-		semi_trailer_collision_config_initialization(global_collision_config->semi_trailer_type);
+	semi_trailer_collision_config_initialization(global_collision_config->semi_trailer_type);
 }
 
 
@@ -1031,4 +1032,11 @@ carmen_collision_detection_set_global_collision_config(int collision_geometry)
 		global_collision_config.geometry = collision_geometry;
 		init_global_colision_config(&global_collision_config);
 	}
+}
+
+
+void
+carmen_collision_detection_set_semi_trailer_type(int semi_trailer_type)
+{
+	semi_trailer_collision_config_initialization(semi_trailer_type);
 }

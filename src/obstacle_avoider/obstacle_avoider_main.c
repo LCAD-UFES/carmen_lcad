@@ -2,6 +2,7 @@
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/task_manager_interface.h>
 #include "obstacle_avoider_messages.h"
 #include "obstacle_avoider_interface.h"
 #include "obstacle_avoider.h"
@@ -408,7 +409,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 
 	if (msg->semi_trailer_type != carmen_semi_trailer_config.type)
+	{
 		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
+		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.type);
+	}
 }
 
 

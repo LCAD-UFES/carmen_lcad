@@ -1283,7 +1283,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 //	t = carmen_get_time();
 
 	if (msg->semi_trailer_type != semi_trailer_config.type)
+	{
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
+		carmen_collision_detection_set_semi_trailer_type(semi_trailer_config.type);
+	}
 }
 
 

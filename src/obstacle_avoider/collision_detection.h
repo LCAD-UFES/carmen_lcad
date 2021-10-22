@@ -125,6 +125,9 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_robot_and_traile
 carmen_robot_and_trailer_pose_t
 carmen_collision_detection_displace_car_on_its_frenet_frame(carmen_robot_and_trailer_traj_point_t *car_pose, double s, double d);
 
+void
+carmen_collision_detection_set_semi_trailer_type(int semi_trailer_type);
+
 #ifdef __cplusplus
 }
 #endif
