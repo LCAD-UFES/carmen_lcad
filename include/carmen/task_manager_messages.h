@@ -33,12 +33,13 @@ typedef struct
 typedef struct
 {
 	int semi_trailer_type;
+	double beta;
 	double timestamp;
 	char *host;
-} carmen_task_manager_set_semi_trailer_type_message;
+} carmen_task_manager_set_semi_trailer_type_and_beta_message;
 
-#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_MESSAGE_NAME	"carmen_task_manager_set_semi_trailer_type"
-#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_MESSAGE_FMT	"{int,double,string}"
+#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_NAME	"carmen_task_manager_set_semi_trailer_type_and_beta"
+#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_FMT	"{int,double,double,string}"
 
 #ifdef __cplusplus
 }

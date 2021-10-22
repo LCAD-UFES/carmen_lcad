@@ -12,6 +12,7 @@
 
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/task_manager_interface.h>
 
 #include <carmen/collision_detection.h>
 
@@ -176,29 +177,6 @@ build_and_follow_path(carmen_point_t globalpos, double beta, double pose_timesta
 
 	follower.build_and_send_refined_path();
 }
-
-
-static void
-read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
-{
-	GlobalState::semi_trailer_config.type = semi_trailer_type;
-
-	char semi_trailer_string[2048];
-
-	sprintf(semi_trailer_string, "%s%d", "semi_trailer", GlobalState::semi_trailer_config.type);
-
-	carmen_param_t semi_trailer_param_list[] = {
-		{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.d),							   0, NULL},
-		{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.M),							   0, NULL},
-		{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.width),						   0, NULL},
-		{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.distance_between_axle_and_back),  0, NULL},
-		{semi_trailer_string,(char *) "max_beta",						 CARMEN_PARAM_DOUBLE, &(GlobalState::semi_trailer_config.max_beta),						   0, NULL}
-	};
-	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
-
-	GlobalState::semi_trailer_config.max_beta = carmen_degrees_to_radians(GlobalState::semi_trailer_config.max_beta);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -221,8 +199,8 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	globalpos_message_received = true;
 
-	if ((msg->semi_trailer_type != GlobalState::semi_trailer_config.type) && (msg->semi_trailer_type > 0))
-		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
+	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.type)
+		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
 }
 
 
@@ -480,7 +458,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	if (GlobalState::semi_trailer_config.type > 0)
-		RRT_IPC::read_parameters_semi_trailer(argc, argv, GlobalState::semi_trailer_config.type);
+		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.type);
 }
 
 

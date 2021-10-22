@@ -1170,9 +1170,14 @@ map_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __a
 
 
 static void
-carmen_task_manager_set_semi_trailer_type_message_handler(carmen_task_manager_set_semi_trailer_type_message *message)
+carmen_task_manager_set_semi_trailer_type_and_beta_message_handler(carmen_task_manager_set_semi_trailer_type_and_beta_message *message)
 {
-	semi_trailer_config.type = message->semi_trailer_type;
+	if (semi_trailer_config.type != message->semi_trailer_type)
+	{
+		char *fake_module_name = (char *) "carmen_task_manager_set_semi_trailer_type_and_beta_message_handler()";
+		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, 1, &fake_module_name, message->semi_trailer_type);
+		globalpos.beta = message->beta;
+	}
 }
 
 
@@ -1369,7 +1374,7 @@ subscribe_to_ipc_message()
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
 	}
 
-	carmen_task_manager_subscribe_set_semi_trailer_type_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_and_beta_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

@@ -20,14 +20,17 @@ carmen_task_manager_subscribe_desired_engage_state_message(carmen_task_manager_d
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
-carmen_task_manager_subscribe_set_semi_trailer_type_message(carmen_task_manager_set_semi_trailer_type_message *msg,
+carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(carmen_task_manager_set_semi_trailer_type_and_beta_message *msg,
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
 carmen_task_manager_publish_desired_engage_state_message(int desired_engage_state, double timestamp);
 
 void
-carmen_task_manager_publish_set_semi_trailer_type_message(int semi_trailer_type, double timestamp);
+carmen_task_manager_publish_set_semi_trailer_type_and_beta_message(int semi_trailer_type, double beta, double timestamp);
+
+void
+carmen_task_manager_read_semi_trailer_parameters(carmen_semi_trailer_config_t *semi_trailer_config, int argc, char **argv, int semi_trailer_type);
 
 #ifdef __cplusplus
 }
