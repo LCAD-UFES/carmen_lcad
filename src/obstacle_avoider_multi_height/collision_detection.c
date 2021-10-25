@@ -1115,7 +1115,7 @@ carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_a
 
 
 carmen_collision_config_t*
-carmen_get_global_collision_config(){
+carmen_collision_detection_get_global_collision_config(){
 	check_collision_config_initialization();
 	return &global_collision_config;
 }

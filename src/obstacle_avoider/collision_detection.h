@@ -13,6 +13,10 @@
 extern "C" {
 #endif
 
+#define DEFAULT_GEOMETRY	0
+#define ENGAGE_GEOMETRY 	1
+
+
 typedef struct _carmen_oriented_bounding_box
 {
 	carmen_vector_2D_t object_pose; /*< Center of the bounding box*/
@@ -44,6 +48,8 @@ typedef struct
 
 typedef struct
 {
+	int geometry;
+
 	int n_markers;
 	carmen_collision_marker_t *markers;
 
@@ -102,7 +108,10 @@ carmen_position_t
 carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_robot_and_trailer_traj_point_t *car_pose, double x, double y);
 
 carmen_collision_config_t*
-carmen_get_global_collision_config();
+carmen_collision_detection_get_global_collision_config();
+
+void
+carmen_collision_detection_set_robot_collision_config(int collision_geometry);
 
 int
 carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer_pose_t car_pose, carmen_point_t moving_object_pose,
@@ -115,6 +124,9 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_robot_and_traile
 
 carmen_robot_and_trailer_pose_t
 carmen_collision_detection_displace_car_on_its_frenet_frame(carmen_robot_and_trailer_traj_point_t *car_pose, double s, double d);
+
+void
+carmen_collision_detection_set_semi_trailer_type(int semi_trailer_type);
 
 #ifdef __cplusplus
 }

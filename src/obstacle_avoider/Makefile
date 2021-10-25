@@ -12,7 +12,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models # -fopenmp
 LFLAGS += -lglobal -lgeometry -lparam_interface -lipc -llocalize_ackerman_interface -lmap_interface -lrobot_ackerman_interface \
 		-lmap_server_interface -lconventional_ackerman -lbase_ackerman_interface -lbehavior_selector_interface -lgrid_mapping \
 		-lmap_io -lmap_util -lmap_interface -lmapper_interface -lprob_models  -llocalize_ackerman_interface -lrotation_geometry \
-		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface
+		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface -ltask_manager_interface
 		
 #CFLAGS += -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -fopenmp -funroll-all-loops
 CFLAGS += -std=c99
@@ -38,8 +38,6 @@ IFLAGS += `pkg-config --cflags gtkglext-1.0`
 LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
 LFLAGS += `pkg-config --libs gtkglext-1.0`
 endif
-
-PUBLIC_LIBRARIES_SO = libobstacle_avoider_interface.so
 
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel

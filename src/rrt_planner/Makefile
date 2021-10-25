@@ -20,7 +20,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lmapper_interface -lrrt_planner_interface \
 		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
-		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core -lcarmodel \
+		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core -lcarmodel -ltask_manager_interface \
 		-lcollision_detection -lgsl -lgslcblas -lm
 			
 			

@@ -29,6 +29,9 @@
 #include <carmen/carmen.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/route_planner_interface.h>
+#include <carmen/collision_detection.h>
+#include <carmen/task_manager_interface.h>
+
 #include <control.h>
 
 #include "simulator_ackerman.h"
@@ -70,6 +73,8 @@ carmen_route_planner_road_network_message *road_network_message = NULL;
 int autonomous = 0;
 
 carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = Stopped;
+
+int g_XGV_horn_status = 0;
 
 
 //static void
@@ -309,6 +314,43 @@ publish_rearlaser(double timestamp)
 			CARMEN_LASER_REARLASER_NAME);
 
 }
+
+
+static void
+publish_ford_escape_status_message()
+{
+	IPC_RETURN_TYPE err;
+	static int first_time = 1;
+	static double previous_timestamp = 0.0;
+
+	if (first_time)
+	{
+		err = IPC_defineMsg(CARMEN_FORD_ESCAPE_STATUS_NAME,
+				IPC_VARIABLE_LENGTH,
+				CARMEN_FORD_ESCAPE_STATUS_FMT);
+		carmen_test_ipc_exit(err, "Could not define message",
+				CARMEN_FORD_ESCAPE_STATUS_NAME);
+
+		first_time = 0;
+	}
+
+	double current_timestamp = carmen_get_time();
+	if ((current_timestamp - previous_timestamp) > (1.0 / 5.0))
+	{
+		IPC_RETURN_TYPE err = IPC_OK;
+		carmen_ford_escape_status_message msg;
+
+		msg.g_XGV_horn_status = g_XGV_horn_status;
+
+		msg.timestamp = carmen_get_time();
+		msg.host = carmen_get_host();
+
+		err = IPC_publishData(CARMEN_FORD_ESCAPE_STATUS_NAME, &msg);
+		carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_STATUS_NAME);
+
+		previous_timestamp = current_timestamp;
+	}
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -376,6 +418,8 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 		publish_rearlaser(timestamp);
 	}
 	counter++;
+
+	publish_ford_escape_status_message();
 
 	carmen_publish_heartbeat("simulator");
 
@@ -739,6 +783,21 @@ static void
 behavior_selector_state_message_handler(carmen_behavior_selector_state_message *msg)
 {
 	behavior_selector_low_level_state = msg->low_level_state;
+
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_robot_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_robot_collision_config(DEFAULT_GEOMETRY);
+}
+
+
+static void
+task_manager_desired_engage_state_message_handler(carmen_task_manager_desired_engage_state_message *message)
+{
+	if (message->desired_engage_state == ENGAGED)
+		g_XGV_horn_status &= ~0x02;
+	else if (message->desired_engage_state == DISENGAGED)
+		g_XGV_horn_status |= 0x02;
 }
 
 
@@ -848,6 +907,8 @@ subscribe_to_relevant_messages()
 	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_task_manager_subscribe_desired_engage_state_message(NULL, (carmen_handler_t) task_manager_desired_engage_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	return (0);
 }

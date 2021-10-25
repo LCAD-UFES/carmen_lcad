@@ -6,3 +6,4 @@ libroute_planner_interface.a binary
 libroad_network_generator_utils.a binary
 libmol_event_detector_interface.a binary
 libtask_manager_interface.a binary
+libcargo_interface.a binary

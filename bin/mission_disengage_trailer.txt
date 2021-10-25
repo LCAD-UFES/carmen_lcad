@@ -1,0 +1,35 @@
+# Sequencia de tasks para desengatar de um trailer
+disengage_trailer_mission:
+
+set colision geometry to engage
+
+# A task abaixo demanda a execução do processo de desengate do semi trailer. 
+# Se o ford_escape_hybrid (ou o simulator_ackerman) não publicar
+# a mensagem indicando que o desengate ocorreu com sucesso dentro do tempo de timeout do task_manager (9 segundos), o comando falha.
+disengage semi trailer
+if previous task failed, execute task at label exit_with_error1
+set semi trailer type to 0 # Tipo 0 indica sistema sem semi trailer
+
+# Move à frente o número de metros necessário para se afastar do semi trailer
+move away from engage_pose
+go
+if previous task failed, execute task at label exit_with_error2
+
+# Missão terminada com sucesso
+stop
+exit_with_sucess:
+set colision geometry to default
+mission completed
+
+
+# Missão terminada com erro 1, não desengatou
+exit_with_error1:
+set colision geometry to default
+mission completed
+
+# Missão terminada com erro 2, não conseguiu se afastar depois de detectar que desengatou
+exit_with_error2:
+stop
+set colision geometry to default
+mission completed
+

@@ -22,6 +22,8 @@
 #include <carmen/mapper_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/obstacle_distance_mapper_datmo.h>
+#include <carmen/task_manager_messages.h>
+#include <carmen/task_manager_interface.h>
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -1178,8 +1180,10 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 //	print_poses(last_rddf_message->poses, last_rddf_message->number_of_poses, (char *) "cacox0.txt");
 
 	if (!last_rddf_message)
+	{
+		publish_current_state(&behavior_selector_state_message);
 		return (NONE);
-
+	}
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
 	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
 
@@ -1240,27 +1244,6 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static void
-read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
-{
-	semi_trailer_config.type = semi_trailer_type;
-
-	char semi_trailer_string[2048];
-
-	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
-
-	carmen_param_t semi_trailer_param_list[] = {
-		{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   	  0, NULL},
-		{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   	  0, NULL},
-		{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						   	  0, NULL},
-		{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-		{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
-		{semi_trailer_string,(char *) "max_beta",						 CARMEN_PARAM_DOUBLE, &(semi_trailer_config.max_beta),						  0, NULL}
-	};
-	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
-
-	semi_trailer_config.max_beta = carmen_degrees_to_radians(semi_trailer_config.max_beta);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -1299,8 +1282,11 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 //
 //	t = carmen_get_time();
 
-	if ((msg->semi_trailer_type != semi_trailer_config.type) && (msg->semi_trailer_type > 0))
-		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
+	if (msg->semi_trailer_type != semi_trailer_config.type)
+	{
+		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
+		carmen_collision_detection_set_semi_trailer_type(semi_trailer_config.type);
+	}
 }
 
 
@@ -1592,6 +1578,18 @@ moving_objects_point_clouds_message_handler_0(carmen_moving_objects_point_clouds
 
 
 static void
+task_manager_set_collision_geometry_message_handler(carmen_task_manager_set_collision_geometry_message *msg)
+{
+	if (msg->geometry == ENGAGE_GEOMETRY)
+		behavior_selector_state_message.low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY;
+	else if (msg->geometry == DEFAULT_GEOMETRY)
+		behavior_selector_state_message.low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY;
+
+	carmen_collision_detection_set_robot_collision_config(msg->geometry);
+}
+
+
+static void
 shutdown_module(int signo)
 {
 	if (signo == SIGINT)
@@ -1693,6 +1691,8 @@ register_handlers()
 	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (carmen_simulator_ackerman_objects_message_handler), CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_moving_objects_point_clouds_subscribe_message_generic(0, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_0, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_task_manager_subscribe_set_collision_geometry_message(NULL, (carmen_handler_t) task_manager_set_collision_geometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1837,7 +1837,7 @@ read_parameters(int argc, char **argv)
 	distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
 	if (semi_trailer_config.type > 0)
-		read_parameters_semi_trailer(argc, argv, semi_trailer_config.type);
+		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.type);
 }
 
 

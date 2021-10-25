@@ -494,9 +494,11 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_position_t
 
 
 void
-semi_trailer_collision_config_initialization(int semi_trailer_type)
+set_semi_trailer_collision_config(int semi_trailer_type)
 {
 	global_collision_config.semi_trailer_type = semi_trailer_type;
+	if (semi_trailer_type == 0)
+		return;
 
 	char semi_trailer_string[2048];
 	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_type);
@@ -534,45 +536,74 @@ semi_trailer_collision_config_initialization(int semi_trailer_type)
 
 
 void
+set_robot_colision_config(carmen_collision_config_t *global_collision_config)
+{
+	char *collision_file, *engage_collision_file;
+	carmen_param_t param_list[] =
+	{
+		{ "robot", "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL },
+		{ "robot", "engage_collision_file", CARMEN_PARAM_STRING, &engage_collision_file, 1, NULL },
+	};
+
+	char *fake_module_name = (char *) "set_robot_colision_config()";
+	carmen_param_install_params(1, &fake_module_name, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	char *carmen_home = getenv("CARMEN_HOME");
+	if (carmen_home == NULL)
+		exit(printf("Could not get environment variable $CARMEN_HOME in check_collision_config_initialization()\n"));
+
+	char collision_file_[2048];
+	if (global_collision_config->geometry == DEFAULT_GEOMETRY)
+		sprintf(collision_file_, "%s/bin/%s", carmen_home, collision_file);
+	else if (global_collision_config->geometry == ENGAGE_GEOMETRY)
+		sprintf(collision_file_, "%s/bin/%s", carmen_home, engage_collision_file);
+	FILE *collision_file_pointer = fopen(collision_file_, "r");
+
+	setlocale(LC_NUMERIC, "C");
+
+	fscanf(collision_file_pointer, "%d", &(global_collision_config->n_markers));
+	int max_h_level;
+	fscanf(collision_file_pointer, "%d", &max_h_level); // Para compatibilidade multi height
+
+	global_collision_config->markers = (carmen_collision_marker_t*) malloc(global_collision_config->n_markers * sizeof(carmen_collision_marker_t));
+	for (int i = 0; i < global_collision_config->n_markers; i++)
+		fscanf(collision_file_pointer, "%lf %lf %lf %d", &global_collision_config->markers[i].x, &global_collision_config->markers[i].y,
+				&global_collision_config->markers[i].radius, &global_collision_config->markers[i].height_level);
+
+	fclose(collision_file_pointer);
+}
+
+
+void
+init_global_colision_config(carmen_collision_config_t *global_collision_config)
+{
+	set_robot_colision_config(global_collision_config);
+
+	carmen_param_t param_list[] =
+	{
+		{ "semi", "trailer_initial_type", CARMEN_PARAM_INT, &(global_collision_config->semi_trailer_type), 1, NULL }
+	};
+
+	char *fake_module_name = (char *) "init_global_colision_config()";
+	carmen_param_install_params(1, &fake_module_name, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	set_semi_trailer_collision_config(global_collision_config->semi_trailer_type);
+}
+
+
+void
 check_collision_config_initialization()
 {
 	static int collision_config_initialized = 0;
 
 	if (collision_config_initialized)
 		return;
+	else
+		global_collision_config.geometry = DEFAULT_GEOMETRY;
+
 	collision_config_initialized = 1;
 
-	char *collision_file;
-	carmen_param_t param_list[] =
-	{
-		{"robot", "collision_file", 		CARMEN_PARAM_STRING, 	&collision_file, 								1, NULL},
-		{"semi",  "trailer_initial_type", 	CARMEN_PARAM_INT, 		&(global_collision_config.semi_trailer_type), 	1, NULL},
-	};
-	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
-
-	char *carmen_home = getenv("CARMEN_HOME");
-
-	if (carmen_home == NULL)
-		exit(printf("Could not get environment variable $CARMEN_HOME in check_collision_config_initialization()\n"));
-
-	char collision_file_[2048];
-	sprintf(collision_file_, "%s/bin/%s", carmen_home, collision_file);
-
-	FILE *collision_file_pointer = fopen(collision_file_, "r");
-	setlocale(LC_NUMERIC, "C");
-	fscanf(collision_file_pointer, "%d", &(global_collision_config.n_markers));
-	int max_h_level;
-	fscanf(collision_file_pointer, "%d", &max_h_level);	// Para compatibilidade multi height
-	global_collision_config.markers = (carmen_collision_marker_t *) malloc(global_collision_config.n_markers * sizeof(carmen_collision_marker_t));
-
-	for (int i = 0; i < global_collision_config.n_markers; i++)
-		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
-				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].height_level);
-
-	fclose(collision_file_pointer);
-
-	if (global_collision_config.semi_trailer_type != 0)
-		semi_trailer_collision_config_initialization(global_collision_config.semi_trailer_type);
+	init_global_colision_config(&global_collision_config);
 }
 
 
@@ -999,9 +1030,31 @@ carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_r
 
 
 carmen_collision_config_t *
-carmen_get_global_collision_config()
+carmen_collision_detection_get_global_collision_config()
 {
 	check_collision_config_initialization();
 
 	return (&global_collision_config);
+}
+
+
+void
+carmen_collision_detection_set_robot_collision_config(int collision_geometry)
+{
+	check_collision_config_initialization();
+
+	if (global_collision_config.geometry != collision_geometry)
+	{
+		global_collision_config.geometry = collision_geometry;
+		set_robot_colision_config(&global_collision_config);
+	}
+}
+
+
+void
+carmen_collision_detection_set_semi_trailer_type(int semi_trailer_type)
+{
+	check_collision_config_initialization();
+
+	set_semi_trailer_collision_config(semi_trailer_type);
 }

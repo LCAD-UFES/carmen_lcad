@@ -2,6 +2,7 @@
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/task_manager_interface.h>
 #include "obstacle_avoider_messages.h"
 #include "obstacle_avoider_interface.h"
 #include "obstacle_avoider.h"
@@ -270,30 +271,6 @@ publish_base_ackerman_motion_command_message_to_stop_robot()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void
-read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
-{
-	carmen_semi_trailer_config.type = semi_trailer_type;
-
-	char semi_trailer_string[2048];
-
-	sprintf(semi_trailer_string, "%s%d", "semi_trailer", carmen_semi_trailer_config.type);
-
-	carmen_param_t semi_trailer_param_list[] = {
-	{semi_trailer_string,(char *) "d",								 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.d),							   	 0, NULL},
-	{semi_trailer_string,(char *) "M",								 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.M),							   	 0, NULL},
-	{semi_trailer_string,(char *) "width",							 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.width),						   	 0, NULL},
-	{semi_trailer_string,(char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-	{semi_trailer_string,(char *) "distance_between_axle_and_back",	 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.distance_between_axle_and_back),	 0, NULL},
-	{semi_trailer_string,(char *) "max_beta",						 CARMEN_PARAM_DOUBLE, &(carmen_semi_trailer_config.max_beta),	 					 0, NULL}
-	};
-	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
-
-	carmen_semi_trailer_config.max_beta = carmen_degrees_to_radians(carmen_semi_trailer_config.max_beta);
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
 // Handlers                                                                                     //
@@ -431,8 +408,11 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 
-	if ((msg->semi_trailer_type != carmen_semi_trailer_config.type) && (msg->semi_trailer_type > 0))
-		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
+	if (msg->semi_trailer_type != carmen_semi_trailer_config.type)
+	{
+		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
+		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.type);
+	}
 }
 
 
@@ -558,6 +538,11 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 {
 	current_algorithm = msg->algorithm;
 	current_task = msg->task;
+
+	if (msg->low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_ENGAGE_COLLISION_GEOMETRY)
+		carmen_collision_detection_set_robot_collision_config(ENGAGE_GEOMETRY);
+	else
+		carmen_collision_detection_set_robot_collision_config(DEFAULT_GEOMETRY);
 }
 
 
@@ -673,7 +658,7 @@ read_parameters(int argc, char **argv)
 
 
 	if (carmen_semi_trailer_config.type > 0)
-		read_parameters_semi_trailer(argc, argv, carmen_semi_trailer_config.type);
+		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.type);
 
 	return (0);
 }

@@ -36,6 +36,8 @@
 #include <carmen/grid_mapping.h>
 #include <carmen/xsens_interface.h>
 #include <carmen/car_model.h>
+#include <carmen/task_manager_interface.h>
+#include <carmen/task_manager_messages.h>
 
 #include <prob_measurement_model.h>
 #include <prob_map.h>
@@ -341,6 +343,9 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 	globalpos_ackerman_message.beta = initialize_msg->beta;
 	globalpos.beta = initialize_msg->beta;
 	
+	globalpos_ackerman_message.semi_trailer_engaged = globalpos.semi_trailer_engaged;
+	globalpos_ackerman_message.semi_trailer_type = globalpos.semi_trailer_type;
+
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos_ackerman_message);
 }
 
@@ -1165,6 +1170,18 @@ map_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __a
 
 
 static void
+carmen_task_manager_set_semi_trailer_type_and_beta_message_handler(carmen_task_manager_set_semi_trailer_type_and_beta_message *message)
+{
+	if (semi_trailer_config.type != message->semi_trailer_type)
+	{
+		char *fake_module_name = (char *) "carmen_task_manager_set_semi_trailer_type_and_beta_message_handler()";
+		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, 1, &fake_module_name, message->semi_trailer_type);
+		globalpos.beta = message->beta;
+	}
+}
+
+
+static void
 shutdown_localize(int x)
 {
 	if (x == SIGINT)
@@ -1354,8 +1371,10 @@ subscribe_to_ipc_message()
 
 		// lidar0
 		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
 	}
+
+	carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_and_beta_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
