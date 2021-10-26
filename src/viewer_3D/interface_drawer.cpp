@@ -78,7 +78,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 
 		if (i < 8)
 		{
-			i_drawer->butt[i].x = base_x + i * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -87,7 +87,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 		else if (i < 16)
 		{
-			i_drawer->butt[i].x = base_x + (i - 8) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 2 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -96,7 +96,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 		else if (i < 24)
 		{
-			i_drawer->butt[i].x = base_x + (i - 16) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -105,7 +105,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 		else if (i < 32)
 		{
-			i_drawer->butt[i].x = base_x + (i - 24) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 4 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -114,7 +114,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 		else if (i < 40)
 		{
-			i_drawer->butt[i].x = base_x + (i - 32) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 2 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -123,7 +123,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 		else if (i < 48)
 		{
-			i_drawer->butt[i].x = base_x + (i - 40) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -132,7 +132,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 		else if (i < 56)
 		{
-			i_drawer->butt[i].x = base_x + (i - 48) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -141,7 +141,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 		else if (i < 64)
 		{
-			i_drawer->butt[i].x = base_x + (i - 56) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -151,7 +151,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 
 		else if (i < 72)
 		{
-			i_drawer->butt[i].x = base_x + (i - 64) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 2 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -165,41 +165,41 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 	}
 
-	i_drawer->butt[0].text = "Options";
-	i_drawer->butt[1].text = "Car";
-	i_drawer->butt[2].text = "Collision Model";
-	i_drawer->butt[3].text = "Fused Odometry";
-	i_drawer->butt[4].text = "GPS XSENS";
-	i_drawer->butt[5].text = "Follow Car";
-	i_drawer->butt[6].text = "GPS";
-	i_drawer->butt[7].text = "Google Image";
+	i_drawer->butt[0].text = BUTTON0_TEXT;
+	i_drawer->butt[1].text = BUTTON1_TEXT;
+	i_drawer->butt[2].text = BUTTON2_TEXT;
+	i_drawer->butt[3].text = BUTTON3_TEXT;
+	i_drawer->butt[4].text = BUTTON4_TEXT;
+	i_drawer->butt[5].text = BUTTON5_TEXT;
+	i_drawer->butt[6].text = BUTTON6_TEXT;
+	i_drawer->butt[7].text = BUTTON7_TEXT;
 
-	i_drawer->butt[8].text = "Velodyne 360";
-	i_drawer->butt[9].text = "Velodyne VBO";
-	i_drawer->butt[10].text = "Velodyne";
-	i_drawer->butt[11].text = "Stereo Velodyne";
-	i_drawer->butt[12].text = "Map";
-	i_drawer->butt[13].text = "Annotation";
-	i_drawer->butt[14].text = "SICK";
-	i_drawer->butt[15].text = "Show Rays";
+	i_drawer->butt[8].text = BUTTON8_TEXT;
+	i_drawer->butt[9].text = BUTTON9_TEXT;
+	i_drawer->butt[10].text = BUTTON10_TEXT;
+	i_drawer->butt[11].text = BUTTON11_TEXT;
+	i_drawer->butt[12].text = BUTTON12_TEXT;
+	i_drawer->butt[13].text = BUTTON13_TEXT;
+	i_drawer->butt[14].text = BUTTON14_TEXT;
+	i_drawer->butt[15].text = BUTTON15_TEXT;
 
-	i_drawer->butt[16].text = "XSENS Axis";
-	i_drawer->butt[17].text = "Global Pos";
-	i_drawer->butt[18].text = "Intensity Vldyn";
-	i_drawer->butt[19].text = "Path Plan";
-	i_drawer->butt[20].text = "Motion Plan";
-	i_drawer->butt[21].text = "Obst. Av. Plan";
-	i_drawer->butt[22].text = "Moving Objects";
-	i_drawer->butt[23].text = "GPS Axis";
+	i_drawer->butt[16].text = BUTTON16_TEXT;
+	i_drawer->butt[17].text = BUTTON17_TEXT;
+	i_drawer->butt[18].text = BUTTON18_TEXT;
+	i_drawer->butt[19].text = BUTTON19_TEXT;
+	i_drawer->butt[20].text = BUTTON20_TEXT;
+	i_drawer->butt[21].text = BUTTON21_TEXT;
+	i_drawer->butt[22].text = BUTTON22_TEXT;
+	i_drawer->butt[23].text = BUTTON23_TEXT;
 
-	i_drawer->butt[24].text = "Robot Waypoints";
-	i_drawer->butt[25].text = "Vldyn Remission";
-	i_drawer->butt[26].text = "Force Velodyne";
-	i_drawer->butt[27].text = "Show Symotha";
-	i_drawer->butt[28].text = "Lidars";
-	i_drawer->butt[29].text = "Show Path Plans";
-	i_drawer->butt[30].text = "Plan Tree";
-	i_drawer->butt[31].text = "Waypoints";
+	i_drawer->butt[24].text = BUTTON24_TEXT;
+	i_drawer->butt[25].text = BUTTON25_TEXT;
+	i_drawer->butt[26].text = BUTTON26_TEXT;
+	i_drawer->butt[27].text = BUTTON27_TEXT;
+	i_drawer->butt[28].text = BUTTON28_TEXT;
+	i_drawer->butt[29].text = BUTTON29_TEXT;
+	i_drawer->butt[30].text = BUTTON30_TEXT;
+	i_drawer->butt[31].text = BUTTON31_TEXT;
 
 	//Annotations
 	i_drawer->butt[32].text = "Traffic Light";
@@ -287,63 +287,63 @@ update_buttons_size(interface_drawer* i_drawer, int window_width, int window_hei
 	{
 		if (i < 8)
 		{
-			i_drawer->butt[i].x = base_x + i * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 16)
 		{
-			i_drawer->butt[i].x = base_x + (i - 8) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 2 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 24)
 		{
-			i_drawer->butt[i].x = base_x + (i - 16) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 32)
 		{
-			i_drawer->butt[i].x = base_x + (i - 24) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 4 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 40)
 		{
-			i_drawer->butt[i].x = base_x + (i - 32) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 2 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 48)
 		{
-			i_drawer->butt[i].x = base_x + (i - 40) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 56)
 		{
-			i_drawer->butt[i].x = base_x + (i - 48) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 64)
 		{
-			i_drawer->butt[i].x = base_x + (i - 56) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 		}
 		else if (i < 72)
 		{
-			i_drawer->butt[i].x = base_x + (i - 64) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
 			i_drawer->butt[i].y = 2 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
@@ -405,47 +405,47 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 						}
 					}
 				}
-				else if (i_drawer->butt[i].code == 1) // draw car
+				else if (i_drawer->butt[i].code == DRAW_CAR_BUTTON_CODE) // draw car
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(4, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_CAR_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 2) // draw particles
+				else if (i_drawer->butt[i].code == DRAW_COLLISION_MARKERS_BUTTON_CODE) // draw collision markers
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(0, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_COLLISION_MARKERS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 3) // draw odometry
+				else if (i_drawer->butt[i].code == DRAW_ODOMETRY_BUTTON_CODE) // draw odometry
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(9, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_ODOMETRY_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 4) // draw gps xsens
+				else if (i_drawer->butt[i].code == DRAW_XSENS_GPS_BUTTON_CODE) // draw gps xsens
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(10, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_XSENS_GPS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 5) // follow car
+				else if (i_drawer->butt[i].code == FOLLOW_CAR_BUTTON_CODE) // follow car
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(11, i_drawer->butt[i].state);
+					set_flag_viewer_3D(FOLLOW_CAR_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 6) // draw gps
+				else if (i_drawer->butt[i].code == DRAW_GPS_BUTTON_CODE) // draw gps
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(8, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_GPS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 7) // draw map image
+				else if (i_drawer->butt[i].code == DRAW_MAP_IMAGE_BUTTON_CODE) // draw map image
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(6, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_MAP_IMAGE_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 8) // velodyne 360
 				{
@@ -480,7 +480,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 						i_drawer->butt[25].state = 0;
 					set_flag_viewer_3D(2, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 11) // stereo variable velodyne
+				else if (i_drawer->butt[i].code == DRAW_STEREO_CLOUD_BUTTON_CODE) // stereo variable velodyne
 				{
 //                    if (i_drawer->butt[i].state == 0)
 //                        i_drawer->butt[i].state = 4;
@@ -489,7 +489,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(3, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_STEREO_CLOUD_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 12) // MAP
 				{
@@ -535,23 +535,23 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					set_flag_viewer_3D(1, i_drawer->butt[i].state);
 					set_flag_viewer_3D(13, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 15) // SICK Rays
+				else if (i_drawer->butt[i].code == DRAW_RAYS_BUTTON_CODE) // SICK Rays
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(5, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_RAYS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 16) // XSENS Orientation
+				else if (i_drawer->butt[i].code == DRAW_XSENS_ORIENTATION_BUTTON_CODE) // XSENS Orientation
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(15, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_XSENS_ORIENTATION_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 17) // Localize Ackerman
+				else if (i_drawer->butt[i].code == DRAW_LOCALIZE_ACKERMAN_BUTTON_CODE) // Localize Ackerman
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(16, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_LOCALIZE_ACKERMAN_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 18) // Velodyne Intensity
 				{
@@ -562,59 +562,59 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(2, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 19) // Path Plan
+				else if (i_drawer->butt[i].code == DRAW_PATH_PLAN_BUTTON_CODE) // Path Plan
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(14, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_PATH_PLAN_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 20) // Trajectory Plan
+				else if (i_drawer->butt[i].code == DRAW_MOTION_PLAN_BUTTON_CODE) // Trajectory Plan
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(17, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_MOTION_PLAN_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 21) // Obst. Av. Plan
+				else if (i_drawer->butt[i].code == DRAW_OBSTACLE_AVOIDER_PLAN_BUTTON_CODE) // Obst. Av. Plan
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(18, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_OBSTACLE_AVOIDER_PLAN_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 22) // Moving Objects
+				else if (i_drawer->butt[i].code == DRAW_MOVING_OBJECTS_BUTTON_CODE) // Moving Objects
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(28, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_MOVING_OBJECTS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 23) // GPS Axis
+				else if (i_drawer->butt[i].code == DRAW_GPS_AXIS_BUTTON_CODE) // GPS Axis
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(29, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_GPS_AXIS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 24) // Robot Waypoints
+				else if (i_drawer->butt[i].code == DRAW_ROBOT_WAYPOINTS_BUTTON_CODE) // Robot Waypoints
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(30, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_ROBOT_WAYPOINTS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 25) // Remission (works on pointcloud from Velodyne VBO)
+				else if (i_drawer->butt[i].code == VELODYNE_REMISSION_BUTTON_CODE) // Remission (works on pointcloud from Velodyne VBO)
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(31, i_drawer->butt[i].state);
+					set_flag_viewer_3D(VELODYNE_REMISSION_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 26) // Force Velodyne
+				else if (i_drawer->butt[i].code == FORCE_VELODYNE_BUTTON_CODE) // Force Velodyne
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(32, i_drawer->butt[i].state);
+					set_flag_viewer_3D(FORCE_VELODYNE_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 27) // Show Symotha
+				else if (i_drawer->butt[i].code == SHOW_SYMOTHA_BUTTON_CODE) // Show Symotha
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(33, i_drawer->butt[i].state);
+					set_flag_viewer_3D(SHOW_SYMOTHA_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				//TODO @vinicius lidars
 				else if (i_drawer->butt[i].code == 28) // Lidars
@@ -652,29 +652,29 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					}
 
 				}
-				else if (i_drawer->butt[i].code == 29) // Show Path Plans
+				else if (i_drawer->butt[i].code == SHOW_PATH_PLANS_BUTTON_CODE) // Show Path Plans
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
 					set_flag_viewer_3D(SHOW_PATH_PLANS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 30) // Plan Tree
+				else if (i_drawer->butt[i].code == SHOW_PLAN_TREE_BUTTON_CODE) // Plan Tree
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(PLAN_TREE_FLAG_CODE, i_drawer->butt[i].state);
+					set_flag_viewer_3D(SHOW_PLAN_TREE_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 31) // Waypoints
+				else if (i_drawer->butt[i].code == DRAW_WAYPOINTS_BUTTON_CODE) // Waypoints
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(WAYPOINTS_CODE, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_WAYPOINTS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 32) // Traffic Light
+				else if (i_drawer->butt[i].code == TRAFFIC_LIGHT_BUTTON_CODE) // Traffic Light
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(20, i_drawer->butt[i].state);
+					set_flag_viewer_3D(TRAFFIC_LIGHT_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 33) // Traffic Signal
 				{
@@ -689,29 +689,29 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 						i_drawer->butt[j].visible = 0;
 					}
 				}
-				else if (i_drawer->butt[i].code == 34) // Pedestrian Track
+				else if (i_drawer->butt[i].code == PEDESTRIAN_TRACK_BUTTON_CODE) // Pedestrian Track
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(22, i_drawer->butt[i].state);
+					set_flag_viewer_3D(PEDESTRIAN_TRACK_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 35) // Stop
+				else if (i_drawer->butt[i].code == STOP_BUTTON_CODE) // Stop
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(23, i_drawer->butt[i].state);
+					set_flag_viewer_3D(STOP_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 36) // Barrier
+				else if (i_drawer->butt[i].code == BARRIER_BUTTON_CODE) // Barrier
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(24, i_drawer->butt[i].state);
+					set_flag_viewer_3D(BARRIER_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 37) // Bump
+				else if (i_drawer->butt[i].code == BUMP_BUTTON_CODE) // Bump
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(25, i_drawer->butt[i].state);
+					set_flag_viewer_3D(BUMP_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 38) // Speed
 				{
@@ -726,83 +726,83 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 						i_drawer->butt[j].visible = 0;
 					}
 				}
-				else if (i_drawer->butt[i].code == 39) // Delete Annotation
+				else if (i_drawer->butt[i].code == DELETE_ANNOTATION_BUTTON_CODE) // Delete Annotation
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(27, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DELETE_ANNOTATION_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == 40) // Speed 0
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 0);
+					set_flag_viewer_3D(SPEED_CODE, 0);
 				}
 				else if (i_drawer->butt[i].code == 41) // Speed 5
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 5);
+					set_flag_viewer_3D(SPEED_CODE, 5);
 				}
 				else if (i_drawer->butt[i].code == 42) // Speed 10
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 10);
+					set_flag_viewer_3D(SPEED_CODE, 10);
 				}
 				else if (i_drawer->butt[i].code == 43) // Speed 15
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 15);
+					set_flag_viewer_3D(SPEED_CODE, 15);
 				}
 				else if (i_drawer->butt[i].code == 44) // Speed 20
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 20);
+					set_flag_viewer_3D(SPEED_CODE, 20);
 				}
 				else if (i_drawer->butt[i].code == 45) // Speed 30
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 30);
+					set_flag_viewer_3D(SPEED_CODE, 30);
 				}
 				else if (i_drawer->butt[i].code == 46) // Speed 40
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 40);
+					set_flag_viewer_3D(SPEED_CODE, 40);
 				}
 				else if (i_drawer->butt[i].code == 47) // Speed 60
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(26, 60);
+					set_flag_viewer_3D(SPEED_CODE, 60);
 				}
 				else if (i_drawer->butt[i].code == 48) // Bump Traffic Signal
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(21, 0);
+					set_flag_viewer_3D(TRAFFIC_SIGN_CODE, 0);
 				}
 				else if (i_drawer->butt[i].code == 49) // Speed 20 Traffic Signal
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(21, 20);
+					set_flag_viewer_3D(TRAFFIC_SIGN_CODE, 20);
 				}
 				else if (i_drawer->butt[i].code == 50) // Speed 30 Traffic Signal
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(21, 30);
+					set_flag_viewer_3D(TRAFFIC_SIGN_CODE, 30);
 				}
 				else if (i_drawer->butt[i].code > 55 && i_drawer->butt[i].code < 72) // Lidar variable_scan active
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 					int lidar_number = i_drawer->butt[i].code - 56;
-					set_flag_viewer_3D(34, lidar_number);
+					set_flag_viewer_3D(DRAW_LIDAR_FLAG_CODE, lidar_number);
 				}
 			}
 		}

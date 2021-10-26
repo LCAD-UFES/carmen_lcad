@@ -4123,7 +4123,7 @@ set_flag_viewer_3D(int flag_num, int value)
 	static int old_velodyne_flag = 0;
     switch (flag_num)
     {
-    case 0:
+    case DRAW_COLLISION_MARKERS_FLAG_CODE:
     	draw_collision_markers_flag = value;
         break;
 
@@ -4137,19 +4137,19 @@ set_flag_viewer_3D(int flag_num, int value)
         velodyne_remission_flag = 0;
         break;
 
-    case 3:
+    case DRAW_STEREO_CLOUD_FLAG_CODE:
         draw_stereo_cloud_flag = value;
         break;
 
-    case 4:
+    case DRAW_CAR_FLAG_CODE:
         draw_car_flag = value;
         break;
 
-    case 5:
+    case DRAW_RAYS_FLAG_CODE:
         draw_rays_flag = value;
         break;
 
-    case 6:
+    case DRAW_MAP_IMAGE_FLAG_CODE:
         draw_map_image_flag = value;
         break;
 
@@ -4157,19 +4157,19 @@ set_flag_viewer_3D(int flag_num, int value)
         weight_type_flag = value;
         break;
 
-    case 8:
+    case DRAW_GPS_FLAG_CODE:
         draw_gps_flag = value;
         break;
 
-    case 9:
+    case DRAW_ODOMETRY_FLAG_CODE:
         draw_odometry_flag = value;
         break;
 
-    case 10:
+    case DRAW_XSENS_GPS_FLAG_CODE:
         draw_xsens_gps_flag = value;
         break;
 
-    case 11:
+    case FOLLOW_CAR_FLAG_CODE:
         follow_car_flag = value;
         break;
 
@@ -4181,23 +4181,23 @@ set_flag_viewer_3D(int flag_num, int value)
         zero_z_flag = value;
         break;
 
-    case 14:
+    case DRAW_PATH_PLAN_FLAG_CODE:
         draw_path_plan_flag = value;
         break;
 
-    case 15:
+    case DRAW_XSENS_ORIENTATION_FLAG_CODE:
         draw_xsens_orientation_flag = value;
         break;
 
-    case 16:
+    case DRAW_LOCALIZE_ACKERMAN_FLAG_CODE:
         draw_localize_ackerman_flag = value;
         break;
 
-    case 17:
+    case DRAW_MOTION_PLAN_FLAG_CODE:
         draw_motion_plan_flag = value;
         break;
 
-    case 18:
+    case DRAW_OBSTACLE_AVOIDER_PLAN_FLAG_CODE:
         draw_obstacle_avoider_plan_flag = value;
         break;
 
@@ -4205,13 +4205,13 @@ set_flag_viewer_3D(int flag_num, int value)
         draw_annotation_flag = value;
         break;
 
-    case 20:
+    case TRAFFIC_LIGHT_FLAG_CODE:
 
         if (!check_annotation_equal_zero())
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT), RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT, 0);
         break;
 
-    case 21:
+    case TRAFFIC_SIGN_CODE:
         if (!check_annotation_equal_zero())
         {
             if (value == 0)
@@ -4235,27 +4235,27 @@ set_flag_viewer_3D(int flag_num, int value)
         }
         break;
 
-    case 22:
+    case PEDESTRIAN_TRACK_FLAG_CODE:
         if (!check_annotation_equal_zero())
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK), RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK, 0);
         break;
 
-    case 23:
+    case STOP_FLAG_CODE:
         if (!check_annotation_equal_zero())
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_STOP), RDDF_ANNOTATION_TYPE_STOP, 0);
         break;
 
-    case 24:
+    case BARRIER_FLAG_CODE:
         if (!check_annotation_equal_zero())
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_BARRIER), RDDF_ANNOTATION_TYPE_BARRIER, 0);
         break;
 
-    case 25:
+    case BUMP_FLAG_CODE:
         if (!check_annotation_equal_zero())
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_BUMP), RDDF_ANNOTATION_TYPE_BUMP, 0);
         break;
 
-    case 26:
+    case SPEED_CODE:
         if (!check_annotation_equal_zero())
         {
             if (value == 0)
@@ -4276,20 +4276,20 @@ set_flag_viewer_3D(int flag_num, int value)
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_60);
         }
         break;
-    case 27:
+    case DELETE_ANNOTATION_CODE:
         //carmen_rddf_annotation_message near = get_near_message_to_delete();
         //carmen_rddf_publish_delete_annotation_message(annotation_point_world);
         break;
-    case 28:
+    case DRAW_MOVING_OBJECTS_FLAG_CODE:
     	draw_moving_objects_flag = value;
     	break;
-    case 29:
+    case DRAW_GPS_AXIS_FLAG_CODE:
     	draw_gps_axis_flag = value;
     	break;
-    case 30:
+    case DRAW_ROBOT_WAYPOINTS_FLAG_CODE:
     	draw_robot_waypoints_flag = value;
         break;
-    case 31:
+    case VELODYNE_REMISSION_FLAG_CODE:
     	velodyne_remission_flag = value;
 
         if(value)
@@ -4304,13 +4304,13 @@ set_flag_viewer_3D(int flag_num, int value)
             draw_velodyne_flag = old_velodyne_flag;
         }
         break;
-    case 32:
+    case FORCE_VELODYNE_FLAG_CODE:
         force_velodyne_flag = value;
         break;
-    case 33:
+    case SHOW_SYMOTHA_FLAG_CODE:
         show_symotha_flag = value;
         break;
-    case 34:
+    case DRAW_LIDAR_FLAG_CODE:
     	if(value == 0)
     		draw_lidar0_flag = !draw_lidar0_flag;
     	if(value == 1)
@@ -4347,10 +4347,10 @@ set_flag_viewer_3D(int flag_num, int value)
     case SHOW_PATH_PLANS_FLAG_CODE:
     	show_path_plans_flag = value;
     	break;
-    case PLAN_TREE_FLAG_CODE:
+    case SHOW_PLAN_TREE_FLAG_CODE:
     	show_plan_tree_flag = value;
     	break;
-    case WAYPOINTS_CODE:
+    case DRAW_WAYPOINTS_FLAG_CODE:
 		draw_waypoints_flag = value;
 		break;
     }
