@@ -165,51 +165,51 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 		}
 	}
 
-	i_drawer->butt[0].text = BUTTON0_TEXT;
-	i_drawer->butt[1].text = BUTTON1_TEXT;
-	i_drawer->butt[2].text = BUTTON2_TEXT;
-	i_drawer->butt[3].text = BUTTON3_TEXT;
-	i_drawer->butt[4].text = BUTTON4_TEXT;
-	i_drawer->butt[5].text = BUTTON5_TEXT;
-	i_drawer->butt[6].text = BUTTON6_TEXT;
-	i_drawer->butt[7].text = BUTTON7_TEXT;
+	i_drawer->butt[0].text =									BUTTON0_TEXT;
+	i_drawer->butt[DRAW_CAR_BUTTON_CODE].text =					DRAW_CAR_BUTTON_TEXT;
+	i_drawer->butt[DRAW_COLLISION_MARKERS_BUTTON_CODE].text =	DRAW_COLLISION_MARKERS_BUTTON_TEXT;
+	i_drawer->butt[DRAW_ODOMETRY_BUTTON_CODE].text =			DRAW_ODOMETRY_BUTTON_TEXT;
+	i_drawer->butt[DRAW_XSENS_GPS_BUTTON_CODE].text =			DRAW_XSENS_GPS_BUTTON_TEXT;
+	i_drawer->butt[FOLLOW_CAR_BUTTON_CODE].text =				FOLLOW_CAR_BUTTON_TEXT;
+	i_drawer->butt[DRAW_GPS_BUTTON_CODE].text =					DRAW_GPS_BUTTON_TEXT;
+	i_drawer->butt[DRAW_MAP_IMAGE_BUTTON_CODE].text =			DRAW_MAP_IMAGE_BUTTON_TEXT;
 
-	i_drawer->butt[8].text = BUTTON8_TEXT;
-	i_drawer->butt[9].text = BUTTON9_TEXT;
-	i_drawer->butt[10].text = BUTTON10_TEXT;
-	i_drawer->butt[11].text = BUTTON11_TEXT;
-	i_drawer->butt[12].text = BUTTON12_TEXT;
-	i_drawer->butt[13].text = BUTTON13_TEXT;
-	i_drawer->butt[14].text = BUTTON14_TEXT;
-	i_drawer->butt[15].text = BUTTON15_TEXT;
+	i_drawer->butt[VELODYNE_360_BUTTON_CODE].text =			VELODYNE_360_BUTTON_TEXT;
+	i_drawer->butt[VELODYNE_VBO_BUTTON_CODE].text =			VELODYNE_VBO_BUTTON_TEXT;
+	i_drawer->butt[VELODYNE_BUTTON_CODE].text =				VELODYNE_BUTTON_TEXT;
+	i_drawer->butt[DRAW_STEREO_CLOUD_BUTTON_CODE].text =	DRAW_STEREO_CLOUD_BUTTON_TEXT;
+	i_drawer->butt[DRAW_MAP_BUTTON_CODE].text =				DRAW_MAP_BUTTON_TEXT;
+	i_drawer->butt[DRAW_ANNOTATION_BUTTON_CODE].text =		DRAW_ANNOTATION_BUTTON_TEXT;
+	i_drawer->butt[DRAW_POINTS_BUTTON_CODE].text =			DRAW_POINTS_BUTTON_TEXT;
+	i_drawer->butt[DRAW_RAYS_BUTTON_CODE].text =			DRAW_RAYS_BUTTON_TEXT;
 
-	i_drawer->butt[16].text = BUTTON16_TEXT;
-	i_drawer->butt[17].text = BUTTON17_TEXT;
-	i_drawer->butt[18].text = BUTTON18_TEXT;
-	i_drawer->butt[19].text = BUTTON19_TEXT;
-	i_drawer->butt[20].text = BUTTON20_TEXT;
-	i_drawer->butt[21].text = BUTTON21_TEXT;
-	i_drawer->butt[22].text = BUTTON22_TEXT;
-	i_drawer->butt[23].text = BUTTON23_TEXT;
+	i_drawer->butt[DRAW_XSENS_ORIENTATION_BUTTON_CODE].text =		DRAW_XSENS_ORIENTATION_BUTTON_TEXT;
+	i_drawer->butt[DRAW_LOCALIZE_ACKERMAN_BUTTON_CODE].text =		DRAW_LOCALIZE_ACKERMAN_BUTTON_TEXT;
+	i_drawer->butt[VELODYNE_INTENSITY_BUTTON_CODE].text =			VELODYNE_INTENSITY_BUTTON_TEXT;
+	i_drawer->butt[DRAW_PATH_PLAN_BUTTON_CODE].text =				DRAW_PATH_PLAN_BUTTON_TEXT;
+	i_drawer->butt[DRAW_MOTION_PLAN_BUTTON_CODE].text =				DRAW_MOTION_PLAN_BUTTON_TEXT;
+	i_drawer->butt[DRAW_OBSTACLE_AVOIDER_PLAN_BUTTON_CODE].text =	DRAW_OBSTACLE_AVOIDER_PLAN_BUTTON_TEXT;
+	i_drawer->butt[DRAW_MOVING_OBJECTS_BUTTON_CODE].text =			DRAW_MOVING_OBJECTS_BUTTON_TEXT;
+	i_drawer->butt[DRAW_GPS_AXIS_BUTTON_CODE].text =				DRAW_GPS_AXIS_BUTTON_TEXT;
 
-	i_drawer->butt[24].text = BUTTON24_TEXT;
-	i_drawer->butt[25].text = BUTTON25_TEXT;
-	i_drawer->butt[26].text = BUTTON26_TEXT;
-	i_drawer->butt[27].text = BUTTON27_TEXT;
-	i_drawer->butt[28].text = BUTTON28_TEXT;
-	i_drawer->butt[29].text = BUTTON29_TEXT;
-	i_drawer->butt[30].text = BUTTON30_TEXT;
-	i_drawer->butt[31].text = BUTTON31_TEXT;
+	i_drawer->butt[DRAW_ROBOT_WAYPOINTS_BUTTON_CODE].text =	DRAW_ROBOT_WAYPOINTS_BUTTON_TEXT;
+	i_drawer->butt[VELODYNE_REMISSION_BUTTON_CODE].text =	VELODYNE_REMISSION_BUTTON_TEXT;
+	i_drawer->butt[FORCE_VELODYNE_BUTTON_CODE].text =		FORCE_VELODYNE_BUTTON_TEXT;
+	i_drawer->butt[SHOW_SYMOTHA_BUTTON_CODE].text =			SHOW_SYMOTHA_BUTTON_TEXT;
+	i_drawer->butt[LIDARS_BUTTON_CODE].text =				LIDARS_BUTTON_TEXT;
+	i_drawer->butt[SHOW_PATH_PLANS_BUTTON_CODE].text =		SHOW_PATH_PLANS_BUTTON_TEXT;
+	i_drawer->butt[SHOW_PLAN_TREE_BUTTON_CODE].text =		SHOW_PLAN_TREE_BUTTON_TEXT;
+	i_drawer->butt[DRAW_WAYPOINTS_BUTTON_CODE].text =		DRAW_WAYPOINTS_BUTTON_TEXT;
 
 	//Annotations
-	i_drawer->butt[32].text = "Traffic Light";
-	i_drawer->butt[33].text = "Traffic Signal";
-	i_drawer->butt[34].text = "Pedestrian Track";
-	i_drawer->butt[35].text = "Stop";
-	i_drawer->butt[36].text = "Barrier";
-	i_drawer->butt[37].text = "Bump";
-	i_drawer->butt[38].text = "Speed";
-	i_drawer->butt[39].text = "Delete";
+	i_drawer->butt[TRAFFIC_LIGHT_BUTTON_CODE].text =		TRAFFIC_LIGHT_BUTTON_TEXT;
+	i_drawer->butt[TRAFFIC_SIGNAL_BUTTON_CODE].text =		TRAFFIC_SIGNAL_BUTTON_TEXT;
+	i_drawer->butt[PEDESTRIAN_TRACK_BUTTON_CODE].text =		PEDESTRIAN_TRACK_BUTTON_TEXT;
+	i_drawer->butt[STOP_BUTTON_CODE].text =					STOP_BUTTON_TEXT;
+	i_drawer->butt[BARRIER_BUTTON_CODE].text =				BARRIER_BUTTON_TEXT;
+	i_drawer->butt[BUMP_BUTTON_CODE].text =					BUMP_BUTTON_TEXT;
+	i_drawer->butt[SPEED_BUTTON_CODE].text =				SPEED_BUTTON_TEXT;
+	i_drawer->butt[DELETE_ANNOTATION_BUTTON_CODE].text =	DELETE_ANNOTATION_BUTTON_TEXT;
 	//Speed Annotations
 	i_drawer->butt[40].text = "0 km/h";
 	i_drawer->butt[41].text = "5 km/h";
