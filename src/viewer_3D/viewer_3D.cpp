@@ -4127,11 +4127,11 @@ set_flag_viewer_3D(int flag_num, int value)
     	draw_collision_markers_flag = value;
         break;
 
-    case 1:
+    case DRAW_POINTS_FLAG_CODE:
         draw_points_flag = value;
         break;
 
-    case 2:
+    case DRAW_VELODYNE_FLAG_CODE:
         draw_velodyne_flag = value;
         set_background_color(g_b_red, g_b_green, g_b_blue);
         velodyne_remission_flag = 0;
@@ -4153,7 +4153,7 @@ set_flag_viewer_3D(int flag_num, int value)
         draw_map_image_flag = value;
         break;
 
-    case 7:
+    case WEIGHT_TYPE_FLAG_CODE:
         weight_type_flag = value;
         break;
 
@@ -4173,11 +4173,11 @@ set_flag_viewer_3D(int flag_num, int value)
         follow_car_flag = value;
         break;
 
-    case 12:
+    case DRAW_MAP_FLAG_CODE:
         draw_map_flag = value;
         break;
 
-    case 13:
+    case ZERO_Z_FLAG_CODE:
         zero_z_flag = value;
         break;
 
@@ -4201,7 +4201,7 @@ set_flag_viewer_3D(int flag_num, int value)
         draw_obstacle_avoider_plan_flag = value;
         break;
 
-    case 19:
+    case DRAW_ANNOTATION_FLAG_CODE:
         draw_annotation_flag = value;
         break;
 

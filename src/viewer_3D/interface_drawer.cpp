@@ -447,38 +447,38 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(DRAW_MAP_IMAGE_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 8) // velodyne 360
+				else if (i_drawer->butt[i].code == VELODYNE_360_BUTTON_CODE) // velodyne 360
 				{
 					if (i_drawer->butt[i].state == 0)
 						i_drawer->butt[i].state = 3;
 					else
 						i_drawer->butt[i].state = 0;
 
-					if (i_drawer->butt[25].state)
-						i_drawer->butt[25].state = 0;
-					set_flag_viewer_3D(2, i_drawer->butt[i].state);
+					if (i_drawer->butt[VELODYNE_REMISSION_BUTTON_CODE].state)
+						i_drawer->butt[VELODYNE_REMISSION_BUTTON_CODE].state = 0;
+					set_flag_viewer_3D(DRAW_VELODYNE_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 9) // velodyne VBO
+				else if (i_drawer->butt[i].code == VELODYNE_VBO_BUTTON_CODE) // velodyne VBO
 				{
 					if (i_drawer->butt[i].state == 0)
 						i_drawer->butt[i].state = 2;
 					else
 						i_drawer->butt[i].state = 0;
 
-					if (i_drawer->butt[25].state)
-						i_drawer->butt[25].state = 0;
-					set_flag_viewer_3D(2, i_drawer->butt[i].state);
+					if (i_drawer->butt[VELODYNE_REMISSION_BUTTON_CODE].state)
+						i_drawer->butt[VELODYNE_REMISSION_BUTTON_CODE].state = 0;
+					set_flag_viewer_3D(DRAW_VELODYNE_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 10) // velodyne
+				else if (i_drawer->butt[i].code == VELODYNE_BUTTON_CODE) // velodyne
 				{
 					if (i_drawer->butt[i].state == 0)
 						i_drawer->butt[i].state = 1;
 					else
 						i_drawer->butt[i].state = 0;
 
-					if (i_drawer->butt[25].state)
-						i_drawer->butt[25].state = 0;
-					set_flag_viewer_3D(2, i_drawer->butt[i].state);
+					if (i_drawer->butt[VELODYNE_REMISSION_BUTTON_CODE].state)
+						i_drawer->butt[VELODYNE_REMISSION_BUTTON_CODE].state = 0;
+					set_flag_viewer_3D(DRAW_VELODYNE_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == DRAW_STEREO_CLOUD_BUTTON_CODE) // stereo variable velodyne
 				{
@@ -491,17 +491,17 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(DRAW_STEREO_CLOUD_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 12) // MAP
+				else if (i_drawer->butt[i].code == DRAW_MAP_BUTTON_CODE) // MAP
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(12, i_drawer->butt[i].state);
-					set_flag_viewer_3D(13, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, i_drawer->butt[i].state);
+					set_flag_viewer_3D(ZERO_Z_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 13) // Annotation
+				else if (i_drawer->butt[i].code == DRAW_ANNOTATION_BUTTON_CODE) // Annotation
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
-					set_flag_viewer_3D(19, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_ANNOTATION_FLAG_CODE, i_drawer->butt[i].state);
 
 					if (i_drawer->butt[38].state == 1)
 					{
@@ -528,12 +528,12 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					}
 
 				}
-				else if (i_drawer->butt[i].code == 14) // SICK
+				else if (i_drawer->butt[i].code == DRAW_POINTS_BUTTON_CODE) // SICK
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(1, i_drawer->butt[i].state);
-					set_flag_viewer_3D(13, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_POINTS_FLAG_CODE, i_drawer->butt[i].state);
+					set_flag_viewer_3D(ZERO_Z_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == DRAW_RAYS_BUTTON_CODE) // SICK Rays
 				{
@@ -553,14 +553,14 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(DRAW_LOCALIZE_ACKERMAN_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 18) // Velodyne Intensity
+				else if (i_drawer->butt[i].code == VELODYNE_INTENSITY_BUTTON_CODE) // Velodyne Intensity
 				{
 					if (i_drawer->butt[i].state == 0)
 						i_drawer->butt[i].state = 5;
 					else
 						i_drawer->butt[i].state = 0;
 
-					set_flag_viewer_3D(2, i_drawer->butt[i].state);
+					set_flag_viewer_3D(DRAW_VELODYNE_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				else if (i_drawer->butt[i].code == DRAW_PATH_PLAN_BUTTON_CODE) // Path Plan
 				{
@@ -617,7 +617,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					set_flag_viewer_3D(SHOW_SYMOTHA_FLAG_CODE, i_drawer->butt[i].state);
 				}
 				//TODO @vinicius lidars
-				else if (i_drawer->butt[i].code == 28) // Lidars
+				else if (i_drawer->butt[i].code == LIDARS_BUTTON_CODE) // Lidars
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 //					set_flag_viewer_3D(19, i_drawer->butt[i].state);
@@ -676,7 +676,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(TRAFFIC_LIGHT_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 33) // Traffic Signal
+				else if (i_drawer->butt[i].code == TRAFFIC_SIGNAL_BUTTON_CODE) // Traffic Signal
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
@@ -713,7 +713,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(BUMP_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 38) // Speed
+				else if (i_drawer->butt[i].code == SPEED_BUTTON_CODE) // Speed
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
