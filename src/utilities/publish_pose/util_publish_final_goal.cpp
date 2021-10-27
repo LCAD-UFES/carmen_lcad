@@ -3,13 +3,13 @@
 
 
 void
-publish_final_goal(carmen_point_t pose)
+publish_final_goal(carmen_robot_and_trailer_pose_t pose)
 {
 	carmen_robot_and_trailer_pose_t pose_with_beta;
 	pose_with_beta.x = pose.x;
 	pose_with_beta.y = pose.y;
 	pose_with_beta.theta = pose.theta;
-	pose_with_beta.beta = 0.0;
+	pose_with_beta.beta = pose.beta;
 	carmen_rddf_publish_end_point_message(50, pose_with_beta);
 }
 
@@ -27,7 +27,7 @@ define_messages()
 int
 main(int argc, char **argv)
 {
-	carmen_point_t pose;
+	carmen_robot_and_trailer_pose_t pose;
 	int time = 4;
 
 	if (argc < 4)
@@ -36,12 +36,14 @@ main(int argc, char **argv)
 				"Time to wait before publishing the final goal\n", argv[0]);
 		exit(-1);
 	}
-	if (argc == 5)
+	if (argc >= 5)
 		time = atoi(argv[4]);
 
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
+	if (argc == 6)
+		pose.beta = atof(argv[5]);
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();
