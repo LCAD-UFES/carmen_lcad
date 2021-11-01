@@ -50,6 +50,7 @@ build_and_publish_detections(vector<bbox_t> &predictions, int cam_number)
 void
 show_detections(Mat image, vector<bbox_t> predictions, double fps)
 {
+	cout<<"show_detections"<<endl;
 	char info[128];
 
     cvtColor(image, image, COLOR_RGB2BGR);
@@ -77,6 +78,7 @@ show_detections(Mat image, vector<bbox_t> predictions, double fps)
 void
 filter_predictions_of_interest(vector<bbox_t> &predictions)
 {
+	cout<<"filter_predictions_of_interest"<<endl;
 	vector<bbox_t> filtered_predictions;
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
@@ -92,13 +94,16 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 
 void get_yolo_detections(Mat &roi, vector<bbox_t> &predictions_vector)
 {
+	cout<<"get_yolo_detections"<<endl;
 	predictions_vector = run_YOLO(roi.data, 3, roi.cols, roi.rows, network_struct, classes_names, 0.5, 0.5);
 	filter_predictions_of_interest(predictions_vector);
+	cout<<"finished get_yolo_detections"<<endl;
 }
 
 
 Mat convert_message_image_to_opencv_image(bool *first_time, camera_image *image)
 {
+	cout<<"convert_message_image_to_opencv_image"<<endl;
     int crop_x, crop_y, crop_w, crop_h;
 	Mat open_cv_image;
 	if (*first_time)
@@ -122,6 +127,7 @@ Mat convert_message_image_to_opencv_image(bool *first_time, camera_image *image)
 void
 image_handler(int cam_number, camera_message *msg)
 {
+	printf("image_handler\n");
     vector<bbox_t> predictions_vector;
     Mat open_cv_image;
     bool first_time = true;
@@ -360,6 +366,7 @@ read_parameters(int argc, char **argv)
             camera_in_use[stoi(cam_id)] = 1;
         }
     }
+	cout<<"parameters were read"<<endl;
 }
 
 int main(int argc, char **argv)
@@ -368,7 +375,7 @@ int main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-    initialize_yolo();
+    // initialize_yolo();
 
 	yolo_detector_define_messages();
 
