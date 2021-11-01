@@ -15,6 +15,8 @@
 #include <carmen/rddf_interface.h>
 #include <carmen/camera_drivers_interface.h>
 #include <carmen/camera_drivers_messages.h>
+#include <carmen/yolo_detector_interface.h>
+#include <carmen/yolo_detector_messages.h>
 
 
 #include <opencv2/highgui/highgui.hpp>

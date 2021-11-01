@@ -18,7 +18,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
-LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
+LFLAGS += -lglobal -lipc -lvelodyne_interface -lyolo_detector_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
 		  -lmoving_objects_interface -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
 		  -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \

@@ -23,6 +23,7 @@ yolo_detector_define_messages()
 
     err = IPC_defineMsg(YOLO_DETECTOR_MESSAGE_NAME, IPC_VARIABLE_LENGTH, YOLO_DETECTOR_MESSAGE_FMT);
     carmen_test_ipc_exit(err, "Could not define", YOLO_DETECTOR_MESSAGE_NAME);
+    printf("message defined!\n");
 }
 
 

@@ -52,7 +52,10 @@ int camera_height;
 camera_message *image_msg = NULL;
 
 Mat open_cv_image;
+int open_cv_image_filled = 0;
 
+yolo_detector_message *detected_bboxes;
+vector<bbox_t> predictions;
 
 // This function find the closest velodyne message with the camera message
 carmen_velodyne_partial_scan_message
@@ -1017,15 +1020,12 @@ publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg);
 void
 track_pedestrians(Mat open_cv_image, double timestamp)
 {
-	// if (globalpos_msg == NULL)
-	// 	return;
-
 	static bool first_time = true;
 	double fps;
 	static double start_time = 0.0;
 	double dist_to_pedestrian_track = DBL_MAX;
 
-	vector<bbox_t> predictions;
+	// vector<bbox_t> predictions;
 	vector<image_cartesian> points;
 	vector<vector<image_cartesian>> points_inside_bbox;
 	vector<vector<image_cartesian>> filtered_points;
@@ -1050,9 +1050,9 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	if (max_dist_to_pedestrian_track < 0.0 )//|| dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
 	{
 		//////// Yolo
-		predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
+		// predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
 		
-		predictions = filter_predictions_of_interest(predictions);
+		// predictions = filter_predictions_of_interest(predictions);
 
 		//////// Python
 		call_python_function(open_cv_image.data, predictions);
@@ -1087,6 +1087,24 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_pedestrian_track);
+}
+
+
+void
+convert_detected_bboxes_to_predictions_vector(yolo_detector_message *detected_bboxes, vector<bbox_t> &predictions)
+{
+	bbox_t b;
+	for(int i = 0; i < detected_bboxes->qtd_bboxes; i++)
+	{
+		b.x = detected_bboxes->bounding_boxes[i].x;
+		b.y = detected_bboxes->bounding_boxes[i].y;
+		b.w = detected_bboxes->bounding_boxes[i].w;
+		b.h = detected_bboxes->bounding_boxes[i].h;
+		b.obj_id = detected_bboxes->bounding_boxes[i].obj_id;
+		b.prob = detected_bboxes->bounding_boxes[i].prob;
+		b.track_id = detected_bboxes->bounding_boxes[i].track_id;
+		predictions.push_back(b);
+	}
 }
 
 
@@ -1157,6 +1175,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 		img = msg->raw_left;
 
 	open_cv_image = Mat(msg->height, msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	open_cv_image_filled = 1;
 }
 
 
@@ -1209,7 +1228,7 @@ void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	globalpos_msg = msg;
-	if(globalpos_msg != NULL)
+	if(globalpos_msg != NULL && open_cv_image_filled == 1)
 		track_pedestrians(open_cv_image, msg->timestamp);
 }
 
@@ -1218,6 +1237,15 @@ void
 rddf_annotation_message_handler(carmen_rddf_annotation_message *msg)
 {
 	rddf_annotation_message = msg;
+}
+
+
+void
+yolo_detector_handler(yolo_detector_message *msg)
+{
+	detected_bboxes = msg;
+	cout<<"qtd bboxes = "<<detected_bboxes->qtd_bboxes<<endl;
+	convert_detected_bboxes_to_predictions_vector(detected_bboxes, predictions);
 }
 
 
@@ -1307,6 +1335,8 @@ subscribe_messages()
     camera_drivers_subscribe_message(message_number, NULL, (carmen_handler_t) camera_image_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	yolo_detector_subscribe_yolo_detector_message(NULL, (carmen_handler_t) yolo_detector_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1341,7 +1371,7 @@ main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-	initializer();
+	// initializer();
 
 	carmen_moving_objects_point_clouds_define_messages_generic(0);
 

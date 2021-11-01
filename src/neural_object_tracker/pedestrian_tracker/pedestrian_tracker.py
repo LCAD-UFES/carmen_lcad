@@ -7,7 +7,7 @@ def activate_virtual_environment(environment_root):
     execfile(activate_script, {'__file__': activate_script})
 
 carmen_home = os.getenv("CARMEN_HOME")
-virtualenv_root = carmen_home + "/src/neural_object_detector3/nod_venv2"
+virtualenv_root = carmen_home + "/src/neural_object_tracker/nod_venv2"
 print("Activating Venv")
 activate_virtual_environment(virtualenv_root)
 
