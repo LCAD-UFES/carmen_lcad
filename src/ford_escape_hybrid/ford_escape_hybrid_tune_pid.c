@@ -323,14 +323,23 @@ build_trajectory_sinusoidal_phi()
 {
 	double delta_t, t;
 	int i;
+	double t0 = 2.0;
 
-	delta_t = t1 / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
+	delta_t = (t0 + t1) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
 
-	for (i = 0, t = 0.0; i < NUM_MOTION_COMMANDS_PER_VECTOR; t += delta_t, i++)
+	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = delta_t;
+		printf("av %lf\n", motion_commands_vector[i].v);
+	}
+
+	for (t = 0.0; t < t1; t += delta_t, i++)
 	{
 		motion_commands_vector[i].v = max_v;
 
-		motion_commands_vector[i].phi = max_phi * sin(frequency * t);
+		motion_commands_vector[i].phi = max_phi * sin(2.0 * M_PI * frequency * t);
 		motion_commands_vector[i].time = delta_t;
 
 		printf("%lf   %lf\n", frequency * t, motion_commands_vector[i].phi);
@@ -349,8 +358,10 @@ timer_handler()
 	if (first_time)
 	{
 //		build_trajectory_trapezoidal_phi();
-//		build_trajectory_sinusoidal_phi();
-		build_trajectory_trapezoidal_v_phi();
+		if (frequency != 0.0)
+			build_trajectory_sinusoidal_phi();
+		else
+			build_trajectory_trapezoidal_v_phi();
 		first_time = 0;
 	}
 }

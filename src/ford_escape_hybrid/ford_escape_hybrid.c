@@ -192,10 +192,10 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 //	if ((robot_model_name == ROBOT_NAME_MPW700) && ((carmen_get_time() - last_time_with_desired_velocity_not_zero) > 0.3))
 //		g_gear_command = 128;	// 128 = Neutral
 
-	if (behavior_selector_low_level_state != Stopped)
+//	if (behavior_selector_low_level_state != Stopped)
 		g_desired_velocity = v;
-	else
-		g_desired_velocity = 0.0;
+//	else
+//		g_desired_velocity = 0.0;
 }
 
 
