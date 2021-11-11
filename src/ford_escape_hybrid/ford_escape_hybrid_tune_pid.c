@@ -31,10 +31,8 @@ signal_handler(int signo __attribute__ ((unused)) )
 static void
 send_trajectory_to_robot()
 {
-//	int i;
-	
-//	for (i = 0; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
-//		printf("v = %lf, phi = %lf, t = %lf\n", motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time);
+//	for (int i = 0; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
+//		printf("i = %d, v = %lf, phi = %lf, t = %lf\n", i, motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time);
 	carmen_base_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR, carmen_get_time());
 }
 

@@ -29,13 +29,18 @@ if [[ $process_name == "-h" ]]; then
 	exit
 fi
 
+echo "Killing proccontrol"
+killall -9 proccontrol
 while read line; do
 if [[ ${line:0:1} != "#" && ${line:0:1} != "" ]]; then
 	temp_line=( $line )
 	program_extracted=${temp_line[4]}
-	if [[ ${program_extracted:0:2} == "./" ]]; then
+	echo "### " $program_extracted
+#	if [[ ${program_extracted:0:2} == "./" ]]; then
 		echo "Killing process "$program_extracted 
-		killall -9 ${program_extracted:2}
-	fi
+#		killall -9 ${program_extracted:2}
+		killall -9 $program_extracted
+#	fi
 fi
 done < "$process_name"
+

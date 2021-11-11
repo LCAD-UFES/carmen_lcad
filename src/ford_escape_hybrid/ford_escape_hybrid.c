@@ -67,6 +67,7 @@ static double phi_bias;
 static double v_multiplier;
 
 int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
+int tune_pid_mode = 0;
 
 carmen_robot_ackerman_velocity_message alternative_odometry;
 
@@ -185,17 +186,29 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	else
 		g_gear_command = 1;		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
 
+	if (tune_pid_mode)
+	{
+		if (v < 0.0)
+			g_gear_command = 129;	// 129 = Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+		else
+			g_gear_command = 1;		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+
+		g_desired_velocity = v;
+	}
+	else
+	{
+		if (behavior_selector_low_level_state != Stopped)
+			g_desired_velocity = v;
+		else
+			g_desired_velocity = 0.0;
+	}
+
 //	static double last_time_with_desired_velocity_not_zero = 0.0;
 //	if (v != 0.0)
 //		last_time_with_desired_velocity_not_zero = carmen_get_time();
 
 //	if ((robot_model_name == ROBOT_NAME_MPW700) && ((carmen_get_time() - last_time_with_desired_velocity_not_zero) > 0.3))
 //		g_gear_command = 128;	// 128 = Neutral
-
-//	if (behavior_selector_low_level_state != Stopped)
-		g_desired_velocity = v;
-//	else
-//		g_desired_velocity = 0.0;
 }
 
 
@@ -1056,6 +1069,7 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
     carmen_param_t param_optional_list[] =
 	{
 		{(char *) "commandline", (char *) "robot_model_name",	CARMEN_PARAM_INT, &(robot_model_name),0, NULL},
+		{(char *) "commandline", (char *) "tune_pid_mode",		CARMEN_PARAM_ONOFF, &(tune_pid_mode),0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
