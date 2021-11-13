@@ -49,7 +49,7 @@ read_mc_file_line(MC *mc_line, FILE *mc_file)
 	{
 		if (sscanf(line, "%d %d %d %d", &(mc_line->mx), &(mc_line->my), &(mc_line->cx), &(mc_line->cy)) != 4)
 		{
-			printf("Could read the mc_line->mx, mc_line->my, mc_line->cx, mc_line->cy from line:\n%s\n", line);
+			printf("Could not read the mc_line->mx, mc_line->my, mc_line->cx, mc_line->cy from line:\n%s\n", line);
 			exit(1);
 		}
 		return (true);
@@ -71,7 +71,7 @@ read_limc_file_line(LIMC *limc_line, FILE *limc_file)
 		if (sscanf(line, "%d %d %d %d %d %d %d", &(limc_line->mx), &(limc_line->my), &(limc_line->cx), &(limc_line->cy),
 				&(limc_line->laser), &(limc_line->ray_size), &(limc_line->intensity)) != 7)
 		{
-			printf("Could read the limc_line->mx, limc_line->my, limc_line->cx, limc_line->cy, limc_line->laser, limc_line->ray_size, limc_line->intensity from line:\n%s\n", line);
+			printf("Could not read the limc_line->mx, limc_line->my, limc_line->cx, limc_line->cy, limc_line->laser, limc_line->ray_size, limc_line->intensity from line:\n%s\n", line);
 			exit(1);
 		}
 		return (true);
@@ -171,7 +171,7 @@ compute_mc_index(char *mc, size_t &mc_index_size)
 			mc_file_index = (MC *) realloc((void *) mc_file_index, (mc_index_size + 1) * sizeof(MC));
 			if (!mc_file_index)
 			{
-				printf("Could allocate memory in compute_mc_index()\n");
+				printf("Could not allocate memory in compute_mc_index()\n");
 				exit(1);
 			}
 			mc_file_index[mc_index_size] = mc_line;
