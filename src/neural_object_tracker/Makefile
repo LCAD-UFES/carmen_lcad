@@ -38,9 +38,10 @@ darknet3:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet3
 
 download:
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1SRMaca78rlME55wRJJzMXDeYKd-a8lxA/view?usp=sharing $(CARMEN_HOME)/src/neural_object_tracker/center_track/models/coco_tracking.pth
 #	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1rE0lY4d4wyMp4mvcx23y4qGK97bvzTnC/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet3/yolov3.weights
-	mkdir pedestrian_tracker/data; $(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1MgaW3ndzOiKWJI8VVkAgTLL4tHzDpxc8/view?usp=sharing $(CARMEN_HOME)/src/neural_object_tracker/pedestrian_tracker/data/googlenet_part8_all_xavier_ckpt_56.h5
-	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1a84AIWEsFufsXplKRS26z7FsxNt31KUb/view?usp=sharing $(CARMEN_HOME)/src/neural_object_tracker/pedestrian_tracker/data/squeezenet_small40_coco_mot16_ckpt_10.h5
-	cd $(CARMEN_HOME)/sharedlib/darknet3; wget https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights
+#	mkdir pedestrian_tracker/data; $(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1MgaW3ndzOiKWJI8VVkAgTLL4tHzDpxc8/view?usp=sharing $(CARMEN_HOME)/src/neural_object_tracker/pedestrian_tracker/data/googlenet_part8_all_xavier_ckpt_56.h5
+#	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1a84AIWEsFufsXplKRS26z7FsxNt31KUb/view?usp=sharing $(CARMEN_HOME)/src/neural_object_tracker/pedestrian_tracker/data/squeezenet_small40_coco_mot16_ckpt_10.h5
+#	cd $(CARMEN_HOME)/sharedlib/darknet3; wget https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights
 
 include ../Makefile.rules
