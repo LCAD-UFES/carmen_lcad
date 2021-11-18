@@ -46,6 +46,7 @@
 #define ROBOT_NAME_FORD_ESCAPE 	0
 #define ROBOT_NAME_ECOTECH4 	1
 #define ROBOT_NAME_MPW700 		2
+#define ROBOT_NAME_ASTRU 		3
 
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
@@ -798,7 +799,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
 							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
 				}
-				else if ((robot_model_name == ROBOT_NAME_ECOTECH4) || (robot_model_name == ROBOT_NAME_MPW700))
+				else if ((robot_model_name == ROBOT_NAME_ECOTECH4) || (robot_model_name == ROBOT_NAME_MPW700) || (robot_model_name == ROBOT_NAME_ASTRU))
 				{
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
