@@ -179,8 +179,8 @@ main(int argc, char *argv[])
 	{
 		if (DEVICE_read_data(dev))
 		{
-			gpgga.timestamp = carmen_get_time();
-			gprmc.timestamp = gpgga.timestamp;
+//			gpgga.timestamp = carmen_get_time();
+//			gprmc.timestamp = gpgga.timestamp;
 
 			int result = send(pi_socket, &gpgga, sizeof(carmen_gps_gpgga_message), MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 

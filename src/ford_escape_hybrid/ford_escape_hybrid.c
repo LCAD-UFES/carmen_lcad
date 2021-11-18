@@ -197,7 +197,7 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	}
 	else
 	{
-		if (behavior_selector_low_level_state != Stopped)
+		if ((behavior_selector_low_level_state != Stopped) && g_go_state)
 			g_desired_velocity = v;
 		else
 			g_desired_velocity = 0.0;
