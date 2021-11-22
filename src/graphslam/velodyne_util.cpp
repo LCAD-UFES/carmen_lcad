@@ -199,8 +199,10 @@ point_is_valid(carmen_sphere_coord_t sphere_point, sensor_parameters_t *velodyne
 //	if ((sphere_point.horizontal_angle > M_PI / 2.0) || (sphere_point.horizontal_angle < -M_PI / 2.0))
 //		return 0;
 
+	carmen_current_semi_trailer_data_t semi_trailer_data = {0, 0, 0.0, 0.0, 0.0}; // não considera semi-trailer
+
 	int ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(model_predictive_planner_obstacles_safe_distance, point_position_in_the_robot.x,
-			point_position_in_the_robot.y);
+			point_position_in_the_robot.y, semi_trailer_data);
 
 	if (ray_hit_the_car || (range >= velodyne_params->range_max) || (point_position_in_the_robot.z >= highest_point))
 		return 0;
