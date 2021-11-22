@@ -362,6 +362,14 @@ typedef struct {
 
 
 typedef struct {
+	int semi_trailer_engaged;
+	int type;
+	double d;
+	double M;
+	double beta;
+} carmen_current_semi_trailer_data_t;
+
+typedef struct {
     double x;
     double y;
     double theta;

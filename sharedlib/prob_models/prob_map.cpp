@@ -1775,8 +1775,45 @@ carmen_parse_collision_file(double **polygon)
 }
 
 
+static int
+carmen_parse_semi_trailer_collision_file(double **polygon, int semi_trailer_type)
+{
+	FILE *poly;
+	int n_points, h_lvl;
+	char *poly_file;
+
+	char semi_trailer_string[2048];
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_type);
+
+	carmen_param_allow_unfound_variables(0);
+	carmen_param_t param_list[] =
+	{
+			{ semi_trailer_string, (char *) "collision_file", CARMEN_PARAM_STRING, &poly_file, 1, NULL }
+	};
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	poly = fopen(poly_file, "r");
+	setlocale(LC_NUMERIC, "C");
+
+	if (poly == NULL)
+		printf("Can not load Col File\n");
+
+	fscanf(poly, "%d\n", &n_points);
+	fscanf(poly, "%d\n", &h_lvl);
+	*polygon = (double *) malloc(n_points * 4 * sizeof(double));
+	for (int i = 0; i < n_points; i++)
+	{
+		fscanf(poly, "%lf %lf %lf %lf\n", *polygon + (4 * i), *polygon + (4 * i + 1), *polygon + (4 * i + 2), *polygon + (4 * i + 3));
+		printf("%lf %lf %lf %lf\n", (*polygon)[4 * i], (*polygon)[4 * i + 1], (*polygon)[4 * i + 2], (*polygon)[4 * i + 3]);
+	}
+	fclose(poly);
+
+	return n_points;
+}
+
+
 int
-carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_safe_distance, double x, double y)
+carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_safe_distance, double x, double y, carmen_current_semi_trailer_data_t semi_trailer_data)
 {
 	static int load_collision_model = 1;
 	static double *collision_model_circles;
@@ -1800,12 +1837,43 @@ carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_s
 			return (1);
 	}
 
+	static int current_semi_trailer_model_type = 0;
+	static double *semi_trailer_collision_model_circles = NULL;
+	static int semi_trailer_col_n_points = 0;
+
+	if (semi_trailer_data.semi_trailer_engaged)
+	{
+		if (current_semi_trailer_model_type != semi_trailer_data.type)
+		{
+			if (semi_trailer_collision_model_circles != NULL)
+				free(semi_trailer_collision_model_circles);
+			semi_trailer_col_n_points = carmen_parse_semi_trailer_collision_file(&semi_trailer_collision_model_circles, semi_trailer_data.type);
+			printf("Semi-trailer collision model Loaded in carmen_prob_models_ray_hit_the_robot()\n");
+			current_semi_trailer_model_type = semi_trailer_data.type;
+		}
+
+		for (int i = 0; i < semi_trailer_col_n_points; i++)
+		{
+			double x_tmp = collision_model_circles[i * 4];
+			double y_tmp = collision_model_circles[i * 4 + 1];
+
+			double center_x = x_tmp * cos(-semi_trailer_data.beta) - y_tmp * sin(-semi_trailer_data.beta) - semi_trailer_data.d * cos(semi_trailer_data.beta) - semi_trailer_data.M;
+			double center_y = x_tmp * sin(-semi_trailer_data.beta) + y_tmp * cos(-semi_trailer_data.beta) + semi_trailer_data.d * sin(semi_trailer_data.beta);
+			double radius = collision_model_circles[i * 4 + 2];
+
+			double distance = sqrt((x - center_x) * (x - center_x) + (y - center_y) * (y - center_y));
+			if (distance < (radius + model_predictive_planner_obstacles_safe_distance))
+				return (1);
+		}
+	}
+
 	return (0);
 }
 
 
 int
 get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, double *by, float *obstacle_z, int *ray_hit_the_car, carmen_sphere_coord_t sphere_point,
+		carmen_current_semi_trailer_data_t semi_trailer_data,
 		carmen_vector_3D_t robot_position, carmen_vector_3D_t sensor_robot_reference, carmen_pose_3D_t sensor_pose, carmen_pose_3D_t sensor_board_pose,
 		rotation_matrix *sensor_to_board_matrix, double range_max, rotation_matrix *r_matrix_robot_to_global,
 		rotation_matrix* board_to_robot_matrix, double robot_wheel_radius, double x_origin, double y_origin, carmen_robot_ackerman_config_t *car_config)
@@ -1831,7 +1899,7 @@ get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, 
 	*ax = sensor_position_in_the_world.x - x_origin;
 	*ay = sensor_position_in_the_world.y - y_origin;
 
-	*ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(car_config->model_predictive_planner_obstacles_safe_distance, point_position_in_the_robot.x, point_position_in_the_robot.y);
+	*ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(car_config->model_predictive_planner_obstacles_safe_distance, point_position_in_the_robot.x, point_position_in_the_robot.y, semi_trailer_data);
 
 	*bx = global_point_position_in_the_world.x - x_origin;
 	*by = global_point_position_in_the_world.y - y_origin;
@@ -1858,6 +1926,7 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		sensor_data->maxed[thread_id][i] = get_ray_origin_a_target_b_and_target_height(&ax, &ay, &bx, &by, &obstacle_z, &sensor_data->ray_hit_the_robot[thread_id][i], sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + i],
+				sensor_data->semi_trailer_data,
 				robot_position,	sensor_params->sensor_robot_reference, sensor_params->pose, sensor_board_pose, sensor_params->sensor_to_support_matrix, 
 				sensor_params->current_range_max, r_matrix_robot_to_global, board_to_robot_matrix, robot_wheel_radius, x_origin, y_origin, car_config);
 
@@ -1917,6 +1986,7 @@ carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		sensor_data->maxed[thread_id][i] = get_ray_origin_a_target_b_and_target_height(&ax, &ay, &bx, &by, &obstacle_z, &sensor_data->ray_hit_the_robot[thread_id][i], sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + i],
+				sensor_data->semi_trailer_data,
 				robot_position,	sensor_params->sensor_robot_reference, sensor_params->pose, sensor_board_pose, sensor_params->sensor_to_support_matrix,
 				sensor_params->current_range_max, r_matrix_robot_to_global, board_to_robot_matrix, robot_wheel_radius, x_origin, y_origin, car_config);
 

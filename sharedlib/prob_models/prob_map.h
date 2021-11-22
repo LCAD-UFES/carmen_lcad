@@ -135,6 +135,7 @@ typedef struct _sensor_data
 	int **maxed;
 	int **ray_hit_the_robot;
 	int *ray_that_hit_the_nearest_target;
+	carmen_current_semi_trailer_data_t semi_trailer_data;
 } sensor_data_t;
 
 
@@ -249,7 +250,7 @@ void carmen_prob_models_uncompress_compact_map(carmen_map_t *map, carmen_compact
 void carmen_prob_models_clear_carmen_map_using_compact_map(carmen_map_t *map, carmen_compact_map_t *cmap, double value);
 
 
-int carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_safe_distance, double x, double y);
+int carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_safe_distance, double x, double y, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 carmen_map_t *carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(carmen_map_t *snapshot_map, carmen_map_t *current_map);
 carmen_map_t *carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(carmen_map_t *log_odds_snapshot_map, carmen_map_t *current_map);

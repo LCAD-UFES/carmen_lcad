@@ -141,6 +141,11 @@ extern carmen_map_t occupancy_map;
 int publish_diff_map = 0;
 double publish_diff_map_interval = 0.5;
 
+static carmen_semi_trailer_config_t semi_trailer_config;
+
+static int g_argc;
+static char **g_argv;
+
 
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
@@ -165,6 +170,13 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			old_robot_position = sensors_data[sensor_number].robot_pose[i];
 			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+			sensors_data[sensor_number].semi_trailer_data = {
+					globalpos_message->semi_trailer_engaged,
+					globalpos_message->semi_trailer_type,
+					semi_trailer_config.d,
+					semi_trailer_config.M,
+					globalpos_message->beta
+			};
 
 			if (use_merge_between_maps)
 				run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
@@ -232,6 +244,35 @@ free_virtual_scan_message()
 		}
 	}
 }
+
+
+static void
+read_parameters_semi_trailer(int semi_trailer_type)
+{
+	semi_trailer_config.type = semi_trailer_type;
+	if (semi_trailer_type == 0)
+		return;
+
+	char semi_trailer_string[2048];
+
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+
+	char *semi_trailer_poly_file;
+
+	carmen_param_t semi_trailer_param_list[] = {
+		{semi_trailer_string, (char *) "d",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   	  0, NULL},
+		{semi_trailer_string, (char *) "M",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   	  0, NULL},
+		{semi_trailer_string, (char *) "width",							 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),							  0, NULL},
+		{semi_trailer_string, (char *) "distance_between_axle_and_front", 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
+		{semi_trailer_string, (char *) "distance_between_axle_and_back",	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
+		{semi_trailer_string, (char *) "max_beta",						 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.max_beta),						  0, NULL},
+		{semi_trailer_string, (char *) "polygon_file",					 	CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 							  	0, NULL}
+	};
+	carmen_param_install_params(g_argc, g_argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+
+	semi_trailer_config.max_beta = carmen_degrees_to_radians(semi_trailer_config.max_beta);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -367,6 +408,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	{
 		robot_near_strong_slow_down_annotation = 0;
 	}
+
+	if (globalpos_message->semi_trailer_type != semi_trailer_config.type)
+		read_parameters_semi_trailer(globalpos_message->semi_trailer_type);
 
 	if (ok_to_publish)
 	{
@@ -1515,6 +1559,8 @@ read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_r
 		{(char *) "model", 		(char *) "predictive_planner_obstacles_safe_distance", 	CARMEN_PARAM_DOUBLE, &(p_car_config->model_predictive_planner_obstacles_safe_distance), 1, NULL},
 		{(char *) "obstacle", 	(char *) "avoider_obstacles_safe_distance", 			CARMEN_PARAM_DOUBLE, &(p_car_config->obstacle_avoider_obstacles_safe_distance), 1, NULL},
 
+		{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.type), 0, NULL},
+
 		{(char *) "sensor",  (char *) "board_1_x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	1, get_sensors_param_pose_handler},
 		{(char *) "sensor",  (char *) "board_1_y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	1, get_sensors_param_pose_handler},
 		{(char *) "sensor",  (char *) "board_1_z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	1, get_sensors_param_pose_handler},
@@ -1630,6 +1676,9 @@ read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_r
 	}
 
 	ultrasonic_sensor_params.current_range_max = ultrasonic_sensor_params.range_max;
+
+	if (semi_trailer_config.type > 0)
+		read_parameters_semi_trailer(semi_trailer_config.type);
 
 	if (map_width != map_height)
 		carmen_die("Wrong map size: width (%f) must be equal to height (%f).", map_width, map_height);
