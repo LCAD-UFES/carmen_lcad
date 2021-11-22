@@ -1872,7 +1872,7 @@ carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_s
 
 
 int
-get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, double *by, float *obstacle_z, int *ray_hit_the_car, carmen_sphere_coord_t sphere_point,
+get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, double *by, float *obstacle_z, int *ray_hit_the_robot, carmen_sphere_coord_t sphere_point,
 		carmen_current_semi_trailer_data_t semi_trailer_data,
 		carmen_vector_3D_t robot_position, carmen_vector_3D_t sensor_robot_reference, carmen_pose_3D_t sensor_pose, carmen_pose_3D_t sensor_board_pose,
 		rotation_matrix *sensor_to_board_matrix, double range_max, rotation_matrix *r_matrix_robot_to_global,
@@ -1899,7 +1899,7 @@ get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, 
 	*ax = sensor_position_in_the_world.x - x_origin;
 	*ay = sensor_position_in_the_world.y - y_origin;
 
-	*ray_hit_the_car = carmen_prob_models_ray_hit_the_robot(car_config->model_predictive_planner_obstacles_safe_distance, point_position_in_the_robot.x, point_position_in_the_robot.y, semi_trailer_data);
+	*ray_hit_the_robot = carmen_prob_models_ray_hit_the_robot(car_config->model_predictive_planner_obstacles_safe_distance, point_position_in_the_robot.x, point_position_in_the_robot.y, semi_trailer_data);
 
 	*bx = global_point_position_in_the_world.x - x_origin;
 	*by = global_point_position_in_the_world.y - y_origin;
