@@ -1852,13 +1852,16 @@ carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_s
 			current_semi_trailer_model_type = semi_trailer_data.type;
 		}
 
+		double sin_beta, cos_beta;
+		sincos(semi_trailer_data.beta, &sin_beta, &cos_beta);
+
 		for (int i = 0; i < semi_trailer_col_n_points; i++)
 		{
 			double x_tmp = collision_model_circles[i * 4];
 			double y_tmp = collision_model_circles[i * 4 + 1];
 
-			double center_x = x_tmp * cos(-semi_trailer_data.beta) - y_tmp * sin(-semi_trailer_data.beta) - semi_trailer_data.d * cos(semi_trailer_data.beta) - semi_trailer_data.M;
-			double center_y = x_tmp * sin(-semi_trailer_data.beta) + y_tmp * cos(-semi_trailer_data.beta) + semi_trailer_data.d * sin(semi_trailer_data.beta);
+			double center_x = x_tmp * cos_beta - y_tmp * (-sin_beta) - semi_trailer_data.d * cos_beta - semi_trailer_data.M;
+			double center_y = x_tmp * (-sin_beta) + y_tmp * cos_beta + semi_trailer_data.d * sin_beta;
 			double radius = collision_model_circles[i * 4 + 2];
 
 			double distance = sqrt((x - center_x) * (x - center_x) + (y - center_y) * (y - center_y));
