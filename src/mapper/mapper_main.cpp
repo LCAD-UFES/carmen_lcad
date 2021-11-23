@@ -170,7 +170,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			old_robot_position = sensors_data[sensor_number].robot_pose[i];
 			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
-			sensors_data[sensor_number].semi_trailer_data = {
+			sensors_data[sensor_number].semi_trailer_data =
+			{
 					globalpos_message->semi_trailer_engaged,
 					globalpos_message->semi_trailer_type,
 					semi_trailer_config.d,
@@ -204,6 +205,14 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		old_robot_position = sensors_data[sensor_number].robot_pose[i];
 		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+		sensors_data[sensor_number].semi_trailer_data =
+		{
+				globalpos_message->semi_trailer_engaged,
+				globalpos_message->semi_trailer_type,
+				semi_trailer_config.d,
+				semi_trailer_config.M,
+				globalpos_message->beta
+		};
 
 		if (use_merge_between_maps)
 			run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
@@ -380,6 +389,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	else
 		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
 
+	printf("beta %lf\n", globalpos_message->beta);
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
 	int index_of_nearest_annotation = 0;
