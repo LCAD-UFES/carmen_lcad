@@ -42,18 +42,18 @@ MODULE_NAME = LOCALIZE ACKERMAN
 MODULE_COMMENT = Markov Localization Module
 
 SOURCES = localize_ackerman_main.cpp localize_ackerman_using_map.cpp localize_ackerman_likelihood_map.c localize_ackerman_core.cpp localize_ackerman_interface.c \
-	  localize_ackerman_initialize.c localize_ackerman_motion.c localize_ackerman_velodyne.cpp localize_ackerman_particle_viewer.c
+	  localize_ackerman_initialize.c localize_ackerman_motion.c localize_ackerman_velodyne.cpp localize_ackerman_particle_viewer.c localize_ackerman_beta_particle_filter.cpp
 	  
 PUBLIC_INCLUDES = localize_ackerman_messages.h localize_ackerman_interface.h localize_ackerman_core.h \
-	          localize_ackerman_likelihood_map.h localize_ackerman_motion.h localize_ackerman_velodyne.h
+	          localize_ackerman_likelihood_map.h localize_ackerman_motion.h localize_ackerman_velodyne.h localize_ackerman_beta_particle_filter.h
 		  
-PUBLIC_LIBRARIES = liblocalize_ackerman_interface.a liblocalize_ackerman_core.a liblocalize_ackerman_motion.a
+PUBLIC_LIBRARIES = liblocalize_ackerman_interface.a liblocalize_ackerman_core.a liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a
 PUBLIC_BINARIES = localize_ackerman localize_ackerman_particle_viewer
 
 MAN_PAGES =
 
 TARGETS = libprob_models.a libgl_plotter.a localize_ackerman liblocalize_ackerman_interface.a \
-		liblocalize_ackerman_core.a liblocalize_ackerman_motion.a model_learn_ackerman/model_learner_ackerman \
+		liblocalize_ackerman_core.a liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a model_learn_ackerman/model_learner_ackerman \
 		localize_ackerman_particle_viewer		
 
 # If you set graphics support in configure.
@@ -90,8 +90,10 @@ liblocalize_ackerman_core.a: localize_ackerman_core.o localize_ackerman_initiali
 
 liblocalize_ackerman_motion.a: localize_ackerman_motion.o
 
+liblocalize_ackerman_beta_particle_filter.a: localize_ackerman_beta_particle_filter.o
+
 localize_ackerman:	localize_ackerman_main.o localize_ackerman_using_map.o localize_ackerman_velodyne.o liblocalize_ackerman_core.a liblocalize_ackerman_interface.a \
-	liblocalize_ackerman_motion.a
+	liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a
 
 localize_ackerman_graph:	localize_ackerman_graph.o localize_ackerman_likelihood_map.o liblocalize_ackerman_interface.a
 

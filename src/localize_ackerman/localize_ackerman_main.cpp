@@ -46,6 +46,8 @@
 #include "localize_ackerman_messages.h"
 #include "localize_ackerman_interface.h"
 #include "localize_ackerman_velodyne.h"
+#include "localize_ackerman_beta_particle_filter.h"
+
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -66,6 +68,7 @@ static int g_fused_odometry_index = -1;
 carmen_map_t *new_map = NULL;
 carmen_localize_ackerman_map_t localize_map;
 carmen_localize_ackerman_particle_filter_p filter;
+carmen_localize_ackerman_particle_filter_p beta_filter;
 carmen_localize_ackerman_summary_t summary;
 
 carmen_map_t local_map;
@@ -690,10 +693,24 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			&base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			velodyne_message->timestamp, car_config.distance_between_front_and_rear_axles);
 
+	carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point =
+	{
+			globalpos.globalpos.x,
+			globalpos.globalpos.y,
+			globalpos.globalpos.theta,
+			globalpos.beta,
+			globalpos.v,
+			globalpos.phi
+	};
+
+	carmen_localize_ackerman_beta_prediction(beta_filter, robot_and_trailer_traj_point, car_config, semi_trailer_config);
+
 	publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
 
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
+
+	carmen_localize_ackerman_beta_correction();
 
 	publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 
@@ -703,6 +720,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
 		carmen_localize_ackerman_velodyne_resample(filter);
+
+		carmen_localize_ackerman_beta_resample();
 	}
 
 	if (filter->initialized)
