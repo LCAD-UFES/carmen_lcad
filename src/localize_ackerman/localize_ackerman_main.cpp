@@ -710,18 +710,22 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
-	carmen_localize_ackerman_beta_correction();
+	carmen_localize_ackerman_beta_correction(beta_filter,
+			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
 	publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 
 	if (filter->initialized)
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 
+	if (beta_filter->initialized)
+		carmen_localize_ackerman_summarize_beta(filter, &summary);
+
 	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
 		carmen_localize_ackerman_velodyne_resample(filter);
 
-		carmen_localize_ackerman_beta_resample();
+		carmen_localize_ackerman_beta_resample(beta_filter);
 	}
 
 	if (filter->initialized)

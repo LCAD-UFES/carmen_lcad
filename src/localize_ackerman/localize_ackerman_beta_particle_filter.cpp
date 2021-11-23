@@ -12,14 +12,26 @@ carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filte
 
 
 void
-carmen_localize_ackerman_beta_correction()
+carmen_localize_ackerman_beta_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p localize_map,
+		carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map,
+		carmen_compact_map_t *local_variance_remission_map  __attribute__ ((unused)),
+		carmen_localize_ackerman_binary_map_t *binary_map __attribute__ ((unused)))
 {
 
 }
 
 
 void
-carmen_localize_ackerman_beta_resample()
+carmen_localize_ackerman_summarize_beta(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary)
 {
 
 }
+
+
+void
+carmen_localize_ackerman_beta_resample(carmen_localize_ackerman_particle_filter_p filter)
+{
+
+}
+
+
