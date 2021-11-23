@@ -1860,8 +1860,8 @@ carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_s
 			double x_tmp = collision_model_circles[i * 4];
 			double y_tmp = collision_model_circles[i * 4 + 1];
 
-			double center_x = -x_tmp * cos_beta + y_tmp * sin_beta - semi_trailer_data.d * cos_beta - semi_trailer_data.M;
-			double center_y = -x_tmp * sin_beta - y_tmp * cos_beta + semi_trailer_data.d * sin_beta;
+			double center_x =  x_tmp * cos_beta + y_tmp * sin_beta - semi_trailer_data.d * cos_beta - semi_trailer_data.M;
+			double center_y = -x_tmp * sin_beta + y_tmp * cos_beta + semi_trailer_data.d * sin_beta;
 			double radius = collision_model_circles[i * 4 + 2];
 
 			double distance = sqrt((x - center_x) * (x - center_x) + (y - center_y) * (y - center_y));
