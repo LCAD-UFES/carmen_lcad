@@ -1504,6 +1504,8 @@ main(int argc, char **argv)
 
 	/* Allocate memory for the particle filter */
 	filter = carmen_localize_ackerman_particle_filter_initialize(&param);
+//	beta_filter = carmen_localize_ackerman_particle_filter_initialize(&param);
+
 
 	init_localize_map();
 	init_local_maps(map_params);
