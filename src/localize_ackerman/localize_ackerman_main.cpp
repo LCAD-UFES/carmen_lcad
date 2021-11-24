@@ -440,7 +440,7 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 	};
 
 	velodyne_initilized = localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(message, &spherical_sensor_params[sensor], 
-			&spherical_sensor_data[sensor], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
+			&spherical_sensor_data[sensor], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
 	if (!velodyne_initilized)
 		return;
 

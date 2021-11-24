@@ -24,12 +24,12 @@ localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variabl
 
 int
 localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *message, sensor_parameters_t *velodyne_params,
-		sensor_data_t *velodyne_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data);
+		sensor_data_t *velodyne_data, double v, double phi);
 
 int
 localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *message, sensor_parameters_t *velodyne_params,
 		sensor_data_t *velodyne_data, double v, double phi,
-		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data);
+		double map_center_x, double map_center_y);
 
 
 void
