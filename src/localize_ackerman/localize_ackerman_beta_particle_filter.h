@@ -11,7 +11,7 @@ extern "C" {
 
 void
 carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point,
-										 carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config);
+										 carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config, double velodyne_timestamp);
 
 void
 carmen_localize_ackerman_beta_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p localize_map, carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map,

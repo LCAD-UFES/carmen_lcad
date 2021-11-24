@@ -721,7 +721,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			globalpos.phi
 	};
 
-//	carmen_localize_ackerman_beta_prediction(beta_filter, robot_and_trailer_traj_point, car_config, semi_trailer_config);
+//	carmen_localize_ackerman_beta_prediction(beta_filter, robot_and_trailer_traj_point, car_config, semi_trailer_config, velodyne_message->timestamp - beta_filter->last_timestamp);
 
 	publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
 
