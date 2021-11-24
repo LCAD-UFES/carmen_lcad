@@ -61,11 +61,11 @@ carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filte
 			phi_step = phi + filter->particles[i].phi_bias;
 
 			robot_pose.v = v_step;
-				robot_pose.phi = phi_step;
+			robot_pose.phi = phi_step;
 
-				filter->particles[i].theta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
-				filter->particles[i].phi = phi_step;
-				filter->particles[i].v = v_step;
+			filter->particles[i].theta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
+			filter->particles[i].phi = phi_step;
+			filter->particles[i].v = v_step;
 		}
 	}
 }
