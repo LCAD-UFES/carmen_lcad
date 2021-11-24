@@ -430,8 +430,17 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 		((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
+	carmen_current_semi_trailer_data_t semi_trailer_data =
+	{
+			globalpos.semi_trailer_engaged,
+			globalpos.semi_trailer_type,
+			semi_trailer_config.d,
+			semi_trailer_config.M,
+			globalpos.beta
+	};
+
 	velodyne_initilized = localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(message, &spherical_sensor_params[sensor], 
-			&spherical_sensor_data[sensor], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+			&spherical_sensor_data[sensor], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
 	if (!velodyne_initilized)
 		return;
 
@@ -684,8 +693,17 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
+	carmen_current_semi_trailer_data_t semi_trailer_data =
+	{
+			globalpos.semi_trailer_engaged,
+			globalpos.semi_trailer_type,
+			semi_trailer_config.d,
+			semi_trailer_config.M,
+			globalpos.beta
+	};
+
 	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(velodyne_message, &spherical_sensor_params[0], 
-			&spherical_sensor_data[0], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+			&spherical_sensor_data[0], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
 	if (!velodyne_initilized)
 		return;
 
@@ -837,8 +855,17 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	if (!necessary_maps_available || !global_localization_requested || ((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
+	carmen_current_semi_trailer_data_t semi_trailer_data =
+	{
+			globalpos.semi_trailer_engaged,
+			globalpos.semi_trailer_type,
+			semi_trailer_config.d,
+			semi_trailer_config.M,
+			globalpos.beta
+	};
+
 	instanteneous_maps_ok = localize_ackerman_variable_scan_build_instanteneous_maps(msg, &spherical_sensor_params[sensor_number], 
-			&spherical_sensor_data[sensor_number], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+			&spherical_sensor_data[sensor_number], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
 	
 	if (!instanteneous_maps_ok)
 		return;

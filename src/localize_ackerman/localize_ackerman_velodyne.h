@@ -6,30 +6,30 @@
 
 int
 localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
-		sensor_data_t *velodyne_data, double v, double phi);
+		sensor_data_t *velodyne_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 int
 localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
 		sensor_data_t *velodyne_data, double v, double phi,
-		double map_center_x, double map_center_y);
+		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 int
 localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *msg, sensor_parameters_t *sensor_params,
-		sensor_data_t *sensor_data, double v, double phi);
+		sensor_data_t *sensor_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 int
 localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *msg, sensor_parameters_t *sensor_params,
 		sensor_data_t *sensor_data, double v, double phi,
-		double map_center_x, double map_center_y);
+		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 int
 localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *message, sensor_parameters_t *velodyne_params,
-		sensor_data_t *velodyne_data, double v, double phi);
+		sensor_data_t *velodyne_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 int
 localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *message, sensor_parameters_t *velodyne_params,
 		sensor_data_t *velodyne_data, double v, double phi,
-		double map_center_x, double map_center_y);
+		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 
 void
