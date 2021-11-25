@@ -23,15 +23,15 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface -lglobal -lipc -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 			-lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv` -luser_preferences
 
-SOURCES = logger.c playback_interface.c playback.cpp writelog.cpp readlog.cpp log_timestamp_repair.c logger_interface.c print_binary_log.cpp
+SOURCES = logger.c playback_interface.c playback.cpp writelog.cpp readlog.cpp log_timestamp_repair.c logger_interface.c print_binary_log.cpp log_fix_messages.cpp
 
 PUBLIC_INCLUDES = logger.h logger_messages.h playback_messages.h playback_interface.h writelog.h readlog.h logger_interface.h
 
 PUBLIC_LIBRARIES = libplayback_interface.a  libwritelog.a libreadlog.a liblogger_interface.a
 
-PUBLIC_BINARIES = logger playback playback_control
+PUBLIC_BINARIES = logger playback playback_control log_fix_messages
 
-TARGETS = liblogger_interface.a  libwritelog.a libreadlog.a logger libplayback_interface.a  playback log_timestamp_repair print_binary_log
+TARGETS = liblogger_interface.a  libwritelog.a libreadlog.a logger libplayback_interface.a  playback log_timestamp_repair print_binary_log log_timestamp_repair log_fix_messages
 
 ifndef NO_GRAPHICS
 SOURCES += playback_control.c
@@ -62,6 +62,8 @@ playback: playback.o libreadlog.a playback_interface.o
 playback_control: playback_control.o playback_interface.o
 
 log_timestamp_repair: log_timestamp_repair.o
+
+log_fix_messages: playback_interface.o libreadlog.a log_fix_messages.o
 
 print_binary_log: print_binary_log.o
 
