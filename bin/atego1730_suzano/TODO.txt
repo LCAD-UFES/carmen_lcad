@@ -1,8 +1,0 @@
-Mapper:
-Tem que passar o beta para update_log_odds_of_cells_in_the_velodyne_perceptual_field()
-Tem que simular o robot com beta em carmen_ackerman_interpolated_robot_position_at_time()
-E fazer o beta chegar a carmen_prob_models_ray_hit_the_robot() para apagar o semi trailer
-
-Localizer:
-Possivelmente o mesmo que acima. Atentar para o modo de localização baseado em remission
-
