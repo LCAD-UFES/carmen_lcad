@@ -27,13 +27,10 @@ cv::Mat *g_offline_map_img = NULL;
 cv::Mat *g_offline_map_img3 = NULL;
 cv::Mat *g_offline_map_img4 = NULL;
 static carmen_map_p g_offline_map = NULL;
+carmen_position_t g_min_pose = { DBL_MAX,  DBL_MAX};
+carmen_position_t g_max_pose = {-DBL_MAX, -DBL_MAX};
+double g_resolution = 0.2;
 
-static carmen_map_t *current_sum_remission_map;
-static carmen_map_t *current_mean_remission_map;
-static carmen_map_t *current_variance_remission_map;
-static carmen_map_t *current_sum_sqr_remission_map;
-static carmen_map_t *current_count_remission_map;
-static carmen_map_t *current_road_map;
 
 void
 rotate_90_counterclockwise(cv::Mat &img)
@@ -87,22 +84,31 @@ rotate_90_counterclockwise(cv::Mat &img)
 }
 
 
-bool
-map_img_is_empty(cv::Mat &map_img, char file_type)
+void
+get_empty_values(uchar *empty_value, cv::Vec3b *empty_value3, cv::Vec4b *empty_value4, char map_img_type)
 {
-	uchar empty_value = 0;
+	if (map_img_type == 'h' || map_img_type == 'i')
+	{
+		*empty_value = 253;
+		*empty_value3 = cv::Vec3b(253, 253, 253);
+		*empty_value4 = cv::Vec4b(253, 253, 253, 255);
+	}
+	if (map_img_type == 'n' || map_img_type == 'm')
+	{
+		*empty_value = (255 + 144 + 30) / 3;
+		*empty_value3 = cv::Vec3b(255, 144, 30);
+		*empty_value4 = cv::Vec4b(255, 144, 30, 255);
+	}
+}
+
+
+bool
+map_img_is_empty(cv::Mat &map_img, char map_img_type)
+{
+	uchar empty_value;
 	cv::Vec3b empty_value3;
 	cv::Vec4b empty_value4;
-
-	if (file_type == 'h')
-		empty_value = 253;
-	else if (file_type == 'i')
-		empty_value3 = cv::Vec3b(253, 253, 253);
-	else if (file_type == 'n')
-		empty_value = (255 + 144 + 30) / 3;
-	else if (file_type == 'm')
-		empty_value3 = cv::Vec3b(255, 144, 30);
-	empty_value4 = cv::Vec4b(empty_value3[0], empty_value3[1], empty_value3[2], 255);
+	get_empty_values(&empty_value, &empty_value3, &empty_value4, map_img_type);
 
 	for (int row = 0; row < map_img.rows; row++)
 	{
@@ -192,7 +198,7 @@ save_remission_map_image(void)
 			else
 				cv::imwrite(path, *g_remission_map_img3);
 		}
-		if (g_image_channels == 4 || g_image_channels == '*')
+		if (g_image_channels == 4)
 		{
 			remission_map_to_image(g_remission_map, g_remission_map_img4, 4);
 			sprintf(path, "%s/%c%s", g_out_dir, 'i', &name[1]);
@@ -248,7 +254,7 @@ save_offline_map_image(void)
 			else
 				cv::imwrite(path, *g_offline_map_img3);
 		}
-		if (g_image_channels == 4 || g_image_channels == '*')
+		if (g_image_channels == 4)
 		{
 			offline_map_to_image(g_offline_map, g_offline_map_img4, 4);
 			sprintf(path, "%s/%c%s", g_out_dir, 'm', &name[1]);
@@ -265,45 +271,75 @@ save_offline_map_image(void)
 
 
 void
-prog_usage(char *prog_name, const char *error_msg = NULL)
+prog_usage(char *prog_name, const char *error_msg = NULL, const char *error_msg2 = NULL)
 {
 	if (error_msg)
-		fprintf(stderr, "\n%s\n", error_msg);
+		fprintf(stderr, "\n%s", error_msg);
+	if (error_msg2)
+		fprintf(stderr, "%s", error_msg2);
 
-	fprintf(stderr, "\nUsage:   %s   -remission {on|off}  -offline {on|off}  -out_dir <dir>  -image_channels {1|3|4|'*'}\n", prog_name);
+	fprintf(stderr, "\n\nUsage:   %s   -remission {on|off}  -offline {on|off}  -out_dir <dir>  -image_channels {1|3|4|'*'}\n", prog_name);
 	fprintf(stderr,   "         %*c   -up_north  {on|off}  -split   {on|off}\n", (int) strlen(prog_name), ' ');
 	fprintf(stderr,   "default: %s   -remission  off      -offline  on       -out_dir .      -image_channels 3\n", prog_name);
 	fprintf(stderr,   "         %*c   -up_north   off      -split    off\n\n", (int) strlen(prog_name), ' ');
-	fprintf(stderr, "To load from map folder \nUsage:   %s 	-input_dir <dir> -out_dir <dir> \n", prog_name);
+	fprintf(stderr, "To load from map folder:\nUsage:   %s   -input_dir <dir>     -out_dir <dir> \n\n", prog_name);
 
 	exit(-1);
+}
+
+
+void
+get_param_string(char **param_string, int argc, char **argv, int i)
+{
+	if (i + 1 >= argc)
+		prog_usage(argv[0], "string argument expected following ", argv[i]);
+	*param_string = argv[i + 1];
+}
+
+
+void
+get_param_onoff(int *param_onoff, int argc, char **argv, int i)
+{
+	if (i + 1 >= argc)
+		prog_usage(argv[0], "on/off argument expected following ", argv[i]);
+	if (strcmp(argv[i + 1], "on") == 0)
+		*param_onoff = 1;
+	else if (strcmp(argv[i + 1], "off") == 0)
+		*param_onoff = 0;
+	else
+		prog_usage(argv[0], "on/off argument expected: ", argv[i + 1]);
 }
 
 
 static void
 read_parameters(int argc, char **argv)
 {
-	char *out_dir = NULL, *image_channels = NULL;
+	char *out_dir = NULL;
+	char *image_channels = NULL;
 	char *input_dir = NULL;
 
-	carmen_param_t param_list[] =
+	for (int i = 1; i < argc; i += 2)
 	{
-			{(char *) "commandline",  (char*) "remission",			CARMEN_PARAM_ONOFF, 	&(g_remission),		0, NULL},
-			{(char *) "commandline",  (char*) "offline",			CARMEN_PARAM_ONOFF, 	&(g_offline),		0, NULL},
-			{(char *) "commandline",  (char*) "out_dir",			CARMEN_PARAM_STRING, 	&(out_dir),			0, NULL},
-			{(char *) "commandline",  (char*) "image_channels",		CARMEN_PARAM_STRING, 	&(image_channels),	0, NULL},
-			{(char *) "commandline",  (char*) "up_north",			CARMEN_PARAM_ONOFF, 	&(g_up_north),		0, NULL},
-			{(char *) "commandline",  (char*) "split",				CARMEN_PARAM_ONOFF, 	&(g_split),			0, NULL},
-			{(char *) "commandline",  (char*) "input_dir",			CARMEN_PARAM_STRING, 	&(input_dir),			0, NULL},
+		if (strcmp(argv[i], "-remission") == 0)
+			get_param_onoff(&g_remission, argc, argv, i);
+		else if (strcmp(argv[i], "-offline") == 0)
+			get_param_onoff(&g_offline, argc, argv, i);
+		else if (strcmp(argv[i], "-out_dir") == 0)
+			get_param_string(&out_dir, argc, argv, i);
+		else if (strcmp(argv[i], "-image_channels") == 0)
+			get_param_string(&image_channels, argc, argv, i);
+		else if (strcmp(argv[i], "-up_north") == 0)
+			get_param_onoff(&g_up_north, argc, argv, i);
+		else if (strcmp(argv[i], "-split") == 0)
+			get_param_onoff(&g_split, argc, argv, i);
+		else if (strcmp(argv[i], "-input_dir") == 0)
+			get_param_string(&input_dir, argc, argv, i);
+		else
+			prog_usage(argv[0], "invalid option: ", argv[i]);
 	};
 
-	carmen_param_allow_unfound_variables(1);
-	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-
 	if (!g_remission && !g_offline)
-	{
-		prog_usage(argv[0], "neither remission nor offline map was chosen");
-	}
+		prog_usage(argv[0], "neither -remission nor -offline option was set on");
 
 	if (input_dir)
 		{
@@ -316,7 +352,7 @@ read_parameters(int argc, char **argv)
 			struct stat st_input_dir;
 			int st = stat(g_input_dir, &st_input_dir);
 			if (st != 0 || !S_ISDIR(st_input_dir.st_mode))
-				prog_usage(argv[0], "invalid input_dir");
+				prog_usage(argv[0], "invalid -input_dir: ", input_dir);
 			g_load_map_from_folder_mode = 1;
 		}
 
@@ -331,7 +367,7 @@ read_parameters(int argc, char **argv)
 		struct stat st_out_dir;
 		int st = stat(g_out_dir, &st_out_dir);
 		if (st != 0 || !S_ISDIR(st_out_dir.st_mode))
-			prog_usage(argv[0], "invalid out_dir");
+			prog_usage(argv[0], "invalid -out_dir: ", out_dir);
 	}
 
 	if (image_channels)
@@ -341,48 +377,28 @@ read_parameters(int argc, char **argv)
 		else if(strcmp(image_channels, "*") == 0)
 			g_image_channels = '*';
 		else
-			prog_usage(argv[0], "invalid image_channels");
+			prog_usage(argv[0], "invalid -image_channels: ", image_channels);
 	}
 }
 
 
-static void
-remission_map_localize_map_handler(carmen_map_t *complete_mean_remission_map)
+void
+set_complete_map_limits(carmen_map_config_t config)
 {
-	static int first_time = 1;
-	if (first_time == 1)
-	{
-		carmen_grid_mapping_initialize_map(g_remission_map,
-											complete_mean_remission_map->config.x_size,
-											complete_mean_remission_map->config.resolution, 'm');
+	double x_size_meters = (double) config.x_size * config.resolution;
+	double y_size_meters = (double) config.y_size * config.resolution;
 
-		if (g_image_channels == 1 || g_image_channels == '*')
-		{
-			g_remission_map_img = new cv::Mat(g_remission_map->config.y_size,
-												g_remission_map->config.x_size,
-												CV_8UC1);
-		}
-		if (g_image_channels == 3 || g_image_channels == '*')
-		{
-			g_remission_map_img3 = new cv::Mat(g_remission_map->config.y_size,
-												g_remission_map->config.x_size,
-												CV_8UC3,
-												cv::Scalar::all(0));
-		}
-		if (g_image_channels == 4 || g_image_channels == '*')
-		{
-			g_remission_map_img4 = new cv::Mat(g_remission_map->config.y_size,
-												g_remission_map->config.x_size,
-												CV_8UC4,
-												cv::Scalar::all(0));
-		}
-		first_time = 0;
-	}
-	memcpy(g_remission_map->complete_map, complete_mean_remission_map->complete_map,
-			sizeof(double) * (complete_mean_remission_map->config.x_size * complete_mean_remission_map->config.y_size));
-	memcpy(&g_remission_map->config, &complete_mean_remission_map->config, sizeof(carmen_map_config_t));
+	if (config.x_origin < g_min_pose.x)
+		g_min_pose.x = config.x_origin;
 
-	save_remission_map_image();
+	if ((config.x_origin + x_size_meters) > g_max_pose.x)
+		g_max_pose.x = config.x_origin + x_size_meters;
+
+	if (config.y_origin < g_min_pose.y)
+		g_min_pose.y = config.y_origin;
+
+	if ((config.y_origin + y_size_meters) > g_max_pose.y)
+		g_max_pose.y = config.y_origin + y_size_meters;
 }
 
 
@@ -419,48 +435,23 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 		first_time = 0;
 	}
 	memcpy(g_remission_map->complete_map, msg->complete_mean_remission_map, sizeof(double) * msg->size);
-	memcpy(&g_remission_map->config, &msg->config, sizeof(carmen_map_config_t));
+	g_remission_map->config = msg->config;
 
 	save_remission_map_image();
+	set_complete_map_limits(msg->config);
 }
 
 
 static void
-block_map_offline_map_handler(carmen_map_t *msg)
+remission_block_map_handler(carmen_map_t *remission_block_map)
 {
-	static int first_time = 1;
-	if (first_time == 1)
-	{
-		carmen_grid_mapping_initialize_map(g_offline_map,
-											msg->config.x_size,
-											msg->config.resolution, 'm');
+	carmen_map_server_localize_map_message msg;
 
-		if (g_image_channels == 1 || g_image_channels == '*')
-		{
-			g_offline_map_img = new cv::Mat(g_offline_map->config.y_size,
-											g_offline_map->config.x_size,
-											CV_8UC1);
-		}
-		if (g_image_channels == 3 || g_image_channels == '*')
-		{
-			g_offline_map_img3 = new cv::Mat(g_offline_map->config.y_size,
-											g_offline_map->config.x_size,
-											CV_8UC3,
-											cv::Scalar::all(0));
-		}
-		if (g_image_channels == 4 || g_image_channels == '*')
-		{
-			g_offline_map_img4 = new cv::Mat(g_offline_map->config.y_size,
-											g_offline_map->config.x_size,
-											CV_8UC4,
-											cv::Scalar::all(0));
-		}
-		first_time = 0;
-	}
-	memcpy(g_offline_map->complete_map, msg->complete_map, sizeof(double) * (msg->config.x_size * msg->config.y_size));
-	memcpy(&g_offline_map->config, &msg->config, sizeof(carmen_map_config_t));
+	msg.complete_mean_remission_map = remission_block_map->complete_map;
+	msg.size = (remission_block_map->config.x_size * remission_block_map->config.y_size);
+	msg.config = remission_block_map->config;
 
-	save_offline_map_image();
+	localize_map_handler(&msg);
 }
 
 
@@ -497,9 +488,23 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 		first_time = 0;
 	}
 	memcpy(g_offline_map->complete_map, msg->complete_map, sizeof(double) * msg->size);
-	memcpy(&g_offline_map->config, &msg->config, sizeof(carmen_map_config_t));
+	g_offline_map->config = msg->config;
 
 	save_offline_map_image();
+	set_complete_map_limits(msg->config);
+}
+
+
+static void
+offline_block_map_handler(carmen_map_t *offline_block_map)
+{
+	carmen_map_server_offline_map_message msg;
+
+	msg.complete_map = offline_block_map->complete_map;
+	msg.size = (offline_block_map->config.x_size * offline_block_map->config.y_size);
+	msg.config = offline_block_map->config;
+
+	offline_map_handler(&msg);
 }
 
 
@@ -517,20 +522,7 @@ static void
 initialize_maps(void)
 {
 	if (g_remission)
-	{
 		g_remission_map = alloc_map_pointer();
-
-		if (g_load_map_from_folder_mode)
-		{
-			current_sum_remission_map = alloc_map_pointer();
-			current_mean_remission_map = alloc_map_pointer();
-			current_variance_remission_map = alloc_map_pointer();
-			current_sum_sqr_remission_map = alloc_map_pointer();
-			current_count_remission_map = alloc_map_pointer();
-			current_road_map = alloc_map_pointer();
-		}
-	}
-
 	if (g_offline)
 		g_offline_map = alloc_map_pointer();
 }
@@ -540,18 +532,7 @@ void
 deinitialize_maps(void)
 {
 	if (g_remission_map)
-		{
-			free_map_pointer(g_remission_map);
-			if (g_load_map_from_folder_mode)
-			{
-				free_map_pointer(current_sum_remission_map);
-				free_map_pointer(current_mean_remission_map);
-				free_map_pointer(current_variance_remission_map);
-				free_map_pointer(current_sum_sqr_remission_map);
-				free_map_pointer(current_count_remission_map);
-				free_map_pointer(current_road_map);
-			}
-		}
+		free_map_pointer(g_remission_map);
 	if (g_remission_map_img)
 		g_remission_map_img->release();
 	if (g_remission_map_img3)
@@ -570,174 +551,148 @@ deinitialize_maps(void)
 
 
 static void
-get_map_origin_by_filename(char *filename, double *x_origin, double *y_origin)
+get_map_origin_by_filename(char *full_path, double *x_origin, double *y_origin)
 {
-	char map_name[1000], *div_char, *aux;
+	char *filename, *file_extension;
+	double x, y;
+	int pos;
 
 	*x_origin = *y_origin = 0.0;
 
+	filename = strrchr(full_path, '/');
 	if (filename == NULL)
-		return;
+		filename = full_path;
+	else
+		filename++;
 
-	div_char = strrchr(filename, '/');
+	file_extension = strrchr(filename, '.');
+	if (file_extension == NULL)
+		file_extension = filename + strlen(filename);
+	else
+		file_extension++;
 
-	if (div_char == NULL)
+	if (sscanf(filename, "%*c%lf_%lf%n", &x, &y, &pos) == 2 && (filename + pos) == file_extension)
 	{
-		return;
+		*x_origin = x;
+		*y_origin = y;
 	}
+}
 
-	div_char++;
 
-	strcpy(map_name, div_char);
+void
+build_complete_map_image(char map_img_type)
+{
+	uchar empty_value;
+	cv::Vec3b empty_value3;
+	cv::Vec4b empty_value4;
+	get_empty_values(&empty_value, &empty_value3, &empty_value4, map_img_type);
+	double x, y;
+	int x_size = round((g_max_pose.x - g_min_pose.x) / g_resolution);
+	int y_size = round((g_max_pose.y - g_min_pose.y) / g_resolution);
+	cv::Mat complete_map;
+	if (g_image_channels == 4)
+		complete_map = cv::Mat(y_size, x_size, CV_8UC4, empty_value4);
+	else if (map_img_type == 'h' || map_img_type == 'n')
+		complete_map = cv::Mat(y_size, x_size, CV_8UC1, empty_value);
+	else
+		complete_map = cv::Mat(y_size, x_size, CV_8UC3, empty_value3);
 
-	div_char = strrchr(map_name, '_');
+	char full_path[1000];
+	DIR *dp  = opendir(g_out_dir);
+	struct dirent *dirp;
 
-	if (div_char != NULL && (map_name[0] == 'm' || map_name[0] == 'g' || map_name[0] == 's' || map_name[0] == '2' || map_name[0] == 'c'
-			|| map_name[0] == 'u' || map_name[0] == 'o' || map_name[0] == 'e' || (map_name[0] >= 'h' && map_name[0] <= 'l')))
+	while ((dirp = readdir(dp)) != NULL)
 	{
-		aux = strrchr(map_name, '.');
+		sprintf(full_path, "%s/%s", g_out_dir, dirp->d_name);
+		struct stat buf;
+		if (stat(full_path, &buf) != 0 || S_ISDIR(buf.st_mode))
+			continue;
 
-		*aux = '\0';
-		*div_char = '\0';
-		div_char++;
-
-		if((isdigit(*(map_name + 1)) || *(map_name + 1) == '-') && (isdigit(*div_char) || *div_char == '-'))
+		if (dirp->d_name[0] == map_img_type && strcmp(&(dirp->d_name[strlen(dirp->d_name) - 4]), ".png") == 0)
 		{
-			*x_origin = atof(map_name + 1);
-			*y_origin = atof(div_char);
+			get_map_origin_by_filename(full_path, &x, &y);
+			cv::Mat map = cv::imread(full_path, (map_img_type == 'h' || map_img_type == 'n') ? cv::IMREAD_GRAYSCALE : cv::IMREAD_UNCHANGED);
+			int left = round((x - g_min_pose.x) / g_resolution);
+			int top  = round((g_max_pose.y - y) / g_resolution) - map.rows;
+			map.copyTo(complete_map(cv::Rect(left, top, map.cols, map.rows)));
+			map.release();
 		}
 	}
+
+	sprintf(full_path, "%s/complete_%c%d_%d.png", g_out_dir, map_img_type, int(g_min_pose.x), int(g_min_pose.y));
+	cv::imwrite(full_path, complete_map);
+	fprintf(stderr, "%s generated\n", full_path);
+	closedir(dp);
+}
+
+
+void
+build_complete_map_images()
+{
+	if (g_offline && (g_image_channels == 1 || g_image_channels == '*'))
+		build_complete_map_image('n');
+	if (g_offline && (g_image_channels == 3 || g_image_channels == 4 || g_image_channels == '*'))
+		build_complete_map_image('m');
+	if (g_remission && (g_image_channels == 1 || g_image_channels == '*'))
+		build_complete_map_image('h');
+	if (g_remission && (g_image_channels == 3 || g_image_channels == 4 || g_image_channels == '*'))
+		build_complete_map_image('i');
 }
 
 
 void
 load_and_save_map_from_folder()
 {
-	carmen_point_t min_pose, max_pose;
-	char full_path[1000] = "";
-	DIR *dp;
+	char full_path[1000];
+	carmen_map_t offline_block_map, remission_block_map, remission_count_block_map;
+	DIR *dp  = opendir(g_input_dir);
 	struct dirent *dirp;
-	int i;
-	carmen_map_t block_map;
-	double x_origin, y_origin, size = 0.0;
-	char *map_type;
-	carmen_point_t pose;
 
-		map_type = (char *) malloc(1024);
-		strcpy(map_type, "mmmmmmm");
-
-	min_pose.x = DBL_MAX;
-	min_pose.y = DBL_MAX;
-
-	max_pose.x = -DBL_MAX;
-	max_pose.y = -DBL_MAX;
-
-	dp  = opendir(g_input_dir);
-	//sprintf(complete_map_name, "rm %s/complete_map.*", map_path);
-	//	system(complete_map_name);
-	for (dirp = readdir(dp), i = 0; dirp != NULL; dirp = readdir(dp))
+	while ((dirp = readdir(dp)) != NULL)
 	{
-		if (dirp->d_name[0] != map_type[0])
+		sprintf(full_path, "%s/%s", g_input_dir, dirp->d_name);
+		struct stat buf;
+		if (stat(full_path, &buf) != 0 || S_ISDIR(buf.st_mode))
 			continue;
 
-		strcat(full_path, g_input_dir);
-		strcat(full_path, "/");//mudar para / no linux
-		strcat(full_path, dirp->d_name);
-
-		get_map_origin_by_filename(full_path, &x_origin, &y_origin);
-
-
-		if (i == 0)
+		if (g_offline && dirp->d_name[0] == 'm' && strcmp(&(dirp->d_name[strlen(dirp->d_name) - 4]), ".map") == 0)
 		{
-			carmen_map_read_gridmap_chunk(full_path, &block_map);
-			size = floor((double)block_map.config.x_size * block_map.config.resolution);
-
-			free(block_map.complete_map);
-			free(block_map.map);
+			get_map_origin_by_filename(full_path, &offline_block_map.config.x_origin, &offline_block_map.config.y_origin);
+			carmen_map_read_gridmap_chunk(full_path, &offline_block_map);
+			offline_block_map_handler(&offline_block_map);
+			carmen_map_free_gridmap(&offline_block_map);
 		}
 
-		if (x_origin < min_pose.x)
-			min_pose.x = x_origin;
-
-		if ((x_origin + size) > max_pose.x)
-			max_pose.x = x_origin + size;
-
-		if (y_origin < min_pose.y)
-			min_pose.y = y_origin;
-
-		if ((y_origin + size) > max_pose.y)
-			max_pose.y = y_origin + size;
-
-		full_path[0] = '\0';
-
-		i++;
+		if (g_remission && dirp->d_name[0] == 's' && strcmp(&(dirp->d_name[strlen(dirp->d_name) - 4]), ".map") == 0)
+		{
+			get_map_origin_by_filename(full_path, &remission_block_map.config.x_origin, &remission_block_map.config.y_origin);
+			carmen_map_read_gridmap_chunk(full_path, &remission_block_map);
+			sprintf(full_path, "%s/c%d_%d.map", g_input_dir, int(remission_block_map.config.x_origin), int(remission_block_map.config.y_origin));
+			remission_count_block_map.config = remission_block_map.config;
+			carmen_map_read_gridmap_chunk(full_path, &remission_count_block_map);
+			carmen_prob_models_calc_mean_remission_map(&remission_block_map, &remission_block_map, &remission_count_block_map);
+			remission_block_map_handler(&remission_block_map);
+			carmen_map_free_gridmap(&remission_block_map);
+			carmen_map_free_gridmap(&remission_count_block_map);
+		}
 	}
 
 	closedir(dp);
-
-	dp  = opendir(g_input_dir);
-
-	for(dirp = readdir(dp), i = 0; dirp != NULL; dirp = readdir(dp))
-	{
-		if ((dirp->d_name[0] != map_type[0]))
-			continue;
-
-		strcat(full_path, g_input_dir);
-		strcat(full_path, "/");
-		strcat(full_path, dirp->d_name);
-
-
-		carmen_map_read_gridmap_chunk(full_path, &block_map);
-		//		printf("block map read = %s \n",full_path);
-		get_map_origin_by_filename(full_path, &block_map.config.x_origin, &block_map.config.y_origin);
-		if (g_offline)
-			block_map_offline_map_handler(&block_map);
-
-		if (g_remission)
-		{
-			pose.x = block_map.config.x_origin;
-			pose.y = block_map.config.y_origin;
-
-			sprintf(full_path, "%s/s%d_%d.map", g_input_dir, int(pose.x), int(pose.y));
-			carmen_map_read_gridmap_chunk(full_path, current_sum_remission_map);
-			current_sum_remission_map->config.x_origin = block_map.config.x_origin;
-			current_sum_remission_map->config.y_origin = block_map.config.y_origin;
-
-			sprintf(full_path, "%s/2%d_%d.map", g_input_dir, int(pose.x), int(pose.y));
-			carmen_map_read_gridmap_chunk(full_path, current_sum_sqr_remission_map);
-			current_sum_sqr_remission_map->config.x_origin = block_map.config.x_origin;
-			current_sum_sqr_remission_map->config.y_origin = block_map.config.y_origin;
-
-			sprintf(full_path, "%s/c%d_%d.map", g_input_dir, int(pose.x), int(pose.y));
-			carmen_map_read_gridmap_chunk(full_path, current_count_remission_map);
-			current_count_remission_map->config.x_origin = block_map.config.x_origin;
-			current_count_remission_map->config.y_origin = block_map.config.y_origin;
-
-
-//			sprintf(full_path, "%s/r%d_%d.map", g_input_dir, int(pose.x), int(pose.y));
-//			carmen_map_read_gridmap_chunk(full_path, current_road_map);
-//			get_map_origin_by_filename(full_path, &current_road_map->config.x_origin, &current_road_map->config.y_origin);
-
-			carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map, current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
-			//remission_map_localize_map_handler(current_mean_remission_map);
-		}
-		//build_complete_map(&block_map, &complete_map);
-		free(block_map.complete_map);
-		free(block_map.map);
-
-		full_path[0] = '\0';
-	}
-
-	closedir(dp);
-
+	build_complete_map_images();
 }
+
 
 void
 shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
-		carmen_ipc_disconnect();
+		fprintf(stderr,"\nInterrupt signal received\n\n");
+		if(!g_load_map_from_folder_mode)
+		{
+			carmen_ipc_disconnect();
+			build_complete_map_images();
+		}
 		deinitialize_maps();
 		exit(0);
 	}
@@ -750,8 +705,6 @@ main(int argc, char **argv)
 	if (argc > 1 && strcmp(argv[1], "-h") == 0)
 		prog_usage(argv[0]);
 
-	carmen_ipc_initialize(argc, argv);
-	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
 	signal(SIGINT, shutdown_module);
@@ -760,12 +713,14 @@ main(int argc, char **argv)
 
 	if(g_load_map_from_folder_mode)
 	{
-		printf("Running input mode\n");
+		printf("Running input data mode\n");
 		load_and_save_map_from_folder();
 	}
 	else
 	{
-		printf("Running navigate mode\n");
+		printf("Running Carmen mode\n");
+		carmen_ipc_initialize(argc, argv);
+		carmen_param_check_version(argv[0]);
 		register_handlers();
 		carmen_ipc_dispatch();
 	}
