@@ -144,7 +144,7 @@ main(int argc, char *argv[])
 	carmen_erase_structure(&gpgga, sizeof(carmen_gps_gpgga_message) );
 	carmen_erase_structure(&gprmc, sizeof(carmen_gps_gprmc_message) );
   
-	carmen_ipc_initialize( argc, argv );
+	carmen_ipc_initialize(argc, argv);
 	ipc_initialize_messages();
  
 	strncpy(tcp_ip_address, argv[1], MAX_NAME_LENGTH);
@@ -176,6 +176,8 @@ main(int argc, char *argv[])
 		else if ((valread == -1) || (valread != sizeof(carmen_gps_gpgga_message)))
 			continue;
 
+		gpgga.timestamp = carmen_get_time();
+		gprmc.timestamp = gpgga.timestamp;
 		gpgga.host = carmen_get_host();
 		gprmc.host = carmen_get_host();
 		ipc_publish_position();

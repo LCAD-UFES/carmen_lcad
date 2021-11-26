@@ -11,39 +11,40 @@ int sockfd_;
 
 
 void
-initizalize_socket_connection(uint16_t port)
+initizalize_socket_connection(uint16_t port, char *ip)
 {
 	sockfd_ = -1;
 	
     sockfd_ = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sockfd_ == -1)
 	{
-		printf("Create socket fail\n");
+		printf("Create socket failed initizalize_socket_connection()\n");
 		return;
 	}
 
 	int opt = 1;
-	if (setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&opt, sizeof(opt)))
+	if (setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, (const void *) &opt, sizeof(opt)))
 	{
-		printf("Setsockopt fail\n");
+		printf("Setsockopt failed initizalize_socket_connection()\n");
 		return;
 	}
 
-	sockaddr_in my_addr;                   // my address information
-	memset(&my_addr, 0, sizeof(my_addr));  // initialize to zeros
-	my_addr.sin_family = AF_INET;          // host byte order
-	my_addr.sin_port = htons(port);        // port in network byte order
-	my_addr.sin_addr.s_addr = INADDR_ANY;  // automatically fill in my IP
+	sockaddr_in my_addr;                   		// my address information
+	memset(&my_addr, 0, sizeof(my_addr));  		// initialize to zeros
+	my_addr.sin_family = AF_INET;          		// host byte order
+	my_addr.sin_port = htons(port);        		// port in network byte order
+	my_addr.sin_addr.s_addr = inet_addr(ip);  	// specific IP
+//	my_addr.sin_addr.s_addr = INADDR_ANY;  		// any IP
 
-	if (bind(sockfd_, (sockaddr*)&my_addr, sizeof(sockaddr)) == -1)
+	if (bind(sockfd_, (sockaddr *) &my_addr, sizeof(sockaddr)) == -1)
 	{
-		printf("Socket bind fail\n");
+		printf("Socket bind to ip %s failed initizalize_socket_connection()\n", ip);
 		return;
 	}
 
 	if (fcntl(sockfd_, F_SETFL, O_NONBLOCK | FASYNC) < 0)
 	{
-		printf("fcntl fail\n");
+		printf("fcntl failed in initizalize_socket_connection()\n");
 		return;
 	}
 }
@@ -72,11 +73,11 @@ receive_packet_from_socket(uint8_t *socket_data, uint16_t port, char *ip)
 			if (retval < 0)  // Error
 			{
 				if (errno != EINTR)
-				{
 					 printf("poll() error: %s\n", strerror(errno));
-				}
-				return 1;
+
+				return (1);
 			}
+
 			if (retval == 0)  // Timeout
 			{
 				printf("Rslidar poll() timeout\n");
@@ -87,35 +88,37 @@ receive_packet_from_socket(uint8_t *socket_data, uint16_t port, char *ip)
 				sender_address.sin_port = htons(port);                   // port in network byte order, set any value
                 inet_aton(ip, &devip_);                                  // inet_aton(ip_adress_string, *sender_address.sin_addr.s_addr)
 				sender_address.sin_addr.s_addr = devip_.s_addr;          // automatically fill in my IP
-				sendto(sockfd_, &buffer_data, strlen(buffer_data), 0, (sockaddr*)&sender_address, sender_address_len);
-				return 1;
+				sendto(sockfd_, &buffer_data, strlen(buffer_data), 0, (sockaddr *) &sender_address, sender_address_len);
+				return (1);
 			}
+
 			if ((fds[0].revents & POLLERR) || (fds[0].revents & POLLHUP) || (fds[0].revents & POLLNVAL))
 			{
 				printf("poll() reports Rslidar error\n");
-				return 1;
+				return (1);
 			}
+
 		} while ((fds[0].revents & POLLIN) == 0);
 
-		nbytes = recvfrom(sockfd_, socket_data, packet_size, 0, (sockaddr*)&sender_address, &sender_address_len);
+		nbytes = recvfrom(sockfd_, socket_data, packet_size, 0, (sockaddr *) &sender_address, &sender_address_len);
 
 		if (nbytes < 0)
 		{
 			if (errno != EWOULDBLOCK)
 			{
-				printf("[driver][socket] recvfail");
-				return 1;
+				printf("recvfail in receive_packet_from_socket()\n");
+				return (1);
 			}
 		}
-		else if ((size_t)nbytes == packet_size)
+		else if ((size_t) nbytes == packet_size)
 			break;  // done
 
 		if (socket_data[0] != 0x55 || socket_data[1] != 0xAA || socket_data[2] != 0x05 || socket_data[3] != 0x0A)     // check pkt header and returns if not a packt of LiDAR measures
-		{
-			return 1;
-		}
-		printf("[driver][socket] incomplete rslidar packet read:%ld bytes\n", nbytes);
+			return (1);
+
+		printf("incomplete rslidar packet read: %ld bytes\n", nbytes);
 	}
+
 	received_packet_size = nbytes;
 
 	if (received_packet_size < 1248)
@@ -149,13 +152,14 @@ unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, c
 	static int max_num_shot = INITIAL_MAX_NUM_SHOT;
 	int last_byte_of_shot;
 	bool complete_turn = false;
-	carmen_velodyne_shot* current_shot = &shots_array[*num_shots];
+	carmen_velodyne_shot *current_shot = &shots_array[*num_shots];
 
 	for (int i = 44; i < 1242; i += 100) // i = 44 to skip the header (42b) and the first data block identifier (2b) 0xffee
 	{
-		current_shot->angle = (double)((256 * socket_data[i] + socket_data[i + 1]) / 100.0);
+		current_shot->angle = (double) ((256 * socket_data[i] + socket_data[i + 1]) / 100.0);
 
-		if (*num_shots > 0 && current_shot->angle < 5.0 && shots_array[*num_shots - 2].angle > 355.0)
+//		if (*num_shots > 0 && current_shot->angle < 5.0 && shots_array[*num_shots - 2].angle > 355.0)
+		if (*num_shots > 0 && current_shot->angle >= 180.0 && shots_array[*num_shots - 1].angle < 180.0)
 			complete_turn = true;
 
 		last_byte_of_shot = i + 2 + 48; // skip 2 bytes of azimuth and 48 bytes of measures (the 50th byte is the last byte of first channel)
@@ -178,7 +182,7 @@ unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, c
 
 		current_shot = &shots_array[*num_shots];
 
-		current_shot->angle = -1;
+		current_shot->angle = -1.0;
 
         last_byte_of_shot = i + 98;
 
@@ -200,12 +204,14 @@ unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, c
 
 		current_shot = &shots_array[*num_shots];
 	}
+
 	return (complete_turn);
 }
 
 
 void
-fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &msg, carmen_velodyne_shot *shots_array, int *num_shots, int lidar_id)
+fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &msg, carmen_velodyne_shot *shots_array,
+		int *num_shots, int lidar_id)
 {
 	double previous_angle = 0.0, next_angle;
 	int last_shot_of_scan = 0;
@@ -214,7 +220,7 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 
 	for (int i = 1; i < last_valid_shot; i++)
 	{
-		if (shots_array[i].angle == -1)
+		if (shots_array[i].angle == -1.0)
 		{
 			previous_angle = shots_array[i - 1].angle;
 			next_angle = shots_array[i + 1].angle;
@@ -228,10 +234,9 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 			 	shots_array[i].angle = shots_array[i].angle - 360.0;
 		}
         
-		if (*num_shots > 0 && shots_array[i].angle < 5.0 && shots_array[i - 1].angle > 355.0)
-        {
+//		if (*num_shots > 0 && shots_array[i].angle < 5.0 && shots_array[i - 1].angle > 355.0)
+		if (*num_shots > 0 && shots_array[i].angle > 180.0 && shots_array[i - 1].angle < 180.0)
 			last_shot_of_scan = i;
-        }
 	}
 
 	msg.number_of_shots = last_shot_of_scan;
@@ -240,9 +245,7 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 	carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
 
 	for (int i = last_shot_of_scan, j = 0; i < last_valid_shot; i++, j++)
-	{
 		memcpy(&shots_array[j], &shots_array[i], sizeof(carmen_velodyne_shot));
-	}
 
 	*num_shots = *num_shots - last_shot_of_scan;
 }
@@ -256,7 +259,7 @@ run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carme
 
 	uint16_t port = atoi(lidar_config.port);
 
-    initizalize_socket_connection(port);
+    initizalize_socket_connection(port, lidar_config.ip);
 
 	while (true)
 	{
@@ -270,9 +273,8 @@ run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carme
 		}
 
 		if (unpack_socket_data(msg, &num_shots, socket_data, msg.partial_scan))
-		{
 			fill_and_publish_variable_scan_message(msg, msg.partial_scan, &num_shots, lidar_id);
-		}
 	}
+
 	printf("\nLidar sensor: disconnected.\n");
 }

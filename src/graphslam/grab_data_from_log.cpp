@@ -508,9 +508,34 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add_positional<string>("odometry_calibration_path", "Path to the odometry calibration file");
 	args->add_positional<string>("sync_path", "Path to the output sync file");
 	args->add_positional<string>("carmen_ini", "Path to a file containing system parameters");
+
+	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
+	args->add<int>("board_to_use", "Id of the sensor board that will be used for the calibration", 1);
+	args->add<int>("use_non_linear_phi", "0 - linear phi; 1 - use a spline to map phi to a new phi", 0);
 	args->add<int>("combined_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
+	args->add<int>("n_particles,n", "Number of particles", 500);
+	args->add<int>("n_iterations,i", "Number of iterations", 300);
+	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
+	args->add<int>("max_log_lines,m", "Maximum number of lines to read from the log file", -1);
+	args->add<int>("view", "Flag indicating if the visualization should run or not.", 1);
 	args->add<double>("initial_time", "Initial time to consider for odometry calibration", 0.0);
 	args->add<double>("final_time", "Final time to consider for odometry calibration", 9999999999999.0);
+	args->add<double>("min_multiplicative_v", "Lower limit of velocity multiplier", 0.979999);
+	args->add<double>("max_multiplicative_v", "Upper limit of velocity multiplier", 1.3001);
+	args->add<double>("min_multiplicative_phi", "Lower limit of phi multiplier", 0.55);
+	args->add<double>("max_multiplicative_phi", "Upper limit of phi multiplier", 2.5);
+	args->add<double>("min_additive_phi", "Lower limit of phi additive bias (degrees)", -2);
+	args->add<double>("max_additive_phi", "Upper limit of phi additive bias (degrees)", 2);
+	args->add<double>("min_initial_angle", "Lower limit of initial angle (degrees)", -180);
+	args->add<double>("max_initial_angle", "Upper limit of initial angle (degrees)", 180);
+	args->add<double>("min_gps_latency", "Lower limit of gps latency (seconds)", 0.0);
+	args->add<double>("max_gps_latency", "Upper limit of gps latency (seconds)", 0.3);
+	args->add<double>("min_k1", "Lower limit of k1 spline coefficient", -0.3);
+	args->add<double>("max_k1", "Upper limit of k1 spline coefficient", 0.3);
+	args->add<double>("min_k2", "Lower limit of k2 spline coefficient", -0.15);
+	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
+	args->add<int>("use_velodyne_timestamp_in_odometry", "Use Velodyne timestamp in ROBOTVELOCITY_ACK messages", 0);
+
 	args->parse(argc, argv);
 }
 

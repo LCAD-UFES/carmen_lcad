@@ -49,7 +49,7 @@ carmen_gps_gprmc_message *carmen_extern_gprmc_ptr = NULL;
 
 
 void
-ipc_publish_position( void )
+ipc_publish_position(void)
 {
 	static double previous_utc_gpgga = -1.0;
 	static double previous_utc_gprmc = -1.0;
@@ -67,7 +67,7 @@ ipc_publish_position( void )
 			return;
 		previous_utc_gpgga = carmen_extern_gpgga_ptr->utc;
 
-		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME, carmen_extern_gpgga_ptr );
+		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME, carmen_extern_gpgga_ptr);
 		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPGGA_MESSAGE_NAME);
 
 		//fprintf( stderr, "(gga)" );
@@ -80,7 +80,7 @@ ipc_publish_position( void )
 			return;
 		previous_utc_gprmc = carmen_extern_gprmc_ptr->utc;
 
-		err = IPC_publishData (CARMEN_GPS_GPRMC_MESSAGE_NAME, carmen_extern_gprmc_ptr );
+		err = IPC_publishData (CARMEN_GPS_GPRMC_MESSAGE_NAME, carmen_extern_gprmc_ptr);
 		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPRMC_MESSAGE_NAME);
 
 		//fprintf( stderr, "(rmc)" );

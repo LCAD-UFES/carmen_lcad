@@ -392,9 +392,10 @@ initialize_local_compacted_mean_remission_map(carmen_compact_map_t *local_compac
 
 int
 localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne_partial_scan_message *velodyne_message,
-		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, double v, double phi)
+		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data)
 {
 	velodyne_data->current_timestamp = velodyne_message->timestamp;
+	velodyne_data->semi_trailer_data = semi_trailer_data;
 
 	int num_points = velodyne_message->number_of_32_laser_shots * velodyne_params->vertical_resolution;
 	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points,
@@ -436,9 +437,10 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 int
 localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne_partial_scan_message *velodyne_message,
 		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, double v, double phi,
-		double map_center_x, double map_center_y)
+		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data)
 {
 	velodyne_data->current_timestamp = velodyne_message->timestamp;
+	velodyne_data->semi_trailer_data = semi_trailer_data;
 
 	int num_points = velodyne_message->number_of_32_laser_shots * velodyne_params->vertical_resolution;
 	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points,
@@ -479,12 +481,13 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 
 int
 localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *msg,
-		sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double v, double phi)
+		sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data)
 {
 	carmen_pose_3D_t local_pose;
 	int num_points = msg->number_of_shots * sensor_params->vertical_resolution;
 	
 	sensor_data->current_timestamp = msg->timestamp;
+	sensor_data->semi_trailer_data = semi_trailer_data;
 
 	build_sensor_point_cloud(&(sensor_data->points), sensor_data->intensity, &(sensor_data->point_cloud_index), num_points,
 			NUM_VELODYNE_POINT_CLOUDS, sensor_params->use_remission);
@@ -524,12 +527,13 @@ localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variabl
 int
 localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *msg,
 		sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double v, double phi,
-		double map_center_x, double map_center_y)
+		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data)
 {
 	carmen_pose_3D_t local_pose;
 	int num_points = msg->number_of_shots * sensor_params->vertical_resolution;
 
 	sensor_data->current_timestamp = msg->timestamp;
+	sensor_data->semi_trailer_data = semi_trailer_data;
 
 	build_sensor_point_cloud(&(sensor_data->points), sensor_data->intensity, &(sensor_data->point_cloud_index), num_points,
 			NUM_VELODYNE_POINT_CLOUDS, sensor_params->use_remission);

@@ -46,6 +46,8 @@
 #include "localize_ackerman_messages.h"
 #include "localize_ackerman_interface.h"
 #include "localize_ackerman_velodyne.h"
+#include "localize_ackerman_beta_particle_filter.h"
+
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -66,6 +68,7 @@ static int g_fused_odometry_index = -1;
 carmen_map_t *new_map = NULL;
 carmen_localize_ackerman_map_t localize_map;
 carmen_localize_ackerman_particle_filter_p filter;
+carmen_localize_ackerman_particle_filter_p beta_filter;
 carmen_localize_ackerman_summary_t summary;
 
 carmen_map_t local_map;
@@ -427,6 +430,15 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 		((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
+	carmen_current_semi_trailer_data_t semi_trailer_data =
+	{
+			globalpos.semi_trailer_engaged,
+			globalpos.semi_trailer_type,
+			semi_trailer_config.d,
+			semi_trailer_config.M,
+			globalpos.beta
+	};
+
 	velodyne_initilized = localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(message, &spherical_sensor_params[sensor], 
 			&spherical_sensor_data[sensor], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
 	if (!velodyne_initilized)
@@ -681,8 +693,17 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
+	carmen_current_semi_trailer_data_t semi_trailer_data =
+	{
+			globalpos.semi_trailer_engaged,
+			globalpos.semi_trailer_type,
+			semi_trailer_config.d,
+			semi_trailer_config.M,
+			globalpos.beta
+	};
+
 	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(velodyne_message, &spherical_sensor_params[0], 
-			&spherical_sensor_data[0], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+			&spherical_sensor_data[0], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
 	if (!velodyne_initilized)
 		return;
 
@@ -690,19 +711,39 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			&base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			velodyne_message->timestamp, car_config.distance_between_front_and_rear_axles);
 
+	carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point =
+	{
+			globalpos.globalpos.x,
+			globalpos.globalpos.y,
+			globalpos.globalpos.theta,
+			globalpos.beta,
+			globalpos.v,
+			globalpos.phi
+	};
+
+//	carmen_localize_ackerman_beta_prediction(beta_filter, robot_and_trailer_traj_point, car_config, semi_trailer_config, velodyne_message->timestamp - beta_filter->last_timestamp);
+
 	publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
 
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
+
+//	carmen_localize_ackerman_beta_correction(beta_filter,
+//			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
 	publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 
 	if (filter->initialized)
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 
+//	if (beta_filter->initialized)
+//		carmen_localize_ackerman_summarize_beta(filter, &summary);
+
 	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
 		carmen_localize_ackerman_velodyne_resample(filter);
+
+//		carmen_localize_ackerman_beta_resample(beta_filter);
 	}
 
 	if (filter->initialized)
@@ -818,8 +859,17 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	if (!necessary_maps_available || !global_localization_requested || ((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
+	carmen_current_semi_trailer_data_t semi_trailer_data =
+	{
+			globalpos.semi_trailer_engaged,
+			globalpos.semi_trailer_type,
+			semi_trailer_config.d,
+			semi_trailer_config.M,
+			globalpos.beta
+	};
+
 	instanteneous_maps_ok = localize_ackerman_variable_scan_build_instanteneous_maps(msg, &spherical_sensor_params[sensor_number], 
-			&spherical_sensor_data[sensor_number], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+			&spherical_sensor_data[sensor_number], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
 	
 	if (!instanteneous_maps_ok)
 		return;
@@ -1454,6 +1504,8 @@ main(int argc, char **argv)
 
 	/* Allocate memory for the particle filter */
 	filter = carmen_localize_ackerman_particle_filter_initialize(&param);
+//	beta_filter = carmen_localize_ackerman_particle_filter_initialize(&param);
+
 
 	init_localize_map();
 	init_local_maps(map_params);
