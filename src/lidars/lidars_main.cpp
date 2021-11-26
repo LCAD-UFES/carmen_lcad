@@ -35,8 +35,8 @@ setup_message(carmen_lidar_config lidar_config)
     for (int i = 0 ; i <= INITIAL_MAX_NUM_SHOT; i++)
 	{
 		variable_scan_msg.partial_scan[i].shot_size = lidar_config.shot_size;
-		variable_scan_msg.partial_scan[i].distance = (unsigned int*) malloc (lidar_config.shot_size * sizeof(unsigned int));
-		variable_scan_msg.partial_scan[i].intensity = (short unsigned int*) malloc (lidar_config.shot_size * sizeof(short unsigned int));
+		variable_scan_msg.partial_scan[i].distance = (unsigned int *) malloc (lidar_config.shot_size * sizeof(unsigned int));
+		variable_scan_msg.partial_scan[i].intensity = (short unsigned int *) malloc (lidar_config.shot_size * sizeof(short unsigned int));
 	}
 	variable_scan_msg.host = carmen_get_host();
 }
@@ -100,22 +100,23 @@ read_parameters(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_
 	
 	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
 
-    carmen_param_t param_list[] = {
-			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
-			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
-			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
-			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
-            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
-            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
-			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
-            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
-			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 1, NULL},
-			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 1, NULL},
-			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 1, NULL},
-			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 1, NULL},
-			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 1, NULL},
-			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 1, NULL},
-			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
+    carmen_param_t param_list[] =
+    {
+		{lidar_string, (char *) "model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
+		{lidar_string, (char *) "ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
+		{lidar_string, (char *) "port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
+		{lidar_string, (char *) "shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
+		{lidar_string, (char *) "min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
+		{lidar_string, (char *) "max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
+		{lidar_string, (char *) "range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
+		{lidar_string, (char *) "time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
+		{lidar_string, (char *) "x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 1, NULL},
+		{lidar_string, (char *) "y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 1, NULL},
+		{lidar_string, (char *) "z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 1, NULL},
+		{lidar_string, (char *) "roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 1, NULL},
+		{lidar_string, (char *) "pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 1, NULL},
+		{lidar_string, (char *) "yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 1, NULL},
+		{lidar_string, (char *) "vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
 	};
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
@@ -151,16 +152,13 @@ main(int argc, char **argv)
 
 	setup_message(lidar_config);
 
-	if(strcmp(lidar_config.model, "RS16") == 0)
-	{
+	if (strcmp(lidar_config.model, "RS16") == 0)
 		run_robosense_RSLiDAR16_driver(variable_scan_msg, lidar_config, lidar_id);
-	}
-	if(strcmp(lidar_config.model, "VLP16") == 0 || strcmp(lidar_config.model, "HDL32") == 0)
-	{
+
+	if (strcmp(lidar_config.model, "VLP16") == 0 || strcmp(lidar_config.model, "HDL32") == 0)
 		run_velodyne_VLP16_PUCK_driver(variable_scan_msg, lidar_config, lidar_id);
-	}
 
 	carmen_die("\nERROR: lidar%d_model %s not found!\nPlease verify the carmen.ini file.\n\n", lidar_id, lidar_config.model);
 
-	return 0;
+	return (0);
 }
