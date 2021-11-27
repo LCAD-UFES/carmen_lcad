@@ -430,15 +430,6 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 		((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
-	carmen_current_semi_trailer_data_t semi_trailer_data =
-	{
-			globalpos.semi_trailer_engaged,
-			globalpos.semi_trailer_type,
-			semi_trailer_config.d,
-			semi_trailer_config.M,
-			globalpos.beta
-	};
-
 	velodyne_initilized = localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(message, &spherical_sensor_params[sensor], 
 			&spherical_sensor_data[sensor], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
 	if (!velodyne_initilized)
