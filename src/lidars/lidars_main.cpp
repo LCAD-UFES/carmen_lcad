@@ -108,6 +108,7 @@ read_parameters(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_
 		{lidar_string, (char *) "shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
 		{lidar_string, (char *) "min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
 		{lidar_string, (char *) "max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
+		{lidar_string, (char *) "max_range", CARMEN_PARAM_DOUBLE, &lidar_config.max_range, 0, NULL},
 		{lidar_string, (char *) "range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
 		{lidar_string, (char *) "time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
 		{lidar_string, (char *) "x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 1, NULL},
