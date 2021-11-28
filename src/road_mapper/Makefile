@@ -44,6 +44,7 @@ SOURCES = \
 	road_mapper_sampling.cpp \
 	road_mapper_log_tracker.cpp \
 	save_map_images.cpp \
+	update_map_from_image.cpp \
 
 PUBLIC_INCLUDES = \
 	road_mapper_messages.h \
@@ -61,6 +62,7 @@ PUBLIC_BINARIES = \
 	road_mapper_image_splitter \
 	road_mapper_display_map \
 	save_map_images \
+	update_map_from_image \
 
 PUBLIC_OTHERS = \
 	rddf_generate.py \
@@ -77,6 +79,7 @@ TARGETS = \
 	road_mapper_display_map \
 	road_mapper_log_tracker \
 	save_map_images \
+	update_map_from_image \
 
 ifneq (, $(shell which nvcc))
 ifdef CAFFE_ENET_HOME
@@ -129,6 +132,7 @@ road_mapper_image_splitter: road_mapper_image_splitter.o
 road_mapper_display_map: road_mapper_display_map.o road_mapper.o road_mapper_utils.o
 road_mapper_log_tracker: road_mapper_log_tracker.o
 save_map_images: save_map_images.o road_mapper.o road_mapper_utils.o
+update_map_from_image: update_map_from_image.o
 
 
 libprob_models.a: 

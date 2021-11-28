@@ -399,6 +399,13 @@ set_complete_map_limits(carmen_map_config_t config)
 
 	if ((config.y_origin + y_size_meters) > g_max_pose.y)
 		g_max_pose.y = config.y_origin + y_size_meters;
+
+	if (config.resolution != g_resolution)
+	{
+		g_resolution = config.resolution;
+		fprintf(stderr, "Warning: map is in a distinct resolution: %lf  origin: (%lf, %lf)  size: (%d, %d)\n",
+				config.resolution, config.x_origin, config.y_origin, config.x_size, config.y_size);
+	}
 }
 
 
@@ -550,7 +557,7 @@ deinitialize_maps(void)
 }
 
 
-static void
+static int
 get_map_origin_by_filename(char *full_path, double *x_origin, double *y_origin)
 {
 	char *filename, *file_extension;
@@ -575,7 +582,9 @@ get_map_origin_by_filename(char *full_path, double *x_origin, double *y_origin)
 	{
 		*x_origin = x;
 		*y_origin = y;
+		return 0;
 	}
+	return -1;
 }
 
 
@@ -598,8 +607,8 @@ build_complete_map_image(char map_img_type)
 		complete_map = cv::Mat(y_size, x_size, CV_8UC3, empty_value3);
 
 	char full_path[1000];
-	DIR *dp  = opendir(g_out_dir);
 	struct dirent *dirp;
+	DIR *dp  = opendir(g_out_dir);
 
 	while ((dirp = readdir(dp)) != NULL)
 	{
@@ -610,19 +619,24 @@ build_complete_map_image(char map_img_type)
 
 		if (dirp->d_name[0] == map_img_type && strcmp(&(dirp->d_name[strlen(dirp->d_name) - 4]), ".png") == 0)
 		{
-			get_map_origin_by_filename(full_path, &x, &y);
-			cv::Mat map = cv::imread(full_path, (map_img_type == 'h' || map_img_type == 'n') ? cv::IMREAD_GRAYSCALE : cv::IMREAD_UNCHANGED);
-			int left = round((x - g_min_pose.x) / g_resolution);
-			int top  = round((g_max_pose.y - y) / g_resolution) - map.rows;
-			map.copyTo(complete_map(cv::Rect(left, top, map.cols, map.rows)));
-			map.release();
+			if (get_map_origin_by_filename(full_path, &x, &y) == 0)
+			{
+				cv::Mat map = cv::imread(full_path, (map_img_type == 'h' || map_img_type == 'n') ? cv::IMREAD_GRAYSCALE : cv::IMREAD_UNCHANGED);
+				if (!map.empty())
+				{
+					int left = round((x - g_min_pose.x) / g_resolution);
+					int top  = round((g_max_pose.y - y) / g_resolution) - map.rows;
+					map.copyTo(complete_map(cv::Rect(left, top, map.cols, map.rows)));
+					map.release();
+				}
+			}
 		}
 	}
 
+	closedir(dp);
 	sprintf(full_path, "%s/complete_%c%d_%d.png", g_out_dir, map_img_type, int(g_min_pose.x), int(g_min_pose.y));
 	cv::imwrite(full_path, complete_map);
 	fprintf(stderr, "%s generated\n", full_path);
-	closedir(dp);
 }
 
 
@@ -643,10 +657,14 @@ build_complete_map_images()
 void
 load_and_save_map_from_folder()
 {
-	char full_path[1000];
 	carmen_map_t offline_block_map, remission_block_map, remission_count_block_map;
-	DIR *dp  = opendir(g_input_dir);
+	memset(&offline_block_map, 0, sizeof(carmen_map_t));
+	memset(&remission_block_map, 0, sizeof(carmen_map_t));
+	memset(&remission_count_block_map, 0, sizeof(carmen_map_t));
+
+	char full_path[1000];
 	struct dirent *dirp;
+	DIR *dp  = opendir(g_input_dir);
 
 	while ((dirp = readdir(dp)) != NULL)
 	{
@@ -657,23 +675,29 @@ load_and_save_map_from_folder()
 
 		if (g_offline && dirp->d_name[0] == 'm' && strcmp(&(dirp->d_name[strlen(dirp->d_name) - 4]), ".map") == 0)
 		{
-			get_map_origin_by_filename(full_path, &offline_block_map.config.x_origin, &offline_block_map.config.y_origin);
-			carmen_map_read_gridmap_chunk(full_path, &offline_block_map);
-			offline_block_map_handler(&offline_block_map);
+			if (get_map_origin_by_filename(full_path, &offline_block_map.config.x_origin, &offline_block_map.config.y_origin) == 0 &&
+				carmen_map_read_gridmap_chunk(full_path, &offline_block_map) == 0)
+			{
+				offline_block_map_handler(&offline_block_map);
+			}
 			carmen_map_free_gridmap(&offline_block_map);
 		}
 
 		if (g_remission && dirp->d_name[0] == 's' && strcmp(&(dirp->d_name[strlen(dirp->d_name) - 4]), ".map") == 0)
 		{
-			get_map_origin_by_filename(full_path, &remission_block_map.config.x_origin, &remission_block_map.config.y_origin);
-			carmen_map_read_gridmap_chunk(full_path, &remission_block_map);
-			sprintf(full_path, "%s/c%d_%d.map", g_input_dir, int(remission_block_map.config.x_origin), int(remission_block_map.config.y_origin));
-			remission_count_block_map.config = remission_block_map.config;
-			carmen_map_read_gridmap_chunk(full_path, &remission_count_block_map);
-			carmen_prob_models_calc_mean_remission_map(&remission_block_map, &remission_block_map, &remission_count_block_map);
-			remission_block_map_handler(&remission_block_map);
+			if (get_map_origin_by_filename(full_path, &remission_block_map.config.x_origin, &remission_block_map.config.y_origin) == 0 &&
+				carmen_map_read_gridmap_chunk(full_path, &remission_block_map) == 0)
+			{
+				sprintf(full_path, "%s/c%d_%d.map", g_input_dir, int(remission_block_map.config.x_origin), int(remission_block_map.config.y_origin));
+				remission_count_block_map.config = remission_block_map.config;
+				if (carmen_map_read_gridmap_chunk(full_path, &remission_count_block_map) == 0)
+				{
+					carmen_prob_models_calc_mean_remission_map(&remission_block_map, &remission_block_map, &remission_count_block_map);
+					remission_block_map_handler(&remission_block_map);
+				}
+				carmen_map_free_gridmap(&remission_count_block_map);
+			}
 			carmen_map_free_gridmap(&remission_block_map);
-			carmen_map_free_gridmap(&remission_count_block_map);
 		}
 	}
 
