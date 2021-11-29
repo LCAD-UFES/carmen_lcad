@@ -6,6 +6,12 @@
 #include <carmen/grid_mapping.h>
 #include <carmen/global_graphics.h>
 #include <carmen/road_mapper.h>
+#include <carmen/param_interface.h>
+#include <wordexp.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
 
 #include <opencv2/core/version.hpp>
 #if CV_MAJOR_VERSION == 3
@@ -31,6 +37,8 @@ int global_pos_on_map_q4(carmen_point_t global_pos, carmen_map_p *maps, int maps
 int maps_has_same_origin(carmen_map_p map1, carmen_map_p map2);
 carmen_map_p alloc_map_pointer(void);
 void free_map_pointer(carmen_map_p map);
+char *get_param(void *param, int argc, char **argv, int argi, int param_type);
+
 
 #ifdef __cplusplus
 }
