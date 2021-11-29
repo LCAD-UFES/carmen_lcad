@@ -165,3 +165,141 @@ free_map_pointer(carmen_map_p map)
 	if (map->map) free(map->map);
 	free(map);
 }
+
+void
+get_param_int(int *param_int, int argc, char **argv, int argi, char *result)
+{
+	if (argi + 1 >= argc)
+	{
+		sprintf(result, "Integer argument expected following: %s", argv[argi]);
+		return;
+	}
+	char *endptr;
+	int param = (int) strtol(argv[argi + 1], &endptr, 0);
+	if (*endptr == '\0' && param > 0)
+		*param_int = param;
+	else
+		sprintf(result, "Invalid positive integer number: %s", argv[argi + 1]);
+}
+
+void
+get_param_double(double *param_double, int argc, char **argv, int argi, char *result)
+{
+	if (argi + 1 >= argc)
+	{
+		sprintf(result, "Floating-point argument expected following: %s", argv[argi]);
+		return;
+	}
+	char *endptr;
+	double param = strtod(argv[argi + 1], &endptr);
+	if (*endptr == '\0' && param > 0.0)
+		*param_double = param;
+	else
+		sprintf(result, "Invalid positive floating-point number: %s", argv[argi + 1]);
+}
+
+void
+get_param_onoff(int *param_onoff, int argc, char **argv, int argi, char *result)
+{
+	if (argi + 1 >= argc)
+	{
+		sprintf(result, "On/Off argument expected following: %s", argv[argi]);
+		return;
+	}
+	if (strcmp(argv[argi + 1], "on") == 0)
+		*param_onoff = 1;
+	else if (strcmp(argv[argi + 1], "off") == 0)
+		*param_onoff = 0;
+	else
+		sprintf(result, "On/Off argument expected: %s", argv[argi + 1]);
+}
+
+void
+get_param_string(char **param_string, int argc, char **argv, int argi, char *result)
+{
+	if (argi + 1 >= argc)
+		sprintf(result, "String argument expected following: %s", argv[argi]);
+	else
+		*param_string = argv[argi + 1];
+}
+
+void
+get_param_file(char **param_file, int argc, char **argv, int argi, char *result)
+{
+	if (argi + 1 >= argc)
+	{
+		sprintf(result, "File argument expected following: %s", argv[argi]);
+		return;
+	}
+	// expand environment variables on path to full path
+	wordexp_t we_file;
+	wordexp(argv[argi + 1], &we_file, 0);
+	char *param = realpath(*we_file.we_wordv, NULL);
+	wordfree(&we_file);
+	struct stat st_file;
+	int st = stat(param, &st_file);
+	if (st == 0 && !S_ISDIR(st_file.st_mode))
+		*param_file = param;
+	else
+	{
+		sprintf(result, "Invalid file: %s", argv[argi + 1]);
+		free(param);
+	}
+}
+
+void
+get_param_dir(char **param_dir, int argc, char **argv, int argi, char *result)
+{
+	if (argi + 1 >= argc)
+	{
+		sprintf(result, "Directory argument expected following: %s", argv[argi]);
+		return;
+	}
+	// expand environment variables on path to full path
+	wordexp_t we_dir;
+	wordexp(argv[argi + 1], &we_dir, 0);
+	char *param = realpath(*we_dir.we_wordv, NULL);
+	wordfree(&we_dir);
+	struct stat st_dir;
+	int st = stat(param, &st_dir);
+	if (st == 0 && S_ISDIR(st_dir.st_mode))
+		*param_dir = param;
+	else
+	{
+		sprintf(result, "Invalid directory: %s", argv[argi + 1]);
+		free(param);
+	}
+}
+
+char *
+get_param(void *param, int argc, char **argv, int argi, int param_type)
+{
+	char *result = (char *) calloc(2000, sizeof(char));
+
+	switch (param_type)
+	{
+		case CARMEN_PARAM_INT:
+			get_param_int((int *) param, argc, argv, argi, result);
+			break;
+		case CARMEN_PARAM_DOUBLE:
+			get_param_double((double *) param, argc, argv, argi, result);
+			break;
+		case CARMEN_PARAM_ONOFF:
+			get_param_onoff((int *) param, argc, argv, argi, result);
+			break;
+		case CARMEN_PARAM_STRING:
+			get_param_string((char **) param, argc, argv, argi, result);
+			break;
+		case CARMEN_PARAM_FILE:
+			get_param_file((char **) param, argc, argv, argi, result);
+			break;
+		case CARMEN_PARAM_DIR:
+			get_param_dir((char **) param, argc, argv, argi, result);
+			break;
+	}
+
+	if (*result)
+		return result;
+	free(result);
+	return NULL;
+}

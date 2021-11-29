@@ -112,6 +112,7 @@ endif
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
 #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+
 IFLAGS += \
 	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
 	`pkg-config --cflags gtkglext-1.0` \
@@ -132,8 +133,7 @@ road_mapper_image_splitter: road_mapper_image_splitter.o
 road_mapper_display_map: road_mapper_display_map.o road_mapper.o road_mapper_utils.o
 road_mapper_log_tracker: road_mapper_log_tracker.o
 save_map_images: save_map_images.o road_mapper.o road_mapper_utils.o
-update_map_from_image: update_map_from_image.o
-
+update_map_from_image: update_map_from_image.o road_mapper.o road_mapper_utils.o
 
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
