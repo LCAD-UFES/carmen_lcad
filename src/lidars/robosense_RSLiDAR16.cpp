@@ -33,8 +33,8 @@ initizalize_socket_connection(uint16_t port, char *ip)
 	memset(&my_addr, 0, sizeof(my_addr));  		// initialize to zeros
 	my_addr.sin_family = AF_INET;          		// host byte order
 	my_addr.sin_port = htons(port);        		// port in network byte order
-	my_addr.sin_addr.s_addr = inet_addr(ip);  	// specific IP
-//	my_addr.sin_addr.s_addr = INADDR_ANY;  		// any IP
+//	my_addr.sin_addr.s_addr = inet_addr(ip);  	// specific IP
+	my_addr.sin_addr.s_addr = INADDR_ANY;  		// any IP
 
 	if (bind(sockfd_, (sockaddr *) &my_addr, sizeof(sockaddr)) == -1)
 	{
@@ -147,7 +147,8 @@ realloc_message(carmen_velodyne_variable_scan_message &msg, int actual_size)
 
 
 bool
-unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, const uint8_t *socket_data, carmen_velodyne_shot *shots_array)
+unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, const uint8_t *socket_data, carmen_velodyne_shot *shots_array,
+		carmen_lidar_config lidar_config)
 {
 	static int max_num_shot = INITIAL_MAX_NUM_SHOT;
 	int last_byte_of_shot;
@@ -156,46 +157,49 @@ unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, c
 
 	for (int i = 44; i < 1242; i += 100) // i = 44 to skip the header (42b) and the first data block identifier (2b) 0xffee
 	{
+		// O RS-LIDAR-16 manda dois blocos de 16 medidas por vez, mas só manda o ângulo do primeiro bloco. Para obter o outro ângulo tem que interpolar.
+		// Primeiro bloco
 		current_shot->angle = (double) ((256 * socket_data[i] + socket_data[i + 1]) / 100.0);
+//		printf("  i %d, num_shots %d, angle %lf\n", i, *num_shots, current_shot->angle);
 
 //		if (*num_shots > 0 && current_shot->angle < 5.0 && shots_array[*num_shots - 2].angle > 355.0)
-		if (*num_shots > 0 && current_shot->angle >= 180.0 && shots_array[*num_shots - 1].angle < 180.0)
+		if (*num_shots > 0 && current_shot->angle >= 180.0 && shots_array[*num_shots - 2].angle < 180.0)
 			complete_turn = true;
 
 		last_byte_of_shot = i + 2 + 48; // skip 2 bytes of azimuth and 48 bytes of measures (the 50th byte is the last byte of first channel)
 
 		for (int index = i + 2, k = 0; index < last_byte_of_shot; index += 3, k++)  // i + 2 to skip the two bytes of the azimuth
 		{
-            if (socket_data[index] > 120)
+			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
+			current_shot->intensity[k] = socket_data[index + 2];
+            if (current_shot->distance[k] / 100.0 > lidar_config.max_range) // a distância é em centímetros e zero indica max_range
 			{
 				current_shot->distance[k] = 0;
 				current_shot->intensity[k] = 0;
-				continue;
 			}
-			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
-			current_shot->intensity[k] = socket_data[index + 2];
 		}
 
 		*num_shots += 1;
 		if (*num_shots > max_num_shot)
 			shots_array = realloc_message(msg, max_num_shot);
 
+		// Segundo bloco
 		current_shot = &shots_array[*num_shots];
 
 		current_shot->angle = -1.0;
+//		printf("* i %d, num_shots %d, angle %lf\n", i, *num_shots, current_shot->angle);
 
         last_byte_of_shot = i + 98;
 
 		for (int index = i + 50, k = 0; index < last_byte_of_shot; index += 3, k++)  // 52 is the first byte of the second channel of the current block and 100 is the last byte of the current block
 		{
-			if (socket_data[index] > 120)
+			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
+			current_shot->intensity[k] = socket_data[index + 2];
+            if (current_shot->distance[k] / 100.0 > lidar_config.max_range) // a distância é em centímetros e zero indica max_range
 			{
 				current_shot->distance[k] = 0;
 				current_shot->intensity[k] = 0;
-				continue;
 			}
-			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
-            current_shot->intensity[k] = socket_data[index + 2];
 		}
 
         *num_shots += 1;
@@ -210,6 +214,33 @@ unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, c
 
 
 void
+interpolate_for_missing_angles(int i, double &previous_angle, double &next_angle, carmen_velodyne_shot *shots_array)
+{
+	if (shots_array[i].angle == -1.0)
+	{
+		previous_angle = shots_array[i - 1].angle;
+		next_angle = shots_array[i + 1].angle;
+		if (next_angle < previous_angle)	// Adjust for a rollover from 359.99 to 0 // TODO verficar se eh necessario
+			next_angle = next_angle + 360.0;
+
+		shots_array[i].angle = previous_angle + ((next_angle - previous_angle) / 2.0); // Interpolate
+		if (shots_array[i].angle > 360.0)	// Correct for any rollover over form 359.99 to 0
+			shots_array[i].angle = shots_array[i].angle - 360.0;
+	}
+}
+
+
+void
+print_message(carmen_velodyne_variable_scan_message msg)
+{
+	for (int i = 0; i < msg.number_of_shots; i++)
+		printf("i %d, angle %lf\n", i, msg.partial_scan[i].angle);
+
+	printf("num shots %d\n\n", msg.number_of_shots);
+}
+
+
+void
 fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &msg, carmen_velodyne_shot *shots_array,
 		int *num_shots, int lidar_id)
 {
@@ -218,36 +249,30 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 
 	int last_valid_shot = *num_shots - 1;
 
+//	printf("* i %d, num_shots %d, angle %lf\n", 0, *num_shots, shots_array[0].angle);
+
 	for (int i = 1; i < last_valid_shot; i++)
 	{
-		if (shots_array[i].angle == -1.0)
-		{
-			previous_angle = shots_array[i - 1].angle;
-			next_angle = shots_array[i + 1].angle;
-
-			if (next_angle < previous_angle)                            // Adjust for a rollover from 359.99 to 0 // TODO verficar se eh necessario
-				next_angle = next_angle + 360.0;
-
-			shots_array[i].angle = previous_angle + ((next_angle - previous_angle) / 2.0); // Interpolate
-
-			if (shots_array[i].angle > 360.0)                           // Correct for any rollover over form 359.99 to 0
-			 	shots_array[i].angle = shots_array[i].angle - 360.0;
-		}
+		interpolate_for_missing_angles(i, previous_angle, next_angle, shots_array);
         
 //		if (*num_shots > 0 && shots_array[i].angle < 5.0 && shots_array[i - 1].angle > 355.0)
-		if (*num_shots > 0 && shots_array[i].angle > 180.0 && shots_array[i - 1].angle < 180.0)
+		if (*num_shots > 0 && shots_array[i].angle >= 180.0 && shots_array[i - 1].angle < 180.0)
 			last_shot_of_scan = i;
+
+//		printf("* i %d, num_shots %d, angle %lf\n", i, *num_shots, shots_array[i].angle);
 	}
 
+//	printf("*********** number_of_shots %d\n\n", last_shot_of_scan);
+	*num_shots = *num_shots - last_shot_of_scan;
 	msg.number_of_shots = last_shot_of_scan;
 	msg.timestamp = carmen_get_time();
+
+//	print_message(msg);
 
 	carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
 
 	for (int i = last_shot_of_scan, j = 0; i < last_valid_shot; i++, j++)
 		memcpy(&shots_array[j], &shots_array[i], sizeof(carmen_velodyne_shot));
-
-	*num_shots = *num_shots - last_shot_of_scan;
 }
 
 
@@ -272,7 +297,7 @@ run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carme
 				continue;
 		}
 
-		if (unpack_socket_data(msg, &num_shots, socket_data, msg.partial_scan))
+		if (unpack_socket_data(msg, &num_shots, socket_data, msg.partial_scan, lidar_config))
 			fill_and_publish_variable_scan_message(msg, msg.partial_scan, &num_shots, lidar_id);
 	}
 

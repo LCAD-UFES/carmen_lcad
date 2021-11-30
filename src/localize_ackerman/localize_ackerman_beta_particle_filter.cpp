@@ -89,9 +89,15 @@ carmen_localize_ackerman_summarize_beta(carmen_localize_ackerman_particle_filter
 
 
 void
-carmen_localize_ackerman_beta_resample(carmen_localize_ackerman_particle_filter_p filter __attribute__ ((unused)))
+carmen_localize_ackerman_beta_resample(carmen_localize_ackerman_particle_filter_p filter)
 {
-
+	/* check if it is time to resample  (verificar se é necessário) */
+	if (filter->distance_travelled >= filter->param->update_distance)
+	{
+		carmen_localize_ackerman_resample(filter);
+		filter->distance_travelled = 0.0;
+		filter->initialized = 1;
+	}
 }
 
 
