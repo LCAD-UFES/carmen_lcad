@@ -172,7 +172,7 @@ unpack_socket_data(carmen_velodyne_variable_scan_message &msg, int *num_shots, c
 		{
 			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
 			current_shot->intensity[k] = socket_data[index + 2];
-            if (current_shot->distance[k] / 100.0 > lidar_config.max_range) // a distância é em centímetros e zero indica max_range
+            if (current_shot->distance[k] / (double) lidar_config.range_division_factor > lidar_config.max_range) // a distância é em centímetros e zero indica max_range
 			{
 				current_shot->distance[k] = 0;
 				current_shot->intensity[k] = 0;

@@ -13,9 +13,10 @@
 extern "C" {
 #endif
 
-#define SET_COURSE 	1
-#define SET_SPEED	2
-#define SET_GRAPH	3
+#define SET_COURSE 								1
+#define SET_SPEED								2
+#define SET_GRAPH								3
+#define ABORT_PREVIOUS_ROUTE_PLANNER_REQUEST 	4
 
 typedef struct
 {

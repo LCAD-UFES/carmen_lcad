@@ -1446,7 +1446,7 @@ get_lidars_sensor_params()
 		sensors_params[i + 10].vertical_correction = lidar_config[i].vertical_angles;
 		sensors_params[i + 10].range_max = lidar_config[i].max_range;
 		sensors_params[i + 10].range_max_factor = mapper_range_max_factor;
-		sensors_params[i + 10].range_division_factor = lidar_config[i].range_division_factor;
+		sensors_params[i + 10].range_division_factor = (double) lidar_config[i].range_division_factor;
 		sensors_params[i + 10].time_spent_by_each_scan = lidar_config[i].time_between_shots;
 		sensors_params[i + 10].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
 
