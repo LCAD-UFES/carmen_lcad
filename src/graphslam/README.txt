@@ -16,12 +16,14 @@ Compile os módulos graphslam e o odometry_calibration
 		- Rode mais de uma vez e observe qual a melhor calibração no gráfico final.
 
 3.1. Você pode combinar a odometria do robô com odometrias alternativas no carmen_lcad. Correntemente temos os módulos visual_odometry2 e lidarodom que podem
-     publicar odometrias alternativas. Para isso, existem as seguintes parâmetros no carmen ini:
+     publicar odometrias alternativas (você precisa ter estas odometrias no seu log, ou gerá-lo novamente com elas). Para isso, existem as seguintes parâmetros no carmen ini:
 	- base_ackerman_publish_combined_odometry <on/off>
 		- Este parâmetro afeta todos os módulos que usam a odometria publicada pelo módulo base_ackerman (todos morro acima). 
 		- Quando ativado, ele combina as mensagens de odometria do robô com as dos módulos que publicam odometrias alternativas.
-		- Ele tem que estar em sintonia com o parâmetro robot_publish_combined_odometry. Para calibracao de odometria de logs esta flags pode ser ativada para misturar odometria visual com a do robo
-3.1. Altere as variaveis abaixo no carmen-ford-escape.ini de acordo com os Resultados do calibrate_bias_from_log (tmp/calibrated_odometry.txt):
+		- Ele tem que estar em sintonia com o parâmetro robot_publish_combined_odometry. Para calibracao de odometria de logs esta flags 
+		  pode ser ativada para misturar odometria visual com a do robo
+
+3.2. Altere as variaveis abaixo no carmen-ford-escape.ini de acordo com os Resultados do calibrate_bias_from_log (tmp/calibrated_odometry.txt):
 	robot_phi_multiplier				1.056087
 	robot_phi_bias					1.065384
 	robot_v_multiplier				0.003477

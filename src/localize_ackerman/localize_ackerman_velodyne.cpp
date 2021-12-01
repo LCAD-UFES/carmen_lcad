@@ -481,7 +481,8 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 
 int
 localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *msg,
-		sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data)
+		sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double v, double phi,
+		carmen_current_semi_trailer_data_t semi_trailer_data)
 {
 	carmen_pose_3D_t local_pose;
 	int num_points = msg->number_of_shots * sensor_params->vertical_resolution;
