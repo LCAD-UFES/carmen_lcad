@@ -702,16 +702,16 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			&base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			velodyne_message->timestamp, car_config.distance_between_front_and_rear_axles);
 
-	carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point =
-	{
-			globalpos.globalpos.x,
-			globalpos.globalpos.y,
-			globalpos.globalpos.theta,
-			globalpos.beta,
-			globalpos.v,
-			globalpos.phi
-	};
-
+//	carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point =
+//	{
+//			globalpos.globalpos.x,
+//			globalpos.globalpos.y,
+//			globalpos.globalpos.theta,
+//			globalpos.beta,
+//			globalpos.v,
+//			globalpos.phi
+//	};
+//
 //	carmen_localize_ackerman_beta_prediction(beta_filter, robot_and_trailer_traj_point, car_config, semi_trailer_config, velodyne_message->timestamp - beta_filter->last_timestamp);
 
 	publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
