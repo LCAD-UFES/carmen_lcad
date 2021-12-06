@@ -44,11 +44,13 @@ carmen_vector_3D_t add_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2);
 carmen_vector_3D_t sub_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2);
 carmen_vector_3D_t carmen_change_sensor_reference(carmen_vector_3D_t position, carmen_vector_3D_t reference, rotation_matrix* transformation_matrix);
 
-carmen_vector_3D_t carmen_get_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose, carmen_vector_3D_t robot_velocity, double robot_time, double interpolated_time, rotation_matrix* r_matrix_robot_to_global);
+carmen_vector_3D_t carmen_get_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose, carmen_vector_3D_t robot_velocity, double robot_time, double interpolated_time, rotation_matrix* r_matrix_robot_to_global)
+__attribute__ ((deprecated("Alberto say -> use carmen_libcarmodel_recalc_pos_ackerman() instead")));
+
+carmen_pose_3D_t carmen_ackerman_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose, double dt, double v, double phi, double distance_between_front_and_rear_axles)
+__attribute__ ((deprecated("Alberto say -> use carmen_libcarmodel_recalc_pos_ackerman() instead")));
 
 carmen_vector_3D_t carmen_get_sensor_sphere_point_in_robot_cartesian_reference(carmen_sphere_coord_t sphere_point, carmen_pose_3D_t sensor_pose, carmen_pose_3D_t sensor_board_pose, rotation_matrix* sensor_to_board_matrix, rotation_matrix* board_to_car_matrix);
-
-carmen_pose_3D_t carmen_ackerman_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose, double dt, double v, double phi, double distance_between_front_and_rear_axles);
 
 carmen_pose_3D_t get_world_pose(carmen_pose_3D_t* local_pose);
 

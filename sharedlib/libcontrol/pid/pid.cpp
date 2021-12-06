@@ -23,6 +23,12 @@ enum
 
 #define NEAR_ZERO_V	0.03
 
+#define ROBOT_ID_FORD_ESCAPE 	0
+#define ROBOT_ID_ECOTECH4 		1
+#define ROBOT_ID_MPW700 		2
+#define ROBOT_ID_ASTRU 			3
+#define ROBOT_ID_BUGGY 			4
+
 
 // Global variables
 static double g_steering_Kp;
@@ -45,6 +51,8 @@ static double g_velocity_backward_deccelerating_Ki;
 static double g_velocity_backward_deccelerating_Kd;
 static double g_brake_gap;
 static double g_max_brake_effort;
+
+static int robot_model_id = 0;
 
 
 void
@@ -399,7 +407,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			g_velocity_forward_accelerating_Kd * derivative_t;
 
 		*throttle_command = u_t;
-		*brakes_command = g_brake_gap;
+		if (robot_model_id == ROBOT_ID_BUGGY)
+			*brakes_command = 0.0;
+		else
+			*brakes_command = g_brake_gap;
 
 		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
 		{
@@ -434,7 +445,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			g_velocity_backward_accelerating_Kd * derivative_t;
 
 		*throttle_command = -u_t;
-		*brakes_command = g_brake_gap;
+		if (robot_model_id == ROBOT_ID_BUGGY)
+			*brakes_command = 0.0;
+		else
+			*brakes_command = g_brake_gap;
 
 		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)))
 		{
@@ -464,15 +478,42 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	error_t_1 = error_t;
 
 	// Anti windup
-	if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
-	    (*brakes_command < g_brake_gap) || (*brakes_command > 100.0))
-		integral_t = integral_t_1;
+	if (robot_model_id == ROBOT_ID_BUGGY)
+	{
+		if ((g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_ACCELERATING) || (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_ACCELERATING))
+		{
+			if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
+				(*brakes_command < 0.0) || (*brakes_command > 100.0))
+				integral_t = integral_t_1;
+		}
+		else
+		{
+			if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
+				(*brakes_command < g_brake_gap) || (*brakes_command > 100.0))
+				integral_t = integral_t_1;
+		}
+	}
+	else
+	{
+		if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
+		    (*brakes_command < g_brake_gap) || (*brakes_command > 100.0))
+			integral_t = integral_t_1;
+	}
+
 	integral_t_1 = integral_t;
 
 	previous_t = t;
 
 	*throttle_command = carmen_clamp(0.0, *throttle_command, 100.0);
-	*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
+	if (robot_model_id == ROBOT_ID_BUGGY)
+	{
+		if ((g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_ACCELERATING) || (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_ACCELERATING))
+			*brakes_command = carmen_clamp(0.0, *brakes_command, 100.0);
+		else
+			*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
+	}
+	else
+		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
@@ -483,9 +524,9 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Inicializations								//
-//												//
+//																								//
+// Inicializations																				//
+//																								//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -520,4 +561,12 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "robot", (char *) "model_id",	CARMEN_PARAM_INT, &(robot_model_id),0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 }

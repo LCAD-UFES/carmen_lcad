@@ -36,6 +36,7 @@
 #include <carmen/rotation_geometry.h>
 #include <carmen/stereo_velodyne.h>
 #include <carmen/task_manager_interface.h>
+#include <car_model.h>
 
 /* gains for gradient descent */
 
@@ -63,6 +64,8 @@ int velodyne_viewer = 0;
 char *save_globalpos_file = NULL;
 double save_globalpos_timestamp = 0.0;
 
+extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message;
+
 
 void
 carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filter_p filter,
@@ -70,7 +73,7 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 		double distance_between_front_and_rear_axles, double dt)
 {
 	double v_step, phi_step;
-	carmen_pose_3D_t robot_pose;
+	carmen_robot_and_trailer_traj_point_t robot_pose;
 
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
 		return;
@@ -94,9 +97,9 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 
 		if (i != 0)
 		{
-			robot_pose.position.x = filter->particles[i].x;
-			robot_pose.position.y = filter->particles[i].y;
-			robot_pose.orientation.yaw = filter->particles[i].theta;
+			robot_pose.x = filter->particles[i].x;
+			robot_pose.y = filter->particles[i].y;
+			robot_pose.theta = filter->particles[i].theta;
 
 			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
@@ -112,27 +115,39 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 					fabs(filter->param->phi_noise_velocity * v));
 			phi_step = carmen_clamp(-M_PI/4.0, phi_step, M_PI/4.0);
 
-			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_step, phi_step, distance_between_front_and_rear_axles);
+			double distance_traveled;
+			robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
+							&distance_traveled, dt, car_config, semi_trailer_config);
 
-			filter->particles[i].x = robot_pose.position.x + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-			filter->particles[i].y = robot_pose.position.y + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-			filter->particles[i].theta = carmen_normalize_theta(
-					robot_pose.orientation.yaw + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+			filter->particles[i].x = robot_pose.x;
+			filter->particles[i].y = robot_pose.y;
+			filter->particles[i].theta = robot_pose.theta;
+
+			if ((i % 10) == 0)
+			{
+				filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+				filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+				filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+			}
 		}
 		else
 		{	// Keep the mean particle of the previous run intact
-			robot_pose.position.x = filter->particles[i].x;
-			robot_pose.position.y = filter->particles[i].y;
-			robot_pose.orientation.yaw = filter->particles[i].theta;
+			robot_pose.x = filter->particles[i].x;
+			robot_pose.y = filter->particles[i].y;
+			robot_pose.theta = filter->particles[i].theta;
 
 			v_step = v;
 			phi_step = phi + filter->particles[i].phi_bias;
 
-			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_step, phi_step, distance_between_front_and_rear_axles);
+			double distance_traveled;
+			robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
+							&distance_traveled, dt, car_config, semi_trailer_config);
 
-			filter->particles[i].x = robot_pose.position.x;
-			filter->particles[i].y = robot_pose.position.y;
-			filter->particles[i].theta = carmen_normalize_theta(robot_pose.orientation.yaw);
+			filter->particles[i].x = robot_pose.x;
+			filter->particles[i].y = robot_pose.y;
+			filter->particles[i].theta = robot_pose.theta;
+			filter->particles[i].phi = phi_step;
+			filter->particles[i].v = v_step;
 		}
 	}
 }
@@ -140,18 +155,13 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 
 void
 carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_particle_filter_p filter,
-		double v, double phi, double distance_between_front_and_rear_axles, double dt)
+		double v, double phi, double distance_between_front_and_rear_axles __attribute__((unused)), double dt)
 {
 	double v_step, phi_step;
-	carmen_pose_3D_t robot_pose;
+	carmen_robot_and_trailer_traj_point_t robot_pose;
 
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
 		return;
-
-//	FILE *caco = fopen("caco_gpos.txt", "a");
-//	fprintf(caco, "%lf ", dt);
-//	fflush(caco);
-//	fclose(caco);
 
 	filter->distance_travelled += fabs(v * dt);
 
@@ -159,9 +169,9 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 	{
 		if (i != 0)
 		{
-			robot_pose.position.x = filter->particles[i].x;
-			robot_pose.position.y = filter->particles[i].y;
-			robot_pose.orientation.yaw = filter->particles[i].theta;
+			robot_pose.x = filter->particles[i].x;
+			robot_pose.y = filter->particles[i].y;
+			robot_pose.theta = filter->particles[i].theta;
 
 			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
@@ -180,14 +190,58 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0,
 					fabs(filter->param->phi_noise_phi * phi) +
 					fabs(filter->param->phi_noise_velocity * v));
-			phi_step = carmen_clamp(-M_PI/4.0, phi_step, M_PI/4.0);
+			phi_step = carmen_clamp(-car_config.max_phi, phi_step, car_config.max_phi);
 
-			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_step, phi_step, distance_between_front_and_rear_axles);
+			double distance_traveled;
+			robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
+							&distance_traveled, dt, car_config, semi_trailer_config);
 
-			filter->particles[i].x = robot_pose.position.x + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-			filter->particles[i].y = robot_pose.position.y + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-			filter->particles[i].theta = carmen_normalize_theta(
-					robot_pose.orientation.yaw + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+			filter->particles[i].x = robot_pose.x;
+			filter->particles[i].y = robot_pose.y;
+			filter->particles[i].theta = robot_pose.theta;
+
+
+			if (behavior_selector_path_goals_and_annotations_message &&
+				(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
+			{
+				double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
+				if (distance_to_goal < 13.0)
+				{
+					double y0 = (double) filter->param->num_particles;
+					double x0 = 1.0;
+					double y1 = 1.0;
+					double x1 = 13.0;
+					double x = distance_to_goal;
+					double y = y0 + (x - x0) * ((y1 - y0) / (x1 - x0));
+					int inverse_franction_of_particles_considered;
+					if (y < 1.0)
+						inverse_franction_of_particles_considered = 1;
+					else if (y > filter->param->num_particles)
+						inverse_franction_of_particles_considered = filter->param->num_particles;
+					else
+						inverse_franction_of_particles_considered = ceil(y);
+
+					if ((i % inverse_franction_of_particles_considered) == 0)
+					{
+						filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+						filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+						filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+					}
+				}
+				else
+				{
+					filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+					filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+					filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+				}
+			}
+			else
+			{
+				filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+				filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+				filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+			}
+
 			filter->particles[i].phi = phi_step;
 			filter->particles[i].v = v_step;
 		}
@@ -195,18 +249,20 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 		{
 			// Keep the mean particle of the previous run intact
 			// Note: This kind of elitism may introduce a bias in the filter.
-			robot_pose.position.x = filter->particles[i].x;
-			robot_pose.position.y = filter->particles[i].y;
-			robot_pose.orientation.yaw = filter->particles[i].theta;
+			robot_pose.x = filter->particles[i].x;
+			robot_pose.y = filter->particles[i].y;
+			robot_pose.theta = filter->particles[i].theta;
 
 			v_step = v;
 			phi_step = phi + filter->particles[i].phi_bias;
 
-			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_step, phi_step, distance_between_front_and_rear_axles);
+			double distance_traveled;
+			robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
+							&distance_traveled, dt, car_config, semi_trailer_config);
 
-			filter->particles[i].x = robot_pose.position.x;
-			filter->particles[i].y = robot_pose.position.y;
-			filter->particles[i].theta = carmen_normalize_theta(robot_pose.orientation.yaw);
+			filter->particles[i].x = robot_pose.x;
+			filter->particles[i].y = robot_pose.y;
+			filter->particles[i].theta = robot_pose.theta;
 			filter->particles[i].phi = phi_step;
 			filter->particles[i].v = v_step;
 		}
@@ -3104,6 +3160,9 @@ get_sensors_param(int argc, char **argv, int correction_type)
 
 	spherical_sensor_params[0].pose = velodyne_pose;
 	spherical_sensor_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, spherical_sensor_params[0].pose.position, sensor_board_1_to_car_matrix);
+	spherical_sensor_params[0].sensor_support_pose = sensor_board_1_pose;
+	spherical_sensor_params[0].sensor_to_support_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
+	spherical_sensor_params[0].support_to_car_matrix = create_rotation_matrix(spherical_sensor_params[0].sensor_support_pose.orientation);
 
 	spherical_sensor_params[0].height = spherical_sensor_params[0].sensor_robot_reference.z + robot_wheel_radius;
 
@@ -3127,7 +3186,6 @@ get_sensors_param(int argc, char **argv, int correction_type)
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 		init_velodyne_points(&spherical_sensor_data[0].points, &spherical_sensor_data[0].intensity, &spherical_sensor_data[0].robot_pose,
 				&spherical_sensor_data[0].robot_velocity, &spherical_sensor_data[0].robot_timestamp, &spherical_sensor_data[0].robot_phi);
-		spherical_sensor_params[0].sensor_to_support_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
 		spherical_sensor_data[0].point_cloud_index = 0;
 		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution, number_of_threads);
 
@@ -3232,6 +3290,22 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &car_config.width, 0, NULL},
 		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &car_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &car_config.distance_between_front_and_rear_axles, 1, NULL},
+		{(char *) "robot", (char *) "distance_between_rear_wheels",					CARMEN_PARAM_DOUBLE, &car_config.distance_between_rear_wheels,				 1, NULL},
+		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &car_config.distance_between_front_car_and_front_wheels, 1, NULL},
+		{(char *) "robot", (char *) "max_velocity",									CARMEN_PARAM_DOUBLE, &car_config.max_v,										 1, NULL},
+		{(char *) "robot", (char *) "max_steering_angle",							CARMEN_PARAM_DOUBLE, &car_config.max_phi,									 1, NULL},
+		{(char *) "robot", (char *) "maximum_acceleration_forward",					CARMEN_PARAM_DOUBLE, &car_config.maximum_acceleration_forward,				 1, NULL},
+		{(char *) "robot", (char *) "maximum_acceleration_reverse",					CARMEN_PARAM_DOUBLE, &car_config.maximum_acceleration_reverse,				 1, NULL},
+		{(char *) "robot", (char *) "maximum_deceleration_forward",					CARMEN_PARAM_DOUBLE, &car_config.maximum_deceleration_forward,				 1, NULL},
+		{(char *) "robot", (char *) "maximum_deceleration_reverse",					CARMEN_PARAM_DOUBLE, &car_config.maximum_deceleration_reverse,				 1, NULL},
+
+		{(char *) "robot", (char *) "desired_decelaration_forward",					CARMEN_PARAM_DOUBLE, &car_config.desired_decelaration_forward,					1, NULL},
+		{(char *) "robot", (char *) "desired_decelaration_reverse",					CARMEN_PARAM_DOUBLE, &car_config.desired_decelaration_reverse,					1, NULL},
+		{(char *) "robot", (char *) "desired_acceleration",							CARMEN_PARAM_DOUBLE, &car_config.desired_acceleration,							1, NULL},
+		{(char *) "robot", (char *) "desired_steering_command_rate",				CARMEN_PARAM_DOUBLE, &car_config.desired_steering_command_rate,					1, NULL},
+		{(char *) "robot", (char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &car_config.understeer_coeficient,							1, NULL},
+		{(char *) "robot", (char *) "maximum_steering_command_rate", 				CARMEN_PARAM_DOUBLE, &car_config.maximum_steering_command_rate, 					1, NULL},
+
 		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_DOUBLE, &robot_publish_odometry, 1, NULL},
 
 		{(char *) "model", 		(char *) "predictive_planner_obstacles_safe_distance", 	CARMEN_PARAM_DOUBLE, &car_config.model_predictive_planner_obstacles_safe_distance, 1, NULL},

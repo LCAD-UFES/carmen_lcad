@@ -331,7 +331,7 @@ carmen_ackerman_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose,
 	int i;
 	int steps = 1;
 	double ds;
-	
+
 	ds = v * (dt / (double) steps);
 
 	for (i = 0; i < steps; i++)

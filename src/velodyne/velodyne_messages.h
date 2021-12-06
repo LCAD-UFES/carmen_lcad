@@ -24,9 +24,9 @@ typedef struct
 
 typedef struct
 {
-	unsigned short  distance[32];
-	unsigned char intensity[32];
-	double angle;
+	unsigned short  distance[32];	// m * 500
+	unsigned char intensity[32];	// 0 to 255
+	double angle;					// degrees
 }carmen_velodyne_32_laser_shot;
 
 typedef struct {

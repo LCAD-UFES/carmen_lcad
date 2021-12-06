@@ -379,6 +379,9 @@ int verbose = 0;
 
 static double mapper_map_grid_res;
 
+static int g_velodyne_single_ray = -1;
+static int g_last_velodyne_single_ray = 0;
+
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -1394,7 +1397,9 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
 		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
 {
-    carmen_pose_3D_t car_interpolated_position;
+	static int velodyne_ray_order[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
+
+	carmen_pose_3D_t car_interpolated_position;
     rotation_matrix r_matrix_car_to_global;
 
 	double dt = velodyne_message->timestamp - car_fused_time - velodyne_message->number_of_32_laser_shots * time_spent_by_each_scan;
@@ -1421,16 +1426,23 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
             if (!velodyne_remission_flag)
             {
-                velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
-                        car_interpolated_position.position);
+            	if (g_velodyne_single_ray == -1)
+					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
+							car_interpolated_position.position);
+            	else
+            	{
+            		if (velodyne_ray_order[j] == g_velodyne_single_ray)
+    					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
+    							car_interpolated_position.position);
+            		else
+            			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = {g_b_red, g_b_green, g_b_blue};
+            	}
             }
             else
             {
             	int intensity = velodyne_message->partial_scan[i].intensity[j];
             	if (remission_calibration_table)
             	{
-            		static int velodyne_ray_order[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
-
                 	double ray_angle = carmen_degrees_to_radians(vertical_correction[j]);
                 	double ray_size_in_the_floor = ((double) velodyne_message->partial_scan[i].distance[j] / 500.0) * cos(ray_angle);
                 	int distance_index = get_distance_index(ray_size_in_the_floor);
@@ -4490,6 +4502,7 @@ mouseFunc(int type, int button, int x, int y)
 void
 keyPress(int code)
 {
+//	printf("code %d\n", code);
     switch (code)
     {
     case 111: // UP
@@ -4635,7 +4648,7 @@ keyPress(int code)
     }
         break;
 
-    case 29: // U
+    case 29: // Y
     {
         // zoom in
         carmen_vector_3D_t displacement = {1.0, 0.0, 0.0};
@@ -4643,11 +4656,44 @@ keyPress(int code)
     }
         break;
 
-    case 30: // I
+    case 30: // U
     {
         // zoom out
         carmen_vector_3D_t displacement = {-1.0, 0.0, 0.0};
         move_camera(displacement);
+    }
+        break;
+
+    case 10: // 1
+    {
+    	// toggle Velodyne single ray display
+        if (g_velodyne_single_ray == -1)
+        	g_velodyne_single_ray = g_last_velodyne_single_ray;
+        else
+        	g_velodyne_single_ray = -1;
+    }
+        break;
+
+    case 11: // 2
+    {
+        // increase Velodyne single ray
+    	g_velodyne_single_ray++;
+        if (g_velodyne_single_ray > 31)
+        	g_velodyne_single_ray = 0;
+        if (g_velodyne_single_ray < 0)
+        	g_velodyne_single_ray = 31;
+        g_last_velodyne_single_ray = g_velodyne_single_ray;
+    }
+        break;
+    case 12: // 3
+    {
+        // decrease Velodyne single ray
+    	g_velodyne_single_ray--;
+        if (g_velodyne_single_ray > 31)
+        	g_velodyne_single_ray = 0;
+        if (g_velodyne_single_ray < 0)
+        	g_velodyne_single_ray = 31;
+        g_last_velodyne_single_ray = g_velodyne_single_ray;
     }
         break;
     }
