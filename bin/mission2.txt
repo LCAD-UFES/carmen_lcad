@@ -1,0 +1,10 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+park at 7757520.20, -363662.24, -1.447 
+#park at 7757528.09, -363666.71, -0.083
+go   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+park at 7757528.91, -363658.69, -0.039 
+go   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+restart

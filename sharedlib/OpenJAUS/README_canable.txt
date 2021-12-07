@@ -66,6 +66,18 @@ Bring Virtual CAN Interface up
  $ candump vcan0
 
 
+cansniffer -c can0 -m 80 81 2B0 111 112
+
+### Hyundai HB20
+Steering (Bytes 0 e 1 - Alngle)
+ID   data
+2B0  98 13 00 07 62 - Tudo para a esquerda
+2B0  00 00 00 07 AF - Steering ZERO
+2B0  74 EC 00 07 42 - Tudo para a direita
+
+Velocity
+ID   data
+52A  01 00 00 00 00 00 01 00 (Bytes 0 e 1 - Alngle # also bytes 6 and 7)
 
 
 ### Toyota Etios

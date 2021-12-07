@@ -1,0 +1,13 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+# Predio Eletrica logo depois do LCAD2
+set course to 7757678.90, -363600.91, 0.655
+go after set course to 7757678.90, -363600.91, 0.655   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+# Estacionamento da Cantina do CT
+set course to 7757854.11, -363554.69, -0.728
+go after set course to 7757854.11, -363554.69, -0.728  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+restart
