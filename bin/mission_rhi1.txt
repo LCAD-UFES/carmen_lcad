@@ -1,0 +1,14 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+
+# Missao 1
+set route planner graph to data/graphs/graph-rddf-poc-rhi-20210709-percurso-1.gr
+
+# Forno 1
+set course to 7757127.010337, -364053.960934, 0.589534
+go 
+stop # tira de modo autonomo
+
+mission completed
+
+

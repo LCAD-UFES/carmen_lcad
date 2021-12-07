@@ -1,0 +1,10 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+# set final goal 7757732.73, -363563.71, -0.138
+
+# Estacionamento da Cantina do CT
+set course to 7757856.47, -363577.52, -2.518
+go after set course to 7757856.47, -363577.52, -2.518  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+	restart

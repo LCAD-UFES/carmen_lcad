@@ -1,0 +1,8 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+
+# Estacionamento do NTI
+set course to 7757767.03, -363818.23, 2.298
+go after set course to 7757767.03, -363818.23, 2.298 # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+

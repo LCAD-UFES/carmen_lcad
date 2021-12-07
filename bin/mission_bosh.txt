@@ -1,0 +1,15 @@
+set course to 7757634.70, -363644.92, 0.614
+go after set course to 7757634.70, -363644.92, 0.614   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+# Estacionamento da Cantina do CT
+park at 7757620.64, -363659.33, 0.685
+go after park at 7757620.64, -363659.33, 0.685  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+# Estacionamento do NTI
+set course to 7757512.10, -363654.50, -0.335
+go after set course to 7757512.10, -363654.50, -0.335 # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+restart
