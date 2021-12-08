@@ -438,7 +438,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 	carmen_vector_3D_t *points_position_with_respect_to_car_estimated = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
 
 	int size = compute_points_position_with_respect_to_car(points_position_with_respect_to_car);
-	if (size == 0)
+	if (size < 10)
 	{
 		free(points_position_with_respect_to_car);
 		free(points_position_with_respect_to_car_estimated);
