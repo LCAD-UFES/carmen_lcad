@@ -193,7 +193,7 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 FILE *gnuplot_pipe;
 
 
-static void
+void
 plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 		carmen_vector_3D_t *points_position_with_respect_to_car_estimated, int size)
 {
@@ -304,6 +304,9 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 			last_velodyne_message, spherical_sensor_params[0].vertical_correction,
 			spherical_sensor_params[0].sensor_to_support_matrix, spherical_sensor_params[0].support_to_car_matrix,
 			spherical_sensor_params[0].pose.position, spherical_sensor_params[0].sensor_support_pose.position);
+
+	if (num_valid_points == 0)
+		return (0);
 
 	int num_filtered_points = 0;
 	for (int i = 0; i < num_valid_points; i++)
@@ -435,6 +438,14 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 	carmen_vector_3D_t *points_position_with_respect_to_car_estimated = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
 
 	int size = compute_points_position_with_respect_to_car(points_position_with_respect_to_car);
+	if (size < 10)
+	{
+		free(points_position_with_respect_to_car);
+		free(points_position_with_respect_to_car_estimated);
+
+		return (predicted_beta);
+	}
+
 	double beta = compute_new_beta(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 
 //	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
