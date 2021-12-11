@@ -99,7 +99,7 @@ extern "C" {
 	void behavior_selector_get_full_state(carmen_behavior_selector_task_t *current_task_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
 			carmen_behavior_selector_algorithm_t *parking_planner_out);
 
-	int behavior_selector_get_task();
+	carmen_behavior_selector_task_t behavior_selector_get_task();
 
 	carmen_robot_and_trailer_traj_point_t *behavior_selector_get_goal_list(int *goal_list_size_out);
 	int *behavior_selector_get_goal_type();

@@ -1023,8 +1023,10 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 
 	previous_v = goal->v; //Limita a velocidade quando o offroad eh acionado, tanto para frente quanto para reh
 	if (((road_network_message != NULL) && (road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) &&
-		 (goal->v > parking_speed_limit)) ||
-	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK) ||
+		 (((reversing_driving == 0) && (goal->v > parking_speed_limit)) || ((reversing_driving == 1) && (goal->v < parking_speed_limit)))) ||
+		 (behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK) ||
+		 (behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+		 (behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
 	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE))
 	 	goal->v = (reversing_driving == 1)? -parking_speed_limit : parking_speed_limit;
 	if (previous_v != goal->v)
