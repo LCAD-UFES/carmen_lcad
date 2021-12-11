@@ -41,8 +41,10 @@
 
 #include <prob_measurement_model.h>
 #include <prob_map.h>
+
 #include <gsl/gsl_fit.h>
 #include <gsl/gsl_multifit.h>
+#include <gsl/gsl_errno.h>
 
 #include "localize_ackerman_core.h"
 #include "localize_ackerman_messages.h"
@@ -55,6 +57,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 using namespace cv;
 
+#define PREDICT_BETA_GSL_ERROR_CODE 100.0
 
 static int necessary_maps_available = 0;
 
@@ -118,8 +121,8 @@ bool global_localization_requested = false;
 
 static carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
 
-static int g_velodyne_single_ray = 15;
-static int g_last_velodyne_single_ray = 15;
+static int g_velodyne_single_ray = 16;
+static int g_last_velodyne_single_ray = 16;
 
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
@@ -190,7 +193,7 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	carmen_test_ipc_exit(err, "Could not publish", message_name);
 }
 
-FILE *gnuplot_pipe;
+FILE *gnuplot_pipe = NULL;
 
 
 void
@@ -202,8 +205,7 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 	if (first_time)
 	{
 		first_time = false;
-
-		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		gnuplot_pipe = popen("taskset -c 0 gnuplot", "w"); // -persist to keep last plot after program closes
 		fprintf(gnuplot_pipe, "set xrange [-2:2]\n");
 		fprintf(gnuplot_pipe, "set yrange [0:4]\n");
 		fprintf(gnuplot_pipe, "set size square\n");
@@ -363,9 +365,13 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 {
 	size_t i;
 	size_t n = size;
+	int status;
 	const size_t p = 2; /* linear fit */
 	gsl_matrix *X, *cov;
 	gsl_vector *x, *y, *c, *c_ols;
+
+	gsl_set_error_handler_off();/*We will have to read the status and handle the errors codes*/
+
 
 	X = gsl_matrix_alloc(n, p);
 	x = gsl_vector_alloc(n);
@@ -393,7 +399,21 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 		gsl_matrix_set(X, i, 1, xi);
 	}
 
-	dofit(gsl_multifit_robust_bisquare, X, y, c, cov);
+	status = dofit(gsl_multifit_robust_bisquare, X, y, c, cov);
+
+	if (status)
+	{
+		if (status == GSL_EMAXITER)
+		{
+			fprintf (stderr, "max_inter, Discarding beta, using the default prediction one. size n=%d\n", n);
+			return (PREDICT_BETA_GSL_ERROR_CODE);
+		}
+		else
+		{
+			fprintf (stderr, "failed, gsl_errno=%d This error isn't handle yet, please check it !! \n", status);
+		}
+//		exit (-1);
+	}
 
 	/* output data and model */
 	for (i = 0; i < n; ++i)
@@ -429,6 +449,8 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 
 	double predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
 
+	static double last_beta_using_gls = predicted_beta; //just initializing
+
 	if (!last_velodyne_message ||
 		!spherical_sensor_params[0].sensor_to_support_matrix ||
 		!spherical_sensor_params[0].support_to_car_matrix)
@@ -447,6 +469,10 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 	}
 
 	double beta = compute_new_beta(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
+	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
+	{
+		return (predicted_beta);
+	}
 
 //	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 
