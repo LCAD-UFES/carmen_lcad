@@ -425,7 +425,7 @@ behavior_selector_get_full_state(carmen_behavior_selector_task_t *current_task_o
 }
 
 
-int
+carmen_behavior_selector_task_t
 behavior_selector_get_task()
 {
 	return (current_task);
