@@ -121,8 +121,8 @@ bool global_localization_requested = false;
 
 static carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
 
-static int g_velodyne_single_ray = 16;
-static int g_last_velodyne_single_ray = 16;
+static int g_velodyne_single_ray = 8;
+static int g_last_velodyne_single_ray = 8;
 
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
