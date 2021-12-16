@@ -394,6 +394,15 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 				glVertex3f(-carDrawer->semi_trailer_config.distance_between_axle_and_back, -carDrawer->semi_trailer_config.width / 2, 0);
 			glEnd();
 
+			glBegin(GL_LINES);
+				glVertex3d(0.0, -carDrawer->semi_trailer_config.width / 2, 0.0);
+				glVertex3d(0.0, carDrawer->semi_trailer_config.width / 2, 0.0);
+			glEnd();
+
+			glBegin(GL_POINTS);
+				glVertex3d(carDrawer->semi_trailer_config.d, 0.0, 0.0);
+			glEnd();
+
 		glPopMatrix();
 	}
 }
