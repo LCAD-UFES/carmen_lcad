@@ -1021,12 +1021,12 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	{
 		static bool into_narrow_passage = false;
 		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
-		if ((last_speed_limit == 5.0 / 3.6) && !into_narrow_passage)
+		if ((last_speed_limit == 10.0 / 3.6) && !into_narrow_passage)
 		{
 			carmen_task_manager_publish_set_collision_geometry_message(ENGAGE_GEOMETRY, timestamp);
 			into_narrow_passage = true;
 		}
-		if (into_narrow_passage && (last_speed_limit > 5.0 / 3.6))
+		if (into_narrow_passage && (last_speed_limit > 10.0 / 3.6))
 		{
 			carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, timestamp);
 			into_narrow_passage = false;
