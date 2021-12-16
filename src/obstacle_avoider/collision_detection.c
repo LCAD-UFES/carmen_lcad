@@ -504,24 +504,39 @@ set_semi_trailer_collision_config(int semi_trailer_type)
 	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_type);
 
 	char *semi_trailer_collision_file;
+	char *semi_trailer_engage_collision_file;
 	carmen_param_t param_list[] =
 	{
 		{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_d), 0, NULL},
 		{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_M), 0, NULL},
 		{semi_trailer_string, "max_beta", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_max_beta), 0, NULL},
 		{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 0, NULL},
+		{semi_trailer_string, "engage_collision_file", CARMEN_PARAM_STRING, &semi_trailer_engage_collision_file, 0, NULL},
 	};
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
 	global_collision_config.semi_trailer_max_beta = carmen_degrees_to_radians(global_collision_config.semi_trailer_max_beta);
 
 	char *carmen_home = getenv("CARMEN_HOME");
 	char collision_file_[2048];
-	strcpy(collision_file_, carmen_home);
-	strcat(collision_file_, "/bin/");
-	strcat(collision_file_, semi_trailer_collision_file);
+	FILE *collision_file_pointer;
+	if (global_collision_config.geometry == DEFAULT_GEOMETRY)
+	{
+		sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_collision_file);
+		collision_file_pointer = fopen(collision_file_, "r");
+	}
+	else if (global_collision_config.geometry == ENGAGE_GEOMETRY)
+	{
+		sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_engage_collision_file);
+		collision_file_pointer = fopen(collision_file_, "r");
+		if (!collision_file_pointer)	// engage collision file nao definido no carmen ini?
+		{
+			sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_collision_file);
+			collision_file_pointer = fopen(collision_file_, "r");
+		}
+	}
 
-	FILE *collision_file_pointer = fopen(collision_file_, "r");
 	setlocale(LC_NUMERIC, "C");
+
 	fscanf(collision_file_pointer, "%d", &(global_collision_config.n_semi_trailer_markers));
 	int max_h_level;
 	fscanf(collision_file_pointer, "%d", &max_h_level);	// Para compatibilidade multi height
@@ -1047,6 +1062,8 @@ carmen_collision_detection_set_robot_collision_config(int collision_geometry)
 	{
 		global_collision_config.geometry = collision_geometry;
 		set_robot_colision_config(&global_collision_config);
+		if (global_collision_config.semi_trailer_type != 0)
+			set_semi_trailer_collision_config(global_collision_config.semi_trailer_type);
 	}
 }
 
