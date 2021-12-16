@@ -838,12 +838,12 @@ namespace View
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelRoutePlannerState), buffer);
 				sprintf(buffer, "Offroad Planner Request: %s", print_offroad_planner_request(route_planner_route->offroad_planner_request));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest), buffer);
-				if (route_planner_route->route_planner_state == IDLE)
-				{
-					offroad_planner_plan = NULL;
-					sprintf(buffer, "Offroad Planner State: NO_REQUEST");
-					gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
-				}
+//				if (route_planner_route->route_planner_state == IDLE)
+//				{
+//					offroad_planner_plan = NULL;
+//					sprintf(buffer, "Offroad Planner State: NO_REQUEST");
+//					gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
+//				}
 			}
 
 			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);

@@ -12,3 +12,16 @@ else
 
 	$(info * The modelo_atego1730-reescalado.obj 3D model already exists *)
 endif
+
+ifeq (,$(wildcard $(CARMEN_HOME)/bin/atego1730_iracemapolis/semi_reboque_graneleiro.obj))
+	$(info )
+	$(info **************** **********************************************************************************************)
+	$(info *	Dowloading 3D model semi_reboque_graneleiro.obj (The semi_trailer))
+	$(info ***************************************************************************************************************)
+	$(info )
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/16Z3DbrEDuOOn3X0CFvHzTChMab6GLD33/view?usp=sharing $(CARMEN_HOME)/bin/atego1730_iracemapolis/semi_reboque_graneleiro.obj
+else
+
+	$(info * The semi_trailer 3D model already exists *)
+endif
+
