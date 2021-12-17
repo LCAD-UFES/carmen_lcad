@@ -474,7 +474,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 		return (predicted_beta);
 	}
 
-	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
+//	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 
 	free(points_position_with_respect_to_car);
 	free(points_position_with_respect_to_car_estimated);
