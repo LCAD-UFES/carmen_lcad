@@ -451,7 +451,6 @@ simulate_car_from_parameters(TrajectoryDimensions &td,
 	carmen_robot_and_trailer_path_point_t furthest_point;
 	td.dist = get_max_distance_in_path(path, furthest_point);	// @@@ Alberto: Por que nao o ultimo do ponto do path?
 	td.theta = atan2(furthest_point.y, furthest_point.x);
-	td.beta = furthest_point.beta;
 	td.d_yaw = furthest_point.theta;
 	td.phi_i = tcp.k[0];
 	td.v_i = v0;
@@ -860,6 +859,29 @@ get_beta_activation_factor()
 
 
 double
+compute_semi_trailer_to_goal_distance(vector<carmen_robot_and_trailer_path_point_t> path, TrajectoryDimensions *target_td)
+{
+	if (path.size() == 0)
+		return (0.0);
+
+	carmen_robot_and_trailer_path_point_t robot_pose = path[path.size() - 1];
+	carmen_robot_and_trailer_pose_t expected_robot_pose = target_td->goal_pose;
+
+	carmen_point_t semi_trailer_pose, expected_semi_trailer_pose;
+
+	semi_trailer_pose.x = robot_pose.x - GlobalState::semi_trailer_config.M * cos(robot_pose.theta) - GlobalState::semi_trailer_config.d * cos(robot_pose.theta - robot_pose.beta);
+	semi_trailer_pose.y	= robot_pose.y - GlobalState::semi_trailer_config.M * sin(robot_pose.theta) - GlobalState::semi_trailer_config.d * sin(robot_pose.theta - robot_pose.beta);
+
+	expected_semi_trailer_pose.x = expected_robot_pose.x - GlobalState::semi_trailer_config.M * cos(expected_robot_pose.theta) - GlobalState::semi_trailer_config.d * cos(expected_robot_pose.theta - expected_robot_pose.beta);
+	expected_semi_trailer_pose.y = expected_robot_pose.y - GlobalState::semi_trailer_config.M * sin(expected_robot_pose.theta) - GlobalState::semi_trailer_config.d * sin(expected_robot_pose.theta - expected_robot_pose.beta);
+
+	double semi_trailer_to_goal_distance = DIST2D(semi_trailer_pose, expected_semi_trailer_pose);
+
+	return (semi_trailer_to_goal_distance);
+}
+
+
+double
 mpp_optimization_function_f(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
@@ -877,13 +899,20 @@ mpp_optimization_function_f(const gsl_vector *x, void *params)
 		(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 2.0) +
 		(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
 
+	double semi_trailer_to_goal_distance = 0.0;
+	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+		semi_trailer_to_goal_distance = compute_semi_trailer_to_goal_distance(path, my_params->target_td);
+//		semi_trailer_to_goal_distance = carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta)) *
+//				carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta));
+
 	double w2_activation_factor = get_distance_dependent_activation_factor(2.0, my_params);
 	double result = sqrt(
 				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 //				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 				w2_activation_factor * 4.0 * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index
-				);
+				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance);
 
 	return (result);
 }
@@ -960,14 +989,22 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 
 	double w2_activation_factor = get_distance_dependent_activation_factor(2.0, my_params);
 	double w4_activation_factor = get_distance_dependent_activation_factor(6.0, my_params);
+
+	double semi_trailer_to_goal_distance = 0.0;
+	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+		semi_trailer_to_goal_distance = compute_semi_trailer_to_goal_distance(path, my_params->target_td);
+//		semi_trailer_to_goal_distance = carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta)) *
+//				carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta));
+
 	double result = sqrt(
 				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index +
 				w2_activation_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 				w4_activation_factor * GlobalState::w4 * path_to_lane_distance + // já é quandrática
 //				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
-				GlobalState::w5 * proximity_to_obstacles); // +
-//				GlobalState::w6 * tcp.sf * tcp.sf);
+				GlobalState::w5 * proximity_to_obstacles +
+				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance);
 
 //	if (print_ws)
 //	{
@@ -1301,6 +1338,9 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 #ifdef PUBLISH_PLAN_TREE
 	tcp_copy = tcp_complete;
 #endif
+
+	if (!tcp_complete.valid)
+		return (tcp_complete);
 
 	// A funcao acima soh usa tcps com tres nos
 	get_tcp_with_n_knots(tcp_complete, 4);

@@ -725,15 +725,17 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailer_pose_t *loca
 	td.v_i = last_odometry.v;
 
 	if (GlobalState::semi_trailer_config.type == 0)
-	{
-		td.beta = 0.0;
 		td.beta_i = 0.0;
-	}
 	else
-	{
-		td.beta = goal_pose->beta;
 		td.beta_i = localizer_pose->beta;
-	}
+
+	SE2 robot_pose(localizer_pose->x, localizer_pose->y,localizer_pose->theta);
+	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
+	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
+	td.goal_pose.x = goal_in_car_reference[0];
+	td.goal_pose.y = goal_in_car_reference[1];
+	td.goal_pose.theta = goal_in_car_reference[2];
+	td.goal_pose.beta = goal_pose->beta;
 
 	return (td);
 }
@@ -792,6 +794,8 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 		}
 
 		paths[0] = path;
+//		printf("%lf   %lf\n", path[path.size() - 1].beta, goal_pose->beta);
+		fflush(stdout);
 
 		previous_good_tcp = otcp;
 		last_timestamp = path_goals_and_annotations_message->timestamp;

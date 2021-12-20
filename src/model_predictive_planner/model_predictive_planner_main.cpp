@@ -668,8 +668,6 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list[0].theta);
 	goal_pose.beta = msg->goal_list[0].beta;
 
-//	printf("@target_v %lf\n", msg->goal_list[0].v);
-
 	if (GlobalState::reverse_driving_flag)
 	{
 		if (msg->goal_list[0].v < 0.0)

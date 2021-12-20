@@ -86,13 +86,13 @@ typedef struct
 
 typedef struct
 {
-	double dist;	// Distance traveled in polar coordinates
-	double theta;	// Angle in polar coordinates
-	double beta;	// Angle of the trailer with respect to the robot
-	double d_yaw;	// Displacement in yaw
-	double phi_i;	// Initial steering wheel angle
-	double beta_i;	// Initial semitrailer beta angle
-	double v_i;		// Initial velocity
+	double dist;		// Distance traveled in polar coordinates
+	double theta;		// Angle in polar coordinates
+	double d_yaw;		// Displacement in yaw
+	double phi_i;		// Initial steering wheel angle
+	double beta_i;		// Initial semitrailer beta angle
+	double v_i;			// Initial velocity
+	carmen_robot_and_trailer_pose_t goal_pose;	// Goal pose in car coordinates
 	TrajectoryControlParameters control_parameters;
 } TrajectoryDimensions;
 

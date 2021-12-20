@@ -53,13 +53,11 @@ sample_motion_model(carmen_fused_odometry_particle x_t_1, carmen_fused_odometry_
 
 	// This will limit the wheel position to the maximum angle the car can turn
 	if (x_t.state.phi > fused_odometry_parameters->maximum_phi)
-	{
 		x_t.state.phi = fused_odometry_parameters->maximum_phi;
-	}
 	else if (x_t.state.phi < -fused_odometry_parameters->maximum_phi)
-	{
 		x_t.state.phi = -fused_odometry_parameters->maximum_phi;
-	}
+
+	x_t.state.beta = 0.0;
 
 	//sensor_vector_imu imu_zt = create_sensor_vector_imu(xsens_matrix_message);
 	//x_t.state.pose.orientation.roll = imu_zt.orientation.roll;
@@ -126,6 +124,8 @@ sample_motion_model_simple(carmen_fused_odometry_particle x_t_1, carmen_fused_od
 	x_t.state.phi = ut.phi + carmen_gaussian_random(0.0,
 					fused_odometry_parameters->phi_noise_phi * ut.phi * ut.phi +
 					fused_odometry_parameters->phi_noise_velocity * ut.v * ut.v);
+
+	x_t.state.beta = 0.0;
 
 	x_t.state.ang_velocity.roll = 0.0;
 	x_t.state.ang_velocity.yaw = 0.0;
@@ -226,7 +226,6 @@ prediction(double timestamp, carmen_fused_odometry_parameters *fused_odometry_pa
 		xt[i] = sample_motion_model(xt[i], ut, dt, fused_odometry_parameters);
 		xt[i].state.timestamp = timestamp;
 	}
-
 }
 
 

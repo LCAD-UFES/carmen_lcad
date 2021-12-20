@@ -4,7 +4,7 @@
 
 
 carmen_point_t
-publish_starting_pose(carmen_point_t pose)
+publish_starting_pose(carmen_point_t pose, double beta)
 {
 	carmen_point_t std;
 
@@ -12,7 +12,7 @@ publish_starting_pose(carmen_point_t pose)
 	std.y = 0.001;
 	std.theta = carmen_degrees_to_radians(0.01);
 
-	carmen_localize_ackerman_initialize_gaussian_command(pose, std, 0.0);
+	carmen_localize_ackerman_initialize_gaussian_command(pose, std, beta);
 
 	return pose;
 }
@@ -42,8 +42,12 @@ main(int argc, char **argv)
 				"Time to wait before publishing the initial pose\n", argv[0]);
 		exit(-1);
 	}
-	if (argc == 5)
+	if (argc >= 5)
 		time = atoi(argv[4]);
+
+	double beta = 0.0;
+	if (argc == 6)
+		beta = atof(argv[5]);
 
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
@@ -55,7 +59,7 @@ main(int argc, char **argv)
 	sleep(time);
 	for (int i = 0; i < 2; i++)
 	{
-		publish_starting_pose(pose);
+		publish_starting_pose(pose, beta);
 		carmen_ipc_sleep(0.1);
 //		usleep(10000);
 	}

@@ -69,6 +69,7 @@ class carmen_timestamp_index_element
 		double angular_velocity_pitch;
 		double angular_velocity_yaw;
 		double phi;
+		double beta;
 		double timestamp;
 		long rddf_offset;
 		long rddf_data_length;
@@ -117,7 +118,7 @@ class carmen_timestamp_index
 			double roll, double pitch, double yaw,
 			double origin_x, double origin_y, double origin_z,
 			double velocity_x, double velocity_y, double velocity_z,
-			double angular_velocity_roll, double angular_velocity_pitch, double angular_velocity_yaw, double phi,
+			double angular_velocity_roll, double angular_velocity_pitch, double angular_velocity_yaw, double phi, double beta,
 			double timestamp, long rddf_file_offset, long rddf_data_length, int annotation);
 		void add_waypoint(carmen_timestamp_index_element waypoint);
 		void remove(int begin, int end);
@@ -150,7 +151,7 @@ void carmen_rddf_index_save(char *rddf_filename);
 long find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation,
 		double timestamp_ignore_neighborhood = 0, int search_only_in_the_begining = 0, double v = 0.0, int test_v = 0);
 carmen_timestamp_index* get_timestamp_index();
-carmen_robot_and_trailer_traj_point_t create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double yaw);
+carmen_robot_and_trailer_traj_point_t create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double beta, double yaw);
 
 void carmen_rddf_index_clear();
 
