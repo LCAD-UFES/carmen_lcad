@@ -56,7 +56,7 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailer_traj_point_t rob
 		double full_time_interval, double *distance_traveled, double delta_t,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
 {
-//	delta_t = delta_t / 10.0;
+	delta_t = delta_t / 10.0;
 	double a = (target_v - robot_state.v) / full_time_interval;
 	int n = floor(full_time_interval / delta_t);
 	double remaining_time = full_time_interval - ((double) n * delta_t);
