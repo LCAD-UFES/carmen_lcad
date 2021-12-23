@@ -1,4 +1,19 @@
 #include "car_model.h"
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_odeiv2.h>
+
+
+typedef struct
+{
+	double L;
+	double understeer_coeficient;
+	double max_phi;
+	double d;
+	double M;
+	double a;
+	double phi;
+} ODEParameters;
 
 
 double
@@ -15,6 +30,88 @@ compute_semi_trailer_beta(carmen_robot_and_trailer_traj_point_t robot_and_traile
 						   (semi_trailer_config.M / (L * semi_trailer_config.d)) * cos(robot_and_trailer_traj_point.beta) * tan(robot_and_trailer_traj_point.phi));
 
 	return (beta);
+}
+
+
+int
+ode_func(double t, const double x[], double dxdt[], void *params)
+{
+	(void)(t); /* avoid unused parameter warning */
+
+	ODEParameters *my_params = (ODEParameters *) params;
+
+	double L = my_params->L;
+	double d = my_params->d;
+	double M = my_params->M;
+	double a = my_params->a;
+
+	double phi = my_params->phi;
+
+	double v = x[4];
+	double theta = x[2];
+	dxdt[0] = v * cos(theta);
+	dxdt[1] = v * sin(theta);
+	dxdt[2] = (v / L) * tan(phi);
+
+	double beta = x[3];
+	dxdt[3] = dxdt[2] - v * (sin(beta) / d + (M / (L * d)) * cos(beta) * tan(phi));
+	dxdt[4] = a;
+	dxdt[5] = v;
+
+	return (GSL_SUCCESS);
+}
+
+
+double
+ode_solver(carmen_robot_and_trailer_traj_point_t *robot_state, ODEParameters params, double delta_t)
+{
+#define SYSTEM_SIZE	6
+	static bool first_time = true;
+	const gsl_odeiv2_step_type *T = gsl_odeiv2_step_rkf45;
+	static gsl_odeiv2_step *s;
+
+	if (first_time)
+	{
+		s = gsl_odeiv2_step_alloc(T, SYSTEM_SIZE);
+
+		first_time = false;
+	}
+
+	gsl_odeiv2_system sys = { ode_func, NULL, SYSTEM_SIZE, &params };
+
+	double x[SYSTEM_SIZE] = { robot_state->x, robot_state->y, robot_state->theta, robot_state->beta, robot_state->v, 0.0 };
+	double xerr[SYSTEM_SIZE];
+
+	gsl_odeiv2_step_apply(s, 0.0, delta_t, x, xerr, NULL, NULL, &sys);
+	//	printf("%lf %lf %lf %lf %lf %lf %lf\n", xerr[0], xerr[1], xerr[2], xerr[3], xerr[4], xerr[5], xerr[6]);
+//	gsl_odeiv2_step_free(s);
+
+	robot_state->x = x[0];
+	robot_state->y = x[1];
+	robot_state->theta = x[2];
+	robot_state->beta = x[3];
+	robot_state->v = x[4];
+
+	return (x[5]);
+}
+
+
+double
+predict_next_pose_step_new(carmen_robot_and_trailer_traj_point_t *robot_state, double target_v, double delta_t,
+		double &achieved_curvature, const double &desired_curvature, double max_curvature_change, ODEParameters params)
+{
+	double delta_curvature = fabs(achieved_curvature - desired_curvature);
+	double command_curvature_signal = (achieved_curvature < desired_curvature) ? 1.0 : -1.0;
+
+	achieved_curvature = achieved_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
+	robot_state->phi = carmen_get_phi_from_curvature(achieved_curvature, robot_state->v, params.understeer_coeficient, params.L);
+	params.phi = robot_state->phi = carmen_clamp(-params.max_phi, robot_state->phi, params.max_phi);
+
+	double distance_traveled = ode_solver(robot_state, params, delta_t);
+
+	robot_state->v = target_v;
+
+	return (distance_traveled);
 }
 
 
@@ -47,7 +144,7 @@ predict_next_pose_step(carmen_robot_and_trailer_traj_point_t *new_robot_state, d
 
 	new_robot_state->v = target_v;
 
-	return sqrt(move_x * move_x + move_y * move_y);
+	return (sqrt(move_x * move_x + move_y * move_y));
 }
 
 
@@ -56,7 +153,7 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailer_traj_point_t rob
 		double full_time_interval, double *distance_traveled, double delta_t,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
 {
-	delta_t = delta_t / 10.0;
+//	delta_t = delta_t / 10.0;
 	double a = (target_v - robot_state.v) / full_time_interval;
 	int n = floor(full_time_interval / delta_t);
 	double remaining_time = full_time_interval - ((double) n * delta_t);
@@ -82,8 +179,63 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailer_traj_point_t rob
 
 	if (remaining_time > 0.0)
 	{
-		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, a, delta_t,
+		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, a, remaining_time,
 				new_curvature, curvature, max_curvature_change, robot_config, semi_trailer_config);
+
+		if (distance_traveled)
+			*distance_traveled += dist_walked;
+	}
+
+	achieved_robot_state.theta = carmen_normalize_theta(achieved_robot_state.theta);
+	robot_state = achieved_robot_state;
+
+	return (achieved_robot_state);
+}
+
+
+carmen_robot_and_trailer_traj_point_t
+carmen_libcarmodel_recalc_pos_ackerman_new(carmen_robot_and_trailer_traj_point_t robot_state, double target_v, double target_phi,
+		double full_time_interval, double *distance_traveled, double delta_t,
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+{
+	delta_t = delta_t / 10.0;
+	double a = (target_v - robot_state.v) / full_time_interval;
+	int n = floor(full_time_interval / delta_t);
+	double remaining_time = full_time_interval - ((double) n * delta_t);
+	carmen_robot_and_trailer_traj_point_t achieved_robot_state = robot_state; // achieved_robot_state eh computado iterativamente abaixo a partir do estado atual do robo
+
+	double curvature = carmen_get_curvature_from_phi(target_phi, target_v,
+			robot_config.understeer_coeficient,	robot_config.distance_between_front_and_rear_axles);
+
+	double new_curvature = carmen_get_curvature_from_phi(achieved_robot_state.phi, achieved_robot_state.v,
+			robot_config.understeer_coeficient,	robot_config.distance_between_front_and_rear_axles);
+
+	double max_curvature_change = robot_config.maximum_steering_command_rate * delta_t;
+
+	ODEParameters params;
+
+	params.L = robot_config.distance_between_front_and_rear_axles;
+	params.understeer_coeficient = robot_config.understeer_coeficient;
+	params.max_phi = robot_config.max_phi;
+
+	params.d = semi_trailer_config.d;
+	params.M = semi_trailer_config.M;
+
+	params.a = a;
+
+	for (int i = 0; i < n; i++)
+	{
+		double dist_walked = predict_next_pose_step_new(&achieved_robot_state, target_v, delta_t,
+				new_curvature, curvature, max_curvature_change, params);
+
+		if (distance_traveled)
+			*distance_traveled += dist_walked;
+	}
+
+	if (remaining_time > 0.0)
+	{
+		double dist_walked = predict_next_pose_step_new(&achieved_robot_state, target_v, remaining_time,
+				new_curvature, curvature, max_curvature_change, params);
 
 		if (distance_traveled)
 			*distance_traveled += dist_walked;
@@ -328,37 +480,3 @@ predict_next_pose_during_main_rrt_planning_(const Robot_State &robot_state, cons
 
 	return achieved_robot_state;
 }
-
-
-carmen_robot_and_trailer_traj_point_t
-carmen_libcarmodel_recalc_pos_ackerman_new(carmen_robot_and_trailer_traj_point_t robot_state, double target_v, double target_phi,
-		double full_time_interval, double *distance_traveled, double delta_t,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
-{
-	Robot_State robot_state_;
-	robot_state_.pose.x = robot_state.x;
-	robot_state_.pose.y = robot_state.y;
-	robot_state_.pose.theta = robot_state.theta;
-	robot_state_.pose.beta = robot_state.beta;
-	robot_state_.v_and_phi.v = target_v;
-	robot_state_.v_and_phi.phi = target_phi;
-
-	Command requested_command;
-	requested_command.v = target_v;
-	requested_command.phi = target_phi;
-
-	robot_state_ = predict_next_pose_during_main_rrt_planning_(robot_state_, requested_command,
-			full_time_interval, distance_traveled, delta_t,
-			robot_config, semi_trailer_config);
-
-	robot_state.x = robot_state_.pose.x;
-	robot_state.y = robot_state_.pose.y;
-	robot_state.theta = robot_state_.pose.theta;
-	robot_state.beta = robot_state_.pose.beta;
-	robot_state.v = robot_state_.v_and_phi.v;
-	robot_state.phi = robot_state_.v_and_phi.phi;
-
-	return (robot_state);
-}
-
-

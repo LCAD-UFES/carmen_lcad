@@ -332,7 +332,7 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
-				&distance_traveled, delta_t, GlobalState::robot_config, GlobalState::semi_trailer_config);
+				&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
 		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
@@ -831,20 +831,20 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 
 
 double
-get_distance_dependent_activation_factor(double threshold, ObjectiveFunctionParams *my_params)
+get_distance_dependent_activation_factor(double threshold __attribute__((unused)), ObjectiveFunctionParams *my_params __attribute__((unused)))
 {
 	double activation_factor = 1.0;
 	return (activation_factor);
 
-	if (my_params->target_td->dist < threshold)
-	{
-		if (my_params->target_td->dist > (threshold - 1.0))
-			activation_factor = my_params->target_td->dist - (threshold - 1.0);
-		else
-			activation_factor = 0.0;
-	}
-
-	return (activation_factor);
+//	if (my_params->target_td->dist < threshold)
+//	{
+//		if (my_params->target_td->dist > (threshold - 1.0))
+//			activation_factor = my_params->target_td->dist - (threshold - 1.0);
+//		else
+//			activation_factor = 0.0;
+//	}
+//
+//	return (activation_factor);
 }
 
 

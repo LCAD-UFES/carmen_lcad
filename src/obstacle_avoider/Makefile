@@ -1,10 +1,14 @@
 include ../Makefile.conf
 
+MODULE_NAME = OBSTACLE AVOIDER DAEMON
+MODULE_COMMENT = Module integrating all robot sensors and configuration
+
 # voice commands
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvoice
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models # -fopenmp
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/
+LFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/Catch
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models # -fopenmp
@@ -12,13 +16,10 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models # -fopenmp
 LFLAGS += -lglobal -lgeometry -lparam_interface -lipc -llocalize_ackerman_interface -lmap_interface -lrobot_ackerman_interface \
 		-lmap_server_interface -lconventional_ackerman -lbase_ackerman_interface -lbehavior_selector_interface -lgrid_mapping \
 		-lmap_io -lmap_util -lmap_interface -lmapper_interface -lprob_models  -llocalize_ackerman_interface -lrotation_geometry \
-		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface -ltask_manager_interface
+		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface -ltask_manager_interface -lgsl -lgslcblas
 		
 #CFLAGS += -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -fopenmp -funroll-all-loops
 CFLAGS += -std=c99
-
-MODULE_NAME = OBSTACLE_AVOIDER_DAEMON
-MODULE_COMMENT = Module integrating all robot sensors and configuration
 
 SOURCES = obstacle_avoider.c obstacle_avoider_interface.c \
 	obstacle_avoider_main.c collision_detection.c obstacle_avoider_test.c 
