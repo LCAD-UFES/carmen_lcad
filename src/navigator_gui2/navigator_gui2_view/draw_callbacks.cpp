@@ -722,6 +722,8 @@ void on_comboPredefinedRoute_changed(GtkWidget *widget __attribute__((unused)),
 void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
+	global_gui->offroad_planner_plan = NULL;
+
 	if (global_gui->final_goal_placed_and_oriented == 1)
 	{
 		carmen_point_t final_goal_pose;

@@ -831,6 +831,11 @@ namespace View
 				sprintf(buffer, "Offroad Planner State: %s", print_offroad_planner_feedback(offroad_planner_plan->offroad_planner_feedback));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
 			}
+			else
+			{
+				sprintf(buffer, "Offroad Planner State: ");
+				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
+			}
 
 			if (route_planner_route)
 			{
