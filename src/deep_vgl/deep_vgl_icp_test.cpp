@@ -664,7 +664,7 @@ void velodyne_partial_scan_handler(char *path)
 
 	int ret = process_data(read_pointcloud_file, pred_pointcloud_file, &delta);
 	// printf("Deu certo? %d\n", ret);
-	printf("confidence %lf, %lf %lf - %lf %lf \n", confidence, pose.x, pose.y, delta.x, delta.y);
+	printf("prediction: %lf %lf -> ICP: %lf %lf \n", pose.x, pose.y, delta.x, delta.y);
 
 	/**
 	 * FIM do GICP
