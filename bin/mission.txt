@@ -3,9 +3,9 @@
 # set final goal 7757732.73, -363563.71, -0.138
 
 # LCAD2
-	set course to  7757674.17, -363607.51, -0.787 
-	go   # fica nesta task ateh o fim do curso 
-	stop # tira de modo autonomo
+set course to 7757674.47, -363607.51, -0.787 
+go after set course to 7757674.47, -363607.51, -0.7   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
 
 # Predio Eletrica logo depois do LCAD2
 set course to 7757732.73, -363563.71, -0.138
@@ -43,18 +43,18 @@ go after set course to 7757417.94, -364068.89, 2.223  # fica nesta task ateh o f
 stop # tira de modo autonomo
 
 # Escadaria do Teatro
-set course to 7757266.70, -364084.30, 1.767
-go after set course to 7757266.70, -364084.30, 1.767  # fica nesta task ateh o fim do curso 
+set course to 7757259.47, -364086.05, 2.979
+go after set course to 7757259.47, -364086.05, 2.979  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento Cinema
-set course to 7757093.29, -364057.97, -1.718 
+set course to 7757093.29, -364057.00, -1.718 
 go after set course to 7757093.29, -364057.97, -1.718  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento Caixa
-set course to 7756960.55, -363732.84, 1.435
-go after set course to 7756960.55, -363732.84, 1.435  # fica nesta task ateh o fim do curso 
+set course to 7756995.11, -363835.09, 2.236
+go after set course to 7756995.11, -363835.09, 2.236  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 # Estacionamento CCJE
