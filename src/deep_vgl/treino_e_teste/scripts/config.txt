@@ -1,5 +1,5 @@
 #!/bin/bash
-image_path="/dados/ternium/"
-output_path="/dados/ternium_gt/"
+image_path="/dados/ufes/"
+output_path="/dados/ufes_lidar_5_1/"
 base_offset=5
-live_offset=0.5
+live_offset=1
