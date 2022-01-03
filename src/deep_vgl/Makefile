@@ -57,21 +57,19 @@ CFLAGS += `pkg-config --cflags opencv` -I/usr/include/gflags
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface -lcamera_drivers -lvelodyne_interface
 LFLAGS += -fPIC -lgflags -ldarknet4 -lstdc++ `pkg-config --libs opencv` 
 
-SOURCES = deep_vgl-test.cpp deep_vgl-eval.cpp deep_vgl_main.cpp convert_lidar.cpp deep_vgl_icp_test.cpp
+SOURCES = deep_vgl-test.cpp deep_vgl-eval.cpp deep_vgl_main.cpp deep_vgl_icp_test.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = deep_vgl-test deep_vgl-eval deep_vgl convert_lidar deep_vgl_icp_test
+PUBLIC_BINARIES = deep_vgl-test deep_vgl-eval deep_vgl deep_vgl_icp_test
 
-TARGETS = darknet deep_vgl-test deep_vgl-eval deep_vgl convert_lidar deep_vgl_icp_test
+TARGETS = darknet deep_vgl-test deep_vgl-eval deep_vgl deep_vgl_icp_test
 
 deep_vgl-test: deep_vgl-test.o
 
 deep_vgl-eval: deep_vgl-eval.o
 
 deep_vgl: deep_vgl_main.o
-
-convert_lidar: convert_lidar.o
 
 deep_vgl_icp_test: deep_vgl_icp_test.o
 
