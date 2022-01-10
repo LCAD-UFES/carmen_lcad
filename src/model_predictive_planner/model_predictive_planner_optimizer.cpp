@@ -331,8 +331,13 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 		command.v = v0 + tcp.a * t;
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 
-		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
-				&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
+		if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+			(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
+					&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
+		else
+			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
+					&distance_traveled, delta_t / 3.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
 		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
@@ -1313,10 +1318,17 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 	else
 		params.use_lane = false;
 
+	int max_iterations;
+	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+		max_iterations = 150;
+	else
+		max_iterations = 50;
+
 	TrajectoryControlParameters tcp_seed;
 	if (!previous_tcp.valid)
 	{
-		get_optimization_params(params, target_v, &tcp_seed, &target_td, 2.0, 150, mpp_optimization_function_f);
+		get_optimization_params(params, target_v, &tcp_seed, &target_td, 2.0, max_iterations, mpp_optimization_function_f);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 		tcp_seed = get_n_knots_tcp_from_detailed_lane(detailed_lane, 3,
 				target_td.v_i, target_td.phi_i, target_td.d_yaw, tcp_seed.a,  tcp_seed.s, tcp_seed.tt);	// computa tcp com tres nos
@@ -1324,7 +1336,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 	else
 	{
 		tcp_seed = reduce_tcp_to_3_knots(previous_tcp);
-		get_optimization_params(params, target_v, &tcp_seed, &target_td, 2.0, 150, mpp_optimization_function_f);
+		get_optimization_params(params, target_v, &tcp_seed, &target_td, 2.0, max_iterations, mpp_optimization_function_f);
 		compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 	}
 
@@ -1344,7 +1356,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 
 	// A funcao acima soh usa tcps com tres nos
 	get_tcp_with_n_knots(tcp_complete, 4);
-	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, 150, mpp_optimization_function_g);
+	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, max_iterations, mpp_optimization_function_g);
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
 
 //	plot_phi_profile(tcp_complete);
