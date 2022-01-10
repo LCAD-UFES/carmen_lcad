@@ -121,8 +121,8 @@ bool global_localization_requested = false;
 
 static carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
 
-static int g_velodyne_single_ray = 8;
-static int g_last_velodyne_single_ray = 8;
+static int g_velodyne_single_ray = 20;
+static int g_last_velodyne_single_ray = 20;
 
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
@@ -206,8 +206,8 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 	{
 		first_time = false;
 		gnuplot_pipe = popen("taskset -c 0 gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set xrange [-2:2]\n");
-		fprintf(gnuplot_pipe, "set yrange [0:4]\n");
+		fprintf(gnuplot_pipe, "set xrange [-5:5]\n");
+		fprintf(gnuplot_pipe, "set yrange [0:7]\n");
 		fprintf(gnuplot_pipe, "set size square\n");
 		fprintf(gnuplot_pipe, "set size ratio -1\n");
 	}
@@ -270,7 +270,7 @@ compute_points_with_rspect_to_king_pin(carmen_vector_3D_t *points_position_with_
 	{
 		if (velodyne_message->partial_scan[i].distance[j] != 0)
 		{
-			points_position_with_respect_to_car[num_valid_points] = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle),
+			points_position_with_respect_to_car[num_valid_points] = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + 180),
 					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 500.0,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
 
@@ -315,7 +315,7 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	{
 		double angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
 		double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
-		if ((carmen_radians_to_degrees(angle) > -45.0) && (carmen_radians_to_degrees(angle) < 45.0) && (distance_to_king_pin < 1.0))
+		if ((carmen_radians_to_degrees(angle) > -89.0) && (carmen_radians_to_degrees(angle) < 89.0) && (distance_to_king_pin < 7.0))
 		{
 			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
 			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
@@ -474,7 +474,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 		return (predicted_beta);
 	}
 
-//	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
+	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 
 	free(points_position_with_respect_to_car);
 	free(points_position_with_respect_to_car_estimated);
