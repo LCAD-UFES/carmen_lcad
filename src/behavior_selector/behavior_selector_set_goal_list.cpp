@@ -72,10 +72,10 @@ get_current_algorithm()
 		break;
 
 	case BEHAVIOR_SELECTOR_PARK:
-		current_algorithm = parking_planner;
-		break;
-
 	case BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE:
+	case BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER:
+	case BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER:
+	case BEHAVIOR_SELECTOR_GET_ENGAGE_POSE:
 		current_algorithm = parking_planner;
 		break;
 
@@ -497,10 +497,10 @@ behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, 
 		break;
 
 	case BEHAVIOR_SELECTOR_PARK:
-		parking_planner = algorithm;
-		break;
-
 	case BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE:
+	case BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER:
+	case BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER:
+	case BEHAVIOR_SELECTOR_GET_ENGAGE_POSE:
 		parking_planner = algorithm;
 		break;
 
