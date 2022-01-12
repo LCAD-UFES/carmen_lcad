@@ -992,6 +992,7 @@ read_parameters(int argc, char **argv)
 
 		{(char *) "robot",				 (char *) "max_centripetal_acceleration",								CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,						 1, NULL},
 		{(char *) "robot",				 (char *) "max_velocity_reverse",										CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,									 1, NULL},
+		{(char *) "robot",				 (char *) "parking_speed_limit",										CARMEN_PARAM_DOUBLE, &GlobalState::param_parking_speed_limit,									 1, NULL},
 
 		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.type,								 0, NULL},
 		{(char *) "rddf",				 (char *) "source_tracker",												CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,								 0, NULL},
