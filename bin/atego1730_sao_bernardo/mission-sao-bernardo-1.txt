@@ -1,10 +1,20 @@
-set route planner graph to data/graphs/graph-rddf-log_portocel-20210617-3.gr
-set maximum speed to MAX_SPEED
+#set route planner graph to data/graphs/graph-rddf-log_portocel-20210617-3.gr
+#set maximum speed to MAX_SPEED
 
+#set course to 7382389.51, -337688.09, -1.035 
+#go after set course to 7382389.51, -337688.09, -1.035   # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
 
-# Stop marcado no chão antes da entrada do estacionamento sul do Teatro da Ufes
-set course to 7806055.32, -388835.0, -2.58
-go after set course to 7806055.32, -388835.0, -2.58   # fica nesta task ateh o fim do curso 
+set course to 7382385.49, -337693.44, -1.073
+go after set course to 7382385.49, -337693.44, -1.073   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+set course to 7382495.41, -337643.25, 2.143  
+go after set course to 7382495.41, -337643.25, 2.143    # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+park at 7382478.89, -337668.20, 0.669
+go after park at 7382478.89, -337668.20, 0.669  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 announce "Mission completed!"
