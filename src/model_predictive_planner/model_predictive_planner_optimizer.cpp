@@ -1331,7 +1331,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 
 	int max_iterations;
 	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
-		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
+		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK))
 		max_iterations = 150;
 	else
 		max_iterations = 50;

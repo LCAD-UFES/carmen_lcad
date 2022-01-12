@@ -798,7 +798,8 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 
 	carmen_behavior_selector_task_t current_task = behavior_selector_get_task();
 	if ((current_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
-		(current_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER))
+		(current_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+		(current_task == BEHAVIOR_SELECTOR_PARK))
 	{
 		distance_between_waypoints /= 5.0;
 		change_goal_distance /= 5.0;
