@@ -315,7 +315,7 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	{
 		double angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
 		double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
-		if ((carmen_radians_to_degrees(angle) > -89.0) && (carmen_radians_to_degrees(angle) < 89.0) && (distance_to_king_pin < 7.0))
+		if ((angle > (-1.2 * semi_trailer_config.max_beta)) && (angle < (1.2 * semi_trailer_config.max_beta)) && (distance_to_king_pin < 7.0))
 		{
 			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
 			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
