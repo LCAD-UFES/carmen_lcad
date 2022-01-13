@@ -77,4 +77,11 @@ int
 carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment,
 		carmen_robot_and_trailer_traj_point_t point);
 
+int
+smooth_rddf_using_conjugate_gradient(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses_back);
+
+void
+plot_state(carmen_robot_and_trailer_traj_point_t *path, int num_points, carmen_robot_and_trailer_traj_point_t *path2, int num_points2, bool display);
+
 #endif

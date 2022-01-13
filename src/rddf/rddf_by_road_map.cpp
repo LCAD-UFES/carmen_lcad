@@ -169,12 +169,18 @@ calculate_theta_and_phi(carmen_robot_and_trailer_traj_point_t *poses_ahead, int 
 		carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses_back)
 {
 	compute_theta(poses_ahead, num_poses_ahead);
-	poses_back[0].theta = poses_ahead[0].theta;
-	calculate_theta_back(poses_back, num_poses_back);
+	if (poses_back)
+	{
+		poses_back[0].theta = poses_ahead[0].theta;
+		calculate_theta_back(poses_back, num_poses_back);
+	}
 
 	calculate_phi_ahead(poses_ahead, num_poses_ahead);
-	poses_back[0].phi = poses_ahead[0].phi;
-	calculate_phi_back(poses_back, num_poses_back);
+	if (poses_back)
+	{
+		poses_back[0].phi = poses_ahead[0].phi;
+		calculate_phi_back(poses_back, num_poses_back);
+	}
 }
 
 
@@ -411,7 +417,9 @@ smooth_rddf_using_conjugate_gradient(carmen_robot_and_trailer_traj_point_t *pose
 	it++;
 	for (i = (num_poses_back - 2); i > 0; i--, it++) // skip first and last poses
 		poses_back[i] = *it;
-	poses_back[0] = *it;
+
+	if (poses_back)
+		poses_back[0] = *it;
 
 	for (i = 0; i < num_poses_ahead - 1; i++, it++) // skip last pose
 		poses_ahead[i] = *it;
@@ -437,6 +445,8 @@ plot_state(carmen_robot_and_trailer_traj_point_t *path, int num_points, carmen_r
 		fprintf(gnuplot_pipeMP, "set xlabel 'x'\n");
 		fprintf(gnuplot_pipeMP, "set ylabel 'y'\n");
 		fprintf(gnuplot_pipeMP, "set tics out\n");
+		fprintf(gnuplot_pipeMP, "set size square\n");
+		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
 		first_time = false;
 	}
 
@@ -464,11 +474,23 @@ plot_state(carmen_robot_and_trailer_traj_point_t *path, int num_points, carmen_r
 
 	if (display)
 	{
-		fprintf(gnuplot_pipeMP, "plot "
-				"'./gnuplot_data_lane_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead normal'"
-				", './gnuplot_data_lane2_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back normal'"
-				", './gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead smooth'"
-				", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back smooth' axes x1y1\n");
+		if (path2)
+			fprintf(gnuplot_pipeMP, "plot "
+					"'./gnuplot_data_lane_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead normal'"
+					", './gnuplot_data_lane2_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back normal'"
+					", './gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead smooth'"
+					", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back smooth' axes x1y1\n");
+		else
+		{
+			if (num_points2 > 0)
+				fprintf(gnuplot_pipeMP, "plot "
+						"'./gnuplot_data_lane_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead normal'"
+						", './gnuplot_data_lane2_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back normal' axes x1y1\n");
+			else
+				fprintf(gnuplot_pipeMP, "plot "
+						"'./gnuplot_data_lane_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead normal' axes x1y1\n");
+		}
+
 		fflush(gnuplot_pipeMP);
 		dynamic_plot_state = abs(dynamic_plot_state) - 1;
 //		fprintf(gnuplot_pipeMP, "plot "

@@ -765,35 +765,47 @@ set_goal_velocity_according_to_obstacle_distance(carmen_robot_and_trailer_traj_p
 
 //@@@Vinicius Aqui o target_v nao pode ser negativo atrapalharah os teste de fmin.
 //Deve-se ter cuidado com a current_v, na funcao atual, nao faz diferenca o sinal, porem seria melhor usar fabs para garantir
+
+// Os globais abaixo sao necessarios por cause de plot_state() e smooth_rddf_using_conjugate_gradient()
+//double traffic_sign_curvature;
+//int traffic_sign_is_on;
+//int state_traffic_sign_code;
+//int traffic_sign_code;
+//double state_traffic_sign_curvature;
+
 double
 limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_robot_and_trailer_traj_point_t *goal,
-		carmen_robot_and_trailer_traj_point_t *path, int number_of_poses)
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, int number_of_poses)
 {
-	if (number_of_poses == 0)
+	if (number_of_poses < 6)
 		return (target_v);
 
-	double desired_v = 0.0;
-	double max_centripetal_acceleration = 0.0;
-	double dist_walked = 0.0;
-	double dist_to_max_curvature = 0.0;
-	double max_path_phi = 0.0;
-	double L = get_robot_config()->distance_between_front_and_rear_axles;
+	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+	memcpy(path, poses_ahead, number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
 
+	path = &(path[1]);
+	number_of_poses -= 1;
+	for (int i = 0; i < ((number_of_poses / 4) - 1); i++)
+		path[i] = path[i * 4];
+	number_of_poses /= 4;
+//	plot_state(path, number_of_poses, NULL, 0, true);
+
+	double L = get_robot_config()->distance_between_front_and_rear_axles;
 	for (int i = 0; i < (number_of_poses - 1); i++)
 	{
 		double delta_theta = carmen_normalize_theta(path[i + 1].theta - path[i].theta);
 		double l = DIST2D(path[i], path[i + 1]);
-		dist_walked += l;
-		if (l < 0.01)
-		{
-			path[i].phi = 0.0;
-			continue;
-		}
 		path[i].phi = atan(L * (delta_theta / l));
 	}
 
+	double dist_walked = 0.0;
+	double max_centripetal_acceleration = 0.0;
+	double dist_to_max_curvature = 0.0;
+	double max_path_phi = 0.0;
 	for (int i = 1; i < (number_of_poses - 1); i++)
 	{
+		double l = DIST2D(path[i], path[i - 1]);
+		dist_walked += l;
 		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
 		if (fabs(path[i].phi) > 0.001)
 		{
@@ -807,12 +819,13 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 			}
 		}
 	}
+//	printf("max_centripetal_acceleration %4.2lf, dist_to_max_curvature %5.2lf\n", max_centripetal_acceleration, dist_to_max_curvature);
 
 	double limited_target_v = target_v;
 	if (max_centripetal_acceleration > robot_max_centripetal_acceleration)
 	{
 		double radius_of_curvature = L / fabs(tan(max_path_phi));
-		desired_v = sqrt(robot_max_centripetal_acceleration * radius_of_curvature);
+		double desired_v = sqrt(robot_max_centripetal_acceleration * radius_of_curvature);
 		if (desired_v < target_v)
 		{
 			carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
@@ -1116,7 +1129,7 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 //			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
 //	}
 
-//	printf("who_set_the_goal_v %d\n", who_set_the_goal_v);
+//	printf("goal->v %5.2lf, who_set_the_goal_v %d\n", 3.6 * goal->v, who_set_the_goal_v);
 //	fflush(stdout);
 //	previous_v = goal->v;
 //	double distance_to_act_on_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, 0.0,
