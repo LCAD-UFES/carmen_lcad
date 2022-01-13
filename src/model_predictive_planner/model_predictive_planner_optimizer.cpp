@@ -1300,7 +1300,7 @@ reduce_tcp_to_3_knots(TrajectoryControlParameters previous_tcp)
 bool
 more_knots_required(TrajectoryDimensions target_td)
 {
-	double threshold_v = GlobalState::param_parking_speed_limit * 2.0;
+	double threshold_v = GlobalState::param_parking_speed_limit * 1.4;
 	if (target_td.v_i > threshold_v)
 		return (true);
 	else
@@ -1366,10 +1366,13 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 	if (!tcp_complete.valid)
 		return (tcp_complete);
 
-	if (more_knots_required(target_td))
-		get_tcp_with_n_knots(tcp_complete, 4);
-	else
+//	if (more_knots_required(target_td))
+	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
+		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK))
 		get_tcp_with_n_knots(tcp_complete, 3);
+	else
+		get_tcp_with_n_knots(tcp_complete, 4);
 
 	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, max_iterations, mpp_optimization_function_g);
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
