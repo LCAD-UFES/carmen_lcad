@@ -6,17 +6,27 @@ DeepMapper é um sistema que estima mapas de profundidade a partir de imagens de
 
 Os modelos pré-treinados com "AdaBins_nyu.pt" e "AdaBins_kitti.pt" estão disponíveis [aqui](https://1drv.ms/u/s!AuWRnPR26byUmfRxBQ327hc8eXse2Q?e=AQuYZw).
 * Baixe e salve-os na pasta "$CARMEN_HOME/src/deep_mapper/pretrained/", pois serão necessários para rodar a rede.
-
+* Também é possível baixar através do comando make download através do gdown.pl.
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/
+```
+```shell
+    make download
+```
 
 ## Preparando o Ambiente
 
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/
 ```
+```shell
+    make
+```
 Caso possuir o CUDA 10.0 e CUDNN compatíveis instalados, basta rodar o comando:
 ```shell
     ./instalar_dependencias.sh
 ```
+
 
 * Para utilizar serão necessários o CUDA_10.0 (e CUDNN compatível), Python 3.5 (ou superior), pip e virtualenv, e são automaticamente instalados pelo comando acima.
 
@@ -32,7 +42,7 @@ O parametro 1 é para instalar CUDA e CUDNN.
 
 ## Para executar o módulo no Carmen_LCAD
 
- Uma vez que os pesos estejam salvos na pasta pretrained e o projeto CARMEN_LCAD compilado e com todas as dependencias instaladas,<br/>
+ Uma vez que os pesos estejam salvos na pasta pretrained e o projeto CARMEN_LCAD compilado e com todas as dependências instaladas,<br/>
  execute os comandos abaixo para habilitar a utilização do DeepMapper no Carmen.
  
  Os comandos abaixo configuram as variáveis de ambiente para que os scripts em pythons sejam corretamente carregados.
