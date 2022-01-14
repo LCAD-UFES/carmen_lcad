@@ -17,7 +17,7 @@ def activate_virtual_environment(environment_root):
     exec(compile(open(activate_script, "rb").read(), activate_script, 'exec'), dict(__file__=activate_script))
 
 carmen_home = os.getenv("CARMEN_HOME")
-virtualenv_root = carmen_home + "/src/deep_mapper/DeepMapper/venv"
+virtualenv_root = carmen_home + "/src/deep_mapper/venv"
 activate_virtual_environment(virtualenv_root)
 #virtualenv activated
 
@@ -25,14 +25,14 @@ activate_virtual_environment(virtualenv_root)
 global inferHelper
 
 def initialize():
-        print('entrou\n')
+        print('deep_mapper.py: inicializacao com nyu\n')
         global inferHelper 
         inferHelper = InferenceHelper('nyu')
 
 def inferenceDepth(image):
         global inferHelper
         pred = inferHelper.predict_pil(image)
-        print('executou a predicao\n')
+        print('deep_mapper.py: executou a predicao\n')
         return pred
 
 def get_img_arr(image):
@@ -97,13 +97,13 @@ class InferenceHelper:
             self.max_depth = 10
             self.saving_factor = 1000  # used to save in 16 bit
             model = UnetAdaptiveBins.build(n_bins=256, min_val=self.min_depth, max_val=self.max_depth)
-            pretrained_path = carmen_home+"/src/deep_mapper/DeepMapper/pretrained/AdaBins_nyu.pt"
+            pretrained_path = carmen_home+"/src/deep_mapper/pretrained/AdaBins_nyu.pt"
         elif dataset == 'kitti':
             self.min_depth = 1e-3
             self.max_depth = 80
             self.saving_factor = 256
             model = UnetAdaptiveBins.build(n_bins=256, min_val=self.min_depth, max_val=self.max_depth)
-            pretrained_path = carmen_home+"/src/deep_mapper/DeepMapper/pretrained/AdaBins_kitti.pt"
+            pretrained_path = carmen_home+"/src/deep_mapper/pretrained/AdaBins_kitti.pt"
         else:
             raise ValueError("dataset can be either 'nyu' or 'kitti' but got {}".format(dataset))
 
@@ -113,7 +113,7 @@ class InferenceHelper:
     
     @torch.no_grad()
     def predict_pil(self, image):
-        print("entrou em pil")
+        print("deep_mapper.py: predict_pil")
         
         height, width, layers = image.shape
         resized_img = ''

@@ -1,9 +1,9 @@
 
 /**
  * @description
- * DNN Global Localizer
+ * Deep Mapper Main
  *
- * @author Alberto F. De Souza
+ * @authors Alberto F. De Souza, Aureziano Faria de Oliveira e Thiago Goncalves Cavalcante
  */
 
 #include <stdio.h>
@@ -33,6 +33,7 @@
 #include <iostream>
 #include "opencv2/opencv.hpp"
 
+
 using namespace std;
 using namespace cv;
 
@@ -43,7 +44,7 @@ static PyObject *deepMapper, *inferencia, *initialize_function;
 
 
 void
-infer_depth(double width, double height,
+infer_depth(long int width, long int height,
 		int dx, int dy, int w, int h,
 		unsigned char *image_raw, double timestamp)
 {
@@ -238,7 +239,7 @@ initialize( )
     if (deepMapper == nullptr)
     {
         PyErr_Print();
-        printf("error: fail to import module\n");
+        printf("error: failed to import module\n");
         return 0;
     }
 
@@ -246,7 +247,7 @@ initialize( )
     if (initialize_function == nullptr)
     {
         PyErr_Print();
-        printf("error: fail to get dictionary\n");
+        printf("error: failed to get dictionary\n");
         return 0;
     }
 
@@ -268,9 +269,9 @@ initialize( )
     {
         if (PyErr_Occurred())
             PyErr_Print();
-        fprintf(stderr, "Cannot initiate object \n");
+        fprintf(stderr, "Could not initiate object \n");
     }
-	printf("DeepMapper: Loading succefully.\n");
+	printf("DeepMapper: Python loaded successfully.\n");
 	return 1;
 }
 
