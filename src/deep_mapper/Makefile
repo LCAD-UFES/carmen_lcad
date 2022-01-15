@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = Deep Mapper 
 MODULE_COMMENT = Estimage Depth Maps from monocular image cameras.
@@ -28,8 +28,22 @@ clean: clean_deep_mapper
 
 clean_deep_mapper:
 	rm -f $(TARGETS)
+
+MYDIR = pretrained
+
+create_pretrained:
+	[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
+
+download: create_pretrained download_kitti download_nyu
+
+download_kitti:
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1HMgff-FV6qw1L0ywQZJ7ECa9VPq1bIoj/edit AdaBins_kitti.pt
 	
-include ../Makefile.rules
+download_nyu:
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1lvyZZbC9NLcS8a__YPcUP7rDiIpbRpoF/edit AdaBins_nyu.pt
+	
+include $(CARMEN_HOME)/src/Makefile.rules
+
 
 
 
