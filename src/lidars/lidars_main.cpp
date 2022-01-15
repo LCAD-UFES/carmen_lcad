@@ -43,9 +43,26 @@ setup_message(carmen_lidar_config lidar_config)
 
 
 void
+print_lidar_message(carmen_velodyne_variable_scan_message msg)
+{
+	printf("==== number_of_shots %d (only 10 shown) ====\n", msg.number_of_shots);
+	for (int i = 0; i < 10; i++)
+	{
+		printf("partial_scan %d\n", i);
+		printf("== shot_size %d   angle %lf ==\n", msg.partial_scan[i].shot_size, msg.partial_scan[i].angle);
+		for (int j = 0; j < msg.partial_scan[i].shot_size; j++)
+			printf("%d - distance %d    intensity %d\n", j, msg.partial_scan[i].distance[j], msg.partial_scan[i].intensity[j]);
+
+		printf("\n");
+	}
+	printf("\n");
+}
+
+
+void
 run_velodyne_VLP16_PUCK_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
 {
-	int port = atoi(lidar_config.port);
+	int port = 6699; //atoi(lidar_config.port);
 
 	velodyne = new velodyne_driver::VelodyneDriver(msg, lidar_config.shot_size, INITIAL_MAX_NUM_SHOT, port, 8309);
 	config = velodyne->getVelodyneConfig();
@@ -55,6 +72,7 @@ run_velodyne_VLP16_PUCK_driver(carmen_velodyne_variable_scan_message &msg, carme
 		if (velodyne->pollScan(msg, port, INITIAL_MAX_NUM_SHOT, 12, 754.0, lidar_config.shot_size))  // 12 is the number of shots per packet, 754.0 the velodyne package rate, see manual
 		{
 			carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
+			print_lidar_message(msg);
 		}
 		else
 		{

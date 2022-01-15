@@ -65,6 +65,7 @@ bool GlobalState::path_has_collision_or_phi_exceeded = false;
 
 int GlobalState::reverse_driving_flag = 0;
 int GlobalState::reverse_planning = 0;
+double GlobalState::distance_between_waypoints = 0.0;
 
 double GlobalState::param_max_vel_reverse = 1.0;
 double GlobalState::param_parking_speed_limit = 1.0;

@@ -804,6 +804,13 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 		distance_between_waypoints /= 5.0;
 		change_goal_distance /= 5.0;
 	}
+	else if (road_network_message && (current_robot_pose_v_and_phi.v < (2.0 * parking_speed_limit)) &&
+									 ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) ||
+									  (road_network_message->route_planner_state == IN_RECTLINEAR_ROUTE_SEGMENT)))
+	{
+		distance_between_waypoints /= 2.5;
+		change_goal_distance /= 2.5;
+	}
 	change_distance_between_waypoints_and_goals(distance_between_waypoints, change_goal_distance);
 
 	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi);

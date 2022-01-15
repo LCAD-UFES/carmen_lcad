@@ -100,6 +100,8 @@ public:
 
 	static int reverse_driving_flag;
 	static int reverse_planning;
+	static double distance_between_waypoints;
+
 	static double param_max_vel_reverse;
 	static double param_parking_speed_limit;
 

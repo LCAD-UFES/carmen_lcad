@@ -999,6 +999,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector",	 (char *) "goal_source_path_planner",									CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner,										 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "use_truepos",												CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos,												 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "reverse_driving",											CARMEN_PARAM_ONOFF,  &GlobalState::reverse_driving_flag,									 0, NULL},
+		{(char *) "behavior_selector", 	 (char *) "distance_between_waypoints", 								CARMEN_PARAM_DOUBLE, &GlobalState::distance_between_waypoints, 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w1_end_of_path_to_goal_distance",         CARMEN_PARAM_DOUBLE, &GlobalState::w1,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w2_end_of_path_to_goal_angular_distance", CARMEN_PARAM_DOUBLE, &GlobalState::w2,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w3_end_of_path_to_goal_delta_theta",      CARMEN_PARAM_DOUBLE, &GlobalState::w3,														 1, NULL},
