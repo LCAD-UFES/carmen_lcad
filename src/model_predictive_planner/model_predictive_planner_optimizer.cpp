@@ -996,8 +996,9 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 	double w4_activation_factor = get_distance_dependent_activation_factor(6.0, my_params);
 
 	double semi_trailer_to_goal_distance = 0.0;
-	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
-		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+	if ((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
+//	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+//		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
 		semi_trailer_to_goal_distance = compute_semi_trailer_to_goal_distance(path, my_params->target_td);
 //		semi_trailer_to_goal_distance = carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta)) *
 //				carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta));
