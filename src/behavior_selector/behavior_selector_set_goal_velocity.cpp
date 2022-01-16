@@ -783,6 +783,7 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
 	memcpy(path, poses_ahead, number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
 
+	carmen_robot_and_trailer_traj_point_t *original_path_copy = path;
 	path = &(path[1]);
 	number_of_poses -= 1;
 	for (int i = 0; i < ((number_of_poses / 4) - 1); i++)
@@ -835,6 +836,8 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 				limited_target_v = velocity_at_goal;
 		}
 	}
+
+	free(original_path_copy);
 
 	return (carmen_fmin(limited_target_v, target_v));
 }

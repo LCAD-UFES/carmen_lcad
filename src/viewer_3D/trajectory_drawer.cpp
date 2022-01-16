@@ -14,8 +14,7 @@ trajectory_drawer *
 create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels,
 		carmen_semi_trailer_config_t semi_trailer_config, double path_point_size, double persistence_time)
 {
-
-	trajectory_drawer *t_drawer = (trajectory_drawer *)malloc(sizeof(trajectory_drawer));
+	trajectory_drawer *t_drawer = (trajectory_drawer *) malloc(sizeof(trajectory_drawer));
 		
 	t_drawer->path = NULL;
 	t_drawer->path_segment_color = NULL;
@@ -45,6 +44,7 @@ destroy_trajectory_drawer(trajectory_drawer *t_drawer)
 {
 	free(t_drawer->path);
 	free(t_drawer->goals);
+	free(t_drawer->path_segment_color);
 	free(t_drawer);
 }
 
@@ -177,6 +177,9 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 void
 draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 {
+	if (!t_drawer->goals || (t_drawer->goals_size == 0))
+		return;
+
 	double length_x = t_drawer->robot_size.x;
 	double length_y = t_drawer->robot_size.y;
 	double car_middle_to_rear_wheels = length_x / 2.0 - t_drawer->distance_between_rear_car_and_rear_wheels;
@@ -210,7 +213,6 @@ draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 void
 draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 {
-
 	glPushMatrix();
 
 		glColor3f(1.0f, 1.0f, 0.0f);
@@ -238,7 +240,7 @@ draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 static void
 draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag, int draw_robot_waypoints_flag, int semi_trailer_engaged)
 {
-	if (t_drawer->path_size == 0)
+	if (!t_drawer->path || (t_drawer->path_size == 0))
 		return;
 
 	if (draw_robot_waypoints_flag)

@@ -698,7 +698,6 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
-
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
 		int rddf_pose_hit_obstacle, moving_object_in_front_index;
 
@@ -972,6 +971,9 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 			goal_type[goal_index] = FINAL_GOAL;
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 		}
+
+		if (goal_index > 2) // Para mostrar no máximo 3 goals a frente
+			break;
 	}
 
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
