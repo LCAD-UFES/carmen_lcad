@@ -2721,6 +2721,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 	}
 }
 
+
 static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message)
 {
@@ -2778,6 +2779,17 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 {
 	if (!show_plan_tree_flag)
 		return;
+
+	if ((offroad_plan_drawer->path_size != 0) || (offroad_plan_drawer->goals_size != 0))
+	{
+		destroy_trajectory_drawer(offroad_plan_drawer);
+	    offroad_plan_drawer = create_trajectory_drawer(0.9, 0.9, 0.9, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
+	}
+	if ((offroad_semi_trailer_plan_drawer->path_size != 0) || (offroad_semi_trailer_plan_drawer->goals_size != 0))
+	{
+		destroy_trajectory_drawer(offroad_semi_trailer_plan_drawer);
+	    offroad_semi_trailer_plan_drawer = create_trajectory_drawer(0.2, 0.2, 0.2, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
+	}
 
 	carmen_navigator_ackerman_plan_message *offroad_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
 	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
