@@ -331,8 +331,9 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 		command.v = v0 + tcp.a * t;
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 
-		if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
-			(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+//		if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+//			(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+		if ((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
 			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
 					&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 		else
@@ -905,8 +906,9 @@ mpp_optimization_function_f(const gsl_vector *x, void *params)
 		(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 2.0));
 
 	double semi_trailer_to_goal_distance = 0.0;
-	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
-		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+//	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+//		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+	if ((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
 		semi_trailer_to_goal_distance = compute_semi_trailer_to_goal_distance(path, my_params->target_td);
 //		semi_trailer_to_goal_distance = carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta)) *
 //				carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta));
@@ -996,9 +998,9 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 	double w4_activation_factor = get_distance_dependent_activation_factor(6.0, my_params);
 
 	double semi_trailer_to_goal_distance = 0.0;
-	if ((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
 //	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
 //		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+	if ((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
 		semi_trailer_to_goal_distance = compute_semi_trailer_to_goal_distance(path, my_params->target_td);
 //		semi_trailer_to_goal_distance = carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta)) *
 //				carmen_normalize_theta(carmen_radians_to_degrees(td.beta) - carmen_radians_to_degrees(my_params->target_td->beta));
@@ -1331,9 +1333,11 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 		params.use_lane = false;
 
 	int max_iterations;
-	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
-		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
-		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK))
+//	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+//		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
+//		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK))
+	if (((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN)) ||
+		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 		max_iterations = 150;
 	else
 		max_iterations = 50;
@@ -1368,9 +1372,11 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 		return (tcp_complete);
 
 //	if (more_knots_required(target_td))
-	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
-		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
-		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK) ||
+//	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
+//		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
+//		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK) ||
+//		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
+	if (((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN)) ||
 		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 		get_tcp_with_n_knots(tcp_complete, 3);
 	else
