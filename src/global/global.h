@@ -358,6 +358,9 @@ typedef struct {
 	double distance_between_axle_and_front;
 	double distance_between_axle_and_back;
 	double max_beta;
+	int beta_correct_velodyne_ray;
+	double beta_correct_angle_factor;
+	double beta_correct_max_distance;
 } carmen_semi_trailer_config_t;
 
 
