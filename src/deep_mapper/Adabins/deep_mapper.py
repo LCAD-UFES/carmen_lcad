@@ -97,13 +97,13 @@ class InferenceHelper:
             self.max_depth = 10
             self.saving_factor = 1000  # used to save in 16 bit
             model = UnetAdaptiveBins.build(n_bins=256, min_val=self.min_depth, max_val=self.max_depth)
-            pretrained_path = carmen_home+"/src/deep_mapper/pretrained/AdaBins_nyu.pt"
+            pretrained_path = carmen_home+"/src/deep_mapper/Adabins/pretrained/AdaBins_nyu.pt"
         elif dataset == 'kitti':
             self.min_depth = 1e-3
             self.max_depth = 80
             self.saving_factor = 256
             model = UnetAdaptiveBins.build(n_bins=256, min_val=self.min_depth, max_val=self.max_depth)
-            pretrained_path = carmen_home+"/src/deep_mapper/pretrained/AdaBins_kitti.pt"
+            pretrained_path = carmen_home+"/src/deep_mapper/Adabins/pretrained/AdaBins_kitti.pt"
         else:
             raise ValueError("dataset can be either 'nyu' or 'kitti' but got {}".format(dataset))
 
@@ -113,7 +113,7 @@ class InferenceHelper:
     
     @torch.no_grad()
     def predict_pil(self, image):
-        print("deep_mapper.py: predict_pil")
+        # print("deep_mapper.py: predict_pil")
         
         height, width, layers = image.shape
         resized_img = ''
@@ -148,10 +148,11 @@ class InferenceHelper:
         #pred = plasma(pred)[:, :, :3]
 
         pred = (pred * 256).astype('uint16')
-        final = pred*255
+        #final = pred*255
         #cv2.imwrite("/tmp/output2.png",final)
-        print(final.shape)
-        return bytearray(final)
+        #print(final.shape)
+        return (pred * 256).astype("uint16")
+        #return bytearray(final)
 
     @torch.no_grad()
     def predict(self, image):

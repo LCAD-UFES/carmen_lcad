@@ -1,0 +1,7 @@
+.vscode/
+*.pt
+pretrained/
+*.a
+*.o
+*.depend
+__pycache__
