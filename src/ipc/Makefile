@@ -1,7 +1,7 @@
 include ../Makefile.conf
 
-#CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -O3 -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 -g
-CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71
+CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -O3 -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 -g
+#CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71
 
 #ifeq ($(PROCESSOR),x86_64)
 #CFLAGS += -fPIC

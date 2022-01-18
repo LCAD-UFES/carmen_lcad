@@ -421,7 +421,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	publish_ford_escape_status_message();
 
-	carmen_publish_heartbeat("simulator");
+//	carmen_publish_heartbeat("simulator");
 
 	last_timestamp = timestamp;
 
