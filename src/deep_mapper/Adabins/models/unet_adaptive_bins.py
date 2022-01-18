@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from miniViT import mViT
+from .miniViT import *
 
 
 class UpSampleBN(nn.Module):

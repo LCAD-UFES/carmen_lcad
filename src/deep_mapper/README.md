@@ -5,9 +5,16 @@ DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera im
 ## Pretrained model
 
 The pretrained models "AdaBins_nyu.pt" and "AdaBins_kitti.pt" are available at [here](https://1drv.ms/u/s!AuWRnPR26byUmfRxBQ327hc8eXse2Q?e=AQuYZw).
-* Download these weights and save them at "$CARMEN_HOME/src/deep_mapper/pretrained/", it is needed for running the Neural Network.
+* Download these weights and save them at "$CARMEN_HOME/src/deep_mapper/Adabins/pretrained/", it is needed for running the Neural Network.
 
 ## Preparing the environment
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/Adabins
+```
+```shell
+    make
+```
 
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/
@@ -20,7 +27,7 @@ If your system already has CUDA 10.0 e CUDNN compatibles installed, run the comm
     ./install_dependencies.sh
 ```
 
-* For using this subsytem is required: CUDA_10.0 (and CUDNN compatible), Python 3.5 (or superior), pip and virtualenv.
+* For using this subsytem is required: CUDA_10.0 (and CUDNN compatible), Python 3.6, pip and virtualenv.
 
 ### In case your machine doesn't have CUDA and CUDNN
 * Run the command and all dependencies are gonna be installed:
@@ -38,7 +45,7 @@ The parameter 1 is required to install CUDA and CUDNN.
 ### Include the directories in your PYTHONPATH
 #### First option
 ```shell
- echo "export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/:$CARMEN_HOME/src/deep_mapper/models/:$PYTHONPATH" >> ~/.bashrc
+ echo "export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH" >> ~/.bashrc
  source ~/.bashrc
 ```
 #### Second option - Through Text Editor:
@@ -48,7 +55,7 @@ The parameter 1 is required to install CUDA and CUDNN.
 And include these lines in the end of file:
 ```shell
     #Deep mapper
-    export PYTHONPATH=$CARMEN_HOME/src/deep_mapper:$CARMEN_HOME/src/deep_mapper/models:$PYTHONPATH
+    export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models:$PYTHONPATH
 ```
 Save and close the Text Editor. For reload the environment variables, run:
 ```shell

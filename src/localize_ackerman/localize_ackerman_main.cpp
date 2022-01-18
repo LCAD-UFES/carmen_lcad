@@ -121,8 +121,8 @@ bool global_localization_requested = false;
 
 static carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
 
-static int g_velodyne_single_ray = 14;
-static int g_last_velodyne_single_ray = 14;
+static int g_velodyne_single_ray = semi_trailer_config.beta_correct_velodyne_ray;
+static int g_last_velodyne_single_ray = semi_trailer_config.beta_correct_velodyne_ray;
 
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
@@ -315,7 +315,7 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	{
 		double angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
 		double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
-		if ((angle > (-1.2 * semi_trailer_config.max_beta)) && (angle < (1.2 * semi_trailer_config.max_beta)) && (distance_to_king_pin < 3.5))
+		if ((angle > (-semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) && (angle < (semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) && (distance_to_king_pin < semi_trailer_config.beta_correct_max_distance))
 		{
 			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
 			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
