@@ -1,20 +1,20 @@
 # Linhas vazias, que comecam com espaco ou com # sao ignoradas
 #
 
-# Estacionamento da Cantina do CT
-set course to  7757852.49, -363553.52, -0.763
-go after set course to  7757852.49, -363553.52, -0.763  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	# Estacionamento da Cantina do CT
+	set course to  7757852.49, -363553.52, -0.763
+	go after set course to  7757852.49, -363553.52, -0.763  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
-# Estacionamento da Cantina do CT
-park truck and semi-trailer at 7757861.23, -363581.90, -0.839, 0.0
-go after park truck and semi trailer at 7757861.23, -363581.90, -0.839, 0.0
-stop # tira de modo autonomo
+	# Estacionamento da Cantina do CT
+	park truck and semi-trailer at 7757861.23, -363581.90, -0.839, 0.0
+	go after park truck and semi trailer at 7757861.23, -363581.90, -0.839, 0.0
+	stop # tira de modo autonomo
 
-# Estacionamento da Cantina do CT
-park truck and semi-trailer at 7757879.59, -363577.33, -0.736, 0.0
-go after park truck and semi trailer at 7757879.59, -363577.33, -0.736, 0.0
-stop # tira de modo autonomo
+	# Estacionamento da Cantina do CT
+	park truck and semi-trailer at 7757879.59, -363577.33, -0.736, 0.0
+	go after park truck and semi trailer at 7757879.59, -363577.33, -0.736, 0.0
+	stop # tira de modo autonomo
 
 # Estacionamento do NTI
 set course to 7757788.29, -363818.29, -2.490
