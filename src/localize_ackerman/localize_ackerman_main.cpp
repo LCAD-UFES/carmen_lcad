@@ -206,7 +206,7 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 		first_time = false;
 		gnuplot_pipe = popen("taskset -c 0 gnuplot", "w"); // -persist to keep last plot after program closes
 		fprintf(gnuplot_pipe, "set xrange [-5:5]\n");
-		fprintf(gnuplot_pipe, "set yrange [0:7]\n");
+		fprintf(gnuplot_pipe, "set yrange [0:4]\n");
 		fprintf(gnuplot_pipe, "set size square\n");
 		fprintf(gnuplot_pipe, "set size ratio -1\n");
 	}
