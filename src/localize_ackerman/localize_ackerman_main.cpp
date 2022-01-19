@@ -479,7 +479,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 	free(points_position_with_respect_to_car);
 	free(points_position_with_respect_to_car_estimated);
 
-	return (beta);
+	return (beta - semi_trailer_config.beta_correct_beta_bias);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
