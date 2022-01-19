@@ -361,6 +361,7 @@ typedef struct {
 	int beta_correct_velodyne_ray;
 	double beta_correct_angle_factor;
 	double beta_correct_max_distance;
+	double beta_correct_beta_bias;
 } carmen_semi_trailer_config_t;
 
 
