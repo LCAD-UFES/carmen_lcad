@@ -58,7 +58,7 @@
 using namespace cv;
 
 #define PREDICT_BETA_GSL_ERROR_CODE 100.0
-#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 100.0)
+#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
 #define MIN_CLUSTER_SIZE			10
 
 static int necessary_maps_available = 0;
