@@ -58,6 +58,8 @@
 using namespace cv;
 
 #define PREDICT_BETA_GSL_ERROR_CODE 100.0
+#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
+#define MIN_CLUSTER_SIZE			10
 
 static int necessary_maps_available = 0;
 
@@ -220,7 +222,7 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 	}
 	fclose(graph_file);
 
-	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");
+	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 t 'points', 'caco_localize.txt' u 3:4 t 'estimated'\n");
 
 	fflush(gnuplot_pipe);
 }
@@ -256,7 +258,7 @@ get_velodyne_point_car_reference(double rot_angle, double vert_angle, double ran
 
 
 int
-compute_points_with_rspect_to_king_pin(carmen_vector_3D_t *points_position_with_respect_to_car,
+compute_points_with_respect_to_king_pin(carmen_vector_3D_t *points_position_with_respect_to_car,
 		carmen_velodyne_partial_scan_message *velodyne_message, double *vertical_correction,
 		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
 		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
@@ -296,11 +298,61 @@ compare_x(const void *a, const void *b)
 	return (0);
 }
 
+#include <carmen/dbscan.h>
+
+
+dbscan::Cluster
+generate_cluster_with_all_points(carmen_vector_3D_t *points, int size)
+{
+	dbscan::Cluster cluster;
+
+	for (int i = 0; i < size; i++)
+	{
+		carmen_point_t point = {points[i].x, points[i].y, 0.0};
+		cluster.push_back(point);
+	}
+
+	return (cluster);
+}
+
+
+int
+remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
+{
+	dbscan::Cluster single_cluster = generate_cluster_with_all_points(points_position_with_respect_to_car, num_filtered_points);
+	dbscan::Clusters clusters = dbscan::dbscan(MIN_DISTANCE_BETWEEN_POINTS, MIN_CLUSTER_SIZE, single_cluster);
+	if (clusters.size() > 0)
+	{
+		int largest_cluster = 0;
+		unsigned int largest_cluster_size = clusters[0].size();
+		for (unsigned int i = 1; i < clusters.size(); i++)
+		{
+			if (clusters[i].size() > largest_cluster_size)
+			{
+				largest_cluster_size = clusters[i].size();
+				largest_cluster = i;
+			}
+		}
+
+//		printf("num_c %d, largest_c %d, lcs %d\n", clusters.size(), largest_cluster, clusters[largest_cluster].size());
+		for (unsigned int i = 0; i < clusters[largest_cluster].size(); i++)
+		{
+			points_position_with_respect_to_car[i].x = clusters[largest_cluster][i].x;
+			points_position_with_respect_to_car[i].y = clusters[largest_cluster][i].y;
+		}
+		num_filtered_points = clusters[largest_cluster].size();
+	}
+	else
+		num_filtered_points = 0;
+
+	return (num_filtered_points);
+}
+
 
 int
 compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_with_respect_to_car)
 {
-	int num_valid_points = compute_points_with_rspect_to_king_pin(points_position_with_respect_to_car,
+	int num_valid_points = compute_points_with_respect_to_king_pin(points_position_with_respect_to_car,
 			last_velodyne_message, spherical_sensor_params[0].vertical_correction,
 			spherical_sensor_params[0].sensor_to_support_matrix, spherical_sensor_params[0].support_to_car_matrix,
 			spherical_sensor_params[0].pose.position, spherical_sensor_params[0].sensor_support_pose.position);
@@ -325,6 +377,8 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 		}
 	}
 	qsort((void *) (points_position_with_respect_to_car), (size_t) num_filtered_points, sizeof(carmen_vector_3D_t), compare_x);
+
+	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
 
 	return (num_filtered_points);
 }
@@ -355,7 +409,7 @@ dofit(const gsl_multifit_robust_type *T, const gsl_matrix *X, const gsl_vector *
 	s = gsl_multifit_robust(X, y, c, cov, work);
 	gsl_multifit_robust_free(work);
 
-	return s;
+	return (s);
 }
 
 
@@ -363,15 +417,12 @@ double
 compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 		carmen_vector_3D_t *points_position_with_respect_to_car_estimated, int size)
 {
-	size_t i;
 	size_t n = size;
-	int status;
 	const size_t p = 2; /* linear fit */
 	gsl_matrix *X, *cov;
 	gsl_vector *x, *y, *c, *c_ols;
 
-	gsl_set_error_handler_off();/*We will have to read the status and handle the errors codes*/
-
+	gsl_set_error_handler_off(); // We will have to read the status and handle the errors codes
 
 	X = gsl_matrix_alloc(n, p);
 	x = gsl_vector_alloc(n);
@@ -381,7 +432,7 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 	c_ols = gsl_vector_alloc(p);
 	cov = gsl_matrix_alloc(p, p);
 
-	for (i = 0; i < n; i++)
+	for (size_t i = 0; i < n; i++)
 	{
 		double xi = points_position_with_respect_to_car[i].x;
 		double yi = points_position_with_respect_to_car[i].y;
@@ -391,7 +442,7 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 	}
 
 	/* construct design matrix X for linear fit */
-	for (i = 0; i < n; ++i)
+	for (size_t i = 0; i < n; ++i)
 	{
 		double xi = gsl_vector_get(x, i);
 
@@ -399,24 +450,21 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 		gsl_matrix_set(X, i, 1, xi);
 	}
 
-	status = dofit(gsl_multifit_robust_bisquare, X, y, c, cov);
+	int status = dofit(gsl_multifit_robust_bisquare, X, y, c, cov);
 
 	if (status)
 	{
-		if (status == GSL_EMAXITER)
+		if (status != GSL_EMAXITER)
 		{
-			fprintf (stderr, "max_inter, Discarding beta, using the default prediction one. size n=%d\n", n);
+			printf("Failed, gsl_errno = %d. This error isn't handle yet, please check it !!\n", status);
+			printf("Discarding beta, using the default prediction one. size n = %d\n", (int) n);
+
 			return (PREDICT_BETA_GSL_ERROR_CODE);
 		}
-		else
-		{
-			fprintf (stderr, "failed, gsl_errno=%d This error isn't handle yet, please check it !! \n", status);
-		}
-//		exit (-1);
 	}
 
 	/* output data and model */
-	for (i = 0; i < n; ++i)
+	for (size_t i = 0; i < n; ++i)
 	{
 		double xi = gsl_vector_get(x, i);
 		gsl_vector_view v = gsl_matrix_row(X, i);
@@ -449,8 +497,6 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 
 	double predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
 
-	static double last_beta_using_gls = predicted_beta; //just initializing
-
 	if (!last_velodyne_message ||
 		!spherical_sensor_params[0].sensor_to_support_matrix ||
 		!spherical_sensor_params[0].support_to_car_matrix)
@@ -460,7 +506,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 	carmen_vector_3D_t *points_position_with_respect_to_car_estimated = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
 
 	int size = compute_points_position_with_respect_to_car(points_position_with_respect_to_car);
-	if (size < 10)
+	if (size < MIN_CLUSTER_SIZE)
 	{
 		free(points_position_with_respect_to_car);
 		free(points_position_with_respect_to_car_estimated);
@@ -469,17 +515,16 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 	}
 
 	double beta = compute_new_beta(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
-	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
-	{
-		return (predicted_beta);
-	}
 
 	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 
 	free(points_position_with_respect_to_car);
 	free(points_position_with_respect_to_car_estimated);
 
-	return (beta - semi_trailer_config.beta_correct_beta_bias);
+	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
+		return (predicted_beta);
+	else
+		return (carmen_normalize_theta(beta - semi_trailer_config.beta_correct_beta_bias));
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
