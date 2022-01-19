@@ -27,7 +27,7 @@ global inferHelper
 def initialize():
         print('deep_mapper.py: inicializacao com nyu\n')
         global inferHelper 
-        inferHelper = InferenceHelper('nyu')
+        inferHelper = InferenceHelper('kitti')
 
 def inferenceDepth(image):
         global inferHelper
@@ -151,7 +151,8 @@ class InferenceHelper:
         #final = pred*255
         #cv2.imwrite("/tmp/output2.png",final)
         #print(final.shape)
-        return (pred * 256).astype("uint16")
+        print(pred)
+        return (pred * 256).astype('uint16')
         #return bytearray(final)
 
     @torch.no_grad()

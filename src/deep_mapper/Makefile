@@ -56,6 +56,8 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 	-lboost_thread-mt -lrt -lboost_signals -lboost_system `python3.6m-config --ldflags --libs`
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne 
 # LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 # Application specific include directories.
@@ -69,9 +71,10 @@ else
 	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
+LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne
 
 # Source code files (.c, .cpp) 
-SOURCES = dbscan.cpp movable_object.cpp virtual_depth.cpp 
+SOURCES = dbscan.cpp movable_object.cpp virtual_depth.cpp stereo_velodyne_adabins.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -80,8 +83,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = virtual_depth
-TARGETS = darknet libtf moving_objects libadabins.a libprob_models.a dbscan movable_object virtual_depth 
+PUBLIC_BINARIES = virtual_depth stereo_velodyne_adabins
+TARGETS = darknet libtf moving_objects libadabins.a libprob_models.a dbscan movable_object virtual_depth stereo_velodyne stereo_velodyne_adabins
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -99,7 +102,11 @@ dbscan: dbscan.o
 
 movable_object: movable_object.o
 
-virtual_depth: virtual_depth.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a dbscan.o movable_object.o
+virtual_depth: virtual_depth.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a dbscan.o movable_object.o 
+
+stereo_velodyne_adabins: stereo_velodyne_adabins.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
+
+#stereo_main: stereo_main.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
 # rules
 libtf:
@@ -110,6 +117,9 @@ libadabins.a:
 
 moving_objects: 
 	$(MAKE) -C $(CARMEN_HOME)/src/moving_objects/
+
+stereo_velodyne:
+	$(MAKE) -C $(CARMEN_HOME)/src/stereo_velodyne/
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4

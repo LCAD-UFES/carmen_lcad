@@ -896,17 +896,13 @@ virtual_lidar(Mat open_cv_image, double timestamp, int camera_index)
 	unsigned char *depth_pred;
 	depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, timestamp);
 	/*End of ADABINS*/
+	/* Transformar a mensagem de depth em stereo_velodyne e publicar para visualizar no viewer 3d*/
 	
 	insert_missing_movable_objects_in_the_track(predictions);
 	
 	/* Piumbini: Generate these points with virtual lidar, using estimated distance */
 	points = velodyne_camera_calibration_fuse_virtual_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
 				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, movable_object_tracks, camera_index, depth_pred);
-	
-	// points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera_index], velodyne_pose, camera_pose[camera_index],
-	// 			original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
-	// //	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_params, &transformer_sick,
-	//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 	
 	points_inside_bbox = get_points_inside_bounding_boxes(movable_object_tracks, points); 
 	
