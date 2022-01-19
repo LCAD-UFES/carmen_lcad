@@ -121,9 +121,6 @@ bool global_localization_requested = false;
 
 static carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
 
-static int g_velodyne_single_ray = semi_trailer_config.beta_correct_velodyne_ray;
-static int g_last_velodyne_single_ray = semi_trailer_config.beta_correct_velodyne_ray;
-
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
 
@@ -264,13 +261,14 @@ compute_points_with_rspect_to_king_pin(carmen_vector_3D_t *points_position_with_
 		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
 		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
 {
-	int j = spherical_sensor_params[0].ray_order[g_velodyne_single_ray];	// raio d interesse
+	int j = spherical_sensor_params[0].ray_order[semi_trailer_config.beta_correct_velodyne_ray];	// raio d interesse
 	int num_valid_points = 0;
 	for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
 		if (velodyne_message->partial_scan[i].distance[j] != 0)
 		{
-			points_position_with_respect_to_car[num_valid_points] = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + 180),
+			points_position_with_respect_to_car[num_valid_points] = get_velodyne_point_car_reference(
+					-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + ((semi_trailer_config.beta_correct_max_distance < 0.0)? 180.0: 0.0)),
 					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 500.0,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
 
@@ -315,7 +313,9 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	{
 		double angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
 		double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
-		if ((angle > (-semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) && (angle < (semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) && (distance_to_king_pin < semi_trailer_config.beta_correct_max_distance))
+		if ((angle > (-semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
+			(angle < (semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
+			(distance_to_king_pin < fabs(semi_trailer_config.beta_correct_max_distance)))
 		{
 			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
 			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
@@ -1835,33 +1835,27 @@ timer_handler()
         switch (c)
         {
         case '1':
-        	// toggle Velodyne single ray display
-            if (g_velodyne_single_ray == -1)
-            	g_velodyne_single_ray = g_last_velodyne_single_ray;
-            else
-            	g_velodyne_single_ray = -1;
+           	semi_trailer_config.beta_correct_velodyne_ray = 0;
             break;
 
         case '2':
             // increase Velodyne single ray
-        	g_velodyne_single_ray++;
-            if (g_velodyne_single_ray > 31)
-            	g_velodyne_single_ray = 0;
-            if (g_velodyne_single_ray < 0)
-            	g_velodyne_single_ray = 31;
-            g_last_velodyne_single_ray = g_velodyne_single_ray;
+        	semi_trailer_config.beta_correct_velodyne_ray++;
+            if (semi_trailer_config.beta_correct_velodyne_ray > 31)
+            	semi_trailer_config.beta_correct_velodyne_ray = 0;
+            if (semi_trailer_config.beta_correct_velodyne_ray < 0)
+            	semi_trailer_config.beta_correct_velodyne_ray = 31;
             break;
         case '3':
             // decrease Velodyne single ray
-        	g_velodyne_single_ray--;
-            if (g_velodyne_single_ray > 31)
-            	g_velodyne_single_ray = 0;
-            if (g_velodyne_single_ray < 0)
-            	g_velodyne_single_ray = 31;
-            g_last_velodyne_single_ray = g_velodyne_single_ray;
+        	semi_trailer_config.beta_correct_velodyne_ray--;
+            if (semi_trailer_config.beta_correct_velodyne_ray > 31)
+            	semi_trailer_config.beta_correct_velodyne_ray = 0;
+            if (semi_trailer_config.beta_correct_velodyne_ray < 0)
+            	semi_trailer_config.beta_correct_velodyne_ray = 31;
             break;
         }
-        printf("g_velodyne_single_ray %d\n", g_velodyne_single_ray);
+        printf("semi_trailer_config.beta_correct_velodyne_ray %d\n", semi_trailer_config.beta_correct_velodyne_ray);
 	}
 }
 

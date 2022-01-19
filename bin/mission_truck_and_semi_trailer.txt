@@ -22,8 +22,8 @@ go after set course to 7757788.29, -363818.29, -2.490 # fica nesta task ateh o f
 stop # tira de modo autonomo
 
 # Estacionamento do NTI
-park truck and semi-trailer at 7757768.55, -363815.25, 2.293, 0.0
-go after park truck and semi trailer at 7757768.55, -363815.25, 2.293, 0.0
+park truck and semi-trailer at 7757769.35, -363814.27, 2.350, 0.0
+go after park truck and semi trailer at 7757769.35, -363814.27, 2.350, 0.0
 stop # tira de modo autonomo
 
 # Estacionamento do NTI
