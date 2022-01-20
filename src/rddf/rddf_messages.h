@@ -9,7 +9,9 @@ extern "C"
 {
 #endif
 
-	#define NUM_RDDF_ANNOTATION_TYPES						16
+// Atencao!!! Ao adicionar um novo tipo de anotacao, incrementar o NUM_RDDF_ANNOTATION_TYPES
+// (note que comecca de zero; assim, NUM_RDDF_ANNOTATION_TYPES eh igual ao ultimo codigo mais 1)
+	#define NUM_RDDF_ANNOTATION_TYPES						18
 
 	#define RDDF_ANNOTATION_TYPE_NONE 						0
 	#define RDDF_ANNOTATION_TYPE_END_POINT_AREA 			1
@@ -28,9 +30,12 @@ extern "C"
 	#define RDDF_ANNOTATION_TYPE_YIELD 						14
 	#define RDDF_ANNOTATION_TYPE_PREDEFINED_ROUTE			15
 	#define RDDF_ANNOTATION_TYPE_AMV						16
+	#define RDDF_ANNOTATION_TYPE_NARROW_LANE				17
 
 
-	#define NUM_RDDF_ANNOTATION_CODES						39
+// Atencao!!! Ao adicionar um novo tipo de CODE de anotacao, incrementar o NUM_RDDF_ANNOTATION_CODES
+// (note que comecca de zero; assim, NUM_RDDF_ANNOTATION_CODES eh igual ao ultimo codigo mais 1)
+	#define NUM_RDDF_ANNOTATION_CODES						41
 
 	#define RDDF_ANNOTATION_CODE_NONE		 				0
 
@@ -79,6 +84,8 @@ extern "C"
 	#define RDDF_ANNOTATION_CODE_BARRIER_10_15				37
 	#define RDDF_ANNOTATION_CODE_BARRIER_10_10				38
 
+	#define RDDF_ANNOTATION_CODE_NARROW_LANE_BEGIN			39
+	#define RDDF_ANNOTATION_CODE_NARROW_LANE_END			40
 
 	#define MIN_DISTANCE_TO_CONSIDER_CROSSWALK 1.0
 

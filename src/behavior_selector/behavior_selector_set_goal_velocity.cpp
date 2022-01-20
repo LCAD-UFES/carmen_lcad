@@ -1035,18 +1035,18 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	previous_v = goal->v;
 	if (keep_speed_limit) //@@@Vinicius Aqui gol_v nao pode ser negativo fmin
 	{
-		static bool into_narrow_passage = false;
+//		static bool into_narrow_passage = false;
 		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
-		if ((last_speed_limit == 10.0 / 3.6) && !into_narrow_passage)
-		{
-			carmen_task_manager_publish_set_collision_geometry_message(ENGAGE_GEOMETRY, timestamp);
-			into_narrow_passage = true;
-		}
-		if (into_narrow_passage && (last_speed_limit > 10.0 / 3.6))
-		{
-			carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, timestamp);
-			into_narrow_passage = false;
-		}
+//		if ((last_speed_limit == 10.0 / 3.6) && !into_narrow_passage)
+//		{
+//			carmen_task_manager_publish_set_collision_geometry_message(ENGAGE_GEOMETRY, timestamp);
+//			into_narrow_passage = true;
+//		}
+//		if (into_narrow_passage && (last_speed_limit > 10.0 / 3.6))
+//		{
+//			carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, timestamp);
+//			into_narrow_passage = false;
+//		}
 	}
 	if (previous_v != goal->v)
 		who_set_the_goal_v = KEEP_SPEED_LIMIT;

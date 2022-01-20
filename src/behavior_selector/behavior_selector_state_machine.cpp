@@ -3,11 +3,15 @@
 #include <carmen/global_graphics.h>
 #include <carmen/rddf_util.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/task_manager_interface.h>
 
 #include "behavior_selector.h"
 
-using namespace std;
+#define NO_NARROW_LANE_SIGN_AHEAD	0
+#define NARROW_LANE_BEGIN			1
+#define NARROW_LANE_END				2
 
+using namespace std;
 
 extern bool wait_start_moving;
 extern bool autonomous;
@@ -156,6 +160,32 @@ stop_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_p
 		return (true);
 	else
 		return (false);
+}
+
+
+int
+narrow_lane_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_narrow_lane_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_NARROW_LANE,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (nearest_narrow_lane_sign_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D(nearest_narrow_lane_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
+	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+
+	if ((distance_to_act_on_annotation >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_narrow_lane_sign_annotation->annotation_point))
+	{
+		if (nearest_narrow_lane_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_NARROW_LANE_BEGIN)
+			return (NARROW_LANE_BEGIN);
+		else
+			return (NARROW_LANE_END);
+	}
+	else
+		return (NO_NARROW_LANE_SIGN_AHEAD);
 }
 
 
@@ -897,6 +927,12 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 			decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE;
 		counter = 0;
 	}
+
+	int narrow_lane_sign = narrow_lane_sign_ahead(current_robot_pose_v_and_phi);
+	if (narrow_lane_sign == NARROW_LANE_BEGIN)
+		carmen_task_manager_publish_set_collision_geometry_message(ENGAGE_GEOMETRY, timestamp);
+	else if (narrow_lane_sign == NARROW_LANE_END)
+		carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, timestamp);
 
 	return (0);
 }
