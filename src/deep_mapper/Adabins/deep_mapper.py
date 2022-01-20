@@ -25,14 +25,14 @@ activate_virtual_environment(virtualenv_root)
 global inferHelper
 
 def initialize():
-        print('deep_mapper.py: inicializacao com nyu\n')
+        print('deep_mapper.py: inicializacao com kitti\n')
         global inferHelper 
         inferHelper = InferenceHelper('kitti')
 
 def inferenceDepth(image):
         global inferHelper
         pred = inferHelper.predict_pil(image)
-        print('deep_mapper.py: executou a predicao\n')
+        # print('deep_mapper.py: executou a predicao\n')
         return pred
 
 def get_img_arr(image):
@@ -151,7 +151,7 @@ class InferenceHelper:
         #final = pred*255
         #cv2.imwrite("/tmp/output2.png",final)
         #print(final.shape)
-        print(pred.shape)
+        # print(pred.shape)
         return (pred * 256).astype('uint16')
         #return bytearray(final)
 
