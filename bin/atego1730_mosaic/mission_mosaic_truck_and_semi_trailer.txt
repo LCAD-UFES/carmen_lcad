@@ -1,0 +1,21 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+
+	# Carga
+	set course to 7989974.96, -205082.73, -1.935
+	go after set course to 7989974.96, -205082.73, -1.935  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
+
+# Descarga
+set course to 7989913.80, -205245.56, 2.251
+go after set course to 7989913.80, -205245.56, 2.251  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+# Park na descarga 
+park truck and semi-trailer at 7989923.51, -205255.81, 2.443, 0.0
+go after park truck and semi trailer at 7989923.51, -205255.81, 2.443, 0.0  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+announce "Mission completed!"
+
+mission completed
+
