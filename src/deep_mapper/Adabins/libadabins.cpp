@@ -102,6 +102,7 @@ libadabins_process_image(int width, int height, unsigned char *image, double tim
 
 	if (PyErr_Occurred())
 	        PyErr_Print();
+
 	unsigned char*result_array = (unsigned char*)PyArray_DATA(python_result_array);
 
 
