@@ -173,11 +173,15 @@ narrow_lane_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_
 		return (false);
 
 	double distance_to_annotation = DIST2D(nearest_narrow_lane_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
-	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
-	if ((distance_to_act_on_annotation >= distance_to_annotation) &&
-		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_narrow_lane_sign_annotation->annotation_point))
+	int last_goal_list_size;
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	double distance_to_first_goal = distance_to_annotation;
+	if (last_goal_list_size)
+		distance_to_first_goal = DIST2D(current_robot_pose_v_and_phi, goal_list[0]);
+
+	if ((distance_to_first_goal >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_narrow_lane_sign_annotation->annotation_point))
 	{
 		if (nearest_narrow_lane_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_NARROW_LANE_BEGIN)
 			return (NARROW_LANE_BEGIN);
