@@ -28,11 +28,11 @@ Para usar essa opção deixe os parametros da seguinte forma:
 
 visual_odometry_publish 			off
 robot_publish_odometry				on
-robot_publish_combined_visual_and_car_odometry 	on
+robot_publish_combined_odometry 	on
 
 E escolha a combinação da odometria com os parâmetros:
-robot_combine_visual_and_car_odometry_phi       1 #
-robot_combine_visual_and_car_odometry_vel       2 # 1-publish VISUAL_ODOMETRY_ velocity instead car velocity / 2-CAR_ODOMETRY_VEL / 3-COMBINE VISUAL and CAR ODOMETRY VELOCITY   
+robot_combine_odometry_phi       1 #
+robot_combine_odometry_vel       2 # 1-publish VISUAL_ODOMETRY_ velocity instead car velocity / 2-CAR_ODOMETRY_VEL / 3-COMBINE VISUAL and CAR ODOMETRY VELOCITY   
 
 A opção 1 o ford_escape irá publicar o PHI/Velocidade da VISUAL_ODOMETRY em vez do phi/velocidade do hardware.
 A opção 2 o ford_escape irá publicar o PHI/Velocidade do hardware em vez do phi/velocidade da VISUAL_ODOMETRY.
@@ -43,11 +43,11 @@ Para o caso de não querer combinar a odometria no Ford_escape, é possível faz
 E passar para o Base_ackerman fazer a combinação (útil para logs)
 1- Base_ackerman
 Para esse modo usar a flag 
-base_ackerman_publish_combined_visual_and_car_odometry	on # 
-Tem que estar em sintonia com a robot_publish_combined_visual_and_car_odometry. Para calibracao de odometria de logs esta flags pode ser ativada para misturar odometria visual com a do robo 
+base_ackerman_publish_combined_odometry	on # 
+Tem que estar em sintonia com a robot_publish_combined_odometry. Para calibracao de odometria de logs esta flags pode ser ativada para misturar odometria visual com a do robo 
 e escolher a combinação da odometria com os parâmetros: 
-robot_combine_visual_and_car_odometry_phi       1 #
-robot_combine_visual_and_car_odometry_vel       2 # 1-publish VISUAL_ODOMETRY_ velocity instead car velocity / 2-CAR_ODOMETRY_VEL / 3-COMBINE VISUAL and CAR ODOMETRY VELOCITY   
+robot_combine_odometry_phi       1 #
+robot_combine_odometry_vel       2 # 1-publish VISUAL_ODOMETRY_ velocity instead car velocity / 2-CAR_ODOMETRY_VEL / 3-COMBINE VISUAL and CAR ODOMETRY VELOCITY   
 
 Assim é possível escolher na hora de fazer mapa, qual melhor combinação, porém os modulos de calibração, leem direto do arquivo de log. 
 uma vez gravada a mensagem  carmen_robot_ackerman_velocity_message pelo ford_escape_hybrid e visual_odometry2.
@@ -77,38 +77,38 @@ RESUMO:
      (i) Modifique os parametros no carmen-...ini para o modo abaixo:
         visual_odometry_publish 			on (isso faz a odometria visual publicar a carmen_robot_ackerman_velocity_message)
         robot_publish_odometry				on
-        robot_publish_combined_visual_and_car_odometry 	on
+        robot_publish_combined_odometry 	on
       E escolha a combinação da odometria com os parâmetros:
-        robot_combine_visual_and_car_odometry_phi       
-        robot_combine_visual_and_car_odometry_vel       
+        robot_combine_odometry_phi       
+        robot_combine_odometry_vel       
     (ii) Para gravar já combinado Modifique os parametros no carmen-...ini para o modo abaixo:
         visual_odometry_publish 			off
         robot_publish_odometry				on
-        robot_publish_combined_visual_and_car_odometry 	on
+        robot_publish_combined_odometry 	on
       E escolha a combinação da odometria com os parâmetros:
-        robot_combine_visual_and_car_odometry_phi       
-        robot_combine_visual_and_car_odometry_vel       
+        robot_combine_odometry_phi       
+        robot_combine_odometry_vel       
     Rode o módulo visual_odometry2 e toda a infraestrutura necessaria pro log
 - Para tocar o log:
     O base_ackerman fará a combinação da odometria
     Modifique os parametros no carmen-...ini para o modo abaixo:
         visual_odometry_publish 			off
         robot_publish_odometry				on
-        robot_publish_combined_visual_and_car_odometry 	off
-        base_ackerman_publish_combined_visual_and_car_odometry on
+        robot_publish_combined_odometry 	off
+        base_ackerman_publish_combined_odometry on
      E escolha a combinação da odometria com os parâmetros:
-        robot_combine_visual_and_car_odometry_phi       
-        robot_combine_visual_and_car_odometry_vel       
+        robot_combine_odometry_phi       
+        robot_combine_odometry_vel       
 
 - Para andar autonomo:
     Em modo autonomo é possivel usar diretamente o ford_escape (ele recebe a carmen_visual_odometry_pose6d_message e a odometria do veículo via driver)
         visual_odometry_publish 			off
         robot_publish_odometry				on
-        base_ackerman_publish_combined_visual_and_car_odometry off
-        robot_publish_combined_visual_and_car_odometry 	on
+        base_ackerman_publish_combined_odometry off
+        robot_publish_combined_odometry 	on
      E escolha a combinação da odometria com os parâmetros:
-        robot_combine_visual_and_car_odometry_phi       
-        robot_combine_visual_and_car_odometry_vel     
+        robot_combine_odometry_phi       
+        robot_combine_odometry_vel     
 
 - Para fazer mapas:
 
@@ -117,8 +117,8 @@ RESUMO:
     calibrate_bias_from_log_config.txt:
         calibrate_combined_visual_and_car_odometry = 1
     E escolha a combinação da odometria com os parametros no carmen-...ini:
-        robot_combine_visual_and_car_odometry_phi       
-        robot_combine_visual_and_car_odometry_vel   
+        robot_combine_odometry_phi       
+        robot_combine_odometry_vel   
     Grab_data (src/graphslah/grab_data_from_log.cpp)
         Atualmente é necessário ativar a flag dentro do código calibrate_combined_visual_and_car_odometry e a combinação esta na main (pesquisar a variavel combine_visual_and_car_odometry_phi)
             combine_visual_and_car_odometry_phi
@@ -132,9 +132,9 @@ RESUMO:
      Modifique os parametros no carmen-...ini para o modo abaixo:
         visual_odometry_publish 			off
         robot_publish_odometry				on
-        robot_publish_combined_visual_and_car_odometry 	off
-        base_ackerman_publish_combined_visual_and_car_odometry on
+        robot_publish_combined_odometry 	off
+        base_ackerman_publish_combined_odometry on
      E escolha a combinação da odometria com os parâmetros:
-        robot_combine_visual_and_car_odometry_phi       
-        robot_combine_visual_and_car_odometry_vel       
+        robot_combine_odometry_phi       
+        robot_combine_odometry_vel       
     Lembre-se que no modo de mapeamentos a FUSED_ODOMETRY DEVE ESTAR DESLIGADA! o Publish_Poses já publica essa mensagem.

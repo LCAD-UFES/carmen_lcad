@@ -1,0 +1,25 @@
+
+Graph Summary Report
+--------------
+SVG file: '@7989870_-205310.svg'
+
+RDDF file #1: 'atego1730_mosaic/arquivos_grafo/output//rddf-log-mosaic-circuito1-semi-reboque-20220118-3.txt'
+ 1063 waypoints in 584.14 meters
+     [   0]  start point                       (x,y)  7989969.287000	-205108.289000	 (   99.29,   201.71)  
+     [1062]  finish point                      (x,y)  7989969.287000	-205108.289000	 (   99.29,   201.71)  
+     [1062]  loop closure                      (x,y)  7989969.287000	-205108.289000	 (   99.29,   201.71)  
+     [ 183]  bad waypoint                      (x,y)  7989921.066472	-205196.369804	 (   51.07,   113.63)  bad steering angle: |  35.32°| > 30.01°
+     [ 184]  bad waypoint                      (x,y)  7989920.858000	-205196.681000	 (   50.86,   113.32)  bad steering angle: | -36.69°| > 30.01°
+     [ 494]  bad waypoint                      (x,y)  7989910.467000	-205222.192000	 (   40.47,    87.81)  bad steering angle: | -30.98°| > 30.01°
+     [ 547]  bad waypoint                      (x,y)  7989931.288898	-205199.149295	 (   61.29,   110.85)  bad steering angle: |  34.05°| > 30.01°
+     [ 548]  bad waypoint                      (x,y)  7989931.551000	-205198.829000	 (   61.55,   111.17)  bad steering angle: | -33.51°| > 30.01°
+     [ 596]  bad waypoint                      (x,y)  7989948.245063	-205177.706530	 (   78.25,   132.29)  bad steering angle: |  50.03°| > 30.01°
+     [ 597]  bad waypoint                      (x,y)  7989948.396000	-205177.368000	 (   78.40,   132.63)  bad steering angle: | -49.32°| > 30.01°
+     [ 890]  bad waypoint                      (x,y)  7990013.752000	-205044.929000	 (  143.75,   265.07)  bad steering angle: |  46.69°| > 30.01°
+
+Command for re-editing the RDDF:
+./edit_graph_inkscape.py  -i atego1730_mosaic/arquivos_grafo/img/  -o atego1730_mosaic/arquivos_grafo/output/  --window  7989870.0  -205310.0  210.0  280.0  'atego1730_mosaic/arquivos_grafo/output//rddf-log-mosaic-circuito1-semi-reboque-20220118-3.txt' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="atego1730_mosaic/arquivos_grafo/output//graph-log-mosaic-circuito1-semi-reboque-20220118-3_150m.gr";  RANGE="150";  echo -e '/bin/atego1730_mosaic/arquivos_grafo/output/rddf-log-mosaic-circuito1-semi-reboque-20220118-3.txt' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE
