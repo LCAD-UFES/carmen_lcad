@@ -122,13 +122,14 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	}
 	
 	imshow("Depth Prediction Transformer", imgdepth);
+	waitKey(1);
 	/*End of AdaBins*/
-	disparity_message.reference_image_size = msg->image_size;
+	// disparity_message.reference_image_size = msg->image_size;
 
-	disparity_message.reference_image = msg->raw_right;
-	disparity_message.timestamp = msg->timestamp;
+	// disparity_message.reference_image = msg->raw_right;
+	// disparity_message.timestamp = msg->timestamp;
 	
-	publish_stereo_message();
+	// publish_stereo_message();
 }
 
 

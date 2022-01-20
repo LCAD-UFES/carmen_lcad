@@ -1,0 +1,16 @@
+
+Graph Summary Report
+--------------
+SVG file: '@7989870_-205310.svg'
+
+RDDF file #1: 'atego1730_mosaic/arquivos_grafo/input/rddf-log-mosaic-20220118-3.txt'
+ 864 waypoints in 549.92 meters
+     [  0]  start point                       (x,y)  7989989.990000	-205062.680000	 (  119.99,   247.32)  
+     [863]  finish point                      (x,y)  7989996.612000	-205055.191000	 (  126.61,   254.81)  
+
+Command for re-editing the RDDF:
+./edit_graph_inkscape.py  -i atego1730_mosaic/arquivos_grafo/img/  -o atego1730_mosaic/arquivos_grafo/output/  --window  7989870.0  -205310.0  210.0  280.0  'atego1730_mosaic/arquivos_grafo/input/rddf-log-mosaic-20220118-3.txt' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="atego1730_mosaic/arquivos_grafo/output//graph-log-mosaic-20220118-3_150m.gr";  RANGE="150";  echo -e '/bin/atego1730_mosaic/arquivos_grafo/input/rddf-log-mosaic-20220118-3.txt' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE

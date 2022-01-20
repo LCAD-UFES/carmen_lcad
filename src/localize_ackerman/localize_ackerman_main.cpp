@@ -222,7 +222,7 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 	}
 	fclose(graph_file);
 
-	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 t 'points', 'caco_localize.txt' u 3:4 t 'estimated'\n");
+	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");
 
 	fflush(gnuplot_pipe);
 }
