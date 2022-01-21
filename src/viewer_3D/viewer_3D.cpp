@@ -1951,7 +1951,7 @@ variable_scan_message_handler15(carmen_velodyne_variable_scan_message *message)
 
 
 static void
-stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
+stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message *velodyne_message)
 {
 	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
 
@@ -3683,8 +3683,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	num_items = sizeof(param_publish_list) / sizeof(param_publish_list[0]);
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_install_params(argc, argv, param_publish_list, num_items);
-
-
 }
 
 

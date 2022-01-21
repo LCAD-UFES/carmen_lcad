@@ -33,7 +33,6 @@ static int bumblebee_basic_width = 0;
 static int bumblebee_basic_height = 0;
 
 static carmen_velodyne_shot *scan;
-static carmen_velodyne_variable_scan_message velodyne_partial_scan;
 
 static IplImage *reference_image;
 static IplImage *reference_image_gray;
@@ -71,9 +70,48 @@ copy_one_channel(IplImage *src, IplImage *dst, int channel)
 
 
 void
-publish_point_cloud()
+publish_point_cloud(unsigned char *depth_pred, int number_of_rows, int number_of_cols, double timestamp)
 {
-	carmen_stereo_velodyne_publish_message(camera, &velodyne_partial_scan);
+	carmen_velodyne_variable_scan_message msg;
+
+	msg.host = carmen_get_host();
+	msg.timestamp = timestamp;
+	msg.number_of_shots = number_of_cols;
+
+	msg.partial_scan = (carmen_velodyne_shot *) malloc(msg.number_of_shots * sizeof(carmen_velodyne_shot));
+
+	unsigned short int *points = (unsigned short int *) depth_pred;
+	double angle = -25.0;
+	double delta_angle = 50.0 / (double) msg.number_of_shots;
+	for (int i = 0; i < number_of_cols; i++)
+	{
+		msg.partial_scan[i].shot_size = number_of_rows;
+		msg.partial_scan[i].angle = angle;
+		angle += delta_angle;
+
+		msg.partial_scan[i].distance = (unsigned int *) malloc(msg.partial_scan[i].shot_size * sizeof(unsigned int));
+		msg.partial_scan[i].intensity = (unsigned short int *) malloc(msg.partial_scan[i].shot_size * sizeof(unsigned short int));
+//		double ag = -25.0 / 2.0;
+//		double delta_ag = 25.0 / msg.partial_scan[i].shot_size;
+		for (int j = 0; j < msg.partial_scan[i].shot_size; j++)
+		{
+//			printf("%lf ", ag);
+//			ag += delta_ag;
+
+			msg.partial_scan[i].distance[j] = points[i + j * number_of_cols];
+			msg.partial_scan[i].intensity[j] = 100;
+		}
+//		printf("\n\n");
+	}
+
+	carmen_velodyne_publish_variable_scan_message(&msg, 8);
+
+	for (int i = 0; i < msg.number_of_shots; i++)
+	{
+		free(msg.partial_scan[i].distance);
+		free(msg.partial_scan[i].intensity);
+	}
+	free(msg.partial_scan);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -85,93 +123,23 @@ publish_point_cloud()
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-static void
-carmen_simple_stereo_disparity_message_handler(carmen_simple_stereo_disparity_message *message)
-{
-	memcpy(reference_image->imageData, message->reference_image, message->reference_image_size);
-    
-    
-    // Mat open_cv_image = Mat(480, 640, CV_8UC3, message->reference_image, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-	// /*ADABINS*/
-	// // unsigned char *depth_pred;
-	// unsigned char *depth_pred;
-	// depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, message->timestamp);
-
-    // cv::Mat imgdepth = cv::Mat(open_cv_image.cols, open_cv_image.rows, CV_16U, depth_pred);
-	// for (int i=0; i<open_cv_image.rows; i++){
-	// 	for(int j=0; j<open_cv_image.cols; j++){
-	// 		message->disparity[i * open_cv_image.rows + j] = (float) imgdepth.at<uint16_t>(j, i) / 256.0;		
-	// 	}
-	// }
-	
-	// imshow("Depth Prediction Transformer", imgdepth);
-	// waitKey(1);
-
-
-	cvCvtColor(reference_image, reference_image, CV_RGB2BGR);
-
-//	copy_one_channel(reference_image, reference_image_gray, 0);
-//	cvEqualizeHist(reference_image_gray, reference_image_gray);
-//	copy_channel(reference_image_gray, reference_image, 0);
-//
-//	copy_one_channel(reference_image, reference_image_gray, 1);
-//	cvEqualizeHist(reference_image_gray, reference_image_gray);
-//	copy_channel(reference_image_gray, reference_image, 1);
-//
-//	copy_one_channel(reference_image, reference_image_gray, 2);
-//	cvEqualizeHist(reference_image_gray, reference_image_gray);
-//	copy_channel(reference_image_gray, reference_image, 2);
-
-	cvCvtColor(reference_image, reference_image_gray, CV_BGR2GRAY);
-	//cvSmooth(reference_image_gray,reference_image_gray,CV_BLUR, 0,0, 21, 3);
-
-//	cvShowImage("1", reference_image);
-//	cvWaitKey(33);
-//    cvShowImage("2", reference_image_gray);
-//    cvWaitKey(33);
-
-	if (!flipped)
-	{
-		convert_stereo_depth_map_to_velodyne_beams(instance, message->disparity, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
-				vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, (unsigned char *) reference_image_gray->imageData);
-
-		velodyne_partial_scan.number_of_shots = horizontal_resolution;
-	}
-	else
-	{
-		convert_stereo_depth_map_to_velodyne_beams_and_flip(instance, message->disparity, vertical_resolution, horizontal_resolution, scan, range_max,
-				vertical_roi_ini, vertical_roi_end, horizontal_roi_ini, horizontal_roi_end);
-
-		velodyne_partial_scan.number_of_shots = vertical_resolution;
-	}
-
-	velodyne_partial_scan.partial_scan = scan;
-	velodyne_partial_scan.host = carmen_get_host();
-	velodyne_partial_scan.timestamp = message->timestamp;
-
-	publish_point_cloud();
-
-	scan->angle = 0.0;
-	memset(scan->distance, 0, scan->shot_size * sizeof(unsigned short));
-}
-
 
 void
 bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
-	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_right, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-	/*ADABINS*/
-	unsigned char *depth_pred;
-	depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
+	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_right, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	cv::Rect myROI(0, 190, stereo_image->width, stereo_image->height - 190);
+	open_cv_image = open_cv_image(myROI);
+
+	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
     
+	publish_point_cloud(depth_pred, open_cv_image.rows, open_cv_image.cols, stereo_image->timestamp);
+
     cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
     cv::imshow("Image", open_cv_image);
 	cv::imshow("Depth Prediction Transformer", imgdepth);
 	waitKey(1);
-
-	// publicar o mapa de profundidade
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -272,10 +240,10 @@ main(int argc, char **argv)
 	initialize_python_context();
 
 	init_stereo_velodyne();
-	carmen_stereo_velodyne_define_messages(camera);
 
-    carmen_stereo_subscribe(camera, NULL, (carmen_handler_t) carmen_simple_stereo_disparity_message_handler, CARMEN_SUBSCRIBE_LATEST);
-    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t)bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_velodyne_define_messages();
+
+    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 
