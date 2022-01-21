@@ -1,8 +1,12 @@
 # Linhas vazias, que comecam com espaco ou com # sao ignoradas
 
 # Carga
-set course to 7989975.47, -205082.13, -1.922
-go after set course to 7989975.47, -205082.13, -1.922  # fica nesta task ateh o fim do curso 
+
+set course to 7989971.67, -205078.98, -1.864
+go after set course to 7989971.67, -205078.98, -1.864  # fica nesta task ateh o fim do curso 
+
+#set course to 7989975.47, -205082.13, -1.922
+#go after set course to 7989975.47, -205082.13, -1.922  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 announce "Awaiting loading!"
