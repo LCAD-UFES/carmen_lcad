@@ -1,0 +1,11 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+
+# Park na descarga 
+park truck and semi-trailer at 7989923.51, -205255.81, 2.443, 0.0
+go after park truck and semi trailer at 7989923.51, -205255.81, 2.443, 0.0  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+announce "Waiting Unload!"
+
+mission completed
+
