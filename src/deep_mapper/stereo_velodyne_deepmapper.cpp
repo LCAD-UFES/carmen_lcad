@@ -79,6 +79,10 @@ publish_point_cloud(unsigned char *depth_pred, int number_of_rows, int number_of
 	msg.number_of_shots = number_of_cols;
 
 	msg.partial_scan = (carmen_velodyne_shot *) malloc(msg.number_of_shots * sizeof(carmen_velodyne_shot));
+	//for (int i = 0; i < number_of_cols; i--){
+	// 	printf("%d ", i);
+	// }
+
 
 	unsigned short int *points = (unsigned short int *) depth_pred;
 	double angle = -25.0;
@@ -97,12 +101,28 @@ publish_point_cloud(unsigned char *depth_pred, int number_of_rows, int number_of
 		{
 //			printf("%lf ", ag);
 //			ag += delta_ag;
-
-			msg.partial_scan[i].distance[j] = points[i + j * number_of_cols];
+			double horizontal_angle = angle * M_PI / 180.0;
+			msg.partial_scan[i].distance[j] = points[(number_of_cols - i -1) + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
 			msg.partial_scan[i].intensity[j] = 100;
 		}
 //		printf("\n\n");
 	}
+// 	angle = -25.0;
+// 	delta_angle = 50.0 / (double) msg.number_of_shots;
+// 	for (int i = 0; i < number_of_cols; i++)
+// 	{
+// 		msg.partial_scan[i].shot_size = number_of_rows;
+// 		msg.partial_scan[i].angle = angle;
+// 		angle += delta_angle;
+// 		for (int j = 0; j < msg.partial_scan[i].shot_size ; j++)
+// 		{
+// //			printf("%lf ", ag);
+// //			ag += delta_ag;
+// 			double horizontal_angle = angle * M_PI / 180.0;
+// 			msg.partial_scan[i].distance[j] = points[(number_of_cols - i - 1) + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
+// 			msg.partial_scan[i].intensity[j] = 100;
+// 		}
+// 	}
 
 	carmen_velodyne_publish_variable_scan_message(&msg, 8);
 
