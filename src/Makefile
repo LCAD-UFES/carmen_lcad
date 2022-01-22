@@ -38,7 +38,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   # hypergraphsclam neural_object_detector3
 
 PACKAGES_LIB = sensors/kinect visual_tracker lane_detector voice_interface localize_neural \
-	   ../sharedlib/prob_models ../sharedlib/libcarmodel
+	   ../sharedlib/prob_models ../sharedlib/libcarmodel ../sharedlib/libclustering
 
 ifndef NO_CPP
 PACKAGES += carmenpp
