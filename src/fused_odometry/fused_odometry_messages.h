@@ -48,7 +48,7 @@ typedef struct
 } carmen_fused_odometry_particle_message;
   
 #define      CARMEN_FUSED_ODOMETRY_PARTICLE_NAME	"carmen_fused_odometry_particle_message"
-#define      CARMEN_FUSED_ODOMETRY_PARTICLE_FMT		"{{{double,double,double},{double,double,double}},double,{double,double,double},{double,double,double},double,double,{double,double,double},int,<{double,double,double}:7>,<{double}:7>,int,double,string}"
+#define      CARMEN_FUSED_ODOMETRY_PARTICLE_FMT		"{{{double,double,double},{double,double,double}},double,{double,double,double},{double,double,double},double,double,{double,double,double},int,<{double,double,double}:8>,<{double}:8>,int,double,string}"
 
 
 #ifdef __cplusplus
