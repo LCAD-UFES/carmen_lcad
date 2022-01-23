@@ -22,8 +22,8 @@ prog_usage(char *prog_name, const char *error_msg = NULL, const char *error_msg2
 	if (error_msg2)
 		fprintf(stderr, "%s", error_msg2);
 
-	fprintf(stderr, "\n\nUsage:    %s   <image_file>  -input_dir <dir>  -out_dir <dir>  -resolution <meters>  -x_size <num>  -y_size <num>\n", prog_name);
-	fprintf(stderr,    "defaults: %*c                 -input_dir .      -out_dir .      -resolution 0.2       -x_size 350    -y_size 350\n\n", int(strlen(prog_name)), ' ');
+	fprintf(stderr, "\n\nUsage:    %s   <image_file>  -input_dir <map_dir>  -out_dir <map_dir>  -resolution <meters>  -x_size <num>  -y_size <num>\n", prog_name);
+	fprintf(stderr,    "defaults: %*c                 -input_dir .          -out_dir .          -resolution 0.2       -x_size 350    -y_size 350\n\n", int(strlen(prog_name)), ' ');
 
 	exit(-1);
 }

@@ -1,0 +1,1 @@
+../src/road_mapper/README_COMO_EDITAR_MAPA_COM_GIMP.txt
