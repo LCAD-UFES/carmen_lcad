@@ -74,7 +74,7 @@ LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkml
 LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne
 
 # Source code files (.c, .cpp) 
-SOURCES = dbscan.cpp movable_object.cpp virtual_depth.cpp stereo_velodyne_deepmapper.cpp
+SOURCES = dbscan.cpp movable_object.cpp virtual_depth.cpp stereo_velodyne_deepmapper.cpp stereo_velodyne_adabins.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -83,8 +83,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = virtual_depth stereo_velodyne_deepmapper
-TARGETS = darknet libtf moving_objects libadabins.a libprob_models.a dbscan movable_object virtual_depth stereo_velodyne stereo_velodyne_deepmapper
+PUBLIC_BINARIES = virtual_depth stereo_velodyne_deepmapper stereo_velodyne_adabins
+TARGETS = darknet libtf moving_objects libadabins.a libprob_models.a dbscan movable_object virtual_depth stereo_velodyne stereo_velodyne_deepmapper stereo_velodyne_adabins
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -105,6 +105,8 @@ movable_object: movable_object.o
 virtual_depth: virtual_depth.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a dbscan.o movable_object.o 
 
 stereo_velodyne_deepmapper: stereo_velodyne_deepmapper.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
+
+stereo_velodyne_adabins: stereo_velodyne_adabins.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
 #stereo_main: stereo_main.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
