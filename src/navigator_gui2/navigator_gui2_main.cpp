@@ -1,3 +1,4 @@
+#include <locale.h>
 #include "navigator_gui2_main.h"
 #include <carmen/carmen.h>
 #include <carmen/navigator_ackerman_interface.h>
@@ -639,8 +640,11 @@ carmen_parse_polygon_file(carmen_polygon_config_t *poly_config, char *poly_file)
 	poly_config->points = (double *) malloc(poly_config->n_points * 2 * sizeof(double));
 	for (int i = 0; i < poly_config->n_points; i++)
 	{
-		fscanf(poly,"%lf %lf\n", &(poly_config->points[2 * i]), &(poly_config->points[2 * i + 1]));
-		printf("%lf %lf\n", poly_config->points[2 * i], poly_config->points[2 * i + 1]);
+		double p1, p2;
+		fscanf(poly,"%lf %lf\n", &p1, &p2);
+		printf("%lf %lf\n", p1, p2);
+		poly_config->points[2 * i] = p1;
+		poly_config->points[2 * i + 1] = p2;
 	}
 
 	fclose(poly);
@@ -1541,6 +1545,8 @@ main(int argc, char *argv[])
 {
 	argc_global = argc;
 	argv_global = argv;
+
+	setlocale(LC_ALL, "C");
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);

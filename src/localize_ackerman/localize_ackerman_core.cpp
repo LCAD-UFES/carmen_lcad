@@ -63,6 +63,7 @@ int mapping_mode = 0;
 int velodyne_viewer = 0;
 char *save_globalpos_file = NULL;
 double save_globalpos_timestamp = 0.0;
+extern carmen_localize_ackerman_globalpos_message globalpos;
 
 extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message;
 
@@ -3396,7 +3397,11 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 	if (semi_trailer_config.type > 0)
+	{
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.type);
+		globalpos.semi_trailer_engaged = 1;
+		globalpos.semi_trailer_type = semi_trailer_config.type;
+	}
 
 	carmen_param_allow_unfound_variables(1);
 
