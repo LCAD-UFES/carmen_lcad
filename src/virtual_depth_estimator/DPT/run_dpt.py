@@ -134,6 +134,7 @@ def dpt_process_image(carmen_image, timestamp):
     filename = output_path + str(timestamp.item(0))
     absolute_depth=False
     out = util.io.depth_to_img(filename, prediction, bits=2, absolute_depth=absolute_depth)
+    # print(out) #480x640 shape
     # Window name in which image is displayed
     # window_name = 'DPT'
     # cv2.imshow(window_name, out)

@@ -120,7 +120,7 @@ publish_point_cloud_old(unsigned char *depth_pred, int number_of_rows, int numbe
 }
 
 void
-publish_point_cloud(cv::Mat imgdepth, int number_of_rows, int number_of_cols, double timestamp)
+publish_point_cloud(unsigned char *depth_pred, int number_of_rows, int number_of_cols, double timestamp, unsigned char *gray)
 {
 	carmen_velodyne_variable_scan_message msg;
 
@@ -128,12 +128,24 @@ publish_point_cloud(cv::Mat imgdepth, int number_of_rows, int number_of_cols, do
 	msg.timestamp = timestamp;
 	msg.number_of_shots = number_of_cols;
 
-	double angle = -25.0;
-	double delta_angle = 50.0 / (double) msg.number_of_shots;
+	// double angle = -10.0; // vertical angle
+	// double delta_angle = 49.5 / (double) msg.number_of_shots;
+	// for (int i = 0; i < number_of_rows; i++){
+	// 	// printf("%d ", i);
+	// 	angle += delta_angle;
+	// 	printf("%.3f ", angle);
+	// }
+	// for (int i = number_of_rows-1; i >=0 ; i--){
+	// 	printf("%d ", i);
+	// }
 
-	//unsigned short int *points = (unsigned short int *) depth_pred;
+	double angle = -33.0; // Horizontal angle
+	double delta_angle = 66.0 / (double) msg.number_of_shots;
+
+	unsigned short int *points = (unsigned short int *) depth_pred;
 	
 	msg.partial_scan = (carmen_velodyne_shot *) malloc(msg.number_of_shots * sizeof(carmen_velodyne_shot));
+
 	for (int i = 0; i < number_of_cols; i++){
 		msg.partial_scan[i].angle = angle;
 		angle += delta_angle;
@@ -145,25 +157,30 @@ publish_point_cloud(cv::Mat imgdepth, int number_of_rows, int number_of_cols, do
 
 	//unsigned short int *points = (unsigned short int *) depth_pred;
 	
-	for (int i = 0, k= number_of_cols-1; i < number_of_cols; i++, k--)
+	// for (int i = 0, k= number_of_cols-1; i < number_of_cols; i++, k--)
+	// {
+	// 	for (int j = 0, l= msg.partial_scan[i].shot_size-1; j < msg.partial_scan[i].shot_size; j++, l--)
+	// 	{
+	// 		double horizontal_angle = msg.partial_scan[i].angle * M_PI / 180.0;
+	// 		//msg.partial_scan[i].distance[j] = points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
+	// 		msg.partial_scan[k].distance[j] = ((unsigned int) imgdepth.at<unsigned short int>(j, k)) * ( 2 - cos(abs(horizontal_angle))); 
+	// 		//msg.partial_scan[k].distance[j] = points[k + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle)));
+	// 		msg.partial_scan[i].intensity[j] = 100;
+	// 	}
+	// }
+	// i < 640
+	for (int i = 0, k= number_of_cols-1 ; i < number_of_cols; i++, k--)
 	{
-		
-
-		// msg.partial_scan[i].distance = (unsigned int *) malloc(msg.partial_scan[i].shot_size * sizeof(unsigned int));
-		// msg.partial_scan[i].intensity = (unsigned short int *) malloc(msg.partial_scan[i].shot_size * sizeof(unsigned short int));
-//		double ag = -25.0 / 2.0;
-//		double delta_ag = 25.0 / msg.partial_scan[i].shot_size;
 		for (int j = 0, l= msg.partial_scan[i].shot_size-1; j < msg.partial_scan[i].shot_size; j++, l--)
 		{
-//			printf("%lf ", ag);
-//			ag += delta_ag;
 			double horizontal_angle = msg.partial_scan[i].angle * M_PI / 180.0;
-			//msg.partial_scan[i].distance[j] = points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
-			msg.partial_scan[k].distance[j] = ((unsigned int) imgdepth.at<unsigned short int>(j, k)) * ( 2 - cos(abs(horizontal_angle))); 
+			msg.partial_scan[i].distance[j] = points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
+			// msg.partial_scan[i].distance[j] =  (unsigned int) ((unsigned int) imgdepth.at<unsigned short int>(j, i)) * 50.0 / 256.0; // * ( 2 - cos(abs(horizontal_angle))); 
+			
+			//msg.partial_scan[k].distance[j] = ((unsigned int) imgdepth.at<unsigned short int>(i, j)) * ( 2 - cos(abs(horizontal_angle))); 
 			//msg.partial_scan[k].distance[j] = points[k + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle)));
-			msg.partial_scan[i].intensity[j] = 100;
+			msg.partial_scan[i].intensity[j] = gray[(int)(i + j * number_of_cols)];;
 		}
-//		printf("\n\n");
 	}
 
 	carmen_velodyne_publish_variable_scan_message(&msg, 8);
@@ -201,15 +218,18 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 
 	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
     cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-	cv::Mat imgrotate;
-	rotate(imgdepth, 180, imgrotate);
+	//cv::Mat imgrotate;
+	//rotate(imgdepth, 180, imgrotate);
+	cv::Mat imggray;
+	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
+	unsigned char*image_gray = imggray.data;
 
-	publish_point_cloud(imgdepth, open_cv_image.rows, open_cv_image.cols, stereo_image->timestamp);
+	publish_point_cloud(depth_pred, open_cv_image.rows, open_cv_image.cols, stereo_image->timestamp, image_gray);
 
     
 
     cv::imshow("Image", open_cv_image);
-	cv::imshow("Rotate", imgrotate);
+	// cv::imshow("Rotate", imgrotate);
 	cv::imshow("Depth Prediction Transformer", imgdepth);
 	waitKey(1);
 }
