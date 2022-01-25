@@ -33,6 +33,7 @@ static int bumblebee_basic_width = 0;
 static int bumblebee_basic_height = 0;
 
 static carmen_velodyne_shot *scan;
+static carmen_velodyne_variable_scan_message velodyne_partial_scan;
 
 static IplImage *reference_image;
 static IplImage *reference_image_gray;
@@ -68,6 +69,11 @@ copy_one_channel(IplImage *src, IplImage *dst, int channel)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void
+publish_point_cloud()
+{
+	carmen_stereo_velodyne_publish_message(camera, &velodyne_partial_scan);
+}
 
 void
 publish_point_cloud_old(unsigned char *depth_pred, int number_of_rows, int number_of_cols, double timestamp)
@@ -120,77 +126,39 @@ publish_point_cloud_old(unsigned char *depth_pred, int number_of_rows, int numbe
 }
 
 void
-publish_point_cloud(unsigned char *depth_pred, int number_of_rows, int number_of_cols, double timestamp, unsigned char *gray)
+convert_depth_to_velodyne_beams(stereo_util interface, unsigned char* depth, int vertical_resolution,
+		int horizontal_resolution, carmen_velodyne_shot *stereo_velodyne_scan,
+		double range_max, int vertical_roi_ini, int vertical_roi_end, int horizontal_roi_ini, int horizontal_roi_end, unsigned char *image)
 {
-	carmen_velodyne_variable_scan_message msg;
+	int i, j;
+	double inc_vertical, inc_horizontal, x, y;
+	int width = horizontal_roi_end - horizontal_roi_ini;
+	int height = vertical_roi_end - vertical_roi_ini;
 
-	msg.host = carmen_get_host();
-	msg.timestamp = timestamp;
-	msg.number_of_shots = number_of_cols;
+	inc_vertical = ((double) height / (double) vertical_resolution);
+	inc_horizontal =  ((double) width / (double) horizontal_resolution);
+	unsigned short int *points = (unsigned short int *) depth;
 
-	// double angle = -10.0; // vertical angle
-	// double delta_angle = 49.5 / (double) msg.number_of_shots;
-	// for (int i = 0; i < number_of_rows; i++){
-	// 	// printf("%d ", i);
-	// 	angle += delta_angle;
-	// 	printf("%.3f ", angle);
-	// }
-	// for (int i = number_of_rows-1; i >=0 ; i--){
-	// 	printf("%d ", i);
-	// }
-
-	double angle = -33.0; // Horizontal angle
-	double delta_angle = 66.0 / (double) msg.number_of_shots;
-
-	unsigned short int *points = (unsigned short int *) depth_pred;
-	
-	msg.partial_scan = (carmen_velodyne_shot *) malloc(msg.number_of_shots * sizeof(carmen_velodyne_shot));
-
-	for (int i = 0; i < number_of_cols; i++){
-		msg.partial_scan[i].angle = angle;
-		angle += delta_angle;
-		msg.partial_scan[i].shot_size = number_of_rows;
-		msg.partial_scan[i].distance = (unsigned int *) malloc(msg.partial_scan[i].shot_size * sizeof(unsigned int));
-		msg.partial_scan[i].intensity = (unsigned short int *) malloc(msg.partial_scan[i].shot_size * sizeof(unsigned short int));
-	}
-
-
-	//unsigned short int *points = (unsigned short int *) depth_pred;
-	
-	// for (int i = 0, k= number_of_cols-1; i < number_of_cols; i++, k--)
-	// {
-	// 	for (int j = 0, l= msg.partial_scan[i].shot_size-1; j < msg.partial_scan[i].shot_size; j++, l--)
-	// 	{
-	// 		double horizontal_angle = msg.partial_scan[i].angle * M_PI / 180.0;
-	// 		//msg.partial_scan[i].distance[j] = points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
-	// 		msg.partial_scan[k].distance[j] = ((unsigned int) imgdepth.at<unsigned short int>(j, k)) * ( 2 - cos(abs(horizontal_angle))); 
-	// 		//msg.partial_scan[k].distance[j] = points[k + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle)));
-	// 		msg.partial_scan[i].intensity[j] = 100;
-	// 	}
-	// }
-	// i < 640
-	for (int i = 0, k= number_of_cols-1 ; i < number_of_cols; i++, k--)
+	double angle = -25.0; // Horizontal angle
+	double delta_angle = 50.0 / (double) width;
+	// double ver_delta_angle = 49.5 / (double) height;
+	for (x = horizontal_roi_ini, j = horizontal_resolution/interface.stereo_stride_x - 1; x <  horizontal_roi_end; x += interface.stereo_stride_x*inc_horizontal, j--)
 	{
-		for (int j = 0, l= msg.partial_scan[i].shot_size-1; j < msg.partial_scan[i].shot_size; j++, l--)
-		{
-			double horizontal_angle = msg.partial_scan[i].angle * M_PI / 180.0;
-			msg.partial_scan[i].distance[j] = points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
-			// msg.partial_scan[i].distance[j] =  (unsigned int) ((unsigned int) imgdepth.at<unsigned short int>(j, i)) * 50.0 / 256.0; // * ( 2 - cos(abs(horizontal_angle))); 
-			
-			//msg.partial_scan[k].distance[j] = ((unsigned int) imgdepth.at<unsigned short int>(i, j)) * ( 2 - cos(abs(horizontal_angle))); 
-			//msg.partial_scan[k].distance[j] = points[k + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle)));
-			msg.partial_scan[i].intensity[j] = gray[(int)(i + j * number_of_cols)];;
+		stereo_velodyne_scan[j].angle = angle;
+		angle += delta_angle;
+		// double ver_angle = -15.0;
+		for (y = vertical_roi_ini, i = vertical_resolution/interface.stereo_stride_y - 1; y < vertical_roi_end; y += interface.stereo_stride_y*inc_vertical, i--)
+		{			
+			// cout << ver_angle << " ";
+			// ver_angle += ver_delta_angle;
+
+			double horizontal_angle = stereo_velodyne_scan[j].angle * M_PI / 180.0;
+			double range = points[(int)(y * (double)interface.width + x)] * ( 2 - cos(abs(horizontal_angle)));
+			range = range > range_max ? 0.0 : range;
+			stereo_velodyne_scan[j].distance[i] = (unsigned short) (range * 800);
+			stereo_velodyne_scan[j].intensity[i] = image[(int)(y * (double)interface.width + x)];
 		}
 	}
-
-	carmen_velodyne_publish_variable_scan_message(&msg, 8);
-
-	for (int i = 0; i < msg.number_of_shots; i++)
-	{
-		free(msg.partial_scan[i].distance);
-		free(msg.partial_scan[i].intensity);
-	}
-	free(msg.partial_scan);
 }
 
 void rotate(cv::Mat& src, double angle, cv::Mat& dst){
@@ -213,24 +181,27 @@ void
 bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
 	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_right, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	cv::Mat imggray;
+	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
+	unsigned char*image_gray = imggray.data;
+
 	cv::Rect myROI(0, 190, stereo_image->width, stereo_image->height - 190);
 	open_cv_image = open_cv_image(myROI);
 
 	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
     cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-	//cv::Mat imgrotate;
-	//rotate(imgdepth, 180, imgrotate);
-	cv::Mat imggray;
-	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
-	unsigned char*image_gray = imggray.data;
-
-	publish_point_cloud(depth_pred, open_cv_image.rows, open_cv_image.cols, stereo_image->timestamp, image_gray);
-
-    
-
+	
+		convert_depth_to_velodyne_beams(instance, depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
+				vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, image_gray);
+	
+    velodyne_partial_scan.partial_scan = scan;
+	velodyne_partial_scan.number_of_shots = horizontal_roi_end - horizontal_roi_ini;
+	velodyne_partial_scan.host = carmen_get_host();
+	velodyne_partial_scan.timestamp = stereo_image->timestamp;
+	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
+	
     cv::imshow("Image", open_cv_image);
-	// cv::imshow("Rotate", imgrotate);
-	cv::imshow("Depth Prediction Transformer", imgdepth);
+	cv::imshow("Adabins", imgdepth * 256);
 	waitKey(1);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////

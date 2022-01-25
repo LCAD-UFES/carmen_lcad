@@ -178,21 +178,10 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 
 	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
     cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-	// transpose(imgdepth, imgdepth);  
-    // flip(imgdepth, imgdepth,1);
-	// transpose(imgdepth, imgdepth);  
-    // flip(imgdepth, imgdepth,1);
-
-	// unsigned short int *points = (unsigned short int *) depth_pred;
-	// cout << "Depth: rows= " << imgdepth.rows << " cols=" << imgdepth.cols << endl;
-
-	
-	// cout << "GRAY: rows= " << imggray.rows << " cols=" << imggray.cols << endl; rows290 x cols640
-
 
 	cv::imshow("Image", open_cv_image);
 	cv::imshow("Gray", imggray);
-	cv::imshow("Depth Prediction Transformer", imgdepth*256);
+	cv::imshow("Adabins", imgdepth*256);
 	waitKey(1);
 
 

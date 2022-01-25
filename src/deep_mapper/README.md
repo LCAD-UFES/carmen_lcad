@@ -102,3 +102,23 @@ Obs.: test_video.mp4 is some choosen video.
 
 # Original Article
 [AdaBins](https://arxiv.org/abs/2011.14141)
+
+
+param_edit -0.4 pitch 800
+o certo nao eh o laser
+fazer os angulos pelo tamanho vertical (100_
+
+usar a msgg stereo)
+
+como faz p ficar um plano p passar os parametros da camera e resultar em ficar plano
+falta retificar
+camera 7 e achar bugs
+dist correction
+
+points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle)))
+
+PLANO:
+double horizontal_angle = angle * M_PI / 180.0;
+			msg.partial_scan[i].distance[j] = 2000.0 * ( 2 - cos(abs(horizontal_angle))); //points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
+
+            
