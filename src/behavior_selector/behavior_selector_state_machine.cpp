@@ -107,7 +107,7 @@ path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose
 
 	if ((distance_to_path_final_pose < robot_config.distance_between_front_and_rear_axles) &&
 		(fabs(current_robot_pose_v_and_phi.v) < 0.25) &&
-		((distance_to_path_final_pose < 0.8) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
+		((distance_to_path_final_pose < 1.0) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
 		return (true);
 	else
 		return (false);
