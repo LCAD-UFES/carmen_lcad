@@ -50,9 +50,9 @@ Surgiu após verificar a distância dos objetos móveis através da câmera, viu
     ```shell
     ./proccontrol process-playback-fovea.ini 
     ```
-1. Ative a venv:
+1. Ative a venv e rode o modulo stereo_velodyne:
     ```shell
-    source $CARMEN_HOME/src/virtual_depth_estimator/DPT/venv/bin/activate
+    source $CARMEN_HOME/src/virtual_depth_estimator/DPT/venv/bin/activate; ./stereo_velodyne_dpt 3
     ```
 1.  Para visualizar SOMENTE a rede DPT, execute:
     ```shell

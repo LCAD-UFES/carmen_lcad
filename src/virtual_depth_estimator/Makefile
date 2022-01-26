@@ -71,7 +71,7 @@ endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 # Source code files (.c, .cpp) 
-SOURCES = dbscan.cpp movable_object.cpp virtual_depth.cpp virtual_dpt.cpp
+SOURCES = dbscan.cpp movable_object.cpp virtual_depth.cpp virtual_dpt.cpp stereo_velodyne_dpt.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -80,8 +80,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = virtual_depth virtual_dpt
-TARGETS = darknet libtf moving_objects libdpt.a libprob_models.a dbscan movable_object virtual_depth virtual_dpt
+PUBLIC_BINARIES = virtual_depth virtual_dpt stereo_velodyne_dpt
+TARGETS = darknet libtf moving_objects libdpt.a libprob_models.a dbscan movable_object virtual_depth virtual_dpt stereo_velodyne_dpt
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -102,6 +102,8 @@ movable_object: movable_object.o
 virtual_depth: virtual_depth.o $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/libdpt.a dbscan.o movable_object.o
 
 virtual_dpt: virtual_dpt.o $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/libdpt.a dbscan.o movable_object.o
+
+stereo_velodyne_dpt: stereo_velodyne_dpt.o $(CARMEN_HOME)/src/virtual_depth_estimator/DPT/libdpt.a
 
 # rules
 libtf:

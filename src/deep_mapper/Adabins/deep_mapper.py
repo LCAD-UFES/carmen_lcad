@@ -152,7 +152,7 @@ class InferenceHelper:
         #cv2.imwrite("/tmp/output2.png",final)
         #print(final.shape)
         # print(pred.shape)
-        return (pred * 256).astype('uint16')
+        return (pred).astype('uint16')
         #return bytearray(final)
 
     @torch.no_grad()

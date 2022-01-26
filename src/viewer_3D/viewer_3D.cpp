@@ -1953,7 +1953,8 @@ variable_scan_message_handler15(carmen_velodyne_variable_scan_message *message)
 static void
 stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message *velodyne_message)
 {
-	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
+	//add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
+    add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, camera_pose);
 
 	add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
 }
@@ -4024,13 +4025,17 @@ subscribe_ipc_messages(void)
 //                                          (carmen_handler_t) carmen_localize_neural_curr_message_handler,
 //                                          CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
+    // carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
+    //                                               (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
+    //                                               CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_stereo_velodyne_subscribe_scan_message(3, NULL,
                                                   (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
-                                                      (carmen_handler_t) sick_variable_scan_message_handler,
-                                                      CARMEN_SUBSCRIBE_LATEST);
+    // carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
+    //                                                   (carmen_handler_t) sick_variable_scan_message_handler,
+    //                                                   CARMEN_SUBSCRIBE_LATEST);
 
     carmen_mapper_subscribe_map_level1_message(NULL,
                                           (carmen_handler_t) mapper_map_message_handler,
