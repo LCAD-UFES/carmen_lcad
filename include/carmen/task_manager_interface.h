@@ -13,15 +13,15 @@ carmen_task_manager_subscribe_set_collision_geometry_message(carmen_task_manager
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
-carmen_task_manager_publish_set_collision_geometry_message(int geometry, double timestamp);
-
-void
 carmen_task_manager_subscribe_desired_engage_state_message(carmen_task_manager_desired_engage_state_message *msg,
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
 carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(carmen_task_manager_set_semi_trailer_type_and_beta_message *msg,
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_publish_set_collision_geometry_message(int geometry, double timestamp);
 
 void
 carmen_task_manager_publish_desired_engage_state_message(int desired_engage_state, double timestamp);
