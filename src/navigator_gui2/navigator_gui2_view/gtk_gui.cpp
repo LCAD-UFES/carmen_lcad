@@ -838,14 +838,24 @@ namespace View
 			if (offroad_planner_plan)
 			{
 				static double timestamp_last_offroad_plan_received = 0.0;
+				static carmen_offroad_planner_feedback_t last_offroad_planner_feedback = PLAN_OK;
 
 				sprintf(buffer, "Offroad Planner State: %s", print_offroad_planner_feedback(offroad_planner_plan->offroad_planner_feedback));
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState), buffer);
 
 				if (timestamp_last_offroad_plan_received == 0.0)
+				{
 					timestamp_last_offroad_plan_received = carmen_get_time();
-				else if ((carmen_get_time() - timestamp_last_offroad_plan_received) > 5.0)
+					last_offroad_planner_feedback = offroad_planner_plan->offroad_planner_feedback;
+				}
+				else if ((offroad_planner_plan->offroad_planner_feedback == last_offroad_planner_feedback) &&
+						 ((carmen_get_time() - timestamp_last_offroad_plan_received) > 5.0))
+				{
 					offroad_planner_plan = NULL;
+					timestamp_last_offroad_plan_received = 0.0;
+				}
+				else
+					last_offroad_planner_feedback = offroad_planner_plan->offroad_planner_feedback;
 			}
 			else
 			{
