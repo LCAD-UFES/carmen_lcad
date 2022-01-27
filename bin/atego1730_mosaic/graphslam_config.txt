@@ -1,7 +1,7 @@
 # Multiplier of the standard deviation of the gps position (times meters)
-gps_xy_std_multiplier = 50
+gps_xy_std_multiplier = 20
 # GPS yaw standard deviation (degrees)
-gps_yaw_std = 300
+gps_yaw_std = 160
 # Odometry position (x, y) standard deviation (meters)
 odom_xy_std = 0.9
 # Odometry orientation (yaw) standard deviation (degrees)

@@ -1,0 +1,26 @@
+
+Graph Summary Report
+--------------
+SVG file: 'output//@7989800_-205240.svg'
+
+RDDF file #1: 'output//2022_01_27_12_09_44_675764'
+ 23650 waypoints in 11704.26 meters
+     [    0]  start point                       (x,y)  7990045.640000	-204519.103000	 (  245.64,   720.90)  
+     [23649]  finish point                      (x,y)  7990045.640000	-204519.103000	 (  245.64,   720.90)  
+     [23649]  loop closure                      (x,y)  7990045.640000	-204519.103000	 (  245.64,   720.90)  
+     [   58]  bad waypoint                      (x,y)  7990014.666000	-204525.138000	 (  214.67,   714.86)  bad steering angle: | -42.88°| > 30.01°
+     [   60]  bad waypoint                      (x,y)  7990013.442000	-204525.370000	 (  213.44,   714.63)  bad steering angle: |  36.67°| > 30.01°
+     [ 2964]  bad waypoint                      (x,y)  7990274.090664	-204863.646121	 (  474.09,   376.35)  bad steering angle: |  32.76°| > 30.01°
+     [ 5362]  bad waypoint                      (x,y)  7991172.350000	-205200.593000	 ( 1372.35,    39.41)  bad steering angle: |  30.73°| > 30.01°
+     [11841]  bad waypoint                      (x,y)  7993768.995000	-204351.411000	 ( 3969.00,   888.59)  bad steering angle: |  30.02°| > 30.01°
+     [11850]  bad waypoint                      (x,y)  7993772.829000	-204355.132000	 ( 3972.83,   884.87)  bad steering angle: |  35.79°| > 30.01°
+     [14500]  bad waypoint                      (x,y)  7992857.974000	-204844.618000	 ( 3057.97,   395.38)  bad steering angle: |  31.38°| > 30.01°
+     [23530]  bad waypoint                      (x,y)  7990055.006000	-204528.538000	 (  255.01,   711.46)  bad steering angle: | -33.74°| > 30.01°
+     [23596]  bad waypoint                      (x,y)  7990071.023000	-204516.057000	 (  271.02,   723.94)  bad steering angle: |  32.69°| > 30.01°
+
+Command for re-editing the RDDF:
+/home/pedro/carmen_lcad/bin/edit_graph_inkscape.py  -i map_img/  -o output/  --window  7989800.0  -205240.0  4060.0  1050.0  'output//2022_01_27_12_09_44_675764' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="output//2022_01_27_12_09_44_675764_150m.gr";  RANGE="150";  echo -e '/bin/atego1730_mosaic/arquivos_grafo/grafo_log-mosaic-britador-to-mina-20220126/output/2022_01_27_12_09_44_675764' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE
