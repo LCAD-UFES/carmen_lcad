@@ -267,7 +267,6 @@ publish_car_status()
 {
 //	printf("cambio %d\n", g_XGV_gear);
 
-	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_ford_escape_status_message msg;
 
 	msg.g_XGV_throttle = g_XGV_throttle;
