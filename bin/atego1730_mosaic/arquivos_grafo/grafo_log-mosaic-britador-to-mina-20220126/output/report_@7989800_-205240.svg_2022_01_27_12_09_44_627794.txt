@@ -1,0 +1,21 @@
+
+Graph Summary Report
+--------------
+SVG file: '@7989800_-205240.svg'
+
+RDDF file #1: 'input/rddf-log-mosaic-britador-to-mina-20220126.txt'
+ 7591 waypoints in 5788.63 meters
+     [   0]  start point                       (x,y)  7993783.318000	-204296.738000	 ( 3983.32,   943.26)  
+     [7590]  finish point                      (x,y)  7990055.504000	-204528.441000	 (  255.50,   711.56)  
+
+RDDF file #2: 'input/rddf-log-mosaic-mina-to-britador-20220126-1.txt'
+ 7654 waypoints in 5887.00 meters
+     [   0]  start point                       (x,y)  7990078.566000	-204518.500000	 (  278.57,   721.50)  
+     [7653]  finish point                      (x,y)  7993792.052000	-204299.585000	 ( 3992.05,   940.42)  
+
+Command for re-editing the RDDFs:
+/home/pedro/carmen_lcad/bin/edit_graph_inkscape.py  -i map_img/  -o output/  --window  7989800.0  -205240.0  4060.0  1050.0  'input/rddf-log-mosaic-britador-to-mina-20220126.txt'  'input/rddf-log-mosaic-mina-to-britador-20220126-1.txt' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="output//graph-log-mosaic-britador-to-mina-20220126_150m.gr";  RANGE="150";  echo -e '/bin/atego1730_mosaic/arquivos_grafo/grafo_log-mosaic-britador-to-mina-20220126/input/rddf-log-mosaic-britador-to-mina-20220126.txt\n/bin/atego1730_mosaic/arquivos_grafo/grafo_log-mosaic-britador-to-mina-20220126/input/rddf-log-mosaic-mina-to-britador-20220126-1.txt' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE
