@@ -155,7 +155,7 @@ convert_depth_to_velodyne_beams(stereo_util interface, unsigned char* depth, int
 			double horizontal_angle = stereo_velodyne_scan[j].angle * M_PI / 180.0;
 			double range = points[(int)(y * (double)interface.width + x)] * ( 2 - cos(abs(horizontal_angle)));
 			range = range > range_max ? 0.0 : range;
-			stereo_velodyne_scan[j].distance[i] = (unsigned short) (range * 800);
+			stereo_velodyne_scan[j].distance[i] = (unsigned short) (range * 500.0);
 			stereo_velodyne_scan[j].intensity[i] = image[(int)(y * (double)interface.width + x)];
 		}
 	}
