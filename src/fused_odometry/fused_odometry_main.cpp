@@ -404,6 +404,19 @@ initialize_carmen_parameters(int argc, char** argv, carmen_fused_odometry_parame
 }
 
 
+/* handles ctrl+c */
+static void
+shutdown_module(int x)
+{
+	if (x == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		carmen_warn("\nDisconnected.\n");
+		exit(0);
+	}
+}
+
+
 int 
 main(int argc, char** argv)
 { 	
@@ -413,6 +426,8 @@ main(int argc, char** argv)
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
+
+	signal(SIGINT, shutdown_module);
 
 	initialize_carmen_parameters(argc, argv, &fused_odometry_parameters);
 

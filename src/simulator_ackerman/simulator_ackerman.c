@@ -288,17 +288,14 @@ publish_rearlaser(double timestamp)
 	static carmen_laser_laser_message rlaser;
 
 	if (!simulator_config->use_rear_laser)
-	{
 		return;
-	}
 
 	if (first)
 	{
 		rlaser.host = carmen_get_host();
 
 		rlaser.num_readings = simulator_config->rear_laser_config.num_lasers;
-		rlaser.range = (double *)calloc
-				(simulator_config->rear_laser_config.num_lasers, sizeof(double));
+		rlaser.range = (double *) calloc(simulator_config->rear_laser_config.num_lasers, sizeof(double));
 		carmen_test_alloc(rlaser.range);
 
 		rlaser.num_remissions = 0;
@@ -310,8 +307,7 @@ publish_rearlaser(double timestamp)
 
 	rlaser.timestamp = timestamp;
 	err = IPC_publishData(CARMEN_LASER_REARLASER_NAME, &rlaser);
-	carmen_test_ipc(err, "Could not publish laser_rearlaser_message",
-			CARMEN_LASER_REARLASER_NAME);
+	carmen_test_ipc(err, "Could not publish laser_rearlaser_message", CARMEN_LASER_REARLASER_NAME);
 
 }
 
@@ -319,34 +315,17 @@ publish_rearlaser(double timestamp)
 static void
 publish_ford_escape_status_message()
 {
-	IPC_RETURN_TYPE err;
-	static int first_time = 1;
 	static double previous_timestamp = 0.0;
-
-	if (first_time)
-	{
-		err = IPC_defineMsg(CARMEN_FORD_ESCAPE_STATUS_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_FORD_ESCAPE_STATUS_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_FORD_ESCAPE_STATUS_NAME);
-
-		first_time = 0;
-	}
-
 	double current_timestamp = carmen_get_time();
+
 	if ((current_timestamp - previous_timestamp) > (1.0 / 5.0))
 	{
-		IPC_RETURN_TYPE err = IPC_OK;
 		carmen_ford_escape_status_message msg;
+		memset(&msg, 0, sizeof(carmen_ford_escape_status_message));
 
 		msg.g_XGV_horn_status = g_XGV_horn_status;
 
-		msg.timestamp = carmen_get_time();
-		msg.host = carmen_get_host();
-
-		err = IPC_publishData(CARMEN_FORD_ESCAPE_STATUS_NAME, &msg);
-		carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_STATUS_NAME);
+		carmen_ford_escape_publish_status_message(&msg, current_timestamp);
 
 		previous_timestamp = current_timestamp;
 	}

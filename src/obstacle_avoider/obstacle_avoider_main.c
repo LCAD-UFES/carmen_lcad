@@ -559,10 +559,14 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 void
 shutdown_obstacle_avoider(int signo __attribute__ ((unused)))
 {
-	publish_base_ackerman_motion_command_message_to_stop_robot();
-	carmen_ipc_disconnect();
+	if (signo == SIGINT)
+	{
+		publish_base_ackerman_motion_command_message_to_stop_robot();
+		carmen_ipc_disconnect();
+		carmen_warn("\nDisconnected.\n");
 
-	exit(0);
+		exit(0);
+	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 

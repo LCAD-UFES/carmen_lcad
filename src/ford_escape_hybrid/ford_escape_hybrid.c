@@ -306,11 +306,8 @@ publish_car_status()
 	msg.g_XGV_headlights_status = g_XGV_headlights_status;
 
 //	printf("g_XGV_turn_signal = 0x%x\n", g_XGV_turn_signal);
-	msg.timestamp = carmen_get_time();
-	msg.host = carmen_get_host();
 
-	err = IPC_publishData(CARMEN_FORD_ESCAPE_STATUS_NAME, &msg);
-	carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_STATUS_NAME);
+	carmen_ford_escape_publish_status_message(&msg, carmen_get_time());
 }
 
 
@@ -322,11 +319,10 @@ publish_car_error()
 	int i;
 
 	msg.num_errors = g_XGV_num_errors;
-	msg.error = calloc(msg.num_errors,sizeof(int));
+	msg.error = calloc(msg.num_errors, sizeof(int));
 	for (i = 0; i < msg.num_errors; i++)
-	{
 		msg.error[i] = g_XGV_error[i];
-	}
+
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 
