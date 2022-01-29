@@ -148,11 +148,13 @@ class InferenceHelper:
         #pred = plasma(pred)[:, :, :3]
 
         pred = (pred * 256).astype('uint16')
+        new_array = pred[200:480,:]
+        #print(new_array.shape)
         #final = pred*255
         #cv2.imwrite("/tmp/output2.png",final)
         #print(final.shape)
         # print(pred.shape)
-        return (pred).astype('uint16')
+        return (new_array).astype('uint16')
         #return bytearray(final)
 
     @torch.no_grad()
