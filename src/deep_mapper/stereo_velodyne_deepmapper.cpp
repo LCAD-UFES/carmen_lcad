@@ -139,19 +139,16 @@ convert_depth_to_velodyne_beams(stereo_util interface, unsigned char* depth, int
 	inc_horizontal =  ((double) width / (double) horizontal_resolution);
 	unsigned short int *points = (unsigned short int *) depth;
 
-	double angle = -25.0; // Horizontal angle
-	double delta_angle = 50.0 / (double) width;
-	// double ver_delta_angle = 49.5 / (double) height;
+	// double angle = -25.0; // Horizontal angle
+	// double delta_angle = 50.0 / (double) width;
+	double angle = -21.5; // Horizontal angle
+	double delta_angle = 43.0 / (double) width;
 	for (x = horizontal_roi_ini, j = horizontal_resolution/interface.stereo_stride_x - 1; x <  horizontal_roi_end; x += interface.stereo_stride_x*inc_horizontal, j--)
 	{
 		stereo_velodyne_scan[j].angle = angle;
 		angle += delta_angle;
-		// double ver_angle = -15.0;
 		for (y = vertical_roi_ini, i = vertical_resolution/interface.stereo_stride_y - 1; y < vertical_roi_end; y += interface.stereo_stride_y*inc_vertical, i--)
 		{			
-			// cout << ver_angle << " ";
-			// ver_angle += ver_delta_angle;
-
 			double horizontal_angle = stereo_velodyne_scan[j].angle * M_PI / 180.0;
 			double range = points[(int)(y * (double)interface.width + x)] * ( 2 - cos(abs(horizontal_angle)));
 			range = range > range_max ? 0.0 : range;
@@ -184,14 +181,13 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char*image_gray = imggray.data;
-
-	cv::Rect myROI(0, 190, stereo_image->width, stereo_image->height - 190);
-	open_cv_image = open_cv_image(myROI);
-
 	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
+
+	cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
+	open_cv_image = open_cv_image(myROI);
     cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-	
-		convert_depth_to_velodyne_beams(instance, depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
+		
+	convert_depth_to_velodyne_beams(instance, depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
 				vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, image_gray);
 	
     velodyne_partial_scan.partial_scan = scan;
