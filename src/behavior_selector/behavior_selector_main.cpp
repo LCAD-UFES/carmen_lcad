@@ -910,10 +910,8 @@ set_path_using_symotha(const carmen_robot_and_trailer_traj_point_t current_robot
 	{
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
 		{
-			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
-				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi,
-				road_network_message->annotations, road_network_message->annotations_codes, road_network_message,
-				&behavior_selector_state_message, timestamp);
+			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
+					&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
 		else
@@ -1093,10 +1091,8 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 	{
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
 		{
-			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message->poses, road_network_message->poses_back,
-				road_network_message->number_of_poses, road_network_message->number_of_poses_back, current_robot_pose_v_and_phi,
-				road_network_message->annotations, road_network_message->annotations_codes, road_network_message,
-				&behavior_selector_state_message, timestamp);
+			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
+					&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
 		else
@@ -1369,7 +1365,7 @@ rddf_road_profile_message_handler(carmen_rddf_road_profile_message *rddf_msg)
 }
 
 
-static void
+void
 frenet_path_planner_set_of_paths_message_handler(carmen_frenet_path_planner_set_of_paths *set_of_paths_message)
 {
 	current_set_of_paths = set_of_paths_message;
@@ -1635,7 +1631,8 @@ register_handlers()
 	if (!behavior_selector_performs_path_planning)
 		carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_road_profile_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_frenet_path_planner_subscribe_set_of_paths_message(NULL, (carmen_handler_t) frenet_path_planner_set_of_paths_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	// Soh deve assinar se estiver usando frenet como um modulo aa parte
+//	carmen_frenet_path_planner_subscribe_set_of_paths_message(NULL, (carmen_handler_t) frenet_path_planner_set_of_paths_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (!use_truepos)
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
