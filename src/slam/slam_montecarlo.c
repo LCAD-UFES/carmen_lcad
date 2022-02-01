@@ -289,12 +289,12 @@ carmen_slam_montecarlo_destroy()
 		free(map);
 	if (map_1) 
 		free(map_1);
-	if (sensor_message.range)
-		free(sensor_message.range);
+//	if (sensor_message.range)
+//		free(sensor_message.range);
 	if (sensor_ackerman_message.range)
 		free(sensor_ackerman_message.range);
-	if (particles_message.particles)
-		free(particles_message.particles);
+//	if (particles_message.particles)
+//		free(particles_message.particles);
 	if (particles_ackerman_message.particles)
 		free(particles_ackerman_message.particles);
 }

@@ -254,7 +254,7 @@ read_parameters(int argc, char **argv)
 	char stereo_string[256];
 	char camera_string[256];
 
-	sprintf(stereo_velodyne_string, "%s%d", "stereo_velodyne", atoi(argv[1]));
+	sprintf(stereo_velodyne_string, "%s%d", "stereo", atoi(argv[1]));
 	sprintf(stereo_string, "%s%d", "stereo", atoi(argv[1]));
 	sprintf(camera_string, "%s%d", "bumblebee_basic", atoi(argv[1]));
 
