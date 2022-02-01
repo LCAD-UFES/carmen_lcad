@@ -182,24 +182,27 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char*image_gray = imggray.data;
 	unsigned char *depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data);
+	
+	cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
+	open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
 
-	 cv::imshow("Image", open_cv_image);
-	cv::imshow("GLPDepth Original", imgdepth);
+	convert_depth_to_velodyne_beams(instance, depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
+				vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, image_gray);
+	
+    velodyne_partial_scan.partial_scan = scan;
+	velodyne_partial_scan.number_of_shots = horizontal_roi_end - horizontal_roi_ini;
+	velodyne_partial_scan.host = carmen_get_host();
+	velodyne_partial_scan.timestamp = stereo_image->timestamp;
+	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
+	
+
+	cv::imshow("Image", open_cv_image);
 	cv::imshow("GLPDepth", imgdepth * 256);
 
-	// cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
-	// open_cv_image = open_cv_image(myROI);
+	
     
 		
-	// convert_depth_to_velodyne_beams(instance, depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
-	// 			vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, image_gray);
-	
-    // velodyne_partial_scan.partial_scan = scan;
-	// velodyne_partial_scan.number_of_shots = horizontal_roi_end - horizontal_roi_ini;
-	// velodyne_partial_scan.host = carmen_get_host();
-	// velodyne_partial_scan.timestamp = stereo_image->timestamp;
-	// carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
 	
    
 	waitKey(1);

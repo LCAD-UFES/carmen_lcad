@@ -7,11 +7,12 @@ import torch
 import torch.backends.cudnn as cudnn
 
 from PIL import Image
-from torchvision import transforms
 
 import utils.logging as logging
 import utils.metrics as metrics
 from models.model import GLPDepth
+import torchvision.transforms as transforms
+import albumentations as A
 
 def activate_virtual_environment(environment_root):
     """Configures the virtual environment starting at ``environment_root``."""
@@ -40,11 +41,6 @@ def initialize():
         model_weight = OrderedDict((k[7:], v) for k, v in model_weight.items())
     model.load_state_dict(model_weight)
     model.eval()
-    if device == torch.device("cuda"):
-        model = model.to(memory_format=torch.channels_last)
-        model = model.half()
-
-    model.to(device)
 
     print("\n\n-------------------------------------------------------")
     print("       Pretrained Model GLPDepth loaded!")
@@ -55,22 +51,28 @@ def glp_process_image(image):
     global model
     global device
     
-    print("GLPDepth: Inference & Evaluate")
+    # print("GLPDepth: Inference & Evaluate")
+    to_tensor = transforms.ToTensor()
+    batch = {}
 
-    img = image
-    img = img[:, :, ::-1].copy() 
-    # print(img.shape)
-    if img.ndim == 2:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # input size should be multiple of 32
+    h, w, c = image.shape
+    new_h, new_w = h // 32 * 32, w // 32 * 32
+    image = cv2.resize(image, (new_w, new_h))
+    image = to_tensor(image)
+    image = image.unsqueeze(0)
+    
+    batch['image'] = image
+    input_RGB = batch['image'].to(device)
 
     with torch.no_grad():
-        tensor_img = torch.Tensor(img)
-        input_RGB = tensor_img.to(device)
         pred = model(input_RGB)
-        pred_d = pred['pred_d']
-        pred_d = pred_d.squeeze()
-        pred_d = pred_d.cpu().numpy() * 256.0
-    return (pred_d).astype('uint16')
+    pred_d = pred['pred_d']
+    pred_d = pred_d.squeeze()
+    pred_d = pred_d.cpu().numpy() * 256.0
+    pred_d_numpy = (pred_d / pred_d.max()) * 255
+    new_array = pred_d_numpy[200:480,:]
+    return (new_array).astype('uint16')
             
         

@@ -87,7 +87,7 @@ initialize_python_context()
 unsigned char*
 libglpdepth_process_image(int width, int height, unsigned char *image)
 {
-	printf("libglpdepth_process_image\n");
+	// printf("libglpdepth_process_image\n");
 	npy_intp dims[3] = {height, width, 3};
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);
 	
