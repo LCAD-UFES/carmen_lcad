@@ -7,7 +7,7 @@ import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
 import model_io
-from models import UnetAdaptiveBins
+from models.unet_adaptive_bins import UnetAdaptiveBins
 
 
 def activate_virtual_environment(environment_root):
