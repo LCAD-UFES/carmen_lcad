@@ -1,4 +1,60 @@
-# Global-Local Path Networks for Monocular Depth Estimation with Vertical CutDepth [[Paper]](https://arxiv.org/abs/2201.07436)
+
+# Carmen LCAD Integration Steps
+
+## DeepMapper
+
+DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera images using Neural Networks. 
+
+## Pretrained model
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/GLPDepth
+    mkdir ckpt
+```
+
+The pretrained model "best_model_kitti.pt" is available at [here](https://drive.google.com/drive/folders/17yYbLZS2uQ6UVn5ET9RhVL0y_X3Ipl5_).
+* Download the kitti weights and save at "$CARMEN_HOME/src/deep_mapper/GLPDepth/ckpt/", it is needed for running the Neural Network.
+
+## Preparing the environment
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/GLPDepth
+```
+Create VirtualEnv in order to install torch and its dependencies:
+```shell
+    ./create_env.sh
+```
+```shell
+    make
+```
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/
+```
+```shell
+    make
+```
+
+### Execution
+Execute these steps:
+```shell
+cd $CARMEN_HOME/bin/
+./central
+```
+```shell
+cd $CARMEN_HOME/bin/
+./proccontrol process-playback-fovea.ini
+```
+```shell
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/GLPDepth:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/GLPDepth/venv/bin/activate; ./stereo_velodyne_glpdepth 3
+```
+After loading the pretrained weights, just play and run. The results are showed at Viewer 3D -> Lidar 8.
+
+
+
+## Original Steps
+
+### Global-Local Path Networks for Monocular Depth Estimation with Vertical CutDepth [[Paper]](https://arxiv.org/abs/2201.07436)
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/global-local-path-networks-for-monocular/monocular-depth-estimation-on-nyu-depth-v2)](https://paperswithcode.com/sota/monocular-depth-estimation-on-nyu-depth-v2?p=global-local-path-networks-for-monocular)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/global-local-path-networks-for-monocular/monocular-depth-estimation-on-kitti-eigen)](https://paperswithcode.com/sota/monocular-depth-estimation-on-kitti-eigen?p=global-local-path-networks-for-monocular)
@@ -6,6 +62,7 @@
 ### Downloads
 - [[Downloads]](https://drive.google.com/drive/folders/17yYbLZS2uQ6UVn5ET9RhVL0y_X3Ipl5_?usp=sharing) Trained ckpt files for NYU Depth V2 and KITTI
 - [[Downloads]](https://drive.google.com/drive/folders/1LGNSKSaXguLTuCJ3Ay_UsYC188JNCK-j?usp=sharing) Predicted depth maps png files for NYU Depth V2 and KITTI Eigen split test set 
+
 
 ### Requirements
 Tested on 
