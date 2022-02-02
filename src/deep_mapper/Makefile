@@ -12,14 +12,9 @@ CXXFLAGS += -std=c++11
 #CFLAGS += -g -pg
 LINK = g++
 
-# AdaBins
-# IFLAGS += -I/usr/include/python2.7
-# LFLAGS += `python2.7-config --libs` -ladabins
-
-# Adabins
+# Adabins and GLPDepth
 IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs` -ladabins
-LFLAGS += `python3.7-config --libs` -lglpdepth
+LFLAGS += `python3.7-config --libs` `python3.6-config --libs` -ladabins -lglpdepth
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
@@ -44,7 +39,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
-	-lbumblebee_basic_interface -lvelodyne_camera_calibration 	\
+	-lbumblebee_basic_interface 	\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface \
 	-lmapper -lmapper_interface
@@ -69,7 +64,7 @@ LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkml
 LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne
 
 # Source code files (.c, .cpp) 
-SOURCES = stereo_velodyne_message_stereo.cpp stereo_velodyne_adabins.cpp stereo_velodyne_glpdepth.cpp
+SOURCES = stereo_velodyne_adabins.cpp stereo_velodyne_glpdepth.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -78,8 +73,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = stereo_velodyne_adabins stereo_velodyne_glpdepth stereo_velodyne_message_stereo
-TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a stereo_velodyne stereo_velodyne_adabins stereo_velodyne_message_stereo  stereo_velodyne_glpdepth
+PUBLIC_BINARIES = stereo_velodyne_adabins stereo_velodyne_glpdepth
+TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a stereo_velodyne stereo_velodyne_adabins stereo_velodyne_glpdepth
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
