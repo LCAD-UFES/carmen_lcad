@@ -1,7 +1,7 @@
 include ../Makefile.conf
 
 # Module name and description
-MODULE_NAME = Virtual Depth Estimation using Adabins
+MODULE_NAME = Virtual Depth Estimation using Adabins and GLPDepth
 MODULE_COMMENT = Depth with monocular cameras
 
 #CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
@@ -21,18 +21,12 @@ IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
 LFLAGS += `python3.7-config --libs` -ladabins
 LFLAGS += `python3.7-config --libs` -lglpdepth
 
-
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
-
-#YOLO
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/lib
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet4
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
@@ -50,7 +44,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
-	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet4		\
+	-lbumblebee_basic_interface -lvelodyne_camera_calibration 	\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface \
 	-lmapper -lmapper_interface
@@ -75,7 +69,7 @@ LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkml
 LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne
 
 # Source code files (.c, .cpp) 
-SOURCES = dbscan.cpp movable_object.cpp virtual_depth.cpp stereo_velodyne_deepmapper.cpp stereo_velodyne_adabins.cpp stereo_velodyne_glpdepth.cpp
+SOURCES = stereo_velodyne_message_stereo.cpp stereo_velodyne_adabins.cpp stereo_velodyne_glpdepth.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -84,8 +78,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = virtual_depth stereo_velodyne_deepmapper stereo_velodyne_adabins stereo_velodyne_glpdepth
-TARGETS = darknet libtf moving_objects libadabins.a libprob_models.a dbscan movable_object virtual_depth stereo_velodyne stereo_velodyne_deepmapper stereo_velodyne_adabins libglpdepth.a stereo_velodyne_glpdepth
+PUBLIC_BINARIES = stereo_velodyne_adabins stereo_velodyne_glpdepth stereo_velodyne_message_stereo
+TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a stereo_velodyne stereo_velodyne_adabins stereo_velodyne_message_stereo  stereo_velodyne_glpdepth
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -99,19 +93,14 @@ LFLAGS += `pkg-config --libs gtk+-3.0`
 # LFLAGS += `pkg-config --libs gtkglext-1.0`
 endif
 
-dbscan: dbscan.o
-
-movable_object: movable_object.o
-
-virtual_depth: virtual_depth.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a dbscan.o movable_object.o 
-
-stereo_velodyne_deepmapper: stereo_velodyne_deepmapper.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
+stereo_velodyne_message_stereo: stereo_velodyne_message_stereo.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
 stereo_velodyne_adabins: stereo_velodyne_adabins.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
 stereo_velodyne_glpdepth: stereo_velodyne_glpdepth.o $(CARMEN_HOME)/src/deep_mapper/GLPDepth/libglpdepth.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
 # rules
+
 libtf:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libtf/src
 
@@ -121,13 +110,7 @@ libadabins.a:
 libglpdepth.a: 
 	$(MAKE) -C $(CARMEN_HOME)/src/deep_mapper/GLPDepth
 
-moving_objects: 
-	$(MAKE) -C $(CARMEN_HOME)/src/moving_objects/
-
 stereo_velodyne:
 	$(MAKE) -C $(CARMEN_HOME)/src/stereo_velodyne/
-
-darknet:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet4
 
 include ../Makefile.rules
