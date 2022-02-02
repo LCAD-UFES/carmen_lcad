@@ -61,7 +61,7 @@ else
 	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
-LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne
+LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne -lcamera_drivers
 
 # Source code files (.c, .cpp) 
 SOURCES = stereo_velodyne_adabins.cpp stereo_velodyne_glpdepth.cpp
@@ -104,6 +104,9 @@ libadabins.a:
 
 libglpdepth.a: 
 	$(MAKE) -C $(CARMEN_HOME)/src/deep_mapper/GLPDepth
+
+camera_drivers:
+	$(MAKE) -C $(CARMEN_HOME)/src/camera_drivers/
 
 stereo_velodyne:
 	$(MAKE) -C $(CARMEN_HOME)/src/stereo_velodyne/

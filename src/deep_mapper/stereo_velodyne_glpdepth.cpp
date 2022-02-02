@@ -13,6 +13,9 @@
 #include <string.h>
 #include <iostream>
 
+#include <carmen/camera_drivers_messages.h>
+#include <carmen/camera_drivers_interface.h>
+
 
 using namespace std;
 using namespace cv;
@@ -118,12 +121,41 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = stereo_image->timestamp;
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
-	
-    cv::imshow("Image", open_cv_image);
+		
+    cv::imshow("Bumblebee Image", open_cv_image);
 	cv::imshow("GLPDepth", imgdepth * 256);
 	waitKey(1);
 }
 
+
+void
+image_handler(camera_message *msg)
+{
+	//printf("camera_image_handler\n");
+	camera_image *stereo_image = msg->images;
+	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	cv::Mat imggray;
+	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
+	unsigned char*image_gray = imggray.data;
+	unsigned char *depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data);
+
+	cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
+	open_cv_image = open_cv_image(myROI);
+    cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
+		
+	convert_depth_to_velodyne_beams(instance, depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
+				vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, image_gray);
+	
+    velodyne_partial_scan.partial_scan = scan;
+	velodyne_partial_scan.number_of_shots = horizontal_roi_end - horizontal_roi_ini;
+	velodyne_partial_scan.host = carmen_get_host();
+	velodyne_partial_scan.timestamp = msg->timestamp;
+	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
+	
+    cv::imshow("Camera Driver Image", open_cv_image);
+	cv::imshow("GLPDepth", imgdepth * 256);
+	waitKey(1);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -223,7 +255,11 @@ main(int argc, char **argv)
 
 	carmen_velodyne_define_messages();
 
-    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
+    if (camera == 3){
+    	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
+	} else {
+		camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
+	}
 
 	carmen_ipc_dispatch();
 
