@@ -10,13 +10,6 @@ The pretrained models "AdaBins_nyu.pt" and "AdaBins_kitti.pt" are available at [
 ## Preparing the environment
 
 ```shell
-    cd $CARMEN_HOME/src/deep_mapper/Adabins
-```
-```shell
-    make
-```
-
-```shell
     cd $CARMEN_HOME/src/deep_mapper/
 ```
 ```shell
@@ -42,31 +35,12 @@ The parameter 1 is required to install CUDA and CUDNN.
  Once the weights are saved at "pretrained" folder and the project CARMEN_LCAD compiled and all dependencies installed, <br/>
  run the commands bellow to use. 
  
-### Include the directories in your PYTHONPATH
-#### First option
-```shell
- echo "export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH" >> ~/.bashrc
- source ~/.bashrc
-```
-#### Second option - Through Text Editor:
-```shell
-    gedit ~/.bashrc
-```
-And include these lines in the end of file:
-```shell
-    #Deep mapper
-    export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models:$PYTHONPATH
-```
-Save and close the Text Editor. For reload the environment variables, run:
-```shell
-    source ~/.bashrc
-```
-
 ### Configuring a process.ini (optional)
-It is necessary ajust some process.ini to load inside a proccontrol process. Edit the choosen process and add the line:
+It is necessary ajust some process.ini to load inside a proccontrol process. Edit the choosen process and add these lines:
 ```
-deep_map_ART    depth_map   0   0   ./deep_mapper  -camera_id 1  # using with ART and Intelbras
-deep_map_IARA   depth_map   0   0   ./deep_mapper  -camera_id 3  # using with IARA and Bumblebee 
+deep_map_ART    depth_map   0   0   export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 1  # using with ART and Intelbras
+deep_map_IARA   depth_map   0   0   export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 3  # using with IARA and Bumblebee 3
+GLP_IARA   depth_map   0   0   export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_glpdepth 3  # using with IARA and Bumblebee 3
 ```
 
 ### Execution
@@ -81,44 +55,17 @@ cd $CARMEN_HOME/bin/
 ```
 ```shell
 cd $CARMEN_HOME/bin/
-source $CARMEN_HOME/src/deep_mapper/venv/bin/activate
-(venv) lcad@lcad:~/carmen_lcad/bin$ ./deep_mapper -camera_id 3
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 3
 ```
 After loading the pretrained weights, just play and run. The results are showed.
 
-
-## Testing the network with a video
-
-## Visualize the images side by side - original/depth
-* Run the command:
+In order to use GLPDepth, run:
+```shell
+cd $CARMEN_HOME/bin/
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_glpdepth 3
 ```
-source $CARMEN_HOME/src/deep_mapper/venv/bin/activate
-python infer_video.py --model kitti --input test_video.mp4
-deactivate
-```
-Obs.: test_video.mp4 is some choosen video.
 
-* We recommend use an GPU TitanV with 11GB, otherwise it can be slow.
 
 # Original Article
 [AdaBins](https://arxiv.org/abs/2011.14141)
-
-
-param_edit -0.4 pitch 800
-o certo nao eh o laser
-fazer os angulos pelo tamanho vertical (100_
-
-usar a msgg stereo)
-
-como faz p ficar um plano p passar os parametros da camera e resultar em ficar plano
-falta retificar
-camera 7 e achar bugs
-dist correction
-
-points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle)))
-
-PLANO:
-double horizontal_angle = angle * M_PI / 180.0;
-			msg.partial_scan[i].distance[j] = 2000.0 * ( 2 - cos(abs(horizontal_angle))); //points[i + j * number_of_cols] * ( 2 - cos(abs(horizontal_angle))); // points[i + j * number_of_cols];
-
-            
+Global-Local Path Networks for Monocular Depth Estimation with Vertical CutDepth [GLPDepth](https://arxiv.org/abs/2201.07436)
