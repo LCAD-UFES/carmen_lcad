@@ -1953,9 +1953,8 @@ variable_scan_message_handler15(carmen_velodyne_variable_scan_message *message)
 static void
 stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message *velodyne_message)
 {
-	//add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
-    add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, camera_pose);
-
+	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
+    
 	add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
 }
 
