@@ -130,10 +130,14 @@ def dpt_process_image(carmen_image, timestamp):
             .cpu()
             .numpy()
         )
-    
-    filename = output_path + str(timestamp.item(0))
-    absolute_depth=False
-    out = util.io.depth_to_img(filename, prediction, bits=2, absolute_depth=absolute_depth)
-    # print(out) #480x640 shape
-    return out
+    pred_d = prediction
+    print(pred_d)
+    pred_d_numpy = (pred_d / pred_d.max()) * 255
+    new_array = pred_d_numpy[200:480,:]
+    return (new_array).astype('uint16')
+    # filename = output_path + str(timestamp.item(0))
+    # absolute_depth=False
+    # out = util.io.depth_to_img(filename, prediction, bits=2, absolute_depth=absolute_depth)
+    # # print(out) #480x640 shape
+    # return out
 
