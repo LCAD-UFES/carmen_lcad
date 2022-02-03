@@ -5,7 +5,7 @@
 #include <carmen/stereo_messages.h>
 #include <carmen/stereo_interface.h>
 #include <carmen/stereo_velodyne.h>
-#include <carmen/libadabins.h>
+#include <carmen/libdpt.h>
 #include <string.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -111,7 +111,7 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char*image_gray = imggray.data;
-	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
+	unsigned char *depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
 
 	cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	open_cv_image = open_cv_image(myROI);
@@ -128,7 +128,7 @@ bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
 		
     cv::imshow("Bumblebee Image", open_cv_image);
-	cv::imshow("Adabins", imgdepth * 256);
+	cv::imshow("DPT", imgdepth * 256);
 	waitKey(1);
 }
 
@@ -143,7 +143,7 @@ image_handler(camera_message *msg)
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char*image_gray = imggray.data;
-	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, msg->timestamp);
+	unsigned char *depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, msg->timestamp);
 
 	cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	open_cv_image = open_cv_image(myROI);
@@ -159,7 +159,7 @@ image_handler(camera_message *msg)
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
 	
     cv::imshow("Camera Driver Image", open_cv_image);
-	cv::imshow("Adabins", imgdepth * 256);
+	cv::imshow("DPT", imgdepth * 256);
 	waitKey(1);
 }
 

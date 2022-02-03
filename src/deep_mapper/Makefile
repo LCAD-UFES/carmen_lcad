@@ -14,7 +14,7 @@ LINK = g++
 
 # Adabins and GLPDepth
 IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs` `python3.6-config --libs` -ladabins -lglpdepth
+LFLAGS += `python3.7-config --libs` `python3.6-config --libs` -ladabins -lglpdepth -ldpt
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
@@ -64,7 +64,7 @@ LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkml
 LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne -lcamera_drivers
 
 # Source code files (.c, .cpp) 
-SOURCES = stereo_velodyne_adabins.cpp stereo_velodyne_glpdepth.cpp
+SOURCES = stereo_velodyne_adabins.cpp stereo_velodyne_glpdepth.cpp stereo_velodyne_dpt.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -73,8 +73,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = stereo_velodyne_adabins stereo_velodyne_glpdepth
-TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a stereo_velodyne stereo_velodyne_adabins stereo_velodyne_glpdepth
+PUBLIC_BINARIES = stereo_velodyne_adabins stereo_velodyne_glpdepth stereo_velodyne_dpt
+TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a libdpt.a stereo_velodyne stereo_velodyne_adabins stereo_velodyne_glpdepth stereo_velodyne_dpt
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -94,6 +94,8 @@ stereo_velodyne_adabins: stereo_velodyne_adabins.o $(CARMEN_HOME)/src/deep_mappe
 
 stereo_velodyne_glpdepth: stereo_velodyne_glpdepth.o $(CARMEN_HOME)/src/deep_mapper/GLPDepth/libglpdepth.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
+stereo_velodyne_dpt: stereo_velodyne_dpt.o $(CARMEN_HOME)/src/deep_mapper/DPT/libdpt.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
+
 # rules
 
 libtf:
@@ -104,6 +106,9 @@ libadabins.a:
 
 libglpdepth.a: 
 	$(MAKE) -C $(CARMEN_HOME)/src/deep_mapper/GLPDepth
+
+libdpt.a: 
+	$(MAKE) -C $(CARMEN_HOME)/src/deep_mapper/DPT
 
 camera_drivers:
 	$(MAKE) -C $(CARMEN_HOME)/src/camera_drivers/

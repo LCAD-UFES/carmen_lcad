@@ -1,0 +1,2 @@
+[Master]
+init-hook="import imp, os; from pylint.config import find_pylintrc; imp.load_source('import_hook', os.path.join(os.path.dirname(find_pylintrc()), 'import_hook.py'))"
