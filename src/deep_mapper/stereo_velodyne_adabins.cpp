@@ -42,6 +42,10 @@ static carmen_velodyne_variable_scan_message velodyne_partial_scan;
 static IplImage *reference_image;
 static IplImage *reference_image_gray;
 
+Mat cameraMatrix, distCoeffs, newcameramtx, R1;
+double fx, fy, cu, camera_cv, k1, k2, p1, p2, k3;
+static Mat MapX, MapY;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -134,6 +138,8 @@ image_handler(camera_message *msg)
 	//printf("camera_image_handler\n");
 	camera_image *stereo_image = msg->images;
 	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	remap(open_cv_image, open_cv_image, MapX, MapY, INTER_LINEAR);  // Transforms the image to compensate for lens distortion
+	
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char*image_gray = imggray.data;
@@ -206,8 +212,10 @@ read_parameters(int argc, char **argv)
 	int num_items;
 
 	char stereo_string[256];
+	char camera_string[256];
 	
 	sprintf(stereo_string, "%s%d", "stereo", atoi(argv[1]));
+	sprintf(camera_string, "%s%d", "intelbras", atoi(argv[1]));
 
 	carmen_param_t param_list[] = {
 		{ (char *) stereo_string, (char *) "vertical_resolution", CARMEN_PARAM_INT, &vertical_resolution, 1, NULL },
@@ -221,8 +229,16 @@ read_parameters(int argc, char **argv)
 		{ (char *) stereo_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 1, NULL },
 		{ (char *) stereo_string, (char *) "horizontal_camera_angle", CARMEN_PARAM_DOUBLE, &horizontal_camera_angle, 1, NULL },
 		{ (char *) stereo_string, (char *) "horizontal_start_angle", CARMEN_PARAM_DOUBLE, &horizontal_start_angle, 1, NULL },
-		{ (char *) stereo_string, (char *) "range_multiplier_factor", CARMEN_PARAM_DOUBLE, &range_multiplier_factor, 1, NULL }
-		
+		{ (char *) stereo_string, (char *) "range_multiplier_factor", CARMEN_PARAM_DOUBLE, &range_multiplier_factor, 1, NULL },
+		{ (char *) camera_string, (char*) "fx", CARMEN_PARAM_DOUBLE, &fx, 0, NULL },
+       	{ (char *) camera_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &fy, 0, NULL },
+       	{ (char *) camera_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &cu, 0, NULL },
+       	{ (char *) camera_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_cv, 0, NULL },
+		{ (char *) camera_string, (char*) "k1", CARMEN_PARAM_DOUBLE, &k1, 0, NULL },
+		{ (char *) camera_string, (char*) "k2", CARMEN_PARAM_DOUBLE, &k2, 0, NULL },
+		{ (char *) camera_string, (char*) "k3", CARMEN_PARAM_DOUBLE, &k3, 0, NULL },
+		{ (char *) camera_string, (char*) "p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL },
+		{ (char *) camera_string, (char*) "p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL }
 	};
 
 	if (vertical_resolution > vertical_roi_end - vertical_roi_ini)
@@ -231,6 +247,17 @@ read_parameters(int argc, char **argv)
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
+	double fx_rect = fx * bumblebee_basic_width;
+	double fy_rect = fy * bumblebee_basic_height;
+	double cu_rect = cu * bumblebee_basic_width;
+	double cv_rect = camera_cv * bumblebee_basic_height;
+
+	cameraMatrix = (Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
+	newcameramtx = (Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
+	distCoeffs = (Mat_<double>(5,1) << k1, k2, p1, p2, k3);
+	R1 = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+	
+	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, Size(bumblebee_basic_width, bumblebee_basic_height), CV_16SC2, MapX, MapY);
 	return (0);
 }
 
