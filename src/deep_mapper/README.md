@@ -55,14 +55,20 @@ cd $CARMEN_HOME/bin/
 ```
 ```shell
 cd $CARMEN_HOME/bin/
-export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 3
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 1
 ```
 After loading the pretrained weights, just play and run. The results are showed.
 
 In order to use GLPDepth, run:
 ```shell
 cd $CARMEN_HOME/bin/
-export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_glpdepth 3
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/GLPDepth::$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/GLPDepth/venv/bin/activate; ./stereo_velodyne_glpdepth 1
+```
+
+In order to use DPT-Intel, run:
+```shell
+cd $CARMEN_HOME/bin/
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/DPT::$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/DPT/venv/bin/activate; ./stereo_velodyne_dpt 3
 ```
 
 
