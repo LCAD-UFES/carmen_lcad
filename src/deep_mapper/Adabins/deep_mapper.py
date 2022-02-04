@@ -28,6 +28,9 @@ def initialize():
         print('deep_mapper.py: inicializacao com kitti\n')
         global inferHelper 
         inferHelper = InferenceHelper('kitti')
+        print("\n\n-------------------------------------------------------")
+        print("       Pretrained Model AdaBins loaded!")
+        print("-------------------------------------------------------\n\n")
 
 def inferenceDepth(image, cut):
         global inferHelper
@@ -148,18 +151,9 @@ class InferenceHelper:
         #pred = plasma(pred)[:, :, :3]
 
         pred = (pred * 256).astype('uint16')
-        #print(pred.shape[0], pred.shape[1], pred.shape)
-        #print(cut)
-        pred[0:cut,:] = 500
-        #print(pred)
-        #new_array = pred[cut:pred.shape[0],:]
-        #print(new_array.shape)
-        #final = pred*255
-        #cv2.imwrite("/tmp/output2.png",final)
-        #print(final.shape)
-        # print(pred.shape)
+        pred[0:cut,:] = 1000
         return (pred).astype('uint16')
-        #return bytearray(final)
+        
 
     @torch.no_grad()
     def predict(self, image):

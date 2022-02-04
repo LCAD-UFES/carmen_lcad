@@ -98,7 +98,7 @@ def initialize():
     print("-------------------------------------------------------\n\n")
 
 
-def dpt_process_image(carmen_image, timestamp):
+def dpt_process_image(carmen_image, cut):
     global model
     global device
     global transform
@@ -131,10 +131,10 @@ def dpt_process_image(carmen_image, timestamp):
             .numpy()
         )
     pred_d = prediction
-    print(pred_d)
+    #print(pred_d)
     pred_d_numpy = (pred_d / pred_d.max()) * 255
-    new_array = pred_d_numpy[200:480,:]
-    return (new_array).astype('uint16')
+    pred_d_numpy[0:cut.item(0),:] = 1000
+    return (pred_d_numpy).astype('uint16')
     # filename = output_path + str(timestamp.item(0))
     # absolute_depth=False
     # out = util.io.depth_to_img(filename, prediction, bits=2, absolute_depth=absolute_depth)

@@ -24,7 +24,7 @@ void initialize_python_path_adabins()
 }
 
 void
-initialize_python_context()
+initialize_python_context_adabins()
 {
 	initialize_python_path_adabins();
 	Py_Initialize();
@@ -101,8 +101,7 @@ libadabins_process_image(int width, int height, unsigned char *image, int cut_pa
 	if (PyErr_Occurred())
 		        PyErr_Print();
 	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libadabins_process_image_function, numpyArray, numpyCutParam, NULL);
-	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libadabins_process_image_function, numpyArray, NULL);
-
+	
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
@@ -113,6 +112,7 @@ libadabins_process_image(int width, int height, unsigned char *image, int cut_pa
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
+	Py_DECREF(numpyCutParam);
 
 	return result_array;
 }

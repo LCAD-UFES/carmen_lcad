@@ -24,7 +24,7 @@ void initialize_python_path_glpdepth()
 }
 
 void
-initialize_python_context()
+initialize_python_context_glpdepth()
 {
 	initialize_python_path_glpdepth();
 	Py_Initialize();
@@ -85,15 +85,21 @@ initialize_python_context()
 }
 
 unsigned char*
-libglpdepth_process_image(int width, int height, unsigned char *image)
+libglpdepth_process_image(int width, int height, unsigned char *image, int cut_param)
 {
 	// printf("libglpdepth_process_image\n");
 	npy_intp dims[3] = {height, width, 3};
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);
+
+	int time[1];
+	time[0] = cut_param;
+	npy_intp dimcut[1] = {1};
+	
+	PyObject* numpyCutParam = PyArray_SimpleNewFromData(1, dimcut, NPY_INT, &time[0]);
 	
 	if (PyErr_Occurred())
 		        PyErr_Print();
-	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libglpdepth_process_image_function, numpyArray, NULL);
+	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libglpdepth_process_image_function, numpyArray, numpyCutParam, NULL);
 
 	if (PyErr_Occurred())
 	        PyErr_Print();
@@ -105,6 +111,7 @@ libglpdepth_process_image(int width, int height, unsigned char *image)
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
+	Py_DECREF(numpyCutParam);
 
 	return result_array;
 }

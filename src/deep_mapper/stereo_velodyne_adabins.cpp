@@ -246,12 +246,10 @@ static void init_params_edit()
 	char value_string[256];
 	char value_ray_string[256];
 	for (int i=0; i < camera_height; i++){ //480
-		//if (i > camera_height - vertical_resolution - 1){ // 480 - 280 i> 200
 		sprintf(value_string, "%0.4f ", v_angle);
 		concatenate(vertical_angles, value_string);
 		sprintf(value_ray_string, "%d ", camera_height-i-1);
 		concatenate(ray_order, value_ray_string);
-		//}
 		v_angle += delta_v_angle;
 	}
 	char *return_value;
@@ -419,7 +417,7 @@ int main(int argc, char **argv)
 	read_parameters(argc, argv);
 
 	/* Register Python Context for adabins*/
-	initialize_python_context();
+	initialize_python_context_adabins();
 
 	init_stereo_velodyne();
 
