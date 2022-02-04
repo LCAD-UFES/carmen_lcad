@@ -54,13 +54,18 @@ def initialize():
 
     # load network
     model_path = dpt_weight_path + "dpt_hybrid_kitti-cb926ef4.pt"
-    net_w = net_h = 384
+    net_w = 1216
+    net_h = 352
+
     model = DPTDepthModel(
-        path=model_path,
-        backbone="vitb_rn50_384",
-        non_negative=True,
-        enable_attention_hooks=False,
-    )
+            path=model_path,
+            scale=0.00006016,
+            shift=0.00579,
+            invert=True,
+            backbone="vitb_rn50_384",
+            non_negative=True,
+            enable_attention_hooks=False,
+        )
     normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     transform = Compose(
         [
