@@ -71,6 +71,7 @@ def glp_process_image(image):
     pred_d = pred['pred_d']
     pred_d = pred_d.squeeze()
     pred_d = pred_d.cpu().numpy() * 256.0
+    print(pred_d)
     pred_d_numpy = (pred_d / pred_d.max()) * 255
     new_array = pred_d_numpy[200:480,:]
     return (new_array).astype('uint16')

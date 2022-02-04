@@ -29,9 +29,9 @@ def initialize():
         global inferHelper 
         inferHelper = InferenceHelper('kitti')
 
-def inferenceDepth(image):
+def inferenceDepth(image, cut):
         global inferHelper
-        pred = inferHelper.predict_pil(image)
+        pred = inferHelper.predict_pil(image, int(cut.item(0)))
         # print('deep_mapper.py: executou a predicao\n')
         return pred
 
@@ -112,7 +112,7 @@ class InferenceHelper:
         self.model = model.to(self.device)
     
     @torch.no_grad()
-    def predict_pil(self, image):
+    def predict_pil(self, image, cut):
         # print("deep_mapper.py: predict_pil")
         
         height, width, layers = image.shape
@@ -148,13 +148,17 @@ class InferenceHelper:
         #pred = plasma(pred)[:, :, :3]
 
         pred = (pred * 256).astype('uint16')
-        new_array = pred[200:480,:]
+        #print(pred.shape[0], pred.shape[1], pred.shape)
+        #print(cut)
+        pred[0:cut,:] = 500
+        #print(pred)
+        #new_array = pred[cut:pred.shape[0],:]
         #print(new_array.shape)
         #final = pred*255
         #cv2.imwrite("/tmp/output2.png",final)
         #print(final.shape)
         # print(pred.shape)
-        return (new_array).astype('uint16')
+        return (pred).astype('uint16')
         #return bytearray(final)
 
     @torch.no_grad()

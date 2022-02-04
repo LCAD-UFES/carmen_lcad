@@ -85,20 +85,23 @@ initialize_python_context()
 }
 
 unsigned char*
-libadabins_process_image(int width, int height, unsigned char *image, double timestamp)
+libadabins_process_image(int width, int height, unsigned char *image, int cut_param)
 {
 	// printf("libadabins_process_image\n");
 	//create shape for numpy array
 	npy_intp dims[3] = {height, width, 3};
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);
-	// double time[1];
-	// time[0] = timestamp;
-	// npy_intp dimstamp[1] = {1};
-	// PyObject* numpyTimestamp = PyArray_SimpleNewFromData(1, dimstamp, NPY_DOUBLE, &time[0]);
 
+	int time[1];
+	time[0] = cut_param;
+	npy_intp dimcut[1] = {1};
+	
+	PyObject* numpyCutParam = PyArray_SimpleNewFromData(1, dimcut, NPY_INT, &time[0]);
+	
 	if (PyErr_Occurred())
 		        PyErr_Print();
-	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libadabins_process_image_function, numpyArray, NULL);
+	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libadabins_process_image_function, numpyArray, numpyCutParam, NULL);
+	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libadabins_process_image_function, numpyArray, NULL);
 
 	if (PyErr_Occurred())
 	        PyErr_Print();

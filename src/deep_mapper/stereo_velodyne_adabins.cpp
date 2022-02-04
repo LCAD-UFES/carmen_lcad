@@ -25,6 +25,7 @@ static double vertical_camera_angle;
 static double range_multiplier_factor;
 static int vertical_roi_ini;
 static int vertical_roi_end;
+static int vertical_top_cut;
 static int lidar_num;
 
 static int horizontal_roi_ini;
@@ -101,7 +102,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
-	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, stereo_image->timestamp);
+	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
 
 	cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	open_cv_image = open_cv_image(myROI);
@@ -115,7 +116,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = stereo_image->timestamp;
 
-	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
+	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 
 	cv::imshow("Bumblebee Image", open_cv_image);
 	cv::imshow("Adabins", imgdepth * 256);
@@ -132,10 +133,10 @@ void image_handler(camera_message *msg)
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
-	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, msg->timestamp);
-
-	cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
-	open_cv_image = open_cv_image(myROI);
+	unsigned char *depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
+	// img(cv::Rect(xMin,yMin,xMax-xMin,yMax-yMin)).copyTo(croppedImg);
+	//cv::Rect myROI(0, camera_height - vertical_resolution, stereo_image->width, camera_height - (camera_height - vertical_resolution));
+	//open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
 
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
@@ -145,7 +146,7 @@ void image_handler(camera_message *msg)
 	velodyne_partial_scan.number_of_shots = horizontal_roi_end - horizontal_roi_ini;
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = msg->timestamp;
-	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, 8);
+	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 
 	cv::imshow("Camera Driver Image", open_cv_image);
 	cv::imshow("Adabins", imgdepth * 256);
@@ -245,12 +246,12 @@ static void init_params_edit()
 	char value_string[256];
 	char value_ray_string[256];
 	for (int i=0; i < camera_height; i++){ //480
-		if (i > camera_height - vertical_resolution - 1){ // 480 - 280 i> 200
-			sprintf(value_string, "%0.4f ", v_angle);
-			concatenate(vertical_angles, value_string);
-			sprintf(value_ray_string, "%d ", camera_height-i-1);
-			concatenate(ray_order, value_ray_string);
-		}
+		//if (i > camera_height - vertical_resolution - 1){ // 480 - 280 i> 200
+		sprintf(value_string, "%0.4f ", v_angle);
+		concatenate(vertical_angles, value_string);
+		sprintf(value_ray_string, "%d ", camera_height-i-1);
+		concatenate(ray_order, value_ray_string);
+		//}
 		v_angle += delta_v_angle;
 	}
 	char *return_value;
@@ -264,7 +265,7 @@ static void init_params_edit()
 	strcpy(char_ray_order, ray_order.c_str());
 
 	char char_shot_size[256];
-	sprintf(char_shot_size, "%d", vertical_resolution);
+	sprintf(char_shot_size, "%d", camera_height);
 
 
 	for (m = 0; m < num_modules; m++)
@@ -369,6 +370,7 @@ int read_parameters(int argc, char **argv)
 		{(char *)stereo_string, (char *)"height", CARMEN_PARAM_INT, &camera_height, 1, NULL},
 		{(char *)stereo_string, (char *)"horizontal_camera_angle", CARMEN_PARAM_DOUBLE, &horizontal_camera_angle, 1, NULL},
 		{(char *)stereo_string, (char *)"vertical_camera_angle", CARMEN_PARAM_DOUBLE, &vertical_camera_angle, 1, NULL},
+		{(char *)stereo_string, (char *)"vertical_top_cut", CARMEN_PARAM_INT, &vertical_top_cut, 1, NULL},
 		{(char *)stereo_string, (char *)"horizontal_start_angle", CARMEN_PARAM_DOUBLE, &horizontal_start_angle, 1, NULL},
 		{(char *)stereo_string, (char *)"range_multiplier_factor", CARMEN_PARAM_DOUBLE, &range_multiplier_factor, 1, NULL},
 		{(char *)stereo_string, (char *)"lidar", CARMEN_PARAM_INT, &lidar_num, 1, NULL},
