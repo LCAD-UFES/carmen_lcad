@@ -38,9 +38,10 @@ The parameter 1 is required to install CUDA and CUDNN.
 ### Configuring a process.ini (optional)
 It is necessary ajust some process.ini to load inside a proccontrol process. Edit the choosen process and add these lines:
 ```
-deep_map_ART    depth_map   0   0   export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 1  # using with ART and Intelbras
-deep_map_IARA   depth_map   0   0   export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 3  # using with IARA and Bumblebee 3
-GLP_IARA   depth_map   0   0   export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_glpdepth 3  # using with IARA and Bumblebee 3
+cam1_adabins		detection	0		0		export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network adabins
+cam1_glpdepth	    detection	0		0		export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/GLPDepth:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/GLPDepth/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network glpdepth
+ cam1_dpt           detection   0       0       export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/DPT:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/DPT/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network dpt
+ 
 ```
 
 ### Execution
@@ -55,20 +56,20 @@ cd $CARMEN_HOME/bin/
 ```
 ```shell
 cd $CARMEN_HOME/bin/
-export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_adabins 1
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network adabins
 ```
 After loading the pretrained weights, just play and run. The results are showed.
 
 In order to use GLPDepth, run:
 ```shell
 cd $CARMEN_HOME/bin/
-export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/GLPDepth::$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/GLPDepth/venv/bin/activate; ./stereo_velodyne_glpdepth 1
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/GLPDepth:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/GLPDepth/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network glpdepth
 ```
 
 In order to use DPT-Intel, run:
 ```shell
 cd $CARMEN_HOME/bin/
-export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/DPT::$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/DPT/venv/bin/activate; ./stereo_velodyne_dpt 3
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/DPT:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/DPT/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network dpt
 ```
 
 
