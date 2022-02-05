@@ -9,11 +9,19 @@ DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera im
 
 ## Pretrained model
 
+#### Option 1:
+
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/DPT
+    make download
+```
+
+#### Option 2:
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/DPT
     mkdir weights
 ```
-
 The pretrained model "dpt_hybrid_kitti-cb926ef4.pt" is available at [dpt_hybrid_kitti-cb926ef4.pt](https://github.com/intel-isl/DPT/releases/download/1_0/dpt_hybrid_kitti-cb926ef4.pt) [Mirror](https://drive.google.com/file/d/1-oJpORoJEdxj4LTV-Pc17iB-smp-khcX/view?usp=sharing).
 * Download the kitti weights and save at "$CARMEN_HOME/src/deep_mapper/DPT/weights/", it is needed for running the Neural Network.
 

@@ -8,7 +8,7 @@ MODULE_NAME = DPT Neural Network
 MODULE_COMMENT = Depth Estimation with Intel DPT
 
 IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.6-config --libs`
+LFLAGS += `python3.7-config --libs` `python3.6-config --libs`
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 
@@ -31,10 +31,17 @@ PUBLIC_LIBRARIES_SO =
 
 libdpt.a: libdpt.o
 
-download:
-	$(CARMEN_HOME)/bin/gdown.pl https://github.com/intel-isl/DPT/releases/download/1_0/dpt_hybrid-midas-501f0c75.pt weights/dpt_hybrid-midas-501f0c75.pt
+MYDIR = weights
 
-# https://stackoverflow.com/questions/7369145/activating-a-virtualenv-using-a-shell-script-doesnt-seem-to-work
+create_weights:
+	[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
+
+download: create_weights download_kitti 
+			mv dpt_hybrid_kitti-cb926ef4.pt weights/
+
+download_kitti:
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1-oJpORoJEdxj4LTV-Pc17iB-smp-khcX/view?usp=sharing dpt_hybrid_kitti-cb926ef4.pt
+
 virtualenv:
 	. create_env.sh
 
