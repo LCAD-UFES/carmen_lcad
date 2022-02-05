@@ -32,6 +32,33 @@ Compile DeepMapper:
     make
 ```
 
+## Preparing the environment for DPT-Intel
+
+Download the pretrained weights:
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/DPT
+    make download
+```
+
+Create VirtualEnv in order to install torch and its dependencies:
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/DPT
+```
+```shell
+    ./create_env.sh
+```
+Compile DPT libraries:
+```shell
+    make
+```
+Compile DeepMapper:
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/
+```
+```shell
+    make
+```
 
 ## Preparing the environment for AdaBins
 

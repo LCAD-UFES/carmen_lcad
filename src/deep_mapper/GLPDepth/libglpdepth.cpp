@@ -37,7 +37,7 @@ initialize_python_context_glpdepth()
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		exit(printf("Error: The python_module deep_mapper could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
+		exit(printf("Error: The python_module run_glpdepth could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
 
 	if (PyErr_Occurred())

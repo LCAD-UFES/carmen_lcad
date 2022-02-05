@@ -3,11 +3,11 @@ sudo python3.7 -m pip install virtualenv
 
 rm -rf venv/
 # Create virtualenv and activating
-virtualenv -p python3.7 venv
+virtualenv -p /usr/bin/python3.7 venv
 source venv/bin/activate
 
-pip3 install scikit-build
-pip3 install numpy
+#pip3 install scikit-build
+#pip3 install numpy
 # Installing dependencies for run squeezeseg in virtualenv
 pip3 install -r $CARMEN_HOME/src/deep_mapper/GLPDepth/requirements.txt
 
