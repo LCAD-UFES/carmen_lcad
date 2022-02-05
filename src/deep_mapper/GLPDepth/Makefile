@@ -7,8 +7,8 @@ CXXFLAGS += -std=gnu++11
 MODULE_NAME = GLPDepth Neural Network
 MODULE_COMMENT = Depth Estimation with GLPDepth
 
-IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs`
+IFLAGS += -I/usr/include/python3.6m
+LFLAGS += `python3.6-config --libs`
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 
@@ -37,6 +37,7 @@ create_ckpt:
 	[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
 
 download: create_ckpt download_kitti 
+			mv best_model_kitti.ckpt ckpt/
 
 download_kitti:
 	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1dipQoGbTTa6LOEPTBvG5Z66rBCl8t9W7/view?usp=sharing best_model_kitti.ckpt

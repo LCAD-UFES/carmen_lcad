@@ -7,6 +7,15 @@ DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera im
 
 ## Pretrained model
 
+#### Option 1:
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/GLPDepth
+    make download
+```
+
+#### Option 2:
+
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/GLPDepth
     mkdir ckpt

@@ -8,7 +8,7 @@ MODULE_NAME = DPT Neural Network
 MODULE_COMMENT = Depth Estimation with Intel DPT
 
 IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs`
+LFLAGS += `python3.6-config --libs`
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 

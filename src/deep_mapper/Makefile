@@ -14,7 +14,7 @@ LINK = g++
 
 # Adabins and GLPDepth
 IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs` `python3.6-config --libs` -ladabins -lglpdepth -ldpt
+LFLAGS += `python3.6-config --libs` -ladabins -lglpdepth -ldpt
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp

@@ -7,8 +7,8 @@ CXXFLAGS += -std=gnu++11
 MODULE_NAME = Adabins Neural Network
 MODULE_COMMENT = Depth Estimation with Adabins
 
-IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs`
+IFLAGS += -I/usr/include/python3.6m
+LFLAGS += `python3.6-config --libs`
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 
@@ -36,7 +36,8 @@ MYDIR = pretrained
 create_pretrained:
 	[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
 
-download: create_pretrained download_kitti download_nyu
+download: create_pretrained download_kitti
+		mv AdaBins_kitti.pt pretrained
 
 download_kitti:
 	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1HMgff-FV6qw1L0ywQZJ7ECa9VPq1bIoj/edit AdaBins_kitti.pt

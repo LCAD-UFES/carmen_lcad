@@ -2,12 +2,42 @@
 
 DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera images using Neural Networks. 
 
-## Pretrained model
+Requirements: Python3.7, pip, virtualenv, Cuda 10.0 and CUDNN compatible.
 
-The pretrained models "AdaBins_nyu.pt" and "AdaBins_kitti.pt" are available at [here](https://1drv.ms/u/s!AuWRnPR26byUmfRxBQ327hc8eXse2Q?e=AQuYZw).
+## Preparing the environment for GLPDepth
+
+Download the pretrained weights:
+
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/GLPDepth
+    make download
+```
+
+Create VirtualEnv in order to install torch and its dependencies:
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/GLPDepth
+```
+```shell
+    ./create_env.sh
+```
+Compile GLPDepth libraries:
+```shell
+    make
+```
+Compile DeepMapper:
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/
+```
+```shell
+    make
+```
+
+
+## Preparing the environment for AdaBins
+
+The pretrained model "AdaBins_kitti.pt" is available at [here](https://1drv.ms/u/s!AuWRnPR26byUmfRxBQ327hc8eXse2Q?e=AQuYZw).
 * Download these weights and save them at "$CARMEN_HOME/src/deep_mapper/Adabins/pretrained/", it is needed for running the Neural Network.
 
-## Preparing the environment
 
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/
@@ -20,7 +50,7 @@ If your system already has CUDA 10.0 e CUDNN compatibles installed, run the comm
     ./install_dependencies.sh
 ```
 
-* For using this subsytem is required: CUDA_10.0 (and CUDNN compatible), Python 3.6, pip and virtualenv.
+* For using this subsytem is required: CUDA_10.0 Python 3.6, pip and virtualenv.
 
 ### In case your machine doesn't have CUDA and CUDNN
 * Run the command and all dependencies are gonna be installed:
