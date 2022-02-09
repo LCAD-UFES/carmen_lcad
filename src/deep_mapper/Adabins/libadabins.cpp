@@ -85,7 +85,7 @@ initialize_python_context_adabins()
 }
 
 unsigned char*
-libadabins_process_image(int width, int height, unsigned char *image, int cut_param)
+libadabins_process_image(int width, int height, unsigned char *image, int cut_param, int down_param)
 {
 	// printf("libadabins_process_image\n");
 	//create shape for numpy array
@@ -97,10 +97,16 @@ libadabins_process_image(int width, int height, unsigned char *image, int cut_pa
 	npy_intp dimcut[1] = {1};
 	
 	PyObject* numpyCutParam = PyArray_SimpleNewFromData(1, dimcut, NPY_INT, &time[0]);
+
+	int down[1];
+	down[0] = down_param;
+	PyObject* numpyDownParam = PyArray_SimpleNewFromData(1, dimcut, NPY_INT, &down[0]);
+	
+
 	
 	if (PyErr_Occurred())
 		        PyErr_Print();
-	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libadabins_process_image_function, numpyArray, numpyCutParam, NULL);
+	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libadabins_process_image_function, numpyArray, numpyCutParam, numpyDownParam, NULL);
 	
 	if (PyErr_Occurred())
 	        PyErr_Print();

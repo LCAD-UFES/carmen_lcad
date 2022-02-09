@@ -47,7 +47,7 @@ def initialize():
     print("-------------------------------------------------------\n\n")
 
 
-def glp_process_image(image, cut):
+def glp_process_image(image, cut, down_cut):
     global model
     global device
     
@@ -74,6 +74,8 @@ def glp_process_image(image, cut):
     #print(pred_d)
     pred_d_numpy = (pred_d / pred_d.max()) * 255
     pred_d_numpy[0:cut.item(0),:] = 1000
+    #print(pred_d_numpy.shape[0]-down_cut.item(0),pred_d_numpy.shape[0])
+    pred_d_numpy[pred_d_numpy.shape[0]-down_cut.item(0):pred_d_numpy.shape[0],:] = 0
     return (pred_d_numpy).astype('uint16')
             
         

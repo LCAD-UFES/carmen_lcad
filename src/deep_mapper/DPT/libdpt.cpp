@@ -85,7 +85,7 @@ initialize_python_context_dpt()
 }
 
 unsigned char*
-libdpt_process_image(int width, int height, unsigned char *image, int cut_param)
+libdpt_process_image(int width, int height, unsigned char *image, int cut_param, int down_param)
 {
 	// printf("libdpt_process_image\n");
 	//create shape for numpy array

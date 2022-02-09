@@ -28,6 +28,7 @@ static double range_multiplier_factor;
 static int vertical_roi_ini;
 static int vertical_roi_end;
 static int vertical_top_cut;
+static int vertical_down_cut;
 static int lidar_num;
 
 static int horizontal_roi_ini;
@@ -110,11 +111,11 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 
 	
 	if (!strcmp(neural_network, "adabins"))
-		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
+		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "dpt"))
-		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
+		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
-		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
+		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	
 	// cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	// open_cv_image = open_cv_image(myROI);
@@ -140,18 +141,18 @@ void image_handler(camera_message *msg)
 	// printf("camera_image_handler\n");
 	camera_image *stereo_image = msg->images;
 	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-	remap(open_cv_image, open_cv_image, MapX, MapY, INTER_LINEAR);											// Transforms the image to compensate for lens distortion
+	//remap(open_cv_image, open_cv_image, MapX, MapY, INTER_LINEAR);											// Transforms the image to compensate for lens distortion
 
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
 	
 	if (!strcmp(neural_network, "adabins"))
-		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
+		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "dpt"))
-		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
+		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
-		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut);
+		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	// img(cv::Rect(xMin,yMin,xMax-xMin,yMax-yMin)).copyTo(croppedImg);
 	//cv::Rect myROI(0, camera_height - vertical_resolution, stereo_image->width, camera_height - (camera_height - vertical_resolution));
 	//open_cv_image = open_cv_image(myROI);
@@ -387,6 +388,7 @@ int read_parameters(int argc, char **argv)
 		{(char *)stereo_string, (char *)"horizontal_camera_angle", CARMEN_PARAM_DOUBLE, &horizontal_camera_angle, 1, NULL},
 		{(char *)stereo_string, (char *)"vertical_camera_angle", CARMEN_PARAM_DOUBLE, &vertical_camera_angle, 1, NULL},
 		{(char *)stereo_string, (char *)"vertical_top_cut", CARMEN_PARAM_INT, &vertical_top_cut, 1, NULL},
+		{(char *)stereo_string, (char *)"vertical_down_cut", CARMEN_PARAM_INT, &vertical_down_cut, 1, NULL},
 		{(char *)stereo_string, (char *)"horizontal_start_angle", CARMEN_PARAM_DOUBLE, &horizontal_start_angle, 1, NULL},
 		{(char *)stereo_string, (char *)"range_multiplier_factor", CARMEN_PARAM_DOUBLE, &range_multiplier_factor, 1, NULL},
 		{(char *)stereo_string, (char *)"lidar", CARMEN_PARAM_INT, &lidar_num, 1, NULL},
