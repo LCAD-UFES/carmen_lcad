@@ -103,7 +103,7 @@ def initialize():
     print("-------------------------------------------------------\n\n")
 
 
-def dpt_process_image(carmen_image, cut):
+def dpt_process_image(carmen_image, cut, down):
     global model
     global device
     global transform
@@ -139,6 +139,7 @@ def dpt_process_image(carmen_image, cut):
     #print(pred_d)
     pred_d_numpy = (pred_d / pred_d.max()) * 255
     pred_d_numpy[0:cut.item(0),:] = 1000
+    pred_d_numpy[pred_d_numpy.shape[0]-down.item(0):pred_d_numpy.shape[0],:] = 0
     return (pred_d_numpy).astype('uint16')
     # filename = output_path + str(timestamp.item(0))
     # absolute_depth=False

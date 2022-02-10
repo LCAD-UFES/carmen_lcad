@@ -131,7 +131,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 
-	cv::imshow("Bumblebee Image", open_cv_image);
+	//cv::imshow("Bumblebee Image", open_cv_image);
 	cv::imshow(neural_network, imgdepth * 256);
 	waitKey(1);
 }
@@ -167,7 +167,7 @@ void image_handler(camera_message *msg)
 	velodyne_partial_scan.timestamp = msg->timestamp;
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 
-	cv::imshow("Camera Driver Image", open_cv_image);
+	//cv::imshow("Camera Driver Image", open_cv_image);
 	cv::imshow(neural_network, imgdepth * 256);
 	waitKey(1);
 }

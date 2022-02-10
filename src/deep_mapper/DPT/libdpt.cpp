@@ -98,9 +98,14 @@ libdpt_process_image(int width, int height, unsigned char *image, int cut_param,
 	
 	PyObject* numpyCutParam = PyArray_SimpleNewFromData(1, dimcut, NPY_INT, &time[0]);
 
+	int down[1];
+	down[0] = down_param;
+	
+	PyObject* numpyDownParam = PyArray_SimpleNewFromData(1, dimcut, NPY_INT, &down[0]);
+
 	if (PyErr_Occurred())
 		        PyErr_Print();
-	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libdpt_process_image_function, numpyArray, numpyCutParam, NULL);
+	PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunctionObjArgs(python_libdpt_process_image_function, numpyArray, numpyCutParam, numpyDownParam, NULL);
 
 	if (PyErr_Occurred())
 	        PyErr_Print();
