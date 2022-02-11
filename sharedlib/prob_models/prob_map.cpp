@@ -699,10 +699,11 @@ load_calibration_table(char *calibration_file)
 	FILE *calibration_file_bin = fopen(calibration_file, "r");
 	if (!calibration_file_bin)
 		return (NULL);
-
+	//int vertical_resolution = 480; // DeepMapper
+	int vertical_resolution = 32;
 	float ***table;
-	table = (float ***) calloc(32, sizeof(float **));
-	for (int i = 0; i < 32; i++)
+	table = (float ***) calloc(vertical_resolution, sizeof(float **));
+	for (int i = 0; i < vertical_resolution; i++)
 	{
 		table[i] = (float **) calloc(10, sizeof(float *));
 		for (int j = 0; j < 10; j++)
@@ -720,7 +721,7 @@ load_calibration_table(char *calibration_file)
 			min_val = val;
 	}
 
-	for (int i = 0; i < 32; i++)
+	for (int i = 0; i < vertical_resolution; i++)
 	{
 		for (int j = 0; j < 10; j++)
 		{
@@ -1433,7 +1434,7 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 //	double p_0;
 	double sigma;
 
-	previous_ray_index = ray_index - 1;
+	previous_ray_index = ray_index - 1;	//DeepMapper -5
 	if (previous_ray_index < 0)
 		return (sensor_params->log_odds.log_odds_l0);
 
