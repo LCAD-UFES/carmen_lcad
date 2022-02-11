@@ -118,7 +118,7 @@ typedef struct {
   double timestamp;
   char *host;                   /**< The host from which this message was sent **/
 } carmen_robot_ackerman_velocity_message;
-#define      CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME         "carmen_robot_ackerman_vel"
+#define      CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME         "carmen_robot_ackerman_odometry"
 #define      CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT          "{double,double,double,string}"
 
 #define      CARMEN_LIDAR_VELOCITY_NAME         "carmen_lidar_vel"
