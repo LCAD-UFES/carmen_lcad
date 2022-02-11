@@ -118,7 +118,7 @@ static int in_map(double x, double y, carmen_map_p map)
 	map_x = carmen_trunc((x - map->config.x_origin) / map->config.resolution);
 	map_y = carmen_trunc((y - map->config.y_origin) / map->config.resolution);
 
-	if (map_x < 0 || map_x > map->config.x_size || map_y < 0 || map_y > map->config.y_size)
+	if (map_x < 0 || map_x >= map->config.x_size || map_y < 0 || map_y >= map->config.y_size)
 	{
 		return 0;
 	}
