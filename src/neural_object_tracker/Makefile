@@ -6,7 +6,8 @@ MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 LINK = g++
 CXXFLAGS = -std=c++11
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src  -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src  -I/usr/include/bullet/ -I/usr/local/include/bullet/ \
+			-I/usr/include/python3.6  -I/usr/include/python3.5 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 
 #IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
 #LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
@@ -21,8 +22,16 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lyolo_detector_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
 		  -lmoving_objects_interface -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
-		  -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
+		  -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface \
 		  -lcamera_drivers
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else
+	LFLAGS += `python3.6-config --libs`
+endif
 
 SOURCES = neural_object_detector_simulator.cpp neural_object_detector_tracker.cpp
 

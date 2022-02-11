@@ -32,9 +32,9 @@ def initialize():
         print("       Pretrained Model AdaBins loaded!")
         print("-------------------------------------------------------\n\n")
 
-def inferenceDepth(image, cut):
+def inferenceDepth(image, cut, down):
         global inferHelper
-        pred = inferHelper.predict_pil(image, int(cut.item(0)))
+        pred = inferHelper.predict_pil(image, int(cut.item(0)), int(down.item(0)))
         # print('deep_mapper.py: executou a predicao\n')
         return pred
 
@@ -115,7 +115,7 @@ class InferenceHelper:
         self.model = model.to(self.device)
     
     @torch.no_grad()
-    def predict_pil(self, image, cut):
+    def predict_pil(self, image, cut, down):
         # print("deep_mapper.py: predict_pil")
         
         height, width, layers = image.shape
@@ -152,6 +152,7 @@ class InferenceHelper:
 
         pred = (pred * 256).astype('uint16')
         pred[0:cut,:] = 1000
+        pred[pred.shape[0]-down:pred.shape[0],:] = 0
         return (pred).astype('uint16')
         
 

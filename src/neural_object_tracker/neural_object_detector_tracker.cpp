@@ -308,26 +308,33 @@ clean_pedestrians(double max_time)
 }
 ///////////////////////////////////////////////////
 //////// Python
-PyObject *python_pedestrian_tracker_function;
+PyObject *python_moving_obstacles_tracker_function;
 npy_intp image_dimensions[3];
+
+#define import_array_alberto() {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return; } }
+
 
 void
 init_python(int image_width, int image_height)
 {
 	Py_Initialize();
 
-	PyObject *python_module_name = PyString_FromString((char *) "pedestrian_tracker");
+	import_array_alberto();
 
-	PyObject *python_module = PyImport_Import(python_module_name);
+	PyObject *python_module_name = PyUnicode_FromString((char *) "moving_obstacles_tracker");
+
+	// PyObject *python_module = PyImport_Import(python_module_name);
+
+	PyObject *python_module = PyImport_ImportModule("moving_obstacles_tracker");
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
+		exit (printf("Error: The python_module moving_obstacles_tracker could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
 	}
 	Py_DECREF(python_module_name);
-
-	import_array();
 
 	PyObject *python_set_image_settings_function = PyObject_GetAttrString(python_module, (char *) "set_image_settings");
 
@@ -344,13 +351,13 @@ init_python(int image_width, int image_height)
 	Py_DECREF(python_arguments);
 	Py_DECREF(python_set_image_settings_function);
 
-	python_pedestrian_tracker_function = PyObject_GetAttrString(python_module, (char *) "run_pedestrian_tracker");
+	python_moving_obstacles_tracker_function = PyObject_GetAttrString(python_module, (char *) "run_moving_obstacles_tracker");
 
-	if (python_pedestrian_tracker_function == NULL || !PyCallable_Check(python_pedestrian_tracker_function))
+	if (python_moving_obstacles_tracker_function == NULL || !PyCallable_Check(python_moving_obstacles_tracker_function))
 	{
 		Py_DECREF(python_module);
 		Py_Finalize();
-		exit (printf("Error: Could not load the python_semantic_segmentation_function.\n"));
+		exit (printf("Error: Could not load the run_moving_obstacles_tracker_function.\n"));
 	}
 
 	image_dimensions[0] = image_height;           //create shape for numpy array
@@ -381,37 +388,58 @@ convert_predtions_array(vector<bbox_t> predictions)
 
 
 void
-call_python_function(unsigned char *image, vector<bbox_t> predictions)
+convert_preds_to_preditions(double *preds, vector<bbox_t> &predictions)
 {
-	if (predictions.size() == 0)
-		return;
+	// [num_dets, score_0, class_0, bbox_x_0, bbox_y_0, bbox_w_0, bbox_h_0, track_id_0, ..., score_n, class_n, bbox_x_n, bbox_y_n, bbox_w_n, bbox_h_n, track_id_n]
+	bbox_t p;
+	for(int i = 1; i < preds[0] * 7; i += 7)
+	{
+		p.prob = preds[i];
+		p.obj_id = int(preds[i+1]) - 1;
+		p.x = preds[i+2];
+		p.y = preds[i+3];
+		p.w = preds[i+4];
+		p.h = preds[i+5];
+		p.track_id = int(preds[i+6]);
+
+		// cout<<"["<<p.prob<<", "<<p.obj_id<<", "<<p.x<<", "<<p.y<<", "<<p.w<<", "<<p.h<<", "<<p.track_id<<"]"<<endl;
+
+		predictions.push_back(p);
+	}
+}
+
+
+void
+call_python_function(unsigned char *image, vector<bbox_t> &predictions)
+{
+	// cout<<"chamando python"<<endl;
+	// if (predictions.size() == 0)
+	// 	return;
 	
 	npy_intp predictions_dimensions[2] = {(int)predictions.size(), 4};
 
 	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);        //convert testVector to a numpy array
 
-	float *array = convert_predtions_array(predictions);
+	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_moving_obstacles_tracker_function, numpy_image_array, NULL);
 
-	PyObject* numpy_predictions_array = PyArray_SimpleNewFromData(2, predictions_dimensions, NPY_FLOAT, array);
+	double *preds = (double*)PyArray_DATA(identifications);
 
-	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
-
-	short *predict = (short*)PyArray_DATA(identifications);
-
-	if (predict == NULL)
+	if (preds == NULL)
 	{
 		Py_Finalize();
-		exit (printf("Error: The predctions erro.\n"));
+		exit (printf("Error: The predictions error.\n"));
 	}
 
-	update_pedestrians(predict);
+	convert_preds_to_preditions(preds, predictions);
+
+	// update_pedestrians(predict);
 
 	if (PyErr_Occurred())
 		PyErr_Print();
 
-	free(array);
+	// free(array);
 	Py_DECREF(numpy_image_array);
-	Py_DECREF(numpy_predictions_array);
+	// Py_DECREF(numpy_predictions_array);
 	Py_DECREF(identifications);
 }
 ///////////////
@@ -423,31 +451,31 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*y += offset_y;
 }
 
-void
-display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
-		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height)
-{
-	char object_info[25];
-    char frame_rate[25];
+// void
+// display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
+// 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height)
+// {
+// 	char object_info[25];
+//     char frame_rate[25];
 
-    cvtColor(image, image, COLOR_RGB2BGR);
+//     cvtColor(image, image, COLOR_RGB2BGR);
 
-    sprintf(frame_rate, "FPS = %.2f", fps);
+//     sprintf(frame_rate, "FPS = %.2f", fps);
 
-    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+//     putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
-    for (unsigned int i = 0; i < predictions.size(); i++)
-    {
-        sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
+//     for (unsigned int i = 0; i < predictions.size(); i++)
+//     {
+//         sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
 
-        rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-        		Scalar(0, 0, 255), 1);
+//         rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+//         		Scalar(0, 0, 255), 1);
 
-        putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
-    }
-    imshow("Neural Object Detector", image);
-    waitKey(1);
-}
+//         putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+//     }
+//     imshow("Neural Object Detector", image);
+//     waitKey(1);
+// }
 
 
 unsigned char *
@@ -752,6 +780,7 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, 
 		unsigned int crop_width, unsigned int crop_height, double dist_to_pedestrian_track)
 {
+	char track_id [128];
 	char info[128];
 
     cvtColor(image, image, COLOR_RGB2BGR);
@@ -770,9 +799,11 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 	
     for (unsigned int i = 0; i < predictions.size(); i++)
 	{
+		sprintf(track_id, "track_id %.2d", predictions[i].track_id);
 		sprintf(info, "prob %.2f", predictions[i].prob);
 		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
 				Scalar(255, 0, 255), 4);
+		putText(image, track_id, Point(predictions[i].x + 1, predictions[i].y - 14), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 		putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 	}
 
@@ -1047,8 +1078,8 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-	if (max_dist_to_pedestrian_track < 0.0 )//|| dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
-	{
+	// if (max_dist_to_pedestrian_track < 0.0 )//|| dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
+	// {
 		//////// Yolo
 		// predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
 		
@@ -1056,37 +1087,39 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 
 		//////// Python
 		call_python_function(open_cv_image.data, predictions);
+		predictions = filter_predictions_of_interest(predictions);
 		
-		insert_missing_pedestrians_in_the_track(predictions);
+		// insert_missing_pedestrians_in_the_track(predictions);
 		
-		points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-				original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
+		// points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+		// 		original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h);
 		
-		points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
+		// points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
 
-		filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+		// filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
-		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-		for (int i = 0; i < positions.size(); i++)
-		{
-			if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
-			{
-				carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_pose.position.x, board_pose.position.y);
-				carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
-				carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+		// vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+		// for (int i = 0; i < positions.size(); i++)
+		// {
+		// 	if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
+		// 	{
+		// 		carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_pose.position.x, board_pose.position.y);
+		// 		carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
+		// 		carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
 
-				update_world_position(&pedestrian_tracks[i], positions[i].cartesian_x,positions[i].cartesian_y, timestamp);
-			}
-		}
-		clean_pedestrians(3.0);
+		// 		update_world_position(&pedestrian_tracks[i], positions[i].cartesian_x,positions[i].cartesian_y, timestamp);
+		// 	}
+		// }
+		// clean_pedestrians(3.0);
 		
-		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
-		publish_moving_objects_message(&msg);
-	}
+		// carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
+		// publish_moving_objects_message(&msg);
+	// }
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_pedestrian_track);
+	predictions.clear();
 }
 
 
@@ -1244,7 +1277,7 @@ void
 yolo_detector_handler(yolo_detector_message *msg)
 {
 	detected_bboxes = msg;
-	cout<<"qtd bboxes = "<<detected_bboxes->qtd_bboxes<<endl;
+	// cout<<"qtd bboxes = "<<msg->qtd_bboxes<<endl;
 	convert_detected_bboxes_to_predictions_vector(detected_bboxes, predictions);
 }
 
@@ -1356,7 +1389,7 @@ initializer()
 
 	classes_names = get_classes_names(classes_names_path);
 
-	network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
+	// network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
 
 	init_python(camera_width, camera_height);
 }
@@ -1371,7 +1404,7 @@ main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-	// initializer();
+	initializer();
 
 	carmen_moving_objects_point_clouds_define_messages_generic(0);
 

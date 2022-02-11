@@ -129,6 +129,57 @@ cd $CARMEN_HOME/bin/
 export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/DPT:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/DPT/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network dpt
 ```
 
+### Steps to a Grip-Map from GLPDepth
+
+#### Step 1 - Logger with lidar
+
+Ajust your carmen.ini file:
+```shell
+# logger parameters
+
+#logger_ascii		off
+logger_localize		off
+logger_gps		on
+logger_simulator	off
+logger_imu          	on
+logger_xsens		on
+logger_velodyne		on
+logger_velodyne_save_to_file on 
+logger_xsens_mtig	off
+logger_imu_pi       	on
+logger_odometry		on
+logger_visual_odometry 	off
+logger_laser		on
+logger_robot_laser	off
+logger_params		on
+logger_motioncmds   	off  # includes base_velocity and motion commands given to robot
+logger_kinect		off
+logger_bumblebee	off
+logger_bumblebee_frames_to_save 1 # How many frames you save (1 for all)
+logger_bumblebee_save_to_file on 
+logger_web_cam		off
+logger_camera		on
+logger_sonar		off
+logger_ford_escape_status on
+logger_can_dump		off
+```
+
+```shell
+cd $CARMEN_HOME/bin/
+./logger /<path_to_save_log>/log_<name_of_original_log>-lidar8.txt
+```
+
+Example:
+```shell
+cd $CARMEN_HOME/bin/
+rm -rf /dados/log_volta_da_ufes_20220120-lidar8.txt*
+:~/carmen_lcad/bin$ ./logger /dados/log_volta_da_ufes_20220120-lidar8.txt
+```
+
+#### Step 2 - Generate a map
+
+Refer to Graphslam and use /<path_to_save_log>/log_<name_of_original_log>-lidar8.txt LOG to generate a grid map.
+
 
 # Original Article
 [AdaBins](https://arxiv.org/abs/2011.14141)

@@ -5,7 +5,7 @@ void
 yolo_detector_subscribe_yolo_detector_message(yolo_detector_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
     carmen_subscribe_message(YOLO_DETECTOR_MESSAGE_NAME, YOLO_DETECTOR_MESSAGE_FMT,
-                             message, sizeof (carmen_route_planner_road_network_message), handler, subscribe_how);
+                             message, sizeof (yolo_detector_message), handler, subscribe_how);
 }
 
 

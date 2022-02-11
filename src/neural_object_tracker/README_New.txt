@@ -30,10 +30,8 @@ Add NOD in PYTHONPATH at bashrc
 add at the end of file
 ```
  #NOD_Tracker - sempre por ultimo
- export PYTHONPATH=$CARMEN_HOME/src/neural_object_tracker/center_track/src:$PYTHONPATH
+ export PYTHONPATH=$CARMEN_HOME/src/neural_object_tracker/center_track/src/lib:$PYTHONPATH
 ```
-
-
 
 Compile the neural_object_tracker
  make

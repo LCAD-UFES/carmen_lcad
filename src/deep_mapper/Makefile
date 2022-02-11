@@ -64,7 +64,7 @@ LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkml
 LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne -lcamera_drivers
 
 # Source code files (.c, .cpp) 
-SOURCES = stereo_velodyne_adabins.cpp stereo_velodyne_depth.cpp
+SOURCES = stereo_velodyne_depth.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -73,8 +73,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = stereo_velodyne_adabins stereo_velodyne_depth 
-TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a libdpt.a stereo_velodyne stereo_velodyne_adabins stereo_velodyne_depth
+PUBLIC_BINARIES = stereo_velodyne_depth 
+TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a libdpt.a stereo_velodyne stereo_velodyne_depth
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -89,8 +89,6 @@ LFLAGS += `pkg-config --libs gtk+-3.0`
 endif
 
 stereo_velodyne_message_stereo: stereo_velodyne_message_stereo.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
-
-stereo_velodyne_adabins: stereo_velodyne_adabins.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
 stereo_velodyne_depth: stereo_velodyne_depth.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a $(CARMEN_HOME)/src/deep_mapper/DPT/libdpt.a $(CARMEN_HOME)/src/deep_mapper/GLPDepth/libglpdepth.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
