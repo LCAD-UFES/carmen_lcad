@@ -19,6 +19,7 @@ struct CarDrawer
 	carmen_vector_3D_t car_size;
 	carmen_pose_3D_t car_pose;
 	double car_axis_distance;
+	double distance_between_rear_car_and_rear_wheels;
 	double car_wheel_radius;
 
 	carmen_vector_3D_t semi_trailer_size;
