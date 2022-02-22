@@ -105,14 +105,16 @@ int *alloc_array (int graph_size);
 a_star_utils_t add_vertex_to_closed_set(a_star_utils_t r, int vertex_id);
 //void add_vertex_to_open_set(a_star_utils_t r, int vertex_id);
 float h_n_manh (int vertex_id, int vertex_end, graph_t graph);
-float h_n_eucl (int vertex_id, int vertex_end, graph_t graph);
-a_star_utils_t a_star_k_neighbours(graph_t graph, int k, int vertex_ini, int vertex_end);
+// float h_n_eucl (int vertex_id, int vertex_end, graph_t graph);
+float h_n_eucl(carmen_point_t pose_ini, carmen_point_t pose_end);
+a_star_utils_t a_star_in_lane_graph(graph_t graph, lane_graph_t lane_graph, int k, int vertex_ini, int vertex_end);
+a_star_utils_t a_star_k_neighbours(graph_t graph, lane_graph_t lane_graph, int k, int vertex_ini, int vertex_end);
 int find_closest_point_in_graph_ternium(graph_t graph, carmen_point_t point, char *direction);
 int find_closest_point_in_graph (graph_t graph, carmen_point_t point);
 //carmen_point_t set_destination(vector<carmen_annotation_t> annotations);
 carmen_point_t set_destination(vector<carmen_annotation_t> annotations, char *goal);
 void get_annotation_from_rddf(char *carmen_annotation_filename, vector<carmen_annotation_t> &annotations);
-void get_graph_from_file(graph_t *graph, graph_t *lane_graph, char *filename);
+void get_graph_from_file(graph_t *graph, lane_graph_t *lane_graph, char *filename);
 void get_route_list(graph_t graph, carmen_position_t center, double range, int *number_of_routes, route_t *routes[]);
 
 #ifdef __cplusplus
