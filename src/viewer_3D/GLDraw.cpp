@@ -386,7 +386,7 @@ get_xsens_position_global_reference (carmen_pose_3D_t xsens_pose, carmen_pose_3D
     destroy_rotation_matrix (board_to_car_matrix);
     destroy_rotation_matrix (car_to_global_matrix);
 
-    return global_reference;
+    return (global_reference);
 }
 
 void
@@ -411,9 +411,9 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
 }
 
 void
-draw_gps_orientation (double gps_orientation, int gps_heading_valid, carmen_orientation_3D_t xsens_orientation, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose)
+draw_gps_orientation(double gps_orientation, int gps_heading_valid, carmen_orientation_3D_t xsens_orientation, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose)
 {
-    carmen_vector_3D_t xsens_global_position = get_xsens_position_global_reference (xsens_pose, sensor_board_pose, car_pose);
+    carmen_vector_3D_t xsens_global_position = get_xsens_position_global_reference(xsens_pose, sensor_board_pose, car_pose);
 
     glPushMatrix ();
 
@@ -431,7 +431,7 @@ draw_gps_orientation (double gps_orientation, int gps_heading_valid, carmen_orie
 }
 
 void
-draw_orientation_instruments (carmen_orientation_3D_t orientation, double r, double g, double b)
+draw_orientation_instruments(carmen_orientation_3D_t orientation, double r, double g, double b)
 {
     glPushMatrix ();
 

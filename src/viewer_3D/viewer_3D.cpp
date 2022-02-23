@@ -149,6 +149,7 @@ static carmen_vector_3D_t *localizer_correction_particles_pos;
 static double *localizer_correction_particles_weight;
 static int num_localizer_correction_particles;
 
+static carmen_pose_3D_t gps_pose;
 static carmen_pose_3D_t xsens_pose;
 static carmen_pose_3D_t laser_pose;
 static carmen_pose_3D_t car_pose;
@@ -632,8 +633,8 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->car_position = car_fused_pose.position;
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->timestamp = message->timestamp;
 
-	rotation_matrix* lidar_to_board_matrix = create_rotation_matrix(lidar_config.pose.orientation);
-	rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
+	rotation_matrix *lidar_to_board_matrix = create_rotation_matrix(lidar_config.pose.orientation);
+	rotation_matrix *board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 
 	discarded_points = convert_variable_scan_message_to_point_cloud(lidar_point_cloud_vector[lidar_point_cloud_vector_index], message, lidar_config,
 			lidar_to_board_matrix, board_to_car_matrix, lidar_config.pose.position, sensor_board_1_pose.position);
@@ -872,7 +873,7 @@ draw_everything()
 		else
 			glColor3f(1.0, 0.5, 0.0);
 
-        draw_gps_orientation(gps_heading, gps_heading_valid, xsens_orientation, xsens_pose, sensor_board_1_pose, car_fused_pose);
+        draw_gps_orientation(gps_heading, gps_heading_valid, xsens_orientation, gps_pose, sensor_board_1_pose, car_fused_pose);
     }
 
     if (show_plan_tree_flag)
@@ -1523,6 +1524,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
     last_timestamp = velodyne_message->timestamp;
 }
 
+
 int
 compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message,
 		double *vertical_correction, int vertical_size,
@@ -1563,6 +1565,7 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_variable_s
 
 	return (range_max_points);
 }
+
 
 int
 compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message,
@@ -1617,6 +1620,7 @@ compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_sca
 
 	return (range_max_points);
 }
+
 
 // TODO O velodyne_variable_scan_message_handler0 é especifico para o Ouster e possui parametros hardcodded precisa ser padronizado
 void
@@ -1959,7 +1963,7 @@ stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_mess
 }
 
 
-static void
+void
 sick_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
 {
 	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, front_bullbar_pose);
@@ -3343,6 +3347,15 @@ destroy_drawers()
 
 
 void
+update_sensos_pose(char *p1 __attribute__ ((unused)), char *p2 __attribute__ ((unused)), char *p3 __attribute__ ((unused)))
+{
+	car_drawer->sensor_board_1_pose = sensor_board_1_pose;
+	car_drawer->xsens_pose = xsens_pose;
+	car_drawer->laser_pose = velodyne_pose;
+}
+
+
+void
 read_parameters_and_init_stuff(int argc, char** argv)
 {
     int num_items;
@@ -3381,12 +3394,12 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "viewer_3D", (char *) "window_x", CARMEN_PARAM_INT, &window_x, 0, NULL},
 			{(char *) "viewer_3D", (char *) "window_y", CARMEN_PARAM_INT, &window_y, 0, NULL},
 
-            {(char *) "sensor", (char *) "board_1_x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw), 1, NULL},
+            {(char *) "sensor", (char *) "board_1_x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw), 1, update_sensos_pose},
             {(char *) "sensor", (char *) "board_1_laser_id", CARMEN_PARAM_INT, &(sensor_board_1_laser_id), 0, NULL},
 		
             {(char *) "front_bullbar", (char *) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.x), 0, NULL},
@@ -3442,14 +3455,21 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char *) "rear_bullbar_right_corner", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(rear_bullbar_right_corner_pose.orientation.yaw), 0, NULL},
             {(char *) "rear_bullbar_right_corner", (char *) "laser_id", CARMEN_PARAM_INT, &(rear_bullbar_right_corner_laser_id), 0, NULL},
 
-            {(char *) "xsens", (char *) "x", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.x), 0, NULL},
-            {(char *) "xsens", (char *) "y", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.y), 0, NULL},
-            {(char *) "xsens", (char *) "z", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.z), 0, NULL},
-            {(char *) "xsens", (char *) "roll", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.roll), 0, NULL},
-            {(char *) "xsens", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.pitch), 0, NULL},
-            {(char *) "xsens", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.yaw), 0, NULL},
+            {(char *) "xsens", (char *) "x", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.x), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "y", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.y), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "z", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.z), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "roll", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.roll), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.pitch), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.yaw), 1, update_sensos_pose},
 
 			{(char *) "xsens", (char *) "magnetic_declination", CARMEN_PARAM_DOUBLE, &magnetic_declination, 0, NULL},
+
+            {(char *) "gps", (char *) "nmea_1_x", CARMEN_PARAM_DOUBLE, &(gps_pose.position.x), 1, NULL},
+            {(char *) "gps", (char *) "nmea_1_y", CARMEN_PARAM_DOUBLE, &(gps_pose.position.y), 1, NULL},
+            {(char *) "gps", (char *) "nmea_1_z", CARMEN_PARAM_DOUBLE, &(gps_pose.position.z), 1, NULL},
+            {(char *) "gps", (char *) "nmea_1_roll", CARMEN_PARAM_DOUBLE, &(gps_pose.orientation.roll), 1, NULL},
+            {(char *) "gps", (char *) "nmea_1_pitch", CARMEN_PARAM_DOUBLE, &(gps_pose.orientation.pitch), 1, NULL},
+            {(char *) "gps", (char *) "nmea_1_yaw", CARMEN_PARAM_DOUBLE, &(gps_pose.orientation.yaw), 1, NULL},
 
             {(char *) "laser", (char *) "num_laser_devices", CARMEN_PARAM_INT, &num_laser_devices, 0, NULL},
 
@@ -3476,12 +3496,12 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char *) "car", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.pitch), 0, NULL},
             {(char *) "car", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.yaw), 0, NULL},
 
-            {(char *) "velodyne", (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 1, NULL},
-            {(char *) "velodyne", (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 1, NULL},
-            {(char *) "velodyne", (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 1, NULL},
-            {(char *) "velodyne", (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 1, NULL},
-            {(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 1, NULL},
-            {(char *) "velodyne", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 1, NULL},
+            {(char *) "velodyne", (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 1, update_sensos_pose},
 
 			{(char *) "laser_ldmrs",  (char *) "x", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.position.x), 0, NULL},
 			{(char *) "laser_ldmrs",  (char *) "y", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.position.y), 0, NULL},
@@ -3503,9 +3523,9 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
             {(char *) "robot", (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 
-			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 0, NULL},
-			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 0, NULL},
-			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
+			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 1, NULL},
+			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 1, NULL},
+			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 1, NULL},
 
 			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.type), 0, NULL},
 
@@ -3541,21 +3561,28 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "viewer_3D", (char *) "window_x", CARMEN_PARAM_INT, &window_x, 0, NULL},
 			{(char *) "viewer_3D", (char *) "window_y", CARMEN_PARAM_INT, &window_y, 0, NULL},
 
-            {(char *) "sensor", (char *) "board_1_x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch), 1, NULL},
-            {(char *) "sensor", (char *) "board_1_yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw), 1, NULL},
+            {(char *) "sensor", (char *) "board_1_x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch), 1, update_sensos_pose},
+            {(char *) "sensor", (char *) "board_1_yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw), 1, update_sensos_pose},
 
-            {(char *) "xsens", (char *) "x", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.x), 0, NULL},
-            {(char *) "xsens", (char *) "y", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.y), 0, NULL},
-            {(char *) "xsens", (char *) "z", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.z), 0, NULL},
-            {(char *) "xsens", (char *) "roll", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.roll), 0, NULL},
-            {(char *) "xsens", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.pitch), 0, NULL},
-            {(char *) "xsens", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.yaw), 0, NULL},
+            {(char *) "xsens", (char *) "x", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.x), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "y", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.y), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "z", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.z), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "roll", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.roll), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.pitch), 1, update_sensos_pose},
+            {(char *) "xsens", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.yaw), 1, update_sensos_pose},
 
 			{(char *) "xsens", (char *) "magnetic_declination", CARMEN_PARAM_DOUBLE, &magnetic_declination, 0, NULL},
+
+            {(char *) "gps", (char *) "nmea_1_x", CARMEN_PARAM_DOUBLE, &(gps_pose.position.x), 0, NULL},
+            {(char *) "gps", (char *) "nmea_1_y", CARMEN_PARAM_DOUBLE, &(gps_pose.position.y), 0, NULL},
+            {(char *) "gps", (char *) "nmea_1_z", CARMEN_PARAM_DOUBLE, &(gps_pose.position.z), 0, NULL},
+            {(char *) "gps", (char *) "nmea_1_roll", CARMEN_PARAM_DOUBLE, &(gps_pose.orientation.roll), 0, NULL},
+            {(char *) "gps", (char *) "nmea_1_pitch", CARMEN_PARAM_DOUBLE, &(gps_pose.orientation.pitch), 0, NULL},
+            {(char *) "gps", (char *) "nmea_1_yaw", CARMEN_PARAM_DOUBLE, &(gps_pose.orientation.yaw), 0, NULL},
 
             {(char *) "laser", (char *) "x", CARMEN_PARAM_DOUBLE, &(laser_pose.position.x), 0, NULL},
             {(char *) "laser", (char *) "y", CARMEN_PARAM_DOUBLE, &(laser_pose.position.y), 0, NULL},
@@ -3578,16 +3605,16 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char *) "car", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.pitch), 0, NULL},
             {(char *) "car", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.yaw), 0, NULL},
 
-            {(char *) "velodyne", (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
-            {(char *) "velodyne", (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
-            {(char *) "velodyne", (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
-            {(char *) "velodyne", (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
-            {(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
-            {(char *) "velodyne", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+            {(char *) "velodyne", (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 1, update_sensos_pose},
+            {(char *) "velodyne", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 1, update_sensos_pose},
 
-			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 0, NULL},
-			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 0, NULL},
-			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 0, NULL},
+			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 1, NULL},
+			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 1, NULL},
+			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 1, NULL},
 
 			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.type), 0, NULL},
 

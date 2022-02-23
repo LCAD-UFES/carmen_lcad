@@ -2,13 +2,108 @@
 #include <locale.h>
 
 
-static void drawBox(double length_x, double length_y, double length_z);
+static void
+drawBox(double length_x, double length_y, double length_z)
+{
+	glPushMatrix();
+
+		glBegin(GL_QUADS);
+
+
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+
+
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+
+
+		glEnd();
+
+	glPopMatrix();
+}
+
+
+void
+draw_cylinder(GLfloat radius, GLfloat height)
+{
+	GLfloat angle_stepsize = 2.0 * M_PI / 36.0;
+
+	/** Draw the tube */
+	glBegin(GL_QUAD_STRIP);
+		GLfloat angle = 0.0;
+		while (angle < 2.0 * M_PI)
+		{
+			GLfloat x = radius * cos(angle);
+			GLfloat y = radius * sin(angle);
+			glVertex3f(x, y, height / 2.0);
+			glVertex3f(x, y, -height / 2.0);
+			angle = angle + angle_stepsize;
+		}
+		glVertex3f(radius, 0.0, height);
+		glVertex3f(radius, 0.0, 0.0);
+	glEnd();
+
+	/** Draw the circle on top of cylinder */
+	glBegin(GL_POLYGON);
+		angle = 0.0;
+		while (angle < 2.0 * M_PI)
+		{
+			GLfloat x = radius * cos(angle);
+			GLfloat y = radius * sin(angle);
+			glVertex3f(x, y, height / 2.0);
+			angle = angle + angle_stepsize;
+		}
+		glVertex3f(radius, 0.0, height);
+	glEnd();
+
+	/** Draw the circle on botton of cylinder */
+	glBegin(GL_POLYGON);
+		angle = 0.0;
+		while (angle < 2.0 * M_PI)
+		{
+			GLfloat x = radius * cos(angle);
+			GLfloat y = radius * sin(angle);
+			glVertex3f(x, y, -height / 2.0);
+			angle = angle + angle_stepsize;
+		}
+		glVertex3f(radius, 0.0, height);
+	glEnd();
+}
 
 
 CarDrawer *
 createCarDrawer(int argc, char** argv)
 {	
-	CarDrawer* carDrawer = (CarDrawer *) malloc(sizeof(CarDrawer));
+	CarDrawer *carDrawer = (CarDrawer *) malloc(sizeof(CarDrawer));
 
 	int num_items;
 
@@ -20,53 +115,56 @@ createCarDrawer(int argc, char** argv)
 	carmen_param_t param_list[] =
 	{
 		{"carmodel", "file_name", CARMEN_PARAM_STRING, &carmodel_file, 0, NULL},
-		{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.x), 0, NULL},
-		{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.y), 0, NULL},
-		{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.z), 0, NULL},
-		{"carmodel", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.position.x), 0, NULL},
-		{"carmodel", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.position.y), 0, NULL},
-		{"carmodel", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.position.z), 0, NULL},
-		{"carmodel", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.roll), 0, NULL},
-		{"carmodel", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.pitch), 0, NULL},
-		{"carmodel", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.yaw), 0, NULL},
-		{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 0, NULL},
-		{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 0, NULL},
-		{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 0, NULL},
-		{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 0, NULL},
+		{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.x), 1, NULL},
+		{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.y), 1, NULL},
+		{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.z), 1, NULL},
+		{"carmodel", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.position.x), 1, NULL},
+		{"carmodel", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.position.y), 1, NULL},
+		{"carmodel", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.position.z), 1, NULL},
+		{"carmodel", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.roll), 1, NULL},
+		{"carmodel", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.pitch), 1, NULL},
+		{"carmodel", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->car_pose.orientation.yaw), 1, NULL},
+		{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(carDrawer->car_axis_distance), 1, NULL},
+		{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &(carDrawer->distance_between_rear_car_and_rear_wheels), 1, NULL},
+		{"robot", "wheel_radius", CARMEN_PARAM_DOUBLE, &(carDrawer->car_wheel_radius), 1, NULL},
+		{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 1, NULL},
+		{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 1, NULL},
 		{"robot", "collision_file", CARMEN_PARAM_STRING, &robot_collision_file, 1, NULL},
 		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.type), 0, NULL},
-		{"sensor_board_1", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 0, NULL},
-		{"sensor_board_1", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 0, NULL},
-		{"sensor_board_1", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 0, NULL},
-		{"sensor_board_1", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.roll), 0, NULL},
-		{"sensor_board_1", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.pitch), 0, NULL},
-		{"sensor_board_1", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.yaw), 0, NULL},
+		{"sensor", "board_1_x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 1, NULL},
+		{"sensor", "board_1_y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 1, NULL},
+		{"sensor", "board_1_z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 1, NULL},
+		{"sensor", "board_1_roll", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.roll), 1, NULL},
+		{"sensor", "board_1_pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.pitch), 1, NULL},
+		{"sensor", "board_1_yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.yaw), 1, NULL},
 
-		{"xsens", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.x), 0, NULL},
-		{"xsens", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.y), 0, NULL},
-		{"xsens", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.z), 0, NULL},
-		{"xsens", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.position.x), 0, NULL},
-		{"xsens", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.position.y), 0, NULL},
-		{"xsens", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.position.z), 0, NULL},
-		{"xsens", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.orientation.roll), 0, NULL},
-		{"xsens", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.orientation.pitch), 0, NULL},
-		{"xsens", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.orientation.yaw), 0, NULL},
+		{"xsens", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.x), 1, NULL},
+		{"xsens", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.y), 1, NULL},
+		{"xsens", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.z), 1, NULL},
+		{"xsens", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.position.x), 1, NULL},
+		{"xsens", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.position.y), 1, NULL},
+		{"xsens", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.position.z), 1, NULL},
+		{"xsens", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.orientation.roll), 1, NULL},
+		{"xsens", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.orientation.pitch), 1, NULL},
+		{"xsens", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_pose.orientation.yaw), 1, NULL},
 
-		{"laser", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_size.x), 0, NULL},
-		{"laser", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_size.y), 0, NULL},
-		{"laser", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_size.z), 0, NULL},
-		{"velodyne", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.position.x), 0, NULL},
-		{"velodyne", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.position.y), 0, NULL},
-		{"velodyne", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.position.z), 0, NULL},
-		{"velodyne", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.orientation.roll), 0, NULL},
-		{"velodyne", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.orientation.pitch), 0, NULL},
-		{"velodyne", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.orientation.yaw), 0, NULL}
+		{"laser", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_size.x), 1, NULL},
+		{"laser", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_size.y), 1, NULL},
+		{"laser", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_size.z), 1, NULL},
+		{"velodyne", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.position.x), 1, NULL},
+		{"velodyne", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.position.y), 1, NULL},
+		{"velodyne", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.position.z), 1, NULL},
+		{"velodyne", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.orientation.roll), 1, NULL},
+		{"velodyne", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.orientation.pitch), 1, NULL},
+		{"velodyne", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->laser_pose.orientation.yaw), 1, NULL}
 	};
 	
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	carDrawer->robot_collision_config = carmen_collision_detection_get_global_collision_config();
+
+	carDrawer->sensor_box_size = carDrawer->xsens_size;
 
 	printf("FILE: %s\n", carmodel_file);
 
@@ -76,7 +174,7 @@ createCarDrawer(int argc, char** argv)
 		carDrawer->carModel = glmReadOBJ(carmodel_file);
 	glmUnitize(carDrawer->carModel);
 
-	glmScale(carDrawer->carModel, carDrawer->car_size.x/2.0);
+	glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
 
 	if (carDrawer->semi_trailer_config.type > 0)
 	{
@@ -116,10 +214,10 @@ createCarDrawer(int argc, char** argv)
 			carDrawer->semiTrailerModel = glmReadOBJ(semi_trailer_model_file);
 		glmUnitize(carDrawer->semiTrailerModel);
 
-		glmScale(carDrawer->semiTrailerModel, carDrawer->semi_trailer_size.x/2.0);
+		glmScale(carDrawer->semiTrailerModel, carDrawer->semi_trailer_size.x / 2.0);
 	}
 
-	return carDrawer;
+	return (carDrawer);
 }
 
 
@@ -143,46 +241,6 @@ draw_wheel_axis(double wheel_diameter, double wheel_distance)
 		glPopMatrix();
 
 	glPopMatrix();
-}
-
-
-void
-draw_cylinder(GLfloat radius, GLfloat height)
-{
-    GLfloat x              = 0.0;
-    GLfloat y              = 0.0;
-    GLfloat angle          = 0.0;
-    GLfloat angle_stepsize = 0.1;
-
-    /** Draw the tube */
-    glPushMatrix();
-
-//		glBegin(GL_QUAD_STRIP);
-//		angle = 0.0;
-//			while( angle < 2*M_PI ) {
-//				x = radius * cos(angle);
-//				y = radius * sin(angle);
-//				glVertex3f(x, y , height);
-//				glVertex3f(x, y , 0.0);
-//				angle = angle + angle_stepsize;
-//			}
-//			glVertex3f(radius, 0.0, height);
-//			glVertex3f(radius, 0.0, 0.0);
-//		glEnd();
-
-		/** Draw the circle on top of cylinder */
-		glBegin(GL_POLYGON);
-		angle = 0.0;
-			while( angle < 2*M_PI ) {
-				x = radius * cos(angle);
-				y = radius * sin(angle);
-				glVertex3f(x, y , height);
-				angle = angle + angle_stepsize;
-			}
-			glVertex3f(radius, 0.0, height);
-		glEnd();
-
-    glPopMatrix();
 }
 
 
@@ -232,56 +290,6 @@ draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, i
 //	glPopMatrix();
 //
 //}
-
-
-static void
-drawBox(double length_x, double length_y, double length_z)
-{
-	glPushMatrix();
-
-		glBegin(GL_QUADS);
-
-			
-			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-
-				
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-
-			
-			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
-			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-	
-				
-			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-			
-				
-			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-
-				
-			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
- 
-
-		glEnd();
-
-	glPopMatrix();
-}
 
 
 static void
@@ -360,7 +368,8 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 	// Car
 	glPushMatrix();
 
-		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,0.0);
+//		glTranslatef(carDrawer->car_pose.position.x, carDrawer->car_pose.position.y, 0.0);
+		glTranslatef(carDrawer->robot_size.x / 2.0 - carDrawer->distance_between_rear_car_and_rear_wheels, 0.0, 0.0);
 
 		glColor3f(0.3,0.3,0.3);
 
@@ -411,6 +420,15 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 void
 draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 {
+	static double previous_size = 0.0;
+
+	if (carDrawer->car_size.x != previous_size)
+	{
+		glmUnitize(carDrawer->carModel);
+		glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
+		previous_size = carDrawer->car_size.x;
+	}
+
 	//draw_axis(500.0);
 
 	// Car
@@ -456,6 +474,14 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 		glRotatef(carmen_radians_to_degrees(carDrawer->sensor_board_1_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
 		glRotatef(carmen_radians_to_degrees(carDrawer->sensor_board_1_pose.orientation.roll), 1.0f, 0.0f, 0.0f);		
 
+		// SensorBox
+		glPushMatrix();
+
+			glColor3f(0.0, 0.0, 8.0);
+			glTranslatef(0.15, 0.0, 0.0);
+			drawBox(2.0 * 0.15, 2.0 * 0.15, 0.03);
+
+		glPopMatrix();
 
 		// Xsens
 		glPushMatrix();
@@ -470,41 +496,20 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 
 		glPopMatrix();
 
-//		// Laser
-//		glPushMatrix();
-//
-//			glTranslatef(carDrawer->laser_pose.position.x, carDrawer->laser_pose.position.y, carDrawer->laser_pose.position.z);
-//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);
-//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
-//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
-//
-//			glColor3f(0.0,0.0,1.0);
-//			drawBox(carDrawer->laser_size.x, carDrawer->laser_size.y, carDrawer->laser_size.z);
-//
-//		glPopMatrix();
+		// Velodyne
+		glPushMatrix();
 
-//		//Laser
-//		glPushMatrix();
-//
-//			glTranslatef(0, 0, 0.12);
-//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);
-//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
-//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
-//
-//			glColor3f(1.0,0.0,1.0);
-//			draw_cylinder(0.0445, 0.14);
-//			//drawCylinder(carDrawer->laser_size.x, carDrawer->laser_size.y, carDrawer->laser_size.z);
-//
-//		glPopMatrix();
-//
-//		// SensorBox
-//		glPushMatrix();
-//
-//			glColor3f(0.0,1.0,1.0);
-//			drawBox(carDrawer->sensor_box_size.x, carDrawer->sensor_box_size.y, carDrawer->sensor_box_size.z);
-//
-//		glPopMatrix();
-	
+			glTranslatef(carDrawer->laser_pose.position.x, carDrawer->laser_pose.position.y, carDrawer->laser_pose.position.z);
+			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);
+			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
+			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
+
+			glColor3f(0.0,0.0,1.0);
+			draw_cylinder(sqrt(pow(carDrawer->laser_size.x, 2.0) + pow(carDrawer->laser_size.y, 2.0)), carDrawer->laser_size.z);
+//			drawBox(carDrawer->laser_size.x, carDrawer->laser_size.y, carDrawer->laser_size.z);
+
+		glPopMatrix();
+
 	glPopMatrix();
 
 	/*

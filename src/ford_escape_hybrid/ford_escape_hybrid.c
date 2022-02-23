@@ -331,29 +331,15 @@ publish_car_error()
 
 
 static void
-publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned long currentTime __attribute__ ((unused)), unsigned long scheduledTime __attribute__ ((unused)))
+publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned long currentTime __attribute__ ((unused)),
+		unsigned long scheduledTime __attribute__ ((unused)))
 {
-	// This function publish the low level velocity and steering angle from the car
-
-	IPC_RETURN_TYPE err = IPC_OK;
-	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
 	static int heartbeat = 0;
 
 //	printf("v %lf, phi %lf, status %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
 	if (ford_escape_hybrid_config->publish_odometry)
-	{
-		robot_ackerman_velocity_message.v = g_XGV_velocity;
-		robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-		robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
-		robot_ackerman_velocity_message.host = carmen_get_host();
-
-		err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
-		carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
-
-		// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
-		//err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME, &robot_ackerman_velocity_message);
-		//carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME);
-	}
+		carmen_robot_ackerman_publish_velocity(g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config),
+				carmen_get_time());
 
 	if ((heartbeat % 10) == 0)
 	{

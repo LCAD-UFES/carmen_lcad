@@ -240,6 +240,28 @@ publish_motion_command_with_name(carmen_robot_and_trailer_motion_command_t *moti
 
 
 void 
+carmen_robot_ackerman_publish_velocity(double v, double phi, double timestamp)
+{
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		define_motion_command_message(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
+		first_time = 0;
+	}
+
+	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
+	robot_ackerman_velocity_message.v = v;
+	robot_ackerman_velocity_message.phi = phi;
+	robot_ackerman_velocity_message.timestamp = timestamp;
+	robot_ackerman_velocity_message.host = carmen_get_host();
+
+	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
+	carmen_test_ipc(err, "Could not publish carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+}
+
+
+void
 carmen_robot_ackerman_publish_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp)
 {
 	static int first_time = 1;

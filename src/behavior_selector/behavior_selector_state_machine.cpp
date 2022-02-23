@@ -107,7 +107,7 @@ path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose
 
 	if ((distance_to_path_final_pose < robot_config.distance_between_front_and_rear_axles) &&
 		(fabs(current_robot_pose_v_and_phi.v) < 0.25) &&
-		((distance_to_path_final_pose < 1.0) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
+		((distance_to_path_final_pose < 0.5) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
 		return (true);
 	else
 		return (false);
@@ -514,6 +514,18 @@ within_narrow_passage(carmen_robot_and_trailer_traj_point_t current_robot_pose_v
 }
 
 
+bool
+still_in_route(carmen_route_planner_state_t route_planner_state)
+{
+	if ((route_planner_state == EXECUTING_OFFROAD_PLAN) ||
+		(route_planner_state == PUBLISHING_ROUTE) ||
+		(route_planner_state == IN_RECTLINEAR_ROUTE_SEGMENT))
+		return (true);
+	else
+		return(false);
+}
+
+
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
 		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
@@ -525,13 +537,15 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			decision_making_state_msg->low_level_state = Stopped;
 			break;
 		case Stopped:
-			if (going_forward())
-				decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
-			else
-				decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
+			decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
 
-			if (autonomous && !path_final_pose_reached(current_robot_pose_v_and_phi))
+			if (autonomous && (!path_final_pose_reached(current_robot_pose_v_and_phi) || still_in_route(decision_making_state_msg->route_planner_state)))
 			{
+				if (going_forward())
+					decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
+				else
+					decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
+
 				if (wait_for_given_seconds(2.0))
 				{
 					if (going_forward())

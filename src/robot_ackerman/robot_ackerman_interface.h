@@ -91,6 +91,8 @@ void carmen_robot_ackerman_follow_trajectory(carmen_robot_and_trailer_traj_point
 void carmen_robot_ackerman_publish_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp);
 void carmen_robot_ackerman_publish_teacher_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp);
 
+void carmen_robot_ackerman_publish_velocity(double v, double phi, double timestamp);
+
 #ifdef __cplusplus
 }
 #endif
