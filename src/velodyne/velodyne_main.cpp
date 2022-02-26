@@ -181,12 +181,12 @@ int main(int argc, char **argv)
 					publish_velodyne_gps(gps);
 				}
 			}
-			else // just in case velodyne crash
+			else
 			{
-				printf("velodyne disconect\n");
-				velodyne->~VelodyneDriver();
-				free(velodyne_partial_scan.partial_scan);
-				velodyne = NULL;
+				printf("velodyne disconected?\n");
+//				velodyne->~VelodyneDriver();
+//				free(velodyne_partial_scan.partial_scan);
+//				velodyne = NULL;
 				usleep(1e6 / 2);
 			}
 		}

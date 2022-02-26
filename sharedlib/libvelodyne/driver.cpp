@@ -71,11 +71,11 @@ bool VelodyneDriver::pollScan(carmen_velodyne_partial_scan_message &scan)
 	{
 		// Fill in the scan_buffer
 		velodyne_packet_t packet;
-		int rc = laser_input_->getScanPacket(&packet);
+		int failed = laser_input_->getScanPacket(&packet);
 		last_package_timestamp = carmen_get_time();
 
-		if (rc < 0)
-			return false; // end of file reached?
+		if (failed)
+			return false;
 
 		for (int j = 0; j < velodyne_driver::VELODYNE_NUM_SHOTS; j++)
 		{

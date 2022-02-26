@@ -90,19 +90,19 @@ namespace velodyne_driver
 			  if (retval < 0)             // poll() error?
 			  {
 				if (errno != EINTR)
-				  printf("poll() error: %s\n", strerror(errno));
+				  printf("\npoll() error: %s\n", strerror(errno));
 				return 1;
 			  }
 
 			  if (retval == 0)            // poll() timeout?
 			  {
-				printf("velodyne scan poll() timeout\n");
+				printf("\nvelodyne scan poll() timeout\n");
 				return 1;
 			  }
 
 			  if ((fds[0].revents & POLLERR) || (fds[0].revents & POLLHUP) || (fds[0].revents & POLLNVAL)) // device error?
 			  {
-				printf("poll() reports velodyne error\n");
+				printf("\npoll() reports velodyne error\n");
 				return 1;
 			  }
 

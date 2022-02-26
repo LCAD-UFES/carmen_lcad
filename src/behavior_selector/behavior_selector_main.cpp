@@ -1202,6 +1202,8 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 	int goal_list_size;
 	carmen_robot_and_trailer_traj_point_t *first_goal;
 	int goal_type;
+	if (last_rddf_message_copy->number_of_poses > 0)
+		last_rddf_message_copy->poses[0].beta = current_robot_pose_v_and_phi.beta;
 	carmen_robot_and_trailer_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
 			path_collision_info, current_moving_objects, behavior_selector_state_message, timestamp);
 
