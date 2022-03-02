@@ -12,7 +12,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/ojIARASim/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/ojIARASim/lib
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lojIARASim -lparam_interface -lglobal -lipc -lcan_dump_interface
+LFLAGS += -lojIARASim -lparam_interface -lglobal -lipc -pthread -lcan_dump_interface
 
 # Source code files (.c, .cpp) 
 SOURCES = can_dump_main.cpp can_view_main.cpp can_playback_main.cpp toyota_corolla_simulator_main.cpp can_dump_interface.c can_playback_one_can_main.cpp

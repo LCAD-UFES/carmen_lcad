@@ -7,7 +7,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 IFLAGS +=
-LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
+LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc -pthread \
 	-lgeometry -lmap_interface \
 	-lparam_interface -lX11 \
 	-llocalize_ackerman_interface  -lmapper_interface -lgrid_mapping -lprob_models \

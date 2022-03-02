@@ -8,7 +8,7 @@ CC = g++
 LINK = g++
 
 IFLAGS += 
-LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv`
+LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv` -pthread
 
 SOURCES = web_cam_main.c web_cam_interface.c web_cam_test.c
 

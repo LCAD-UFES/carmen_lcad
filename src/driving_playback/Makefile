@@ -7,7 +7,7 @@ MODULE_COMMENT = Driving record and playback
 LINK = g++
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal \
+LFLAGS += -lparam_interface -lipc -pthread -lglobal \
 	-lfused_odometry_interface -lrddf_interface -lmotion_planner_interface
 		
 CFLAGS += -Wall -g

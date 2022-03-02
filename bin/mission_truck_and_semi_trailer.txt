@@ -46,15 +46,15 @@ park truck and semi-trailer at 7757676.66, -363904.44, -2.481, 0.0
 go after park truck and semi trailer at 7757676.66, -363904.44, -2.481, 0.0  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
-# Escadaria do Teatro
-set course to 7757259.47, -364086.05, 2.979
-go after set course to 7757259.47, -364086.05, 2.979  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	# Escadaria do Teatro
+	set course to 7757259.47, -364086.05, 2.979
+	go after set course to 7757259.47, -364086.05, 2.979  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
-# Escadaria do Teatro
-park truck and semi-trailer at 7757259.47, -364086.05, 2.979, 0.0
-go after park truck and semi trailer at 7757259.47, -364086.05, 2.979, 0.0  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	# Escadaria do Teatro
+	park truck and semi-trailer at 7757259.47, -364086.05, 2.979, 0.0
+	go after park truck and semi trailer at 7757259.47, -364086.05, 2.979, 0.0  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
 # Estacionamento CCJE
 set course to 7757427.20, -363573.80, -0.907

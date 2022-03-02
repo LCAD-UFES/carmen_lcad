@@ -7,7 +7,7 @@ LINK = $(CXX)
 
 CFLAGS += 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
-LFLAGS += -lreadlog -lkinect_interface -lglobal -lparam_interface -lipc `pkg-config --libs opencv`
+LFLAGS += -lreadlog -lkinect_interface -lglobal -lparam_interface -lipc `pkg-config --libs opencv` -pthread
 
 MODULE_NAME = MODEL-LEARN ACKERMAN
 MODULE_COMMENT = A program for learning motion models.

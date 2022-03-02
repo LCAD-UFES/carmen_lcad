@@ -91,14 +91,6 @@ int g_XGV_horn_status = 0;
 //}
 
 
-static void
-carmen_destroy_simulator_map(carmen_map_t *map)
-{
-	free(map->complete_map);
-	free(map->map);
-}
-
-
 int
 apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
@@ -385,7 +377,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	{
 		publish_odometry(timestamp);
 		carmen_simulator_ackerman_update_objects(simulator_config);
-		publish_objects(timestamp);
+//		publish_objects(timestamp);
 	}
 	publish_truepos(timestamp);
 
@@ -400,7 +392,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	publish_ford_escape_status_message();
 
-//	carmen_publish_heartbeat("simulator");
+	carmen_publish_heartbeat("simulator");
 
 	last_timestamp = timestamp;
 
@@ -568,58 +560,17 @@ localize_initialize_message_handler(carmen_localize_ackerman_initialize_message 
 
 
 void
-map_update_handler(carmen_map_t *new_map)
-{
-	carmen_map_p map_ptr;
-	int map_x, map_y;
-	carmen_point_t zero = {0, 0, 0};
-
-	map_ptr = carmen_map_clone(new_map);
-
-	carmen_destroy_simulator_map(&simulator_config->map);
-
-	simulator_config->map = *map_ptr;
-	free(map_ptr);
-
-	/* Reset odometry and true pose only of the robot's pose     */
-	/* is not valid given the new map. Otherwise keep old poses. */
-	/* This enables to activate a new map without messing up     */
-	/* the odometry. */
-
-	map_x = (simulator_config->true_pose.x - simulator_config->map.config.x_origin) /
-			simulator_config->map.config.resolution;
-	map_y = (simulator_config->true_pose.y - simulator_config->map.config.y_origin) /
-			simulator_config->map.config.resolution;
-
-	if (map_x < 0 || map_x >= simulator_config->map.config.x_size ||
-			map_y < 0 || map_y >= simulator_config->map.config.y_size ||
-			simulator_config->map.map[map_x][map_y] > 0.5 ||
-			carmen_simulator_object_too_close(simulator_config->true_pose.x, simulator_config->true_pose.y, -1))
-	{
-		simulator_config->odom_pose = zero;
-		simulator_config->true_pose = zero;
-	}
-
-}
-
-// Essa funcao nao eh usada em lugar nenhum...
-void
-grid_mapping_handler(carmen_map_server_offline_map_message *new_gridmap)
-{
-//	printf("teste\n");
-	carmen_map_t new_map;
-
-	new_map.complete_map = new_gridmap->complete_map;
-	new_map.config = new_gridmap->config;
-
-	map_update_handler(&new_map);
-}
-
-
-void
 offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_message)
 {
-	carmen_map_server_copy_offline_map_from_message(&(simulator_config->map), offline_map_message);
+	if (!necessary_maps_available)
+		simulator_config->map.map = (double **) malloc(offline_map_message->config.x_size * sizeof(double *));
+
+	simulator_config->map.config = offline_map_message->config;
+	simulator_config->map.complete_map = offline_map_message->complete_map;
+	for (int i = 0; i < simulator_config->map.config.x_size; i++)
+		simulator_config->map.map[i] = simulator_config->map.complete_map + i * simulator_config->map.config.y_size;
+
+//	carmen_map_server_copy_offline_map_from_message(&(simulator_config->map), offline_map_message);
 	necessary_maps_available = 1;
 }
 
@@ -812,13 +763,13 @@ fill_laser_config_data(carmen_simulator_ackerman_laser_config_t *lasercfg)
 	if (fabs(lasercfg->fov - M_PI) > 1e-6 &&
 			fabs(lasercfg->fov - 100.0/180.0 * M_PI) > 1e-6 &&
 			fabs(lasercfg->fov -  90.0/180.0 * M_PI) > 1e-6)
-		carmen_warn("Warnung: You are not using a standard SICK configuration (fov=%.4f deg)\n",
+		carmen_warn("Warning: You are not using a standard SICK configuration (fov=%.4f deg)\n",
 				carmen_radians_to_degrees(lasercfg->fov));
 
 	if (fabs(lasercfg->angular_resolution - carmen_degrees_to_radians(1.0)) > 1e-6 &&
 			fabs(lasercfg->angular_resolution - carmen_degrees_to_radians(0.5)) > 1e-6 &&
 			fabs(lasercfg->angular_resolution - carmen_degrees_to_radians(0.25)) > 1e-6)
-		carmen_warn("Warnung: You are not using a standard SICK configuration (res=%.4f deg)\n",
+		carmen_warn("Warning: You are not using a standard SICK configuration (res=%.4f deg)\n",
 				carmen_radians_to_degrees(lasercfg->angular_resolution));
 
 }
@@ -883,7 +834,7 @@ subscribe_to_relevant_messages()
 
 #endif
 
-	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1156,9 +1107,18 @@ main(int argc, char **argv)
 	if (subscribe_to_relevant_messages() < 0)
 		carmen_die("Error subscribing to messages...\n");
 
-	// carmen_ipc_addPeriodicTimer(simulator_conf.real_time, simulate_car_and_publish_readings, NULL);
-	// carmen_ipc_dispatch();
-	//
+//	carmen_ipc_addPeriodicTimer(simulator_conf.real_time, simulate_car_and_publish_readings, NULL);
+//	carmen_ipc_dispatch();
+
+
+//	IPC_RETURN_TYPE err;
+//
+//	/* Set local message queue capacity */
+//	err = IPC_setCapacity(4);
+//	carmen_test_ipc_exit(err, "I had problems setting the IPC capacity. This is a "
+//			"very strange error and should never happen.\n",
+//			"IPC_setCapacity");
+
 	while (1)
 	{
 		simulate_car_and_publish_readings(NULL, 0, 0);

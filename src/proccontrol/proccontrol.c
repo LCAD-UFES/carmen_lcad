@@ -367,10 +367,10 @@ int my_ipc_connect(char *ipc_module_name)
 		return -1;
 
 	/* Set local message queue capacity */
-	err = IPC_setCapacity(4);
-	carmen_test_ipc_exit(err, "I had problems setting the IPC capacity. This is a "
-			"very strange error and should never happen.\n",
-			"IPC_setCapacity");
+//	err = IPC_setCapacity(4);
+//	carmen_test_ipc_exit(err, "I had problems setting the IPC capacity. This is a "
+//			"very strange error and should never happen.\n",
+//			"IPC_setCapacity");
 	return 0;
 }
 

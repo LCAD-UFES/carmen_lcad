@@ -17,7 +17,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne 
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal -lstereo_velodyne_interface -lstereo_velodyne -lstereo_interface `pkg-config --libs opencv` 
+LFLAGS += -lparam_interface -lipc -pthread -lglobal -lstereo_velodyne_interface -lstereo_velodyne -lstereo_interface `pkg-config --libs opencv` 
 CFLAGS += -Wall
 
 # Source code files (.c, .cpp) 

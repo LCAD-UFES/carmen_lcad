@@ -6,7 +6,7 @@ MODULE_COMMENT = "NMEA GPS Module"
 LINK=g++
 
 IFLAGS += 
-LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lstdc++
+LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lstdc++ -pthread
 # Para o Raspberry Pi
 LFLAGS += -L/usr/local/ipc-3.9.1/src/lib/Linux-4.14/
 

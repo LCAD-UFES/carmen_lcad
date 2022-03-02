@@ -6,7 +6,7 @@ CFLAGS += -g -Wall
 LFLAGS += -lglobal -lipc -lparam_interface \
 			-llocalize_ackerman_interface -lgps_xyz_interface \
 			-lcurl `pkg-config --libs opencv` \
-			-lcarmen_gps_wrapper -lm -lgrid_mapping -lmap_io -lmap_interface
+			-lcarmen_gps_wrapper -lm -lgrid_mapping -lmap_io -lmap_interface -pthread
 
 MODULE_NAME = DOWNLOAD_MAP
 MODULE_COMMENT = This module download map images from google maps

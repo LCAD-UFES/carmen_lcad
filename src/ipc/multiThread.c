@@ -37,10 +37,13 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
+
+#include "globalM.h"
+#include "multiThread.h"
 
 #ifdef THREADED
-#include "multiThread.h"
-
+
 MUTEX_STATUS initMutex(MUTEX_PTR mutex)
 {
   int result;

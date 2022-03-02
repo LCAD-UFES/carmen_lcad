@@ -84,7 +84,7 @@ static void queryReplyHandler (MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 			       void *clientData);
 static BOOLEAN testQueryReplyData(QUERY_REPLY_PTR queryReply,
 				  QUERY_NOTIFICATION_PTR element);
-
+
 IPC_RETURN_TYPE IPC_respond (MSG_INSTANCE msgInstance, const char *msgName,
 			     unsigned int length, BYTE_ARRAY content)
 {

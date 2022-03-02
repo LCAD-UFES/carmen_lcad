@@ -797,9 +797,7 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 	}
 
 	carmen_behavior_selector_task_t current_task = behavior_selector_get_task();
-	if ((current_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
-		(current_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
-		(current_task == BEHAVIOR_SELECTOR_PARK))
+	if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.type != 0))
 	{
 		distance_between_waypoints /= 5.0;
 		change_goal_distance /= 5.0;
@@ -1121,8 +1119,7 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 		rddf_msg.number_of_poses = set_of_paths.number_of_poses;
 		rddf_msg.number_of_poses_back = set_of_paths.number_of_poses_back;
 
-		if ((behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
-			(behavior_selector_get_task() == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER))
+		if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.type != 0))
 			for (int i = 0; i < rddf_msg.number_of_poses; i++)
 				rddf_msg.poses[i].beta = road_network_message->poses[i].beta;
 

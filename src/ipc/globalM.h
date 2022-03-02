@@ -455,6 +455,8 @@
 #include "lex.h"
 #endif
 
+#define THREADED
+
 #ifdef THREADED
 #include "multiThread.h"
 

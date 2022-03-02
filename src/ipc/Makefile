@@ -3,14 +3,12 @@ include ../Makefile.conf
 #CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 -g
 CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71
 
-#ifeq ($(PROCESSOR),x86_64)
-#CFLAGS += -fPIC
-#endif
-
 #ifndef NO_TCPD
 #CFLAGS += -DACCESS_CONTROL
 #LFLAGS = -lnsl -lwrap
 #endif
+
+LFLAGS = -pthread
 
 MODULE_NAME = IPC
 MODULE_COMMENT = Flexible communications package written by Reid Simmons
@@ -37,13 +35,13 @@ libipc.a: ipc.o queryResponse.o marshall.o timer.o list.o behaviors.o \
 	tcModError.o datamsg.o formatters.o hash.o idtable.o key.o \
 	primFmttrs.o reg.o sendMsg.o tcaMem.o tcaRef.o comModule.o com.o \
 	globalM.o globalMUtil.o strList.o modLogging.o modVar.o resMod.o \
-	parseFmttrs.o lex.o printData.o 
+	parseFmttrs.o lex.o printData.o multiThread.o
 
 libipc.so.1: ipc.o queryResponse.o marshall.o timer.o list.o behaviors.o \
 	tcModError.o datamsg.o formatters.o hash.o idtable.o key.o \
 	primFmttrs.o reg.o sendMsg.o tcaMem.o tcaRef.o comModule.o com.o \
 	globalM.o globalMUtil.o strList.o modLogging.o modVar.o resMod.o \
-	parseFmttrs.o lex.o printData.o 
+	parseFmttrs.o lex.o printData.o multiThread.o
 
 central: comServer.o dispatch.o msgTap.o recvMsg.o res.o tcerror.o logging.o \
 	globalS.o centralIO.o globalVar.o central.o libipc.a

@@ -709,86 +709,99 @@ X_IPC_RETURN_STATUS_TYPE x_ipc_writeNBytes(int sd, char *buf, int32 nbytes)
  *
  *****************************************************************************/
 
-static X_IPC_RETURN_STATUS_TYPE x_ipc_writeNBuffers(int sd, struct iovec *vec,
-						    int32 amount)
+static X_IPC_RETURN_STATUS_TYPE x_ipc_writeNBuffers(int sd, struct iovec *vec, int32 amount)
 {
-  int32 amountWritten = 0;
-  int32 numBuffers=0;
-  int32 amountToWrite=0;
-  int32 i, start=0;
-  BOOLEAN *pipeBrokenPtr;
-  
-  for (i=0; (vec[i].iov_base != NULL); i++) {
-    numBuffers++;
-    amountToWrite += vec[i].iov_len;
-  }
-  
-  if (amountToWrite != amount) {
-    X_IPC_MOD_ERROR("Internal Error: Amounts incorrect in msg send.\n");
-    return StatError;
-  }
-  
-  LOCK_IO_MUTEX;
-  LOCK_M_MUTEX;
-  pipeBrokenPtr = &GET_M_GLOBAL(pipeBroken);
-  UNLOCK_M_MUTEX;
-  while (amountToWrite > 0) {
-    *pipeBrokenPtr = FALSE;
+	int32 amountWritten = 0;
+	int32 numBuffers = 0;
+	int32 amountToWrite = 0;
+	int32 i, start = 0;
+	BOOLEAN *pipeBrokenPtr;
+
+	for (i = 0; (vec[i].iov_base != NULL); i++)
+	{
+		numBuffers++;
+		amountToWrite += vec[i].iov_len;
+	}
+
+	if (amountToWrite != amount)
+	{
+		X_IPC_MOD_ERROR("Internal Error: Amounts incorrect in msg send.\n");
+		return StatError;
+	}
+
+	LOCK_IO_MUTEX;
+	LOCK_M_MUTEX;
+	pipeBrokenPtr = &GET_M_GLOBAL(pipeBroken);
+	UNLOCK_M_MUTEX;
+	while (amountToWrite > 0)
+	{
+		*pipeBrokenPtr = FALSE;
 #ifndef OS2
-    errno = 0;
+		errno = 0;
 #endif
-    SAFE_IO(amountWritten, writev(sd, &vec[start], numBuffers));
-    if (*pipeBrokenPtr || (errno == EPIPE)) {
-      X_IPC_MOD_WARNING( "\nWARNING: pipe broken!\n");
-      x_ipcFree((char *)vec);
-      UNLOCK_IO_MUTEX;
-      return StatError;
-    } else if (amountWritten < 0) {
+		SAFE_IO(amountWritten, writev(sd, &vec[start], numBuffers));
+		if (*pipeBrokenPtr || (errno == EPIPE))
+		{
+			X_IPC_MOD_WARNING("\nWARNING: pipe broken!\n");
+			x_ipcFree((char*) vec);
+			UNLOCK_IO_MUTEX;
+			return StatError;
+		}
+		else if (amountWritten < 0)
+		{
 #if defined(VXWORKS) || defined(THINK_C) || defined(macintosh)
-      x_ipcFree((char *)vec);
-      UNLOCK_IO_MUTEX;
-      return StatError;
+			x_ipcFree((char *)vec);
+			UNLOCK_IO_MUTEX;
+			return StatError;
 #else
 #ifdef _WINSOCK_
-      if (WSAGetLastError() == WSAEWOULDBLOCK)
+			if (WSAGetLastError() == WSAEWOULDBLOCK)
 #else
-	if (errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK)
 #endif
-	  {
-	    X_IPC_MOD_WARNING(
-			  "\nWARNING: x_ipc_writeNBytes: EWOULDBLOCK: trying again!\n");
-	    PAUSE_MIN_DELAY();
-	} else {
-	  x_ipcFree((char *)vec);
-	  UNLOCK_IO_MUTEX;
-	  return StatError;
-	}
+			{
+				X_IPC_MOD_WARNING("\nWARNING: x_ipc_writeNBytes: EWOULDBLOCK: trying again!\n");
+				PAUSE_MIN_DELAY();
+			}
+			else
+			{
+				x_ipcFree((char*) vec);
+				UNLOCK_IO_MUTEX;
+				return StatError;
+			}
 #endif
-    } else {
-      amountToWrite -= amountWritten;
-      if (amountToWrite > 0) {
-	while (amountWritten > 0) {
-	  if (vec[start].iov_len <= amountWritten) {
-	    amountWritten -= vec[start].iov_len;
-	    start++;
-	    numBuffers--;
-	  } else if (vec[start].iov_len > amountWritten) {
-	    vec[start].iov_len -= amountWritten;
+		}
+		else
+		{
+			amountToWrite -= amountWritten;
+			if (amountToWrite > 0)
+			{
+				while (amountWritten > 0)
+				{
+					if (vec[start].iov_len <= amountWritten)
+					{
+						amountWritten -= vec[start].iov_len;
+						start++;
+						numBuffers--;
+					}
+					else if (vec[start].iov_len > amountWritten)
+					{
+						vec[start].iov_len -= amountWritten;
 #ifndef _SGI_SOURCE
-	    vec[start].iov_base += amountWritten;
+						vec[start].iov_base += amountWritten;
 #else
-	    vec[start].iov_base =
-	      (caddr_t)((int32)vec[start].iov_base + amountWritten);
+						vec[start].iov_base = (caddr_t)((int32)vec[start].iov_base + amountWritten);
 #endif
-	    amountWritten = 0;
-	  }
+						amountWritten = 0;
+					}
+				}
+			}
+		}
 	}
-      }
-    }
-  }
-  UNLOCK_IO_MUTEX;
-  x_ipcFree((char *)vec);
-  return StatOK;
+	UNLOCK_IO_MUTEX;
+	x_ipcFree((char*) vec);
+
+	return StatOK;
 }
 
 /*****************************************************************************/

@@ -10,7 +10,7 @@ LINK = g++
 IFLAGS += 
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lglobal -lipc -lultrasonic_filter_interface -lGL -lglut -lGLU 
+LFLAGS += -lparam_interface -lglobal -lipc -lultrasonic_filter_interface -lGL -lglut -lGLU -pthread
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = ultrasonic_filter_main.c ultrasonic_filter_interface.c ultrasonic_viewer_main.cpp

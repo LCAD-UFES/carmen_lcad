@@ -23,7 +23,7 @@ IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 IFLAGS += `pkg-config --cflags opencv` `pkg-config --cflags bullet`
 
-LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
+LFLAGS += -lglobal -lipc -pthread -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
 	 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lboost_system \
 		-lrt -lboost_signals 
 LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \

@@ -12,7 +12,7 @@ LFLAGS += -L/usr/local/lib
 LFLAGS += `pkg-config --libs opencv` 
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal \
+LFLAGS += -lparam_interface -lipc -pthread -lglobal \
 -llocalize_ackerman_interface -lmoving_objects_interface \
 -lbumblebee_basic_interface
 
