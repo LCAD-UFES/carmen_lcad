@@ -33,7 +33,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   moving_objects_simulator zed_camera2 graphslam pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer traffic_light \
 	   tracker_opentld  \
-	   velodyne_camera_calibration deep_vgl \
+	   velodyne_camera_calibration # deep_vgl \
 	   
 	   # hypergraphsclam neural_object_detector3
 

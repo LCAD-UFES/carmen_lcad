@@ -796,7 +796,6 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 			change_goal_distance = distance_between_waypoints_with_v_multiplier * fabs(current_robot_pose_v_and_phi.v);
 	}
 
-	carmen_behavior_selector_task_t current_task = behavior_selector_get_task();
 	if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.type != 0))
 	{
 		distance_between_waypoints /= 5.0;

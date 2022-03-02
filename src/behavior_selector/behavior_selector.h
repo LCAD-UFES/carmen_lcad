@@ -131,6 +131,7 @@ extern "C" {
 	carmen_robot_and_trailer_traj_point_t *get_nearest_forward_waypoint_ahead();
 	carmen_robot_and_trailer_traj_point_t *get_nearest_reverse_waypoint_ahead();
 	carmen_robot_and_trailer_traj_point_t *get_waypoint_near_to_nearest_pedestrian_ahead();
+	int get_index_of_waypoint_near_to_nearest_pedestrian_ahead();
 
 	carmen_robot_and_trailer_traj_point_t *get_path_final_pose();
 	carmen_robot_and_trailer_traj_point_t *get_final_goal();
