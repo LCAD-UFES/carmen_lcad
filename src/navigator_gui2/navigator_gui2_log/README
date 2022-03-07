@@ -1,5 +1,8 @@
-Para utilizar o log é necessário que a pasta /dados/navigator_gui2_log exista.
-Com o navigator_gui2 aberto, pressione o botão Record, e então ele irá criar uma pasta com nome da data e hora do momento que você está gravando.
+#Para utilizar o log é necessário que a pasta /dados/navigator_gui2_log exista.
+#Com o navigator_gui2 aberto, pressione o botão Record, e então ele irá criar uma pasta com nome da data e hora do momento que você está gravando.
+
+Atualmente é necessário executar o navigator_gui2 com a flag "-autonomous_record_screen 1", dessa forma, o navigator_gui2 já começa gravando a tela
+
 
 Para transformar as imagens em vídeos é necessário executar o programa da seguinte forma:
 ./image_ready /dados/navigator_gui2_log/2019-08-08...
