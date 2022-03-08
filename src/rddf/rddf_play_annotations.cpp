@@ -325,58 +325,47 @@ pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_v
 bool
 pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_objects_vector, carmen_annotation_t pedestrian_track_annotation)
 {
+	static double last_time_pedestrian_detected = 0.0;
+
 	if (moving_objects_vector == NULL)
 		return (false);
-
-	carmen_vector_2D_t displaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
 
 	switch (crosswalk_state)
 	{
 		case Free_Crosswalk:
-			printf("Free_Crosswalk \n");
 			if (pedestrian_in_crosswalk(moving_objects_vector, pedestrian_track_annotation))
 			{
 				crosswalk_state = Stopping_Busy_Crosswalk;
 				return (true);
 			}
+
 			return (false);
 
 		case Stopping_Busy_Crosswalk:
-			printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
-			/* if (!pedestrian_in_crosswalk(moving_objects_vector, pedestrian_track_annotation))
-			{
-				crosswalk_state = Free_Crosswalk;
-				return (false);
-			}
-			else */ if (current_globalpos_msg->v < 0.15 /* && DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose) < 20.0 */) // || dist stop point < 2.0
-			{
+			if (fabs(current_globalpos_msg->v) < 0.15)
 				crosswalk_state = Stopped_Busy_Crosswalk;
-			}
+
 			return (true);
 
 		case Stopped_Busy_Crosswalk:
-			printf("Stopped_Busy_Crosswalk \n");
 			if (!pedestrian_crossing(moving_objects_vector, pedestrian_track_annotation))
 			{
+				last_time_pedestrian_detected = carmen_get_time();
 				crosswalk_state = Leaving_Crosswalk;
-				return (false);
 			}
+
 			return (true);
 
 		case Leaving_Crosswalk:
-			printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (pedestrian_crossing(moving_objects_vector, pedestrian_track_annotation))
-			{
-//				printf("pedestrian_crossing \n");
 				crosswalk_state = Stopped_Busy_Crosswalk;
-				return (true);
-			}
-			else if (DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose) < 2.0)
-			{
+
+			if ((carmen_get_time() - last_time_pedestrian_detected) > 2.0)
 				crosswalk_state = Free_Crosswalk;
-			}
-			return (false);
+
+			return (true);
 	}
+
 	return (true);
 }
 
