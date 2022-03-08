@@ -63,21 +63,23 @@ void
 run_velodyne_VLP16_PUCK_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
 {
 	int port = atoi(lidar_config.port);
-
 	velodyne = new velodyne_driver::VelodyneDriver(msg, lidar_config.shot_size, INITIAL_MAX_NUM_SHOT, port, 8309);
 	config = velodyne->getVelodyneConfig();
-	
+
 	while (1)
 	{
-		if (velodyne->pollScan(msg, port, INITIAL_MAX_NUM_SHOT, 12, 754.0, lidar_config.shot_size))  // 12 is the number of shots per packet, 754.0 the velodyne package rate, see manual
+		while (1)
 		{
-			carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
-//			print_lidar_message(msg);
-		}
-		else
-		{
-			printf("Velodyne disconected!\n");
-			velodyne->~VelodyneDriver();
+			if (velodyne->pollScan(msg, port, INITIAL_MAX_NUM_SHOT, 12, 754.0, lidar_config.shot_size))  // 12 is the number of shots per packet, 754.0 the velodyne package rate, see manual
+			{
+				carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
+//				print_lidar_message(msg);
+			}
+			else
+			{
+				printf("Velodyne disconected?\n");
+//				velodyne->~VelodyneDriver();
+			}
 		}
 	}
 }

@@ -160,35 +160,25 @@ int main(int argc, char **argv)
 
 	velodyne_partial_scan.host = carmen_get_host();
 
+	velodyne = new velodyne_driver::VelodyneDriver(velodyne_scan_port, velodyne_gps_port, velodyne_partial_scan);
+	config = velodyne->getVelodyneConfig();
+
 	while (true)
 	{
-		if (velodyne == NULL)
+		if (velodyne->pollScan(velodyne_partial_scan))
 		{
-			velodyne = new velodyne_driver::VelodyneDriver(velodyne_scan_port, velodyne_gps_port, velodyne_partial_scan);
-			config = velodyne->getVelodyneConfig();
+			publish_velodyne_partial_scan();
+
+			if (velodyne_gps_enabled && velodyne->pollGps())
+			{
+				gps = velodyne->getVelodyneGps();
+				publish_velodyne_gps(gps);
+			}
 		}
 		else
 		{
-			if (velodyne->pollScan(velodyne_partial_scan))
-			{
-				publish_velodyne_partial_scan();
-
-				// publish_velodyne_variable_scan();
-
-				if (velodyne_gps_enabled && velodyne->pollGps())
-				{
-					gps = velodyne->getVelodyneGps();
-					publish_velodyne_gps(gps);
-				}
-			}
-			else
-			{
-				printf("velodyne disconected?\n");
-//				velodyne->~VelodyneDriver();
-//				free(velodyne_partial_scan.partial_scan);
-//				velodyne = NULL;
-				usleep(1e6 / 2);
-			}
+			printf("velodyne disconected?\n");
+			usleep(1e6 / 2);
 		}
 	}
 

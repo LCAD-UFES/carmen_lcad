@@ -224,14 +224,14 @@ bool VelodyneDriver::pollScan(carmen_velodyne_variable_scan_message &variable_sc
 		int rc = laser_input_->getScanPacket(&packet, velodyne_udp_port);
 		last_package_timestamp = carmen_get_time();
 
-		if (rc < 0)
+		if (rc != 0)
 			return false; // end of file reached?
 
 		for (int j = 0; j < velodyne_num_shots; j++)
 		{
 			// Compute previous_i. It is equal -1 only once.
 			int previous_i = i;
-			i+=1;
+			i += 1;
 			if (i >= velodyne_max_laser_shots_per_revolution)
 				i = 0;
 
