@@ -811,59 +811,19 @@ void on_buttonPlaceRobot_clicked(GtkWidget *widget __attribute__((unused)), GtkG
 }
 
 //extern "C" G_MODULE_EXPORT
-void on_buttonPlaceGoal_clicked(GtkWidget *widget __attribute__((unused)),
+void on_buttonSetCollisionGeometry_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	global_gui->change_cursor(&carmen_yellow, &carmen_black);
-	global_gui->placement_status = PLACING_GOAL;
+	carmen_task_manager_publish_set_collision_geometry_message(ENGAGE_GEOMETRY, carmen_get_time());
 
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
 
 //extern "C" G_MODULE_EXPORT
-void on_buttonRemoveGoal_clicked(GtkWidget *widget __attribute__((unused)),
+void on_buttonSetDefaultGeometry_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if (global_gui->behavior_selector_active)// || global_gui->goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-//		global_gui->execute_decrement_point();
-//	else
-		carmen_behavior_selector_remove_goal();
-
-	global_gui->placement_status = PLACING_GOAL;
-
-	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
-}
-
-//extern "C" G_MODULE_EXPORT
-void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
-					   GtkGui* gui)
-{
-	if (global_gui->behavior_selector_active)// || global_gui->goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-//		{
-//			if (global_gui->queuePoints != NULL)
-//			{
-//				pointers *item = global_gui->queuePoints->begin;
-//				pointers *itemAux;
-//
-//				while (item != NULL)
-//				{
-//					itemAux = item;
-//					item	= item->next;
-//					free(itemAux);
-//				}
-//
-//				global_gui->queuePoints->begin = NULL;
-//				global_gui->queuePoints->curr  = NULL;
-//				global_gui->queuePoints->end   = NULL;
-//
-//				//navigator_unset_goal(item->pt.posiX, item->pt.posiY);
-//				free(item);
-//				navigator_set_goal(-1, -1, 0);
-////				navigator_stop_moving();
-//			}
-//		}
-//		else
-		carmen_behavior_selector_clear_goal_list();
+	carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, carmen_get_time());
 
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }

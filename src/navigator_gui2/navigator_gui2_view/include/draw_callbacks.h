@@ -20,6 +20,7 @@
 #include <carmen/global_graphics.h>
 #include <carmen/map_graphics.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/task_manager_interface.h>
 
 
 namespace View
@@ -286,13 +287,10 @@ extern "C" G_MODULE_EXPORT
 void on_buttonPlaceRobot_clicked(GtkWidget *widget , GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_buttonPlaceGoal_clicked(GtkWidget *widget , GtkGui* gui);
+void on_buttonSetCollisionGeometry_clicked(GtkWidget *widget , GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_buttonRemoveGoal_clicked(GtkWidget *widget , GtkGui* gui);
-
-extern "C" G_MODULE_EXPORT
-void on_buttonClearGoals_clicked(GtkWidget *widget, GtkGui* gui);
+void on_buttonSetDefaultGeometry_clicked(GtkWidget *widget , GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonComputeRoute_clicked(GtkWidget *widget, GtkGui* gui);

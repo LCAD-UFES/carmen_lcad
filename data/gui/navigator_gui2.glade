@@ -1594,13 +1594,13 @@
                                         <property name="can_focus">False</property>
                                         <property name="homogeneous">True</property>
                                         <child>
-                                          <object class="GtkToggleButton" id="buttonPlaceGoal">
-                                            <property name="label" translatable="yes">Place Goal</property>
+                                          <object class="GtkToggleButton" id="buttonSetCollisionGeometry">
+                                            <property name="label" translatable="yes">Set Collision Geometry</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonPlaceGoal_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonSetCollisionGeometry_clicked" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1637,13 +1637,13 @@
                                         <property name="can_focus">False</property>
                                         <property name="homogeneous">True</property>
                                         <child>
-                                          <object class="GtkToggleButton" id="buttonRemoveGoal">
-                                            <property name="label" translatable="yes">Remove Goal</property>
+                                          <object class="GtkToggleButton" id="buttonSetDefaultGeometry">
+                                            <property name="label" translatable="yes">Set Default Geometry</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonRemoveGoal_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonSetDefaultGeometry_clicked" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
