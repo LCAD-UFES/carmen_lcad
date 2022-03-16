@@ -156,7 +156,7 @@ DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
 PUBLIC_INCLUDES = carmen_darknet_interface.hpp
 
-all: $(OBJDIR) LIBDIR $(EXEC) $(LIBNAMESO)
+all: yolo4.weights $(OBJDIR) LIBDIR $(EXEC) $(LIBNAMESO)
 
 ifeq ($(LIBSO), 1)
 CFLAGS+= -fPIC
@@ -187,7 +187,10 @@ clean: clean_darknet
 clean_darknet:
 	rm -rf lib result $(OBJS) $(OBJDIR) $(EXEC) $(LIBNAMESO)
 
-download:
-	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/17Aoet5rA1BlLVEuEAnIdps3tfdDVIEel/view?usp=sharing yolov4.weights
+yolo4.weights:
+	cat yolov4_weights.aa yolov4_weights.ab yolov4_weights.ac > yolov4.weights
+
+#download:
+#	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1iKudubW8jxgoMkrqkonEJdmjd_MotFiY/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet3/yolov4.weights
 
 include $(CARMEN_HOME)/src/Makefile.rules
