@@ -1,7 +1,6 @@
 #ifndef MAPPER_H_
 #define MAPPER_H_
 
-//#include <tf.h>
 #include <carmen/moving_objects_interface.h>
 #include "neural_mapper_io.h"
 
@@ -12,6 +11,8 @@
 
 #define NUM_VELODYNE_POINT_CLOUDS	5
 #define GLOBAL_POS_QUEUE_SIZE		100
+
+#define NUMBER_OF_SENSORS 25      // The number_of_sensors must be the maximun number of sensors: 25 
 
 
 void mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map);
@@ -55,6 +56,37 @@ carmen_map_t *get_the_map();
 void set_rays_threshold_to_merge_between_maps();
 
 double get_rays_threshold_to_merge_between_maps();
+
+void carmen_mapper_initialize_transforms();
+
+void carmen_mapper_get_highest_sensor();
+
+void carmen_mapper_sensors_params_handler(char *module, char *variable, __attribute__((unused)) char *value);
+
+void carmen_mapper_read_alive_lidars_configs(int argc, char **argv);
+
+void carmen_mapper_get_alive_sensors(int argc, char **argv);
+
+void read_parameters_semi_trailer(int semi_trailer_type);
+
+int *carmen_mapper_generates_ray_order(int size);
+
+void carmen_mapper_get_sensors_param(int argc, char **argv);
+
+void carmen_mapper_sort_ray_order_by_vertical_correction_angles(sensor_parameters_t params);
+
+void carmen_mapper_sort_vertical_correction_angles(sensor_parameters_t params);
+
+void carmen_mapper_get_lidars_sensor_params();
+
+void carmen_mapper_init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intencity, carmen_pose_3D_t **robot_pose_out,
+		carmen_vector_3D_t **robot_velocity_out, double **robot_timestamp_out, double **robot_phi_out, double **points_timestamp_out);
+
+void carmen_mapper_override_mapping_mode_params(int argc, char **argv);
+
+void get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute__((unused)) char *variable, __attribute__((unused)) char *value);
+
+void carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_robot_ackerman_config_t *p_car_config);
 
 
 #endif /* MAPPER_H_ */
