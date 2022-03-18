@@ -356,3 +356,83 @@ carmen_mapper_publish_diff_map_message(short int *coord_x, short int *coord_y, u
 	err = IPC_publishData(CARMEN_MAPPER_DIFF_MAP_MESSAGE_NAME, &msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAPPER_DIFF_MAP_MESSAGE_NAME);
 }
+
+
+//----------------------------------------------------------RANIK-------------------------------------------------------------------
+
+
+void
+carmen_mapper_define_probability_of_each_ray_of_lidar_hit_obstacle_messages()
+{
+	IPC_RETURN_TYPE err;
+
+	char message_name[64];
+
+	for (int i = 0; i <= 15; i++)
+	{
+		sprintf(message_name, "%s%d", CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME, i);
+		err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_FMT);
+		carmen_test_ipc_exit(err, "Could not define", message_name);
+	}
+}
+
+
+void
+carmen_mapper_subscribe_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message,
+													carmen_handler_t handler, carmen_subscribe_t subscribe_how, int lidar_id)
+{
+	static char message_name[64];
+	sprintf(message_name, "%s%d", CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME, lidar_id);
+
+	carmen_subscribe_message(message_name, (char*) CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_FMT,
+			message, sizeof(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message), handler, subscribe_how);
+}
+
+
+void
+carmen_mapper_unsubscribe_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_handler_t handler, int lidar_id)
+{
+	static char message_name[64];
+	sprintf(message_name, "%s%d", CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME, lidar_id);
+	carmen_unsubscribe_message(message_name, handler);
+}
+
+
+IPC_RETURN_TYPE
+carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message, int lidar_id)
+{
+	IPC_RETURN_TYPE err;
+
+	static char message_name[64];
+	sprintf(message_name, "%s%d", CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME, lidar_id);
+	err = IPC_publishData(message_name, message);
+	carmen_test_ipc_exit(err, "Could not publish", message_name);
+
+	return err;
+}
+
+
+void
+carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message, int shot_size, int number_of_shots)
+{
+	message->number_of_shots = number_of_shots;
+	message->scan = (carmen_mapper_shot*) malloc ((number_of_shots + 1) * sizeof(carmen_mapper_shot));
+
+	for (int i = 0 ; i <= number_of_shots; i++)
+	{
+		message->scan[i].shot_size = shot_size;
+		message->scan[i].probability = (unsigned short*)  malloc (shot_size * sizeof(unsigned short));
+	}
+	message->host = carmen_get_host();
+}
+
+
+void
+initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message)
+{
+	message->number_of_shots = 0;
+	message->scan = NULL;
+	message->timestamp = 0.0;
+	message->host = NULL;
+}
+

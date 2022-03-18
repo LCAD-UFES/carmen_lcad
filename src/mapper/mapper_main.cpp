@@ -142,7 +142,9 @@ extern char **g_argv;
 
 extern tf::Transformer tf_transformer;
 
-// #define OBSTACLE_PROBABILY_MESSAGE
+carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message probability_of_each_ray_msg_0;
+extern carmen_robot_ackerman_config_t car_config; // TODO essa variável deveria mesmo ser extern???????
+//#define OBSTACLE_PROBABILY_MESSAGE
 
 
 void
@@ -280,6 +282,76 @@ free_virtual_scan_message()
 // 	semi_trailer_config.max_beta = carmen_degrees_to_radians(semi_trailer_config.max_beta);
 // }
 
+//----------------------------------------------------------RANIK-------------------------------------------------------------------
+
+// TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO checar essa função
+void
+get_occupancy_log_odds_of_each_ray_target(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int scan_index)
+{
+	int thread_id = omp_get_thread_num();
+	int point_cloud_index = sensor_data->point_cloud_index;
+	spherical_point_cloud v_zt = sensor_data->points[point_cloud_index];
+	int N = v_zt.num_points / sensor_params->vertical_resolution;
+	double v = sensor_data->robot_velocity[point_cloud_index].x;
+	double phi = sensor_data->robot_phi[point_cloud_index];
+	double dt = sensor_params->time_spent_by_each_scan;
+	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index] - (double) N * dt;
+	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
+	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
+	double dt2 = dt * scan_index / sensor_params->vertical_resolution;
+	robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
+			dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+
+	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
+
+	change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[scan_index].horizontal_angle);
+
+	carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, scan_index, robot_interpolated_position.position,
+			sensor_params->sensor_support_pose, r_matrix_car_to_global, sensor_params->support_to_car_matrix,
+			robot_wheel_radius, offline_map.config.x_origin, offline_map.config.y_origin, &car_config, robot_near_strong_slow_down_annotation, thread_id, use_remission);
+
+	carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, scan_index, highest_sensor, safe_range_above_sensors,
+			robot_near_strong_slow_down_annotation, thread_id);
+			// Updates: sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][ray_index] : 0 <= ray_index < 32
+}
+
+void
+carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
+		carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message prob_msg)
+{
+	int cloud_index = sensor_data->point_cloud_index;
+	int vertical_resolution = sensor_params->vertical_resolution;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / vertical_resolution;
+	int thread_id = omp_get_thread_num();
+
+	if (prob_msg.scan == NULL)
+		carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(&prob_msg, vertical_resolution, number_of_laser_shots);  // TODO realocar caso mude o tamanho
+
+	for (int j = 0; j < number_of_laser_shots; j++)
+	{
+		int scan_index = j * vertical_resolution;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+
+		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
+
+		for (int i = 1; i < vertical_resolution; i++)
+		{
+			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
+			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+
+			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+			//prob contem a probabilidade de um raio ter atingido um obstáculo ou não, no mapper tudo com prob>0.5 atingiu um obstáculo
+
+			prob_msg.scan[j].probability[i] = 1;
+//			prob_msg->scan[j]->probability[i] = prob;
+
+		}
+	}
+}
+//-----------------------------------------------------------------------------------------------------------------------------
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -387,7 +459,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	else
 		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
 
-	printf("beta %lf\n", globalpos_message->beta);
+	// printf("beta %lf\n", globalpos_message->beta);
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
 	int index_of_nearest_annotation = 0;
@@ -445,6 +517,11 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
+
+		#ifdef OBSTACLE_PROBABILY_MESSAGE
+		    carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0 + 10], &sensors_data[0 + 10], probability_of_each_ray_msg_0);
+			carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_0, 0);
+		#endif
 	}
 
 	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0 && mapper_save_map)
@@ -478,10 +555,6 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 		fake_velodyne_message.timestamp = pose->timestamp;
 		fake_velodyne_message.host = carmen_get_host();
 		mapper_velodyne_partial_scan(VELODYNE, &fake_velodyne_message);
-		#ifdef OBSTACLE_PROBABILY_MESSAGE
-			// carmen_mapper_fill_lidar_point_cloud_each_ray_hit_obstacle_probabily_message()
-			// publish()
-		#endif
 	}
 }
 
@@ -1035,13 +1108,22 @@ subscribe_to_ipc_messages()
 
 
 static void
+initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_messages()
+{
+	initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_0);
+}
+
+
+static void
 define_mapper_messages()
 {
-	/* register initialize message */
 	carmen_map_server_define_compact_cost_map_message();
 	carmen_mapper_define_messages();
 	carmen_mapper_define_virtual_scan_message();
+	carmen_mapper_define_probability_of_each_ray_of_lidar_hit_obstacle_messages();
 }
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1068,6 +1150,8 @@ main(int argc, char **argv)
 	carmen_mapper_initialize_transforms();
 
 	mapper_initialize(&map_config, car_config, use_merge_between_maps);
+
+	initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_messages();
 
 	if (use_neural_mapper)
 		initialize_inference_context_mapper_();
