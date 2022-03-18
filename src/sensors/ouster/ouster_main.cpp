@@ -17,12 +17,20 @@ namespace OS1 = ouster::OS1;
 
 #define INITIAL_MAX_NUM_SHOT 2048 // TODO usar 2048
 
+#define OS132 0
+#define OS164 1
+#define OS032 0
+
 char *ouster_ip = NULL;
 char *host_ip = NULL;
 char *string_mode = NULL;
 int ouster_sensor_id = 0;
 int ouster_publish_imu = 0;
 int ouster_intensity_type = 0;
+int column_bytes = 0;
+char *lidar_string_model;
+int lidar_model = -1;
+int H = -1;
 
 
 void
@@ -150,11 +158,11 @@ build_and_publish_variable_scan_message(uint8_t* buf, carmen_velodyne_variable_s
     // This is the solution used by ouster to store the packets until a complete scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
     for (int icol = 0; icol < OS1::columns_per_buffer; icol++) 
     {
-        const uint8_t* col_buf = OS1::nth_col(icol, buf);
+        const uint8_t* col_buf = OS1::nth_col(icol, buf, column_bytes);
         const uint16_t m_id = OS1::col_measurement_id(col_buf);
 
         // drop invalid / out-of-bounds data in case of misconfiguration
-        if (OS1::col_valid(col_buf) != 0xffffffff || m_id >= W) 
+        if (OS1::col_valid(col_buf, OS1::pixels_per_column[lidar_model]) != 0xffffffff || m_id >= W)
             continue; // what to do in this case??
 
         const uint64_t ts = OS1::col_timestamp(col_buf);
@@ -183,10 +191,9 @@ build_and_publish_variable_scan_message(uint8_t* buf, carmen_velodyne_variable_s
                 message.number_of_shots = next_m_id;
      
                 // printf("NS %d\n", next_m_id);
-                carmen_velodyne_publish_variable_scan_message(&message, 4);
+                carmen_velodyne_publish_variable_scan_message(&message, ouster_sensor_id);
                 // index = 0;
             }
-
             scan_ts = ts;
             next_m_id = 0;
         }
@@ -194,7 +201,8 @@ build_and_publish_variable_scan_message(uint8_t* buf, carmen_velodyne_variable_s
         next_m_id = m_id + 1;
 
         // message->partial_scan[m_id].angle = h_angle_0;
-        message.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
+//        double angle_teste = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + ouster32_azimuth_offsets[m_id] + 180);
+        message.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + (ouster32_azimuth_offsets[icol]) + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
 
         message.partial_scan[m_id].shot_size = H;
 
@@ -221,6 +229,87 @@ build_and_publish_variable_scan_message(uint8_t* buf, carmen_velodyne_variable_s
 
 
 void
+build_and_publish_variable_scan_message_2_lidars(uint8_t* buf, carmen_velodyne_variable_scan_message &message0, carmen_velodyne_variable_scan_message &message1)
+{
+    static int next_m_id = W;
+    static int64_t scan_ts = -1L;
+
+    // This is the solution used by ouster to store the packets until a complete scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
+    for (int icol = 0; icol < OS1::columns_per_buffer; icol++)
+    {
+        const uint8_t* col_buf = OS1::nth_col(icol, buf, column_bytes);
+        const uint16_t m_id = OS1::col_measurement_id(col_buf);
+
+        // drop invalid / out-of-bounds data in case of misconfiguration
+        if (OS1::col_valid(col_buf, OS1::pixels_per_column[lidar_model]) != 0xffffffff || m_id >= W)
+            continue; // what to do in this case??
+
+        const uint64_t ts = OS1::col_timestamp(col_buf);
+        float h_angle_0 = OS1::col_h_angle(col_buf);
+
+        if (m_id < next_m_id)
+        {
+            // if not initializing with first packet
+            if (scan_ts != -1)
+            {
+                message0.timestamp = carmen_get_time(); // TODO use sensor timestamp
+                message1.timestamp = message0.timestamp;
+
+                message0.number_of_shots = next_m_id;
+                message1.number_of_shots = message0.number_of_shots;
+
+                // printf("Publicou\n");
+                carmen_velodyne_publish_variable_scan_message(&message0, 0);
+                carmen_velodyne_publish_variable_scan_message(&message1, 1);
+            }
+            scan_ts = ts;
+            next_m_id = 0;
+        }
+
+        next_m_id = m_id + 1;
+
+        message0.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 1.4 + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
+        message1.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 1.4 + 180);
+
+        for (uint8_t ipx = 0, j0 = 0, j1 = 0; ipx < H; ipx++)
+        {
+            const uint8_t* px_buf = OS1::nth_px(ipx, col_buf);
+            uint32_t range = OS1::px_range(px_buf); // in mm
+            uint16_t intensity = 0;
+
+//            if (range > 65535)
+//            	range = 0;
+
+            if (ouster_intensity_type == INTENSITY)
+                intensity = OS1::px_signal_photons(px_buf);
+            else if (ouster_intensity_type == REFLECTIVITY)
+                intensity = OS1::px_reflectivity(px_buf);
+            else if (ouster_intensity_type == NOISE)
+                intensity = OS1::px_noise_photons(px_buf);
+            else
+                fprintf(stderr, "Warning: Invalid intensity type: %d. Filling intensity with zeros.\n", intensity);
+
+            switch (ipx % 2)
+            {
+            case 0:
+                message0.partial_scan[m_id].distance[j0] = range;
+                message0.partial_scan[m_id].intensity[j0] = intensity;
+                j0++;
+                break;
+
+            case 1:
+                message1.partial_scan[m_id].distance[j1] = range;
+                message1.partial_scan[m_id].intensity[j1] = intensity;
+                j1++;
+                break;
+
+            }
+        }
+    }
+}
+
+
+void
 build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_variable_scan_message &message0, carmen_velodyne_variable_scan_message &message1,
     carmen_velodyne_variable_scan_message &message2, carmen_velodyne_variable_scan_message &message3)
 {
@@ -230,11 +319,11 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
     // This is the solution used by ouster to store the packets until a complete scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
     for (int icol = 0; icol < OS1::columns_per_buffer; icol++) 
     {
-        const uint8_t* col_buf = OS1::nth_col(icol, buf);
+        const uint8_t* col_buf = OS1::nth_col(icol, buf, column_bytes);
         const uint16_t m_id = OS1::col_measurement_id(col_buf);
 
         // drop invalid / out-of-bounds data in case of misconfiguration
-        if (OS1::col_valid(col_buf) != 0xffffffff || m_id >= W) 
+        if (OS1::col_valid(col_buf, OS1::pixels_per_column[lidar_model]) != 0xffffffff || m_id >= W)
             continue; // what to do in this case??
 
         const uint64_t ts = OS1::col_timestamp(col_buf);
@@ -263,7 +352,7 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
         next_m_id = m_id + 1;
 
         message0.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 3.164 + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
-        message1.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 1.055 + 180);
+        message1.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + 1.055 + 180);//os valores de 3.164 e 1.055 sao os beam_azimuth_angles read the README
         message2.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 1.055 + 180);
         message3.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) - 3.164 + 180);
 
@@ -359,7 +448,8 @@ get_mode_code(char *mode_string)
 void 
 read_parameters(int argc, char **argv)
 {
-	carmen_param_t param_list[] = {
+
+	carmen_param_t comand_line_param_list[] = {
 		{(char*) "commandline", (char*) "sensor_ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL},
 		{(char*) "commandline", (char*) "host_ip", CARMEN_PARAM_STRING, &host_ip, 0, NULL},
 		{(char*) "commandline", (char*) "mode", CARMEN_PARAM_STRING, &string_mode, 0, NULL},
@@ -367,13 +457,29 @@ read_parameters(int argc, char **argv)
         {(char*) "commandline", (char*) "intensity_type", CARMEN_PARAM_INT, &ouster_intensity_type, 0, NULL}, 
 		{(char*) "commandline", (char*) "publish_imu", CARMEN_PARAM_ONOFF, &ouster_publish_imu, 0, NULL},
 	};
-	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
+	carmen_param_install_params(argc, argv, comand_line_param_list, sizeof(comand_line_param_list)/sizeof(comand_line_param_list[0]));
 
     if (ouster_intensity_type < 1 || ouster_intensity_type > 3)
     {
         fprintf(stderr, "Invalid intensity type: %d. Filling intensity with zeros.\n", ouster_intensity_type);
         exit(0);
     }
+
+    char lidar_string[256];
+
+    sprintf(lidar_string, "lidar%d", ouster_sensor_id);        // Geather the lidar id
+
+    carmen_param_t param_list[] =
+    {
+    		{lidar_string, (char *) "model", CARMEN_PARAM_STRING, &lidar_string_model, 0, NULL},
+    };
+    int num_items = sizeof(param_list) / sizeof(param_list[0]);
+    carmen_param_install_params(argc, argv, param_list, num_items);
+
+    if (strcmp(lidar_string_model, "OS132") == 0)
+    	lidar_model = OS132;
+    else if (strcmp(lidar_string_model, "OS164") == 0)
+    	lidar_model = OS164;
 }
 
 
@@ -386,12 +492,6 @@ main(int argc, char** argv)
     carmen_velodyne_variable_scan_message message2;
     carmen_velodyne_variable_scan_message message3;
 
-    setup_message(message, INITIAL_MAX_NUM_SHOT, 64);
-    setup_message(message0, INITIAL_MAX_NUM_SHOT, 16);
-    setup_message(message1, INITIAL_MAX_NUM_SHOT, 16);
-    setup_message(message2, INITIAL_MAX_NUM_SHOT, 16);
-    setup_message(message3, INITIAL_MAX_NUM_SHOT, 16);
-
     carmen_ipc_initialize(argc, argv);
 
 	signal(SIGINT, shutdown_module);
@@ -399,10 +499,32 @@ main(int argc, char** argv)
     carmen_param_check_version(argv[0]);
 	
     read_parameters(argc, argv);
+
+    switch(lidar_model)
+    {
+		case OS132:
+			setup_message(message, INITIAL_MAX_NUM_SHOT, 32);
+			break;
+
+		case OS164:
+			setup_message(message, INITIAL_MAX_NUM_SHOT, 64);
+			setup_message(message0, INITIAL_MAX_NUM_SHOT, 16);
+			setup_message(message1, INITIAL_MAX_NUM_SHOT, 16);
+			setup_message(message2, INITIAL_MAX_NUM_SHOT, 16);
+			setup_message(message3, INITIAL_MAX_NUM_SHOT, 16);
+			break;
+
+		default:
+			printf("Modelo não reconhecido, verifique o parametros lidar<ID>_model\n"); //Saida de erro do carmen
+			exit(1);
+    }
 	
     carmen_velodyne_define_messages();
 
     fprintf(stderr, "Intensity type: '%s'\n", intensity_type_to_string(ouster_intensity_type));
+
+    H = OS1::pixels_per_column[lidar_model];
+    column_bytes = OS1::get_column_bytes(OS1::pixels_per_column[lidar_model], OS1::pixel_bytes);
 
     ouster::OS1::lidar_mode mode_code = get_mode_code(string_mode);
 
@@ -416,10 +538,12 @@ main(int argc, char** argv)
     else
     {
         std::cerr << "Successfully connected to sensor: " << ouster_ip << std::endl;
+        std::cerr << "Sensor model: " << lidar_string_model << std::endl;
         std::cerr << "Wait 15-20 seconds to start receiving point clouds." << std::endl;
     }
 
-    uint8_t lidar_buf[OS1::lidar_packet_bytes + 1];
+
+    uint8_t lidar_buf[OS1::lidar_packet_bytes[lidar_model] + 1];
     uint8_t imu_buf[OS1::imu_packet_bytes + 1];
 
     while (true) 
@@ -432,10 +556,20 @@ main(int argc, char** argv)
         }
         else if (st & OS1::LIDAR_DATA) 
         {
-            if (OS1::read_lidar_packet(*cli, lidar_buf))
+            if (OS1::read_lidar_packet(*cli, lidar_buf, OS1::lidar_packet_bytes[lidar_model]))
             {
-//                build_and_publish_variable_scan_message(lidar_buf, message);
-                build_and_publish_variable_scan_message_4_lidars(lidar_buf, message0, message1, message2, message3);
+            	//                build_and_publish_variable_scan_message(lidar_buf, message);
+            	switch(lidar_model)
+            	{
+            		case OS132:
+            			build_and_publish_variable_scan_message(lidar_buf, message);
+//            			build_and_publish_variable_scan_message_2_lidars(lidar_buf, message0, message1);
+            			break;
+
+            		case OS164:
+						build_and_publish_variable_scan_message_4_lidars(lidar_buf, message0, message1, message2, message3);
+            			break;
+            		}
             }
         }
         else if (st & OS1::IMU_DATA) 

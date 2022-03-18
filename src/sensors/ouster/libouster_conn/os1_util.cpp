@@ -6,7 +6,7 @@
 namespace ouster {
 namespace OS1 {
 
-extern const std::vector<double> beam_altitude_angles = {
+extern const std::vector<double> ouster64_beam_altitude_angles = {
     16.611,  16.084,  15.557,  15.029,  14.502,  13.975,  13.447,  12.920,
     12.393,  11.865,  11.338,  10.811,  10.283,  9.756,   9.229,   8.701,
     8.174,   7.646,   7.119,   6.592,   6.064,   5.537,   5.010,   4.482,
@@ -17,7 +17,8 @@ extern const std::vector<double> beam_altitude_angles = {
     -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611,
 };
 
-extern const std::vector<double> beam_azimuth_angles = {
+//TODO COLOCAR ISSO PARA O de 32 tambem
+extern const std::vector<double> ouster64_beam_azimuth_angles = {
     3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
     3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
     3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
