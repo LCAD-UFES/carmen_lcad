@@ -14,7 +14,7 @@
 namespace ouster {
 namespace OS1 {
 
-const size_t lidar_packet_bytes = 12608;
+const size_t lidar_packet_bytes[2] = {6464, 12608};
 const size_t imu_packet_bytes = 48;
 
 class client 
@@ -47,6 +47,7 @@ struct version {
     int16_t minor;
     int16_t patch;
 };
+
 
 const version invalid_version = {0, 0, 0};
 
@@ -144,7 +145,7 @@ client_state poll_client(const client& cli, int timeout_sec = 1);
  * lidar_packet_bytes + 1 bytes
  * @return true if a lidar packet was successfully read
  */
-bool read_lidar_packet(const client& cli, uint8_t* buf);
+bool read_lidar_packet(const client& cli, uint8_t* buf, size_t lidar_packetbytes);
 
 /**
  * Read imu data from the sensor. Will block for up to a second if no data is

@@ -238,7 +238,7 @@ std::string get_metadata(const client& cli) {
     return Json::writeString(builder, cli.meta);
 }
 
-sensor_info parse_metadata(const std::string& meta) {
+sensor_info parse_metadata(const std::string& meta, int lidar_model) {
     Json::Value root{};
     Json::CharReaderBuilder builder{};
     std::string errors{};
@@ -248,6 +248,7 @@ sensor_info parse_metadata(const std::string& meta) {
         if (!Json::parseFromStream(builder, ss, &root, &errors))
             throw std::runtime_error{errors.c_str()};
     }
+
 
     sensor_info info = {"UNKNOWN", "UNKNOWN", {}, lidar_mode(0),
                         {},        {},        {}, {}};
@@ -259,12 +260,12 @@ sensor_info parse_metadata(const std::string& meta) {
 
     for (const auto& v : root["beam_altitude_angles"])
         info.beam_altitude_angles.push_back(v.asDouble());
-    if (info.beam_altitude_angles.size() != OS1::pixels_per_column)
+    if (info.beam_altitude_angles.size() != (OS1::pixels_per_column[lidar_model]))
         info.beam_altitude_angles = {};
 
     for (const auto& v : root["beam_azimuth_angles"])
         info.beam_azimuth_angles.push_back(v.asDouble());
-    if (info.beam_azimuth_angles.size() != OS1::pixels_per_column)
+    if (info.beam_azimuth_angles.size() != (OS1::pixels_per_column[lidar_model]))
         info.beam_azimuth_angles = {};
 
     for (const auto& v : root["imu_to_sensor_transform"])
@@ -395,8 +396,8 @@ static bool recv_fixed(int fd, void* buf, size_t len) {
     return false;
 }
 
-bool read_lidar_packet(const client& cli, uint8_t* buf) {
-    return recv_fixed(cli.lidar_fd, buf, lidar_packet_bytes);
+bool read_lidar_packet(const client& cli, uint8_t* buf, size_t lidar_packetbytes) {
+    return recv_fixed(cli.lidar_fd, buf, lidar_packetbytes);
 }
 
 bool read_imu_packet(const client& cli, uint8_t* buf) {
