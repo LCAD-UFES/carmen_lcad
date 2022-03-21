@@ -342,8 +342,9 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
 			//prob contem a probabilidade de um raio ter atingido um obstáculo ou não, no mapper tudo com prob>0.5 atingiu um obstáculo
-
-			prob_msg->scan[j].probability[i] = 333;
+			prob = prob < 0.0 ? 0.0 : prob;
+			// Retirar a parte inteira (caso exista), e multiplicar a parte decimal por 50.000 para caber em um short. Quando esse valor for usado em outros módulos, é necessário dividir por 50.000
+			prob_msg->scan[j].probability[i] = (prob - floor(prob)) * 50000;
 //			prob_msg->scan[j]->probability[i] = prob;
 
 		}
