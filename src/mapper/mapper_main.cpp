@@ -317,15 +317,15 @@ get_occupancy_log_odds_of_each_ray_target(sensor_parameters_t *sensor_params, se
 
 void
 carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
-		carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message prob_msg)
+		carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *prob_msg)
 {
 	int cloud_index = sensor_data->point_cloud_index;
 	int vertical_resolution = sensor_params->vertical_resolution;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / vertical_resolution;
 	int thread_id = omp_get_thread_num();
 
-	if (prob_msg.scan == NULL)
-		carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(&prob_msg, vertical_resolution, number_of_laser_shots);  // TODO realocar caso mude o tamanho
+	if (prob_msg->scan == NULL)
+		carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(prob_msg, vertical_resolution, number_of_laser_shots);  // TODO realocar caso mude o tamanho
 
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
@@ -342,8 +342,9 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
 			//prob contem a probabilidade de um raio ter atingido um obstáculo ou não, no mapper tudo com prob>0.5 atingiu um obstáculo
-
-			prob_msg.scan[j].probability[i] = 1;
+			prob = prob < 0.0 ? 0.0 : prob;
+			// Retirar a parte inteira (caso exista), e multiplicar a parte decimal por 50.000 para caber em um short. Quando esse valor for usado em outros módulos, é necessário dividir por 50.000
+			prob_msg->scan[j].probability[i] = (prob - floor(prob)) * 50000;
 //			prob_msg->scan[j]->probability[i] = prob;
 
 		}
@@ -519,7 +520,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_virtual_scan(globalpos_message->timestamp);
 
 		#ifdef OBSTACLE_PROBABILY_MESSAGE
-		    carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0 + 10], &sensors_data[0 + 10], probability_of_each_ray_msg_0);
+		    carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0 + 10], &sensors_data[0 + 10], &probability_of_each_ray_msg_0);
 			carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_0, 0);
 		#endif
 	}

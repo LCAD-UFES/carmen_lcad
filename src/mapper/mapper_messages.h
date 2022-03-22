@@ -124,7 +124,8 @@ typedef struct
 }carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message;
 
 
-#define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME       "carmen_velodyne_variable_scan_message"
+//#define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME       "carmen_velodyne_variable_scan_message"
+#define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME       "carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message"
 #define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_FMT        "{int, <{int, <short:1>}:1>, double, string}"
 
 #define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE0_NAME       "carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message0"
