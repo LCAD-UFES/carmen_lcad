@@ -142,7 +142,7 @@ extern char **g_argv;
 
 extern tf::Transformer tf_transformer;
 
-carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message probability_of_each_ray_msg_0;
+carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message probability_of_each_ray_msg_array[16];
 extern carmen_robot_ackerman_config_t car_config; // TODO essa variável deveria mesmo ser extern???????
 //#define OBSTACLE_PROBABILY_MESSAGE
 
@@ -327,6 +327,8 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 	if (prob_msg->scan == NULL)
 		carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(prob_msg, vertical_resolution, number_of_laser_shots);  // TODO realocar caso mude o tamanho
 
+	prob_msg->timestamp = sensor_data->points_timestamp[cloud_index]; // timestamp precisa ser igual ao da mensagem variable scan
+
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
 		int scan_index = j * vertical_resolution;
@@ -350,6 +352,22 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 		}
 	}
 }
+
+
+void
+fill_and_publish_probabilities_message()
+{
+	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	{
+		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
+		{
+			carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[i + 10], &sensors_data[i + 10], &probability_of_each_ray_msg_array[i]);
+			carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_array[i], i);
+		}
+	}
+}
+
+
 //-----------------------------------------------------------------------------------------------------------------------------
 
 
@@ -520,8 +538,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_virtual_scan(globalpos_message->timestamp);
 
 		#ifdef OBSTACLE_PROBABILY_MESSAGE
-		    carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0 + 10], &sensors_data[0 + 10], &probability_of_each_ray_msg_0);
-			carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_0, 0);
+		fill_and_publish_probabilities_message();
+//		    carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0 + 10], &sensors_data[0 + 10], &probability_of_each_ray_msg_0);
+//			carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_0, 0);
 		#endif
 	}
 
@@ -1111,7 +1130,11 @@ subscribe_to_ipc_messages()
 static void
 initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_messages()
 {
-	initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_0);
+	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	{
+		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
+			initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_array[i]);
+	}
 }
 
 
