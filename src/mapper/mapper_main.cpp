@@ -327,7 +327,7 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 	if (prob_msg->scan == NULL)
 		carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(prob_msg, vertical_resolution, number_of_laser_shots);  // TODO realocar caso mude o tamanho
 
-	prob_msg->timestamp = sensor_data->points_timestamp[cloud_index]; // timestamp precisa ser igual ao da mensagem variable scan
+	prob_msg->timestamp = sensor_data->last_timestamp; // timestamp precisa ser igual ao da mensagem variable scan
 
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
