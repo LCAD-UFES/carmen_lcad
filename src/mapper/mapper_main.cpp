@@ -324,11 +324,13 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / vertical_resolution;
 	int thread_id = omp_get_thread_num();
 
+	if (number_of_laser_shots <= 0 || number_of_laser_shots > 10000) // Sem essa condição, pode acontecer segfault. Essa variável pode ter um valor muito grande de vez em quando e trava o programa no alloc.
+		return;
+
 	if (prob_msg->scan == NULL)
 		carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(prob_msg, vertical_resolution, number_of_laser_shots);  // TODO realocar caso mude o tamanho
 
 	prob_msg->timestamp = sensor_data->last_timestamp; // timestamp precisa ser igual ao da mensagem variable scan
-
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
 		int scan_index = j * vertical_resolution;
@@ -344,9 +346,12 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
 			//prob contem a probabilidade de um raio ter atingido um obstáculo ou não, no mapper tudo com prob>0.5 atingiu um obstáculo
+//			printf("prob = %f %f\n", prob, log_odds);
 			prob = prob < 0.0 ? 0.0 : prob;
+//			printf("prob = %f\n", prob);
 			// Retirar a parte inteira (caso exista), e multiplicar a parte decimal por 50.000 para caber em um short. Quando esse valor for usado em outros módulos, é necessário dividir por 50.000
 			prob_msg->scan[j].probability[i] = (prob - floor(prob)) * 50000;
+//			printf("probabi = %d\n", prob_msg->scan[j].probability[i]);
 //			prob_msg->scan[j]->probability[i] = prob;
 
 		}
