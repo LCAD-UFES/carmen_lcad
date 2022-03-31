@@ -21,6 +21,13 @@ DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera im
     mkdir ckpt
 ```
 
+```shell
+mkdir build;
+cd build;
+cmake -DCMAKE_PREFIX_PATH=/dados/libtorch ..
+make
+```
+
 The pretrained model "best_model_kitti.pt" is available at [here](https://drive.google.com/drive/folders/17yYbLZS2uQ6UVn5ET9RhVL0y_X3Ipl5_).
 * Download the kitti weights and save at "$CARMEN_HOME/src/deep_mapper/GLPDepth/ckpt/", it is needed for running the Neural Network.
 
