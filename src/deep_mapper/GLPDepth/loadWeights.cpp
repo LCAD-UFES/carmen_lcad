@@ -105,20 +105,30 @@ int main(int argc, const char *argv[])
 
   torch::NoGradGuard no_grad;
   auto output = module.forward(inputs).toGenericDict();
-  auto pred_d = output.at("pred_d");
+  auto pred_d = output.at("pred_d").toTensor();
+  pred_d = pred_d.squeeze();
+  pred_d = pred_d * 256.0;
+  pred_d = (pred_d / pred_d.max()) * 255;
+  pred_d = pred_d.toType(torch::kU8);
+  
+  int width = pred_d.sizes()[0];
+  int height = pred_d.sizes()[1];
+
+  std::cout << pred_d << std::endl;
+  cv::Mat color_mat;
+  cv::Mat output_mat(cv::Size{ height, width }, CV_8U, pred_d.data_ptr<uchar>());
+  applyColorMap(output_mat, color_mat, cv::COLORMAP_RAINBOW);
   //auto TensorList = output.toTensor();
-  //std::cout << TensorList << std::endl;
+  
   // at::Tensor new_output = output[0].toTensor();
   // new_output = new_output.contiguous();
   std::cout << pred_d << std::endl;
 
-  // cv::Mat image = tensorToOpenCv(new_output, new_h, new_w, 1);
+  //cv::Mat image = tensorToOpenCv(pred_d, new_h, new_w, 1);
 
-  // cv::namedWindow("Profundidade"); // Create a window
-
-  // cv::imshow("Profundidade", image); // Show our image inside the created window.
-
-  // cv::waitKey(0);
+  cv::namedWindow("Profundidade"); // Create a window
+  cv::imshow("Profundidade", color_mat); // Show our image inside the created window.
+  cv::waitKey(0);
 
   std::cout << "ok\n";
 }

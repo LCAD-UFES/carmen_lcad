@@ -62,6 +62,7 @@ def main():
     for batch_idx, batch in enumerate(test_loader):
         input_RGB = batch['image'].to(device)
         filename = batch['filename']
+        print(input_RGB.shape)
 
         with torch.no_grad():
             pred = model(input_RGB)
