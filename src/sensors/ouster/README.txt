@@ -1,3 +1,7 @@
+#TODO
+ -Update the firmware
+ -Modify the driver to read the azimuth angles from the sensor (get_beam_intrinsics)
+ -Probably it's better adapt the Ouster example driver
 
 # how to run the driver: 
 ./ouster -sensor_ip <SENSOR IP> -host_ip<IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -mode<512x10|512x20|1024x10|1024x20|2048x10>
@@ -12,21 +16,49 @@
 # example
 ./ouster -sensor_ip 192.168.1.200 -host_ip 192.168.1.1 -sensor_id 0 -mode 1024x20 -publish_imu off -intensity_type 1
 
+sensors ip list:
+ OS164 SN: 991901000584 IP: 192.168.1.200
+ OS132 SN: 122144001108 IP: 192.168.1.205
+ OS032 SN: 122145000764 IP: 192.168.1.206
+ OS032 SN: 122144000315 IP: 192.168.1.207
+ OS132-LCAD SN:122144001128 IP: 192.168.1.208
+
 # how to run the viewer:
 ./ouster_viewer -sensor_id <ID TO ASSIGNED TO THE VARIABLE VELODYNE MESSAGE: [0-9]>
 
-
+to access sensors configuration page http://os-<IP or Serial>.local/
+ ex: http://os-122144000315.local/
 ---------------------------------------------------------------------------------
 Initial Configuration
 ---------------------------------------------------------------------------------
-# On first acces you must set a fixed IP on the sensor
-Conect the sensor to a router, so it will receive an IP vie DHCP
+# On the first use of the sensor you must set a fixed IP on the sensor and configure it to run at 20hz
+You can connect at the first time by:
+ (i) conecting the sensor to a router, so it will receive an IP vie DHCP or
+ (ii) conecting the sensor direct to your Ubuntu/linux and creating an ethernet conection Link-local-Only. 
+To identify the sensor IP, run:
+ ping os-<serialNumber>.local,
+
 
   sudo apt install httpie
-  echo '"192.168.1.200/24"' | http -v PUT http://192.168.1.101/api/v1/system/network/ipv4/override
+  echo '"192.168.1.208/24"' | http -v PUT http://169.254.110.2/api/v1/system/network/ipv4/override
 
 192.168.1.200/24 is the new IP
-http://192.168.1.101 is the IP given by the router
+http://169.254.188.238 is the IP given by the router
+This command will print a message saying that its OK and the new IP Adress.
+Disconnect from the link-local-Only network and connect the SensorBox Network
+
+# Set the laser to run at 20hz
+got to the page http://os-122144000315.local/ or http://192.168.1.200/
+got to the Tab: Configuration and change the Lidar Mode to 1024x20 and Apply Config
+
+To get the vertical angles and azimuth_angles (the rays of some ouster sensors aren't aligned!)
+run:
+  nc <sensor_ip> 7501
+  get_beam_intrinsics
+It should print the ouster32_altitude_angles(our vertical angles), beam_azimuth_angles(rays offset, in one shot, the lasers aren't pointing to the same direction) and lidar_origin_to_beam_origin_mm
+OS164 is not Aligned, there are 4 sets of 16 rays aligned (this driver will publish 4 four messages)
+OS132 is Aligned (this driver publish only one message)
+OS032 is not Aligned ALL RAYS have differet azimuth angles (this driver doesn't work with this one yet) 
 
 
 

@@ -1,7 +1,6 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include <carmen/libsqueeze_seg.h>
 #include <iostream>
 #include <carmen/carmen.h>
 #include <prob_map.h>
@@ -9,6 +8,7 @@
 #include <carmen/velodyne_camera_calibration.h>
 #include <stdlib.h> /* getenv */
 #include <fstream>
+#include <carmen/libsqueeze_seg.h>
 #define NUMPY_IMPORT_ARRAY_RETVAL
 
 PyObject *python_libsqueeze_seg_process_point_cloud_function;

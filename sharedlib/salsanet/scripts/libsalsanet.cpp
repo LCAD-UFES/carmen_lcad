@@ -1,11 +1,11 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
-#include "libsalsanet.h"
 #include <numpy/arrayobject.h>
 #include <carmen/carmen.h>
 #include <prob_map.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_camera_calibration.h>
+#include "libsalsanet.h"
 
 #define NUMPY_IMPORT_ARRAY_RETVAL 
 

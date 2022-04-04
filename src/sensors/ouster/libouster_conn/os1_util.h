@@ -19,8 +19,8 @@ namespace OS1 {
  * Design values for altitude and azimuth offset angles. Can be used if
  * calibrated values are not available.
  */
-extern const std::vector<double> beam_altitude_angles;
-extern const std::vector<double> beam_azimuth_angles;
+extern const std::vector<double> ouster64_beam_altitude_angles;
+extern const std::vector<double> ouster64_beam_azimuth_angles;
 
 /**
  * Design values for imu and lidar to sensor-frame transforms. See the OS-1

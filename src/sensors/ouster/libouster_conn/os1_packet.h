@@ -13,16 +13,20 @@
 namespace ouster {
 namespace OS1 {
 
-const int pixels_per_column = 64;
+const int pixels_per_column[2] = {32, 64};
 const int columns_per_buffer = 16;
 
 const int pixel_bytes = 12;
-const int column_bytes = 16 + (pixels_per_column * pixel_bytes) + 4;
+//const int column_bytes = 16 + (pixels_per_column * pixel_bytes) + 4;
 
 const int encoder_ticks_per_rev = 90112;
 
+inline int get_column_bytes(const int pixels_per_column, const int pixel_bytes){
+	return (16 + (pixels_per_column * pixel_bytes) + 4);
+}
+
 // lidar column fields
-inline const uint8_t* nth_col(int n, const uint8_t* udp_buf) {
+inline const uint8_t* nth_col(int n, const uint8_t* udp_buf, int column_bytes) {
     return udp_buf + (n * column_bytes);
 }
 
@@ -56,7 +60,7 @@ inline uint16_t col_frame_id(const uint8_t* col_buf) {
     return res;
 }
 
-inline uint32_t col_valid(const uint8_t* col_buf) {
+inline uint32_t col_valid(const uint8_t* col_buf, const int pixels_per_column) {
     uint32_t res;
     memcpy(&res, col_buf + (16 + pixels_per_column * pixel_bytes),
            sizeof(uint32_t));
