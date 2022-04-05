@@ -88,8 +88,5 @@ void get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attr
 
 void carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_robot_ackerman_config_t *p_car_config);
 
-void
-change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle);
-
 
 #endif /* MAPPER_H_ */

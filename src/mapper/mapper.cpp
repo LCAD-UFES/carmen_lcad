@@ -161,7 +161,7 @@ get_the_map()
 }
 
 
-void
+static void
 change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 {
 	if ((angle > M_PI / 2.0) || (angle < -M_PI / 2.0))
@@ -2566,6 +2566,65 @@ get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute
 		sensors_params[1].height = sensors_params[1].sensor_robot_reference.z + robot_wheel_radius;
 	} 
 }
+
+
+// void
+// get_occupancy_log_odds_of_each_ray_target(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int scan_index)
+// {
+// 	int thread_id = omp_get_thread_num();
+// 	int point_cloud_index = sensor_data->point_cloud_index;
+// 	spherical_point_cloud v_zt = sensor_data->points[point_cloud_index];
+// 	int N = v_zt.num_points / sensor_params->vertical_resolution;
+// 	double v = sensor_data->robot_velocity[point_cloud_index].x;
+// 	double phi = sensor_data->robot_phi[point_cloud_index];
+// 	double dt = sensor_params->time_spent_by_each_scan;
+// 	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index] - (double) N * dt;
+// 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
+// 	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
+// 	double dt2 = dt * scan_index / sensor_params->vertical_resolution;
+// 	robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
+// 			dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+
+// 	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
+
+// 	change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[scan_index].horizontal_angle);
+
+// 	carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, scan_index, robot_interpolated_position.position,
+// 			sensor_params->sensor_support_pose, r_matrix_car_to_global, sensor_params->support_to_car_matrix,
+// 			robot_wheel_radius, offline_map.config.x_origin, offline_map.config.y_origin, &car_config, robot_near_strong_slow_down_annotation, thread_id, use_remission);
+
+// 	carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, scan_index, highest_sensor, safe_range_above_sensors,
+// 			robot_near_strong_slow_down_annotation, thread_id);
+// 			// Updates: sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][ray_index] : 0 <= ray_index < 32
+// }
+
+
+// void
+// carmen_mapper_fill_lidar_point_cloud_each_ray_hit_obstacle_probabily_message(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+// {
+// 	int cloud_index = sensor_data->point_cloud_index;
+// 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+// 	int thread_id = omp_get_thread_num();
+
+// 	for (int j = 0; j < number_of_laser_shots; j++)
+// 	{
+// 		int scan_index = j * sensor_params->vertical_resolution;
+// 		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+
+// 		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
+
+// 		for (int i = 1; i < sensor_params->vertical_resolution; i++)
+// 		{
+// 			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
+// 			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+
+// 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+// 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+// 			//prob contem a probabilidade de um raio ter atingido um obstáculo ou não, no mapper tudo com prob>0.5 atingiu um obstáculo
+			
+// 		}
+// 	}
+// }
 
 
 // read all parameters from .ini file and command line

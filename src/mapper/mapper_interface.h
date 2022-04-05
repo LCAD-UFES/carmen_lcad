@@ -102,23 +102,6 @@ carmen_mapper_publish_compact_map_message(carmen_compact_map_t *carmen_map, doub
 void
 carmen_mapper_publish_diff_map_message(short int *coord_x, short int *coord_y, unsigned char *value, int size, carmen_map_config_t config, double timestamp);
 
-void
-carmen_mapper_define_probability_of_each_ray_of_lidar_hit_obstacle_messages();
-
-void
-carmen_mapper_subscribe_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message,
-													carmen_handler_t handler, carmen_subscribe_t subscribe_how, int lidar_id);
-void
-carmen_mapper_unsubscribe_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_handler_t handler, int lidar_id);
-
-IPC_RETURN_TYPE
-carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message, int lidar_id);
-
-void
-carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message, int shot_size, int number_of_shots);
-
-void
-initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message(carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *message);
 
 #ifdef __cplusplus
 }
