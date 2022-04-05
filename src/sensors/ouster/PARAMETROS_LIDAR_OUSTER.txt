@@ -1,0 +1,14 @@
+#Lista de paretros importantes dos nossos Lasers Ouster
+
+### OS164
+Rodar driver:
+  
+Atualmente Usamos o lidar 0 na linha de comando acima, mas ele usa 
+Serial: 
+IP: 192.168.1.201
+
+Carmen ini
+### OS132
+
+### OS032
+
