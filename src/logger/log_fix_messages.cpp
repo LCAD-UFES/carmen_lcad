@@ -18,6 +18,8 @@ carmen_robot_ackerman_velocity_message *velocity_ackerman_msg;
 
 int main(int argc, char **argv)
 {
+  int v_changed = 0;
+  int phi_changed = 0;
   int i, percent, last_percent = 0;
   char line[100000];
   int messages_count = 0;
@@ -30,17 +32,22 @@ int main(int argc, char **argv)
   host_carmen = (char*) malloc (64 * sizeof(char));
   memset(&velocity_ackerman_msg, 0, sizeof(velocity_ackerman_msg));
 
-  if (argc < 3 || (argc > 1 && strcmp(argv[1], "-h") == 0))
+  if (argc < 7 || (argc > 1 && strcmp(argv[1], "-h") == 0))
   {
-	  fprintf(stderr, "\n This program is specific to correct the message ROBOTVELOCITY_ACK \n");
-	  fprintf(stderr, " This program will create a new file, however SAVE copy of your log.txt \n then after generate the new file, rename it back to the original file, the _images and _lidar folders use the original log name\n");
-	  fprintf(stderr, "\nUsage:   %s   </path/input_log_camen.txt> <output_log_file.txt> \n", argv[0]);
+	  fprintf(stderr, "\n This program is specific to correct the message ROBOTVELOCITY_ACK. There are 2 options \n"
+			  "(i) to correct the velocity (ex: negative velocities between positive)\n"
+			  "(ii) to correct the phi when the odometry is bad. This program will change all phi to 0.0\n");
+	  fprintf(stderr, " This program will create a new file, however SAVE copy of your log.txt \n "
+			  "then after generate the new file, rename it back to the original file, the _images and _lidar folders use the original log name\n");
+	  fprintf(stderr, "\nUsage:   %s  -v <0(off)/1(on)> -phi <0(off)/1(on)> </path/input_log_camen.txt> <output_log_file.txt> \n", argv[0]);
 
 	  exit(-1);
   }
 
-  log_filename = argv[1];
-  char* log_output_filename = argv[2];
+  int fix_v = atoi(argv[2]);
+  int fix_phi = atoi(argv[4]);
+  log_filename = argv[5];
+  char* log_output_filename = argv[6];
 
   outfile = carmen_fopen(log_output_filename, "r");
 
@@ -95,13 +102,29 @@ int main(int argc, char **argv)
     	log_playback_time = atof(current_position);
 
     	//DO SOMETHING
-    	if(carmen_sign(v) != carmen_sign(last_v) &&
-    			(fabs(last_v) > 0.005))
+    	if(fix_v)
     	{
-    		v = (-1.0) * v;
-    		messages_changed++;
+    		if(carmen_sign(v) != carmen_sign(last_v) &&
+    				(fabs(last_v) > 0.005))
+    		{
+    			v = (-1.0) * v;
+    			v_changed = 1;
+    		}
+    		last_v = v;
     	}
-    	last_v = v;
+
+    	if(fix_phi)
+    	{
+    		phi = 0.0;
+    		phi_changed = 1;
+    	}
+
+    	if (v_changed || phi_changed)
+    	{
+    		messages_changed++;
+    		v_changed = 0;
+    		phi_changed = 0;
+    	}
 
     	carmen_fprintf(outfile, "ROBOTVELOCITY_ACK %f %f %f %s %f\n", v,
     			phi, timestamp, host_carmen, log_playback_time);
