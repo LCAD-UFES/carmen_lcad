@@ -368,7 +368,7 @@ carmen_mapper_define_probability_of_each_ray_of_lidar_hit_obstacle_messages()
 
 	char message_name[256];
 
-	for (int i = 0; i <= 15; i++)
+	for (int i = 0; i <= 16; i++)
 	{
 		sprintf(message_name, "%s%d", CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_NAME, i);
 		err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE_FMT);
