@@ -1,4 +1,5 @@
 #include <torch/script.h> // One-stop header.
+#include <torch/cuda.h>
 
 #include <iostream>
 #include <memory>
@@ -10,6 +11,7 @@
 using namespace cv;
 
 torch::jit::script::Module module;
+torch::DeviceType device_type;
 
 at::Tensor matToTensor(cv::Mat frame, int h, int w, int c)
 {
@@ -18,10 +20,6 @@ at::Tensor matToTensor(cv::Mat frame, int h, int w, int c)
   auto input_tensor = torch::from_blob(frame.data, {1, h, w, c});
   input_tensor = input_tensor.permute({0, 3, 1, 2});
 
-  torch::DeviceType device_type = torch::kCPU;
-  //    if (torch::cuda::is_available()) {
-  // device_type = torch::kCUDA;
-  //    }
   input_tensor = input_tensor.to(device_type);
   return input_tensor;
 }
@@ -30,15 +28,14 @@ cv::Mat tensorToOpenCv(at::Tensor out_tensor, int h, int w, int c)
 {
   out_tensor = out_tensor.squeeze().detach().permute({1, 2, 0});
   out_tensor = out_tensor.mul(255).clamp(0, 255).to(torch::kU8);
-  out_tensor = out_tensor.to(torch::kCPU);
+  out_tensor = out_tensor.to(device_type);
   cv::Mat resultImg(h, w, CV_8UC3);
   // cv::Mat resultImg(h, w, CV_8UC1);
   std::memcpy((void *)resultImg.data, out_tensor.data_ptr(), sizeof(torch::kU8) * out_tensor.numel());
   return resultImg;
 }
 
-void 
-initialize_glpdepth()
+void initialize_glpdepth()
 {
   try
   {
@@ -47,22 +44,30 @@ initialize_glpdepth()
     pPath = getenv("CARMEN_HOME");
     glpdepthPath = (char *)"/src/deep_mapper/GLPDepth/ckpt/best_model_kitti.pt";
     char *path = (char *)malloc(1 + strlen(pPath) + strlen(glpdepthPath));
-    strcat(path, pPath);
+    strcpy(path, pPath);
     strcat(path, glpdepthPath);
-
     // Deserialize the ScriptModule from a file using torch::jit::load().
     module = torch::jit::load(path);
     module.eval();
-    module.to(at::kCPU);
+
+    if (torch::cuda::is_available())
+    {
+      device_type = torch::kCUDA;
+    }
+    else
+    {
+      device_type = torch::kCPU;
+    }
+    module.to(device_type);
   }
   catch (const c10::Error &e)
   {
     std::cerr << "GLPDepth: error loading the model\n";
   }
+  std::cout << "GLPDepth: Loaded model to " << device_type << std::endl;
 }
 
-
-unsigned char* 
+unsigned char *
 libglpdepth_process_image(cv::Mat img, int cut_param, int down_param)
 {
   at::Tensor tensor;
@@ -107,36 +112,35 @@ libglpdepth_process_image(cv::Mat img, int cut_param, int down_param)
   pred_d = pred_d.squeeze();
   pred_d = pred_d * 256.0;
   pred_d = (pred_d / pred_d.max()) * 255;
-  pred_d = pred_d.toType(torch::kU8);
+  pred_d = pred_d.toType(torch::kUInt8);
   
   int width = pred_d.sizes()[0];
   int height = pred_d.sizes()[1];
+  // cv::Mat resultImg(height, width, CV_16U);
+  // std::memcpy((void *)resultImg.data, pred_d.data_ptr(), sizeof(torch::kU8) * pred_d.numel());
+  // for(unsigned int i = 0; i < cut_param; i++)
+  // {
+  //   for(unsigned int j = 0; j < width; j++)
+  //   {
+  //     pred_d[i][j] = 1000.0;
+  //   }
+  // }
+  // for(unsigned int i = height - down_param; i < height; i++)
+  // {
+  //   for(unsigned int j = 0; j < width; j++)
+  //   {
+  //     pred_d[i][j] = 0.0;
+  //   }
+  // }
+  std::cout << "GLPDepth: processed" << std::endl;
 
-  std::cout << pred_d << std::endl;
-
-  for(unsigned int i = 0; i < cut_param; i++)
-  {
-    for(unsigned int j = 0; j < width; j++)
-    {
-      pred_d[i][j] = 1000;
-    }
-  }
-  for(unsigned int i = height - down_param; i < height; i++)
-  {
-    for(unsigned int j = 0; j < width; j++)  
-    {
-      pred_d[i][j] = 0;
-    }
-  }
-
-  
   cv::Mat color_mat;
   cv::Mat output_mat(cv::Size{ height, width }, CV_8U, pred_d.data_ptr<uchar>());
   applyColorMap(output_mat, color_mat, cv::COLORMAP_RAINBOW);
-  
-  cv::namedWindow("GLPDepth"); // Create a window
-  cv::imshow("GLPDepth", color_mat); // Show our image inside the created window.
+
+  cv::namedWindow("LIBGLPDepth"); // Create a window
+  cv::imshow("LIBGLPDepth", color_mat * 256); // Show our image inside the created window.
   cv::waitKey(0);
 
-  return pred_d.data_ptr<uchar>();
+  return output_mat.data;
 }

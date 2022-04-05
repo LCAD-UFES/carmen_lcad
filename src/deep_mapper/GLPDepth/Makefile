@@ -7,8 +7,8 @@ CXXFLAGS += -std=gnu++11 -std=gnu++14
 MODULE_NAME = GLPDepth Neural Network
 MODULE_COMMENT = Depth Estimation with GLPDepth
 
-IFLAGS += -I/usr/include/python3.6m
-LFLAGS += `python3.6-config --libs`
+IFLAGS += -I/usr/include/python3.6m -I/usr/include/python3.7
+LFLAGS += `python3.6-config --libs` `python3.7-config --libs`
 
 #LIBTORCH
 IFLAGS += -I/dados/libtorch/include -I/dados/libtorch/include/torch/csrc/api/include
@@ -25,16 +25,18 @@ LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basi
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-SOURCES = libglpdepth.cpp
+SOURCES = libglpdepth.cpp libpythonglpdepth.cpp
  
-PUBLIC_INCLUDES = libglpdepth.h 
-PUBLIC_LIBRARIES = libglpdepth.a
+PUBLIC_INCLUDES = libglpdepth.h libpythonglpdepth.h 
+PUBLIC_LIBRARIES = libglpdepth.a libpythonglpdepth.a
 PUBLIC_BINARIES = 
 
-TARGETS = libglpdepth.a
+TARGETS = libglpdepth.a libpythonglpdepth.a
 PUBLIC_LIBRARIES_SO =
 
 libglpdepth.a: libglpdepth.o
+
+libpythonglpdepth.a: libpythonglpdepth.o
 
 MYDIR = ckpt
 
