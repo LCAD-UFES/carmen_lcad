@@ -10,6 +10,14 @@ extern "C" {
 #define DISENGAGED	0
 
 
+typedef enum
+{
+	STARTING_MISSION,
+	MISSION_COMPLETED,
+	TASK_FAILED
+} carmen_task_manager_mission_level_state_t;
+
+
 typedef struct
 {
 	int geometry;
@@ -40,6 +48,20 @@ typedef struct
 
 #define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_NAME	"carmen_task_manager_set_semi_trailer_type_and_beta"
 #define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_FMT	"{int,double,double,string}"
+
+typedef struct
+{
+	carmen_task_manager_mission_level_state_t mission_state;
+	char *mission_filename;
+	carmen_robot_and_trailer_pose_t final_goal;
+	char *info;
+	double timestamp;
+	char *host;
+} carmen_task_manager_state_message;
+
+#define	CARMEN_TASK_MANAGER_STATE_MESSAGE_NAME	"carmen_task_manager_state_message"
+#define	CARMEN_TASK_MANAGER_STATE_MESSAGE_FMT "{int,string,{double,double,double,double},string,double,string}"
+
 
 #ifdef __cplusplus
 }

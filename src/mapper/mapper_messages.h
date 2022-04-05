@@ -144,7 +144,7 @@ typedef struct
 #define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE13_NAME       "carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message13"
 #define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE14_NAME       "carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message14"
 #define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE15_NAME       "carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message15"
-
+#define      CARMEN_MAPPER_PROBABILITY_OF_EACH_RAY_OF_LIDAR_HIT_OBSTACLE_MESSAGE16_NAME       "carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message16"
 
 #ifdef __cplusplus
 }
