@@ -1,0 +1,39 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+
+set led pattern to 0000 in button set 0
+set led pattern to 0000 in button set 1
+set led pattern to 1111 in button set 0
+set led pattern to 1111 in button set 1
+set led pattern to 0000 in button set 0
+set led pattern to 0000 in button set 1
+
+wait for button 2 of button set 0
+set led pattern to 0010 in button set 0
+
+# Proximo entrada armazem
+set course to 7805931.69, -389217.33, -2.583
+go after set course to 7805931.69, -389217.33, -2.583   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+park truck and semi-trailer at 7805965.66, -389221.18, 2.145, 0.0
+go after park truck and semi trailer at 7805965.66, -389221.18, 2.145, 0.0  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+set led pattern to 0100 in button set 0
+wait for button 1 of button set 0
+set led pattern to 0000 in button set 0
+
+park truck and semi-trailer at 7805976.34, -389172.81, 0.560, 0.0
+go after park truck and semi trailer at 7805976.34, -389172.81, 0.560, 0.0  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+set led pattern to 0010 in button set 1
+wait for button 2 of button set 1
+set led pattern to 0000 in button set 1
+
+set course to 7805991.23, -389163.83, 0.549
+go after set course to 7805991.23, -389163.83, 0.549   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+restart
