@@ -142,7 +142,7 @@ extern char **g_argv;
 
 extern tf::Transformer tf_transformer;
 
-carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message probability_of_each_ray_msg_array[16];
+carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message probability_of_each_ray_msg_array[17];
 extern carmen_robot_ackerman_config_t car_config; // TODO essa variável deveria mesmo ser extern???????
 //#define OBSTACLE_PROBABILY_MESSAGE
 
@@ -362,7 +362,14 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 void
 fill_and_publish_probabilities_message()
 {
-	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	// Esse primeiro if serve para tratar o partial scan
+	if (sensors_params[0].alive)
+	{
+		carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0], &sensors_data[0], &probability_of_each_ray_msg_array[16]);
+		carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_array[16], 16);
+	}
+
+	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
 	{
 		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
 		{
@@ -1135,6 +1142,10 @@ subscribe_to_ipc_messages()
 static void
 initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_messages()
 {
+
+	if (sensors_params[0].alive)  // Lidars start from 10 in the sensors_params vector
+		initialize_carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_array[16]);
+
 	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
 	{
 		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector

@@ -5,7 +5,7 @@ from dataset.base_dataset import BaseDataset
 
 
 class kitti(BaseDataset):
-    def __init__(self, data_path, filenames_path='./code/dataset/filenames/', 
+    def __init__(self, data_path, filenames_path='./dataset/filenames/', 
                  is_train=True, dataset='kitti', crop_size=(352, 704),
                  scale_size=None):
         super().__init__(crop_size)        
