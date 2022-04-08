@@ -52,4 +52,4 @@ Compile the neural_object_detector3
  make
 
 Run it:
-./neural_object_detector_tracker 3 1
+./neural_object_detector_tracker intelbras1 1

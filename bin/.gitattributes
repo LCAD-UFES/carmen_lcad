@@ -10,3 +10,4 @@ camera_log_viewer binary
 task_manager binary
 radar_Continental_ARS_408_21 binary
 cargo binary
+user_app_server binary
