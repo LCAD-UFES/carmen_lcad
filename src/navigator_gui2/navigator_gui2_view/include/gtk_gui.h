@@ -35,6 +35,7 @@
 #include <carmen/frenet_path_planner_interface.h>
 #include <carmen/route_planner_interface.h>
 #include <carmen/offroad_planner_interface.h>
+#include <carmen/user_app_server_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -116,7 +117,7 @@ namespace View
 
 			//GtkComboBox *comboGoalSource;
 			GtkComboBox *comboPlaceOfInterest;
-			GtkComboBox *comboPredefinedRoute;
+			GtkComboBox *comboMission;
 			GtkComboBox *comboState;
 			GtkComboBox *comboFollowRoute;
 			GtkComboBox *comboParking;
@@ -343,8 +344,10 @@ namespace View
 		int get_algorithm_code(char *algorithm_name);
 //		int get_goal_source_code(char* goal_source_name);
 		void get_place_of_interest(char *new_place_of_interest);
-		void get_predefined_route(char *new_predefined_route);
-		void reset_predefined_route();
+		// void get_predefined_route(char *new_predefined_route);
+		// void reset_predefined_route();
+		void get_mission(char *new_mission);
+		void reset_mission();
 		int get_task_code(char *task_name);
 		void save_to_image(GtkMapViewer *mapv);
 		void do_publish_map_view(GtkMapViewer *mapv);

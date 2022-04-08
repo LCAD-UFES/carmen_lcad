@@ -21,6 +21,7 @@
 #include <carmen/map_graphics.h>
 #include <carmen/mapper_interface.h>
 #include <carmen/task_manager_interface.h>
+#include <carmen/user_app_server_interface.h>
 
 
 namespace View
@@ -272,7 +273,7 @@ extern "C" G_MODULE_EXPORT
 void on_comboPlaceOfInterest_changed(GtkWidget *widget, GtkGui* data);
 
 extern "C" G_MODULE_EXPORT
-void on_comboPredefinedRoute_changed(GtkWidget *widget, GtkGui* data);
+void on_comboMission_changed(GtkWidget *widget, GtkGui* data);
 
 extern "C" G_MODULE_EXPORT
 void on_comboState_changed(GtkWidget *widget, GtkGui* data);

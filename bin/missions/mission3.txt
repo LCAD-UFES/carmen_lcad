@@ -1,0 +1,10 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+# set final goal 7757732.73, -363563.71, -0.138
+
+#frente lcad
+set robot pose 7757673.30, -363605.10, 0.639
+#estacionamento ambiental
+set course to 7757916.12, -363567.07, 2.418
+go   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo

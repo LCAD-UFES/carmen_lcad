@@ -4,6 +4,7 @@ extern int record_screen;
 extern char place_of_interest[2048];
 extern char predefined_route[2048];
 extern int predefined_route_code;
+extern char mission[2048];
 
 
 extern void
@@ -18,6 +19,7 @@ namespace View
 
 GtkGui *global_gui = NULL;
 int superimposed_is_set = 0;
+int first_mission = 1;
 
 //extern "C" G_MODULE_EXPORT
 gboolean on_drawArea_idle(void *data)
@@ -706,15 +708,40 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 	}
 }
 
+std::string
+read_file_to_string(std::string file_name)
+{
+	ifstream text_file(file_name);
+	stringstream buffer;
+	buffer << text_file.rdbuf();
+
+	return (buffer.str());
+}
+
 //extern "C" G_MODULE_EXPORT
-void on_comboPredefinedRoute_changed(GtkWidget *widget __attribute__((unused)),
+void on_comboMission_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
 	{
-		global_gui->get_predefined_route(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboPredefinedRoute));
-		if (strcmp(predefined_route, "None") != 0)
-			carmen_route_planner_set_predefined_route(predefined_route, predefined_route_code);
+		global_gui->get_mission(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboMission));
+		if (strcmp(mission, "None") != 0)
+		{
+			printf("%s\n", mission);
+			string mission_as_string = read_file_to_string(mission);
+			if (mission_as_string.size() == 0)
+				exit(printf("Could not read mission file %s\n", mission));
+			if(first_mission == 1)
+				carmen_user_app_server_publish_execute_mission_message(mission_as_string.c_str(), carmen_get_time());
+			else
+				{
+					carmen_user_app_server_publish_update_mission_message(1, carmen_get_time());
+					carmen_user_app_server_publish_execute_mission_message(mission_as_string.c_str(), carmen_get_time());
+				}
+		}
+		// global_gui->get_predefined_route(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboMission));
+		// if (strcmp(predefined_route, "None") != 0)
+		// 	carmen_route_planner_set_predefined_route(predefined_route, predefined_route_code);
 	}
 }
 
@@ -738,8 +765,10 @@ void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 
 	if (global_gui)
 	{
-		gtk_combo_box_set_active((GtkComboBox *) global_gui->controls_.comboPredefinedRoute, 0);
-		global_gui->reset_predefined_route();
+		// gtk_combo_box_set_active((GtkComboBox *) global_gui->controls_.comboPredefinedRoute, 0);
+		// global_gui->reset_predefined_route();
+		gtk_combo_box_set_active((GtkComboBox *) global_gui->controls_.comboMission, 0);
+		global_gui->reset_mission();
 		global_gui->display_needs_updating = 1;
 		global_gui->do_redraw();
 	}
