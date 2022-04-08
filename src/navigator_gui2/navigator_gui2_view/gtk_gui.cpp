@@ -7,9 +7,11 @@ extern int record_screen;
 extern int use_glade_with_annotations;
 extern char place_of_interest[2048];
 extern char predefined_route[2048];
+extern char mission[2048];
 extern int predefined_route_code;
 extern std::vector <carmen_annotation_t> place_of_interest_list;
 extern std::vector <carmen_annotation_t> predefined_route_list;
+extern std::vector <std::string> missions_filenames;
 //extern int use_route_planner_in_graph_mode;
 extern int publish_map_view;
 extern double publish_map_view_interval;
@@ -559,7 +561,7 @@ namespace View
 
 		//controls_.comboGoalSource = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboGoalSource" ));
 		controls_.comboPlaceOfInterest = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPlaceOfInterest" ));
-		controls_.comboPredefinedRoute = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPredefinedRoute" ));
+		controls_.comboMission = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboMission" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
 		controls_.comboFollowRoute = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowRoute" ));
 		controls_.comboParking = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboParking" ));
@@ -1460,44 +1462,84 @@ namespace View
 	}
 
 
+	// void
+	// GtkGui::get_predefined_route(char *new_predefined_route)
+	// {
+	// 	std::string d;
+	// 	std::string predefined_route_prefix("PREDEFINED_ROUTE_");
+	// 	int index = 0;
+	// 	int code = 0;
+
+	// 	if (strcmp(new_predefined_route, "None") != 0)
+	// 	{
+	// 		for (unsigned int i = 0; i < predefined_route_list.size(); i++)
+	// 		{
+	// 			string d(predefined_route_list[i].annotation_description);
+	// 			if (d.substr(0, predefined_route_prefix.size()) == predefined_route_prefix)
+	// 				d = d.substr(predefined_route_prefix.size());
+
+	// 			if (strcmp(new_predefined_route, d.c_str()) == 0)
+	// 			{
+	// 				index = i;
+	// 				break;
+	// 			}
+	// 		}
+	// 		destination.x = predefined_route_list[index].annotation_point.x;
+	// 		destination.y = predefined_route_list[index].annotation_point.y;
+	// 		destination.theta = predefined_route_list[index].annotation_orientation;
+	// 		code = (predefined_route_list[index].annotation_code != 0);
+	// 	}
+
+	// 	strcpy(predefined_route, new_predefined_route);
+	// 	predefined_route_code = code;
+	// }
+
+
+	// void
+	// GtkGui::reset_predefined_route()
+	// {
+	// 	strcpy(predefined_route, "None");
+	// 	predefined_route_code = 0;
+	// }
+
 	void
-	GtkGui::get_predefined_route(char *new_predefined_route)
+	GtkGui::get_mission(char *new_mission)
 	{
 		std::string d;
-		std::string predefined_route_prefix("PREDEFINED_ROUTE_");
+		std::vector <string> sorted_items;
 		int index = 0;
-		int code = 0;
 
-		if (strcmp(new_predefined_route, "None") != 0)
+		if (strcmp(new_mission, "None") != 0)
 		{
-			for (unsigned int i = 0; i < predefined_route_list.size(); i++)
+			std::string nm = new_mission;
+			for (unsigned int i = 0; i < missions_filenames.size(); i++)
 			{
-				string d(predefined_route_list[i].annotation_description);
-				if (d.substr(0, predefined_route_prefix.size()) == predefined_route_prefix)
-					d = d.substr(predefined_route_prefix.size());
-
-				if (strcmp(new_predefined_route, d.c_str()) == 0)
+				std::string str = missions_filenames[i];
+				std::size_t found = str.find_last_of("/");
+				sorted_items.push_back(str.substr(found+1));
+				std::string str2;
+				str2 = sorted_items[i].substr(0, sorted_items[i].size()-4);
+				std::transform(str2.begin(), str2.end(),str2.begin(), ::toupper);
+				if ((str2.compare(nm)) == 0)
 				{
 					index = i;
 					break;
 				}
+				// printf("%s\n", sorted_items[i].c_str());
 			}
-			destination.x = predefined_route_list[index].annotation_point.x;
-			destination.y = predefined_route_list[index].annotation_point.y;
-			destination.theta = predefined_route_list[index].annotation_orientation;
-			code = (predefined_route_list[index].annotation_code != 0);
 		}
+		// printf("%s\n", new_mission);
+		// printf("Mission is: %s\n", missions_filenames[index].c_str());
 
-		strcpy(predefined_route, new_predefined_route);
-		predefined_route_code = code;
+		strcpy(mission, missions_filenames[index].c_str());
+		// printf("%s\n", mission);
 	}
 
 
 	void
-	GtkGui::reset_predefined_route()
+	GtkGui::reset_mission()
 	{
-		strcpy(predefined_route, "None");
-		predefined_route_code = 0;
+		strcpy(mission, "None");
 	}
 
 

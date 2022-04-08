@@ -70,6 +70,10 @@ char previous_place_of_interest[2048];
 char predefined_route[2048];
 int predefined_route_code;
 
+char mission[2048];
+
+char *missions_folder = NULL;
+
 int window_width  = -1;
 int window_height = -1;
 int window_x  = -1;
@@ -77,6 +81,7 @@ int window_y = -1;
 
 std::vector <carmen_annotation_t> place_of_interest_list;
 std::vector <carmen_annotation_t> predefined_route_list;
+std::vector <std::string> missions_filenames;
 
 static int argc_global;
 static char **argv_global;
@@ -360,6 +365,37 @@ read_glade_file(char *glade_path)
 	return glade_file;
 }
 
+std::vector <string>
+format_missions_to_gtk_list_store(std::vector <std::string> missions_filenames)
+{
+	std::vector <string> gtk_list_store;
+	std::vector <string> sorted_items;
+	string row_begin = "      <row>\n";
+	string row_end = "      </row>\n";
+
+	for (unsigned int i = 0; i < missions_filenames.size(); i++)
+	{
+		std::string str = missions_filenames[i];
+		std::size_t found = str.find_last_of("/");
+		sorted_items.push_back(str.substr(found+1));
+		sorted_items[i] = sorted_items[i].substr(0, sorted_items[i].size()-4);
+		std::transform(sorted_items[i].begin(), sorted_items[i].end(),sorted_items[i].begin(), ::toupper);
+		// printf("%s\n", sorted_items[i].c_str());
+	}
+	std::sort(sorted_items.begin(), sorted_items.end());
+
+	for (unsigned int i = 0; i < sorted_items.size(); i++)
+	{
+		gtk_list_store.push_back(row_begin);
+		string d(sorted_items[i]);
+		string col = "        <col id=\"0\" translatable=\"yes\">" + d + "</col>\n";
+		gtk_list_store.push_back(col);
+		gtk_list_store.push_back(row_end);
+	}
+
+	return gtk_list_store;
+}
+
 
 std::vector <string>
 format_annotation_to_gtk_list_store(std::vector <carmen_annotation_t> annotation_list, const char *annotation_prefix)
@@ -412,15 +448,48 @@ get_gtk_list_store_data_index(std::vector <string> &glade_file, const char *gtk_
 
 
 void
-build_glade_with_annotation (char *annotation_path)
+get_filenames_in_mission_folder(char *missions_folder, std::vector <std::string> &missions_filenames)
+{
+	DIR *d;
+  	struct dirent *dir;
+  	d = opendir(missions_folder);
+  	if (d) {
+		std::string m_folder = missions_folder;
+		if(m_folder[m_folder.size() - 1] != '/')
+			m_folder.push_back('/');
+
+    	while ((dir = readdir(d)) != NULL) {
+			std::string filename(dir->d_name);
+			std::string full_path;
+			if(filename[0] != '.')
+			{
+				full_path = m_folder + filename;
+				missions_filenames.push_back(full_path);
+			}
+      		// printf("%s\n", dir->d_name);
+    	}
+    	closedir(d);
+  	}
+	// for(uint i = 0; i < missions_filenames.size(); i++)
+	// {
+	// 	printf("%s\n", missions_filenames[i].c_str());
+	// }
+}
+
+
+void
+build_glade_with_annotation (char *annotation_path, char *missions_folder)
 {
 	const char *place_annotation_prefix = "RDDF_PLACE_";
 	const char *place_gtk_list_store_id = "\"listPlaceOfInterest\"";
-	const char *predefined_route_annotation_prefix = "PREDEFINED_ROUTE_";
-	const char *predefined_route_gtk_list_store_id = "\"listPredefinedRoute\"";
+	// const char *predefined_route_annotation_prefix = "PREDEFINED_ROUTE_";
+	const char *mission_gtk_list_store_id = "\"listMission\"";
 
 	read_annotation_list_from_file(annotation_path, place_of_interest_list, RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST,
 			predefined_route_list, RDDF_ANNOTATION_TYPE_PREDEFINED_ROUTE);
+
+	if(missions_folder != NULL)
+		get_filenames_in_mission_folder(missions_folder, missions_filenames);
 
 	char glade_path[1000];
 	char *carmen_home_path = getenv("CARMEN_HOME");
@@ -432,10 +501,16 @@ build_glade_with_annotation (char *annotation_path)
 	if (place_list_data_index >= 0)
 		glade_file.insert(glade_file.begin() + place_list_data_index, places_in_glade.begin(), places_in_glade.end());
 
-	std::vector <string> predefined_routes_in_glade = format_annotation_to_gtk_list_store(predefined_route_list, predefined_route_annotation_prefix);
-	int predefined_route_list_data_index = get_gtk_list_store_data_index(glade_file, predefined_route_gtk_list_store_id);
-	if (predefined_route_list_data_index >= 0)
-		glade_file.insert(glade_file.begin() + predefined_route_list_data_index, predefined_routes_in_glade.begin(), predefined_routes_in_glade.end());
+	std::vector <string> missions_in_glade = format_missions_to_gtk_list_store(missions_filenames);
+	int mission_list_data_index = get_gtk_list_store_data_index(glade_file, mission_gtk_list_store_id);
+	if (mission_list_data_index >= 0)
+		glade_file.insert(glade_file.begin() + mission_list_data_index, missions_in_glade.begin(), missions_in_glade.end());
+
+
+	// std::vector <string> predefined_routes_in_glade = format_annotation_to_gtk_list_store(predefined_route_list, predefined_route_annotation_prefix);
+	// int predefined_route_list_data_index = get_gtk_list_store_data_index(glade_file, predefined_route_gtk_list_store_id);
+	// if (predefined_route_list_data_index >= 0)
+	// 	glade_file.insert(glade_file.begin() + predefined_route_list_data_index, predefined_routes_in_glade.begin(), predefined_routes_in_glade.end());
 
 	char glade_path_with_annotation[1000];
 	sprintf(glade_path_with_annotation, "%s/data/gui/navigator_gui2_annotation.glade", carmen_home_path);
@@ -1411,9 +1486,17 @@ read_parameters(int argc, char *argv[],
 
 	carmen_param_install_params(argc, argv, param_cmd_list, num_items);
 
+	carmen_param_t param_list2[] =
+	{
+		{(char *) "navigator_panel", (char *) "missions_folder", 		CARMEN_PARAM_STRING, &missions_folder, 0, NULL},
+	};
+	num_items = sizeof(param_list2) / sizeof(param_list2[0]);
+	carmen_param_install_params(argc, argv, param_list2, num_items);
+	printf("%s\n", missions_folder);
+
 	if (annotation_path != NULL)
 	{
-		build_glade_with_annotation (annotation_path);
+		build_glade_with_annotation (annotation_path, missions_folder);
 		use_glade_with_annotations = 1;
 	}
 
@@ -1536,6 +1619,7 @@ init_navigator_gui_variables(int argc, char *argv[])
 	strcpy(place_of_interest, "Robot");
 	strcpy(previous_place_of_interest, "Robot");
 	strcpy(predefined_route, "None");
+	strcpy(mission, "None");
 	predefined_route_code = 0;
 }
 

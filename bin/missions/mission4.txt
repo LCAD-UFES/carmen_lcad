@@ -1,0 +1,9 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+# Predio Eletrica logo depois do LCAD2
+#frente lcad antihorario
+set robot pose 7757674.73, -363600.56, -2.497
+#frente lcad atrás
+set course to 7757685.76, -363593.02, -2.554
+go after set course to 7757854.11, -363554.69, -0.728  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
