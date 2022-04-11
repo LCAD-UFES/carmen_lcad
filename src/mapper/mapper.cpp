@@ -488,9 +488,9 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 	//	plot_data = fopen("plot_data.dat", "w");
 	// Ray-trace the grid
 	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
-//	robot_pose.position.z = 0.0;
-//	robot_pose.orientation.pitch = 0.0;
-//	robot_pose.orientation.roll = 0.0;
+	robot_pose.position.z = 0.0;
+	robot_pose.orientation.pitch = 0.0;
+	robot_pose.orientation.roll = 0.0;
 
 	initialize_virtual_scan_message_update(VELODYNE, robot_pose, robot_interpolated_position, dt * (double) N, v_zt.sphere_points[sensor_params->vertical_resolution * (N - 1)].horizontal_angle,
 			v, phi, N, point_cloud_index, r_matrix_robot_to_global, sensor_params, sensor_data);
