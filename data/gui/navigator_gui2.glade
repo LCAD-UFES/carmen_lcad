@@ -13,7 +13,7 @@
       </row>
     </data>
   </object>
-  <object class="GtkListStore" id="listPredefinedRoute">
+  <object class="GtkListStore" id="listMission">
     <columns>
       <!-- column-name Text -->
       <column type="gchararray"/>
@@ -1336,12 +1336,12 @@
                                         <property name="can_focus">False</property>
                                         <property name="homogeneous">True</property>
                                         <child>
-                                          <object class="GtkLabel" id="labelPredefinedRoute">
+                                          <object class="GtkLabel" id="labelMission">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="xalign">0</property>
                                             <property name="xpad">5</property>
-                                            <property name="label" translatable="yes">Predefined Route:</property>
+                                            <property name="label" translatable="yes">Mission:</property>
                                             <property name="ellipsize">start</property>
                                           </object>
                                           <packing>
@@ -1351,12 +1351,12 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkComboBox" id="comboPredefinedRoute">
+                                          <object class="GtkComboBox" id="comboMission">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="model">listPredefinedRoute</property>
+                                            <property name="model">listMission</property>
                                             <property name="active">0</property>
-                                            <signal name="changed" handler="on_comboPredefinedRoute_changed" swapped="no"/>
+                                            <signal name="changed" handler="on_comboMission_changed" swapped="no"/>
                                             <child>
                                               <object class="GtkCellRendererText" id="cellrenderertext5"/>
                                               <attributes>
