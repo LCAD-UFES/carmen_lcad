@@ -711,7 +711,7 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 std::string
 read_file_to_string(std::string file_name)
 {
-	ifstream text_file(file_name);
+	std::ifstream text_file(file_name);
 	stringstream buffer;
 	buffer << text_file.rdbuf();
 
