@@ -4,8 +4,10 @@
  -Probably it's better adapt the Ouster example driver
 
 # how to run the driver: 
-./ouster -sensor_ip <SENSOR IP> -host_ip<IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -mode<512x10|512x20|1024x10|1024x20|2048x10>
-    -sensor_id [0-9] -publish_imu [on | off]  -intensity_type [1 | 2 | 3]
+./ouster -sensor_ip <SENSOR IP> -host_ip<IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -sensor_id <ID TO THE VARIABLE VELODYNE MESSAGE AND CAMEN.INI PARAMETER: [0-9]> -mode<512x10|512x20|1024x10|1024x20|2048x10> -publish_imu [on | off]  -intensity_type [1 | 2 | 3]
+
+# example
+./ouster -sensor_ip 192.168.1.200 -host_ip 192.168.1.1 -sensor_id 0 -mode 1024x20 -publish_imu off -intensity_type 1
 
 # if intensity_type == 1 -> INTENSITY 
 # if intensity_type == 2 -> REFLECTIVITY
@@ -13,18 +15,14 @@
 
 # if mode == 1024x20 -> horizontal resolution 1024, frequency 20Hz
 
-# example
-./ouster -sensor_ip 192.168.1.200 -host_ip 192.168.1.1 -sensor_id 0 -mode 1024x20 -publish_imu off -intensity_type 1
+#ANY QUESTION ABOUT PARAMETERS, CHECK: $CARMEN_HOME/src/sensors/ouster/PARAMETROS_LIDAR_OUSTER.txt
 
-sensors ip list:
+our sensors ip list:
  OS164 SN: 991901000584 IP: 192.168.1.200
  OS132 SN: 122144001108 IP: 192.168.1.205
  OS032 SN: 122145000764 IP: 192.168.1.206
  OS032 SN: 122144000315 IP: 192.168.1.207
  OS132-LCAD SN:122144001128 IP: 192.168.1.208
-
-# how to run the viewer:
-./ouster_viewer -sensor_id <ID TO ASSIGNED TO THE VARIABLE VELODYNE MESSAGE: [0-9]>
 
 to access sensors configuration page http://os-<IP or Serial>.local/
  ex: http://os-122144000315.local/

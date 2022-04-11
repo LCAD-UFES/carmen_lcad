@@ -1,3 +1,5 @@
+ROBOSENSE ESTA ENVIANDO OS DADOS PARA UM IP FIXO-MUDAR NO DRIVER DELE PARA MANDAR PARA O HOST 192.168.1.1
+
 Este módulo atualmente será usado para publicar Puck (VLP16) e Robosense (RS16) usando a mensagem carmen_velodyne_variable_scan_message (velodyne_messages).
 Pode também publicar o velodyne HL-32 porém precisa ser testado e comparado com o drive atual que publica a partial_scan.
  Pode substituir o módulo do velodyne mas usa a velodyne_interface.h e messagens dele.

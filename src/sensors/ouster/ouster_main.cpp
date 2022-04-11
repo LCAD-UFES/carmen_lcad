@@ -17,9 +17,9 @@ namespace OS1 = ouster::OS1;
 
 #define INITIAL_MAX_NUM_SHOT 2048 // TODO usar 2048
 
-#define OS132 0
-#define OS164 1
 #define OS032 0
+#define OS132 1
+#define OS164 2
 
 char *ouster_ip = NULL;
 char *host_ip = NULL;
@@ -31,7 +31,7 @@ int column_bytes = 0;
 char *lidar_string_model;
 int lidar_model = -1;
 int H = -1;
-
+const double* ouster_azimuth_offsets;
 
 void
 setup_message(carmen_velodyne_variable_scan_message &msg, int number_of_shots, int shot_size)
@@ -202,7 +202,7 @@ build_and_publish_variable_scan_message(uint8_t* buf, carmen_velodyne_variable_s
 
         // message->partial_scan[m_id].angle = h_angle_0;
 //        double angle_teste = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + ouster32_azimuth_offsets[m_id] + 180);
-        message.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + (ouster32_azimuth_offsets[icol]) + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
+        message.partial_scan[m_id].angle = carmen_normalize_angle_degree(carmen_radians_to_degrees(h_angle_0) + (ouster_azimuth_offsets[icol]) + 180); // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus
 
         message.partial_scan[m_id].shot_size = H;
 
@@ -476,10 +476,19 @@ read_parameters(int argc, char **argv)
     int num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
 
-    if (strcmp(lidar_string_model, "OS132") == 0)
+    if (strcmp(lidar_string_model, "OS032") == 0)
+    {
+    	lidar_model = OS032;
+    	ouster_azimuth_offsets = get_OS32_azimuth_offsets(ouster_ip);
+    }
+    else if (strcmp(lidar_string_model, "OS132") == 0)
+    {
     	lidar_model = OS132;
+    	ouster_azimuth_offsets = get_OS32_azimuth_offsets(ouster_ip);
+    }
     else if (strcmp(lidar_string_model, "OS164") == 0)
     	lidar_model = OS164;
+
 }
 
 
@@ -502,6 +511,10 @@ main(int argc, char** argv)
 
     switch(lidar_model)
     {
+		case OS032:
+			setup_message(message, INITIAL_MAX_NUM_SHOT, 32);
+			break;
+
 		case OS132:
 			setup_message(message, INITIAL_MAX_NUM_SHOT, 32);
 			break;
@@ -556,11 +569,16 @@ main(int argc, char** argv)
         }
         else if (st & OS1::LIDAR_DATA) 
         {
-            if (OS1::read_lidar_packet(*cli, lidar_buf, OS1::lidar_packet_bytes[lidar_model]))
+            if (OS1::read_lidar_packet(*cli, lidar_buf, OS1::lidar_packet_bytes[lidar_model]) && ouster_azimuth_offsets)
             {
             	//                build_and_publish_variable_scan_message(lidar_buf, message);
             	switch(lidar_model)
             	{
+            		case OS032:
+            			build_and_publish_variable_scan_message(lidar_buf, message);
+//						build_and_publish_variable_scan_message_2_lidars(lidar_buf, message0, message1);
+            			break;
+
             		case OS132:
             			build_and_publish_variable_scan_message(lidar_buf, message);
 //            			build_and_publish_variable_scan_message_2_lidars(lidar_buf, message0, message1);

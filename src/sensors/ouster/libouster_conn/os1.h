@@ -14,7 +14,7 @@
 namespace ouster {
 namespace OS1 {
 
-const size_t lidar_packet_bytes[2] = {6464, 12608};
+const size_t lidar_packet_bytes[3] = {6464, 6464, 12608};
 const size_t imu_packet_bytes = 48;
 
 class client 
