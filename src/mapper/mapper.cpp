@@ -2120,6 +2120,8 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 		{(char *) "mapper", (char *) "stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_l0, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_l0, 1, NULL},
 
+		{(char *) "mapper", (char *) "lidar8_ray_index_difference", CARMEN_PARAM_DOUBLE, &sensors_params[18].ray_index_difference, 1, NULL},
+		{(char *) "mapper", (char *) "lidar8_use_index_difference", CARMEN_PARAM_DOUBLE, &sensors_params[18].use_index_difference, 1, NULL},
 		{(char *) "mapper", (char *) "lidar8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[18].unexpeted_delta_range_sigma, 1, NULL},
 		{(char *) "mapper", (char *) "velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[0].unexpeted_delta_range_sigma, 1, NULL},
 		{(char *) "mapper", (char *) "laser_ldmrs_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 1, NULL},

@@ -106,6 +106,8 @@ typedef struct _sensor_parameters
 	carmen_vector_3D_t sensor_robot_reference;
 
 	int use_remission;
+	int ray_index_difference;
+	bool use_index_difference;
 
 	double cutoff_negative_acceleration;
 
