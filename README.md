@@ -1,5 +1,5 @@
 # carmen_lcad
-Version of the Carmen Robot Navigation Tookit developed by LCAD for IARA - the Intelligent Autonomous Robotic Autonomobile.
+Version of the Carmen Robot Navigation Toolkit developed by LCAD for IARA - the Intelligent Autonomous Robotic Autonomobile.
 
 This software is being developed with the support of DI/LCAD/UFES and is financed in part by Fundação de Amparo à Pesquisa do Espírito Santo – Brazil (FAPES), Conselho Nacional de Desenvolvimento Científico e Tecnológico – Brasil (CNPq), and Coordenação de Aperfeiçoamento de Pessoal de Nível Superior – Brasil (CAPES).
 
