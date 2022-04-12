@@ -10,8 +10,8 @@ import os
 # An instance of your model.
 carmen_home = os.getenv("CARMEN_HOME")
 
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cpu")
 print("GLPDepth: device: %s" % device)
 print("GLPDepth: Define Model with kitti")
 model = GLPDepth(max_depth=80.0, is_train=False).to(device)
@@ -25,4 +25,6 @@ example = torch.rand(1, 3, 128, 128)
 example = example.to(device)
 
 traced_script_module = torch.jit.trace(model, example, strict=False)
-traced_script_module.save(carmen_home + "/src/deep_mapper/GLPDepth/ckpt/best_model_kitti.pt")
+traced_script_module.save(carmen_home + "/src/deep_mapper/GLPDepth/ckpt/best_model_kitti_cuda.pt")
+
+

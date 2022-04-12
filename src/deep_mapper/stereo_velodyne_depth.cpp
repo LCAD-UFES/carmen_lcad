@@ -50,7 +50,7 @@ static Mat MapX, MapY;
 static char **modules;
 static int num_modules;
 
-char *neural_network = (char*) "adabins";
+char *neural_network = (char *)"adabins";
 unsigned char *depth_pred;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,14 +109,13 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
 
-	
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "dpt"))
 		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
-		depth_pred = libglpdepth_process_image(open_cv_image, vertical_top_cut, vertical_down_cut);
-	
+		depth_pred = libglpdepth_python_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
+
 	// cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	// open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
@@ -131,7 +130,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 
-	//cv::imshow("Bumblebee Image", open_cv_image);
+	// cv::imshow("Bumblebee Image", open_cv_image);
 	cv::imshow(neural_network, imgdepth * 256);
 	waitKey(1);
 }
@@ -146,16 +145,17 @@ void image_handler(camera_message *msg)
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
-	
+
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "dpt"))
 		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
-		depth_pred = libglpdepth_process_image(open_cv_image, vertical_top_cut, vertical_down_cut);
+		depth_pred = libglpdepth_python_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
+		
 	// img(cv::Rect(xMin,yMin,xMax-xMin,yMax-yMin)).copyTo(croppedImg);
-	//cv::Rect myROI(0, camera_height - vertical_resolution, stereo_image->width, camera_height - (camera_height - vertical_resolution));
-	//open_cv_image = open_cv_image(myROI);
+	// cv::Rect myROI(0, camera_height - vertical_resolution, stereo_image->width, camera_height - (camera_height - vertical_resolution));
+	// open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
 
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
@@ -167,7 +167,7 @@ void image_handler(camera_message *msg)
 	velodyne_partial_scan.timestamp = msg->timestamp;
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 
-	//cv::imshow("Camera Driver Image", open_cv_image);
+	// cv::imshow("Camera Driver Image", open_cv_image);
 	cv::imshow(neural_network, imgdepth * 256);
 	waitKey(1);
 }
@@ -215,9 +215,10 @@ static int *num_params;
 static int **update_param_mask;
 static int **num_param_mask;
 
-void concatenate(std::string& s, const char* c) {
-    s.reserve(s.size() + strlen(c));
-    s.append(c);
+void concatenate(std::string &s, const char *c)
+{
+	s.reserve(s.size() + strlen(c));
+	s.append(c);
 }
 
 static void init_params_edit()
@@ -254,36 +255,36 @@ static void init_params_edit()
 
 	string vertical_angles;
 	string ray_order;
-	double v_angle = (vertical_camera_angle/2.0)*(-1);
-	double delta_v_angle = vertical_camera_angle/camera_height;
+	double v_angle = (vertical_camera_angle / 2.0) * (-1);
+	double delta_v_angle = vertical_camera_angle / camera_height;
 
-  	sprintf(module, "%s%d", "lidar", lidar_num);
+	sprintf(module, "%s%d", "lidar", lidar_num);
 	sprintf(variable, "%s", "vertical_angles");
 	sprintf(variable_ray_order, "%s", "ray_order");
 	sprintf(variable_shot_size, "%s", "shot_size");
-	
+
 	char value_string[256];
 	char value_ray_string[256];
-	for (int i=0; i < camera_height; i++){ //480
+	for (int i = 0; i < camera_height; i++)
+	{ // 480
 		sprintf(value_string, "%0.4f ", v_angle);
 		concatenate(vertical_angles, value_string);
-		sprintf(value_ray_string, "%d ", camera_height-i-1);
+		sprintf(value_ray_string, "%d ", camera_height - i - 1);
 		concatenate(ray_order, value_ray_string);
 		v_angle += delta_v_angle;
 	}
 	char *return_value;
-  	int status = 0;
+	int status = 0;
 	int n = vertical_angles.length();
-    char char_vertical_angles[n + 1];
+	char char_vertical_angles[n + 1];
 	strcpy(char_vertical_angles, vertical_angles.c_str());
 
 	n = ray_order.length();
-    char char_ray_order[n + 1];
+	char char_ray_order[n + 1];
 	strcpy(char_ray_order, ray_order.c_str());
 
 	char char_shot_size[256];
 	sprintf(char_shot_size, "%d", camera_height);
-
 
 	for (m = 0; m < num_modules; m++)
 	{
@@ -296,40 +297,40 @@ static void init_params_edit()
 				{
 					update_param_mask[m][p] = -2;
 					if (carmen_param_set_variable(variables[m][p], char_vertical_angles,
-                                           &return_value) < 0)
-          				status = -1;
+												  &return_value) < 0)
+						status = -1;
 					else
-        			{
-          				status = 1;
-          				update_param_mask[m][p] = 0;
-          			}
-					cout << module << "_" << variable << " " << char_vertical_angles << endl;	
+					{
+						status = 1;
+						update_param_mask[m][p] = 0;
+					}
+					cout << module << "_" << variable << " " << char_vertical_angles << endl;
 				}
 				if (!strcmp(variables[m][p], variable_ray_order))
 				{
 					update_param_mask[m][p] = -2;
 					if (carmen_param_set_variable(variables[m][p], char_ray_order,
-                                           &return_value) < 0)
-          				status = -1;
+												  &return_value) < 0)
+						status = -1;
 					else
-        			{
-          				status = 1;
-          				update_param_mask[m][p] = 0;
-          			}
-					cout << module << "_" << variable_ray_order << " " << char_ray_order << endl;	
+					{
+						status = 1;
+						update_param_mask[m][p] = 0;
+					}
+					cout << module << "_" << variable_ray_order << " " << char_ray_order << endl;
 				}
 				if (!strcmp(variables[m][p], variable_shot_size))
 				{
 					update_param_mask[m][p] = -2;
 					if (carmen_param_set_variable(variables[m][p], char_shot_size,
-                                           &return_value) < 0)
-          				status = -1;
+												  &return_value) < 0)
+						status = -1;
 					else
-        			{
-          				status = 1;
-          				update_param_mask[m][p] = 0;
-          			}
-					cout << module << "_" << variable_shot_size << " " << char_shot_size << endl;	
+					{
+						status = 1;
+						update_param_mask[m][p] = 0;
+					}
+					cout << module << "_" << variable_shot_size << " " << char_shot_size << endl;
 				}
 			}
 			break;
@@ -342,7 +343,6 @@ static void init_params_edit()
 		cout << "Saving parameters...nothing to save" << endl;
 	else
 		cout << "Saving parameters...failed" << endl;
-
 
 	for (m = 0; m < num_modules; m++)
 	{
@@ -407,11 +407,11 @@ int read_parameters(int argc, char **argv)
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
-	
+
 	carmen_param_t param_optional_list[] =
-	{
-		{(char *) "commandline", (char *) "neural_network", CARMEN_PARAM_STRING, &neural_network, 0, NULL},
-	};
+		{
+			{(char *)"commandline", (char *)"neural_network", CARMEN_PARAM_STRING, &neural_network, 0, NULL},
+		};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	double fx_rect = fx * camera_width;
@@ -435,23 +435,25 @@ int main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	if (argc -1 != 3)
+	if (argc - 1 != 3)
 		carmen_die("%s: Wrong number of parameters. stereo requires 3 parameters and received %d parameter(s). \n"
-					"Usage:\n %s <camera_number>"
-					" -neural_network <n>    : neural_network option (adabins, dpt or glpdepth)\n",
+				   "Usage:\n %s <camera_number>"
+				   " -neural_network <n>    : neural_network option (adabins, dpt or glpdepth)\n",
 				   argv[0], argc - 1, argv[0]);
 
 	camera = atoi(argv[1]);
 	read_parameters(argc, argv);
-	
+
 	if (!strcmp(neural_network, "adabins"))
 		initialize_python_context_adabins();
-	
+
 	if (!strcmp(neural_network, "dpt"))
 		initialize_python_context_dpt();
 
 	if (!strcmp(neural_network, "glpdepth"))
-		initialize_glpdepth();
+	{
+		initialize_python_context_glpdepth();
+	}
 
 	init_stereo_velodyne();
 

@@ -5,6 +5,8 @@
 
 DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera images using Neural Networks. 
 
+python exportPtCpp.py --run-eval
+
 ## Pretrained model
 
 #### Option 1:

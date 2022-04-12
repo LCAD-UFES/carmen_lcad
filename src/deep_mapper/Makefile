@@ -12,9 +12,6 @@ CXXFLAGS += -std=c++11
 #CFLAGS += -g -pg
 LINK = g++
 
-#LIBTORCH
-IFLAGS += -I/dados/libtorch/include -I/dados/libtorch/include/torch/csrc/api/include
-LFLAGS += -L/dados/libtorch/lib -Wl,-R/dados/libtorch/lib -ltorch -ltorch_cpu -lc10 
 
 # Adabins and GLPDepth
 IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
