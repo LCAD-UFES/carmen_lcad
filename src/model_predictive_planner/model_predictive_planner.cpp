@@ -31,6 +31,7 @@ int plot_to_debug = 0;
 
 extern int use_unity_simulator;
 
+//#define EXPERIMENT_DATA
 //#define PLOT_COLLISION
 
 
@@ -779,6 +780,11 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 			detailed_lane.clear();
 	}
 
+#ifdef EXPERIMENT_DATA
+		save_experiment_data(path_goals_and_annotations_message, localizer_pose,
+						 detailed_lane, last_odometry);
+#endif
+
 	bool use_lane = true;
 	TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, last_odometry, goal_pose);
 	TrajectoryControlParameters otcp = get_complete_optimized_trajectory_control_parameters(previous_good_tcp, td, target_v, detailed_lane, use_lane);
@@ -807,6 +813,7 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 
 		paths.clear();
 	}
+	//SALVAR TAMBEM OS PATHS PARA VER PRA CADA POSE E GOAL QUAL FOI A SAIDA
 
 	return (paths);
 }
