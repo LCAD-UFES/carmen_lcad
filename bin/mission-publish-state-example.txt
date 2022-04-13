@@ -1,0 +1,37 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+# SEMPRE QUE FOR CRIAR UMA MISSAO ADICIONAR NO INICIO 
+#  publish mission state STARTING_MISSION <ID[qualquerNomeOuNumeroQueIdentifiqueAMissao]>
+# NO FIM DE TODAS AS TASKS QUE DEFINEM AQUELA MISSAO ADICIONE
+#  publish mission state MISSION_COMPLETED <ID[O MESMO IDENTIFICADOR DA MISSAO INICIADA]>
+# Um arquivo pode ter varias missoes, uma missao pode ter varias tasks, como no exemplo abaixo, a primeira missao tem o set couse, seguido de um parking
+# a missao soh termina quando a ultima task (parking nesse caso) for concluída
+# Caso a missão não seja realmente concluída com sucesso, o MISSION_COMPLETED irá checar e publicar MISSION_FAILED
+#####
+
+set robot pose 7757680.25, -363600.25, 0.639
+
+publish mission state STARTING_MISSION 1
+
+# Predio Eletrica logo depois do LCAD2
+set course to 7757720.30, -363570.00, 0.671
+go after set course to 7757720.30, -363570.00, 0.671  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+park at 7757781.01, -363518.79, 0.776
+#go after park at 7757870.43, -363601.65, -0.879  # fica nesta task ateh o fim do curso 
+go
+stop # tira de modo autonomo
+
+publish mission state MISSION_COMPLETED 1
+
+publish mission state STARTING_MISSION NTI
+
+# Estacionamento do NTI
+set course to 7757767.03, -363818.23, 2.298
+go after set course to 7757767.03, -363818.23, 2.298 # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+publish mission state MISSION_COMPLETED NTI
+
+restart
