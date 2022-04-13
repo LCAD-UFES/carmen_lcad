@@ -306,16 +306,18 @@ Util::between(const Pose *pose1, const carmen_ackerman_path_point_t pose2, const
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
-dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
+dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w)
 {
     return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 }
 
-
+/*
+ * Encontra distancia do eixo traseiro pra lane/path
+ * */
 double
-get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
-        carmen_ackerman_path_point_t p2,
-        carmen_ackerman_path_point_t robot)
+get_distance_between_point_to_line(carmen_robot_and_trailer_path_point_t p1,
+		carmen_robot_and_trailer_path_point_t p2,
+		carmen_robot_and_trailer_path_point_t robot)
 {
     //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
     double delta_x = p2.x - p1.x;
@@ -331,9 +333,13 @@ get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
 
 }
 
-
+/*
+ * Usa 3 pontos para achar os 2 pontos que formam a reta mais proxima do carro.
+ *  Preenche index1, index2 e pose mais próxima do carro usando distancia euclidiana (carro sempre na origem)
+ *
+ */
 void
-get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
+get_points2(vector<carmen_robot_and_trailer_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
 {
 
     double d = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
@@ -360,12 +366,12 @@ get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index
 
 void
 save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
-					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
-					const vector<Command> &lastOdometryVector)
+					carmen_robot_and_trailer_pose_t *localizer_pose, vector<carmen_robot_and_trailer_path_point_t> &detailed_lane,
+					Command lastOdometry)
 {
 	if (detailed_lane.size() > 0)
 	{
-		carmen_ackerman_path_point_t localize;
+		carmen_robot_and_trailer_path_point_t localize;
 		localize.x = 0.0;
 		localize.y = 0.0;
 		//Metric evaluation
@@ -383,7 +389,7 @@ save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message
 		double erro_theta = fabs(volante_rddf_theta - localizer_pose->theta);
 		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
 		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
-				lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
+				lastOdometry.v, lastOdometry.phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
 				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, path_goals_and_annotations_message->timestamp);
 
 	}

@@ -15,6 +15,18 @@
 #include <vector>
 #include <math.h>
 
+//-----------Funcoes para extrair dados do Experimento------------------------
+double dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w);
+double get_distance_between_point_to_line(carmen_robot_and_trailer_path_point_t p1,
+		carmen_robot_and_trailer_path_point_t p2,
+		carmen_robot_and_trailer_path_point_t robot);
+
+void get_points2(vector<carmen_robot_and_trailer_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima);
+void save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
+							carmen_robot_and_trailer_pose_t *localizer_pose, vector<carmen_robot_and_trailer_path_point_t> &detailed_lane,
+							Command lastOdometry);
+//------------------------------------------------------------
+
 class Util
 {
 public:
@@ -110,15 +122,5 @@ public:
 	static bool between(carmen_ackerman_path_point_t &p, const Pose *pose, carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w);
 };
 
-//-----------Funcoes para extrair dados do Experimento------------------------
-double dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w);
-double get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
-        carmen_ackerman_path_point_t p2,
-        carmen_ackerman_path_point_t robot);
 
-void get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima);
-void save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
-					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
-					const vector<Command> &lastOdometryVector);
-//------------------------------------------------------------
 #endif /* UTIL_H_ */
