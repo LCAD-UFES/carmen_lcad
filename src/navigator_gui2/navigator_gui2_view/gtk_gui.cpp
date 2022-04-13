@@ -1939,6 +1939,48 @@ namespace View
 		carmen_graphics_update_ipc_callbacks(handle_ipc);
 	}
 
+	double
+	GtkGui::calc_theta_diff (double angle_u, double angle_v)
+	{
+		return atan2(sin(angle_u-angle_v), cos(angle_u-angle_v));
+	}
+
+
+	double
+	GtkGui::euclidean_distance(double x1, double y1, double x2, double y2)
+	{
+		double dist = sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
+
+		return dist;
+	}
+
+
+	int
+	GtkGui::get_closest_final_goal_index_in_nearby_lanes()
+	{
+		double min_weight = DBL_MAX;
+		double eucl_distance;
+		double theta_diff;
+		double weight;
+		int closest_point = 0;
+
+		for (int i = 0; i < route_planner_route->nearby_lanes_size ; i++)
+		{
+			eucl_distance = euclidean_distance(final_goal.pose.x, final_goal.pose.y, route_planner_route->nearby_lanes[i].x, route_planner_route->nearby_lanes[i].y);
+			theta_diff = calc_theta_diff(route_planner_route->nearby_lanes[i].theta, final_goal.pose.theta);
+			weight = (eucl_distance + abs(theta_diff)) * 0.1;
+			if (weight < min_weight)
+			{
+				min_weight = weight;
+				closest_point = i;
+			}
+		}
+
+		// cout<<"POINT ID = "<<closest_point<<" theta_diff = "<<min_theta<<" robot_theta = "<<point.theta<<" closest_point_theta = "<<graph.nodes[closest_point].rddf_point.pose.theta<<endl;
+
+		return (closest_point);
+	}
+
 	int
 	GtkGui::placing_robot_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event)
 	{
@@ -2405,6 +2447,13 @@ namespace View
 					world_point->pose.x - final_goal.pose.x);
 			final_goal.pose.theta = angle;
 
+			f_final_goal = fopen("final_goal_pose.txt", "w");
+			if(f_final_goal == NULL)
+				printf("Could not open f_final_goal file\n");
+			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, 0.0);
+			fclose(f_final_goal);
+
+
 			if (globalpos->semi_trailer_engaged)
 			{
 				placement_status = ORIENTING_FINAL_GOAL_SEMI_TRAILER;
@@ -2448,6 +2497,14 @@ namespace View
 				carmen_rddf_publish_end_point_message(half_meters_to_goal, final_goal.pose);
 
 			final_goal_placed_and_oriented = 1;
+
+			f_final_goal = fopen("final_goal_pose.txt", "w");
+			if(f_final_goal == NULL)
+				printf("Could not open f_final_goal file\n");
+
+			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, final_goal.pose.beta);
+			fclose(f_final_goal);
+
 
 			GdkCursor *cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);

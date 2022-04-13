@@ -324,8 +324,12 @@ namespace View
 		carmen_rddf_waypoint* near_rddf_point;
 		int near_rddf_point_index;
 
+		FILE *f_final_goal = NULL;
+
 		bool freeze_status;
 		carmen_simulator_ackerman_object_t object_type;
+
+		int editing_final_goal = 0;
 
 		car_panel *car_panel_gl;
 
@@ -405,6 +409,10 @@ namespace View
 		void navigator_graphics_display_config (char *attribute, int value, char *new_status_message);
 		void navigator_graphics_add_ipc_handler(GdkInputFunction handle_ipc);
 		void navigator_graphics_start(char *path);
+
+		double calc_theta_diff (double angle_u, double angle_v);
+		double euclidean_distance(double x1, double y1, double x2, double y2);
+		int get_closest_final_goal_index_in_nearby_lanes();
 
 		int placing_robot_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event);
 		int placing_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event);
