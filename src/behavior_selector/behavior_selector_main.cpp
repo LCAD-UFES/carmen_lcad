@@ -759,8 +759,71 @@ check_soft_stop(carmen_robot_and_trailer_traj_point_t *first_goal, carmen_robot_
 }
 
 
+double
+limit_goal_distance_according_to_radius_of_curvature(double &dist_to_min_radius_of_curvature,
+		carmen_rddf_road_profile_message *last_rddf_message, double max_distance_considered)
+{
+	int number_of_poses;
+	carmen_robot_and_trailer_traj_point_t *path;
+	if (last_rddf_message)
+	{
+		number_of_poses = last_rddf_message->number_of_poses;
+		path = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+		memcpy(path, last_rddf_message->poses, number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+	}
+	else
+	{
+		dist_to_min_radius_of_curvature = 1000.0;
+		return (1000.0);
+	}
+
+	carmen_robot_and_trailer_traj_point_t *original_path_copy = path;
+	path = &(path[1]);
+	number_of_poses -= 1;
+	for (int i = 0; i < ((number_of_poses / 4) - 1); i++)
+		path[i] = path[i * 4];
+	number_of_poses /= 4;
+
+	double L = get_robot_config()->distance_between_front_and_rear_axles;
+	for (int i = 0; i < (number_of_poses - 1); i++)
+	{
+		double delta_theta = carmen_normalize_theta(path[i + 1].theta - path[i].theta);
+		double l = DIST2D(path[i], path[i + 1]);
+		path[i].phi = atan(L * (delta_theta / l));
+	}
+
+	double dist_walked = 0.0;
+	double min_radius_of_curvature = 1000.0;
+	for (int i = 1; i < (number_of_poses - 1); i++)
+	{
+		double l = DIST2D(path[i], path[i - 1]);
+		dist_walked += l;
+		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+		if (fabs(path[i].phi) > 0.001)
+		{
+			double radius_of_curvature = L / fabs(tan(path[i].phi));
+			if (radius_of_curvature < min_radius_of_curvature)
+			{
+				dist_to_min_radius_of_curvature = dist_walked;
+				min_radius_of_curvature = radius_of_curvature;
+			}
+
+			if (dist_walked > max_distance_considered)
+				break;
+		}
+	}
+
+	free(original_path_copy);
+
+	printf("min_radius_of_curvature %lf, dist_to_min_radius_of_curvature %lf\n", min_radius_of_curvature, dist_to_min_radius_of_curvature);
+
+	return (min_radius_of_curvature);
+}
+
+
 void
-set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+		carmen_rddf_road_profile_message *last_rddf_message, double timestamp)
 {
 	if (behavior_selector_state_message.low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
 	{
@@ -795,7 +858,14 @@ set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_po
 		if ((distance_between_waypoints_with_v_multiplier * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
 			change_goal_distance = distance_between_waypoints_with_v_multiplier * fabs(current_robot_pose_v_and_phi.v);
 	}
-
+	double dist_to_min_radius_of_curvature;
+	static double min_radius_of_curvature = 1000.0;
+	double last_sample_of_min_radius_of_curvature = limit_goal_distance_according_to_radius_of_curvature(dist_to_min_radius_of_curvature, last_rddf_message, distance_between_waypoints * 1.5);
+	min_radius_of_curvature = min_radius_of_curvature + 0.05 * (last_sample_of_min_radius_of_curvature - min_radius_of_curvature);
+	if ((min_radius_of_curvature < distance_between_waypoints))// && ((dist_to_min_radius_of_curvature / 1.5) < distance_between_waypoints))
+		change_goal_distance = distance_between_waypoints = min_radius_of_curvature;
+	else
+		min_radius_of_curvature = distance_between_waypoints;
 	if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.type != 0))
 	{
 		distance_between_waypoints /= 5.0;
@@ -977,7 +1047,7 @@ select_behaviour_using_symotha(carmen_robot_and_trailer_traj_point_t current_rob
 
 	carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, compact_lane_contents);
 
-	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
+	set_behaviours_parameters(current_robot_pose_v_and_phi, last_rddf_message, timestamp);
 
 	set_path_using_symotha(current_robot_pose_v_and_phi, behavior_selector_state_message, timestamp);
 
@@ -1171,7 +1241,7 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 	static carmen_robot_and_trailer_traj_point_t last_valid_goal;
 	static carmen_robot_and_trailer_traj_point_t *last_valid_goal_p = NULL;
 
-	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
+	set_behaviours_parameters(current_robot_pose_v_and_phi, last_rddf_message, timestamp);
 
 //	double t2 = carmen_get_time();
 
