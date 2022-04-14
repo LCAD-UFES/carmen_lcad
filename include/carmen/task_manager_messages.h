@@ -14,8 +14,17 @@ typedef enum
 {
 	STARTING_MISSION,
 	MISSION_COMPLETED,
-	TASK_FAILED
+	MISSION_FAILED
 } carmen_task_manager_mission_level_state_t;
+
+//Sugestao-pensar-sobre
+//typedef enum
+//{
+//	NEW_MISSION_FILE_STARTED,
+//	LOAD,
+//	UNLOAD,
+//	PARK
+//} carmen_task_manager_mission_id_t;
 
 
 typedef struct
@@ -52,15 +61,16 @@ typedef struct
 typedef struct
 {
 	carmen_task_manager_mission_level_state_t mission_state;
+	char *mission_id;
 	char *mission_filename;
-	carmen_robot_and_trailer_pose_t final_goal;
+	carmen_robot_and_trailer_pose_t pose;
 	char *info;
 	double timestamp;
 	char *host;
 } carmen_task_manager_state_message;
 
 #define	CARMEN_TASK_MANAGER_STATE_MESSAGE_NAME	"carmen_task_manager_state_message"
-#define	CARMEN_TASK_MANAGER_STATE_MESSAGE_FMT "{int,string,{double,double,double,double},string,double,string}"
+#define	CARMEN_TASK_MANAGER_STATE_MESSAGE_FMT "{int,string,string,{double,double,double,double},string,double,string}"
 
 
 #ifdef __cplusplus
