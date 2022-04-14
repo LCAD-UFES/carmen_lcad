@@ -86,6 +86,18 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 
 	filter->distance_travelled += fabs(average_v * dt);
 
+	robot_pose.x = filter->particles[0].x;
+	robot_pose.y = filter->particles[0].y;
+	robot_pose.theta = filter->particles[0].theta;
+	double distance_to_goal_factor = 1.0;
+	if (behavior_selector_path_goals_and_annotations_message &&
+		(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
+	{
+		double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
+		if (distance_to_goal < 2.0)
+			distance_to_goal_factor = 0.0;
+	}
+
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
 		filter->particles[i].v += 1.1 * (xsens_global_quat_message->m_acc.x + 0.2) * dt + carmen_gaussian_random(0.0, 0.01);
@@ -111,6 +123,9 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 				filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
 				filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
 			}
+			else
+				filter->particles[i].phi_bias = 0.0;
+
 			phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0,
 					fabs(filter->param->phi_noise_phi * phi) +
 					fabs(filter->param->phi_noise_velocity * v));
@@ -124,12 +139,9 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 			filter->particles[i].y = robot_pose.y;
 			filter->particles[i].theta = robot_pose.theta;
 
-			if ((i % 10) == 0)
-			{
-				filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-			}
+			filter->particles[i].x += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].y += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
 		}
 		else
 		{	// Keep the mean particle of the previous run intact
@@ -166,6 +178,18 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 	filter->distance_travelled += fabs(v * dt);
 
+	robot_pose.x = filter->particles[0].x;
+	robot_pose.y = filter->particles[0].y;
+	robot_pose.theta = filter->particles[0].theta;
+	double distance_to_goal_factor = 1.0;
+	if (behavior_selector_path_goals_and_annotations_message &&
+		(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
+	{
+		double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
+		if (distance_to_goal < 2.0)
+			distance_to_goal_factor = 0.0;
+	}
+
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
 		if (i != 0)
@@ -188,6 +212,9 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 				// 0.0175 radians is approx 1 degree
 				filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
 			}
+			else
+				filter->particles[i].phi_bias = 0.0;
+
 			phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0,
 					fabs(filter->param->phi_noise_phi * phi) +
 					fabs(filter->param->phi_noise_velocity * v));
@@ -201,47 +228,9 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			filter->particles[i].y = robot_pose.y;
 			filter->particles[i].theta = robot_pose.theta;
 
-
-			if (behavior_selector_path_goals_and_annotations_message &&
-				(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
-			{
-				double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
-				if (distance_to_goal < 13.0)
-				{
-					double y0 = (double) filter->param->num_particles;
-					double x0 = 1.0;
-					double y1 = 1.0;
-					double x1 = 13.0;
-					double x = distance_to_goal;
-					double y = y0 + (x - x0) * ((y1 - y0) / (x1 - x0));
-					int inverse_franction_of_particles_considered;
-					if (y < 1.0)
-						inverse_franction_of_particles_considered = 1;
-					else if (y > filter->param->num_particles)
-						inverse_franction_of_particles_considered = filter->param->num_particles;
-					else
-						inverse_franction_of_particles_considered = ceil(y);
-
-					if ((i % inverse_franction_of_particles_considered) == 0)
-					{
-						filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-						filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-						filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-					}
-				}
-				else
-				{
-					filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-					filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-					filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-				}
-			}
-			else
-			{
-				filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-			}
+			filter->particles[i].x += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].y += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
 
 			filter->particles[i].phi = phi_step;
 			filter->particles[i].v = v_step;
