@@ -58,7 +58,9 @@
 using namespace cv;
 
 #define PREDICT_BETA_GSL_ERROR_CODE 100.0
-#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
+//#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
+#define MIN_DISTANCE_BETWEEN_POINTS	(0.6)
+
 #define MIN_CLUSTER_SIZE			10
 
 static int necessary_maps_available = 0;
@@ -222,10 +224,42 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 	}
 	fclose(graph_file);
 
-	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");
-
+	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated', 'caco_localize_before-cluster.txt' u 1:2 t 'before_cluster'\n");
 	fflush(gnuplot_pipe);
 }
+
+
+//void
+//plot_cluster_graph(dbscan::Clusters &cluster)
+//{
+//	static bool first_time = true;
+//
+//	if (first_time)
+//	{
+//		first_time = false;
+//		gnuplot_pipe = popen("taskset -c 0 gnuplot", "w"); // -persist to keep last plot after program closes
+//		fprintf(gnuplot_pipe, "set xrange [-5:5]\n");
+//		fprintf(gnuplot_pipe, "set yrange [0:4]\n");
+//		fprintf(gnuplot_pipe, "set size square\n");
+//		fprintf(gnuplot_pipe, "set size ratio -1\n");
+//	}
+//
+//	FILE *graph_file;
+//
+//	graph_file = fopen("caco_localize_cluster.txt", "w");
+//	for (int i = 0; i < cluster.size(); i++)
+//	{
+//		fprintf(graph_file, "%lf %lf\n",
+//				cluster[i].x, cluster[i].y);
+//	}
+//	fclose(graph_file);
+//
+//	fprintf(gnuplot_pipe, "plot 'caco_localize_cluster.txt' u 1:2 w l t 'points'\n");
+//
+//	fflush(gnuplot_pipe);
+//
+//
+//}
 
 
 static carmen_vector_3D_t
@@ -333,6 +367,7 @@ remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *poi
 				largest_cluster = i;
 			}
 		}
+//		plot_cluster_graph(clusters[largest_cluster_size]);
 
 //		printf("num_c %d, largest_c %d, lcs %d\n", clusters.size(), largest_cluster, clusters[largest_cluster].size());
 		for (unsigned int i = 0; i < clusters[largest_cluster].size(); i++)
@@ -377,6 +412,16 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 		}
 	}
 	qsort((void *) (points_position_with_respect_to_car), (size_t) num_filtered_points, sizeof(carmen_vector_3D_t), compare_x);
+
+//	FILE *debug_file;
+//
+//	debug_file = fopen("caco_localize_before-cluster.txt", "w");
+//	for (int i = 0; i < num_filtered_points; i++)
+//	{
+//		fprintf(debug_file, "%lf %lf %d\n",
+//				points_position_with_respect_to_car[i].x, points_position_with_respect_to_car[i].y, i);
+//	}
+//	fclose(debug_file);
 
 	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
 
@@ -516,7 +561,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 
 	double beta = compute_new_beta(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 
-//	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
+	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 
 	free(points_position_with_respect_to_car);
 	free(points_position_with_respect_to_car_estimated);
