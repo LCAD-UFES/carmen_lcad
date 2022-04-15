@@ -73,6 +73,7 @@ extern bool use_merge_between_maps;
 
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern carmen_pose_3D_t front_bullbar_pose;
+extern carmen_pose_3D_t rear_bullbar_pose;
 
 extern sensor_parameters_t *sensors_params;
 extern sensor_parameters_t ultrasonic_sensor_params;
@@ -252,6 +253,37 @@ free_virtual_scan_message()
 	}
 }
 
+void
+update_sensor_reference_pose(double beta)
+{
+	//Alterar o rear_bullbar_pose por conta do beta
+	carmen_pose_3D_t temp_rear_bullbar_pose;
+	// a = h * cos(beta)
+	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta);
+	// b = h * sin(beta), y é adicionado por considerar situações na qual a posição da rear bullbar tenha um y diferente de 0 quando beta == 0
+	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.y + (rear_bullbar_pose.position.x * sin(beta));
+	temp_rear_bullbar_pose.position.z 			= rear_bullbar_pose.position.z;
+	temp_rear_bullbar_pose.orientation.pitch 	= rear_bullbar_pose.orientation.pitch;
+	temp_rear_bullbar_pose.orientation.roll 	= rear_bullbar_pose.orientation.roll;
+	temp_rear_bullbar_pose.orientation.yaw 		= rear_bullbar_pose.orientation.yaw - beta; // Verificar se soma o beta ou subtrai
+
+	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, temp_rear_bullbar_pose};
+
+	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	{
+		if (!sensors_params[i + 10].alive || sensors_params[i + 10].sensor_reference != 2)
+			continue;
+
+		sensors_params[i + 10].sensor_support_pose = choosed_sensor_referenced[sensors_params[i + 10].sensor_reference];
+		sensors_params[i + 10].support_to_car_matrix = create_rotation_matrix(sensors_params[i + 10].sensor_support_pose.orientation);
+		sensors_params[i + 10].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i + 10].pose.orientation);
+		sensors_params[i + 10].sensor_robot_reference = carmen_change_sensor_reference(sensors_params[i + 10].sensor_support_pose.position,
+															sensors_params[i + 10].pose.position, sensors_params[i + 10].support_to_car_matrix);
+		sensors_params[i + 10].height = sensors_params[i + 10].sensor_robot_reference.z + robot_wheel_radius;
+	}
+}
+
 
 // static void
 // read_parameters_semi_trailer(int semi_trailer_type)
@@ -419,6 +451,13 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (globalpos_message->semi_trailer_type != semi_trailer_config.type)
 		read_parameters_semi_trailer(globalpos_message->semi_trailer_type);
+
+#ifdef USE_REAR_BULLBAR
+	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+//	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, rear_bullbar_pose};
+	if (globalpos_message->semi_trailer_type != 0) // se for igual a 0 ele não é articulado e não precisa atualizar a rear_bullbar_pose
+		update_sensor_reference_pose(globalpos_message->beta);
+#endif
 
 	if (ok_to_publish)
 	{
