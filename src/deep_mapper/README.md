@@ -13,6 +13,14 @@ Download the pretrained weights:
     make download
 ```
 
+Install Python3.7.7 (Will install an alternative installation - not bad for your PC)
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/GLPDepth
+```
+```shell
+    ./install_python3.7.sh
+```
+
 Create VirtualEnv in order to install torch and its dependencies:
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/GLPDepth
@@ -20,10 +28,15 @@ Create VirtualEnv in order to install torch and its dependencies:
 ```shell
     ./create_env.sh
 ```
+
 Compile GLPDepth libraries:
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/GLPDepth
+```
 ```shell
     make
 ```
+
 Compile DeepMapper:
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/
@@ -67,16 +80,25 @@ The pretrained model "AdaBins_kitti.pt" is available at [here](https://1drv.ms/u
 
 
 ```shell
-    cd $CARMEN_HOME/src/deep_mapper/
+    cd $CARMEN_HOME/src/deep_mapper/Adabins
 ```
 ```shell
-    make
+    make download
 ```
+
 If your system already has CUDA 10.0 e CUDNN compatibles installed, run the command:
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/Adabins
+```
 ```shell
     ./install_dependencies.sh
 ```
-
+```shell
+    cd $CARMEN_HOME/src/deep_mapper/Adabins
+```
+```shell
+    make 
+```
 * For using this subsytem is required: CUDA_10.0 Python 3.6, pip and virtualenv.
 
 ### In case your machine doesn't have CUDA and CUDNN
@@ -95,10 +117,10 @@ The parameter 1 is required to install CUDA and CUDNN.
 ### Configuring a process.ini (optional)
 It is necessary ajust some process.ini to load inside a proccontrol process. Edit the choosen process and add these lines:
 ```
-cam1_adabins		detection	0		0		export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network adabins
+cam1_adabins		detection	0		0		export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/Adabins/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network adabins
 cam1_glpdepth	    detection	0		0		export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/GLPDepth:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/GLPDepth/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network glpdepth
  cam1_dpt           detection   0       0       export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/DPT:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/DPT/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network dpt
- 
+ cam1_newcrfs           detection   0       0       export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/newcrfs:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/newcrfs/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network newcrfs
 ```
 
 ### Execution
@@ -111,9 +133,14 @@ cd $CARMEN_HOME/bin/
 cd $CARMEN_HOME/bin/
 ./proccontrol process-playback-fovea.ini
 ```
+Making maps
 ```shell
 cd $CARMEN_HOME/bin/
-export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network adabins
+./proccontrol process-volta_da_ufes_playback_viewer_3D_map_generation_deep_mapper.ini
+```
+```shell
+cd $CARMEN_HOME/bin/
+export PYTHONPATH=$CARMEN_HOME/src/deep_mapper/Adabins:$CARMEN_HOME/src/deep_mapper/Adabins/models/:$PYTHONPATH; source $CARMEN_HOME/src/deep_mapper/Adabins/venv/bin/activate; ./stereo_velodyne_depth 1 -neural_network adabins
 ```
 After loading the pretrained weights, just play and run. The results are showed.
 
