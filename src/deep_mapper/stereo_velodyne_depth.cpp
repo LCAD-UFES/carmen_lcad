@@ -3,6 +3,7 @@
 #include <carmen/libadabins.h>
 #include <carmen/libdpt.h>
 #include <carmen/libglpdepth.h>
+#include <carmen/libnewcrfs.h>
 #include <string.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -115,6 +116,8 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
 		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
+	if (!strcmp(neural_network, "newcrfs"))
+		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 
 	// cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	// open_cv_image = open_cv_image(myROI);
@@ -152,7 +155,8 @@ void image_handler(camera_message *msg)
 		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
 		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
-		
+	if (!strcmp(neural_network, "newcrfs"))
+		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	// img(cv::Rect(xMin,yMin,xMax-xMin,yMax-yMin)).copyTo(croppedImg);
 	// cv::Rect myROI(0, camera_height - vertical_resolution, stereo_image->width, camera_height - (camera_height - vertical_resolution));
 	// open_cv_image = open_cv_image(myROI);
@@ -453,6 +457,10 @@ int main(int argc, char **argv)
 	if (!strcmp(neural_network, "glpdepth"))
 	{
 		initialize_python_context_glpdepth();
+	}
+	if (!strcmp(neural_network, "newcrfs"))
+	{
+		initialize_python_context_newcrfs();
 	}
 
 	init_stereo_velodyne();

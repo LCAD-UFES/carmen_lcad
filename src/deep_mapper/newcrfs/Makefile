@@ -4,8 +4,8 @@ LINK = g++
 CFLAGS += -std=c++11
 CXXFLAGS += -std=gnu++11 
 
-MODULE_NAME = GLPDepth Neural Network
-MODULE_COMMENT = Depth Estimation with GLPDepth
+MODULE_NAME = NeWCRFs Neural Network
+MODULE_COMMENT = Depth Estimation with NeWCRFs
 
 IFLAGS += -I/usr/include/python3.6m
 LFLAGS += `python3.6-config --libs`
@@ -20,16 +20,16 @@ LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basi
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-SOURCES = libglpdepth.cpp
+SOURCES = libnewcrfs.cpp
 
-PUBLIC_INCLUDES = libglpdepth.h
-PUBLIC_LIBRARIES = libglpdepth.a
+PUBLIC_INCLUDES = libnewcrfs.h
+PUBLIC_LIBRARIES = libnewcrfs.a
 PUBLIC_BINARIES = 
 
-TARGETS = libglpdepth.a
+TARGETS = libnewcrfs.a
 PUBLIC_LIBRARIES_SO =
 
-libglpdepth.a: libglpdepth.o
+libnewcrfs.a: libnewcrfs.o
 
 MYDIR = ckpt
 
@@ -37,10 +37,10 @@ create_ckpt:
 	[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
 
 download: create_ckpt download_kitti 
-			mv best_model_kitti.ckpt ckpt/
+			mv model_kittieigen.ckpt ckpt/
 
 download_kitti:
-	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1dipQoGbTTa6LOEPTBvG5Z66rBCl8t9W7/view?usp=sharing best_model_kitti.ckpt
+	$(CARMEN_HOME)/bin/gdown.pl https://virutalbuy-public.oss-cn-hangzhou.aliyuncs.com/share/newcrfs/models/model_kittieigen.ckpt model_kittieigen.ckpt
 
 
 # https://stackoverflow.com/questions/7369145/activating-a-virtualenv-using-a-shell-script-doesnt-seem-to-work

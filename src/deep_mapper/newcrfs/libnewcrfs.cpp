@@ -2,34 +2,34 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include <iostream>
-#include "libglpdepth.h"
+#include "libnewcrfs.h"
 #include <stdlib.h> /* getenv */
 
 #define NUMPY_IMPORT_ARRAY_RETVAL
 
-PyObject *python_libglpdepth_process_image_function;
+PyObject *python_libnewcrfs_process_image_function;
 
-void initialize_python_path_glpdepth()
+void initialize_python_path_newcrfs()
 {
 	char *pyPath;
 	char *pPath;
-	char *glpdepthPath;
+	char *newcrfsPath;
 	pyPath = (char *)"PYTHONPATH=";
 	pPath = getenv("CARMEN_HOME");
-	glpdepthPath = (char *)"/src/deep_mapper/GLPDepth";
-	char *path = (char *)malloc(1 + strlen(pyPath) + strlen(pPath) + strlen(glpdepthPath));
+	newcrfsPath = (char *)"/src/deep_mapper/newcrfs";
+	char *path = (char *)malloc(1 + strlen(pyPath) + strlen(pPath) + strlen(newcrfsPath));
 	strcpy(path, pyPath);
 	strcat(path, pPath);
-	strcat(path, glpdepthPath);
+	strcat(path, newcrfsPath);
 	putenv(path);
 }
 
-void initialize_python_context_glpdepth()
+void initialize_python_context_newcrfs()
 {
-	initialize_python_path_glpdepth();
+	initialize_python_path_newcrfs();
 	Py_Initialize();
 	import_array();
-	PyObject *python_module = PyImport_ImportModule("run_glpdepth");
+	PyObject *python_module = PyImport_ImportModule("run_newcrfs");
 
 	if (PyErr_Occurred())
 		PyErr_Print();
@@ -37,7 +37,7 @@ void initialize_python_context_glpdepth()
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		exit(printf("Error: The python_module run_glpdepth could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
+		exit(printf("Error: The python_module run_newcrfs could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
 
 	if (PyErr_Occurred())
@@ -65,28 +65,28 @@ void initialize_python_context_glpdepth()
 	// Py_DECREF(python_arguments);
 	// Py_DECREF(python_initialize_function);
 
-	python_libglpdepth_process_image_function = PyObject_GetAttrString(python_module, (char *)"glp_process_image");
+	python_libnewcrfs_process_image_function = PyObject_GetAttrString(python_module, (char *)"newcrfs_process_image");
 
 	if (PyErr_Occurred())
 		PyErr_Print();
 
-	if (python_libglpdepth_process_image_function == NULL || !PyCallable_Check(python_libglpdepth_process_image_function))
+	if (python_libnewcrfs_process_image_function == NULL || !PyCallable_Check(python_libnewcrfs_process_image_function))
 	{
 		// Py_DECREF(python_module);
 		Py_Finalize();
-		exit(printf("Error: Could not load the glp_process_image.\n"));
+		exit(printf("Error: Could not load the newcrfs_process_image.\n"));
 	}
 
 	if (PyErr_Occurred())
 		PyErr_Print();
 
-	printf("Success: Loaded GLPDepth\n");
+	printf("Success: Loaded newcrfs\n");
 }
 
 unsigned char *
-libglpdepth_process_image(int width, int height, unsigned char *image, int cut_param, int down_param)
+libnewcrfs_process_image(int width, int height, unsigned char *image, int cut_param, int down_param)
 {
-	// printf("libglpdepth_process_image\n");
+	// printf("libnewcrfs_process_image\n");
 	npy_intp dims[3] = {height, width, 3};
 	PyObject *numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);
 
@@ -101,7 +101,7 @@ libglpdepth_process_image(int width, int height, unsigned char *image, int cut_p
 
 	if (PyErr_Occurred())
 		PyErr_Print();
-	PyArrayObject *python_result_array = (PyArrayObject *)PyObject_CallFunctionObjArgs(python_libglpdepth_process_image_function, numpyArray, numpyCutParam, numpyDownParam, NULL);
+	PyArrayObject *python_result_array = (PyArrayObject *)PyObject_CallFunctionObjArgs(python_libnewcrfs_process_image_function, numpyArray, numpyCutParam, numpyDownParam, NULL);
 
 	if (PyErr_Occurred())
 		PyErr_Print();
