@@ -87,6 +87,7 @@ typedef struct _sensor_parameters
 	int vertical_resolution;
 	int *ray_order;
 	double unsafe_height_above_ground;
+	int sensor_reference;			// If it is in reference in relation to the sensorboard (0), to the front_bullbar (1), or the rear_bullbar (2)
 
 	double sigma_zhit, zhit, zshort, zmax, zrand;
 	double lambda_short;

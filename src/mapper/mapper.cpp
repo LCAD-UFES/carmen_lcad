@@ -49,6 +49,7 @@ sensor_parameters_t *sensors_params;
 sensor_data_t *sensors_data;
 extern int number_of_sensors;
 carmen_pose_3D_t front_bullbar_pose;
+carmen_pose_3D_t rear_bullbar_pose;
 carmen_pose_3D_t laser_ldmrs_pose;
 double mapper_unsafe_height_above_ground;
 int publish_moving_objects_raw_map;
@@ -2293,6 +2294,11 @@ carmen_mapper_sort_vertical_correction_angles(sensor_parameters_t params)
 void
 carmen_mapper_get_lidars_sensor_params()
 {
+#ifdef USE_REAR_BULLBAR
+	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, rear_bullbar_pose};
+#endif
+
 	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
 	{
 		if (!sensors_params[i + 10].alive)
@@ -2310,7 +2316,12 @@ carmen_mapper_get_lidars_sensor_params()
 
 		sensors_params[i + 10].name = lidar_config[i].model;
 		sensors_params[i + 10].pose = lidar_config[i].pose;
+#ifdef USE_REAR_BULLBAR
+		sensors_params[i + 10].sensor_reference = lidar_config[i].sensor_reference;
+		sensors_params[i + 10].sensor_support_pose = choosed_sensor_referenced[sensors_params[i + 10].sensor_reference];
+#else
 		sensors_params[i + 10].sensor_support_pose = sensor_board_1_pose;
+#endif
 		sensors_params[i + 10].support_to_car_matrix = create_rotation_matrix(sensors_params[i + 10].sensor_support_pose.orientation);
 		
 		sensors_params[i + 10].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i + 10].pose.orientation);
@@ -2343,6 +2354,10 @@ carmen_mapper_get_lidars_sensor_params()
 
 		carmen_mapper_sort_ray_order_by_vertical_correction_angles(sensors_params[i + 10]);
 		carmen_mapper_sort_vertical_correction_angles(sensors_params[i + 10]);
+#ifdef USE_REAR_BULLBAR
+		sensors_params[i + 10].sensor_reference = lidar_config[i].sensor_reference;
+#endif
+
 	}
 }
 
@@ -2666,6 +2681,14 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "front_bullbar",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.pitch),0, NULL},
 		{(char *) "front_bullbar",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.yaw),	0, NULL},
 
+#ifdef USE_REAR_BULLBAR
+		{(char *) "rear_bullbar",  (char *) "x", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.position.x),	0, NULL},
+		{(char *) "rear_bullbar",  (char *) "y", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.position.y),	0, NULL},
+		{(char *) "rear_bullbar",  (char *) "z", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.position.z),	0, NULL},
+		{(char *) "rear_bullbar",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.orientation.roll),0, NULL},
+		{(char *) "rear_bullbar",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.orientation.pitch),0, NULL},
+		{(char *) "rear_bullbar",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.orientation.yaw),	0, NULL},
+#endif
 		{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 1, get_sensors_param_pose_handler},
 		{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 1, get_sensors_param_pose_handler},
 		{(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 1, get_sensors_param_pose_handler},

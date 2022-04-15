@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+//#define USE_REAR_BULLBAR
+
 typedef struct
 {
 	char *model;
@@ -20,6 +22,7 @@ typedef struct
 	carmen_pose_3D_t pose;          // x, y, z, roll, pitch, yaw
 	int *ray_order;                 // Order of the laser beams from the bottom up
 	double *vertical_angles;        // Angles beteween laser beams in the same shot
+	int sensor_reference;			// If it is in reference in relation to the sensorboard (0), to the front_bullbar (1), or the rear_bullbar (2)
 }carmen_lidar_config;
 
 typedef struct
