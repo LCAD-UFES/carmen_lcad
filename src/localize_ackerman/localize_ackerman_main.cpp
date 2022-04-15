@@ -59,7 +59,7 @@ using namespace cv;
 
 #define PREDICT_BETA_GSL_ERROR_CODE 100.0
 //#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
-#define MIN_DISTANCE_BETWEEN_POINTS	(0.6)
+#define MIN_DISTANCE_BETWEEN_POINTS	(1.0)
 
 #define MIN_CLUSTER_SIZE			10
 
@@ -224,7 +224,7 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 	}
 	fclose(graph_file);
 
-	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated', 'caco_localize_before-cluster.txt' u 1:2 t 'before_cluster'\n");
+	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");//, 'caco_localize_before-cluster.txt' u 1:2 t 'before_cluster'\n");
 	fflush(gnuplot_pipe);
 }
 
@@ -423,7 +423,7 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 //	}
 //	fclose(debug_file);
 
-	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
+//	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
 
 	return (num_filtered_points);
 }
