@@ -357,6 +357,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	static double 	integral_t_1 = 0.0;
 	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
 	static double	previous_t = 0.0;
+	static double	current_max_break_effort = 0.0;
 
 	if (previous_t == 0.0)
 	{
@@ -385,7 +386,8 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		error_t_1 = integral_t = integral_t_1 = 0.0;
 
 		*throttle_command = 0.0;
-		*brakes_command = g_max_brake_effort;
+		current_max_break_effort = current_max_break_effort + 0.03 * (g_max_brake_effort - current_max_break_effort);
+		*brakes_command = current_max_break_effort;
 //		*brakes_command = *brakes_command + NEAR_ZERO_V * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
 
 		if ((desired_velocity > 0.0) && (current_velocity >= -NEAR_ZERO_V))
@@ -411,6 +413,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			*brakes_command = 0.0;
 		else
 			*brakes_command = g_brake_gap;
+		current_max_break_effort = 0.0;
 
 		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
 		{
@@ -428,6 +431,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		*throttle_command = 0.0;
 		*brakes_command = -u_t + g_brake_gap;
+		current_max_break_effort = 0.0;
 
 		if ((desired_velocity > 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && u_t > 0.0)
 		{
@@ -449,6 +453,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			*brakes_command = 0.0;
 		else
 			*brakes_command = g_brake_gap;
+		current_max_break_effort = 0.0;
 
 		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)))
 		{
@@ -466,6 +471,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		*throttle_command = 0.0;
 		*brakes_command = u_t + g_brake_gap;
+		current_max_break_effort = 0.0;
 
 		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)))
 		{
