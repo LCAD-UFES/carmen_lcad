@@ -224,7 +224,8 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 	}
 	fclose(graph_file);
 
-	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");//, 'caco_localize_before-cluster.txt' u 1:2 t 'before_cluster'\n");
+//	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");
+	fprintf(gnuplot_pipe, "plot 'caco_localize_before-cluster.txt' u 1:2 t 'before_cluster', 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");
 	fflush(gnuplot_pipe);
 }
 
@@ -351,6 +352,52 @@ generate_cluster_with_all_points(carmen_vector_3D_t *points, int size)
 
 
 int
+remove_begin_and_end_points(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
+{
+	double x_size = points_position_with_respect_to_car[num_filtered_points-1].x - points_position_with_respect_to_car[0].x; //get_points_x_size(num_filtered_points, points_position_with_respect_to_car);
+	double fraction_to_remove = x_size * 0.03;
+	int index_begin = 0;
+	int index_end = 0;
+	int new_number_filter_points = 0;
+	for(int i = 0; i < num_filtered_points; i++)
+	{
+		if(fabs(points_position_with_respect_to_car[i].x - points_position_with_respect_to_car[0].x) >= fraction_to_remove)
+		{
+			index_begin = i;
+			break;
+		}
+	}
+	if (num_filtered_points - index_begin > 9)
+	{
+
+		for(int i = (num_filtered_points - 1); i > 0; i--)
+		{
+			if(fabs(points_position_with_respect_to_car[num_filtered_points-1].x) - fabs(points_position_with_respect_to_car[i].x) >= fraction_to_remove)
+			{
+				index_end = i;
+				break;
+			}
+		}
+	}
+	else
+	{
+		index_end = num_filtered_points-1;
+	}
+
+	int j = index_begin;
+	for(int i = 0; j <= index_end; i++, j++)
+	{
+		points_position_with_respect_to_car[i] = points_position_with_respect_to_car[j];
+		new_number_filter_points++;
+	}
+//	printf("new_number_filter_points %d num_filtered_points %d x_size %lf, fraction_to_remove %lf, index_begin %d, index_end %d\n", new_number_filter_points, num_filtered_points, x_size, fraction_to_remove, index_begin, index_end);
+
+	return (new_number_filter_points);
+
+}
+
+
+int
 remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
 {
 	dbscan::Cluster single_cluster = generate_cluster_with_all_points(points_position_with_respect_to_car, num_filtered_points);
@@ -413,17 +460,19 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	}
 	qsort((void *) (points_position_with_respect_to_car), (size_t) num_filtered_points, sizeof(carmen_vector_3D_t), compare_x);
 
-//	FILE *debug_file;
-//
-//	debug_file = fopen("caco_localize_before-cluster.txt", "w");
-//	for (int i = 0; i < num_filtered_points; i++)
-//	{
-//		fprintf(debug_file, "%lf %lf %d\n",
-//				points_position_with_respect_to_car[i].x, points_position_with_respect_to_car[i].y, i);
-//	}
-//	fclose(debug_file);
+	FILE *debug_file;
 
-//	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
+	debug_file = fopen("caco_localize_before-cluster.txt", "w");
+	for (int i = 0; i < num_filtered_points; i++)
+	{
+		fprintf(debug_file, "%lf %lf %d\n",
+				points_position_with_respect_to_car[i].x, points_position_with_respect_to_car[i].y, i);
+	}
+	fclose(debug_file);
+
+	num_filtered_points = remove_begin_and_end_points(num_filtered_points, points_position_with_respect_to_car);
+
+	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
 
 	return (num_filtered_points);
 }
