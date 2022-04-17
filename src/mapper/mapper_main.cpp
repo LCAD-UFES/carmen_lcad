@@ -253,19 +253,12 @@ free_virtual_scan_message()
 	}
 }
 
+
 void
 update_sensor_reference_pose(double beta)
 {
 	//Alterar o rear_bullbar_pose por conta do beta
-	carmen_pose_3D_t temp_rear_bullbar_pose;
-	// a = h * cos(beta)
-	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta);
-	// b = h * sin(beta), y é adicionado por considerar situações na qual a posição da rear bullbar tenha um y diferente de 0 quando beta == 0
-	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.y + (rear_bullbar_pose.position.x * sin(beta));
-	temp_rear_bullbar_pose.position.z 			= rear_bullbar_pose.position.z;
-	temp_rear_bullbar_pose.orientation.pitch 	= rear_bullbar_pose.orientation.pitch;
-	temp_rear_bullbar_pose.orientation.roll 	= rear_bullbar_pose.orientation.roll;
-	temp_rear_bullbar_pose.orientation.yaw 		= rear_bullbar_pose.orientation.yaw - beta; // Verificar se soma o beta ou subtrai
+	carmen_pose_3D_t temp_rear_bullbar_pose = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta);
 
 	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
 	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, temp_rear_bullbar_pose};
@@ -454,7 +447,6 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 #ifdef USE_REAR_BULLBAR
 	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
-//	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, rear_bullbar_pose};
 	if (globalpos_message->semi_trailer_type != 0) // se for igual a 0 ele não é articulado e não precisa atualizar a rear_bullbar_pose
 		update_sensor_reference_pose(globalpos_message->beta);
 #endif

@@ -89,5 +89,4 @@ void get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attr
 
 void carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_robot_ackerman_config_t *p_car_config);
 
-
 #endif /* MAPPER_H_ */

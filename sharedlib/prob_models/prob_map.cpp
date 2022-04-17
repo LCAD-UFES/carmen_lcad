@@ -3400,3 +3400,18 @@ void carmen_prob_models_create_masked_distance_map_old(carmen_prob_models_distan
 
     }
 }
+
+carmen_pose_3D_t
+compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta)
+{
+	carmen_pose_3D_t temp_rear_bullbar_pose;
+	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
+	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
+
+	temp_rear_bullbar_pose.position.z 			= rear_bullbar_pose.position.z;
+	temp_rear_bullbar_pose.orientation.pitch 	= rear_bullbar_pose.orientation.pitch;
+	temp_rear_bullbar_pose.orientation.roll 	= rear_bullbar_pose.orientation.roll;
+	temp_rear_bullbar_pose.orientation.yaw 		= -(carmen_normalize_theta(rear_bullbar_pose.orientation.yaw + beta)); // Verificar se soma o beta ou subtrai
+
+	return temp_rear_bullbar_pose;
+}

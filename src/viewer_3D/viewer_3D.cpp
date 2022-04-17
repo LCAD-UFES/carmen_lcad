@@ -559,10 +559,10 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 				discarded_points++;
 				continue;
 			}
-			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(lidar_message->partial_scan[i].angle),
-					carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) lidar_message->partial_scan[i].distance[j] / (double) lidar_config.range_division_factor,
-					lidar_to_board_matrix, board_to_car_matrix, lidar_pose_position, sensor_board_1_pose_position);
 
+			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(lidar_message->partial_scan[i].angle),
+							carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) lidar_message->partial_scan[i].distance[j] / (double) lidar_config.range_division_factor,
+							lidar_to_board_matrix, board_to_car_matrix, lidar_pose_position, sensor_board_1_pose_position);
             carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position, &r_matrix_car_to_global);
 
 			lidar_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
@@ -591,6 +591,11 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 		point_cloud **lidar_point_cloud_vector, int &lidar_point_cloud_vector_max_size, int &lidar_point_cloud_vector_index,
 		carmen_lidar_config &lidar_config, int draw_lidar_flag, double &last_timestamp)
 {
+#ifdef USE_REAR_BULLBAR
+	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, rear_bullbar_pose};
+#endif
+
     int discarded_points = 0;
     int num_points = 0;
 
@@ -634,10 +639,21 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->timestamp = message->timestamp;
 
 	rotation_matrix *lidar_to_board_matrix = create_rotation_matrix(lidar_config.pose.orientation);
+#ifdef USE_REAR_BULLBAR
+	if (semi_trailer_config.type != 0)
+	{
+		choosed_sensor_referenced[lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta);
+	}
+	rotation_matrix *board_to_car_matrix = create_rotation_matrix(choosed_sensor_referenced[lidar_config.sensor_reference].orientation);
+
+	discarded_points = convert_variable_scan_message_to_point_cloud(lidar_point_cloud_vector[lidar_point_cloud_vector_index], message, lidar_config,
+			lidar_to_board_matrix, board_to_car_matrix, lidar_config.pose.position, choosed_sensor_referenced[lidar_config.sensor_reference].position);
+#else
 	rotation_matrix *board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 
 	discarded_points = convert_variable_scan_message_to_point_cloud(lidar_point_cloud_vector[lidar_point_cloud_vector_index], message, lidar_config,
 			lidar_to_board_matrix, board_to_car_matrix, lidar_config.pose.position, sensor_board_1_pose.position);
+#endif
 
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->num_points -= discarded_points;
 
@@ -832,7 +848,7 @@ draw_everything()
 
 		glPointSize(1);
 		glColor3f(0.0f, 0.0f, 1.0f);
-		rear_bullbar_pose.orientation.yaw += 0.2;
+//		rear_bullbar_pose.orientation.yaw += 0.2;
 		glPushMatrix();
 		position = get_world_position(REAR_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE, rear_bullbar_left_corner_hierarchy);
 		glTranslatef(position.x, position.y, position.z);

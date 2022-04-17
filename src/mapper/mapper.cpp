@@ -2316,12 +2316,14 @@ carmen_mapper_get_lidars_sensor_params()
 
 		sensors_params[i + 10].name = lidar_config[i].model;
 		sensors_params[i + 10].pose = lidar_config[i].pose;
+
 #ifdef USE_REAR_BULLBAR
 		sensors_params[i + 10].sensor_reference = lidar_config[i].sensor_reference;
 		sensors_params[i + 10].sensor_support_pose = choosed_sensor_referenced[sensors_params[i + 10].sensor_reference];
 #else
 		sensors_params[i + 10].sensor_support_pose = sensor_board_1_pose;
 #endif
+
 		sensors_params[i + 10].support_to_car_matrix = create_rotation_matrix(sensors_params[i + 10].sensor_support_pose.orientation);
 		
 		sensors_params[i + 10].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i + 10].pose.orientation);
