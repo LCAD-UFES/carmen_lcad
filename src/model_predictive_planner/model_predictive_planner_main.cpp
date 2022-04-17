@@ -136,8 +136,8 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 void
 publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailer_path_point_t> &original_path, double timestamp)
 {
-//	vector<carmen_robot_and_trailer_path_point_t> path = smooth_short_path(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
-	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
+	vector<carmen_robot_and_trailer_path_point_t> path = smooth_short_path(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
+//	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
 //	print_path_(path);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }
@@ -510,12 +510,12 @@ build_and_follow_path(double timestamp)
 			GlobalState::robot_config.max_v = 0.0;
 			if (GlobalState::following_path)
 			{
-				last_phi *= 0.99;
+				last_phi *= 0.95;
 				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
 			}
 			else	// Stop button
 			{
-				last_phi *= 0.99;
+				last_phi *= 0.9;
 				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
 			}
 		}
@@ -539,12 +539,12 @@ build_and_follow_path(double timestamp)
 				GlobalState::robot_config.max_v = 0.0;
 				if (GlobalState::following_path)
 				{
-					last_phi *= 0.99;
+					last_phi *= 0.95;
 					publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
 				}
 				else	// Stop button
 				{
-					last_phi *= 0.99;
+					last_phi *= 0.9;
 					publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
 				}
 			}
@@ -575,12 +575,12 @@ build_and_follow_path_new(double timestamp)
 		{
 			if (GlobalState::following_path)
 			{
-				last_phi *= 0.99;
+				last_phi *= 0.95;
 				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
 			}
 			else	// Stop button
 			{
-				last_phi *= 0.99;
+				last_phi *= 0.9;
 				publish_path_follower_single_motion_command(0.0, last_phi, timestamp);
 			}
 		}
