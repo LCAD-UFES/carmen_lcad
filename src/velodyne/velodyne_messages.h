@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define USE_REAR_BULLBAR
+//#define USE_REAR_BULLBAR
 
 typedef struct
 {
