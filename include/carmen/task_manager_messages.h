@@ -17,6 +17,11 @@ typedef enum
 	MISSION_FAILED
 } carmen_task_manager_mission_level_state_t;
 
+#define print_mission_level_state(x) ( \
+	(x == STARTING_MISSION)? "STARTING_MISSION": \
+	(x == MISSION_COMPLETED)? "MISSION_COMPLETED": \
+	(x == MISSION_FAILED)? "MISSION_FAILED": "")
+
 //Sugestao-pensar-sobre
 //typedef enum
 //{
