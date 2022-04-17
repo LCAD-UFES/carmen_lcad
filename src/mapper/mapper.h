@@ -14,7 +14,7 @@
 
 #define NUMBER_OF_SENSORS 25      // The number_of_sensors must be the maximun number of sensors: 25 
 
-//#define USE_REAR_BULLBAR
+#define USE_REAR_BULLBAR
 
 void mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map);
 

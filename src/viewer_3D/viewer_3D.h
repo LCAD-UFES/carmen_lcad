@@ -6,7 +6,7 @@
 #define WINDOW_WIDTH	1000.0
 #define WINDOW_HEIGHT	600.0
 
-//#define USE_REAR_BULLBAR
+#define USE_REAR_BULLBAR
 
 
 struct _point_cloud
