@@ -51,6 +51,7 @@ static double g_velocity_backward_deccelerating_Ki;
 static double g_velocity_backward_deccelerating_Kd;
 static double g_brake_gap;
 static double g_max_brake_effort;
+static double g_maximum_steering_command_rate;
 
 static int robot_model_id = 0;
 
@@ -179,6 +180,15 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	if (delta_t < (0.7 * (1.0 / 40.0)))
 		return (u_t);
 
+	double desired_curvature = tan(atan_desired_curvature);
+	double current_curvature = tan(atan_current_curvature);
+	double delta_curvature = fabs(desired_curvature - current_curvature);
+	double command_curvature_signal = (current_curvature < desired_curvature) ? 1.0 : -1.0;
+	double max_curvature_change = g_maximum_steering_command_rate * delta_t;
+
+	double achieved_curvature = current_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
+	atan_desired_curvature = atan(achieved_curvature);
+
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
 	if (manual_override == 0)
@@ -186,7 +196,6 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	else
 		integral_t = integral_t_1 = 0.0;
 
-//	double derivative_t = (error_t - error_t_1) / delta_t;
 	double derivative_t = (error_t - error_t_1) / delta_t;
 
 	u_t = g_steering_Kp * error_t +
@@ -201,9 +210,6 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	integral_t_1 = integral_t;
 
 	previous_t = t;
-
-//	if (atan_desired_curvature != 0.0)
-//		u_t = 13.0;
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
@@ -563,6 +569,7 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Kd, 0, NULL},
 		{(char *)"robot", (char *)"PID_velocity_brake_gap", CARMEN_PARAM_DOUBLE, &g_brake_gap, 0, NULL},
 		{(char *)"robot", (char *)"PID_velocity_max_brake_effort", CARMEN_PARAM_DOUBLE, &g_max_brake_effort, 0, NULL},
+		{(char *)"robot", (char *)"maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &g_maximum_steering_command_rate, 0, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
