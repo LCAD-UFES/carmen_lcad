@@ -806,15 +806,6 @@ set_goal_velocity_according_to_obstacle_distance(carmen_robot_and_trailer_traj_p
 	return (goal->v);
 }
 
-//@@@Vinicius Aqui o target_v nao pode ser negativo atrapalharah os teste de fmin.
-//Deve-se ter cuidado com a current_v, na funcao atual, nao faz diferenca o sinal, porem seria melhor usar fabs para garantir
-
-// Os globais abaixo sao necessarios por cause de plot_state() e smooth_rddf_using_conjugate_gradient()
-//double traffic_sign_curvature;
-//int traffic_sign_is_on;
-//int state_traffic_sign_code;
-//int traffic_sign_code;
-//double state_traffic_sign_curvature;
 
 double
 limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_robot_and_trailer_traj_point_t *goal,
@@ -870,19 +861,87 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 	{
 		double radius_of_curvature = L / fabs(tan(max_path_phi));
 		double desired_v = sqrt(robot_max_centripetal_acceleration * radius_of_curvature);
-		if (desired_v < target_v)
+		if (target_v < 0.0)
+			desired_v = -desired_v;
+
+		if (fabs(desired_v) < fabs(target_v))
 		{
 			carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
 			double dist_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal);
 			double velocity_at_goal = get_velocity_at_goal(current_v, desired_v, dist_to_goal, dist_to_max_curvature);
-			if (velocity_at_goal < target_v)
+			if (fabs(velocity_at_goal) < fabs(target_v))
 				limited_target_v = velocity_at_goal;
 		}
 	}
 
 	free(original_path_copy);
 
-	return (carmen_fmin(limited_target_v, target_v));
+	return (limited_target_v);
+}
+
+
+double
+limit_maximum_velocity_according_to_maximum_steering_command_rate(carmen_robot_and_trailer_traj_point_t *goal,
+		carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, int number_of_poses)
+{
+	double target_v = goal->v;
+	if (number_of_poses < 6)
+		return (target_v);
+
+	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+	memcpy(path, poses_ahead, number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+
+	carmen_robot_and_trailer_traj_point_t *original_path_copy = path;
+	path = &(path[1]);
+	number_of_poses -= 1;
+	for (int i = 0; i < ((number_of_poses / 4) - 1); i++)
+		path[i] = path[i * 4];
+	number_of_poses /= 4;
+//	plot_state(path, number_of_poses, NULL, 0, true);
+
+	double L = get_robot_config()->distance_between_front_and_rear_axles;
+	for (int i = 0; i < (number_of_poses - 1); i++)
+	{
+		double delta_theta = carmen_normalize_theta(path[i + 1].theta - path[i].theta);
+		double l = DIST2D(path[i], path[i + 1]);
+		path[i].phi = atan(L * (delta_theta / l));
+	}
+
+	double previous_curvature = fabs(current_robot_pose_v_and_phi->phi) / L;
+	double limited_target_v = target_v;
+	double max_allowed_v = fabs(target_v);
+	double total_s = 0.0;
+	for (int i = 1; i < (number_of_poses - 1); i++)
+	{
+		double s = DIST2D(path[i], path[i - 1]);
+		total_s += s;
+		if (total_s > (1.3 * DIST2D(path[i], *goal)))
+			break;
+		double delta_t = s / fabs(target_v);
+//		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+		double curvature = fabs(tan(path[i].phi)) / L;
+		double delta_curvature = fabs(curvature - previous_curvature);
+		double steering_command_rate = delta_curvature / delta_t;
+		if (steering_command_rate > (robot_config.maximum_steering_command_rate * 0.7))
+		{
+			delta_t = delta_curvature / (robot_config.maximum_steering_command_rate * 0.7);
+			double v = s / delta_t;
+			if (v < max_allowed_v)
+				max_allowed_v = v;
+			if (target_v > 0.0)
+				limited_target_v = max_allowed_v;
+			else
+				limited_target_v = -max_allowed_v;
+//			printf("  limited_target_v %lf, target_v %lf\n", limited_target_v, target_v);
+		}
+		previous_curvature = curvature;
+	}
+//	printf("* limited_target_v %lf, target_v %lf\n", limited_target_v, target_v);
+
+	free(original_path_copy);
+
+	return (limited_target_v);
 }
 
 extern SampleFilter filter2;
@@ -1058,37 +1117,6 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_OBSTACLE;
 
-	previous_v = goal->v; //@@@Vinicius target_v nao pode ser negativo esse robot_pose eh diferente do current..pose_v? tratar ele para garantir de nao ser usado errado
-	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
-			last_rddf_message->poses, last_rddf_message->number_of_poses);
-	if (previous_v != goal->v)
-		who_set_the_goal_v = CENTRIPETAL_ACCELERATION;
-
-	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
-	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, path_collision_info,
-			behavior_selector_state_message, timestamp);
-	if (previous_v != goal->v)
-		who_set_the_goal_v = ANNOTATION;
-
-	previous_v = goal->v;
-	if (keep_speed_limit) //@@@Vinicius Aqui gol_v nao pode ser negativo fmin
-	{
-//		static bool into_narrow_passage = false;
-		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
-//		if ((last_speed_limit == 10.0 / 3.6) && !into_narrow_passage)
-//		{
-//			carmen_task_manager_publish_set_collision_geometry_message(ENGAGE_GEOMETRY, timestamp);
-//			into_narrow_passage = true;
-//		}
-//		if (into_narrow_passage && (last_speed_limit > 10.0 / 3.6))
-//		{
-//			carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, timestamp);
-//			into_narrow_passage = false;
-//		}
-	}
-	if (previous_v != goal->v)
-		who_set_the_goal_v = KEEP_SPEED_LIMIT;
-
 	previous_v = goal->v; //Limita a velocidade quando o offroad eh acionado, tanto para frente quanto para reh
 	if (((road_network_message != NULL) && (road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) &&
 		 (((reversing_driving == 0) && (goal->v > parking_speed_limit)) || ((reversing_driving == 1) && (goal->v < parking_speed_limit)))) ||
@@ -1101,12 +1129,30 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 		who_set_the_goal_v = PARKING_MANOUVER;
 
 	previous_v = goal->v;
+	if (keep_speed_limit) //@@@Vinicius Aqui gol_v nao pode ser negativo fmin
+		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
+	if (previous_v != goal->v)
+		who_set_the_goal_v = KEEP_SPEED_LIMIT;
+
+	previous_v = goal->v;
 	if (((road_network_message != NULL) && (road_network_message->route_planner_state == IN_RECTLINEAR_ROUTE_SEGMENT) &&
 		 (goal->v > move_to_engage_pose_speed_limit)) ||
 	 	(behavior_selector_get_task() == BEHAVIOR_SELECTOR_MOVE_TO_ENGAGE_POSE))
 	 	goal->v = (reversing_driving == 1)? -move_to_engage_pose_speed_limit : move_to_engage_pose_speed_limit;
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_TO_ENGAGE_POSE_MANOUVER;
+
+	previous_v = goal->v; //@@@Vinicius target_v nao pode ser negativo esse robot_pose eh diferente do current..pose_v? tratar ele para garantir de nao ser usado errado
+	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
+			last_rddf_message->poses, last_rddf_message->number_of_poses);
+	if (previous_v != goal->v)
+		who_set_the_goal_v = CENTRIPETAL_ACCELERATION;
+
+	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
+	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, path_collision_info,
+			behavior_selector_state_message, timestamp);
+	if (previous_v != goal->v)
+		who_set_the_goal_v = ANNOTATION;
 
 	previous_v = goal->v;
 	if (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL)
@@ -1133,67 +1179,14 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	}
 
 	previous_v = goal->v;
+	goal->v = limit_maximum_velocity_according_to_maximum_steering_command_rate(goal, current_robot_pose_v_and_phi, last_rddf_message->poses, last_rddf_message->number_of_poses);
+	if (previous_v != goal->v)
+		who_set_the_goal_v = STEERING_COMMAND_RATE;
+
+	previous_v = goal->v;
 	goal->v = set_goal_velocity_according_to_state_machine(goal, behavior_selector_state_message);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STATE_MACHINE;
-//	previous_v = goal->v;
-//	if (behavior_selector_reverse_driving &&
-//		(goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL) &&
-//		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
-//		(fabs(current_robot_pose_v_and_phi->v) < 0.2))
-//	{
-//		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
-//
-//		if (initial_dist == 0.0)
-//		{
-//			initial_dist = path_dist;
-//			intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);
-//			activate_intermediate_velocity = 1;
-//		}
-//	}
-//
-//	if (behavior_selector_reverse_driving && activate_intermediate_velocity &&
-//	    (goal_type == SWITCH_VELOCITY_SIGNAL_GOAL || goal_type == FINAL_GOAL))
-//	{
-//		path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
-//
-//		if ((path_dist < 1.0) || (initial_dist / 2.0 > path_dist))
-//		{
-//			goal->v = 0.0;
-//			initial_dist = 0.0;
-//			activate_intermediate_velocity = 0;
-//		}
-//		else
-//		{
-//			if (reversing_driving)
-//				goal->v = -intermediate_velocity;
-//			else
-//				goal->v = intermediate_velocity;
-//		}
-//
-//		if (previous_v != goal->v)
-//			who_set_the_goal_v = INTERMEDIATE_VELOCITY;
-//	}
-
-//	printf("goal->v %5.2lf, who_set_the_goal_v %d\n", 3.6 * goal->v, who_set_the_goal_v);
-//	fflush(stdout);
-//	previous_v = goal->v;
-//	double distance_to_act_on_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, 0.0,
-//					DIST2D_P(current_robot_pose_v_and_phi, goal));
-//	double distance_to_goal = DIST2D_P(current_robot_pose_v_and_phi, goal);
-//	if ((goal_type == SWITCH_VELOCITY_SIGNAL_GOAL) && (distance_to_act_on_goal >= distance_to_goal))
-//		goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v,
-//							  	  0.0, distance_to_goal, DIST2D_P(current_robot_pose_v_and_phi, goal)),
-//							  fabs(goal->v));
-//	if (previous_v != goal->v)
-//		who_set_the_goal_v = WAIT_SWITCH_VELOCITY_SIGNAL;
-//
-////	printf("1 - goal v %lf, who_set_the_goal_v %d\n", goal->v, who_set_the_goal_v);
-//
-//	previous_v = goal->v; //@@@Vinicius Aqui tem que tratar as anotacoes para frente dependendo da direcao que o carro ta indo e alguns Fmin (Tratado)
-//	goal->v = set_goal_velocity_according_to_final_goal(goal, goal_type, current_robot_pose_v_and_phi);
-//	if (previous_v != goal->v)
-//		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
 	previous_v = goal->v;
 

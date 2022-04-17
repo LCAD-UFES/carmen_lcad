@@ -815,7 +815,7 @@ limit_goal_distance_according_to_radius_of_curvature(double &dist_to_min_radius_
 
 	free(original_path_copy);
 
-	printf("min_radius_of_curvature %lf, dist_to_min_radius_of_curvature %lf\n", min_radius_of_curvature, dist_to_min_radius_of_curvature);
+//	printf("min_radius_of_curvature %lf, dist_to_min_radius_of_curvature %lf\n", min_radius_of_curvature, dist_to_min_radius_of_curvature);
 
 	return (min_radius_of_curvature);
 }
