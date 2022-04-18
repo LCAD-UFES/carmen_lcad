@@ -3406,11 +3406,11 @@ compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double be
 {
 	beta = -beta;
 	carmen_pose_3D_t temp_rear_bullbar_pose;
-//	temp_rear_bullbar_pose.position.x 			= -((semi_trailer_config.d + semi_trailer_config.distance_between_axle_and_back) * cos(beta) + semi_trailer_config.M) + rear_bullbar_pose.position.y * sin(beta);
-//	temp_rear_bullbar_pose.position.y 			= (semi_trailer_config.d + semi_trailer_config.distance_between_axle_and_back) * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
+	temp_rear_bullbar_pose.position.x 			= -semi_trailer_config.M + rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
+	temp_rear_bullbar_pose.position.y 			= 						   rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
 
-	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
-	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
+//	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
+//	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
 
 	temp_rear_bullbar_pose.position.z 			= rear_bullbar_pose.position.z;
 	temp_rear_bullbar_pose.orientation.pitch 	= rear_bullbar_pose.orientation.pitch;
