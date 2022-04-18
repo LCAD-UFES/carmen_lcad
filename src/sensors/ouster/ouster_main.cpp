@@ -22,6 +22,8 @@ namespace OS1 = ouster::OS1;
 #define OS164 2
 
 char *ouster_ip = NULL;
+int ouster_port = 7502;
+int ouster_imu_port = 7503;
 char *host_ip = NULL;
 char *string_mode = NULL;
 int ouster_sensor_id = 0;
@@ -472,6 +474,8 @@ read_parameters(int argc, char **argv)
     carmen_param_t param_list[] =
     {
     		{lidar_string, (char *) "model", CARMEN_PARAM_STRING, &lidar_string_model, 0, NULL},
+			{lidar_string, (char *) "port", CARMEN_PARAM_INT, &ouster_port, 0, NULL},
+			{lidar_string, (char *) "imu_port", CARMEN_PARAM_INT, &ouster_imu_port, 0, NULL}
     };
     int num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
@@ -541,7 +545,7 @@ main(int argc, char** argv)
 
     ouster::OS1::lidar_mode mode_code = get_mode_code(string_mode);
 
-    std::shared_ptr<OS1::client> cli = OS1::init_client(ouster_ip, host_ip, mode_code);
+    std::shared_ptr<OS1::client> cli = OS1::init_client(ouster_ip, host_ip, mode_code, ouster_port, ouster_imu_port);
 
     if (!cli) 
     {
@@ -550,7 +554,7 @@ main(int argc, char** argv)
     }
     else
     {
-        std::cerr << "Successfully connected to sensor: " << ouster_ip << std::endl;
+        std::cerr << "Successfully connected to sensor: " << ouster_ip << " port: " << ouster_port << std::endl;
         std::cerr << "Sensor model: " << lidar_string_model << std::endl;
         std::cerr << "Wait 15-20 seconds to start receiving point clouds." << std::endl;
     }

@@ -47,7 +47,11 @@ Disconnect from the link-local-Only network and connect the SensorBox Network
 
 # Set the laser to run at 20hz
 got to the page http://os-122144000315.local/ or http://192.168.1.200/
-got to the Tab: Configuration and change the Lidar Mode to 1024x20 and Apply Config
+got to the Tab: Configuration and:
+	 change the Lidar Mode to 1024x20
+	 and if you will use two LIDARS ouster together, change the lidar and imu ports
+ 	Apply Config and Save Config
+
 
 To get the vertical angles and azimuth_angles (the rays of some ouster sensors aren't aligned!)
 run:
