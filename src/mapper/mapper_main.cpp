@@ -258,7 +258,7 @@ void
 update_sensor_reference_pose(double beta)
 {
 	//Alterar o rear_bullbar_pose por conta do beta
-	carmen_pose_3D_t temp_rear_bullbar_pose = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta);
+	carmen_pose_3D_t temp_rear_bullbar_pose = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
 
 	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
 	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, temp_rear_bullbar_pose};

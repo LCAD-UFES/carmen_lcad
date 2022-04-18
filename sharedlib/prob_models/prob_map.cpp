@@ -3402,10 +3402,13 @@ void carmen_prob_models_create_masked_distance_map_old(carmen_prob_models_distan
 }
 
 carmen_pose_3D_t
-compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta)
+compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta, carmen_semi_trailer_config_t semi_trailer_config)
 {
 	beta = -beta;
 	carmen_pose_3D_t temp_rear_bullbar_pose;
+//	temp_rear_bullbar_pose.position.x 			= -((semi_trailer_config.d + semi_trailer_config.distance_between_axle_and_back) * cos(beta) + semi_trailer_config.M) + rear_bullbar_pose.position.y * sin(beta);
+//	temp_rear_bullbar_pose.position.y 			= (semi_trailer_config.d + semi_trailer_config.distance_between_axle_and_back) * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
+
 	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
 	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
 
