@@ -4,7 +4,7 @@ MODULE_NAME = LIBVELODYNE
 MODULE_COMMENT = Velodyne Library for UDP Access
 
 LINK = g++
-CXXFLAGS += -g
+CXXFLAGS +=
 LFLAGS += -lglobal -lipc 
  
 SOURCES = input.cpp driver.cpp main.cpp
