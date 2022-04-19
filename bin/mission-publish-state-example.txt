@@ -34,4 +34,4 @@ stop # tira de modo autonomo
 
 publish mission state MISSION_COMPLETED NTI
 
-restart
+#restart
