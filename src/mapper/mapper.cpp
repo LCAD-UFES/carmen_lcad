@@ -2047,7 +2047,7 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 	sensors_params = (sensor_parameters_t *) calloc(number_of_sensors, sizeof(sensor_parameters_t));
 	carmen_test_alloc(sensors_params);
 
-	sensors_data = (sensor_data_t *) calloc(25, sizeof(sensor_data_t));
+	sensors_data = (sensor_data_t *) calloc(number_of_sensors, sizeof(sensor_data_t));
 	carmen_test_alloc(sensors_data);
 
 	carmen_param_t param_list[] =
