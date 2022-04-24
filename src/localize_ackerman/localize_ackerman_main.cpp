@@ -1,31 +1,3 @@
-/*********************************************************
- *
- * This source code is part of the Carnegie Mellon Robot
- * Navigation Toolkit (CARMEN)
- *
- * CARMEN Copyright (c) 2002 Michael Montemerlo, Nicholas
- * Roy, Sebastian Thrun, Dirk Haehnel, Cyrill Stachniss,
- * and Jared Glover
- *
- * CARMEN is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; 
- * either version 2 of the License, or (at your option)
- * any later version.
- *
- * CARMEN is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more 
- * details.
- *
- * You should have received a copy of the GNU General 
- * Public License along with CARMEN; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, 
- * Suite 330, Boston, MA  02111-1307 USA
- *
- ********************************************************/
-
 #include <carmen/carmen.h>
 #include <carmen/robot_ackerman_messages.h>
 #include <carmen/robot_ackerman_interface.h>
@@ -67,13 +39,11 @@ using namespace cv;
 
 static int necessary_maps_available = 0;
 
-#define BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE 50
-static carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
-static int base_ackerman_odometry_index = -1;
+carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
+int base_ackerman_odometry_index = -1;
 
-#define FUSED_ODOMETRY_VECTOR_SIZE 50
-static carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
-static int g_fused_odometry_index = -1;
+carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
+int g_fused_odometry_index = -1;
 
 /* global variables */
 carmen_map_t *new_map = NULL;
@@ -99,12 +69,12 @@ carmen_robot_ackerman_laser_message front_laser;
 carmen_xsens_global_quat_message *xsens_global_quat_message = NULL;
 
 // Variables read via read_parameters()
-extern carmen_robot_ackerman_config_t 	car_config;
-extern carmen_semi_trailer_config_t 	semi_trailer_config;
+carmen_robot_ackerman_config_t 	car_config;
+carmen_semi_trailer_config_t 	semi_trailer_config;
 
 extern int robot_publish_odometry;
 
-extern int number_of_sensors;
+int number_of_sensors;
 extern sensor_parameters_t *spherical_sensor_params;
 extern sensor_data_t *spherical_sensor_data;
 
@@ -129,53 +99,16 @@ static carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
 
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
+FILE *gnuplot_pipe = NULL;
 
-static int
-get_fused_odometry_index_by_timestamp(double timestamp)
-{
-	double min_diff, diff;
-	int min_index;
-
-	min_diff = DBL_MAX;
-	min_index = -1;
-
-	for (int i = 0; i < FUSED_ODOMETRY_VECTOR_SIZE; i++)
-	{
-		diff = fabs(fused_odometry_vector[i].timestamp - timestamp);
-
-		if (diff < min_diff)
-		{
-			min_diff = diff;
-			min_index = i;
-		}
-	}
-
-	return min_index;
-}
-
-
-static int
-get_base_ackerman_odometry_index_by_timestamp(double timestamp)
-{
-	double min_diff, diff;
-	int min_index;
-
-	min_diff = DBL_MAX;
-	min_index = -1;
-
-	for (int i = 0; i < BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE; i++)
-	{
-		diff = fabs(base_ackerman_odometry_vector[i].timestamp - timestamp);
-
-		if (diff < min_diff)
-		{
-			min_diff = diff;
-			min_index = i;
-		}
-	}
-
-	return min_index;
-}
+carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
+double robot_wheel_radius;
+double highest_sensor;
+char *calibration_file = NULL;
+int number_of_threads = 1;
+int mapping_mode = 0;
+carmen_pose_3D_t velodyne_pose;
+double safe_range_above_sensors;
 
 
 static void
@@ -195,8 +128,6 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	err = IPC_publishData(message_name, &pmsg);
 	carmen_test_ipc_exit(err, "Could not publish", message_name);
 }
-
-FILE *gnuplot_pipe = NULL;
 
 
 void
@@ -1114,8 +1045,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			globalpos.beta
 	};
 
-	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(velodyne_message, &spherical_sensor_params[0], 
-			&spherical_sensor_data[0], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
+	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(&local_compacted_map, &local_compacted_mean_remission_map, &local_map,
+			velodyne_message, &spherical_sensor_params[0], &spherical_sensor_data[0], base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi, semi_trailer_data);
 	if (!velodyne_initilized)
 		return;
 

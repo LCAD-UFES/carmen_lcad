@@ -178,36 +178,8 @@ build_sensor_ackerman_message(carmen_localize_ackerman_sensor_message *sensor_ac
 
 
 carmen_point_t
-improved_proposal_distribution_odometry(const OdometryMotionCommand *ut, carmen_point_t xt_1,
-		carmen_map_t* map, float *zt,
-		int number_of_particles)
-{
-	int m;
-	carmen_point_t _xt;
-	double wt;
-	double max_wt = -1.0;
-	carmen_point_t max_xt;
-
-	max_xt = xt_1;
-	for (m = 0; m < number_of_particles; m++)
-	{
-		_xt = sample_motion_model_odometry(ut, xt_1);
-		wt = carmen_beam_range_finder_measurement_model(zt, &_xt, map);
-		//wt = 1.0; // uncomment this to disable correction
-
-		if (wt > max_wt)
-		{
-			max_wt = wt;
-			max_xt = _xt;
-		}
-	}
-	return max_xt;
-}
-
-
-carmen_point_t
 improved_proposal_distribution_ackerman(const AckermanMotionCommand *ut, carmen_point_t xt_1,
-		carmen_map_t* map, float *zt,
+		carmen_map_t* map, double *zt,
 		int number_of_particles)
 {
 	int m;
@@ -229,33 +201,6 @@ improved_proposal_distribution_ackerman(const AckermanMotionCommand *ut, carmen_
 			max_xt = _xt;
 		}
 	}
-	return max_xt;
-}
 
-
-carmen_point_t
-improved_proposal_distribution_velocity(const VelocityMotionCommand *ut, carmen_point_t xt_1,
-		carmen_map_t* map, float *zt,
-		int number_of_particles)
-{
-	int m;
-	carmen_point_t _xt;
-	double wt;
-	double max_wt = -1.0;
-	carmen_point_t max_xt;
-
-	max_xt = xt_1;
-	for (m = 0; m < number_of_particles; m++)
-	{
-		_xt = sample_motion_model_velocity(ut, xt_1);
-		wt = carmen_beam_range_finder_measurement_model(zt, &_xt, map);
-		//wt = 1.0; // uncomment this to disable correction
-
-		if (wt > max_wt)
-		{
-			max_wt = wt;
-			max_xt = _xt;
-		}
-	}
-	return max_xt;
+	return (max_xt);
 }

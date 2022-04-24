@@ -89,4 +89,8 @@ void get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attr
 
 void carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_robot_ackerman_config_t *p_car_config);
 
+void update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds_snapshot_map, sensor_parameters_t *sensor_params,
+		sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays,
+		int build_snapshot_map __attribute__ ((unused)));
+
 #endif /* MAPPER_H_ */

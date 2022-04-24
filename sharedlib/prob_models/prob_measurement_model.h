@@ -41,7 +41,7 @@ _BeanRangeFinderMeasurementModelParams
 } BeanRangeFinderMeasurementModelParams;
 
 void init_bean_range_finder_measurement_model(BeanRangeFinderMeasurementModelParams params);
-double carmen_beam_range_finder_measurement_model(float *zt, carmen_point_t *xt, carmen_map_t *map);
+double carmen_beam_range_finder_measurement_model(double *zt, carmen_point_t *xt, carmen_map_t *map);
 double beam_range_finder_model_probability(double ztk_star, double ztk);
 
 #ifdef __cplusplus

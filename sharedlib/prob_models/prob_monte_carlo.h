@@ -39,17 +39,17 @@ build_particles_ackerman_message(carmen_localize_ackerman_particle_message *part
 
 carmen_point_t
 improved_proposal_distribution_odometry(const OdometryMotionCommand *ut, carmen_point_t xt_1,
-		carmen_map_t* map, float *zt,
+		carmen_map_t* map, double *zt,
 		int number_of_particles);
 
 carmen_point_t
 improved_proposal_distribution_ackerman(const AckermanMotionCommand *ut, carmen_point_t xt_1,
-		carmen_map_t* map, float *zt,
+		carmen_map_t* map, double *zt,
 		int number_of_particles);
 
 carmen_point_t
 improved_proposal_distribution_velocity(const VelocityMotionCommand *ut, carmen_point_t xt_1,
-		carmen_map_t* map, float *zt,
+		carmen_map_t* map, double *zt,
 		int number_of_particles);
 
 #ifdef __cplusplus
