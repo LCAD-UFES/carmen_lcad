@@ -640,7 +640,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 
 	rotation_matrix *lidar_to_board_matrix = create_rotation_matrix(lidar_config.pose.orientation);
 #ifdef USE_REAR_BULLBAR
-	if (semi_trailer_config.type != 0)
+	if (semi_trailer_config.type != 0 && lidar_config.sensor_reference == 2)
 	{
 		choosed_sensor_referenced[lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
 	}
