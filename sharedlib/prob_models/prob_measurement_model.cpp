@@ -142,7 +142,7 @@ beam_range_finder_model_probability(double ztk_star, double ztk)
  * @See Table 6.1 of the book Probabilistic Robotics.
  */
 double 
-carmen_beam_range_finder_measurement_model(float *zt, carmen_point_t *xt, carmen_map_t *map)
+carmen_beam_range_finder_measurement_model(double *zt, carmen_point_t *xt, carmen_map_t *map)
 {
 	carmen_point_t zt_pose;
 	double ztk_star, ztk;

@@ -43,29 +43,80 @@
 #define K_T   0.0001
 #define K_ROT 0.00001
 
-int number_of_sensors;
+extern int number_of_sensors;
 sensor_parameters_t *spherical_sensor_params;
 sensor_data_t *spherical_sensor_data;
-carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
+extern carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
 carmen_pose_3D_t sensor_board_1_pose;
-double robot_wheel_radius;
-double highest_sensor;
-char *calibration_file = NULL;
-int number_of_threads = 1;
-carmen_pose_3D_t velodyne_pose;
+extern double robot_wheel_radius;
+extern double highest_sensor;
+extern char *calibration_file;
+extern int number_of_threads;
+extern carmen_pose_3D_t velodyne_pose;
 rotation_matrix *sensor_board_1_to_car_matrix;
-carmen_semi_trailer_config_t semi_trailer_config;
-carmen_robot_ackerman_config_t 	car_config;
+extern carmen_semi_trailer_config_t semi_trailer_config;
+extern carmen_robot_ackerman_config_t car_config;
 int robot_publish_odometry;
-double safe_range_above_sensors;
+extern double safe_range_above_sensors;
 int use_raw_laser = 1;
-int mapping_mode = 0;
+extern int mapping_mode;
 int velodyne_viewer = 0;
 char *save_globalpos_file = NULL;
 double save_globalpos_timestamp = 0.0;
 extern carmen_localize_ackerman_globalpos_message globalpos;
 
 extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message;
+
+extern carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
+extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
+
+
+int
+get_fused_odometry_index_by_timestamp(double timestamp)
+{
+	double min_diff, diff;
+	int min_index;
+
+	min_diff = DBL_MAX;
+	min_index = -1;
+
+	for (int i = 0; i < FUSED_ODOMETRY_VECTOR_SIZE; i++)
+	{
+		diff = fabs(fused_odometry_vector[i].timestamp - timestamp);
+
+		if (diff < min_diff)
+		{
+			min_diff = diff;
+			min_index = i;
+		}
+	}
+
+	return min_index;
+}
+
+
+int
+get_base_ackerman_odometry_index_by_timestamp(double timestamp)
+{
+	double min_diff, diff;
+	int min_index;
+
+	min_diff = DBL_MAX;
+	min_index = -1;
+
+	for (int i = 0; i < BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE; i++)
+	{
+		diff = fabs(base_ackerman_odometry_vector[i].timestamp - timestamp);
+
+		if (diff < min_diff)
+		{
+			min_diff = diff;
+			min_index = i;
+		}
+	}
+
+	return min_index;
+}
 
 
 void

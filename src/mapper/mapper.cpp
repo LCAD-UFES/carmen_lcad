@@ -45,8 +45,8 @@ extern int decay_to_offline_map;
 extern int create_map_sum_and_count;
 extern int use_remission;
 
-sensor_parameters_t *sensors_params;
-sensor_data_t *sensors_data;
+extern sensor_parameters_t *sensors_params;
+extern sensor_data_t *sensors_data;
 extern int number_of_sensors;
 carmen_pose_3D_t front_bullbar_pose;
 carmen_pose_3D_t rear_bullbar_pose;
@@ -64,14 +64,13 @@ carmen_pose_3D_t ultrasonic_sensor_r2_g;
 carmen_pose_3D_t ultrasonic_sensor_l1_g;
 carmen_pose_3D_t ultrasonic_sensor_l2_g;
 int use_truepos = 0;
-int number_of_sensors = NUMBER_OF_SENSORS;
 carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
 int g_argc;
 char **g_argv;
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 int neural_map_num_clouds = 1;
-int mapping_mode = 0;
+extern int mapping_mode;
 int publish_diff_map = 0;
 double publish_diff_map_interval = 0.5;
 double mapper_velodyne_range_max;
@@ -93,9 +92,9 @@ extern int number_of_threads;
 extern int use_unity_simulator;
 int neural_mapper_initialized = 0;
 
-carmen_semi_trailer_config_t semi_trailer_config;
-carmen_pose_3D_t sensor_board_1_pose;
-carmen_pose_3D_t velodyne_pose;
+extern carmen_semi_trailer_config_t semi_trailer_config;
+extern carmen_pose_3D_t sensor_board_1_pose;
+extern carmen_pose_3D_t velodyne_pose;
 
 
 /**
@@ -137,8 +136,8 @@ int globalpos_initialized = 0;
 extern carmen_localize_ackerman_globalpos_message *globalpos_history;
 extern int last_globalpos;
 
-carmen_robot_ackerman_config_t car_config;
-carmen_map_config_t map_config;
+extern carmen_robot_ackerman_config_t car_config;
+extern carmen_map_config_t map_config;
 
 double x_origin, y_origin; // map origin in meters
 
@@ -469,7 +468,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 }
 
 
-static void
+void
 update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds_snapshot_map, sensor_parameters_t *sensor_params,
 		sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays,
 		int build_snapshot_map __attribute__ ((unused)))
@@ -2048,7 +2047,7 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 	sensors_params = (sensor_parameters_t *) calloc(number_of_sensors, sizeof(sensor_parameters_t));
 	carmen_test_alloc(sensors_params);
 
-	sensors_data = (sensor_data_t *) calloc(25, sizeof(sensor_data_t));
+	sensors_data = (sensor_data_t *) calloc(number_of_sensors, sizeof(sensor_data_t));
 	carmen_test_alloc(sensors_data);
 
 	carmen_param_t param_list[] =
@@ -2705,7 +2704,7 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "laser_ldmrs",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.pitch), 0, NULL},
 		{(char *) "laser_ldmrs",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.yaw), 0, NULL},
 
-		// {(char *) "mapper",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL}, // The number_of_sensors must be the maximun number of sensors: 25
+		{(char *) "mapper",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL}, // The number_of_sensors must be the maximun number of sensors: 25
 		{(char *) "mapper",  (char *) "safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
 
 		{(char *) "mapper",  (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &map_resolution, 0, NULL},
@@ -2776,8 +2775,6 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "frenet_path_planner",  (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-
-	number_of_sensors = NUMBER_OF_SENSORS;  // TODO move this line to a more apropriate spot
 
 	int mkdir_status = mkdir(map_path, 0775);
 	if (mkdir_status != 0)
