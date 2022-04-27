@@ -270,16 +270,19 @@ free_virtual_scan_message()
 void
 update_sensor_reference_pose(double beta)
 {
-	//Alterar o rear_bullbar_pose por conta do beta
-	carmen_pose_3D_t temp_rear_bullbar_pose = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
-
-	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
-	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, temp_rear_bullbar_pose};
 
 	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
 	{
 		if (!sensors_params[i + 10].alive || sensors_params[i + 10].sensor_reference != 2)
 			continue;
+
+		//Coloquei dentro do for para não calcular atoa (quando a rear bullbar não for usada)
+		//Alterar o rear_bullbar_pose por conta do beta
+		carmen_pose_3D_t temp_rear_bullbar_pose = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
+
+		//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+		carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, temp_rear_bullbar_pose};
+
 
 		sensors_params[i + 10].sensor_support_pose = choosed_sensor_referenced[sensors_params[i + 10].sensor_reference];
 		sensors_params[i + 10].support_to_car_matrix = create_rotation_matrix(sensors_params[i + 10].sensor_support_pose.orientation);
