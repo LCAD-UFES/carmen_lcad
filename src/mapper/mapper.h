@@ -42,9 +42,9 @@ void mapper_periodically_save_current_map(double timestamp);
 
 void mapper_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config, bool use_merge_between_maps);
 
-void mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, bool save_map);
+void mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_t *occupancy_map, carmen_position_t *map_origin, bool save_map);
 
-void mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map_origin, bool save_map);
+void mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen_map_t *occupancy_map, carmen_position_t *map_origin, bool save_map);
 
 int run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, double rays_threshold_to_merge_between_maps);
 
@@ -89,8 +89,12 @@ void get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attr
 
 void carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_robot_ackerman_config_t *p_car_config);
 
-void update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds_snapshot_map, sensor_parameters_t *sensor_params,
+void update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *occupancy_map, carmen_map_t *log_odds_snapshot_map, sensor_parameters_t *sensor_params,
 		sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays,
 		int build_snapshot_map __attribute__ ((unused)));
+
+void
+build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensity, int *point_cloud_index, int num_points, int max_point_buffer,
+		int use_remission);
 
 #endif /* MAPPER_H_ */

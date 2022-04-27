@@ -814,9 +814,9 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	offline_map.config = msg->config;
 
 	if (use_merge_between_maps)
-		mapper_change_map_origin_to_another_map_block_with_clones(&map_origin, mapper_save_map);
+		mapper_change_map_origin_to_another_map_block_with_clones(map_path, &occupancy_map, &map_origin, mapper_save_map);
 	else
-		mapper_change_map_origin_to_another_map_block(&map_origin, mapper_save_map);
+		mapper_change_map_origin_to_another_map_block(map_path, &occupancy_map, &map_origin, mapper_save_map);
 
 	if (merge_with_offline_map)
 		mapper_merge_online_map_with_offline_map(&offline_map);
