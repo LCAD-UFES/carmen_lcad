@@ -365,6 +365,118 @@ carmen_localize_ackerman_initialize_localize_map(carmen_localize_ackerman_map_p 
 
 
 void
+carmen_localize_ackerman_initialize_likelihood_map_only(carmen_localize_ackerman_map_p lmap, carmen_map_p cmap)
+{
+	int i;
+
+	if (lmap->complete_distance == NULL)
+	{
+		/* copy map parameters from carmen map */
+		lmap->config = cmap->config;
+
+		/* add raw map into likelihood map */
+		lmap->carmen_map = *cmap;
+
+		/* allocate distance map */
+		lmap->complete_distance = (double *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(double));
+		carmen_test_alloc(lmap->complete_distance);
+
+		lmap->distance = (double **) calloc(lmap->config.x_size,
+				sizeof(double *));
+		carmen_test_alloc(lmap->distance);
+
+		/* allocate prob map */
+		lmap->complete_prob = (double *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(double));
+		carmen_test_alloc(lmap->complete_prob);
+		lmap->prob = (double **) calloc(lmap->config.x_size, sizeof(double *));
+		carmen_test_alloc(lmap->prob);
+
+		/* allocate x offset map */
+		lmap->complete_x_offset = (short int *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(short int));
+		carmen_test_alloc(lmap->complete_x_offset);
+		lmap->x_offset = (short int **) calloc(lmap->config.x_size,
+				sizeof(short int *));
+		carmen_test_alloc(lmap->x_offset);
+		/* allocate y offset map */
+		lmap->complete_y_offset = (short int *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(short int));
+		carmen_test_alloc(lmap->complete_y_offset);
+		lmap->y_offset = (short int **) calloc(lmap->config.x_size,
+				sizeof(short int *));
+		carmen_test_alloc(lmap->y_offset);
+	}
+	else if ((lmap->config.x_size != cmap->config.x_size) || // o novo mapa pode ser de tamanho diferente... lmap->config = cmap->config
+			(lmap->config.y_size != cmap->config.y_size))
+	{
+		free(lmap->complete_x_offset);
+		free(lmap->complete_y_offset);
+		free(lmap->complete_distance);
+		free(lmap->complete_prob);
+		free(lmap->x_offset);
+		free(lmap->y_offset);
+		free(lmap->distance);
+		free(lmap->prob);
+
+		/* copy map parameters from carmen map */
+		lmap->config = cmap->config;
+
+		/* add raw map into likelihood map */
+		lmap->carmen_map = *cmap;
+
+		/* allocate distance map */
+		lmap->complete_distance = (double *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(double));
+		carmen_test_alloc(lmap->complete_distance);
+
+		lmap->distance = (double **) calloc(lmap->config.x_size,
+				sizeof(double *));
+		carmen_test_alloc(lmap->distance);
+
+		/* allocate prob map */
+		lmap->complete_prob = (double *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(double));
+		carmen_test_alloc(lmap->complete_prob);
+		lmap->prob = (double **) calloc(lmap->config.x_size, sizeof(double *));
+		carmen_test_alloc(lmap->prob);
+
+		/* allocate x offset map */
+		lmap->complete_x_offset = (short int *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(short int));
+		carmen_test_alloc(lmap->complete_x_offset);
+		lmap->x_offset = (short int **) calloc(lmap->config.x_size,
+				sizeof(short int *));
+		carmen_test_alloc(lmap->x_offset);
+		/* allocate y offset map */
+		lmap->complete_y_offset = (short int *) calloc(
+				lmap->config.x_size * lmap->config.y_size, sizeof(short int));
+		carmen_test_alloc(lmap->complete_y_offset);
+		lmap->y_offset = (short int **) calloc(lmap->config.x_size,
+				sizeof(short int *));
+		carmen_test_alloc(lmap->y_offset);
+	}
+	else
+	{
+		/* copy map parameters from carmen map */
+		lmap->config = cmap->config;
+
+		/* add raw map into likelihood map */
+		lmap->carmen_map = *cmap;
+	}
+
+	for (i = 0; i < lmap->config.x_size; i++)
+	{
+		lmap->distance[i] = lmap->complete_distance + i * lmap->config.y_size;
+		lmap->prob[i] = lmap->complete_prob + i * lmap->config.y_size;
+		lmap->x_offset[i] = lmap->complete_x_offset + i * lmap->config.y_size;
+		lmap->y_offset[i] = lmap->complete_y_offset + i * lmap->config.y_size;
+	}
+}
+
+
+void
 carmen_to_localize_ackerman_map(carmen_map_p cmap,
 		carmen_map_p mean_remission_map, carmen_map_p variance_remission_map,
 		carmen_localize_ackerman_map_p lmap, carmen_localize_ackerman_param_p param)
@@ -398,6 +510,32 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 			param->tracking_beam_maxlikelihood, param->use_log_odds);
 	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->gprob, lmap, param->global_lmap_std, param->global_beam_minlikelihood,
 			param->global_beam_maxlikelihood, param->use_log_odds);
+}
+
+
+void
+carmen_to_localize_ackerman_likelihood_map_only(carmen_map_p cmap, carmen_localize_ackerman_map_p lmap, carmen_localize_ackerman_param_p param)
+{
+	carmen_localize_ackerman_initialize_likelihood_map_only(lmap, cmap);
+
+	static carmen_prob_models_distance_map *distance_map = NULL;
+
+	if (distance_map == NULL)
+	{
+		distance_map =  (carmen_prob_models_distance_map *) calloc(1, sizeof(carmen_prob_models_distance_map));
+		carmen_prob_models_initialize_distance_map(distance_map, cmap->config);
+	}
+
+	carmen_prob_models_create_distance_map(distance_map, cmap, param->occupied_prob);
+	lmap->complete_distance = distance_map->complete_distance;
+	lmap->complete_x_offset = distance_map->complete_x_offset;
+	lmap->complete_y_offset = distance_map->complete_y_offset;
+	lmap->distance = distance_map->distance;
+	lmap->x_offset = distance_map->x_offset;
+	lmap->y_offset = distance_map->y_offset;
+
+	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->prob, lmap, param->lmap_std, param->tracking_beam_minlikelihood,
+			param->tracking_beam_maxlikelihood, param->use_log_odds);
 }
 
 
