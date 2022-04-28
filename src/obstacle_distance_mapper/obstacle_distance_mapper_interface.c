@@ -342,7 +342,10 @@ carmen_obstacle_distance_mapper_free_compact_distance_map(carmen_obstacle_distan
 		free(map->y_offset);
 
 	if (map->config.map_name != NULL)
+	{
 		free(map->config.map_name);
+		map->config.map_name = NULL;
+	}
 
 	map->coord_x = NULL;
 	map->coord_y = NULL;
@@ -396,8 +399,11 @@ carmen_obstacle_distance_mapper_free_distance_map(carmen_prob_models_distance_ma
 		free(map->x_offset);
 	if (map->y_offset != NULL)
 		free(map->y_offset);
-//	if (map->config.map_name != NULL)
-//		free(map->config.map_name);
+	if (map->config.map_name != NULL)
+	{
+		free(map->config.map_name);
+		map->config.map_name = NULL;
+	}
 }
 
 

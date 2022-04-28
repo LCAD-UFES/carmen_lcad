@@ -276,6 +276,8 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 							&distance_traveled, dt, car_config, semi_trailer_config);
 
 			filter->particles[i].x = robot_pose.x;
+			if (fabs(filter->particles[i].x) > 1000000000.0)
+				printf("eita!");
 			filter->particles[i].y = robot_pose.y;
 			filter->particles[i].theta = robot_pose.theta;
 
@@ -302,6 +304,8 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 							&distance_traveled, dt, car_config, semi_trailer_config);
 
 			filter->particles[i].x = robot_pose.x;
+			if (fabs(filter->particles[i].x) > 1000000000.0)
+				printf("eita!");
 			filter->particles[i].y = robot_pose.y;
 			filter->particles[i].theta = robot_pose.theta;
 			filter->particles[i].phi = phi_step;

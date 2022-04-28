@@ -78,7 +78,10 @@ carmen_map_server_copy_offline_map_from_message(carmen_map_t *current_map, carme
 	}
 
 	if (current_map->config.map_name != NULL)
+	{
 		free(current_map->config.map_name);
+		current_map->config.map_name = NULL;
+	}
 	current_map->config = offline_map_message->config;
 	if (offline_map_message->config.map_name != NULL)
 	{

@@ -542,6 +542,7 @@ carmen_grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, d
 				free(unk_map.map);
 				free(unk_map.complete_map);
 				free(unk_map.config.map_name);
+				unk_map.config.map_name = NULL;
 				count_maps_on_file++;
 			}
 		}

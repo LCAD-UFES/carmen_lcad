@@ -60,7 +60,7 @@ extern "C" {
 #define 	STEREO_MAPPING_SENSOR_INDEX 	10
 
 #define     SMALL_PROB        0.01
-#define     MAX_BEAMS_PER_SCAN   10000
+#define     MAX_BEAMS_PER_SCAN   50000
 
 /* #define      LOCALIZECORE_TRACKING_MINLIKELIHOOD        (0.5) */
 /* #define      LOCALIZECORE_GLOBAL_MINLIKELIHOOD          (0.9) */

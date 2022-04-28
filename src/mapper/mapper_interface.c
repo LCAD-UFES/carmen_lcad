@@ -25,7 +25,10 @@ carmen_mapper_copy_map_from_message(carmen_map_t *current_map, carmen_mapper_map
 	}
 	
 	if (current_map->config.map_name != NULL)
+	{
 		free(current_map->config.map_name);
+		current_map->config.map_name = NULL;
+	}
 	current_map->config = online_map_message->config;
 	if (online_map_message->config.map_name != NULL)
 	{

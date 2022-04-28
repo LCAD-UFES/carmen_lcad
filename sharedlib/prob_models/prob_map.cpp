@@ -222,11 +222,11 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 
 	cmap->config = map->config;
 
-	if (map->config.map_name != NULL)
-	{
-		cmap->config.map_name = (char *) calloc(strlen(map->config.map_name) + 1, sizeof(char));
-		strcpy(cmap->config.map_name, map->config.map_name);
-	}
+//	if ((map->config.map_name != NULL) && (strlen(map->config.map_name) > 0))
+//	{
+//		cmap->config.map_name = (char *) calloc(strlen(map->config.map_name) + 1, sizeof(char));
+//		strcpy(cmap->config.map_name, map->config.map_name);
+//	}
 
 	cmap->coord_x = (int *) malloc(number_of_cells * sizeof(int));
 	cmap->coord_y = (int *) malloc(number_of_cells * sizeof(int));
@@ -365,8 +365,8 @@ carmen_prob_models_free_compact_map(carmen_compact_map_t *map)
 	if (map->value != NULL)
 		free(map->value);
 
-	if (map->config.map_name != NULL)
-		free(map->config.map_name);
+//	if (map->config.map_name != NULL)
+//		free(map->config.map_name);
 
 	map->value = NULL;
 	map->coord_x = NULL;
