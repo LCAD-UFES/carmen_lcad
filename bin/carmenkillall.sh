@@ -40,7 +40,11 @@
 		echo "### " $program_extracted
 		echo "Killing process "$program_extracted 
  #		killall -9 ${program_extracted}
-		killall -9 ${program_extracted:2}
+		if [[ ${program_extracted:0:2} == "./" ]]; then
+	  		killall -9 ${program_extracted:2}
+		else
+	  		killall -9 $program_extracted
+		fi
 	fi
  fi
  done < "$process_name"
