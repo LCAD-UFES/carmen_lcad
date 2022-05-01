@@ -3212,7 +3212,7 @@ init_flags(void)
     draw_map_image_flag = 0;
     draw_localize_image_flag = 0;
     weight_type_flag = 2;
-    draw_gps_flag = 0;
+    draw_gps_flag = 1;
     draw_odometry_flag = 0;
     draw_xsens_gps_flag = 0;
     follow_car_flag = 1;
@@ -3222,7 +3222,7 @@ init_flags(void)
     draw_motion_plan_flag = 1;
     draw_obstacle_avoider_plan_flag = 1;
     draw_xsens_orientation_flag = 0;
-    draw_localize_ackerman_flag = 0;
+    draw_localize_ackerman_flag = 1;
     draw_annotation_flag = 0;
     draw_moving_objects_flag = 0;
     draw_gps_axis_flag = 1;

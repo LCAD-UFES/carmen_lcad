@@ -201,7 +201,7 @@ get_car_position_from_message(carmen_xsens_xyz_message *xsens_xyz_message)
 }
 
 
-static carmen_vector_3D_t 
+static carmen_vector_3D_t
 get_car_position_from_message(carmen_gps_xyz_message *gps_xyz_message)
 {
 	tf::StampedTransform gps_to_car;
@@ -1016,12 +1016,12 @@ initialize_carmen_parameters(xsens_xyz_handler *xsens_handler, int argc, char **
 
 		{(char *) "xsens", (char *) "magnetic_declination", CARMEN_PARAM_DOUBLE, &xsens_magnetic_declination,	0, NULL},
 
-		{(char *) "gps_nmea", (char *) "x",				CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.x,		0, NULL},
-		{(char *) "gps_nmea", (char *) "y",				CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.y,		0, NULL},
-		{(char *) "gps_nmea", (char *) "z",				CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.z,		0, NULL},
-		{(char *) "gps_nmea", (char *) "roll",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.roll,		0, NULL},
-		{(char *) "gps_nmea", (char *) "pitch",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.pitch,	0, NULL},
-		{(char *) "gps_nmea", (char *) "yaw",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.yaw,		0, NULL},
+		{(char *) "gps_nmea_1", (char *) "x",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.x,		0, NULL},
+		{(char *) "gps_nmea_1", (char *) "y",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.y,		0, NULL},
+		{(char *) "gps_nmea_1", (char *) "z",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.z,		0, NULL},
+		{(char *) "gps_nmea_1", (char *) "roll",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.roll,		0, NULL},
+		{(char *) "gps_nmea_1", (char *) "pitch",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.pitch,	0, NULL},
+		{(char *) "gps_nmea_1", (char *) "yaw",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.yaw,		0, NULL},
 
 	};
 	
