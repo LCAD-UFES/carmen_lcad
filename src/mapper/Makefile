@@ -44,7 +44,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface -llocalize_ackerman_core -lcarmodel -lgsl -lgslcblas -llocalize_ackerman_motion -ltask_manager_interface \
-	-llaser_ldmrs_interface -llaser_ldmrs_utils \
+	-llaser_ldmrs_interface -llaser_ldmrs_utils -ldbscan \
 	-lmoving_objects_interface # -lstereo_mapping_interface
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system

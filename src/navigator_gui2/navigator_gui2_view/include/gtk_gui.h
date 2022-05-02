@@ -285,7 +285,8 @@ namespace View
 		int final_goal_placed_and_oriented = 0;
 		carmen_point_t destination;
 
-		carmen_localize_ackerman_particle_message particle_msg;
+		carmen_localize_ackerman_particle_message prediction_particles_msg;
+		carmen_localize_ackerman_particle_message correction_particles_msg;
 		carmen_localize_ackerman_sensor_message	  sensor_msg;
 
 		int	 is_filming;
