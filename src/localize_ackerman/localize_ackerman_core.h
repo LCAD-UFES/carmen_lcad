@@ -385,6 +385,10 @@ calc_global_cell_coordinate_fast(cell_coords_t *global, cell_coords_t local,
 		double robot_position_in_the_map_x, double robot_position_in_the_map_y,
 		double sin_theta, double cos_theta);
 
+double
+compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point, double dt,
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config);
+
 #ifdef __cplusplus
 }
 #endif

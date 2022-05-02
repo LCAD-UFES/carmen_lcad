@@ -79,11 +79,8 @@ bool use_merge_between_maps = false;
 tf::Transformer tf_transformer(false);
 static carmen_pose_3D_t car_pose_g;
 static carmen_pose_3D_t camera_pose_g;
-static carmen_pose_3D_t sensor_board_pose_g;
-
 
 extern char *map_path;
-
 
 extern int robot_near_strong_slow_down_annotation;
 extern int ok_to_publish;
@@ -95,6 +92,8 @@ int neural_mapper_initialized = 0;
 extern carmen_semi_trailer_config_t semi_trailer_config;
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern carmen_pose_3D_t velodyne_pose;
+
+static carmen_pose_3D_t gps_pose_in_the_car;
 
 
 /**
@@ -1852,6 +1851,7 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 void
 carmen_mapper_initialize_transforms()
 {
+	tf::Transform board_to_gps_pose;
 	tf::Transform board_to_camera_pose;
 	tf::Transform car_to_board_pose;
 	tf::Transform world_to_car_pose;
@@ -1869,10 +1869,16 @@ carmen_mapper_initialize_transforms()
 	tf_transformer.setTransform(world_to_car_transform, "world_to_car_transform");
 
 	// board pose with respect to the car
-	car_to_board_pose.setOrigin(tf::Vector3(sensor_board_pose_g.position.x, sensor_board_pose_g.position.y, sensor_board_pose_g.position.z));
-	car_to_board_pose.setRotation(tf::Quaternion(sensor_board_pose_g.orientation.yaw, sensor_board_pose_g.orientation.pitch, sensor_board_pose_g.orientation.roll)); 				// yaw, pitch, roll
+	car_to_board_pose.setOrigin(tf::Vector3(sensor_board_1_pose.position.x, sensor_board_1_pose.position.y, sensor_board_1_pose.position.z));
+	car_to_board_pose.setRotation(tf::Quaternion(sensor_board_1_pose.orientation.yaw, sensor_board_1_pose.orientation.pitch, sensor_board_1_pose.orientation.roll)); 				// yaw, pitch, roll
 	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
 	tf_transformer.setTransform(car_to_board_transform, "car_to_board_transform");
+
+	// gps pose with respect to the board
+	board_to_gps_pose.setOrigin(tf::Vector3(gps_pose_in_the_car.position.x, gps_pose_in_the_car.position.y, gps_pose_in_the_car.position.z));
+	board_to_gps_pose.setRotation(tf::Quaternion(gps_pose_in_the_car.orientation.yaw, gps_pose_in_the_car.orientation.pitch, gps_pose_in_the_car.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform board_to_gps_transform(board_to_gps_pose, tf::Time(0), "/board", "/gps");
+	tf_transformer.setTransform(board_to_gps_transform, "board_to_gps_transform");
 
 	// camera pose with respect to the board
 	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose_g.position.x, camera_pose_g.position.y, camera_pose_g.position.z));
@@ -2703,6 +2709,13 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "laser_ldmrs",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.roll), 0, NULL},
 		{(char *) "laser_ldmrs",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.pitch), 0, NULL},
 		{(char *) "laser_ldmrs",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.yaw), 0, NULL},
+
+		{(char *) "gps", (char *) "nmea_1_x",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.x,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_y",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.y,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_z",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.z,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_roll",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.roll,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_pitch",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.pitch,	1, NULL},
+		{(char *) "gps", (char *) "nmea_1_yaw",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.yaw,		1, NULL},
 
 		{(char *) "mapper",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL}, // The number_of_sensors must be the maximun number of sensors: 25
 		{(char *) "mapper",  (char *) "safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},

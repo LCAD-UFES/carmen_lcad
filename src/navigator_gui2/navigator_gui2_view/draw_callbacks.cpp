@@ -470,9 +470,15 @@ void on_menuDisplay_ShowParticles_toggled (GtkCheckMenuItem* togglebutton __attr
 	global_gui->nav_panel_config->show_particles = gtk_check_menu_item_get_active(togglebutton);
 
 	if ((global_gui->nav_panel_config->show_particles == 1) && !global_gui->nav_panel_config->show_gaussians)
-		carmen_localize_ackerman_subscribe_particle_correction_message(&global_gui->particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	{
+		carmen_localize_ackerman_subscribe_particle_prediction_message(&global_gui->prediction_particles_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		carmen_localize_ackerman_subscribe_particle_correction_message(&global_gui->correction_particles_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	}
 	else if (!global_gui->nav_panel_config->show_particles && !global_gui->nav_panel_config->show_gaussians)
+	{
+		carmen_localize_ackerman_subscribe_particle_prediction_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 		carmen_localize_ackerman_subscribe_particle_correction_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+	}
 }
 
 //extern "C" G_MODULE_EXPORT

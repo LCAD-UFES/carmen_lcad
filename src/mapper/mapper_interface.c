@@ -254,6 +254,13 @@ carmen_mapper_publish_map_message(carmen_map_t *carmen_map, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	static carmen_mapper_map_message mapper_message;
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		carmen_mapper_define_map_message();
+		first_time = 0;
+	}
 
 	strcpy(mapper_message.config.origin, "from_mapping");
 	mapper_message.complete_map = carmen_map->complete_map;
