@@ -65,6 +65,7 @@ extern carmen_robot_ackerman_config_t car_config;
 int robot_publish_odometry;
 extern double safe_range_above_sensors;
 int use_raw_laser = 1;
+double gps_correction_factor = 0.0;
 extern int mapping_mode;
 int velodyne_viewer = 0;
 char *save_globalpos_file = NULL;
@@ -86,6 +87,8 @@ extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR
 
 FILE *gnuplot_pipe = NULL;
 carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
+
+carmen_pose_3D_t gps_pose_in_the_car;
 
 
 void
@@ -3853,6 +3856,12 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "mapper", (char *) "map_range_factor", CARMEN_PARAM_DOUBLE, &p_map_params->range_factor, 0, NULL},
 		{(char *) "map_server", (char*) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
 		{(char *) "map_server", (char*) "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
+		{(char *) "gps", (char *) "nmea_1_x",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.x,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_y",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.y,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_z",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.z,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_roll",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.roll,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_pitch",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.pitch,	1, NULL},
+		{(char *) "gps", (char *) "nmea_1_yaw",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.yaw,		1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -3869,6 +3878,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	carmen_param_t param_optional_list[] =
 	{
 		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
+		{(char *) "localize_ackerman", (char *) "gps_correction_factor", CARMEN_PARAM_ONOFF, &gps_correction_factor, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
 		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},

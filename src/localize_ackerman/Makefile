@@ -20,7 +20,8 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 	  -lfused_odometry_interface -lvelodyne_interface -lrotation_geometry -lprob_models -lgl_plotter \
 	  -lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface -lcarmodel \
 	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -lmoving_objects_interface -lxsens_interface \
-	  -ltask_manager_interface -lbehavior_selector_interface -lgsl -lgslcblas -lcarmodel -ldbscan `pkg-config --libs opencv`
+	  -ltask_manager_interface -lbehavior_selector_interface -lgsl -lgslcblas -lcarmodel -ldbscan \
+	  -lgps_xyz_interface `pkg-config --libs opencv`
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 

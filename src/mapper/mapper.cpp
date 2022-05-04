@@ -1825,10 +1825,10 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 
 
 	if (use_neural_mapper && !neural_mapper_initialized)
-		{
-			neural_mapper_initialized = neural_mapper_initialize(neural_mapper_max_distance_meters, neural_mapper_data_pace, map_config);
-			printf("%d\n\n", neural_mapper_initialized);
-		}
+	{
+		neural_mapper_initialized = neural_mapper_initialize(neural_mapper_max_distance_meters, neural_mapper_data_pace, map_config);
+		printf("%d\n\n", neural_mapper_initialized);
+	}
 
 	globalpos_initialized = 0; // Only considered initialized when first message is received
 
