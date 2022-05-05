@@ -22,8 +22,8 @@ namespace OS1 = ouster::OS1;
 #define OS164 2
 
 char *ouster_ip = NULL;
-int ouster_port = 7502;
-int ouster_imu_port = 7503;
+int ouster_port = 7501;
+int ouster_imu_port = 7502;
 char *host_ip = NULL;
 char *string_mode = NULL;
 int ouster_sensor_id = 0;
@@ -334,6 +334,7 @@ build_and_publish_variable_scan_message_4_lidars(uint8_t* buf, carmen_velodyne_v
         if (m_id < next_m_id) 
         {
             // if not initializing with first packet
+
             if (scan_ts != -1)
             {
                 message0.timestamp = carmen_get_time(); // TODO use sensor timestamp
@@ -571,9 +572,9 @@ main(int argc, char** argv)
         {
             return 1;
         }
-        else if (st & OS1::LIDAR_DATA) 
+        if (st & OS1::LIDAR_DATA)
         {
-            if (OS1::read_lidar_packet(*cli, lidar_buf, OS1::lidar_packet_bytes[lidar_model]) && ouster_azimuth_offsets)
+            if (OS1::read_lidar_packet(*cli, lidar_buf, OS1::lidar_packet_bytes[lidar_model]) )//&& ouster_azimuth_offsets)
             {
             	//                build_and_publish_variable_scan_message(lidar_buf, message);
             	switch(lidar_model)
@@ -589,17 +590,27 @@ main(int argc, char** argv)
             			break;
 
             		case OS164:
+//                    	printf("Enviou o lidar\n");
 						build_and_publish_variable_scan_message_4_lidars(lidar_buf, message0, message1, message2, message3);
             			break;
             		}
+
             }
         }
-        else if (st & OS1::IMU_DATA) 
+        if (st & OS1::IMU_DATA)
         {
-            // The IMU is running in a smaller frequency than it should be. TODO: fix it!
+        	// The IMU is running in a smaller frequency than it should be. TODO: fix it!
             if (OS1::read_imu_packet(*cli, imu_buf) && ouster_publish_imu)
+            {
                 build_and_publish_imu_message(imu_buf);
+//            	printf("Enviou a IMU\n");
+            }
         }
+//        if (st == ouster::OS1::TIMEOUT)
+//        {
+//        	printf("Timeout\n");
+//        }
+
     }
 
     return 0;
