@@ -5,6 +5,10 @@ MODULE_COMMENT = "GPS Module XYZ"
 
 CFLAGS += #-DPARSE_DEBUG
 IFLAGS += 
+
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/lib/x86_64-linux-gnu
+
 LFLAGS += -L../../sharedlib/libtf/src
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lxsens_mtig_interface -lvelodyne_interface -lgps_nmea_interface \
 		  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt \

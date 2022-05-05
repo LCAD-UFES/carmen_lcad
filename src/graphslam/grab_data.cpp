@@ -205,16 +205,16 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 	switch (message->gps_quality)
 	{
 		case 1:
-			gps_std = 8.0;
+			gps_std = 100.0;
 			break;
 		case 2:
-			gps_std = 2.0;
+			gps_std = 50.0;
 			break;
 		case 4:
-			gps_std = 0.2;
+			gps_std = 1.0;
 			break;
 		case 5:
-			gps_std = 1.5;
+			gps_std = 2.0;
 			break;
 		default:
 			gps_std = DBL_MAX;

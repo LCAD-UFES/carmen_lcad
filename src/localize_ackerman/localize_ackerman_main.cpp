@@ -431,13 +431,7 @@ void
 initialize_tf_transforms()
 {
 	tf::Transform board_to_gps_pose;
-	tf::Transform board_to_camera_pose;
 	tf::Transform car_to_board_pose;
-	tf::Transform world_to_car_pose;
-	tf::Transform ultrasonic_sensor_r1_to_car_pose;
-	tf::Transform ultrasonic_sensor_r2_to_car_pose;
-	tf::Transform ultrasonic_sensor_l1_to_car_pose;
-	tf::Transform ultrasonic_sensor_l2_to_car_pose;
 
 	tf::Time::init();
 
@@ -496,6 +490,8 @@ gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, carmen_velo
 		gps_sigma_squared = 1.0 * 1.0;
 	else if (gps_xyz_message->gps_quality == 5)
 		gps_sigma_squared = 2.0 * 2.0;
+	else if (gps_xyz_message->gps_quality == 6)	// graphslam pose
+		gps_sigma_squared = 2.0 * 2.0;
 
 //	int i = xt_1->param->num_particles / 2;
 //	carmen_vector_3D_t estimated_car_pose = get_car_pose_from_gps_pose(gps_xyz_message, xt_1->particles[i].theta,
@@ -514,12 +510,12 @@ gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, carmen_velo
 		double distance_squared = distance * distance;
 		double gps_weight = exp(-distance_squared / gps_sigma_squared) / sqrt(gps_sigma_squared * 2.0 * M_PI);
 
-		printf("gps_sigma_squared %lf, distance[%d] %lf, weight %lf, gps_weight %lf\n", gps_sigma_squared, i, distance,
-				xt_1->particles[i].weight, gps_weight * normalization_factor);
+//		printf("gps_sigma_squared %lf, distance[%d] %lf, weight %lf, gps_weight %lf\n", gps_sigma_squared, i, distance,
+//				xt_1->particles[i].weight, gps_weight * normalization_factor);
 
 		xt_1->particles[i].weight = xt_1->particles[i].weight + gps_weight * gps_correction_factor * normalization_factor;
 	}
-	printf("\n");
+//	printf("\n");
 }
 
 
