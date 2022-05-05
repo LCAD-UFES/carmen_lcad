@@ -14,6 +14,9 @@
 #include <prob_measurement_model.h>
 #include <prob_map.h>
 
+#include <tf.h>
+#include <carmen/mapper.h>
+
 #include "localize_ackerman_core.h"
 #include "localize_ackerman_messages.h"
 #include "localize_ackerman_interface.h"
@@ -96,6 +99,15 @@ int number_of_threads = 1;
 int mapping_mode = 0;
 carmen_pose_3D_t velodyne_pose;
 double safe_range_above_sensors;
+
+#define GPS_XYZ_VECTOR_SIZE	10
+carmen_gps_xyz_message gps_xyz_vector[GPS_XYZ_VECTOR_SIZE];
+int g_gps_xyz_index = -1;
+
+tf::Transformer tf_transformer;
+extern double gps_correction_factor;
+extern carmen_pose_3D_t sensor_board_1_pose;
+extern carmen_pose_3D_t gps_pose_in_the_car;
 
 
 static void
@@ -339,6 +351,176 @@ publish_carmen_base_ackerman_odometry()
 	carmen_test_ipc(err, "Could not publish carmen_base_ackerman_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+int
+get_gps_xyz_index_by_timestamp(double timestamp)
+{
+	double min_diff, diff;
+	int min_index;
+
+	min_diff = DBL_MAX;
+	min_index = -1;
+
+	for (int i = 0; i < GPS_XYZ_VECTOR_SIZE; i++)
+	{
+		diff = fabs(gps_xyz_vector[i].timestamp - timestamp);
+
+		if (diff < min_diff)
+		{
+			min_diff = diff;
+			min_index = i;
+		}
+	}
+
+	return (min_index);
+}
+
+
+static tf::Vector3
+carmen_vector3_to_tf_vector3(carmen_vector_3D_t carmen_vector)
+{
+	tf::Vector3 tf_vector(carmen_vector.x, carmen_vector.y, carmen_vector.z);
+
+	return (tf_vector);
+}
+
+
+static carmen_vector_3D_t
+tf_vector3_to_carmen_vector3(tf::Vector3 tf_vector)
+{
+	carmen_vector_3D_t carmen_vector;
+	carmen_vector.x = tf_vector.x();
+	carmen_vector.y = tf_vector.y();
+	carmen_vector.z = tf_vector.z();
+
+	return (carmen_vector);
+}
+
+
+static tf::Quaternion
+carmen_rotation_to_tf_quaternion(carmen_orientation_3D_t carmen_orientation)
+{
+	tf::Quaternion tf_quat(carmen_orientation.yaw, carmen_orientation.pitch, carmen_orientation.roll);
+
+	return tf_quat;
+}
+
+
+static carmen_vector_3D_t
+carmen_ackerman_interpolated_robot_position_at_time(carmen_vector_3D_t robot_pose, double dt, double v, double theta)
+{
+	carmen_vector_3D_t pose = robot_pose;
+	int i;
+	int steps = 1;
+	double ds;
+
+	ds = v * (dt / (double) steps);
+
+	for (i = 0; i < steps; i++)
+	{
+		pose.x = pose.x + ds * cos(theta);
+		pose.y = pose.y + ds * sin(theta);
+	}
+
+	return (pose);
+}
+
+
+void
+initialize_tf_transforms()
+{
+	tf::Transform board_to_gps_pose;
+	tf::Transform board_to_camera_pose;
+	tf::Transform car_to_board_pose;
+	tf::Transform world_to_car_pose;
+	tf::Transform ultrasonic_sensor_r1_to_car_pose;
+	tf::Transform ultrasonic_sensor_r2_to_car_pose;
+	tf::Transform ultrasonic_sensor_l1_to_car_pose;
+	tf::Transform ultrasonic_sensor_l2_to_car_pose;
+
+	tf::Time::init();
+
+	// board pose with respect to the car
+	car_to_board_pose.setOrigin(tf::Vector3(sensor_board_1_pose.position.x, sensor_board_1_pose.position.y, sensor_board_1_pose.position.z));
+	car_to_board_pose.setRotation(tf::Quaternion(sensor_board_1_pose.orientation.yaw, sensor_board_1_pose.orientation.pitch, sensor_board_1_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
+	tf_transformer.setTransform(car_to_board_transform, "car_to_board_transform");
+
+	// gps pose with respect to the board
+	board_to_gps_pose.setOrigin(tf::Vector3(gps_pose_in_the_car.position.x, gps_pose_in_the_car.position.y, gps_pose_in_the_car.position.z));
+	board_to_gps_pose.setRotation(tf::Quaternion(gps_pose_in_the_car.orientation.yaw, gps_pose_in_the_car.orientation.pitch, gps_pose_in_the_car.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform board_to_gps_transform(board_to_gps_pose, tf::Time(0), "/board", "/gps");
+	tf_transformer.setTransform(board_to_gps_transform, "board_to_gps_transform");
+}
+
+
+carmen_vector_3D_t
+get_car_pose_from_gps_pose(carmen_gps_xyz_message *gps_xyz_message, double theta, double v, double timestamp)
+{
+	tf::StampedTransform gps_to_car;
+	tf_transformer.lookupTransform((char *) "/gps", (char *) "/car", tf::Time(0), gps_to_car);
+
+	carmen_vector_3D_t gps_position;
+	gps_position.x = gps_xyz_message->x;
+	gps_position.y = gps_xyz_message->y;
+	gps_position.z = gps_xyz_message->z;
+
+	tf::Transform global_to_gps;
+	global_to_gps.setOrigin(carmen_vector3_to_tf_vector3(gps_position));
+	global_to_gps.setRotation(carmen_rotation_to_tf_quaternion({0.0, 0.0, theta}));
+
+	tf::Transform global_to_car = global_to_gps * gps_to_car;
+
+	carmen_vector_3D_t car_position = tf_vector3_to_carmen_vector3(global_to_car.getOrigin());
+
+	car_position = carmen_ackerman_interpolated_robot_position_at_time(car_position, timestamp - gps_xyz_message->timestamp, v, theta);
+
+	return (car_position);
+}
+
+
+void
+gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, carmen_velodyne_partial_scan_message *zt)
+{
+	if (g_gps_xyz_index == -1)
+		return;
+
+	carmen_gps_xyz_message *gps_xyz_message = &(gps_xyz_vector[get_gps_xyz_index_by_timestamp(zt->timestamp)]);
+
+	if (fabs(gps_xyz_message->timestamp - zt->timestamp) > 0.3)
+		return;
+
+	double gps_sigma_squared = 100.0 * 100.0;
+	if (gps_xyz_message->gps_quality == 4)
+		gps_sigma_squared = 1.0 * 1.0;
+	else if (gps_xyz_message->gps_quality == 5)
+		gps_sigma_squared = 2.0 * 2.0;
+
+//	int i = xt_1->param->num_particles / 2;
+//	carmen_vector_3D_t estimated_car_pose = get_car_pose_from_gps_pose(gps_xyz_message, xt_1->particles[i].theta,
+//			xt_1->particles[i].v, zt->timestamp);
+//	double distance = DIST2D(xt_1->particles[i], estimated_car_pose);
+//	double distance_squared = distance * distance;
+//	double gps_weight = exp(-distance_squared / gps_sigma_squared) + 0.000001;
+//	printf("gps_sigma_squared %lf, distance[%d] %lf, weight %lf, gps_weight %lf\n", gps_sigma_squared, i, distance,
+//			xt_1->particles[i].weight, gps_weight);
+	double normalization_factor = sqrt((2.0 * 2.0) * 2.0 * M_PI); // gps_weight = 1.0 no máximo com gps_xyz_message->gps_quality == 5
+	for (int i = 0; i < xt_1->param->num_particles; i++)
+	{
+		carmen_vector_3D_t estimated_car_pose = get_car_pose_from_gps_pose(gps_xyz_message, xt_1->particles[i].theta,
+				xt_1->particles[i].v, zt->timestamp);
+		double distance = DIST2D(xt_1->particles[i], estimated_car_pose);
+		double distance_squared = distance * distance;
+		double gps_weight = exp(-distance_squared / gps_sigma_squared) / sqrt(gps_sigma_squared * 2.0 * M_PI);
+
+		printf("gps_sigma_squared %lf, distance[%d] %lf, weight %lf, gps_weight %lf\n", gps_sigma_squared, i, distance,
+				xt_1->particles[i].weight, gps_weight * normalization_factor);
+
+		xt_1->particles[i].weight = xt_1->particles[i].weight + gps_weight * gps_correction_factor * normalization_factor;
+	}
+	printf("\n");
+}
 
 
 static void
@@ -649,6 +831,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
+	gps_xyz_correction(filter, velodyne_message);
 
 //	carmen_localize_ackerman_beta_correction(beta_filter,
 //			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
@@ -1160,6 +1343,22 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 
 
 static void
+gps_xyz_message_handler(carmen_gps_xyz_message *msg)
+{
+	static int is_first_gps_xyz_message = 1;
+
+	if (is_first_gps_xyz_message)
+	{
+		is_first_gps_xyz_message = 0;
+		return;
+	}
+
+	g_gps_xyz_index = (g_gps_xyz_index + 1) % GPS_XYZ_VECTOR_SIZE;
+	gps_xyz_vector[g_gps_xyz_index] = *msg;
+}
+
+
+static void
 shutdown_localize(int x)
 {
 	if (x == SIGINT)
@@ -1354,6 +1553,7 @@ subscribe_to_ipc_message()
 
 	carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_and_beta_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_gps_xyz_subscribe_message(NULL, (carmen_handler_t) gps_xyz_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1504,6 +1704,7 @@ main(int argc, char **argv)
 
 	/* Initialize all the relevant parameters */
 	carmen_localize_ackerman_read_parameters(argc, argv, &param, &map_params);
+	initialize_tf_transforms();
 
 #ifndef OLD_MOTION_MODEL
 	param.motion_model = carmen_localize_ackerman_motion_initialize(argc, argv);
