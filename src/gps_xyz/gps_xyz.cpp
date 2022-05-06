@@ -70,6 +70,9 @@ vector<carmen_gps_xyz_message> gps_xyz_message_queue;
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t gps_pose_in_the_car;
 
+carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
+int base_ackerman_odometry_index = -1;
+
 
 double
 get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
@@ -119,6 +122,30 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 	}
 	else
 		return (false);
+}
+
+
+static int
+gps_xyz_get_base_ackerman_odometry_index_by_timestamp(double timestamp)
+{
+	double min_diff, diff;
+	int min_index;
+
+	min_diff = DBL_MAX;
+	min_index = -1;
+
+	for (int i = 0; i < BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE; i++)
+	{
+		diff = fabs(base_ackerman_odometry_vector[i].timestamp - timestamp);
+
+		if (diff < min_diff)
+		{
+			min_diff = diff;
+			min_index = i;
+		}
+	}
+
+	return (min_index);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -266,12 +293,15 @@ get_nearest_graphslam_gps_pose_opt(double timestamp)
 			timestamp,
             mystruct_comparer());
 
-	double delta_t = fabs((*car_pose_iter).timestamp - timestamp);
-//	printf("%lf %lf - delta_t %lf ", (*car_pose_iter).timestamp, timestamp, delta_t);
-
+	int base_ackerman_odometry_index = gps_xyz_get_base_ackerman_odometry_index_by_timestamp(timestamp);
 	double v = 0.0;
+	if (fabs(base_ackerman_odometry_vector[base_ackerman_odometry_index].timestamp - timestamp) < 0.2)
+		v = base_ackerman_odometry_vector[base_ackerman_odometry_index].v;
+
 	carmen_vector_3D_t gps_pose = get_gps_pose_from_car_pose(*car_pose_iter, (*car_pose_iter).theta, v, timestamp);
 	static graphslam_pose_t pose;
+	double delta_t = fabs((*car_pose_iter).timestamp - timestamp);
+//	printf("%lf %lf - delta_t %lf, %lf ", (*car_pose_iter).timestamp, timestamp, delta_t, v);
     if (delta_t < 0.1)
     {
     	pose = {gps_pose.x, gps_pose.y, (*car_pose_iter).theta, timestamp};
@@ -478,6 +508,14 @@ velodyne_gps_handler(carmen_velodyne_gps_message *message)
 }
 
 
+static void
+base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
+{
+	base_ackerman_odometry_index = (base_ackerman_odometry_index + 1) % BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE;
+	base_ackerman_odometry_vector[base_ackerman_odometry_index] = *msg;
+}
+
+
 void
 shutdown_module(int signo)
 {
@@ -574,9 +612,10 @@ main(int argc, char *argv[])
 	carmen_xsens_xyz_define_message();
 	carmen_velodyne_gps_xyz_define_message();
 
-	carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t) carmen_gps_gpgga_message_handler, CARMEN_SUBSCRIBE_ALL);
-	carmen_xsens_mtig_subscribe_message(NULL, (carmen_handler_t) xsens_mtig_handler, CARMEN_SUBSCRIBE_ALL);
-	carmen_velodyne_subscribe_gps_message(NULL, (carmen_handler_t) velodyne_gps_handler, CARMEN_SUBSCRIBE_ALL);
+	carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t) carmen_gps_gpgga_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_xsens_mtig_subscribe_message(NULL, (carmen_handler_t) xsens_mtig_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_velodyne_subscribe_gps_message(NULL, (carmen_handler_t) velodyne_gps_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	/* Loop forever waiting for messages */
 	carmen_ipc_dispatch();

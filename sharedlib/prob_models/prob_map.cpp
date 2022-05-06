@@ -1686,6 +1686,13 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 				}
 			}
 		}
+
+//		if ((sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground) &&
+//			(!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i]))
+//			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
+//		else
+//			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_l0;
+
 		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) &&
 			(min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
 		{
