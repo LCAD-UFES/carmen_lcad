@@ -173,6 +173,11 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 		phi = 0.0;
 	}
 
+	if (v > ford_escape_hybrid_config->max_velocity)
+		v = ford_escape_hybrid_config->max_velocity;
+	if (v < ford_escape_hybrid_config->max_velocity_reverse)
+		v = ford_escape_hybrid_config->max_velocity_reverse;
+
 	// The function carmen_ford_escape_hybrid_steering_PID_controler() uses g_atan_desired_curvature to compute the g_steering_command that is sent to the car.
 	// This function is called when new info about the current measured velocity (g_XGV_velocity) arrives from the car via Jaus messages handled
 	// by the torc_report_velocity_state_message_handler() callback function.
@@ -1048,6 +1053,8 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 //		{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
 		{"robot", "understeer_coeficient2", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient2), 0, NULL},
 		{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
+		{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &(config->max_velocity), 1, NULL},
+		{"robot", "max_velocity_reverse", CARMEN_PARAM_DOUBLE, &(config->max_velocity_reverse), 1, NULL},
 
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 0, NULL},

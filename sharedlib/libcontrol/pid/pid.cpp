@@ -382,6 +382,12 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
+//	double delta_velocity = fabs(desired_velocity - current_velocity);
+//	double command_velocity_signal = (current_velocity < desired_velocity) ? 1.0 : -1.0;
+//	double max_velocity_change = 5.4 * delta_t;
+
+//	desired_velocity = current_velocity + command_velocity_signal * fmin(delta_velocity, max_velocity_change);
+
 	if (fabs(desired_velocity) < NEAR_ZERO_V) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
 	{
 		desired_velocity = 0.0;

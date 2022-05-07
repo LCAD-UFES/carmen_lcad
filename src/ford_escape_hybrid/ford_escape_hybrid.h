@@ -69,7 +69,9 @@ typedef struct
 //	double understeer_coeficient;
 	double understeer_coeficient2; // Sera que isso soh eh preciso ao ler da IARA? Se sim, o paramentro acima deve ser zero em todos os modulos
 	double max_phi;
-	
+	double max_velocity;
+	double max_velocity_reverse;
+
 	carmen_robot_and_trailer_motion_command_t *current_motion_command_vector;
 	int nun_motion_commands;
 	double time_of_last_command;
