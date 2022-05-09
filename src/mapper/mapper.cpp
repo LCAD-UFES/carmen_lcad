@@ -437,8 +437,8 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 		}
 
 		if (create_map_sum_and_count)
-			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(
-				&snapshot_map,
+			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays_into_log_odds_snapshot_map(
+				log_odds_snapshot_map,
 				&sum_occupancy_map,
 				&count_occupancy_map,
 				sensor_params,
@@ -530,7 +530,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *occupanc
 		}
 		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
 		if (create_map_sum_and_count)
-			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(occupancy_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays_into_log_odds_snapshot_map(log_odds_snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 		else
 			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 

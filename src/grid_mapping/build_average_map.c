@@ -81,28 +81,26 @@ main(int argc, char **argv)
 
 	carmen_grid_mapping_read_complete_map_type(map_path, &complete_map_sum, "u");
 	carmen_grid_mapping_read_complete_map_type(map_path, &complete_map_count, "o");
-	carmen_grid_mapping_read_complete_map_type(map_path, &complete_map_average, "e");
+//	carmen_grid_mapping_read_complete_map_type(map_path, &complete_map_average, "e");
 
+	complete_map_average.config.resolution = complete_map_sum.config.resolution;
+	complete_map_average.config.x_origin = complete_map_sum.config.x_origin;
+	complete_map_average.config.y_origin = complete_map_sum.config.y_origin;
+	complete_map_average.config.x_size = complete_map_sum.config.x_size;
+	complete_map_average.config.y_size = complete_map_sum.config.y_size;
+	complete_map_average.complete_map = (double*) malloc(sizeof(double) * complete_map_average.config.x_size * complete_map_average.config.y_size);
+	complete_map_average.map = (double**)malloc(sizeof(double*) * complete_map_average.config.x_size);
 
-//	complete_map_average.config.resolution = complete_map_sum.config.resolution;
-//	complete_map_average.config.x_origin = complete_map_sum.config.x_origin;
-//	complete_map_average.config.y_origin = complete_map_sum.config.y_origin;
-//	complete_map_average.config.x_size = complete_map_sum.config.x_size;
-//	complete_map_average.config.y_size = complete_map_sum.config.y_size;
-//	complete_map_average.complete_map = (double*) malloc(sizeof(double) * complete_map_average.config.x_size * complete_map_average.config.y_size);
-//	complete_map_average.map = (double**)malloc(sizeof(double*) * complete_map_average.config.x_size);
-//
-//
-//	for (int x = 0; x < complete_map_average.config.x_size; x++)
-//	{
-//		complete_map_average.map[x] = &complete_map_average.complete_map[x * complete_map_average.config.y_size];
-//
-//		//initializing map with unknown
-//		for (int y = 0; y < complete_map_average.config.y_size; y++)
-//		{
-//			complete_map_average.map[x][y] = -1.0;
-//		}
-//	}
+	for (int x = 0; x < complete_map_average.config.x_size; x++)
+	{
+		complete_map_average.map[x] = &complete_map_average.complete_map[x * complete_map_average.config.y_size];
+
+		//initializing map with unknown
+		for (int y = 0; y < complete_map_average.config.y_size; y++)
+		{
+			complete_map_average.map[x][y] = -1.0;
+		}
+	}
 
 	double mean = 0.0;
 	for (int x = 0; x < complete_map_sum.config.x_size; x++)
@@ -138,12 +136,11 @@ main(int argc, char **argv)
 //				complete_map_average.map[x][y] = ((mean < 0.68) && (mean > 0.0)) ? 0.0  : mean;
 			}
 		}
-
 	}
 
 	sprintf(new_complete_map_name, "%scomplete_map.map", map_path);
 	printf("Saving map %s\n", new_complete_map_name);
 	carmen_grid_mapping_save_map(new_complete_map_name, &complete_map_average);
 
-	return 1;
+	return (1);
 }
