@@ -737,6 +737,58 @@ carmen_grid_mapping_read_complete_map(char *map_path, carmen_map_t *map)
 }
 
 
+int
+carmen_grid_mapping_read_complete_map_by_type(char *map_path, char *map_type, carmen_map_t *map)
+{
+	FILE *file;
+	char global_map_path[1000], aux[1000];
+	int rtr = -1;
+
+	switch (map_type[0])
+	{
+	case 'm':
+		sprintf(global_map_path, "%s/complete_map.map", map_path);
+		rtr = carmen_map_read_gridmap_chunk(global_map_path, map);
+
+		sprintf(global_map_path, "%s/complete_map.info", map_path);
+		break;
+
+	case 'o':
+		sprintf(global_map_path, "%s/complete_map_count.map", map_path);
+		rtr = carmen_map_read_gridmap_chunk(global_map_path, map);
+
+		sprintf(global_map_path, "%s/complete_map_count.info", map_path);
+		break;
+
+	case 'u':
+		sprintf(global_map_path, "%s/complete_map_sum.map", map_path);
+		rtr = carmen_map_read_gridmap_chunk(global_map_path, map);
+
+		sprintf(global_map_path, "%s/complete_map_sum.info", map_path);
+		break;
+
+	default:
+		exit(printf("Error! map_type %c not implemented in this program yet...\n", map_type[0]));
+	}
+
+	file = fopen(global_map_path, "r");
+
+	if (file == NULL)
+	{
+		fprintf(stderr, "Error: complete map not found!\n");
+		return -1;
+	}
+
+	fscanf(file, "%s\n", aux);
+	map->config.x_origin = atof(aux);
+	fscanf(file, "%s\n", aux);
+	map->config.y_origin = atof(aux);
+	fclose(file);
+
+	return (rtr);
+}
+
+
 carmen_map_t *
 carmen_grid_mapping_copy_map(carmen_map_t *map, carmen_map_t *map_from)
 {
