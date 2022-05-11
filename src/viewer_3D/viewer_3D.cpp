@@ -57,6 +57,7 @@ static lane_analysis_drawer *lane_drawer;
 
 #include "symotha_drawer.h"
 
+#include "math.h" //test Braian
 
 static int num_laser_devices;
 static int stereo_point_cloud_size;
@@ -782,10 +783,7 @@ draw_everything()
 
     if (follow_car_flag)
     {
-        set_camera_offset(car_fused_pose.position);
-
-//            set_camera_offset({0,0,0});
-//            set_camera ({{-5,0,3}, {0,0,0}});
+    	set_camera_offset(car_fused_pose);
     }
 
     reset_camera();
@@ -1029,9 +1027,9 @@ draw_everything()
 
     if (draw_map_flag)
     {
-        carmen_pose_3D_t camera_pose = get_camera_pose();
-        double map_zoom = camera_pose.position.z / 120.0;
-        draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
+//        carmen_pose_3D_t camera_pose = get_camera_pose();
+//        double map_zoom = camera_pose.position.z / 120.0; // test Braian
+        draw_map(m_drawer, get_position_offset(), car_fused_pose, 0.6); // test Braian
 //            carmen_pose_3D_t camera_pose = get_camera_pose();
 //            printf("x %lf, y %lf, z %lf\n", camera_pose.position.x, camera_pose.position.y, camera_pose.position.z);
 //            camera_pose = get_camera_offset();
@@ -3792,7 +3790,7 @@ draw_while_picking()
 	lastDisplayTime = carmen_get_time();
 
 	if (follow_car_flag)
-		set_camera_offset(car_fused_pose.position);
+		set_camera_offset(car_fused_pose);
 
 	reset_camera();
 
@@ -4489,6 +4487,7 @@ mouseFunc(int type, int button, int x, int y)
     static int lastX = 0;
     static int lastY = 0;
     static int pressed = 0;
+    static int last_type = 0;
 
     interface_mouse_func(i_drawer, type, button, x, y, window_height);
 
@@ -4505,13 +4504,15 @@ mouseFunc(int type, int button, int x, int y)
     }
     else if (button == 5)
     {
-        // zoom out
+        // zoo m out
         carmen_vector_3D_t displacement = {-1.0, 0.0, 0.0};
         move_camera(displacement);
     }
 
     double dx = (x - lastX) / 2.0;
     double dy = (y - lastY) / 2.0;
+
+//    printf("lastX: %d, lastY: %d, x:%d, y: %d, dx: %lf, dy: %lf\n", lastX, lastY, x, y, dx, dy);
 
     lastX = x;
     lastY = y;
@@ -4530,7 +4531,28 @@ mouseFunc(int type, int button, int x, int y)
             //take_position_for_annotation_unproject(x,y);
         }
     }
-    //printf("mouse - type: %d, button: %d, x: %d, y: %d\n", type, button, x, y);
+
+    if (type == 4)
+    {
+    	enable_free_mode();
+    }
+
+    if (type == 5)
+    {
+    	if(last_type == 4)
+    	{
+    		disable_free_mode(car_fused_pose.orientation);
+    	}
+    	else
+    	{
+    		enable_free_mode();
+    	}
+    }
+
+
+//    printf("last-mouse-type: %d, mouse - type: %d, button: %d, x: %d, y: %d\n", last_type, type, button, x, y);
+    last_type = type;
+
 }
 
 void
@@ -4541,37 +4563,68 @@ keyPress(int code)
     {
     case 111: // UP
     {
-        carmen_orientation_3D_t rotation = {0.0, carmen_degrees_to_radians(4.0), 0.0};
-        rotate_camera(rotation);
+//        carmen_orientation_3D_t rotation = {0.0, carmen_degrees_to_radians(4.0), 0.0};
+//        rotate_camera(rotation);
+
+//    	carmen_vector_3D_t displacement = {0.5, 0.0, 0.0};
+//    	move_camera(displacement);
+
+    	move_front_camera(0.5);
     }
         break;
 
     case 113: // LEFT
     {
-        carmen_orientation_3D_t rotation = {-carmen_degrees_to_radians(4.0), 0.0, 0.0};
-        rotate_camera(rotation);
+//        carmen_orientation_3D_t rotation = {-carmen_degrees_to_radians(4.0), 0.0, 0.0};
+//        rotate_camera(rotation);
+
+    	carmen_vector_3D_t displacement = {0.0, 0.5, 0.0};
+    	move_camera(displacement);
+
+//    	printf("car_fused_pose.position -> x: %f, y: %f, z: %f\n", car_fused_pose.position.x, car_fused_pose.position.y, car_fused_pose.position.z);
+//    	printf("car_fused_pose.orientation -> x: %f, y: %f, z: %f\n", car_fused_pose.orientation.pitch, car_fused_pose.orientation.roll, car_fused_pose.orientation.yaw);
     }
         break;
 
     case 114: // RIGHT
     {
-        carmen_orientation_3D_t rotation = {carmen_degrees_to_radians(4.0), 0.0, 0.0};
-        rotate_camera(rotation);
+//        carmen_orientation_3D_t rotation = {carmen_degrees_to_radians(4.0), 0.0, 0.0};
+//        rotate_camera(rotation);
+
+    	carmen_vector_3D_t displacement = {0.0, -0.5, 0.0};
+    	move_camera(displacement);
+
+//    	printf("car_fused_pose.position -> x: %f, y: %f, z: %f\n", car_fused_pose.position.x, car_fused_pose.position.y, car_fused_pose.position.z);
+//    	printf("car_fused_pose.orientation -> x: %f, y: %f, z: %f\n", car_fused_pose.orientation.pitch, car_fused_pose.orientation.roll, car_fused_pose.orientation.yaw);
     }
         break;
 
     case 116: // DOWN
     {
-        carmen_orientation_3D_t rotation = {0.0, -carmen_degrees_to_radians(4.0), 0.0};
-        rotate_camera(rotation);
+//        carmen_orientation_3D_t rotation = {0.0, -carmen_degrees_to_radians(4.0), 0.0};
+//        rotate_camera(rotation);
+
+//    	carmen_vector_3D_t displacement = {-0.5, 0.0, 0.0};
+//    	move_camera(displacement);
+
+    	move_front_camera(-0.5);
+
+//    	printf("car_fused_pose.position -> x: %f, y: %f, z: %f\n", car_fused_pose.position.x, car_fused_pose.position.y, car_fused_pose.position.z);
+//    	printf("car_fused_pose.orientation -> x: %f, y: %f, z: %f\n", car_fused_pose.orientation.pitch, car_fused_pose.orientation.roll, car_fused_pose.orientation.yaw);
     }
         break;
+    case 64: // ALT-LEFT
+    {
+    	//
+    }
 
+    	break;
     case 65: // SPACE
     {
         follow_car_flag = !follow_car_flag;
     }
         break;
+
 
     case 27: // R
     {
@@ -4730,6 +4783,30 @@ keyPress(int code)
         g_last_velodyne_single_ray = g_velodyne_single_ray;
     }
         break;
+    case 16: // 7 // test Braian
+    {
+    	set_camera_mode(1);
+    	follow_car_flag = 1;
+
+    }
+       break;
+    case 17: // 8 // test Braian
+    {
+    	set_camera_mode(2);
+    	follow_car_flag = 1;
+    }
+       break;
+    case 18: // 9 // test Braian
+    {
+    	set_camera_mode(3);
+    	follow_car_flag = 1;
+    }
+       break;
+    case 19: // 0 // test Braian
+    {
+    	// adicionar mais modos de camera.
+    }
+       break;
     }
 }
 
