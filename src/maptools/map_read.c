@@ -668,10 +668,10 @@ carmen_map_read_gridmap_chunk(char *filename, carmen_map_p map)
     return -1;
 
   fp = carmen_fopen(filename, "r");
-  if(fp == NULL) {
-	if (file_warnings)
-      fprintf(stderr, "Error: could not open file %s for reading.\n",
-	    filename);
+  if (fp == NULL) {
+//	if (file_warnings)
+//      fprintf(stderr, "Error: could not open file %s for reading.\n",
+//	    filename);
     return -1;
   }
   if(carmen_map_advance_to_chunk(fp, CARMEN_MAP_GRIDMAP_CHUNK) < 0) {

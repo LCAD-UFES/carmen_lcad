@@ -43,7 +43,8 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-lultrasonic_filter_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
-	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils \
+	-lparking_assistant_interface -llocalize_ackerman_core -lcarmodel -lgsl -lgslcblas -llocalize_ackerman_motion -ltask_manager_interface \
+	-llaser_ldmrs_interface -llaser_ldmrs_utils -ldbscan \
 	-lmoving_objects_interface # -lstereo_mapping_interface
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
@@ -62,7 +63,7 @@ SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from
 		  test_diff_map.cpp #neural_mapper_dataset_check.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
-PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h neural_mapper_io.h
+PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h neural_mapper_io.h neural_map.h lib_neural_mapper_py.h
 
 # Public libraries, linked to 'carmen/lib'.
 PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
@@ -84,11 +85,11 @@ endif
 
 libmapper_interface.a:	mapper_interface.o
 
-libmapper.a: mapper.o
+libmapper.a: mapper.o neural_mapper_io.o neural_map.o lib_neural_mapper_py.o
 
 libmapper_interface.so.1: libmapper_interface.o
 
-mapper: mapper.o mapper_main.o libmapper.a libmapper_interface.a neural_mapper_io.o neural_map.o lib_neural_mapper_py.o $(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a
+mapper: mapper.o mapper_main.o libmapper.a libmapper_interface.a $(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a
 
 # convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 

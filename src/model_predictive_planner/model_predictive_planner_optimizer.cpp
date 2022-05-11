@@ -841,7 +841,14 @@ get_distance_dependent_activation_factor(double threshold __attribute__((unused)
 {
 	double activation_factor = 1.0;
 	return (activation_factor);
+}
 
+
+//double
+//get_distance_dependent_activation_factor(double threshold, ObjectiveFunctionParams *my_params)
+//{
+//	double activation_factor = 1.0;
+//
 //	if (my_params->target_td->dist < threshold)
 //	{
 //		if (my_params->target_td->dist > (threshold - 1.0))
@@ -851,7 +858,7 @@ get_distance_dependent_activation_factor(double threshold __attribute__((unused)
 //	}
 //
 //	return (activation_factor);
-}
+//}
 
 
 double

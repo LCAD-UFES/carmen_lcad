@@ -73,19 +73,20 @@ extern bool use_merge_between_maps;
 
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern carmen_pose_3D_t front_bullbar_pose;
+extern carmen_pose_3D_t rear_bullbar_pose;
 
-extern sensor_parameters_t *sensors_params;
+sensor_parameters_t *sensors_params;
 extern sensor_parameters_t ultrasonic_sensor_params;
-extern sensor_data_t *sensors_data;
+sensor_data_t *sensors_data;
 
-extern int number_of_sensors;
+int number_of_sensors;
 
 #define MAX_NUMBER_OF_LIDARS 16   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
 
 // const int number_of_lidars = 12; //lidar parameters
 const int first_lidar_number = 10;
-extern carmen_semi_trailer_config_t semi_trailer_config;
-extern carmen_pose_3D_t velodyne_pose;
+carmen_semi_trailer_config_t semi_trailer_config;
+carmen_pose_3D_t velodyne_pose;
 extern carmen_pose_3D_t laser_ldmrs_pose;
 extern carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
 
@@ -110,7 +111,6 @@ int use_neural_mapper = 0;
 int generate_neural_mapper_dataset = 0;
 int neural_mapper_max_distance_meters = 0;
 int neural_mapper_data_pace = 0;
-extern int neural_map_num_clouds;
 /**********************/
 
 rotation_matrix *r_matrix_car_to_global = NULL;
@@ -119,16 +119,11 @@ extern int use_truepos;
 
 double time_secs_between_map_save = 0.0;
 
-extern int mapping_mode;
-
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 extern carmen_moving_objects_point_clouds_message *moving_objects_message;
 
 extern carmen_mapper_virtual_scan_message virtual_scan_message;
-
-extern char *calibration_file;
-extern char *save_calibration_file;
 
 int use_unity_simulator = 0;
 
@@ -137,10 +132,29 @@ extern carmen_map_t occupancy_map;
 extern int publish_diff_map;
 extern double publish_diff_map_interval;
 
-extern int g_argc;
-extern char **g_argv;
-
 extern tf::Transformer tf_transformer;
+
+carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
+carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
+carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
+carmen_localize_ackerman_globalpos_message globalpos;
+carmen_localize_ackerman_particle_filter_p filter;
+carmen_map_t local_map;
+carmen_map_t local_sum_remission_map;
+carmen_map_t local_mean_remission_map;
+carmen_map_t local_variance_remission_map;
+carmen_map_t local_sum_sqr_remission_map;
+carmen_map_t local_count_remission_map;
+
+carmen_compact_map_t local_compacted_map;
+carmen_compact_map_t local_compacted_mean_remission_map;
+carmen_compact_map_t local_compacted_variance_remission_map;
+carmen_localize_ackerman_binary_map_t binary_map;
+
+carmen_map_config_t map_config;
+carmen_robot_ackerman_config_t car_config;
+
+int mapping_mode = 0;
 
 // #define OBSTACLE_PROBABILY_MESSAGE
 
@@ -253,6 +267,33 @@ free_virtual_scan_message()
 }
 
 
+void
+update_sensor_reference_pose(double beta)
+{
+
+	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	{
+		if (!sensors_params[i + 10].alive || sensors_params[i + 10].sensor_reference != 2)
+			continue;
+
+		//Coloquei dentro do for para não calcular atoa (quando a rear bullbar não for usada)
+		//Alterar o rear_bullbar_pose por conta do beta
+		carmen_pose_3D_t temp_rear_bullbar_pose = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
+
+		//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+		carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, temp_rear_bullbar_pose};
+
+
+		sensors_params[i + 10].sensor_support_pose = choosed_sensor_referenced[sensors_params[i + 10].sensor_reference];
+		sensors_params[i + 10].support_to_car_matrix = create_rotation_matrix(sensors_params[i + 10].sensor_support_pose.orientation);
+		sensors_params[i + 10].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i + 10].pose.orientation);
+		sensors_params[i + 10].sensor_robot_reference = carmen_change_sensor_reference(sensors_params[i + 10].sensor_support_pose.position,
+															sensors_params[i + 10].pose.position, sensors_params[i + 10].support_to_car_matrix);
+		sensors_params[i + 10].height = sensors_params[i + 10].sensor_robot_reference.z + robot_wheel_radius;
+	}
+}
+
+
 // static void
 // read_parameters_semi_trailer(int semi_trailer_type)
 // {
@@ -349,7 +390,7 @@ publish_map(double timestamp)
 
 	add_moving_objects(&occupancy_map, moving_objects_message);
 
-	// Publica o mapa compactado aoenas com as celulas com probabilidade igual ou maior que 0.5
+	// Publica o mapa compactado apenas com as celulas com probabilidade igual ou maior que 0.5
 	carmen_compact_map_t cmap;
 	carmen_prob_models_create_compact_map_with_cells_larger_than_value(&cmap, &occupancy_map, 0.5);
 	carmen_mapper_publish_compact_map_message(&cmap, timestamp);
@@ -419,6 +460,12 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (globalpos_message->semi_trailer_type != semi_trailer_config.type)
 		read_parameters_semi_trailer(globalpos_message->semi_trailer_type);
+
+#ifdef USE_REAR_BULLBAR
+	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+	if (globalpos_message->semi_trailer_type != 0) // se for igual a 0 ele não é articulado e não precisa atualizar a rear_bullbar_pose
+		update_sensor_reference_pose(globalpos_message->beta);
+#endif
 
 	if (ok_to_publish)
 	{
@@ -770,9 +817,9 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	offline_map.config = msg->config;
 
 	if (use_merge_between_maps)
-		mapper_change_map_origin_to_another_map_block_with_clones(&map_origin, mapper_save_map);
+		mapper_change_map_origin_to_another_map_block_with_clones(map_path, &occupancy_map, &map_origin, mapper_save_map);
 	else
-		mapper_change_map_origin_to_another_map_block(&map_origin, mapper_save_map);
+		mapper_change_map_origin_to_another_map_block(map_path, &occupancy_map, &map_origin, mapper_save_map);
 
 	if (merge_with_offline_map)
 		mapper_merge_online_map_with_offline_map(&offline_map);
@@ -1048,9 +1095,6 @@ define_mapper_messages()
 int
 main(int argc, char **argv)
 {
-	carmen_map_config_t map_config;
-	carmen_robot_ackerman_config_t car_config;
-
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
 

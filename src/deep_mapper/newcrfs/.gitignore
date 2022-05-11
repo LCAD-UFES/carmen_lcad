@@ -1,0 +1,10 @@
+
+__pycache__
+model_zoo
+models
+datasets
+files
+data_splits
+configs
+ckpt
+

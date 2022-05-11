@@ -2,14 +2,13 @@ include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
 CFLAGS += -std=c++11
-CXXFLAGS += -std=gnu++11 -std=gnu++14
+CXXFLAGS += -std=gnu++11 
 
 MODULE_NAME = GLPDepth Neural Network
 MODULE_COMMENT = Depth Estimation with GLPDepth
 
-IFLAGS += -I/usr/include/python3.6m -I/usr/include/python3.7 
-LFLAGS += `python3.6-config --libs` `python3.7-config --libs`
-
+IFLAGS += -I/usr/include/python3.6m
+LFLAGS += `python3.6-config --libs`
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 
@@ -22,7 +21,7 @@ LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basi
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 SOURCES = libglpdepth.cpp
- 
+
 PUBLIC_INCLUDES = libglpdepth.h
 PUBLIC_LIBRARIES = libglpdepth.a
 PUBLIC_BINARIES = 

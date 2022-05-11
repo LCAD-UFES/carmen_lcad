@@ -48,7 +48,7 @@
 #include <carmen/xsens_mtig_interface.h>
 
 #include <vector>
-
+#include <algorithm>
 
 #define GPS_MESSAGE_QUEUE_SIZE 10
 #define GPS_REACH1 2
@@ -58,8 +58,20 @@
 
 using namespace std;
 
+typedef struct
+{
+	double x, y, theta, timestamp;
+} graphslam_pose_t;
+
+vector<graphslam_pose_t> graphslam_poses_opt;
 
 vector<carmen_gps_xyz_message> gps_xyz_message_queue;
+
+carmen_pose_3D_t sensor_board_1_pose;
+carmen_pose_3D_t gps_pose_in_the_car;
+
+carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
+int base_ackerman_odometry_index = -1;
 
 
 double
@@ -111,6 +123,30 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 	else
 		return (false);
 }
+
+
+static int
+gps_xyz_get_base_ackerman_odometry_index_by_timestamp(double timestamp)
+{
+	double min_diff, diff;
+	int min_index;
+
+	min_diff = DBL_MAX;
+	min_index = -1;
+
+	for (int i = 0; i < BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE; i++)
+	{
+		diff = fabs(base_ackerman_odometry_vector[i].timestamp - timestamp);
+
+		if (diff < min_diff)
+		{
+			min_diff = diff;
+			min_index = i;
+		}
+	}
+
+	return (min_index);
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -159,6 +195,123 @@ publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gphdt_p
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include <tf.h>
+
+tf::Transformer tf_transformer;
+
+
+static tf::Vector3
+carmen_vector3_to_tf_vector3(carmen_vector_3D_t carmen_vector)
+{
+	tf::Vector3 tf_vector(carmen_vector.x, carmen_vector.y, carmen_vector.z);
+
+	return (tf_vector);
+}
+
+
+static carmen_vector_3D_t
+tf_vector3_to_carmen_vector3(tf::Vector3 tf_vector)
+{
+	carmen_vector_3D_t carmen_vector;
+	carmen_vector.x = tf_vector.x();
+	carmen_vector.y = tf_vector.y();
+	carmen_vector.z = tf_vector.z();
+
+	return (carmen_vector);
+}
+
+
+static tf::Quaternion
+carmen_rotation_to_tf_quaternion(carmen_orientation_3D_t carmen_orientation)
+{
+	tf::Quaternion tf_quat(carmen_orientation.yaw, carmen_orientation.pitch, carmen_orientation.roll);
+
+	return tf_quat;
+}
+
+
+static carmen_vector_3D_t
+carmen_ackerman_interpolated_robot_position_at_time(carmen_vector_3D_t robot_pose, double dt, double v, double theta)
+{
+	carmen_vector_3D_t pose = robot_pose;
+	int i;
+	int steps = 1;
+	double ds;
+
+	ds = v * (dt / (double) steps);
+
+	for (i = 0; i < steps; i++)
+	{
+		pose.x = pose.x + ds * cos(theta);
+		pose.y = pose.y + ds * sin(theta);
+	}
+
+	return (pose);
+}
+
+
+carmen_vector_3D_t
+get_gps_pose_from_car_pose(graphslam_pose_t car_pose, double theta, double v, double timestamp)
+{
+	tf::StampedTransform car_to_gps;
+	tf_transformer.lookupTransform((char *) "/car", (char *) "/gps", tf::Time(0), car_to_gps);
+
+	carmen_vector_3D_t car_position;
+	car_position.x = car_pose.x;
+	car_position.y = car_pose.y;
+	car_position.z = 0.0;
+
+	tf::Transform global_to_car;
+	global_to_car.setOrigin(carmen_vector3_to_tf_vector3(car_position));
+	global_to_car.setRotation(carmen_rotation_to_tf_quaternion({0.0, 0.0, theta}));
+
+	tf::Transform global_to_gps = global_to_car * car_to_gps;
+
+	carmen_vector_3D_t gps_position = tf_vector3_to_carmen_vector3(global_to_gps.getOrigin());
+
+	gps_position = carmen_ackerman_interpolated_robot_position_at_time(gps_position, timestamp - car_pose.timestamp, v, theta);
+
+	return (gps_position);
+}
+
+
+struct mystruct_comparer
+{
+    bool operator ()(graphslam_pose_t const& ms, double const timestamp) const
+    {
+        return ms.timestamp < timestamp;
+    }
+};
+
+
+graphslam_pose_t *
+get_nearest_graphslam_gps_pose_opt(double timestamp)
+{
+	vector<graphslam_pose_t>::iterator car_pose_iter = lower_bound(graphslam_poses_opt.begin(),
+    		graphslam_poses_opt.end(),
+			timestamp,
+            mystruct_comparer());
+
+	int base_ackerman_odometry_index = gps_xyz_get_base_ackerman_odometry_index_by_timestamp(timestamp);
+	double v = 0.0;
+	if (fabs(base_ackerman_odometry_vector[base_ackerman_odometry_index].timestamp - timestamp) < 0.2)
+		v = base_ackerman_odometry_vector[base_ackerman_odometry_index].v;
+
+	carmen_vector_3D_t gps_pose = get_gps_pose_from_car_pose(*car_pose_iter, (*car_pose_iter).theta, v, timestamp);
+	static graphslam_pose_t pose;
+	double delta_t = fabs((*car_pose_iter).timestamp - timestamp);
+//	printf("%lf %lf - delta_t %lf, %lf ", (*car_pose_iter).timestamp, timestamp, delta_t, v);
+    if (delta_t < 0.1)
+    {
+    	pose = {gps_pose.x, gps_pose.y, (*car_pose_iter).theta, timestamp};
+    	return (&pose);
+    }
+    else
+    	return (NULL);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -241,8 +394,19 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 	if (gps_xyz_message.timestamp - first_timestamp < 5.0) // wait for deep_vgl
 		return;
 
-	carmen_gps_xyz_publish_message(gps_xyz_message);
+	if ((gps_xyz_message.gps_quality < 4) && (graphslam_poses_opt.size() > 0))
+	{
+		graphslam_pose_t *graphslam_gps_pose = get_nearest_graphslam_gps_pose_opt(gps_xyz_message.timestamp);
+		if (graphslam_gps_pose)
+		{
+			gps_xyz_message.gps_quality = 6;
+			gps_xyz_message.x = graphslam_gps_pose->x;
+			gps_xyz_message.y = graphslam_gps_pose->y;
+		}
+	}
+//	printf("%lf %lf %d\n", gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.gps_quality);
 
+	carmen_gps_xyz_publish_message(gps_xyz_message);
 
 	if ((gps_xyz_message.nr == GPS_REACH1) || (gps_xyz_message.nr == GPS_REACH2))
 		gps_xyz_message_queue.push_back(gps_xyz_message);
@@ -344,6 +508,14 @@ velodyne_gps_handler(carmen_velodyne_gps_message *message)
 }
 
 
+static void
+base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
+{
+	base_ackerman_odometry_index = (base_ackerman_odometry_index + 1) % BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE;
+	base_ackerman_odometry_vector[base_ackerman_odometry_index] = *msg;
+}
+
+
 void
 shutdown_module(int signo)
 {
@@ -357,6 +529,72 @@ shutdown_module(int signo)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+void
+read_poses_opt_data_file(char *poses_opt_file_name)
+{
+	FILE *f = fopen(poses_opt_file_name, "r");
+	if (!f)
+	{
+		printf("Error: Could not open poses opt file %s\n", poses_opt_file_name);
+		return;
+	}
+
+	printf("Reading poses opt file %s\n", poses_opt_file_name);
+	while(!feof(f))
+	{
+		graphslam_pose_t pose_opt;
+		fscanf(f, "%lf %lf %lf %lf\n", &pose_opt.x, &pose_opt.y, &pose_opt.theta, &pose_opt.timestamp);
+		graphslam_poses_opt.push_back(pose_opt);
+	}
+	printf("%d poses read.\n", (int) graphslam_poses_opt.size());
+}
+
+
+void
+initialize_tf_transforms()
+{
+	tf::Transform board_to_gps_pose;
+	tf::Transform car_to_board_pose;
+
+	tf::Time::init();
+
+	// board pose with respect to the car
+	car_to_board_pose.setOrigin(tf::Vector3(sensor_board_1_pose.position.x, sensor_board_1_pose.position.y, sensor_board_1_pose.position.z));
+	car_to_board_pose.setRotation(tf::Quaternion(sensor_board_1_pose.orientation.yaw, sensor_board_1_pose.orientation.pitch, sensor_board_1_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
+	tf_transformer.setTransform(car_to_board_transform, "car_to_board_transform");
+
+	// gps pose with respect to the board
+	board_to_gps_pose.setOrigin(tf::Vector3(gps_pose_in_the_car.position.x, gps_pose_in_the_car.position.y, gps_pose_in_the_car.position.z));
+	board_to_gps_pose.setRotation(tf::Quaternion(gps_pose_in_the_car.orientation.yaw, gps_pose_in_the_car.orientation.pitch, gps_pose_in_the_car.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform board_to_gps_transform(board_to_gps_pose, tf::Time(0), "/board", "/gps");
+	tf_transformer.setTransform(board_to_gps_transform, "board_to_gps_transform");
+}
+
+
+void
+gps_xyz_read_parameters(int argc, char **argv)
+{
+	carmen_param_t param_list[] =
+	{
+		{(char *) "sensor_board_1", (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
+		{(char *) "sensor_board_1", (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
+		{(char *) "sensor_board_1", (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
+		{(char *) "sensor_board_1", (char *) "roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll),0, NULL},
+		{(char *) "sensor_board_1", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch),0, NULL},
+		{(char *) "sensor_board_1", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	0, NULL},
+		{(char *) "gps", (char *) "nmea_1_x",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.x,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_y",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.y,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_z",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.z,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_roll",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.roll,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_pitch",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.pitch,	1, NULL},
+		{(char *) "gps", (char *) "nmea_1_yaw",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.yaw,		1, NULL},
+	};
+
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -364,13 +602,20 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, shutdown_module);
 
+	if (argc == 2)
+		read_poses_opt_data_file(argv[1]);
+
+	gps_xyz_read_parameters(argc, argv);
+	initialize_tf_transforms();
+
 	carmen_gps_xyz_define_message();
 	carmen_xsens_xyz_define_message();
 	carmen_velodyne_gps_xyz_define_message();
 
-	carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t) carmen_gps_gpgga_message_handler, CARMEN_SUBSCRIBE_ALL);
-	carmen_xsens_mtig_subscribe_message(NULL, (carmen_handler_t) xsens_mtig_handler, CARMEN_SUBSCRIBE_ALL);
-	carmen_velodyne_subscribe_gps_message(NULL, (carmen_handler_t) velodyne_gps_handler, CARMEN_SUBSCRIBE_ALL);
+	carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t) carmen_gps_gpgga_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_xsens_mtig_subscribe_message(NULL, (carmen_handler_t) xsens_mtig_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_velodyne_subscribe_gps_message(NULL, (carmen_handler_t) velodyne_gps_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	/* Loop forever waiting for messages */
 	carmen_ipc_dispatch();

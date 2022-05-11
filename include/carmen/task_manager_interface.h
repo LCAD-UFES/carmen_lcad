@@ -27,8 +27,8 @@ carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(carmen_task
 
 
 void
-carmen_task_manager_publish_state_message(carmen_task_manager_mission_level_state_t mission_state, char *mission_filename,
-											carmen_robot_and_trailer_pose_t final_goal, char *info);
+carmen_task_manager_publish_state_message(carmen_task_manager_mission_level_state_t mission_state, char* mission_id, char *mission_filename,
+											carmen_robot_and_trailer_pose_t pose, char *info);
 
 void
 carmen_task_manager_publish_set_collision_geometry_message(int geometry, double timestamp);

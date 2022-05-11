@@ -177,7 +177,7 @@ vector<string> get_files_from_rddf_list(char *rddf_list);
 void load_rddfs (vector<string> files, vector< vector<carmen_rddf_waypoint> > &rddfs);
 // void build_nearby_lanes(graph_t &graph, double nearby_lane_range, vector< vector<int> > nearby_indexes);
 void process_crossroads_around_nodes(graph_t &graph, double nearby_lane_range);
-void build_nearby_lanes(graph_t &graph, double nearby_lane_range, vector< vector<int> > nearby_indexes, unsigned int qtd_lanes);
+void build_nearby_lanes(graph_t &graph, double nearby_lane_range, vector< vector<int> > nearby_indexes, std::vector<std::vector<carmen_rddf_waypoint>>);
 double euclidean_distance(double x1, double y1, double x2, double y2);
 void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordinate);
 lane_graph_t build_lane_graph (lane_graph_t lane_graph, graph_t &graph);

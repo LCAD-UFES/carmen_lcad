@@ -17,7 +17,7 @@ def activate_virtual_environment(environment_root):
     exec(compile(open(activate_script, "rb").read(), activate_script, 'exec'), dict(__file__=activate_script))
 
 carmen_home = os.getenv("CARMEN_HOME")
-virtualenv_root = carmen_home + "/src/deep_mapper/venv"
+virtualenv_root = carmen_home + "/src/deep_mapper/Adabins/venv"
 activate_virtual_environment(virtualenv_root)
 #virtualenv activated
 

@@ -76,6 +76,9 @@ int carmen_grid_mapping_save_map(char *map_file_name, carmen_map_t *map);
 
 int carmen_grid_mapping_read_complete_map(char *map_path, carmen_map_t *map);
 
+int carmen_grid_mapping_read_complete_map_by_type(char *map_path, char *map_type, carmen_map_t *map);
+
+
 carmen_map_t *carmen_grid_mapping_copy_map(carmen_map_t *map, carmen_map_t *map_from);
 
 #ifdef __cplusplus

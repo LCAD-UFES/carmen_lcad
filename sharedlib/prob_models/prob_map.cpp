@@ -222,11 +222,11 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 
 	cmap->config = map->config;
 
-	if (map->config.map_name != NULL)
-	{
-		cmap->config.map_name = (char *) calloc(strlen(map->config.map_name) + 1, sizeof(char));
-		strcpy(cmap->config.map_name, map->config.map_name);
-	}
+//	if ((map->config.map_name != NULL) && (strlen(map->config.map_name) > 0))
+//	{
+//		cmap->config.map_name = (char *) calloc(strlen(map->config.map_name) + 1, sizeof(char));
+//		strcpy(cmap->config.map_name, map->config.map_name);
+//	}
 
 	cmap->coord_x = (int *) malloc(number_of_cells * sizeof(int));
 	cmap->coord_y = (int *) malloc(number_of_cells * sizeof(int));
@@ -365,8 +365,8 @@ carmen_prob_models_free_compact_map(carmen_compact_map_t *map)
 	if (map->value != NULL)
 		free(map->value);
 
-	if (map->config.map_name != NULL)
-		free(map->config.map_name);
+//	if (map->config.map_name != NULL)
+//		free(map->config.map_name);
 
 	map->value = NULL;
 	map->coord_x = NULL;
@@ -557,11 +557,16 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_m
 	{
 		if (i != sensor_data->ray_that_hit_the_nearest_target[thread_id])
 		{
-			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
-			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
-			if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y))
-				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] != sensor_params->log_odds.log_odds_l0)
+			if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] != sensor_params->log_odds.log_odds_l0) &&
+				!sensor_data->maxed[thread_id][i] &&
+				!sensor_data->ray_hit_the_robot[thread_id][i] &&
+				!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
+			{
+				cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
+				cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
+				if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 					carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+			}
 		}
 	}
 
@@ -582,39 +587,41 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, 
 {
 	int i;
 	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
-	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
+	double prob_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
 
 	cell_hit_by_nearest_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
 	cell_hit_by_nearest_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
 
 	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
-		log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+		prob_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
-		if (i != sensor_data->ray_that_hit_the_nearest_target[thread_id])
+		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] != sensor_params->log_odds.log_odds_l0) &&
+			!sensor_data->maxed[thread_id][i] &&
+			!sensor_data->ray_hit_the_robot[thread_id][i] &&
+			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 		{
 			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
 			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
 			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
-				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0)
+			{
+				if (count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] == -1.0)
 				{
-					if (count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] == -1.0)
-					{
-						count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
-						sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
-					}
-					carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
-
-					sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]); //map->map[cell_hit_by_ray.x][cell_hit_by_ray.y];
-					count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += 1.0;
+					count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
+					sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
 				}
+				carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+
+				sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+				count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += 1.0;
+			}
 		}
 	}
 
 	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
 	{
-		map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
+		map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = prob_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
 
 		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
 			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
@@ -627,7 +634,68 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, 
 			}
 			carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
 
-			sum_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += carmen_prob_models_log_odds_to_probabilistic(2.0 * sensor_params->log_odds.log_odds_occ); //map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+			sum_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += 2.0 * sensor_params->log_odds.log_odds_occ;
+			count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += 1.0;
+		}
+	}
+}
+
+
+void
+carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays_into_log_odds_snapshot_map(carmen_map_t *log_odds_map,
+		carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
+		double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground)
+{
+	int i;
+	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
+	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
+
+	cell_hit_by_nearest_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / log_odds_map->config.resolution);
+	cell_hit_by_nearest_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / log_odds_map->config.resolution);
+
+	if (map_grid_is_valid(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+		log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = log_odds_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] != sensor_params->log_odds.log_odds_l0) &&
+			!sensor_data->maxed[thread_id][i] &&
+			!sensor_data->ray_hit_the_robot[thread_id][i] &&
+			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
+		{
+			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
+			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
+			if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y))
+			{
+				if (count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] == -1.0)
+				{
+					count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
+					sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
+				}
+				carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+
+				sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+				count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += 1.0;
+			}
+		}
+	}
+
+	if (map_grid_is_valid(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+	{
+		log_odds_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
+
+		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
+			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
+			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
+		{
+			if (count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] == -1.0)
+			{
+				count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = 0.0;
+				sum_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = 0.0;
+			}
+			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
+
+			sum_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += 2.0 * sensor_params->log_odds.log_odds_occ;
 			count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += 1.0;
 		}
 	}
@@ -1148,7 +1216,7 @@ carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, 
 				sum_occupancy_map->map[nx][ny] = 0.0;
 			}
 			carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
-			sum_occupancy_map->map[nx][ny] += carmen_prob_models_log_odds_to_probabilistic(sensor_params->log_odds.log_odds_free);
+			sum_occupancy_map->map[nx][ny] += sensor_params->log_odds.log_odds_free;
 			count_occupancy_map->map[nx][ny] += 1.0;
 			if (map->map[nx][ny] >= 0.5)
 				break;	// do not cross obstacles until they are cleared
@@ -1681,11 +1749,16 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 			if (sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground)
 			{
 				if (!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i] && !(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
-				{
 					sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
-				}
 			}
 		}
+
+//		if ((sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground) &&
+//			(!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i]))
+//			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
+//		else
+//			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_l0;
+
 		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) &&
 			(min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
 		{
@@ -3399,4 +3472,23 @@ void carmen_prob_models_create_masked_distance_map_old(carmen_prob_models_distan
                 }
 
     }
+}
+
+carmen_pose_3D_t
+compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta, carmen_semi_trailer_config_t semi_trailer_config)
+{
+	beta = -beta;
+	carmen_pose_3D_t temp_rear_bullbar_pose;
+	temp_rear_bullbar_pose.position.x 			= -semi_trailer_config.M + rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
+	temp_rear_bullbar_pose.position.y 			= 						   rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
+
+//	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
+//	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
+
+	temp_rear_bullbar_pose.position.z 			= rear_bullbar_pose.position.z;
+	temp_rear_bullbar_pose.orientation.pitch 	= rear_bullbar_pose.orientation.pitch;
+	temp_rear_bullbar_pose.orientation.roll 	= rear_bullbar_pose.orientation.roll;
+	temp_rear_bullbar_pose.orientation.yaw 		= carmen_normalize_theta(rear_bullbar_pose.orientation.yaw + beta); // Verificar se soma o beta ou subtrai
+
+	return (temp_rear_bullbar_pose);
 }

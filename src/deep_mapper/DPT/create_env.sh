@@ -1,8 +1,9 @@
+python3 -m pip install --upgrade pip
 # Install virtualenv tool
-sudo python3 -m pip install virtualenv
+python3 -m pip install virtualenv --user
 
 # Create virtualenv and activating
-virtualenv -p /usr/bin/python3.7 venv
+virtualenv -p /usr/bin/python3 venv
 source venv/bin/activate
 
 # Installing dependencies for run squeezeseg in virtualenv

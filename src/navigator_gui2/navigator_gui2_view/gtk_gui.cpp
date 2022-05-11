@@ -27,7 +27,21 @@ mapper_handler(carmen_mapper_map_message *message);
 
 
 GdkColor *
-build_color_gradient()
+build_prediction_color_gradient()
+{
+	static GdkColor gradient[256];
+	int i;
+
+	// Azul é bom (particula pesada); verde é ruim
+	for (i = 0; i < 256; i++)
+		gradient[i] = carmen_graphics_add_color_rgb(0, 255 - i, i);
+
+	return (gradient);
+}
+
+
+GdkColor *
+build_correction_color_gradient()
 {
 	static GdkColor gradient[256];
 	int i;
@@ -335,7 +349,10 @@ namespace View
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 
 		if (nav_panel_config->show_particles || nav_panel_config->show_gaussians)
-			carmen_localize_ackerman_subscribe_particle_correction_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		{
+			carmen_localize_ackerman_subscribe_particle_prediction_message(&prediction_particles_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+			carmen_localize_ackerman_subscribe_particle_correction_message(&correction_particles_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		}
 
 		if (nav_panel_config->show_lasers)
 			carmen_localize_ackerman_subscribe_sensor_message(&sensor_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
@@ -1939,6 +1956,48 @@ namespace View
 		carmen_graphics_update_ipc_callbacks(handle_ipc);
 	}
 
+	double
+	GtkGui::calc_theta_diff (double angle_u, double angle_v)
+	{
+		return atan2(sin(angle_u-angle_v), cos(angle_u-angle_v));
+	}
+
+
+	double
+	GtkGui::euclidean_distance(double x1, double y1, double x2, double y2)
+	{
+		double dist = sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
+
+		return dist;
+	}
+
+
+	int
+	GtkGui::get_closest_final_goal_index_in_nearby_lanes()
+	{
+		double min_weight = DBL_MAX;
+		double eucl_distance;
+		double theta_diff;
+		double weight;
+		int closest_point = 0;
+
+		for (int i = 0; i < route_planner_route->nearby_lanes_size ; i++)
+		{
+			eucl_distance = euclidean_distance(final_goal.pose.x, final_goal.pose.y, route_planner_route->nearby_lanes[i].x, route_planner_route->nearby_lanes[i].y);
+			theta_diff = calc_theta_diff(route_planner_route->nearby_lanes[i].theta, final_goal.pose.theta);
+			weight = (eucl_distance + abs(theta_diff)) * 0.1;
+			if (weight < min_weight)
+			{
+				min_weight = weight;
+				closest_point = i;
+			}
+		}
+
+		// cout<<"POINT ID = "<<closest_point<<" theta_diff = "<<min_theta<<" robot_theta = "<<point.theta<<" closest_point_theta = "<<graph.nodes[closest_point].rddf_point.pose.theta<<endl;
+
+		return (closest_point);
+	}
+
 	int
 	GtkGui::placing_robot_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event)
 	{
@@ -2405,6 +2464,13 @@ namespace View
 					world_point->pose.x - final_goal.pose.x);
 			final_goal.pose.theta = angle;
 
+			f_final_goal = fopen("final_goal_pose.txt", "w");
+			if(f_final_goal == NULL)
+				printf("Could not open f_final_goal file\n");
+			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, 0.0);
+			fclose(f_final_goal);
+
+
 			if (globalpos->semi_trailer_engaged)
 			{
 				placement_status = ORIENTING_FINAL_GOAL_SEMI_TRAILER;
@@ -2448,6 +2514,14 @@ namespace View
 				carmen_rddf_publish_end_point_message(half_meters_to_goal, final_goal.pose);
 
 			final_goal_placed_and_oriented = 1;
+
+			f_final_goal = fopen("final_goal_pose.txt", "w");
+			if(f_final_goal == NULL)
+				printf("Could not open f_final_goal file\n");
+
+			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, final_goal.pose.beta);
+			fclose(f_final_goal);
+
 
 			GdkCursor *cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
@@ -2537,24 +2611,28 @@ namespace View
 	{
 		int index;
 		carmen_world_point_t particle, final_point;
-		static GdkColor *color_gradient = NULL;
+		static GdkColor *prediction_color_gradient = NULL;
+		static GdkColor *correction_color_gradient = NULL;
 
-		if (color_gradient == NULL)
-			color_gradient = build_color_gradient();
+		if (prediction_color_gradient == NULL)
+		{
+			prediction_color_gradient = build_prediction_color_gradient();
+			correction_color_gradient = build_correction_color_gradient();
+		}
 
 		if (!nav_panel_config->show_particles)
 			return;
 
-		if (particle_msg.particles != NULL)
+		if (prediction_particles_msg.particles != NULL)
 		{
-			// Vermelho é bom (particula pesada); verde é ruim
-			int *weight_color = compute_particle_weight_color(particle_msg.particles, particle_msg.num_particles);
-			
-			for (index = 0; index < particle_msg.num_particles; index++)
+			// Azul é bom (particula pesada); verde é ruim
+			int *weight_color = compute_particle_weight_color(prediction_particles_msg.particles, prediction_particles_msg.num_particles);
+
+			for (index = 0; index < prediction_particles_msg.num_particles; index++)
 			{
-				particle.pose.x = particle_msg.particles[index].x;
-				particle.pose.y = particle_msg.particles[index].y;
-				particle.pose.theta = particle_msg.particles[index].theta;
+				particle.pose.x = prediction_particles_msg.particles[index].x;
+				particle.pose.y = prediction_particles_msg.particles[index].y;
+				particle.pose.theta = prediction_particles_msg.particles[index].theta;
 				particle.map	= the_map_view->internal_map;
 
 				final_point = particle;
@@ -2563,14 +2641,44 @@ namespace View
 
 				carmen_map_graphics_draw_line(the_map_view, &carmen_yellow, &particle, &final_point);
 			}
-			for (index = 0; index < particle_msg.num_particles; index++)
+			for (index = 0; index < prediction_particles_msg.num_particles; index++)
 			{
-				particle.pose.x = particle_msg.particles[index].x;
-				particle.pose.y = particle_msg.particles[index].y;
-				particle.pose.theta = particle_msg.particles[index].theta;
+				particle.pose.x = prediction_particles_msg.particles[index].x;
+				particle.pose.y = prediction_particles_msg.particles[index].y;
+				particle.pose.theta = prediction_particles_msg.particles[index].theta;
 				particle.map	= the_map_view->internal_map;
 
-				carmen_map_graphics_draw_circle(the_map_view, &(color_gradient[weight_color[index]]), TRUE, &particle, pixel_size);
+				carmen_map_graphics_draw_circle(the_map_view, &(prediction_color_gradient[weight_color[index]]), TRUE, &particle, pixel_size);
+			}
+			free(weight_color);
+		}
+
+		if (correction_particles_msg.particles != NULL)
+		{
+			// Vermelho é bom (particula pesada); verde é ruim
+			int *weight_color = compute_particle_weight_color(correction_particles_msg.particles, correction_particles_msg.num_particles);
+			
+			for (index = 0; index < correction_particles_msg.num_particles; index++)
+			{
+				particle.pose.x = correction_particles_msg.particles[index].x;
+				particle.pose.y = correction_particles_msg.particles[index].y;
+				particle.pose.theta = correction_particles_msg.particles[index].theta;
+				particle.map	= the_map_view->internal_map;
+
+				final_point = particle;
+				final_point.pose.x = final_point.pose.x + cos(final_point.pose.theta) * 5.0;
+				final_point.pose.y = final_point.pose.y + sin(final_point.pose.theta) * 5.0;
+
+				carmen_map_graphics_draw_line(the_map_view, &carmen_yellow, &particle, &final_point);
+			}
+			for (index = 0; index < correction_particles_msg.num_particles; index++)
+			{
+				particle.pose.x = correction_particles_msg.particles[index].x;
+				particle.pose.y = correction_particles_msg.particles[index].y;
+				particle.pose.theta = correction_particles_msg.particles[index].theta;
+				particle.map	= the_map_view->internal_map;
+
+				carmen_map_graphics_draw_circle(the_map_view, &(correction_color_gradient[weight_color[index]]), TRUE, &particle, pixel_size);
 			}
 			free(weight_color);
 		}
@@ -2581,7 +2689,7 @@ namespace View
 	{
 		carmen_world_point_t mean;
 
-		if (!nav_panel_config->show_gaussians || (particle_msg.particles == NULL))
+		if (!nav_panel_config->show_gaussians || (correction_particles_msg.particles == NULL))
 			return;
 
 		mean = robot;

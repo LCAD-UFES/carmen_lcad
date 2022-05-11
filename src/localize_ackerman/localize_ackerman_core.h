@@ -53,11 +53,14 @@
 extern "C" {
 #endif
 
+#define BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE 	50
+#define FUSED_ODOMETRY_VECTOR_SIZE 			50
+
 #define 	MAX_NUMBER_OF_LIDARS 16   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
 #define 	STEREO_MAPPING_SENSOR_INDEX 	10
 
 #define     SMALL_PROB        0.01
-#define     MAX_BEAMS_PER_SCAN   10000
+#define     MAX_BEAMS_PER_SCAN   50000
 
 /* #define      LOCALIZECORE_TRACKING_MINLIKELIHOOD        (0.5) */
 /* #define      LOCALIZECORE_GLOBAL_MINLIKELIHOOD          (0.9) */
@@ -369,6 +372,22 @@ calc_posible_particle_position(carmen_localize_ackerman_particle_filter_p filter
 
 void
 carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, ProbabilisticMapParams *p_map_params);
+
+int
+get_fused_odometry_index_by_timestamp(double timestamp);
+
+int
+get_base_ackerman_odometry_index_by_timestamp(double timestamp);
+
+void
+calc_global_cell_coordinate_fast(cell_coords_t *global, cell_coords_t local,
+		double map_center_x, double map_center_y,
+		double robot_position_in_the_map_x, double robot_position_in_the_map_y,
+		double sin_theta, double cos_theta);
+
+double
+compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point, double dt,
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config);
 
 #ifdef __cplusplus
 }

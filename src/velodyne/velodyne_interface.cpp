@@ -376,7 +376,6 @@ carmen_velodyne_free_variable_velodyne_message(
 	free(message);
 }
 
-
 void
 load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lidar_config)
 {
@@ -406,6 +405,9 @@ load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lid
 		{lidar_string, (char *) "yaw", CARMEN_PARAM_DOUBLE, &lidar_config_p->pose.orientation.yaw, 1, NULL},
 		{lidar_string, (char *) "ray_order", CARMEN_PARAM_STRING, &ray_order_string, 0, NULL},
 		{lidar_string, (char *) "vertical_angles", CARMEN_PARAM_STRING, &vertical_angles_string, 0, NULL},
+#ifdef USE_REAR_BULLBAR
+		{lidar_string, (char *) "sensor_reference", CARMEN_PARAM_INT, &lidar_config_p->sensor_reference, 0, NULL},
+#endif
  	};
  	carmen_param_install_params(argc, argv, param_list, (sizeof(param_list) / sizeof(param_list[0])));
 

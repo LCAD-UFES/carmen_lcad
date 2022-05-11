@@ -87,6 +87,7 @@ typedef struct _sensor_parameters
 	int vertical_resolution;
 	int *ray_order;
 	double unsafe_height_above_ground;
+	int sensor_reference;			// If it is in reference in relation to the sensorboard (0), to the front_bullbar (1), or the rear_bullbar (2)
 
 	double sigma_zhit, zhit, zshort, zmax, zrand;
 	double lambda_short;
@@ -234,6 +235,7 @@ void carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int x
 #ifdef __cplusplus
 void carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground = -20.0);
 void carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground = -20.0);
+void carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays_into_log_odds_snapshot_map(carmen_map_t *log_odds_map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground = -20.0);
 #endif
 
 void carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(carmen_map_t *log_odds_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
@@ -301,6 +303,9 @@ void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map 
 float ***load_calibration_table(char *calibration_file);
 
 int get_distance_index(double distance);
+
+carmen_pose_3D_t compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta, carmen_semi_trailer_config_t semi_trailer_config);
+
 
 #ifdef __cplusplus
 }

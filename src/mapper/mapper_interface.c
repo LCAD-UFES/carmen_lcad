@@ -25,7 +25,10 @@ carmen_mapper_copy_map_from_message(carmen_map_t *current_map, carmen_mapper_map
 	}
 	
 	if (current_map->config.map_name != NULL)
+	{
 		free(current_map->config.map_name);
+		current_map->config.map_name = NULL;
+	}
 	current_map->config = online_map_message->config;
 	if (online_map_message->config.map_name != NULL)
 	{
@@ -251,6 +254,13 @@ carmen_mapper_publish_map_message(carmen_map_t *carmen_map, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	static carmen_mapper_map_message mapper_message;
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		carmen_mapper_define_map_message();
+		first_time = 0;
+	}
 
 	strcpy(mapper_message.config.origin, "from_mapping");
 	mapper_message.complete_map = carmen_map->complete_map;

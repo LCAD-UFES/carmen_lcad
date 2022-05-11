@@ -7,17 +7,10 @@ MODULE_COMMENT = Depth with monocular cameras
 #CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
 #CXXFLAGS += -Wall -O4 -mfpmath=sse -msse2 -msse4.2
-CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CFLAGS += -std=c11 
+CXXFLAGS += -std=c++11 
 #CFLAGS += -g -pg
 LINK = g++
-
-
-# Adabins and GLPDepth
-IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs` `python3.6-config --libs` -ladabins -lglpdepth -ldpt
-
-
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
@@ -47,11 +40,11 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface \
 	-lmapper -lmapper_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-	-lboost_thread-mt -lrt -lboost_signals -lboost_system `python3.6m-config --ldflags --libs`
+	-lboost_thread-mt -lrt -lboost_signals -lboost_system `python3.6m-config --ldflags --libs` 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne 
-# LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
@@ -64,7 +57,7 @@ else
 	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
-LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne -lcamera_drivers
+LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne -lcamera_drivers -ladabins -lglpdepth -ldpt -lnewcrfs
 
 # Source code files (.c, .cpp) 
 SOURCES = stereo_velodyne_depth.cpp

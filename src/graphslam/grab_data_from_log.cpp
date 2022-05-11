@@ -14,6 +14,7 @@
 #include "velodyne_util.h"
 
 #define MAX_LINE_LENGTH (5 * 4000000)
+#define MIN_VELOCITY 	0.03
 
 using namespace std;
 
@@ -152,10 +153,13 @@ velodyne_handler(double velodyne_timestamp, double initial_timestamp, double fin
 			if ((dt <= 0) || (dt_gps <= 0))
 				printf("** ERROR: (dt <= 0) || (dt_gps <= 0) in velodyne_handler()\n");
 
-			ackerman_prediction(&dead_reckoning, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt, distance_between_front_and_rear_axles);
-			ackerman_prediction(&gps_pose, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt_gps, distance_between_front_and_rear_axles);
+			if (fabs(odometry_queue[odomid].v) > MIN_VELOCITY)
+			{
+				ackerman_prediction(&dead_reckoning, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt, distance_between_front_and_rear_axles);
+				ackerman_prediction(&gps_pose, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt_gps, distance_between_front_and_rear_axles);
 
-			write_sensor_data(dead_reckoning, gps_pose, velodyne_timestamp, gps_std, gps_orientation, gps_orientation_valid);
+				write_sensor_data(dead_reckoning, gps_pose, velodyne_timestamp, gps_std, gps_orientation, gps_orientation_valid);
+			}
 		}
 		else
 			is_first = false;
@@ -201,16 +205,16 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message, int gps_to_use, double 
 	switch (message->gps_quality)
 	{
 		case 1:
-			gps_std = 8.0;
+			gps_std = 100.0;
 			break;
 		case 2:
-			gps_std = 2.0;
+			gps_std = 50.0;
 			break;
 		case 4:
-			gps_std = 0.2;
+			gps_std = 1.0;
 			break;
 		case 5:
-			gps_std = 1.5;
+			gps_std = 2.0;
 			break;
 		default:
 			gps_std = DBL_MAX;

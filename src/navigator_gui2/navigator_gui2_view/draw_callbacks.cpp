@@ -5,6 +5,7 @@ extern char place_of_interest[2048];
 extern char predefined_route[2048];
 extern int predefined_route_code;
 extern char mission[2048];
+int final_goal_closest_index_in_nearby_lanes;
 
 
 extern void
@@ -469,9 +470,15 @@ void on_menuDisplay_ShowParticles_toggled (GtkCheckMenuItem* togglebutton __attr
 	global_gui->nav_panel_config->show_particles = gtk_check_menu_item_get_active(togglebutton);
 
 	if ((global_gui->nav_panel_config->show_particles == 1) && !global_gui->nav_panel_config->show_gaussians)
-		carmen_localize_ackerman_subscribe_particle_correction_message(&global_gui->particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	{
+		carmen_localize_ackerman_subscribe_particle_prediction_message(&global_gui->prediction_particles_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		carmen_localize_ackerman_subscribe_particle_correction_message(&global_gui->correction_particles_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	}
 	else if (!global_gui->nav_panel_config->show_particles && !global_gui->nav_panel_config->show_gaussians)
+	{
+		carmen_localize_ackerman_subscribe_particle_prediction_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 		carmen_localize_ackerman_subscribe_particle_correction_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+	}
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1231,6 +1238,52 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 		case GDK_c:
 			global_gui->freeze_status = (global_gui->freeze_status)? false: true;
 			global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_CAR;
+			break;
+
+		case GDK_j:
+			global_gui->editing_final_goal = 1;
+			if(global_gui->final_goal_placed_and_oriented)
+			{
+				final_goal_closest_index_in_nearby_lanes = global_gui->get_closest_final_goal_index_in_nearby_lanes();
+			}
+			break;
+
+		case GDK_k:
+			if(global_gui->editing_final_goal && global_gui->final_goal_placed_and_oriented)
+			{
+				int i = final_goal_closest_index_in_nearby_lanes-1;
+				if(i < 0)
+					i = 0;
+				global_gui->final_goal.pose.x = global_gui->route_planner_route->nearby_lanes[i].x;
+				global_gui->final_goal.pose.y = global_gui->route_planner_route->nearby_lanes[i].y;
+				global_gui->final_goal.pose.theta = global_gui->route_planner_route->nearby_lanes[i].theta;
+				global_gui->final_goal.pose.beta = global_gui->route_planner_route->nearby_lanes[i].beta;
+				global_gui->f_final_goal = fopen("final_goal_pose.txt", "w");
+				if(global_gui->f_final_goal == NULL)
+					printf("Could not open f_final_goal file\n");
+				fprintf(global_gui->f_final_goal, "%lf, %lf, %lf, %lf\n", global_gui->final_goal.pose.x, global_gui->final_goal.pose.y, global_gui->final_goal.pose.theta, global_gui->final_goal.pose.beta);
+				fclose(global_gui->f_final_goal);
+				final_goal_closest_index_in_nearby_lanes = i;
+			}
+			break;
+
+		case GDK_l:
+			if(global_gui->editing_final_goal && global_gui->final_goal_placed_and_oriented)
+			{
+				int i = final_goal_closest_index_in_nearby_lanes+1;
+				if(i > global_gui->route_planner_route->nearby_lanes_size - 1)
+					i = global_gui->route_planner_route->nearby_lanes_size - 1;
+				global_gui->final_goal.pose.x = global_gui->route_planner_route->nearby_lanes[i].x;
+				global_gui->final_goal.pose.y = global_gui->route_planner_route->nearby_lanes[i].y;
+				global_gui->final_goal.pose.theta = global_gui->route_planner_route->nearby_lanes[i].theta;
+				global_gui->final_goal.pose.beta = global_gui->route_planner_route->nearby_lanes[i].beta;
+				global_gui->f_final_goal = fopen("final_goal_pose.txt", "w");
+				if(global_gui->f_final_goal == NULL)
+					printf("Could not open f_final_goal file\n");
+				fprintf(global_gui->f_final_goal, "%lf, %lf, %lf, %lf\n", global_gui->final_goal.pose.x, global_gui->final_goal.pose.y, global_gui->final_goal.pose.theta, global_gui->final_goal.pose.beta);
+				fclose(global_gui->f_final_goal);
+				final_goal_closest_index_in_nearby_lanes = i;
+			}
 			break;
 
 			default:

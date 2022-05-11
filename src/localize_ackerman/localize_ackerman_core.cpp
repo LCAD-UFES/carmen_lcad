@@ -38,34 +38,505 @@
 #include <carmen/task_manager_interface.h>
 #include <car_model.h>
 
+#include <carmen/dbscan.h>
+#include <gsl/gsl_fit.h>
+#include <gsl/gsl_multifit.h>
+#include <gsl/gsl_errno.h>
+
+
 /* gains for gradient descent */
 
 #define K_T   0.0001
 #define K_ROT 0.00001
 
-int number_of_sensors;
+extern int number_of_sensors;
 sensor_parameters_t *spherical_sensor_params;
 sensor_data_t *spherical_sensor_data;
-carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
+extern carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
 carmen_pose_3D_t sensor_board_1_pose;
-double robot_wheel_radius;
-double highest_sensor;
-char *calibration_file = NULL;
-int number_of_threads = 1;
-carmen_pose_3D_t velodyne_pose;
+extern double robot_wheel_radius;
+extern double highest_sensor;
+extern char *calibration_file;
+extern int number_of_threads;
+extern carmen_pose_3D_t velodyne_pose;
 rotation_matrix *sensor_board_1_to_car_matrix;
-carmen_semi_trailer_config_t semi_trailer_config;
-carmen_robot_ackerman_config_t 	car_config;
+extern carmen_semi_trailer_config_t semi_trailer_config;
+extern carmen_robot_ackerman_config_t car_config;
 int robot_publish_odometry;
-double safe_range_above_sensors;
+extern double safe_range_above_sensors;
 int use_raw_laser = 1;
-int mapping_mode = 0;
+double gps_correction_factor = 0.0;
+extern int mapping_mode;
 int velodyne_viewer = 0;
 char *save_globalpos_file = NULL;
 double save_globalpos_timestamp = 0.0;
 extern carmen_localize_ackerman_globalpos_message globalpos;
 
 extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message;
+
+extern carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
+extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
+
+#define PLOT_GRAPH 0
+
+#define PREDICT_BETA_GSL_ERROR_CODE 100.0
+//#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
+#define MIN_DISTANCE_BETWEEN_POINTS	(1.0)
+
+#define MIN_CLUSTER_SIZE			10
+
+FILE *gnuplot_pipe = NULL;
+carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
+
+carmen_pose_3D_t gps_pose_in_the_car;
+
+
+void
+plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
+		carmen_vector_3D_t *points_position_with_respect_to_car_estimated, int size)
+{
+	static bool first_time = true;
+
+	if (first_time)
+	{
+		first_time = false;
+		gnuplot_pipe = popen("taskset -c 0 gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set xrange [-5:5]\n");
+		fprintf(gnuplot_pipe, "set yrange [0:4]\n");
+		fprintf(gnuplot_pipe, "set size square\n");
+		fprintf(gnuplot_pipe, "set size ratio -1\n");
+	}
+
+	FILE *graph_file;
+
+	graph_file = fopen("caco_localize.txt", "w");
+	for (int i = 0; i < size; i++)
+	{
+		fprintf(graph_file, "%lf %lf %lf %lf %d\n",
+				points_position_with_respect_to_car[i].x, points_position_with_respect_to_car[i].y,
+				points_position_with_respect_to_car_estimated[i].x, points_position_with_respect_to_car_estimated[i].y, i);
+	}
+	fclose(graph_file);
+
+//	fprintf(gnuplot_pipe, "plot 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");
+	fprintf(gnuplot_pipe, "plot 'caco_localize_before-cluster.txt' u 1:2 t 'before_cluster', 'caco_localize.txt' u 1:2 w l t 'points', 'caco_localize.txt' u 3:4 w l t 'estimated'\n");
+	fflush(gnuplot_pipe);
+}
+
+
+void
+save_points_file_to_debug(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
+{
+FILE *debug_file;
+
+	debug_file = fopen("caco_localize_before-cluster.txt", "w");
+	for (int i = 0; i < num_filtered_points; i++)
+	{
+		fprintf(debug_file, "%lf %lf %d\n",
+				points_position_with_respect_to_car[i].x, points_position_with_respect_to_car[i].y, i);
+	}
+	fclose(debug_file);
+}
+
+
+
+static carmen_vector_3D_t
+get_velodyne_point_car_reference(double rot_angle, double vert_angle, double range,
+		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
+		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+{
+    double cos_rot_angle = cos(rot_angle);
+    double sin_rot_angle = sin(rot_angle);
+
+    double cos_vert_angle = cos(vert_angle);
+    double sin_vert_angle = sin(vert_angle);
+
+    double xy_distance = range * cos_vert_angle;
+
+    carmen_vector_3D_t velodyne_reference;
+
+    velodyne_reference.x = (xy_distance * cos_rot_angle);
+    velodyne_reference.y = (xy_distance * sin_rot_angle);
+    velodyne_reference.z = (range * sin_vert_angle);
+
+    carmen_vector_3D_t board_reference = multiply_matrix_vector(velodyne_to_board_matrix, velodyne_reference);
+    board_reference = add_vectors(board_reference, velodyne_pose_position);
+
+    carmen_vector_3D_t car_reference = multiply_matrix_vector(board_to_car_matrix, board_reference);
+    car_reference = add_vectors(car_reference, sensor_board_1_pose_position);
+
+    return (car_reference);
+}
+
+
+int
+compute_points_with_respect_to_king_pin(carmen_vector_3D_t *points_position_with_respect_to_car,
+		carmen_velodyne_partial_scan_message *velodyne_message, double *vertical_correction,
+		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
+		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+{
+	int j = spherical_sensor_params[0].ray_order[semi_trailer_config.beta_correct_velodyne_ray];	// raio d interesse
+	int num_valid_points = 0;
+	for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
+	{
+		if (velodyne_message->partial_scan[i].distance[j] != 0)
+		{
+			points_position_with_respect_to_car[num_valid_points] = get_velodyne_point_car_reference(
+					-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + ((semi_trailer_config.beta_correct_max_distance < 0.0)? 180.0: 0.0)),
+					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 500.0,
+					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+
+			points_position_with_respect_to_car[num_valid_points].x += semi_trailer_config.M;
+			num_valid_points++;
+		}
+	}
+
+	return (num_valid_points);
+}
+
+
+int
+compare_x(const void *a, const void *b)
+{
+	carmen_vector_3D_t *arg1 = (carmen_vector_3D_t *) a;
+	carmen_vector_3D_t *arg2 = (carmen_vector_3D_t *) b;
+
+	double delta_x = arg1->x - arg2->x;
+	if (delta_x < 0.0)
+		return (-1);
+	if (delta_x > 0.0)
+		return (1);
+
+	return (0);
+}
+
+
+dbscan::Cluster
+generate_cluster_with_all_points(carmen_vector_3D_t *points, int size)
+{
+	dbscan::Cluster cluster;
+
+	for (int i = 0; i < size; i++)
+	{
+		carmen_point_t point = {points[i].x, points[i].y, 0.0};
+		cluster.push_back(point);
+	}
+
+	return (cluster);
+}
+
+
+int
+remove_begin_and_end_points(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
+{
+	double x_size = points_position_with_respect_to_car[num_filtered_points-1].x - points_position_with_respect_to_car[0].x; //get_points_x_size(num_filtered_points, points_position_with_respect_to_car);
+	double fraction_to_remove = x_size * 0.03;
+	int index_begin = 0;
+	int index_end = 0;
+	int new_number_filter_points = 0;
+	for(int i = 0; i < num_filtered_points; i++)
+	{
+		if(fabs(points_position_with_respect_to_car[i].x - points_position_with_respect_to_car[0].x) >= fraction_to_remove)
+		{
+			index_begin = i;
+			break;
+		}
+	}
+	if (num_filtered_points - index_begin > 9)
+	{
+
+		for(int i = (num_filtered_points - 1); i > 0; i--)
+		{
+			if(fabs(points_position_with_respect_to_car[num_filtered_points-1].x - points_position_with_respect_to_car[i].x) >= fraction_to_remove)
+			{
+				index_end = i;
+				break;
+			}
+		}
+	}
+	else
+	{
+		index_end = num_filtered_points-1;
+	}
+
+	int j = index_begin;
+	for(int i = 0; j <= index_end; i++, j++)
+	{
+		points_position_with_respect_to_car[i] = points_position_with_respect_to_car[j];
+		new_number_filter_points++;
+	}
+//	printf("new_number_filter_points %d num_filtered_points %d x_size %lf, fraction_to_remove %lf, index_begin %d, index_end %d\n", new_number_filter_points, num_filtered_points, x_size, fraction_to_remove, index_begin, index_end);
+
+	return (new_number_filter_points);
+
+}
+
+
+int
+remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
+{
+	dbscan::Cluster single_cluster = generate_cluster_with_all_points(points_position_with_respect_to_car, num_filtered_points);
+	dbscan::Clusters clusters = dbscan::dbscan(MIN_DISTANCE_BETWEEN_POINTS, MIN_CLUSTER_SIZE, single_cluster);
+	if (clusters.size() > 0)
+	{
+		int largest_cluster = 0;
+		unsigned int largest_cluster_size = clusters[0].size();
+		for (unsigned int i = 1; i < clusters.size(); i++)
+		{
+			if (clusters[i].size() > largest_cluster_size)
+			{
+				largest_cluster_size = clusters[i].size();
+				largest_cluster = i;
+			}
+		}
+//		plot_cluster_graph(clusters[largest_cluster_size]);
+
+//		printf("num_c %d, largest_c %d, lcs %d\n", clusters.size(), largest_cluster, clusters[largest_cluster].size());
+		for (unsigned int i = 0; i < clusters[largest_cluster].size(); i++)
+		{
+			points_position_with_respect_to_car[i].x = clusters[largest_cluster][i].x;
+			points_position_with_respect_to_car[i].y = clusters[largest_cluster][i].y;
+		}
+		num_filtered_points = clusters[largest_cluster].size();
+	}
+	else
+		num_filtered_points = 0;
+
+	return (num_filtered_points);
+}
+
+
+int
+compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_with_respect_to_car)
+{
+	int num_valid_points = compute_points_with_respect_to_king_pin(points_position_with_respect_to_car,
+			last_velodyne_message, spherical_sensor_params[0].vertical_correction,
+			spherical_sensor_params[0].sensor_to_support_matrix, spherical_sensor_params[0].support_to_car_matrix,
+			spherical_sensor_params[0].pose.position, spherical_sensor_params[0].sensor_support_pose.position);
+
+	if (num_valid_points == 0)
+		return (0);
+
+	int num_filtered_points = 0;
+	for (int i = 0; i < num_valid_points; i++)
+	{
+		double angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
+		double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
+		if ((angle > (-semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
+			(angle < (semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
+			(distance_to_king_pin < fabs(semi_trailer_config.beta_correct_max_distance)))
+		{
+			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
+			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
+			points_position_with_respect_to_car[num_filtered_points].x = x;
+			points_position_with_respect_to_car[num_filtered_points].y = y;
+			num_filtered_points++;
+		}
+	}
+	qsort((void *) (points_position_with_respect_to_car), (size_t) num_filtered_points, sizeof(carmen_vector_3D_t), compare_x);
+
+	if(PLOT_GRAPH)
+		save_points_file_to_debug(num_filtered_points, points_position_with_respect_to_car);
+
+	num_filtered_points = remove_begin_and_end_points(num_filtered_points, points_position_with_respect_to_car);
+
+	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
+
+	return (num_filtered_points);
+}
+
+
+//double
+//compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car, int size)
+//{
+//	// https://www.gnu.org/software/gsl/doc/html/lls.html
+//
+//	const double *x = (double *) points_position_with_respect_to_car;
+//	const double *y = (double *) points_position_with_respect_to_car;
+//	y = &(y[1]);
+//
+//	double c0, c1, cov00, cov01, cov11, sumsq;
+//	gsl_fit_linear(x, 3, y, 3, size, &c0, &c1, &cov00, &cov01, &cov11, &sumsq);
+//
+//	return (-atan(c1));
+//}
+
+
+int
+dofit(const gsl_multifit_robust_type *T, const gsl_matrix *X, const gsl_vector *y, gsl_vector *c, gsl_matrix *cov)
+{
+	int s;
+	gsl_multifit_robust_workspace *work = gsl_multifit_robust_alloc(T, X->size1, X->size2);
+
+	s = gsl_multifit_robust(X, y, c, cov, work);
+	gsl_multifit_robust_free(work);
+
+	return (s);
+}
+
+
+double
+compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
+		carmen_vector_3D_t *points_position_with_respect_to_car_estimated, int size)
+{
+	size_t n = size;
+	const size_t p = 2; /* linear fit */
+	gsl_matrix *X, *cov;
+	gsl_vector *x, *y, *c, *c_ols;
+
+	gsl_set_error_handler_off(); // We will have to read the status and handle the errors codes
+
+	X = gsl_matrix_alloc(n, p);
+	x = gsl_vector_alloc(n);
+	y = gsl_vector_alloc(n);
+
+	c = gsl_vector_alloc(p);
+	c_ols = gsl_vector_alloc(p);
+	cov = gsl_matrix_alloc(p, p);
+
+	for (size_t i = 0; i < n; i++)
+	{
+		double xi = points_position_with_respect_to_car[i].x;
+		double yi = points_position_with_respect_to_car[i].y;
+
+		gsl_vector_set(x, i, xi);
+		gsl_vector_set(y, i, yi);
+	}
+
+	/* construct design matrix X for linear fit */
+	for (size_t i = 0; i < n; ++i)
+	{
+		double xi = gsl_vector_get(x, i);
+
+		gsl_matrix_set(X, i, 0, 1.0);
+		gsl_matrix_set(X, i, 1, xi);
+	}
+
+	int status = dofit(gsl_multifit_robust_bisquare, X, y, c, cov);
+
+	if (status)
+	{
+		if (status != GSL_EMAXITER)
+		{
+			printf("Failed, gsl_errno = %d. This error isn't handle yet, please check it !!\n", status);
+			printf("Discarding beta, using the default prediction one. size n = %d\n", (int) n);
+
+			return (PREDICT_BETA_GSL_ERROR_CODE);
+		}
+	}
+
+	/* output data and model */
+	for (size_t i = 0; i < n; ++i)
+	{
+		double xi = gsl_vector_get(x, i);
+		gsl_vector_view v = gsl_matrix_row(X, i);
+		double y_rob, y_err;
+
+		gsl_multifit_robust_est(&v.vector, c, cov, &y_rob, &y_err);
+		points_position_with_respect_to_car_estimated[i].x = xi;
+		points_position_with_respect_to_car_estimated[i].y = y_rob;
+	}
+
+	double estimated_beta = -atan(gsl_vector_get(c, 1));
+
+	gsl_matrix_free(X);
+	gsl_vector_free(x);
+	gsl_vector_free(y);
+	gsl_vector_free(c);
+	gsl_vector_free(c_ols);
+	gsl_matrix_free(cov);
+
+	return (estimated_beta);
+}
+
+
+double
+compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point, double dt,
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+{
+	if (semi_trailer_config.type == 0)
+		return (0.0);
+
+	double predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
+
+	if (!last_velodyne_message ||
+		!spherical_sensor_params[0].sensor_to_support_matrix ||
+		!spherical_sensor_params[0].support_to_car_matrix)
+		return (predicted_beta);
+
+	carmen_vector_3D_t *points_position_with_respect_to_car = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
+	carmen_vector_3D_t *points_position_with_respect_to_car_estimated = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
+
+	int size = compute_points_position_with_respect_to_car(points_position_with_respect_to_car);
+	if (size < MIN_CLUSTER_SIZE)
+	{
+		free(points_position_with_respect_to_car);
+		free(points_position_with_respect_to_car_estimated);
+
+		return (predicted_beta);
+	}
+
+	double beta = compute_new_beta(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
+
+	if (PLOT_GRAPH)
+		plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
+
+	free(points_position_with_respect_to_car);
+	free(points_position_with_respect_to_car_estimated);
+
+	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
+		return (predicted_beta);
+	else
+		return (carmen_normalize_theta(beta - semi_trailer_config.beta_correct_beta_bias));
+}
+
+
+int
+get_fused_odometry_index_by_timestamp(double timestamp)
+{
+	double min_diff, diff;
+	int min_index;
+
+	min_diff = DBL_MAX;
+	min_index = -1;
+
+	for (int i = 0; i < FUSED_ODOMETRY_VECTOR_SIZE; i++)
+	{
+		diff = fabs(fused_odometry_vector[i].timestamp - timestamp);
+
+		if (diff < min_diff)
+		{
+			min_diff = diff;
+			min_index = i;
+		}
+	}
+
+	return min_index;
+}
+
+
+int
+get_base_ackerman_odometry_index_by_timestamp(double timestamp)
+{
+	double min_diff, diff;
+	int min_index;
+
+	min_diff = DBL_MAX;
+	min_index = -1;
+
+	for (int i = 0; i < BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE; i++)
+	{
+		diff = fabs(base_ackerman_odometry_vector[i].timestamp - timestamp);
+
+		if (diff < min_diff)
+		{
+			min_diff = diff;
+			min_index = i;
+		}
+	}
+
+	return min_index;
+}
 
 
 void
@@ -85,6 +556,18 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 	double average_v = filter->particles[0].v;
 
 	filter->distance_travelled += fabs(average_v * dt);
+
+	robot_pose.x = filter->particles[0].x;
+	robot_pose.y = filter->particles[0].y;
+	robot_pose.theta = filter->particles[0].theta;
+	double distance_to_goal_factor = 1.0;
+	if (behavior_selector_path_goals_and_annotations_message &&
+		(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
+	{
+		double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
+		if (distance_to_goal < 2.0)
+			distance_to_goal_factor = 0.0;
+	}
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
@@ -111,6 +594,9 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 				filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
 				filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
 			}
+			else
+				filter->particles[i].phi_bias = 0.0;
+
 			phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0,
 					fabs(filter->param->phi_noise_phi * phi) +
 					fabs(filter->param->phi_noise_velocity * v));
@@ -124,12 +610,9 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 			filter->particles[i].y = robot_pose.y;
 			filter->particles[i].theta = robot_pose.theta;
 
-			if ((i % 10) == 0)
-			{
-				filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-			}
+			filter->particles[i].x += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].y += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
 		}
 		else
 		{	// Keep the mean particle of the previous run intact
@@ -166,6 +649,18 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 	filter->distance_travelled += fabs(v * dt);
 
+	robot_pose.x = filter->particles[0].x;
+	robot_pose.y = filter->particles[0].y;
+	robot_pose.theta = filter->particles[0].theta;
+	double distance_to_goal_factor = 1.0;
+	if (behavior_selector_path_goals_and_annotations_message &&
+		(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
+	{
+		double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
+		if (distance_to_goal < 2.0)
+			distance_to_goal_factor = 0.0;
+	}
+
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
 		if (i != 0)
@@ -188,6 +683,9 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 				// 0.0175 radians is approx 1 degree
 				filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
 			}
+			else
+				filter->particles[i].phi_bias = 0.0;
+
 			phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0,
 					fabs(filter->param->phi_noise_phi * phi) +
 					fabs(filter->param->phi_noise_velocity * v));
@@ -198,50 +696,14 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 							&distance_traveled, dt, car_config, semi_trailer_config);
 
 			filter->particles[i].x = robot_pose.x;
+			if (fabs(filter->particles[i].x) > 1000000000.0)
+				printf("eita!");
 			filter->particles[i].y = robot_pose.y;
 			filter->particles[i].theta = robot_pose.theta;
 
-
-			if (behavior_selector_path_goals_and_annotations_message &&
-				(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
-			{
-				double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
-				if (distance_to_goal < 13.0)
-				{
-					double y0 = (double) filter->param->num_particles;
-					double x0 = 1.0;
-					double y1 = 1.0;
-					double x1 = 13.0;
-					double x = distance_to_goal;
-					double y = y0 + (x - x0) * ((y1 - y0) / (x1 - x0));
-					int inverse_franction_of_particles_considered;
-					if (y < 1.0)
-						inverse_franction_of_particles_considered = 1;
-					else if (y > filter->param->num_particles)
-						inverse_franction_of_particles_considered = filter->param->num_particles;
-					else
-						inverse_franction_of_particles_considered = ceil(y);
-
-					if ((i % inverse_franction_of_particles_considered) == 0)
-					{
-						filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-						filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-						filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-					}
-				}
-				else
-				{
-					filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-					filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-					filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-				}
-			}
-			else
-			{
-				filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
-				filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
-			}
+			filter->particles[i].x += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].y += distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
 
 			filter->particles[i].phi = phi_step;
 			filter->particles[i].v = v_step;
@@ -262,6 +724,8 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 							&distance_traveled, dt, car_config, semi_trailer_config);
 
 			filter->particles[i].x = robot_pose.x;
+			if (fabs(filter->particles[i].x) > 1000000000.0)
+				printf("eita!");
 			filter->particles[i].y = robot_pose.y;
 			filter->particles[i].theta = robot_pose.theta;
 			filter->particles[i].phi = phi_step;
@@ -3392,6 +3856,12 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "mapper", (char *) "map_range_factor", CARMEN_PARAM_DOUBLE, &p_map_params->range_factor, 0, NULL},
 		{(char *) "map_server", (char*) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
 		{(char *) "map_server", (char*) "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
+		{(char *) "gps", (char *) "nmea_1_x",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.x,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_y",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.y,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_z",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.position.z,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_roll",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.roll,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_pitch",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.pitch,	1, NULL},
+		{(char *) "gps", (char *) "nmea_1_yaw",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.yaw,		1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -3408,6 +3878,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	carmen_param_t param_optional_list[] =
 	{
 		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
+		{(char *) "localize_ackerman", (char *) "gps_correction_factor", CARMEN_PARAM_ONOFF, &gps_correction_factor, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
 		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
