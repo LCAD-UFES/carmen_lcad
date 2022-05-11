@@ -265,7 +265,7 @@ drawBox(double length_x, double length_y, double length_z)
 			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
 			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
 
-				
+
 			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
 			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
 			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
@@ -330,7 +330,7 @@ draw_single_map(carmen_map_t map, double car_x, double car_y, double zoom)
 		for(int i = 0; i < map.config.x_size; i++)
 		{
 			for(int j = 0; j < map.config.y_size; j++)
-			{				
+			{
 				double x = i * resolution;
 				double y = j * resolution;
 				double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
@@ -352,7 +352,7 @@ draw_single_map(carmen_map_t map, double car_x, double car_y, double zoom)
 static void
 draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 {
-	//printf("Offset2 x:% lf, y:% lf, z:% lf\n", offset.x, offset.y, offset.z);
+//	printf("Offset2 x:% lf, y:% lf, z:% lf\n", offset.x, offset.y, offset.z);
 
 	glPushMatrix();
 

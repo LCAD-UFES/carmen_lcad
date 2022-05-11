@@ -42,6 +42,8 @@
 #define BUMP_BUTTON_CODE						37
 #define SPEED_BUTTON_CODE						38
 #define DELETE_ANNOTATION_BUTTON_CODE			39
+#define HELP_BUTTON_CODE						72
+#define HELP_CODE							    73
 
 #define BUTTON0_TEXT							"Options"
 #define DRAW_CAR_BUTTON_TEXT					"Car"
@@ -83,6 +85,8 @@
 #define BUMP_BUTTON_TEXT						"Bump"
 #define SPEED_BUTTON_TEXT						"Speed"
 #define DELETE_ANNOTATION_BUTTON_TEXT			"Delete"
+#define HELP_BUTTON_TEXT						"Help"
+#define HELP_TEXT							    "Camera Views://7: Sattelite View (Navigator /GUI View)/8: Sattelite View (Fixed on car)/9: Back View (Follow Robot)/Arrow Keys: Camera Moviment/Mouse: Camera Orientation/Mouse Scroll: Zoom/Space: Unlock and Lock Cam"
 
 #define DRAW_CAR_FLAG_CODE						4
 #define DRAW_COLLISION_MARKERS_FLAG_CODE		0
