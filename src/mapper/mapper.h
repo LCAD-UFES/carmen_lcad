@@ -93,8 +93,10 @@ void update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *occ
 		sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays,
 		int build_snapshot_map __attribute__ ((unused)));
 
-void
-build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensity, int *point_cloud_index, int num_points, int max_point_buffer,
+void build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensity, int *point_cloud_index, int num_points, int max_point_buffer,
 		int use_remission);
+
+void carmen_mapper_update_cells_bellow_robot(carmen_point_t pose, carmen_map_t *map, double prob);
+
 
 #endif /* MAPPER_H_ */

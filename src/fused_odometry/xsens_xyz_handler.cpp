@@ -350,19 +350,19 @@ get_std_error(xsens_xyz_handler *xsens_handler, carmen_fused_odometry_parameters
 {
 	carmen_point_t std;
 
-	if (xsens_handler->extra_gps == 2)
+	if (xsens_handler->extra_gps == 2)	// Trimble
 	{
 		if (xsens_handler->gps_xyz.gps_quality == 4)
 		{
 			std.x = fused_odometry_parameters->xsens_gps_x_std_error / 5.0;
 			std.y = fused_odometry_parameters->xsens_gps_y_std_error / 5.0;
-			std.theta = fused_odometry_parameters->xsens_yaw_std_error;// / 5.0;
+			std.theta = fused_odometry_parameters->xsens_yaw_std_error / 5.0;
 		}
 		else if (xsens_handler->gps_xyz.gps_quality == 5)
 		{
 			std.x = fused_odometry_parameters->xsens_gps_x_std_error / 2.0;
 			std.y = fused_odometry_parameters->xsens_gps_y_std_error / 2.0;
-			std.theta = fused_odometry_parameters->xsens_yaw_std_error;// / 2.0;
+			std.theta = fused_odometry_parameters->xsens_yaw_std_error / 2.0;
 		}
 		else
 		{

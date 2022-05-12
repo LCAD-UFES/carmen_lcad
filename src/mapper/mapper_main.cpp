@@ -428,7 +428,6 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	else
 		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
 
-	printf("beta %lf\n", globalpos_message->beta);
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
 	int index_of_nearest_annotation = 0;
