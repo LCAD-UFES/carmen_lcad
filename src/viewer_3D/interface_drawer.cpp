@@ -34,14 +34,14 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y);
 static void handle_mouse_right_click(interface_drawer* i_drawer, int x, int y);
 static int test_mouse_over_button(button b, int x, int y);
 static void draw_button(button b);
-static void drawText(float x, float y, const char* msg, ...);
+static void drawText(float x, float y, const char* msg, int font_help ...);
 
 interface_drawer*
 create_interface_drawer(int window_width, int window_height)
 {
 	interface_drawer* i_drawer = (interface_drawer*) malloc(sizeof(interface_drawer));
 
-	i_drawer->num_buttons = 72;
+	i_drawer->num_buttons = 74; // test Braian
 	i_drawer->butt = (button*) malloc(i_drawer->num_buttons * sizeof(button));
 
 	init_buttons(i_drawer, window_width, window_height);
@@ -64,7 +64,7 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	int i;
 
 	double base_x = 80.0 * window_width / 1000.0;
-	double base_y = 30.0 * window_height / 600.0;
+	double base_y = 50.0 * window_height / 600.0;
 	double button_width = 100.0 * window_width / 1000.0;
 	double button_height = 20.0 * window_height / 600.0;
 	double horizontal_space = 120.0 * window_width / 1000.0;
@@ -159,6 +159,16 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 			i_drawer->butt[i].visible = 0;
 		}
 
+		if (i == 72) // test Braian
+		{
+			i_drawer->butt[i].visible = 1;
+		}
+
+		if (i == 73) // test Braian
+		{
+			i_drawer->butt[i].visible = 0;
+		}
+
 		if (i == 0)
 		{
 			i_drawer->butt[i].visible = 1;
@@ -248,6 +258,11 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	i_drawer->butt[70].text = "lidar14";
 	i_drawer->butt[71].text = "lidar15";
 
+
+	//Help
+	i_drawer->butt[HELP_BUTTON_CODE].text = HELP_BUTTON_TEXT; // test Braian
+	i_drawer->butt[HELP_CODE].text = HELP_TEXT; //test Braian
+
 }
 
 
@@ -256,7 +271,7 @@ interface_mouse_func(interface_drawer* i_drawer, int type, int button, int x, in
 {
 	y = window_height - y;
 
-	//printf("mouse - type: %d, button: %d, x: %d, y: %d\n", type, button, x, y);
+//	printf("mouse - type: %d, button: %d, x: %d, y: %d\n", type, button, x, y);
 	if (type == 0 && button == 0) // Mouse movement
 	{
 		handle_mouse_movement(i_drawer, x, y);
@@ -347,6 +362,22 @@ update_buttons_size(interface_drawer* i_drawer, int window_width, int window_hei
 			i_drawer->butt[i].y = 2 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
+		}
+
+		else if (i == 72) // test Braian
+		{
+			i_drawer->butt[i].x = window_width - 60;
+			i_drawer->butt[i].y = window_height - 30;
+			i_drawer->butt[i].width = 80;
+			i_drawer->butt[i].height = 20;
+		}
+
+		else if (i == 73) // test Braian
+		{
+			i_drawer->butt[i].x = window_width - 170;
+			i_drawer->butt[i].y = window_height - 160;
+			i_drawer->butt[i].width = 300;
+			i_drawer->butt[i].height = 200;
 		}
 	}
 }
@@ -804,6 +835,10 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					int lidar_number = i_drawer->butt[i].code - 56;
 					set_flag_viewer_3D(DRAW_LIDAR_FLAG_CODE, lidar_number);
 				}
+				else if (i_drawer->butt[i].code == 72) // test Braian
+				{
+					i_drawer->butt[HELP_CODE].visible = !i_drawer->butt[73].visible;
+				}
 			}
 		}
 	}
@@ -861,7 +896,7 @@ draw_button(button b)
 {
 	glPushMatrix();
 
-	if (b.mouse_over)
+	if (b.mouse_over && b.code != HELP_CODE) // test Braian
 	{
 		glColor3d(1.0, 1.0, 0.0);
 	}
@@ -882,14 +917,25 @@ draw_button(button b)
 	glEnd();
 
 	glColor3d(0.0, 0.0, 0.0);
-	drawText(-b.width / 2 + 5, -5, b.text);
+
+	int fontHelp; // test Braian
+
+	if(b.code != 73){
+		fontHelp = 0;
+		drawText(-b.width / 2 + 5, -5, b.text, fontHelp);
+	}
+	else
+	{
+		fontHelp = 1;
+		drawText(-b.width/2 + 5, 60, b.text, fontHelp);
+	}
 
 	glPopMatrix();
 }
 
 
 static void
-drawText(float x, float y, const char* msg, ...)
+drawText(float x, float y, const char* msg, int font_help, ...)
 {
 	char buf[1024];
 	va_list args;
@@ -903,7 +949,20 @@ drawText(float x, float y, const char* msg, ...)
 	glRasterPos2f(x, y);
 	for (i = 0; i < l; i++)
 	{
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, buf[i]);
+		if(buf[i] == '/')
+		{
+			y -= 15;
+			glRasterPos2f(x, y);
+	    }
+
+		else
+	    {
+			if(font_help){ // test Braian
+				glutBitmapCharacter(GLUT_BITMAP_9_BY_15, buf[i]);
+			} else {
+				glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, buf[i]);
+			}
+	    }
 	}
 
 }

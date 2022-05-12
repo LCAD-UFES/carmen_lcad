@@ -24,11 +24,15 @@
 static carmen_pose_3D_t camera_pose;
 static carmen_pose_3D_t camera_offset;
 
+static int camera_mode; // test Braian
+static int free_mode; // test Braian
+
 static unsigned int map_image_texture_id;
 static unsigned int localize_image_base_texture_id;
 static unsigned int localize_image_curr_texture_id;
 
 static unsigned int laser_buffer_id;
+
 static double *laser_pos_buffer;
 
 double background_r;
@@ -76,21 +80,7 @@ initGl (int width, int height)
 
     gluPerspective (45.0f, width / height, 0.1f, 4000.0f); // Calculate The Aspect Ratio Of The Window
 
-    carmen_pose_3D_t zero_pose;
-    zero_pose.position.x = 0.0;
-    zero_pose.position.y = 0.0;
-    zero_pose.position.z = 0.0;
-    zero_pose.orientation.roll = 0.0;
-    zero_pose.orientation.pitch = 0.0;
-    zero_pose.orientation.yaw = 0.0;
-
-    camera_pose = zero_pose;
-    camera_offset = zero_pose;
-
-    camera_pose.position.z = 30.0;
-    camera_pose.orientation.pitch = carmen_degrees_to_radians (90.0);
-
-    camera_offset.orientation.yaw = carmen_degrees_to_radians (90.0);
+    set_camera_mode(1); // test Braian
 
     background_r = 0.0;
     background_g = 0.0;
@@ -98,6 +88,69 @@ initGl (int width, int height)
 
     glMatrixMode (GL_MODELVIEW);
 
+}
+
+void move_front_camera(double moviment)
+{
+	double theta = 90 + carmen_radians_to_degrees(camera_offset.orientation.pitch);
+
+//  camera_pose.position.z -= moviment * cos(carmen_degrees_to_radians(30));
+//  camera_pose.position.x += moviment * sin(carmen_degrees_to_radians(30));
+    camera_pose.position.z -= moviment * cos(carmen_degrees_to_radians(theta));
+    camera_pose.position.x += moviment * sin(carmen_degrees_to_radians(theta));
+
+
+
+//  printf("%lf\n", carmen_radians_to_degrees(camera_offset.orientation.pitch));
+//	printf("pitch: %lf\n", carmen_radians_to_degrees(camera_pose.orientation.pitch));
+}
+
+void enable_free_mode()
+{
+	free_mode = 1;
+}
+
+void disable_free_mode(carmen_orientation_3D_t orientation)
+{
+	if(camera_offset.orientation.yaw <= orientation.yaw + 0.1 && camera_offset.orientation.yaw >= orientation.yaw - 0.1)
+	{
+		free_mode = 0;
+	}
+}
+
+void
+set_camera_mode (int mode) // test Braian
+{
+	camera_mode = mode;
+	free_mode = 0;
+	reset_camera_position();
+}
+
+void
+reset_camera_position () // test Braian
+{
+
+	if(camera_mode == 1 || camera_mode == 2)
+	{
+		camera_pose.position.x = 0.0;
+		camera_pose.position.y = 0.0;
+		camera_pose.position.z = 80.0;
+		camera_pose.orientation.pitch = carmen_degrees_to_radians (90.0);
+
+		camera_offset.orientation.pitch = 0.0;
+		camera_offset.orientation.roll = 0.0;
+		camera_offset.orientation.yaw = carmen_degrees_to_radians (90.0);
+	}
+	else if (camera_mode == 3)
+	{
+		camera_pose.position.x = -1;
+		camera_pose.position.y = 0.0;
+		camera_pose.position.z = 10;
+		camera_pose.orientation.pitch = carmen_degrees_to_radians (70.0);
+
+		camera_offset.orientation.pitch = carmen_degrees_to_radians (-60.0);
+		camera_offset.orientation.roll = carmen_degrees_to_radians (0);
+	}
 }
 
 void
@@ -114,6 +167,7 @@ set_camera (carmen_pose_3D_t pose)
     camera_pose = pose;
 }
 
+
 carmen_pose_3D_t
 get_camera_pose()
 {
@@ -127,9 +181,12 @@ get_camera_offset()
 }
 
 void
-set_camera_offset (carmen_vector_3D_t offset)
+set_camera_offset (carmen_pose_3D_t offset)
 {
-    camera_offset.position = offset;
+	if((camera_mode == 2 || camera_mode == 3) && free_mode == 0){ // test Braian
+		camera_offset.orientation.yaw = offset.orientation.yaw;
+	}
+	camera_offset.position = offset.position;
 }
 
 void
@@ -142,6 +199,9 @@ move_camera (carmen_vector_3D_t displacement)
     camera_pose.position = add_vectors (camera_pose.position, displacement_world_coordinates);
 
     destroy_rotation_matrix (r_matrix);
+
+//  printf("x: %lf, y: %lf, z: %lf\n", camera_pose.position.x, camera_pose.position.y, camera_pose.position.z);
+
 }
 
 void
@@ -162,9 +222,11 @@ rotate_camera (carmen_orientation_3D_t rotation)
 void
 rotate_camera_offset (carmen_orientation_3D_t rotation)
 {
-    camera_offset.orientation.roll += rotation.roll;
+
+	camera_offset.orientation.roll += rotation.roll;
     camera_offset.orientation.pitch += rotation.pitch;
     camera_offset.orientation.yaw += rotation.yaw;
+
 }
 
 void
@@ -206,6 +268,7 @@ reset_camera ()
     glRotated (carmen_radians_to_degrees (camera_offset.orientation.yaw), 0.0, 0.0, -1.0);
 
     glTranslated (-camera_offset.position.x, -camera_offset.position.y, -camera_offset.position.z);
+
 }
 
 void
@@ -401,9 +464,9 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
     glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.pitch - xsens_pose.orientation.pitch)), 0.0f, 1.0f, 0.0f);
     glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.roll - xsens_pose.orientation.roll)), 1.0f, 0.0f, 0.0f);
 //    printf("xsens_angle %lf, car angle %lf, xsens_bias %lf, roll %lf, pitch %lf\n",
-//    		carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.yaw)),
-//    		carmen_radians_to_degrees(car_pose.orientation.yaw), carmen_radians_to_degrees(xsens_yaw_bias),
-//			carmen_radians_to_degrees(xsens_orientation.roll), carmen_radians_to_degrees(xsens_orientation.pitch));
+//    carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.yaw)),
+//    carmen_radians_to_degrees(car_pose.orientation.yaw), carmen_radians_to_degrees(xsens_yaw_bias),
+//	  carmen_radians_to_degrees(xsens_orientation.roll), carmen_radians_to_degrees(xsens_orientation.pitch));
 
     draw_xsens_axis(1.0);
 

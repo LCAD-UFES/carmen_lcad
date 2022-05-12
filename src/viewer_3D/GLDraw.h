@@ -15,11 +15,17 @@ void initGl(int width, int height);
 void set_camera(carmen_pose_3D_t pose);
 carmen_pose_3D_t get_camera_pose();
 carmen_pose_3D_t get_camera_offset();
-void set_camera_offset(carmen_vector_3D_t offset);
+void set_camera_offset(carmen_pose_3D_t offset);
 void move_camera(carmen_vector_3D_t displacement);
 void rotate_camera(carmen_orientation_3D_t rotation);
 void rotate_camera_offset(carmen_orientation_3D_t rotation);
 void set_background_color(double r, double g, double b);
+
+void enable_free_mode(); // test Braian
+void disable_free_mode(carmen_orientation_3D_t orientation); // test Braian
+void reset_camera_position(); // test Braian
+void set_camera_mode(int mode); // test Braian
+void move_front_camera(double moviment); // test Braian
 
 void set_laser(float x, float y, float z, float roll, float pitch, float yaw);
 
