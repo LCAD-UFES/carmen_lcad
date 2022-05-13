@@ -782,16 +782,54 @@ initialize_structures(void)
 
 	carmen_grid_mapping_initialize_map(current_road_map, ((double)map_width / map_grid_res), map_grid_res, 'r');
 }
+
+
+void
+map_server_get_first_map()
+{
+	if (map_file_name != NULL)
+	{
+		int no_valid_map_on_file = carmen_map_read_gridmap_chunk(map_file_name, current_map) != 0;
+		if (no_valid_map_on_file)
+			printf("map_server: could not read offline map from file named: %s\n", map_file_name);
+	}
+	else
+	{
+		carmen_point_t pose;
+		pose.x = initial_map_x;
+		pose.y = initial_map_y;
+		if (block_map)
+		{
+			carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', pose, current_map);
+			carmen_grid_mapping_get_block_map_by_origin(map_path, 's', pose, current_sum_remission_map);
+			carmen_grid_mapping_get_block_map_by_origin(map_path, '2', pose, current_sum_sqr_remission_map);
+			carmen_grid_mapping_get_block_map_by_origin(map_path, 'c', pose, current_count_remission_map);
+			carmen_grid_mapping_get_block_map_by_origin(map_path, 'r', pose, current_road_map);
+		}
+	}
+	if (current_map->complete_map != NULL)
+	{
+		double timestamp = carmen_get_time();
+		carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map, current_sum_remission_map,
+				current_sum_sqr_remission_map, current_count_remission_map);
+		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
+		carmen_map_server_publish_offline_map_message(current_map, timestamp);
+		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
+		carmen_map_server_publish_localize_map_message(&localize_map);
+		if (publish_grid_mapping_map_at_startup)
+			carmen_mapper_publish_map_message(current_map, timestamp);
+	}
+	else
+	{
+		printf("map_server: could not get an offline map at startup!\n");
+	}
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int 
 main(int argc, char **argv)
 {
-	carmen_point_t pose;
-	int no_valid_map_on_file;
-	double timestamp;
-
 	usleep(initial_waiting_time * 1e6);	// Com a adocao da nova versao do IPC esta espera tem que ocorrer antes da conexao com o central.
 										// Se nao esperar aqui, os mapas iniciais nao sao recebidos pelo localize_ackerman para alguma razao...
 										// Assim, o parametro map_server_initial_waiting_time nao esta funcionando (esta fixo aqui com o valor
@@ -805,46 +843,7 @@ main(int argc, char **argv)
 	carmen_grid_mapping_init_parameters(map_grid_res, map_width);
 
 	initialize_structures();
-	if (map_file_name != NULL)
-	{
-		no_valid_map_on_file = carmen_map_read_gridmap_chunk(map_file_name, current_map) != 0;
-		if (no_valid_map_on_file)
-			printf("map_server: could not read offline map from file named: %s\n", map_file_name);
-	}
-	else
-	{	
-		pose.x = initial_map_x;
-		pose.y = initial_map_y;
-
-		if (block_map)
-		{
-			carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', pose, current_map);
-			carmen_grid_mapping_get_block_map_by_origin(map_path, 's', pose, current_sum_remission_map);
-			carmen_grid_mapping_get_block_map_by_origin(map_path, '2', pose, current_sum_sqr_remission_map);
-			carmen_grid_mapping_get_block_map_by_origin(map_path, 'c', pose, current_count_remission_map);
-			carmen_grid_mapping_get_block_map_by_origin(map_path, 'r', pose, current_road_map);
-		}
-	}
-
-	if (current_map->complete_map != NULL)
-	{
-		timestamp = carmen_get_time();
-
-		carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map,
-				current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
-
-		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
-
-		carmen_map_server_publish_offline_map_message(current_map, timestamp);
-		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
-		carmen_map_server_publish_localize_map_message(&localize_map);
-		if (publish_grid_mapping_map_at_startup)
-			carmen_mapper_publish_map_message(current_map, timestamp);
-	}
-	else
-	{
-		printf("map_server: could not get an offline map at startup!\n");
-	}
+	map_server_get_first_map();
 
 	register_handlers();
 	carmen_ipc_dispatch();

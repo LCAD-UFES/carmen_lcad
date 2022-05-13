@@ -1085,7 +1085,7 @@ mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_t *occu
 		first_time = 0;
 	}
 
-	if (carmen_grid_mapping_is_map_changed(map_origin, x_origin, y_origin))
+	if (carmen_grid_mapping_is_map_changed(map_origin, x_origin, y_origin) || save_map)
 	{
 		x_origin = map_origin->x;
 		y_origin = map_origin->y;
@@ -1793,7 +1793,6 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 			carmen_grid_mapping_create_new_map(&sum_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, 's');
 			carmen_grid_mapping_create_new_map(&sum_sqr_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, '2');
 			carmen_grid_mapping_create_new_map(&count_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, 'c');
-
 		}
 	}
 

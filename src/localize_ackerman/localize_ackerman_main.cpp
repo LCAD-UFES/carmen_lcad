@@ -475,14 +475,14 @@ get_car_pose_from_gps_pose(carmen_gps_xyz_message *gps_xyz_message, double theta
 
 
 void
-gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, carmen_velodyne_partial_scan_message *zt)
+gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, double timestamp)
 {
 	if (g_gps_xyz_index == -1)
 		return;
 
-	carmen_gps_xyz_message *gps_xyz_message = &(gps_xyz_vector[get_gps_xyz_index_by_timestamp(zt->timestamp)]);
+	carmen_gps_xyz_message *gps_xyz_message = &(gps_xyz_vector[get_gps_xyz_index_by_timestamp(timestamp)]);
 
-	if (fabs(gps_xyz_message->timestamp - zt->timestamp) > 0.3)
+	if (fabs(gps_xyz_message->timestamp - timestamp) > 0.3)
 		return;
 
 	double gps_sigma_squared = 100.0 * 100.0;
@@ -495,7 +495,7 @@ gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, carmen_velo
 
 //	int i = xt_1->param->num_particles / 2;
 //	carmen_vector_3D_t estimated_car_pose = get_car_pose_from_gps_pose(gps_xyz_message, xt_1->particles[i].theta,
-//			xt_1->particles[i].v, zt->timestamp);
+//			xt_1->particles[i].v, timestamp);
 //	double distance = DIST2D(xt_1->particles[i], estimated_car_pose);
 //	double distance_squared = distance * distance;
 //	double gps_weight = exp(-distance_squared / gps_sigma_squared) + 0.000001;
@@ -505,7 +505,7 @@ gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, carmen_velo
 	for (int i = 0; i < xt_1->param->num_particles; i++)
 	{
 		carmen_vector_3D_t estimated_car_pose = get_car_pose_from_gps_pose(gps_xyz_message, xt_1->particles[i].theta,
-				xt_1->particles[i].v, zt->timestamp);
+				xt_1->particles[i].v, timestamp);
 		double distance = DIST2D(xt_1->particles[i], estimated_car_pose);
 		double distance_squared = distance * distance;
 		double gps_weight = exp(-distance_squared / gps_sigma_squared) / sqrt(gps_sigma_squared * 2.0 * M_PI);
@@ -551,6 +551,7 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 
 	carmen_localize_ackerman_velodyne_correction(filter, &localize_map, &local_compacted_map, &local_compacted_mean_remission_map,
 			&local_compacted_variance_remission_map, &binary_map);
+//	gps_xyz_correction(filter, message->timestamp);
 
 	publish_particles_correction(filter, &summary, message->timestamp);
 
@@ -827,7 +828,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
-	gps_xyz_correction(filter, velodyne_message);
+	gps_xyz_correction(filter, velodyne_message->timestamp);
 
 //	carmen_localize_ackerman_beta_correction(beta_filter,
 //			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);

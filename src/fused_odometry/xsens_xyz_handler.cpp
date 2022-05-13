@@ -26,6 +26,8 @@ bool got_gps_message = false;
 
 double xsens_magnetic_declination = 0.0;
 
+extern carmen_vector_3D_t gps_initial_pos;
+
 
 int
 is_global_pos_initialized()
@@ -214,9 +216,17 @@ get_car_position_from_message(carmen_gps_xyz_message *gps_xyz_message)
 
 	tf::Transform global_to_gps;
 	global_to_gps.setOrigin(carmen_vector3_to_tf_vector3(gps_position));
-	tf::Quaternion zero_quat(0.0, 0.0, 0.0);
-	global_to_gps.setRotation(zero_quat);
-	
+	if (xsens_handler.gps_hdt.valid)
+	{
+		carmen_orientation_3D_t orientation = {0.0, 0.0, xsens_handler.gps_hdt.heading};
+		tf::Quaternion q_orientation = carmen_rotation_to_tf_quaternion(orientation);
+		global_to_gps.setRotation(q_orientation);
+	}
+	else
+	{
+		tf::Quaternion zero_quat(0.0, 0.0, 0.0);
+		global_to_gps.setRotation(zero_quat);
+	}
 	tf::Transform global_to_car = global_to_gps * gps_to_car;
 
 	carmen_vector_3D_t car_position = tf_vector3_to_carmen_vector3(global_to_car.getOrigin());
@@ -264,7 +274,10 @@ create_sensor_vector_gps_xyz(carmen_gps_xyz_message *gps_xyz_message)
 	carmen_orientation_3D_t zero_ori = {0.0, 0.0, 0.0};
 
 	sensor_vector->acceleration = zero;
-	sensor_vector->orientation = zero_ori;
+	if (xsens_handler.gps_hdt.valid)
+		sensor_vector->orientation = {0.0, 0.0, xsens_handler.gps_hdt.heading};
+	else
+		sensor_vector->orientation = zero_ori;
 	sensor_vector->ang_velocity = zero_ori;
 	sensor_vector->position = get_car_position_from_message(gps_xyz_message);
 	sensor_vector->timestamp = gps_xyz_message->timestamp;
@@ -333,7 +346,7 @@ create_state_vector_from_message(carmen_gps_xyz_message *gps_xyz_message)
 
 	sv.pose.position = sensor_vector->position;
 	sv.xsens_yaw_bias = 0.0;
-	sv.pose.orientation = zero_ori;
+	sv.pose.orientation = sensor_vector->orientation;
 	sv.velocity = zero;
 	sv.ang_velocity = zero_ori;
 	sv.phi = 0.0;
@@ -474,6 +487,8 @@ initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 		if (xsens_handler.gps_xyz.gps_quality)
 		{
 			carmen_fused_odometry_state_vector initial_state = create_state_vector_from_message(&xsens_handler.gps_xyz);
+			gps_initial_pos = {xsens_handler.gps_xyz.x, xsens_handler.gps_xyz.y, xsens_handler.gps_xyz.z};
+
 			if (xsens_handler.gps_hdt.valid && (xsens_handler.extra_gps == 2)) // Trimble
 			{
 				carmen_orientation_3D_t orientation = {0.0, 0.0, xsens_handler.gps_hdt.heading};
@@ -482,12 +497,11 @@ initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 			else
 				initial_state.pose.orientation = get_car_orientation_from_message(xsens_mti);
 
-			carmen_orientation_3D_t orientation = get_car_orientation_from_message(xsens_mti);
-			printf("yaw %lf magnetic_declination %lf\n", 180.0 * orientation.yaw / M_PI, 180.0 * xsens_magnetic_declination / M_PI);
-			fflush(stdout);
+//			carmen_orientation_3D_t orientation = get_car_orientation_from_message(xsens_mti);
+//			printf("yaw %lf magnetic_declination %lf\n", 180.0 * orientation.yaw / M_PI, 180.0 * xsens_magnetic_declination / M_PI);
+//			fflush(stdout);
 
 			globalpos_ackerman_initialize_from_xsens(initial_state, xsens_mti->timestamp);
-
 			xsens_handler.initial_state_initialized = 1;
 		}
 	}
@@ -1022,7 +1036,6 @@ initialize_carmen_parameters(xsens_xyz_handler *xsens_handler, int argc, char **
 		{(char *) "gps_nmea_1", (char *) "roll",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.roll,		0, NULL},
 		{(char *) "gps_nmea_1", (char *) "pitch",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.pitch,	0, NULL},
 		{(char *) "gps_nmea_1", (char *) "yaw",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.yaw,		0, NULL},
-
 	};
 	
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
