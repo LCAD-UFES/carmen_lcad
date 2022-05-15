@@ -56,6 +56,10 @@ void carmen_localize_ackerman_initialize_localize_map(carmen_localize_ackerman_m
 void carmen_to_localize_ackerman_map(carmen_map_p cmap, carmen_map_p mean_remission_map,
 		carmen_map_p variance_remission_map, carmen_localize_ackerman_map_p lmap, carmen_localize_ackerman_param_p param);
 
+void carmen_to_localize_ackerman_map_only_prob(carmen_map_p cmap,
+		carmen_map_p mean_remission_map, carmen_map_p variance_remission_map,
+		carmen_localize_ackerman_map_p lmap, carmen_localize_ackerman_param_p param);
+
 void carmen_to_localize_ackerman_likelihood_map_only(carmen_map_p cmap, carmen_localize_ackerman_map_p lmap,
 		carmen_localize_ackerman_param_p param);
 
