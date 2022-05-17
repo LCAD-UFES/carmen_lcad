@@ -7,6 +7,8 @@ Depois destes comandos você está no novobranch de mesmo modo que estaria no ma
 Contudo, novos pushs tem que ser como acima. Alternativamente, execute o comando:
  git push --set-upstream origin novobranch
 
+Depois dele, novos git push vao para novobranch.
+
 Para voltar para o branch master (main)
  git checkout origin master
 
