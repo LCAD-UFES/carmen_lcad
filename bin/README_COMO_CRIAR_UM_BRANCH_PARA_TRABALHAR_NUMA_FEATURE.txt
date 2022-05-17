@@ -10,7 +10,7 @@ Contudo, novos pushs tem que ser como acima. Alternativamente, execute o comando
 Depois dele, novos git push vao para novobranch.
 
 Para voltar para o branch master (main)
- git checkout origin master
+ git checkout master
 
 Para voltar para novobranch
- git checkout origin novobranch
+ git checkout novobranch
