@@ -16,6 +16,35 @@
 
 #define USE_REAR_BULLBAR
 
+typedef struct
+{
+	carmen_map_t *offline_map;
+
+	carmen_map_t *occupancy_map;
+	carmen_map_t *sum_occupancy_map;
+	carmen_map_t *count_occupancy_map;
+
+	carmen_map_t *new_occupancy_map;
+	carmen_map_t *new_sum_occupancy_map;
+	carmen_map_t *new_count_occupancy_map;
+
+	carmen_map_t *sum_remission_map;
+	carmen_map_t *sum_sqr_remission_map;
+	carmen_map_t *count_remission_map;
+
+	carmen_map_t *new_sum_remission_map;
+	carmen_map_t *new_sum_sqr_remission_map;
+	carmen_map_t *new_count_remission_map;
+
+	carmen_map_t *snapshot_map;
+	carmen_map_t *sum_remission_snapshot_map;
+	carmen_map_t *sum_sqr_remission_snapshot_map;
+	carmen_map_t *count_remission_snapshot_map;
+
+	carmen_map_t *moving_objects_raw_map;
+} carmen_map_set_t;
+
+
 void mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map);
 
 int mapper_stereo_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message);
@@ -42,9 +71,11 @@ void mapper_periodically_save_current_map(double timestamp);
 
 void mapper_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config, bool use_merge_between_maps);
 
-void mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_t *occupancy_map, carmen_position_t *map_origin, bool save_map);
+void mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_set_t *map_set,
+		carmen_position_t *map_origin, bool save_map);
 
-void mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen_map_t *occupancy_map, carmen_position_t *map_origin, bool save_map);
+void mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen_map_set_t *map_set,
+		carmen_position_t *map_origin, bool save_map);
 
 int run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, double rays_threshold_to_merge_between_maps);
 

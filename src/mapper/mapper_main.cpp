@@ -30,7 +30,6 @@
 
 
 carmen_map_t offline_map;
-// TODO: @@@ Alberto: essa variavel eh definida como externa dentro da lib do mapper. Corrigir!
 carmen_localize_ackerman_globalpos_message *globalpos_history;
 int last_globalpos;
 
