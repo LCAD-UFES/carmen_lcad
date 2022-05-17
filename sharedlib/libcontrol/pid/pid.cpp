@@ -21,7 +21,7 @@ enum
 #define min_fuzzy_v 4.17 // = 20km/h Parameters start variation from this velocity
 #define max_fuzzy_v 9.72 // = 45km/h Parameters stop variation from twice this velocity
 
-#define NEAR_ZERO_V	0.03
+#define NEAR_ZERO_V	0.05
 
 #define ROBOT_ID_FORD_ESCAPE 	0
 #define ROBOT_ID_ECOTECH4 		1
@@ -382,6 +382,13 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
+//	double g_maximum_acceleration = 0.5;
+//	double delta_velocity = fabs(desired_velocity - current_velocity);
+//	double command_curvature_signal = (current_velocity < desired_velocity) ? 1.0 : -1.0;
+//	double max_velocity_change = g_maximum_acceleration * delta_t;
+//
+//	desired_velocity = current_velocity + command_curvature_signal * fmin(delta_velocity, max_velocity_change);
+
 //	double delta_velocity = fabs(desired_velocity - current_velocity);
 //	double command_velocity_signal = (current_velocity < desired_velocity) ? 1.0 : -1.0;
 //	double max_velocity_change = 5.4 * delta_t;
@@ -407,7 +414,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		error_t_1 = integral_t = integral_t_1 = 0.0;
 
 		*throttle_command = 0.0;
-		current_max_break_effort = current_max_break_effort + 0.03 * (g_max_brake_effort - current_max_break_effort);
+		current_max_break_effort = current_max_break_effort + 0.05 * (g_max_brake_effort - current_max_break_effort);
 		*brakes_command = current_max_break_effort;
 //		*brakes_command = *brakes_command + NEAR_ZERO_V * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
 
@@ -438,7 +445,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
 		{
-			error_t_1 = integral_t = integral_t_1 = 0.0;
+//			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_DECCELERATING;
 		}
 		if (desired_velocity <= 0.0)
@@ -456,7 +463,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		if ((desired_velocity > 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && u_t > 0.0)
 		{
-			error_t_1 = integral_t = integral_t_1 = 0.0;
+//			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
 		}
 		if (desired_velocity <= 0.0)

@@ -42,6 +42,7 @@
 //#define FORD_ESCAPE_COMMUNICATION_DUMP
 //#define PLOT_PHI
 //#define PLOT_VELOCITY
+#define FORD_ESCAPE_CYCLE_TIME	(1.0 / 40.0)
 
 #define ROBOT_NAME_FORD_ESCAPE 	0
 #define ROBOT_NAME_ECOTECH4 	1
@@ -80,6 +81,8 @@ int behavior_selector_going_backwards = 0;
 double g_XGV_velocity_temp = 0.0;
 
 carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
+
+carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
 
 static double
@@ -142,6 +145,30 @@ get_phi_from_curvature(double curvature, ford_escape_hybrid_config_t *ford_escap
 }
 
 
+double
+decreased_v_according_to_acceptable_acceleations(double v)
+{
+	double new_v;
+
+	double robot_desired_decelaration_forward = 5.0;
+	new_v = v - robot_desired_decelaration_forward * FORD_ESCAPE_CYCLE_TIME;
+
+	return (new_v);
+}
+
+
+double
+increased_v_according_to_acceptable_acceleations(double v)
+{
+	double new_v;
+
+	double robot_maximum_acceleration_forward = 5.0;
+	new_v = v + robot_maximum_acceleration_forward * FORD_ESCAPE_CYCLE_TIME;
+
+	return (new_v);
+}
+
+
 static void
 set_wrench_efforts_desired_v_curvature_and_gear()
 {
@@ -171,6 +198,21 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	{
 		v = 0.0;
 		phi = 0.0;
+	}
+
+	if ((fabs(ford_escape_hybrid_config->filtered_v) > 1.0) && path_goals_and_annotations_message && (path_goals_and_annotations_message->goal_list_size != 0) && path_goals_and_annotations_message->goal_list)
+	{
+		double v_goal = path_goals_and_annotations_message->goal_list[0].v;
+
+		if (v_goal > 0.0)
+		{
+			if (fabs(v - v_goal) < 0.3)
+				v = v_goal;
+			else if (v > v_goal)
+				v = decreased_v_according_to_acceptable_acceleations(v);
+			else
+				v = increased_v_according_to_acceptable_acceleations(v);
+		}
 	}
 
 	if (v > ford_escape_hybrid_config->max_velocity)
@@ -585,6 +627,13 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 		carmen_collision_detection_set_robot_collision_config(ENGAGE_GEOMETRY);
 	else
 		carmen_collision_detection_set_robot_collision_config(DEFAULT_GEOMETRY);
+}
+
+
+static void
+path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
+{
+	path_goals_and_annotations_message = msg;
 }
 
 
@@ -1129,6 +1178,8 @@ subscribe_to_relevant_messages()
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_task_manager_subscribe_desired_engage_state_message(NULL, (carmen_handler_t) task_manager_desired_engage_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1241,7 +1292,7 @@ main(int argc, char** argv)
 
 	initialize_jaus();
 
-	carmen_ipc_addPeriodicTimer(1.0 / 40.0, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
+	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 
 	carmen_ipc_dispatch();
 
