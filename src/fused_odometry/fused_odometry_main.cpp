@@ -35,7 +35,7 @@ extern carmen_fused_odometry_message fused_odometry_message;
 static carmen_vector_3D_t *particle_pos = NULL;
 static double *particle_weight = NULL;
 
-static carmen_vector_3D_t gps_initial_pos;
+carmen_vector_3D_t gps_initial_pos;
 
 int kalman_filter;
 
@@ -275,9 +275,6 @@ init_particles(carmen_fused_odometry_state_vector initial_state, carmen_fused_od
 		xt[m].weight = 1.0 / (double) num_particles;
 		xt[m].weight_type = -1;
 	}
-
-	gps_initial_pos = initial_state.pose.position;
-
 }
 
 

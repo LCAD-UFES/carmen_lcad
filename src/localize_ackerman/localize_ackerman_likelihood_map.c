@@ -477,7 +477,7 @@ carmen_localize_ackerman_initialize_likelihood_map_only(carmen_localize_ackerman
 
 
 void
-carmen_to_localize_ackerman_map(carmen_map_p cmap,
+carmen_to_localize_ackerman_map_only_prob(carmen_map_p cmap,
 		carmen_map_p mean_remission_map, carmen_map_p variance_remission_map,
 		carmen_localize_ackerman_map_p lmap, carmen_localize_ackerman_param_p param)
 {
@@ -492,8 +492,14 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 	}
 
 	/*add remission map into localize map*/
-	lmap->carmen_mean_remission_map = *mean_remission_map;
-	lmap->carmen_variance_remission_map = *variance_remission_map;
+	if (mean_remission_map)
+		lmap->carmen_mean_remission_map = *mean_remission_map;
+	else
+		lmap->carmen_mean_remission_map.complete_map = lmap->carmen_map.complete_map;	// so porque a mensagem de mapas de localizacao exige
+	if (variance_remission_map)
+		lmap->carmen_variance_remission_map = *variance_remission_map;
+	else
+		lmap->carmen_variance_remission_map.complete_map = lmap->carmen_map.complete_map;	// so porque a mensagem de mapas de localizacao exige
 
 	carmen_prob_models_create_distance_map(distance_map, cmap, param->occupied_prob);
 	lmap->complete_distance = distance_map->complete_distance;
@@ -508,6 +514,15 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 
 	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->prob, lmap, param->lmap_std, param->tracking_beam_minlikelihood,
 			param->tracking_beam_maxlikelihood, param->use_log_odds);
+}
+
+
+void
+carmen_to_localize_ackerman_map(carmen_map_p cmap,
+		carmen_map_p mean_remission_map, carmen_map_p variance_remission_map,
+		carmen_localize_ackerman_map_p lmap, carmen_localize_ackerman_param_p param)
+{
+	carmen_to_localize_ackerman_map_only_prob(cmap, mean_remission_map, variance_remission_map, lmap, param);
 	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->gprob, lmap, param->global_lmap_std, param->global_beam_minlikelihood,
 			param->global_beam_maxlikelihood, param->use_log_odds);
 }

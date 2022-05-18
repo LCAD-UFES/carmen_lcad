@@ -1271,6 +1271,10 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 
     pos.x = localize_ackerman_message->globalpos.x - offset.x;
     pos.y = localize_ackerman_message->globalpos.y - offset.y;
+//    printf("localize_ackerman_message->globalpos.x %lf, localize_ackerman_message->globalpos.y %lf\n",
+//    		localize_ackerman_message->globalpos.x, localize_ackerman_message->globalpos.y);
+//    fflush(stdout);
+
     pos.z = 0.0 - offset.z;
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1323,7 +1327,6 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 		if (last_localize_ackerman_semi_trailer_trail >= localize_ackerman_size)
 			last_localize_ackerman_semi_trailer_trail -= localize_ackerman_size;
 	}
-
 
     static double time_of_last_publish = carmen_get_time();
 	if (publish_map_view && ((carmen_get_time() - time_of_last_publish) >= publish_map_view_interval))
@@ -2524,6 +2527,8 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
     new_pos.x = gps_xyz_raw_message->x - offset.x;
     new_pos.y = gps_xyz_raw_message->y - offset.y;
     new_pos.z = gps_xyz_raw_message->z - offset.z;
+//    printf("gps_xyz_raw_message->x %lf, gps_xyz_raw_message->y %lf,  offset.x %lf,  offset.y %lf\n",
+//    		gps_xyz_raw_message->x, gps_xyz_raw_message->y, offset.x, offset.y);
 
     gps_trail[last_gps_trail] = new_pos;
     gps_nr[last_gps_trail] = gps_xyz_raw_message->nr;
@@ -2896,10 +2901,10 @@ carmen_localize_neural_curr_message_handler(carmen_localize_neural_imagepos_mess
 
 
 static void
-carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
+carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg __attribute__ ((unused)))
 {
-	gps_position_at_turn_on = {initialize_msg->mean->x, initialize_msg->mean->y, 0.0};
-    odometry_initialized = 1;
+//	gps_position_at_turn_on = {initialize_msg->mean->x, initialize_msg->mean->y, 0.0};
+//    odometry_initialized = 1;
 }
 
 

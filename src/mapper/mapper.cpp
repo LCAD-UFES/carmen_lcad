@@ -1092,7 +1092,7 @@ mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_t *occu
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
-			if (offline_map_available && occupancy_map->complete_map != NULL && occupancy_map->config.x_origin != 0.0 && save_map)
+			if (save_map && (offline_map_available && occupancy_map->complete_map != NULL) && (occupancy_map->config.x_origin != 0.0))
 			{
 				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', occupancy_map);
 				if (use_remission)
@@ -1133,8 +1133,8 @@ mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_t *occu
 		//destroy current map and assign new map to current map
 		carmen_grid_mapping_swap_maps_and_clear_old_map(occupancy_map, &new_carmen_map);
 
-		if (update_and_merge_with_mapper_saved_maps)
-		{
+//		if (update_and_merge_with_mapper_saved_maps)
+//		{
 			if (use_remission)
 			{
 				carmen_grid_mapping_swap_maps_and_clear_old_map(&sum_remission_map, &new_sum_remission_map);
@@ -1147,7 +1147,7 @@ mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_t *occu
 				carmen_grid_mapping_swap_maps_and_clear_old_map(&sum_occupancy_map, &new_sum_occupancy_map);
 				carmen_grid_mapping_swap_maps_and_clear_old_map(&count_occupancy_map, &new_count_occupancy_map);
 			}
-		}
+//		}
 	}
 
 	moving_objects_raw_map.config.x_origin = x_origin;
@@ -1793,7 +1793,6 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 			carmen_grid_mapping_create_new_map(&sum_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, 's');
 			carmen_grid_mapping_create_new_map(&sum_sqr_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, '2');
 			carmen_grid_mapping_create_new_map(&count_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, 'c');
-
 		}
 	}
 

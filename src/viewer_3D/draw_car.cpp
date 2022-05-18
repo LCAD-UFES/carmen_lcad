@@ -559,6 +559,7 @@ draw_car_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int s
 void
 draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
 {
+//	printf("car x %lf, car y %lf\n", pose.position.x, pose.position.y);
 	glPushMatrix();
 		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
 		glRotatef(carmen_radians_to_degrees(pose.orientation.yaw), 0.0f, 0.0f, 1.0f);

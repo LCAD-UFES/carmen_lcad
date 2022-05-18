@@ -1503,6 +1503,8 @@ draw_gps (carmen_vector_3D_t *gps_trail, int *gps_nr, int size)
 
     glBegin (GL_POINTS);
 
+//	printf("gps x %lf, gps y %lf\n", gps_trail[size-1].x, gps_trail[size-1].y);
+
     for (int i = 0; i < size; i++)
     {
         if (gps_nr[i] == 1)
