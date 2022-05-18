@@ -1,0 +1,17 @@
+
+Graph Summary Report
+--------------
+SVG file: 'atego1730_iracemapolis2//@7495530_-243040.svg'
+
+RDDF file #1: 'atego1730_iracemapolis2//2022_05_18_12_05_46_302695'
+ 2978 waypoints in 1495.28 meters
+     [   0]  start point                       (x,y)  7495804.911000	-242933.661000	 (  274.91,   106.34)  
+     [2977]  finish point                      (x,y)  7495804.911000	-242933.661000	 (  274.91,   106.34)  
+     [2977]  loop closure                      (x,y)  7495804.911000	-242933.661000	 (  274.91,   106.34)  
+
+Command for re-editing the RDDF:
+./edit_graph_inkscape.py  -i ../data/mapper_teste2  -o atego1730_iracemapolis2/  --window  7495530.0  -243040.0  700.0  280.0  'atego1730_iracemapolis2//2022_05_18_12_05_46_302695' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="atego1730_iracemapolis2//2022_05_18_12_05_46_302695_150m.gr";  RANGE="150";  echo -e '/bin/atego1730_iracemapolis2/2022_05_18_12_05_46_302695' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE
