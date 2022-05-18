@@ -200,25 +200,25 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 		phi = 0.0;
 	}
 
-	if ((fabs(ford_escape_hybrid_config->filtered_v) > 1.0) && path_goals_and_annotations_message && (path_goals_and_annotations_message->goal_list_size != 0) && path_goals_and_annotations_message->goal_list)
-	{
-		double v_goal = path_goals_and_annotations_message->goal_list[0].v;
-
-		if (v_goal > 0.0)
-		{
-			if (fabs(v - v_goal) < 0.3)
-				v = v_goal;
-			else if (v > v_goal)
-				v = decreased_v_according_to_acceptable_acceleations(v);
-			else
-				v = increased_v_according_to_acceptable_acceleations(v);
-		}
-	}
-
-	if (v > ford_escape_hybrid_config->max_velocity)
-		v = ford_escape_hybrid_config->max_velocity;
-	if (v < ford_escape_hybrid_config->max_velocity_reverse)
-		v = ford_escape_hybrid_config->max_velocity_reverse;
+//	if ((fabs(ford_escape_hybrid_config->filtered_v) > 1.0) && path_goals_and_annotations_message && (path_goals_and_annotations_message->goal_list_size != 0) && path_goals_and_annotations_message->goal_list)
+//	{
+//		double v_goal = path_goals_and_annotations_message->goal_list[0].v;
+//
+//		if (v_goal > 0.0)
+//		{
+//			if (fabs(v - v_goal) < 0.3)
+//				v = v_goal;
+//			else if (v > v_goal)
+//				v = decreased_v_according_to_acceptable_acceleations(v);
+//			else
+//				v = increased_v_according_to_acceptable_acceleations(v);
+//		}
+//	}
+//
+//	if (v > ford_escape_hybrid_config->max_velocity)
+//		v = ford_escape_hybrid_config->max_velocity;
+//	if (v < ford_escape_hybrid_config->max_velocity_reverse)
+//		v = ford_escape_hybrid_config->max_velocity_reverse;
 
 	// The function carmen_ford_escape_hybrid_steering_PID_controler() uses g_atan_desired_curvature to compute the g_steering_command that is sent to the car.
 	// This function is called when new info about the current measured velocity (g_XGV_velocity) arrives from the car via Jaus messages handled

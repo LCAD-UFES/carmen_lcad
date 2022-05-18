@@ -445,7 +445,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
 		{
-//			error_t_1 = integral_t = integral_t_1 = 0.0;
+			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_DECCELERATING;
 		}
 		if (desired_velocity <= 0.0)
@@ -463,7 +463,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		if ((desired_velocity > 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && u_t > 0.0)
 		{
-//			error_t_1 = integral_t = integral_t_1 = 0.0;
+			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
 		}
 		if (desired_velocity <= 0.0)
