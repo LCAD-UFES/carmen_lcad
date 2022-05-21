@@ -931,6 +931,7 @@ carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(carmen_map_t *
 		carmen_map_destroy(&snapshot_map);
 		snapshot_map = carmen_map_interface_create_new_empty_map(&(current_map->config));
 	}
+
 	return (snapshot_map);
 }
 

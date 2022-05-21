@@ -34,6 +34,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list_extra, sizeof(param_list_extra) / sizeof(param_list_extra[0]));
 }
 
+
 int
 main(int argc, char **argv)
 {
