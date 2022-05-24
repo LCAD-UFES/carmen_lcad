@@ -77,7 +77,7 @@ extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_sel
 extern carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
 
-#define PLOT_GRAPH 0
+#define PLOT_GRAPH 1
 
 #define PREDICT_BETA_GSL_ERROR_CODE 100.0
 //#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)

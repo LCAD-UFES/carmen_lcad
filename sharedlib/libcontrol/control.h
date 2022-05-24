@@ -8,7 +8,7 @@ extern "C" {
 
 //#define PLOT    		// Plot Phi
 //#define PLOT_VELOCITY
-#define PRINT			// Print Debug
+//#define PRINT			// Print Debug
 //#define SAVE			// Save Ploted Values
 
 #include <fann.h>

@@ -1,0 +1,26 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+
+set led pattern to 0000 in button set 1
+set led pattern to 1111 in button set 1
+set led pattern to 0000 in button set 1
+
+wait for button 1 of button set 1
+set led pattern to 0100 in button set 1
+
+# Proximo a cancela
+set course to 7806048.89, -389287.29, -2.638
+go after set course to 7806048.89, -389287.29, -2.638   # fica nesta task ateh o fim do curso 
+set led pattern to 0000 in button set 1
+
+set led pattern to 0010 in button set 1
+wait for button 1 of button set 1
+set led pattern to 0100 in button set 1
+
+# Proximo a entrada do galpao
+set course to 7806017.30, -389363.90, -2.587
+go after set course to 7806017.30, -389363.90, -2.587   # fica nesta task ateh o fim do curso 
+set led pattern to 0000 in button set 1
+stop # tira de modo autonomo
+
+mission completed
