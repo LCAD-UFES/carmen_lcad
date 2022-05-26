@@ -147,6 +147,8 @@ main(int argc, char ** argv)
     	i++;
     }
   }
+  else
+	  exit(printf("Error: No map file specified.\n Usage: ./map_editor <-grayscale> <-invert> <-rescale> <-blackwhite> <-enhance> <-removeminusone> <-logodds> <map_file.map>\n"));
 
   brush_size = 1.5;
   line_size = 2;
@@ -169,7 +171,8 @@ main(int argc, char ** argv)
   start_drawing_window(&argc, &argv);
   gtk_main();
 
-  if(window) {
+  if (window)
+  {
     gtk_widget_hide(window);
     gtk_widget_destroy(window);
   }

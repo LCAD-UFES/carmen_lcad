@@ -43,6 +43,7 @@ void new_map_menu(GtkAction *action, gpointer user_data __attribute__ ((unused))
 void open_map_menu(GtkAction *action, gpointer user_data __attribute__ ((unused)));
 void save_map_menu(GtkAction *action, gpointer user_data __attribute__ ((unused)));
 void save_map_as_menu(GtkAction *action, gpointer user_data __attribute__ ((unused)));
+void reload_map_menu(GtkAction *action, gpointer user_data __attribute__ ((unused)));
 void import_from_bmp_menu(GtkAction *action, gpointer user_data __attribute__ ((unused)));
 void quit_menu(GtkAction *action, gpointer user_data __attribute__ ((unused)));
 void undo_menu(GtkAction *action, gpointer user_data __attribute__ ((unused)));

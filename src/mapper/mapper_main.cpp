@@ -29,8 +29,6 @@
 #include "message_interpolation.cpp"
 
 
-carmen_map_t offline_map;
-// TODO: @@@ Alberto: essa variavel eh definida como externa dentro da lib do mapper. Corrigir!
 carmen_localize_ackerman_globalpos_message *globalpos_history;
 int last_globalpos;
 
@@ -38,12 +36,6 @@ extern int visual_odometry_is_global_pos;
 static int parking_assistant_found_safe_space = 0;
 
 MessageInterpolation<carmen_localize_ackerman_globalpos_message, carmen_ultrasonic_sonar_sensor_message> interpolator(1);
-
-extern carmen_pose_3D_t ultrasonic_sensor_r1_g;
-extern carmen_pose_3D_t ultrasonic_sensor_r2_g;
-extern carmen_pose_3D_t ultrasonic_sensor_l1_g;
-extern carmen_pose_3D_t ultrasonic_sensor_l2_g;
-
 
 /**
  * Model params
@@ -64,9 +56,6 @@ int update_and_merge_with_snapshot_map;
 int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
-extern double mapper_velodyne_range_max;
-extern double mapper_range_max_factor;
-extern double mapper_unsafe_height_above_ground;     // Points above and bellow this value will not be used by the mapper
 extern int mapper_save_map;
 extern double rays_threshold_to_merge_between_maps;
 extern bool use_merge_between_maps;
@@ -87,12 +76,8 @@ int number_of_sensors;
 const int first_lidar_number = 10;
 carmen_semi_trailer_config_t semi_trailer_config;
 carmen_pose_3D_t velodyne_pose;
-extern carmen_pose_3D_t laser_ldmrs_pose;
-extern carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
 
 char *map_path;
-
-extern int publish_moving_objects_raw_map;
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
 int robot_near_strong_slow_down_annotation = 0;
@@ -127,8 +112,6 @@ extern carmen_mapper_virtual_scan_message virtual_scan_message;
 
 int use_unity_simulator = 0;
 
-extern carmen_map_t occupancy_map;
-
 extern int publish_diff_map;
 extern double publish_diff_map_interval;
 
@@ -157,6 +140,16 @@ carmen_robot_ackerman_config_t car_config;
 int mapping_mode = 0;
 
 // #define OBSTACLE_PROBABILY_MESSAGE
+
+/**
+ * The map
+**/
+
+carmen_map_set_t *map_set;
+
+/**
+ * Endo of the map
+**/
 
 
 void
@@ -192,9 +185,9 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			};
 
 			if (use_merge_between_maps)
-				run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
+				run_mapper_with_remision_threshold(map_set, &sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
 			else
-				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+				run_mapper(map_set, &sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
 			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
@@ -227,9 +220,9 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		};
 
 		if (use_merge_between_maps)
-			run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
+			run_mapper_with_remision_threshold(map_set, &sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
 		else
-			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+			run_mapper(map_set, &sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
 		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
@@ -381,26 +374,26 @@ publish_map(double timestamp)
 //	mapper_publish_map(timestamp);
 	if (build_snapshot_map)
 	{
-		memcpy(occupancy_map.complete_map, offline_map.complete_map, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));
-		// memset(map.complete_map, 0, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));         // Uncomment to see the snapshot_map on viewer 3D, on carmen-ford-scape.ini turn on mapper_build_snapshot_map an turn off mapper_decay_to_offline_map
-		run_snapshot_mapper();
+		memcpy(map_set->occupancy_map->complete_map, map_set->offline_map->complete_map, map_set->offline_map->config.x_size *  map_set->offline_map->config.y_size * sizeof(double));
+		// memset(map.complete_map, 0, map_set->offline_map->config.x_size *  map_set->offline_map->config.y_size * sizeof(double));         // Uncomment to see the snapshot_map on viewer 3D, on carmen-ford-scape.ini turn on mapper_build_snapshot_map an turn off mapper_decay_to_offline_map
+		run_snapshot_mapper(map_set);
 	}
 
-	add_virtual_laser_points(&occupancy_map, &virtual_laser_message);
+	add_virtual_laser_points(map_set->occupancy_map, &virtual_laser_message);
 
-	add_moving_objects(&occupancy_map, moving_objects_message);
+	add_moving_objects(map_set->occupancy_map, moving_objects_message);
 
 	// Publica o mapa compactado apenas com as celulas com probabilidade igual ou maior que 0.5
 	carmen_compact_map_t cmap;
-	carmen_prob_models_create_compact_map_with_cells_larger_than_value(&cmap, &occupancy_map, 0.5);
+	carmen_prob_models_create_compact_map_with_cells_larger_than_value(&cmap, map_set->occupancy_map, 0.5);
 	carmen_mapper_publish_compact_map_message(&cmap, timestamp);
 	carmen_prob_models_free_compact_map(&cmap);
 
 	// Publica o mapa nao compactado
-	carmen_mapper_publish_map_message(&occupancy_map, timestamp);
+	carmen_mapper_publish_map_message(map_set->occupancy_map, timestamp);
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
 //	printf("n = %d\n", virtual_laser_message.num_positions);
-	do_publish_diff_map(&offline_map, &occupancy_map, timestamp);
+	do_publish_diff_map(map_set->offline_map, map_set->occupancy_map, timestamp);
 }
 
 
@@ -426,7 +419,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	if (visual_odometry_is_global_pos)
 		interpolator.AddMessageToInterpolationList(globalpos_message);
 	else
-		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
+		mapper_set_robot_pose_into_the_map(map_set, globalpos_message, update_cells_below_car);
 
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
@@ -469,7 +462,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	if (ok_to_publish)
 	{
 		if (decay_to_offline_map)
-			map_decay_to_offline_map(&occupancy_map);
+			map_decay_to_offline_map(map_set);
 
 		free_virtual_scan_message();
 
@@ -494,7 +487,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	}
 
 	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0 && mapper_save_map)
-		mapper_periodically_save_current_map(globalpos_message->timestamp);
+		mapper_periodically_save_current_map(map_set, globalpos_message->timestamp);
 }
 
 
@@ -503,7 +496,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 {
 	if (offline_map_available && !ok_to_publish)
 	{
-		map_decay_to_offline_map(get_the_map());
+		map_decay_to_offline_map(map_set);
 		publish_map(pose->timestamp);
 
 		// O codigo abaixo publica mensagens de Velodyne fake ateh que o mecanismo padrao de publicacao de mapas comece a funcionar
@@ -812,16 +805,16 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	map_origin.x = msg->config.x_origin;
 	map_origin.y = msg->config.y_origin;
 
-	memcpy(offline_map.complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
-	offline_map.config = msg->config;
+	memcpy(map_set->offline_map->complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
+	map_set->offline_map->config = msg->config;
 
 	if (use_merge_between_maps)
-		mapper_change_map_origin_to_another_map_block_with_clones(map_path, &occupancy_map, &map_origin, mapper_save_map);
+		mapper_change_map_origin_to_another_map_block_with_clones(map_path, map_set, &map_origin, mapper_save_map);
 	else
-		mapper_change_map_origin_to_another_map_block(map_path, &occupancy_map, &map_origin, mapper_save_map);
+		mapper_change_map_origin_to_another_map_block(map_path, map_set, &map_origin, mapper_save_map);
 
 	if (merge_with_offline_map)
-		mapper_merge_online_map_with_offline_map(&offline_map);
+		mapper_merge_online_map_with_offline_map(map_set);
 }
 
 
@@ -845,7 +838,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	carmen_localize_ackerman_globalpos_message globalpos_message;
 	globalpos_message = interpolator.InterpolateMessages(message);
 
-	mapper_set_robot_pose_into_the_map(&globalpos_message, update_cells_below_car);
+	mapper_set_robot_pose_into_the_map(map_set, &globalpos_message, update_cells_below_car);
 
 	if (parking_assistant_found_safe_space)
 	{
@@ -871,7 +864,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	for (i=0 ; i<180 ; i++)
 		range[i] = (double) message->sensor[3];
 
-	mapper_update_grid_map(Xt_r1, range, &ultrasonic_sensor_params);
+	mapper_update_grid_map(map_set, Xt_r1, range, &ultrasonic_sensor_params);
 
 	//SENSOR R2 - LATERAL FRONTAL
 	tf::StampedTransform world_to_ultrasonic_sensor_r2;
@@ -884,7 +877,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	for (i = 0; i < 180 ;i++)
 		range[i] = (double) message->sensor[2];
 
-	mapper_update_grid_map(Xt_r2, range, &ultrasonic_sensor_params);
+	mapper_update_grid_map(map_set, Xt_r2, range, &ultrasonic_sensor_params);
 
 	//SENSOR L2 - LATERAL TRASEIRO
 	tf::StampedTransform world_to_ultrasonic_sensor_l2;
@@ -897,7 +890,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	for (i = 0; i < 180 ;i++)
 		range[i] = (double) message->sensor[1];
 
-	mapper_update_grid_map(Xt_l2, range, &ultrasonic_sensor_params);
+	mapper_update_grid_map(map_set, Xt_l2, range, &ultrasonic_sensor_params);
 
 	//SENSOR L1 - TRASEIRO
 	tf::StampedTransform world_to_ultrasonic_sensor_l1;
@@ -910,7 +903,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	for (i = 0; i < 180; i++)
 		range[i] = (double) message->sensor[0];
 
-	mapper_update_grid_map(Xt_l1, range, &ultrasonic_sensor_params);
+	mapper_update_grid_map(map_set, Xt_l1, range, &ultrasonic_sensor_params);
 
 	publish_map(message->timestamp);
 }
@@ -943,7 +936,7 @@ shutdown_module(int signo)
 	if (signo == SIGINT)
 	{
 		if (update_and_merge_with_mapper_saved_maps)
-			mapper_save_current_map();
+			mapper_save_current_map(map_set);
 
 		if (sensors_params[0].save_calibration_file)
 			fclose(sensors_params[0].save_calibration_file);
@@ -1110,7 +1103,7 @@ main(int argc, char **argv)
 
 	carmen_mapper_initialize_transforms();
 
-	mapper_initialize(&map_config, car_config, use_merge_between_maps);
+	map_set = mapper_initialize(&map_config, car_config, use_merge_between_maps);
 
 	if (use_neural_mapper)
 		initialize_inference_context_mapper_();

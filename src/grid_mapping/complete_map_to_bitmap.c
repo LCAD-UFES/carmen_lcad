@@ -34,6 +34,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list_extra, sizeof(param_list_extra) / sizeof(param_list_extra[0]));
 }
 
+
 int
 main(int argc, char **argv)
 {
@@ -75,6 +76,19 @@ main(int argc, char **argv)
 
 	printf("max cell value = %lf,  min cell value = %lf\n", max_value, min_value);
 
+	if (map_type[0] == 'u')
+	{
+		max_value /= 1000;
+		min_value /= 100;
+		printf("trucated to: max cell value = %lf,  min cell value = %lf\n", max_value, min_value);
+	}
+
+	if (map_type[0] == 'o')
+	{
+		max_value /= 10;
+		printf("trucated to: max cell value = %lf,  min cell value = %lf\n", max_value, min_value);
+	}
+
 	for (int x = 0; x < width; x++)
 	{
 		for (int y = 0; y < height; y++)
@@ -108,7 +122,8 @@ main(int argc, char **argv)
 				}
 				else
 				{
-					unsigned char value = (unsigned char) ((complete_map.map[x][y] / max_value) * 255.0);
+					double new_raw_value = (complete_map.map[x][y] > max_value)? max_value: complete_map.map[x][y];
+					unsigned char value = (unsigned char) ((new_raw_value / max_value) * 255.0);
 					r = value;
 					g = value;
 					b = value;
@@ -117,7 +132,8 @@ main(int argc, char **argv)
 
 			case 'u':
 				{
-					unsigned char value = (unsigned char) (((complete_map.map[x][y] - min_value) / (max_value - min_value)) * 255.0);
+					double new_raw_value = (complete_map.map[x][y] > max_value)? max_value: (complete_map.map[x][y] < min_value)? min_value: complete_map.map[x][y];
+					unsigned char value = (unsigned char) (((new_raw_value - min_value) / (max_value - min_value)) * 255.0);
 					r = value;
 					g = value;
 					b = value;
