@@ -118,8 +118,6 @@ extern int last_globalpos;
 extern carmen_robot_ackerman_config_t car_config;
 extern carmen_map_config_t map_config;
 
-double x_origin, y_origin; // map origin in meters
-
 static carmen_laser_laser_message flaser; // moving_objects
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
@@ -203,8 +201,8 @@ compute_virtual_scan_point(int ray_id, int tid, sensor_parameters_t *sensor_para
 			((sensor_data->occupancy_log_odds_of_each_ray_target[tid][ray_id] > sensor_params->log_odds.log_odds_occ / 10.0) || is_ldmrs) &&
 			(map_set->offline_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] <= 0.5))
 		{
-			virtual_scan_message.virtual_scan_sensor[sensor].points[ray_num].x = x + x_origin;
-			virtual_scan_message.virtual_scan_sensor[sensor].points[ray_num].y = y + y_origin;
+			virtual_scan_message.virtual_scan_sensor[sensor].points[ray_num].x = x + map_set->x_origin;
+			virtual_scan_message.virtual_scan_sensor[sensor].points[ray_num].y = y + map_set->y_origin;
 			virtual_scan_message.virtual_scan_sensor[sensor].num_points = ray_num + 1;
 		}
 	}
@@ -272,7 +270,7 @@ initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pos
 static bool
 mapper_map_configs_are_different(carmen_map_config_t &a, carmen_map_config_t &b)
 {
-	return a.x_origin != b.x_origin || a.y_origin != b.y_origin || a.x_size != b.x_size || a.y_size != b.y_size || a.resolution != b.resolution;
+	return (a.x_origin != b.x_origin || a.y_origin != b.y_origin || a.x_size != b.x_size || a.y_size != b.y_size || a.resolution != b.resolution);
 }
 
 
@@ -282,9 +280,7 @@ mapper_merge_snapshot_map(carmen_map_t *count_remission_map, carmen_map_t *sourc
 	for (int i = 0; i < count_remission_map->config.x_size * count_remission_map->config.y_size; i++)
 	{
 		if (rays_threshold_to_merge_between_maps > count_remission_map->complete_map[i])
-		{
 			target->complete_map[i] = source->complete_map[i];
-		}
 	}
 }
 
@@ -300,9 +296,7 @@ mapper_clone_map(carmen_map_t *source, carmen_map_t *target, char map_type)
 	}
 
 	for (int i = 0; i < source->config.x_size * source->config.y_size; ++i)
-	{
 		target->complete_map[i] = source->complete_map[i];
-	}
 }
 
 
@@ -372,8 +366,8 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 			r_matrix_robot_to_global,
 			sensor_params->support_to_car_matrix,
 			robot_wheel_radius,
-			x_origin,
-			y_origin,
+			map_set->x_origin,
+			map_set->y_origin,
 			&car_config,
 			robot_near_strong_slow_down_annotation,
 			tid,
@@ -381,7 +375,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 		);
 
 		if (use_neural_mapper)
-			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, map_set->log_odds_snapshot_map, map_config, x_origin, y_origin, highest_sensor, safe_range_above_sensors);
+			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, map_set->log_odds_snapshot_map, map_config, map_set->x_origin, map_set->y_origin, highest_sensor, safe_range_above_sensors);
 
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(
 			sensor_data,
@@ -475,10 +469,10 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 
 		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
 				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
-				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
+				robot_wheel_radius, map_set->x_origin, map_set->y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
 
 		if (use_neural_mapper)
-			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, map_set->log_odds_snapshot_map, map_config, x_origin, y_origin, highest_sensor, safe_range_above_sensors);
+			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, map_set->log_odds_snapshot_map, map_config, map_set->x_origin, map_set->y_origin, highest_sensor, safe_range_above_sensors);
 
 //		fprintf(plot_data, "%lf %lf %lf",
 //				sensor_data->ray_origin_in_the_floor[tid][1].x,
@@ -597,7 +591,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_set_t *m
 
 		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
 				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
-				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, 0);
+				robot_wheel_radius, map_set->x_origin, map_set->y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, 0);
 
 //		fprintf(plot_data, "%lf %lf %lf",
 //				sensor_data->ray_position_in_the_floor[tid][1].x,
@@ -638,10 +632,8 @@ set_map_equal_offline_map(carmen_map_t *current_map, carmen_map_set_t *map_set)
 void
 add_offline_map_over_unknown(carmen_map_t *current_map, carmen_map_set_t *map_set)
 {
-	int xi, yi;
-
-	for (xi = 0; xi < current_map->config.x_size; xi++)
-		for (yi = 0; yi < current_map->config.y_size; yi++)
+	for (int xi = 0; xi < current_map->config.x_size; xi++)
+		for (int yi = 0; yi < current_map->config.y_size; yi++)
 			if (current_map->map[xi][yi] < 0.0)
 				current_map->map[xi][yi] = map_set->offline_map->map[xi][yi];
 }
@@ -650,9 +642,7 @@ add_offline_map_over_unknown(carmen_map_t *current_map, carmen_map_set_t *map_se
 void
 map_decay_to_offline_map(carmen_map_set_t *map_set)
 {
-	//int xi, yi;
-
-	#pragma omp for
+//	#pragma omp for
 	for (int i = 0; i < map_set->occupancy_map->config.x_size * map_set->occupancy_map->config.y_size; i++)
 	{
 		if (map_set->occupancy_map->complete_map[i] >= 0.0)
@@ -692,7 +682,7 @@ run_mapper_with_remision_threshold(carmen_map_set_t *map_set, sensor_parameters_
 		first = 0;
 	}
 
-#pragma omp parallel num_threads(number_of_threads)
+//#pragma omp parallel num_threads(number_of_threads)
 	{
 		map_set->log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(map_set->log_odds_snapshot_map, map_set->occupancy_map);
 
@@ -738,8 +728,8 @@ run_mapper_with_remision_threshold(carmen_map_set_t *map_set, sensor_parameters_
 					bool get_next_map = neural_mapper_compute_travelled_distance(
 						&neural_mapper_car_position_according_to_map,
 						neural_mapper_robot_pose,
-						x_origin,
-						y_origin,
+						map_set->x_origin,
+						map_set->y_origin,
 						neural_mapper_data_pace
 					);
 
@@ -808,7 +798,7 @@ run_mapper(carmen_map_set_t *map_set, sensor_parameters_t *sensor_params, sensor
 				{
 					int size_trained = neural_mapper_max_distance_meters / map_set->log_odds_snapshot_map->config.resolution * 2;
 					clear_log_odds_map(map_set->log_odds_snapshot_map, sensor_params->log_odds.log_odds_l0);
-					neural_map_run_foward(map_set->log_odds_snapshot_map, size_trained, &neural_mapper_robot_pose, x_origin, y_origin);
+					neural_map_run_foward(map_set->log_odds_snapshot_map, size_trained, &neural_mapper_robot_pose, map_set->x_origin, map_set->y_origin);
 					carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(map_set->occupancy_map, map_set->log_odds_snapshot_map,
 																										sensor_params->log_odds.log_odds_l0);
 					// carmen_grid_mapping_save_map((char *) "neural_map_teste.map", &map);
@@ -824,7 +814,7 @@ run_mapper(carmen_map_set_t *map_set, sensor_parameters_t *sensor_params, sensor
 				if (generate_neural_mapper_dataset)
 				{
 					bool get_next_map = neural_mapper_compute_travelled_distance(&neural_mapper_car_position_according_to_map, neural_mapper_robot_pose,
-							x_origin, y_origin, neural_mapper_data_pace);
+							map_set->x_origin, map_set->y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(*(map_set->offline_map), neural_mapper_car_position_according_to_map);
 					// neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
@@ -840,25 +830,25 @@ run_mapper(carmen_map_set_t *map_set, sensor_parameters_t *sensor_params, sensor
 
 
 void
-initialize_first_map_block_origin(char *map_path, carmen_map_t *current_carmen_map, carmen_position_t *map_origin, char map_type)
+initialize_first_map_block_origin(char *map_path, carmen_map_set_t *map_set, carmen_map_t *current_carmen_map, carmen_position_t *map_origin, char map_type)
 {
 	current_carmen_map->complete_map = NULL;
-	x_origin = map_origin->x;
-	y_origin = map_origin->y;
+	map_set->x_origin = map_origin->x;
+	map_set->y_origin = map_origin->y;
 
 	if (update_and_merge_with_mapper_saved_maps)
 	{
-		carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, map_type, x_origin, y_origin, current_carmen_map);
+		carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, map_type, map_set->x_origin, map_set->y_origin, current_carmen_map);
 
 		if (current_carmen_map->complete_map == NULL)
 			carmen_grid_mapping_initialize_map(current_carmen_map, current_carmen_map->config.x_size, current_carmen_map->config.resolution, map_type);
 	}
 	else
-		carmen_grid_mapping_get_buffered_map(x_origin, y_origin, current_carmen_map, map_type);
+		carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, current_carmen_map, map_type);
 }
 
 
-void
+int
 mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen_map_set_t *map_set,
 		carmen_position_t *map_origin, bool save_map, bool force_saving_new_map)
 {
@@ -866,22 +856,22 @@ mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen
 
 	if (first_time)
 	{
-		initialize_first_map_block_origin(map_path, map_set->occupancy_map, map_origin, 'm');
+		initialize_first_map_block_origin(map_path, map_set, map_set->occupancy_map, map_origin, 'm');
 
 		if (publish_moving_objects_raw_map)
-			initialize_first_map_block_origin(map_path, map_set->moving_objects_raw_map, map_origin, 'm');
+			initialize_first_map_block_origin(map_path, map_set, map_set->moving_objects_raw_map, map_origin, 'm');
 
 		if (create_map_sum_and_count)
 		{
-			initialize_first_map_block_origin(map_path, map_set->sum_occupancy_map, map_origin, 'u');
-			initialize_first_map_block_origin(map_path, map_set->count_occupancy_map, map_origin, 'o');
+			initialize_first_map_block_origin(map_path, map_set, map_set->sum_occupancy_map, map_origin, 'u');
+			initialize_first_map_block_origin(map_path, map_set, map_set->count_occupancy_map, map_origin, 'o');
 		}
 
 		if (use_remission)
 		{
-			initialize_first_map_block_origin(map_path, map_set->sum_remission_map, map_origin, 's');
-			initialize_first_map_block_origin(map_path, map_set->sum_sqr_remission_map, map_origin, '2');
-			initialize_first_map_block_origin(map_path, map_set->sum_sqr_remission_map, map_origin, 'c');
+			initialize_first_map_block_origin(map_path, map_set, map_set->sum_remission_map, map_origin, 's');
+			initialize_first_map_block_origin(map_path, map_set, map_set->sum_sqr_remission_map, map_origin, '2');
+			initialize_first_map_block_origin(map_path, map_set, map_set->count_remission_map, map_origin, 'c');
 		}
 
 		carmen_grid_mapping_create_new_map(map_set->new_occupancy_map, map_set->occupancy_map->config.x_size, map_set->occupancy_map->config.y_size, map_set->occupancy_map->config.resolution, 'm');
@@ -896,20 +886,21 @@ mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen
 		{
 			carmen_grid_mapping_create_new_map(map_set->new_sum_remission_map, map_set->sum_remission_map->config.x_size, map_set->sum_remission_map->config.y_size, map_set->sum_remission_map->config.resolution, 's');
 			carmen_grid_mapping_create_new_map(map_set->new_sum_sqr_remission_map, map_set->sum_sqr_remission_map->config.x_size, map_set->sum_sqr_remission_map->config.y_size, map_set->sum_sqr_remission_map->config.resolution, '2');
-			carmen_grid_mapping_create_new_map(map_set->new_count_remission_map, map_set->sum_sqr_remission_map->config.x_size, map_set->sum_sqr_remission_map->config.y_size, map_set->sum_sqr_remission_map->config.resolution, 'c');
+			carmen_grid_mapping_create_new_map(map_set->new_count_remission_map, map_set->count_remission_map->config.x_size, map_set->count_remission_map->config.y_size, map_set->count_remission_map->config.resolution, 'c');
 		}
 
 		first_time = 0;
 	}
 
-	if (force_saving_new_map || carmen_grid_mapping_is_map_changed(map_origin, x_origin, y_origin))
+	int map_origin_changed = carmen_grid_mapping_is_map_changed(map_origin, map_set->x_origin, map_set->y_origin);
+	if (force_saving_new_map || map_origin_changed)
 	{
-		x_origin = map_origin->x;
-		y_origin = map_origin->y;
+		map_set->x_origin = map_origin->x;
+		map_set->y_origin = map_origin->y;
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
-			if (offline_map_available && map_set->occupancy_map->complete_map != NULL && map_set->occupancy_map->config.x_origin != 0.0 && save_map)
+			if (save_map && offline_map_available && (map_set->occupancy_map->complete_map != NULL) && (map_set->occupancy_map->config.x_origin != 0.0))
 			{
 				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', map_set->occupancy_map);
 
@@ -923,90 +914,113 @@ mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen
 				{
 					carmen_grid_mapping_save_block_map_by_origin(map_path, 's', map_set->sum_remission_map);
 					carmen_grid_mapping_save_block_map_by_origin(map_path, '2', map_set->sum_sqr_remission_map);
-					carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', map_set->sum_sqr_remission_map);
+					carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', map_set->count_remission_map);
 				}
 			}
 
 			// get new map with integrated information of the old map
-			carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'm', x_origin, y_origin, map_set->new_occupancy_map);
+			carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'm', map_set->x_origin, map_set->y_origin, map_set->new_occupancy_map);
 
 			if (create_map_sum_and_count)
 			{
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'u', x_origin, y_origin, map_set->new_sum_occupancy_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'o', x_origin, y_origin, map_set->new_count_occupancy_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'u', map_set->x_origin, map_set->y_origin, map_set->new_sum_occupancy_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'o', map_set->x_origin, map_set->y_origin, map_set->new_count_occupancy_map);
 			}
 
 			if (use_remission)
 			{
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 's', x_origin, y_origin, map_set->new_sum_remission_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, '2', x_origin, y_origin, map_set->new_sum_sqr_remission_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'c', x_origin, y_origin, map_set->new_count_remission_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 's', map_set->x_origin, map_set->y_origin, map_set->new_sum_remission_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, '2', map_set->x_origin, map_set->y_origin, map_set->new_sum_sqr_remission_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'c', map_set->x_origin, map_set->y_origin, map_set->new_count_remission_map);
 			}
 		}
-		else
-		{
-			carmen_grid_mapping_update_map_buffer(map_set->occupancy_map, 'm');
-			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, map_set->new_occupancy_map, 'm');
-		}
 
-		//destroy current map and assign new map to current map
+		carmen_grid_mapping_update_map_buffer(map_set, map_set->occupancy_map, 'm');
+		carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_occupancy_map, 'm');
 		carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->occupancy_map, map_set->new_occupancy_map);
 
-		if (update_and_merge_with_mapper_saved_maps)
+		if (create_map_sum_and_count)
 		{
-			if (create_map_sum_and_count)
-			{
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_occupancy_map, map_set->new_sum_occupancy_map);
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->count_occupancy_map, map_set->new_count_occupancy_map);
-			}
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->sum_occupancy_map, 'u');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_sum_occupancy_map, 'u');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_occupancy_map, map_set->new_sum_occupancy_map);
 
-			if (use_remission)
-			{
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_remission_map, map_set->new_sum_remission_map);
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_sqr_remission_map, map_set->new_sum_sqr_remission_map);
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_sqr_remission_map, map_set->new_count_remission_map);
-			}
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->count_occupancy_map, 'o');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_count_occupancy_map, 'o');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->count_occupancy_map, map_set->new_count_occupancy_map);
+		}
+
+		if (use_remission)
+		{
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->sum_remission_map, 's');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_sum_remission_map, 's');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_remission_map, map_set->new_sum_remission_map);
+
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->sum_sqr_remission_map, '2');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_sum_sqr_remission_map, '2');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_sqr_remission_map, map_set->new_sum_sqr_remission_map);
+
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->count_remission_map, 'c');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_count_remission_map, 'c');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->count_remission_map, map_set->new_count_remission_map);
 		}
 	}
 
-	map_set->occupancy_map->config.x_origin = map_set->snapshot_map->config.x_origin = x_origin;
-	map_set->occupancy_map->config.y_origin = map_set->snapshot_map->config.y_origin = y_origin;
+	map_set->occupancy_map->config.x_origin = map_set->snapshot_map->config.x_origin = map_set->x_origin;
+	map_set->occupancy_map->config.y_origin = map_set->snapshot_map->config.y_origin = map_set->y_origin;
 	mapper_clone_map(map_set->occupancy_map, map_set->snapshot_map, 'm');
 
 	if (publish_moving_objects_raw_map)
 	{
-		map_set->moving_objects_raw_map->config.x_origin = x_origin;
-		map_set->moving_objects_raw_map->config.y_origin = y_origin;
+		map_set->moving_objects_raw_map->config.x_origin = map_set->x_origin;
+		map_set->moving_objects_raw_map->config.y_origin = map_set->y_origin;
+	}
+
+	if (create_map_sum_and_count)
+	{
+		map_set->sum_occupancy_map->config.x_origin = map_set->x_origin;
+		map_set->sum_occupancy_map->config.y_origin = map_set->y_origin;
+
+		map_set->count_occupancy_map->config.x_origin = map_set->x_origin;
+		map_set->count_occupancy_map->config.y_origin = map_set->y_origin;
 	}
 
 	if (use_remission)
 	{
-		map_set->sum_remission_map->config.x_origin = x_origin;
-		map_set->sum_remission_map->config.y_origin = y_origin;
+		map_set->sum_remission_map->config.x_origin = map_set->x_origin;
+		map_set->sum_remission_map->config.y_origin = map_set->y_origin;
 
-		map_set->sum_sqr_remission_map->config.x_origin = x_origin;
-		map_set->sum_sqr_remission_map->config.y_origin = y_origin;
+		map_set->sum_sqr_remission_map->config.x_origin = map_set->x_origin;
+		map_set->sum_sqr_remission_map->config.y_origin = map_set->y_origin;
 
-		map_set->count_remission_snapshot_map->config.x_origin = map_set->sum_sqr_remission_map->config.x_origin = x_origin;
-		map_set->count_remission_snapshot_map->config.y_origin = map_set->sum_sqr_remission_map->config.y_origin = y_origin;
+		map_set->count_remission_snapshot_map->config.x_origin = map_set->sum_sqr_remission_snapshot_map->config.x_origin = map_set->x_origin;
+		map_set->count_remission_snapshot_map->config.y_origin = map_set->sum_sqr_remission_snapshot_map->config.y_origin = map_set->y_origin;
 
 		mapper_clone_map(map_set->sum_remission_map, map_set->sum_remission_snapshot_map, 's');
 		mapper_clone_map(map_set->sum_sqr_remission_map, map_set->sum_sqr_remission_snapshot_map, '2');
 		mapper_clone_map(map_set->count_remission_map, map_set->count_remission_snapshot_map, 'c');
 	}
 
-	if (create_map_sum_and_count)
-	{
-		map_set->sum_occupancy_map->config.x_origin = x_origin;
-		map_set->sum_occupancy_map->config.y_origin = y_origin;
-
-		map_set->count_occupancy_map->config.x_origin = x_origin;
-		map_set->count_occupancy_map->config.y_origin = y_origin;
-	}
+	return (map_origin_changed);
 }
 
 
-void
+bool
+map_valid(carmen_map_t *map)
+{
+	if (
+			(map->map[map->config.x_size / 2][0] > 1.0) ||
+			(map->map[0][map->config.y_size / 2] > 1.0) ||
+			(map->map[map->config.x_size - 1][map->config.y_size / 2] > 1.0) ||
+			(map->map[map->config.x_size / 2][map->config.y_size - 1] > 1.0)
+	   )
+		return (false);
+	else
+		return (true);
+}
+
+
+int
 mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_set_t *map_set,
 		carmen_position_t *map_origin, bool save_map, bool force_saving_new_map)
 {
@@ -1014,25 +1028,26 @@ mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_set_t *
 
 	if (first_time)
 	{
-		initialize_first_map_block_origin(map_path, map_set->occupancy_map, map_origin, 'm');
+		initialize_first_map_block_origin(map_path, map_set, map_set->occupancy_map, map_origin, 'm');
 
 		if (publish_moving_objects_raw_map)
-			initialize_first_map_block_origin(map_path, map_set->moving_objects_raw_map, map_origin, 'm');
+			initialize_first_map_block_origin(map_path, map_set, map_set->moving_objects_raw_map, map_origin, 'm');
 
 		if (create_map_sum_and_count)
 		{
-			initialize_first_map_block_origin(map_path, map_set->sum_occupancy_map, map_origin, 'u');
-			initialize_first_map_block_origin(map_path, map_set->count_occupancy_map, map_origin, 'o');
+			initialize_first_map_block_origin(map_path, map_set, map_set->sum_occupancy_map, map_origin, 'u');
+			initialize_first_map_block_origin(map_path, map_set, map_set->count_occupancy_map, map_origin, 'o');
 		}
 
 		if (use_remission)
 		{
-			initialize_first_map_block_origin(map_path, map_set->sum_remission_map, map_origin, 's');
-			initialize_first_map_block_origin(map_path, map_set->sum_sqr_remission_map, map_origin, '2');
-			initialize_first_map_block_origin(map_path, map_set->sum_sqr_remission_map, map_origin, 'c');
+			initialize_first_map_block_origin(map_path, map_set, map_set->sum_remission_map, map_origin, 's');
+			initialize_first_map_block_origin(map_path, map_set, map_set->sum_sqr_remission_map, map_origin, '2');
+			initialize_first_map_block_origin(map_path, map_set, map_set->count_remission_map, map_origin, 'c');
 		}
 
 		carmen_grid_mapping_create_new_map(map_set->new_occupancy_map, map_set->occupancy_map->config.x_size, map_set->occupancy_map->config.y_size, map_set->occupancy_map->config.resolution, 'm');
+
 		if (create_map_sum_and_count)
 		{
 			carmen_grid_mapping_create_new_map(map_set->new_sum_occupancy_map, map_set->sum_occupancy_map->config.x_size, map_set->sum_occupancy_map->config.y_size, map_set->sum_occupancy_map->config.resolution, 'u');
@@ -1043,20 +1058,21 @@ mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_set_t *
 		{
 			carmen_grid_mapping_create_new_map(map_set->new_sum_remission_map, map_set->sum_remission_map->config.x_size, map_set->sum_remission_map->config.y_size, map_set->sum_remission_map->config.resolution, 's');
 			carmen_grid_mapping_create_new_map(map_set->new_sum_sqr_remission_map, map_set->sum_sqr_remission_map->config.x_size, map_set->sum_sqr_remission_map->config.y_size, map_set->sum_sqr_remission_map->config.resolution, '2');
-			carmen_grid_mapping_create_new_map(map_set->new_count_remission_map, map_set->sum_sqr_remission_map->config.x_size, map_set->sum_sqr_remission_map->config.y_size, map_set->sum_sqr_remission_map->config.resolution, 'c');
+			carmen_grid_mapping_create_new_map(map_set->new_count_remission_map, map_set->count_remission_map->config.x_size, map_set->count_remission_map->config.y_size, map_set->count_remission_map->config.resolution, 'c');
 		}
 
 		first_time = 0;
 	}
 
-	if (force_saving_new_map || carmen_grid_mapping_is_map_changed(map_origin, x_origin, y_origin))
+	int map_origin_changed = carmen_grid_mapping_is_map_changed(map_origin, map_set->x_origin, map_set->y_origin);
+	if (force_saving_new_map || map_origin_changed)
 	{
-		x_origin = map_origin->x;
-		y_origin = map_origin->y;
+		map_set->x_origin = map_origin->x;
+		map_set->y_origin = map_origin->y;
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
-			if (save_map && (offline_map_available && map_set->occupancy_map->complete_map != NULL) && (map_set->occupancy_map->config.x_origin != 0.0))
+			if (save_map && offline_map_available && (map_set->occupancy_map->complete_map != NULL) && (map_set->occupancy_map->config.x_origin != 0.0))
 			{
 				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', map_set->occupancy_map);
 
@@ -1070,81 +1086,89 @@ mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_set_t *
 				{
 					carmen_grid_mapping_save_block_map_by_origin(map_path, 's', map_set->sum_remission_map);
 					carmen_grid_mapping_save_block_map_by_origin(map_path, '2', map_set->sum_sqr_remission_map);
-					carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', map_set->sum_sqr_remission_map);
+					carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', map_set->count_remission_map);
 				}
 			}
 
 			// get new map with integrated information of the old map
-			carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'm', x_origin, y_origin, map_set->new_occupancy_map);
+			carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'm', map_set->x_origin, map_set->y_origin, map_set->new_occupancy_map);
 
 			if (create_map_sum_and_count)
 			{
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'u', x_origin, y_origin, map_set->new_sum_occupancy_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'o', x_origin, y_origin, map_set->new_count_occupancy_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'u', map_set->x_origin, map_set->y_origin, map_set->new_sum_occupancy_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'o', map_set->x_origin, map_set->y_origin, map_set->new_count_occupancy_map);
 			}
 
 			if (use_remission)
 			{
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 's', x_origin, y_origin, map_set->new_sum_remission_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, '2', x_origin, y_origin, map_set->new_sum_sqr_remission_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'c', x_origin, y_origin, map_set->new_count_remission_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 's', map_set->x_origin, map_set->y_origin, map_set->new_sum_remission_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, '2', map_set->x_origin, map_set->y_origin, map_set->new_sum_sqr_remission_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'c', map_set->x_origin, map_set->y_origin, map_set->new_count_remission_map);
 			}
 		}
-		else
-		{
-			carmen_grid_mapping_update_map_buffer(map_set->occupancy_map, 'm');
-			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, map_set->new_occupancy_map, 'm');
-		}
 
-		//destroy current map and assign new map to current map
+		carmen_grid_mapping_update_map_buffer(map_set, map_set->occupancy_map, 'm');
+		carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_occupancy_map, 'm');
 		carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->occupancy_map, map_set->new_occupancy_map);
 
-//		if (update_and_merge_with_mapper_saved_maps)
-//		{
-			if (create_map_sum_and_count)
-			{
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_occupancy_map, map_set->new_sum_occupancy_map);
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->count_occupancy_map, map_set->new_count_occupancy_map);
-			}
+		if (create_map_sum_and_count)
+		{
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->sum_occupancy_map, 'u');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_sum_occupancy_map, 'u');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_occupancy_map, map_set->new_sum_occupancy_map);
 
-			if (use_remission)
-			{
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_remission_map, map_set->new_sum_remission_map);
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_sqr_remission_map, map_set->new_sum_sqr_remission_map);
-				carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_sqr_remission_map, map_set->new_count_remission_map);
-			}
-//		}
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->count_occupancy_map, 'o');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_count_occupancy_map, 'o');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->count_occupancy_map, map_set->new_count_occupancy_map);
+		}
+
+		if (use_remission)
+		{
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->sum_remission_map, 's');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_sum_remission_map, 's');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_remission_map, map_set->new_sum_remission_map);
+
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->sum_sqr_remission_map, '2');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_sum_sqr_remission_map, '2');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->sum_sqr_remission_map, map_set->new_sum_sqr_remission_map);
+
+			carmen_grid_mapping_update_map_buffer(map_set, map_set->count_remission_map, 'c');
+			carmen_grid_mapping_get_buffered_map(map_set, map_set->x_origin, map_set->y_origin, map_set->new_count_remission_map, 'c');
+			carmen_grid_mapping_swap_maps_and_clear_old_map(map_set->count_remission_map, map_set->new_count_remission_map);
+		}
 	}
 
-	map_set->occupancy_map->config.x_origin = x_origin;
-	map_set->occupancy_map->config.y_origin = y_origin;
+	map_set->occupancy_map->config.x_origin = map_set->x_origin;
+	map_set->occupancy_map->config.y_origin = map_set->y_origin;
 
 	if (publish_moving_objects_raw_map)
 	{
-		map_set->moving_objects_raw_map->config.x_origin = x_origin;
-		map_set->moving_objects_raw_map->config.y_origin = y_origin;
+		map_set->moving_objects_raw_map->config.x_origin = map_set->x_origin;
+		map_set->moving_objects_raw_map->config.y_origin = map_set->y_origin;
 	}
 
 	if (create_map_sum_and_count)
 	{
-		map_set->sum_occupancy_map->config.x_origin = x_origin;
-		map_set->sum_occupancy_map->config.y_origin = y_origin;
+		map_set->sum_occupancy_map->config.x_origin = map_set->x_origin;
+		map_set->sum_occupancy_map->config.y_origin = map_set->y_origin;
 
-		map_set->count_occupancy_map->config.x_origin = x_origin;
-		map_set->count_occupancy_map->config.y_origin = y_origin;
+		map_set->count_occupancy_map->config.x_origin = map_set->x_origin;
+		map_set->count_occupancy_map->config.y_origin = map_set->y_origin;
 	}
 
 	if (use_remission)
 	{
-		map_set->sum_remission_map->config.x_origin = x_origin;
-		map_set->sum_remission_map->config.y_origin = y_origin;
+		map_set->sum_remission_map->config.x_origin = map_set->x_origin;
+		map_set->sum_remission_map->config.y_origin = map_set->y_origin;
 
-		map_set->sum_sqr_remission_map->config.x_origin = x_origin;
-		map_set->sum_sqr_remission_map->config.y_origin = y_origin;
+		map_set->sum_sqr_remission_map->config.x_origin = map_set->x_origin;
+		map_set->sum_sqr_remission_map->config.y_origin = map_set->y_origin;
 
-		map_set->sum_sqr_remission_map->config.x_origin = x_origin;
-		map_set->sum_sqr_remission_map->config.y_origin = y_origin;
+		map_set->count_remission_map->config.x_origin = map_set->x_origin;
+		map_set->count_remission_map->config.y_origin = map_set->y_origin;
 	}
+
+	return (map_origin_changed);
 }
 
 
@@ -1340,56 +1364,6 @@ update_data_params_with_lidar_data(int sensor_number, carmen_velodyne_variable_s
 }
 
 
-// int
-// mapper_velodyne_variable_scan(int lidar_id, carmen_velodyne_variable_scan_message *message)
-// {
-// 	static int message_id;
-// 	int sensor_number = lidar_id+10; //10 is the first position of lidar parameters on carmen-ford-escape.ini
-// 	int num_points = message->number_of_shots * sensors_params[sensor_number].vertical_resolution;
-
-// 	ok_to_publish = 0;
-// 	if (!globalpos_initialized)
-// 		return (ok_to_publish);
-
-// 	if (sensors_data[sensor_number].last_timestamp == 0.0)
-// 	{
-// 		sensors_data[sensor_number].last_timestamp = message->timestamp;
-// 		message_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
-
-// 		return (ok_to_publish);
-// 	}
-
-// 	sensors_data[sensor_number].last_timestamp = sensors_data[sensor_number].current_timestamp = message->timestamp;
-
-// 	build_sensor_point_cloud(&sensors_data[sensor_number].points, sensors_data[sensor_number].intensity,
-// 							&sensors_data[sensor_number].point_cloud_index, num_points, NUM_VELODYNE_POINT_CLOUDS);
-
-// 	carmen_velodyne_variable_scan_update_points(message, sensors_params[sensor_number].vertical_resolution,
-// 			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index],
-// 			sensors_data[sensor_number].intensity[sensors_data[sensor_number].point_cloud_index],
-// 			sensors_params[sensor_number].ray_order, sensors_params[sensor_number].vertical_correction,
-// 			sensors_params[sensor_number].range_max, message->timestamp);
-
-// 	sensors_data[sensor_number].robot_pose[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].pose;
-// 	sensors_data[sensor_number].robot_velocity[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].velocity;
-// 	sensors_data[sensor_number].robot_timestamp[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
-// 	sensors_data[sensor_number].robot_phi[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].phi;
-// 	sensors_data[sensor_number].points_timestamp[sensors_data[sensor_number].point_cloud_index] = message->timestamp;
-
-// 	if (message_id >= 0)
-// 	{
-// 		ok_to_publish = 1;
-
-// 		if (message_id > 1000000)
-// 			message_id = 0;
-// 	}
-// 	message_id++;
-// 	sensors_data[sensor_number].last_timestamp = message->timestamp;
-
-// 	return (ok_to_publish);
-// }
-
-
 int
 mapper_stereo_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
@@ -1479,20 +1453,20 @@ draw_line(carmen_map_t *map, double x_1, double y_1, double x_2, double y_2)
 	int h = y2 - y1;
 	int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
 
-	if (w<0)
+	if (w < 0)
 		dx1 = -1;
 	else
-		if (w>0)
+		if (w > 0)
 			dx1 = 1;
-	if (h<0)
+	if (h < 0)
 		dy1 = -1;
 	else
-		if (h>0)
+		if (h > 0)
 			dy1 = 1;
-	if (w<0)
+	if (w < 0)
 		dx2 = -1;
 	else
-		if (w>0)
+		if (w > 0)
 			dx2 = 1;
 
 	int longest = abs(w) ;
@@ -1501,15 +1475,15 @@ draw_line(carmen_map_t *map, double x_1, double y_1, double x_2, double y_2)
 	{
 		longest = abs(h) ;
 		shortest = abs(w) ;
-		if (h<0)
+		if (h < 0)
 			dy2 = -1;
 		else
-			if (h>0)
+			if (h > 0)
 				dy2 = 1;
-		dx2 = 0 ;
+		dx2 = 0;
 	}
 	int numerator = longest >> 1 ;
-	for (int i=0;i<=longest;i++)
+	for (int i = 0;i <= longest;i++)
 	{
 		if (x1 >= 0 && x1 < map->config.x_size && y1 >= 0 && y1 < map->config.y_size)
 			map->map[x1][y1] = 1.0;
@@ -1548,8 +1522,8 @@ void
 draw_rectangle(carmen_map_t *map, double x, double y, double length, double width, double theta)
 {
 	carmen_vector_2D_t p1, p2, p3, p4;
-	double length2 = length/2.0;
-	double width2 = width/2.0;
+	double length2 = length / 2.0;
+	double width2 = width / 2.0;
 
 	p1.x = x_coord(-length2, width2, theta, x);
 	p1.y = y_coord(-length2, width2, theta, y);
@@ -1686,8 +1660,8 @@ mapper_set_robot_pose_into_the_map(carmen_map_set_t *map_set, carmen_localize_ac
 
 	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, globalpos_history[last_globalpos].pose.orientation);
 
-	map_set->occupancy_map->config.x_origin = x_origin;
-	map_set->occupancy_map->config.y_origin = y_origin;
+	map_set->occupancy_map->config.x_origin = map_set->x_origin;
+	map_set->occupancy_map->config.y_origin = map_set->y_origin;
 
 	if (UPDATE_CELLS_BELOW_CAR)
 		carmen_mapper_update_cells_bellow_robot(globalpos_message->globalpos, map_set->occupancy_map, 0.0);
@@ -1827,6 +1801,15 @@ get_a_map_set(carmen_map_config_t map_config, bool use_merge_between_maps, bool 
 	map_set->moving_objects_raw_map = (carmen_map_t *) (calloc(1, sizeof(carmen_map_t)));
 	carmen_test_alloc(map_set->moving_objects_raw_map);
 	carmen_grid_mapping_create_new_map(map_set->moving_objects_raw_map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
+
+	for (int i = 0; i < MAP_BUFFER_SIZE; i++)
+	{
+		map_set->map_buffer[i] = (carmen_map_t *) calloc(sizeof(carmen_map_t), 1);
+		map_set->map_buffer[i]->complete_map = NULL;
+		map_set->map_buffer[i]->map = NULL;
+		map_set->map_buffer[i]->config.map_name = NULL;
+	}
+	map_set->map_buffer_index = 0;
 
 	return (map_set);
 }
@@ -2271,30 +2254,26 @@ carmen_mapper_init_velodyne_points(spherical_point_cloud **velodyne_points_out, 
 int *
 carmen_mapper_generates_ray_order(int size)
 {
-	int i;
-
 	int *ray_order = (int *) malloc(size * sizeof(int));
 	carmen_test_alloc(ray_order);
 
-	for (i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 		ray_order[i] = i;
 
-	return ray_order;
+	return (ray_order);
 }
 
 
 void
 carmen_mapper_sort_ray_order_by_vertical_correction_angles(sensor_parameters_t params)
 {
-	int aux = 0;
-	
 	for (int i = params.vertical_resolution - 1; i > 0; i--)
 	{
 		for (int j = 0; j < i; j++)
 		{
 			if (params.vertical_correction[params.ray_order[j]] > params.vertical_correction[params.ray_order[j + 1]])
 			{
-				aux = params.ray_order[j];
+				int aux = params.ray_order[j];
 				params.ray_order[j] = params.ray_order[j + 1];
 				params.ray_order[j + 1] = aux;
 			}
@@ -2311,9 +2290,7 @@ carmen_mapper_sort_vertical_correction_angles(sensor_parameters_t params)
 	memcpy(aux, params.vertical_correction, params.vertical_resolution * sizeof(double));
 
 	for (int i = 0; i < params.vertical_resolution; i++)
-	{
 		params.vertical_correction[i] = aux[params.ray_order[i]];
-	}
 }
 
 
@@ -2393,19 +2370,6 @@ carmen_mapper_get_lidars_sensor_params()
 void
 carmen_mapper_get_sensors_param(int argc, char **argv)
 {
-	int i;
-	int flipped;
-	int horizontal_resolution;
-	char stereo_velodyne_string[256];
-
-	int stereo_velodyne_vertical_roi_ini;
-	int stereo_velodyne_vertical_roi_end;
-
-	int stereo_velodyne_horizontal_roi_ini;
-	int stereo_velodyne_horizontal_roi_end;
-
-	int roi_ini, roi_end;
-
 	//-----------------------------------------------------------------------------------------//
 	// The Velodyne HDL32E is hard coded as sensor 0 when using velodyne_partial_scan_message
 	if (calibration_file)
@@ -2516,7 +2480,7 @@ carmen_mapper_get_sensors_param(int argc, char **argv)
 
 	//-------------------------------------------------------------------------------//
 	// STEREO CAMERAS
-	for (i = 2; i < 10; i++)
+	for (int i = 2; i < 10; i++)
 	{
 		sensors_params[i].calibration_table = NULL;
 		sensors_params[i].save_calibration_file = NULL;
@@ -2536,9 +2500,15 @@ carmen_mapper_get_sensors_param(int argc, char **argv)
 
 			sensors_params[i].time_spent_by_each_scan = 0.0;
 
+			char stereo_velodyne_string[256];
 			sprintf(stereo_velodyne_string, "%s%d", "stereo", i);
 
-
+			int horizontal_resolution;
+			int flipped;
+			int stereo_velodyne_vertical_roi_ini;
+			int stereo_velodyne_vertical_roi_end;
+			int stereo_velodyne_horizontal_roi_ini;
+			int stereo_velodyne_horizontal_roi_end;
 			carmen_param_t param_list[] =
 			{
 				{sensors_params[i].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[i].vertical_resolution, 0, NULL},
@@ -2553,6 +2523,7 @@ carmen_mapper_get_sensors_param(int argc, char **argv)
 
 			carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
+			int roi_ini, roi_end;
 			if (flipped)
 			{
 				sensors_params[i].vertical_resolution = horizontal_resolution;

@@ -2,6 +2,7 @@
 #define MAPPER_H_
 
 #include <carmen/moving_objects_interface.h>
+#include <carmen/grid_mapping.h>
 #include "neural_mapper_io.h"
 
 
@@ -15,36 +16,6 @@
 #define NUMBER_OF_SENSORS 25      // The number_of_sensors must be the maximun number of sensors: 25 
 
 #define USE_REAR_BULLBAR
-
-typedef struct
-{
-	carmen_map_t *offline_map;
-
-	carmen_map_t *occupancy_map;
-	carmen_map_t *sum_occupancy_map;
-	carmen_map_t *count_occupancy_map;
-
-	carmen_map_t *new_occupancy_map;
-	carmen_map_t *new_sum_occupancy_map;
-	carmen_map_t *new_count_occupancy_map;
-
-	carmen_map_t *sum_remission_map;
-	carmen_map_t *sum_sqr_remission_map;
-	carmen_map_t *count_remission_map;
-
-	carmen_map_t *new_sum_remission_map;
-	carmen_map_t *new_sum_sqr_remission_map;
-	carmen_map_t *new_count_remission_map;
-
-	carmen_map_t *snapshot_map;
-	carmen_map_t *sum_remission_snapshot_map;
-	carmen_map_t *sum_sqr_remission_snapshot_map;
-	carmen_map_t *count_remission_snapshot_map;
-
-	carmen_map_t *log_odds_snapshot_map;
-
-	carmen_map_t *moving_objects_raw_map;
-} carmen_map_set_t;
 
 
 void mapper_merge_online_map_with_offline_map(carmen_map_set_t *map_set);
@@ -73,10 +44,10 @@ void mapper_periodically_save_current_map(carmen_map_set_t *map_set, double time
 
 carmen_map_set_t *mapper_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config, bool use_merge_between_maps);
 
-void mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_set_t *map_set,
+int mapper_change_map_origin_to_another_map_block(char *map_path, carmen_map_set_t *map_set,
 		carmen_position_t *map_origin, bool save_map, bool force_saving_new_map = false);
 
-void mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen_map_set_t *map_set,
+int mapper_change_map_origin_to_another_map_block_with_clones(char *map_path, carmen_map_set_t *map_set,
 		carmen_position_t *map_origin, bool save_map, bool force_saving_new_map = false);
 
 int run_mapper(carmen_map_set_t *map_set, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global);
@@ -133,5 +104,6 @@ void carmen_mapper_update_cells_bellow_robot(carmen_point_t pose, carmen_map_t *
 
 carmen_map_set_t *get_a_map_set(carmen_map_config_t map_config, bool use_merge_between_maps, bool create_map_sum_and_count, bool use_remission);
 
+bool map_valid(carmen_map_t *map);
 
 #endif /* MAPPER_H_ */

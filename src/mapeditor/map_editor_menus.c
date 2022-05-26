@@ -57,6 +57,9 @@ static GtkWidget *name_label, *x_label, *y_label, *theta_label;
 static GtkWidget *name_entry, *x_entry, *y_entry, *theta_entry, *x_std_entry, 
 *y_std_entry, *theta_std_entry;
 
+extern GtkWidget *window;
+
+
 /********************************************************
  *  Menu functions                                      *
  ********************************************************/
@@ -642,13 +645,13 @@ int map_open(char *filename, int have_graphics __attribute__ ((unused)))
 
 	map = new_map;
 
-	if(tmp_pixmap)
+	if (tmp_pixmap)
 		gdk_pixmap_unref(tmp_pixmap);
 	if (map_pixmap)
 		gdk_pixmap_unref(map_pixmap);
 
 
-	map_pixmap = NULL;
+	tmp_pixmap = NULL;
 	map_pixmap = NULL;
 
 	if(backup)
@@ -661,6 +664,132 @@ int map_open(char *filename, int have_graphics __attribute__ ((unused)))
 
 	modified = 0;
 	return 1;
+}
+
+int reload_map(char *filename)
+{
+	char error_str[1000];
+	carmen_map_p new_map;
+	int err;
+
+	if (!carmen_map_file(filename))
+	{
+		sprintf(error_str, "Error: %s does not appear to be a valid carmen map file;\n"
+				"if it is gzipped, make sure it has a \".gz\" extension\n", filename);
+		carmen_warn("%s\n", error_str);
+
+		return -1;
+	}
+
+	if (strlen(filename) >= 254)
+		return -1;
+
+	strcpy(map_filename, filename);
+
+	new_map = (carmen_map_p) calloc(1, sizeof(carmen_map_t));
+	carmen_test_alloc(new_map);
+
+	if (!carmen_map_chunk_exists(filename, CARMEN_MAP_GRIDMAP_CHUNK))
+	{
+		sprintf(error_str, "The map file %s contains no gridmap.", filename);
+		/* dbug
+		 if (have_graphics)
+		 gnome_error_dialog_parented(error_str, GTK_WINDOW(window));
+		 else
+		 */
+		carmen_warn("%s\n", error_str);
+		return -1;
+	}
+
+	err = carmen_map_read_gridmap_chunk(map_filename, new_map);
+	if (err < 0)
+	{
+		sprintf(error_str, "Error reading file %s : %s.", filename, strerror(errno));
+		/* dbug
+		 if (have_graphics)
+		 gnome_error_dialog_parented(error_str, GTK_WINDOW(window));
+		 else
+		 */
+		carmen_warn("%s\n", error_str);
+
+		if (new_map->map)
+			free(new_map->map);
+		if (new_map->complete_map)
+			free(new_map->complete_map);
+		free(new_map);
+
+		return -1;
+	}
+
+	if (new_map->config.x_size == 0 || new_map->config.y_size == 0 || new_map->config.resolution == 0.0)
+	{
+		sprintf(error_str, "File %s contains no gridmap.", filename);
+		/* dbug
+		 if (have_graphics)
+		 gnome_error_dialog_parented(error_str, GTK_WINDOW(window));
+		 else
+		 */
+		carmen_warn("%s\n", error_str);
+
+		if (new_map->map)
+			free(new_map->map);
+		if (new_map->complete_map)
+			free(new_map->complete_map);
+		free(new_map);
+
+		return -1;
+	}
+
+	if (offlimits_array != NULL)
+	{
+		free(offlimits_array);
+		offlimits_array = NULL;
+		num_offlimits_segments = 0;
+		offlimits_capacity = 0;
+	}
+
+	if (carmen_map_chunk_exists(filename, CARMEN_MAP_OFFLIMITS_CHUNK))
+	{
+		carmen_map_read_offlimits_chunk(map_filename, &offlimits_array, &num_offlimits_segments);
+		if (num_offlimits_segments > 0)
+			offlimits_capacity = num_offlimits_segments;
+	}
+
+	if (place_list != NULL)
+	{
+		free(place_list->places);
+		free(place_list);
+		place_list = NULL;
+		places_capacity = 0;
+	}
+
+	if (carmen_map_chunk_exists(filename, CARMEN_MAP_PLACES_CHUNK))
+	{
+		place_list = (carmen_map_placelist_p) calloc(1, sizeof(carmen_map_placelist_t));
+		carmen_test_alloc(place_list);
+		carmen_map_read_places_chunk(map_filename, place_list);
+		if (place_list->num_places > 0)
+			places_capacity = place_list->num_places;
+	}
+
+	if (map)
+	{
+		free(map->map);
+		free(map->complete_map);
+		free(map);
+	}
+
+	map = new_map;
+
+	if (backup)
+		free(backup);
+	backup = (double *) calloc(map->config.x_size * map->config.y_size, sizeof(double));
+	carmen_test_alloc(backup);
+	memcpy(backup, map->complete_map, sizeof(double) * map->config.x_size * map->config.y_size);
+
+	modified = 0;
+
+	return (1);
 }
 
 void create_open_map_selector(void)
@@ -1148,7 +1277,7 @@ void open_map_menu(GtkAction *action __attribute__ ((unused)),
 void save_map_menu(GtkAction *action __attribute__ ((unused)), 
 		gpointer user_data __attribute__ ((unused)))
 {
-	if(modified)
+	if (modified)
 		map_save(map_filename);
 }
 
@@ -1171,6 +1300,20 @@ void import_from_bmp_menu(GtkAction *action __attribute__ ((unused)),
 		gpointer user_data __attribute__ ((unused)))
 {
 	create_import_map_selector();
+}
+
+void reload_map_menu(GtkAction *action __attribute__ ((unused)),
+		gpointer user_data __attribute__ ((unused)))
+{
+	reload_map(map_filename);
+
+	if (tmp_pixmap)
+		gdk_pixmap_unref(tmp_pixmap);
+	tmp_pixmap = NULL;
+
+	gtk_window_set_title (GTK_WINDOW (window), map_filename);
+
+	redraw();
 }
 
 void quit_menu(GtkAction *action __attribute__ ((unused)), 
