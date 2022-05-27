@@ -12,7 +12,6 @@ IFLAGS += -std=c++11
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 
-LFLAGS += -lglobal -lipc -lbumblebee_basic_interface -lparam_interface 
 
 # ORB_SLAM2 Dependencies
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 `pkg-config --cflags opencv` 
@@ -24,6 +23,7 @@ IFLAGS += -I ~/packages_carmen/ORB_SLAM2/include -I ~/packages_carmen/ORB_SLAM2/
 LFLAGS += -L ~/packages_carmen/ORB_SLAM2/lib -L ~/packages_carmen/ORB_SLAM2/Thirdparty/DBoW2/lib 
 LFLAGS += ~/packages_carmen/ORB_SLAM2/Thirdparty/g2o/lib/libg2o.so
 LFLAGS += -lORB_SLAM2 -lDBoW2
+LFLAGS += -lglobal -lpthread -lipc -lbumblebee_basic_interface -lparam_interface 
 
 SOURCES = orb_slam2_main.cpp
 

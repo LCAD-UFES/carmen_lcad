@@ -43,6 +43,8 @@
 double time_last_message_arrived = 0;
 #endif
 
+//#define ADD_BIAS_TO_BASE_ACKERMAN
+
 #include "objects_ackerman.h"
 
 static carmen_simulator_ackerman_config_t simulator_conf;
@@ -162,6 +164,16 @@ publish_odometry(double timestamp)
 
 	if (!simulate_legacy_500)
 	{
+#ifdef ADD_BIAS_TO_BASE_ACKERMAN
+		carmen_base_ackerman_config_t *car_config
+		if(use_velocity_nn)
+			odometry_v = raw_v * v_multiplier + v_bias;
+		if(use_phi_nn)
+			odometry_phi = raw_phi * phi_multiplier + phi_bias;
+		car_config.odometry = simulator_config
+		carmen_simulator_ackerman_recalc_pos(car_config)
+#endif
+
 		odometry.x     = simulator_config->odom_pose.x;
 		odometry.y     = simulator_config->odom_pose.y;
 		odometry.theta = simulator_config->odom_pose.theta;
