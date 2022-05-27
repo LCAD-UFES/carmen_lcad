@@ -2309,7 +2309,8 @@ localize_map_mahalanobis_correction_with_remission_map(carmen_localize_ackerman_
 
 
 void
-mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_filter_p filter)
+mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map,
+		carmen_localize_ackerman_particle_filter_p filter)
 {
 	double map_center_x = (double) local_map->config.x_size * 0.5;
 	double map_center_y = (double) local_map->config.y_size * 0.5;
@@ -2373,10 +2374,7 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 					if (use_log_odds)
 					{
 						double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
-
-						// nao esta funcionando pois p fica maior que 1.0 devido ao denominador acima
-						// pq o p fica maior que 1?
-						temp_weights[i][laser_reading] = log(p / (1.0 - p));
+						temp_weights[i][laser_reading] = carmen_prob_models_probabilistic_to_log_odds(p);
 					}
 					else
 						temp_weights[i][laser_reading] = -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
@@ -2418,6 +2416,32 @@ localize_map_mahalanobis_correction_with_remission_map_and_outlier_rejection(car
 	mahalanobis_distance_with_outlier_rejection(global_map, local_mean_remission_map, filter);
 
 	convert_particles_log_odd_weights_to_prob(filter);
+}
+
+
+void
+localize_map_correlation_plus_mahalanobis_correction_with_remission_map_and_outlier_rejection(carmen_localize_ackerman_particle_filter_p filter,
+		carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map)
+{
+	compute_particles_weights_with_outlier_rejection(localize_map, local_map, filter);
+	convert_particles_log_odd_weights_to_prob(filter);
+
+	double *map_correlation_weights = (double *) malloc(filter->param->num_particles * sizeof(double));
+	for (int i = 0; i < filter->param->num_particles; i++)
+		map_correlation_weights[i] = filter->particles[i].weight;
+
+	double temp1 = filter->param->particles_normalize_factor;
+	filter->param->particles_normalize_factor = filter->param->remission_particles_normalize_factor;
+	filter->param->use_log_odds = 0;
+	mahalanobis_distance_with_outlier_rejection(localize_map, local_mean_remission_map, filter);
+	filter->param->particles_normalize_factor = temp1;
+	convert_particles_log_odd_weights_to_prob(filter);
+	filter->param->use_log_odds = 1;
+
+	for (int i = 0; i < filter->param->num_particles; i++)
+		filter->particles[i].weight = (map_correlation_weights[i] + filter->particles[i].weight) / 2.0;
+
+	free(map_correlation_weights);
 }
 
 
@@ -2551,39 +2575,9 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 //			free(temp_map.map);
 			break;
 
-//		case 8:
-//					// The localize_map used in this function must be in log_odds and the local_map in probabilities
-//		//			localize_map_correlation_correction(filter, localize_map, local_map);
-//					localize_neural_correction(filter, localize_map, local_map);
-//					// para ver este mapa no navigator_gui2 coloque CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT na linha 930 de gtk_gui.cpp
-//		//			carmen_moving_objects_map_message moving_objects_map_message;
-//		//			moving_objects_map_message.complete_map = localize_map->complete_prob;
-//		//			moving_objects_map_message.size = localize_map->config.x_size * localize_map->config.y_size;
-//		//			moving_objects_map_message.config = localize_map->config;
-//		//			moving_objects_map_message.timestamp = carmen_get_time();
-//		//			moving_objects_map_message.host = carmen_get_host();
-//		//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
-//
-//		//			carmen_moving_objects_map_message moving_objects_map_message;
-//		//			carmen_map_t temp_map;
-//		//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution, 'm');
-//		//			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
-//		//			carmen_prob_models_uncompress_compact_map(&temp_map, local_map);
-//		//			moving_objects_map_message.complete_map = temp_map.complete_map;
-//		//			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;
-//		//			moving_objects_map_message.config = temp_map.config;
-//		//			moving_objects_map_message.timestamp = carmen_get_time();
-//		//			moving_objects_map_message.host = carmen_get_host();
-//		//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
-//		//			free(temp_map.complete_map);
-//		//			free(temp_map.map);
-//
-//		//			carmen_map_t temp_map;
-//		//			temp_map.config = localize_map->config;
-//		//			temp_map.complete_map = localize_map->complete_prob;
-//		//			temp_map.map = localize_map->prob;
-//		//			carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
-//					break;
+		case 8: // 0 + 7
+			localize_map_correlation_plus_mahalanobis_correction_with_remission_map_and_outlier_rejection(filter, localize_map, local_map, local_mean_remission_map);
+			break;
 	}
 }
 
@@ -3152,7 +3146,7 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	std_y = 0;
 	std_theta = 0;
 	xy_cov = 0;
-	for(i = 0; i < filter->param->num_particles; i++)
+	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		diff_x = (filter->particles[i].x - summary->mean.x);
 		diff_y = (filter->particles[i].y - summary->mean.y);
@@ -3428,8 +3422,7 @@ get_alive_LIDARs_and_their_parameters(int argc, char **argv, int correction_type
 			spherical_sensor_params[i].range_division_factor = lidar_config[i].range_division_factor;
 			spherical_sensor_params[i].time_spent_by_each_scan = lidar_config[i].time_between_shots;
 
-			int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6) || (correction_type == 7); // See carmen_ford_escape.ini # TODO usar o correction type
-			spherical_sensor_params[i].use_remission = use_remission;
+			spherical_sensor_params[i].correction_type = correction_type;
 
 			if (calibration_file)
 				spherical_sensor_params[i].calibration_table = load_calibration_table(calibration_file);
@@ -3614,8 +3607,7 @@ get_sensors_param(int argc, char **argv, int correction_type)
 
 	int roi_ini, roi_end;
 
-	int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6) || (correction_type == 7); // See carmen_ford_escape.ini
-	spherical_sensor_params[0].use_remission = use_remission;
+	spherical_sensor_params[0].correction_type = correction_type;
 
 	if (calibration_file)
 		spherical_sensor_params[0].calibration_table = load_calibration_table(calibration_file);
@@ -3668,7 +3660,7 @@ get_sensors_param(int argc, char **argv, int correction_type)
 	// Le parametros de stereo_velodyne. Lidars nao sao preenchidos aqui
 	for (i = 1; i < 10; i++)
 	{
-		spherical_sensor_params[i].use_remission = use_remission;
+		spherical_sensor_params[i].correction_type = correction_type;
 
 		spherical_sensor_params[i].calibration_table = NULL;
 		spherical_sensor_params[i].save_calibration_file = NULL;
@@ -3813,6 +3805,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "localize", (char *) "small_remission_likelihood", CARMEN_PARAM_DOUBLE, &param->small_remission_likelihood, 0, NULL},
 
 		{(char *) "localize", (char *) "particles_normalize_factor", CARMEN_PARAM_DOUBLE, &param->particles_normalize_factor, 0, NULL},
+		{(char *) "localize", (char *) "remission_particles_normalize_factor", CARMEN_PARAM_DOUBLE, &param->remission_particles_normalize_factor, 0, NULL},
 
 		{(char *) "localize", (char *) "yaw_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->yaw_uncertainty_due_to_grid_resolution, 0, NULL},
 		{(char *) "localize", (char *) "xy_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->xy_uncertainty_due_to_grid_resolution, 0, NULL},

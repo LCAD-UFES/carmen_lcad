@@ -106,7 +106,7 @@ typedef struct _sensor_parameters
 	rotation_matrix *support_to_car_matrix;
 	carmen_vector_3D_t sensor_robot_reference;
 
-	int use_remission;
+	int correction_type;
 	int ray_index_difference;
 	bool use_index_difference;
 

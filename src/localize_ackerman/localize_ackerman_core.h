@@ -114,6 +114,7 @@ typedef struct {
   double small_remission_likelihood;
 
   double particles_normalize_factor;
+  double remission_particles_normalize_factor;
 
   double xy_uncertainty_due_to_grid_resolution;
   double yaw_uncertainty_due_to_grid_resolution;
