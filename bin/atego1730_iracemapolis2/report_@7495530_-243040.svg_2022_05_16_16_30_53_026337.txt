@@ -1,0 +1,24 @@
+
+Graph Summary Report
+--------------
+SVG file: 'atego1730_iracemapolis2/@7495530_-243040.svg'
+
+RDDF file #1: 'atego1730_iracemapolis2//rddf_1.txt'
+ 2469 waypoints in 1494.89 meters
+     [   0]  start point                       (x,y)  7495781.459000	-242951.417000	 (  251.46,    88.58)  
+     [2468]  finish point                      (x,y)  7495781.459000	-242951.417000	 (  251.46,    88.58)  
+     [2468]  loop closure                      (x,y)  7495781.459000	-242951.417000	 (  251.46,    88.58)  
+     [2455]  merge                 RDDF #2     (x,y)  7495787.064000	-242948.265000	 (  257.06,    91.73)  
+
+RDDF file #2: 'atego1730_iracemapolis2//rddf_2.txt'
+   93 waypoints in 54.81 meters
+     [   0]  start point                       (x,y)  7495840.533000	-242939.615000	 (  310.53,   100.39)  
+     [  92]  finish point                      (x,y)  7495787.064000	-242948.265000	 (  257.06,    91.73)  
+     [  92]  merge                 RDDF #1     (x,y)  7495787.064000	-242948.265000	 (  257.06,    91.73)  bad steering angle: |  31.63°| > 30.01°
+
+Command for re-editing the RDDFs:
+./edit_graph_inkscape.py  -o atego1730_iracemapolis2/  --window  7495530.0  -243040.0  700.0  280.0  'atego1730_iracemapolis2//rddf_1.txt'  'atego1730_iracemapolis2//rddf_2.txt' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="atego1730_iracemapolis2//graph_1_150m.gr";  RANGE="150";  echo -e '/bin/atego1730_iracemapolis2/rddf_1.txt\n/bin/atego1730_iracemapolis2/rddf_2.txt' > rddf_files_list.txt;  ./road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE

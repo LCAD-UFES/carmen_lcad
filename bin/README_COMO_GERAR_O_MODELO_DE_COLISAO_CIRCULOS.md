@@ -42,3 +42,13 @@ Exemplo do arquivo do modelo de visualização da IARA:
 -0.96 -0.903
 3.465 -0.903
 3.465 0.903
+
+No caso de um semireboque (ver valores dos parametros abaixo no carmen ini):
+3.475 // ninguem sabe para que este numero...
+4
+-(semi_trailer1_distance_between_axle_and_back)  (semi_trailer1_width)/2
+-(semi_trailer1_distance_between_axle_and_back)  -(semi_trailer1_width)/2
+(semi_trailer1_distance_between_axle_and_front)  -(semi_trailer1_width)/2
+(semi_trailer1_distance_between_axle_and_front)  (semi_trailer1_width)/2
+
+
