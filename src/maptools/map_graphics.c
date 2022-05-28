@@ -228,8 +228,14 @@ regenerate_map_pixmap(GtkMapViewer *map_view)
 }
 
 static void 
-redraw (GtkMapViewer *map_view, int map_changed, int viewport_changed) 
+redraw(GtkMapViewer *map_view, int map_changed, int viewport_changed)
 {
+	static double last_timestamp = 0.0;
+	double now = carmen_get_time();
+	if ((now - last_timestamp) < 0.05)
+		return;
+	last_timestamp = now;
+
 	GdkPixmap *drawing_pixmap;
 
 	GtkWidget *widget;

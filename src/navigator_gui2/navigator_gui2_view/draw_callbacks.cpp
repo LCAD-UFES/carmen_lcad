@@ -1310,6 +1310,9 @@ int button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
 //extern "C" G_MODULE_EXPORT
 void draw_robot_objects(GtkMapViewer *the_map_view)
 {
+//	static double last_timestamp = 0.0;
+//	double time = carmen_get_time();
+
 	double pixel_size;
 
 	if ((global_gui == NULL) || (the_map_view->internal_map == NULL))
@@ -1592,5 +1595,8 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_simulator_objects)
 		global_gui->draw_simulated_objects(the_map_view);
+
+//	printf("time - last_timestamp = %lf,  dt %lf\n", time - last_timestamp, time - carmen_get_time());
+//	last_timestamp = carmen_get_time();
 }
 }

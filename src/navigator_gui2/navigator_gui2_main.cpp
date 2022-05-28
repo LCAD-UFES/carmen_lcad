@@ -1492,7 +1492,7 @@ read_parameters(int argc, char *argv[],
 	};
 	num_items = sizeof(param_list2) / sizeof(param_list2[0]);
 	carmen_param_install_params(argc, argv, param_list2, num_items);
-	printf("%s\n", missions_folder);
+//	printf("%s\n", missions_folder);
 
 	if (annotation_path != NULL)
 	{
