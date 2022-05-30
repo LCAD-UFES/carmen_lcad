@@ -939,7 +939,10 @@ shutdown_module(int signo)
 			mapper_save_current_map(map_set);
 
 		if (sensors_params[0].save_calibration_file)
+		{
+			fflush(sensors_params[0].save_calibration_file);
 			fclose(sensors_params[0].save_calibration_file);
+		}
 
 		carmen_ipc_disconnect();
 		fprintf(stderr, "Shutdown mapper_main\n");
