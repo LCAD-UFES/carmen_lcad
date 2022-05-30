@@ -4,6 +4,7 @@
 #include "../control.h"
 #include <list>
 
+#define PRINT			// Print Debug
 
 using namespace std;
 

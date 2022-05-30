@@ -329,6 +329,11 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 	for (t = delta_t; t < tcp.tt; t += delta_t)
 	{
 		command.v = v0 + tcp.a * t;
+		if (command.v > GlobalState::param_max_vel)
+			command.v = GlobalState::param_max_vel;
+		else if (command.v < GlobalState::param_max_vel_reverse)
+			command.v = GlobalState::param_max_vel_reverse;
+
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 
 //		if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
@@ -354,6 +359,10 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 		double final_delta_t = tcp.tt - (t - delta_t);
 
 		command.v = v0 + tcp.a * tcp.tt;
+		if (command.v > GlobalState::param_max_vel)
+			command.v = GlobalState::param_max_vel;
+		else if (command.v < GlobalState::param_max_vel_reverse)
+			command.v = GlobalState::param_max_vel_reverse;
 		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, final_delta_t,
@@ -703,6 +712,60 @@ move_to_front_axle(carmen_robot_and_trailer_path_point_t pose)
 	return (pose_moved);
 }
 
+//#define NEW_PATH_TO_LANE_DISTANCE
+
+#ifdef NEW_PATH_TO_LANE_DISTANCE
+
+double
+compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailer_path_point_t> &path)
+{
+	double distance = 0.0;
+	double total_distance = 0.0;
+	double total_points = 0.0;
+
+	int increment;
+	if (use_unity_simulator)
+		increment = 1;
+	else
+		increment = 3;
+
+	carmen_robot_and_trailer_path_point_t nearest_point = {};
+	unsigned int i;
+	int status;
+	for (i = 0; i < (my_params->detailed_lane.size() - 1); i += 1)
+	{
+		nearest_point = carmen_get_point_nearest_to_path(&status, my_params->detailed_lane[i], my_params->detailed_lane[i + 1], path[0], 0.001);
+		if (status == POINT_WITHIN_SEGMENT)
+			break;
+	}
+	if (i >= my_params->detailed_lane.size())
+		nearest_point = carmen_get_point_nearest_to_path(&status, my_params->detailed_lane[0], my_params->detailed_lane[1], path[0], 0.001);
+	double angle = ANGLE2D(path[0], nearest_point);
+	bool first_point_side = (carmen_normalize_theta(path[0].theta - angle) > 0.0)? true: false;
+
+	for (unsigned int i = 0, j = 0; i < path.size(); i += increment)
+	{
+		for ( ; j < (my_params->detailed_lane.size() - 1); j += 1)
+		{
+			nearest_point = carmen_get_point_nearest_to_path(&status, my_params->detailed_lane[j], my_params->detailed_lane[j + 1], path[i], 0.001);
+			if (status == POINT_WITHIN_SEGMENT)
+				break;
+		}
+
+		angle = ANGLE2D(path[i], nearest_point);
+		bool point_side = (carmen_normalize_theta(path[i].theta - angle) > 0.0)? true: false;
+		if (point_side != first_point_side)
+			distance = 5.0 * DIST2D(path[i], nearest_point);
+		else
+			distance = DIST2D(path[i], nearest_point);
+		total_distance += distance * distance;
+		total_points += 1.0;
+	}
+
+	return (total_distance / total_points);
+}
+
+#else
 
 double
 compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailer_path_point_t> &path)
@@ -741,6 +804,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 		return (0.0);
 }
 
+#endif
 
 vector<carmen_robot_and_trailer_path_point_t>
 compute_path_to_lane_distance_evaluation(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailer_path_point_t> &path)
@@ -982,6 +1046,9 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
 	{
+#ifdef NEW_PATH_TO_LANE_DISTANCE
+		path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+#else
 		if (path.size() != my_params->path_size)
 		{
 			compute_path_points_nearest_to_lane(my_params, path);
@@ -989,6 +1056,7 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 		}
 		else
 			path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+#endif
 	}
 
 	double proximity_to_obstacles = 0.0;

@@ -788,11 +788,18 @@ carmen_vector_3D_t carmen_covert_sphere_to_cartesian_coord(carmen_sphere_coord_t
 void carmen_alloc_spherical_point_cloud(spherical_point_cloud *velodyne_points, int num_points, int spherical_point_cloud_index);
 void carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, 
 					    double v_bias, double v_multiplier, double phi_bias, double phi_multiplier);
+
 carmen_robot_and_trailer_traj_point_t
 carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
 		carmen_robot_and_trailer_traj_point_t v,
 		carmen_robot_and_trailer_traj_point_t w,
 		carmen_robot_and_trailer_traj_point_t p, double min_segment_size);
+
+carmen_robot_and_trailer_path_point_t
+carmen_get_point_nearest_to_path(int *point_in_trajectory_is,
+		carmen_robot_and_trailer_path_point_t v,
+		carmen_robot_and_trailer_path_point_t w,
+		carmen_robot_and_trailer_path_point_t p, double min_segment_size);
 
 int
 carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle);
