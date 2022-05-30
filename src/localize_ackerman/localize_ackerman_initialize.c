@@ -344,7 +344,7 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 		start = i * n_particles_per_mode;
 
 		// num particles is not necessarily multiple of num modes.
-		if(i == num_modes - 1)
+		if (i == num_modes - 1)
 			end = filter->param->num_particles;
 		else
 			end = (i + 1) * n_particles_per_mode;

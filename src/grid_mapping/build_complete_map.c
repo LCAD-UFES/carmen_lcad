@@ -140,7 +140,7 @@ main(int argc, char **argv)
 			continue;
 
 		strcat(full_path, map_path);
-		strcat(full_path, "/");//mudar para / no linux
+		strcat(full_path, "/");
 		strcat(full_path, dirp->d_name);
 
 		get_map_origin_by_filename(full_path, &x_origin, &y_origin);
@@ -174,13 +174,28 @@ main(int argc, char **argv)
 
 	closedir(dp);
 
+	if (i == 0)
+		exit(printf("Could not find any map of type \"%c\"\n", map_type[0]));
+
 	complete_map.config.resolution = map_resolution;
 	complete_map.config.x_origin = min_pose.x;
 	complete_map.config.y_origin = min_pose.y;
 	complete_map.config.x_size = (max_pose.x - min_pose.x) / complete_map.config.resolution;
 	complete_map.config.y_size = (max_pose.y - min_pose.y) / complete_map.config.resolution;
+
+	printf("max_pose.x = %lf, min_pose.x = %lf, max_pose.y = %lf, min_pose.y = %lf, complete_map.config.resolution %lf\n",
+			max_pose.x, min_pose.x, max_pose.y, min_pose.y, complete_map.config.resolution);
+
+	printf("complete_map.config.x_size = %d, complete_map.config.y_size = %d, total %d\n",
+			complete_map.config.x_size, complete_map.config.y_size, complete_map.config.x_size * complete_map.config.y_size);
+
 	complete_map.complete_map = (double *) malloc(sizeof(double) * complete_map.config.x_size * complete_map.config.y_size);
 	carmen_test_alloc(complete_map.complete_map);
+
+	printf("complete_map.config.x_size = %d\n",
+			complete_map.config.x_size);
+	fflush(stdout);
+
 	complete_map.map = (double **)malloc(sizeof(double*) * complete_map.config.x_size);
 	carmen_test_alloc(complete_map.map);
 

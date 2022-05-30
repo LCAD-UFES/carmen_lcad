@@ -57,6 +57,8 @@ static GtkUIManager *ui_manager;
 
 extern int grayscale;
 
+extern char map_filename[255];
+
 
 void create_cursors(void)
 {
@@ -751,6 +753,7 @@ static GtkActionEntry action_entries[] = {
   {"SaveMap", GTK_STOCK_SAVE, "_Save Map", "<control>S", NULL, G_CALLBACK(save_map_menu)},
   {"SaveMapAs", NULL, "Save Map _As...", NULL, NULL, G_CALLBACK(save_map_as_menu)},
   {"ImportFromBmp", NULL, "Import from BMP", NULL, NULL, G_CALLBACK(import_from_bmp_menu)},
+  {"ReloadMap", NULL, "Reload Map", NULL, NULL, G_CALLBACK(reload_map_menu)},
   {"Quit", GTK_STOCK_QUIT, "_Quit", "<control>Q", NULL, G_CALLBACK(quit_menu)},
   {"EditMenu", NULL, "_Edit", NULL, NULL, NULL},
   {"Undo", NULL, "_Undo", "<control>Z", NULL, G_CALLBACK(undo_menu)},
@@ -775,6 +778,7 @@ const char *ui_description =
   "      <menuitem action='SaveMap'/>"
   "      <menuitem action='SaveMapAs'/>"
   "      <menuitem action='ImportFromBmp'/>"
+  "      <menuitem action='ReloadMap'/>"
   "      <separator/>"
   "      <menuitem action='Quit'/>"
   "    </menu>"
@@ -928,7 +932,7 @@ void start_drawing_window(int *argc, char **argv[])
 
   g_signal_connect(GTK_OBJECT (window), "destroy", G_CALLBACK(gtk_main_quit), (gpointer) "WM destroy");
 
-  gtk_window_set_title (GTK_WINDOW (window), "Map");
+  gtk_window_set_title (GTK_WINDOW (window), map_filename);
   gtk_signal_connect (GTK_OBJECT (window), "delete_event", 
 		      GTK_SIGNAL_FUNC (gtk_exit), NULL);
   gtk_container_set_border_width (GTK_CONTAINER (window), 0);

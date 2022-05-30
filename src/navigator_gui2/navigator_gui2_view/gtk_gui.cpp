@@ -1098,9 +1098,10 @@ namespace View
 			break;
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
+			flags = CARMEN_GRAPHICS_ENHACE_LOW_PROB_CONTRAST;
 //			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT | CARMEN_GRAPHICS_ENHANCE_CONTRAST;// | CARMEN_GRAPHICS_RESCALE;// | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
 //			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT /* | CARMEN_GRAPHICS_RESCALE */ | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
-			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
+//			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 //			flags = 0;
 			break;
 
@@ -3174,7 +3175,8 @@ namespace View
 			carmen_map_graphics_draw_line(the_map_view, &carmen_grey, &start, &end);
 
 			GdkImage *image = annotation_image[rddf_annotation_msg.annotations[i].annotation_type][rddf_annotation_msg.annotations[i].annotation_code];
-			carmen_map_graphics_draw_image(the_map_view, image, &end, gdk_image_get_width(image), gdk_image_get_height(image));
+			if (image)
+				carmen_map_graphics_draw_image(the_map_view, image, &end, gdk_image_get_width(image), gdk_image_get_height(image));
 
 			if ((rddf_annotation_msg.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
 				(rddf_annotation_msg.annotations[i].annotation_point.z > 0.0))

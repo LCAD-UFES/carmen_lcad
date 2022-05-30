@@ -264,138 +264,165 @@ float carmen_map_image_to_map_color_occupancy(unsigned char r, unsigned char g,
 }
 
 #ifndef COMPILE_WITHOUT_MAP_SUPPORT
-unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags) 
+unsigned char* carmen_graphics_convert_to_image(carmen_map_p map, int flags)
 {
-  register double *data_ptr;
-  unsigned char *image_data = NULL;
-  register unsigned char *image_ptr = NULL;
-  double value;
-  int x_size, y_size;
-  int x_index, y_index;
-  int index;
-  double max_val = -MAXDOUBLE, min_val = MAXDOUBLE;
-  unsigned char blue, green, red;
-  road_prob *cell;
+//	static double last_timestamp = 0.0;
+//	double time = carmen_get_time();
 
-  int rescale = flags & CARMEN_GRAPHICS_RESCALE;
-  int invert = flags & CARMEN_GRAPHICS_INVERT;
-  int rotate = flags & CARMEN_GRAPHICS_ROTATE;
-  int black_and_white = flags & CARMEN_GRAPHICS_BLACK_AND_WHITE;
-  int enhance_contrast = flags & CARMEN_GRAPHICS_ENHANCE_CONTRAST;
-  int grayscale = flags & CARMEN_GRAPHICS_GRAYSCALE;
-  int remove_minus_one = flags & CARMEN_GRAPHICS_REMOVE_MINUS_ONE;
-  int log_odds = flags & CARMEN_GRAPHICS_LOG_ODDS;
-  int road_contrast = flags & CARMEN_GRAPHICS_ROAD_CONTRAST;
-  int enhace_low_prob_contrast = flags & CARMEN_GRAPHICS_ENHACE_LOW_PROB_CONTRAST;
+	double *data_ptr;
+	unsigned char *image_data = NULL;
+	unsigned char *image_ptr = NULL;
+	double value;
+	int x_size, y_size;
+	int x_index, y_index;
+	int index;
+	double max_val = -MAXDOUBLE, min_val = MAXDOUBLE;
+	unsigned char blue, green, red;
+	road_prob *cell;
 
-  if (map == NULL) {
-    carmen_warn("carmen_graphics_convert_to_image was passed NULL map.\n");
-    return NULL;
-  }
+	int rescale = flags & CARMEN_GRAPHICS_RESCALE;
+	int invert = flags & CARMEN_GRAPHICS_INVERT;
+	int rotate = flags & CARMEN_GRAPHICS_ROTATE;
+	int black_and_white = flags & CARMEN_GRAPHICS_BLACK_AND_WHITE;
+	int enhance_contrast = flags & CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+	int grayscale = flags & CARMEN_GRAPHICS_GRAYSCALE;
+	int remove_minus_one = flags & CARMEN_GRAPHICS_REMOVE_MINUS_ONE;
+	int log_odds = flags & CARMEN_GRAPHICS_LOG_ODDS;
+	int road_contrast = flags & CARMEN_GRAPHICS_ROAD_CONTRAST;
+	int enhace_low_prob_contrast = flags & CARMEN_GRAPHICS_ENHACE_LOW_PROB_CONTRAST;
 
-  x_size = map->config.x_size;
-  y_size = map->config.y_size;
-  image_data = (unsigned char *)calloc(x_size*y_size*3, sizeof(unsigned char));
-  carmen_test_alloc(image_data);
+	if (map == NULL)
+	{
+		carmen_warn("carmen_graphics_convert_to_image was passed NULL map.\n");
+		return NULL;
+	}
 
-  if (rescale || grayscale) {
-    max_val = -MAXDOUBLE;
-    min_val = MAXDOUBLE;
-    data_ptr = map->complete_map;
-    for (index = 0; index < map->config.x_size*map->config.y_size; index++) {
-      max_val = carmen_fmax(max_val, *data_ptr);
-      min_val = carmen_fmin(min_val, *data_ptr);
-      data_ptr++;
-    }
-  }
+	x_size = map->config.x_size;
+	y_size = map->config.y_size;
+	image_data = (unsigned char*) calloc(x_size * y_size * 3, sizeof(unsigned char));
+	carmen_test_alloc(image_data);
 
-  if (max_val < 0)
-    rescale = 0;
+	if (rescale || grayscale)
+	{
+		max_val = -MAXDOUBLE;
+		min_val = MAXDOUBLE;
+		data_ptr = map->complete_map;
+		for (index = 0; index < map->config.x_size * map->config.y_size; index++)
+		{
+			max_val = carmen_fmax(max_val, *data_ptr);
+			min_val = carmen_fmin(min_val, *data_ptr);
+			data_ptr++;
+		}
+	}
 
-  image_ptr = image_data;
-  data_ptr = map->complete_map;
-  for (x_index = 0; x_index < x_size; x_index++) {
-	  for (y_index = 0; y_index < y_size; y_index++) {
-		  value = *(data_ptr++);
-		  if (rotate)
-			  image_ptr = image_data+y_index*x_size*3+x_index;
-		  if (grayscale) {
-			  value = (value - min_val) / (max_val - min_val);
-			  for (index = 0; index < 3; index++)
-				  *(image_ptr++) = value * 255;
-		  }
-		  else if (log_odds) {
-			  double p = 1.0L - (1.0L / (1.0L + expl((long double) value)));
-			  if (invert)
-				  p = 1.0 - p;
-			  for (index = 0; index < 3; index++)
-				  *(image_ptr++) = p * 255;
-		  }
-		  else if (road_contrast)
-		  {
-			  cell = road_mapper_double_to_prob(&value);
-			  road_mapper_cell_color(cell, &blue, &green, &red);
-			  *(image_ptr++) = red;
-			  *(image_ptr++) = green;
-			  *(image_ptr++) = blue;
-		  }
-		  else if (value < 0 && value > -1.5) {
-			  if (black_and_white) {
-				  *(image_ptr++) = 255;
-				  *(image_ptr++) = 255;
-				  *(image_ptr++) = 255;
-			  } else {
-				  *(image_ptr++) = 30;
-				  *(image_ptr++) = 144;
-				  *(image_ptr++) = 255;
-			  }
-		  }
-		  else if (value < -1.5) { // for offlimits
-			  if (black_and_white) {
-				  *(image_ptr++) = 205;
-				  *(image_ptr++) = 205;
-				  *(image_ptr++) = 205;
-			  } else {
-				  *(image_ptr++) = 255;
-				  *(image_ptr++) = 0;
-				  *(image_ptr++) = 0;
-			  }
-		  }
-		  else if(!rescale && value > 1.0) {
-			  if (black_and_white) {
-				  *(image_ptr++) = 128;
-				  *(image_ptr++) = 128;
-				  *(image_ptr++) = 128;
-			  } else {
-				  *(image_ptr++) = 255;
-				  *(image_ptr++) = 0;
-				  *(image_ptr++) = 0;
-			  }
-		  }
-		  else {
-			  if (remove_minus_one)
-			  {
-				  min_val = 0.0;
-				  if (value == -1.0)
-					  value = 0.0;
-			  }
-			  if (rescale)
-				  value = (value - min_val) / (max_val - min_val);
-			  if (!invert)
-				  value = 1 - value;
-			  if (enhance_contrast)
-				  value = carmen_clamp(0.0, value * 3.0, 1.0);
-			  if (enhace_low_prob_contrast)
-			  {
-				  if ((value != -1.0) && (value < 0.3))
-					  value = 0.0;
-			  }
-			  for (index = 0; index < 3; index++)
-				  *(image_ptr++) = value * 255;
-		  }
-	  }
-  }
-  return image_data;
+	if (max_val < 0)
+		rescale = 0;
+
+	image_ptr = image_data;
+	data_ptr = map->complete_map;
+	for (x_index = 0; x_index < x_size; x_index++)
+	{
+		for (y_index = 0; y_index < y_size; y_index++)
+		{
+			value = *(data_ptr++);
+			if (rotate)
+				image_ptr = image_data + y_index * x_size * 3 + x_index;
+			if (grayscale)
+			{
+				value = (value - min_val) / (max_val - min_val);
+				for (index = 0; index < 3; index++)
+					*(image_ptr++) = value * 255;
+			}
+			else if (log_odds)
+			{
+				double p = 1.0L - (1.0L / (1.0L + expl((long double) value)));
+				if (invert)
+					p = 1.0 - p;
+				for (index = 0; index < 3; index++)
+					*(image_ptr++) = p * 255;
+			}
+			else if (road_contrast)
+			{
+				cell = road_mapper_double_to_prob(&value);
+				road_mapper_cell_color(cell, &blue, &green, &red);
+				*(image_ptr++) = red;
+				*(image_ptr++) = green;
+				*(image_ptr++) = blue;
+			}
+			else if (value < 0 && value > -1.5)
+			{
+				if (black_and_white)
+				{
+					*(image_ptr++) = 255;
+					*(image_ptr++) = 255;
+					*(image_ptr++) = 255;
+				}
+				else
+				{
+					*(image_ptr++) = 30;
+					*(image_ptr++) = 144;
+					*(image_ptr++) = 255;
+				}
+			}
+			else if (value < -1.5)
+			{ // for offlimits
+				if (black_and_white)
+				{
+					*(image_ptr++) = 205;
+					*(image_ptr++) = 205;
+					*(image_ptr++) = 205;
+				}
+				else
+				{
+					*(image_ptr++) = 255;
+					*(image_ptr++) = 0;
+					*(image_ptr++) = 0;
+				}
+			}
+			else if (!rescale && value > 1.0)
+			{
+				if (black_and_white)
+				{
+					*(image_ptr++) = 128;
+					*(image_ptr++) = 128;
+					*(image_ptr++) = 128;
+				}
+				else
+				{
+					*(image_ptr++) = 255;
+					*(image_ptr++) = 0;
+					*(image_ptr++) = 0;
+				}
+			}
+			else
+			{
+				if (remove_minus_one)
+				{
+					min_val = 0.0;
+					if (value == -1.0)
+						value = 0.0;
+				}
+				if (rescale)
+					value = (value - min_val) / (max_val - min_val);
+				if (!invert)
+					value = 1 - value;
+				if (enhance_contrast)
+					value = carmen_clamp(0.0, value * 3.0, 1.0);
+				if (enhace_low_prob_contrast)
+				{
+					if ((value != -1.0) && (value < 0.3))
+						value = 0.0;
+				}
+				for (index = 0; index < 3; index++)
+					*(image_ptr++) = value * 255;
+			}
+		}
+	}
+
+//	printf("time - last_timestamp = %lf,  dt %lf\n", time - last_timestamp, time - carmen_get_time());
+//	last_timestamp = carmen_get_time();
+
+	return image_data;
 }
 
 GdkPixmap * 

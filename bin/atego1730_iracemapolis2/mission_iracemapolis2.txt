@@ -1,0 +1,18 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+
+# Ida
+set course to  7495944.98, -242930.25, 2.744
+go after set course to 7495944.98, -242930.25, 2.744  # fica nesta task ateh o fim do curso 
+
+# Park 
+park truck and semi-trailer at 7495980.00, -242957.60, 2.427, 0.0
+go after park truck and semi trailer at 7495980.00, -242957.60, 2.427, 0.0  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+# Fim
+set course to  7495818.53, -242921.20, -2.633
+go after set course to  7495818.53, -242921.20, -2.633   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+	restart
+
