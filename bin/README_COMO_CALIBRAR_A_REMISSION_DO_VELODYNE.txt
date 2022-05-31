@@ -1,7 +1,7 @@
 Para que o mapa de remission fique bom e seu uso seja o melhor possível é importante calibrar e usar a remission do Velodyne.
 
 Para calibrar, rode a etapa de mapeamento uma vez (a etapa em que as poses otimizadas do graphslam ou hypergraphsclam são usadas) com o mapper configurado como abaixo:
- ./mapper -map_path ../data/mapper_teste2/ -mapping_mode on  -save_calibration_file calibration_file.txt
+ ./mapper -map_path ../data/mapper_teste2 -mapping_mode on  -save_calibration_file calibration_file.txt
 
 O arquivo calibration_file.txt (você pode ecolher outro nome, obviamente) será gerado e conterá os dados necessários para a calibração. Este arquivo fica 
 muito grande se o log for longo. Não é necessário que o log seja longo para uma boa calibração da remission do Velodyne, mas é importante que ele contenha 
