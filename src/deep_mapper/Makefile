@@ -57,7 +57,13 @@ else
 	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
-LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne -lcamera_drivers -ladabins -lglpdepth -ldpt -lnewcrfs
+LFLAGS +=  -lstereo_velodyne_interface -lstereo_velodyne -lcamera_drivers -ladabins -lglpdepth -ldpt 
+
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lvelodyne_camera_calibration
+LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
+		  `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
+		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration -lvelodyne_interface -lparam_interface
 
 # Source code files (.c, .cpp) 
 SOURCES = stereo_velodyne_depth.cpp
@@ -70,7 +76,7 @@ PUBLIC_LIBRARIES =
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = stereo_velodyne_depth 
-TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a libdpt.a stereo_velodyne stereo_velodyne_depth
+TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a libdpt.a stereo_velodyne stereo_velodyne_depth velodyne_camera_calibration
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -107,5 +113,8 @@ camera_drivers:
 
 stereo_velodyne:
 	$(MAKE) -C $(CARMEN_HOME)/src/stereo_velodyne/
+
+velodyne_camera_calibration:
+	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
 
 include ../Makefile.rules

@@ -14,6 +14,10 @@ from models.model import GLPDepth
 import torchvision.transforms as transforms
 import albumentations as A
 
+MIN_DEPTH = 1e-3
+MAX_DEPTH_NYU = 10
+MAX_DEPTH_KITTI = 80
+
 def activate_virtual_environment(environment_root):
     """Configures the virtual environment starting at ``environment_root``."""
     activate_script = os.path.join(
@@ -69,10 +73,9 @@ def glp_process_image(image, cut, down_cut):
     with torch.no_grad():
         pred = model(input_RGB)
     pred_d = pred['pred_d']
-    pred_d = pred_d.squeeze()
-    pred_d = pred_d.cpu().numpy() * 256.0
+    pred_d_numpy = pred_d.squeeze().cpu().numpy() * 255
     #print(pred_d)
-    pred_d_numpy = (pred_d / pred_d.max()) * 255
+    pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 255
     pred_d_numpy[0:cut.item(0),:] = 1000
     #print(pred_d_numpy.shape[0]-down_cut.item(0),pred_d_numpy.shape[0])
     pred_d_numpy[pred_d_numpy.shape[0]-down_cut.item(0):pred_d_numpy.shape[0],:] = 0
