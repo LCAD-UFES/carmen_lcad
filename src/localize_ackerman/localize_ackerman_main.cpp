@@ -1546,6 +1546,10 @@ subscribe_to_ipc_message()
 		// lidar0
 		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+		
+		// lidar8
+		if ((number_of_sensors > 17) && spherical_sensor_params[18].alive)
+			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 0);
 	}
 
 	carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_and_beta_message_handler, CARMEN_SUBSCRIBE_LATEST);
