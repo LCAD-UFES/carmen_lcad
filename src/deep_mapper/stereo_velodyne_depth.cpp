@@ -18,6 +18,11 @@
 #include <fstream>
 #include <tf.h>
 
+/*Message stereo*/
+#include <carmen/stereo_interface.h>
+#include <carmen/stereo_util.h>
+#include <carmen/stereo_point_cloud_interface.h>
+
 using namespace std;
 using namespace cv;
 
@@ -42,6 +47,10 @@ static carmen_velodyne_variable_scan_message velodyne_partial_scan;
 static IplImage *reference_image;
 static IplImage *reference_image_gray;
 
+/*Message stereo*/
+// static carmen_stereo_point_cloud_message point_cloud_message;
+// static stereo_util su;
+
 Mat cameraMatrix, distCoeffs, newcameramtx, R1;
 double fx, fy, cu, camera_cv, k1, k2, p1, p2, k3;
 static Mat MapX, MapY;
@@ -65,70 +74,6 @@ inline double round(double val)
 	return floor(val + 0.5);
 }
 
-void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message, char *dove)
-{
-	int i, j, line;
-	int horizontal_resolution = velodyne_message->number_of_32_laser_shots;
-	int vertical_resolution = 32;
-
-	double timestamp = velodyne_message->timestamp;
-
-	ofstream point_cloud_file;
-	char *pPath = getenv("CARMEN_HOME");
-	point_cloud_file.open(std::string(pPath) + "/src/deep_mapper/samples/" + std::to_string(timestamp) + "_" + std::string(dove) + ".pcd");
-	point_cloud_file << "#horizontal_resolution\t" << horizontal_resolution << "\n";
-	for (j = horizontal_resolution - 1, line = 0; j > 0; j--)
-	{
-		if (velodyne_message->partial_scan[j].angle >= -47 && velodyne_message->partial_scan[j].angle <= 47)
-		{
-			for (i = vertical_resolution - 1; i > 0; i--, line++)
-			{
-				double horizontal_angle = carmen_normalize_theta(-velodyne_message->partial_scan[j].angle);
-				double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
-				
-				double range = (((double)velodyne_message->partial_scan[i].distance[j]) / 500.0);
-				tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-				double p_x = round(point.x() * 100.0) / 100.0;
-				double p_y = round(point.y() * 100.0) / 100.0;
-				double p_z = round(point.z() * 100.0) / 100.0;
-				point_cloud_file << p_x << "\t" << p_y << "\t" << p_z << "\t" << range << "\t" << velodyne_message->partial_scan[j].angle << "\t" << sorted_vertical_angles[i] << "\n";
-			}
-			point_cloud_file << "# New slice\n";
-		}
-	}
-	point_cloud_file.close();
-}
-void write_pointcloud_variable_txt(carmen_velodyne_variable_scan_message *velodyne_message, char *dove)
-{
-	int i, j, line;
-	int horizontal_resolution = 640;
-	int vertical_resolution = 480;
-
-	double timestamp = velodyne_message->timestamp;
-
-	ofstream point_cloud_file;
-	char *pPath = getenv("CARMEN_HOME");
-	point_cloud_file.open(std::string(pPath) + "/src/deep_mapper/samples/" + std::to_string(timestamp) + "_" + std::string(dove) + ".pcd");
-
-	for (j = horizontal_resolution - 1, line = 0; j > 0; j--)
-	{
-		for (i = vertical_resolution - 1; i > 0; i--, line++)
-		{
-			double horizontal_angle = carmen_normalize_theta(-velodyne_message->partial_scan[j].angle) / 180.0;
-			double range = velodyne_message->partial_scan[j].distance[i]/480.0;
-			double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_lidar8_vertical_angles[i]));
-			tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-			double p_x = round(point.x() * 100.0) / 100.0;
-			double p_y = round(point.y() * 100.0) / 100.0;
-			double p_z = round(point.z() * 100.0) / 100.0;
-			
-			point_cloud_file << p_x << "\t" << p_y << "\t" << p_z << "\t" << range << "\t" << velodyne_message->partial_scan[j].angle << "\t" << sorted_lidar8_vertical_angles[i] << "\n";
-		}
-		point_cloud_file << "# New slice\n";
-	}
-	point_cloud_file.close();
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,10 +81,52 @@ void write_pointcloud_variable_txt(carmen_velodyne_variable_scan_message *velody
 // Publishers                                                                                //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+/*Message stereo*/
+// IPC_RETURN_TYPE
+// publish_stereo_point_cloud(void)
+// {
+// 	IPC_RETURN_TYPE err;
+
+// 	err = IPC_publishData(CARMEN_STEREO_POINT_CLOUD_NAME, &point_cloud_message);
+// 	carmen_test_ipc_exit(err, "Could not publish stereo point cloud", CARMEN_STEREO_POINT_CLOUD_NAME);
+
+// 	return err;
+// }
+// /*Message stereo*/
+// void convert_depth_to_stereo_point_cloud(unsigned char *depth, int vertical_resolution,
+// 										 int horizontal_resolution,	 unsigned char *reference_image, double timestamp)
+// {
+// 	carmen_vector_3D_t *image3D = (carmen_vector_3D_t *) malloc(vertical_resolution * horizontal_resolution * sizeof(carmen_vector_3D_t));
+// 	float *points = (float *)depth;
+// 	reproject_to_3D(points, image3D, 0.0, su);
+
+// 	point_cloud_message.num_points = vertical_resolution * horizontal_resolution;
+// 	point_cloud_message.points = (carmen_vector_3D_t *)realloc(point_cloud_message.points, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
+// 	point_cloud_message.point_color = (carmen_vector_3D_t *)realloc(point_cloud_message.point_color, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
+
+// 	int i;
+// 	for (i = 0; i < point_cloud_message.num_points; i++)
+// 	{
+// 		point_cloud_message.points[i].x = image3D[i].x;
+// 		point_cloud_message.points[i].y = image3D[i].y;
+// 		point_cloud_message.points[i].z = image3D[i].z;
+
+// 		point_cloud_message.point_color[i].x = ((double)reference_image[3 * i]) / 255.0;
+// 		point_cloud_message.point_color[i].y = ((double)reference_image[3 * i + 1]) / 255.0;
+// 		point_cloud_message.point_color[i].z = ((double)reference_image[3 * i + 2]) / 255.0;
+// 	}
+
+// 	point_cloud_message.timestamp = timestamp;
+// 	point_cloud_message.host = carmen_get_host();
+
+// 	publish_stereo_point_cloud();
+
+// 	free(image3D);
+// }
 
 void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resolution,
 									 int horizontal_resolution, carmen_velodyne_shot *stereo_velodyne_scan,
-									 double range_max, unsigned char *image)
+									 double range_max, unsigned char *image_gray)
 {
 	int i, j, x, y;
 
@@ -153,13 +140,13 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 		angle += delta_angle;
 		for (y = 0, i = vertical_resolution - 1; y < vertical_resolution; y += 1, i--)
 		{
-			//double horizontal_angle = carmen_normalize_theta(-stereo_velodyne_scan[j].angle) / 180.0;
-			// double horizontal_angle = stereo_velodyne_scan[j].angle * M_PI / 180.0;
-			double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(stereo_velodyne_scan[j].angle))/M_PI;
+			// double horizontal_angle = carmen_normalize_theta(-stereo_velodyne_scan[j].angle) / 180.0;
+			//  double horizontal_angle = stereo_velodyne_scan[j].angle * M_PI / 180.0;
+			double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(stereo_velodyne_scan[j].angle)) / M_PI;
 			double range = points[(int)(y * (double)horizontal_resolution + x)] * (2 - cos(abs(horizontal_angle)));
 			range = range > range_max ? 0.0 : range;
 			stereo_velodyne_scan[j].distance[i] = (unsigned short)(range * range_multiplier_factor);
-			stereo_velodyne_scan[j].intensity[i] = image[(int)(y * (double)horizontal_resolution + x)];
+			stereo_velodyne_scan[j].intensity[i] = image_gray[(int)(y * (double)horizontal_resolution + x)];
 		}
 	}
 }
@@ -170,11 +157,6 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-void velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
-{
-	//write_pointcloud_txt(velodyne_message, (char *)"velodyne");
-}
 
 void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
@@ -203,12 +185,13 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = stereo_image->timestamp;
-	//write_pointcloud_variable_txt(&velodyne_partial_scan, (char *)"lidar8");
+	// write_pointcloud_variable_txt(&velodyne_partial_scan, (char *)"lidar8");
 
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
+	
 
 	// cv::imshow("Bumblebee Image", open_cv_image);
-	cv::imshow(neural_network, imgdepth * 255);
+	cv::imshow(neural_network, imgdepth * 500);
 	waitKey(1);
 }
 
@@ -222,6 +205,7 @@ void image_handler(camera_message *msg)
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
+	unsigned char *image_color = open_cv_image.data;
 
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
@@ -243,11 +227,13 @@ void image_handler(camera_message *msg)
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = msg->timestamp;
-	//write_pointcloud_variable_txt(&velodyne_partial_scan, (char *)"lidar8");
+	// write_pointcloud_variable_txt(&velodyne_partial_scan, (char *)"lidar8");
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
+	// convert_depth_to_stereo_point_cloud(depth_pred, vertical_resolution,
+	// 								horizontal_resolution, image_color, msg->timestamp);
 
 	// cv::imshow("Camera Driver Image", open_cv_image);
-	cv::imshow(neural_network, imgdepth * 500);
+	cv::imshow(neural_network, imgdepth * 500.0);
 	waitKey(1);
 }
 
@@ -477,6 +463,23 @@ int read_parameters(int argc, char **argv)
 		{(char *)camera_string, (char *)"p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL},
 		{(char *)camera_string, (char *)"p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL}};
 
+	/*SU stereo*/
+	// if ((camera_width > 0) && (camera_height > 0))
+	// {
+	// 	su.width = camera_width;
+	// 	su.height = camera_height;
+	// }
+	// su.baseline = 0.0;
+	// su.fx = fx * su.width;
+	// su.fy = fy * su.height;
+	// su.xc = cu * su.width;
+	// su.yc = camera_cv * su.height;
+	// su.vfov = 2 * atan(camera_height / (2 * su.fy));
+	// su.hfov = 2 * atan(camera_width / (2 * su.fx));
+	// su.stereo_stride_x = 1.0;
+	// su.stereo_stride_y = 1.0;
+	/*----*/
+
 	if (vertical_resolution > vertical_resolution - 0)
 		carmen_die("The stereo_velodyne_vertical_resolution is bigger than stereo point cloud height");
 
@@ -541,9 +544,6 @@ int main(int argc, char **argv)
 	{
 		camera_drivers_subscribe_message(camera, NULL, (carmen_handler_t)image_handler, CARMEN_SUBSCRIBE_LATEST);
 	}
-	carmen_velodyne_subscribe_partial_scan_message(NULL,
-												   (carmen_handler_t)velodyne_partial_scan_message_handler,
-												   CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 

@@ -4067,7 +4067,7 @@ subscribe_ipc_messages(void)
     //                                               (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
     //                                               CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_stereo_velodyne_subscribe_scan_message(3, NULL,
+    carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
                                                   (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 
