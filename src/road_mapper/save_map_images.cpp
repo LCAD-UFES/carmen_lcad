@@ -282,7 +282,7 @@ prog_usage(char *prog_name, const char *error_msg = NULL, const char *error_msg2
 	fprintf(stderr,   "         %*c   -up_north  {on|off}  -split   {on|off}\n", (int) strlen(prog_name), ' ');
 	fprintf(stderr,   "default: %s   -remission  off      -offline  on       -out_dir .      -image_channels 3\n", prog_name);
 	fprintf(stderr,   "         %*c   -up_north   off      -split    off\n\n", (int) strlen(prog_name), ' ');
-	fprintf(stderr, "To load from map folder:\nUsage:   %s   -input_dir <dir>     -out_dir <dir> \n\n", prog_name);
+	fprintf(stderr, "To load from map folder:\nUsage:   %s   -input_dir <dir>     [the options above...] \n\n", prog_name);
 
 	exit(-1);
 }
@@ -547,9 +547,24 @@ build_complete_map_image(char map_img_type)
 	cv::Vec3b empty_value3;
 	cv::Vec4b empty_value4;
 	get_empty_values(&empty_value, &empty_value3, &empty_value4, map_img_type);
-	double x, y;
-	int x_size = round((g_max_pose.x - g_min_pose.x) / g_resolution);
-	int y_size = round((g_max_pose.y - g_min_pose.y) / g_resolution);
+	int x_size, y_size;
+	double x_origin, y_origin, x, y;
+
+	if (g_up_north)
+	{
+		x_size = round((g_max_pose.y - g_min_pose.y) / g_resolution);
+		y_size = round((g_max_pose.x - g_min_pose.x) / g_resolution);
+		x_origin = - g_max_pose.y;
+		y_origin = g_min_pose.x;
+	}
+	else
+	{
+		x_size = round((g_max_pose.x - g_min_pose.x) / g_resolution);
+		y_size = round((g_max_pose.y - g_min_pose.y) / g_resolution);
+		x_origin = g_min_pose.x;
+		y_origin = g_min_pose.y;
+	}
+
 	cv::Mat complete_map;
 	if (g_image_channels == 4)
 		complete_map = cv::Mat(y_size, x_size, CV_8UC4, empty_value4);
@@ -576,8 +591,8 @@ build_complete_map_image(char map_img_type)
 				cv::Mat map = cv::imread(full_path, (map_img_type == 'h' || map_img_type == 'n') ? cv::IMREAD_GRAYSCALE : cv::IMREAD_UNCHANGED);
 				if (!map.empty())
 				{
-					int left = round((x - g_min_pose.x) / g_resolution);
-					int top  = round((g_max_pose.y - y) / g_resolution) - map.rows;
+					int left = round((x - x_origin) / g_resolution);
+					int top  = round(y_size - (y - y_origin) / g_resolution) - map.rows;
 					map.copyTo(complete_map(cv::Rect(left, top, map.cols, map.rows)));
 					map.release();
 				}
@@ -586,7 +601,7 @@ build_complete_map_image(char map_img_type)
 	}
 
 	closedir(dp);
-	sprintf(full_path, "%s/complete_%c%d_%d.png", g_out_dir, map_img_type, int(g_min_pose.x), int(g_min_pose.y));
+	sprintf(full_path, "%s/complete_%c%d_%d.png", g_out_dir, map_img_type, int(x_origin), int(y_origin));
 	cv::imwrite(full_path, complete_map);
 	fprintf(stderr, "%s generated\n", full_path);
 }
