@@ -58,7 +58,7 @@ static int robot_model_id = 0;
 
 
 void
-pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title)
+pid_plot_phi(double current_phi, double desired_phi, double y_range, char *title)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi;
@@ -577,25 +577,25 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 
 	carmen_param_t param_list[]=
 	{
-		{(char *)"robot", (char *)"PID_steering_kp", CARMEN_PARAM_DOUBLE, &g_steering_Kp, 0, NULL},
-		{(char *)"robot", (char *)"PID_steering_ki", CARMEN_PARAM_DOUBLE, &g_steering_Ki, 0, NULL},
-		{(char *)"robot", (char *)"PID_steering_kd", CARMEN_PARAM_DOUBLE, &g_steering_Kd, 0, NULL},
-		{(char *)"robot", (char *)"PID_minimum_delta_velocity", CARMEN_PARAM_DOUBLE, &g_minimum_delta_velocity, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_forward_accelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_forward_accelerating_Kp, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_forward_accelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_forward_accelerating_Ki, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_forward_accelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_forward_accelerating_Kd, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_forward_deccelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_forward_deccelerating_Kp, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_forward_deccelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_forward_deccelerating_Ki, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_forward_deccelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_forward_deccelerating_Kd, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_backward_accelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_backward_accelerating_Kp, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_backward_accelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_backward_accelerating_Ki, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_backward_accelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_backward_accelerating_Kd, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Kp, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Ki, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Kd, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_brake_gap", CARMEN_PARAM_DOUBLE, &g_brake_gap, 0, NULL},
-		{(char *)"robot", (char *)"PID_velocity_max_brake_effort", CARMEN_PARAM_DOUBLE, &g_max_brake_effort, 0, NULL},
-		{(char *)"robot", (char *)"maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &g_maximum_steering_command_rate, 0, NULL},
+		{(char *)"robot", (char *)"PID_steering_kp", CARMEN_PARAM_DOUBLE, &g_steering_Kp, 1, NULL},
+		{(char *)"robot", (char *)"PID_steering_ki", CARMEN_PARAM_DOUBLE, &g_steering_Ki, 1, NULL},
+		{(char *)"robot", (char *)"PID_steering_kd", CARMEN_PARAM_DOUBLE, &g_steering_Kd, 1, NULL},
+		{(char *)"robot", (char *)"PID_minimum_delta_velocity", CARMEN_PARAM_DOUBLE, &g_minimum_delta_velocity, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_forward_accelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_forward_accelerating_Kp, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_forward_accelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_forward_accelerating_Ki, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_forward_accelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_forward_accelerating_Kd, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_forward_deccelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_forward_deccelerating_Kp, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_forward_deccelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_forward_deccelerating_Ki, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_forward_deccelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_forward_deccelerating_Kd, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_backward_accelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_backward_accelerating_Kp, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_backward_accelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_backward_accelerating_Ki, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_backward_accelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_backward_accelerating_Kd, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Kp", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Kp, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Ki", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Ki, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_backward_deccelerating_Kd", CARMEN_PARAM_DOUBLE, &g_velocity_backward_deccelerating_Kd, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_brake_gap", CARMEN_PARAM_DOUBLE, &g_brake_gap, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_max_brake_effort", CARMEN_PARAM_DOUBLE, &g_max_brake_effort, 1, NULL},
+		{(char *)"robot", (char *)"maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &g_maximum_steering_command_rate, 1, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
