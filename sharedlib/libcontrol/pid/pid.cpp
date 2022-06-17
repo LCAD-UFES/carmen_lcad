@@ -462,7 +462,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		*brakes_command = -u_t + g_brake_gap;
 		current_max_break_effort = 0.0;
 
-		if ((desired_velocity > 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && u_t > 0.0)
+		if ((desired_velocity > 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t > 0.0))
 		{
 			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
@@ -484,7 +484,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			*brakes_command = g_brake_gap;
 		current_max_break_effort = 0.0;
 
-		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)))
+		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t >= 0.0))
 		{
 			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_DECCELERATING;
@@ -502,7 +502,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		*brakes_command = u_t + g_brake_gap;
 		current_max_break_effort = 0.0;
 
-		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)))
+		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t < 0.0))
 		{
 			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_ACCELERATING;
