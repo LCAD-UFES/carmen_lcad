@@ -113,10 +113,10 @@ plot_phi_profile(TrajectoryControlParameters tcp)
 
 
 void
-print_tcp(TrajectoryControlParameters tcp)
+print_tcp(TrajectoryControlParameters tcp, double timestamp)
 {
-	printf("v %d, tt %3.8lf, a %3.8lf, vf %3.8lf, sf %3.8lf, s %3.8lf\n",
-			tcp.valid, tcp.tt, tcp.a, tcp.vf, tcp.sf, tcp.s);
+	printf("timestamp %lf, valid %d, tt %3.8lf, a %3.8lf, vf %3.8lf, sf %3.8lf, s %3.8lf\n",
+			timestamp, tcp.valid, tcp.tt, tcp.a, tcp.vf, tcp.sf, tcp.s);
 
 	for (unsigned int i = 0; i < tcp.k.size(); i++)
 		printf("k%d % 3.8lf, ", (int) i, tcp.k[i]);
@@ -543,7 +543,7 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
 	a = (-1.0) * a;
 	if (a == 0.0)
 	{
@@ -589,7 +589,8 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
+	double v = target_td.v_i;
 	if (a == 0.0)
 	{
 		if (target_v != 0.0)
@@ -598,19 +599,11 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 			tcp_seed.tt = 0.05;
 	}
 	else if (a > GlobalState::robot_config.maximum_acceleration_forward)
-	{
 		a = GlobalState::robot_config.maximum_acceleration_forward;
-		double v = target_td.v_i;
-		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
-	}
 	else if (a < -GlobalState::robot_config.maximum_deceleration_forward)
-	{
 		a = -GlobalState::robot_config.maximum_deceleration_forward;
-		double v = target_td.v_i;
-		tcp_seed.tt = -(sqrt(2.0 * a * s + v * v) + v) / a;
-	}
-	else
-		tcp_seed.tt = (target_v - target_td.v_i) / a;
+
+	tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
 
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
@@ -1461,6 +1454,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
 
 //	plot_phi_profile(tcp_complete);
+	print_tcp(tcp_complete, carmen_get_time());
 
 #ifdef PUBLISH_PLAN_TREE
 	TrajectoryDimensions td = target_td;

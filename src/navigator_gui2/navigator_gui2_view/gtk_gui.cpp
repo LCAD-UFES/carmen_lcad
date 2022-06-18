@@ -844,8 +844,9 @@ namespace View
 					globalpos->v * 3.6, globalpos->v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
 
-			sprintf(buffer, "Velocity: %5.1f km/h (%.2f m/s), %.2f %s", robot_traj.t_vel * 3.6, robot_traj.t_vel,
-					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
+			sprintf(buffer, "Velocity: %5.1f km/h (%.2f m/s), %.2f %s (%.3f %s)", robot_traj.t_vel * 3.6, robot_traj.t_vel,
+					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"),
+					robot_traj.r_vel, (nav_panel_config->use_ackerman ? "rad" : "rad/s"));
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
 			sprintf(buffer, "Goal: %.2f, %.2f, %.3f (%.2f deg) (%.2lf Km/h, %.2f m/s)", goal.x, goal.y, goal.theta,
