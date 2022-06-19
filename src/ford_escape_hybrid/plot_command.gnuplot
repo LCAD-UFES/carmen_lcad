@@ -12,10 +12,10 @@ plot "./results_pid-velocity.txt" using 19:12 with lines title "cv", \
 "./results_pid-velocity.txt" using 19:13 with lines title "dv", \
 "./results_pid-velocity.txt" using 19:($15/10) with lines title "throt", \
 "./results_pid-velocity.txt" using 19:($16/100) with lines title "breaks", \
-"../../bin/bs.txt" using 2:4 with lines title "goal-v", \
-"../../bin/bs.txt" using 2:($6/10) with lines title "who set v", \
-"../../bin/bs.txt" using 2:($8/10) with lines title "bs s", \
-"../../bin/bs.txt" using 2:($10/10) with lines title "rp s", \
+"./bs.txt" using 2:4 with lines title "goal-v", \
+"./bs.txt" using 2:($6/10) with lines title "who set v", \
+"./bs.txt" using 2:($8/10) with lines title "bs s", \
+"./bs.txt" using 2:($10/10) with lines title "rp s", \
 "./mpp.txt" using 2:6 with lines title "tt", \
 "./mpp.txt" using 2:14 with lines title "s", \
 "./mpp.txt" using 2:8 with lines title "a"

@@ -250,6 +250,41 @@ get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation
 }
 
 
+carmen_annotation_t *
+get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
+		carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving)
+{
+	int nearest_annotation_index = -1;
+	double distance_to_nearest_annotation = 1000.0;
+
+	for (int i = 0; i < annotation_message.num_annotations; i++)
+	{
+		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
+		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_YIELD) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
+			  (annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) && !wait_start_moving) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP)) &&
+			carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point) &&
+			 (distance_to_annotation < distance_to_nearest_annotation))
+		{
+			distance_to_nearest_annotation = distance_to_annotation;
+			nearest_annotation_index = i;
+		}
+	}
+
+	if (nearest_annotation_index != -1)
+		return (&(annotation_message.annotations[nearest_annotation_index]));
+	else
+		return (NULL);
+}
+
+
 bool
 busy_pedestrian_track_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -330,41 +365,6 @@ must_yield_ahead(path_collision_info_t path_collision_info, carmen_robot_and_tra
 }
 
 
-carmen_annotation_t *
-get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
-		carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving)
-{
-	int nearest_annotation_index = -1;
-	double distance_to_nearest_annotation = 1000.0;
-
-	for (int i = 0; i < annotation_message.num_annotations; i++)
-	{
-		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
-		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_YIELD) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
-			  (annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) && !wait_start_moving) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP)) &&
-			carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point) &&
-			 (distance_to_annotation < distance_to_nearest_annotation))
-		{
-			distance_to_nearest_annotation = distance_to_annotation;
-			nearest_annotation_index = i;
-		}
-	}
-
-	if (nearest_annotation_index != -1)
-		return (&(annotation_message.annotations[nearest_annotation_index]));
-	else
-		return (NULL);
-}
-
-
 carmen_robot_and_trailer_traj_point_t *
 get_final_goal()
 {
@@ -397,9 +397,9 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 
 	double a;
 	if (v0 > 0.0)
-		a = -get_robot_config()->maximum_acceleration_forward * 1.1; // Desaceleracao para anotacoes
+		a = -get_robot_config()->desired_decelaration_forward; // Desaceleracao para anotacoes
 	else
-		a = -get_robot_config()->maximum_acceleration_reverse * 1.1; // Desaceleracao para reh
+		a = -get_robot_config()->desired_decelaration_reverse; // Desaceleracao para reh
 
 	v0 = fabs(v0); //a distancia para reagir a anotacao independe do sinal, sinal soh indica orientacao do movimento.
 
@@ -462,16 +462,17 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.0;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD) &&
-			 must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
-		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
 			 (DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
-	{
-		// printf ("D %lf\n", DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point));
 		v = 0.0;
-	}
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP)
+		v = annotation_velocity_pedestrian_track_stop;
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
+		v = annotation_velocity_pedestrian_track_stop;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD) &&
+			 must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
+		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
 			 (behavior_selector_state_message.low_level_state != Stopped_At_Stop_Sign_S2))
 		v = 0.0;
@@ -480,8 +481,6 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 		v = 0.0;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
 		v = annotation_velocity_bump;
-	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP)
-		v = annotation_velocity_pedestrian_track_stop;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD)
 		v = annotation_velocity_yield;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
@@ -689,8 +688,6 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t 
 
 			if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
 					((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL_STOP))))
-
-				//TODO retorna positivo
 				goal->v = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi,
 						path_collision_info, behavior_selector_state_message, timestamp);
 		}
