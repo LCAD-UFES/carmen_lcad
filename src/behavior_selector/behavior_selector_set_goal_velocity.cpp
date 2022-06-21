@@ -1163,6 +1163,7 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
+	previous_v = goal->v;
 	if ((fabs(goal->v) < 1.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
 //		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
 		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 0.5))
@@ -1174,6 +1175,8 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 		else
 			goal->v = intermediate_velocity;
 	}
+	if (previous_v != goal->v)
+		who_set_the_goal_v = TORRICHELLI;
 
 	previous_v = goal->v;
 	goal->v = limit_maximum_velocity_according_to_maximum_steering_command_rate(goal, current_robot_pose_v_and_phi, last_rddf_message->poses, last_rddf_message->number_of_poses);
