@@ -1554,7 +1554,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
 
 //	plot_phi_profile(tcp_complete);
-	print_tcp(tcp_complete, carmen_get_time());
+//	print_tcp(tcp_complete, carmen_get_time());
 
 #ifdef PUBLISH_PLAN_TREE
 	TrajectoryDimensions td = target_td;
