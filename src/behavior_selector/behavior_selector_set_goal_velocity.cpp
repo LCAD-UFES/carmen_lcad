@@ -673,7 +673,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailer_traj_point_t 
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
-			   (distance_to_annotation < distance_to_goal)) && annotation_ahead) ||
+			   (distance_to_annotation < (distance_to_goal + robot_config.distance_between_front_and_rear_axles / 4.0))) && annotation_ahead) ||
 			   ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
 				((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL_STOP)))))
 		{
@@ -1188,8 +1188,8 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STATE_MACHINE;
 
-	printf("timestamp %lf, goal->v %lf, who_set_the_goal_v %d, bs_state %d, rp_state %d\n",
-			behavior_selector_state_message.timestamp, goal->v, who_set_the_goal_v, behavior_selector_state_message.low_level_state, behavior_selector_state_message.route_planner_state);
+//	printf("timestamp %lf, goal->v %lf, who_set_the_goal_v %d, bs_state %d, rp_state %d\n",
+//			behavior_selector_state_message.timestamp, goal->v, who_set_the_goal_v, behavior_selector_state_message.low_level_state, behavior_selector_state_message.route_planner_state);
 
 	return (who_set_the_goal_v);
 }
