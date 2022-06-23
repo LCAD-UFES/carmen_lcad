@@ -21,7 +21,7 @@ After a power failure, it is convenient to automatically restart a computer and 
 
 > sudo cp $CARMEN_HOME/src/utilities/auto_restart_pppoedi/start_pppoedi.sh  /usr/local/bin/
 
-Alternativamente, edite o script com as linhas abaixo: 
+Edite o script inserindo o username e password nas linhas apropriadas: 
 
 > sudo gedit  /usr/local/bin/start_pppoedi.sh
 
@@ -46,13 +46,14 @@ done
 7. Certifique que o systemd esteja instalado: 
 
 > sudo apt update
+
 > sudo apt install systemd
 
 8. Copie o arquivo: 
 
 > sudo cp $CARMEN_HOME/src/utilities/auto_restart_pppoedi/pppoedi.service  /etc/systemd/system/
 
-Alternativamente, edite o arquivo com as linhas abaixo: 
+Alternativamente, o arquivo pode ser criado com as linhas abaixo: 
 
 > sudo gedit  /etc/systemd/system/pppoedi.service
 
@@ -74,7 +75,9 @@ WantedBy=default.targe
 9. Instale o serviço systemd e habilite-o para início automático no boot:
 
 > sudo  systemctl  daemon-reload
+
 > sudo  systemctl  enable pppoedi.service
+
 > sudo  systemctl  start  pppoedi.service
 
 A configuração está concluída. Faça um reboot para testar se a máquina fica remotamente acessível. Caso queira conhecer outras opções válidas no systemd: 
