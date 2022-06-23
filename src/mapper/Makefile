@@ -22,13 +22,15 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 IFLAGS += `pkg-config --cflags opencv`
 
 #Lib_Neural_Mapper_py
-IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
 	LFLAGS += `python3.5-config --libs`
-else
+else ifeq ($(UBUNTU_VERSION),"18.04")
 	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --embed --libs` -pthread
 endif
 
 # Application specific include directories.

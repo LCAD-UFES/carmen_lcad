@@ -1,6 +1,11 @@
 include ../Makefile.conf
 
 LFLAGS += -lcarmenserial -lglobal -lipc -lespeak -lvoice_interface_interface
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"20.04")
+	LFLAGS += -pthread
+endif
 
 MODULE_NAME = PROCCONTROL
 MODULE_COMMENT = Process controller for CARMEN

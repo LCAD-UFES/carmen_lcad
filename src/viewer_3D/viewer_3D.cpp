@@ -2538,7 +2538,7 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
     if (last_gps_trail >= gps_size)
         last_gps_trail -= gps_size;
 
-    if ((gps_xyz_raw_message->nr == 1) || (gps_xyz_raw_message->nr == 2)) // Trimble ou Reach1
+//    if ((gps_xyz_raw_message->nr == 1) || (gps_xyz_raw_message->nr == 2)) // Trimble ou Reach1
         gps_fix_flag = gps_xyz_raw_message->gps_quality;
 }
 
