@@ -27,12 +27,12 @@ Edite o script inserindo o username e password nas linhas apropriadas:
 
 ```
 #!/bin/bash
-LDAP_DI_user="type here your LDAP DI user (get from LAR/UFES)"
-LDAP_DI_password="type here your password"
+LDAP_DI_user=""      # type your LDAP DI user within the quotes (get from LAR/UFES)
+LDAP_DI_password=""  # type your password within the quotes
 while [ 1 ]
 do
     PPP=$(ifconfig | grep UP | grep POINTOPOINT | grep RUNNING)
-    if ! [ -n "$PPP" ]; then
+    if [[ -z "$PPP" ]]; then
         /usr/local/bin/pppoedi-cli  ${LDAP_DI_user}  ${LDAP_DI_password}
     fi
     sleep 60
@@ -41,7 +41,7 @@ done
 
 6. Certifique que o script esteja executável: 
 
-> sudo chmod +x  /usr/local/bin/start_pppoedi.sh
+> sudo chmod 700  /usr/local/bin/start_pppoedi.sh
 
 7. Certifique que o systemd esteja instalado: 
 

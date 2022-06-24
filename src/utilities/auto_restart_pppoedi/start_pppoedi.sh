@@ -1,9 +1,9 @@
 #!/bin/bash
 
-LDAP_DI_user="type here your LDAP DI user (get from LAR/UFES)"
-LDAP_DI_password="type here your password"
+LDAP_DI_user=""      # type your LDAP DI user within the quotes (get from LAR/UFES)
+LDAP_DI_password=""  # type your password within the quotes
 
-if [[ "$1" = "-h" ]]; then
+if [[ "$1" == "-h" ]]; then
 
 	echo -e "\nThis script makes sure every minute that PPPoEDI is up and running."
 	echo -e "It is intended to run at startup boot on systemd Linux.\n"
@@ -13,12 +13,29 @@ if [[ "$1" = "-h" ]]; then
 	exit
 fi
 
+if [[ -n "$1" ]]; then
+	LDAP_DI_user="$1"
+elif [[ -z "$LDAP_DI_user" ]]; then
+	read -p "Type your LDAP DI user (get from LAR/UFES): " LDAP_DI_user
+fi
+if [[ -n "$2" ]]; then
+	LDAP_DI_password="$2"
+elif [[ -z "$LDAP_DI_password" ]]; then
+	read -sp "Type your LDAP DI password: " LDAP_DI_password
+fi
+
+function interrupt()
+{
+	exit
+}
+
+trap interrupt SIGINT
+
 while [ 1 ]
 do
 	PPP=$(ifconfig | grep UP | grep POINTOPOINT | grep RUNNING)
-	if ! [ -n "$PPP" ]; then
+	if [[ -z "$PPP" ]]; then
 		/usr/local/bin/pppoedi-cli ${LDAP_DI_user} ${LDAP_DI_password}
 	fi
 	sleep 60
 done
-
