@@ -8,7 +8,12 @@ LINK = g++
 CFLAGS += -Wall -g
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"20.04")
+	LFLAGS += -pthread
+endif
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.

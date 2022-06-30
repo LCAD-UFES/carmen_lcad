@@ -21,13 +21,16 @@ UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
 	LFLAGS += `python3.5-config --libs`
-else
+else ifeq ($(UBUNTU_VERSION),"18.04")
 	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --embed --libs` -pthread
 endif
+
 
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
 
 SOURCES = rddf_interface.c rddf_play_main.cpp rddf_index.cpp rddf_build_main.cpp rddf_util.cpp rddf_play_annotations.cpp rddf_by_road_map.cpp rddf_resample.cpp
 SOURCES += test_update_annotation.cpp
