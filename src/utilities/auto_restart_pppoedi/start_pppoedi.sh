@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -a
 LDAP_DI_user=""      # type your LDAP DI user within the quotes (get from LAR/UFES)
 LDAP_DI_password=""  # type your password within the quotes
 
@@ -35,7 +36,19 @@ while [ 1 ]
 do
 	PPP=$(ifconfig | grep UP | grep POINTOPOINT | grep RUNNING)
 	if [[ -z "$PPP" ]]; then
-		/usr/local/bin/pppoedi-cli ${LDAP_DI_user} ${LDAP_DI_password}
+		# /usr/local/bin/pppoedi-cli ${LDAP_DI_user} ${LDAP_DI_password}
+		python3 - << end_python3
+###
+from pppoediplugin.PppoeDiCli import PppoeDiCli
+import sys, os
+if __name__ == '__main__':
+	for i in range(3 - len(sys.argv)):
+		sys.argv.append('')
+	sys.argv[1] = os.getenv("LDAP_DI_user")
+	sys.argv[2] = os.getenv("LDAP_DI_password")
+	pppoe = PppoeDiCli()
+end_python3
+###
 	fi
 	sleep 60
 done
