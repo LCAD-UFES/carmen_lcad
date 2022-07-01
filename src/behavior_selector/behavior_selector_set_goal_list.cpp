@@ -849,6 +849,11 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
 					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1))) ||
 
+//					((busy_pedestrian_track_ahead(robot_pose, timestamp) &&
+//					((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) ||
+//					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
+//					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1)))) ||
+
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 				   (busy_pedestrian_track_ahead(robot_pose, timestamp) ||
 					(behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) ||
