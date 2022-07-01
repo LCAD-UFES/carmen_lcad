@@ -30,7 +30,7 @@ IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
 # Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-*)
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
