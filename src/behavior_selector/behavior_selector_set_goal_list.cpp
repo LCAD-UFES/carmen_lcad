@@ -35,13 +35,9 @@ static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
 static double distance_to_remove_annotation_goal = 1.5;
 
-//@@@Vinicius
-//extern carmen_rddf_annotation_message last_rddf_annotation_message;
-
 extern int behavior_selector_reverse_driving;
 
 int position_of_next_annotation = 0;
-
 
 // filipe:: TODO: colocar no carmen.ini
 double dist_to_reduce_speed = 15.0;
@@ -710,10 +706,6 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 				distance_to_last_obstacle_free_waypoint, rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index,
 				current_moving_objects, timestamp, next_pose_change_direction_index);
 
-		//@@@Vinicius pedestres
-//		carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP,
-//				last_rddf_annotation_message, &robot_pose);
-
 		static double moving_obstacle_trasition = 0.0;
 		if (rddf_pose_hit_obstacle)
 		{
@@ -855,11 +847,6 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 				   ((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) ||
 					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
 					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1))) ||
-
-//					((nearest_pedestrian_track_annotation == NULL) &&
-//					(busy_pedestrian_track_ahead(robot_pose, timestamp) &&
-//					((behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1) ||
-//					(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S2)))) ||
 
 				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 				   (busy_pedestrian_track_ahead(robot_pose, timestamp) ||
