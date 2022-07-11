@@ -200,6 +200,8 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 		phi = 0.0;
 	}
 
+	printf("timestamp %lf, v %lf, i %d, n %d\n", current_time, v, i, ford_escape_hybrid_config->nun_motion_commands);
+
 //	if ((fabs(ford_escape_hybrid_config->filtered_v) > 1.0) && path_goals_and_annotations_message && (path_goals_and_annotations_message->goal_list_size != 0) && path_goals_and_annotations_message->goal_list)
 //	{
 //		double v_goal = path_goals_and_annotations_message->goal_list[0].v;

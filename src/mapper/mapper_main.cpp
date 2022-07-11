@@ -47,6 +47,7 @@ double robot_wheel_radius;
 int use_simulator_pose = 0;
 
 double highest_sensor = 0.0;
+double safe_height_from_ground;
 
 extern int merge_with_offline_map;
 int build_snapshot_map;

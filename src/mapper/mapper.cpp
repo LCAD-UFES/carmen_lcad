@@ -34,6 +34,8 @@
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 
 extern double safe_range_above_sensors;
+extern double safe_height_from_ground;
+
 extern double robot_wheel_radius;
 
 extern double highest_sensor;
@@ -410,10 +412,11 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 				sensor_data,
 				highest_sensor,
 				safe_range_above_sensors,
-				tid
+				tid,
+				safe_height_from_ground
 			);
 		else
-			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(map_set->log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(map_set->log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid, safe_height_from_ground);
 
 		if (update_and_merge_with_mapper_saved_maps && use_remission)
 			carmen_prob_models_update_intensity_of_cells_hit_by_rays(
@@ -425,7 +428,8 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 				highest_sensor,
 				safe_range_above_sensors,
 				NULL,
-				tid
+				tid,
+				safe_height_from_ground
 			);
 	}
 }
@@ -496,12 +500,12 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
 		if (create_map_sum_and_count)
 			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays_into_log_odds_snapshot_map(map_set->log_odds_snapshot_map, map_set->sum_occupancy_map, map_set->count_occupancy_map,
-					sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+					sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid, safe_height_from_ground);
 		else
-			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(map_set->log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(map_set->log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid, safe_height_from_ground);
 
 		if (update_and_merge_with_mapper_saved_maps && use_remission)
-			carmen_prob_models_update_intensity_of_cells_hit_by_rays(map_set->sum_remission_map, map_set->sum_sqr_remission_map, map_set->count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid);
+			carmen_prob_models_update_intensity_of_cells_hit_by_rays(map_set->sum_remission_map, map_set->sum_sqr_remission_map, map_set->count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid, safe_height_from_ground);
 
 		//Lucas: Mapa para deteccao de objetos moveis
 		//carmen_prob_models_update_log_odds_of_cells_hit_by_rays(&moving_objects_raw_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
@@ -2711,6 +2715,7 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 
 		{(char *) "mapper",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL}, // The number_of_sensors must be the maximun number of sensors: 25
 		{(char *) "mapper",  (char *) "safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
+		{(char *) "mapper",  (char *) "safe_height_from_ground", CARMEN_PARAM_DOUBLE, &safe_height_from_ground, 0, NULL},
 
 		{(char *) "mapper",  (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &map_resolution, 0, NULL},
 		{(char *) "mapper",  (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},

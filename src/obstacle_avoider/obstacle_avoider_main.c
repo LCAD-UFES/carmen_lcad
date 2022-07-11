@@ -144,6 +144,8 @@ apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int
 
 	for (int j = 0; j < size; j++)
 		original_path[j].v = path[j].v;
+	for (int j = size - 1; j < original_size; j++)
+		original_path[j].v = path[size - 1].v;
 
 	int size_decrease_due_to_velocity_delay = i;
 
@@ -172,6 +174,8 @@ apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int
 
 	for (int j = 0; j < size; j++)
 		original_path[j].phi = path[j].phi;
+	for (int j = size - 1; j < original_size; j++)
+		original_path[j].phi = path[size - 1].phi;
 
 	int size_decrease_due_to_steering_delay = i;
 

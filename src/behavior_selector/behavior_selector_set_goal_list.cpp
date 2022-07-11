@@ -39,7 +39,6 @@ extern int behavior_selector_reverse_driving;
 
 int position_of_next_annotation = 0;
 
-
 // filipe:: TODO: colocar no carmen.ini
 double dist_to_reduce_speed = 15.0;
 double speed_around_annotation = 1.0;

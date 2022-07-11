@@ -210,11 +210,10 @@ double carmen_prob_models_compute_expected_delta_ray(double ray_size, int ray_in
 void
 carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
 		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id, double safe_height_from_ground = -20.0);
-#endif
-
 void
 carmen_prob_models_get_occuppancy_log_odds_by_height(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
-		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id);
+		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id, double safe_height_from_ground = -20.0);
+#endif
 
 void
 carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
@@ -239,7 +238,9 @@ void carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays_into_log_odds_
 #endif
 
 void carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(carmen_map_t *log_odds_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
-void carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
+#ifdef __cplusplus
+void carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground = -20.0);
+#endif
 void carmen_prob_models_get_maximum_probability_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_log_odds_of_cells_hit_by_ldmrs_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
@@ -278,7 +279,9 @@ void carmen_prob_models_add_intensity_of_cells_hit_by_rays(carmen_compact_map_t 
 void carmen_prob_models_calc_mean_and_variance_remission_map(carmen_map_t *mean_remission_map, carmen_map_t *variance_remission_map, carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map);
 void carmen_prob_models_calc_mean_remission_map(carmen_map_t *mean_remission_map, carmen_map_t *sum_remission_map, carmen_map_t *count_remission_map);
 
-void carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map, carmen_map_t *remission_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
+#ifdef __cplusplus
+void carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map, carmen_map_t *remission_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground = -20.0);
+#endif
 
 void carmen_prob_models_clean_carmen_map(carmen_map_t *map);
 

@@ -113,10 +113,10 @@ plot_phi_profile(TrajectoryControlParameters tcp)
 
 
 void
-print_tcp(TrajectoryControlParameters tcp)
+print_tcp(TrajectoryControlParameters tcp, double timestamp)
 {
-	printf("v %d, tt %3.8lf, a %3.8lf, vf %3.8lf, sf %3.8lf, s %3.8lf\n",
-			tcp.valid, tcp.tt, tcp.a, tcp.vf, tcp.sf, tcp.s);
+	printf("timestamp %lf, valid %d, tt %3.8lf, a %3.8lf, vf %3.8lf, sf %3.8lf, s %3.8lf\n",
+			timestamp, tcp.valid, tcp.tt, tcp.a, tcp.vf, tcp.sf, tcp.s);
 
 	for (unsigned int i = 0; i < tcp.k.size(); i++)
 		printf("k%d % 3.8lf, ", (int) i, tcp.k[i]);
@@ -536,6 +536,98 @@ bad_tcp(TrajectoryControlParameters tcp)
 }
 
 
+#define NEW_COMPUTE_A_AND_T_FROM_S
+#ifdef NEW_COMPUTE_A_AND_T_FROM_S
+
+void
+compute_a_and_t_from_s_reverse(double s, double target_v,
+		TrajectoryDimensions target_td,
+		TrajectoryControlParameters &tcp_seed,
+		ObjectiveFunctionParams *params)
+{
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
+	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
+	a = (-1.0) * a;
+	if (a == 0.0)
+	{
+		if (target_v != 0.0)
+			tcp_seed.tt = fabs(s / target_v);
+		else
+			tcp_seed.tt = 0.05;
+	}
+	else if (a < -GlobalState::robot_config.maximum_acceleration_reverse)
+	{
+		a = GlobalState::robot_config.maximum_acceleration_reverse;
+		double v = fabs(target_td.v_i);
+		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v) + v)) / a;
+		a = (-1.0) * a;
+
+	}
+	else if (a > GlobalState::robot_config.maximum_deceleration_reverse)
+	{
+		a = GlobalState::robot_config.maximum_deceleration_reverse;
+		double v = fabs(target_td.v_i);
+		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
+	}
+	else
+		tcp_seed.tt = (target_v - target_td.v_i) / a;
+
+	if (tcp_seed.tt > 200.0)
+		tcp_seed.tt = 200.0;
+	if (tcp_seed.tt < 0.05)
+		tcp_seed.tt = 0.05;
+
+//	if (isnan(tcp_seed.tt) || isnan(a))
+//		printf("nan em compute_a_and_t_from_s_reverse()\n");
+
+	params->suitable_tt = tcp_seed.tt;
+	params->suitable_acceleration = tcp_seed.a = a;
+}
+
+
+void
+compute_a_and_t_from_s_foward(double s, double target_v,
+		TrajectoryDimensions target_td,
+		TrajectoryControlParameters &tcp_seed,
+		ObjectiveFunctionParams *params)
+{
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
+	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
+	double v = target_td.v_i;
+	if (a == 0.0)
+	{
+		if (target_v != 0.0)
+			tcp_seed.tt = s / target_v;
+		else
+			tcp_seed.tt = 0.05;
+	}
+	else if (a > GlobalState::robot_config.maximum_acceleration_forward)
+	{
+		a = GlobalState::robot_config.maximum_acceleration_forward;
+		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
+	}
+	else if (a < -GlobalState::robot_config.maximum_deceleration_forward)
+	{
+		a = -GlobalState::robot_config.maximum_deceleration_forward;
+		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
+	}
+	else
+		tcp_seed.tt = (target_v - target_td.v_i) / a;
+
+	if (tcp_seed.tt > 200.0)
+		tcp_seed.tt = 200.0;
+	if (tcp_seed.tt < 0.05)
+		tcp_seed.tt = 0.05;
+
+//	if (isnan(tcp_seed.tt) || isnan(a))
+//		printf("nan em compute_a_and_t_from_s_foward()\n");
+
+	params->suitable_tt = tcp_seed.tt;
+	params->suitable_acceleration = tcp_seed.a = a;
+}
+
+#else
+
 void
 compute_a_and_t_from_s_reverse(double s, double target_v,
 		TrajectoryDimensions target_td,
@@ -624,6 +716,7 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 	params->suitable_acceleration = tcp_seed.a = a;
 }
 
+#endif
 
 void
 compute_a_and_t_from_s(double s, double target_v,
@@ -1461,6 +1554,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
 
 //	plot_phi_profile(tcp_complete);
+//	print_tcp(tcp_complete, carmen_get_time());
 
 #ifdef PUBLISH_PLAN_TREE
 	TrajectoryDimensions td = target_td;
