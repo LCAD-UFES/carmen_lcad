@@ -17,7 +17,7 @@ LFLAGS += -L$(MAEHOME)/lib -L/usr/local/lib -L/usr/X11R6/lib
 LFLAGS += -lnet_conn -lforms -lGA -lX11 -lglut -lGLU -lGL -lm -lfl -lrt -lz -fopenmp \
 	-lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lkinect_interface
 
-CFLAGS += -g -Wall -DCML_SCRIPT
+CFLAGS += -Wall -DCML_SCRIPT
 #CFLAGS += -g -Wall 
 
 MAE_FILES = visual_search.con

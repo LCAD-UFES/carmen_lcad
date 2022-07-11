@@ -13,8 +13,8 @@ MAKEFILE      = Makefile
 CC            = gcc
 CXX           = g++
 DEFINES       = -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
-CFLAGS        = -pipe -g -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-CXXFLAGS      = -pipe -g -std=gnu++11 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
+CFLAGS        = -pipe -Wall -W -D_REENTRANT -fPIC $(DEFINES)
+CXXFLAGS      = -pipe -std=gnu++11 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 INCPATH       = -I. -I. -I$(CARMEN_HOME)/include -I/opt/Qt/5.7/gcc_64/include -I/opt/Qt/5.7/gcc_64/include/QtWidgets -I/opt/Qt/5.7/gcc_64/include/QtGui -I/opt/Qt/5.7/gcc_64/include/QtCore -I. -I. -I/opt/Qt/5.7/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/Qt/5.7/gcc_64/bin/qmake
 DEL_FILE      = rm -f

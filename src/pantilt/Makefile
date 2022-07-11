@@ -2,8 +2,8 @@ include ../Makefile.conf
 
 LFLAGS += -lglobal -lpantilt_interface -lparam_interface -lipc 
 
-CFLAGS     +=  -g -O0 -ggdb 
-CXXFLAGS   +=  -g -O0 -ggdb
+CFLAGS     +=  
+CXXFLAGS   +=  
 
 MODULE_NAME = PANTILT
 MODULE_COMMENT = Module for pantilt interface - direct perception
