@@ -389,7 +389,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	{
 		publish_odometry(timestamp);
 		carmen_simulator_ackerman_update_objects(simulator_config);
-//		publish_objects(timestamp);
+		publish_objects(timestamp);
 	}
 	publish_truepos(timestamp);
 
@@ -846,7 +846,7 @@ subscribe_to_relevant_messages()
 
 #endif
 
-//	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
