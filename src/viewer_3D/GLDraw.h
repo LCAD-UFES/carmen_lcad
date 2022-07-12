@@ -49,11 +49,12 @@ void draw_xsens_orientation(carmen_orientation_3D_t xsens_orientation, double xs
 void draw_gps_orientation (double gps_orientation, int gps_heading_valid, carmen_orientation_3D_t xsens_orientation, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose);
 void draw_orientation_instruments(carmen_orientation_3D_t orientation, double r, double g, double b);
 void draw_gps_fault_signal(void);
-void draw_map_image(carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img);
+void draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img);
 void draw_localize_image (bool draw_image_base, carmen_vector_3D_t gps_position_at_turn_on, carmen_pose_3D_t pose, char *image, int width, int height, int square_size);
 void draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking, int current_num_point_clouds,
 		carmen_vector_3D_t offset, CarDrawer *car_drawer, int draw_particles_flag);
 void draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ldmrs_objects, double min_velocity, CarDrawer *car_drawer);
+void saveScreenshotToFile(std::string filename, int windowWidth, int windowHeight);
 #ifdef __cplusplus
 }
 #endif

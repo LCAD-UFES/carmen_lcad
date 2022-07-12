@@ -16,7 +16,6 @@
 #include "GLDraw.h"
 #include "texture_loader.h"
 
-
 //float cameraX, cameraY, cameraZ;
 //float cameraXOffset, cameraYOffset, cameraZOffset;
 //float cameraRoll, cameraPitch, cameraYaw;
@@ -24,8 +23,8 @@
 static carmen_pose_3D_t camera_pose;
 static carmen_pose_3D_t camera_offset;
 
-static int camera_mode; // test Braian
-static int free_mode; // test Braian
+static int camera_mode;
+static int free_mode;
 
 static unsigned int map_image_texture_id;
 static unsigned int localize_image_base_texture_id;
@@ -80,13 +79,15 @@ initGl (int width, int height)
 
     gluPerspective (45.0f, width / height, 0.1f, 4000.0f); // Calculate The Aspect Ratio Of The Window
 
-    set_camera_mode(1); // test Braian
+    set_camera_mode(1);
 
     background_r = 0.0;
     background_g = 0.0;
     background_b = 0.0;
 
     glMatrixMode (GL_MODELVIEW);
+
+
 
 }
 
@@ -119,7 +120,7 @@ void disable_free_mode(carmen_orientation_3D_t orientation)
 }
 
 void
-set_camera_mode (int mode) // test Braian
+set_camera_mode (int mode)
 {
 	camera_mode = mode;
 	free_mode = 0;
@@ -127,7 +128,7 @@ set_camera_mode (int mode) // test Braian
 }
 
 void
-reset_camera_position () // test Braian
+reset_camera_position ()
 {
 
 	if(camera_mode == 1 || camera_mode == 2)
@@ -1583,12 +1584,12 @@ draw_localize_ackerman (carmen_vector_3D_t* localize_ackerman_trail, int size)
 void
 draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img)
 {
-    carmen_vector_2D_t tex_coord_min;
+	carmen_vector_2D_t tex_coord_min;
     carmen_vector_2D_t tex_coord_max;
     char *map_image = NULL;
 
     if (img != NULL)
-        map_image = update_map_image_texture2 (map_center, square_size, img);
+    	map_image = update_map_image_texture2 (map_center, square_size, img);
 
     glTranslated (map_center.x - gps_position_at_turn_on.x, map_center.y - gps_position_at_turn_on.y, -0.56 / 2.0); // @@@ Alberto: 0.56 ee o diametro da roda do carro. Tem que fazer este valor chegar aqui vindo do carmen.ini
     glColor3d (1.0, 1.0, 1.0);
@@ -1640,4 +1641,23 @@ draw_localize_image (bool draw_image_base, carmen_vector_3D_t gps_position_at_tu
     glPopMatrix ();
     glDisable (GL_TEXTURE_2D);
     glPopMatrix ();
+}
+
+void saveScreenshotToFile(std::string filename, int windowWidth, int windowHeight) {
+    const int numberOfPixels = windowWidth * windowHeight * 3;
+    unsigned char pixels[numberOfPixels];
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, windowWidth, windowHeight, GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels);
+
+    FILE *outputFile = fopen(filename.c_str(), "w");
+    short header[] = {0, 2, 0, 0, 0, 0, (short) windowWidth, (short) windowHeight, 24};
+
+    fwrite(&header, sizeof(header), 1, outputFile);
+    fwrite(pixels, numberOfPixels, 1, outputFile);
+    fclose(outputFile);
+
+    printf("Finish writing to file.\n");
+
 }

@@ -4,7 +4,7 @@ MODULE_NAME = RDDF
 MODULE_COMMENT = Rddf Builder And Player
 
 LINK = g++
-CFLAGS += -Wall -g 
+CFLAGS += -Wall
 CXXFLAGS += -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/libcarmodel -I$(CARMEN_HOME)/sharedlib/libcontrol

@@ -50,6 +50,7 @@ static void update_map_image_using_small_map(double map_center_x, double map_cen
 	// according to the following URL, the pixel size at equator in zoom level 19 are 30cm
 	// => http://www.google.com.br/url?sa=t&rct=j&q=google%20number%20images%20tiles%20of%20zoom%20level&source=web&cd=3&ved=0CC0QFjAC&url=http%3A%2F%2Fwww.microimages.com%2Fdocumentation%2FTechGuides%2F76googleMapsStruc.pdf&ei=gpJTUOihOIWQ8wTM9YGIDg&usg=AFQjCNHcqDaejFREnp_sDF9oNQK1BcHMjA&cad=rja
 	double meter_per_pixel = 0.3;
+//	double meter_per_pixel = 0.2;
 	pixels_per_meter = 1 / meter_per_pixel;
 
 	double x_origin_in_meters_double = map_center_x - square_size / 2.0;

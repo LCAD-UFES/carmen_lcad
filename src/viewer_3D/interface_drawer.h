@@ -14,7 +14,7 @@
 #define VELODYNE_VBO_BUTTON_CODE				9
 #define VELODYNE_BUTTON_CODE					10
 #define DRAW_STEREO_CLOUD_BUTTON_CODE			11
-#define DRAW_MAP_BUTTON_CODE					12
+#define MAPS_BUTTON_CODE						12
 #define DRAW_ANNOTATION_BUTTON_CODE				13
 #define DRAW_POINTS_BUTTON_CODE					14
 #define DRAW_RAYS_BUTTON_CODE					15
@@ -42,8 +42,8 @@
 #define BUMP_BUTTON_CODE						37
 #define SPEED_BUTTON_CODE						38
 #define DELETE_ANNOTATION_BUTTON_CODE			39
-#define HELP_BUTTON_CODE						72
-#define HELP_CODE							    73
+#define HELP_BUTTON_CODE						76
+#define HELP_CODE							    77
 
 #define BUTTON0_TEXT							"Options"
 #define DRAW_CAR_BUTTON_TEXT					"Car"
@@ -57,7 +57,7 @@
 #define VELODYNE_VBO_BUTTON_TEXT				"Velodyne VBO"
 #define VELODYNE_BUTTON_TEXT					"Velodyne"
 #define DRAW_STEREO_CLOUD_BUTTON_TEXT			"Stereo Velodyne"
-#define DRAW_MAP_BUTTON_TEXT					"Map"
+#define MAPS_BUTTON_TEXT						"Maps"
 #define DRAW_ANNOTATION_BUTTON_TEXT				"Annotation"
 #define DRAW_POINTS_BUTTON_TEXT					"SICK"
 #define DRAW_RAYS_BUTTON_TEXT					"Show Rays"
@@ -86,7 +86,7 @@
 #define SPEED_BUTTON_TEXT						"Speed"
 #define DELETE_ANNOTATION_BUTTON_TEXT			"Delete"
 #define HELP_BUTTON_TEXT						"Help"
-#define HELP_TEXT							    "Camera Views://7: Sattelite View (Navigator /GUI View)/8: Sattelite View (Fixed on car)/9: Back View (Follow Robot)/Arrow Keys: Camera Moviment/Mouse: Camera Orientation/Mouse Scroll: Zoom/Space: Unlock and Lock Cam"
+#define HELP_TEXT							    "Camera Views:$$7: Sattelite View (Navigator $GUI View)$8: Sattelite View (Fixed on car)$9: Back View (Follow Robot)$Arrow Keys: Camera Moviment$Mouse: Camera Orientation$Mouse Scroll: Zoom$Space: Unlock and Lock Cam$0: PrintScreen (Default folder: $ ~/Pictures)"
 
 #define DRAW_CAR_FLAG_CODE						4
 #define DRAW_COLLISION_MARKERS_FLAG_CODE		0
