@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-CFLAGS += -DOLD_MOTION_MODEL -std=gnu99 -g
+CFLAGS += -DOLD_MOTION_MODEL -std=gnu99
 
 IFLAGS += -I../obstacle_avoider
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/include/

@@ -258,6 +258,9 @@ static int draw_gps_flag;
 static int draw_odometry_flag;
 static int draw_xsens_gps_flag;
 static int draw_map_flag;
+static int draw_costs_map_flag;
+static int draw_offline_map_flag;
+static int draw_remission_map_flag;
 static int draw_path_plan_flag;
 static int draw_motion_plan_flag;
 static int draw_obstacle_avoider_plan_flag;
@@ -384,6 +387,12 @@ static double mapper_map_grid_res;
 static int g_velodyne_single_ray = -1;
 static int g_last_velodyne_single_ray = 0;
 
+// Remission map test
+int first_localize_map_message_received = 1;
+carmen_localize_ackerman_map_t localize_all_maps;
+static carmen_map_p likelihood_map = NULL, remission_map = NULL, global_likelihood_map = NULL;
+
+int print_count = 0;
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -1041,11 +1050,11 @@ draw_everything()
         draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
     }
 
-    if (draw_map_flag)
+    if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag /*|| draw_remission_map_flag*/)
     {
-//        carmen_pose_3D_t camera_pose = get_camera_pose();
-//        double map_zoom = camera_pose.position.z / 120.0; // test Braian
-        draw_map(m_drawer, get_position_offset(), car_fused_pose, 0.6); // test Braian
+        carmen_pose_3D_t camera_pose = get_camera_pose();
+        double map_zoom = camera_pose.position.z / 120.0;
+        draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
 //            carmen_pose_3D_t camera_pose = get_camera_pose();
 //            printf("x %lf, y %lf, z %lf\n", camera_pose.position.x, camera_pose.position.y, camera_pose.position.z);
 //            camera_pose = get_camera_offset();
@@ -1060,16 +1069,19 @@ draw_everything()
 
             if (new_map_has_been_received)
             {
-                img = cvCreateImageHeader(cvSize(download_map_message.width, download_map_message.height), IPL_DEPTH_8U, 3);
-                img->imageData = download_map_message.image_data;
-
+            	img = cvCreateImageHeader(cvSize(download_map_message.width, download_map_message.height), IPL_DEPTH_8U, 3);
+            	img->imageData = download_map_message.image_data;
                 new_map_has_been_received = 0;
             }
 
+
             draw_map_image(get_position_offset(), download_map_message.map_center, 153.6 /* 0.3 pixels per meter * 512 pixels of the image */, img);
+//            draw_map_image(get_position_offset(), download_map_message.map_center, 70.0 /* 0.2 pixels per meter * 350 pixels of the image */, img);
 
             if (img != NULL)
-                cvReleaseImageHeader(&img);
+            	cvReleaseImageHeader(&img);
+
+
         }
     }
 
@@ -2542,9 +2554,33 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
         gps_fix_flag = gps_xyz_raw_message->gps_quality;
 }
 
+static void
+mapper_map_message_handler(carmen_mapper_map_message *message)
+{
+	if(!first_map_received)
+	{
+		first_map_received = 1;
+		first_map_origin.x = message->config.x_origin;
+		first_map_origin.y = message->config.y_origin;
+		first_map_origin.z = 0.0;
+	}
+	else if ((first_map_origin.x == 0.0) && (first_map_origin.y == 0.0) && ((message->config.x_origin != 0.0) || (message->config.y_origin != 0.0)))
+	{
+		first_map_origin.x = message->config.x_origin;
+		first_map_origin.y = message->config.y_origin;
+		first_map_origin.z = 0.0;
+	}
+
+	if (!draw_map_flag)
+		return;
+
+	carmen_pose_3D camera_pose = get_camera_pose();
+	double map_zoom = camera_pose.position.z / 120.0;
+	add_map_message(m_drawer, message, get_position_offset(), car_fused_pose, map_zoom);
+}
 
 static void
-map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
+mapper_map_level1_message_handler(carmen_mapper_map_message *message)
 {
 	if (!first_map_received)
     {
@@ -2561,6 +2597,57 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
     }
 
 	if (!draw_map_flag)
+		return;
+
+	carmen_pose_3D_t camera_pose = get_camera_pose();
+	double map_zoom = camera_pose.position.z / 120.0;
+	add_map_message(m_drawer, message, get_position_offset(), car_fused_pose, map_zoom);
+}
+
+static void
+offline_map_update_handler(carmen_mapper_map_message *message)
+{
+	if(!first_map_received)
+	{
+		first_map_received = 1;
+		first_map_origin.x = message->config.x_origin;
+		first_map_origin.y = message->config.y_origin;
+		first_map_origin.z = 0.0;
+	}
+	else if ((first_map_origin.x == 0.0) && (first_map_origin.y == 0.0) && ((message->config.x_origin != 0.0) || (message->config.y_origin != 0.0)))
+	{
+		first_map_origin.x = message->config.x_origin;
+		first_map_origin.y = message->config.y_origin;
+		first_map_origin.z = 0.0;
+		}
+
+	if (!draw_offline_map_flag)
+		return;
+
+	carmen_pose_3D camera_pose = get_camera_pose();
+	double map_zoom = camera_pose.position.z / 120.0;
+	add_map_message(m_drawer, message, get_position_offset(), car_fused_pose, map_zoom);
+}
+
+static void
+map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
+{
+
+	if (!first_map_received)
+    {
+        first_map_received = 1;
+        first_map_origin.x = message->config.x_origin;
+        first_map_origin.y = message->config.y_origin;
+        first_map_origin.z = 0.0;
+    }
+    else if ((first_map_origin.x == 0.0) && (first_map_origin.y == 0.0) && ((message->config.x_origin != 0.0) || (message->config.y_origin != 0.0)))
+    {
+        first_map_origin.x = message->config.x_origin;
+        first_map_origin.y = message->config.y_origin;
+        first_map_origin.z = 0.0;
+    }
+
+	if (!draw_costs_map_flag)
 		return;
 
 	static carmen_compact_map_t *compact_cost_map = NULL;
@@ -2590,34 +2677,69 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 	carmen_pose_3D_t camera_pose = get_camera_pose();
 	double map_zoom = camera_pose.position.z / 120.0;
-	add_map_message(m_drawer, static_cost_map, get_position_offset(), car_fused_pose, map_zoom);
+	add_compact_cost_map_message(m_drawer, static_cost_map, get_position_offset(), car_fused_pose, map_zoom);
 }
 
-
-static void
-mapper_map_message_handler(carmen_mapper_map_message *message)
-{
-    if (!first_map_received)
-    {
-        first_map_received = 1;
-        first_map_origin.x = message->config.x_origin;
-        first_map_origin.y = message->config.y_origin;
-        first_map_origin.z = 0.0;
-    }
-    else if ((first_map_origin.x == 0.0) && (first_map_origin.y == 0.0) && ((message->config.x_origin != 0.0) || (message->config.y_origin != 0.0)))
-    {
-        first_map_origin.x = message->config.x_origin;
-        first_map_origin.y = message->config.y_origin;
-        first_map_origin.z = 0.0;
-    }
-
-	if (!draw_map_flag)
-		return;
-
-	carmen_pose_3D_t camera_pose = get_camera_pose();
-	double map_zoom = camera_pose.position.z / 120.0;
-	add_map_level1_message(m_drawer, message, get_position_offset(), car_fused_pose, map_zoom);
-}
+//static void
+//localize_map_update_handler(carmen_map_server_localize_map_message *message)
+//{
+//	if (first_localize_map_message_received)
+//	{
+//		memset(&localize_all_maps, 0, sizeof(localize_all_maps));
+//		localize_all_maps.config = message->config;
+//		first_localize_map_message_received = 0;
+//	}
+//
+//	carmen_map_server_localize_map_message_to_localize_map(message, &localize_all_maps);
+//
+//	if (likelihood_map == NULL)
+//	{
+//		likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
+//		carmen_test_alloc(likelihood_map);
+//		carmen_grid_mapping_initialize_map(likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
+//	}
+//
+//	if (global_likelihood_map == NULL)
+//	{
+//		global_likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
+//		carmen_test_alloc(global_likelihood_map);
+//		carmen_grid_mapping_initialize_map(global_likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
+//	}
+//
+//	if (remission_map == NULL)
+//	{
+//		remission_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
+//		carmen_test_alloc(remission_map);
+//		carmen_grid_mapping_initialize_map(remission_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
+//	}
+//
+//	remission_map->config = likelihood_map->config = global_likelihood_map->config = localize_all_maps.config = message->config;
+//	localize_all_maps.carmen_mean_remission_map.config = localize_all_maps.config;
+//	memcpy(likelihood_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+//	memcpy(global_likelihood_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+//	memcpy(remission_map->complete_map, localize_all_maps.carmen_mean_remission_map.complete_map, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+//
+//	cout << remission_map->complete_map << endl;
+//
+//
+//	if (superimposedmap_type == CARMEN_LOCALIZE_LMAP_v)
+//		carmen_map_interface_set_superimposed_map(likelihood_map);
+//	else if (superimposedmap_type == CARMEN_LOCALIZE_GMAP_v)
+//		carmen_map_interface_set_superimposed_map(global_likelihood_map);
+//	else if (superimposedmap_type == CARMEN_REMISSION_MAP_v)
+//		carmen_map_interface_set_superimposed_map(remission_map);
+//	gui->navigator_graphics_redraw_superimposed();
+//
+//	if (gui->navigator_graphics_update_map() && is_graphics_up)
+//	{
+//		if (map_type == CARMEN_LOCALIZE_LMAP_v)
+//			gui->navigator_graphics_change_map(likelihood_map);
+//		else if (map_type == CARMEN_LOCALIZE_GMAP_v)
+//			gui->navigator_graphics_change_map(global_likelihood_map);
+//		else if (map_type == CARMEN_REMISSION_MAP_v)
+//			gui->navigator_graphics_change_map(remission_map);
+//	}
+//}
 
 //static void
 //plan_message_handler(carmen_navigator_ackerman_plan_message *message)
@@ -2861,7 +2983,7 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 void
 carmen_download_map_handler(carmen_download_map_message *message)
 {
-    download_map_message.height = message->height;
+	download_map_message.height = message->height;
     download_map_message.width = message->width;
     download_map_message.image_data = message->image_data;
     download_map_message.position = message->position;
@@ -3213,13 +3335,16 @@ init_flags(void)
     draw_car_flag = 0;
     draw_rays_flag = 0;
     draw_map_image_flag = 0;
-    draw_localize_image_flag = 0;
+    draw_localize_image_flag = 1;
     weight_type_flag = 2;
     draw_gps_flag = 1;
     draw_odometry_flag = 0;
     draw_xsens_gps_flag = 0;
     follow_car_flag = 1;
     draw_map_flag = 0;
+    draw_costs_map_flag = 0;
+    draw_offline_map_flag = 0;
+    draw_remission_map_flag = 0;
     zero_z_flag = 1;
     draw_path_plan_flag = 1;
     draw_motion_plan_flag = 1;
@@ -3935,7 +4060,7 @@ draw_while_picking()
 		draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 	}
 
-	if (draw_map_flag)
+	if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag /*|| draw_remission_map_flag*/)
 	{
 		carmen_pose_3D_t camera_pose = get_camera_pose();
 		double map_zoom = camera_pose.position.z / 120.0;
@@ -3957,6 +4082,7 @@ draw_while_picking()
 			}
 
 			draw_map_image(get_position_offset(), download_map_message.map_center, 153.6 /* 0.3 pixels per meter * 512 pixels of the image */, img);
+//			draw_map_image(get_position_offset(), download_map_message.map_center, 70 /* 0.2 pixels per meter * 350 pixels of the image */, img);
 
 			if (img != NULL)
 				cvReleaseImageHeader(&img);
@@ -3969,7 +4095,7 @@ draw_while_picking()
 	if (show_symotha_flag)
 		draw_symotha(symotha_drawer, car_fused_pose);
 
-	//draw_interface(i_drawer);
+//	draw_interface(i_drawer);
 }
 
 
@@ -4051,9 +4177,11 @@ subscribe_ipc_messages(void)
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
     
  
-//    carmen_download_map_subscribe_message(NULL,
-//                                          (carmen_handler_t) carmen_download_map_handler,
-//                                          CARMEN_SUBSCRIBE_LATEST);
+    carmen_download_map_subscribe_message(NULL,
+                                          (carmen_handler_t) carmen_download_map_handler,
+                                          CARMEN_SUBSCRIBE_LATEST);
+
+
 
 //    carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
 //                                          (carmen_handler_t) carmen_localize_neural_base_message_handler,
@@ -4075,13 +4203,25 @@ subscribe_ipc_messages(void)
     //                                                   (carmen_handler_t) sick_variable_scan_message_handler,
     //                                                   CARMEN_SUBSCRIBE_LATEST);
 
+    carmen_mapper_subscribe_map_message(NULL,
+    										(carmen_handler_t) mapper_map_message_handler,
+											CARMEN_SUBSCRIBE_LATEST);
+
     carmen_mapper_subscribe_map_level1_message(NULL,
-                                          (carmen_handler_t) mapper_map_message_handler,
-                                          CARMEN_SUBSCRIBE_LATEST);
+                                    		(carmen_handler_t) mapper_map_level1_message_handler,
+											CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_cost_map(NULL,
-													(carmen_handler_t) map_server_compact_cost_map_message_handler,
-													CARMEN_SUBSCRIBE_LATEST);
+											(carmen_handler_t) map_server_compact_cost_map_message_handler,
+											CARMEN_SUBSCRIBE_LATEST);
+	carmen_map_server_subscribe_offline_map(NULL,
+											(carmen_handler_t) offline_map_update_handler,
+											CARMEN_SUBSCRIBE_LATEST);
+
+//	carmen_map_server_subscribe_localize_map_message(NULL,
+//													(carmen_handler_t) localize_map_update_handler,
+//													CARMEN_SUBSCRIBE_LATEST);
+
 
 //    carmen_navigator_ackerman_subscribe_plan_message(NULL,
 //                                                     (carmen_handler_t) plan_message_handler,
@@ -4239,8 +4379,42 @@ set_flag_viewer_3D(int flag_num, int value)
         break;
 
     case DRAW_MAP_FLAG_CODE:
-        draw_map_flag = value;
-        break;
+
+    	if (value == 0)
+    	{
+    		draw_map_flag = !draw_map_flag;
+
+    		draw_costs_map_flag = 0;
+    		draw_offline_map_flag = 0;
+    		draw_remission_map_flag = 0;
+    	}
+    	else if (value == 1)
+    	{
+    		draw_costs_map_flag = !draw_costs_map_flag;
+
+    		draw_map_flag = 0;
+    		draw_offline_map_flag = 0;
+    		draw_remission_map_flag = 0;
+
+    	}
+    	else if (value == 2)
+    	{
+    		draw_offline_map_flag = !draw_offline_map_flag;
+
+    		draw_map_flag = 0;
+    		draw_costs_map_flag = 0;
+    		draw_remission_map_flag = 0;
+    	}
+    	else if (value == 3)
+    	{
+    		draw_remission_map_flag = !draw_remission_map_flag;
+
+    		draw_map_flag = 0;
+    		draw_costs_map_flag = 0;
+    		draw_offline_map_flag = 0;
+    	}
+
+    	break;
 
     case ZERO_Z_FLAG_CODE:
         zero_z_flag = value;
@@ -4804,28 +4978,39 @@ keyPress(int code)
         g_last_velodyne_single_ray = g_velodyne_single_ray;
     }
         break;
-    case 16: // 7 // test Braian
+    case 16: // 7
     {
     	set_camera_mode(1);
     	follow_car_flag = 1;
 
     }
        break;
-    case 17: // 8 // test Braian
+    case 17: // 8
     {
     	set_camera_mode(2);
     	follow_car_flag = 1;
     }
        break;
-    case 18: // 9 // test Braian
+    case 18: // 9
     {
     	set_camera_mode(3);
     	follow_car_flag = 1;
     }
        break;
-    case 19: // 0 // test Braian
+    case 19: // 0
     {
-    	// adicionar mais modos de camera.
+    	// Tirar print
+    	XWindowAttributes attr;
+    	XGetWindowAttributes(w->g_pDisplay, w->g_window, &attr);
+    	char filename [1024];
+    	strcat(filename, getenv("HOME"));
+    	string f = filename;
+    	stringstream ss;
+    	ss << print_count;
+    	f = f + "/Pictures/print" + ss.str() + ".tga";
+    	saveScreenshotToFile(f.c_str(), attr.width, attr.height);
+    	print_count++;
+
     }
        break;
     }

@@ -7,7 +7,7 @@ CC = g++
 CFLAGS += -fpermissive
 
 ifndef NO_GRAPHICS
-IFLAGS += `$(GTK_CONFIG) --cflags` -ggdb 
+IFLAGS += `$(GTK_CONFIG) --cflags`
 IFLAGS += `pkg-config opencv --cflags`
 LFLAGS += -lmap_interface -lmap_io -lglobal_graphics \
 	`$(GTK_CONFIG) --libs` -lglobal -lipc
