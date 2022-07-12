@@ -69,3 +69,24 @@ carmen_ford_escape_publish_status_message(carmen_ford_escape_status_message *msg
 	carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_STATUS_NAME);
 }
 
+
+void
+carmen_ford_escape_publish_signals_message(carmen_ford_escape_signals_message *msg, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		err = IPC_defineMsg(CARMEN_FORD_ESCAPE_SIGNAL_NAME, IPC_VARIABLE_LENGTH, CARMEN_FORD_ESCAPE_SIGNAL_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_FORD_ESCAPE_SIGNAL_NAME);
+		first_time = 0;
+	}
+
+	msg->timestamp = timestamp;
+	msg->host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_FORD_ESCAPE_SIGNAL_NAME, msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_SIGNAL_NAME);
+}
+
