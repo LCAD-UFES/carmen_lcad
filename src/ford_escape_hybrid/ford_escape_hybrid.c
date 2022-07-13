@@ -200,7 +200,7 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 		phi = 0.0;
 	}
 
-	printf("timestamp %lf, v %lf, i %d, n %d\n", current_time, v, i, ford_escape_hybrid_config->nun_motion_commands);
+//	printf("timestamp %lf, v %lf, i %d, n %d\n", current_time, v, i, ford_escape_hybrid_config->nun_motion_commands);
 
 //	if ((fabs(ford_escape_hybrid_config->filtered_v) > 1.0) && path_goals_and_annotations_message && (path_goals_and_annotations_message->goal_list_size != 0) && path_goals_and_annotations_message->goal_list)
 //	{
@@ -567,6 +567,7 @@ ford_escape_signals_message_handler(carmen_ford_escape_signals_message *msg)
 		if ((g_headlights_status_command & 7) == 2)
 			g_headlights_status_command ^= 0x10;
 
+//	printf("g_horn_status_command %d, g_headlights_status_command %d\n", g_horn_status_command, g_headlights_status_command);
 	publish_ford_escape_turn_horn_and_headlight_signals(XGV_CCU);
 }
 
