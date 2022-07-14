@@ -4,7 +4,7 @@ MODULE_NAME = RDDF
 MODULE_COMMENT = Rddf Builder And Player
 
 LINK = g++
-CFLAGS += -Wall -g 
+CFLAGS += -Wall
 CXXFLAGS += -std=c++11
 
 IFLAGS += -I/usr/include/eigen3

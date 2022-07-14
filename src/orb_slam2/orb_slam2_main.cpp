@@ -59,9 +59,9 @@ main(int argc, char **argv)
 	signal(SIGINT, save_camera_path_and_shutdown);
 
 	// TODO: write this file using parameters from carmen-ford-escape.ini
-	const char *bb3_config = "bb3_config_640x480.yaml";
+	const char *bb3_config = "bb1_zed_config_1280x720.yaml";
 	char vocabulary_file[128];
-	strcpy(vocabulary_file, getenv("HOME"));
+	strcpy(vocabulary_file, "/home/lume");
 	strcat(vocabulary_file, "/packages_carmen/ORB_SLAM2/Vocabulary/ORBvoc.txt");
 
 	SLAM = new ORB_SLAM2::System(vocabulary_file, bb3_config, ORB_SLAM2::System::STEREO, true);

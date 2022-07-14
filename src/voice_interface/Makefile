@@ -5,7 +5,7 @@ MODULE_NAME = voice_interface_PACKAGE
 MODULE_COMMENT = Allows voice interaction with IARA
 
 LINK = g++
-CFLAGS += -Wall -g
+CFLAGS += -Wall
 
 # Application specific include directories.
 IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
