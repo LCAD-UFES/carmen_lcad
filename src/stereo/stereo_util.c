@@ -94,6 +94,8 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   carmen_param_install_params(1, argv, mandatory_param_list, sizeof(mandatory_param_list) / sizeof(mandatory_param_list[0]));
 
 
+  free(width_key);
+  free(height_key);
   free(fx_key);
   free(fy_key);
   free(xc_key);
@@ -102,6 +104,7 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   free(camera_model_key);
   free(stereo_stride_x_key);
   free(stereo_stride_y_key);
+  free(camera_model_value);
 
   free(argv);
 
