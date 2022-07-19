@@ -24,6 +24,7 @@ void set_background_color(double r, double g, double b);
 void enable_free_mode();
 void disable_free_mode(carmen_orientation_3D_t orientation);
 void reset_camera_position();
+int get_camera_mode();
 void set_camera_mode(int mode);
 void move_front_camera(double moviment);
 

@@ -119,6 +119,12 @@ void disable_free_mode(carmen_orientation_3D_t orientation)
 	}
 }
 
+int
+get_camera_mode()
+{
+	return camera_mode;
+}
+
 void
 set_camera_mode (int mode)
 {

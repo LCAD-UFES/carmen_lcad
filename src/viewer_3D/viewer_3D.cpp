@@ -807,7 +807,7 @@ check_if_remission_map_directory_exist()
 
 	char map_dir[1024];
 	sprintf(map_dir,
-			"%s/data/map_voltadaufes-201903025-4/remission_images",
+			"%s/data/remission_201903025-4_images",
 			carmen_home);
 
 	DIR* dir = opendir(map_dir);
@@ -1132,7 +1132,11 @@ draw_everything()
     {
         carmen_pose_3D_t camera_pose = get_camera_pose();
         double map_zoom = camera_pose.position.z / 120.0;
-        draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
+
+        if(get_camera_mode() == 3)
+        	draw_map(m_drawer, get_position_offset(), car_fused_pose, 0.6); // @@@Braian: Desativa a renderização do mapa baseada no zoom quando tiver no modo de camera back view
+        else
+        	draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
 //            carmen_pose_3D_t camera_pose = get_camera_pose();
 //            printf("x %lf, y %lf, z %lf\n", camera_pose.position.x, camera_pose.position.y, camera_pose.position.z);
 //            camera_pose = get_camera_offset();
@@ -5024,20 +5028,20 @@ keyPress(int code)
         break;
     case 16: // 7
     {
-    	set_camera_mode(1);
+    	set_camera_mode(1); // Sattelite View (navigator_gui)
     	follow_car_flag = 1;
 
     }
        break;
     case 17: // 8
     {
-    	set_camera_mode(2);
+    	set_camera_mode(2); // Sattelite View (fixed on car)
     	follow_car_flag = 1;
     }
        break;
     case 18: // 9
     {
-    	set_camera_mode(3);
+    	set_camera_mode(3); // Back view (follow robot)
     	follow_car_flag = 1;
     }
        break;
