@@ -1228,6 +1228,13 @@ moving_objects_point_clouds_message_handler_0(carmen_moving_objects_point_clouds
 	update_moving_objects_list(0, msg);
 }
 
+void
+moving_objects_point_clouds_message_handler_1(carmen_moving_objects_point_clouds_message *msg)
+{
+	//printf("%d \n", msg->num_point_clouds);
+	update_moving_objects_list(1, msg);
+}
+
 
 static void
 plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
@@ -1559,6 +1566,8 @@ subscribe_ipc_messages()
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_moving_objects_point_clouds_subscribe_message_generic(0, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_0, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message_generic(1, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_1, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_lane_map(NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
