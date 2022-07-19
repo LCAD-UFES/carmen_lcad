@@ -184,7 +184,7 @@ get_camera_offset()
 void
 set_camera_offset (carmen_pose_3D_t offset)
 {
-	if((camera_mode == 2 || camera_mode == 3) && free_mode == 0){ // test Braian
+	if((camera_mode == 2 || camera_mode == 3) && free_mode == 0){
 		camera_offset.orientation.yaw = offset.orientation.yaw;
 	}
 	camera_offset.position = offset.position;
@@ -1585,17 +1585,53 @@ void
 draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img)
 {
 	carmen_vector_2D_t tex_coord_min;
+	carmen_vector_2D_t tex_coord_max;
+	char *map_image = NULL;
+
+	if (img != NULL)
+		map_image = update_map_image_texture2 (map_center, square_size, img);
+
+	glTranslated (map_center.x - gps_position_at_turn_on.x, map_center.y - gps_position_at_turn_on.y, -0.56 / 2.0); // @@@ Alberto: 0.56 ee o diametro da roda do carro. Tem que fazer este valor chegar aqui vindo do carmen.ini
+	glColor3d (1.0, 1.0, 1.0);
+	glEnable (GL_TEXTURE_2D);
+	glPushMatrix ();
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glTexImage2D (GL_TEXTURE_2D, 0, 3, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_BGR, GL_UNSIGNED_BYTE, map_image);
+	glBindTexture (GL_TEXTURE_2D, map_image_texture_id);
+	glBegin (GL_QUADS);
+	tex_coord_min = get_map_image_tex_coord_min ();
+	tex_coord_max = get_map_image_tex_coord_max ();
+	glTexCoord2f (tex_coord_max.x, tex_coord_min.y);
+	glVertex3d (-square_size / 2.0, -square_size / 2.0, 0.0f);
+	glTexCoord2f (tex_coord_max.x, tex_coord_max.y);
+	glVertex3d (square_size / 2.0, -square_size / 2.0, 0.0f);
+	glTexCoord2f (tex_coord_min.x, tex_coord_max.y);
+	glVertex3d (square_size / 2.0, square_size / 2.0, 0.0f);
+	glTexCoord2f (tex_coord_min.x, tex_coord_min.y);
+	glVertex3d (-square_size / 2.0, square_size / 2.0, 0.0f);
+	glEnd ();
+	glPopMatrix ();
+	glDisable (GL_TEXTURE_2D);
+ }
+
+void
+draw_remission_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img)
+{
+	carmen_vector_2D_t tex_coord_min;
     carmen_vector_2D_t tex_coord_max;
     char *map_image = NULL;
 
     if (img != NULL)
-    	map_image = update_map_image_texture2 (map_center, square_size, img);
+    	map_image = update_remission_map_image_texture(map_center, square_size, img);
 
     glTranslated (map_center.x - gps_position_at_turn_on.x, map_center.y - gps_position_at_turn_on.y, -0.56 / 2.0); // @@@ Alberto: 0.56 ee o diametro da roda do carro. Tem que fazer este valor chegar aqui vindo do carmen.ini
     glColor3d (1.0, 1.0, 1.0);
     glEnable (GL_TEXTURE_2D);
     glPushMatrix ();
-    glTexImage2D (GL_TEXTURE_2D, 0, 3, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_BGR, GL_UNSIGNED_BYTE, map_image);
+    glRotatef(90, 0, 0, 1);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glTexImage2D (GL_TEXTURE_2D, 0, 3, REMISSION_MAP_SIZE, REMISSION_MAP_SIZE, 0, GL_BGR, GL_UNSIGNED_BYTE, map_image);
     glBindTexture (GL_TEXTURE_2D, map_image_texture_id);
     glBegin (GL_QUADS);
     tex_coord_min = get_map_image_tex_coord_min ();
@@ -1610,7 +1646,9 @@ draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t m
     glVertex3d (-square_size / 2.0, square_size / 2.0, 0.0f);
     glEnd ();
     glPopMatrix ();
+    glTranslated (-(map_center.x - gps_position_at_turn_on.x), -(map_center.y - gps_position_at_turn_on.y), -(-0.56 / 2.0));
     glDisable (GL_TEXTURE_2D);
+
 }
 
 void
@@ -1640,7 +1678,6 @@ draw_localize_image (bool draw_image_base, carmen_vector_3D_t gps_position_at_tu
     glEnd ();
     glPopMatrix ();
     glDisable (GL_TEXTURE_2D);
-    glPopMatrix ();
 }
 
 void saveScreenshotToFile(std::string filename, int windowWidth, int windowHeight) {
@@ -1658,6 +1695,11 @@ void saveScreenshotToFile(std::string filename, int windowWidth, int windowHeigh
     fwrite(pixels, numberOfPixels, 1, outputFile);
     fclose(outputFile);
 
-    printf("Finish writing to file.\n");
+//    printf("Finish writing to file.\n");
 
+}
+
+void cleanTexture()
+{
+	glBindTexture(GL_TEXTURE_2D, map_image_texture_id);
 }

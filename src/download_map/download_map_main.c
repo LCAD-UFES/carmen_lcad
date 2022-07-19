@@ -62,13 +62,6 @@ carmen_build_download_map_message (IplImage *img, carmen_vector_3D_t position, c
 {
 	int i, j, p_img, p_msg;
 
-	char map_filename [1024];
-
-	char *carmen_home = getenv("CARMEN_HOME");
-
-	sprintf(map_filename,"%s/data/teste/build_download_map.bmp", carmen_home);
-	cvSaveImage(map_filename, img, NULL);
-
 	download_map_message->height = img->height;
 	download_map_message->width = img->width;
 	download_map_message->size = 3 * img->height * img->width;
@@ -97,13 +90,8 @@ carmen_build_download_map_message (IplImage *img, carmen_vector_3D_t position, c
 void
 carmen_grid_mapping_get_map_origin2(carmen_point_t *global_pose, int *x_origin, int* y_origin)
 {
-//	*x_origin = (floor(global_pose->x / 70) - 1) * 70;
-//	*y_origin = (floor(global_pose->y / 70) - 1) * 70;
 	*x_origin = (floor(global_pose->x / 50) - 1) * 50;
 	*y_origin = (floor(global_pose->y / 50) - 1) * 50;
-
-//	printf("%f -> %i | %f -> %i\n", global_pose->x, global_pose->y, *x_origin, *y_origin);
-//	printf("%i | %i\n", *x_origin, *y_origin);
 }
 
 
@@ -132,13 +120,6 @@ format_map_path (int x_origin, int y_origin, char* map_filename)
 			carmen_home,
 			x_origin,
 			y_origin);
-
-//	sprintf(map_filename,
-//			"%s/data/map_image_voltadaufes-201903025-4/i%d_%d.png",
-//			carmen_home,
-//			x_origin,
-//			y_origin);
-
 }
 
 
@@ -192,8 +173,6 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	position.y = msg->globalpos.y;
 	position.z = 0;
 
-//	printf("x: %f, y: %f\n", msg->globalpos.x, msg->globalpos.y);
-
 	get_map_origin (robot_real_pos_x, robot_real_pos_y, &x_origin, &y_origin);
 
 	// o mapa do google tem 153.6 (512 pixels * 0.3 metros por pixel) metros de lado
@@ -202,8 +181,6 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 	map_center_x = (double)(x_origin + 75);
 	map_center_y = (double)(y_origin + 75);
-//	map_center_x = (double)(x_origin + 35);
-//	map_center_y = (double)(y_origin + 35);
 
 	// os valores sao colocados invertidos por causa do sistema de coordenadas do gps
 	double gps_position_x = -map_center_y;
@@ -215,27 +192,19 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	{
 		map_img = find_map_from_data (x_origin, y_origin);
 
-//		if (map_img == NULL)
-//		{
-//			if (carmen_download_map_from_internet)
-//			{
-//				printf("map downloaded from latitude: %lf e longitude: %lf\n", latitude, longitude);
-//
-//				map_img = download_map_from_google_maps (latitude, longitude);
-//				save_map_image (map_img, x_origin, y_origin);
-//			}
-//		}
+		if (map_img == NULL)
+		{
+			if (carmen_download_map_from_internet)
+			{
+				printf("map downloaded from latitude: %lf e longitude: %lf\n", latitude, longitude);
+
+				map_img = download_map_from_google_maps (latitude, longitude);
+				save_map_image (map_img, x_origin, y_origin);
+			}
+		}
 
 		if (map_img != NULL)
 		{
-
-//			char map_filename [1024];
-//
-//			char *carmen_home = getenv("CARMEN_HOME");
-//
-//			sprintf(map_filename,"%s/data/teste/localize_handler.bmp", carmen_home);
-//			cvSaveImage(map_filename, map_img, NULL);
-
 			carmen_build_download_map_message (map_img, position, &download_map_message);
 
 			download_map_message.map_center.x = map_center_x; // x_origin;

@@ -305,55 +305,99 @@ add_localize_map_message(map_drawer* m_drawer, carmen_map_server_localize_map_me
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
+// Função para testar outra forma para desenhar @@@Braian
+//static void
+//drawPlaneNew(double length_x, double length_y, double length_z)
+//{
+//
+//	double positions[] = {
+//		-length_x/2, -length_y/2, length_z/2,
+//		 length_x/2, -length_y/2, length_z/2,
+//		 length_x/2,  length_y/2, length_z/2,
+//		-length_x/2,  length_y/2, length_z/2
+//	};
+//
+//	glEnableClientState(GL_VERTEX_ARRAY);
+//
+//	glVertexPointer(3, GL_DOUBLE, 3*sizeof(double), positions);
+//
+//	glDrawArrays(GL_QUADS, 0, 4);
+//
+//	glDisableClientState(GL_VERTEX_ARRAY);
+//}
+
 static void
-drawBox(double length_x, double length_y, double length_z)
+drawPlane(double length_x, double length_y, double length_z)
 {
 
 	glPushMatrix();
 
 		glBegin(GL_QUADS);
-
-			
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-
-
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-
-
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-
-
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-
-
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-
-
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
- 
-
+			glNormal3f( 0.0f, 0.0f, 1.0f);
+			glVertex3f(-length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);
+			glVertex3f(length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);
+			glVertex3f(length_x/2, length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);
+			glVertex3f(-length_x/2, length_y/2, length_z/2);
+			glNormal3f( 0.0f, -1.0f, 0.0f);
 		glEnd();
 
 	glPopMatrix();
 }
+
+
+// Função que desenha o cubo completo, menos eficiente (original) @@@Braian
+//static void
+//drawBox(double length_x, double length_y, double length_z)
+//{
+//
+//	glPushMatrix();
+//
+//		glBegin(GL_QUADS);
+//
+//
+//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+//
+//
+//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+//
+//
+//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+//
+//
+//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+//
+//
+//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+//
+//
+//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+//
+//
+//		glEnd();
+//
+//	glPopMatrix();
+//}
 
 
 static void
@@ -365,7 +409,9 @@ draw_map_element(double x, double y, double z, double map_value, double resoluti
 			
 			glTranslated(x, y, z);
 			glColor3d(1.0, 0.0, 0.0);
-			drawBox(resolution, resolution, 0.5);
+//			drawBox(resolution, resolution, 0.5);
+			drawPlane(resolution, resolution, 0);
+//			drawPlaneNew(resolution, resolution, 0);
 
 		glPopMatrix();
 	}
@@ -493,9 +539,9 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, carmen_pose_3D
 void
 draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom)
 {
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
+//	glEnable(GL_CULL_FACE);
+//	glFrontFace(GL_CCW);
+//	glCullFace(GL_BACK);
 
 	glPushMatrix();
 
@@ -510,5 +556,5 @@ draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_f
 
 	glPopMatrix();
 
-	glDisable(GL_CULL_FACE);
+//	glDisable(GL_CULL_FACE);
 }

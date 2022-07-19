@@ -57,7 +57,8 @@ static lane_analysis_drawer *lane_drawer;
 
 #include "symotha_drawer.h"
 
-#include "math.h" //test Braian
+#include "math.h"
+#include <dirent.h>
 
 static int num_laser_devices;
 static int stereo_point_cloud_size;
@@ -387,12 +388,12 @@ static double mapper_map_grid_res;
 static int g_velodyne_single_ray = -1;
 static int g_last_velodyne_single_ray = 0;
 
-// Remission map test
-int first_localize_map_message_received = 1;
-carmen_localize_ackerman_map_t localize_all_maps;
-static carmen_map_p likelihood_map = NULL, remission_map = NULL, global_likelihood_map = NULL;
-
 int print_count = 0;
+
+carmen_point_t global_pos;
+int remission_map_side_size_in_meters = 70;
+int remission_map_directory_exists = 1;
+int first_remission_directory_check = 1;
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -748,6 +749,83 @@ get_world_position(int graphSize, carmen_pose_3D_t* sceneGraph[])
 	return get_world_position(pose->position, graphSize, sceneGraph, 1);
 }
 
+void
+get_remission_map_origin(int *x_origin, int *y_origin)
+{
+	*x_origin = (floor(global_pos.x / remission_map_side_size_in_meters) * remission_map_side_size_in_meters);
+	*y_origin = (floor(global_pos.y / remission_map_side_size_in_meters) * remission_map_side_size_in_meters);
+}
+
+void
+get_remission_map_center(int x_origin, int y_origin, carmen_vector_3D_t *map_center)
+{
+	// se cada mapa de remission possuir 70 metros de lado (350px * 0.2 metros por px).
+	// para achar o centro, basta somar: metade do tamanho (35) + origem do mapa.
+	map_center->x = (double)(x_origin + remission_map_side_size_in_meters/2);
+	map_center->y = (double)(y_origin + remission_map_side_size_in_meters/2);
+}
+
+void
+format_map_path(int x_origin, int y_origin, char* map_filename)
+{
+	char *carmen_home = getenv("CARMEN_HOME");
+
+	if(carmen_home == NULL){
+		exit(printf("Could not get environment variable $CARMEN_HOME in format_map_path()\n"));
+	}
+
+	sprintf(map_filename,
+			"%s/data/map_voltadaufes-201903025-4/remission_images/i%d_%d.png",
+			carmen_home,
+			x_origin,
+			y_origin);
+}
+
+IplImage *
+find_map_from_data(int x_origin, int y_origin)
+{
+	IplImage *map;
+	char map_filename[1024];
+
+	format_map_path(x_origin, y_origin, map_filename);
+
+//	printf("%s\n", map_filename);
+
+	map = cvLoadImage(map_filename, CV_LOAD_IMAGE_ANYCOLOR);
+
+	return map;
+
+}
+
+int
+check_if_remission_map_directory_exist()
+{
+	char *carmen_home = getenv("CARMEN_HOME");
+	if(carmen_home == NULL){
+		exit(printf("Could not get environment variable $CARMEN_HOME in format_map_path()\n"));
+	}
+
+	char map_dir[1024];
+	sprintf(map_dir,
+			"%s/data/map_voltadaufes-201903025-4/remission_images",
+			carmen_home);
+
+	DIR* dir = opendir(map_dir);
+
+	if (dir)
+	{
+		/* Directory exists. */
+		closedir(dir);
+		return 1;
+	}
+	else
+	{
+		/* Directory does not exist. */
+//		printf("Directory %s does not exists\n", map_dir);
+		return 0;
+
+	}
+}
 
 void
 draw_final_goal()
@@ -1050,7 +1128,7 @@ draw_everything()
         draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
     }
 
-    if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag /*|| draw_remission_map_flag*/)
+    if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag)
     {
         carmen_pose_3D_t camera_pose = get_camera_pose();
         double map_zoom = camera_pose.position.z / 120.0;
@@ -1061,28 +1139,69 @@ draw_everything()
 //            printf("roll %lf, pitch %lf, yaw %lf\n", camera_pose.orientation.roll, camera_pose.orientation.pitch, camera_pose.orientation.yaw);
     }
 
+    if (draw_remission_map_flag && remission_map_directory_exists)
+    {
+    	if(first_remission_directory_check){
+    		remission_map_directory_exists = check_if_remission_map_directory_exist();
+    		first_remission_directory_check = 1;
+    	}
+
+    	if(remission_map_directory_exists)
+    	{
+    		IplImage *map_img = NULL;
+    		carmen_vector_3D_t map_center;
+    		int x_origin, y_origin, x_grid_origin, y_grid_origin;
+
+    		cleanTexture(); // @@@Braian: Necessario para nao dar conflito com a textura do carro
+
+    		get_remission_map_origin(&x_origin, &y_origin);
+    		x_grid_origin = x_origin - 70;
+    		y_grid_origin = y_origin - 70;
+
+    		for(int i = 0; i < 3; i++)
+    		{
+    			for(int j = 0; j < 3; j++)
+    			{
+    				int x = x_grid_origin + i * remission_map_side_size_in_meters;
+    				int y = y_grid_origin + j * remission_map_side_size_in_meters;
+
+    				map_img = find_map_from_data(x, y);
+    				get_remission_map_center(x, y, &map_center);
+
+    				if(map_img != NULL)
+    				{
+    					draw_remission_map_image(get_position_offset(), map_center, remission_map_side_size_in_meters, map_img);
+    					cvReleaseImage(&map_img);
+    				}
+
+    			}
+    		}
+    	}
+
+    }
+
     if (draw_map_image_flag)
     {
-        if (first_download_map_have_been_aquired)
-        {
-            IplImage *img = NULL;
+    	if (first_download_map_have_been_aquired)
+    	{
+    		IplImage *img = NULL;
 
-            if (new_map_has_been_received)
-            {
-            	img = cvCreateImageHeader(cvSize(download_map_message.width, download_map_message.height), IPL_DEPTH_8U, 3);
-            	img->imageData = download_map_message.image_data;
-                new_map_has_been_received = 0;
-            }
+    		cleanTexture(); // @@@Braian: Necessario para nao dar conflito com a textura do carro
 
+    		if (new_map_has_been_received)
+    		{
+    			img = cvCreateImageHeader(cvSize(download_map_message.width, download_map_message.height), IPL_DEPTH_8U, 3);
+    			img->imageData = download_map_message.image_data;
+    			new_map_has_been_received = 0;
+    		}
 
-            draw_map_image(get_position_offset(), download_map_message.map_center, 153.6 /* 0.3 pixels per meter * 512 pixels of the image */, img);
-//            draw_map_image(get_position_offset(), download_map_message.map_center, 70.0 /* 0.2 pixels per meter * 350 pixels of the image */, img);
+    		draw_map_image(get_position_offset(), download_map_message.map_center, 153.6 /* 0.3 pixels per meter * 512 pixels of the image */, img);
 
-            if (img != NULL)
-            	cvReleaseImageHeader(&img);
-
-
-        }
+    		if (img != NULL)
+    		{
+    			cvReleaseImageHeader(&img);
+    		}
+    	}
     }
 
     if (draw_localize_image_flag && localize_imagepos_base_initialized)
@@ -1277,7 +1396,7 @@ carmen_fused_odometry_message_handler(carmen_fused_odometry_message *odometry_me
 static void
 localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_ackerman_message)
 {
-    carmen_vector_3D_t pos;
+	carmen_vector_3D_t pos;
 
     carmen_vector_3D_t offset = get_position_offset();
 
@@ -1346,6 +1465,10 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 		do_publish_3D_view();
 		time_of_last_publish = carmen_get_time();
 	}
+
+	global_pos.x = localize_ackerman_message->globalpos.x;
+	global_pos.y = localize_ackerman_message->globalpos.y;
+	global_pos.theta = localize_ackerman_message->globalpos.theta;
 }
 
 
@@ -2680,79 +2803,6 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 	add_compact_cost_map_message(m_drawer, static_cost_map, get_position_offset(), car_fused_pose, map_zoom);
 }
 
-//static void
-//localize_map_update_handler(carmen_map_server_localize_map_message *message)
-//{
-//	if (first_localize_map_message_received)
-//	{
-//		memset(&localize_all_maps, 0, sizeof(localize_all_maps));
-//		localize_all_maps.config = message->config;
-//		first_localize_map_message_received = 0;
-//	}
-//
-//	carmen_map_server_localize_map_message_to_localize_map(message, &localize_all_maps);
-//
-//	if (likelihood_map == NULL)
-//	{
-//		likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
-//		carmen_test_alloc(likelihood_map);
-//		carmen_grid_mapping_initialize_map(likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
-//	}
-//
-//	if (global_likelihood_map == NULL)
-//	{
-//		global_likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
-//		carmen_test_alloc(global_likelihood_map);
-//		carmen_grid_mapping_initialize_map(global_likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
-//	}
-//
-//	if (remission_map == NULL)
-//	{
-//		remission_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
-//		carmen_test_alloc(remission_map);
-//		carmen_grid_mapping_initialize_map(remission_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
-//	}
-//
-//	remission_map->config = likelihood_map->config = global_likelihood_map->config = localize_all_maps.config = message->config;
-//	localize_all_maps.carmen_mean_remission_map.config = localize_all_maps.config;
-//	memcpy(likelihood_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-//	memcpy(global_likelihood_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-//	memcpy(remission_map->complete_map, localize_all_maps.carmen_mean_remission_map.complete_map, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-//
-//	cout << remission_map->complete_map << endl;
-//
-//
-//	if (superimposedmap_type == CARMEN_LOCALIZE_LMAP_v)
-//		carmen_map_interface_set_superimposed_map(likelihood_map);
-//	else if (superimposedmap_type == CARMEN_LOCALIZE_GMAP_v)
-//		carmen_map_interface_set_superimposed_map(global_likelihood_map);
-//	else if (superimposedmap_type == CARMEN_REMISSION_MAP_v)
-//		carmen_map_interface_set_superimposed_map(remission_map);
-//	gui->navigator_graphics_redraw_superimposed();
-//
-//	if (gui->navigator_graphics_update_map() && is_graphics_up)
-//	{
-//		if (map_type == CARMEN_LOCALIZE_LMAP_v)
-//			gui->navigator_graphics_change_map(likelihood_map);
-//		else if (map_type == CARMEN_LOCALIZE_GMAP_v)
-//			gui->navigator_graphics_change_map(global_likelihood_map);
-//		else if (map_type == CARMEN_REMISSION_MAP_v)
-//			gui->navigator_graphics_change_map(remission_map);
-//	}
-//}
-
-//static void
-//plan_message_handler(carmen_navigator_ackerman_plan_message *message)
-//{
-//    add_trajectory_message(path_drawer, message);
-//}
-
-//void
-//obstacle_avoider_message_handler(carmen_navigator_ackerman_plan_message *message)
-//{
-//    add_trajectory_message(obstacle_avoider_plan_drawer, message);
-//}
-
 void
 base_ackerman_motion_command_message_handler(carmen_base_ackerman_motion_command_message *message)
 {
@@ -3974,7 +4024,10 @@ draw_while_picking()
 		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
 
 	if (draw_car_flag)
+	{
 		draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+
+	}
 	else
 		draw_car_outline_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 
@@ -4060,7 +4113,7 @@ draw_while_picking()
 		draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 	}
 
-	if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag /*|| draw_remission_map_flag*/)
+	if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag)
 	{
 		carmen_pose_3D_t camera_pose = get_camera_pose();
 		double map_zoom = camera_pose.position.z / 120.0;
@@ -4073,6 +4126,8 @@ draw_while_picking()
 		{
 			IplImage *img = NULL;
 
+			cleanTexture();
+
 			if (new_map_has_been_received)
 			{
 				img = cvCreateImageHeader(cvSize(download_map_message.width, download_map_message.height), IPL_DEPTH_8U, 3);
@@ -4082,7 +4137,6 @@ draw_while_picking()
 			}
 
 			draw_map_image(get_position_offset(), download_map_message.map_center, 153.6 /* 0.3 pixels per meter * 512 pixels of the image */, img);
-//			draw_map_image(get_position_offset(), download_map_message.map_center, 70 /* 0.2 pixels per meter * 350 pixels of the image */, img);
 
 			if (img != NULL)
 				cvReleaseImageHeader(&img);
@@ -4218,11 +4272,6 @@ subscribe_ipc_messages(void)
 											(carmen_handler_t) offline_map_update_handler,
 											CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_map_server_subscribe_localize_map_message(NULL,
-//													(carmen_handler_t) localize_map_update_handler,
-//													CARMEN_SUBSCRIBE_LATEST);
-
-
 //    carmen_navigator_ackerman_subscribe_plan_message(NULL,
 //                                                     (carmen_handler_t) plan_message_handler,
 //                                                     CARMEN_SUBSCRIBE_LATEST);
@@ -4356,6 +4405,7 @@ set_flag_viewer_3D(int flag_num, int value)
 
     case DRAW_MAP_IMAGE_FLAG_CODE:
         draw_map_image_flag = value;
+        draw_remission_map_flag = 0;
         break;
 
     case WEIGHT_TYPE_FLAG_CODE:
@@ -4386,7 +4436,6 @@ set_flag_viewer_3D(int flag_num, int value)
 
     		draw_costs_map_flag = 0;
     		draw_offline_map_flag = 0;
-    		draw_remission_map_flag = 0;
     	}
     	else if (value == 1)
     	{
@@ -4394,7 +4443,6 @@ set_flag_viewer_3D(int flag_num, int value)
 
     		draw_map_flag = 0;
     		draw_offline_map_flag = 0;
-    		draw_remission_map_flag = 0;
 
     	}
     	else if (value == 2)
@@ -4403,15 +4451,11 @@ set_flag_viewer_3D(int flag_num, int value)
 
     		draw_map_flag = 0;
     		draw_costs_map_flag = 0;
-    		draw_remission_map_flag = 0;
     	}
     	else if (value == 3)
     	{
     		draw_remission_map_flag = !draw_remission_map_flag;
-
-    		draw_map_flag = 0;
-    		draw_costs_map_flag = 0;
-    		draw_offline_map_flag = 0;
+    		draw_map_image_flag = 0;
     	}
 
     	break;
@@ -4699,7 +4743,7 @@ mouseFunc(int type, int button, int x, int y)
     }
     else if (button == 5)
     {
-        // zoo m out
+        // zoom out
         carmen_vector_3D_t displacement = {-1.0, 0.0, 0.0};
         move_camera(displacement);
     }
