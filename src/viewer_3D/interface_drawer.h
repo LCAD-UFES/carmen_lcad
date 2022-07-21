@@ -86,7 +86,7 @@
 #define SPEED_BUTTON_TEXT						"Speed"
 #define DELETE_ANNOTATION_BUTTON_TEXT			"Delete"
 #define HELP_BUTTON_TEXT						"Help"
-#define HELP_TEXT							    "Camera Views:$$7: Sattelite View (Navigator $GUI View)$8: Sattelite View (Fixed on car)$9: Back View (Follow Robot)$Arrow Keys: Camera Moviment$Mouse: Camera Orientation$Mouse Scroll: Zoom$Space: Unlock and Lock Cam$0: PrintScreen (Default folder: $ ~/Pictures)"
+#define HELP_TEXT							    "Camera Views:$$7: Sattelite View (Navigator $GUI View)$8: Sattelite View (Fixed on car)$9: Back View (Follow Robot)$Arrow Keys: Camera Moviment$Mouse: Camera Orientation$Mouse Scroll: Zoom$Space: Unlock and Lock Cam$0: PrintScreen(Folder:~/Pictures)$ scripts_lume TGAtoPNG "
 
 #define DRAW_CAR_FLAG_CODE						4
 #define DRAW_COLLISION_MARKERS_FLAG_CODE		0

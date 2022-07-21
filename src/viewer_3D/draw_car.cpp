@@ -439,9 +439,8 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 		glRotatef(0.0, 0.0, 1.0, 0.0);
 
 		glColor3f(0.3,0.3,0.3);
-		//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
+//		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
 		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
-		
 		
 	glPopMatrix();
 	
@@ -465,14 +464,14 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 		glPopMatrix();
 	}
 
-	
+
 	// Sensor Board
 	glPushMatrix();
 
 		glTranslatef(carDrawer->sensor_board_1_pose.position.x,carDrawer->sensor_board_1_pose.position.y,carDrawer->sensor_board_1_pose.position.z);
-		glRotatef(carmen_radians_to_degrees(carDrawer->sensor_board_1_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);		
+		glRotatef(carmen_radians_to_degrees(carDrawer->sensor_board_1_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);
 		glRotatef(carmen_radians_to_degrees(carDrawer->sensor_board_1_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
-		glRotatef(carmen_radians_to_degrees(carDrawer->sensor_board_1_pose.orientation.roll), 1.0f, 0.0f, 0.0f);		
+		glRotatef(carmen_radians_to_degrees(carDrawer->sensor_board_1_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
 
 		// SensorBox
 		glPushMatrix();
@@ -487,12 +486,12 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 		glPushMatrix();
 
 			glTranslatef(carDrawer->xsens_pose.position.x,carDrawer->xsens_pose.position.y,carDrawer->xsens_pose.position.z);
-			glRotatef(carmen_radians_to_degrees(carDrawer->xsens_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);		
+			glRotatef(carmen_radians_to_degrees(carDrawer->xsens_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);
 			glRotatef(carmen_radians_to_degrees(carDrawer->xsens_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
-			glRotatef(carmen_radians_to_degrees(carDrawer->xsens_pose.orientation.roll), 1.0f, 0.0f, 0.0f);		
+			glRotatef(carmen_radians_to_degrees(carDrawer->xsens_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
 
 			glColor3f(1.0,0.6,0.0);
-			drawBox(carDrawer->xsens_size.x, carDrawer->xsens_size.y, carDrawer->xsens_size.z);		
+			drawBox(carDrawer->xsens_size.x, carDrawer->xsens_size.y, carDrawer->xsens_size.z);
 
 		glPopMatrix();
 
@@ -512,11 +511,11 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 
 	glPopMatrix();
 
-	/*
+	/* TODO: Desenha um cubo para representar o carro. Verificar se pode apagar esse trecho
 	glPushMatrix();
-		
+
 		glPushMatrix();
-			
+
 			glColor3f(0.3,0.3,0.3);
 			draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
 
