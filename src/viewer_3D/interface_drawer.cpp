@@ -7,6 +7,7 @@
 #include <GL/glu.h>
 
 #include "interface_drawer.h"
+#include "Window.h"
 
 struct button
 {
@@ -41,7 +42,7 @@ create_interface_drawer(int window_width, int window_height)
 {
 	interface_drawer* i_drawer = (interface_drawer*) malloc(sizeof(interface_drawer));
 
-	i_drawer->num_buttons = 78;
+	i_drawer->num_buttons = 84;
 	i_drawer->butt = (button*) malloc(i_drawer->num_buttons * sizeof(button));
 
 	init_buttons(i_drawer, window_width, window_height);
@@ -159,22 +160,33 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 			i_drawer->butt[i].visible = 0;
 		}
 
-		else if (i < 76)
+		else if (i < 77)
 		{
 			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
-			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 
-		else if (i == 76)
+		else if (i < 82)
+		{
+//			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i - 77) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
+		else if (i == 82)
 		{
 			i_drawer->butt[i].visible = 1;
 		}
 
-		else if (i == 77)
+		else if (i == 83)
 		{
 			i_drawer->butt[i].visible = 0;
 		}
@@ -192,7 +204,8 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	i_drawer->butt[DRAW_XSENS_GPS_BUTTON_CODE].text =			DRAW_XSENS_GPS_BUTTON_TEXT;
 	i_drawer->butt[FOLLOW_CAR_BUTTON_CODE].text =				FOLLOW_CAR_BUTTON_TEXT;
 	i_drawer->butt[DRAW_GPS_BUTTON_CODE].text =					DRAW_GPS_BUTTON_TEXT;
-	i_drawer->butt[DRAW_MAP_IMAGE_BUTTON_CODE].text =			DRAW_MAP_IMAGE_BUTTON_TEXT;
+//	i_drawer->butt[DRAW_MAP_IMAGE_BUTTON_CODE].text =			DRAW_MAP_IMAGE_BUTTON_TEXT;
+	i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].text =				WINDOW_SIZES_BUTTON_TEXT;
 
 	i_drawer->butt[VELODYNE_360_BUTTON_CODE].text =			VELODYNE_360_BUTTON_TEXT;
 	i_drawer->butt[VELODYNE_VBO_BUTTON_CODE].text =			VELODYNE_VBO_BUTTON_TEXT;
@@ -272,6 +285,13 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	i_drawer->butt[73].text = "Costs Map";
 	i_drawer->butt[74].text = "Offline Map";
 	i_drawer->butt[75].text = "Remission Map";
+	i_drawer->butt[76].text = "Google images";
+
+	i_drawer->butt[77].text = "1920x1080";
+	i_drawer->butt[78].text = "1500x920";
+	i_drawer->butt[79].text = "1000x600";
+	i_drawer->butt[80].text = "800x400";
+	i_drawer->butt[81].text = "500x300";
 
 	//Help
 	i_drawer->butt[HELP_BUTTON_CODE].text = HELP_BUTTON_TEXT;
@@ -378,17 +398,28 @@ update_buttons_size(interface_drawer* i_drawer, int window_width, int window_hei
 			i_drawer->butt[i].height = button_height;
 		}
 
-		else if (i < 76)
+		else if (i < 77)
 		{
 			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
-			i_drawer->butt[i].y = 2 * base_y;
+			i_drawer->butt[i].y = 3 * base_y;
 			i_drawer->butt[i].width = button_width;
 			i_drawer->butt[i].height = button_height;
 
 			i_drawer->butt[i].visible = 0;
 		}
 
-		else if (i == 76)
+		else if (i < 82)
+		{
+//			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i - 77) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
+		else if (i == 82)
 		{
 			i_drawer->butt[i].x = window_width - 60;
 			i_drawer->butt[i].y = window_height - 30;
@@ -396,7 +427,7 @@ update_buttons_size(interface_drawer* i_drawer, int window_width, int window_hei
 			i_drawer->butt[i].height = 20;
 		}
 
-		else if (i == 77)
+		else if (i == 83)
 		{
 			i_drawer->butt[i].x = window_width - 170;
 			i_drawer->butt[i].y = window_height - 170;
@@ -464,7 +495,17 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					if(i_drawer->butt[MAPS_BUTTON_CODE].state)
 					{
 						i_drawer->butt[MAPS_BUTTON_CODE].state = !(i_drawer->butt[MAPS_BUTTON_CODE].state);
-						for(j = 72; j < 76; j++)
+						for(j = 72; j < 77; j++)
+						{
+							i_drawer->butt[j].visible = 0;
+						}
+					}
+
+					// if window sizes
+					if(i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].state)
+					{
+						i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].state = !(i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].state);
+						for(j = 77; j < 82; j++)
 						{
 							i_drawer->butt[j].visible = 0;
 						}
@@ -506,12 +547,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(DRAW_GPS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == DRAW_MAP_IMAGE_BUTTON_CODE) // draw map image
-				{
-					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(DRAW_MAP_IMAGE_FLAG_CODE, i_drawer->butt[i].state);
-				}
 				else if (i_drawer->butt[i].code == VELODYNE_360_BUTTON_CODE) // velodyne 360
 				{
 					if (i_drawer->butt[i].state == 0)
@@ -560,7 +596,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					for (int j = 72; j < 76; j++)
+					for (int j = 72; j < 77; j++)
 					{
 						i_drawer->butt[j].visible = i_drawer->butt[i].state;
 					}
@@ -572,6 +608,24 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 //					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, i_drawer->butt[i].state);
 //					set_flag_viewer_3D(ZERO_Z_FLAG_CODE, i_drawer->butt[i].state);
 				}
+
+				else if (i_drawer->butt[i].code == WINDOW_SIZES_BUTTON_CODE) // Window sizes
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					for (int j = 77; j < 82; j++)
+					{
+						i_drawer->butt[j].visible = i_drawer->butt[i].state;
+					}
+					for (int j = 1; j < 32; j++)
+					{
+						i_drawer->butt[j].visible = !i_drawer->butt[i].state;
+					}
+
+//					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, i_drawer->butt[i].state);
+//					set_flag_viewer_3D(ZERO_Z_FLAG_CODE, i_drawer->butt[i].state);
+				}
+
 				else if (i_drawer->butt[i].code == DRAW_ANNOTATION_BUTTON_CODE) // Annotation
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
@@ -907,7 +961,49 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, 3);
 				}
 
-				else if (i_drawer->butt[i].code == 76) // Help
+				else if (i_drawer->butt[i].code == 76)	// Google images
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, 4);
+				}
+
+				else if (i_drawer->butt[i].code == 77)	// 1920x1080
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 1);
+				}
+
+				else if (i_drawer->butt[i].code == 78)	// 1500x920
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 2);
+				}
+
+				else if (i_drawer->butt[i].code == 79)	// 1000x600
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 3);
+				}
+
+				else if (i_drawer->butt[i].code == 80)	// 800x480
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 4);
+				}
+
+				else if (i_drawer->butt[i].code == 81)	// 500x300
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 5);
+				}
+
+				else if (i_drawer->butt[i].code == 82) // Help
 				{
 					i_drawer->butt[HELP_CODE].visible = !i_drawer->butt[HELP_CODE].visible;
 				}
@@ -992,7 +1088,7 @@ draw_button(button b)
 
 	int fontHelp;
 
-	if(b.code != 77){
+	if(b.code != 83){
 		fontHelp = 0;
 		drawText(-b.width / 2 + 5, -5, b.text, fontHelp);
 	}
@@ -1017,6 +1113,9 @@ drawText(float x, float y, const char* msg, int font_help, ...)
 
 	int l, i;
 
+	XWindowAttributes attr;
+	attr = get_window_atrr();
+
 	l = strlen(buf);
 	glRasterPos2f(x, y);
 	for (i = 0; i < l; i++)
@@ -1032,9 +1131,11 @@ drawText(float x, float y, const char* msg, int font_help, ...)
 			if(font_help){
 				glutBitmapCharacter(GLUT_BITMAP_9_BY_15, buf[i]);
 			} else {
-				glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, buf[i]);
+				if(attr.width > 980 && attr.height > 500)
+					glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, buf[i]);
+				else
+					glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, buf[i]);
 			}
 	    }
 	}
-
 }

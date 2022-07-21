@@ -9,7 +9,8 @@
 #define DRAW_XSENS_GPS_BUTTON_CODE				4
 #define FOLLOW_CAR_BUTTON_CODE					5
 #define DRAW_GPS_BUTTON_CODE					6
-#define DRAW_MAP_IMAGE_BUTTON_CODE				7
+//#define DRAW_MAP_IMAGE_BUTTON_CODE				7 @@@Braian
+#define WINDOW_SIZES_BUTTON_CODE					7
 #define VELODYNE_360_BUTTON_CODE				8
 #define VELODYNE_VBO_BUTTON_CODE				9
 #define VELODYNE_BUTTON_CODE					10
@@ -42,8 +43,8 @@
 #define BUMP_BUTTON_CODE						37
 #define SPEED_BUTTON_CODE						38
 #define DELETE_ANNOTATION_BUTTON_CODE			39
-#define HELP_BUTTON_CODE						76
-#define HELP_CODE							    77
+#define HELP_BUTTON_CODE						82
+#define HELP_CODE							    83
 
 #define BUTTON0_TEXT							"Options"
 #define DRAW_CAR_BUTTON_TEXT					"Car"
@@ -52,7 +53,8 @@
 #define DRAW_XSENS_GPS_BUTTON_TEXT				"GPS XSENS"
 #define FOLLOW_CAR_BUTTON_TEXT					"Follow Car"
 #define DRAW_GPS_BUTTON_TEXT					"GPS"
-#define DRAW_MAP_IMAGE_BUTTON_TEXT				"Google Image"
+//#define DRAW_MAP_IMAGE_BUTTON_TEXT				"Google Image" @@@Braian
+#define WINDOW_SIZES_BUTTON_TEXT					"Window Size"
 #define VELODYNE_360_BUTTON_TEXT				"Velodyne 360"
 #define VELODYNE_VBO_BUTTON_TEXT				"Velodyne VBO"
 #define VELODYNE_BUTTON_TEXT					"Velodyne"
@@ -94,7 +96,8 @@
 #define DRAW_XSENS_GPS_FLAG_CODE				10
 #define FOLLOW_CAR_FLAG_CODE					11
 #define DRAW_GPS_FLAG_CODE						8
-#define DRAW_MAP_IMAGE_FLAG_CODE				6
+//#define DRAW_MAP_IMAGE_FLAG_CODE				6 @@@Braian
+#define WINDOW_SIZES_FLAG_CODE					6
 #define DRAW_VELODYNE_FLAG_CODE					2
 #define DRAW_STEREO_CLOUD_FLAG_CODE				3
 #define DRAW_MAP_FLAG_CODE						12
