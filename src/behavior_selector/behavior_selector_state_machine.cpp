@@ -7,21 +7,21 @@
 
 #include "behavior_selector.h"
 
-#define NO_NARROW_LANE_SIGN_AHEAD		0
+#define NO_NARROW_LANE_SIGN_AHEAD	0
 #define NARROW_LANE_BEGIN			1
 #define NARROW_LANE_END				2
 
-#define NO_ENGINE_BRAKE_SIGN_AHEAD		0
+#define NO_ENGINE_BRAKE_SIGN_AHEAD	0
 #define ENGINE_BRAKE_ON				1
 #define ENGINE_BRAKE_OFF			2
 
 #define NO_TURN_LEFT_INDICATOR_SIGN_AHEAD	0
-#define TURN_LEFT_INDICATOR_ON			1
-#define TURN_LEFT_INDICATOR_OFF			2
+#define TURN_LEFT_INDICATOR_ON				1
+#define TURN_LEFT_INDICATOR_OFF				2
 
 #define NO_TURN_RIGHT_INDICATOR_SIGN_AHEAD	0
-#define TURN_RIGHT_INDICATOR_ON			1
-#define TURN_RIGHT_INDICATOR_OFF		2
+#define TURN_RIGHT_INDICATOR_ON				1
+#define TURN_RIGHT_INDICATOR_OFF			2
 
 using namespace std;
 
@@ -1058,12 +1058,14 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 	int engine_brake_sign = engine_brake_sign_ahead(current_robot_pose_v_and_phi);
 	if (engine_brake_sign == ENGINE_BRAKE_ON)
 	{
-		signals_msg.fog_lights = 1;
+		signals_msg.headlight_status = HEADLIGHT_ON;
+		signals_msg.high_beams = 1;
 		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
 	}
 	else if (engine_brake_sign == ENGINE_BRAKE_OFF)
 	{
-		signals_msg.fog_lights = 0;
+		signals_msg.headlight_status = HEADLIGHT_OFF;
+		signals_msg.high_beams = 0;
 		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
 	}
 
