@@ -65,7 +65,7 @@ else
 	LFLAGS += `python3.8-config --embed --libs` -pthread
 endif
 
-LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
+LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -lford_escape_hybrid_interface
 
 ifeq ("$(CARMEN_LOGGING)","ON")
 CFLAGS += \
