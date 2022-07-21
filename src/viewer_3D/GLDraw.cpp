@@ -38,6 +38,8 @@ double background_r;
 double background_g;
 double background_b;
 
+double wheel_displacement = 1.15;
+
 void
 initGl (int width, int height)
 {
@@ -1588,7 +1590,7 @@ draw_localize_ackerman (carmen_vector_3D_t* localize_ackerman_trail, int size)
 }
 
 void
-draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img)
+draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img, double robot_wheel_radius)
 {
 	carmen_vector_2D_t tex_coord_min;
 	carmen_vector_2D_t tex_coord_max;
@@ -1597,7 +1599,7 @@ draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t m
 	if (img != NULL)
 		map_image = update_map_image_texture2 (map_center, square_size, img);
 
-	glTranslated (map_center.x - gps_position_at_turn_on.x, map_center.y - gps_position_at_turn_on.y, -0.56 / 2.0); // @@@ Alberto: 0.56 ee o diametro da roda do carro. Tem que fazer este valor chegar aqui vindo do carmen.ini
+	glTranslated (map_center.x - gps_position_at_turn_on.x, map_center.y - gps_position_at_turn_on.y, -robot_wheel_radius * wheel_displacement);
 	glColor3d (1.0, 1.0, 1.0);
 	glEnable (GL_TEXTURE_2D);
 	glPushMatrix ();
@@ -1621,7 +1623,7 @@ draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t m
  }
 
 void
-draw_remission_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img)
+draw_remission_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img, double robot_wheel_radius)
 {
 	carmen_vector_2D_t tex_coord_min;
     carmen_vector_2D_t tex_coord_max;
@@ -1630,7 +1632,7 @@ draw_remission_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vec
     if (img != NULL)
     	map_image = update_remission_map_image_texture(map_center, square_size, img);
 
-    glTranslated (map_center.x - gps_position_at_turn_on.x, map_center.y - gps_position_at_turn_on.y, -0.56 / 2.0); // @@@ Alberto: 0.56 ee o diametro da roda do carro. Tem que fazer este valor chegar aqui vindo do carmen.ini
+    glTranslated (map_center.x - gps_position_at_turn_on.x, map_center.y - gps_position_at_turn_on.y, -robot_wheel_radius * wheel_displacement);
     glColor3d (1.0, 1.0, 1.0);
     glEnable (GL_TEXTURE_2D);
     glPushMatrix ();
@@ -1652,7 +1654,7 @@ draw_remission_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vec
     glVertex3d (-square_size / 2.0, square_size / 2.0, 0.0f);
     glEnd ();
     glPopMatrix ();
-    glTranslated (-(map_center.x - gps_position_at_turn_on.x), -(map_center.y - gps_position_at_turn_on.y), -(-0.56 / 2.0));
+    glTranslated (-(map_center.x - gps_position_at_turn_on.x), -(map_center.y - gps_position_at_turn_on.y), robot_wheel_radius * wheel_displacement);
     glDisable (GL_TEXTURE_2D);
 
 }
