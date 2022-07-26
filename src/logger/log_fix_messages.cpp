@@ -34,20 +34,21 @@ int main(int argc, char **argv)
 
   if (argc < 7 || (argc > 1 && strcmp(argv[1], "-h") == 0))
   {
-	  fprintf(stderr, "\n This program is specific to correct the message ROBOTVELOCITY_ACK. There are 2 options \n"
+	  fprintf(stderr, "\n TODO:RECEBER POR PARAMETRO O GREP_MODE - This program is specific to correct the message ROBOTVELOCITY_ACK. There are 2 options \n"
 			  "(i) to correct the velocity (ex: negative velocities between positive)\n"
 			  "(ii) to correct the phi when the odometry is bad. This program will change all phi to 0.0\n");
 	  fprintf(stderr, " This program will create a new file, however SAVE copy of your log.txt \n "
 			  "then after generate the new file, rename it back to the original file, the _images and _lidar folders use the original log name\n");
-	  fprintf(stderr, "\nUsage:   %s  -v <0(off)/1(on)> -phi <0(off)/1(on)> </path/input_log_camen.txt> <output_log_file.txt> \n", argv[0]);
+	  fprintf(stderr, "\nUsage:   %s  -v <0(off)/1(on)> -phi <0(off)/1(on)> -grep_mode <0(off)/1(on)> </path/input_log_camen.txt> <output_log_file.txt> \n", argv[0]);
 
 	  exit(-1);
   }
 
   int fix_v = atoi(argv[2]);
   int fix_phi = atoi(argv[4]);
-  log_filename = argv[5];
-  char* log_output_filename = argv[6];
+  int grep_mode = atoi(argv[6]);
+  log_filename = argv[7];
+  char* log_output_filename = argv[8];
 
   outfile = carmen_fopen(log_output_filename, "r");
 
@@ -92,7 +93,29 @@ int main(int argc, char **argv)
 
     char *current_position;
 
-    if (strncmp(line, "ROBOTVELOCITY_ACK ", 18) == 0)
+    if (grep_mode && strncmp(line, "ROBOTVELOCITY_ACK ", 18) == 0)
+    {
+    	current_position = carmen_next_word(line);
+    	double v = CLF_READ_DOUBLE(&current_position);
+    	double phi = CLF_READ_DOUBLE(&current_position);
+    	double timestamp = CLF_READ_DOUBLE(&current_position);
+    	copy_host_string(&host_carmen, &current_position);
+    	log_playback_time = atof(current_position);
+
+    	if (strcmp("camera_drivers@pedroNote", host_carmen) == 0)
+    	{
+    		printf("ROBOTVELOCITY_ACK %f %f %f %s %f\n", v,
+    				phi, timestamp, host_carmen, log_playback_time);
+    	}
+    	else
+    	{
+    		carmen_fprintf(outfile, "ROBOTVELOCITY_ACK %f %f %f %s %f\n", v,
+    				phi, timestamp, host_carmen, log_playback_time);
+    		messages_count++;
+    	}
+
+    }
+    else if (!grep_mode && strncmp(line, "ROBOTVELOCITY_ACK ", 18) == 0)
     {
     	current_position = carmen_next_word(line);
     	double v = CLF_READ_DOUBLE(&current_position);
