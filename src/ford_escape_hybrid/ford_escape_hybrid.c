@@ -267,7 +267,7 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 		else
 		{
 			g_desired_velocity = 0.0;
-//			g_gear_command = 128;	// 128 = Neutral
+			g_gear_command = 128;	// 128 = Neutral
 		}
 	}
 
