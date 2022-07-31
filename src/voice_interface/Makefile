@@ -17,7 +17,9 @@ endif
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += `python3.6-config --libs` -L${HOME}/packages_carmen/porcupine-1.6/lib/linux/x86_64 \
+LFLAGS += `python3.6-config --libs` \
+			-L${HOME}/packages_carmen/Porcupine/lib/linux/x86_64 \
+			-L${HOME}/packages_carmen/porcupine-1.6/lib/linux/x86_64 \
 			-lparam_interface -lipc -lglobal -lvoice_interface_interface -lpv_porcupine -lasound \
 			-lnavigator_ackerman_interface -lcurl -ljsoncpp
 			
