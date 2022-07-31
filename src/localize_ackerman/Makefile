@@ -6,6 +6,10 @@ CFLAGS += -std=c11 -fopenmp
 CXXFLAGS += -std=c++11 -fopenmp
 LINK = g++
 
+#CFLAGS += -std=c11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
+#CXXFLAGS += -std=c++11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
+#LINK = g++ -fsanitize=address -fno-omit-frame-pointer
+
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 

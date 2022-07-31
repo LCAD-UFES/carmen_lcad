@@ -758,7 +758,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		if (publish_combined_odometry)
 			build_combined_visual_and_car_odometry();
-//		printf("*v %lf, phi %lf, status %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
+//		printf("*v %lf, phi %lf, timestamp %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_atan_desired_curvature), ford_escape_hybrid_config), carmen_get_time());
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
@@ -871,7 +871,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		}
 
 		//Printf para testar a diferença das curvaturas original e modificada
-		//printf(cc %lf cc2 %lf\n", g_XGV_atan_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)));
+//		printf("cphi %lf, dphi %lf\n", g_XGV_atan_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)));
+//		printf(" v %lf, phi %lf, timestamp %lf\n", g_XGV_velocity, ford_escape_hybrid_config->filtered_phi, carmen_get_time());
 
 		//////////////////////////////////////////  PRINTS VALUES TO FILE TO VERIFICATIONS  //////////////////////////////////////////
 		//	fprintf(stdout, "(cc dc s v t) %lf %lf %lf %lf %lf\n", -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)), g_atan_desired_curvature, g_steering_command, ford_escape_hybrid_config->filtered_v, carmen_get_time());

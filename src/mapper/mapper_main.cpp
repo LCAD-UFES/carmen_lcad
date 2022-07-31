@@ -71,7 +71,7 @@ sensor_data_t *sensors_data;
 
 int number_of_sensors;
 
-#define MAX_NUMBER_OF_LIDARS 16   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
+#define MAX_NUMBER_OF_LIDARS 18   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
 
 // const int number_of_lidars = 12; //lidar parameters
 const int first_lidar_number = 10;

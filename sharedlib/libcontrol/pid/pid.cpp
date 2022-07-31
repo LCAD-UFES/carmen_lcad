@@ -4,7 +4,7 @@
 #include "../control.h"
 #include <list>
 
-//#define PRINT			// Print Debug
+#define PRINT			// Print Debug
 
 using namespace std;
 
@@ -442,7 +442,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			*brakes_command = 0.0;
 		else
 			*brakes_command = g_brake_gap;
-		current_max_break_effort = 0.0;
+		current_max_break_effort = *brakes_command;
 
 		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
 		{
@@ -460,7 +460,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		*throttle_command = 0.0;
 		*brakes_command = -u_t + g_brake_gap;
-		current_max_break_effort = 0.0;
+		current_max_break_effort = *brakes_command;
 
 		if ((desired_velocity > 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t > 0.0))
 		{
@@ -482,7 +482,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			*brakes_command = 0.0;
 		else
 			*brakes_command = g_brake_gap;
-		current_max_break_effort = 0.0;
+		current_max_break_effort = *brakes_command;
 
 		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t >= 0.0))
 		{
@@ -500,7 +500,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		*throttle_command = 0.0;
 		*brakes_command = u_t + g_brake_gap;
-		current_max_break_effort = 0.0;
+		current_max_break_effort = *brakes_command;
 
 		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t < 0.0))
 		{
