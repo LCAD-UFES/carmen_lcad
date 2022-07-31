@@ -18,6 +18,8 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
 
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
 
@@ -33,8 +35,18 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
 		-lcollision_detection -lcarmodel -lgsl -lgslcblas -lm -lford_escape_hybrid_interface -lmoving_objects_interface \
-		-ltask_manager_interface
+		-ltask_manager_interface -lvoice_interface_interface
 			
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --embed --libs` -pthread
+endif
+
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp \
 		model_predictive_planner_optimizer.cpp global_state.cpp publisher_util.cpp util.cpp pose.cpp \
 		model_predictive_planner_interface.c

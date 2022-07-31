@@ -213,7 +213,7 @@ compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_p
 		num_poses_ahead_by_velocity = param_rddf_num_poses_ahead_limited_by_map;
 
 //	printf("\n current_v: %lf distance: %lf a: %lf num_poses: %d \n", current_pose.v, distance, a, num_poses_ahead_by_velocity);
-	return num_poses_ahead_by_velocity;
+	return (num_poses_ahead_by_velocity);
 }
 
 
