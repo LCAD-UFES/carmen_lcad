@@ -260,14 +260,22 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	}
 	else
 	{
-		if ((behavior_selector_low_level_state != Stopped) && g_go_state)
+		static double last_neutral_gear_timestamp = 0.0;
+
+		if (g_go_state &&
+			(behavior_selector_low_level_state != Stopped) &&
+			(behavior_selector_low_level_state != End_Of_Path_Reached2))
 		{
-			g_desired_velocity = v;
+			if (carmen_get_time() - last_neutral_gear_timestamp > 3.0)	// In order to wait for the gear hardware...
+				g_desired_velocity = v;
+			else
+				g_desired_velocity = 0.0;
 		}
 		else
 		{
 			g_desired_velocity = 0.0;
 			g_gear_command = 128;	// 128 = Neutral
+			last_neutral_gear_timestamp = carmen_get_time();
 		}
 	}
 
@@ -857,9 +865,15 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 				}
 				else if ((robot_model_name == ROBOT_NAME_ECOTECH4) || (robot_model_name == ROBOT_NAME_MPW700) || (robot_model_name == ROBOT_NAME_ASTRU))
 				{
+					double plan_size;
+					if (ford_escape_hybrid_config->nun_motion_commands > 2)
+						plan_size = DIST2D(ford_escape_hybrid_config->current_motion_command_vector[0], ford_escape_hybrid_config->current_motion_command_vector[ford_escape_hybrid_config->nun_motion_commands - 1]);
+					else
+						plan_size = 0.0;
+
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
-							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+							plan_size, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 				}
 				else
 					printf("ROBOT_MODEL_NAME %d wasnt recognized, check the code number\n "

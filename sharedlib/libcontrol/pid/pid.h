@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 
-double carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double delta_t, int manual_override);
+double carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int manual_override);
 
 
 double carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double atan_current_curvature,

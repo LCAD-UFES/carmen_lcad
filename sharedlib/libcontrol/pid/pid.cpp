@@ -4,7 +4,7 @@
 #include "../control.h"
 #include <list>
 
-#define PRINT			// Print Debug
+//#define PRINT			// Print Debug
 
 using namespace std;
 
@@ -55,6 +55,10 @@ static double g_max_brake_effort;
 static double g_maximum_steering_command_rate;
 
 static int robot_model_id = 0;
+
+#ifdef PRINT
+extern carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
+#endif
 
 
 void
@@ -160,7 +164,7 @@ pid_plot_velocity(double current_vel, double desired_vel, double y_range, char* 
 
 
 double
-carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
+carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size,
 		int manual_override)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
@@ -185,7 +189,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double current_curvature = tan(atan_current_curvature);
 	double delta_curvature = fabs(desired_curvature - current_curvature);
 	double command_curvature_signal = (current_curvature < desired_curvature) ? 1.0 : -1.0;
-	double max_curvature_change = 1.2 * g_maximum_steering_command_rate * delta_t;
+	double max_curvature_change = carmen_clamp(0.05, (0.6 * fabs(plan_size)), 1.2) * g_maximum_steering_command_rate * delta_t;
 
 	double achieved_curvature = current_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
 	atan_desired_curvature = atan(achieved_curvature);
@@ -415,7 +419,9 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		error_t_1 = integral_t = integral_t_1 = 0.0;
 
 		*throttle_command = 0.0;
-		current_max_break_effort = current_max_break_effort + 0.05 * (g_max_brake_effort - current_max_break_effort);
+		if (current_max_break_effort < g_max_brake_effort)
+			current_max_break_effort = current_max_break_effort + g_max_brake_effort / 80.0;
+//		current_max_break_effort = current_max_break_effort + 0.05 * (g_max_brake_effort - current_max_break_effort);
 		*brakes_command = current_max_break_effort;
 //		*brakes_command = *brakes_command + NEAR_ZERO_V * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
 
@@ -482,7 +488,8 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			*brakes_command = 0.0;
 		else
 			*brakes_command = g_brake_gap;
-		current_max_break_effort = *brakes_command;
+//		current_max_break_effort = *brakes_command;
+		current_max_break_effort = 0.0;
 
 		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t >= 0.0))
 		{
@@ -500,7 +507,8 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 		*throttle_command = 0.0;
 		*brakes_command = u_t + g_brake_gap;
-		current_max_break_effort = *brakes_command;
+//		current_max_break_effort = *brakes_command;
+		current_max_break_effort = 0.0;
 
 		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t < 0.0))
 		{
@@ -551,10 +559,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 #ifdef PRINT
-	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %d, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 		*throttle_command, *brakes_command,
-		integral_t, derivative_t, carmen_get_time());
+		integral_t, derivative_t, behavior_selector_low_level_state, carmen_get_time());
 	fflush(stdout);
 #endif
 
