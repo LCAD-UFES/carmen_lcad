@@ -31,6 +31,7 @@
 #include <carmen/route_planner_interface.h>
 #include <carmen/collision_detection.h>
 #include <carmen/task_manager_interface.h>
+#include <carmen/moving_objects_interface.h>
 
 #include <control.h>
 
@@ -134,6 +135,83 @@ apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion
 
 	return (i);
 }
+
+
+
+carmen_moving_objects_point_clouds_message
+build_moving_objects_message(int num_objects, carmen_simulator_ackerman_objects_message objects_sim)
+{
+
+	carmen_moving_objects_point_clouds_message msg;
+
+//	vector<object> tmp_predictions = predictions;
+//
+//	for (int i=0; i<simulated_objects.size(); i++)
+//	{
+//		if (simulated_objects[i].active)
+//		{
+//			tmp_predictions.push_back(simulated_objects[i].p);
+//			image_cartesian ic;
+//			vector<image_cartesian> vic;
+//			vic.push_back(ic);
+//			points_lists.push_back(vic);
+//		}
+//	}
+//	int num_objects = compute_num_measured_objects(tmp_predictions);
+
+	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
+
+	msg.num_point_clouds = num_objects;
+	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
+
+	for (int i = 0, l = 0; i < num_objects; i++)
+	{
+			msg.point_clouds[l].r = 1.0;
+			msg.point_clouds[l].g = 1.0;
+			msg.point_clouds[l].b = 0.0;
+
+			msg.point_clouds[l].linear_velocity = objects_sim.objects[i].v;
+			msg.point_clouds[l].orientation = objects_sim.objects[i].theta;
+
+			// printf("%lf %lf\n", tmp_predictions[i].orientation, last_globalpos->globalpos.theta);
+
+			msg.point_clouds[l].width  = 1.0;
+			msg.point_clouds[l].length = 1.0;
+			msg.point_clouds[l].height = 2.0;
+
+			msg.point_clouds[l].object_pose.x = objects_sim.objects[i].x;
+			msg.point_clouds[l].object_pose.y = objects_sim.objects[i].y;
+			msg.point_clouds[l].object_pose.z = 0.0;
+
+
+			msg.point_clouds[l].geometric_model = 0;
+			msg.point_clouds[l].model_features.geometry.width  = 1.0;
+			msg.point_clouds[l].model_features.geometry.length = 1.0;
+			msg.point_clouds[l].model_features.geometry.height = 2.0;
+			msg.point_clouds[l].model_features.red = 1.0;
+			msg.point_clouds[l].model_features.green = 1.0;
+			msg.point_clouds[l].model_features.blue = 0.8;
+			msg.point_clouds[l].model_features.model_name = (char *) "pedestrian";
+
+			msg.point_clouds[l].num_associated = i;
+
+			msg.point_clouds[l].point_size = num_objects;
+
+			msg.point_clouds[l].points = (carmen_vector_3D_t *) malloc (msg.point_clouds[l].point_size * sizeof(carmen_vector_3D_t));
+
+			for (int j = 0; j < num_objects; j++)
+			{
+				carmen_vector_3D_t p;
+
+				p.x = 0;
+				p.y = 0;
+				p.z = 0;
+				msg.point_clouds[l].points[j] = p;
+			}
+			l++;
+	}
+	return (msg);
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -228,6 +306,16 @@ publish_truepos(double timestamp)
 }
 
 
+void
+publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg)
+{
+	msg->timestamp = carmen_get_time();
+	msg->host = carmen_get_host();
+
+    carmen_moving_objects_point_clouds_publish_message_generic(0, msg);
+}
+
+
 static void
 publish_objects(double timestamp)
 {
@@ -244,9 +332,17 @@ publish_objects(double timestamp)
 //	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
 	carmen_simulator_ackerman_get_objects(&(objects.num_objects), &(objects.objects));
 	objects.timestamp = timestamp;
+
+	if((objects.num_objects) != 0)
+	{
+		carmen_moving_objects_point_clouds_message msg = build_moving_objects_message(objects.num_objects, objects);
+		publish_moving_objects_message(&msg);
+	}
+
 	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME, &objects);
 	carmen_test_ipc(err, "Could not publish simulator_objects_message",
 			CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME);
+
 }
 
 
@@ -944,6 +1040,10 @@ initialize_ipc(void)
 			CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_FMT);
 	if (err != IPC_OK)
 		return -1;
+
+	err = carmen_moving_objects_point_clouds_define_messages_generic(0);
+	if (err != IPC_OK)
+			return -1;
 
 	return 0;
 }

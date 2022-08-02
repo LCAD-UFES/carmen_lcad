@@ -19,7 +19,7 @@ LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobst
 	  -lglobal -lipc -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lmapper_interface \
 	  -lmap_server_interface -lford_escape_hybrid_interface -lcontrol -lcarmodel -lfann -lgsl -lgslcblas \
 	  -lobstacle_avoider_interface -lroute_planner_interface -lnavigator_ackerman_interface -lbehavior_selector_interface \
-	  -ltask_manager_interface
+	  -ltask_manager_interface -lmoving_objects_interface
 	  
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel

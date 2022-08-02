@@ -1055,22 +1055,38 @@ draw_everything()
         draw_velodyne_intensity(v_int_drawer);
     }
 
-    draw_point_cloud(lidar0_drawer);
-    draw_point_cloud(lidar1_drawer);
-    draw_point_cloud(lidar2_drawer);
-    draw_point_cloud(lidar3_drawer);
-    draw_point_cloud(lidar4_drawer);
-    draw_point_cloud(lidar5_drawer);
-    draw_point_cloud(lidar6_drawer);
-    draw_point_cloud(lidar7_drawer);
-    draw_point_cloud(lidar8_drawer);
-    draw_point_cloud(lidar9_drawer);
-    draw_point_cloud(lidar10_drawer);
-    draw_point_cloud(lidar11_drawer);
-    draw_point_cloud(lidar12_drawer);
-    draw_point_cloud(lidar13_drawer);
-    draw_point_cloud(lidar14_drawer);
-    draw_point_cloud(lidar15_drawer);
+    if (draw_lidar0_flag)
+    	draw_point_cloud(lidar0_drawer);
+    if (draw_lidar1_flag)
+    	draw_point_cloud(lidar1_drawer);
+    if (draw_lidar2_flag)
+    	draw_point_cloud(lidar2_drawer);
+    if (draw_lidar3_flag)
+    	draw_point_cloud(lidar3_drawer);
+    if (draw_lidar4_flag)
+    	draw_point_cloud(lidar4_drawer);
+    if (draw_lidar5_flag)
+    	draw_point_cloud(lidar5_drawer);
+    if (draw_lidar6_flag)
+    	draw_point_cloud(lidar6_drawer);
+    if (draw_lidar7_flag)
+    	draw_point_cloud(lidar7_drawer);
+    if (draw_lidar8_flag)
+    	draw_point_cloud(lidar8_drawer);
+    if (draw_lidar9_flag)
+    	draw_point_cloud(lidar9_drawer);
+    if (draw_lidar10_flag)
+    	draw_point_cloud(lidar10_drawer);
+    if (draw_lidar11_flag)
+    	draw_point_cloud(lidar11_drawer);
+    if (draw_lidar12_flag)
+    	draw_point_cloud(lidar12_drawer);
+    if (draw_lidar13_flag)
+    	draw_point_cloud(lidar13_drawer);
+    if (draw_lidar14_flag)
+    	draw_point_cloud(lidar14_drawer);
+    if (draw_lidar15_flag)
+    	draw_point_cloud(lidar15_drawer);
 
     if (draw_rays_flag)
     {
