@@ -1,3 +1,6 @@
+Como configuarar o ZED-F9P
+ https://drotek.gitbook.io/rtk-f9p-positioning-solutions/how-to-get-started/zed-f9p-rtk-configuration
+
 Driver antigo
 colocar a porta que foi conectada no carmen.ini (/dev/USB..)
 mudar o comando str2str para velocidade de 36800
@@ -29,6 +32,6 @@ Para checar se esta passando mensagem rode:
 ./gps_test
 Exemplo para adicionar no process:
 
-gps			sensors 	0		0			./gps_nmea
+ gps			sensors 	0		0			./gps_nmea
  gps_correction		sensors	 	0		0			str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyACM0:38400:8:n:1:off
 
