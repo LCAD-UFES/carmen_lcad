@@ -440,6 +440,41 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 }
 
 
+static void
+publish_objects(double timestamp, carmen_moving_objects_point_clouds_message *msg)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static int first = 1;
+	static carmen_simulator_ackerman_objects_t *current_objects = NULL;
+
+	static carmen_simulator_ackerman_objects_message objects;
+
+	if (first)
+	{
+		objects.host = carmen_get_host();
+		first = 0;
+	}
+
+	current_objects = (carmen_simulator_ackerman_objects_t *) realloc(current_objects, msg->num_point_clouds * sizeof(carmen_simulator_ackerman_objects_t));
+	for (int i = 0; i < msg->num_point_clouds; i++)
+	{
+		current_objects[i].type = CARMEN_SIMULATOR_ACKERMAN_PERSON;
+		current_objects[i].x = msg->point_clouds->object_pose.x;
+		current_objects[i].y = msg->point_clouds->object_pose.y;
+		current_objects[i].theta = msg->point_clouds->orientation;
+		current_objects[i].v = msg->point_clouds->linear_velocity;
+	}
+	int *num = msg->num_point_clouds;
+	objects.objects = current_objects;
+
+//	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
+	objects.timestamp = timestamp;
+	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME, &objects);
+	carmen_test_ipc(err, "Could not publish simulator_objects_message",
+			CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME);
+}
+
+
 void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
@@ -456,6 +491,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 	publish_moving_objects_message(&msg);
+	publish_objects(msg.timestamp, &msg);
 }
 
 
