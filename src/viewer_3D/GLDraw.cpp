@@ -1505,6 +1505,35 @@ draw_velodyne_points (point_cloud *velodyne_points, int cloud_size)
 
 }
 
+
+void
+draw_velodyne_points_color (point_cloud *velodyne_points, int cloud_size)
+{
+   // glPointSize (5);
+    glBegin (GL_POINTS);
+
+    //glColor3d(0.0,0.0,1.0);
+
+    int i;
+    for (i = 0; i < cloud_size; i++)
+    {
+        int j;
+        for (j = 0; j < velodyne_points[i].num_points; j++)
+        {
+//            set_laser_point_color (velodyne_points[i].points[j].x, velodyne_points[i].points[j].y, velodyne_points[i].points[j].z);
+  //      	glColor3d (velodyne_points[i].point_color[j].x / 3.0, velodyne_points[i].point_color[j].y / 2.0, velodyne_points[i].point_color[j].z * 2.0);
+        	glColor3d (velodyne_points[i].point_color[j].x, velodyne_points[i].point_color[j].y, velodyne_points[i].point_color[j].z );
+
+
+            glVertex3d (velodyne_points[i].points[j].x, velodyne_points[i].points[j].y, velodyne_points[i].points[j].z);
+        }
+    }
+
+    glEnd ();
+
+}
+
+
 void
 draw_gps (carmen_vector_3D_t *gps_trail, int *gps_nr, int size)
 {
