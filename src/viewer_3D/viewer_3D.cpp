@@ -518,7 +518,7 @@ create_point_colors_intensity(double intensity)
 	carmen_vector_3D_t colors;
 
 	double intensity_normalized = intensity / 255.0;
-
+//	printf(" : %f\n", intensity_normalized);
 	colors.x = intensity_normalized;
 	colors.y = intensity_normalized;
 	colors.z = intensity_normalized;
@@ -1029,15 +1029,18 @@ draw_everything()
     if (draw_velodyne_flag == 1)
     {
 //        if (draw_annotation_flag || velodyne_remission_flag)
-            glPointSize(5);
+            glPointSize(1);
         draw_velodyne_points(velodyne_points, velodyne_size);
         glPointSize(point_size);
     }
     else if (draw_velodyne_flag == 2)
     {
         //draw_velodyne_points(&(velodyne_points[last_velodyne_position]), 1);
-        if (draw_annotation_flag || velodyne_remission_flag)
-            glPointSize(5);
+        if (velodyne_remission_flag)
+        {
+            glPointSize(2);
+            draw_velodyne_points_color(velodyne_points, velodyne_size);
+        }
         draw_point_cloud(velodyne_drawer);
 
         glPointSize(point_size);
@@ -4653,7 +4656,7 @@ set_flag_viewer_3D(int flag_num, int value)
         if(value)
         {
         	old_velodyne_flag = draw_velodyne_flag;
-            set_background_color(0, 0, 0);
+            set_background_color(0.2, 0.2, 0.2);
         	draw_velodyne_flag = 2;
         }
         else
