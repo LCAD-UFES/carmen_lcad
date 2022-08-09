@@ -5,7 +5,7 @@
   <object class="GtkListStore" id="listPlaceOfInterest">
     <columns>
       <!-- column-name Text -->
-      <column type="gchararray"/>
+      <column type="gchararray" />
     </columns>
     <data>
       <row>
@@ -16,7 +16,7 @@
   <object class="GtkListStore" id="listMission">
     <columns>
       <!-- column-name Text -->
-      <column type="gchararray"/>
+      <column type="gchararray" />
     </columns>
     <data>
       <row>
@@ -27,7 +27,7 @@
   <object class="GtkListStore" id="listParking">
     <columns>
       <!-- column-name Text -->
-      <column type="gchararray"/>
+      <column type="gchararray" />
     </columns>
     <data>
       <row>
@@ -41,7 +41,7 @@
   <object class="GtkListStore" id="listState">
     <columns>
       <!-- column-name Text -->
-      <column type="gchararray"/>
+      <column type="gchararray" />
     </columns>
     <data>
       <row>
@@ -67,7 +67,7 @@
   <object class="GtkListStore" id="listFollowRoute">
     <columns>
       <!-- column-name Text -->
-      <column type="gchararray"/>
+      <column type="gchararray" />
     </columns>
     <data>
       <row>
@@ -91,8 +91,8 @@
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Carmen-LCAD Navigator</property>
     <property name="icon">nav.ico</property>
-    <signal name="destroy" handler="gtk_main_quit" swapped="no"/>
-    <signal name="realize" handler="on_mainWindow_realize" swapped="no"/>
+    <signal name="destroy" handler="gtk_main_quit" swapped="no" />
+    <signal name="realize" handler="on_mainWindow_realize" swapped="no" />
     <child>
       <object class="GtkVBox" id="box1">
         <property name="visible">True</property>
@@ -119,8 +119,8 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Quit</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                        <signal name="activate" handler="on_activeMenuQuit" swapped="no"/>
+                        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK" />
+                        <signal name="activate" handler="on_activeMenuQuit" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -148,8 +148,8 @@
                         <property name="active">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <accelerator key="m" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-                        <signal name="toggled" handler="on_menuMaps_Map_toggled" swapped="no"/>
+                        <accelerator key="m" signal="activate" modifiers="GDK_CONTROL_MASK" />
+                        <signal name="toggled" handler="on_menuMaps_Map_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -161,7 +161,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_MapLevel1_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_MapLevel1_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -172,7 +172,7 @@
                         <property name="label" translatable="yes">Offline Map</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="on_menuMaps_OfflineMap_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_OfflineMap_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -184,7 +184,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_Utility_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_Utility_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -196,7 +196,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_Costs_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_Costs_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -208,7 +208,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_Likelihood_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_Likelihood_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -220,7 +220,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_GlobalLikelihood_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_GlobalLikelihood_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -232,7 +232,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_Lane_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_Lane_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -244,7 +244,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_CompleteMap_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_CompleteMap_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -256,7 +256,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_RemissionMap_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_RemissionMap_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -268,7 +268,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_MovingObjects_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_MovingObjects_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -280,7 +280,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuMaps_OfflineMap</property>
-                        <signal name="toggled" handler="on_menuMaps_RoadMap_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuMaps_RoadMap_toggled" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -307,7 +307,7 @@
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_None_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_None_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -319,7 +319,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_Map_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_Map_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -331,7 +331,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_MapLevel1_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_MapLevel1_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -343,7 +343,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_OfflineMap_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_OfflineMap_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -355,7 +355,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_Utility_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_Utility_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -367,7 +367,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_Costs_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_Costs_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -379,7 +379,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_Likelihood_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_Likelihood_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -391,7 +391,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_GlobalLikelihood_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_GlobalLikelihood_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -403,7 +403,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_Lane_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_Lane_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -415,7 +415,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_RemissionMap_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_RemissionMap_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -427,7 +427,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_MovingObjects_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_MovingObjects_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -439,7 +439,7 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
-                        <signal name="toggled" handler="on_menuSuperimposedMaps_RoadMap_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_RoadMap_toggled" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -465,7 +465,7 @@
                         <property name="label" translatable="yes">Track Robot</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_TrackRobot_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_TrackRobot_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -476,7 +476,7 @@
                         <property name="label" translatable="yes">Path</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_DrawPath_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_DrawPath_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -486,7 +486,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Waipoints</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_DrawWaipoints_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_DrawWaipoints_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -497,7 +497,7 @@
                         <property name="label" translatable="yes">Robot Waipoints</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_DrawRobotWaipoints_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_DrawRobotWaipoints_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -507,7 +507,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Lateral Offset</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowLateralOffset_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowLateralOffset_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -518,7 +518,7 @@
                         <property name="label" translatable="yes">Particles</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowParticles_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowParticles_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -528,7 +528,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Fused Odometry</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowFusedOdometry_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowFusedOdometry_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -538,7 +538,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Gaussians</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowGaussians_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowGaussians_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -548,7 +548,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Laser Data</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowLaserData_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowLaserData_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -558,7 +558,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Nearby Lanes</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowNearbyLanes_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowNearbyLanes_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -568,7 +568,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Nearby Lanes Width</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowNearbyLanesWidth_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowNearbyLanesWidth_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -578,7 +578,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Path Plans</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowPathPlans_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowPathPlans_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -588,7 +588,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">MPP Motion Plan</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowMPPMotionPlan_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowMPPMotionPlan_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -598,7 +598,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">OA Motion Plan</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowOAMotionPlan_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowOAMotionPlan_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -608,7 +608,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Command Plan</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowCommandPlan_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowCommandPlan_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -618,7 +618,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Offroad Plan</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowOffroadPlan_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowOffroadPlan_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -628,7 +628,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Dynamic Objects</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowDynamicObjects_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowDynamicObjects_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -638,7 +638,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Dynamic Points</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowDynamicPoints_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowDynamicPoints_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -648,7 +648,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Annotations</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowAnnotations_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowAnnotations_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -658,7 +658,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Lane Markings</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowLaneMarkings_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowLaneMarkings_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -668,7 +668,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Collision Model</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowCollisionRange_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowCollisionRange_toggled" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -693,7 +693,7 @@
                         <property name="label" translatable="yes">Fused Odometry</property>
                         <property name="use_underline">True</property>
                         <property name="group">menuCarPanel_robot_ackerman_message</property>
-                        <signal name="toggled" handler="on_menuCarPanel_fused_odometry_message" swapped="yes"/>
+                        <signal name="toggled" handler="on_menuCarPanel_fused_odometry_message" swapped="yes" />
                       </object>
                     </child>
                     <child>
@@ -704,7 +704,7 @@
                         <property name="label" translatable="yes">Robot Ackerman</property>
                         <property name="use_underline">True</property>
                         <property name="group">menuCarPanel_robot_ackerman_message</property>
-                        <signal name="toggled" handler="on_menuCarPanel_robot_ackerman_message" swapped="yes"/>
+                        <signal name="toggled" handler="on_menuCarPanel_robot_ackerman_message" swapped="yes" />
                       </object>
                     </child>
                     <child>
@@ -715,7 +715,7 @@
                         <property name="label" translatable="yes">Base Ackerman Motion</property>
                         <property name="use_underline">True</property>
                         <property name="group">menuCarPanel_robot_ackerman_message</property>
-                        <signal name="toggled" handler="on_menuCarPanel_base_ackerman_motion_message" swapped="yes"/>
+                        <signal name="toggled" handler="on_menuCarPanel_base_ackerman_motion_message" swapped="yes" />
                       </object>
                     </child>
                     <child>
@@ -727,7 +727,7 @@
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
                         <property name="group">menuCarPanel_robot_ackerman_message</property>
-                        <signal name="toggled" handler="on_menuCarPanel_base_ackerman_odometry_message" swapped="yes"/>
+                        <signal name="toggled" handler="on_menuCarPanel_base_ackerman_odometry_message" swapped="yes" />
                       </object>
                     </child>
                     <child>
@@ -738,7 +738,7 @@
                         <property name="label" translatable="yes">Localize Ackerman Global Position</property>
                         <property name="use_underline">True</property>
                         <property name="group">menuCarPanel_robot_ackerman_message</property>
-                        <signal name="toggled" handler="on_menuCarPanel_localize_ackerman_globalpos_message" swapped="yes"/>
+                        <signal name="toggled" handler="on_menuCarPanel_localize_ackerman_globalpos_message" swapped="yes" />
                       </object>
                     </child>
                   </object>
@@ -762,7 +762,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Show True Position</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuSimulatorShowTruePosition_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSimulatorShowTruePosition_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -772,7 +772,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Show Objects</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuSimulator_ShowObjects_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuSimulator_ShowObjects_toggled" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -782,7 +782,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Clear Objects</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuSimulator_ClearObjects_activate" swapped="no"/>
+                        <signal name="activate" handler="on_menuSimulator_ClearObjects_activate" swapped="no" />
                       </object>
                     </child>
                     <child>
@@ -799,7 +799,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Add Person</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuSimulator_AddPerson_activate" swapped="no"/>
+                        <signal name="activate" handler="on_menuSimulator_AddPerson_activate" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -823,7 +823,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Global Localization</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuStartLocation_GlobalLocalization_activate" swapped="no"/>
+                        <signal name="activate" handler="on_menuStartLocation_GlobalLocalization_activate" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -847,7 +847,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Edit Rddf Goals</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuGoals_EditRddfGoals_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuGoals_EditRddfGoals_toggled" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -871,7 +871,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">About</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_menuHelp_About_activate" swapped="no"/>
+                        <signal name="activate" handler="on_menuHelp_About_activate" swapped="no" />
                       </object>
                     </child>
                   </object>
@@ -900,7 +900,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <placeholder/>
+                      <placeholder />
                     </child>
                   </object>
                 </child>
@@ -922,8 +922,8 @@
                       <object class="GtkDrawingArea" id="drawingArea">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <signal name="expose-event" handler="on_drawingArea_expose_event" swapped="no"/>
-                        <signal name="realize" handler="on_drawingArea_realize" swapped="no"/>
+                        <signal name="expose-event" handler="on_drawingArea_expose_event" swapped="no" />
+                        <signal name="realize" handler="on_drawingArea_realize" swapped="no" />
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -965,7 +965,7 @@
                     <property name="can_focus">True</property>
                     <child>
                       <object class="GtkFrame" id="frame1">
-                        <property name="height_request">250</property>
+                        <property name="height_request">340</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="border_width">3</property>
@@ -980,7 +980,7 @@
                               <object class="GtkVBox" id="box5">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="homogeneous">True</property>
+                                <property name="homogeneous">False</property>
                                 <child>
                                   <object class="GtkLabel" id="labelOrigin">
                                     <property name="selectable">True</property>
@@ -1101,21 +1101,21 @@
                                     <property name="position">7</property>
                                   </packing>
                                 </child>
-				<child>
-				  <object class="GtkLabel" id="labelLowLevelState">
-				    <property name="selectable">True</property>
-				    <property name="visible">True</property>
-				    <property name="can_focus">False</property>
-				    <property name="xalign">0</property>
-				    <property name="xpad">5</property>
-				    <property name="label" translatable="yes">Low Level State:</property>
-				  </object>
-				  <packing>
-				    <property name="expand">True</property>
-				    <property name="fill">True</property>
-				    <property name="position">8</property>
-				  </packing>
-				</child>
+                                <child>
+                                  <object class="GtkLabel" id="labelLowLevelState">
+                                    <property name="selectable">True</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="xalign">0</property>
+                                    <property name="xpad">5</property>
+                                    <property name="label" translatable="yes">Low Level State:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">8</property>
+                                  </packing>
+                                </child>
                                 <child>
                                   <object class="GtkLabel" id="labelTrafficSignState">
                                     <property name="selectable">True</property>
@@ -1191,6 +1191,95 @@
                                     <property name="position">13</property>
                                   </packing>
                                 </child>
+                                <child>
+                                  <object class="GtkExpander" id="expanderErrors">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="expanded">False</property>
+                                    <child>
+                                      <object class="GtkVBox" id="box0">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="homogeneous">True</property>
+                                        <child>
+                                          <object class="GtkLabel" id="labelDecisionMakingErrors">
+                                            <property name="selectable">True</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="xalign">0</property>
+                                            <property name="xpad">5</property>
+                                            <property name="label" translatable="yes">Decision Making:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">True</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">15</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="labelBasicPerceptionErrors">
+                                            <property name="selectable">True</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="xalign">0</property>
+                                            <property name="xpad">5</property>
+                                            <property name="label" translatable="yes">Basic Perception:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">True</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">16</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="labelLidarsErrors">
+                                            <property name="selectable">True</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="xalign">0</property>
+                                            <property name="xpad">5</property>
+                                            <property name="label" translatable="yes">Lidars:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">True</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">17</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="labelCamerasErrors">
+                                            <property name="selectable">True</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="xalign">0</property>
+                                            <property name="xpad">5</property>
+                                            <property name="label" translatable="yes">Cameras:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">True</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">18</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                    </child>
+                                    <child type="label">
+                                      <object class="GtkLabel" id="labelErrors">
+                                        <property name="selectable">True</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="xalign">0</property>
+                                        <property name="xpad">5</property>
+                                        <property name="label" translatable="yes">Errors</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">14</property>
+                                  </packing>
+                                </child>
                               </object>
                             </child>
                             <child type="label">
@@ -1210,7 +1299,7 @@
                           </object>
                         </child>
                         <child type="label_item">
-                          <placeholder/>
+                          <placeholder />
                         </child>
                       </object>
                       <packing>
@@ -1231,8 +1320,8 @@
                       <object class="GtkDrawingArea" id="drawingAreaCarPanel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <signal name="expose-event" handler="on_drawingAreaCarPanel_expose_event" swapped="no"/>
-                        <signal name="realize" handler="on_drawingAreaCarPanel_realize" swapped="no"/>
+                        <signal name="expose-event" handler="on_drawingAreaCarPanel_expose_event" swapped="no" />
+                        <signal name="realize" handler="on_drawingAreaCarPanel_realize" swapped="no" />
                       </object>
                       <packing>
                         <property name="position">1</property>
@@ -1309,9 +1398,9 @@
                                             <property name="can_focus">False</property>
                                             <property name="model">listPlaceOfInterest</property>
                                             <property name="active">0</property>
-                                            <signal name="changed" handler="on_comboPlaceOfInterest_changed" swapped="no"/>
+                                            <signal name="changed" handler="on_comboPlaceOfInterest_changed" swapped="no" />
                                             <child>
-                                              <object class="GtkCellRendererText" id="cellrenderertext2"/>
+                                              <object class="GtkCellRendererText" id="cellrenderertext2" />
                                               <attributes>
                                                 <attribute name="text">0</attribute>
                                               </attributes>
@@ -1356,9 +1445,9 @@
                                             <property name="can_focus">False</property>
                                             <property name="model">listMission</property>
                                             <property name="active">0</property>
-                                            <signal name="changed" handler="on_comboMission_changed" swapped="no"/>
+                                            <signal name="changed" handler="on_comboMission_changed" swapped="no" />
                                             <child>
-                                              <object class="GtkCellRendererText" id="cellrenderertext5"/>
+                                              <object class="GtkCellRendererText" id="cellrenderertext5" />
                                               <attributes>
                                                 <attribute name="text">0</attribute>
                                               </attributes>
@@ -1377,7 +1466,6 @@
                                         <property name="position">1</property>
                                       </packing>
                                     </child>
-
                                     <child>
                                       <object class="GtkHBox" id="box9">
                                         <property name="visible">True</property>
@@ -1403,9 +1491,9 @@
                                             <property name="can_focus">False</property>
                                             <property name="model">listState</property>
                                             <property name="active">0</property>
-                                            <signal name="changed" handler="on_comboState_changed" swapped="no"/>
+                                            <signal name="changed" handler="on_comboState_changed" swapped="no" />
                                             <child>
-                                              <object class="GtkCellRendererText" id="cellrenderertext3"/>
+                                              <object class="GtkCellRendererText" id="cellrenderertext3" />
                                               <attributes>
                                                 <attribute name="text">0</attribute>
                                               </attributes>
@@ -1449,9 +1537,9 @@
                                             <property name="can_focus">False</property>
                                             <property name="model">listFollowRoute</property>
                                             <property name="active">0</property>
-                                            <signal name="changed" handler="on_comboFollowRoute_changed" swapped="no"/>
+                                            <signal name="changed" handler="on_comboFollowRoute_changed" swapped="no" />
                                             <child>
-                                              <object class="GtkCellRendererText" id="cellrenderertext4"/>
+                                              <object class="GtkCellRendererText" id="cellrenderertext4" />
                                               <attributes>
                                                 <attribute name="text">0</attribute>
                                               </attributes>
@@ -1495,9 +1583,9 @@
                                             <property name="can_focus">False</property>
                                             <property name="model">listParking</property>
                                             <property name="active">0</property>
-                                            <signal name="changed" handler="on_comboParking_changed" swapped="no"/>
+                                            <signal name="changed" handler="on_comboParking_changed" swapped="no" />
                                             <child>
-                                              <object class="GtkCellRendererText" id="cellrenderertext1"/>
+                                              <object class="GtkCellRendererText" id="cellrenderertext1" />
                                               <attributes>
                                                 <attribute name="text">0</attribute>
                                               </attributes>
@@ -1558,7 +1646,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonPlaceRobot_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonPlaceRobot_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1573,7 +1661,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonPlaceSimulator_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonPlaceSimulator_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1600,7 +1688,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonSetCollisionGeometry_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonSetCollisionGeometry_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1616,7 +1704,7 @@
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
                                             <property name="relief">half</property>
-                                            <signal name="clicked" handler="on_buttonPlaceFinalGoal_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonPlaceFinalGoal_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1643,7 +1731,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonSetDefaultGeometry_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonSetDefaultGeometry_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1658,7 +1746,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonComputeRoute_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonComputeRoute_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1685,8 +1773,8 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonGo_clicked" swapped="no"/>
-                                            <signal name="enter" handler="on_buttonGo_entered" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonGo_clicked" swapped="no" />
+                                            <signal name="enter" handler="on_buttonGo_entered" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1701,7 +1789,7 @@
                                         <property name="position">3</property>
                                       </packing>
                                     </child>
-				    <child>
+                                    <child>
                                       <object class="GtkVBox" id="box18">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
@@ -1713,8 +1801,8 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonRecord_clicked" swapped="no"/>
-                                            <signal name="enter" handler="on_buttonRecord_entered" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonRecord_clicked" swapped="no" />
+                                            <signal name="enter" handler="on_buttonRecord_entered" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1741,7 +1829,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonZoomIn_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonZoomIn_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1756,7 +1844,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonZoomOut_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonZoomOut_clicked" swapped="no" />
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>
@@ -1802,7 +1890,7 @@
                       </object>
                     </child>
                     <child type="label_item">
-                      <placeholder/>
+                      <placeholder />
                     </child>
                   </object>
                   <packing>
