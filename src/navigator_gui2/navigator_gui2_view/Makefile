@@ -22,7 +22,7 @@ LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lma
 		  -ldynamic_object_detector_interface -lmapper_interface \
 		  -lsimulator_ackerman_interface -llocalize_ackerman_interface -lnavigator_ackerman_interface -lnavigator_interface \
 		  -lfused_odometry_interface -lmap_io -lrddf_interface -lfrenet_path_planner_interface -lroute_planner_interface -lmap_server_interface -lbehavior_selector_interface \
-		  -lrotation_geometry -lcar_panel -lrobot_ackerman_interface `pkg-config --libs opencv` \
+		  -lrotation_geometry -lcar_panel -laudit_interface -lrobot_ackerman_interface `pkg-config --libs opencv` \
 		  -lglm -lGL -lGLU -lglut -ltf -luser_app_server_interface
 LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
