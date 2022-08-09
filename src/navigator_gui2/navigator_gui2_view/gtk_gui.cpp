@@ -2210,7 +2210,7 @@ namespace View
 			speed /= 10.0;
 			new_person.pose.theta = angle;
 			carmen_simulator_ackerman_set_object(&(new_person.pose), speed,
-					(carmen_simulator_ackerman_object_t) CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT);
+					(carmen_simulator_ackerman_object_t) CARMEN_SIMULATOR_ACKERMAN_PERSON);
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 			return TRUE;
@@ -2223,19 +2223,42 @@ namespace View
 	GtkGui::orienting_simulator_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point)
 	{
 		GdkCursor *cursor;
-		if (placement_status == ORIENTING_SIMULATOR)
+		if (placement_status == ORIENTING_SIMULATOR ||
+				placement_status == ORIENTING_LINE_FOLLOWER ||
+				placement_status == ORIENTING_OTHER_ROBOT ||
+				placement_status == ORIENTING_BIKE ||
+				placement_status == ORIENTING_CAR ||
+				placement_status == ORIENTING_TRUCK )
 		{
-			placement_status = NO_PLACEMENT;
+
 			double angle = atan2(world_point->pose.y - new_simulator.pose.y,
 					world_point->pose.x - new_simulator.pose.x);
 			new_simulator.pose.theta = angle;
 			double speed = hypot(world_point->pose.y - new_simulator.pose.y,
 					world_point->pose.x - new_simulator.pose.x);
 			speed /= 10.0;
-			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, object_type);
+//			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, object_type);
+			carmen_simulator_ackerman_object_t current_object_type;
+
+			if (placement_status == ORIENTING_LINE_FOLLOWER)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_LINE_FOLLOWER;
+			else if (placement_status == ORIENTING_OTHER_ROBOT)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT;
+			else if (placement_status == ORIENTING_BIKE)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_BIKE;
+			else if (placement_status == ORIENTING_CAR)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_CAR;
+			else if (placement_status == ORIENTING_TRUCK)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_TRUCK;
+			else
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT;
+
+			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, (carmen_simulator_ackerman_object_t) current_object_type);
+
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
+			placement_status = NO_PLACEMENT;
 			return (TRUE);
 		}
 
@@ -2247,12 +2270,30 @@ namespace View
 	{
 		GdkCursor *cursor;
 
-		if (placement_status == PLACING_SIMULATOR)
+		if (placement_status == PLACING_SIMULATOR ||
+				placement_status == PLACING_LINE_FOLLOWER ||
+				placement_status == PLACING_OTHER_ROBOT ||
+				placement_status == PLACING_BIKE ||
+				placement_status == PLACING_CAR ||
+				placement_status == PLACING_TRUCK)
 		{
 			new_simulator = *world_point;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
-			placement_status = ORIENTING_SIMULATOR;
+
+			if (placement_status == PLACING_LINE_FOLLOWER)
+				placement_status = ORIENTING_LINE_FOLLOWER;
+			else if (placement_status == PLACING_OTHER_ROBOT)
+				placement_status = ORIENTING_OTHER_ROBOT;
+			else if (placement_status == PLACING_BIKE)
+				placement_status = ORIENTING_BIKE;
+			else if (placement_status == PLACING_CAR)
+				placement_status = ORIENTING_CAR;
+			else if (placement_status == PLACING_TRUCK)
+				placement_status = ORIENTING_TRUCK;
+			else
+				placement_status = ORIENTING_SIMULATOR;
+
 			return TRUE;
 		}
 
@@ -3223,7 +3264,12 @@ namespace View
 				(placement_status != ORIENTING_PERSON) &&
 				(placement_status != ORIENTING_FINAL_GOAL) &&
 				(placement_status != ORIENTING_FINAL_GOAL_SEMI_TRAILER) &&
-				(placement_status != ORIENTING_SIMULATOR))
+				(placement_status != ORIENTING_SIMULATOR) &&
+				(placement_status != ORIENTING_LINE_FOLLOWER) &&
+				(placement_status != ORIENTING_OTHER_ROBOT) &&
+				(placement_status != ORIENTING_BIKE) &&
+				(placement_status != ORIENTING_CAR) &&
+				(placement_status != ORIENTING_TRUCK))
 			return;
 
 		/* Everything from here down is only used if we are orienting something.
@@ -3326,6 +3372,32 @@ namespace View
 				draw_point = &new_simulator;
 				colour	   = &carmen_blue;
 			}
+			else if (placement_status == ORIENTING_LINE_FOLLOWER)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_OTHER_ROBOT)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_BIKE)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_CAR)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_TRUCK)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+
 			else if (placement_status == ORIENTING_GOAL)
 			{
 				draw_point = &goal_temp;
