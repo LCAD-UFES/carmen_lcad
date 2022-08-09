@@ -1053,7 +1053,12 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 			(global_gui->placement_status == ORIENTING_SIMULATOR) ||
 			(global_gui->placement_status == ORIENTING_FINAL_GOAL) ||
 			(global_gui->placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER) ||
-			(global_gui->placement_status == ORIENTING_PERSON))
+			(global_gui->placement_status == ORIENTING_PERSON) ||
+			(global_gui->placement_status == ORIENTING_LINE_FOLLOWER) ||
+			(global_gui->placement_status == ORIENTING_OTHER_ROBOT) ||
+			(global_gui->placement_status == ORIENTING_BIKE) ||
+			(global_gui->placement_status == ORIENTING_CAR) ||
+			(global_gui->placement_status == ORIENTING_TRUCK))
 	{
 		global_gui->cursor_pos = *world_point;
 		global_gui->display_needs_updating = 1;
