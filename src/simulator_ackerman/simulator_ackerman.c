@@ -163,9 +163,11 @@ build_moving_objects_message(int num_objects, carmen_simulator_ackerman_objects_
 
 	msg.num_point_clouds = num_objects;
 	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
-
+	int real_number_of_objects = 0;
 	for (int i = 0, l = 0; i < num_objects; i++)
 	{
+		if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_PERSON)
+		{
 			msg.point_clouds[l].r = 1.0;
 			msg.point_clouds[l].g = 1.0;
 			msg.point_clouds[l].b = 0.0;
@@ -209,7 +211,11 @@ build_moving_objects_message(int num_objects, carmen_simulator_ackerman_objects_
 				msg.point_clouds[l].points[j] = p;
 			}
 			l++;
+			real_number_of_objects++;
+		}
 	}
+	msg.num_point_clouds = real_number_of_objects;
+
 	return (msg);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////

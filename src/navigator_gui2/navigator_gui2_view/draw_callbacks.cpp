@@ -678,6 +678,52 @@ void on_menuSimulator_AddPerson_activate(GtkWidget *widget __attribute__((unused
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddLineFollower_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_LINE_FOLLOWER;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddOtherRobot_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_OTHER_ROBOT;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddBike_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_BIKE;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddCar_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_CAR;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddTruck_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_TRUCK;
+}
+
+
+//extern "C" G_MODULE_EXPORT
 void on_menuStartLocation_GlobalLocalization_activate(GtkWidget *widget __attribute__((unused)),
 					   GdkEvent *event __attribute__((unused)),
 					   GtkGui* data	__attribute__((unused)))
