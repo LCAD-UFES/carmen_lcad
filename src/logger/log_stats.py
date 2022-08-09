@@ -18,11 +18,12 @@ def main():
                     continue
                 token = tokens[0]
                 ts = tokens[-1]
-                if token in token_dict:
-                    (count, ts_init, ts_end) = token_dict[token]
-                    token_dict[token] = (count + 1, ts_init, ts)
+                token_data = token_dict.get(token)
+                if token_data:
+                    token_data[0] += 1
+                    token_data[2] = ts
                 else:
-                    token_dict[token] = (1, ts, ts)
+                    token_dict[token] = [1, ts, ts]
     except IOError:
         print('\nERROR: Could not open log filename: {}\n'.format(log_filename))
         sys.exit(2)
