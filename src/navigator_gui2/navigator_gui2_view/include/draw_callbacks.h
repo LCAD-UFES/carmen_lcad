@@ -258,6 +258,31 @@ void on_menuSimulator_AddPerson_activate(GtkWidget *widget,
 					   GtkGui* data);
 
 extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddLineFollower_activate(GtkWidget *widget,
+					   GdkEvent *event,
+					   GtkGui* data);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddOtherRobot_activate(GtkWidget *widget,
+					   GdkEvent *event,
+					   GtkGui* data);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddBike_activate(GtkWidget *widget,
+					   GdkEvent *event,
+					   GtkGui* data);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddCar_activate(GtkWidget *widget,
+					   GdkEvent *event,
+					   GtkGui* data);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddTruck_activate(GtkWidget *widget,
+					   GdkEvent *event,
+					   GtkGui* data);
+
+extern "C" G_MODULE_EXPORT
 void on_menuStartLocation_GlobalLocalization_activate(GtkWidget *widget,
 					   GdkEvent *event,
 					   GtkGui* data);

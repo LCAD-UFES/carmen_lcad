@@ -467,7 +467,8 @@ void carmen_simulator_ackerman_update_objects(carmen_simulator_ackerman_config_t
 		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT)
 			update_other_robot(object_list + index);
 		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_PERSON)
-			update_object_in_lane(index, simulator_config);
+			update_random_object(index, simulator_config);
+//			update_object_in_lane(index, simulator_config);
 		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_BIKE)
 			update_object_in_lane(index, simulator_config);
 		else if (object_list[index].type == CARMEN_SIMULATOR_ACKERMAN_CAR)

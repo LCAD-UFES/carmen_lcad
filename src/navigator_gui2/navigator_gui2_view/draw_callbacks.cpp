@@ -678,6 +678,52 @@ void on_menuSimulator_AddPerson_activate(GtkWidget *widget __attribute__((unused
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddLineFollower_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_LINE_FOLLOWER;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddOtherRobot_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_OTHER_ROBOT;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddBike_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_BIKE;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddCar_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_CAR;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSimulator_AddTruck_activate(GtkWidget *widget __attribute__((unused)),
+					   GdkEvent *event __attribute__((unused)),
+					   GtkGui* gui)
+{
+	global_gui->change_cursor(&carmen_orange, &carmen_black);
+	global_gui->placement_status = PLACING_TRUCK;
+}
+
+
+//extern "C" G_MODULE_EXPORT
 void on_menuStartLocation_GlobalLocalization_activate(GtkWidget *widget __attribute__((unused)),
 					   GdkEvent *event __attribute__((unused)),
 					   GtkGui* data	__attribute__((unused)))
@@ -1007,7 +1053,12 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 			(global_gui->placement_status == ORIENTING_SIMULATOR) ||
 			(global_gui->placement_status == ORIENTING_FINAL_GOAL) ||
 			(global_gui->placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER) ||
-			(global_gui->placement_status == ORIENTING_PERSON))
+			(global_gui->placement_status == ORIENTING_PERSON) ||
+			(global_gui->placement_status == ORIENTING_LINE_FOLLOWER) ||
+			(global_gui->placement_status == ORIENTING_OTHER_ROBOT) ||
+			(global_gui->placement_status == ORIENTING_BIKE) ||
+			(global_gui->placement_status == ORIENTING_CAR) ||
+			(global_gui->placement_status == ORIENTING_TRUCK))
 	{
 		global_gui->cursor_pos = *world_point;
 		global_gui->display_needs_updating = 1;

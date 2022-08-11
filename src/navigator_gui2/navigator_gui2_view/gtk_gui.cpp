@@ -598,6 +598,10 @@ namespace View
 		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
 		controls_.labelOffRoadPlannerRequest = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerRequest" ));
 		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
+		controls_.labelDecisionMakingErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelDecisionMakingErrors" ));
+		controls_.labelBasicPerceptionErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelBasicPerceptionErrors" ));
+		controls_.labelLidarsErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelLidarsErrors" ));
+		controls_.labelCamerasErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelCamerasErrors" ));
 
 		controls_.labelNavConTimestamp = GTK_LABEL(gtk_builder_get_object(builder, "labelNavConTimestamp" ));
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
@@ -1003,6 +1007,275 @@ namespace View
 		}
 
 		display_needs_updating = 1;
+		do_redraw();
+	}
+
+	void
+	GtkGui::navigator_graphics_update_errors(carmen_audit_status_message *message)
+	{
+		static char buffer[2048];
+
+		const char *pad = "";
+		sprintf(buffer, "Decision Making: ");
+		if(message->decision_making_status & ROUTE_PLANNER_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sRP", pad);
+			pad = ", ";
+		}
+
+		if(message->decision_making_status & BEHAVIOR_SELECTOR_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sBS", pad);
+			pad = ", ";
+		}
+
+		if(message->decision_making_status & MPP_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sMPP", pad);
+			pad = ", ";
+		}
+
+		if(message->decision_making_status & OBSTACLE_AVOIDER_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sOBS", pad);
+			pad = ", ";
+		}
+
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelDecisionMakingErrors), buffer);
+
+		pad = "";
+		sprintf(buffer, "Basic Perception: ");
+		if(message->basic_perception_status & LOCALIZER_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sLOC", pad);
+			pad = ", ";
+		}
+
+		if(message->basic_perception_status & OD_MAPPER_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sOD_MAP", pad);
+			pad = ", ";
+		}
+
+		if(message->basic_perception_status & VEHICLE_ODOMETRY_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sB_ACK", pad);
+			pad = ", ";
+		}
+
+		if(message->basic_perception_status & IMU_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sIMU", pad);
+			pad = ", ";
+		}
+
+		if(message->basic_perception_status & GPS_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sGPS", pad);
+			pad = ", ";
+		}
+
+		if(message->basic_perception_status & VELODYNE_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sVLDY", pad);
+			pad = ", ";
+		}
+
+		if(message->basic_perception_status & LDMRS_ERROR)
+		{
+			sprintf(buffer + strlen(buffer), "%sLDMRS", pad);
+			pad = ", ";
+		}
+
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelBasicPerceptionErrors), buffer);
+
+		sprintf(buffer, "Lidars: ");
+		if(message->lidar_status & LIDAR0_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "0 ");
+		}
+
+		if(message->lidar_status & LIDAR1_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "1 ");
+		}
+
+		if(message->lidar_status & LIDAR2_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "2 ");
+		}
+
+		if(message->lidar_status & LIDAR3_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "3 ");
+		}
+
+		if(message->lidar_status & LIDAR4_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "4 ");
+		}
+
+		if(message->lidar_status & LIDAR5_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "5 ");
+		}
+
+		if(message->lidar_status & LIDAR6_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "6 ");
+		}
+
+		if(message->lidar_status & LIDAR7_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "7 ");
+		}
+
+		if(message->lidar_status & LIDAR8_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "8 ");
+		}
+
+		if(message->lidar_status & LIDAR9_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "9 ");
+		}
+
+		if(message->lidar_status & LIDAR10_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "10 ");
+		}
+
+		if(message->lidar_status & LIDAR11_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "11 ");
+		}
+
+		if(message->lidar_status & LIDAR12_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "12 ");
+		}
+
+		if(message->lidar_status & LIDAR13_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "13 ");
+		}
+
+		if(message->lidar_status & LIDAR14_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "14 ");
+		}
+
+		if(message->lidar_status & LIDAR15_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "15 ");
+		}
+
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelLidarsErrors), buffer);
+
+		sprintf(buffer, "Cameras: ");
+
+		if(message->camera_status & CAMERA1_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "1 ");
+		}
+
+		if(message->camera_status & CAMERA2_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "2 ");
+		}
+
+		if(message->camera_status & CAMERA3_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "3 ");
+		}
+
+		if(message->camera_status & CAMERA4_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "4 ");
+		}
+
+		if(message->camera_status & CAMERA5_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "5 ");
+		}
+
+		if(message->camera_status & CAMERA6_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "6 ");
+		}
+
+		if(message->camera_status & CAMERA7_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "7 ");
+		}
+
+		if(message->camera_status & CAMERA8_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "8 ");
+		}
+
+		if(message->camera_status & CAMERA9_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "9 ");
+		}
+
+		if(message->camera_status & CAMERA10_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "10 ");
+		}
+
+		if(message->camera_status & CAMERA11_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "11 ");
+		}
+
+		if(message->camera_status & CAMERA12_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "12 ");
+		}
+
+		if(message->camera_status & CAMERA13_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "13 ");
+		}
+
+		if(message->camera_status & CAMERA14_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "14 ");
+		}
+
+		if(message->camera_status & CAMERA15_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "15 ");
+		}
+
+		if(message->camera_status & CAMERA16_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "16 ");
+		}
+
+		if(message->camera_status & CAMERA17_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "17 ");
+		}
+
+		if(message->camera_status & CAMERA18_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "18 ");
+		}
+
+		if(message->camera_status & CAMERA19_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "19 ");
+		}
+
+		if(message->camera_status & CAMERA20_ERROR_INDEX)
+		{
+			sprintf(buffer + strlen(buffer), "20 ");
+		}
+
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelCamerasErrors), buffer);
+
 		do_redraw();
 	}
 
@@ -1841,7 +2114,7 @@ namespace View
 			snprintf(log_buffer,sizeof(log_buffer),"%spictures/%d.jpg", log_path, log_counter);
 			gdk_pixbuf_save(pixbuf, log_buffer, "jpeg", &error, NULL);
 
-			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
+			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOrigin)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelRobot)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelFusedOdometry)),
@@ -1855,6 +2128,10 @@ namespace View
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelRoutePlannerState)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOffRoadPlannerState)),
 					gtk_label_get_text(GTK_LABEL(this->controls_.labelOffRoadPlannerRequest)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelDecisionMakingErrors)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelBasicPerceptionErrors)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelLidarsErrors)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelCamerasErrors)),
 					log_button_go);
 			fprintf(file_log,"%s\n", log_buffer);
 			log_counter++;
@@ -2210,7 +2487,7 @@ namespace View
 			speed /= 10.0;
 			new_person.pose.theta = angle;
 			carmen_simulator_ackerman_set_object(&(new_person.pose), speed,
-					(carmen_simulator_ackerman_object_t) CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT);
+					(carmen_simulator_ackerman_object_t) CARMEN_SIMULATOR_ACKERMAN_PERSON);
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 			return TRUE;
@@ -2223,19 +2500,42 @@ namespace View
 	GtkGui::orienting_simulator_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point)
 	{
 		GdkCursor *cursor;
-		if (placement_status == ORIENTING_SIMULATOR)
+		if (placement_status == ORIENTING_SIMULATOR ||
+				placement_status == ORIENTING_LINE_FOLLOWER ||
+				placement_status == ORIENTING_OTHER_ROBOT ||
+				placement_status == ORIENTING_BIKE ||
+				placement_status == ORIENTING_CAR ||
+				placement_status == ORIENTING_TRUCK )
 		{
-			placement_status = NO_PLACEMENT;
+
 			double angle = atan2(world_point->pose.y - new_simulator.pose.y,
 					world_point->pose.x - new_simulator.pose.x);
 			new_simulator.pose.theta = angle;
 			double speed = hypot(world_point->pose.y - new_simulator.pose.y,
 					world_point->pose.x - new_simulator.pose.x);
 			speed /= 10.0;
-			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, object_type);
+//			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, object_type);
+			carmen_simulator_ackerman_object_t current_object_type;
+
+			if (placement_status == ORIENTING_LINE_FOLLOWER)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_LINE_FOLLOWER;
+			else if (placement_status == ORIENTING_OTHER_ROBOT)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT;
+			else if (placement_status == ORIENTING_BIKE)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_BIKE;
+			else if (placement_status == ORIENTING_CAR)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_CAR;
+			else if (placement_status == ORIENTING_TRUCK)
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_TRUCK;
+			else
+				current_object_type = CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT;
+
+			carmen_simulator_ackerman_set_object(&(new_simulator.pose), speed, (carmen_simulator_ackerman_object_t) current_object_type);
+
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
+			placement_status = NO_PLACEMENT;
 			return (TRUE);
 		}
 
@@ -2247,12 +2547,30 @@ namespace View
 	{
 		GdkCursor *cursor;
 
-		if (placement_status == PLACING_SIMULATOR)
+		if (placement_status == PLACING_SIMULATOR ||
+				placement_status == PLACING_LINE_FOLLOWER ||
+				placement_status == PLACING_OTHER_ROBOT ||
+				placement_status == PLACING_BIKE ||
+				placement_status == PLACING_CAR ||
+				placement_status == PLACING_TRUCK)
 		{
 			new_simulator = *world_point;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
-			placement_status = ORIENTING_SIMULATOR;
+
+			if (placement_status == PLACING_LINE_FOLLOWER)
+				placement_status = ORIENTING_LINE_FOLLOWER;
+			else if (placement_status == PLACING_OTHER_ROBOT)
+				placement_status = ORIENTING_OTHER_ROBOT;
+			else if (placement_status == PLACING_BIKE)
+				placement_status = ORIENTING_BIKE;
+			else if (placement_status == PLACING_CAR)
+				placement_status = ORIENTING_CAR;
+			else if (placement_status == PLACING_TRUCK)
+				placement_status = ORIENTING_TRUCK;
+			else
+				placement_status = ORIENTING_SIMULATOR;
+
 			return TRUE;
 		}
 
@@ -3223,7 +3541,12 @@ namespace View
 				(placement_status != ORIENTING_PERSON) &&
 				(placement_status != ORIENTING_FINAL_GOAL) &&
 				(placement_status != ORIENTING_FINAL_GOAL_SEMI_TRAILER) &&
-				(placement_status != ORIENTING_SIMULATOR))
+				(placement_status != ORIENTING_SIMULATOR) &&
+				(placement_status != ORIENTING_LINE_FOLLOWER) &&
+				(placement_status != ORIENTING_OTHER_ROBOT) &&
+				(placement_status != ORIENTING_BIKE) &&
+				(placement_status != ORIENTING_CAR) &&
+				(placement_status != ORIENTING_TRUCK))
 			return;
 
 		/* Everything from here down is only used if we are orienting something.
@@ -3326,6 +3649,32 @@ namespace View
 				draw_point = &new_simulator;
 				colour	   = &carmen_blue;
 			}
+			else if (placement_status == ORIENTING_LINE_FOLLOWER)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_OTHER_ROBOT)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_BIKE)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_CAR)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+			else if (placement_status == ORIENTING_TRUCK)
+			{
+				draw_point = &new_simulator;
+				colour	   = &carmen_blue;
+			}
+
 			else if (placement_status == ORIENTING_GOAL)
 			{
 				draw_point = &goal_temp;

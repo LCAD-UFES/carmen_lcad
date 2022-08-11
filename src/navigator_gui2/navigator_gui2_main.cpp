@@ -21,6 +21,8 @@
 #include <carmen/route_planner_interface.h>
 #include <carmen/offroad_planner_interface.h>
 
+#include <carmen/audit_interface.h>
+
 #include <carmen/carmen_graphics.h>
 #include <gtk_gui.h>
 
@@ -1191,6 +1193,11 @@ lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
 	gui->lane_markings_msg = msg;
 }
 
+static void
+audit_status_message_handler(carmen_audit_status_message *message)
+{
+	gui->navigator_graphics_update_errors(message);
+}
 
 
 
@@ -1604,6 +1611,9 @@ subscribe_ipc_messages()
 	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL, (carmen_handler_t) navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_lane_subscribe(NULL, (carmen_handler_t) lane_detector_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_audit_subscribe_status_message(NULL, (carmen_handler_t) audit_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 
 	err = IPC_defineMsg(CARMEN_RDDF_END_POINT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_END_POINT_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_END_POINT_MESSAGE_NAME);
