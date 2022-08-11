@@ -75,7 +75,8 @@ int base_ackerman_odometry_index = -1;
 
 
 double
-get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
+//get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
+get_angle_between_gpss(carmen_gps_xyz_message reach1, carmen_gps_xyz_message reach2)
 {
 	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) + REFERENCE_ANGLE;
 	angle = carmen_normalize_theta(angle);
