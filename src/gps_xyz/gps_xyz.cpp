@@ -54,7 +54,7 @@
 #define GPS_1 1
 #define GPS_2 2
 #define SMALL_DELTA_T 0.02
-#define REFERENCE_ANGLE 0.0
+#define REFERENCE_ANGLE (M_PI)
 
 using namespace std;
 
