@@ -51,8 +51,8 @@
 #include <algorithm>
 
 #define GPS_MESSAGE_QUEUE_SIZE 5
+#define GPS_1 1
 #define GPS_2 2
-#define GPS_3 3
 #define SMALL_DELTA_T 0.02
 #define REFERENCE_ANGLE (M_PI / 2.0)
 
@@ -94,11 +94,11 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 	{
 		for (i = gps_xyz_message_queue.size() - 1; i >= 0; i--)
 		{
-			if (gps_xyz_message_queue[i].nr == GPS_2)
+			if (gps_xyz_message_queue[i].nr == GPS_1)
 			{
 				for (int j = gps_xyz_message_queue.size() - 1; j >= 0; j--)
 				{
-					if ((gps_xyz_message_queue[j].nr == GPS_3) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
+					if ((gps_xyz_message_queue[j].nr == GPS_2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
 					{
 						angle = get_angle_between_gpss(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
 						break;
@@ -412,7 +412,7 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 
 	carmen_gps_xyz_publish_message(gps_xyz_message);
 
-	if ((gps_xyz_message.nr == GPS_2) || (gps_xyz_message.nr == GPS_3))
+	if ((gps_xyz_message.nr == GPS_1) || (gps_xyz_message.nr == GPS_2))
 		gps_xyz_message_queue.push_back(gps_xyz_message);
 
 	if (gps_xyz_message_queue.size() > GPS_MESSAGE_QUEUE_SIZE)
