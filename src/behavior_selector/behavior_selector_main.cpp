@@ -213,7 +213,7 @@ compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_p
 		num_poses_ahead_by_velocity = param_rddf_num_poses_ahead_limited_by_map;
 
 //	printf("\n current_v: %lf distance: %lf a: %lf num_poses: %d \n", current_pose.v, distance, a, num_poses_ahead_by_velocity);
-	return num_poses_ahead_by_velocity;
+	return (num_poses_ahead_by_velocity);
 }
 
 
@@ -1179,7 +1179,13 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 
 	if (behavior_selector_performs_path_planning && current_set_of_paths)
 	{
-		set_of_paths.selected_path = selected_path_id;
+		if(busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
+			((behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
+			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1))) //@@@Vinicius teste para nao escolher paths laterais na faixa
+			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
+		else
+			set_of_paths.selected_path = selected_path_id;
+
 		publish_set_of_paths_message(&set_of_paths);
 
 		static carmen_rddf_road_profile_message rddf_msg;

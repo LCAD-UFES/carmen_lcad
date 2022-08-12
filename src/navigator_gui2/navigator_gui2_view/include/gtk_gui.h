@@ -36,6 +36,7 @@
 #include <carmen/route_planner_interface.h>
 #include <carmen/offroad_planner_interface.h>
 #include <carmen/user_app_server_interface.h>
+#include <carmen/audit_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -74,7 +75,17 @@ typedef enum
 	ORIENTING_FINAL_GOAL,
 	ORIENTING_FINAL_GOAL_SEMI_TRAILER,
 	SELECTING_NEAR_WAYPOINT,
-	EDITING_NEAR_RDDF
+	EDITING_NEAR_RDDF,
+	PLACING_LINE_FOLLOWER,
+	ORIENTING_LINE_FOLLOWER,
+	PLACING_OTHER_ROBOT,
+	ORIENTING_OTHER_ROBOT,
+	PLACING_BIKE,
+	ORIENTING_BIKE,
+	PLACING_CAR,
+	ORIENTING_CAR,
+	PLACING_TRUCK,
+	ORIENTING_TRUCK
 } placement_t;
 
 typedef struct {
@@ -138,6 +149,10 @@ namespace View
 			GtkLabel *labelOffRoadPlannerRequest;
 			GtkLabel *labelOffRoadPlannerState;
 			GtkLabel *labelGlobalPosTimeStamp;
+			GtkLabel *labelDecisionMakingErrors;
+			GtkLabel *labelBasicPerceptionErrors;
+			GtkLabel *labelLidarsErrors;
+			GtkLabel *labelCamerasErrors;
 
 			GtkLabel *labelNavConTimestamp;
 
@@ -382,6 +397,7 @@ namespace View
 		void navigator_graphics_update_path_plans(carmen_robot_and_trailer_traj_point_t **plans, int number_of_plans, int number_of_poses, int selected_plan);
 		void navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t *new_path, int path_length, int path_id);
 		void navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length);
+		void navigator_graphics_update_errors(carmen_audit_status_message *message);
 		void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
 		void navigator_graphics_set_flags(carmen_navigator_map_t type);
 

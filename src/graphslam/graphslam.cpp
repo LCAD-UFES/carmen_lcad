@@ -609,12 +609,21 @@ generate_poses_in_gps_coordinates(char *filename, char *filename_in_gps_coordina
 	tf::Transformer *transformer = new tf::Transformer(false);
 	initialize_tf_transfoms(params, transformer, gps_id);
 
+	// Para plotar em forma de vetor, a primeira pose não será plotada
+	double previous_timestamp, previous_gps_x, previous_gps_y, previous_gps_theta;
+	fscanf(f, "%lf %lf %lf %lf\n", &x, &y, &theta, &previous_timestamp);
+	get_gps_pose_given_car_pose(previous_gps_x, previous_gps_y, previous_gps_theta, x, y, theta, transformer);
 	while (!feof(f))
 	{
 		fscanf(f, "%lf %lf %lf %lf\n", &x, &y, &theta, &timestamp);
 		double gps_x, gps_y, gps_theta;
 		get_gps_pose_given_car_pose(gps_x, gps_y, gps_theta, x, y, theta, transformer);
-		fprintf(f2, "%lf %lf %lf %lf\n", gps_x, gps_y, gps_theta, timestamp);
+		double vector_size = sqrt((gps_x - previous_gps_x) * (gps_x - previous_gps_x) + (gps_y - previous_gps_y) * (gps_y - previous_gps_y));
+		fprintf(f2, "%lf %lf %lf %lf %lf %lf\n", previous_gps_x, previous_gps_y, previous_gps_theta, vector_size * cos(previous_gps_theta), vector_size * sin(previous_gps_theta), previous_timestamp);
+		previous_gps_x = gps_x;
+		previous_gps_y = gps_y;
+		previous_gps_theta = gps_theta;
+		previous_timestamp = timestamp;
 	}
 
 	fclose(f);
@@ -629,7 +638,7 @@ plot_graph(int gps_id)
 
 	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 
-	fprintf(gnuplot_pipe, "set size square; set size ratio -1; plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', 'tmp/poses_opt.txt' u 1:2 w l t 'car', 'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'car in gps coords'\n");
+	fprintf(gnuplot_pipe, "set size square; set size ratio -1; plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', 'tmp/poses_opt.txt' u 1:2 w l t 'car', 'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'car in gps coords', 'tmp/poses_opt_in_gps_coordinates.txt' u 1:2:4:5 with vectors title 'car in gps coords vectors'\n");
 
 	fflush(gnuplot_pipe);
 }

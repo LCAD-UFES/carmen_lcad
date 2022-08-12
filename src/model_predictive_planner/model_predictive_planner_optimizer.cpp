@@ -54,8 +54,8 @@ plot_phi_profile(TrajectoryControlParameters tcp)
 		first_time = false;
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:5]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xrange [0:7]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-0.75:0.75]\n");
 		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
 		fprintf(gnuplot_pipeMP, "set ylabel 'phi'\n");
 		fprintf(gnuplot_pipeMP, "set size ratio -1\n");

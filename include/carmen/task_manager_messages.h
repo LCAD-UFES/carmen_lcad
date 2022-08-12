@@ -14,13 +14,19 @@ typedef enum
 {
 	STARTING_MISSION,
 	MISSION_COMPLETED,
-	MISSION_FAILED
+	MISSION_FAILED,
+	MISSION_FILE_STARTED,
+	MISSION_FILE_FINISHED,
+	IDLE_MODE
 } carmen_task_manager_mission_level_state_t;
 
 #define print_mission_level_state(x) ( \
-	(x == STARTING_MISSION)? "STARTING_MISSION": \
-	(x == MISSION_COMPLETED)? "MISSION_COMPLETED": \
-	(x == MISSION_FAILED)? "MISSION_FAILED": "")
+	(x == STARTING_MISSION) 	? "STARTING_MISSION": \
+	(x == MISSION_COMPLETED)	? "MISSION_COMPLETED": \
+	(x == MISSION_FAILED)		? "MISSION_FAILED": \
+	(x == MISSION_FILE_STARTED)	? "MISSION_FILE_STARTED": \
+	(x == MISSION_FILE_FINISHED)	? "MISSION_FILE_FINISHED": \
+	(x == IDLE_MODE)		? "IDLE_MODE": "")
 
 //Sugestao-pensar-sobre
 //typedef enum

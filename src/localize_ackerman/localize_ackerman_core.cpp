@@ -3372,6 +3372,8 @@ get_alive_LIDARs_and_their_parameters(int argc, char **argv, int correction_type
 	char l0[128];
 	char unexpeted_delta_range_sigma[128];
 	char range_max_factor[128];
+	char ray_index_difference[128];
+	char use_index_difference[128];
 
 	for (i = 10; i < number_of_sensors; i++)
 	{
@@ -3381,6 +3383,8 @@ get_alive_LIDARs_and_their_parameters(int argc, char **argv, int correction_type
 		sprintf(l0, "lidar%d_l0", i - 10);
 		sprintf(unexpeted_delta_range_sigma, "lidar%d_unexpeted_delta_range_sigma", i - 10);
 		sprintf(range_max_factor, "lidar%d_range_max_factor", i - 10);
+		sprintf(ray_index_difference, "lidar%d_ray_index_difference", i - 10);
+		sprintf(use_index_difference, "lidar%d_use_index_difference", i - 10);
 
 		// Inicio do carregamento dos parametros do sensor
 		carmen_param_t param_list[] =
@@ -3391,6 +3395,8 @@ get_alive_LIDARs_and_their_parameters(int argc, char **argv, int correction_type
 			{(char *) "localize_ackerman", l0, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].log_odds.log_odds_l0, 0, NULL},
 			{(char *) "localize_ackerman", unexpeted_delta_range_sigma, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].unexpeted_delta_range_sigma, 0, NULL},
 			{(char *) "localize_ackerman", range_max_factor, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].range_max_factor, 0, NULL},
+			{(char *) "localize_ackerman", ray_index_difference, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].ray_index_difference, 0, NULL},
+			{(char *) "localize_ackerman", use_index_difference, CARMEN_PARAM_ONOFF, &spherical_sensor_params[i].use_index_difference, 0, NULL},
 			{(char *) "localize_ackerman", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].unsafe_height_above_ground, 0, NULL},
 		};
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

@@ -17,6 +17,7 @@
 static IplImage* ipl_image = NULL;
 
 static char *map_image = NULL; //[3 * TEXTURE_SIZE * TEXTURE_SIZE];
+static char *remission_map_image = NULL;
 
 static carmen_vector_2D_t tex_coord_min;
 static carmen_vector_2D_t tex_coord_max;
@@ -45,7 +46,8 @@ static void set_texture_coordinates(int x_origin_int, int y_origin_int, int squa
 	tex_coord_max.y = (y_origin_double + square_size_double - (double)(y_origin_int)) / (double)(square_size_int);
 }
 
-static void update_map_image_using_small_map(double map_center_x, double map_center_y, double square_size)
+static void
+update_map_image_using_small_map(double map_center_x, double map_center_y, double square_size)
 {
 	// according to the following URL, the pixel size at equator in zoom level 19 are 30cm
 	// => http://www.google.com.br/url?sa=t&rct=j&q=google%20number%20images%20tiles%20of%20zoom%20level&source=web&cd=3&ved=0CC0QFjAC&url=http%3A%2F%2Fwww.microimages.com%2Fdocumentation%2FTechGuides%2F76googleMapsStruc.pdf&ei=gpJTUOihOIWQ8wTM9YGIDg&usg=AFQjCNHcqDaejFREnp_sDF9oNQK1BcHMjA&cad=rja
@@ -66,7 +68,28 @@ static void update_map_image_using_small_map(double map_center_x, double map_cen
 	memcpy (map_image, ipl_image->imageData, ipl_image->imageSize * sizeof(char));
 }
 
-void rotate_map ()
+static void
+update_remission_map_image_using_small_map(double map_center_x, double map_center_y, double square_size)
+{
+	double meter_per_pixel = 0.2;
+	pixels_per_meter = 1 / meter_per_pixel;
+
+	double x_origin_in_meters_double = map_center_x - square_size / 2.0;
+	double y_origin_in_meters_double = map_center_y - square_size / 2.0;
+
+	double 	x_origin_in_pixels_double = x_origin_in_meters_double * pixels_per_meter;
+	double 	y_origin_in_pixels_double = y_origin_in_meters_double * pixels_per_meter;
+	int 	x_origin_in_pixels_int = (int)(x_origin_in_pixels_double + 0.5);
+	int 	y_origin_in_pixels_int = (int)(y_origin_in_pixels_double + 0.5);
+
+	double square_size_in_pixels_double = square_size * pixels_per_meter;
+	set_texture_coordinates(x_origin_in_pixels_int, y_origin_in_pixels_int, REMISSION_MAP_SIZE, x_origin_in_pixels_double, y_origin_in_pixels_double, square_size_in_pixels_double);
+
+	memcpy (remission_map_image, ipl_image->imageData, ipl_image->imageSize * sizeof(char));
+}
+
+void
+rotate_map()
 {
 	IplImage *cpy = cvCreateImage (cvSize(ipl_image->width, ipl_image->height), ipl_image->depth, ipl_image->nChannels);
 	cvCopy(ipl_image, cpy, NULL);
@@ -76,16 +99,29 @@ void rotate_map ()
 }
 
 char *
-update_map_image_texture2 (carmen_vector_3D_t map_center, double square_size, IplImage *img)
+update_map_image_texture2(carmen_vector_3D_t map_center, double square_size, IplImage *img)
 {
 	if (map_image == NULL)
 		map_image = (char *) calloc (TEXTURE_SIZE * TEXTURE_SIZE * 3, sizeof(char));
 
 	ipl_image = img;
-	rotate_map ();
+	rotate_map();
 	update_map_image_using_small_map(map_center.x, map_center.y, square_size);
 
 	return (map_image);
+}
+
+char *
+update_remission_map_image_texture(carmen_vector_3D_t map_center, double square_size, IplImage *img)
+{
+	if (remission_map_image == NULL)
+		remission_map_image = (char *) calloc (REMISSION_MAP_SIZE * REMISSION_MAP_SIZE * 3.1, sizeof(char));
+
+	ipl_image = img;
+	rotate_map();
+	update_remission_map_image_using_small_map(map_center.x, map_center.y, square_size);
+
+	return (remission_map_image);
 }
 
 int create_texture(void)
@@ -151,6 +187,7 @@ int create_texture(void)
 	//double map_height_meters = map_limit.y - map_origin.y;
 	//pixels_per_meter = (double)(ipl_image->height) / map_height_meters;
 
+	cvReleaseImage(&ipl_image);
 	return texture;
 }
 

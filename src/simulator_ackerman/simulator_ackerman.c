@@ -31,6 +31,7 @@
 #include <carmen/route_planner_interface.h>
 #include <carmen/collision_detection.h>
 #include <carmen/task_manager_interface.h>
+#include <carmen/moving_objects_interface.h>
 
 #include <control.h>
 
@@ -58,6 +59,7 @@ static carmen_localize_ackerman_initialize_message init_msg;
 //static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 //static int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
 static int publish_laser_flag = 0;
+static int publish_detection_moving_objects = 0;
 
 static int necessary_maps_available = 0;
 
@@ -133,6 +135,104 @@ apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion
 	}
 
 	return (i);
+}
+
+
+
+carmen_moving_objects_point_clouds_message
+build_moving_objects_message(int num_objects, carmen_simulator_ackerman_objects_message objects_sim)
+{
+
+	carmen_moving_objects_point_clouds_message msg;
+
+//	vector<object> tmp_predictions = predictions;
+//
+//	for (int i=0; i<simulated_objects.size(); i++)
+//	{
+//		if (simulated_objects[i].active)
+//		{
+//			tmp_predictions.push_back(simulated_objects[i].p);
+//			image_cartesian ic;
+//			vector<image_cartesian> vic;
+//			vic.push_back(ic);
+//			points_lists.push_back(vic);
+//		}
+//	}
+//	int num_objects = compute_num_measured_objects(tmp_predictions);
+
+	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
+
+	msg.num_point_clouds = num_objects;
+	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
+	int real_number_of_objects = 0;
+	for (int i = 0, l = 0; i < num_objects; i++)
+	{
+		if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_PERSON || publish_detection_moving_objects)
+		{
+			msg.point_clouds[l].r = 1.0;
+			msg.point_clouds[l].g = 1.0;
+			msg.point_clouds[l].b = 0.0;
+
+			msg.point_clouds[l].linear_velocity = objects_sim.objects[i].v;
+			msg.point_clouds[l].orientation = objects_sim.objects[i].theta;
+
+			// printf("%lf %lf\n", tmp_predictions[i].orientation, last_globalpos->globalpos.theta);
+
+			msg.point_clouds[l].width  = 1.0;
+			msg.point_clouds[l].length = 1.0;
+			msg.point_clouds[l].height = 2.0;
+
+			msg.point_clouds[l].object_pose.x = objects_sim.objects[i].x;
+			msg.point_clouds[l].object_pose.y = objects_sim.objects[i].y;
+			msg.point_clouds[l].object_pose.z = 0.0;
+
+
+			msg.point_clouds[l].geometric_model = 0;
+			msg.point_clouds[l].model_features.geometry.width  = 1.0;
+			msg.point_clouds[l].model_features.geometry.length = 1.0;
+			msg.point_clouds[l].model_features.geometry.height = 2.0;
+			msg.point_clouds[l].model_features.red = 1.0;
+			msg.point_clouds[l].model_features.green = 1.0;
+			msg.point_clouds[l].model_features.blue = 0.8;
+			msg.point_clouds[l].model_features.model_name = (char *) "pedestrian";
+
+			if (publish_detection_moving_objects)
+			{
+				if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_RANDOM_OBJECT)
+					msg.point_clouds[l].model_features.model_name = (char *) "Random Object";
+				if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_LINE_FOLLOWER)
+					msg.point_clouds[l].model_features.model_name = (char *) "Line Follower";
+				if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_OTHER_ROBOT)
+					msg.point_clouds[l].model_features.model_name = (char *) "Other Robot";
+				if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_BIKE)
+					msg.point_clouds[l].model_features.model_name = (char *) "Bike";
+				if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_CAR)
+					msg.point_clouds[l].model_features.model_name = (char *) "Car";
+				if (objects_sim.objects[i].type == CARMEN_SIMULATOR_ACKERMAN_TRUCK)
+					msg.point_clouds[l].model_features.model_name = (char *) "Truck";
+			}
+			msg.point_clouds[l].num_associated = i;
+
+			msg.point_clouds[l].point_size = num_objects;
+
+			msg.point_clouds[l].points = (carmen_vector_3D_t *) malloc (msg.point_clouds[l].point_size * sizeof(carmen_vector_3D_t));
+
+			for (int j = 0; j < num_objects; j++)
+			{
+				carmen_vector_3D_t p;
+
+				p.x = 0;
+				p.y = 0;
+				p.z = 0;
+				msg.point_clouds[l].points[j] = p;
+			}
+			l++;
+			real_number_of_objects++;
+		}
+	}
+	msg.num_point_clouds = real_number_of_objects;
+
+	return (msg);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -228,6 +328,16 @@ publish_truepos(double timestamp)
 }
 
 
+void
+publish_moving_objects_message(carmen_moving_objects_point_clouds_message *msg)
+{
+	msg->timestamp = carmen_get_time();
+	msg->host = carmen_get_host();
+
+    carmen_moving_objects_point_clouds_publish_message_generic(0, msg);
+}
+
+
 static void
 publish_objects(double timestamp)
 {
@@ -244,9 +354,23 @@ publish_objects(double timestamp)
 //	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
 	carmen_simulator_ackerman_get_objects(&(objects.num_objects), &(objects.objects));
 	objects.timestamp = timestamp;
+
+	if((objects.num_objects) != 0)
+	{
+		carmen_moving_objects_point_clouds_message msg = build_moving_objects_message(objects.num_objects, objects);
+		publish_moving_objects_message(&msg);
+	}
+	else
+	{
+		carmen_moving_objects_point_clouds_message msg;
+		msg.num_point_clouds = 0;
+		publish_moving_objects_message(&msg);
+	}
+
 	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME, &objects);
 	carmen_test_ipc(err, "Could not publish simulator_objects_message",
 			CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME);
+
 }
 
 
@@ -389,7 +513,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	{
 		publish_odometry(timestamp);
 		carmen_simulator_ackerman_update_objects(simulator_config);
-//		publish_objects(timestamp);
+		publish_objects(timestamp);
 	}
 	publish_truepos(timestamp);
 
@@ -846,7 +970,7 @@ subscribe_to_relevant_messages()
 
 #endif
 
-//	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -945,6 +1069,10 @@ initialize_ipc(void)
 	if (err != IPC_OK)
 		return -1;
 
+	err = carmen_moving_objects_point_clouds_define_messages_generic(0);
+	if (err != IPC_OK)
+			return -1;
+
 	return 0;
 }
 
@@ -993,7 +1121,9 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"simulator_ackerman", "publish_laser", CARMEN_PARAM_ONOFF, &publish_laser_flag, 0, NULL},
 			{"rrt",   "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
 			{"rrt",   "use_rlpid",                  CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL},
-			{"behavior_selector",  "use_truepos", 	CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
+			{"behavior_selector",  "use_truepos", 	CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+			{"simulator", "ackerman_publish_detection_moving_objects", CARMEN_PARAM_ONOFF, &publish_detection_moving_objects, 0, NULL},
+
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);

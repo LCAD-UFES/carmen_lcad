@@ -7,6 +7,7 @@
 #include <GL/glu.h>
 
 #include "interface_drawer.h"
+#include "Window.h"
 
 struct button
 {
@@ -41,7 +42,7 @@ create_interface_drawer(int window_width, int window_height)
 {
 	interface_drawer* i_drawer = (interface_drawer*) malloc(sizeof(interface_drawer));
 
-	i_drawer->num_buttons = 74; // test Braian
+	i_drawer->num_buttons = 84;
 	i_drawer->butt = (button*) malloc(i_drawer->num_buttons * sizeof(button));
 
 	init_buttons(i_drawer, window_width, window_height);
@@ -159,12 +160,33 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 			i_drawer->butt[i].visible = 0;
 		}
 
-		if (i == 72) // test Braian
+		else if (i < 77)
+		{
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
+		else if (i < 82)
+		{
+//			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i - 77) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
+		else if (i == 82)
 		{
 			i_drawer->butt[i].visible = 1;
 		}
 
-		if (i == 73) // test Braian
+		else if (i == 83)
 		{
 			i_drawer->butt[i].visible = 0;
 		}
@@ -182,13 +204,14 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	i_drawer->butt[DRAW_XSENS_GPS_BUTTON_CODE].text =			DRAW_XSENS_GPS_BUTTON_TEXT;
 	i_drawer->butt[FOLLOW_CAR_BUTTON_CODE].text =				FOLLOW_CAR_BUTTON_TEXT;
 	i_drawer->butt[DRAW_GPS_BUTTON_CODE].text =					DRAW_GPS_BUTTON_TEXT;
-	i_drawer->butt[DRAW_MAP_IMAGE_BUTTON_CODE].text =			DRAW_MAP_IMAGE_BUTTON_TEXT;
+//	i_drawer->butt[DRAW_MAP_IMAGE_BUTTON_CODE].text =			DRAW_MAP_IMAGE_BUTTON_TEXT;
+	i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].text =				WINDOW_SIZES_BUTTON_TEXT;
 
 	i_drawer->butt[VELODYNE_360_BUTTON_CODE].text =			VELODYNE_360_BUTTON_TEXT;
 	i_drawer->butt[VELODYNE_VBO_BUTTON_CODE].text =			VELODYNE_VBO_BUTTON_TEXT;
 	i_drawer->butt[VELODYNE_BUTTON_CODE].text =				VELODYNE_BUTTON_TEXT;
 	i_drawer->butt[DRAW_STEREO_CLOUD_BUTTON_CODE].text =	DRAW_STEREO_CLOUD_BUTTON_TEXT;
-	i_drawer->butt[DRAW_MAP_BUTTON_CODE].text =				DRAW_MAP_BUTTON_TEXT;
+	i_drawer->butt[MAPS_BUTTON_CODE].text =					MAPS_BUTTON_TEXT;
 	i_drawer->butt[DRAW_ANNOTATION_BUTTON_CODE].text =		DRAW_ANNOTATION_BUTTON_TEXT;
 	i_drawer->butt[DRAW_POINTS_BUTTON_CODE].text =			DRAW_POINTS_BUTTON_TEXT;
 	i_drawer->butt[DRAW_RAYS_BUTTON_CODE].text =			DRAW_RAYS_BUTTON_TEXT;
@@ -258,10 +281,21 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	i_drawer->butt[70].text = "lidar14";
 	i_drawer->butt[71].text = "lidar15";
 
+	i_drawer->butt[72].text = "Map";
+	i_drawer->butt[73].text = "Costs Map";
+	i_drawer->butt[74].text = "Offline Map";
+	i_drawer->butt[75].text = "Remission Map";
+	i_drawer->butt[76].text = "Google images";
+
+	i_drawer->butt[77].text = "1920x1080";
+	i_drawer->butt[78].text = "1500x920";
+	i_drawer->butt[79].text = "1000x600";
+	i_drawer->butt[80].text = "800x400";
+	i_drawer->butt[81].text = "500x300";
 
 	//Help
-	i_drawer->butt[HELP_BUTTON_CODE].text = HELP_BUTTON_TEXT; // test Braian
-	i_drawer->butt[HELP_CODE].text = HELP_TEXT; //test Braian
+	i_drawer->butt[HELP_BUTTON_CODE].text = HELP_BUTTON_TEXT;
+	i_drawer->butt[HELP_CODE].text = HELP_TEXT;
 
 }
 
@@ -364,7 +398,28 @@ update_buttons_size(interface_drawer* i_drawer, int window_width, int window_hei
 			i_drawer->butt[i].height = button_height;
 		}
 
-		else if (i == 72) // test Braian
+		else if (i < 77)
+		{
+			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
+		else if (i < 82)
+		{
+//			i_drawer->butt[i].x = base_x + (i % 8) * horizontal_space;
+			i_drawer->butt[i].x = base_x + (i - 77) * horizontal_space;
+			i_drawer->butt[i].y = 3 * base_y;
+			i_drawer->butt[i].width = button_width;
+			i_drawer->butt[i].height = button_height;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
+		else if (i == 82)
 		{
 			i_drawer->butt[i].x = window_width - 60;
 			i_drawer->butt[i].y = window_height - 30;
@@ -372,12 +427,12 @@ update_buttons_size(interface_drawer* i_drawer, int window_width, int window_hei
 			i_drawer->butt[i].height = 20;
 		}
 
-		else if (i == 73) // test Braian
+		else if (i == 83)
 		{
 			i_drawer->butt[i].x = window_width - 170;
-			i_drawer->butt[i].y = window_height - 160;
+			i_drawer->butt[i].y = window_height - 170;
 			i_drawer->butt[i].width = 300;
-			i_drawer->butt[i].height = 200;
+			i_drawer->butt[i].height = 220;
 		}
 	}
 }
@@ -435,6 +490,26 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 							i_drawer->butt[j].visible = 0;
 						}
 					}
+
+					// if maps
+					if(i_drawer->butt[MAPS_BUTTON_CODE].state)
+					{
+						i_drawer->butt[MAPS_BUTTON_CODE].state = !(i_drawer->butt[MAPS_BUTTON_CODE].state);
+						for(j = 72; j < 77; j++)
+						{
+							i_drawer->butt[j].visible = 0;
+						}
+					}
+
+					// if window sizes
+					if(i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].state)
+					{
+						i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].state = !(i_drawer->butt[WINDOW_SIZES_BUTTON_CODE].state);
+						for(j = 77; j < 82; j++)
+						{
+							i_drawer->butt[j].visible = 0;
+						}
+					}
 				}
 				else if (i_drawer->butt[i].code == DRAW_CAR_BUTTON_CODE) // draw car
 				{
@@ -472,12 +547,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(DRAW_GPS_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == DRAW_MAP_IMAGE_BUTTON_CODE) // draw map image
-				{
-					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(DRAW_MAP_IMAGE_FLAG_CODE, i_drawer->butt[i].state);
-				}
 				else if (i_drawer->butt[i].code == VELODYNE_360_BUTTON_CODE) // velodyne 360
 				{
 					if (i_drawer->butt[i].state == 0)
@@ -522,13 +592,40 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(DRAW_STEREO_CLOUD_FLAG_CODE, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == DRAW_MAP_BUTTON_CODE) // MAP
+				else if (i_drawer->butt[i].code == MAPS_BUTTON_CODE) // Maps
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, i_drawer->butt[i].state);
-					set_flag_viewer_3D(ZERO_Z_FLAG_CODE, i_drawer->butt[i].state);
+					for (int j = 72; j < 77; j++)
+					{
+						i_drawer->butt[j].visible = i_drawer->butt[i].state;
+					}
+					for (int j = 1; j < 32; j++)
+					{
+						i_drawer->butt[j].visible = !i_drawer->butt[i].state;
+					}
+
+//					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, i_drawer->butt[i].state);
+//					set_flag_viewer_3D(ZERO_Z_FLAG_CODE, i_drawer->butt[i].state);
 				}
+
+				else if (i_drawer->butt[i].code == WINDOW_SIZES_BUTTON_CODE) // Window sizes
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					for (int j = 77; j < 82; j++)
+					{
+						i_drawer->butt[j].visible = i_drawer->butt[i].state;
+					}
+					for (int j = 1; j < 32; j++)
+					{
+						i_drawer->butt[j].visible = !i_drawer->butt[i].state;
+					}
+
+//					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, i_drawer->butt[i].state);
+//					set_flag_viewer_3D(ZERO_Z_FLAG_CODE, i_drawer->butt[i].state);
+				}
+
 				else if (i_drawer->butt[i].code == DRAW_ANNOTATION_BUTTON_CODE) // Annotation
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
@@ -653,20 +750,20 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 //					set_flag_viewer_3D(19, i_drawer->butt[i].state);
 
-					if (i_drawer->butt[38].state == 1)
-					{
-						for (int j = 40; j < 48; j++)
-						{
-							i_drawer->butt[j].visible = 0;
-						}
-					}
-					if (i_drawer->butt[37].state == 1)
-					{
-						for (int j = 48; j < 56; j++)
-						{
-							i_drawer->butt[j].visible = 0;
-						}
-					}
+//					if (i_drawer->butt[38].state == 1)
+//					{
+//						for (int j = 40; j < 48; j++)
+//						{
+//							i_drawer->butt[j].visible = 0;
+//						}
+//					}
+//					if (i_drawer->butt[37].state == 1)
+//					{
+//						for (int j = 48; j < 56; j++)
+//						{
+//							i_drawer->butt[j].visible = 0;
+//						}
+//					}
 
 					for (int j = 56; j < 72; j++)
 					{
@@ -677,10 +774,10 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 						i_drawer->butt[j].visible = !i_drawer->butt[i].state;
 					}
 
-					for (int j = 32; j < 56; j++)
-					{
-						i_drawer->butt[j].visible = 0;
-					}
+//					for (int j = 32; j < 56; j++)
+//					{
+//						i_drawer->butt[j].visible = 0;
+//					}
 
 				}
 				else if (i_drawer->butt[i].code == SHOW_PATH_PLANS_BUTTON_CODE) // Show Path Plans
@@ -835,9 +932,80 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					int lidar_number = i_drawer->butt[i].code - 56;
 					set_flag_viewer_3D(DRAW_LIDAR_FLAG_CODE, lidar_number);
 				}
-				else if (i_drawer->butt[i].code == 72) // test Braian
+
+				else if (i_drawer->butt[i].code == 72) // Map
 				{
-					i_drawer->butt[HELP_CODE].visible = !i_drawer->butt[73].visible;
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, 0);
+				}
+
+				else if (i_drawer->butt[i].code == 73) // Costs Map
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, 1);
+				}
+
+				else if (i_drawer->butt[i].code == 74) // Offline Map
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, 2);
+				}
+
+				else if (i_drawer->butt[i].code == 75) // Remission Map
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, 3);
+				}
+
+				else if (i_drawer->butt[i].code == 76)	// Google images
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(DRAW_MAP_FLAG_CODE, 4);
+				}
+
+				else if (i_drawer->butt[i].code == 77)	// 1920x1080
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 1);
+				}
+
+				else if (i_drawer->butt[i].code == 78)	// 1500x920
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 2);
+				}
+
+				else if (i_drawer->butt[i].code == 79)	// 1000x600
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 3);
+				}
+
+				else if (i_drawer->butt[i].code == 80)	// 800x480
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 4);
+				}
+
+				else if (i_drawer->butt[i].code == 81)	// 500x300
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+					set_flag_viewer_3D(WINDOW_SIZES_FLAG_CODE, 5);
+				}
+
+				else if (i_drawer->butt[i].code == 82) // Help
+				{
+					i_drawer->butt[HELP_CODE].visible = !i_drawer->butt[HELP_CODE].visible;
 				}
 			}
 		}
@@ -896,7 +1064,7 @@ draw_button(button b)
 {
 	glPushMatrix();
 
-	if (b.mouse_over && b.code != HELP_CODE) // test Braian
+	if (b.mouse_over && b.code != HELP_CODE)
 	{
 		glColor3d(1.0, 1.0, 0.0);
 	}
@@ -918,9 +1086,9 @@ draw_button(button b)
 
 	glColor3d(0.0, 0.0, 0.0);
 
-	int fontHelp; // test Braian
+	int fontHelp;
 
-	if(b.code != 73){
+	if(b.code != 83){
 		fontHelp = 0;
 		drawText(-b.width / 2 + 5, -5, b.text, fontHelp);
 	}
@@ -945,11 +1113,14 @@ drawText(float x, float y, const char* msg, int font_help, ...)
 
 	int l, i;
 
+	XWindowAttributes attr;
+	attr = get_window_atrr();
+
 	l = strlen(buf);
 	glRasterPos2f(x, y);
 	for (i = 0; i < l; i++)
 	{
-		if(buf[i] == '/')
+		if(buf[i] == '$')
 		{
 			y -= 15;
 			glRasterPos2f(x, y);
@@ -957,12 +1128,14 @@ drawText(float x, float y, const char* msg, int font_help, ...)
 
 		else
 	    {
-			if(font_help){ // test Braian
+			if(font_help){
 				glutBitmapCharacter(GLUT_BITMAP_9_BY_15, buf[i]);
 			} else {
-				glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, buf[i]);
+				if(attr.width > 980 && attr.height > 500)
+					glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, buf[i]);
+				else
+					glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, buf[i]);
 			}
 	    }
 	}
-
 }

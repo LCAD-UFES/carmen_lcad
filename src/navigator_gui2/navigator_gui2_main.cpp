@@ -21,6 +21,8 @@
 #include <carmen/route_planner_interface.h>
 #include <carmen/offroad_planner_interface.h>
 
+#include <carmen/audit_interface.h>
+
 #include <carmen/carmen_graphics.h>
 #include <gtk_gui.h>
 
@@ -1191,6 +1193,11 @@ lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
 	gui->lane_markings_msg = msg;
 }
 
+static void
+audit_status_message_handler(carmen_audit_status_message *message)
+{
+	gui->navigator_graphics_update_errors(message);
+}
 
 
 
@@ -1228,6 +1235,33 @@ moving_objects_point_clouds_message_handler_0(carmen_moving_objects_point_clouds
 	update_moving_objects_list(0, msg);
 }
 
+void
+moving_objects_point_clouds_message_handler_1(carmen_moving_objects_point_clouds_message *msg)
+{
+	//printf("%d \n", msg->num_point_clouds);
+	update_moving_objects_list(1, msg);
+}
+
+void
+moving_objects_point_clouds_message_handler_2(carmen_moving_objects_point_clouds_message *msg)
+{
+	//printf("%d \n", msg->num_point_clouds);
+	update_moving_objects_list(2, msg);
+}
+
+void
+moving_objects_point_clouds_message_handler_3(carmen_moving_objects_point_clouds_message *msg)
+{
+	//printf("%d \n", msg->num_point_clouds);
+	update_moving_objects_list(3, msg);
+}
+
+void
+moving_objects_point_clouds_message_handler_4(carmen_moving_objects_point_clouds_message *msg)
+{
+	//printf("%d \n", msg->num_point_clouds);
+	update_moving_objects_list(4, msg);
+}
 
 static void
 plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
@@ -1560,6 +1594,14 @@ subscribe_ipc_messages()
 
 	carmen_moving_objects_point_clouds_subscribe_message_generic(0, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_0, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_moving_objects_point_clouds_subscribe_message_generic(1, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_1, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message_generic(2, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_2, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message_generic(3, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_3, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message_generic(4, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_4, CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_map_server_subscribe_compact_lane_map(NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1569,6 +1611,9 @@ subscribe_ipc_messages()
 	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL, (carmen_handler_t) navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_lane_subscribe(NULL, (carmen_handler_t) lane_detector_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_audit_subscribe_status_message(NULL, (carmen_handler_t) audit_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 
 	err = IPC_defineMsg(CARMEN_RDDF_END_POINT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_END_POINT_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_END_POINT_MESSAGE_NAME);

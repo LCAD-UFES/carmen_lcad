@@ -1548,7 +1548,7 @@ subscribe_to_ipc_message()
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
 		
 		// lidar8
-		if ((number_of_sensors > 17) && spherical_sensor_params[18].alive)
+		if ((number_of_sensors > 18) && spherical_sensor_params[18].alive)
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 0);
 	}
 

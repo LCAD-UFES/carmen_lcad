@@ -4,7 +4,7 @@ MODULE_NAME = LOGGER
 MODULE_COMMENT = Modules for logging, displaying, and playing back data.
 
 LINK = g++
-CFLAGS += -Wall -g
+CFLAGS += -Wall
 CXXFLAGS += -std=c++11
 
 ifdef FOR_XAVIER  

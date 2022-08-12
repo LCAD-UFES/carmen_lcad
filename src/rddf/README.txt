@@ -13,3 +13,14 @@ Para adicionar annotations ao RNDF abra o arquivo KML com o Google Earth, clique
 - speed bumper: quebra-molas.
 
 OBS: NAO USE ASPAS!!
+
+Anotações que usam o último campo da lista de anotações:
+
+RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK		3	0	3.016		7756880.63	-364044.30	7.0
+
+Nessa anotação, o último valor (7.0) define o raio da cobertura da faixa de pedestre.
+
+
+RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT		8	0	-2.312832	7757498.447006	-364158.309644	6.671012
+
+Nessa anotação, o último valor (6.0) é a altura do semáfaro.

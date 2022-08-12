@@ -6,7 +6,7 @@ MODULE_COMMENT = Rddf Builder And Player
 
 LINK = g++
 
-CFLAGS += -Wall -g 
+CFLAGS += -Wall
 CXXFLAGS += -std=c++11
 LFLAGS += -lparam_interface -lipc -lglobal -lrddf_interface \
 	-lcarmen_gps_wrapper  -llocalize_ackerman_interface \

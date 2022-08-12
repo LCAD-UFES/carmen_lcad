@@ -5,14 +5,21 @@ MODULE_NAME = voice_interface_PACKAGE
 MODULE_COMMENT = Allows voice interaction with IARA
 
 LINK = g++
-CFLAGS += -Wall -g
+CFLAGS += -Wall
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"20.04")
+	LFLAGS += -pthread
+endif
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += `python3.6-config --libs` -L${HOME}/packages_carmen/porcupine-1.6/lib/linux/x86_64 \
+LFLAGS += `python3.6-config --libs` \
+			-L${HOME}/packages_carmen/Porcupine/lib/linux/x86_64 \
+			-L${HOME}/packages_carmen/porcupine-1.6/lib/linux/x86_64 \
 			-lparam_interface -lipc -lglobal -lvoice_interface_interface -lpv_porcupine -lasound \
 			-lnavigator_ackerman_interface -lcurl -ljsoncpp
 			

@@ -1,11 +1,3 @@
-/*
- * model_predictive_planner_main.cpp
- *
- *  Created on: 04/12/2012
- *      Author: romulo
- */
-
-//#include <fenv.h>
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
@@ -14,6 +6,9 @@
 #include <carmen/ford_escape_hybrid_interface.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/task_manager_interface.h>
+
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
@@ -61,6 +56,8 @@ int use_unity_simulator = 0;
 //}
 
 double original_model_predictive_planner_obstacles_safe_distance;
+
+double voice_interface_max_vel = 0.0;
 
 
 vector<carmen_robot_and_trailer_path_point_t>
@@ -810,76 +807,29 @@ ford_escape_status_handler(carmen_ford_escape_status_message *msg)
 }
 
 
-//void
-//lane_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
-//{
-//#ifdef save_rddf_to_file
-//	int static last_number_of_poses = 0;
-//
-//	if (message->number_of_poses != last_number_of_poses)
-//	{
-//		FILE *rddf_file = fopen("rddf_reh.txt", "a");
-//		for (int i = 0; i < message->number_of_poses; i++)
-//		{
-//			fprintf(rddf_file, "%lf %lf %lf %lf %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i].theta, message->poses[i].v, message->poses[i].phi, carmen_get_time());
-//		}
-//		fprintf(rddf_file, "------------------------------------------------------\n");
-//		fclose(rddf_file);
-//
-//		last_number_of_poses = message->number_of_poses;
-//	}
-//	//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
-//	//
-//	//	for (int i = 0; i < message->number_of_poses; i++)
-//	//	{
-//	//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
-//	//		getchar();
-//	//	}
-//#endif
-//}
-
-
-//void
-//navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_message *msg)
-//{
-//	// Na mensagem atual não é possível representar um goal nulo. Coordenadas do mundo são grandes.
-//	if (msg->x == -1 && msg->y == -1 && msg->theta == 0)
-//	{
-//		GlobalState::goal_pose = NULL;
-//		return;
-//	}
-//
-//	Pose goal_pose;
-//	goal_pose.x		= msg->x;
-//	goal_pose.y		= msg->y;
-//	goal_pose.theta = carmen_normalize_theta(msg->theta);
-//	GlobalState::set_goal_pose(goal_pose);
-//
-//	GlobalState::last_goal = true;
-//}
+static void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_SPEED)
+	{
+		if (strcmp(message->command, "MAX_SPEED") == 0)
+			GlobalState::robot_config.max_v = GlobalState::param_max_vel = voice_interface_max_vel;
+		else if (strcmp(message->command, "0.0") == 0)
+			GlobalState::robot_config.max_v = GlobalState::param_max_vel = 0.0;
+		else
+			GlobalState::robot_config.max_v = GlobalState::param_max_vel = strtod(message->command, NULL);
+	}
+}
 
 
 static void
 signal_handler(int sig)
 {
 	printf("Signal %d received, exiting program ...\n", sig);
-//	if (update_lookup_table)
-//	{
-//		save_trajectory_lookup_table();
-//		printf("New trajectory_lookup_table.bin saved.\n");
-//	}
 	system("pkill gnuplot");
 	carmen_ipc_disconnect();
 	exit(1);
 }
-//
-//static void
-//carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message* msg)
-//{
-//	GlobalState::objects_message = msg;
-//	GlobalState::moving_objects_initialized = true;
-//	construct_object_trajectories(msg);
-//}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -941,6 +891,8 @@ register_handlers()
 
 	carmen_behaviour_selector_subscribe_compact_lane_contents_message(NULL,
 			(carmen_handler_t) carmen_behaviour_selector_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1019,7 +971,7 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
-	GlobalState::param_max_vel = GlobalState::robot_config.max_v;
+	voice_interface_max_vel = GlobalState::param_max_vel = GlobalState::robot_config.max_v;
 
 	read_parameters_specific(argc, argv);
 

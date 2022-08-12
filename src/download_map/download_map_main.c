@@ -90,8 +90,8 @@ carmen_build_download_map_message (IplImage *img, carmen_vector_3D_t position, c
 void
 carmen_grid_mapping_get_map_origin2(carmen_point_t *global_pose, int *x_origin, int* y_origin)
 {
-	*x_origin = (floor(global_pose->x / 50.0) - 1) * 50;
-	*y_origin = (floor(global_pose->y / 50.0) - 1) * 50;
+	*x_origin = (floor(global_pose->x / 50) - 1) * 50;
+	*y_origin = (floor(global_pose->y / 50) - 1) * 50;
 }
 
 
@@ -178,6 +178,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	// o mapa do google tem 153.6 (512 pixels * 0.3 metros por pixel) metros de lado
 	// como a origem calculada eh no canto inferior esquerdo do mapa, preciso somar meio lado
 	// para calcular as coordenadas do meio do mapa
+
 	map_center_x = (double)(x_origin + 75);
 	map_center_y = (double)(y_origin + 75);
 

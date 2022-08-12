@@ -46,6 +46,7 @@
 #include "gps-ipc.h"
 #include "gps-io.h"
 
+int gps_nr = 0;
 
 void
 read_parameters(SerialDevice *dev, int argc, char **argv)
@@ -58,6 +59,13 @@ read_parameters(SerialDevice *dev, int argc, char **argv)
   
 	carmen_param_install_params(argc, argv, gps_dev, 
 			      sizeof(gps_dev) / sizeof(gps_dev[0]));
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t optional_param_list[] =
+		{
+			{(char *) "commandline", (char *) "gps_number", CARMEN_PARAM_INT, &gps_nr, 0, NULL},
+		};
+		carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
   
 	strncpy(dev->ttyport, device, MAX_NAME_LENGTH);
 
@@ -69,8 +77,10 @@ read_parameters(SerialDevice *dev, int argc, char **argv)
 void
 print_usage( void )
 {
-	// fprintf( stderr, "gps-nmea [-nr NR] [-dev DEVICE]\n");
-	fprintf( stderr, "Syntax: gps-nmea\n");
+	fprintf(stderr, " The default gps_number is 0, you can choose other one:\n");
+	fprintf(stderr, "\nUsage: ./gps_nmea -gps_number <0|1|2...> \n");
+	exit(-1);
+	//recebe o nome da pasta com os arquivos
 }
 
 
@@ -81,7 +91,10 @@ print_usage( void )
 int
 main(int argc, char *argv[])
 {
-	int gps_nr = 0;
+
+	if (argc > 1 && strcmp(argv[1], "-h") == 0)
+		print_usage();
+
 	SerialDevice dev;
 	carmen_gps_gpgga_message gpgga;
 	carmen_gps_gprmc_message gprmc;
@@ -106,8 +119,9 @@ main(int argc, char *argv[])
 	fprintf( stderr, "INFO: ************************\n" );
 	fprintf( stderr, "INFO: ********* GPS   ********\n" );
 	fprintf( stderr, "INFO: ************************\n" );
-
+	fprintf( stderr, "INFO: Publishing gps_number: %d\n", carmen_extern_gpgga_ptr->nr);
 	fprintf( stderr, "INFO: open device: %s\n", dev.ttyport);
+
 	if (DEVICE_connect_port(&dev) < 0)
 	{
 		fprintf(stderr, "ERROR: can't open device !!!\n\n");

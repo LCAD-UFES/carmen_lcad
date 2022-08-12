@@ -200,7 +200,7 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 		phi = 0.0;
 	}
 
-	printf("timestamp %lf, v %lf, i %d, n %d\n", current_time, v, i, ford_escape_hybrid_config->nun_motion_commands);
+//	printf("timestamp %lf, v %lf, i %d, n %d\n", current_time, v, i, ford_escape_hybrid_config->nun_motion_commands);
 
 //	if ((fabs(ford_escape_hybrid_config->filtered_v) > 1.0) && path_goals_and_annotations_message && (path_goals_and_annotations_message->goal_list_size != 0) && path_goals_and_annotations_message->goal_list)
 //	{
@@ -260,14 +260,22 @@ set_wrench_efforts_desired_v_curvature_and_gear()
 	}
 	else
 	{
-		if ((behavior_selector_low_level_state != Stopped) && g_go_state)
+		static double last_neutral_gear_timestamp = 0.0;
+
+		if (g_go_state &&
+			(behavior_selector_low_level_state != Stopped) &&
+			(behavior_selector_low_level_state != End_Of_Path_Reached2))
 		{
-			g_desired_velocity = v;
+			if (carmen_get_time() - last_neutral_gear_timestamp > 3.0)	// In order to wait for the gear hardware...
+				g_desired_velocity = v;
+			else
+				g_desired_velocity = 0.0;
 		}
 		else
 		{
 			g_desired_velocity = 0.0;
-//			g_gear_command = 128;	// 128 = Neutral
+			g_gear_command = 128;	// 128 = Neutral
+			last_neutral_gear_timestamp = carmen_get_time();
 		}
 	}
 
@@ -567,6 +575,7 @@ ford_escape_signals_message_handler(carmen_ford_escape_signals_message *msg)
 		if ((g_headlights_status_command & 7) == 2)
 			g_headlights_status_command ^= 0x10;
 
+//	printf("g_horn_status_command %d, g_headlights_status_command %d\n", g_horn_status_command, g_headlights_status_command);
 	publish_ford_escape_turn_horn_and_headlight_signals(XGV_CCU);
 }
 
@@ -757,7 +766,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		if (publish_combined_odometry)
 			build_combined_visual_and_car_odometry();
-//		printf("*v %lf, phi %lf, status %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
+//		printf("*v %lf, phi %lf, timestamp %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_atan_desired_curvature), ford_escape_hybrid_config), carmen_get_time());
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
@@ -856,9 +865,15 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 				}
 				else if ((robot_model_name == ROBOT_NAME_ECOTECH4) || (robot_model_name == ROBOT_NAME_MPW700) || (robot_model_name == ROBOT_NAME_ASTRU))
 				{
+					double plan_size;
+					if (ford_escape_hybrid_config->nun_motion_commands > 2)
+						plan_size = DIST2D(ford_escape_hybrid_config->current_motion_command_vector[0], ford_escape_hybrid_config->current_motion_command_vector[ford_escape_hybrid_config->nun_motion_commands - 1]);
+					else
+						plan_size = 0.0;
+
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
-							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+							plan_size, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 				}
 				else
 					printf("ROBOT_MODEL_NAME %d wasnt recognized, check the code number\n "
@@ -870,7 +885,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		}
 
 		//Printf para testar a diferença das curvaturas original e modificada
-		//printf(cc %lf cc2 %lf\n", g_XGV_atan_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)));
+//		printf("cphi %lf, dphi %lf\n", g_XGV_atan_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)));
+//		printf(" v %lf, phi %lf, timestamp %lf\n", g_XGV_velocity, ford_escape_hybrid_config->filtered_phi, carmen_get_time());
 
 		//////////////////////////////////////////  PRINTS VALUES TO FILE TO VERIFICATIONS  //////////////////////////////////////////
 		//	fprintf(stdout, "(cc dc s v t) %lf %lf %lf %lf %lf\n", -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)), g_atan_desired_curvature, g_steering_command, ford_escape_hybrid_config->filtered_v, carmen_get_time());

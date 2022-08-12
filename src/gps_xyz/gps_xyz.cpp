@@ -50,11 +50,11 @@
 #include <vector>
 #include <algorithm>
 
-#define GPS_MESSAGE_QUEUE_SIZE 10
-#define GPS_REACH1 2
-#define GPS_REACH2 3
+#define GPS_MESSAGE_QUEUE_SIZE 5
+#define GPS_1 1
+#define GPS_2 2
 #define SMALL_DELTA_T 0.02
-#define REFERENCE_ANGLE (M_PI / 2.0)
+#define REFERENCE_ANGLE 0.0 // (M_PI)
 
 using namespace std;
 
@@ -75,7 +75,8 @@ int base_ackerman_odometry_index = -1;
 
 
 double
-get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
+//get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
+get_angle_between_gpss(carmen_gps_xyz_message reach1, carmen_gps_xyz_message reach2)
 {
 	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) + REFERENCE_ANGLE;
 	angle = carmen_normalize_theta(angle);
@@ -92,13 +93,13 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 
 	if (gps_xyz_message_queue.size() > 0)
 	{
-		for (i = gps_xyz_message_queue.size() / 2; i >= 0; i--)
+		for (i = gps_xyz_message_queue.size() - 1; i >= 0; i--)
 		{
-			if (gps_xyz_message_queue[i].nr == GPS_REACH1)
+			if (gps_xyz_message_queue[i].nr == GPS_1)
 			{
 				for (int j = gps_xyz_message_queue.size() - 1; j >= 0; j--)
 				{
-					if ((gps_xyz_message_queue[j].nr == GPS_REACH2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
+					if ((gps_xyz_message_queue[j].nr == GPS_2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
 					{
 						angle = get_angle_between_gpss(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
 						break;
@@ -115,7 +116,11 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 		carmen_extern_gphdt_ptr->heading = angle;
 		carmen_extern_gphdt_ptr->host = gps_xyz_message_queue[i].host;
 		carmen_extern_gphdt_ptr->nr = gps_xyz_message_queue[i].nr;
-		carmen_extern_gphdt_ptr->timestamp = gps_xyz_message_queue[i].timestamp;
+		static double previous_timestamp = 0.0;
+		if (gps_xyz_message_queue[i].timestamp != previous_timestamp)
+			previous_timestamp = carmen_extern_gphdt_ptr->timestamp = gps_xyz_message_queue[i].timestamp;
+		else
+			return (false);
 		carmen_extern_gphdt_ptr->valid = 1;
 
 		return (true);
@@ -408,7 +413,7 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 
 	carmen_gps_xyz_publish_message(gps_xyz_message);
 
-	if ((gps_xyz_message.nr == GPS_REACH1) || (gps_xyz_message.nr == GPS_REACH2))
+	if ((gps_xyz_message.nr == GPS_1) || (gps_xyz_message.nr == GPS_2))
 		gps_xyz_message_queue.push_back(gps_xyz_message);
 
 	if (gps_xyz_message_queue.size() > GPS_MESSAGE_QUEUE_SIZE)

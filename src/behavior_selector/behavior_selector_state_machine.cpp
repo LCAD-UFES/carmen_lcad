@@ -11,6 +11,18 @@
 #define NARROW_LANE_BEGIN			1
 #define NARROW_LANE_END				2
 
+#define NO_ENGINE_BRAKE_SIGN_AHEAD	0
+#define ENGINE_BRAKE_ON				1
+#define ENGINE_BRAKE_OFF			2
+
+#define NO_TURN_LEFT_INDICATOR_SIGN_AHEAD	0
+#define TURN_LEFT_INDICATOR_ON				1
+#define TURN_LEFT_INDICATOR_OFF				2
+
+#define NO_TURN_RIGHT_INDICATOR_SIGN_AHEAD	0
+#define TURN_RIGHT_INDICATOR_ON				1
+#define TURN_RIGHT_INDICATOR_OFF			2
+
 using namespace std;
 
 extern bool wait_start_moving;
@@ -21,6 +33,7 @@ extern carmen_robot_ackerman_config_t robot_config;
 
 static double wait_for_given_seconds_start_time = 0.0;
 
+carmen_ford_escape_signals_message signals_msg = {};
 
 bool
 forward_waypoint_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
@@ -106,7 +119,7 @@ path_final_pose_reached(carmen_robot_and_trailer_traj_point_t current_robot_pose
 	double distance_to_path_final_pose = DIST2D_P(path_final_pose, &current_robot_pose_v_and_phi);
 
 	if ((distance_to_path_final_pose < robot_config.distance_between_front_and_rear_axles) &&
-		(fabs(current_robot_pose_v_and_phi.v) < 0.25) &&
+		(fabs(current_robot_pose_v_and_phi.v) < 0.4) &&
 		((distance_to_path_final_pose < 0.5) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
 		return (true);
 	else
@@ -190,6 +203,96 @@ narrow_lane_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_
 	}
 	else
 		return (NO_NARROW_LANE_SIGN_AHEAD);
+}
+
+
+int
+engine_brake_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_engine_brake_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_ENGINE_BRAKE,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (nearest_engine_brake_sign_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D(nearest_engine_brake_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
+
+	int last_goal_list_size;
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	double distance_to_first_goal = distance_to_annotation;
+	if (last_goal_list_size)
+		distance_to_first_goal = DIST2D(current_robot_pose_v_and_phi, goal_list[0]);
+
+	if ((distance_to_first_goal >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_engine_brake_sign_annotation->annotation_point))
+	{
+		if (nearest_engine_brake_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_ENGINE_BRAKE_ON)
+			return (ENGINE_BRAKE_ON);
+		else
+			return (ENGINE_BRAKE_OFF);
+	}
+	else
+		return (NO_ENGINE_BRAKE_SIGN_AHEAD);
+}
+
+
+int
+turn_left_indicator_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_turn_left_indicator_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_TURN_LEFT_INDICATOR,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (nearest_turn_left_indicator_sign_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D(nearest_turn_left_indicator_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
+
+	int last_goal_list_size;
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	double distance_to_first_goal = distance_to_annotation;
+	if (last_goal_list_size)
+		distance_to_first_goal = DIST2D(current_robot_pose_v_and_phi, goal_list[0]);
+
+	if ((distance_to_first_goal >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_turn_left_indicator_sign_annotation->annotation_point))
+	{
+		if (nearest_turn_left_indicator_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_TURN_LEFT_INDICATOR_ON)
+			return (TURN_LEFT_INDICATOR_ON);
+		else
+			return (TURN_LEFT_INDICATOR_OFF);
+	}
+	else
+		return (NO_TURN_LEFT_INDICATOR_SIGN_AHEAD);
+}
+
+
+int
+turn_right_indicator_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_turn_right_indicator_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_TURN_RIGHT_INDICATOR,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (nearest_turn_right_indicator_sign_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D(nearest_turn_right_indicator_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
+
+	int last_goal_list_size;
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	double distance_to_first_goal = distance_to_annotation;
+	if (last_goal_list_size)
+		distance_to_first_goal = DIST2D(current_robot_pose_v_and_phi, goal_list[0]);
+
+	if ((distance_to_first_goal >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_turn_right_indicator_sign_annotation->annotation_point))
+	{
+		if (nearest_turn_right_indicator_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_TURN_RIGHT_INDICATOR_ON)
+			return (TURN_RIGHT_INDICATOR_ON);
+		else
+			return (TURN_RIGHT_INDICATOR_OFF);
+	}
+	else
+		return (NO_TURN_RIGHT_INDICATOR_SIGN_AHEAD);
 }
 
 
@@ -951,6 +1054,44 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 		carmen_task_manager_publish_set_collision_geometry_message(ENGAGE_GEOMETRY, timestamp);
 	else if (narrow_lane_sign == NARROW_LANE_END)
 		carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, timestamp);
+
+	int engine_brake_sign = engine_brake_sign_ahead(current_robot_pose_v_and_phi);
+	if (engine_brake_sign == ENGINE_BRAKE_ON)
+	{
+		signals_msg.headlight_status = HEADLIGHT_ON;
+		signals_msg.high_beams = 1;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+	else if (engine_brake_sign == ENGINE_BRAKE_OFF)
+	{
+		signals_msg.headlight_status = HEADLIGHT_OFF;
+		signals_msg.high_beams = 0;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+
+	int turn_left_indicator_sign = turn_left_indicator_sign_ahead(current_robot_pose_v_and_phi);
+	if (turn_left_indicator_sign == TURN_LEFT_INDICATOR_ON)
+	{
+		signals_msg.turn_signal = SIGNAL_LEFT;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+	else if (turn_left_indicator_sign == TURN_LEFT_INDICATOR_OFF)
+	{
+		signals_msg.turn_signal = SIGNAL_OFF;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+
+	int turn_right_indicator_sign = turn_right_indicator_sign_ahead(current_robot_pose_v_and_phi);
+	if (turn_right_indicator_sign == TURN_RIGHT_INDICATOR_ON)
+	{
+		signals_msg.turn_signal = SIGNAL_RIGHT;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+	else if (turn_right_indicator_sign == TURN_RIGHT_INDICATOR_OFF)
+	{
+		signals_msg.turn_signal = SIGNAL_OFF;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
 
 	return (0);
 }
