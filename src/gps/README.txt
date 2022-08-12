@@ -22,6 +22,6 @@ Se estiver em São Paulo por exemplo, deve-se usar a POLI0 ou EACH0 dependendo d
 https://www.ibge.gov.br/geociencias/informacoes-sobre-posicionamento-geodesico/rede-geodesica/16258-rede-brasileira-de-monitoramento-continuo-dos-sistemas-gnss-rbmc.html?=&t=dados-diarios-e-situacao-operacional
 
 Outra forma, é possível consultar na seguinte lista
-/200.145.185.200:2101
+200.145.185.200:2101
 Uma cópia feita em 24/07/2020 está em:
 carmen_lcad/src/gps/ESTACOES-GPS-IBGE-RTK-RMBC-NTRIP-.txt
