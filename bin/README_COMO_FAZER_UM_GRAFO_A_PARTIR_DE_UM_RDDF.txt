@@ -11,5 +11,5 @@ Na linha acima, <graph_name.gr> eh o nome do grafo gerado e <nearby_lanes_range_
 e <offline_map_dir> eh o diretorio do mapa.
 
 Examplo de comando:
- ./road_network_generator -c rddf_file_name.txt ../data/graphs/graph-rddf-log_portocel-20210617-3.gr 250.0 /data/map_portocel-20210617-3
+ ./road_network_generator -c rddf_file_name.txt ../data/graphs/graph-rddf.gr 250.0 /data/mapper_teste2
 
