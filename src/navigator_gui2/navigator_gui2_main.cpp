@@ -22,6 +22,7 @@
 #include <carmen/offroad_planner_interface.h>
 
 #include <carmen/audit_interface.h>
+#include <carmen/voice_interface_interface.h>
 
 #include <carmen/carmen_graphics.h>
 #include <gtk_gui.h>
@@ -1321,6 +1322,18 @@ odometry_handler(carmen_base_ackerman_odometry_message *msg)
 }
 
 
+void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_MAP)
+	{
+		printf("New map set by the voice interface command: %s\n", message->command);
+
+		strcpy(map_path, message->command);
+	}
+}
+
+
 static void
 display_config_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
@@ -1637,6 +1650,8 @@ subscribe_ipc_messages()
 	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) carmen_offroad_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

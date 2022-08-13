@@ -17,6 +17,7 @@ extern "C" {
 #define SET_SPEED								2
 #define SET_GRAPH								3
 #define ABORT_PREVIOUS_ROUTE_PLANNER_REQUEST 	4
+#define SET_MAP									5
 
 typedef struct
 {

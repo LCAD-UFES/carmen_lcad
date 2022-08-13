@@ -20,6 +20,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L../car_panel_gui/
 
 IFLAGS += `pkg-config --cflags opencv`
 
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+
+
 LFLAGS += -L/usr/local/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lmap_interface -lprob_models \
 		  -lgrid_mapping -lbase_ackerman_interface -lgeometry -lobstacle_avoider_interface \
@@ -28,12 +31,25 @@ LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lma
 		  -lfused_odometry_interface -lmap_io -lrddf_interface -lfrenet_path_planner_interface -lroute_planner_interface -lmap_server_interface -lbehavior_selector_interface \
 		  -lrotation_geometry -lcar_panel -lrobot_ackerman_interface -lparking_assistant_interface  -lford_escape_hybrid_interface \
 		  -lglm -lGL -lGLU -lglut -ltf -lmoving_objects_interface -laudit_interface -llane_detector_interface -lmodel_predictive_planner_interface \
-		  -loffroad_planner_interface -luser_app_server_interface `pkg-config --libs opencv`
+		  -loffroad_planner_interface -luser_app_server_interface -lvoice_interface_interface
+
+LFLAGS += `pkg-config --libs opencv`
+
 LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -ltask_manager_interface
 LFLAGS += -luser_preferences
 
 #CFLAGS += -Wno-unknown-pragmas
 #CXXFLAGS += -Wno-unknown-pragmas
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --embed --libs` -pthread
+endif
 
 # Source code files (.c, .cpp) 
 SOURCES = navigator_gui2_main.cpp navigator_gui2_interface.c 2D_map_view.cpp
