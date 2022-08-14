@@ -1329,6 +1329,9 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 	{
 		printf("New map set by the voice interface command: %s\n", message->command);
 
+		if (map_path)
+			free(map_path);
+		map_path = (char *) malloc(strlen(message->command) + 1);
 		strcpy(map_path, message->command);
 	}
 }
@@ -1452,9 +1455,7 @@ read_parameters(int argc, char *argv[],
 		carmen_navigator_panel_config_t *navigator_panel_config)
 {
 	int num_items;
-
 	char *robot_poly_file;
-
 
 	carmen_param_t param_list[] =
 	{
@@ -1535,7 +1536,7 @@ read_parameters(int argc, char *argv[],
 
 	carmen_param_t param_list2[] =
 	{
-		{(char *) "navigator_panel", (char *) "missions_folder", 		CARMEN_PARAM_STRING, &missions_folder, 0, NULL},
+		{(char *) "navigator_panel", (char *) "missions_folder", CARMEN_PARAM_STRING, &missions_folder, 0, NULL},
 	};
 	num_items = sizeof(param_list2) / sizeof(param_list2[0]);
 	carmen_param_install_params(argc, argv, param_list2, num_items);

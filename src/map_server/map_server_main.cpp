@@ -542,6 +542,10 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 	{
 		printf("New map set by the voice interface command: %s\n", message->command);
 
+		if (map_path)
+			free(map_path);
+		map_path = (char *) malloc(strlen(message->command) + 1);
+
 		strcpy(map_path, message->command);
 		publish_a_new_offline_map_if_robot_moved_to_another_block(&pose_g, true, message->timestamp);
 	}
