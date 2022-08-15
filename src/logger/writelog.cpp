@@ -367,7 +367,7 @@ void carmen_logger_write_gps_gpgga(carmen_gps_gpgga_message *gps_msg,
 		long_o = 'E';
 
 	carmen_fprintf(outfile,
-			"NMEAGGA %d %lf %lf %c %lf %c %d %d %lf %lf %lf %lf %lf %d %lf %s %lf\n",
+			"NMEAGGA %d %lf %.7lf %c %.7lf %c %d %d %lf %lf %lf %lf %lf %d %lf %s %lf\n",
 			gps_msg->nr, gps_msg->utc, gps_msg->latitude_dm, lat_o,
 			gps_msg->longitude_dm, long_o, gps_msg->gps_quality,
 			gps_msg->num_satellites, gps_msg->hdop, gps_msg->sea_level,
