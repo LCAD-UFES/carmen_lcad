@@ -1287,6 +1287,10 @@ initialize_jaus()
 	xgv_ccu_service_connections = create_xgv_ccu_service_connections(XGV_CCU);
 
 }
+
+/*
+// ALTERAÇÕES DO AUTOMATIC TUNE PID
+
 static void
 tune_pid_gain_parameters_message_handler(tune_pid_gain_parameters_message* msg)
 {
@@ -1307,6 +1311,9 @@ subscribe_tune_pid_gain_parameters_message()
 {
 	carmen_ford_escape_subscribe_tune_pid_parameters(NULL, (carmen_handler_t) tune_pid_gain_parameters_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
+*/
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1332,7 +1339,12 @@ main(int argc, char** argv)
 
 	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 
+	/*
+	
+	// ALTERAÇÕES DO AUTOMATIC TUNE PID
 	subscribe_tune_pid_gain_parameters_message();
+
+	*/
 
 	carmen_ipc_dispatch();
 
