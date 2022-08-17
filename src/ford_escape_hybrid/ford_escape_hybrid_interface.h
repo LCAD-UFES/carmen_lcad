@@ -51,13 +51,24 @@ carmen_ford_escape_subscribe_status_message(carmen_ford_escape_status_message *m
 			       carmen_subscribe_t subscribe_how);
 
 void
+carmen_ford_escape_subscribe_tune_pid_parameters(tune_pid_gain_parameters_message *message,
+			       carmen_handler_t handler,
+			       carmen_subscribe_t subscribe_how);
+
+void
 carmen_ford_escape_unsubscribe_status_message(carmen_handler_t handler);
+
+void
+carmen_ford_escape_unsubscribe_tune_pid_parameters(carmen_handler_t handler);
 
 void
 carmen_ford_escape_publish_status_message(carmen_ford_escape_status_message *msg, double timestamp);
 
 void
 carmen_ford_escape_publish_signals_message(carmen_ford_escape_signals_message *msg, double timestamp);
+
+void
+carmen_ford_escape_publish_tune_pid_parameters(tune_pid_gain_parameters_message *msg, double timestamp);
 
 /*
 void
