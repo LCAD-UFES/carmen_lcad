@@ -9,6 +9,8 @@
 #include <carmen/mapper_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/extra_keys_interface.h>
+
 #include <prob_map.h>
 #include "audit_messages.h"
 #include "audit_interface.h"
