@@ -209,7 +209,7 @@ narrow_lane_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_
 int
 engine_brake_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
 {
-	carmen_annotation_t *nearest_engine_brake_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_ENGINE_BRAKE,
+	carmen_annotation_t *nearest_engine_brake_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_RETARDER_BRAKE,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_engine_brake_sign_annotation == NULL)
@@ -226,7 +226,7 @@ engine_brake_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose
 	if ((distance_to_first_goal >= distance_to_annotation) &&
 		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_engine_brake_sign_annotation->annotation_point))
 	{
-		if (nearest_engine_brake_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_ENGINE_BRAKE_ON)
+		if (nearest_engine_brake_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_RETARDER_BRAKE_ON)
 			return (ENGINE_BRAKE_ON);
 		else
 			return (ENGINE_BRAKE_OFF);
