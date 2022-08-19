@@ -1,0 +1,8 @@
+publish mission state STARTING_MISSION UFES2
+# Predio Eletrica logo depois do LCAD2
+set course to 7757700.04, -363585.28, 0.633
+go after set course to 7757700.04, -363585.28, 0.633
+stop
+publish mission state MISSION_COMPLETED UFES2
+
+mission completed
