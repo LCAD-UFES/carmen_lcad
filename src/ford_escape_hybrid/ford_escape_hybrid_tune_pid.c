@@ -526,7 +526,7 @@ main(int argc, char **argv) //./ford_escape_hybrid_train_base -max_v 5.0 -max_ph
 	//carmen_ipc_addPeriodicTimer(4.0, vel_handler, NULL);
 
 	tune_pid_gain_parameters_message *pid_msg = fill_pid_gain_parameters_message();
-	carmen_ford_escape_publish_tune_pid_parameters(pid_msg , carmen_get_time());
+	carmen_ford_escape_publish_tune_pid_gain_parameters_message(pid_msg , carmen_get_time());
 
 
 

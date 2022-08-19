@@ -648,6 +648,23 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 }
 
 
+static void
+tune_pid_gain_parameters_handler(tune_pid_gain_parameters_message* msg)
+{
+	(void) msg;
+	// printf("valor de ki antes %lf\n", msg->ki);
+	// printf("valor de kd antes %lf\n", msg->kd);
+	// printf("valor de kp antes %lf\n", msg->kp);
+	// printf("timestamp da msg %lf\n",  msg->timestamp);
+	// msg->kp = rand() % 100000;
+	// msg->ki = rand() % 100000;
+	// msg->kd = rand() % 100000;
+	// printf("valor de ki atual %lf\n", msg->ki);
+	// printf("valor de kd atual %lf\n", msg->kd);
+	// printf("valor de kp atual %lf\n", msg->kp);
+}
+
+
 static void 
 shutdown_module()
 {
@@ -1198,6 +1215,8 @@ subscribe_to_relevant_messages()
 	carmen_task_manager_subscribe_desired_engage_state_message(NULL, (carmen_handler_t) task_manager_desired_engage_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_ford_escape_subscribe_tune_pid_gain_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_parameters_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1288,34 +1307,6 @@ initialize_jaus()
 
 }
 
-/*
-// ALTERAÇÕES DO AUTOMATIC TUNE PID
-
-static void
-tune_pid_gain_parameters_message_handler(tune_pid_gain_parameters_message* msg)
-{
-	printf("valor de ki antes %lf\n", msg->ki);
-	printf("valor de kd antes %lf\n", msg->kd);
-	printf("valor de kp antes %lf\n", msg->kp);
-	printf("timestamp da msg %lf\n",  msg->timestamp);
-	msg->kp = rand() % 100000;
-	msg->ki = rand() % 100000;
-	msg->kd = rand() % 100000;
-	printf("valor de ki atual %lf\n", msg->ki);
-	printf("valor de kd atual %lf\n", msg->kd);
-	printf("valor de kp atual %lf\n", msg->kp);
-}
-
-static void
-subscribe_tune_pid_gain_parameters_message()
-{
-	carmen_ford_escape_subscribe_tune_pid_parameters(NULL, (carmen_handler_t) tune_pid_gain_parameters_message_handler, CARMEN_SUBSCRIBE_LATEST);
-}
-*/
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 int 
 main(int argc, char** argv)
@@ -1323,6 +1314,7 @@ main(int argc, char** argv)
 	signal(SIGINT, shutdown_module);
 
 	carmen_ipc_initialize(argc, argv);
+
 	carmen_param_check_version(argv[0]);
 
 	initialize_structures();
@@ -1338,13 +1330,6 @@ main(int argc, char** argv)
 	initialize_jaus();
 
 	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
-
-	/*
-	
-	// ALTERAÇÕES DO AUTOMATIC TUNE PID
-	subscribe_tune_pid_gain_parameters_message();
-
-	*/
 
 	carmen_ipc_dispatch();
 

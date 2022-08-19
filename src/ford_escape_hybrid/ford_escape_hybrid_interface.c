@@ -49,24 +49,19 @@ carmen_ford_escape_unsubscribe_status_message(carmen_handler_t handler)
 }
 
 void
-carmen_ford_escape_subscribe_tune_pid_parameters(tune_pid_gain_parameters_message *message,
-			       carmen_handler_t handler,
-			       carmen_subscribe_t subscribe_how)
+carmen_ford_escape_subscribe_tune_pid_gain_parameters_message(tune_pid_gain_parameters_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
-  carmen_subscribe_message(TUNE_PID_GAIN_PARAMENTERS_NAME,
-		  	  	  	  	   TUNE_PID_GAIN_PARAMENTERS_FMT,
-                           message, sizeof(tune_pid_gain_parameters_message),
-                           handler, subscribe_how);
+  carmen_subscribe_message(TUNE_PID_GAIN_PARAMENTERS_NAME, TUNE_PID_GAIN_PARAMENTERS_FMT, message, sizeof(tune_pid_gain_parameters_message), handler, subscribe_how);
 }
 
 void
-carmen_ford_escape_unsubscribe_tune_pid_parameters(carmen_handler_t handler)
+carmen_ford_escape_unsubscribe_tune_pid_gain_parameters_message(carmen_handler_t handler)
 {
   carmen_unsubscribe_message(TUNE_PID_GAIN_PARAMENTERS_NAME, handler);
 }
 
 void
-carmen_ford_escape_publish_tune_pid_parameters(tune_pid_gain_parameters_message *msg, double timestamp)
+carmen_ford_escape_publish_tune_pid_gain_parameters_message(tune_pid_gain_parameters_message *msg, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	static int first_time = 1;
