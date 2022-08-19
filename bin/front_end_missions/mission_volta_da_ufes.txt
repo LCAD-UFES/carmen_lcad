@@ -1,66 +1,25 @@
-# Linhas vazias, que comecam com espaco ou com # sao ignoradas
-#
-# set final goal 7757732.73, -363563.71, -0.138
+publish mission state STARTING_MISSION VOLTA_UFES
 
-	# LCAD2
-	set course to 7757674.47, -363607.51, -0.787 
-	go after set course to 7757674.47, -363607.51, -0.7   # fica nesta task ateh o fim do curso 
-	stop # tira de modo autonomo
+# Ponto 1
+#set course to 7757892.37, -363588.60, -0.635
+#go after set course to 7757892.37, -363588.60, -0.635
+#stop
 
-# Predio Eletrica logo depois do LCAD2
-set course to 7757732.73, -363563.71, -0.138
-go after set course to 7757732.73, -363563.71, -0.138   # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+# Ponto 2
+set course to 7757694.75, -363890.09, -2.438
+go after set course to 7757694.75, -363890.09, -2.438
+stop
 
-# Estacionamento da Cantina do CT
-set course to 7757856.47, -363577.52, -2.518
-go after set course to 7757856.47, -363577.52, -2.518  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+# Ponto 3
+#set course to 7757026.08, -364062.10, 3.043
+#go after set course to 7757026.08, -364062.10, 3.043
+#stop
 
-# Estacionamento da Cantina do CT
-park at 7757870.43, -363601.65, -0.879
-go after park at 7757870.43, -363601.65, -0.879  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+# Ponto 4
+set course to 7757651.54, -363622.50, 0.625
+go after set course to 7757651.54, -363622.50, 0.625
+stop
 
-# Estacionamento do NTI
-set course to 7757767.03, -363818.23, 2.298
-go after set course to 7757767.03, -363818.23, 2.298 # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+publish mission state MISSION_COMPLETED VOLTA_UFES
 
-# Estacionamento do NTI
-park at 7757736.86, -363840.55, -2.467 
-go after park at 7757736.86, -363840.55, -2.467  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
-
-# Estacionamento ICs
-set course to 7757628.18, -363928.71, -0.906
-go after set course to 7757628.18, -363928.71, -0.906  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
-
-	# Estacionamento Reitoria
-	set course to 7757417.14, -364068.89, 2.223
-	go after set course to 7757417.94, -364068.89, 2.223  # fica nesta task ateh o fim do curso 
-	stop # tira de modo autonomo
-
-# Escadaria do Teatro
-set course to 7757259.47, -364086.05, 2.979
-go after set course to 7757259.47, -364086.05, 2.979  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
-
-	# Estacionamento Cinema
-	set course to 7757093.29, -364057.00, -1.718 
-	go after set course to 7757093.29, -364057.97, -1.718  # fica nesta task ateh o fim do curso 
-	stop # tira de modo autonomo
-
-	# Estacionamento Caixa
-	set course to 7756995.11, -363835.09, 2.236
-	go after set course to 7756995.11, -363835.09, 2.236  # fica nesta task ateh o fim do curso 
-	stop # tira de modo autonomo
-
-# Estacionamento CCJE
-set course to 7757421.69, -363565.91, -2.538
-go after set course to 7757421.69, -363565.91, -2.538  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
-
-
-restart
+mission completed
