@@ -103,6 +103,14 @@ typedef struct {
 #define CARMEN_FORD_ESCAPE_SIGNAL_NAME	"carmen_ford_escape_signals"
 #define CARMEN_FORD_ESCAPE_SIGNAL_FMT		"{int, int, int, int, int, double, string}"
 
+typedef struct {
+  double kp, ki, kd;
+  double timestamp;
+	char *host;
+} tune_pid_gain_parameters_message;
+
+#define TUNE_PID_GAIN_PARAMENTERS_NAME "tune_pid_gain_parameters"
+#define TUNE_PID_GAIN_PARAMENTERS_FMT "{double, double, double, double, string}"
 #ifdef __cplusplus
 }
 #endif

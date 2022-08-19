@@ -33,6 +33,7 @@
 void output_handler(carmen_proccontrol_output_message *output)
 {
   fprintf(stderr, "%s", output->output);
+  fflush(stderr);
 }
 
 int main(int argc, char **argv)

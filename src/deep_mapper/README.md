@@ -2,7 +2,13 @@
 
 DeepMapper is a Carmen subsystem to estimate depth maps from monocular camera images using Neural Networks.
 
-Requirements: Python3.6, pip, virtualenv, Cuda 10.0 and CUDNN compatible.
+Requirements: Python3.8, pip, virtualenv, Cuda 11.0 and CUDNN compatible.
+
+For install libraries, run:
+```shell
+cd $CARMEN_HOME/src/deep_mapper/DPT/ && make clean && make && cd ../GLPDepth && make clean && make && cd ../Adabins && make clean && make && cd .. && make clean && make
+```
+pip install torch==1.10.1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1 -f https://download.pytorch.org/whl/torch_stable.html
 
 ## Preparing the environment for GLPDepth
 
@@ -77,7 +83,7 @@ The pretrained model "AdaBins_kitti.pt" is available at [here](https://1drv.ms/u
     make download
 ```
 
-If your system already has CUDA 10.0 e CUDNN compatibles installed, run the command:
+If your system already has CUDA 11.0 e CUDNN compatibles installed, run the command:
 ```shell
     cd $CARMEN_HOME/src/deep_mapper/Adabins
 ```
@@ -90,7 +96,7 @@ If your system already has CUDA 10.0 e CUDNN compatibles installed, run the comm
 ```shell
     make 
 ```
-* For using this subsytem is required: CUDA_10.0, Python 3.6, pip and virtualenv.
+* For using this subsytem is required: CUDA_11.0, Python 3.8, pip and virtualenv.
 
 ### In case your machine doesn't have CUDA and CUDNN
 * Run the command and all dependencies are gonna be installed:
@@ -122,24 +128,24 @@ cd $CARMEN_HOME/bin/
 Making maps
 ```shell
 cd $CARMEN_HOME/bin/
-./proccontrol process-volta_da_ufes_playback_viewer_3D_map_generation_sensorbox3_deepmapper.ini
+./proccontrol process-volta_da_ufes_playback_viewer_3D_map_generation_sensorbox_deepmapper_1.ini
 ```
 Localize
 ```shell
-./proccontrol process-volta_da_ufes_playback_viewer_3D_sensorbox3_deepmapper.ini
+./proccontrol process-volta_da_ufes_playback_viewer_3D_sensorbox_deepmapper_1.ini
 ```
 
 ### Steps to a Grip-Map from GLPDepth
 
 ##### Map Generation
-Verify if velodyne are "off" and lidar8 are "on" at /src/carmen-ford-escape-sensorbox-3-deepmapper.ini
+Verify if velodyne are "off" and lidar8 are "on" at /src/carmen-ford-escape-sensorbox-deepmapper.ini
 ```shell
-./proccontrol process-volta_da_ufes_playback_viewer_3D_map_generation_sensorbox3_deepmapper.ini
+./proccontrol process-volta_da_ufes_playback_viewer_3D_map_generation_sensorbox_deepmapper_1.ini
 ```
 Clean maps and turn on PubPoses
 ##### Localize
 ```shell
-./proccontrol process-volta_da_ufes_playback_viewer_3D_sensorbox3_deepmapper.ini
+./proccontrol process-volta_da_ufes_playback_viewer_3D_sensorbox_deepmapper_1.ini
 ```
 
 # Original Article

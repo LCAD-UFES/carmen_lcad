@@ -1287,6 +1287,33 @@ initialize_jaus()
 	xgv_ccu_service_connections = create_xgv_ccu_service_connections(XGV_CCU);
 
 }
+
+/*
+// ALTERAÇÕES DO AUTOMATIC TUNE PID
+
+static void
+tune_pid_gain_parameters_message_handler(tune_pid_gain_parameters_message* msg)
+{
+	printf("valor de ki antes %lf\n", msg->ki);
+	printf("valor de kd antes %lf\n", msg->kd);
+	printf("valor de kp antes %lf\n", msg->kp);
+	printf("timestamp da msg %lf\n",  msg->timestamp);
+	msg->kp = rand() % 100000;
+	msg->ki = rand() % 100000;
+	msg->kd = rand() % 100000;
+	printf("valor de ki atual %lf\n", msg->ki);
+	printf("valor de kd atual %lf\n", msg->kd);
+	printf("valor de kp atual %lf\n", msg->kp);
+}
+
+static void
+subscribe_tune_pid_gain_parameters_message()
+{
+	carmen_ford_escape_subscribe_tune_pid_parameters(NULL, (carmen_handler_t) tune_pid_gain_parameters_message_handler, CARMEN_SUBSCRIBE_LATEST);
+}
+*/
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1311,6 +1338,13 @@ main(int argc, char** argv)
 	initialize_jaus();
 
 	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
+
+	/*
+	
+	// ALTERAÇÕES DO AUTOMATIC TUNE PID
+	subscribe_tune_pid_gain_parameters_message();
+
+	*/
 
 	carmen_ipc_dispatch();
 

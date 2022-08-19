@@ -10,17 +10,29 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+IFLAGS += `pkg-config --cflags opencv` 
+
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS +=  -lgrid_mapping -lprob_models -lz -lmap_io -lmap_util -lmap_interface -lglobal -lparam_interface -lnavigator_spline_interface \
 	-lmapper_interface -llocalize_ackerman_interface  -lipc \
 	-L/usr/lib64/libkml -lrrt_util_wrapper -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -llocalize_ackerman_core \
 	-lrotation_geometry -ldownload_map -lrddf_interface -ltracker_interface -lnavigator_astar_interface \
-	-lsimulator_ackerman_interface -lbehavior_selector_interface
-		
+	-lsimulator_ackerman_interface -lbehavior_selector_interface -lvoice_interface_interface
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --embed --libs` -pthread
+endif
+
 CFLAGS += -fopenmp -std=c99 
 CXXFLAGS += -Wno-write-strings
 
-IFLAGS += `pkg-config --cflags opencv` 
 LFLAGS += `pkg-config --libs opencv` 
 
 # Source code files (.c, .cpp) 

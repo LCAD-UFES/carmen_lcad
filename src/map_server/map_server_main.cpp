@@ -20,6 +20,8 @@
 #include <carmen/navigator_astar_interface.h>
 #include <carmen/navigator_spline_interface.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/voice_interface_interface.h>
+
 #include <vector>
 
 //TODO: ler da lista de parâmetros se for ler imagens já baixadas
@@ -345,7 +347,7 @@ publish_compressed_lane_map()
 
 
 static void
-publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, double timestamp)
+publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, bool force_publish, double timestamp)
 {
 	double x_origin, y_origin, time_now;
 
@@ -356,7 +358,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 
 	time_now = carmen_get_time();
 
-	if ((time_now - last_time_changed) > time_interval_for_map_change && (current_map->config.x_origin != x_origin || current_map->config.y_origin != y_origin))
+	if (force_publish || ((time_now - last_time_changed) > time_interval_for_map_change && (current_map->config.x_origin != x_origin || current_map->config.y_origin != y_origin)))
 	{
 		last_time_changed = time_now;
 
@@ -440,14 +442,10 @@ static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	static int first_time = 1;
-	carmen_point_t pose;
 
-	pose = msg->globalpos;
+	pose_g = msg->globalpos;
 
-	//TODO:
-	pose_g = pose;
-
-	publish_a_new_offline_map_if_robot_moved_to_another_block(&pose, msg->timestamp);
+	publish_a_new_offline_map_if_robot_moved_to_another_block(&pose_g, false, msg->timestamp);
 
 	// Force offline map publication when the first pose is received
 	if (first_time)
@@ -464,14 +462,10 @@ static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
 	static int first_time = 1;
-	carmen_point_t pose;
 
-	pose = msg->truepose;
+	pose_g = msg->truepose;
 
-	//TODO:
-	pose_g = pose;
-
-	publish_a_new_offline_map_if_robot_moved_to_another_block(&pose, msg->timestamp);
+	publish_a_new_offline_map_if_robot_moved_to_another_block(&pose_g, false, msg->timestamp);
 
 	// Force offline map publication when the first pose is received
 	if (first_time)
@@ -487,7 +481,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 static void
 localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *msg)
 {
-	publish_a_new_offline_map_if_robot_moved_to_another_block(msg->mean, msg->timestamp);
+	publish_a_new_offline_map_if_robot_moved_to_another_block(msg->mean, false, msg->timestamp);
 }
 
 
@@ -537,6 +531,23 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 			pose_in_last_publish = pose_g;
 			offline_map_published = 0;
 		}
+	}
+}
+
+
+void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_MAP)
+	{
+		printf("New map set by the voice interface command: %s\n", message->command);
+
+		if (map_path)
+			free(map_path);
+		map_path = (char *) malloc(strlen(message->command) + 1);
+
+		strcpy(map_path, message->command);
+		publish_a_new_offline_map_if_robot_moved_to_another_block(&pose_g, true, message->timestamp);
 	}
 }
 
@@ -717,6 +728,7 @@ register_handlers()
 
 //	carmen_download_map_subscribe_message(NULL, (carmen_handler_t) download_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -807,6 +819,7 @@ map_server_get_first_map()
 			carmen_grid_mapping_get_block_map_by_origin(map_path, 'r', pose, current_road_map);
 		}
 	}
+
 	if (current_map->complete_map != NULL)
 	{
 		double timestamp = carmen_get_time();
