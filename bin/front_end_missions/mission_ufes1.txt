@@ -1,8 +1,0 @@
-publish mission state STARTING_MISSION UFES 1
-
-set course to 7757648.70, -363624.10, 0.609 
-go after set course to 7757648.70, -3636s24.10, 0.609
-stop 
-publish mission state MISSION_COMPLETED UFES 1
-
-mission completed
