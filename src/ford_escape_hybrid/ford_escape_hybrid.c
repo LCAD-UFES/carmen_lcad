@@ -553,6 +553,27 @@ apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion
 }
 
 
+void
+check_jaus_reported_errors()
+{
+	int i;
+	int needs_soft_stop = 0;
+
+	if (g_XGV_num_errors != 0)
+	{
+		for (i = 0; i < g_XGV_num_errors; i++)
+		{
+			if (g_XGV_error[i] == STEERING_INITIALIZATION_ERROR_CODE)
+				needs_soft_stop = 1;
+		}
+	}
+
+	if (needs_soft_stop)
+		activate_soft_stop();
+	else
+		deactivate_soft_stop();
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
@@ -1125,7 +1146,6 @@ torc_report_error_count_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)),
 {
 	ReportErrorCountMessage reportErrorCount;
 	int i;
-	int needs_soft_stop = 0;
 
 	reportErrorCount = reportErrorCountMessageFromJausMessage(error_message);
 	if (reportErrorCount)
@@ -1134,14 +1154,8 @@ torc_report_error_count_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)),
 		for (i = 0; i < g_XGV_num_errors; i++)
 		{
 			g_XGV_error[i] = reportErrorCount->error[i];
-			if (g_XGV_error[i] == STEERING_INITIALIZATION_ERROR_CODE)
-				needs_soft_stop = 1;
 			carmen_verbose("error[%d]: %d\t",i,g_XGV_error[i]);
 		}
-		if (needs_soft_stop)
-			activate_soft_stop();
-		else
-			deactivate_soft_stop();
 		carmen_verbose("\n");
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 		FILE *caco = fopen("ford_dump.txt", "a");
@@ -1376,6 +1390,11 @@ main(int argc, char** argv)
 	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 
 	carmen_ipc_dispatch();
+
+	while (1)
+	{
+		check_jaus_reported_errors();
+	}
 
 	return 0;
 }
