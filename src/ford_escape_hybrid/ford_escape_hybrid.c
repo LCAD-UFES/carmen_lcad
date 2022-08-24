@@ -31,6 +31,8 @@
 #include <carmen/collision_detection.h>
 #include <carmen/task_manager_interface.h>
 #include <carmen/task_manager_messages.h>
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 #include <jaus.h>				// Header file for JAUS types, structs and messages
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
@@ -48,6 +50,8 @@
 #define ROBOT_NAME_ECOTECH4 	1
 #define ROBOT_NAME_MPW700 		2
 #define ROBOT_NAME_ASTRU 		3
+
+#define STEERING_INITIALIZATION_ERROR_CODE 9101 // manual Torc p. 89
 
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
@@ -70,6 +74,8 @@ static double v_multiplier;
 
 int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
 int tune_pid_mode = 0;
+
+int soft_stop_on = 0;
 
 carmen_robot_ackerman_velocity_message alternative_odometry;
 
@@ -420,6 +426,37 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 	heartbeat++;
 }
 
+
+void
+activate_soft_stop()
+{
+	if (!soft_stop_on)
+	{
+		carmen_voice_interface_command_message message;
+		message.command_id = SET_SPEED;
+		message.command = "0.0";
+		message.host = carmen_get_host();
+		message.timestamp = carmen_get_time();
+		carmen_voice_interface_publish_command_message(&message);
+		soft_stop_on = 1;
+	}
+}
+
+
+void
+deactivate_soft_stop()
+{
+	if (soft_stop_on)
+	{
+		carmen_voice_interface_command_message message;
+		message.command_id = SET_SPEED;
+		message.command = "MAX_SPEED";
+		message.host = carmen_get_host();
+		message.timestamp = carmen_get_time();
+		carmen_voice_interface_publish_command_message(&message);
+		soft_stop_on = 0;
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1088,6 +1125,7 @@ torc_report_error_count_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)),
 {
 	ReportErrorCountMessage reportErrorCount;
 	int i;
+	int needs_soft_stop = 0;
 
 	reportErrorCount = reportErrorCountMessageFromJausMessage(error_message);
 	if (reportErrorCount)
@@ -1096,8 +1134,14 @@ torc_report_error_count_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)),
 		for (i = 0; i < g_XGV_num_errors; i++)
 		{
 			g_XGV_error[i] = reportErrorCount->error[i];
+			if (g_XGV_error[i] == STEERING_INITIALIZATION_ERROR_CODE)
+				needs_soft_stop = 1;
 			carmen_verbose("error[%d]: %d\t",i,g_XGV_error[i]);
 		}
+		if (needs_soft_stop)
+			activate_soft_stop();
+		else
+			deactivate_soft_stop();
 		carmen_verbose("\n");
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 		FILE *caco = fopen("ford_dump.txt", "a");
