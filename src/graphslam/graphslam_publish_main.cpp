@@ -143,7 +143,7 @@ assembly_and_publish_fused_odometry_particles(carmen_point_t point, double times
 	message.timestamp = timestamp;
 
 	message.num_particles = 1;
-	message.particle_pos = (carmen_vector_3D_t*) calloc (1, sizeof(carmen_vector_3D_t*));
+	message.particle_pos = (carmen_vector_3D_t*) calloc (1, sizeof(carmen_vector_3D_t));
 	message.weights = (double*) calloc (1, sizeof(double));
 	message.weight_type = 0;
 

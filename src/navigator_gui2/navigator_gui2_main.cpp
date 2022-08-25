@@ -22,6 +22,7 @@
 #include <carmen/offroad_planner_interface.h>
 
 #include <carmen/audit_interface.h>
+#include <carmen/voice_interface_interface.h>
 
 #include <carmen/carmen_graphics.h>
 #include <gtk_gui.h>
@@ -87,6 +88,7 @@ std::vector <std::string> missions_filenames;
 
 static int argc_global;
 static char **argv_global;
+int publish_final_goal_at_place_of_interest;
 
 static void
 navigator_get_empty_map()
@@ -1321,6 +1323,21 @@ odometry_handler(carmen_base_ackerman_odometry_message *msg)
 }
 
 
+void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_MAP)
+	{
+		printf("New map set by the voice interface command: %s\n", message->command);
+
+		if (map_path)
+			free(map_path);
+		map_path = (char *) malloc(strlen(message->command) + 1);
+		strcpy(map_path, message->command);
+	}
+}
+
+
 static void
 display_config_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
@@ -1439,9 +1456,7 @@ read_parameters(int argc, char *argv[],
 		carmen_navigator_panel_config_t *navigator_panel_config)
 {
 	int num_items;
-
 	char *robot_poly_file;
-
 
 	carmen_param_t param_list[] =
 	{
@@ -1455,6 +1470,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator",		 (char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),		1, NULL},
 		{(char *) "navigator",		 (char *) "goal_size",				CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
 		{(char *) "navigator",		 (char *) "goal_theta_tolerance",	CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),	1, NULL},
+		{(char *) "navigator_panel", (char *) "publish_final_goal_at_place_of_interest",	CARMEN_PARAM_ONOFF, &(publish_final_goal_at_place_of_interest),	1, NULL},
 		{(char *) "navigator_panel", (char *) "initial_map_zoom",		CARMEN_PARAM_DOUBLE, &(navigator_panel_config->initial_map_zoom),	1, NULL},
 		{(char *) "navigator_panel", (char *) "track_robot",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->track_robot),		1, NULL},
 		{(char *) "navigator_panel", (char *) "draw_path",				CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_path),			1, NULL},
@@ -1522,7 +1538,7 @@ read_parameters(int argc, char *argv[],
 
 	carmen_param_t param_list2[] =
 	{
-		{(char *) "navigator_panel", (char *) "missions_folder", 		CARMEN_PARAM_STRING, &missions_folder, 0, NULL},
+		{(char *) "navigator_panel", (char *) "missions_folder", CARMEN_PARAM_STRING, &missions_folder, 0, NULL},
 	};
 	num_items = sizeof(param_list2) / sizeof(param_list2[0]);
 	carmen_param_install_params(argc, argv, param_list2, num_items);
@@ -1637,6 +1653,8 @@ subscribe_ipc_messages()
 	carmen_route_planner_subscribe_road_network_message(NULL, (carmen_handler_t) carmen_route_planner_road_network_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_offroad_planner_subscribe_plan_message(NULL, (carmen_handler_t) carmen_offroad_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

@@ -9,18 +9,29 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/include/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/
 IFLAGS += -I$(CARMEN_HOME)/include/carmen/
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lmotion_planner_interface -lbase_ackerman_interface -lvisual_odometry_interface \
 	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface \
 	  -ltask_manager_interface -lopenJaus -ljaus -lojTorc -lcontrol -lcarmodel -lfann -lgsl -lgslcblas -lford_escape_hybrid_interface \
-	  -lrobot_ackerman_interface
+	  -lrobot_ackerman_interface -lvoice_interface_interface
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/lib/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/lib/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/lib/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else ifeq ($(UBUNTU_VERSION),"18.04")
+	LFLAGS += `python3.6-config --libs`
+else
+	LFLAGS += `python3.8-config --embed --libs` -pthread
+endif
 
 MODULE_NAME = FORD_ESCAPE_HYBRID
 MODULE_COMMENT = "LCAD driver for TORC/JAUS Ford Escape Hybrid"

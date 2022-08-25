@@ -15,6 +15,7 @@ extern std::vector <std::string> missions_filenames;
 //extern int use_route_planner_in_graph_mode;
 extern int publish_map_view;
 extern double publish_map_view_interval;
+extern int publish_final_goal_at_place_of_interest;
 
 int button_record_verification=0;
 int unsubscribe_map_server = 0;
@@ -517,6 +518,11 @@ namespace View
 
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/narrow_lane_end_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_NARROW_LANE][RDDF_ANNOTATION_CODE_NARROW_LANE_END] = get_annotation_image(annotation_image_filename);
+
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/retarder_warning_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_RETARDER_BRAKE][RDDF_ANNOTATION_CODE_RETARDER_BRAKE_ON] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/retarder_warning_off_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_RETARDER_BRAKE][RDDF_ANNOTATION_CODE_RETARDER_BRAKE_OFF] = get_annotation_image(annotation_image_filename);
 
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
@@ -1734,12 +1740,17 @@ namespace View
 			destination.x = place_of_interest_list[destination_index].annotation_point.x;
 			destination.y = place_of_interest_list[destination_index].annotation_point.y;
 			destination.theta = place_of_interest_list[destination_index].annotation_orientation;
-			final_goal.pose.x = destination.x;
-			final_goal.pose.y = destination.y;
-			final_goal.pose.theta = destination.theta;
-			final_goal.pose.beta = 0.0;
-			final_goal.map = this->controls_.map_view->internal_map;
-			carmen_rddf_publish_end_point_message(50, final_goal.pose);
+
+			if (publish_final_goal_at_place_of_interest) //Usually we dont want to publish when using task_manager
+			{
+				final_goal.pose.x = destination.x;
+				final_goal.pose.y = destination.y;
+				final_goal.pose.theta = destination.theta;
+				final_goal.pose.beta = 0.0;
+				final_goal.map = this->controls_.map_view->internal_map;
+
+				carmen_rddf_publish_end_point_message(50, final_goal.pose);
+			}
 
 			if (!previous_map)
 				previous_map = nav_panel_config->map;

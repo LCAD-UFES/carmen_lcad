@@ -1,30 +1,3 @@
- /*********************************************************
- *
- * This source code is part of the Carnegie Mellon Robot
- * Navigation Toolkit (CARMEN)
- * * CARMEN Copyright (c) 2002 Michael Montemerlo, Nicholas
- * Roy, Sebastian Thrun, Dirk Haehnel, Cyrill Stachniss,
- * and Jared Glover
- *
- * CARMEN is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; 
- * either version 2 of the License, or (at your option)
- * any later version.
- *
- * CARMEN is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more 
- * details.
- *
- * You should have received a copy of the GNU General 
- * Public License along with CARMEN; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, 
- * Suite 330, Boston, MA  02111-1307 USA
- *
- ********************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,11 +34,11 @@ gps_parse_gga( char * line, int num_chars )
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->utc = atof(ptr);
+    carmen_extern_gpgga_ptr->utc = strtod(ptr, NULL);
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->latitude_dm = atof(ptr);
+    carmen_extern_gpgga_ptr->latitude_dm = strtod(ptr, NULL);
     carmen_extern_gpgga_ptr->latitude = carmen_global_convert_degmin_to_double(carmen_extern_gpgga_ptr->latitude_dm);
 
     ptr = strsep( &line, ",");
@@ -74,7 +47,7 @@ gps_parse_gga( char * line, int num_chars )
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->longitude_dm = atof(ptr);
+    carmen_extern_gpgga_ptr->longitude_dm = strtod(ptr, NULL);
     carmen_extern_gpgga_ptr->longitude = carmen_global_convert_degmin_to_double(carmen_extern_gpgga_ptr->longitude_dm);
 
     ptr = strsep( &line, ",");
@@ -91,23 +64,23 @@ gps_parse_gga( char * line, int num_chars )
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->hdop = atof(ptr);
+    carmen_extern_gpgga_ptr->hdop = strtod(ptr, NULL);
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->sea_level = atof(ptr);
+    carmen_extern_gpgga_ptr->sea_level = strtod(ptr, NULL);
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->altitude = atof(ptr);
+    carmen_extern_gpgga_ptr->altitude = strtod(ptr, NULL);
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->geo_sea_level = atof(ptr);
+    carmen_extern_gpgga_ptr->geo_sea_level = strtod(ptr, NULL);
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gpgga_ptr->geo_sep = atof(ptr);
+    carmen_extern_gpgga_ptr->geo_sep = strtod(ptr, NULL);
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
@@ -141,7 +114,7 @@ gps_parse_hdt(char *line, int num_chars)
 
     if (strlen(ptr) > 0)
     {
-      double heading = atof(ptr);
+      double heading = strtod(ptr, NULL);
       heading = carmen_degrees_to_radians(-90.0 - heading);
       heading = carmen_normalize_theta(heading);
       carmen_extern_gphdt_ptr->heading = heading;
@@ -175,7 +148,7 @@ gps_parse_rmc(char * line, int num_chars)
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gprmc_ptr->utc = atof(ptr);
+    carmen_extern_gprmc_ptr->utc = strtod(ptr, NULL);
  
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
@@ -183,7 +156,7 @@ gps_parse_rmc(char * line, int num_chars)
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gprmc_ptr->latitude_dm = atof(ptr);
+    carmen_extern_gprmc_ptr->latitude_dm = strtod(ptr, NULL);
     carmen_extern_gprmc_ptr->latitude = carmen_global_convert_degmin_to_double(carmen_extern_gprmc_ptr->latitude_dm);
 
     ptr = strsep( &line, ",");
@@ -192,7 +165,7 @@ gps_parse_rmc(char * line, int num_chars)
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gprmc_ptr->longitude_dm = atof(ptr);
+    carmen_extern_gprmc_ptr->longitude_dm = strtod(ptr, NULL);
     carmen_extern_gprmc_ptr->longitude = carmen_global_convert_degmin_to_double(carmen_extern_gprmc_ptr->longitude_dm);
 
     ptr = strsep( &line, ",");
@@ -201,11 +174,11 @@ gps_parse_rmc(char * line, int num_chars)
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gprmc_ptr->speed = carmen_knots_to_meters_per_second( atof(ptr) );
+    carmen_extern_gprmc_ptr->speed = carmen_knots_to_meters_per_second(strtod(ptr, NULL));
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gprmc_ptr->true_course = carmen_degrees_to_radians( atoi(ptr) );
+    carmen_extern_gprmc_ptr->true_course = carmen_degrees_to_radians(atoi(ptr));
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
@@ -213,7 +186,7 @@ gps_parse_rmc(char * line, int num_chars)
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
-    carmen_extern_gprmc_ptr->variation = carmen_degrees_to_radians( atoi(ptr) );
+    carmen_extern_gprmc_ptr->variation = carmen_degrees_to_radians(atoi(ptr));
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);

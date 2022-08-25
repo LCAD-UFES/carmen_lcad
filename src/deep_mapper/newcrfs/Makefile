@@ -7,8 +7,8 @@ CXXFLAGS += -std=gnu++11
 MODULE_NAME = NeWCRFs Neural Network
 MODULE_COMMENT = Depth Estimation with NeWCRFs
 
-IFLAGS += -I/usr/include/python3.6m
-LFLAGS += `python3.6-config --libs`
+IFLAGS += -I/usr/include/python3.8
+LFLAGS += `python3.8-config --libs`
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 

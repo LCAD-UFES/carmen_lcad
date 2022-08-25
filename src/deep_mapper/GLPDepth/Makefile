@@ -7,8 +7,8 @@ CXXFLAGS += -std=gnu++11
 MODULE_NAME = GLPDepth Neural Network
 MODULE_COMMENT = Depth Estimation with GLPDepth
 
-IFLAGS += -I/usr/include/python3.6m
-LFLAGS += `python3.6-config --libs`
+IFLAGS += -I/usr/include/python3.8
+LFLAGS += `python3.8-config --libs` -L /usr/lib/x86_64-linux-gnu/ -lpython3.8
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 

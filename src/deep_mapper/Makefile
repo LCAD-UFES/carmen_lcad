@@ -40,7 +40,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface \
 	-lmapper -lmapper_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-	-lboost_thread-mt -lrt -lboost_signals -lboost_system `python3.6m-config --ldflags --libs` 
+	-lboost_thread-mt -lrt -lboost_signals -lboost_system `python3.8-config --ldflags --libs` -lpython3.8
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne 
@@ -76,7 +76,7 @@ PUBLIC_LIBRARIES =
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = stereo_velodyne_depth 
-TARGETS = libtf libprob_models.a libadabins.a libglpdepth.a libdpt.a stereo_velodyne stereo_velodyne_depth velodyne_camera_calibration
+TARGETS = libtf libprob_models.a velodyne_camera_calibration  stereo_velodyne stereo_velodyne_depth libadabins.a libglpdepth.a libdpt.a
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -92,7 +92,7 @@ endif
 
 stereo_velodyne_message_stereo: stereo_velodyne_message_stereo.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
-stereo_velodyne_depth: stereo_velodyne_depth.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a $(CARMEN_HOME)/src/deep_mapper/DPT/libdpt.a $(CARMEN_HOME)/src/deep_mapper/GLPDepth/libglpdepth.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
+stereo_velodyne_depth: stereo_velodyne_depth.o $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a $(CARMEN_HOME)/src/deep_mapper/DPT/libdpt.a $(CARMEN_HOME)/src/deep_mapper/GLPDepth/libglpdepth.a 
 
 # rules
 

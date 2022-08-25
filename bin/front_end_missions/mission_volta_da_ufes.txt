@@ -1,0 +1,25 @@
+publish mission state STARTING_MISSION VOLTA_UFES
+
+# Ponto 1
+#set course to 7757892.37, -363588.60, -0.635
+#go after set course to 7757892.37, -363588.60, -0.635
+#stop
+
+# Ponto 2
+set course to 7757694.75, -363890.09, -2.438
+go after set course to 7757694.75, -363890.09, -2.438
+stop
+
+# Ponto 3
+#set course to 7757026.08, -364062.10, 3.043
+#go after set course to 7757026.08, -364062.10, 3.043
+#stop
+
+# Ponto 4
+set course to 7757651.54, -363622.50, 0.625
+go after set course to 7757651.54, -363622.50, 0.625
+stop
+
+publish mission state MISSION_COMPLETED VOLTA_UFES
+
+mission completed

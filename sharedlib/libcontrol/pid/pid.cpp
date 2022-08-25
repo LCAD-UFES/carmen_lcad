@@ -54,6 +54,8 @@ static double g_brake_gap;
 static double g_max_brake_effort;
 static double g_maximum_steering_command_rate;
 
+static double g_throttle_gap = 0.0;
+
 static int robot_model_id = 0;
 
 #ifdef PRINT
@@ -443,7 +445,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			g_velocity_forward_accelerating_Ki * integral_t +
 			g_velocity_forward_accelerating_Kd * derivative_t;
 
-		*throttle_command = u_t;
+		*throttle_command = u_t + g_throttle_gap;
 		if (robot_model_id == ROBOT_ID_BUGGY)
 			*brakes_command = 0.0;
 		else
@@ -483,7 +485,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			g_velocity_backward_accelerating_Ki * integral_t +
 			g_velocity_backward_accelerating_Kd * derivative_t;
 
-		*throttle_command = -u_t;
+		*throttle_command = -u_t + g_throttle_gap;
 		if (robot_model_id == ROBOT_ID_BUGGY)
 			*brakes_command = 0.0;
 		else

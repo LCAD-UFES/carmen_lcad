@@ -79,6 +79,8 @@ typedef enum
 	Stopped_At_Go_Forward_S0,
 	Stopped_At_Go_Forward_S1,
 	Stopped_At_Go_Forward_S2,
+	Stopping_At_Unavoidable_Obstacle,
+	Stopped_At_Unavoidable_Obstacle_S0,
 	End_Of_Path_Reached,
 	End_Of_Path_Reached2,
 	Recovering_From_Error

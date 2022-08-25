@@ -31,6 +31,8 @@
 #include <carmen/collision_detection.h>
 #include <carmen/task_manager_interface.h>
 #include <carmen/task_manager_messages.h>
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 #include <jaus.h>				// Header file for JAUS types, structs and messages
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
@@ -48,6 +50,8 @@
 #define ROBOT_NAME_ECOTECH4 	1
 #define ROBOT_NAME_MPW700 		2
 #define ROBOT_NAME_ASTRU 		3
+
+#define STEERING_INITIALIZATION_ERROR_CODE 9101 // manual Torc p. 89
 
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
@@ -70,6 +74,8 @@ static double v_multiplier;
 
 int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
 int tune_pid_mode = 0;
+
+int soft_stop_on = 0;
 
 carmen_robot_ackerman_velocity_message alternative_odometry;
 
@@ -421,6 +427,37 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 }
 
 
+void
+activate_soft_stop()
+{
+	if (!soft_stop_on)
+	{
+		carmen_voice_interface_command_message message;
+		message.command_id = SET_SPEED;
+		message.command = "0.0";
+		message.host = carmen_get_host();
+		message.timestamp = carmen_get_time();
+		carmen_voice_interface_publish_command_message(&message);
+		soft_stop_on = 1;
+	}
+}
+
+
+void
+deactivate_soft_stop()
+{
+	if (soft_stop_on)
+	{
+		carmen_voice_interface_command_message message;
+		message.command_id = SET_SPEED;
+		message.command = "MAX_SPEED";
+		message.host = carmen_get_host();
+		message.timestamp = carmen_get_time();
+		carmen_voice_interface_publish_command_message(&message);
+		soft_stop_on = 0;
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -515,6 +552,27 @@ apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion
 	return (i);
 }
 
+
+void
+check_jaus_reported_errors()
+{
+	int i;
+	int needs_soft_stop = 0;
+
+	if (g_XGV_num_errors != 0)
+	{
+		for (i = 0; i < g_XGV_num_errors; i++)
+		{
+			if (g_XGV_error[i] == STEERING_INITIALIZATION_ERROR_CODE)
+				needs_soft_stop = 1;
+		}
+	}
+
+	if (needs_soft_stop)
+		activate_soft_stop();
+	else
+		deactivate_soft_stop();
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -645,6 +703,23 @@ static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
 	path_goals_and_annotations_message = msg;
+}
+
+
+static void
+tune_pid_gain_parameters_handler(tune_pid_gain_parameters_message* msg)
+{
+	(void) msg;
+	// printf("valor de ki antes %lf\n", msg->ki);
+	// printf("valor de kd antes %lf\n", msg->kd);
+	// printf("valor de kp antes %lf\n", msg->kp);
+	// printf("timestamp da msg %lf\n",  msg->timestamp);
+	// msg->kp = rand() % 100000;
+	// msg->ki = rand() % 100000;
+	// msg->kd = rand() % 100000;
+	// printf("valor de ki atual %lf\n", msg->ki);
+	// printf("valor de kd atual %lf\n", msg->kd);
+	// printf("valor de kp atual %lf\n", msg->kp);
 }
 
 
@@ -1198,6 +1273,8 @@ subscribe_to_relevant_messages()
 	carmen_task_manager_subscribe_desired_engage_state_message(NULL, (carmen_handler_t) task_manager_desired_engage_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_ford_escape_subscribe_tune_pid_gain_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_parameters_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1287,7 +1364,6 @@ initialize_jaus()
 	xgv_ccu_service_connections = create_xgv_ccu_service_connections(XGV_CCU);
 
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int 
@@ -1296,6 +1372,7 @@ main(int argc, char** argv)
 	signal(SIGINT, shutdown_module);
 
 	carmen_ipc_initialize(argc, argv);
+
 	carmen_param_check_version(argv[0]);
 
 	initialize_structures();
@@ -1313,6 +1390,11 @@ main(int argc, char** argv)
 	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 
 	carmen_ipc_dispatch();
+
+	while (1)
+	{
+		check_jaus_reported_errors();
+	}
 
 	return 0;
 }
