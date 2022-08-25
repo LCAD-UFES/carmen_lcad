@@ -1255,7 +1255,7 @@
                                   <object class="GtkExpander" id="expanderErrors">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="expanded">False</property>
+                                    <property name="expanded">True</property>
                                     <child>
                                       <object class="GtkVBox" id="box0">
                                         <property name="visible">True</property>
