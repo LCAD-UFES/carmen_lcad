@@ -192,6 +192,8 @@ int behavior_selector_check_pedestrian_near_path = 0;
 double behavior_pedestrian_near_path_min_lateral_distance = 4.0;
 double behavior_selector_pedestrian_near_path_min_longitudinal_distance = 5.0;
 
+bool all_paths_has_collision = false;
+
 
 int
 compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_pose)
@@ -1147,6 +1149,22 @@ print_road_network_behavior_selector(carmen_route_planner_road_network_message *
 //	fclose(arq);
 //}
 
+bool
+check_if_all_paths_has_collision(vector<path_collision_info_t> &paths_collision_info)
+{
+	int paths_with_collision_counter = 0;
+	for(uint i = 0; i < paths_collision_info.size(); i++)
+	{
+		if(paths_collision_info[i].path_has_no_collision == false)
+			paths_with_collision_counter++;
+	}
+
+	if(paths_with_collision_counter == frenet_path_planner_num_paths)
+		return true;
+
+	return false;
+}
+
 
 path_collision_info_t
 set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
@@ -1185,6 +1203,14 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
 		else
 			set_of_paths.selected_path = selected_path_id;
+
+		if(check_if_all_paths_has_collision(paths_collision_info))
+		{
+			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
+			all_paths_has_collision = true;
+		}
+		else
+			all_paths_has_collision = false;
 
 		publish_set_of_paths_message(&set_of_paths);
 
@@ -1257,6 +1283,12 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 //	printf("delta_t funcao %0.3lf\n", carmen_get_time() - t2);
 
 //	print_poses(last_rddf_message->poses, last_rddf_message->number_of_poses, (char *) "cacox0.txt");
+
+	// if(all_paths_has_collision)
+	// {
+	// 	set_max_v(0.0);
+	// 	soft_stop_on = true;
+	// }
 
 	if (!last_rddf_message)
 	{
