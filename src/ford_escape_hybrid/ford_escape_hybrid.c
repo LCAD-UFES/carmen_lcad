@@ -1165,6 +1165,7 @@ torc_report_error_count_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)),
 		fclose(caco);
 #endif
 		reportErrorCountMessageDestroy(reportErrorCount);
+		check_jaus_reported_errors();
 	}
 	else
 	{
@@ -1390,11 +1391,6 @@ main(int argc, char** argv)
 	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 
 	carmen_ipc_dispatch();
-
-	while (1)
-	{
-		check_jaus_reported_errors();
-	}
 
 	return 0;
 }
