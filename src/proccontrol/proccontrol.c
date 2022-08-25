@@ -133,6 +133,7 @@ void start_signal_handlers(void)
 	for(this_signal = 0; this_signal < 128; this_signal++)
 		if(this_signal != SIGCHLD && // this_signal != SIGCLD &&
 				this_signal != SIGCONT)
+//		if(this_signal == SIGINT || this_signal == SIGKILL || this_signal == SIGTERM)
 			signal(this_signal, pc_handle_signal);
 }
 
