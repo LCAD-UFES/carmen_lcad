@@ -32,6 +32,9 @@
 #include "proccontrol_ipc.h"
 #include "proccontrol.h"
 
+
+//#define OLD_SIGNALS_CONDITION
+
 process_info_t process[MAX_PROCESSES];
 int num_processes = 0;
 int my_pid;
@@ -131,9 +134,12 @@ void start_signal_handlers(void)
 	int this_signal;
 
 	for(this_signal = 0; this_signal < 128; this_signal++)
-//		if(this_signal != SIGCHLD && // this_signal != SIGCLD &&
-//				this_signal != SIGCONT)
+#ifdef OLD_SIGNALS_CONDITION
+		if(this_signal != SIGCHLD && // this_signal != SIGCLD &&
+				this_signal != SIGCONT && this_signal != 28) //28 é o signal de redimensionar terminal
+#else
 		if(this_signal == SIGINT || this_signal == SIGKILL || this_signal == SIGTERM || this_signal == SIGSEGV || this_signal == SIGBUS)
+#endif
 			signal(this_signal, pc_handle_signal);
 }
 
