@@ -31,6 +31,25 @@
 
 
 void
+carmen_ford_escape_subscribe_error_message(carmen_ford_escape_error_message *message,
+			       carmen_handler_t handler,
+			       carmen_subscribe_t subscribe_how)
+{
+  carmen_subscribe_message(CARMEN_FORD_ESCAPE_ERROR_NAME,
+		  	  	  	  	   CARMEN_FORD_ESCAPE_ERROR_FMT,
+                           message, sizeof(carmen_ford_escape_error_message),
+                           handler, subscribe_how);
+}
+
+
+void
+carmen_ford_escape_unsubscribe_error_message(carmen_handler_t handler)
+{
+  carmen_unsubscribe_message(CARMEN_FORD_ESCAPE_ERROR_NAME, handler);
+}
+
+
+void
 carmen_ford_escape_subscribe_status_message(carmen_ford_escape_status_message *message,
 			       carmen_handler_t handler,
 			       carmen_subscribe_t subscribe_how)
@@ -47,6 +66,8 @@ carmen_ford_escape_unsubscribe_status_message(carmen_handler_t handler)
 {
   carmen_unsubscribe_message(CARMEN_FORD_ESCAPE_STATUS_NAME, handler);
 }
+
+
 
 void
 carmen_ford_escape_subscribe_tune_pid_gain_velocity_parameters_message(tune_pid_gain_velocity_parameters_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)

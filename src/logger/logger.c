@@ -27,6 +27,8 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
+#include <sys/stat.h>
+#include <string.h>
 #include "writelog.h"
 #include "logger.h"
 
@@ -850,6 +852,70 @@ shutdown_module(int sig)
 }
 
 
+void 
+_increase_file(char *filename, char *outfile)
+{
+    int inc = 1;
+    char token[1024], _token[1024], ext[8], _inc[4], __inc[4];
+    // file extension
+    char *_ext = strrchr(filename, '.');
+    strcpy(ext, _ext);
+    int i = 0;
+    for (; i < (int) (strlen(filename) - strlen(ext)); i++)
+        _token[i] = filename[i];
+    _token[i] = '\0';
+
+    // already is incremented
+    int hp = 0;
+    int j = 0;
+    i = strlen(_token) - 1;
+    for (; (i > 0) && isdigit(_token[i]) && (j < 3); i--, j++) // only 3-digit
+        __inc[j] = _token[i];
+    __inc[j] = '\0';
+    if (_token[i] == '-')
+        hp = 1;
+    else
+        __inc[0] = '\0';
+    int n = strlen(__inc);
+    for (j = 0; j < n; j++)
+        _inc[j] = __inc[n - j - 1];
+    inc = atoi(_inc) + 1;
+
+    if (hp)
+    {
+        token[i--] = '\0';
+        for (; i >= 0; i--)
+            token[i] = _token[i];
+    }
+    else
+        strcpy(token, _token);
+
+    sprintf(outfile, "%s-%d%s", token, inc, ext);
+}
+
+void 
+increase_file(char *filename)
+{
+    struct stat buf;
+    char f1[1024], f2[1024];
+
+    if (stat(filename, &buf) == -1)
+    {
+        return;
+    }
+
+    strcpy(f2, filename);
+    while (stat(f2, &buf) != -1)
+    {
+        memset(f1, 0, sizeof(f1));
+        strcpy(f1, f2);
+        memset(f2, 0, sizeof(f2));
+        _increase_file(f1, f2);
+    }
+	carmen_warn("\nWARNING: log file %s already exists, renaming to %s\n", filename, f2);
+    strcpy(filename, f2);
+}
+
 void
 get_log_file_name(int argc, char **argv)
 {
@@ -859,15 +925,14 @@ get_log_file_name(int argc, char **argv)
 	  char date[48]; 
 	  carmen_get_date(date);
 
-	  if (prefix)
-		  sprintf(log_filename, "%s/log_%s_%s", log_path, prefix, date);
+	  if (prefix && suffix)
+		  sprintf(log_filename, "%s/log_%s_%s_%s.txt", log_path, prefix, date, suffix);
+	  else if (prefix)
+		  sprintf(log_filename, "%s/log_%s_%s.txt", log_path, prefix, date);
+	  else if (suffix)
+		  sprintf(log_filename, "%s/log_%s_%s.txt", log_path, date, suffix);
 	  else
-		  sprintf(log_filename, "%s/log_%s", log_path, date);
-	  
-	  if (suffix)
-		  sprintf(log_filename, "%s_%s", log_filename, suffix);
-	  
-	  sprintf(log_filename, "%s.txt", log_filename);
+		  sprintf(log_filename, "%s/log_%s.txt", log_path, date);
   }
   else
   {
@@ -876,6 +941,8 @@ get_log_file_name(int argc, char **argv)
 
     log_filename = argv[1];
   }
+
+  increase_file(log_filename);
 }
 
 
@@ -889,16 +956,6 @@ main(int argc, char **argv)
 
 	get_log_file_name(argc, argv);
 
-	outfile = carmen_fopen(log_filename, "r");
-	if (outfile != NULL)
-	{
-		fprintf(stderr, "Overwrite %s (Y/N)? ", log_filename);
-		char key;
-		scanf("%c", &key);
-		if (toupper(key) != 'Y')
-			carmen_die("Log file %s is not supposed to be overwritten!\n", log_filename);
-		carmen_fclose(outfile);
-	}
 	outfile = carmen_fopen(log_filename, "w");
 
 	if (outfile == NULL)

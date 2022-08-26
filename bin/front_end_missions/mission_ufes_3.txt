@@ -4,5 +4,3 @@ set course to 7757732.10, -363560.30, 0.681
 go after set course to 7757732.10, -363560.30, 0.681
 stop
 publish mission state MISSION_COMPLETED UFES3
-
-mission completed
