@@ -1,4 +1,0 @@
-park truck and semi-trailer at 7989971.67, -205078.98, -1.864
-go after park truck and semi trailer at 7989971.67, -205078.98, -1.864, 0.0  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
-mission completed
