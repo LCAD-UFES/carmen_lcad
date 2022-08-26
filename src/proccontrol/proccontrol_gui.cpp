@@ -582,12 +582,13 @@ main(int argc, char** argv)
 
 			if (first_run)
 			{
-				if (argc > 1)
+				for (int i = 1; i < argc; i++)
 				{
-					if (strcmp("-show", argv[1]) == 0)
-						for (int i = 2; i < argc; i++)
+					if (strcmp("-show", argv[i]) == 0)
+						for (++i; i < argc && (argv[i][0] != '-'); i++)
 							if (button_slot_id.find(argv[i]) != button_slot_id.end()) // found in map
 								qdisplay->showClicked(button_slot_id[argv[i]][2]);
+					// add other tags
 				}
 				first_run = FALSE;
 			}
