@@ -131,9 +131,9 @@ void start_signal_handlers(void)
 	int this_signal;
 
 	for(this_signal = 0; this_signal < 128; this_signal++)
-		if(this_signal != SIGCHLD && // this_signal != SIGCLD &&
-				this_signal != SIGCONT)
-//		if(this_signal == SIGINT || this_signal == SIGKILL || this_signal == SIGTERM)
+//		if(this_signal != SIGCHLD && // this_signal != SIGCLD &&
+//				this_signal != SIGCONT)
+		if(this_signal == SIGINT || this_signal == SIGKILL || this_signal == SIGTERM || this_signal == SIGSEGV || this_signal == SIGBUS)
 			signal(this_signal, pc_handle_signal);
 }
 
