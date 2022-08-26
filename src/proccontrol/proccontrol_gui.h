@@ -88,7 +88,7 @@ private:
   Q3ButtonGroup *bgrp[MAX_NUM_GROUPS];
   Q3TextView *output;
 
-private slots:
+public slots:
   void startClicked( int );
   void stopClicked( int );
   void showClicked( int );
