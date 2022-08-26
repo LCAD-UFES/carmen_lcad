@@ -495,18 +495,7 @@ define_messages()
 //	}
 //}
 
-/*
-tune_pid_gain_parameters_message* 
-fill_pid_gain_parameters_message()
-{
-	tune_pid_gain_parameters_message *pid_msg = (tune_pid_gain_parameters_message*) malloc (sizeof (tune_pid_gain_parameters_message));
-	pid_msg->kd = 0.;
-	pid_msg->ki = 0.;
-	pid_msg->kp = 0.;
-	/*pid_msg->host = carmen_get_host();
-	pid_msg->timestamp = carmen_get_time();*/
-	//return pid_msg;
-//}
+
 
 int
 main(int argc, char **argv) //./ford_escape_hybrid_train_base -max_v 5.0 -max_phi 5.0 -timer_period 1.0 -t1 4.0 -t2 2.0 -t3 4.0
@@ -525,11 +514,6 @@ main(int argc, char **argv) //./ford_escape_hybrid_train_base -max_v 5.0 -max_ph
 	carmen_ipc_addPeriodicTimer(timer_period, timer_handler, NULL);
 	//carmen_ipc_addPeriodicTimer(timer_period, timer_handler_general, NULL);
 	//carmen_ipc_addPeriodicTimer(4.0, vel_handler, NULL);
-
-	//tune_pid_gain_parameters_message *pid_msg = fill_pid_gain_parameters_message();
-	//carmen_ford_escape_publish_tune_pid_gain_parameters_message(pid_msg , carmen_get_time());
-
-
 
 	carmen_ipc_dispatch();
 

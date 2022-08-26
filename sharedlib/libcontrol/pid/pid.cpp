@@ -347,7 +347,7 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 	ki = g_steering_Ki + factor * 4976.7;
 	kd = g_steering_Kd + factor * 50.65;
 
-	kp = steer_kd + factor * 791.5;
+	kp = steer_kp + factor * 791.5;
 	ki = steer_ki + factor * 4976.7;
 	kd = steer_kd + factor * 50.65;
 
