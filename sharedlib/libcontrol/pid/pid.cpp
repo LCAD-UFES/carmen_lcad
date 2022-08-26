@@ -164,6 +164,7 @@ pid_plot_velocity(double current_vel, double desired_vel, double y_range, char* 
 	fflush(gnuplot_pipe);
 }
 
+
 double
 carmen_libpid_steering_PID_controler_publish_data(steering_pid_data_message * msg, double atan_desired_curvature, double atan_current_curvature, double plan_size,
 		int manual_override, double kp, double kd, double ki)
@@ -209,9 +210,9 @@ carmen_libpid_steering_PID_controler_publish_data(steering_pid_data_message * ms
 		  g_steering_Kd * derivative_t;
 
 	
-	u_t = global_steer_kp * error_t +
-		  global_steer_ki * integral_t +
-		  global_steer_kd * derivative_t;
+	u_t = kp * error_t +
+		  ki * integral_t +
+		  kd * derivative_t;
 
 	error_t_1 = error_t;
 

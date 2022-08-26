@@ -43,7 +43,7 @@ send_trajectory_to_robot()
 /*
 
 double
-my_f(const gsl_vector *v, void *params_ptr)
+my_f_new(const gsl_vector *v, void *params_ptr)
 {
 	EFFORT_SPLINE_DESCRIPTOR d;
 	PARAMS *params = (PARAMS *) params_ptr;
@@ -92,11 +92,11 @@ my_f(const gsl_vector *v, void *params_ptr)
 
 
 void
-my_df(const gsl_vector *v, void *params, gsl_vector *df)
+my_df_new(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	EFFORT_SPLINE_DESCRIPTOR d;
 	double h = 0.1;
-	double f_x = my_f(v, params);
+	double f_x = my_f_new(v, params);
 	gsl_vector *x_h;
 
 	x_h = gsl_vector_alloc(4);
@@ -110,28 +110,28 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 1, d.k2);
 	gsl_vector_set(x_h, 2, d.k3);
 	gsl_vector_set(x_h, 3, d.k4);
-	double f_k1_h = my_f(x_h, params);
+	double f_k1_h = my_f_new(x_h, params);
 	double df_k1_h = (f_k1_h - f_x) / h;
 
 	gsl_vector_set(x_h, 0, d.k1);
 	gsl_vector_set(x_h, 1, d.k2 + h);
 	gsl_vector_set(x_h, 2, d.k3);
 	gsl_vector_set(x_h, 3, d.k4);
-	double f_k2_h = my_f(x_h, params);
+	double f_k2_h = my_f_new(x_h, params);
 	double df_k2_h = (f_k2_h - f_x) / h;
 
 	gsl_vector_set(x_h, 0, d.k1);
 	gsl_vector_set(x_h, 1, d.k2);
 	gsl_vector_set(x_h, 2, d.k3 + h);
 	gsl_vector_set(x_h, 3, d.k4);
-	double f_k3_h = my_f(x_h, params);
+	double f_k3_h = my_f_new(x_h, params);
 	double df_k3_h = (f_k3_h - f_x) / h;
 
 	gsl_vector_set(x_h, 0, d.k1);
 	gsl_vector_set(x_h, 1, d.k2);
 	gsl_vector_set(x_h, 2, d.k3);
 	gsl_vector_set(x_h, 3, d.k4 + h);
-	double f_k4_h = my_f(x_h, params);
+	double f_k4_h = my_f_new(x_h, params);
 	double df_k4_h = (f_k4_h - f_x) / h;
 
 	gsl_vector_set(df, 0, df_k1_h);
@@ -144,10 +144,10 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 
 
 void
-my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
+my_fdf_new(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 {
-	*f = my_f (x, params);
-	my_df (x, params, df);
+	*f = my_f_new (x, params);
+	my_df_new (x, params, df);
 }
 
 
@@ -160,9 +160,9 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 	int status;
 
 	my_func.n = 4;
-	my_func.f = my_f;
-	my_func.df = my_df;
-	my_func.fdf = my_fdf;
+	my_func.f = my_f_new;
+	my_func.df = my_df_new;
+	my_func.fdf = my_fdf_new;
 	my_func.params = params;
 
 	x = gsl_vector_alloc (4);  // Num of parameters to minimize
@@ -201,6 +201,7 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 	return (seed);
 }
 */
+
 static void
 build_trajectory(double t)
 {
