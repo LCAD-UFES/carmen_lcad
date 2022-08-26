@@ -1,0 +1,4 @@
+publish mission state STARTING_MISSION FAILED1
+set course to  7757628.70, -363638.89, 0.561
+stop  
+publish mission state MISSION_COMPLETED FAILED1

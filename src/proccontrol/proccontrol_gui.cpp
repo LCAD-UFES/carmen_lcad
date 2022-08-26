@@ -29,8 +29,11 @@ int                                    pid_update = FALSE;
 int                                    out_update = FALSE;
 
 process_table_type                     table;
-carmen_proccontrol_pidtable_message     pidtable;
-carmen_proccontrol_output_message       output;
+carmen_proccontrol_pidtable_message    pidtable;
+carmen_proccontrol_output_message      output;
+
+// <module_name, {Start Program, Stop Program, Show Output, No Output}>
+map<string, int[4]> button_slot_id;
 
 typedef struct
 {
@@ -322,6 +325,12 @@ QDisplay::setModule( int group, int module, char * module_name, int pid )
 		s.sprintf( "%s\npid: %d", module_name, pid );
 		but[group][module]->setText( s );
 		but[group][module]->show();
+
+		int n = NUM_STATES*(group * MAX_NUM_MODULES + module);
+		button_slot_id[module_name][0] = n; // Start Program
+		button_slot_id[module_name][1] = n + 1; // Stop Program
+		button_slot_id[module_name][2] = n + 2; // Show Output
+		button_slot_id[module_name][3] = n + 3; // No Output
 	}
 }
 
@@ -546,6 +555,7 @@ shutdown( int sig )
 int
 main(int argc, char** argv)
 {
+	static bool first_run = TRUE;
 	QApplication         app( argc, argv );
 	QDisplay             gui;
 
@@ -569,6 +579,19 @@ main(int argc, char** argv)
 		if (pid_update) {
 			carmen_update_pidtable( &pidtable );
 			pid_update = FALSE;
+
+			if (first_run)
+			{
+				for (int i = 1; i < argc; i++)
+				{
+					if (strcmp("-show", argv[i]) == 0)
+						for (++i; i < argc && (argv[i][0] != '-'); i++)
+							if (button_slot_id.find(argv[i]) != button_slot_id.end()) // found in map
+								qdisplay->showClicked(button_slot_id[argv[i]][2]);
+					// add other tags
+				}
+				first_run = FALSE;
+			}
 		}
 		if (out_update) {
 			if (output_pid( output.pid ))

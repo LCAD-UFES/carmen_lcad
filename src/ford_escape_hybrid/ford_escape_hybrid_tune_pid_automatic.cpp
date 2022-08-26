@@ -1,5 +1,10 @@
 #include <carmen/carmen.h>
+//#include <iostream>
 #include <carmen/motion_planner.h>
+#include "ford_escape_hybrid_interface.h"
+#include "ford_escape_hybrid_messages.h"
+#include <gsl/gsl_vector.h>
+#include <carmen/mpc.h>
 
 typedef double (*MotionControlFunction)(double v, double w, double t);
 
@@ -35,7 +40,7 @@ send_trajectory_to_robot()
 }
 
 
-
+/*
 
 double
 my_f(const gsl_vector *v, void *params_ptr)
@@ -195,7 +200,7 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 
 	return (seed);
 }
-
+*/
 static void
 build_trajectory(double t)
 {
@@ -333,11 +338,70 @@ build_trajectory_trapezoidal_phi()
 	send_trajectory_to_robot();
 }
 
+void
+build_trajectory_sinusoidal_phi()
+{
+	double delta_t, t;
+	int i;
+	double t0 = 2.0;
+
+	delta_t = (t0 + t1) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
+
+	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = delta_t;
+		printf("av %lf\n", motion_commands_vector[i].v);
+	}
+
+	for (t = 0.0; t < t1; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = max_v;
+
+		motion_commands_vector[i].phi = max_phi * sin(2.0 * M_PI * frequency * t);
+		motion_commands_vector[i].time = delta_t;
+
+		printf("%lf   %lf\n", frequency * t, motion_commands_vector[i].phi);
+	}
+
+	printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
+	send_trajectory_to_robot();
+}
+
+
+tune_pid_gain_velocity_parameters_message* 
+fill_pid_gain_velocity_parameters_message()
+{
+	tune_pid_gain_velocity_parameters_message *pid_msg = (tune_pid_gain_velocity_parameters_message*) malloc (sizeof (tune_pid_gain_velocity_parameters_message));
+	pid_msg->kd = 0.;
+	pid_msg->ki = 1.;
+	pid_msg->kp = 2.;
+	pid_msg->host = carmen_get_host();
+	pid_msg->timestamp = carmen_get_time();
+	return pid_msg;
+}
+
+tune_pid_gain_steering_parameters_message* 
+fill_pid_gain_steering_parameters_message()
+{
+	tune_pid_gain_steering_parameters_message *pid_msg = (tune_pid_gain_steering_parameters_message*) malloc (sizeof (tune_pid_gain_steering_parameters_message));
+	pid_msg->kd = 0.;
+	pid_msg->ki = 1.;
+	pid_msg->kp = 2.;
+	pid_msg->host = carmen_get_host();
+	pid_msg->timestamp = carmen_get_time();
+	return pid_msg;
+}
+
 
 static void
 timer_handler()
 {
 	static int first_time = 1;
+
+	// Publicar ganhos de steering 
+	// Publicar ganhos de velocity
 	
 	if (first_time)
 	{
@@ -346,9 +410,12 @@ timer_handler()
 		else
 			build_trajectory_trapezoidal_v_phi();
 		first_time = 0;
+		tune_pid_gain_velocity_parameters_message *pid_vel_msg = fill_pid_gain_velocity_parameters_message();
+		carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(pid_vel_msg , carmen_get_time());
+		tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message();
+		carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());
 	}
 }
-
 
 static void
 read_parameters(int argc, char **argv)
@@ -392,13 +459,16 @@ define_messages()
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
 }
 
-
+/*
+void
 base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 {
-	base_ackerman_odometry_index = (base_ackerman_odometry_index + 1) % BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE;
+	int base_ackerman_odometry_index = (base_ackerman_odometry_index + 1) % BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE;
 	base_ackerman_odometry_vector[base_ackerman_odometry_index] = *msg;
 }
+*/
 
+/*
 void
 calibrate_PID_parameters()
 {
@@ -447,7 +517,7 @@ calibrate_PID_parameters()
 
 	return (seed);
 }
-
+*/
 
 int
 main(int argc, char **argv)
@@ -461,9 +531,13 @@ main(int argc, char **argv)
 	define_messages();
 
 	read_parameters(argc, argv);
-
-	calibrate_PID_parameters();
-
+	
+	//calibrate_PID_parameters();
+	tune_pid_gain_velocity_parameters_message *pid_vel_msg = fill_pid_gain_velocity_parameters_message();
+	carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(pid_vel_msg , carmen_get_time());
+	tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message();
+	carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());
+	
 	carmen_ipc_dispatch();
 
 	return 0;
