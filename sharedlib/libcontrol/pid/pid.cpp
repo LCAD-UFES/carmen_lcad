@@ -164,6 +164,82 @@ pid_plot_velocity(double current_vel, double desired_vel, double y_range, char* 
 	fflush(gnuplot_pipe);
 }
 
+double
+carmen_libpid_steering_PID_controler_publish_data(steering_pid_data_message * msg, double atan_desired_curvature, double atan_current_curvature, double plan_size,
+		int manual_override, double kp, double kd, double ki)
+{
+	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
+	static double	previous_t = 0.0;
+
+	if (previous_t == 0.0)
+	{
+		previous_t = carmen_get_time();
+		return (0.0);
+	}
+	double t = carmen_get_time();
+	double delta_t = t - previous_t;
+
+	if (delta_t < (0.7 * (1.0 / 40.0)))
+		return (u_t);
+
+	double desired_curvature = tan(atan_desired_curvature);
+	double current_curvature = tan(atan_current_curvature);
+	double delta_curvature = fabs(desired_curvature - current_curvature);
+	double command_curvature_signal = (current_curvature < desired_curvature) ? 1.0 : -1.0;
+	double max_curvature_change = carmen_clamp(0.05, (0.6 * fabs(plan_size)), 1.2) * g_maximum_steering_command_rate * delta_t;
+
+	double achieved_curvature = current_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
+	atan_desired_curvature = atan(achieved_curvature);
+
+	double error_t = atan_desired_curvature - atan_current_curvature;
+
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = integral_t_1 = 0.0;
+
+	double derivative_t = (error_t - error_t_1) / delta_t;
+
+	u_t = g_steering_Kp * error_t +
+		  g_steering_Ki * integral_t +
+		  g_steering_Kd * derivative_t;
+
+	
+	u_t = global_steer_kp * error_t +
+		  global_steer_ki * integral_t +
+		  global_steer_kd * derivative_t;
+
+	error_t_1 = error_t;
+
+	// Anti windup
+	if ((u_t < -100.0) || (u_t > 100.0))
+		integral_t = integral_t_1;
+	integral_t_1 = integral_t;
+
+	previous_t = t;
+
+	u_t = carmen_clamp(-100.0, u_t, 100.0);
+
+	msg->atan_current_curvature = atan_current_curvature;
+	msg->atan_desired_curvature = atan_desired_curvature;
+	msg->derivative_t = derivative_t;
+	msg->error_t = error_t;
+	msg->integral_t = integral_t;
+	msg->effort = u_t;
+
+#ifdef PRINT
+	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
+	fflush(stdout);
+#endif
+
+	return u_t;
+}
+
 
 double
 carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size,
@@ -345,6 +421,8 @@ carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double
 	kp = g_steering_Kp + factor * 791.5;
 	ki = g_steering_Ki + factor * 4976.7;
 	kd = g_steering_Kd + factor * 50.65;
+
+	printf("Chegou o outro kd %lf\n", g_steering_Kd);
 
 	//printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
 
