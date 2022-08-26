@@ -229,6 +229,81 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	return u_t;
 }
 
+double
+carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_message *msg, double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
+		int manual_override, double v, double steer_kp, double steer_kd, double steer_ki)
+{
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
+	static double	previous_t = 0.0;
+	double factor = 0.0, kp = 0.0, ki = 0.0, kd = 0.0;
+
+	if (previous_t == 0.0)
+	{
+		previous_t = carmen_get_time();
+		return (0.0);
+	}
+	double t = carmen_get_time();
+	double delta_t = t - previous_t;
+
+	if (delta_t < (0.7 * (1.0 / 40.0)))
+		return (u_t);
+
+	double error_t = atan_desired_curvature - atan_current_curvature;
+
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = integral_t_1 = 0.0;
+
+	double derivative_t = (error_t - error_t_1) / delta_t;
+
+	////////////////  FUZZY  ////////////////
+	//1480.9  -  689.4   =  791.5
+	//6985.4  -  2008.7  =  4976.7
+	//81.45   -  30.8    =  50.65
+	factor = carmen_clamp(0.0, (v - min_fuzzy_v) / (max_fuzzy_v - min_fuzzy_v), 1.0); // The PID parameters stabilize when the velocity is max_fuzzy_v
+
+	kp = g_steering_Kp + factor * 791.5;
+	ki = g_steering_Ki + factor * 4976.7;
+	kd = g_steering_Kd + factor * 50.65;
+
+	kp = steer_kd + factor * 791.5;
+	ki = steer_ki + factor * 4976.7;
+	kd = steer_kd + factor * 50.65;
+
+	//printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
+
+	u_t = (kp * error_t)  +  (ki * integral_t)  +  (kd * derivative_t);
+
+	error_t_1 = error_t;
+
+	// Anti windup
+	if ((u_t < -100.0) || (u_t > 100.0))
+		integral_t = integral_t_1;
+	integral_t_1 = integral_t;
+
+	previous_t = t;
+
+	u_t = carmen_clamp(-100.0, u_t, 100.0);
+
+	msg->atan_current_curvature = atan_current_curvature;
+	msg->atan_desired_curvature = atan_desired_curvature;
+	msg->derivative_t = derivative_t;
+	msg->error_t = error_t;
+	msg->integral_t = integral_t;
+	msg->effort = u_t;
+
+#ifdef PRINT
+	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
+	fflush(stdout);
+#endif
+
+	return u_t;
+}
 
 double
 carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
@@ -367,6 +442,235 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 	return u_t;
 }
 
+void
+carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg, double *throttle_command, double *brakes_command, int *gear_command,
+										double desired_velocity, double current_velocity, double delta_t_old __attribute__ ((unused)),
+										int manual_override, double kp, double kd, double ki)
+{
+	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
+	static double	previous_t = 0.0;
+	static double	current_max_break_effort = 0.0;
+
+	if (previous_t == 0.0)
+	{
+		previous_t = carmen_get_time();
+		return;
+	}
+	double t = carmen_get_time();
+	double delta_t = t - previous_t;
+
+//	double g_maximum_acceleration = 0.5;
+//	double delta_velocity = fabs(desired_velocity - current_velocity);
+//	double command_curvature_signal = (current_velocity < desired_velocity) ? 1.0 : -1.0;
+//	double max_velocity_change = g_maximum_acceleration * delta_t;
+//
+//	desired_velocity = current_velocity + command_curvature_signal * fmin(delta_velocity, max_velocity_change);
+
+//	double delta_velocity = fabs(desired_velocity - current_velocity);
+//	double command_velocity_signal = (current_velocity < desired_velocity) ? 1.0 : -1.0;
+//	double max_velocity_change = 5.4 * delta_t;
+
+//	desired_velocity = current_velocity + command_velocity_signal * fmin(delta_velocity, max_velocity_change);
+
+	if (fabs(desired_velocity) < NEAR_ZERO_V) //(fabs(desired_velocity) < 0.01)	// Estudar esta linha para reduzir parada brusca
+	{
+		desired_velocity = 0.0;
+		g_velocity_PID_controler_state = STOP_CAR;
+	}
+
+	double error_t = desired_velocity - current_velocity;
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = 0.0;
+
+	double derivative_t = (error_t - error_t_1) / delta_t;
+
+	if (g_velocity_PID_controler_state == STOP_CAR)
+	{
+		error_t_1 = integral_t = integral_t_1 = 0.0;
+
+		*throttle_command = 0.0;
+		if (current_max_break_effort < g_max_brake_effort)
+			current_max_break_effort = current_max_break_effort + g_max_brake_effort / 80.0;
+//		current_max_break_effort = current_max_break_effort + 0.05 * (g_max_brake_effort - current_max_break_effort);
+		*brakes_command = current_max_break_effort;
+//		*brakes_command = *brakes_command + NEAR_ZERO_V * (g_max_brake_effort - *brakes_command); // Estudar esta linha para reduzir parada brusca
+
+		if ((desired_velocity > 0.0) && (current_velocity >= -NEAR_ZERO_V))
+		{
+			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
+			*gear_command = 1; 		// 1 = Low; 2 = Drive (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+		}
+		if ((desired_velocity < 0.0) && (current_velocity <= NEAR_ZERO_V))
+		{
+			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_ACCELERATING;
+			*gear_command = 129; 	// 129 = Reverse gear (sharedlib/OpenJAUS/torc_docs/ByWire XGV User Manual v1.5.pdf page 67)
+		}
+	}
+
+	if (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_ACCELERATING)
+	{
+		u_t = 	g_velocity_forward_accelerating_Kp * error_t +
+			g_velocity_forward_accelerating_Ki * integral_t +
+			g_velocity_forward_accelerating_Kd * derivative_t;
+
+		u_t = 	kp * error_t +
+		ki * integral_t +
+		kd * derivative_t;
+
+		*throttle_command = u_t + g_throttle_gap;
+		if (robot_model_id == ROBOT_ID_BUGGY)
+			*brakes_command = 0.0;
+		else
+			*brakes_command = g_brake_gap;
+		current_max_break_effort = *brakes_command;
+
+		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
+		{
+			error_t_1 = integral_t = integral_t_1 = 0.0;
+			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_DECCELERATING;
+		}
+		if (desired_velocity <= 0.0)
+			g_velocity_PID_controler_state = STOP_CAR;
+	}
+	else if (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_DECCELERATING)
+	{
+		u_t = 	g_velocity_forward_deccelerating_Kp * error_t +
+			g_velocity_forward_deccelerating_Ki * integral_t +
+			g_velocity_forward_deccelerating_Kd * derivative_t;
+
+		u_t = 	kp * error_t +
+		ki * integral_t +
+		kd * derivative_t;
+
+		*throttle_command = 0.0;
+		*brakes_command = -u_t + g_brake_gap;
+		current_max_break_effort = *brakes_command;
+
+		if ((desired_velocity > 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t > 0.0))
+		{
+			error_t_1 = integral_t = integral_t_1 = 0.0;
+			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_ACCELERATING;
+		}
+		if (desired_velocity <= 0.0)
+			g_velocity_PID_controler_state = STOP_CAR;
+	}
+
+	if (g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_ACCELERATING)
+	{
+		u_t = 	g_velocity_backward_accelerating_Kp * error_t +
+			g_velocity_backward_accelerating_Ki * integral_t +
+			g_velocity_backward_accelerating_Kd * derivative_t;
+		
+		u_t = 	kp * error_t +
+		ki * integral_t +
+		kd * derivative_t;
+
+		*throttle_command = -u_t + g_throttle_gap;
+		if (robot_model_id == ROBOT_ID_BUGGY)
+			*brakes_command = 0.0;
+		else
+			*brakes_command = g_brake_gap;
+//		current_max_break_effort = *brakes_command;
+		current_max_break_effort = 0.0;
+
+		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t >= 0.0))
+		{
+			error_t_1 = integral_t = integral_t_1 = 0.0;
+			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_DECCELERATING;
+		}
+		if (desired_velocity >= 0.0)
+			g_velocity_PID_controler_state = STOP_CAR;
+	}
+	else if (g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_DECCELERATING)
+	{
+		u_t = 	g_velocity_backward_deccelerating_Kp * error_t +
+			g_velocity_backward_deccelerating_Ki * integral_t +
+			g_velocity_backward_deccelerating_Kd * derivative_t;
+
+		u_t = 	kp * error_t +
+		ki * integral_t +
+		kd * derivative_t;
+
+		*throttle_command = 0.0;
+		*brakes_command = u_t + g_brake_gap;
+//		current_max_break_effort = *brakes_command;
+		current_max_break_effort = 0.0;
+
+		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t < 0.0))
+		{
+			error_t_1 = integral_t = integral_t_1 = 0.0;
+			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_ACCELERATING;
+		}
+		if (desired_velocity >= 0.0)
+			g_velocity_PID_controler_state = STOP_CAR;
+	}
+	error_t_1 = error_t;
+
+	// Anti windup
+	if (robot_model_id == ROBOT_ID_BUGGY)
+	{
+		if ((g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_ACCELERATING) || (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_ACCELERATING))
+		{
+			if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
+				(*brakes_command < 0.0) || (*brakes_command > 100.0))
+				integral_t = integral_t_1;
+		}
+		else
+		{
+			if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
+				(*brakes_command < g_brake_gap) || (*brakes_command > 100.0))
+				integral_t = integral_t_1;
+		}
+	}
+	else
+	{
+		if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
+		    (*brakes_command < g_brake_gap) || (*brakes_command > 100.0))
+			integral_t = integral_t_1;
+	}
+
+	integral_t_1 = integral_t;
+
+	previous_t = t;
+
+	*throttle_command = carmen_clamp(0.0, *throttle_command, 100.0);
+	if (robot_model_id == ROBOT_ID_BUGGY)
+	{
+		if ((g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_ACCELERATING) || (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_ACCELERATING))
+			*brakes_command = carmen_clamp(0.0, *brakes_command, 100.0);
+		else
+			*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
+	}
+	else
+		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
+
+	
+	printf("REalmente pegou o kd %lf\n",kd);
+
+	msg->brakes_command = *brakes_command;
+	msg->current_velocity = current_velocity;
+	msg->desired_velocity = desired_velocity;
+	msg->derivative_t = derivative_t;
+	msg->error_t = error_t;
+	msg->integral_t = integral_t;
+	msg->PID_controler_state = g_velocity_PID_controler_state;
+	msg->throttle_command = *throttle_command;
+	
+#ifdef PRINT
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %d, %lf\n",
+		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
+		*throttle_command, *brakes_command,
+		integral_t, derivative_t, behavior_selector_low_level_state, carmen_get_time());
+	fflush(stdout);
+#endif
+
+}
 
 void
 carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,

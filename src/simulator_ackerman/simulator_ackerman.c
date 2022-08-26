@@ -32,6 +32,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/task_manager_interface.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/ford_escape_hybrid_interface.h>
 
 #include <control.h>
 
@@ -72,6 +73,14 @@ static int connected_to_iron_bird = 0;
 static int use_external_true_pose = 0;
 static double iron_bird_v = 0.0;
 static double iron_bird_phi = 0.0;
+
+double global_steer_kp = 0.0;
+double global_steer_kd = 0.0;
+double global_steer_ki = 0.0;
+
+double global_vel_kp = 0.0;
+double global_vel_kd = 0.0;
+double global_vel_ki = 0.0;
 
 carmen_route_planner_road_network_message *road_network_message = NULL;
 int autonomous = 0;
@@ -866,6 +875,50 @@ task_manager_desired_engage_state_message_handler(carmen_task_manager_desired_en
 		g_XGV_horn_status |= 0x02;
 }
 
+static void
+tune_pid_gain_steering_handler(tune_pid_gain_steering_parameters_message *msg)
+{
+	printf("valor antes de kp %lf\n", msg->kp);
+	printf("valor antes de kd %lf\n", msg->kd);
+	printf("valor antes de ki %lf\n", msg->ki);
+	msg->kp = rand() % 100000;
+	msg->ki = rand() % 100000;
+	msg->kd = rand() % 100000;
+	printf("valor atual de kp %lf\n", msg->kp);
+	printf("valor atual de kd %lf\n", msg->kd);
+	printf("valor atual de ki %lf\n", msg->ki);
+	global_steer_kp = msg->kp;
+	global_steer_kd = msg->kd;
+	global_steer_ki = msg->ki;
+}
+
+static void
+tune_pid_gain_velocity_handler(tune_pid_gain_velocity_parameters_message *msg)
+{
+	printf("valor antes de kp %lf\n", msg->kp);
+	printf("valor antes de kd %lf\n", msg->kd);
+	printf("valor antes de ki %lf\n", msg->ki);
+	msg->kp = rand() % 100000;
+	msg->ki = rand() % 100000;
+	msg->kd = rand() % 100000;
+	printf("valor atual de kp %lf\n", msg->kp);
+	printf("valor atual de kd %lf\n", msg->kd);
+	printf("valor atual de ki %lf\n", msg->ki);
+	global_vel_kp = msg->kp;
+	global_vel_kd = msg->kd;
+	global_vel_ki = msg->ki;
+}
+static void
+velocity_pid_data_handler(velocity_pid_data_message *msg)
+{
+	printf("Velocidade atual %lf\n", msg->current_velocity);
+}
+
+static void
+steering_pid_data_handler(steering_pid_data_message *msg)
+{
+	printf("Effort ataul %lf\n", msg->effort);
+}
 
 /* handles ctrl+c */
 static void
@@ -976,6 +1029,10 @@ subscribe_to_relevant_messages()
 
 	carmen_task_manager_subscribe_desired_engage_state_message(NULL, (carmen_handler_t) task_manager_desired_engage_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_ford_escape_subscribe_tune_pid_gain_steering_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_steering_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_tune_pid_gain_velocity_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_velocity_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_velocity_pid_data_message(NULL, (carmen_handler_t) velocity_pid_data_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_steering_pid_data_message(NULL, (carmen_handler_t) steering_pid_data_handler , CARMEN_SUBSCRIBE_LATEST);
 	return (0);
 }
 
