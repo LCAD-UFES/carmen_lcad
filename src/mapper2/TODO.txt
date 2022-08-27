@@ -1,0 +1,42 @@
+2016/04/16
+
+- A flag mapper_build_snapshot_map parece ser desnecessaria. Ela eh implicita em mapper_update_and_merge_with_snapshot_map.
+
+
+2014/07/26
+
+- Remover delta_difference_mean e delta_difference_stddev dos fontes e do carmen ini -> nao eh mais usado
+
+
+2013/03/24
+
+- Tem que acabar com o tipo probabilistic map urgentemente
+- Os dados do robo no prob_models (largura, comprimento, etc., usados para apaga-lo do mapa) nao estao sendo tratados corretamente.
+-- Tem que haver uma unica funcao para todos os robos ou funcoes distintas com nomes distintos para robos distintos
+-- A passagem de parametros do robo deve ser unica e governada por estruturas de dados feitas para a Humanidade, respeitando nossas decisoes
+   sobre parametros (ver TODO.txt no home de carmen)
+- A interface do modulo velodyne esta com funcoes que nao deveriam estar na interface
+- Ee urgente o curso do Lauro sobre os padroes de carmen
+- (feito) O parametro car_wheel_diameter deveria estar na secao do robot no carmen ini. Ele deveria se chamar robot_wheel_radius (e ter a metade do valor).
+- A pose do carro com relacao ao mundo deveria ser calculada pela tf...
+- O mapper nao pode decidir quando mudar a origem de seu mapa (o mapa sendo construido). Ele tem que fazer isso quando receber um novo offline_map.
+- (feito) Melhorar a lista de leitura de parametros do mapper_main.c (os paramentros do robot sao lidos em dois pontos diferentes desnecessariamente).
+
+- Checar por que sensor_params->pose.orientation = {roll = 0, pitch = -0.022700000000000001, yaw = 0}} em carmen_prob_models_compute_relevant_map_coordinates()
+
+2013/03/23
+
+- (feito) A variavel global ../velodyne/velodyne_mean_error.h:double delta_difference_mean_new[50] = {... tem que ter uma funcao de acesso. Nao pode ser passada via .h
+- Apagar a variavel velodyne_initialized dos modulos em que ela consta: ela nao ee usada.
+- Mudar o nome da funcao ../../sharedlib/prob_models/prob_map.h:void init_carmen_map(const ProbabilisticMapParams *params, carmen_map_t *carmen_map) em todos os lugares onde
+ela ee usada por prob_models_init_carmen_map(...)
+- (feito) As linhas abaixo nao deveriam estar na funcao update_cells_in_the_velodyne_perceptual_field(). Uma funcao propria deveria cuidar disso...
+		laser_ray_angle_index = mapper_laser_get_hash_that_gets_the_laser_ray_angle_index_from_angle(v_zt.sphere_points[i].horizontal_angle);
+
+		if (carmen_prob_models_log_odds_to_probabilistic(sr_data->occupancy_log_odds_of_each_ray_target[ray_that_hit_the_nearest_target]) > 0.95)
+			laser_ranges[laser_ray_angle_index] = sr_data->ray_size_in_the_floor[ray_that_hit_the_nearest_target];
+
+		if (sr_data->maxed[ray_that_hit_the_nearest_target])
+			laser_ranges[laser_ray_angle_index] = sr_params->current_range_max;
+
+- (feito) Mudar o nome das variaveis iniciadas com srs_ para algo mais legivel
