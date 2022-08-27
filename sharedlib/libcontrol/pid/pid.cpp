@@ -342,7 +342,9 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 	//6985.4  -  2008.7  =  4976.7
 	//81.45   -  30.8    =  50.65
 	factor = carmen_clamp(0.0, (v - min_fuzzy_v) / (max_fuzzy_v - min_fuzzy_v), 1.0); // The PID parameters stabilize when the velocity is max_fuzzy_v
-
+	
+	printf("Chegou o outro kd %lf\n", g_steering_Kd);
+	
 	kp = g_steering_Kp + factor * 791.5;
 	ki = g_steering_Ki + factor * 4976.7;
 	kd = g_steering_Kd + factor * 50.65;
@@ -423,7 +425,7 @@ carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double
 	ki = g_steering_Ki + factor * 4976.7;
 	kd = g_steering_Kd + factor * 50.65;
 
-	printf("Chegou o outro kd %lf\n", g_steering_Kd);
+	
 
 	//printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
 
