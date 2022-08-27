@@ -24,7 +24,7 @@ double get_distance_between_point_to_line(carmen_robot_and_trailer_path_point_t 
 void get_points2(vector<carmen_robot_and_trailer_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima);
 void save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 							carmen_robot_and_trailer_pose_t *localizer_pose, vector<carmen_robot_and_trailer_path_point_t> &detailed_lane,
-							Command lastOdometry);
+							Command lastOdometry, double target_v);
 //------------------------------------------------------------
 
 class Util

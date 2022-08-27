@@ -1,0 +1,13 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+
+publish mission state STARTING_MISSION MPP
+# LCAD2
+set course to 7757674.47, -363607.51, -0.787 
+go after set course to 7757674.47, -363607.51, -0.787 # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+publish mission state MISSION_COMPLETED MPP
+
+mission completed
+
+

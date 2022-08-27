@@ -782,7 +782,7 @@ compute_path_to_goal(carmen_robot_and_trailer_pose_t *localizer_pose, Pose *goal
 
 #ifdef EXPERIMENT_DATA
 		save_experiment_data(path_goals_and_annotations_message, localizer_pose,
-						 detailed_lane, last_odometry);
+						 detailed_lane, last_odometry, target_v);
 #endif
 
 	bool use_lane = true;

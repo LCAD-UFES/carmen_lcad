@@ -1,0 +1,15 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+
+publish mission state STARTING_MISSION REH
+# Predio Eletrica logo depois do LCAD2
+set course to 7757732.73, -363563.71, -0.138
+go after set course to 7757732.73, -363563.71, -0.138   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+set course to 7757751.11, -363545.25, 0.668
+go after set course to 7757751.11, -363545.25, 0.668  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+publish mission state MISSION_COMPLETED REH
+
+mission completed

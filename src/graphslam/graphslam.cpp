@@ -190,6 +190,8 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 	FILE *caco = fopen("caco.txt", "w");
 	for (i = 0; i < input_data.size(); i++)
 	{
+		//TODO @@@VINICIUS Necessario invesitgar porque a orientacao inicial do gps esta dando problema
+//		double gps_yaw = input_data[i].odom[2]; //Descomentar essa linha e comentar a de baixo caso a orientação inicial do GPS esteja com problema
 		double gps_yaw = input_data[i].gps[2];
 		double gps_x = input_data[i].gps[0] - input_data[0].gps[0];
 		double gps_y = input_data[i].gps[1] - input_data[0].gps[1];
