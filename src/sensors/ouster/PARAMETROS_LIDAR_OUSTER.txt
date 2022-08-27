@@ -70,7 +70,7 @@ Carmen ini parameters
 lidar5_model		 OS132 # OS032 # OS164 # HDL32 # VLP16 # RS16
 lidar5_port 		 7502
 lidar5_imu_port 	 7503
-lidar5_ip            192.168.0.205
+lidar5_ip            192.168.1.205
 lidar5_shot_size     32
 lidar5_min_sensing	 1000 			# 2m in 2mm units
 lidar5_max_sensing	 24000 			# 1200m in 2mm units
@@ -93,7 +93,7 @@ lidar5_sensor_reference 	0 # informa em que a posicao do lidar esta referenciada
 lidar6_model		 OS032 # OS132 # OS164 # HDL32 # VLP16 # RS16
 lidar6_port 		 7505
 lidar6_imu_port 	 7506
-lidar6_ip            192.168.0.206
+lidar6_ip            192.168.1.206
 lidar6_shot_size     32
 lidar6_min_sensing	 1000 			# 2m in 2mm units
 lidar6_max_sensing	 24000 			# 1200m in 2mm units
@@ -115,7 +115,7 @@ lidar6_sensor_reference 	2 # informa em que a posicao do lidar esta referenciada
 lidar7_model		 OS032 # OS132 # OS164 # HDL32 # VLP16 # RS16
 lidar7_port 		 7502
 lidar7_imu_port 	 7503
-lidar7_ip            192.168.0.207
+lidar7_ip            192.168.1.207
 lidar7_shot_size     32
 lidar7_min_sensing	 1000 			# 2m in 2mm units
 lidar7_max_sensing	 24000 			# 1200m in 2mm units
@@ -137,7 +137,7 @@ lidar7_sensor_reference 	0 # informa em que a posicao do lidar esta referenciada
 lidar8_model		 OS132 # OS032 # OS164 # HDL32 # VLP16 # RS16
 lidar8_port 		 7505
 lidar8_imu_port 	 7506
-lidar8_ip            192.168.0.208
+lidar8_ip            192.168.1.208
 lidar8_shot_size     32
 lidar8_min_sensing	 1000 			# 2m in 2mm units
 lidar8_max_sensing	 24000 			# 1200m in 2mm units

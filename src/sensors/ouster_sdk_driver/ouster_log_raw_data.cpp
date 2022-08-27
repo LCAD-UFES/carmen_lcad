@@ -21,7 +21,7 @@
 
 using namespace ouster;
 
-const size_t N_SCANS = 1;
+const size_t N_SCANS = 20;
 const size_t UDP_BUF_SIZE = 65536;
 
 char *ouster_ip = NULL;
@@ -141,11 +141,12 @@ main(int argc, char* argv[])
 
     const std::string sensor_hostname = ouster_ip;
     const std::string data_destination = host_ip;
-    std::cerr << "Connecting to \"" << sensor_hostname << "\"... ";
+    std::cerr << "Connecting to \"" << sensor_hostname << "\"... " << std::endl;
     
 //TODO checar se vai precisa de porta com varios sensores conectados
     auto handle = sensor::init_client(sensor_hostname, data_destination);
     std::cout << "Open a pcap recording file: " << pcap_fname << std::endl;
+    std::cout << " " << std::endl;
     auto record_handle = sensor_utils::record_initialize(pcap_fname,sensor_hostname, data_destination, 1024, false);
     
     if (!handle) FATAL("Failed to connect");
@@ -196,14 +197,14 @@ main(int argc, char* argv[])
      * possible to configure the sensor offline and read data directly from a
      * UDP socket.
      */
-    std::cerr << "Capturing points... ";
+    std::cerr << "Capturing points... " << std::endl;
 
     // buffer to store raw packet data
     std::unique_ptr<uint8_t[]> packet_buf(new uint8_t[UDP_BUF_SIZE]);
 
-    while (true)
+//    while (true)
     {
-        for (size_t i = 0; i < N_SCANS;)
+        for (size_t i = 0; i < N_SCANS; i++)
         {
             // wait until sensor data is available
             sensor::client_state st = sensor::poll_client(*handle);
@@ -223,7 +224,8 @@ main(int argc, char* argv[])
                 // std::cout << col_buf[0] << "\t";
                 const std::chrono::nanoseconds ts(pf.col_timestamp(col_buf));
                 
-                sensor_utils::record_packet(*record_handle, ouster_port, ouster_port, packet_buf.get(), UDP_BUF_SIZE,((uint64_t) (ts.count() / 1000)));
+                sensor_utils::record_packet(*record_handle, ouster_port, ouster_port, packet_buf.get(), pf.lidar_packet_size, ((uint64_t) (ts.count() / 1000)));
+                std::cerr << "recording data points in pcap file... " << std::endl;
             }
 
             // check if IMU data is available (but don't do anything with it)
@@ -233,6 +235,9 @@ main(int argc, char* argv[])
             }
         }
     }
+    std::cerr << "closing... " << std::endl;
+    sensor_utils::record_uninitialize(*record_handle);
+
 
     return 0;
 }
