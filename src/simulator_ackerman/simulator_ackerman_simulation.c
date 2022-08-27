@@ -299,10 +299,10 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 	{
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t, 0);
-		velocity_pid_data_message *msg = (velocity_pid_data_message *) malloc (sizeof (velocity_pid_data_message));
+		/*velocity_pid_data_message *msg = (velocity_pid_data_message *) malloc (sizeof (velocity_pid_data_message));
 		carmen_libpid_velocity_PID_controler_publish_data(msg, &throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t, 0, global_vel_kp, global_vel_kd, global_vel_ki);
-		carmen_ford_escape_publish_velocity_pid_data_message(msg, carmen_get_time());
+		carmen_ford_escape_publish_velocity_pid_data_message(msg, carmen_get_time());*/
 	}
 
 #endif
@@ -637,10 +637,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 			//steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0);
 
 			steering_effort = carmen_libpid_steering_PID_controler_FUZZY(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0, simulator_config->v);
-			static steering_effort_new;
+			/*static steering_effort_new;
 			steering_pid_data_message *msg = (steering_pid_data_message *) malloc (sizeof (steering_pid_data_message));
 			steering_effort_new = carmen_libpid_steering_PID_controler_FUZZY_publish_data(msg, atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0, simulator_config->v, global_steer_kp, global_steer_kd, global_steer_ki);
-			carmen_ford_escape_publish_steering_pid_data_message(msg, carmen_get_time());
+			carmen_ford_escape_publish_steering_pid_data_message(msg, carmen_get_time());*/
 
 		}
 		#ifdef PLOT
