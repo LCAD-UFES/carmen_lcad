@@ -1019,10 +1019,13 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_errors(carmen_audit_status_message *message)
 	{
+		static char category[2048];
 		static char buffer[2048];
+		const char *format = "<span>%s</span><span foreground=\"red\">\%s</span>";
+		char *markup;
 
 		const char *pad = "";
-		sprintf(buffer, "Decision Making: ");
+		sprintf(category, "Decision Making: ");
 		if(message->decision_making_status & ROUTE_PLANNER_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "%sRP", pad);
@@ -1047,10 +1050,13 @@ namespace View
 			pad = ", ";
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelDecisionMakingErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelDecisionMakingErrors), markup);
 
+		sprintf(buffer, "%s", "");
 		pad = "";
-		sprintf(buffer, "Basic Perception: ");
+		sprintf(category, "Basic Perception: ");
+
 		if(message->basic_perception_status & LOCALIZER_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "%sLOC", pad);
@@ -1093,9 +1099,13 @@ namespace View
 			pad = ", ";
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelBasicPerceptionErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelBasicPerceptionErrors), markup);
 
-		sprintf(buffer, "Lidars: ");
+		sprintf(buffer, "%s", "");
+		pad = "";
+		sprintf(category, "Lidars: ");
+
 		if(message->lidar_status & LIDAR0_ERROR_INDEX)
 		{
 			sprintf(buffer + strlen(buffer), "0 ");
@@ -1176,9 +1186,13 @@ namespace View
 			sprintf(buffer + strlen(buffer), "15 ");
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelLidarsErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelLidarsErrors), markup);
 
-		sprintf(buffer, "Cameras: ");
+
+		sprintf(buffer, "%s", "");
+		pad = "";
+		sprintf(category, "Cameras: ");
 
 		if(message->camera_status & CAMERA1_ERROR_INDEX)
 		{
@@ -1280,8 +1294,11 @@ namespace View
 			sprintf(buffer + strlen(buffer), "20 ");
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelCamerasErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelCamerasErrors), markup);
 
+		sprintf(buffer, "%s", "");
+		g_free(markup);
 		do_redraw();
 	}
 
