@@ -1,12 +1,13 @@
 python3 -m pip install --upgrade pip
 # Install virtualenv tool
-python3 -m pip install virtualenv --user
+#python3 -m pip install virtualenv --user
 
+#sudo apt-get install python3-virtualenv 
 #Cleaning old venv
-rm -rf venv
+#rm -rf venv
 
 # Create virtualenv and activating
-virtualenv -p /usr/bin/python3 venv
+virtualenv venv
 source venv/bin/activate
 
 # Installing dependencies for run GLP in virtualenv

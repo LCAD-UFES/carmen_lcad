@@ -87,6 +87,7 @@ def glp_process_image(image, cut, down_cut):
     #     pred_d_numpy[i+1,:] = 0
     #     pred_d_numpy[i+2,:] = 0
     #     i += 4
+    #print((pred_d_numpy).astype('uint16'))
     return (pred_d_numpy).astype('uint16')
             
         

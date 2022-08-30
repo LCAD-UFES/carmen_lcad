@@ -161,11 +161,14 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 
 void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
-	// printf("bumblebee_basic_handler\n");
-	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_right, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_left, 0);
+
+	
+	
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
+	// unsigned char *image_color = open_cv_image.data;
 
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
@@ -191,8 +194,8 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 	
 
-	// cv::imshow("Bumblebee Image", open_cv_image);
-	cv::imshow(neural_network, imgdepth * 500);
+	cv::imshow("Bumblebee Image", open_cv_image) ;
+	cv::imshow(neural_network, imgdepth * 100.0);
 	waitKey(1);
 }
 
@@ -206,7 +209,7 @@ void image_handler(camera_message *msg)
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
-	unsigned char *image_color = open_cv_image.data;
+	// unsigned char *image_color = open_cv_image.data;
 
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
@@ -439,7 +442,13 @@ int read_parameters(int argc, char **argv)
 	char camera_string[256];
 
 	sprintf(stereo_string, "%s%d", "stereo", atoi(argv[1]));
-	sprintf(camera_string, "%s%d", "intelbras", atoi(argv[1]));
+	camera = atoi(argv[1]);
+	if (camera == 3)
+	{
+		sprintf(camera_string, "%s%d", "bumblebee_basic", atoi(argv[1]));
+	}else{
+		sprintf(camera_string, "%s%d", "intelbras", atoi(argv[1]));
+	}
 
 	carmen_param_t param_list[] = {
 		{(char *)stereo_string, (char *)"vertical_resolution", CARMEN_PARAM_INT, &vertical_resolution, 1, NULL},
@@ -458,11 +467,12 @@ int read_parameters(int argc, char **argv)
 		{(char *)camera_string, (char *)"fy", CARMEN_PARAM_DOUBLE, &fy, 0, NULL},
 		{(char *)camera_string, (char *)"cu", CARMEN_PARAM_DOUBLE, &cu, 0, NULL},
 		{(char *)camera_string, (char *)"cv", CARMEN_PARAM_DOUBLE, &camera_cv, 0, NULL},
-		{(char *)camera_string, (char *)"k1", CARMEN_PARAM_DOUBLE, &k1, 0, NULL},
-		{(char *)camera_string, (char *)"k2", CARMEN_PARAM_DOUBLE, &k2, 0, NULL},
-		{(char *)camera_string, (char *)"k3", CARMEN_PARAM_DOUBLE, &k3, 0, NULL},
-		{(char *)camera_string, (char *)"p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL},
-		{(char *)camera_string, (char *)"p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL}};
+		// {(char *)camera_string, (char *)"k1", CARMEN_PARAM_DOUBLE, &k1, 0, NULL},
+		// {(char *)camera_string, (char *)"k2", CARMEN_PARAM_DOUBLE, &k2, 0, NULL},
+		// {(char *)camera_string, (char *)"k3", CARMEN_PARAM_DOUBLE, &k3, 0, NULL},
+		// {(char *)camera_string, (char *)"p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL},
+		// {(char *)camera_string, (char *)"p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL}
+		};
 
 	/*SU stereo*/
 	// if ((camera_width > 0) && (camera_height > 0))
@@ -493,17 +503,17 @@ int read_parameters(int argc, char **argv)
 		};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	double fx_rect = fx * camera_width;
-	double fy_rect = fy * camera_height;
-	double cu_rect = cu * camera_width;
-	double cv_rect = camera_cv * camera_height;
+	// double fx_rect = fx * camera_width;
+	// double fy_rect = fy * camera_height;
+	// double cu_rect = cu * camera_width;
+	// double cv_rect = camera_cv * camera_height;
 
-	cameraMatrix = (Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
-	newcameramtx = (Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
-	distCoeffs = (Mat_<double>(5, 1) << k1, k2, p1, p2, k3);
-	R1 = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+	// cameraMatrix = (Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
+	// newcameramtx = (Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
+	// distCoeffs = (Mat_<double>(5, 1) << k1, k2, p1, p2, k3);
+	// R1 = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
 
-	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, Size(camera_width, camera_height), CV_16SC2, MapX, MapY);
+	// initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, Size(camera_width, camera_height), CV_16SC2, MapX, MapY);
 
 	init_params_edit();
 	return (0);
