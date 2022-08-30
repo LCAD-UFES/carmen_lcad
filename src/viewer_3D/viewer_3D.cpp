@@ -4476,7 +4476,7 @@ set_flag_viewer_3D(int flag_num, int value)
     	else if (value == 4)
     		XMoveResizeWindow(w->g_pDisplay, w->g_window, 1920, 1920, 800, 480);
     	else if (value == 5)
-    		XMoveResizeWindow(w->g_pDisplay, w->g_window, 1920, 1920, 500, 300);
+    		XMoveResizeWindow(w->g_pDisplay, w->g_window, 1920, 1920, 650, 390);
 
         break;
 

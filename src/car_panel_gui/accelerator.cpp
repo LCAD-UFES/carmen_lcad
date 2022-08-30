@@ -12,11 +12,14 @@ Accelerator::Accelerator()
 {
 	lineWidth = 2.0;
 	width = 8.0;
-	height = 80.0;
+//	height = 80.0;
+	height = 40.0;
 	colorRange = 0.0322580645;
-	maxMarkers = 43.0;
+//	maxMarkers = 43.0;
+	maxMarkers = 21.0;
 	widthMarker = 8.0;
 	heightMarker = 1.0;
+//	heightMarker = 0.5;
 
 	colorG = 1.0;
 	colorR = 0.0;
@@ -45,21 +48,21 @@ Accelerator::draw(void)
 
 	glLineWidth(lineWidth);
 
-	glTranslatef(-16, 92, 0);
+	glTranslatef(-12, 60, 0);
 	character->draw(fabs(dozenAcceleration), polygonsDozen, 8, color);
-	glTranslatef(16, -92, 0);
+	glTranslatef(12, -60, 0);
 
-	glTranslatef(-2, 92, 0);
+	glTranslatef(2, 60, 0);
 	character->draw(fabs(unitAcceleration), polygonsUnit, 8, color);
-	glTranslatef(2, -92, 0);
+	glTranslatef(-2, -60, 0);
 
-	glTranslatef(2, 84, 0);
+	glTranslatef(6, 52, 0);
 	character->drawSinglePoint(color);
-	glTranslatef(-2, -84, 0);
+	glTranslatef(-6, -52, 0);
 
-	glTranslatef(16, 92, 0);
+	glTranslatef(20, 60, 0);
 	character->draw(fabs(floatPointAcceleration), polygonsFloatPoint, 8, color);
-	glTranslatef(-16, -92, 0);
+	glTranslatef(-20, -60, 0);
 
 	glBegin(GL_LINE_LOOP);
 	{

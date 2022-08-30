@@ -23,30 +23,32 @@ handler_message_t handler_message;
 void 
 displayLights(void)
 {
-	glTranslatef(-20.0f, 80.0f, 0.0f);
+	glTranslatef(-90.0f, -15.0f, 0.0f);
+
 	lights->drawLight();
 	glTranslatef(15.0f, 0.0f, 0.0f);
 	glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
 	lights->drawLight();
 	glRotatef(-180.0f, 0.0f, 0.0f, 1.0f);
 	glTranslatef(-15.0f, 0.0f, 0.0f);
-	glTranslatef(20.0f, -80.0f, 0.0f);
 
-	glTranslatef(-60.0f, 80.0f, 0.0f);
-	lights->drawHighLight();
-	glTranslatef(60.0f, -80.0f, 0.0f);
+	glTranslatef(90.0f, 15.0f, 0.0f);
 
-	glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
-	glTranslatef(60.0f, 90.0f, 0.0f);
-	arrowLeft->draw();
-	glTranslatef(-60.0f, -90.0f, 0.0f);
-	glRotatef(-90.0f, 0.0f, 0.0f, 1.0f);
+//	glTranslatef(-30.0f, 50.0f, 0.0f);
+//	lights->drawHighLight();
+//	glTranslatef(30.0f, -50.0f, 0.0f);
 
-	glRotatef(-90.0f, 0.0f, 0.0f, 1.0f);
-	glTranslatef(-60.0f, 90.0f, 0.0f);
-	arrowRight->draw();
-	glTranslatef(60.0f, -90.0f, 0.0f);
-	glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+//	glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+//	glTranslatef(50.0f, 90.0f, 0.0f);
+//	arrowLeft->draw();
+//	glTranslatef(-50.0f, -90.0f, 0.0f);
+//	glRotatef(-90.0f, 0.0f, 0.0f, 1.0f);
+//
+//	glRotatef(-90.0f, 0.0f, 0.0f, 1.0f);
+//	glTranslatef(-50.0f, 90.0f, 0.0f);
+//	arrowRight->draw();
+//	glTranslatef(50.0f, -90.0f, 0.0f);
+//	glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
 }
 
 
@@ -82,15 +84,17 @@ display(void)
 
 	displayLights();
 
-	glTranslatef(45.0f, -13.0f, 0.0f);
+//	glTranslatef(45.0f, -13.0f, 0.0f);
+	glTranslatef(0.0f, -52.0f, 0.0f);
 	displayAccelerator();
-	glTranslatef(-45.0f, 13.0f, 0.0f);
+//	glTranslatef(-45.0f, 13.0f, 0.0f);
+	glTranslatef(0.0f, 52.0f, 0.0f);
 
 	glScalef(GLfloat(1 * 0.7), GLfloat(1 * 0.7), GLfloat(1 * 0.7));
 
-	glTranslatef(190.0f, -45.0f, 0.0f);
+	glTranslatef(190.0f, -80.0f, 0.0f);
 	displaySteering();
-	glTranslatef(-190.0f, 45.0f, 0.0f);
+	glTranslatef(-190.0f, 80.0f, 0.0f);
 
 	glTranslatef(-80.0f, -50.0f, 0.0f);
 	displaySpeedometer();
@@ -177,6 +181,13 @@ static void
 ford_escape_status_handler(carmen_ford_escape_status_message *message)
 {
 //	printf("cambio %d, %s\n", message->g_XGV_gear, message->host);
+
+	int manual_override = message->g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG;
+
+	if(manual_override == 0)
+		lights->setLight(0.1f);
+	else
+		lights->setLight(1.0f);
 
 	if (message->g_XGV_gear == 128)
 		speedometer->set_cambio('N');

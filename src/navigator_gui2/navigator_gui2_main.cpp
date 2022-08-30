@@ -51,7 +51,7 @@ int height_max_level = 0;
 
 static double last_v = 0, last_phi = 0;
 static carmen_robot_and_trailer_traj_point_t last_goal;
-static int goal_set = 0, autonomous = 0;
+static int goal_set = 0, autonomous = 0; // Checks if Go button has been pressed
 
 static char *map_path = NULL;
 char *annotation_path = NULL;
@@ -89,6 +89,8 @@ std::vector <std::string> missions_filenames;
 static int argc_global;
 static char **argv_global;
 int publish_final_goal_at_place_of_interest;
+
+int manual_override; // Is it manual? If it is autonomous, manual_override == 0
 
 static void
 navigator_get_empty_map()
@@ -873,12 +875,17 @@ void
 ford_escape_status_handler(carmen_ford_escape_status_message *message)
 {
 	int yellow_button = message->g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG;//carmen_get_bit_value(message->g_XGV_component_status, 0);
+	manual_override = yellow_button;
+
+//	printf("XGV_component: %i\n", message->g_XGV_component_status);
 
 	if (yellow_button)
 		record_screen = 0;
 
 	if (!yellow_button && (autonomous_record_screen == 1))
 		record_screen = 1;
+
+	gui->navigator_graphics_update_mode(manual_override);
 }
 
 

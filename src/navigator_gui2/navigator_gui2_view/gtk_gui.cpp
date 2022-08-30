@@ -604,6 +604,7 @@ namespace View
 		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
 		controls_.labelOffRoadPlannerRequest = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerRequest" ));
 		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
+		controls_.labelMode = GTK_LABEL(gtk_builder_get_object(builder, "labelMode" ));
 		controls_.labelDecisionMakingErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelDecisionMakingErrors" ));
 		controls_.labelBasicPerceptionErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelBasicPerceptionErrors" ));
 		controls_.labelLidarsErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelLidarsErrors" ));
@@ -1299,6 +1300,20 @@ namespace View
 
 		sprintf(buffer, "%s", "");
 		g_free(markup);
+		do_redraw();
+	}
+
+	void
+	GtkGui::navigator_graphics_update_mode(int manual_override)
+	{
+		static char buffer[2048];
+
+		if(manual_override == 0)
+			sprintf(buffer, "Mode: %s", "Autonomous");
+		else
+			sprintf(buffer, "Mode: %s", "Manual");
+
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelMode), buffer);
 		do_redraw();
 	}
 
@@ -4200,7 +4215,7 @@ namespace View
 	void
 	GtkGui::draw_gl_components_car_panel()
 	{
-		car_panel_gl->set_view(500, 250);
+		car_panel_gl->set_view(500, 240);
 		car_panel_gl->draw();
 	}
 

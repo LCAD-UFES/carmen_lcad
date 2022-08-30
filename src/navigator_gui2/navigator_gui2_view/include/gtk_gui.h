@@ -149,6 +149,7 @@ namespace View
 			GtkLabel *labelOffRoadPlannerRequest;
 			GtkLabel *labelOffRoadPlannerState;
 			GtkLabel *labelGlobalPosTimeStamp;
+			GtkLabel *labelMode;
 			GtkLabel *labelDecisionMakingErrors;
 			GtkLabel *labelBasicPerceptionErrors;
 			GtkLabel *labelLidarsErrors;
@@ -398,6 +399,7 @@ namespace View
 		void navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t *new_path, int path_length, int path_id);
 		void navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length);
 		void navigator_graphics_update_errors(carmen_audit_status_message *message);
+		void navigator_graphics_update_mode(int manual_override);
 		void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
 		void navigator_graphics_set_flags(carmen_navigator_map_t type);
 
