@@ -16,7 +16,7 @@ LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobst
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lmotion_planner_interface -lbase_ackerman_interface -lvisual_odometry_interface \
 	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface \
 	  -ltask_manager_interface -lopenJaus -ljaus -lojTorc -lcontrol -lcarmodel -lfann -lgsl -lgslcblas -lford_escape_hybrid_interface \
-	  -lrobot_ackerman_interface -lvoice_interface_interface -lsimulator_ackerman
+	  -lrobot_ackerman_interface -lvoice_interface_interface -lsimulator_ackerman 
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/lib/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/lib/
@@ -46,7 +46,7 @@ PUBLIC_INCLUDES = ford_escape_hybrid_messages.h ford_escape_hybrid_interface.h f
 PUBLIC_LIBRARIES = libford_escape_hybrid_interface.a
 PUBLIC_BINARIES = ford_escape_hybrid ford_escape_hybrid_tune_pid ford_escape_hybrid_test ford_escape_hybrid_test_curves fake_odometry
 
-TARGETS = OpenJAUS libcarmodel libcontrol ford_escape_hybrid ford_escape_hybrid_tune_pid  ford_escape_hybrid_tune_pid_automatic fake_odometry libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
+TARGETS = OpenJAUS libcontrol libcarmodel ford_escape_hybrid ford_escape_hybrid_tune_pid  ford_escape_hybrid_tune_pid_automatic fake_odometry libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
 
 ifndef NO_PYTHON
 PUBLIC_LIBRARIES_SO = libford_escape_hybrid_interface.so

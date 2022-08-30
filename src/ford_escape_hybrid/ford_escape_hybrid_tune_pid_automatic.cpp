@@ -1,10 +1,14 @@
 #include <carmen/carmen.h>
-//#include <iostream>
 #include <carmen/motion_planner.h>
+#include "ford_escape_hybrid_tune_pid_automatic.h"
+#include <carmen/car_model.h>
 #include "ford_escape_hybrid_interface.h"
 #include "ford_escape_hybrid_messages.h"
-#include <gsl/gsl_vector.h>
-#include <carmen/mpc.h>
+
+
+
+
+using namespace std;
 
 typedef double (*MotionControlFunction)(double v, double w, double t);
 
@@ -40,7 +44,132 @@ send_trajectory_to_robot()
 }
 
 
-/*
+double
+get_effort_in_time_from_spline(EFFORT_SPLINE_DESCRIPTOR *descriptors, double time)
+{
+	double x[4] = { 0.0, PREDICTION_HORIZON / 3.0, 2.0 * PREDICTION_HORIZON / 3.0, PREDICTION_HORIZON };
+	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
+
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	const gsl_interp_type *type = gsl_interp_cspline;
+	gsl_spline *phi_effort_spline = gsl_spline_alloc(type, 4);
+
+	gsl_spline_init(phi_effort_spline, x, y, 4);
+
+	double effort = gsl_spline_eval(phi_effort_spline, time, acc);
+
+	gsl_spline_free(phi_effort_spline);
+	gsl_interp_accel_free(acc);
+
+	return (effort);
+}
+
+
+vector<double>
+get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, double prediction_horizon)
+{
+	double x[4] = { 0.0, prediction_horizon / 3.0, 2.0 * prediction_horizon / 3.0, prediction_horizon };
+	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
+
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	const gsl_interp_type *type = gsl_interp_cspline;
+	gsl_spline *phi_effort_spline = gsl_spline_alloc(type, 4);
+
+	gsl_spline_init(phi_effort_spline, x, y, 4);
+
+	vector<double> effort_vector;
+	for (double t = 0.0; t < prediction_horizon; t += DELTA_T)
+		effort_vector.push_back(gsl_spline_eval(phi_effort_spline, t, acc));
+		//effort_vector.push_back(carmen_clamp(-100.0, gsl_spline_eval(phi_effort_spline, t, acc), 100.0));
+
+	gsl_spline_free(phi_effort_spline);
+	gsl_interp_accel_free(acc);
+
+	return (effort_vector);
+}
+
+
+unsigned int
+get_motion_timed_index_to_motion_command(PARAMS* params) // TODO nao devia retornar j--   ????
+{
+	double motion_commands_vector_time = params->motion_commands_vector[0].time;
+	unsigned int j = 0;
+	while ((motion_commands_vector_time	< params->time_elapsed_since_last_motion_command) && (j < params->motion_commands_vector_size))
+	{
+		j++;
+		motion_commands_vector_time += params->motion_commands_vector[j].time;
+	}
+
+	return j;
+}
+
+
+vector<double>
+get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int size)
+{
+	vector<double> velocity_vector;
+	double phi_vector_time = 0.0;
+
+	unsigned int timed_index_to_motion_command = get_motion_timed_index_to_motion_command(params);
+	double motion_commands_vector_time = params->motion_commands_vector[timed_index_to_motion_command].time;
+
+	for (unsigned int i = 0; i < size; i++)
+	{
+		velocity_vector.push_back(params->motion_commands_vector[timed_index_to_motion_command].v);
+
+		phi_vector_time += DELTA_T;
+		if (phi_vector_time > motion_commands_vector_time)
+		{
+			timed_index_to_motion_command++;
+			if (timed_index_to_motion_command >= params->motion_commands_vector_size)
+				break;
+
+			motion_commands_vector_time += params->motion_commands_vector[timed_index_to_motion_command].time;
+		}
+	}
+
+	return (velocity_vector);
+}
+
+
+double
+car_steering_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
+{
+	//steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
+	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
+
+	// TODO fazer funcao aterar a proxima curvatura tambem
+	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
+			params->steering_ann, v, params->understeer_coeficient, params->distance_rear_axles, 2.0 * params->max_phi);
+//	phi = 1.0 * phi;// - 0.01;
+//	phi *= (1.0 / (1.0 + v / 10.0));
+	
+	return (phi);
+}
+
+
+vector<double>
+get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PARAMS *params)
+{
+	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	memcpy(steering_ann_input, params->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
+
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, PREDICTION_HORIZON);
+	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(params, effort_vector.size());
+	vector<double> phi_vector;
+	double phi, atan_current_curvature = params->atan_current_curvature;
+
+	for (unsigned int i = 0; i < effort_vector.size(); i++)
+	{
+		phi = car_steering_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
+
+		phi_vector.push_back(phi + params->dk);
+
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->current_velocity, params->understeer_coeficient, params->distance_rear_axles);
+	}
+	return (phi_vector);
+}
+
 
 double
 my_f_new(const gsl_vector *v, void *params_ptr)
@@ -152,7 +281,7 @@ my_fdf_new(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 
 
 EFFORT_SPLINE_DESCRIPTOR
-get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
+get_optimized_effort_new(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 {
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
@@ -200,7 +329,7 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 
 	return (seed);
 }
-*/
+
 
 static void
 build_trajectory(double t)
@@ -460,18 +589,18 @@ define_messages()
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
 }
 
-/*
+
 void
 base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 {
 	int base_ackerman_odometry_index = (base_ackerman_odometry_index + 1) % BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE;
-	base_ackerman_odometry_vector[base_ackerman_odometry_index] = *msg;
+	//base_ackerman_odometry_vector[base_ackerman_odometry_index] = *msg;
 }
-*/
 
-/*
-void
-calibrate_PID_parameters()
+
+
+EFFORT_SPLINE_DESCRIPTOR
+calibrate_PID_parameters(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 {
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
@@ -479,9 +608,9 @@ calibrate_PID_parameters()
 	int status;
 
 	my_func.n = 3;
-	my_func.f = my_f;
-	my_func.df = my_df;
-	my_func.fdf = my_fdf;
+	my_func.f = my_f_new;
+	my_func.df = my_df_new;
+	my_func.fdf = my_fdf_new;
 	my_func.params = params;
 
 	x = gsl_vector_alloc (3);  // Num of parameters to minimize
@@ -518,7 +647,7 @@ calibrate_PID_parameters()
 
 	return (seed);
 }
-*/
+
 
 int
 main(int argc, char **argv)
@@ -532,8 +661,12 @@ main(int argc, char **argv)
 	define_messages();
 
 	read_parameters(argc, argv);
+
+	static PARAMS params;
+	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
 	
-	//calibrate_PID_parameters();
+	seed = calibrate_PID_parameters(&params, seed);
+
 	tune_pid_gain_velocity_parameters_message *pid_vel_msg = fill_pid_gain_velocity_parameters_message();
 	carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(pid_vel_msg , carmen_get_time());
 	tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message();
