@@ -169,7 +169,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
 	// unsigned char *image_color = open_cv_image.data;
-
+	cv::cvtColor(open_cv_image, open_cv_image, cv::COLOR_BGR2RGB);
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "dpt"))
