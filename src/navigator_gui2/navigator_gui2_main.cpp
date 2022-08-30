@@ -88,6 +88,7 @@ std::vector <std::string> missions_filenames;
 
 static int argc_global;
 static char **argv_global;
+int publish_final_goal_at_place_of_interest;
 
 static void
 navigator_get_empty_map()
@@ -1469,6 +1470,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator",		 (char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),		1, NULL},
 		{(char *) "navigator",		 (char *) "goal_size",				CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
 		{(char *) "navigator",		 (char *) "goal_theta_tolerance",	CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),	1, NULL},
+		{(char *) "navigator_panel", (char *) "publish_final_goal_at_place_of_interest",	CARMEN_PARAM_ONOFF, &(publish_final_goal_at_place_of_interest),	1, NULL},
 		{(char *) "navigator_panel", (char *) "initial_map_zoom",		CARMEN_PARAM_DOUBLE, &(navigator_panel_config->initial_map_zoom),	1, NULL},
 		{(char *) "navigator_panel", (char *) "track_robot",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->track_robot),		1, NULL},
 		{(char *) "navigator_panel", (char *) "draw_path",				CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_path),			1, NULL},
