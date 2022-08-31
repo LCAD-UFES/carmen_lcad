@@ -1158,6 +1158,7 @@ check_if_all_paths_has_collision(vector<path_collision_info_t> &paths_collision_
 		if(paths_collision_info[i].path_has_no_collision == false)
 			paths_with_collision_counter++;
 	}
+	// printf("paths_with_collision_counter: %d\n", paths_with_collision_counter);
 
 	if(paths_with_collision_counter == frenet_path_planner_num_paths)
 		return true;
@@ -1206,11 +1207,14 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 
 		if(check_if_all_paths_has_collision(paths_collision_info))
 		{
+			// printf("paths com colisao\n\n");
 			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
 			all_paths_has_collision = true;
 		}
 		else
+		{
 			all_paths_has_collision = false;
+		}
 
 		publish_set_of_paths_message(&set_of_paths);
 
