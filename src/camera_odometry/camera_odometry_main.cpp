@@ -1,5 +1,6 @@
 #include "camera_odomery.h"
 #include <cmath>
+#include "BigFloat.h"
 
 char *log_filename = NULL;
 int initial_pose_found = 0;
@@ -85,10 +86,10 @@ read_data_from_log(char *log_file)
     }
     log_filename = log_file;
 	std::vector<std::vector<double>> poses_gps;
-	std::vector<double> aux_gps, aux_centroid_x_gps, aux_centroid_y_gps;
+	std::vector<double> aux_gps;
 	FILE *poses_gps_file = fopen("poses_gps.txt", "a");
-	long double x_sum = 0., y_sum = 0.;
-	int index_aux = 0;
+	BigFloat x_sum (0.);
+	BigFloat y_sum (0.);
 	while (std::getline(logfile, line))
 	{
 		// the input tag
@@ -123,29 +124,15 @@ read_data_from_log(char *log_file)
 				aux_gps.clear();
 				x_sum = x_sum + m.x;
 				y_sum = y_sum + m.y;
-				index_aux++;
-				if(index_aux == 1000)
-				{
-					aux_centroid_x_gps.push_back(x_sum / 1000.);
-					aux_centroid_y_gps.push_back(y_sum / 1000.);
-					x_sum = y_sum = 0.;
-					index_aux = 0;
-				}
+				std::cout << y_sum.ToString() << std::endl;
 			}
 		}
     }
 	fclose(poses_gps_file);
 	double centroid_x_gps, centroid_y_gps ;
-	x_sum = y_sum = 0.;
-
-	for(int i = 0; i < aux_centroid_x_gps.size(); i++)
-	{
-		x_sum = x_sum + aux_centroid_x_gps[i];
-		y_sum = y_sum + aux_centroid_y_gps[i];
-		//printf("%lf\n", x_sum);
-	}
-	centroid_x_gps = x_sum / aux_centroid_x_gps.size();
-	centroid_y_gps = y_sum / aux_centroid_x_gps.size();
+	std::cout << BigFloat(x_sum / int(aux_gps.size())).ToString() << std::endl;
+	centroid_x_gps = BigFloat(x_sum / int(aux_gps.size())).ToDouble(); //BigFloat(x_sum / BigFloat(int (aux_gps.size()))).ToDouble();
+	centroid_y_gps = BigFloat(y_sum / int(aux_gps.size())).ToDouble();
 	printf("aaaa %lf %lf\n", centroid_x_gps, centroid_y_gps);
 	logfile.close();
     std::ifstream poses_file("/home/marcelo/evaluation_tools/convert/kitti2Tum/bin/saida.txt");
@@ -170,7 +157,7 @@ read_data_from_log(char *log_file)
 			y = std::stod(splitted_string[2]);
 			x = x  * sin(100 * M_PI / 180.) + y * cos(100 * M_PI / 180.);
 			y = x * cos( 100 * M_PI / 180.) - y * sin(100 * M_PI / 180.);
-			x = 25 * x;
+			x = 20 * x;
 			y = 90 * y;
 			//printf("%lf\n", x);
 			//fprintf(poses_file_write, "%lf %lf\n", x, y);
@@ -216,7 +203,10 @@ read_data_from_log(char *log_file)
 	centroid_x_slam = x_sum_slam / poses_vector.size();
 	centroid_y_slam = y_sum_slam / poses_vector.size();
 	centroid_x_gps = 7.75735e+06; //+ 0.00010e+06;
-	centroid_y_gps = -363785; //+50;
+	//centroid_y_gps = -363785; //+50;
+	//centroid_x_gps = 7.75639e+06;
+	centroid_y_gps = -363746;
+	//centroid_x_gps = 7.75639e+06;
 	for(uint i = 0 ; i < poses_vector.size(); i++)
 	{
 		double r = sqrt(pow((poses_vector[i][0] - centroid_x_slam), 2)  + pow((poses_vector[i][1] - centroid_y_slam), 2));
