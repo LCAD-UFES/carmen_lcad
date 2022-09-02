@@ -109,7 +109,6 @@ float h_n_manh (int vertex_id, int vertex_end, graph_t graph);
 float h_n_eucl(carmen_point_t pose_ini, carmen_point_t pose_end);
 a_star_utils_t a_star_in_lane_graph(graph_t &graph, lane_graph_t &lane_graph, vector<int> &route, int vertex_ini, int vertex_end);
 a_star_utils_t a_star_k_neighbours(graph_t &graph, lane_graph_t &lane_graph, int k, int vertex_ini, int vertex_end);
-int find_closest_point_in_graph_ternium(graph_t graph, carmen_point_t point, char *direction);
 int find_closest_point_in_graph (graph_t &graph, carmen_point_t point);
 //carmen_point_t set_destination(vector<carmen_annotation_t> annotations);
 carmen_point_t set_destination(vector<carmen_annotation_t> annotations, char *goal);
