@@ -12,23 +12,24 @@
 #include <vector>
 
 #include "build.h"
+#include "helpers.h"
 #include <ouster/client.h>
 #include <ouster/lidar_scan.h>
-#include <ouster/types.h>
+#include "types.h"
+#include "ouster/os_pcap.h"
 #include <json/json.h>
 
 
 using namespace ouster;
 
-const size_t N_SCANS = 1;
+const size_t N_SCANS = 50;
 const size_t UDP_BUF_SIZE = 65536;
 
-char *ouster_ip = NULL;
-char *host_ip = NULL;
+char *pcap_file2 = NULL;
+char *json_file2 = NULL;
 int ouster_sensor_id = 0;
 int ouster_publish_imu = 0;
 int ouster_intensity_type = 1;
-
 
 void 
 FATAL(const char* msg) {
@@ -69,10 +70,9 @@ read_parameters(int argc, char **argv)
 {
 
 	carmen_param_t comand_line_param_list[] = {
-		{(char*) "commandline", (char*) "sensor_ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL},
-		{(char*) "commandline", (char*) "host_ip", CARMEN_PARAM_STRING, &host_ip, 0, NULL},
+		{(char*) "commandline", (char*) "pcap_file", CARMEN_PARAM_STRING, &pcap_file2, 0, NULL},
+		{(char*) "commandline", (char*) "json_file", CARMEN_PARAM_STRING, &json_file2, 0, NULL},
         {(char*) "commandline", (char*) "sensor_id", CARMEN_PARAM_INT, &ouster_sensor_id, 0, NULL},
-        {(char*) "commandline", (char*) "intensity_type", CARMEN_PARAM_INT, &ouster_intensity_type, 0, NULL}, 
 		{(char*) "commandline", (char*) "publish_imu", CARMEN_PARAM_ONOFF, &ouster_publish_imu, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, comand_line_param_list, sizeof(comand_line_param_list)/sizeof(comand_line_param_list[0]));
@@ -102,16 +102,6 @@ int
 main(int argc, char* argv[]) 
 {
     std::cerr << "Ouster client SDK Version " << ouster::CLIENT_VERSION << std::endl;
-    /*
-     * The sensor client consists of the network client and a library for
-     * reading and working with data.
-     *
-     * The network client supports reading and writing a limited number of
-     * configuration parameters and receiving data without working directly with
-     * the socket APIs. See the `client.h` for more details. The minimum
-     * required parameters are the sensor hostname/ip and the data destination
-     * hostname/ip.
-     */
     
     //Carmen Stuffs
     carmen_ipc_initialize(argc, argv);
@@ -119,15 +109,12 @@ main(int argc, char* argv[])
     signal(SIGINT, shutdown_module);
 	
     carmen_param_check_version(argv[0]);
-    //TODO pegar o ip etc daqui, rodar o modulo soh com o numero da mensagem / -lidar_id 
     read_parameters(argc, argv);
 
-    const std::string sensor_hostname = ouster_ip;
-    const std::string data_destination = host_ip;
-    std::cerr << "Connecting to \"" << sensor_hostname << "\"... ";
-    
-//TODO checar se vai precisa de porta com varios sensores conectados
-    auto handle = sensor::init_client(sensor_hostname, data_destination);
+    const std::string pcap_file = pcap_file2;
+    const std::string json_file = json_file2;
+
+    auto handle = sensor_utils::replay_initialize(pcap_file);
     if (!handle) FATAL("Failed to connect");
     std::cerr << "ok" << std::endl;
 
@@ -137,10 +124,7 @@ main(int argc, char* argv[])
      * accurate point clouds.
      */
     std::cerr << "Gathering metadata..." << std::endl;
-    auto metadata = sensor::get_metadata(*handle);
-
-    // Raw metadata can be parsed into a `sensor_info` struct
-    sensor::sensor_info info = sensor::parse_metadata(metadata);
+    auto info = sensor::metadata_from_json(json_file);
 
     size_t w = info.format.columns_per_frame;
     size_t h = info.format.pixels_per_column;
@@ -166,65 +150,16 @@ main(int argc, char* argv[])
               << "\n  Publising Lidar Message:   " << ouster_sensor_id << std::endl;
 
     // A LidarScan holds lidar data for an entire rotation of the device
-    std::vector<LidarScan> scans{
-        N_SCANS, LidarScan{w, h, info.format.udp_profile_lidar}};
+    auto scan = LidarScan(w, h, info.format.udp_profile_lidar);
 
-    // A ScanBatcher can be used to batch packets into scans
-    sensor::packet_format pf = sensor::get_format(info);
-    ScanBatcher batch_to_scan(info.format.columns_per_frame, pf);
-
-    /*
-     * The network client provides some convenience wrappers around socket APIs
-     * to facilitate reading lidar and IMU data from the network. It is also
-     * possible to configure the sensor offline and read data directly from a
-     * UDP socket.
-     */
     std::cerr << "Capturing points... ";
 
-    // buffer to store raw packet data
-    std::unique_ptr<uint8_t[]> packet_buf(new uint8_t[UDP_BUF_SIZE]);
-
-    while (true)
+//    while (true)
     {
-        for (size_t i = 0; i < N_SCANS;)
+        for (size_t i = 0; i < N_SCANS; i++)
         {
-            // wait until sensor data is available
-            sensor::client_state st = sensor::poll_client(*handle);
-
-            // check for error status
-            if (st & sensor::CLIENT_ERROR)
-                FATAL("Sensor client returned error state!");
-
-            // check for lidar data, read a packet and add it to the current batch
-            if (st & sensor::LIDAR_DATA)
-            {
-                if (!sensor::read_lidar_packet(*handle, packet_buf.get(), pf))
-                    FATAL("Failed to read a packet of the expected size!");
-
-                // batcher will return "true" when the current scan is complete
-                if (batch_to_scan(packet_buf.get(), scans[i]))
-                {
-                    // LidarScan provides access to azimuth block data and headers
-                    auto n_invalid = std::count_if(
-                        scans[i].headers.begin(), scans[i].headers.end(),
-                        [](const LidarScan::BlockHeader &h)
-                        {
-                            return !(h.status & 0x01);
-                        });
-                    // retry until we receive a full set of valid measurements
-                    // (accounting for azimuth_window settings if any)
-                    if (n_invalid <= (int)w - column_window_length)
-                        i++;
-                }
-            }
-
-            // check if IMU data is available (but don't do anything with it)
-            if (st & sensor::IMU_DATA)
-            {
-                sensor::read_imu_packet(*handle, packet_buf.get(), pf);
-            }
-        }
-        // std::cerr << "ok" << std::endl;
+        	sleep(5);
+            get_complete_scan(handle, scan, info);
 
         // /*
         //  * The example code includes functions for efficiently and accurately
@@ -233,8 +168,6 @@ main(int argc, char* argv[])
         //  *
         //  * [0] http://eigen.tuxfamily.org
         //  */
-        for (const LidarScan &scan : scans)
-        {
             int number_of_shots = 0;
             // auto n_returns = (scan.field(sensor::RANGE) != 0).count();
             auto range = scan.field(sensor::RANGE);
@@ -252,7 +185,7 @@ main(int argc, char* argv[])
 
             for (int m_id = column_window.first; m_id <= column_window.second; m_id++)
             {
-                double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);//Calculo do angulo, no ouster os shots sao fixos
+                double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);
                 // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus na linha abaixo
                 double shot_angle_correction = carmen_normalize_angle_degree(carmen_radians_to_degrees(shot_angle) + (info.beam_azimuth_angles.at(0)) + 180);
                 // std::cerr << "\n angle " << shot_angle << " shot_angle_correction " << shot_angle_correction << std::endl;
@@ -269,10 +202,11 @@ main(int argc, char* argv[])
             }
 
             message.number_of_shots = number_of_shots;
+            carmen_velodyne_publish_variable_scan_message(&message, ouster_sensor_id);
+            ouster::sensor_utils::replay_uninitialize(*handle);
+            std::cerr << "Publiquei   " << std::endl;
         }
 
-        carmen_velodyne_publish_variable_scan_message(&message, ouster_sensor_id);
-        // std::cerr << "Publiquei   " << std::endl;
     }
 
     return 0;
