@@ -30,7 +30,7 @@ typedef struct {
 
 
 #define		CARMEN_ASTAR_GOAL_LIST_NAME		"carmen_navigator_ackerman_astar_goal_list"
-#define		CARMEN_ASTAR_GOAL_LIST_FMT		"{<{double, double, double, double, double, double}:2>,int,double,string}"
+#define		CARMEN_ASTAR_GOAL_LIST_FMT		"{<{double, double, double, int, [double:5], double, double}:2>,int,double,string}"
 
 #ifdef __cplusplus
 }

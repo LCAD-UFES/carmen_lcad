@@ -22,7 +22,7 @@ typedef struct {
 } carmen_navigator_ackerman_astar_goal_list_message;
 
 #define		CARMEN_ASTAR_GOAL_LIST_NAME		"carmen_navigator_ackerman_astar_goal_list"
-#define		CARMEN_ASTAR_GOAL_LIST_FMT		"{<{double, double, double, double, double, double}:2>,int,double,string}"
+#define		CARMEN_ASTAR_GOAL_LIST_FMT		"{<{double, double, double, int, [double:5], double, double}:2>,int,double,string}"
 
 typedef struct {
 	carmen_robot_and_trailers_traj_point_t robot;
@@ -45,7 +45,7 @@ typedef struct
 } carmen_path_planner_road_profile_message;
 
 #define CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_NAME "carmen_path_planner_road_profile_message"
-#define CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double, double}:1>, <{double, double, double, double, double, double}:2>, <int:1>, double, string}"
+#define CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, int, [double:5], double, double}:1>, <{double, double, double, int, [double:5], double, double}:2>, <int:1>, double, string}"
 
 
 #ifdef __cplusplus

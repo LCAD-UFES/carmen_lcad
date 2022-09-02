@@ -56,7 +56,7 @@ typedef struct
 } carmen_rrt_planner_plan_message;
 
 #define CARMEN_RRT_PLANNER_PLAN_NAME "carmen_rrt_planner_plan"
-#define CARMEN_RRT_PLANNER_PLAN_FMT "{<{double, double, double, double, double, double}:2>,int,double,string}"
+#define CARMEN_RRT_PLANNER_PLAN_FMT "{<{double, double, double, int, [double:5], double, double}:2>,int,double,string}"
 
 typedef carmen_default_message carmen_rrt_planner_go_message;
 #define CARMEN_RRT_PLANNER_GO "carmen_rrt_planner_go"

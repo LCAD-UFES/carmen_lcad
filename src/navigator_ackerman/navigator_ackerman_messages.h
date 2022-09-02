@@ -73,7 +73,7 @@ typedef struct {
 } carmen_navigator_ackerman_status_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME       "carmen_navigator_ackerman_status"
-#define CARMEN_NAVIGATOR_ACKERMAN_STATUS_FMT        "{int,int,{double, double, double, double, double, double},{double, double, double, double, double, double},double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_STATUS_FMT        "{int,int,{double, double, double, int, [double:5], double, double},{double, double, double, int, [double:5], double, double},double,string}"
 
 /** This message is published by the navigator. The current path of the
       navigator. Should never be emitted without a goal. If the goal is
@@ -91,7 +91,7 @@ typedef struct {
 } carmen_navigator_ackerman_plan_message;
 
 #define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME       "carmen_navigator_ackerman_plan"
-#define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT        "{<{double, double, double, double, double, double}:2>,int,double,string}"
+#define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT        "{<{double, double, double, int, [double:5], double, double}:2>,int,double,string}"
 
 
 /** This message is sent to the navigator by other programs wishing to plan
@@ -122,7 +122,7 @@ typedef struct {
 } carmen_navigator_ackerman_set_goal_triplet_message;
 
 #define      CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_TRIPLET_NAME         "carmen_navigator_ackerman_set_goal_triplet"
-#define      CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_TRIPLET_FMT          "{{double,double,double,double,double,double},double,string}"
+#define      CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_TRIPLET_FMT          "{{double,double,double,int,[double:5],double,double},double,string}"
 
 typedef enum{CARMEN_NAVIGATOR_ACKERMAN_GOAL_REACHED_v,
 	CARMEN_NAVIGATOR_ACKERMAN_USER_STOPPED_v,
@@ -269,7 +269,7 @@ typedef struct
 } carmen_navigator_ackerman_plan_tree_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME "carmen_navigator_ackerman_plan_tree"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double,double}:1>,<{double,double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double,double}:100, 500],[int:100],int,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,int,[double:5],double,double}:1>,<{double,double,double,int,[double:5],double,double}:1>,<int:1>,[{double,double,double,int,[double:5],double,double}:100, 500],[int:100],int,double,string}"
 
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_NAME "carmen_navigator_ackerman_goal_plan_tree"
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_FMT CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT
@@ -283,7 +283,7 @@ typedef struct
 } carmen_navigator_ackerman_plan_to_draw_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME "carmen_navigator_ackerman_plan_to_draw_message"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT "{int,<{double,double,double,double,double,double}:1>,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT "{int,<{double,double,double,int,[double:5],double,double}:1>,double,string}"
 
 #ifdef __cplusplus
 }

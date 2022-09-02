@@ -59,7 +59,7 @@ typedef struct
 } carmen_offroad_planner_plan_message;
 
 #define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_NAME	"carmen_offroad_planner_plan_message"
-#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, double, double, double}:2>, int, {double, double, double, double, double, double}, {double, double, double, double, double, double}, double, string}"
+#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, int, [double:5], double, double}:2>, int, {double, double, double, int, [double:5], double, double}, {double, double, double, int, [double:5], double, double}, double, string}"
 
 #ifdef __cplusplus
 }

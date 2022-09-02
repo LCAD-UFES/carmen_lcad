@@ -24,7 +24,7 @@ typedef struct {
 } carmen_motion_planner_path_message;
 
 #define CARMEN_MOTION_PLANNER_PATH_NAME "carmen_motion_planner_path"
-#define CARMEN_MOTION_PLANNER_PATH_FMT "{<{double, double, double, double, double, double}:2>, int, int, double, string}"
+#define CARMEN_MOTION_PLANNER_PATH_FMT "{<{double, double, double, int, [double:5], double, double}:2>, int, int, double, string}"
 
 
 #ifdef __cplusplus

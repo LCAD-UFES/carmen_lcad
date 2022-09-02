@@ -81,7 +81,7 @@ typedef struct
 } carmen_task_manager_state_message;
 
 #define	CARMEN_TASK_MANAGER_STATE_MESSAGE_NAME	"carmen_task_manager_state_message"
-#define	CARMEN_TASK_MANAGER_STATE_MESSAGE_FMT "{int,string,string,{double,double,double,double},string,double,string}"
+#define	CARMEN_TASK_MANAGER_STATE_MESSAGE_FMT "{int,string,string,{double,double,double,int,[double:5]},string,double,string}"
 
 
 #ifdef __cplusplus

@@ -13,7 +13,7 @@ typedef struct {
 } carmen_navigator_spline_path_message;
 
 #define		CARMEN_NAVIGATOR_SPLINE_PATH_NAME		"carmen_navigator_spline_path"
-#define		CARMEN_NAVIGATOR_SPLINE_PATH_FMT		"{<{double, double, double, double, double, double}:2>,int,double,string}"
+#define		CARMEN_NAVIGATOR_SPLINE_PATH_FMT		"{<{double, double, double, int, [double:5], double, double}:2>,int,double,string}"
 
 #ifdef __cplusplus
 }

@@ -38,7 +38,7 @@ extern "C"
     } carmen_frenet_path_planner_set_of_paths;
 
 	#define CARMEN_FRENET_PATH_PLANNER_SET_OF_PATHS_MESSAGE_NAME "carmen_frenet_path_planner_set_of_paths"
-	#define CARMEN_FRENET_PATH_PLANNER_SET_OF_PATHS_MESSAGE_FMT  "{int, int, <{double, double, double, double, double, double}:1>, int, int, <{double, double, double, double, double, double}:5>, <{double, double, double, double, double, double}:2>, <{double, double, double, double, double, double}:5>, <int:2>, <int:2>, int, <int:11>, <int:11>, <int:11>, int, <{double, double, double, double, double, double}:15>, <int:15>, double, string}"
+	#define CARMEN_FRENET_PATH_PLANNER_SET_OF_PATHS_MESSAGE_FMT  "{int, int, <{double, double, double, int, [double:5], double, double}:1>, int, int, <{double, double, double, int, [double:5], double, double}:5>, <{double, double, double, int, [double:5], double, double}:2>, <{double, double, double, int, [double:5], double, double}:5>, <int:2>, <int:2>, int, <int:11>, <int:11>, <int:11>, int, <{double, double, double, int, [double:5], double, double}:15>, <int:15>, double, string}"
 
 
 	typedef struct

@@ -16,7 +16,7 @@ typedef struct
 } carmen_model_predictive_planner_motion_plan_message;
 
 #define CARMEN_MODEL_PREDICTIVE_PLANNER_MOTION_PLAN_MESSAGE_NAME "carmen_model_predictive_planner_motion_plan"
-#define CARMEN_MODEL_PREDICTIVE_PLANNER_MOTION_PLAN_MESSAGE_FMT "{<{double, double, double, double, double, double}:2>,int,double,string}"
+#define CARMEN_MODEL_PREDICTIVE_PLANNER_MOTION_PLAN_MESSAGE_FMT "{<{double, double, double, int, [double:5], double, double}:2>,int,double,string}"
 
 #ifdef __cplusplus
 }
