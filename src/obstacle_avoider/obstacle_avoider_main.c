@@ -12,7 +12,7 @@
 static int necessary_maps_available = 0;
 
 static int current_motion_command_vetor = 0;
-static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailers_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 static int num_motion_commands_in_vector[NUM_MOTION_COMMANDS_VECTORS];
 static double timestamp_of_motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS];
 
@@ -116,9 +116,9 @@ consume_motion_command_time(int motion_command_vetor)
 
 
 int
-apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int original_size)
+apply_robot_delays(carmen_robot_and_trailers_motion_command_t *original_path, int original_size)
 {
-	carmen_robot_and_trailer_motion_command_t *path = original_path;
+	carmen_robot_and_trailers_motion_command_t *path = original_path;
 	int size = original_size;
 
 	// Velocity delay
@@ -196,13 +196,13 @@ apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int
 
 
 static void
-obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_motion_command_t *motion_commands,
+obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailers_motion_command_t *motion_commands,
 		int num_motion_commands, double timestamp)
 {
 	if (eliminate_path_follower)
 	{
-		carmen_robot_and_trailer_motion_command_t *motion_commands_copy = (carmen_robot_and_trailer_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
-		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
+		carmen_robot_and_trailers_motion_command_t *motion_commands_copy = (carmen_robot_and_trailers_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
+		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 
 		apply_robot_delays(motion_commands_copy, num_motion_commands);
 		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_copy, num_motion_commands, timestamp);
@@ -215,7 +215,7 @@ obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_m
 
 
 static void
-publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
+publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_and_trailers_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
 	return;
@@ -232,7 +232,7 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_
 
 
 void
-publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
+publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_robot_and_trailers_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
 	return;
@@ -352,7 +352,7 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 //	print_path(motion_command_message->motion_command, motion_command_message->num_motion_commands);
 
 	static double time_of_last_call = 0.0;
-	carmen_robot_and_trailer_motion_command_t *next_motion_command_vector;
+	carmen_robot_and_trailers_motion_command_t *next_motion_command_vector;
 	int i, num_motion_commands;
 
 	if (motion_command_message->num_motion_commands < 1)
@@ -396,7 +396,7 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	carmen_robot_and_trailer_traj_point_t pose;
+	carmen_robot_and_trailers_traj_point_t pose;
 
 	if (!necessary_maps_available)
 		return;
@@ -404,7 +404,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	pose.x = msg->globalpos.x;
 	pose.y = msg->globalpos.y;
 	pose.theta = msg->globalpos.theta;
-	pose.beta = msg->beta;
+	pose.trailer_theta[0] = msg->beta;
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -423,7 +423,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	carmen_robot_and_trailer_traj_point_t pose;
+	carmen_robot_and_trailers_traj_point_t pose;
 
 	if (!necessary_maps_available)
 		return;
@@ -431,7 +431,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	pose.x = msg->truepose.x;
 	pose.y = msg->truepose.y;
 	pose.theta = msg->truepose.theta;
-	pose.beta = msg->beta;
+	pose.trailer_theta[0] = msg->beta;
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 

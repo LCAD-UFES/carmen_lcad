@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t *goal_list;
+	carmen_robot_and_trailers_traj_point_t *goal_list;
 	int size;
 	double timestamp;
 	char *host;

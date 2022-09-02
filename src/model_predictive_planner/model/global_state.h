@@ -50,8 +50,8 @@ public:
 
 	static double time_to_change_gears;
 
-	static carmen_robot_and_trailer_pose_t *localizer_pose;
-	static carmen_robot_and_trailer_pose_t *last_plan_pose;
+	static carmen_robot_and_trailers_pose_t *localizer_pose;
+	static carmen_robot_and_trailers_pose_t *last_plan_pose;
 	static double localizer_pose_timestamp;
 
 	static Command last_odometry;
@@ -68,7 +68,7 @@ public:
 	static carmen_moving_objects_point_clouds_message *objects_message;
 	static bool moving_objects_initialized;
 
-	static std::vector<carmen_robot_and_trailer_traj_point_t*> moving_objects_trajectories;
+	static std::vector<carmen_robot_and_trailers_traj_point_t*> moving_objects_trajectories;
 
 	static bool following_path; // true if the path is being followed
 

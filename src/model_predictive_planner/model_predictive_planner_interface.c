@@ -33,7 +33,7 @@ carmen_model_predictive_planner_unsubscribe_motion_plan_message(carmen_handler_t
 
 //Publishers
 void
-carmen_model_predictive_planner_publish_motion_plan_message(carmen_robot_and_trailer_traj_point_t *plan, int plan_length)
+carmen_model_predictive_planner_publish_motion_plan_message(carmen_robot_and_trailers_traj_point_t *plan, int plan_length)
 {
     IPC_RETURN_TYPE err;
 	carmen_model_predictive_planner_motion_plan_message motion_plan_msg;

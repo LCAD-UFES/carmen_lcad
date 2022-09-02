@@ -944,8 +944,8 @@ char *carmen_string_to_robot_ackerman_follow_trajectory_message(char *string, ca
 
 	if(msg->trajectory_length != length) {
 		msg->trajectory_length = length;
-		msg->trajectory = (carmen_robot_and_trailer_traj_point_t *)realloc(msg->trajectory, length *
-				sizeof(carmen_robot_and_trailer_traj_point_t));
+		msg->trajectory = (carmen_robot_and_trailers_traj_point_t *)realloc(msg->trajectory, length *
+				sizeof(carmen_robot_and_trailers_traj_point_t));
 		carmen_test_alloc(msg->trajectory);
 	}
 
@@ -1896,12 +1896,12 @@ carmen_string_to_base_ackerman_motion_message(char *string, carmen_base_ackerman
 	if (msg->motion_command == NULL)
 	{
 		msg->num_motion_commands = current_motion_command_vector_size;
-		msg->motion_command = (carmen_robot_and_trailer_motion_command_t *) calloc(msg->num_motion_commands, sizeof(carmen_robot_and_trailer_motion_command_t));
+		msg->motion_command = (carmen_robot_and_trailers_motion_command_t *) calloc(msg->num_motion_commands, sizeof(carmen_robot_and_trailers_motion_command_t));
 	}
 	else if (msg->num_motion_commands != current_motion_command_vector_size)
 	{
 		msg->num_motion_commands = current_motion_command_vector_size;
-		msg->motion_command = (carmen_robot_and_trailer_motion_command_t *) realloc(msg->motion_command, msg->num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
+		msg->motion_command = (carmen_robot_and_trailers_motion_command_t *) realloc(msg->motion_command, msg->num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 	}
 
 	for (i = 0; i < msg->num_motion_commands; i++)

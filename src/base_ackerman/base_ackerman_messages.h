@@ -69,7 +69,7 @@ typedef struct {
 typedef struct
 {
 	int num_motion_commands;
-	carmen_robot_and_trailer_motion_command_t *motion_command;
+	carmen_robot_and_trailers_motion_command_t *motion_command;
 	double timestamp;
 	char *host;                 /**< The host from which this message was sent **/
 } carmen_base_ackerman_motion_command_message;

@@ -89,7 +89,7 @@ draw_symotha(symotha_drawer_t *symotha_drawer, carmen_pose_3D_t car_fused_pose)
 	theta = car_fused_pose.orientation.yaw;
 	for (int i = 0; i < robot_collision_profile->n_markers; i++)
 	{
-		carmen_robot_and_trailer_traj_point_t point = {car_fused_pose.position.x, car_fused_pose.position.y, theta, 0.0, 0.0, 0.0};
+		carmen_robot_and_trailers_traj_point_t point = {car_fused_pose.position.x, car_fused_pose.position.y, theta, 0, 0.0, 0.0, 0.0};
 		carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&point,
 				robot_collision_profile->markers[i].x, robot_collision_profile->markers[i].y);
 

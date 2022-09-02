@@ -131,8 +131,8 @@ typedef struct {
 
 typedef struct {
   int trajectory_length;
-  carmen_robot_and_trailer_traj_point_t *trajectory;
-  carmen_robot_and_trailer_traj_point_t robot_position;
+  carmen_robot_and_trailers_traj_point_t *trajectory;
+  carmen_robot_and_trailers_traj_point_t robot_position;
   double timestamp;
   char *host;                 /**< The host from which this message was sent **/
 } carmen_robot_ackerman_follow_trajectory_message;
@@ -153,7 +153,7 @@ typedef struct {
 typedef struct 
 {
 	int num_motion_commands;
-	carmen_robot_and_trailer_motion_command_t *motion_command;
+	carmen_robot_and_trailers_motion_command_t *motion_command;
 	double timestamp;
 	char *host;                 /**< The host from which this message was sent **/
 } carmen_robot_ackerman_motion_command_message;

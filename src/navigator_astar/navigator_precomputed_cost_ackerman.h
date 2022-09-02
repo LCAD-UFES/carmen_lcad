@@ -47,8 +47,8 @@ typedef struct {
     int astar_call_cont;
     double direction;
     FH_NODE* fh_node;
-    carmen_robot_and_trailer_traj_point_t point;
-    carmen_robot_and_trailer_traj_point_t prev_point;
+    carmen_robot_and_trailers_traj_point_t point;
+    carmen_robot_and_trailers_traj_point_t prev_point;
 }carmen_astar_node_t, *carmen_astar_node_p;
 
 void carmen_precomputed_cost_ackerman_dijkstra();

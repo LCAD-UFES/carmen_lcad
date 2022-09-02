@@ -19,7 +19,7 @@ void carmen_model_predictive_planner_unsubscribe_motion_plan_message(carmen_hand
 
 
 //Publishers
-void carmen_model_predictive_planner_publish_motion_plan_message(carmen_robot_and_trailer_traj_point_t *plan, int plan_length);
+void carmen_model_predictive_planner_publish_motion_plan_message(carmen_robot_and_trailers_traj_point_t *plan, int plan_length);
 
 #ifdef __cplusplus
 }

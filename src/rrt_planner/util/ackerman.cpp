@@ -564,7 +564,7 @@ Ackerman::predict_next_pose_during_main_rrt_planning_step(Robot_State &new_robot
 	new_robot_state.pose.y	   += move_y;
 	new_robot_state.pose.theta += initial_robot_state.v_and_phi.v * delta_t * tan(initial_robot_state.v_and_phi.phi) / GlobalState::robot_config.distance_between_front_and_rear_axles;
 
-	carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point = {
+	carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point = {
 			new_robot_state.pose.x, new_robot_state.pose.y, new_robot_state.pose.theta, new_robot_state.pose.beta,
 			new_robot_state.v_and_phi.v, new_robot_state.v_and_phi.phi
 	};

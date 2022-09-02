@@ -1934,7 +1934,7 @@ carmen_prob_models_ray_hit_the_robot(double model_predictive_planner_obstacles_s
 		}
 
 		double sin_beta, cos_beta;
-		sincos(semi_trailer_data.beta, &sin_beta, &cos_beta);
+		sincos(semi_trailer_data.current_trailer_theta, &sin_beta, &cos_beta);
 
 		for (int i = 0; i < semi_trailer_col_n_points; i++)
 		{

@@ -70,7 +70,7 @@ set_color(trajectory_drawer *t_drawer, int i, double v_i)
 void
 add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_plan_message *message)
 {
-	t_drawer->path = (carmen_robot_and_trailer_pose_t *) realloc(t_drawer->path, message->path_length * sizeof(carmen_robot_and_trailer_pose_t));
+	t_drawer->path = (carmen_robot_and_trailers_pose_t *) realloc(t_drawer->path, message->path_length * sizeof(carmen_robot_and_trailers_pose_t));
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->path_length * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->path_length;
 
@@ -79,7 +79,7 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 		t_drawer->path[i].x = message->path[i].x;
 		t_drawer->path[i].y = message->path[i].y;
 		t_drawer->path[i].theta = message->path[i].theta;
-		t_drawer->path[i].beta = message->path[i].beta;
+		t_drawer->path[i].trailer_theta[0] = message->path[i].trailer_theta[0];
 		set_color(t_drawer, i, message->path[i].v);
 	}
 
@@ -90,7 +90,7 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 void
 add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ackerman_motion_command_message *message)
 {
-	t_drawer->path = (carmen_robot_and_trailer_pose_t *) realloc(t_drawer->path, message->num_motion_commands * sizeof(carmen_robot_and_trailer_pose_t));
+	t_drawer->path = (carmen_robot_and_trailers_pose_t *) realloc(t_drawer->path, message->num_motion_commands * sizeof(carmen_robot_and_trailers_pose_t));
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->num_motion_commands * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->num_motion_commands;
 
@@ -100,7 +100,7 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 		t_drawer->path[i].x = message->motion_command[i].x;
 		t_drawer->path[i].y = message->motion_command[i].y;
 		t_drawer->path[i].theta = message->motion_command[i].theta;
-		t_drawer->path[i].beta = message->motion_command[i].beta;
+		t_drawer->path[i].trailer_theta[0] = message->motion_command[i].trailer_theta[0];
 		set_color(t_drawer, i, message->motion_command[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->motion_command[i].x, message->motion_command[i].y, message->motion_command[i].theta,
@@ -115,7 +115,7 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 void
 add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *message)
 {
-	t_drawer->path = (carmen_robot_and_trailer_pose_t *) realloc(t_drawer->path, message->size * sizeof(carmen_robot_and_trailer_pose_t));
+	t_drawer->path = (carmen_robot_and_trailers_pose_t *) realloc(t_drawer->path, message->size * sizeof(carmen_robot_and_trailers_pose_t));
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->size * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->size;
 
@@ -124,7 +124,7 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 		t_drawer->path[i].x = message->path[i].p1.x;
 		t_drawer->path[i].y = message->path[i].p1.y;
 		t_drawer->path[i].theta = message->path[i].p1.theta;
-		t_drawer->path[i].beta = message->path[i].p1.beta;
+		t_drawer->path[i].trailer_theta[0] = message->path[i].p1.trailer_theta[0];
 		set_color(t_drawer, i, message->path[i].v);
 	}
 
@@ -135,7 +135,7 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 void
 add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behavior_selector_path_goals_and_annotations_message *message, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels)
 {
-	t_drawer->path = (carmen_robot_and_trailer_pose_t *) realloc(t_drawer->path, message->number_of_poses * sizeof(carmen_robot_and_trailer_pose_t));
+	t_drawer->path = (carmen_robot_and_trailers_pose_t *) realloc(t_drawer->path, message->number_of_poses * sizeof(carmen_robot_and_trailers_pose_t));
 	t_drawer->path_segment_color = (carmen_vector_3D_t *) realloc(t_drawer->path_segment_color, message->number_of_poses * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->number_of_poses;
 
@@ -148,7 +148,7 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 		t_drawer->path[i].x = message->poses[i].x;
 		t_drawer->path[i].y = message->poses[i].y;
 		t_drawer->path[i].theta = message->poses[i].theta;
-		t_drawer->path[i].beta = message->poses[i].beta;
+		t_drawer->path[i].trailer_theta[0] = message->poses[i].trailer_theta[0];
 		set_color(t_drawer, i, message->poses[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->poses[i].x, message->poses[i].y, message->poses[i].theta,
@@ -263,10 +263,10 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 				if (semi_trailer_engaged)
 				{
 					glPushMatrix();
-						glRotatef(-carmen_radians_to_degrees(t_drawer->path[i].beta), 0.0, 0.0, 1.0);
+						glRotatef(-carmen_radians_to_degrees(t_drawer->path[i].trailer_theta[0]), 0.0, 0.0, 1.0);
 
-						glTranslatef(-t_drawer->semi_trailer_config.d - t_drawer->semi_trailer_config.M * cos(t_drawer->path[i].beta),
-									 -t_drawer->semi_trailer_config.M * sin(t_drawer->path[i].beta),
+						glTranslatef(-t_drawer->semi_trailer_config.d - t_drawer->semi_trailer_config.M * cos(t_drawer->path[i].trailer_theta[0]),
+									 -t_drawer->semi_trailer_config.M * sin(t_drawer->path[i].trailer_theta[0]),
 									 0.0);
 
 						glBegin(GL_LINE_STRIP);

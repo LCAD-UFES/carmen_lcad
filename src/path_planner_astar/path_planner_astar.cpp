@@ -109,7 +109,7 @@ draw_point_on_map_img(double x, double y, carmen_map_config_t config, cv::Scalar
 
 
 void
-draw_point_in_opencv_image(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_trailer_traj_point_t parent, carmen_map_config_t config, cv::Scalar color, int size = 1)
+draw_point_in_opencv_image(carmen_robot_and_trailers_traj_point_t current, carmen_robot_and_trailers_traj_point_t parent, carmen_map_config_t config, cv::Scalar color, int size = 1)
 {
 		int img_x = (double) (current.x - config.x_origin) / config.resolution;
 		int img_y = (double) (current.y - config.y_origin) / config.resolution;
@@ -121,7 +121,7 @@ draw_point_in_opencv_image(carmen_robot_and_trailer_traj_point_t current, carmen
 
 
 int
-get_index_of_nearest_pose_in_path(carmen_robot_and_trailer_traj_point_t *path, carmen_point_t globalpos, int path_length)
+get_index_of_nearest_pose_in_path(carmen_robot_and_trailers_traj_point_t *path, carmen_point_t globalpos, int path_length)
 {
 	int nearest_pose_index = 0;
 	double min_dist = DIST2D(path[nearest_pose_index], globalpos);
@@ -139,10 +139,10 @@ get_index_of_nearest_pose_in_path(carmen_robot_and_trailer_traj_point_t *path, c
 }
 
 
-carmen_robot_and_trailer_traj_point_t *
-get_poses_back(carmen_robot_and_trailer_traj_point_t *path, int nearest_pose_index)
+carmen_robot_and_trailers_traj_point_t *
+get_poses_back(carmen_robot_and_trailers_traj_point_t *path, int nearest_pose_index)
 {
-	carmen_robot_and_trailer_traj_point_t *poses_back = (carmen_robot_and_trailer_traj_point_t *) malloc((nearest_pose_index + 1) * sizeof(carmen_robot_and_trailer_traj_point_t));
+	carmen_robot_and_trailers_traj_point_t *poses_back = (carmen_robot_and_trailers_traj_point_t *) malloc((nearest_pose_index + 1) * sizeof(carmen_robot_and_trailers_traj_point_t));
 	for (int i = 0; i < (nearest_pose_index + 1); i++)
 		poses_back[i] = path[nearest_pose_index - i];
 
@@ -151,7 +151,7 @@ get_poses_back(carmen_robot_and_trailer_traj_point_t *path, int nearest_pose_ind
 
 
 void
-calculate_phi_ahead(std::vector<carmen_robot_and_trailer_traj_point_t> &path, int num_poses)
+calculate_phi_ahead(std::vector<carmen_robot_and_trailers_traj_point_t> &path, int num_poses)
 {
 	double L = robot_config.distance_between_front_and_rear_axles;
 
@@ -182,7 +182,7 @@ calculate_phi_ahead(std::vector<carmen_robot_and_trailer_traj_point_t> &path, in
 
 
 void
-compute_theta(std::vector<carmen_robot_and_trailer_traj_point_t> &path, int num_poses)
+compute_theta(std::vector<carmen_robot_and_trailers_traj_point_t> &path, int num_poses)
 {
 	for (int i = 1; i < (num_poses - 1); i++)
 	{
@@ -203,7 +203,7 @@ compute_theta(std::vector<carmen_robot_and_trailer_traj_point_t> &path, int num_
 
 
 void
-calculate_theta_and_phi(std::vector<carmen_robot_and_trailer_traj_point_t> &poses_ahead, int num_poses_ahead)
+calculate_theta_and_phi(std::vector<carmen_robot_and_trailers_traj_point_t> &poses_ahead, int num_poses_ahead)
 {
 	compute_theta(poses_ahead, num_poses_ahead);
 	calculate_phi_ahead(poses_ahead, num_poses_ahead);
@@ -269,12 +269,12 @@ my_f(const gsl_vector *v, void *params)
 			x_prev = param->points[i-1].x;
 			y_prev = param->points[i-1].y;
 
-			carmen_robot_and_trailer_traj_point_t delta_i = DELTA2D(param->points[i], param->points[i - 1]);
-			carmen_robot_and_trailer_traj_point_t delta_i_1 = DELTA2D(param->points[i+1], param->points[i]);
-			carmen_robot_and_trailer_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
+			carmen_robot_and_trailers_traj_point_t delta_i = DELTA2D(param->points[i], param->points[i - 1]);
+			carmen_robot_and_trailers_traj_point_t delta_i_1 = DELTA2D(param->points[i+1], param->points[i]);
+			carmen_robot_and_trailers_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
 			smoothness_cost +=  DOT2D(delta, delta);
 
-			carmen_robot_and_trailer_traj_point_t current;
+			carmen_robot_and_trailers_traj_point_t current;
 			current.x = x_i;
 			current.y = y_i;
 
@@ -316,7 +316,7 @@ my_f(const gsl_vector *v, void *params)
 
 
 double
-single_point_my_f(carmen_robot_and_trailer_traj_point_t i, carmen_robot_and_trailer_traj_point_t i_prev, carmen_robot_and_trailer_traj_point_t i_next)
+single_point_my_f(carmen_robot_and_trailers_traj_point_t i, carmen_robot_and_trailers_traj_point_t i_prev, carmen_robot_and_trailers_traj_point_t i_next)
 {
 
 	double dmax = 1.0;
@@ -328,9 +328,9 @@ single_point_my_f(carmen_robot_and_trailer_traj_point_t i, carmen_robot_and_trai
 	double distance, delta_phi;
 
 	double curvature_term;
-	carmen_robot_and_trailer_traj_point_t delta_i = DELTA2D(i, i_prev);
-	carmen_robot_and_trailer_traj_point_t delta_i_1 = DELTA2D(i_next, i);
-	carmen_robot_and_trailer_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
+	carmen_robot_and_trailers_traj_point_t delta_i = DELTA2D(i, i_prev);
+	carmen_robot_and_trailers_traj_point_t delta_i_1 = DELTA2D(i_next, i);
+	carmen_robot_and_trailers_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
 	smoothness_cost +=  DOT2D(delta, delta);
 
 	if (i.v >= 0)
@@ -382,9 +382,9 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector *x_h = gsl_vector_alloc(param->problem_size);
 	gsl_vector_memcpy(x_h, v);
 
-	carmen_robot_and_trailer_traj_point_t temp_i;
-	carmen_robot_and_trailer_traj_point_t temp_i_next;
-	carmen_robot_and_trailer_traj_point_t temp_i_prev;
+	carmen_robot_and_trailers_traj_point_t temp_i;
+	carmen_robot_and_trailers_traj_point_t temp_i_next;
+	carmen_robot_and_trailers_traj_point_t temp_i_prev;
 
 
 	int j = 0;
@@ -439,7 +439,7 @@ my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
 
 
 int
-smooth_rddf_using_conjugate_gradient(std::vector<carmen_robot_and_trailer_traj_point_t> &astar_path)
+smooth_rddf_using_conjugate_gradient(std::vector<carmen_robot_and_trailers_traj_point_t> &astar_path)
 {
 
 	int iter = 0;
@@ -536,7 +536,7 @@ smooth_rddf_using_conjugate_gradient(std::vector<carmen_robot_and_trailer_traj_p
 
 void
 add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_message,
-		carmen_robot_and_trailer_traj_point_t *path_copy)
+		carmen_robot_and_trailers_traj_point_t *path_copy)
 {
 	int num_lanes = NUM_LANES;
 	if (path_copy)
@@ -548,7 +548,7 @@ add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_
     route_planner_road_network_message.nearby_lanes_sizes = (int *) malloc(route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
     route_planner_road_network_message.nearby_lanes_size = num_lanes *
     		(route_planner_road_network_message.number_of_poses_back + route_planner_road_network_message.number_of_poses - 1);	// a primeira pose do poses e poses back eh igual
-    route_planner_road_network_message.nearby_lanes = (carmen_robot_and_trailer_traj_point_t *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(carmen_robot_and_trailer_traj_point_t));
+    route_planner_road_network_message.nearby_lanes = (carmen_robot_and_trailers_traj_point_t *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(carmen_robot_and_trailers_traj_point_t));
     route_planner_road_network_message.traffic_restrictions =  (int *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(int));
 
     // Coloca o rddf como a lane 0, isto eh, a rota escolhida
@@ -1013,8 +1013,8 @@ carmen_compute_abs_angular_distance(double theta_1, double theta_2)
 }
 
 
-std::vector<carmen_robot_and_trailer_traj_point_t>
-reed_shepp_path(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_trailer_traj_point_t goal_state, int &reed_shepp_collision, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map)
+std::vector<carmen_robot_and_trailers_traj_point_t>
+reed_shepp_path(carmen_robot_and_trailers_traj_point_t current, carmen_robot_and_trailers_traj_point_t goal_state, int &reed_shepp_collision, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map)
 {
 	int rs_pathl;
 	int rs_numero;
@@ -1023,11 +1023,11 @@ reed_shepp_path(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_
 	double vr;
 	double distance_traveled = 0.0;
 	double distance_traveled_old = 0.0;
-	carmen_robot_and_trailer_traj_point_t rs_points[6]; // Por alguma razão, com o valor 5 acontece stack smashing às vezes quando o rs_pathl == 5
+	carmen_robot_and_trailers_traj_point_t rs_points[6]; // Por alguma razão, com o valor 5 acontece stack smashing às vezes quando o rs_pathl == 5
 	double v_step;
 	double step_weight;
 	double path_cost = 0.0;
-	std::vector<carmen_robot_and_trailer_traj_point_t> rs_path_nodes;
+	std::vector<carmen_robot_and_trailers_traj_point_t> rs_path_nodes;
 
 	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
 	double rs_length = reed_shepp(current, goal_state, &rs_numero, &tr, &ur, &vr);
@@ -1038,7 +1038,7 @@ reed_shepp_path(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_
 
 	for (int i = rs_pathl; i > 0; i--)
 	{
-		carmen_robot_and_trailer_traj_point_t point = rs_points[i];
+		carmen_robot_and_trailers_traj_point_t point = rs_points[i];
 		if (rs_points[i].v < 0.0)
 		{
 			v_step = EXPAND_NODES_V;
@@ -1056,7 +1056,7 @@ reed_shepp_path(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_
 					0.1, &distance_traveled, DELTA_T, robot_config, semi_trailer_config);
 			path_cost += step_weight * (distance_traveled - distance_traveled_old);
 //			carmen_robot_and_trailer_traj_point_t * new_state = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t));
-			carmen_robot_and_trailer_traj_point_t new_state;
+			carmen_robot_and_trailers_traj_point_t new_state;
 			new_state = point;
 			//Como o Reed Shepp realiza o caminho do goal para um ponto, ele está andando de ré. Por isso precisa-se inverter o sinal de v
 			new_state.v = -new_state.v;
@@ -1156,21 +1156,21 @@ analytic_expansion(state_node** n, state_node* goal_node, carmen_obstacle_distan
 {
 	int reed_shepp_collision = 0;
 
-	carmen_robot_and_trailer_traj_point_t trajectory_current_pose;
+	carmen_robot_and_trailers_traj_point_t trajectory_current_pose;
 	trajectory_current_pose.x = (*n)->pose.x;
 	trajectory_current_pose.y = (*n)->pose.y;
 	trajectory_current_pose.theta = (*n)->pose.theta;
 	trajectory_current_pose.v = 0;
 	trajectory_current_pose.phi = 0;
 
-	carmen_robot_and_trailer_traj_point_t trajectory_goal_pose;
+	carmen_robot_and_trailers_traj_point_t trajectory_goal_pose;
 	trajectory_goal_pose.x = goal_node->pose.x;
 	trajectory_goal_pose.y = goal_node->pose.y;
 	trajectory_goal_pose.theta = goal_node->pose.theta;
 	trajectory_goal_pose.v = 0;
 	trajectory_goal_pose.phi = 0;
 
-	std::vector<carmen_robot_and_trailer_traj_point_t> rs_path = reed_shepp_path(trajectory_current_pose, trajectory_goal_pose, reed_shepp_collision, obstacle_distance_grid_map);
+	std::vector<carmen_robot_and_trailers_traj_point_t> rs_path = reed_shepp_path(trajectory_current_pose, trajectory_goal_pose, reed_shepp_collision, obstacle_distance_grid_map);
 	if (reed_shepp_collision == 0)
 	{
 		state_node_p ant_state = (state_node_p) malloc(sizeof(state_node));
@@ -1238,7 +1238,7 @@ movement_cost(state_node* current_node, state_node* new_node)
 double
 penalties(state_node* current_node, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map)
 {
-	carmen_robot_and_trailer_traj_point_t trajectory_pose;
+	carmen_robot_and_trailers_traj_point_t trajectory_pose;
 	trajectory_pose.x = current_node->pose.x;
 	trajectory_pose.y = current_node->pose.y;
 	trajectory_pose.theta = current_node->pose.theta;
@@ -1268,7 +1268,7 @@ is_valid_state(state_node *state, carmen_obstacle_distance_mapper_map_message *o
 	int direction;
 	get_current_pos(state, x, y, theta, direction, obstacle_distance_grid_map);
 
-	carmen_robot_and_trailer_traj_point_t trajectory_pose;
+	carmen_robot_and_trailers_traj_point_t trajectory_pose;
 	trajectory_pose.x = state->pose.x;
 	trajectory_pose.y = state->pose.y;
 	trajectory_pose.theta = state->pose.theta;
@@ -1284,13 +1284,13 @@ is_valid_state(state_node *state, carmen_obstacle_distance_mapper_map_message *o
 
 
 void
-get_astar_path(state_node *n, std::vector<carmen_robot_and_trailer_traj_point_t> &path_result)
+get_astar_path(state_node *n, std::vector<carmen_robot_and_trailers_traj_point_t> &path_result)
 {
 	if (n == NULL)
 		return;
 
-	carmen_robot_and_trailer_traj_point_t trajectory_pose;
-	carmen_robot_and_trailer_traj_point_t last_state;
+	carmen_robot_and_trailers_traj_point_t trajectory_pose;
+	carmen_robot_and_trailers_traj_point_t last_state;
 
 	trajectory_pose.x = n->pose.x;
 	trajectory_pose.y = n->pose.y;
@@ -1332,7 +1332,7 @@ get_astar_path(state_node *n, std::vector<carmen_robot_and_trailer_traj_point_t>
 		}
 		else if (DIST2D(trajectory_pose, last_state) > 1.0)
 		{
-			carmen_robot_and_trailer_traj_point_t trajectory_pose_2;
+			carmen_robot_and_trailers_traj_point_t trajectory_pose_2;
 			trajectory_pose_2.x = (trajectory_pose.x + last_state.x) / 2.0;
 			trajectory_pose_2.y = (trajectory_pose.y + last_state.y) / 2.0;
 			trajectory_pose_2.theta = carmen_normalize_theta((trajectory_pose.theta + last_state.theta) / 2.0);
@@ -1355,7 +1355,7 @@ check_initial_nodes(state_node *initial_node, state_node *goal_node, carmen_obst
 {
 	failed = 0;
 
-	carmen_robot_and_trailer_traj_point_t trajectory_pose;
+	carmen_robot_and_trailers_traj_point_t trajectory_pose;
 	trajectory_pose.x = initial_node->pose.x;
 	trajectory_pose.y = initial_node->pose.y;
 	trajectory_pose.theta = initial_node->pose.theta;
@@ -1385,10 +1385,10 @@ check_initial_nodes(state_node *initial_node, state_node *goal_node, carmen_obst
 
 
 offroad_planner_plan_t
-astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_robot_and_trailer_pose_t *goal_pose, std::vector<carmen_robot_and_trailer_traj_point_t> path_result)
+astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_robot_and_trailers_pose_t *goal_pose, std::vector<carmen_robot_and_trailers_traj_point_t> path_result)
 {
-	carmen_robot_and_trailer_traj_point_t robot;
-	carmen_robot_and_trailer_traj_point_t goal;
+	carmen_robot_and_trailers_traj_point_t robot;
+	carmen_robot_and_trailers_traj_point_t goal;
 	robot.x = robot_pose->x;
 	robot.y = robot_pose->y;
 	robot.theta = robot_pose->theta;
@@ -1538,7 +1538,7 @@ expand_node(state_node* n, carmen_obstacle_distance_mapper_map_message *obstacle
 }
 
 
-std::vector<carmen_robot_and_trailer_traj_point_t>
+std::vector<carmen_robot_and_trailers_traj_point_t>
 carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 		carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map, double *goal_distance_map,
 		nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map)
@@ -1549,7 +1549,7 @@ carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 #endif
 
 	expanded_nodes_by_astar = 0;
-	std::vector<carmen_robot_and_trailer_traj_point_t> path_result;
+	std::vector<carmen_robot_and_trailers_traj_point_t> path_result;
 
 	grid_state_p**** grid_state_map = alloc_grid_state_map();
 	state_node* initial_node = new_state_node(initial_pose->x, initial_pose->y, initial_pose->theta, initial_pose->r, 0, 0, 0, NULL);

@@ -94,7 +94,7 @@ typedef struct {
 } carmen_world_point_t, *carmen_world_point_p;
 
 typedef struct {
-  carmen_robot_and_trailer_pose_t pose;
+  carmen_robot_and_trailers_pose_t pose;
   carmen_map_p map;
 } carmen_world_robot_and_trailer_pose_t;
 

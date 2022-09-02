@@ -39,7 +39,7 @@ handler(carmen_navigator_ackerman_autonomous_stopped_message *msg
 
 int main(int argc, char **argv)
 {
-  carmen_robot_and_trailer_traj_point_t goal;
+  carmen_robot_and_trailers_traj_point_t goal;
   carmen_navigator_ackerman_status_message *status;
 
   carmen_ipc_initialize(argc, argv);

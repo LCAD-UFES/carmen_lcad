@@ -143,8 +143,8 @@ extern "C"
     {
         int number_of_poses;
         int number_of_poses_back;
-        carmen_robot_and_trailer_traj_point_t *poses;
-        carmen_robot_and_trailer_traj_point_t *poses_back;
+        carmen_robot_and_trailers_traj_point_t *poses;
+        carmen_robot_and_trailers_traj_point_t *poses_back;
         int *annotations;
         int *annotations_codes;
         double timestamp;
@@ -158,7 +158,7 @@ extern "C"
     typedef struct
     {
         int half_meters_to_final_goal;	// number of waypoints to consider near end_point (point)
-        carmen_robot_and_trailer_pose_t point;
+        carmen_robot_and_trailers_pose_t point;
         double timestamp;
         char *host;
     } carmen_rddf_end_point_message;
@@ -170,7 +170,7 @@ extern "C"
     typedef struct
     {
         int number_of_poses;
-        carmen_robot_and_trailer_traj_point_t *poses;
+        carmen_robot_and_trailers_traj_point_t *poses;
         double timestamp;
         char *host;
     } carmen_rddf_waypoints_around_end_point_message;

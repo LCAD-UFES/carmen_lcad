@@ -13,7 +13,7 @@ carmen_map_p map_occupancy = NULL;
 nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map;
 int use_nonholonomic_heuristic_cost_map = 1;
 int heuristic_number = 0;
-carmen_robot_and_trailer_pose_t *final_goal = NULL;
+carmen_robot_and_trailers_pose_t *final_goal = NULL;
 int final_goal_received = 0;
 int path_sended = 0;
 
@@ -22,7 +22,7 @@ int grid_state_map_y_size;
 
 carmen_route_planner_road_network_message route_planner_road_network_message;
 offroad_planner_plan_t plan_path_poses;
-std::vector<carmen_robot_and_trailer_traj_point_t> astar_path;
+std::vector<carmen_robot_and_trailers_traj_point_t> astar_path;
 
 clock_t r_time;
 
@@ -44,7 +44,7 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 		annotations_codes[i] = RDDF_ANNOTATION_CODE_NONE;
 	}
 	int nearest_pose_index = get_index_of_nearest_pose_in_path(path.points, globalpos_message->globalpos, path.length);
-	carmen_robot_and_trailer_traj_point_t *path_copy = NULL;
+	carmen_robot_and_trailers_traj_point_t *path_copy = NULL;
 
 	// Por alguma razão, o route_planner_road_network_message só funciona corretamente se for global
 //	carmen_route_planner_road_network_message route_planner_road_network_message;

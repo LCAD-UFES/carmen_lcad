@@ -74,7 +74,7 @@ typedef struct
 	carmen_task_manager_mission_level_state_t mission_state;
 	char *mission_id;
 	char *mission_filename;
-	carmen_robot_and_trailer_pose_t pose;
+	carmen_robot_and_trailers_pose_t pose;
 	char *info;
 	double timestamp;
 	char *host;

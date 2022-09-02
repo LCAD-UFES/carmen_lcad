@@ -56,7 +56,7 @@ Publisher_Util::publish_plan_tree_message(Tree tree)
 			printf("Error: paths_sizes[%d] > %d in Publisher_Util::publish_plan_tree_message()\n", i, CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE);
 			exit(1);
 		}
-		memcpy(plan_tree_msg.paths[i], tree.paths[i], sizeof(carmen_robot_and_trailer_traj_point_t) * tree.paths_sizes[i]);
+		memcpy(plan_tree_msg.paths[i], tree.paths[i], sizeof(carmen_robot_and_trailers_traj_point_t) * tree.paths_sizes[i]);
 		plan_tree_msg.path_size[i] = tree.paths_sizes[i];
 	}
 

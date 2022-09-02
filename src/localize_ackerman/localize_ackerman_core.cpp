@@ -451,7 +451,7 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 
 
 double
-compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point, double dt,
+compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
 {
 	if (semi_trailer_config.type == 0)
@@ -545,7 +545,7 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 		double distance_between_front_and_rear_axles, double dt)
 {
 	double v_step, phi_step;
-	carmen_robot_and_trailer_traj_point_t robot_pose;
+	carmen_robot_and_trailers_traj_point_t robot_pose;
 
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
 		return;
@@ -642,7 +642,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 		double v, double phi, double distance_between_front_and_rear_axles __attribute__((unused)), double dt)
 {
 	double v_step, phi_step;
-	carmen_robot_and_trailer_traj_point_t robot_pose;
+	carmen_robot_and_trailers_traj_point_t robot_pose;
 
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
 		return;

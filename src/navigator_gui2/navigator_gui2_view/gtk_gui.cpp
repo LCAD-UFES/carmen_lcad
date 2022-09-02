@@ -120,7 +120,7 @@ compute_particle_weight_color(carmen_localize_ackerman_particle_ipc_t *particles
 
 
 bool
-valid_robot_and_trailer_traj_point(carmen_robot_and_trailer_traj_point_t world_point, carmen_map_t *map)
+valid_robot_and_trailer_traj_point(carmen_robot_and_trailers_traj_point_t world_point, carmen_map_t *map)
 {
 	if (!map)
 		return (false);
@@ -788,7 +788,7 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_display(carmen_traj_point_p new_robot,
 			carmen_localize_ackerman_globalpos_message *current_globalpos,
-			carmen_robot_and_trailer_traj_point_t *new_goal,
+			carmen_robot_and_trailers_traj_point_t *new_goal,
 			int	autonomous)
 	{
 		static char   buffer[2048];
@@ -921,7 +921,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int size)
+	GtkGui::navigator_graphics_update_goal_list(carmen_robot_and_trailers_traj_point_t *goal_list, int size)
 	{
 //		int RDDF_MAX_SIZE = 10000;
 		if (this->navigator_goal_list != NULL)
@@ -959,7 +959,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_waypoint_list(carmen_robot_and_trailer_traj_point_t *waypoint_list, int size)
+	GtkGui::navigator_graphics_update_waypoint_list(carmen_robot_and_trailers_traj_point_t *waypoint_list, int size)
 	{
 		int i;
 
@@ -984,7 +984,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length)
+	GtkGui::navigator_graphics_update_plan(carmen_robot_and_trailers_traj_point_t *new_plan, int plan_length)
 	{
 		if (this->controls_.map_view->internal_map == NULL)
 			return;
@@ -1318,7 +1318,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t *new_path, int path_length, int path_id)
+	GtkGui::navigator_graphics_update_path(carmen_robot_and_trailers_traj_point_t *new_path, int path_length, int path_id)
 	{
 		int path_index;
 
@@ -1488,8 +1488,8 @@ namespace View
 		if (this->simulator_hidden)
 			this->simulator_hidden = 0;
 
-		carmen_robot_and_trailer_pose_t truepose_with_beta = {truepose.x, truepose.y, truepose.theta, beta};
-		truepose_with_beta.beta = globalpos->beta;		// remover esta linha quando o beta da truepos estiver tratado!!
+		carmen_robot_and_trailers_pose_t truepose_with_beta = {truepose.x, truepose.y, truepose.theta, beta};
+		truepose_with_beta.trailer_theta[0] = globalpos->beta;		// remover esta linha quando o beta da truepos estiver tratado!!
 		simulator_trueposition.pose = truepose_with_beta;
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
 		last_simulator_update  = carmen_get_time();
@@ -1541,7 +1541,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_plan_to_draw(int path_size, carmen_robot_and_trailer_traj_point_t *path)
+	GtkGui::navigator_graphics_update_plan_to_draw(int path_size, carmen_robot_and_trailers_traj_point_t *path)
 	{
 		static int first = 1;
 		static int allocated_size = 0;
@@ -1579,11 +1579,11 @@ namespace View
 
 	void
 	GtkGui::navigator_graphics_update_plan_tree(
-			carmen_robot_and_trailer_traj_point_t *p1,
-			carmen_robot_and_trailer_traj_point_t *p2,
+			carmen_robot_and_trailers_traj_point_t *p1,
+			carmen_robot_and_trailers_traj_point_t *p2,
 			int *mask,
 			int plan_tree_length,
-			carmen_robot_and_trailer_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
+			carmen_robot_and_trailers_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
 			int path_size[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS],
 			int num_path)
 	{
@@ -1778,7 +1778,7 @@ namespace View
 				final_goal.pose.x = destination.x;
 				final_goal.pose.y = destination.y;
 				final_goal.pose.theta = destination.theta;
-				final_goal.pose.beta = 0.0;
+				final_goal.pose.trailer_theta[0] = 0.0;
 				final_goal.map = this->controls_.map_view->internal_map;
 
 				carmen_rddf_publish_end_point_message(50, final_goal.pose);
@@ -2339,7 +2339,7 @@ namespace View
 			robot_temp.pose.x = world_point->pose.x;
 			robot_temp.pose.y = world_point->pose.y;
 			robot_temp.pose.theta = world_point->pose.theta;
-			robot_temp.pose.beta = 0.0;
+			robot_temp.pose.trailer_theta[0] = 0.0;
 
 			placement_status = ORIENTING_ROBOT;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
@@ -2409,7 +2409,7 @@ namespace View
 
 			angle = robot_temp.pose.theta - atan2(world_point->pose.y - (robot_temp.pose.y - semi_trailer_config->M * sin(robot_temp.pose.theta)),
 					world_point->pose.x - (robot_temp.pose.x - semi_trailer_config->M * cos(robot_temp.pose.theta)));
-			robot_temp.pose.beta = carmen_normalize_theta(angle);
+			robot_temp.pose.trailer_theta[0] = carmen_normalize_theta(angle);
 			navigator_update_robot(&robot_temp);
 
 			return TRUE;
@@ -2631,7 +2631,7 @@ namespace View
 			carmen_point_t pose;
 			pose = world_point->pose;
 
-			robot_temp.pose = {pose.x, pose.y, pose.theta, 0.0};
+			robot_temp.pose = {pose.x, pose.y, pose.theta, 0, 0.0};
 			navigator_update_robot(&robot_temp);
 
 			if (!map)
@@ -2804,7 +2804,7 @@ namespace View
 			final_goal.pose.x = world_point->pose.x;
 			final_goal.pose.y = world_point->pose.y;
 			final_goal.pose.theta = world_point->pose.theta;
-			final_goal.pose.beta = 0.0;
+			final_goal.pose.trailer_theta[0] = 0.0;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 			placement_status = ORIENTING_FINAL_GOAL;
@@ -2869,7 +2869,7 @@ namespace View
 		{
 			placement_status = NO_PLACEMENT;
 
-			final_goal.pose.beta = carmen_normalize_theta(final_goal.pose.theta - atan2(world_point->pose.y - (final_goal.pose.y - semi_trailer_config->M * sin(final_goal.pose.theta)),
+			final_goal.pose.trailer_theta[0] = carmen_normalize_theta(final_goal.pose.theta - atan2(world_point->pose.y - (final_goal.pose.y - semi_trailer_config->M * sin(final_goal.pose.theta)),
 					world_point->pose.x - (final_goal.pose.x - semi_trailer_config->M * cos(final_goal.pose.theta))));
 
 			int half_meters_to_goal = 2 * DIST2D(world_point->pose, final_goal.pose);
@@ -2882,7 +2882,7 @@ namespace View
 			if(f_final_goal == NULL)
 				printf("Could not open f_final_goal file\n");
 
-			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, final_goal.pose.beta);
+			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, final_goal.pose.trailer_theta[0]);
 			fclose(f_final_goal);
 
 
@@ -2902,11 +2902,11 @@ namespace View
 
 		if ( (placement_status == SELECTING_NEAR_WAYPOINT) )
 		{
-			carmen_robot_and_trailer_pose_t pose_with_beta;
+			carmen_robot_and_trailers_pose_t pose_with_beta;
 			pose_with_beta.x = world_point->pose.x;
 			pose_with_beta.y = world_point->pose.y;
 			pose_with_beta.theta = world_point->pose.theta;
-			pose_with_beta.beta = 0.0;
+			pose_with_beta.trailer_theta[0] = 0.0;
 			carmen_rddf_publish_end_point_message(1, pose_with_beta);
 
 			placement_status = NO_PLACEMENT;
@@ -3612,7 +3612,7 @@ namespace View
 				if (placement_status == ORIENTING_FINAL_GOAL)
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
 				else if (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER)
-					draw_point->pose.beta = carmen_normalize_theta(final_goal.pose.theta - atan2(cursor_pos.pose.y - (final_goal.pose.y - semi_trailer_config->M * sin(final_goal.pose.theta)),
+					draw_point->pose.trailer_theta[0] = carmen_normalize_theta(final_goal.pose.theta - atan2(cursor_pos.pose.y - (final_goal.pose.y - semi_trailer_config->M * sin(final_goal.pose.theta)),
 							cursor_pos.pose.x - (final_goal.pose.x - semi_trailer_config->M * cos(final_goal.pose.theta))));
 
 				draw_robot_shape(the_map_view, draw_point, TRUE, colour);
@@ -3647,7 +3647,7 @@ namespace View
 				if (placement_status == ORIENTING_ROBOT)
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
 				else if (placement_status == ORIENTING_ROBOT_SEMI_TRAILER)
-					draw_point->pose.beta = carmen_normalize_theta(robot_temp.pose.theta - atan2(cursor_pos.pose.y - (robot_temp.pose.y - semi_trailer_config->M * sin(robot_temp.pose.theta)),
+					draw_point->pose.trailer_theta[0] = carmen_normalize_theta(robot_temp.pose.theta - atan2(cursor_pos.pose.y - (robot_temp.pose.y - semi_trailer_config->M * sin(robot_temp.pose.theta)),
 							cursor_pos.pose.x - (robot_temp.pose.x - semi_trailer_config->M * cos(robot_temp.pose.theta))));
 
 				draw_robot_shape(the_map_view, draw_point, TRUE, colour);
@@ -3994,7 +3994,7 @@ namespace View
 		{
 			double semi_trailer_M = semi_trailer_config->M;
 			double semi_trailer_d = semi_trailer_config->d;
-			double beta = location->pose.beta;
+			double beta = location->pose.trailer_theta[0];
 
 			if (nav_panel_config->show_collision_range)
 			{

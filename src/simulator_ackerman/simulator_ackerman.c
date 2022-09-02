@@ -105,7 +105,7 @@ int g_XGV_horn_status = 0;
 
 
 int
-apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
+apply_system_latencies(carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
 	int i, j;
 

@@ -9,13 +9,13 @@ extern "C" {
 #endif
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t *points;
+	carmen_robot_and_trailers_traj_point_t *points;
 	int length;
 	int capacity;
 } carmen_planner_path_t, *carmen_planner_path_p;
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t *goal_list;
+	carmen_robot_and_trailers_traj_point_t *goal_list;
 	int size;
 	double timestamp;
 	char *host;
@@ -25,8 +25,8 @@ typedef struct {
 #define		CARMEN_ASTAR_GOAL_LIST_FMT		"{<{double, double, double, double, double, double}:2>,int,double,string}"
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t robot;
-	carmen_robot_and_trailer_traj_point_t goal;
+	carmen_robot_and_trailers_traj_point_t robot;
+	carmen_robot_and_trailers_traj_point_t goal;
 	carmen_planner_path_t path;
 	int goal_set;
 } carmen_planner_status_t, *carmen_planner_status_p;
@@ -36,8 +36,8 @@ typedef struct
 {
 	int number_of_poses;
 	int number_of_poses_back;
-	carmen_robot_and_trailer_traj_point_t *poses;
-	carmen_robot_and_trailer_traj_point_t *poses_back;
+	carmen_robot_and_trailers_traj_point_t *poses;
+	carmen_robot_and_trailers_traj_point_t *poses_back;
 	// int *signals_annotations;
 	int *annotations;
 	double timestamp;

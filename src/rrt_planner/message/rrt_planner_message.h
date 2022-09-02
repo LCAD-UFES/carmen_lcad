@@ -49,7 +49,7 @@ typedef struct
 
 typedef struct
 {
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 	int	   path_length;
 	double timestamp;
 	char  *host;

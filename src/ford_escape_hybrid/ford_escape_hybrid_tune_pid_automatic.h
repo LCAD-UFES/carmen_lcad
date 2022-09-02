@@ -54,7 +54,7 @@ typedef double (*get_vector_from_spline)(EFFORT_SPLINE_DESCRIPTOR *descriptors, 
 
 typedef struct
 {
-	carmen_robot_and_trailer_motion_command_t *motion_commands_vector;
+	carmen_robot_and_trailers_motion_command_t *motion_commands_vector;
 	unsigned int motion_commands_vector_size;
 
 	MOTION_COMMAND path;

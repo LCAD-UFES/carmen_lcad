@@ -66,8 +66,8 @@ typedef struct {
 				      receives a stop message, and change to 1 whenever
 				      the navigator receives a go message. */
 	int goal_set;                  /**< Is there a current goal? */
-	carmen_robot_and_trailer_traj_point_t goal;           /**< Undefined if goal_set is 0 */
-	carmen_robot_and_trailer_traj_point_t robot;     /**< The current position of the robot. */
+	carmen_robot_and_trailers_traj_point_t goal;           /**< Undefined if goal_set is 0 */
+	carmen_robot_and_trailers_traj_point_t robot;     /**< The current position of the robot. */
 	double timestamp;
 	char *host;
 } carmen_navigator_ackerman_status_message;
@@ -84,7 +84,7 @@ typedef struct {
  */
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 	int path_length;
 	double timestamp;
 	char *host;
@@ -113,7 +113,7 @@ typedef struct {
  */
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t goal;   /**< It is assumed that (x, y) is in the reference
+	carmen_robot_and_trailers_traj_point_t goal;   /**< It is assumed that (x, y) is in the reference
 			      frame of the current map. Using this function causes
                               the planner to also arrive at the goal with an orientation
                               that matches the theta field of the goal point.  */ 
@@ -256,11 +256,11 @@ typedef enum{CARMEN_NAVIGATOR_ACKERMAN_GOAL_REACHED_v,
 typedef struct
 {
 	int	   num_edges;//int
-	carmen_robot_and_trailer_traj_point_t *p1;//<{double,double,double,double,double}:1>
-	carmen_robot_and_trailer_traj_point_t *p2;//<{double,double,double,double,double}:1>
+	carmen_robot_and_trailers_traj_point_t *p1;//<{double,double,double,double,double}:1>
+	carmen_robot_and_trailers_traj_point_t *p2;//<{double,double,double,double,double}:1>
 	int *mask;//<int:1>
 
-	carmen_robot_and_trailer_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE];//[{double,double,double,double,double}:100, 1000]
+	carmen_robot_and_trailers_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE];//[{double,double,double,double,double}:100, 1000]
 	int path_size[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS];//[int:100]
 	int num_path;//int
 
@@ -277,7 +277,7 @@ typedef struct
 typedef struct
 {
 	int path_size;
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 	double timestamp;//double
 	char  *host;//string
 } carmen_navigator_ackerman_plan_to_draw_message;

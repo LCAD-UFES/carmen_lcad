@@ -168,7 +168,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	if (semi_trailer_config.type > 0)
 	{
 		globalpos.semi_trailer_engaged = 1;
-		carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point =
+		carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point =
 		{
 				globalpos.globalpos.x,
 				globalpos.globalpos.y,

@@ -48,7 +48,7 @@ main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-	carmen_robot_and_trailer_traj_point_t robot_state = {};
+	carmen_robot_and_trailers_traj_point_t robot_state = {};
 //	robot_state.v = 1.0;
 	double v = 1.0;
 	double phi = 0.2;

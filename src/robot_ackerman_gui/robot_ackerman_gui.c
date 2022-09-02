@@ -105,7 +105,7 @@ robot_rearlaser_handler(void)
 static void
 odometry_handler(void)
 {
-	carmen_robot_and_trailer_motion_command_t motion_command;
+	carmen_robot_and_trailers_motion_command_t motion_command;
   
   if (!gui_control || !mouse_down)
     return;
@@ -334,7 +334,7 @@ static gint
 button_release_event(GtkWidget *widget __attribute__ ((unused)), 
 		     GdkEventButton *event __attribute__ ((unused)))
 {
-	carmen_robot_and_trailer_motion_command_t motion_command;
+	carmen_robot_and_trailers_motion_command_t motion_command;
   
   moving = 0;
   rotating = 0;
@@ -356,7 +356,7 @@ key_press_event(GtkWidget *widget __attribute__ ((unused)),
   int err;
   static double time_since_last_key_command = -1;
   static double current_commanded_v = 0, current_commanded_phi = 0; 
-  carmen_robot_and_trailer_motion_command_t motion_command;
+  carmen_robot_and_trailers_motion_command_t motion_command;
 
   if (toupper(key->keyval) == 'C' && (key->state & GDK_CONTROL_MASK))
     shutdown_robotgraph(SIGINT);
@@ -1010,7 +1010,7 @@ Joystick_Event(GtkWidget *widget __attribute__ ((unused)),
 {
   double v, phi;
   static double last_update = 0;
-  carmen_robot_and_trailer_motion_command_t motion_command;
+  carmen_robot_and_trailers_motion_command_t motion_command;
 
   if (!joystick.initialized)
     return FALSE;

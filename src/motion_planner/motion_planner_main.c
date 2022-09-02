@@ -16,7 +16,7 @@
 
 extern int autonomous_status;
 extern carmen_motion_planner_path_message path;
-extern carmen_robot_and_trailer_traj_point_t g_robot_position;
+extern carmen_robot_and_trailers_traj_point_t g_robot_position;
 
 extern int current_map;
 extern carmen_map_p map_vector[NUM_MAPS];
@@ -30,7 +30,7 @@ extern carmen_behavior_selector_algorithm_t current_algorithm;
  **********************************************************/
 
 void
-publish_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands)
+publish_obstacle_avoider_path(carmen_robot_and_trailers_motion_command_t *motion_commands_vector, int num_motion_commands)
 {
 	carmen_navigator_ackerman_plan_message msg;
 	
@@ -42,7 +42,7 @@ publish_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_
  
 
 void
-publish_motion_planner_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector, int num_motion_commands)
+publish_motion_planner_path(carmen_robot_and_trailers_motion_command_t *motion_commands_vector, int num_motion_commands)
 {
 	carmen_navigator_ackerman_plan_message msg;
 	

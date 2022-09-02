@@ -10,7 +10,7 @@ extern "C" {
 
 
 void
-carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point,
+carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point,
 										 carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config, double velodyne_timestamp);
 
 void

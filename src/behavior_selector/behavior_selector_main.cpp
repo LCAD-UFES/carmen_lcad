@@ -74,7 +74,7 @@ using namespace std;
 
 vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_moving_objects_point_clouds_message *current_moving_objects,
-		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+		carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi,
 		int who_set_the_goal_v, carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp);
 
 
@@ -196,7 +196,7 @@ bool all_paths_has_collision = false;
 
 
 int
-compute_max_rddf_num_poses_ahead(carmen_robot_and_trailer_traj_point_t current_pose)
+compute_max_rddf_num_poses_ahead(carmen_robot_and_trailers_traj_point_t current_pose)
 {
 	int num_poses_ahead_by_velocity = param_rddf_num_poses_ahead_min;
 	//	s = vf*vf - v0*v0 / 2*a;
@@ -246,13 +246,13 @@ copy_rddf_message_considering_velocity(carmen_rddf_road_profile_message *last_rd
 	last_rddf_message->number_of_poses = carmen_rddf_num_poses_ahead;
 	last_rddf_message->number_of_poses_back = rddf_msg->number_of_poses_back;
 
-	last_rddf_message->poses = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * carmen_rddf_num_poses_ahead);
-	last_rddf_message->poses_back = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
+	last_rddf_message->poses = (carmen_robot_and_trailers_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_robot_and_trailers_traj_point_t) * carmen_rddf_num_poses_ahead);
+	last_rddf_message->poses_back = (carmen_robot_and_trailers_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_robot_and_trailers_traj_point_t) * last_rddf_message->number_of_poses_back);
 	last_rddf_message->annotations = (int *) realloc(last_rddf_message->annotations, sizeof(int) * carmen_rddf_num_poses_ahead);
 	last_rddf_message->annotations_codes = (int *) realloc(last_rddf_message->annotations_codes, sizeof(int) * carmen_rddf_num_poses_ahead);
 
-	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * carmen_rddf_num_poses_ahead);
-	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
+	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_robot_and_trailers_traj_point_t) * carmen_rddf_num_poses_ahead);
+	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_robot_and_trailers_traj_point_t) * last_rddf_message->number_of_poses_back);
 	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * carmen_rddf_num_poses_ahead);
 	memcpy(last_rddf_message->annotations_codes, rddf_msg->annotations_codes, sizeof(int) * carmen_rddf_num_poses_ahead);
 
@@ -278,13 +278,13 @@ copy_rddf_message(carmen_rddf_road_profile_message *last_rddf_message, carmen_rd
 	last_rddf_message->number_of_poses = rddf_msg->number_of_poses;
 	last_rddf_message->number_of_poses_back = rddf_msg->number_of_poses_back;
 
-	last_rddf_message->poses = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses);
-	last_rddf_message->poses_back = (carmen_robot_and_trailer_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
+	last_rddf_message->poses = (carmen_robot_and_trailers_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_robot_and_trailers_traj_point_t) * last_rddf_message->number_of_poses);
+	last_rddf_message->poses_back = (carmen_robot_and_trailers_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_robot_and_trailers_traj_point_t) * last_rddf_message->number_of_poses_back);
 	last_rddf_message->annotations = (int *) realloc(last_rddf_message->annotations, sizeof(int) * last_rddf_message->number_of_poses);
 	last_rddf_message->annotations_codes = (int *) realloc(last_rddf_message->annotations_codes, sizeof(int) * last_rddf_message->number_of_poses);
 
-	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses);
-	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_robot_and_trailer_traj_point_t) * last_rddf_message->number_of_poses_back);
+	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_robot_and_trailers_traj_point_t) * last_rddf_message->number_of_poses);
+	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_robot_and_trailers_traj_point_t) * last_rddf_message->number_of_poses_back);
 	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * last_rddf_message->number_of_poses);
 	memcpy(last_rddf_message->annotations_codes, rddf_msg->annotations_codes, sizeof(int) * last_rddf_message->number_of_poses);
 
@@ -292,16 +292,16 @@ copy_rddf_message(carmen_rddf_road_profile_message *last_rddf_message, carmen_rd
 }
 
 
-carmen_robot_and_trailer_traj_point_t *
+carmen_robot_and_trailers_traj_point_t *
 compute_simulated_objects(double timestamp)
 {
 	if (!necessary_maps_available || !current_set_of_paths)
 		return (NULL);
 
-	carmen_robot_and_trailer_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
+	carmen_robot_and_trailers_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
 	int number_of_poses = current_set_of_paths->number_of_poses;
 
-	static carmen_robot_and_trailer_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0};
 	static double previous_timestamp = 0.0;
 	static double initial_time = 0.0; // Simulation start time.
 
@@ -328,11 +328,11 @@ compute_simulated_objects(double timestamp)
 	double dx = v * dt * cos(previous_pose.theta);
 	double dy = v * dt * sin(previous_pose.theta);
 
-	carmen_robot_and_trailer_traj_point_t pose_ahead;
+	carmen_robot_and_trailers_traj_point_t pose_ahead;
 	pose_ahead.x = previous_pose.x + dx;
 	pose_ahead.y = previous_pose.y + dy;
 
-	static carmen_robot_and_trailer_traj_point_t next_pose = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	static carmen_robot_and_trailers_traj_point_t next_pose = {0.0, 0.0, 0.0, 0, 0.0, 0.0, 0.0};
 	for (int i = 0, n = number_of_poses - 1; i < n; i++)
 	{
 		int status;
@@ -347,19 +347,19 @@ compute_simulated_objects(double timestamp)
 }
 
 
-carmen_robot_and_trailer_traj_point_t *
-compute_simulated_lateral_objects(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+carmen_robot_and_trailers_traj_point_t *
+compute_simulated_lateral_objects(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	if (!necessary_maps_available || !current_set_of_paths || (current_set_of_paths->number_of_nearby_lanes == 0))
 		return (NULL);
 
-	carmen_robot_and_trailer_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
+	carmen_robot_and_trailers_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
 	int number_of_poses = current_set_of_paths->number_of_poses;
 	if (poses == NULL)
 		return (NULL);
 
-	static carmen_robot_and_trailer_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0};
-	static carmen_robot_and_trailer_traj_point_t returned_pose = {0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t returned_pose = {0, 0, 0, 0, 0, 0, 0};
 	static double previous_timestamp = 0.0;
 	static double initial_time = 0.0; // Simulation start time.
 	static double disp = 2.5;
@@ -400,11 +400,11 @@ compute_simulated_lateral_objects(carmen_robot_and_trailer_traj_point_t current_
 	double dx = v * dt * cos(previous_pose.theta);
 	double dy = v * dt * sin(previous_pose.theta);
 
-	carmen_robot_and_trailer_traj_point_t pose_ahead;
+	carmen_robot_and_trailers_traj_point_t pose_ahead;
 	pose_ahead.x = previous_pose.x + dx;
 	pose_ahead.y = previous_pose.y + dy;
 
-	static carmen_robot_and_trailer_traj_point_t next_pose = {0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t next_pose = {0, 0, 0, 0, 0, 0, 0};
 	for (int i = 0; i < number_of_poses - 1; i++)
 	{
 		int status;
@@ -423,7 +423,7 @@ compute_simulated_lateral_objects(carmen_robot_and_trailer_traj_point_t current_
 
 
 void
-add_simulated_object(carmen_robot_and_trailer_traj_point_t *object_pose)
+add_simulated_object(carmen_robot_and_trailers_traj_point_t *object_pose)
 {
 	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
 	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
@@ -444,7 +444,7 @@ add_simulated_object(carmen_robot_and_trailer_traj_point_t *object_pose)
 
 
 void
-add_larger_simulated_object(carmen_robot_and_trailer_traj_point_t *object_pose)
+add_larger_simulated_object(carmen_robot_and_trailers_traj_point_t *object_pose)
 {
 	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
 	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
@@ -556,7 +556,7 @@ add_object_to_map(double width, double length, double x, double y, double theta)
 
 void
 add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_objects_message *msg,
-		carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+		carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
 	if (!msg)
 		return;
@@ -622,7 +622,7 @@ clear_moving_obstacles_from_compact_lane_map(carmen_obstacle_distance_mapper_com
 
 static void
 publish_path_goals_and_annotations_message(carmen_rddf_road_profile_message *path_and_annotations,
-		carmen_robot_and_trailer_traj_point_t *goal_list,
+		carmen_robot_and_trailers_traj_point_t *goal_list,
 		int goal_list_size, double timestamp)
 {
 	carmen_behavior_selector_path_goals_and_annotations_message path_goals_and_annotations_message;
@@ -732,11 +732,11 @@ publish_new_best_path(int best_path, double timestamp)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-carmen_robot_and_trailer_traj_point_t *
-check_soft_stop(carmen_robot_and_trailer_traj_point_t *first_goal, carmen_robot_and_trailer_traj_point_t *goal_list, int &goal_type)
+carmen_robot_and_trailers_traj_point_t *
+check_soft_stop(carmen_robot_and_trailers_traj_point_t *first_goal, carmen_robot_and_trailers_traj_point_t *goal_list, int &goal_type)
 {
 	static bool soft_stop_in_progress = false;
-	static carmen_robot_and_trailer_traj_point_t soft_stop_goal;
+	static carmen_robot_and_trailers_traj_point_t soft_stop_goal;
 	static int soft_stop_goal_type;
 
 	if (soft_stop_on)
@@ -766,12 +766,12 @@ limit_goal_distance_according_to_radius_of_curvature(double &dist_to_min_radius_
 		carmen_rddf_road_profile_message *last_rddf_message, double max_distance_considered)
 {
 	int number_of_poses;
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 	if (last_rddf_message)
 	{
 		number_of_poses = last_rddf_message->number_of_poses;
-		path = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
-		memcpy(path, last_rddf_message->poses, number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+		path = (carmen_robot_and_trailers_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
+		memcpy(path, last_rddf_message->poses, number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
 	}
 	else
 	{
@@ -779,7 +779,7 @@ limit_goal_distance_according_to_radius_of_curvature(double &dist_to_min_radius_
 		return (1000.0);
 	}
 
-	carmen_robot_and_trailer_traj_point_t *original_path_copy = path;
+	carmen_robot_and_trailers_traj_point_t *original_path_copy = path;
 	path = &(path[1]);
 	number_of_poses -= 1;
 	for (int i = 0; i < ((number_of_poses / 4) - 1); i++)
@@ -824,7 +824,7 @@ limit_goal_distance_according_to_radius_of_curvature(double &dist_to_min_radius_
 
 
 void
-set_behaviours_parameters(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+set_behaviours_parameters(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi,
 		carmen_rddf_road_profile_message *last_rddf_message, double timestamp)
 {
 	if (behavior_selector_state_message.low_level_state_flags & CARMEN_BEHAVIOR_SELECTOR_WITHIN_NARROW_PASSAGE)
@@ -919,7 +919,7 @@ remove_moving_objects_from_distance_map_old(carmen_route_planner_road_network_me
 	virtual_laser_message.num_positions = 0;
 	for (int i = 0; i < road_network_message->number_of_nearby_lanes; i++)
 	{
-		carmen_robot_and_trailer_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
+		carmen_robot_and_trailers_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
 		int *traffic_restrictions = &(road_network_message->traffic_restrictions[road_network_message->nearby_lanes_indexes[i]]);
 		int lane_size = road_network_message->nearby_lanes_sizes[i];
 		for (int j = 0; j < lane_size - 1; j++)
@@ -970,7 +970,7 @@ create_carmen_obstacle_distance_mapper_map_message(carmen_obstacle_distance_mapp
 
 
 void
-set_path_using_symotha(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+set_path_using_symotha(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
@@ -1042,10 +1042,10 @@ set_path_using_symotha(const carmen_robot_and_trailer_traj_point_t current_robot
 
 
 int
-select_behaviour_using_symotha(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+select_behaviour_using_symotha(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	static carmen_robot_and_trailer_traj_point_t last_valid_goal;
-	static carmen_robot_and_trailer_traj_point_t *last_valid_goal_p = NULL;
+	static carmen_robot_and_trailers_traj_point_t last_valid_goal;
+	static carmen_robot_and_trailers_traj_point_t *last_valid_goal_p = NULL;
 
 	carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, compact_lane_contents);
 
@@ -1062,9 +1062,9 @@ select_behaviour_using_symotha(carmen_robot_and_trailer_traj_point_t current_rob
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	int goal_list_size;
-	carmen_robot_and_trailer_traj_point_t *first_goal;
+	carmen_robot_and_trailers_traj_point_t *first_goal;
 	int goal_type;
-	carmen_robot_and_trailer_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
+	carmen_robot_and_trailers_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
 			path_collision_info_t {}, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
@@ -1091,12 +1091,12 @@ select_behaviour_using_symotha(carmen_robot_and_trailer_traj_point_t current_rob
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
 #ifdef SIMULATE_MOVING_OBSTACLE
-	carmen_robot_and_trailer_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
+	carmen_robot_and_trailers_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
 	if (simulated_object_pose)
 		add_simulated_object(simulated_object_pose);
 #endif
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
-	carmen_robot_and_trailer_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
+	carmen_robot_and_trailers_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose2)
 		add_larger_simulated_object(simulated_object_pose2);
 //		add_simulated_object(simulated_object_pose2);
@@ -1168,7 +1168,7 @@ check_if_all_paths_has_collision(vector<path_collision_info_t> &paths_collision_
 
 
 path_collision_info_t
-set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi,
+set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
 {
 	static carmen_frenet_path_planner_set_of_paths set_of_paths;
@@ -1226,7 +1226,7 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 
 		if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.type != 0))
 			for (int i = 0; i < rddf_msg.number_of_poses; i++)
-				rddf_msg.poses[i].beta = road_network_message->poses[i].beta;
+				rddf_msg.poses[i].trailer_theta[0] = road_network_message->poses[i].trailer_theta[0];
 
 		if (!road_network_message->annotations && (set_of_paths.number_of_poses != 0))
 		{
@@ -1272,10 +1272,10 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 
 
 int
-select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	static carmen_robot_and_trailer_traj_point_t last_valid_goal;
-	static carmen_robot_and_trailer_traj_point_t *last_valid_goal_p = NULL;
+	static carmen_robot_and_trailers_traj_point_t last_valid_goal;
+	static carmen_robot_and_trailers_traj_point_t *last_valid_goal_p = NULL;
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, last_rddf_message, timestamp);
 
@@ -1308,11 +1308,11 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	int goal_list_size;
-	carmen_robot_and_trailer_traj_point_t *first_goal;
+	carmen_robot_and_trailers_traj_point_t *first_goal;
 	int goal_type;
 	if (last_rddf_message_copy->number_of_poses > 0)
-		last_rddf_message_copy->poses[0].beta = current_robot_pose_v_and_phi.beta;
-	carmen_robot_and_trailer_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
+		last_rddf_message_copy->poses[0].trailer_theta[0] = current_robot_pose_v_and_phi.trailer_theta[0];
+	carmen_robot_and_trailers_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
 			path_collision_info, current_moving_objects, behavior_selector_state_message, timestamp);
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
@@ -1340,12 +1340,12 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
 #ifdef SIMULATE_MOVING_OBSTACLE
-	carmen_robot_and_trailer_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
+	carmen_robot_and_trailers_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
 	if (simulated_object_pose)
 		add_simulated_object(simulated_object_pose);
 #endif
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
-	carmen_robot_and_trailer_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
+	carmen_robot_and_trailers_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose2)
 		add_larger_simulated_object(simulated_object_pose2);
 //		add_simulated_object(simulated_object_pose2);
@@ -1379,12 +1379,12 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	if (behavior_selector_performs_path_planning && !road_network_message)
 		return;
 
-	carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi;
+	carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi;
 
 	current_robot_pose_v_and_phi.x = msg->globalpos.x;
 	current_robot_pose_v_and_phi.y = msg->globalpos.y;
 	current_robot_pose_v_and_phi.theta = msg->globalpos.theta;
-	current_robot_pose_v_and_phi.beta = msg->beta;
+	current_robot_pose_v_and_phi.trailer_theta[0] = msg->beta;
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
@@ -1416,12 +1416,12 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	if (behavior_selector_performs_path_planning && !road_network_message)
 		return;
 
-	carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi;
+	carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi;
 
 	current_robot_pose_v_and_phi.x = msg->truepose.x;
 	current_robot_pose_v_and_phi.y = msg->truepose.y;
 	current_robot_pose_v_and_phi.theta = msg->truepose.theta;
-	current_robot_pose_v_and_phi.beta = msg->beta;
+	current_robot_pose_v_and_phi.trailer_theta[0] = msg->beta;
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 

@@ -257,7 +257,7 @@ carmen_behavior_selector_publish_path_goals_and_annotations_message(carmen_behav
 
 
 carmen_annotation_t *
-carmen_behavior_selector_get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+carmen_behavior_selector_get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;

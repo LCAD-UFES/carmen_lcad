@@ -45,8 +45,8 @@ publish_base_velocity_command(double tv, double rv)
 {
 	static carmen_base_ackerman_velocity_message v;
 	int num_commands = 1;
-	carmen_robot_and_trailer_motion_command_t *msg =
-				(carmen_robot_and_trailer_motion_command_t *) (malloc(num_commands * sizeof(carmen_robot_and_trailer_motion_command_t)));
+	carmen_robot_and_trailers_motion_command_t *msg =
+				(carmen_robot_and_trailers_motion_command_t *) (malloc(num_commands * sizeof(carmen_robot_and_trailers_motion_command_t)));
 
 	v.v = tv;
 	v.phi = rv;

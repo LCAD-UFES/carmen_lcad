@@ -9,7 +9,7 @@ extern "C" {
 
 typedef struct
 {
-	carmen_robot_and_trailer_traj_point_t *plan;
+	carmen_robot_and_trailers_traj_point_t *plan;
 	int	   plan_length;
 	double timestamp;
 	char  *host;

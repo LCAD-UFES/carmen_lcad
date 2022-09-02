@@ -11,7 +11,7 @@ typedef struct _trajectory_drawer
 	double g;
 	double b;
 
-	carmen_robot_and_trailer_pose_t *path;
+	carmen_robot_and_trailers_pose_t *path;
 	carmen_vector_3D_t *path_segment_color;
 	int path_size;
 	double path_point_size;

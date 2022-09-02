@@ -79,7 +79,7 @@ public:
 
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t p1, p2;
+	carmen_robot_and_trailers_traj_point_t p1, p2;
 	double v, phi;
 	double time;
 } Edge_Struct;

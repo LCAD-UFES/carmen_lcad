@@ -50,7 +50,7 @@ static int	  is_graphics_up = 0;
 int height_max_level = 0;
 
 static double last_v = 0, last_phi = 0;
-static carmen_robot_and_trailer_traj_point_t last_goal;
+static carmen_robot_and_trailers_traj_point_t last_goal;
 static int goal_set = 0, autonomous = 0; // Checks if Go button has been pressed
 
 static char *map_path = NULL;
@@ -649,7 +649,7 @@ navigator_update_robot(carmen_world_robot_and_trailer_pose_t *robot)
 				carmen_radians_to_degrees(robot->pose.theta));
 
 		carmen_point_t pose_without_beta = {robot->pose.x,robot->pose.y, robot->pose.theta};
-		carmen_localize_ackerman_initialize_gaussian_command(pose_without_beta, localize_std, robot->pose.beta);
+		carmen_localize_ackerman_initialize_gaussian_command(pose_without_beta, localize_std, robot->pose.trailer_theta[0]);
 		IPC_listen(50);
 	}
 }
@@ -1403,7 +1403,7 @@ void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
 	gui->final_goal.map = gui->controls_.map_view->internal_map;
-	gui->final_goal.pose = {rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta, rddf_end_point_message->point.beta};
+	gui->final_goal.pose = {rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta, rddf_end_point_message->point.num_trailers, rddf_end_point_message->point.trailer_theta[0]};
 	gui->final_goal_placed_and_oriented = 1;
 }
 

@@ -52,7 +52,7 @@ static char **argv_global;
 
 
 void
-Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_robot_and_trailer_motion_command_t *commands, int num_commands, double timestamp)
+Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_robot_and_trailers_motion_command_t *commands, int num_commands, double timestamp)
 {
 //	double x0 = path_msg->path[0].p1.x;
 //	double y0 = path_msg->path[0].p1.y;
@@ -99,7 +99,7 @@ Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_robot_and_t
 void
 Path_Follower_Ackerman::publish_path_follower_single_motion_command(double v, double phi, double timestamp)
 {
-	carmen_robot_and_trailer_motion_command_t commands[2];
+	carmen_robot_and_trailers_motion_command_t commands[2];
 
 	commands[0].v = v;
 	commands[0].phi = phi;
@@ -124,7 +124,7 @@ publish_navigator_ackerman_plan_message(list<RRT_Path_Edge> &path)
 		return;
 
 	msg.path_length = path.size() + 1;
-	msg.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * (msg.path_length));
+	msg.path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * (msg.path_length));
 
 	it = path.begin();
 
@@ -133,7 +133,7 @@ publish_navigator_ackerman_plan_message(list<RRT_Path_Edge> &path)
 		msg.path[i].x	  = it->p1.pose.x;
 		msg.path[i].y	  = it->p1.pose.y;
 		msg.path[i].theta = it->p1.pose.theta;
-		msg.path[i].beta  = it->p1.pose.beta;
+		msg.path[i].trailer_theta[0]  = it->p1.pose.beta;
 		msg.path[i].v	  = it->command.v;
 		msg.path[i].phi	  = it->command.phi;
 		i++;
@@ -144,7 +144,7 @@ publish_navigator_ackerman_plan_message(list<RRT_Path_Edge> &path)
 	msg.path[i].x	  = rit->p2.pose.x;
 	msg.path[i].y	  = rit->p2.pose.y;
 	msg.path[i].theta = rit->p2.pose.theta;
-	msg.path[i].beta  = rit->p2.pose.beta;
+	msg.path[i].trailer_theta[0]  = rit->p2.pose.beta;
 	msg.path[i].v	  = rit->command.v;
 	msg.path[i].phi	  = rit->command.phi;
 

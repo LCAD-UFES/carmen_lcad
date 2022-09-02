@@ -49,10 +49,10 @@ typedef struct
 {
 	carmen_offroad_planner_feedback_t offroad_planner_feedback;
 	int number_of_poses;
-	carmen_robot_and_trailer_traj_point_t *poses;
+	carmen_robot_and_trailers_traj_point_t *poses;
 	int pose_id;
-	carmen_robot_and_trailer_traj_point_t transition_pose;
-	carmen_robot_and_trailer_traj_point_t goal_pose;
+	carmen_robot_and_trailers_traj_point_t transition_pose;
+	carmen_robot_and_trailers_traj_point_t goal_pose;
 
     double timestamp;
     char *host;
