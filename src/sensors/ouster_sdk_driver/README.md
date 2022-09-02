@@ -21,7 +21,7 @@ baixe as dependencias:
 
 instale no packages carmen
 	build
-	cmake
+	cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_VIZ=ON -DBUILD_PCAP=ON -DBUILD_EXAMPLES=ON ..
 	make
 	sudo make instal
 

@@ -1,11 +1,11 @@
 
 1) Transforme todos os arquivos de mapas (.map) numa unica imagem (.png)
 
-   mkdir -p /tmp/img/ ; $CARMEN_HOME/bin/save_map_images  -input_dir $CARMEN_HOME/data/map_volta_da_ufes-20190915  -out_dir /tmp/img/
+   mkdir -p /dados/tmp/img/ ; $CARMEN_HOME/bin/save_map_images  -input_dir $CARMEN_HOME/data/map_volta_da_ufes-20190915  -out_dir /dados/tmp/img/
 
 2) Abra o arquivo de imagem usando o gimp
 
-   gimp  $(ls /tmp/img/complete_*.png)
+   gimp  $(ls /dados/tmp/img/complete_*.png)
 
 3) Menu gimp: Tools > Paint Tools > Pencil
 
@@ -26,7 +26,7 @@
 
 8) Atualize os mapas usando o arquivo de imagem editado
 
-   mkdir -p /tmp/map/ ; $CARMEN_HOME/bin/update_map_from_image  $(ls /tmp/img/complete_*.png)  -input_dir $CARMEN_HOME/data/map_volta_da_ufes-20190915  -out_dir /tmp/map/
+   mkdir -p /dados/tmp/map/ ; $CARMEN_HOME/bin/update_map_from_image  $(ls /dados/tmp/img/complete_*.png)  -input_dir $CARMEN_HOME/data/map_volta_da_ufes-20190915  -out_dir /dados/tmp/map/
 
-# Os mapas alterados ficam em /tmp/map/
+# Os mapas alterados ficam em /dados/tmp/map/
 
