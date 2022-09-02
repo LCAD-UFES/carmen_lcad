@@ -252,7 +252,7 @@ main(int argc, char* argv[])
 
             for (int m_id = column_window.first; m_id <= column_window.second; m_id++)
             {
-                double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);
+                double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);//Calculo do angulo, no ouster os shots sao fixos
                 // TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus na linha abaixo
                 double shot_angle_correction = carmen_normalize_angle_degree(carmen_radians_to_degrees(shot_angle) + (info.beam_azimuth_angles.at(0)) + 180);
                 // std::cerr << "\n angle " << shot_angle << " shot_angle_correction " << shot_angle_correction << std::endl;

@@ -13,3 +13,16 @@ Isso só é útil para o viewer 3D e talvez para módulos que usem o velodyne_ca
 traria mais problemas do que ganho (Opnião do Vinicius)
 
 - Publicar imagem gerada pela reflexão do sensor, para testarmos detecção na imagem do lidar
+
+###Instalação
+
+Baixe o SDK usado -> link
+baixe as dependencias:
+
+instale no packages carmen
+	build
+	cmake
+	make
+	sudo make instal
+
+compile o modulo carmen
