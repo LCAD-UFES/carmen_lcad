@@ -36,6 +36,8 @@ copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_rob
 #define G_EPSABS	0.016
 #define F_EPSABS	G_EPSABS
 
+//#define USE_STANLEY_METHOD
+
 bool use_obstacles = true;
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
@@ -955,6 +957,56 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 }
 
 
+#ifdef USE_STANLEY_METHOD
+double
+compute_error_using_stanley_method(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path)
+{
+
+	double total_steering_error = 0;
+	double theta_error = 0.0;
+	int look_ahead;
+	double k = 1.0;
+	int total_points = 1; //How many
+	double steerig_stanley = 0.0;
+	carmen_robot_and_trailer_path_point_t robot_point;
+	int index_p1;
+	int index_p2;
+	int index_mais_proximo;
+
+	if (use_unity_simulator)
+		look_ahead = 1;
+	else
+		look_ahead = 3;
+	for (unsigned int i = look_ahead; i < path.size(); i += look_ahead)
+	{
+		if ((i < param->path_point_nearest_to_lane.size()) &&
+				(param->path_point_nearest_to_lane.at(i) < param->detailed_lane.size()))
+		{
+			robot_point = move_to_front_axle(path.at(i));
+
+			if (!GlobalState::reverse_planning)
+				robot_point = move_to_front_axle(path.at(i));
+			index_p1 = (i>0?(i-1):i);
+			index_p2 = (i<path.size()?(i+1):i);
+			get_between_points(robot_point, param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p1)), param->detailed_lane.at(param->path_point_nearest_to_lane.at(i)), param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p2)), i, index_p1, index_p2, index_mais_proximo);//Calcular distancia pro ponto mais proximo no path, eles usam ponto pra reta
+			//	get_points2();
+			theta_error = carmen_normalize_theta(robot_point.theta - param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_mais_proximo)).theta);
+			double Efa = get_distance_between_point_to_line(param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p1)),  param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p2)), robot_point);
+
+			steerig_stanley = theta_error + atan(k*Efa/robot_point.v);
+			total_points += 1.0;
+		}
+		else
+			steerig_stanley = 0.0;
+
+		total_steering_error += steerig_stanley;
+	}
+
+	return total_steering_error;
+}
+
+#endif
+
 inline carmen_ackerman_path_point_t
 move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t point, double displacement)
 {
@@ -1142,13 +1194,18 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 #ifdef NEW_PATH_TO_LANE_DISTANCE
 		path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
 #else
+
 		if (path.size() != my_params->path_size)
 		{
 			compute_path_points_nearest_to_lane(my_params, path);
-			path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
 		}
-		else
-			path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+		path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+
+#ifdef USE_STANLEY_METHOD
+			double steering_error= 0.0;
+			steering_error = compute_error_using_stanley_method(my_params, path);
+
+#endif
 #endif
 	}
 

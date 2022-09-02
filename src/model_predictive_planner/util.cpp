@@ -365,6 +365,34 @@ get_points2(vector<carmen_robot_and_trailer_path_point_t> &detailed_goal_list, i
 
 
 void
+get_between_points(carmen_robot_and_trailer_path_point_t robot, carmen_robot_and_trailer_path_point_t point_before, carmen_robot_and_trailer_path_point_t center, carmen_robot_and_trailer_path_point_t point_next,
+		int index_center, int &index_p1, int &index_p2, int &mais_proxima)
+{
+
+    double centro = DIST2D(center, robot);
+    double d = DIST2D(point_before, robot);
+    double d2 = DIST2D(point_next, robot);
+
+    if (d < d2)
+    {
+        index_p1 = (index_center - 1);
+        index_p2 = (index_center);
+        mais_proxima = (index_center - 1);
+        if(centro < d)
+            mais_proxima = centro;
+    }
+    else
+    {
+        index_p1 = index_center;
+        index_p2 = index_center+1;
+        mais_proxima = index_p2;
+        if(centro < d2)
+            mais_proxima = centro;
+    }
+}
+
+
+void
 save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 					carmen_robot_and_trailer_pose_t *localizer_pose, vector<carmen_robot_and_trailer_path_point_t> &detailed_lane,
 					Command lastOdometry, double target_v)
