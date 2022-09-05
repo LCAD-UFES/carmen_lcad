@@ -166,7 +166,7 @@ void carmen_navigator_ackerman_publish_plan(void)
 	carmen_navigator_ackerman_plan_message plan_msg;
 	IPC_RETURN_TYPE err;
 	/* cyrill, 10.07.2003 */
-	static carmen_robot_and_trailers_traj_point_t prev_goal        = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
+	static carmen_robot_and_trailers_traj_point_t prev_goal        = {-1.0, -1.0, -1.0, 1, {-1.0, -1.0, -1.0, -1.0, -1.0}, -1.0, -1.0};
 
 	static carmen_planner_path_t prev_path = {NULL, 0, 0};
 

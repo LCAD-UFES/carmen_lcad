@@ -824,7 +824,7 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer
 {
 	check_collision_config_initialization();
 
-	carmen_robot_and_trailers_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.trailer_theta[0], 0.0, 0.0};
+	carmen_robot_and_trailers_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.num_trailers, {car_pose.trailer_theta[0], car_pose.trailer_theta[1], car_pose.trailer_theta[2], car_pose.trailer_theta[3], car_pose.trailer_theta[4]}, 0.0, 0.0};
 	carmen_position_t mo_points[1000];
 	int mo_points_size = compute_mo_points(mo_points, moving_object->width, moving_object->length, moving_object_pose.x, moving_object_pose.y, moving_object_pose.theta);
 //	printf("id %d, mo_points_size %d\n", moving_object->num_associated, mo_points_size);
@@ -835,7 +835,7 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer
 	for (double displacement = -longitudinal_safety_magin; displacement <= longitudinal_safety_magin; displacement += 0.5)
 	{
 		carmen_robot_and_trailers_pose_t ldcp = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&cp, displacement);
-		carmen_robot_and_trailers_traj_point_t ldcp2 = {ldcp.x, ldcp.y, ldcp.theta, car_pose.trailer_theta[0], 0.0, 0.0};
+		carmen_robot_and_trailers_traj_point_t ldcp2 = {ldcp.x, ldcp.y, ldcp.theta, car_pose.num_trailers, {car_pose.trailer_theta[0], car_pose.trailer_theta[1], car_pose.trailer_theta[2], car_pose.trailer_theta[3], car_pose.trailer_theta[4]}, 0.0, 0.0};
 		for (int i = 0; i < n_markers; i++)
 		{
 			double radius = markers[i].radius + mo_radius_plus_safety_margin;

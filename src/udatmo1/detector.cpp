@@ -54,7 +54,7 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 double displacement,
 				 double timestamp)
 {
-	carmen_robot_and_trailers_traj_point_t robot_pose = {robot_pose_.x, robot_pose_.y, robot_pose_.theta, 0.0, robot_pose_.v, robot_pose_.phi};
+	carmen_robot_and_trailers_traj_point_t robot_pose = {robot_pose_.x, robot_pose_.y, robot_pose_.theta, robot_pose_.num_trailers, {robot_pose_.trailer_theta[0], robot_pose_.trailer_theta[1], robot_pose_.trailer_theta[2], robot_pose_.trailer_theta[3], robot_pose_.trailer_theta[4]}, robot_pose_.v, robot_pose_.phi};
 
 //	printf("w %d, i %d\n", obstacle_already_detected, rddf_pose_index);
 	if (rddf_pose_index == 0)

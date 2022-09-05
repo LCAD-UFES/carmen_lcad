@@ -166,7 +166,7 @@ collision_s_distance_to_static_object(path_collision_info_t &path_collision_info
 		for (int s = 0; s < last_s; s++)
 		{
 			carmen_robot_and_trailers_pose_t car_pose = car_poses_and_indexes_in_path[s].car_pose;
-			carmen_robot_and_trailers_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.num_trailers, car_pose.trailer_theta[0], 0.0, 0.0};
+			carmen_robot_and_trailers_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.num_trailers, {car_pose.trailer_theta[0], car_pose.trailer_theta[1], car_pose.trailer_theta[2], car_pose.trailer_theta[3], car_pose.trailer_theta[4]}, 0.0, 0.0};
 			index_in_path = car_poses_and_indexes_in_path[s].index_in_path;
 			// Incluir um loop para testar colisão com objetos móveis lentos o suficiente, como em collision_s_distance_to_moving_object(), só que com o teste ao contrário.
 			if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance,
@@ -451,7 +451,7 @@ get_moving_object_lane(int &lane_size, double &d_distance_to_lane, double &s_dis
 
 	int status;
 	int mo_index = moving_object->lane_index;
-	carmen_robot_and_trailers_traj_point_t mo_pose = {moving_object->object_pose.x, moving_object->object_pose.y, moving_object->orientation, 0, 0.0, 0.0, 0.0};
+	carmen_robot_and_trailers_traj_point_t mo_pose = {moving_object->object_pose.x, moving_object->object_pose.y, moving_object->orientation, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, 0.0, 0.0};
 	carmen_robot_and_trailers_traj_point_t mo_pose_projection_into_lane;
 	if (mo_index < lane_size - 1)
 		mo_pose_projection_into_lane = carmen_get_point_nearest_to_trajectory(&status, moving_object_lane[mo_index], moving_object_lane[mo_index + 1], mo_pose, 0.1);
@@ -506,7 +506,7 @@ simulate_moving_object_movement(t_point_cloud_struct *moving_object, carmen_robo
 		int lane_size, double d_distance_to_lane, double s_distance_to_lane, double t)
 {
 	carmen_robot_and_trailers_traj_point_t movin_object_pose = {moving_object->object_pose.x, moving_object->object_pose.y,
-			moving_object->orientation, 0, 0.0, moving_object->linear_velocity, 0.0};
+			moving_object->orientation, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, moving_object->linear_velocity, 0.0};
 
 	double s_displacement = moving_object->linear_velocity * t;
 	double d_displacement = moving_object->lateral_velocity * t;

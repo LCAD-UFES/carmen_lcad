@@ -301,7 +301,7 @@ compute_simulated_objects(double timestamp)
 	carmen_robot_and_trailers_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
 	int number_of_poses = current_set_of_paths->number_of_poses;
 
-	static carmen_robot_and_trailers_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t previous_pose = {0, 0, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, 0, 0};
 	static double previous_timestamp = 0.0;
 	static double initial_time = 0.0; // Simulation start time.
 
@@ -332,7 +332,7 @@ compute_simulated_objects(double timestamp)
 	pose_ahead.x = previous_pose.x + dx;
 	pose_ahead.y = previous_pose.y + dy;
 
-	static carmen_robot_and_trailers_traj_point_t next_pose = {0.0, 0.0, 0.0, 0, 0.0, 0.0, 0.0};
+	static carmen_robot_and_trailers_traj_point_t next_pose = {0.0, 0.0, 0.0, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, 0.0, 0.0};
 	for (int i = 0, n = number_of_poses - 1; i < n; i++)
 	{
 		int status;
@@ -358,8 +358,8 @@ compute_simulated_lateral_objects(carmen_robot_and_trailers_traj_point_t current
 	if (poses == NULL)
 		return (NULL);
 
-	static carmen_robot_and_trailers_traj_point_t previous_pose = {0, 0, 0, 0, 0, 0, 0};
-	static carmen_robot_and_trailers_traj_point_t returned_pose = {0, 0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t previous_pose = {0, 0, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t returned_pose = {0, 0, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, 0, 0};
 	static double previous_timestamp = 0.0;
 	static double initial_time = 0.0; // Simulation start time.
 	static double disp = 2.5;
@@ -404,7 +404,7 @@ compute_simulated_lateral_objects(carmen_robot_and_trailers_traj_point_t current
 	pose_ahead.x = previous_pose.x + dx;
 	pose_ahead.y = previous_pose.y + dy;
 
-	static carmen_robot_and_trailers_traj_point_t next_pose = {0, 0, 0, 0, 0, 0, 0};
+	static carmen_robot_and_trailers_traj_point_t next_pose = {0, 0, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, 0, 0};
 	for (int i = 0; i < number_of_poses - 1; i++)
 	{
 		int status;

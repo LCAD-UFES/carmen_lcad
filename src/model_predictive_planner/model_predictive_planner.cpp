@@ -160,7 +160,7 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavi
 	{
 		SE2 lane_in_world_reference(path_goals_and_annotations_message->poses[k].x, path_goals_and_annotations_message->poses[k].y, path_goals_and_annotations_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], 0, beta,
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], 0, {beta, 0.0, 0.0, 0.0, 0.0},
 				path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
 		lane_in_local_pose->push_back(local_reference_lane_point);
 	}
@@ -237,7 +237,7 @@ add_points_to_goal_list_interval(carmen_robot_and_trailers_path_point_t p1, carm
 	double delta_theta = carmen_normalize_theta(p2.theta - p1.theta) / (double) num_points;
 	double delta_beta = carmen_normalize_theta(p2.trailer_theta[0] - p1.trailer_theta[0]) / (double) num_points;
 
-	carmen_robot_and_trailers_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.num_trailers, p1.trailer_theta[0], p1.v, p1.phi, 0.0}; // necessario para capturar v e phi
+	carmen_robot_and_trailers_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.num_trailers, {p1.trailer_theta[0], p1.trailer_theta[1], p1.trailer_theta[2], p1.trailer_theta[3], p1.trailer_theta[4]}, p1.v, p1.phi, 0.0}; // necessario para capturar v e phi
 	for (int i = 0; i < num_points; i++)
 	{
 		new_point.x = p1.x + (double) i * delta_x;
@@ -461,7 +461,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 {
 	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance;
 	carmen_robot_and_trailers_pose_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y,
-			GlobalState::localizer_pose->theta, GlobalState::localizer_pose->num_trailers, GlobalState::localizer_pose->trailer_theta[0]};
+			GlobalState::localizer_pose->theta, GlobalState::localizer_pose->num_trailers, {GlobalState::localizer_pose->trailer_theta[0], GlobalState::localizer_pose->trailer_theta[1], GlobalState::localizer_pose->trailer_theta[2], GlobalState::localizer_pose->trailer_theta[3], GlobalState::localizer_pose->trailer_theta[4]}};
 
 	double max_circle_invasion;
 	for (int j = 0; j < 1; j++)
@@ -480,7 +480,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 				}
 			}
 
-			carmen_robot_and_trailers_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].num_trailers, path[i].trailer_theta[0]};
+			carmen_robot_and_trailers_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].num_trailers, {path[i].trailer_theta[0], path[i].trailer_theta[1], path[i].trailer_theta[2], path[i].trailer_theta[3], path[i].trailer_theta[4]}};
 			if (GlobalState::distance_map != NULL)
 			{
 				double circle_invasion = sqrt(carmen_obstacle_avoider_proximity_to_obstacles(&localizer,

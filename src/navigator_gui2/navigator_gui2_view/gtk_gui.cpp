@@ -1488,7 +1488,7 @@ namespace View
 		if (this->simulator_hidden)
 			this->simulator_hidden = 0;
 
-		carmen_robot_and_trailers_pose_t truepose_with_beta = {truepose.x, truepose.y, truepose.theta, beta};
+		carmen_robot_and_trailers_pose_t truepose_with_beta = {truepose.x, truepose.y, truepose.theta, 0, {beta, 0.0, 0.0, 0.0, 0.0}};
 		truepose_with_beta.trailer_theta[0] = globalpos->beta;		// remover esta linha quando o beta da truepos estiver tratado!!
 		simulator_trueposition.pose = truepose_with_beta;
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
@@ -3130,7 +3130,7 @@ namespace View
 	GtkGui::draw_robot(GtkMapViewer *the_map_view)
 	{
 		carmen_world_robot_and_trailer_pose_t robot_with_beta;
-		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, globalpos->beta};
+		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, 0, {globalpos->beta, 0.0, 0.0, 0.0, 0.0}};
 		robot_with_beta.map = robot.map;
 
 		if (!nav_panel_config->show_particles && !nav_panel_config->show_gaussians)

@@ -21,7 +21,7 @@ carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filte
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
-		robot_pose = {robot_and_trailer_traj_point.x ,robot_and_trailer_traj_point.y, robot_and_trailer_traj_point.theta, robot_and_trailer_traj_point.trailer_theta[0], robot_and_trailer_traj_point.v, robot_and_trailer_traj_point.phi};
+		robot_pose = {robot_and_trailer_traj_point.x ,robot_and_trailer_traj_point.y, robot_and_trailer_traj_point.theta, robot_and_trailer_traj_point.num_trailers, {robot_and_trailer_traj_point.trailer_theta[0], robot_and_trailer_traj_point.trailer_theta[1], robot_and_trailer_traj_point.trailer_theta[2], robot_and_trailer_traj_point.trailer_theta[3], robot_and_trailer_traj_point.trailer_theta[4]}, robot_and_trailer_traj_point.v, robot_and_trailer_traj_point.phi};
 
 		if (i != 0)
 		{

@@ -173,7 +173,8 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 				globalpos.globalpos.x,
 				globalpos.globalpos.y,
 				globalpos.globalpos.theta,
-				globalpos.beta,
+				0,
+				{globalpos.beta, 0.0, 0.0, 0.0, 0.0},
 				globalpos.v,
 				globalpos.phi
 		};

@@ -253,7 +253,7 @@ datmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *current
 				if (mo.in_front)
 				{
 					carmen_robot_and_trailers_traj_point_t cp = rddf->poses[rddf_pose_index];
-					carmen_robot_and_trailers_pose_t car_pose = {cp.x, cp.y, cp.theta, cp.num_trailers , cp.trailer_theta[0]};
+					carmen_robot_and_trailers_pose_t car_pose = {cp.x, cp.y, cp.theta, cp.num_trailers , {cp.trailer_theta[0], cp.trailer_theta[1], cp.trailer_theta[2], cp.trailer_theta[3], cp.trailer_theta[4]}};
 					carmen_point_t moving_object_pose = {mo.object_pose.x, mo.object_pose.y, mo.orientation};
 					if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_object_pose, &mo, 0.0, 0.0))
 					{

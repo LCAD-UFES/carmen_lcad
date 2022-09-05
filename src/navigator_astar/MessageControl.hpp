@@ -29,7 +29,7 @@ public:
 	{
 		carmen_planner_map = NULL;
 		requested_goal = NULL;
-		robot = {0, 0, 0, 0, 0, 0};
+		robot = {0, 0, 0, 0, {0.0, 0.0, 0.0, 0.0, 0.0}, 0, 0};
 		robot_conf_g = NULL;
 		path = {NULL, 0, 0};
 	}

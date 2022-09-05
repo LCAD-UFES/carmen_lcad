@@ -299,6 +299,10 @@ convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailers
 	path_point.theta = robot_state.theta;
 	path_point.num_trailers = robot_state.num_trailers;
 	path_point.trailer_theta[0] = robot_state.trailer_theta[0];
+	path_point.trailer_theta[1] = robot_state.trailer_theta[1];
+	path_point.trailer_theta[2] = robot_state.trailer_theta[2];
+	path_point.trailer_theta[3] = robot_state.trailer_theta[3];
+	path_point.trailer_theta[4] = robot_state.trailer_theta[4];
 	path_point.v = robot_state.v;
 	path_point.phi = robot_state.phi;
 	path_point.time = time;
@@ -1034,7 +1038,7 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
-		carmen_robot_and_trailers_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].num_trailers, path[i].trailer_theta[0]};
+		carmen_robot_and_trailers_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].num_trailers, {path[i].trailer_theta[0], path[i].trailer_theta[1], path[i].trailer_theta[2], path[i].trailer_theta[3], path[i].trailer_theta[4]}};
 		double proximity_point = carmen_obstacle_avoider_proximity_to_obstacles(GlobalState::localizer_pose,
 				point_to_check, GlobalState::distance_map, safety_distance);
 		proximity_to_obstacles_for_path += proximity_point;
