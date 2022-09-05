@@ -25,6 +25,9 @@ void get_points2(vector<carmen_robot_and_trailers_path_point_t> &detailed_goal_l
 void save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 							carmen_robot_and_trailers_pose_t *localizer_pose, vector<carmen_robot_and_trailers_path_point_t> &detailed_lane,
 							Command lastOdometry, double target_v);
+
+void get_between_points(carmen_robot_and_trailer_path_point_t robot, carmen_robot_and_trailer_path_point_t point_before, carmen_robot_and_trailer_path_point_t center, carmen_robot_and_trailer_path_point_t point_next,
+		int index_center, int &index_p1, int &index_p2, int &mais_proxima);
 //------------------------------------------------------------
 
 class Util
