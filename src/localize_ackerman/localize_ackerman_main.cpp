@@ -173,19 +173,19 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 				globalpos.globalpos.x,
 				globalpos.globalpos.y,
 				globalpos.globalpos.theta,
-				0,
-				{globalpos.beta, 0.0, 0.0, 0.0, 0.0},
+				globalpos.num_trailers,
+				{globalpos.trailer_theta[0], globalpos.trailer_theta[1], globalpos.trailer_theta[2], globalpos.trailer_theta[3], globalpos.trailer_theta[4]},
 				globalpos.v,
 				globalpos.phi
 		};
 		double delta_t = globalpos.timestamp - last_timestamp;
 //		globalpos.beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
-		globalpos.beta = compute_semi_trailer_beta_using_velodyne(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
+		globalpos.trailer_theta[0] = compute_semi_trailer_beta_using_velodyne(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
 	}
 	else
 	{
 		globalpos.semi_trailer_engaged = 0;
-		globalpos.beta = 0.0;
+		globalpos.trailer_theta[0] = 0.0;
 	}
 	globalpos.semi_trailer_type = semi_trailer_config.type;
 	last_timestamp = timestamp;
@@ -286,8 +286,18 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 	globalpos_ackerman_message.phi = 0.0;
 	globalpos_ackerman_message.v = 0.0;
 
-	globalpos_ackerman_message.beta = initialize_msg->beta;
-	globalpos.beta = initialize_msg->beta;
+	globalpos_ackerman_message.num_trailers = initialize_msg->num_trailers;
+	globalpos_ackerman_message.trailer_theta[0] = initialize_msg->trailer_theta[0];
+	globalpos_ackerman_message.trailer_theta[1] = initialize_msg->trailer_theta[1];
+	globalpos_ackerman_message.trailer_theta[2] = initialize_msg->trailer_theta[2];
+	globalpos_ackerman_message.trailer_theta[3] = initialize_msg->trailer_theta[3];
+	globalpos_ackerman_message.trailer_theta[4] = initialize_msg->trailer_theta[4];
+	globalpos.num_trailers = initialize_msg->num_trailers;
+	globalpos.trailer_theta[0] = initialize_msg->trailer_theta[0];
+	globalpos.trailer_theta[1] = initialize_msg->trailer_theta[1];
+	globalpos.trailer_theta[2] = initialize_msg->trailer_theta[2];
+	globalpos.trailer_theta[3] = initialize_msg->trailer_theta[3];
+	globalpos.trailer_theta[4] = initialize_msg->trailer_theta[4];
 	
 	globalpos_ackerman_message.semi_trailer_engaged = globalpos.semi_trailer_engaged;
 	globalpos_ackerman_message.semi_trailer_type = globalpos.semi_trailer_type;
@@ -801,7 +811,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			globalpos.semi_trailer_type,
 			semi_trailer_config.d,
 			semi_trailer_config.M,
-			globalpos.beta
+			globalpos.trailer_theta[0]
 	};
 
 	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(&local_compacted_map, &local_compacted_mean_remission_map, &local_map,
@@ -967,7 +977,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 			globalpos.semi_trailer_type,
 			semi_trailer_config.d,
 			semi_trailer_config.M,
-			globalpos.beta
+			globalpos.trailer_theta[0]
 	};
 
 	instanteneous_maps_ok = localize_ackerman_variable_scan_build_instanteneous_maps(msg, &spherical_sensor_params[sensor_number], 
@@ -1328,7 +1338,12 @@ carmen_task_manager_set_semi_trailer_type_and_beta_message_handler(carmen_task_m
 	{
 		char *fake_module_name = (char *) "carmen_task_manager_set_semi_trailer_type_and_beta_message_handler()";
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, 1, &fake_module_name, message->semi_trailer_type);
-		globalpos.beta = message->beta;
+		globalpos.num_trailers = message->num_trailers;
+		globalpos.trailer_theta[0] = message->trailer_theta[0];
+		globalpos.trailer_theta[1] = message->trailer_theta[1];
+		globalpos.trailer_theta[2] = message->trailer_theta[2];
+		globalpos.trailer_theta[3] = message->trailer_theta[3];
+		globalpos.trailer_theta[4] = message->trailer_theta[4];
 	}
 }
 

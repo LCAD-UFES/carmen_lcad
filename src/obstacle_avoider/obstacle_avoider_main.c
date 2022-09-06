@@ -404,7 +404,12 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	pose.x = msg->globalpos.x;
 	pose.y = msg->globalpos.y;
 	pose.theta = msg->globalpos.theta;
-	pose.trailer_theta[0] = msg->beta;
+	pose.num_trailers = msg->num_trailers;
+	pose.trailer_theta[0] = msg->trailer_theta[0];
+	pose.trailer_theta[1] = msg->trailer_theta[1];
+	pose.trailer_theta[2] = msg->trailer_theta[2];
+	pose.trailer_theta[3] = msg->trailer_theta[3];
+	pose.trailer_theta[4] = msg->trailer_theta[4];
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -431,7 +436,12 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	pose.x = msg->truepose.x;
 	pose.y = msg->truepose.y;
 	pose.theta = msg->truepose.theta;
-	pose.trailer_theta[0] = msg->beta;
+	pose.num_trailers = msg->num_trailers;
+	pose.trailer_theta[0] = msg->trailer_theta[0];
+	pose.trailer_theta[1] = msg->trailer_theta[1];
+	pose.trailer_theta[2] = msg->trailer_theta[2];
+	pose.trailer_theta[3] = msg->trailer_theta[3];
+	pose.trailer_theta[4] = msg->trailer_theta[4];
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 

@@ -110,7 +110,13 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 		commands[i].x = it->x;
 		commands[i].y = it->y;
 		commands[i].theta = it->theta;
+		commands[i].num_trailers = it->num_trailers;
 		commands[i].trailer_theta[0] = it->trailer_theta[0];
+		commands[i].trailer_theta[1] = it->trailer_theta[1];
+		commands[i].trailer_theta[2] = it->trailer_theta[2];
+		commands[i].trailer_theta[3] = it->trailer_theta[3];
+		commands[i].trailer_theta[4] = it->trailer_theta[4];
+
 
 		i++;
 	}
@@ -241,7 +247,12 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 	traj.x = GlobalState::localizer_pose->x;
 	traj.y = GlobalState::localizer_pose->y;
 	traj.theta = GlobalState::localizer_pose->theta;
+	traj.num_trailers = GlobalState::localizer_pose->num_trailers;
 	traj.trailer_theta[0] = GlobalState::localizer_pose->trailer_theta[0];
+	traj.trailer_theta[1] = GlobalState::localizer_pose->trailer_theta[1];
+	traj.trailer_theta[2] = GlobalState::localizer_pose->trailer_theta[2];
+	traj.trailer_theta[3] = GlobalState::localizer_pose->trailer_theta[3];
+	traj.trailer_theta[4] = GlobalState::localizer_pose->trailer_theta[4];
 	path.push_back(traj);
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
@@ -354,7 +365,12 @@ copy_path_to_traj(carmen_robot_and_trailers_traj_point_t *traj, vector<carmen_ro
 		traj[i].x = it->x;
 		traj[i].y = it->y;
 		traj[i].theta = it->theta;
+		traj[i].num_trailers = it->num_trailers;
 		traj[i].trailer_theta[0] = it->trailer_theta[0];
+		traj[i].trailer_theta[1] = it->trailer_theta[1];
+		traj[i].trailer_theta[2] = it->trailer_theta[2];
+		traj[i].trailer_theta[3] = it->trailer_theta[3];
+		traj[i].trailer_theta[4] = it->trailer_theta[4];
 		traj[i].v = it->v;
 		traj[i].phi = it->phi;
 	}
@@ -611,7 +627,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	if (!GlobalState::localizer_pose)
 		GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 
-	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,  0, msg->beta}; //Adicionar num_trailers
+	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,  msg->num_trailers, {msg->trailer_theta[0], msg->trailer_theta[1], msg->trailer_theta[2], msg->trailer_theta[3], msg->trailer_theta[4]}}; //Adicionar num_trailers
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
@@ -635,7 +651,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	if (!GlobalState::localizer_pose)
 			GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 
-	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, 0, 0.0};
+	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, 0, {0.0, 0.0, 0.0, 0.0, 0.0}};
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);

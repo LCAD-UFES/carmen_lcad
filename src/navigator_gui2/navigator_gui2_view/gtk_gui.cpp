@@ -1488,8 +1488,8 @@ namespace View
 		if (this->simulator_hidden)
 			this->simulator_hidden = 0;
 
-		carmen_robot_and_trailers_pose_t truepose_with_beta = {truepose.x, truepose.y, truepose.theta, 0, {beta, 0.0, 0.0, 0.0, 0.0}};
-		truepose_with_beta.trailer_theta[0] = globalpos->beta;		// remover esta linha quando o beta da truepos estiver tratado!!
+		carmen_robot_and_trailers_pose_t truepose_with_beta = {truepose.x, truepose.y, truepose.theta, globalpos->num_trailers, {beta, globalpos->trailer_theta[1], globalpos->trailer_theta[2], globalpos->trailer_theta[3], globalpos->trailer_theta[4]}};
+		truepose_with_beta.trailer_theta[0] = globalpos->trailer_theta[0];		// remover esta linha quando o beta da truepos estiver tratado!!
 		simulator_trueposition.pose = truepose_with_beta;
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
 		last_simulator_update  = carmen_get_time();
@@ -1778,7 +1778,12 @@ namespace View
 				final_goal.pose.x = destination.x;
 				final_goal.pose.y = destination.y;
 				final_goal.pose.theta = destination.theta;
+				final_goal.pose.num_trailers = 0;
 				final_goal.pose.trailer_theta[0] = 0.0;
+				final_goal.pose.trailer_theta[1] = 0.0;
+				final_goal.pose.trailer_theta[2] = 0.0;
+				final_goal.pose.trailer_theta[3] = 0.0;
+				final_goal.pose.trailer_theta[4] = 0.0;
 				final_goal.map = this->controls_.map_view->internal_map;
 
 				carmen_rddf_publish_end_point_message(50, final_goal.pose);
@@ -3130,7 +3135,7 @@ namespace View
 	GtkGui::draw_robot(GtkMapViewer *the_map_view)
 	{
 		carmen_world_robot_and_trailer_pose_t robot_with_beta;
-		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, 0, {globalpos->beta, 0.0, 0.0, 0.0, 0.0}};
+		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, globalpos->num_trailers, {globalpos->trailer_theta[0], globalpos->trailer_theta[1], globalpos->trailer_theta[2], globalpos->trailer_theta[3], globalpos->trailer_theta[4]}};
 		robot_with_beta.map = robot.map;
 
 		if (!nav_panel_config->show_particles && !nav_panel_config->show_gaussians)

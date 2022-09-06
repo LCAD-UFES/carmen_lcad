@@ -70,7 +70,12 @@ compute_new_average_state(carmen_fused_odometry_particle *xt)
 	average_message.velocity.y = 0.0;
 	average_message.velocity.z = 0.0;
 	average_message.phi = 0.0;
-	average_message.beta = 0.0;
+	average_message.num_trailers = 0;
+	average_message.trailer_theta[0] = 0.0;
+	average_message.trailer_theta[1] = 0.0;
+	average_message.trailer_theta[2] = 0.0;
+	average_message.trailer_theta[3] = 0.0;
+	average_message.trailer_theta[4] = 0.0;
 	average_message.angular_velocity.roll = 0.0;
 	average_message.angular_velocity.pitch = 0.0;
 	average_message.angular_velocity.yaw = 0.0;
@@ -92,7 +97,11 @@ compute_new_average_state(carmen_fused_odometry_particle *xt)
 
 		average_message.phi +=	xt[m].state.phi * invM;		
 
-		average_message.beta +=	xt[m].state.beta * invM;
+		average_message.trailer_theta[0] +=	xt[m].state.trailer_theta[0] * invM;
+		average_message.trailer_theta[1] +=	xt[m].state.trailer_theta[1] * invM;
+		average_message.trailer_theta[2] +=	xt[m].state.trailer_theta[2] * invM;
+		average_message.trailer_theta[3] +=	xt[m].state.trailer_theta[3] * invM;
+		average_message.trailer_theta[4] +=	xt[m].state.trailer_theta[4] * invM;
 
 		average_message.angular_velocity.roll += 	xt[m].state.ang_velocity.roll * invM;
 		average_message.angular_velocity.pitch += 	xt[m].state.ang_velocity.pitch * invM;
@@ -129,7 +138,11 @@ compute_new_average_state(carmen_fused_odometry_particle *xt)
 	average_message.particle_pos = particle_pos;
 	average_message.weights = particle_weight;
 
-	average_message.beta = 0.0;
+	average_message.trailer_theta[0] = 0.0;
+	average_message.trailer_theta[1] = 0.0;
+	average_message.trailer_theta[2] = 0.0;
+	average_message.trailer_theta[3] = 0.0;
+	average_message.trailer_theta[4] = 0.0;
 
 	return (average_message);
 }
@@ -145,7 +158,12 @@ assemble_fused_odometry_message(carmen_fused_odometry_particle_message particle_
 	message.velocity = particle_message.velocity;
 	message.angular_velocity = particle_message.angular_velocity;
 	message.phi = particle_message.phi;
-	message.beta = particle_message.beta;
+	message.num_trailers = particle_message.num_trailers;
+	message.trailer_theta[0] = particle_message.trailer_theta[0];
+	message.trailer_theta[1] = particle_message.trailer_theta[1];
+	message.trailer_theta[2] = particle_message.trailer_theta[2];
+	message.trailer_theta[3] = particle_message.trailer_theta[3];
+	message.trailer_theta[4] = particle_message.trailer_theta[4];
 	message.gps_position_at_turn_on = particle_message.gps_position_at_turn_on;
 	message.timestamp = particle_message.timestamp;
 	message.host = carmen_get_host();
@@ -247,7 +265,12 @@ randomize_state_vector(carmen_fused_odometry_state_vector initial_state, carmen_
 
 	new_sv.phi = initial_state.phi; // + carmen_gaussian_random(0.0, fused_odometry_parameters->phi_noise_phi);
 
-	new_sv.beta = 0.0;
+	new_sv.num_trailers = 0;
+	new_sv.trailer_theta[0] = 0.0;
+	new_sv.trailer_theta[1] = 0.0;
+	new_sv.trailer_theta[2] = 0.0;
+	new_sv.trailer_theta[3] = 0.0;
+	new_sv.trailer_theta[4] = 0.0;
 
 	new_sv.timestamp = initial_state.timestamp;
 

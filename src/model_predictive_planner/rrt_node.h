@@ -96,7 +96,7 @@ typedef struct
 } rrt_path_message;
 
 #define RRT_PATH_NAME "rrt_path_message_name"
-#define RRT_PATH_FMT "{<{{double, double, double, double, double, double}, {double, double, double, double, double, double}, double, double, double}:2>, int, {double, double, double}, int, double, string}"
+#define RRT_PATH_FMT "{<{{double, double, double, int, [double:5], double, double}, {double, double, double, int, [double:5], double, double}, double, double, double}:2>, int, {double, double, double}, int, double, string}"
 
 
 

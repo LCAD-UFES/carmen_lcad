@@ -195,7 +195,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		Follower::go();
 
 	if (!eliminate_path_follower)
-		build_and_follow_path(msg->globalpos, msg->beta, msg->timestamp);
+		build_and_follow_path(msg->globalpos, msg->trailer_theta[0], msg->timestamp);
 
 	globalpos_message_received = true;
 
@@ -215,7 +215,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 		GlobalState::last_odometry.v = msg->v;
 		GlobalState::last_odometry.phi = msg->phi;
 
-		build_and_follow_path(msg->truepose, msg->beta, msg->timestamp);
+		build_and_follow_path(msg->truepose, msg->trailer_theta[0], msg->timestamp);
 	}
 }
 

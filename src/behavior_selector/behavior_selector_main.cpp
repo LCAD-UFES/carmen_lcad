@@ -1234,7 +1234,14 @@ set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_p
 
 		if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.type != 0))
 			for (int i = 0; i < rddf_msg.number_of_poses; i++)
+			{
+				rddf_msg.poses[i].num_trailers = road_network_message->poses[i].num_trailers;
 				rddf_msg.poses[i].trailer_theta[0] = road_network_message->poses[i].trailer_theta[0];
+				rddf_msg.poses[i].trailer_theta[1] = road_network_message->poses[i].trailer_theta[1];
+				rddf_msg.poses[i].trailer_theta[2] = road_network_message->poses[i].trailer_theta[2];
+				rddf_msg.poses[i].trailer_theta[3] = road_network_message->poses[i].trailer_theta[3];
+				rddf_msg.poses[i].trailer_theta[4] = road_network_message->poses[i].trailer_theta[4];
+			}
 
 		if (!road_network_message->annotations && (set_of_paths.number_of_poses != 0))
 		{
@@ -1320,7 +1327,14 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 	carmen_robot_and_trailers_traj_point_t *first_goal;
 	int goal_type;
 	if (last_rddf_message_copy->number_of_poses > 0)
+	{
+		last_rddf_message_copy->poses[0].num_trailers = current_robot_pose_v_and_phi.num_trailers;
 		last_rddf_message_copy->poses[0].trailer_theta[0] = current_robot_pose_v_and_phi.trailer_theta[0];
+		last_rddf_message_copy->poses[0].trailer_theta[1] = current_robot_pose_v_and_phi.trailer_theta[1];
+		last_rddf_message_copy->poses[0].trailer_theta[2] = current_robot_pose_v_and_phi.trailer_theta[2];
+		last_rddf_message_copy->poses[0].trailer_theta[3] = current_robot_pose_v_and_phi.trailer_theta[3];
+		last_rddf_message_copy->poses[0].trailer_theta[4] = current_robot_pose_v_and_phi.trailer_theta[4];
+	}
 	carmen_robot_and_trailers_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
 			path_collision_info, current_moving_objects, behavior_selector_state_message, timestamp);
 
@@ -1393,7 +1407,13 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.x = msg->globalpos.x;
 	current_robot_pose_v_and_phi.y = msg->globalpos.y;
 	current_robot_pose_v_and_phi.theta = msg->globalpos.theta;
-	current_robot_pose_v_and_phi.trailer_theta[0] = msg->beta;
+	current_robot_pose_v_and_phi.num_trailers = msg->num_trailers;
+	current_robot_pose_v_and_phi.trailer_theta[0] = msg->trailer_theta[0];
+	current_robot_pose_v_and_phi.trailer_theta[1] = msg->trailer_theta[1];
+	current_robot_pose_v_and_phi.trailer_theta[2] = msg->trailer_theta[2];
+	current_robot_pose_v_and_phi.trailer_theta[3] = msg->trailer_theta[3];
+	current_robot_pose_v_and_phi.trailer_theta[4] = msg->trailer_theta[4];
+
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
@@ -1430,7 +1450,12 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	current_robot_pose_v_and_phi.x = msg->truepose.x;
 	current_robot_pose_v_and_phi.y = msg->truepose.y;
 	current_robot_pose_v_and_phi.theta = msg->truepose.theta;
-	current_robot_pose_v_and_phi.trailer_theta[0] = msg->beta;
+	current_robot_pose_v_and_phi.num_trailers = msg->num_trailers;
+	current_robot_pose_v_and_phi.trailer_theta[0] = msg->trailer_theta[0];
+	current_robot_pose_v_and_phi.trailer_theta[1] = msg->trailer_theta[1];
+	current_robot_pose_v_and_phi.trailer_theta[2] = msg->trailer_theta[2];
+	current_robot_pose_v_and_phi.trailer_theta[3] = msg->trailer_theta[3];
+	current_robot_pose_v_and_phi.trailer_theta[4] = msg->trailer_theta[4];
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 

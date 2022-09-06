@@ -69,7 +69,8 @@ class carmen_timestamp_index_element
 		double angular_velocity_pitch;
 		double angular_velocity_yaw;
 		double phi;
-		double beta;
+		int num_trailers;
+		double trailer_theta[MAX_NUM_TRAILERS];
 		double timestamp;
 		long rddf_offset;
 		long rddf_data_length;

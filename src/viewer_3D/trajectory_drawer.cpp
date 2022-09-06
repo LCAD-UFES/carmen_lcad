@@ -79,7 +79,12 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 		t_drawer->path[i].x = message->path[i].x;
 		t_drawer->path[i].y = message->path[i].y;
 		t_drawer->path[i].theta = message->path[i].theta;
+		t_drawer->path[i].num_trailers = message->path[i].num_trailers;
 		t_drawer->path[i].trailer_theta[0] = message->path[i].trailer_theta[0];
+		t_drawer->path[i].trailer_theta[1] = message->path[i].trailer_theta[1];
+		t_drawer->path[i].trailer_theta[2] = message->path[i].trailer_theta[2];
+		t_drawer->path[i].trailer_theta[3] = message->path[i].trailer_theta[3];
+		t_drawer->path[i].trailer_theta[4] = message->path[i].trailer_theta[4];
 		set_color(t_drawer, i, message->path[i].v);
 	}
 
@@ -100,7 +105,12 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 		t_drawer->path[i].x = message->motion_command[i].x;
 		t_drawer->path[i].y = message->motion_command[i].y;
 		t_drawer->path[i].theta = message->motion_command[i].theta;
+		t_drawer->path[i].num_trailers = message->motion_command[i].num_trailers;
 		t_drawer->path[i].trailer_theta[0] = message->motion_command[i].trailer_theta[0];
+		t_drawer->path[i].trailer_theta[1] = message->motion_command[i].trailer_theta[1];
+		t_drawer->path[i].trailer_theta[2] = message->motion_command[i].trailer_theta[2];
+		t_drawer->path[i].trailer_theta[3] = message->motion_command[i].trailer_theta[3];
+		t_drawer->path[i].trailer_theta[4] = message->motion_command[i].trailer_theta[4];
 		set_color(t_drawer, i, message->motion_command[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->motion_command[i].x, message->motion_command[i].y, message->motion_command[i].theta,
@@ -124,7 +134,12 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 		t_drawer->path[i].x = message->path[i].p1.x;
 		t_drawer->path[i].y = message->path[i].p1.y;
 		t_drawer->path[i].theta = message->path[i].p1.theta;
+		t_drawer->path[i].num_trailers = message->path[i].p1.num_trailers;
 		t_drawer->path[i].trailer_theta[0] = message->path[i].p1.trailer_theta[0];
+		t_drawer->path[i].trailer_theta[1] = message->path[i].p1.trailer_theta[1];
+		t_drawer->path[i].trailer_theta[2] = message->path[i].p1.trailer_theta[2];
+		t_drawer->path[i].trailer_theta[3] = message->path[i].p1.trailer_theta[3];
+		t_drawer->path[i].trailer_theta[4] = message->path[i].p1.trailer_theta[4];
 		set_color(t_drawer, i, message->path[i].v);
 	}
 
@@ -148,7 +163,12 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 		t_drawer->path[i].x = message->poses[i].x;
 		t_drawer->path[i].y = message->poses[i].y;
 		t_drawer->path[i].theta = message->poses[i].theta;
+		t_drawer->path[i].num_trailers = message->poses[i].num_trailers;
 		t_drawer->path[i].trailer_theta[0] = message->poses[i].trailer_theta[0];
+		t_drawer->path[i].trailer_theta[1] = message->poses[i].trailer_theta[1];
+		t_drawer->path[i].trailer_theta[2] = message->poses[i].trailer_theta[2];
+		t_drawer->path[i].trailer_theta[3] = message->poses[i].trailer_theta[3];
+		t_drawer->path[i].trailer_theta[4] = message->poses[i].trailer_theta[4];
 		set_color(t_drawer, i, message->poses[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->poses[i].x, message->poses[i].y, message->poses[i].theta,

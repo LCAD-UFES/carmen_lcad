@@ -155,7 +155,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	robot_position.x = round(msg->globalpos.x * roundValue) / roundValue;
 	robot_position.y = round(msg->globalpos.y * roundValue) / roundValue;
 	robot_position.theta = round(msg->globalpos.theta * roundValue) / roundValue;
-	robot_position.trailer_theta[0] = round(msg->beta * roundValue) / roundValue;
+	robot_position.trailer_theta[0] = round(msg->trailer_theta[0] * roundValue) / roundValue;
 	robot_position.v = msg->v;
 	robot_position.phi = msg->phi;
 

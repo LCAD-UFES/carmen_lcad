@@ -182,7 +182,7 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 					globalpos_message->semi_trailer_type,
 					semi_trailer_config.d,
 					semi_trailer_config.M,
-					globalpos_message->beta
+					globalpos_message->trailer_theta[0]
 			};
 
 			if (use_merge_between_maps)
@@ -217,7 +217,7 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 				globalpos_message->semi_trailer_type,
 				semi_trailer_config.d,
 				semi_trailer_config.M,
-				globalpos_message->beta
+				globalpos_message->trailer_theta[0]
 		};
 
 		if (use_merge_between_maps)
@@ -457,7 +457,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 #ifdef USE_REAR_BULLBAR
 	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
 	if (globalpos_message->semi_trailer_type != 0) // se for igual a 0 ele não é articulado e não precisa atualizar a rear_bullbar_pose
-		update_sensor_reference_pose(globalpos_message->beta);
+		update_sensor_reference_pose(globalpos_message->trailer_theta[0]);
 #endif
 
 	if (ok_to_publish)

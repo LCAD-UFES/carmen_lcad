@@ -61,13 +61,14 @@ typedef struct
 typedef struct
 {
 	int semi_trailer_type;
-	double beta;
+	int num_trailers;
+	double trailer_theta[MAX_NUM_TRAILERS];
 	double timestamp;
 	char *host;
 } carmen_task_manager_set_semi_trailer_type_and_beta_message;
 
 #define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_NAME	"carmen_task_manager_set_semi_trailer_type_and_beta"
-#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_FMT	"{int,double,double,string}"
+#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_FMT	"{int,int,[double:5],double,string}"
 
 typedef struct
 {

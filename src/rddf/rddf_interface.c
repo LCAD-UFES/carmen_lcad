@@ -197,7 +197,12 @@ carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_robo
     end_point.x = point.x;
     end_point.y = point.y;
     end_point.theta = point.theta;
+    end_point.num_trailers = point.num_trailers;
     end_point.trailer_theta[0] = point.trailer_theta[0];
+    end_point.trailer_theta[1] = point.trailer_theta[1];
+    end_point.trailer_theta[2] = point.trailer_theta[2];
+    end_point.trailer_theta[3] = point.trailer_theta[3];
+    end_point.trailer_theta[4] = point.trailer_theta[4];
 
     rddf_end_point_message.point = end_point;
     rddf_end_point_message.timestamp = carmen_get_time();

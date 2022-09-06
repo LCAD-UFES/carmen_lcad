@@ -903,6 +903,10 @@ create_ackerman_traj_point_struct(double x, double y, double velocity_x, double 
 	point.theta = yaw;
 	point.num_trailers = 0;
 	point.trailer_theta[0] = 0.0;
+	point.trailer_theta[1] = 0.0;
+	point.trailer_theta[2] = 0.0;
+	point.trailer_theta[3] = 0.0;
+	point.trailer_theta[4] = 0.0;
 
 	return point;
 }

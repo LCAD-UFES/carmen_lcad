@@ -1142,7 +1142,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 static void
 carmen_simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	gui->navigator_graphics_update_simulator_truepos(msg->truepose, msg->beta);
+	gui->navigator_graphics_update_simulator_truepos(msg->truepose, msg->trailer_theta[0]);
 }
 
 

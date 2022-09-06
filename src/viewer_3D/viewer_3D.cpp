@@ -1466,7 +1466,7 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
         last_localize_ackerman_trail -= localize_ackerman_size;
 
 
-    beta = localize_ackerman_message->beta;
+    beta = localize_ackerman_message->trailer_theta[0];
 	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
 	if (localize_ackerman_message->semi_trailer_type != semi_trailer_config.type)
@@ -2902,7 +2902,12 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				path[i].x	  = message->set_of_paths[j * message->number_of_poses + i].x;
 				path[i].y	  = message->set_of_paths[j * message->number_of_poses + i].y;
 				path[i].theta = message->set_of_paths[j * message->number_of_poses + i].theta;
+				path[i].num_trailers = message->set_of_paths[j * message->number_of_poses + i].num_trailers;
 				path[i].trailer_theta[0]  = message->set_of_paths[j * message->number_of_poses + i].trailer_theta[0];
+				path[i].trailer_theta[1]  = message->set_of_paths[j * message->number_of_poses + i].trailer_theta[1];
+				path[i].trailer_theta[2]  = message->set_of_paths[j * message->number_of_poses + i].trailer_theta[2];
+				path[i].trailer_theta[3]  = message->set_of_paths[j * message->number_of_poses + i].trailer_theta[3];
+				path[i].trailer_theta[4]  = message->set_of_paths[j * message->number_of_poses + i].trailer_theta[4];
 				path[i].v	  = message->set_of_paths[j * message->number_of_poses + i].v;
 				path[i].phi	  = message->set_of_paths[j * message->number_of_poses + i].phi;
 			}
@@ -2941,7 +2946,12 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				path[i].x	  	= message->nearby_lanes[lane_start + i].x;
 				path[i].y	  	= message->nearby_lanes[lane_start + i].y;
 				path[i].theta   = message->nearby_lanes[lane_start + i].theta;
+				path[i].num_trailers   = message->nearby_lanes[lane_start + i].num_trailers;
 				path[i].trailer_theta[0]   = message->nearby_lanes[lane_start + i].trailer_theta[0];
+				path[i].trailer_theta[1]   = message->nearby_lanes[lane_start + i].trailer_theta[1];
+				path[i].trailer_theta[2]   = message->nearby_lanes[lane_start + i].trailer_theta[2];
+				path[i].trailer_theta[3]   = message->nearby_lanes[lane_start + i].trailer_theta[3];
+				path[i].trailer_theta[4]   = message->nearby_lanes[lane_start + i].trailer_theta[4];
 				path[i].v		= 0;
 				path[i].phi		= 0;
 			}
@@ -3042,7 +3052,12 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 		path[i].x	  = message->poses[i].x;
 		path[i].y	  = message->poses[i].y;
 		path[i].theta = message->poses[i].theta;
+		path[i].num_trailers  = message->poses[i].num_trailers;
 		path[i].trailer_theta[0]  = message->poses[i].trailer_theta[0];
+		path[i].trailer_theta[1]  = message->poses[i].trailer_theta[1];
+		path[i].trailer_theta[2]  = message->poses[i].trailer_theta[2];
+		path[i].trailer_theta[3]  = message->poses[i].trailer_theta[3];
+		path[i].trailer_theta[4]  = message->poses[i].trailer_theta[4];
 		path[i].v	  = message->poses[i].v;
 		path[i].phi	  = message->poses[i].phi;
 	}
@@ -3067,7 +3082,12 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 			semi_trailer_path[i].x	  = message->poses[i].x - semi_trailer_config.M * cos(message->poses[i].theta) - semi_trailer_config.d * cos(message->poses[i].theta - message->poses[i].trailer_theta[0]);
 			semi_trailer_path[i].y	  = message->poses[i].y - semi_trailer_config.M * sin(message->poses[i].theta) - semi_trailer_config.d * sin(message->poses[i].theta - message->poses[i].trailer_theta[0]);
 			semi_trailer_path[i].theta = message->poses[i].theta - message->poses[i].trailer_theta[0];
+			semi_trailer_path[i].num_trailers  = message->poses[i].num_trailers;
 			semi_trailer_path[i].trailer_theta[0]  = message->poses[i].trailer_theta[0];
+			semi_trailer_path[i].trailer_theta[1]  = message->poses[i].trailer_theta[1];
+			semi_trailer_path[i].trailer_theta[2]  = message->poses[i].trailer_theta[2];
+			semi_trailer_path[i].trailer_theta[3]  = message->poses[i].trailer_theta[3];
+			semi_trailer_path[i].trailer_theta[4]  = message->poses[i].trailer_theta[4];
 			semi_trailer_path[i].v	  = message->poses[i].v;
 			semi_trailer_path[i].phi	  = message->poses[i].phi;
 		}

@@ -384,7 +384,12 @@ carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen
 	displaced_car_pose.y = car_pose->y + displace * sine;
 
 	displaced_car_pose.theta = car_pose->theta;
+	displaced_car_pose.num_trailers = car_pose->num_trailers;
 	displaced_car_pose.trailer_theta[0] = car_pose->trailer_theta[0];
+	displaced_car_pose.trailer_theta[1] = car_pose->trailer_theta[1];
+	displaced_car_pose.trailer_theta[2] = car_pose->trailer_theta[2];
+	displaced_car_pose.trailer_theta[3] = car_pose->trailer_theta[3];
+	displaced_car_pose.trailer_theta[4] = car_pose->trailer_theta[4];
 
 	return (displaced_car_pose);
 }
@@ -419,8 +424,12 @@ carmen_collision_detection_displace_car_on_its_frenet_frame(carmen_robot_and_tra
 	displaced_car_pose.y = displaced_car_pose.y + displacement * sine;
 
 	displaced_car_pose.theta = car_pose->theta;
+	displaced_car_pose.num_trailers = car_pose->num_trailers;
 	displaced_car_pose.trailer_theta[0] = car_pose->trailer_theta[0];
-
+	displaced_car_pose.trailer_theta[1] = car_pose->trailer_theta[1];
+	displaced_car_pose.trailer_theta[2] = car_pose->trailer_theta[2];
+	displaced_car_pose.trailer_theta[3] = car_pose->trailer_theta[3];
+	displaced_car_pose.trailer_theta[4] = car_pose->trailer_theta[4];
 	return (displaced_car_pose);
 }
 

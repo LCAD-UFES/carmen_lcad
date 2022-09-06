@@ -53,13 +53,14 @@ typedef struct {
   int distribution;
   int num_modes;
   carmen_point_t *mean, *std;
-  double beta;
+  int num_trailers;
+  double trailer_theta[MAX_NUM_TRAILERS];
   double timestamp;
   char *host;
 } carmen_localize_ackerman_initialize_message;
 
 #define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME  "carmen_localize_ackerman_initialize"
-#define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT   "{int,int,<{double,double,double}:2>,<{double,double,double}:2>,double,double,string}"
+#define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT   "{int,int,<{double,double,double}:2>,<{double,double,double}:2>,int,[double:5],double,string}"
 
   /* initialize by map placename */
 
@@ -83,13 +84,14 @@ typedef struct {
   int converged;
   int semi_trailer_engaged;
   int semi_trailer_type;
-  double beta;
+  int num_trailers;
+  double trailer_theta[MAX_NUM_TRAILERS];
   double timestamp;
   char *host;
 } carmen_localize_ackerman_globalpos_message;
 
 #define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME "carmen_localize_ackerman_globalpos"
-#define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT  "{{double,double,double},{double,double,double},{double,double,double},{{double,double,double},{double,double,double}},{double,double,double},double,double,double,int,int,int,double,double,string}"
+#define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT  "{{double,double,double},{double,double,double},{double,double,double},{{double,double,double},{double,double,double}},{double,double,double},double,double,double,int,int,int,int,[double:5],double,string}"
 
 /* particle message */
 

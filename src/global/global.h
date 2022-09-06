@@ -372,6 +372,12 @@ typedef struct {
 
 
 typedef struct {
+	int num_semi_trailers;
+	carmen_semi_trailer_config_t semi_trailers;
+} carmen_semi_trailers_config_t;
+
+
+typedef struct {
 	int semi_trailer_engaged;
 	int type;
 	double d;
