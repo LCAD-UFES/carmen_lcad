@@ -755,11 +755,13 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped_At_Unavoidable_Obstacle_S0:
 			if (route_was_recomputed(decision_making_state_msg->route_planner_state) && all_paths_has_collision == false)
 				decision_making_state_msg->low_level_state = Free_Running;
-			else if (could_not_compute_the_route(decision_making_state_msg->route_planner_state))
-			{
-				if(wait_for_given_seconds(1.0))
-					decision_making_state_msg->low_level_state = Stopped;
-			}
+			else if (wait_for_given_seconds(2.0) && still_in_route(decision_making_state_msg->route_planner_state))
+				decision_making_state_msg->low_level_state = Free_Running;
+			// else if (could_not_compute_the_route(decision_making_state_msg->route_planner_state))
+			// {
+			// 	if(wait_for_given_seconds(1.0))
+			// 		decision_making_state_msg->low_level_state = Stopped;
+			// }
 
 			break;
 
