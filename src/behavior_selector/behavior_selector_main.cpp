@@ -70,6 +70,9 @@
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
 
+// Comment or uncomment this definition to control paths collision states.
+// #define CHECK_IF_ALL_PATHS_HAS_COLLISION
+
 using namespace std;
 
 vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
@@ -1158,7 +1161,8 @@ check_if_all_paths_has_collision(vector<path_collision_info_t> &paths_collision_
 		if(paths_collision_info[i].path_has_no_collision == false)
 			paths_with_collision_counter++;
 	}
-	// printf("paths_with_collision_counter: %d\n", paths_with_collision_counter);
+	if(paths_with_collision_counter == (int)paths_collision_info.size())
+		printf("paths_with_collision_counter: %d\n", paths_with_collision_counter);
 
 	if(paths_with_collision_counter == frenet_path_planner_num_paths)
 		return true;
@@ -1175,13 +1179,14 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 
 	if (behavior_selector_performs_path_planning)
 	{
-		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
+		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL) && 
+		(behavior_selector_state_message.low_level_state != Stopped_At_Unavoidable_Obstacle_S0))
 		{
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
 					&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
-		else
+		else if ((road_network_message->number_of_poses == 0) || (road_network_message->poses == NULL))
 			current_set_of_paths = NULL;
 	}
 
@@ -1205,16 +1210,19 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 		else
 			set_of_paths.selected_path = selected_path_id;
 
-		if(check_if_all_paths_has_collision(paths_collision_info))
-		{
-			// printf("paths com colisao\n\n");
-			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
-			all_paths_has_collision = true;
-		}
-		else
-		{
-			all_paths_has_collision = false;
-		}
+		#ifdef CHECK_IF_ALL_PATHS_HAS_COLLISION
+			if(check_if_all_paths_has_collision(paths_collision_info))
+			{
+				printf("paths com colisao\n\n");
+				set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
+				all_paths_has_collision = true;
+			}
+			else
+			{
+				set_of_paths.selected_path = selected_path_id;
+				all_paths_has_collision = false;
+			}
+		#endif
 
 		publish_set_of_paths_message(&set_of_paths);
 
@@ -1261,7 +1269,8 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 //		if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
 //			publish_behavior_selector_road_profile_message(&rddf_msg);
 
-		free(set_of_paths.set_of_paths);
+		if(behavior_selector_state_message.low_level_state != Stopped_At_Unavoidable_Obstacle_S0)
+			free(set_of_paths.set_of_paths);
 	}
 
 	if ((int) paths_collision_info.size() > selected_path_id)
