@@ -2369,15 +2369,12 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 				}
 				else
 				{
-					double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) /
-							(filter->param->remission_variance_multiplier * variance);
+					double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) / (filter->param->remission_variance_multiplier * variance);
+					double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
 					if (use_log_odds)
-					{
-						double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
 						temp_weights[i][laser_reading] = carmen_prob_models_probabilistic_to_log_odds(p);
-					}
 					else
-						temp_weights[i][laser_reading] = -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
+						temp_weights[i][laser_reading] = p;// -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
 				}
 				if (temp_weights[i][laser_reading] <= small_log_weight)
 					count[laser_reading] += 1;
@@ -2432,11 +2429,12 @@ localize_map_correlation_plus_mahalanobis_correction_with_remission_map_and_outl
 
 	double temp1 = filter->param->particles_normalize_factor;
 	filter->param->particles_normalize_factor = filter->param->remission_particles_normalize_factor;
-	filter->param->use_log_odds = 0;
+//	double temp2 = filter->param->use_log_odds;
+//	filter->param->use_log_odds = 0;
 	mahalanobis_distance_with_outlier_rejection(localize_map, local_mean_remission_map, filter);
 	filter->param->particles_normalize_factor = temp1;
 	convert_particles_log_odd_weights_to_prob(filter);
-	filter->param->use_log_odds = 1;
+//	filter->param->use_log_odds = temp2;
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 		filter->particles[i].weight = (map_correlation_weights[i] + filter->particles[i].weight) / 2.0;
