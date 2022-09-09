@@ -16,9 +16,10 @@ traria mais problemas do que ganho (Opnião do Vinicius)
 
 ###Instalação
 
-Baixe o SDK usado -> link
+Baixe o SDK 0.4.1 usado -> https://drive.google.com/file/d/1L5wQ-yqk9REpW62EWWOS1pmnvYHFsHPE/view?usp=sharing
 baixe as dependencias:
-
+sudo apt install build-essential cmake libjsoncpp-dev libeigen3-dev libcurl4-openssl-dev \
+                   libtins-dev libpcap-dev libglfw3-dev libglew-dev
 instale no packages carmen
 	build
 	cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_VIZ=ON -DBUILD_PCAP=ON -DBUILD_EXAMPLES=ON ..
