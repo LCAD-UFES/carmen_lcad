@@ -108,6 +108,7 @@ tf::Transformer tf_transformer;
 extern double gps_correction_factor;
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern carmen_pose_3D_t gps_pose_in_the_car;
+extern carmen_pose_3D_t semitrailer_pose;
 
 
 static void
@@ -186,6 +187,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		globalpos.semi_trailer_engaged = 0;
 		globalpos.beta = 0.0;
 	}
+
 	globalpos.semi_trailer_type = semi_trailer_config.type;
 	last_timestamp = timestamp;
 
@@ -206,7 +208,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.pose.position.y = globalpos.globalpos.y;
 	globalpos.pose.position.z = 0;
 	globalpos.velocity.x = v;
-	
+
 	//globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = 0.0;
 
 	if (save_globalpos_file)
@@ -432,20 +434,34 @@ initialize_tf_transforms()
 {
 	tf::Transform board_to_gps_pose;
 	tf::Transform car_to_board_pose;
+	tf::Transform car_to_kingpin_pose;
+	tf::Transform board_to_velodyne_pose;
 
 	tf::Time::init();
 
 	// board pose with respect to the car
 	car_to_board_pose.setOrigin(tf::Vector3(sensor_board_1_pose.position.x, sensor_board_1_pose.position.y, sensor_board_1_pose.position.z));
-	car_to_board_pose.setRotation(tf::Quaternion(sensor_board_1_pose.orientation.yaw, sensor_board_1_pose.orientation.pitch, sensor_board_1_pose.orientation.roll)); 				// yaw, pitch, roll
+	car_to_board_pose.setRotation(tf::Quaternion(sensor_board_1_pose.orientation.yaw, sensor_board_1_pose.orientation.pitch, sensor_board_1_pose.orientation.roll)); // yaw, pitch, roll
 	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
 	tf_transformer.setTransform(car_to_board_transform, "car_to_board_transform");
 
 	// gps pose with respect to the board
 	board_to_gps_pose.setOrigin(tf::Vector3(gps_pose_in_the_car.position.x, gps_pose_in_the_car.position.y, gps_pose_in_the_car.position.z));
-	board_to_gps_pose.setRotation(tf::Quaternion(gps_pose_in_the_car.orientation.yaw, gps_pose_in_the_car.orientation.pitch, gps_pose_in_the_car.orientation.roll)); 				// yaw, pitch, roll
+	board_to_gps_pose.setRotation(tf::Quaternion(gps_pose_in_the_car.orientation.yaw, gps_pose_in_the_car.orientation.pitch, gps_pose_in_the_car.orientation.roll));
 	tf::StampedTransform board_to_gps_transform(board_to_gps_pose, tf::Time(0), "/board", "/gps");
 	tf_transformer.setTransform(board_to_gps_transform, "board_to_gps_transform");
+
+	// king pin pose with respect to the car
+    car_to_kingpin_pose.setOrigin(tf::Vector3(semitrailer_pose.position.x, semitrailer_pose.position.y, semitrailer_pose.position.z));
+    car_to_kingpin_pose.setRotation(tf::Quaternion(semitrailer_pose.orientation.yaw, semitrailer_pose.orientation.pitch, semitrailer_pose.orientation.roll));
+    tf::StampedTransform car_to_kingpin_transform(car_to_kingpin_pose, tf::Time(0), "/car", "/kingpin");
+    tf_transformer.setTransform(car_to_kingpin_transform, "car_to_kingpin_transform");
+
+	// velodyne pose with respect to the board
+    board_to_velodyne_pose.setOrigin(tf::Vector3(velodyne_pose.position.x, velodyne_pose.position.y, velodyne_pose.position.z));
+    board_to_velodyne_pose.setRotation(tf::Quaternion(velodyne_pose.orientation.yaw, velodyne_pose.orientation.pitch, velodyne_pose.orientation.roll));
+    tf::StampedTransform board_to_camera_transform(board_to_velodyne_pose, tf::Time(0), "/board", "/velodyne");
+    tf_transformer.setTransform(board_to_camera_transform, "board_to_velodyne_transform");
 }
 
 

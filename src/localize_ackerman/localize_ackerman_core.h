@@ -49,6 +49,9 @@
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/velodyne_interface.h>
 
+#include <carmen/bumblebee_basic_messages.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -389,6 +392,9 @@ calc_global_cell_coordinate_fast(cell_coords_t *global, cell_coords_t local,
 double
 compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point, double dt,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config);
+
+void
+localize_image_handler(carmen_bumblebee_basic_stereoimage_message* msg);
 
 #ifdef __cplusplus
 }

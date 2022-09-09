@@ -36,6 +36,7 @@
 #include <carmen/rotation_geometry.h>
 #include <carmen/stereo_velodyne.h>
 #include <carmen/task_manager_interface.h>
+#include <carmen/tf.h>
 #include <car_model.h>
 
 #include <carmen/dbscan.h>
@@ -54,6 +55,9 @@ sensor_parameters_t *spherical_sensor_params;
 sensor_data_t *spherical_sensor_data;
 extern carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
 carmen_pose_3D_t sensor_board_1_pose;
+carmen_pose_3D_t semitrailer_pose;
+extern tf::Transformer tf_transformer;
+
 extern double robot_wheel_radius;
 extern double highest_sensor;
 extern char *calibration_file;
@@ -77,7 +81,7 @@ extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_sel
 extern carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
 
-#define PLOT_GRAPH 0
+#define PLOT_GRAPH 1
 
 #define PREDICT_BETA_GSL_ERROR_CODE 100.0
 //#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
@@ -127,7 +131,7 @@ plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car,
 void
 save_points_file_to_debug(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
 {
-FILE *debug_file;
+	FILE *debug_file;
 
 	debug_file = fopen("caco_localize_before-cluster.txt", "w");
 	for (int i = 0; i < num_filtered_points; i++)
@@ -139,55 +143,62 @@ FILE *debug_file;
 }
 
 
-
 static carmen_vector_3D_t
-get_velodyne_point_car_reference(double rot_angle, double vert_angle, double range,
-		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
-		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+tf_vector3_to_carmen_vector3(tf::Vector3 tf_vector)
 {
-    double cos_rot_angle = cos(rot_angle);
-    double sin_rot_angle = sin(rot_angle);
+	carmen_vector_3D_t carmen_vector;
+	carmen_vector.x = tf_vector.x();
+	carmen_vector.y = tf_vector.y();
+	carmen_vector.z = tf_vector.z();
 
-    double cos_vert_angle = cos(vert_angle);
-    double sin_vert_angle = sin(vert_angle);
+	return (carmen_vector);
+}
 
-    double xy_distance = range * cos_vert_angle;
 
-    carmen_vector_3D_t velodyne_reference;
+tf::Point
+move_to_kingpin_reference(tf::Point p3d_velodyne_reference)
+{
+	tf::StampedTransform velodyne_to_kingpin_pose;
+	tf_transformer.lookupTransform("/kingpin", "/velodyne", tf::Time(0), velodyne_to_kingpin_pose);
+	tf::Point p3d_kingpin_reference = velodyne_to_kingpin_pose * p3d_velodyne_reference;
 
-    velodyne_reference.x = (xy_distance * cos_rot_angle);
-    velodyne_reference.y = (xy_distance * sin_rot_angle);
-    velodyne_reference.z = (range * sin_vert_angle);
+	return p3d_kingpin_reference;
+}
 
-    carmen_vector_3D_t board_reference = multiply_matrix_vector(velodyne_to_board_matrix, velodyne_reference);
-    board_reference = add_vectors(board_reference, velodyne_pose_position);
 
-    carmen_vector_3D_t car_reference = multiply_matrix_vector(board_to_car_matrix, board_reference);
-    car_reference = add_vectors(car_reference, sensor_board_1_pose_position);
+tf::Point
+spherical_to_cartesian(double hangle, double vangle, double range)
+{
+	double x, y, z;
 
-    return (car_reference);
+	x = range * cos(vangle) * cos(hangle);
+	y = range * cos(vangle) * sin(hangle);
+	z = range * sin(vangle);
+
+	return tf::Point(x, y, z);
 }
 
 
 int
 compute_points_with_respect_to_king_pin(carmen_vector_3D_t *points_position_with_respect_to_car,
-		carmen_velodyne_partial_scan_message *velodyne_message, double *vertical_correction,
-		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
-		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+	carmen_velodyne_partial_scan_message *velodyne_message, double *vertical_correction)
 {
-	int j = spherical_sensor_params[0].ray_order[semi_trailer_config.beta_correct_velodyne_ray];	// raio d interesse
 	int num_valid_points = 0;
+	double h_angle, v_angle, range, angle, distance_to_king_pin;
+	tf::Point p3d_velodyne_reference, p3d_kingpin_reference;
+	int j = spherical_sensor_params[0].ray_order[semi_trailer_config.beta_correct_velodyne_ray];	// raio d interesse
+
 	for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
 		if (velodyne_message->partial_scan[i].distance[j] != 0)
 		{
-			points_position_with_respect_to_car[num_valid_points] = get_velodyne_point_car_reference(
-					-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + ((semi_trailer_config.beta_correct_max_distance < 0.0)? 180.0: 0.0)),
-					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 500.0,
-					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+			h_angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle);
+			v_angle = carmen_normalize_theta(carmen_degrees_to_radians(vertical_correction[j]));
+			range = (((double) velodyne_message->partial_scan[i].distance[j]) / 500.0);
+			p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
+			p3d_kingpin_reference = move_to_kingpin_reference(p3d_velodyne_reference);
 
-			points_position_with_respect_to_car[num_valid_points].x += semi_trailer_config.M;
-			num_valid_points++;
+			points_position_with_respect_to_car[num_valid_points++] = tf_vector3_to_carmen_vector3(p3d_kingpin_reference);
 		}
 	}
 
@@ -307,12 +318,13 @@ remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *poi
 
 
 int
-compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_with_respect_to_car)
+compute_points_regression(carmen_vector_3D_t *points_position_with_respect_to_car)
 {
-	int num_valid_points = compute_points_with_respect_to_king_pin(points_position_with_respect_to_car,
-			last_velodyne_message, spherical_sensor_params[0].vertical_correction,
-			spherical_sensor_params[0].sensor_to_support_matrix, spherical_sensor_params[0].support_to_car_matrix,
-			spherical_sensor_params[0].pose.position, spherical_sensor_params[0].sensor_support_pose.position);
+	double angle, distance_to_king_pin;
+	int num_valid_points = compute_points_with_respect_to_king_pin(
+		points_position_with_respect_to_car, 
+		last_velodyne_message, spherical_sensor_params[0].vertical_correction
+	);
 
 	if (num_valid_points == 0)
 		return (0);
@@ -320,14 +332,15 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	int num_filtered_points = 0;
 	for (int i = 0; i < num_valid_points; i++)
 	{
-		double angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
-		double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
+		angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
+		angle = -(angle + M_PI); // positive comparisson
+		distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
 		if ((angle > (-semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
 			(angle < (semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
 			(distance_to_king_pin < fabs(semi_trailer_config.beta_correct_max_distance)))
 		{
-			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
-			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
+			double x = points_position_with_respect_to_car[i].x;// * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
+			double y = points_position_with_respect_to_car[i].y;// * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
 			points_position_with_respect_to_car[num_filtered_points].x = x;
 			points_position_with_respect_to_car[num_filtered_points].y = y;
 			num_filtered_points++;
@@ -467,7 +480,8 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailer_traj_point_t r
 	carmen_vector_3D_t *points_position_with_respect_to_car = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
 	carmen_vector_3D_t *points_position_with_respect_to_car_estimated = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
 
-	int size = compute_points_position_with_respect_to_car(points_position_with_respect_to_car);
+	int size = compute_points_regression(points_position_with_respect_to_car);
+
 	if (size < MIN_CLUSTER_SIZE)
 	{
 		free(points_position_with_respect_to_car);
@@ -3870,6 +3884,25 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.type);
 		globalpos.semi_trailer_engaged = 1;
 		globalpos.semi_trailer_type = semi_trailer_config.type;
+
+		char semitrailer_string[256];
+		sprintf(semitrailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+		carmen_param_t param_semitrailer_list[] =
+		{
+			{semitrailer_string, (char *)"M", CARMEN_PARAM_DOUBLE, &semitrailer_pose.position.x, 0, NULL}
+		};
+		carmen_param_install_params(argc, argv, param_semitrailer_list, sizeof(param_semitrailer_list) / sizeof(param_semitrailer_list[0]));
+
+		/*
+		distancia do ponto de engate ao centro do eixo traseiro do veiculo (positivo para engate atras do eixo, negativo para engate a frente do eixo)
+		aqui deve ter sinal oposto pois o axis definido está contrário ao axis do carro (regra da mão direita)
+		*/
+		semitrailer_pose.position.x = -semitrailer_pose.position.x;
+		semitrailer_pose.position.y = 0.0;
+		semitrailer_pose.position.z = 0.0;
+		semitrailer_pose.orientation.roll = 0.0;
+		semitrailer_pose.orientation.pitch = 0.0;
+		semitrailer_pose.orientation.yaw = 0.0;
 	}
 
 	carmen_param_allow_unfound_variables(1);
