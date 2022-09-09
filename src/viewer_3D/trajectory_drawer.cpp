@@ -12,7 +12,7 @@
 
 trajectory_drawer *
 create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_size, double distance_between_rear_car_and_rear_wheels,
-		carmen_semi_trailer_config_t semi_trailer_config, double path_point_size, double persistence_time)
+		carmen_semi_trailers_config_t semi_trailer_config, double path_point_size, double persistence_time)
 {
 	trajectory_drawer *t_drawer = (trajectory_drawer *) malloc(sizeof(trajectory_drawer));
 		
@@ -80,11 +80,8 @@ add_trajectory_message(trajectory_drawer *t_drawer, carmen_navigator_ackerman_pl
 		t_drawer->path[i].y = message->path[i].y;
 		t_drawer->path[i].theta = message->path[i].theta;
 		t_drawer->path[i].num_trailers = message->path[i].num_trailers;
-		t_drawer->path[i].trailer_theta[0] = message->path[i].trailer_theta[0];
-		t_drawer->path[i].trailer_theta[1] = message->path[i].trailer_theta[1];
-		t_drawer->path[i].trailer_theta[2] = message->path[i].trailer_theta[2];
-		t_drawer->path[i].trailer_theta[3] = message->path[i].trailer_theta[3];
-		t_drawer->path[i].trailer_theta[4] = message->path[i].trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			t_drawer->path[i].trailer_theta[z] = message->path[i].trailer_theta[z];
 		set_color(t_drawer, i, message->path[i].v);
 	}
 
@@ -106,11 +103,8 @@ add_base_ackerman_trajectory_message(trajectory_drawer *t_drawer, carmen_base_ac
 		t_drawer->path[i].y = message->motion_command[i].y;
 		t_drawer->path[i].theta = message->motion_command[i].theta;
 		t_drawer->path[i].num_trailers = message->motion_command[i].num_trailers;
-		t_drawer->path[i].trailer_theta[0] = message->motion_command[i].trailer_theta[0];
-		t_drawer->path[i].trailer_theta[1] = message->motion_command[i].trailer_theta[1];
-		t_drawer->path[i].trailer_theta[2] = message->motion_command[i].trailer_theta[2];
-		t_drawer->path[i].trailer_theta[3] = message->motion_command[i].trailer_theta[3];
-		t_drawer->path[i].trailer_theta[4] = message->motion_command[i].trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			t_drawer->path[i].trailer_theta[z] = message->motion_command[i].trailer_theta[z];
 		set_color(t_drawer, i, message->motion_command[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->motion_command[i].x, message->motion_command[i].y, message->motion_command[i].theta,
@@ -135,11 +129,8 @@ add_rrt_trajectory_message(trajectory_drawer *t_drawer, rrt_path_message *messag
 		t_drawer->path[i].y = message->path[i].p1.y;
 		t_drawer->path[i].theta = message->path[i].p1.theta;
 		t_drawer->path[i].num_trailers = message->path[i].p1.num_trailers;
-		t_drawer->path[i].trailer_theta[0] = message->path[i].p1.trailer_theta[0];
-		t_drawer->path[i].trailer_theta[1] = message->path[i].p1.trailer_theta[1];
-		t_drawer->path[i].trailer_theta[2] = message->path[i].p1.trailer_theta[2];
-		t_drawer->path[i].trailer_theta[3] = message->path[i].p1.trailer_theta[3];
-		t_drawer->path[i].trailer_theta[4] = message->path[i].p1.trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			t_drawer->path[i].trailer_theta[z] = message->path[i].p1.trailer_theta[z];
 		set_color(t_drawer, i, message->path[i].v);
 	}
 
@@ -164,11 +155,8 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 		t_drawer->path[i].y = message->poses[i].y;
 		t_drawer->path[i].theta = message->poses[i].theta;
 		t_drawer->path[i].num_trailers = message->poses[i].num_trailers;
-		t_drawer->path[i].trailer_theta[0] = message->poses[i].trailer_theta[0];
-		t_drawer->path[i].trailer_theta[1] = message->poses[i].trailer_theta[1];
-		t_drawer->path[i].trailer_theta[2] = message->poses[i].trailer_theta[2];
-		t_drawer->path[i].trailer_theta[3] = message->poses[i].trailer_theta[3];
-		t_drawer->path[i].trailer_theta[4] = message->poses[i].trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			t_drawer->path[i].trailer_theta[z] = message->poses[i].trailer_theta[z];
 		set_color(t_drawer, i, message->poses[i].v);
 //		fprintf(arq, "%lf %lf %lf %lf %lf\n",
 //				message->poses[i].x, message->poses[i].y, message->poses[i].theta,
@@ -285,16 +273,16 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 					glPushMatrix();
 						glRotatef(-carmen_radians_to_degrees(t_drawer->path[i].trailer_theta[0]), 0.0, 0.0, 1.0);
 
-						glTranslatef(-t_drawer->semi_trailer_config.d - t_drawer->semi_trailer_config.M * cos(t_drawer->path[i].trailer_theta[0]),
-									 -t_drawer->semi_trailer_config.M * sin(t_drawer->path[i].trailer_theta[0]),
+						glTranslatef(-t_drawer->semi_trailer_config.semi_trailers.d - t_drawer->semi_trailer_config.semi_trailers.M * cos(t_drawer->path[i].trailer_theta[0]),
+									 -t_drawer->semi_trailer_config.semi_trailers.M * sin(t_drawer->path[i].trailer_theta[0]),
 									 0.0);
 
 						glBegin(GL_LINE_STRIP);
-							glVertex3f(-t_drawer->semi_trailer_config.distance_between_axle_and_back, -t_drawer->semi_trailer_config.width / 2, 0);
-							glVertex3f(t_drawer->semi_trailer_config.distance_between_axle_and_front, -t_drawer->semi_trailer_config.width / 2, 0);
-							glVertex3f(t_drawer->semi_trailer_config.distance_between_axle_and_front, t_drawer->semi_trailer_config.width / 2, 0);
-							glVertex3f(-t_drawer->semi_trailer_config.distance_between_axle_and_back, t_drawer->semi_trailer_config.width / 2, 0);
-							glVertex3f(-t_drawer->semi_trailer_config.distance_between_axle_and_back, -t_drawer->semi_trailer_config.width / 2, 0);
+							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
+							glVertex3f(t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, -t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
+							glVertex3f(t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
+							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
+							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
 						glEnd();
 
 					glPopMatrix();

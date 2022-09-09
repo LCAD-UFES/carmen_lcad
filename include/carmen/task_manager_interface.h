@@ -40,7 +40,7 @@ void
 carmen_task_manager_publish_set_semi_trailer_type_and_beta_message(int semi_trailer_type, double beta, double timestamp);
 
 void
-carmen_task_manager_read_semi_trailer_parameters(carmen_semi_trailer_config_t *semi_trailer_config, int argc, char **argv, int semi_trailer_type);
+carmen_task_manager_read_semi_trailer_parameters(carmen_semi_trailers_config_t *semi_trailer_config, int argc, char **argv, int semi_trailer_type);
 
 #ifdef __cplusplus
 }

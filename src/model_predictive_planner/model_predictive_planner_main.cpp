@@ -111,11 +111,8 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 		commands[i].y = it->y;
 		commands[i].theta = it->theta;
 		commands[i].num_trailers = it->num_trailers;
-		commands[i].trailer_theta[0] = it->trailer_theta[0];
-		commands[i].trailer_theta[1] = it->trailer_theta[1];
-		commands[i].trailer_theta[2] = it->trailer_theta[2];
-		commands[i].trailer_theta[3] = it->trailer_theta[3];
-		commands[i].trailer_theta[4] = it->trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			commands[i].trailer_theta[z] = it->trailer_theta[z];
 
 
 		i++;
@@ -248,11 +245,9 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 	traj.y = GlobalState::localizer_pose->y;
 	traj.theta = GlobalState::localizer_pose->theta;
 	traj.num_trailers = GlobalState::localizer_pose->num_trailers;
-	traj.trailer_theta[0] = GlobalState::localizer_pose->trailer_theta[0];
-	traj.trailer_theta[1] = GlobalState::localizer_pose->trailer_theta[1];
-	traj.trailer_theta[2] = GlobalState::localizer_pose->trailer_theta[2];
-	traj.trailer_theta[3] = GlobalState::localizer_pose->trailer_theta[3];
-	traj.trailer_theta[4] = GlobalState::localizer_pose->trailer_theta[4];
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		traj.trailer_theta[z] = GlobalState::localizer_pose->trailer_theta[z];
+
 	path.push_back(traj);
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
@@ -366,11 +361,8 @@ copy_path_to_traj(carmen_robot_and_trailers_traj_point_t *traj, vector<carmen_ro
 		traj[i].y = it->y;
 		traj[i].theta = it->theta;
 		traj[i].num_trailers = it->num_trailers;
-		traj[i].trailer_theta[0] = it->trailer_theta[0];
-		traj[i].trailer_theta[1] = it->trailer_theta[1];
-		traj[i].trailer_theta[2] = it->trailer_theta[2];
-		traj[i].trailer_theta[3] = it->trailer_theta[3];
-		traj[i].trailer_theta[4] = it->trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			traj[i].trailer_theta[z] = it->trailer_theta[z];
 		traj[i].v = it->v;
 		traj[i].phi = it->phi;
 	}
@@ -627,17 +619,20 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	if (!GlobalState::localizer_pose)
 		GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 
-	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,  msg->num_trailers, {msg->trailer_theta[0], msg->trailer_theta[1], msg->trailer_theta[2], msg->trailer_theta[3], msg->trailer_theta[4]}}; //Adicionar num_trailers
+	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,  msg->num_trailers, {0.0}}; //Adicionar num_trailers
+
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		GlobalState::localizer_pose->trailer_theta[z] = msg->trailer_theta[z];
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
 	else
 		build_and_follow_path(msg->timestamp);
 
-	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.type)
+	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.semi_trailers.type)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.type);
+		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.semi_trailers.type);
 	}
 }
 
@@ -962,7 +957,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot",				 (char *) "max_velocity_reverse",										CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,									 1, NULL},
 		{(char *) "robot",				 (char *) "parking_speed_limit",										CARMEN_PARAM_DOUBLE, &GlobalState::param_parking_speed_limit,									 1, NULL},
 
-		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.type,								 0, NULL},
+		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.semi_trailers.type,								 0, NULL},
 		{(char *) "rddf",				 (char *) "source_tracker",												CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,								 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "goal_source_path_planner",									CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner,										 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "use_truepos",												CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos,												 0, NULL},
@@ -999,8 +994,8 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	if (GlobalState::semi_trailer_config.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.type);
+	if (GlobalState::semi_trailer_config.semi_trailers.type > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.semi_trailers.type);
 }
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;

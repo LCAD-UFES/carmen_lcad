@@ -166,7 +166,9 @@ collision_s_distance_to_static_object(path_collision_info_t &path_collision_info
 		for (int s = 0; s < last_s; s++)
 		{
 			carmen_robot_and_trailers_pose_t car_pose = car_poses_and_indexes_in_path[s].car_pose;
-			carmen_robot_and_trailers_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.num_trailers, {car_pose.trailer_theta[0], car_pose.trailer_theta[1], car_pose.trailer_theta[2], car_pose.trailer_theta[3], car_pose.trailer_theta[4]}, 0.0, 0.0};
+			carmen_robot_and_trailers_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, car_pose.num_trailers, {0.0}, 0.0, 0.0};
+			for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+				cp.trailer_theta[z] = car_pose.trailer_theta[z];
 			index_in_path = car_poses_and_indexes_in_path[s].index_in_path;
 			// Incluir um loop para testar colisão com objetos móveis lentos o suficiente, como em collision_s_distance_to_moving_object(), só que com o teste ao contrário.
 			if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance,

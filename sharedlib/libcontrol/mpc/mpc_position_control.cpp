@@ -69,12 +69,10 @@ get_pose_vector_from_spline_descriptors_old(EFFORT_SPLINE_DESCRIPTOR *descriptor
 	robot_state.y = param->global_pos.globalpos.y;
 	robot_state.theta = param->global_pos.globalpos.theta;
 	robot_state.num_trailers = param->global_pos.num_trailers;
-	robot_state.trailer_theta[0] = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
-	robot_state.trailer_theta[1] = 0.0;
-	robot_state.trailer_theta[2] = 0.0;
-	robot_state.trailer_theta[3] = 0.0;
-	robot_state.trailer_theta[4] = 0.0;
-	carmen_semi_trailer_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		robot_state.trailer_theta[z] = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
+
+	carmen_semi_trailers_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
 
 	double distance_traveled = 0.0;
 
@@ -116,12 +114,10 @@ get_pose_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, P
 	robot_state.y = param->global_pos.globalpos.y;
 	robot_state.theta = param->global_pos.globalpos.theta;
 	robot_state.num_trailers = param->global_pos.num_trailers;
-	robot_state.trailer_theta[0] = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
-	robot_state.trailer_theta[1] = 0.0;
-	robot_state.trailer_theta[2] = 0.0;
-	robot_state.trailer_theta[3] = 0.0;
-	robot_state.trailer_theta[4] = 0.0;
-	carmen_semi_trailer_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		robot_state.trailer_theta[z] = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
+
+	carmen_semi_trailers_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
 
 	carmen_robot_and_trailers_traj_point_t pose;
 

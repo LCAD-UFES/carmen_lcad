@@ -18,16 +18,16 @@ typedef struct
 
 double
 compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
-	if (semi_trailer_config.type == 0)
+	if (semi_trailer_config.semi_trailers.type == 0)
 		return (0.0);
 
 	double L = robot_config.distance_between_front_and_rear_axles;
 	double beta = robot_and_trailer_traj_point.trailer_theta[0] + dt *
 			robot_and_trailer_traj_point.v * (tan(robot_and_trailer_traj_point.phi) / L -
-						   sin(robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.d +
-						   (semi_trailer_config.M / (L * semi_trailer_config.d)) * cos(robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
+						   sin(robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d +
+						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
 
 	return (beta);
 }
@@ -118,7 +118,7 @@ predict_next_pose_step_new(carmen_robot_and_trailers_traj_point_t *robot_state, 
 double
 predict_next_pose_step(carmen_robot_and_trailers_traj_point_t *new_robot_state, double target_v, double a, double delta_t,
 		double &achieved_curvature, const double &desired_curvature, double &max_curvature_change,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
 	carmen_robot_and_trailers_traj_point_t initial_robot_state = *new_robot_state;
 
@@ -151,7 +151,7 @@ predict_next_pose_step(carmen_robot_and_trailers_traj_point_t *new_robot_state, 
 carmen_robot_and_trailers_traj_point_t
 carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailers_traj_point_t robot_state, double target_v, double target_phi,
 		double full_time_interval, double *distance_traveled, double delta_t,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
 //	delta_t = delta_t / 10.0;
 	double a = (target_v - robot_state.v) / full_time_interval;
@@ -196,7 +196,7 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailers_traj_point_t ro
 carmen_robot_and_trailers_traj_point_t
 carmen_libcarmodel_recalc_pos_ackerman_new(carmen_robot_and_trailers_traj_point_t robot_state, double target_v, double target_phi,
 		double full_time_interval, double *distance_traveled, double delta_t,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
 	delta_t = delta_t / 10.0;
 	double a = (target_v - robot_state.v) / full_time_interval;
@@ -218,8 +218,8 @@ carmen_libcarmodel_recalc_pos_ackerman_new(carmen_robot_and_trailers_traj_point_
 	params.understeer_coeficient = robot_config.understeer_coeficient;
 	params.max_phi = robot_config.max_phi;
 
-	params.d = semi_trailer_config.d;
-	params.M = semi_trailer_config.M;
+	params.d = semi_trailer_config.semi_trailers.d;
+	params.M = semi_trailer_config.semi_trailers.M;
 
 	params.a = a;
 
@@ -344,14 +344,14 @@ get_max_v_change(const double &current_v, const double &desired_v, const double 
 double
 predict_next_pose_during_main_rrt_planning_step(Robot_State &new_robot_state, const Command &requested_command, double delta_t,
 		double &achieved_curvature, const double &desired_curvature, double &max_curvature_change,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 #else
 double
 predict_next_pose_during_main_rrt_planning_step(Robot_State &new_robot_state, const Command &requested_command, double &phi_velocity,
 		const double t, const double delta_t,
 		double t_fim_descida, double t_fim_plato, double t_fim_subida,
 		double max_phi_velocity, double max_phi_acceleration,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 #endif
 {
 	Robot_State initial_robot_state = new_robot_state;
@@ -403,7 +403,7 @@ predict_next_pose_during_main_rrt_planning_step(Robot_State &new_robot_state, co
 Robot_State
 predict_next_pose_during_main_rrt_planning_(const Robot_State &robot_state, const Command &requested_command,
 		double full_time_interval, double *distance_traveled, double delta_t,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
 	if (distance_traveled)
 		*distance_traveled = 0.0;

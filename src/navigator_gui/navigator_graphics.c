@@ -408,11 +408,8 @@ static int selecting_near_waypoint_action(GtkMapViewer *the_map_view __attribute
 		pose_with_beta.y = world_point->pose.y;
 		pose_with_beta.theta = world_point->pose.theta;
 		pose_with_beta.num_trailers = 0;
-		pose_with_beta.trailer_theta[0] = 0.0;
-		pose_with_beta.trailer_theta[1] = 0.0;
-		pose_with_beta.trailer_theta[2] = 0.0;
-		pose_with_beta.trailer_theta[3] = 0.0;
-		pose_with_beta.trailer_theta[4] = 0.0;
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			pose_with_beta.trailer_theta[z] = 0.0;
 
 		carmen_rddf_publish_end_point_message(1, pose_with_beta);
 
@@ -2303,11 +2300,9 @@ orienting_final_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *wo
 		pose_with_beta.y = final_goal.pose.y;
 		pose_with_beta.theta = final_goal.pose.theta;
 		pose_with_beta.num_trailers = 0;
-		pose_with_beta.trailer_theta[0] = 0.0;
-		pose_with_beta.trailer_theta[1] = 0.0;
-		pose_with_beta.trailer_theta[2] = 0.0;
-		pose_with_beta.trailer_theta[3] = 0.0;
-		pose_with_beta.trailer_theta[4] = 0.0;
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			pose_with_beta.trailer_theta[z] = 0.0;
+
 		carmen_rddf_publish_end_point_message(50, pose_with_beta);
 
 		cursor = gdk_cursor_new(GDK_LEFT_PTR);

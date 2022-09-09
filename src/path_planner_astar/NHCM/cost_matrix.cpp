@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 carmen_robot_ackerman_config_t robot_config;
-carmen_semi_trailer_config_t semi_trailer_config;
+carmen_semi_trailers_config_t semi_trailer_config;
 nonholonomic_heuristic_cost_p ***cost_map;
 
 int precomputed_cost_size, precomputed_cost_theta_size;
@@ -211,7 +211,7 @@ carmen_get_parameters(int argc, char** argv)
 			{(char *) "robot", 				(char *) "maximum_deceleration_reverse",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_reverse,					1, NULL},
 			{(char *) "robot", 				(char *) "maximum_steering_command_rate",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_steering_command_rate,					1, NULL},
 			{(char *) "robot", 				(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &robot_config.understeer_coeficient,							1, NULL},
-			{(char *) "semi_trailer",	 	(char *) "initial_type",								CARMEN_PARAM_INT, 	 &(semi_trailer_config.type), 									0, NULL},
+			{(char *) "semi_trailer",	 	(char *) "initial_type",								CARMEN_PARAM_INT, 	 &(semi_trailer_config.semi_trailers.type), 					0, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_size", 				CARMEN_PARAM_INT, 	 &precomputed_cost_size, 										1, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_theta_size", 		CARMEN_PARAM_INT, 	 &precomputed_cost_theta_size, 									1, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_resolution", 		CARMEN_PARAM_DOUBLE, &precomputed_cost_resolution,									1, NULL},

@@ -60,7 +60,7 @@ extern char *calibration_file;
 extern int number_of_threads;
 extern carmen_pose_3D_t velodyne_pose;
 rotation_matrix *sensor_board_1_to_car_matrix;
-extern carmen_semi_trailer_config_t semi_trailer_config;
+extern carmen_semi_trailers_config_t semi_trailer_config;
 extern carmen_robot_ackerman_config_t car_config;
 int robot_publish_odometry;
 extern double safe_range_above_sensors;
@@ -175,18 +175,18 @@ compute_points_with_respect_to_king_pin(carmen_vector_3D_t *points_position_with
 		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
 		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
 {
-	int j = spherical_sensor_params[0].ray_order[semi_trailer_config.beta_correct_velodyne_ray];	// raio d interesse
+	int j = spherical_sensor_params[0].ray_order[semi_trailer_config.semi_trailers.beta_correct_velodyne_ray];	// raio d interesse
 	int num_valid_points = 0;
 	for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
 		if (velodyne_message->partial_scan[i].distance[j] != 0)
 		{
 			points_position_with_respect_to_car[num_valid_points] = get_velodyne_point_car_reference(
-					-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + ((semi_trailer_config.beta_correct_max_distance < 0.0)? 180.0: 0.0)),
+					-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + ((semi_trailer_config.semi_trailers.beta_correct_max_distance < 0.0)? 180.0: 0.0)),
 					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 500.0,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
 
-			points_position_with_respect_to_car[num_valid_points].x += semi_trailer_config.M;
+			points_position_with_respect_to_car[num_valid_points].x += semi_trailer_config.semi_trailers.M;
 			num_valid_points++;
 		}
 	}
@@ -322,9 +322,9 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	{
 		double angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
 		double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
-		if ((angle > (-semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
-			(angle < (semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
-			(distance_to_king_pin < fabs(semi_trailer_config.beta_correct_max_distance)))
+		if ((angle > (-semi_trailer_config.semi_trailers.beta_correct_angle_factor * semi_trailer_config.semi_trailers.max_beta)) &&
+			(angle < (semi_trailer_config.semi_trailers.beta_correct_angle_factor * semi_trailer_config.semi_trailers.max_beta)) &&
+			(distance_to_king_pin < fabs(semi_trailer_config.semi_trailers.beta_correct_max_distance)))
 		{
 			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
 			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
@@ -452,9 +452,9 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 
 double
 compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
-		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config)
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
-	if (semi_trailer_config.type == 0)
+	if (semi_trailer_config.semi_trailers.type == 0)
 		return (0.0);
 
 	double predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
@@ -487,7 +487,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t 
 	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
 		return (predicted_beta);
 	else
-		return (carmen_normalize_theta(beta - semi_trailer_config.beta_correct_beta_bias));
+		return (carmen_normalize_theta(beta - semi_trailer_config.semi_trailers.beta_correct_beta_bias));
 }
 
 
@@ -3772,7 +3772,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "model", 		(char *) "predictive_planner_obstacles_safe_distance", 	CARMEN_PARAM_DOUBLE, &car_config.model_predictive_planner_obstacles_safe_distance, 1, NULL},
 		{(char *) "obstacle", 	(char *) "avoider_obstacles_safe_distance", 			CARMEN_PARAM_DOUBLE, &car_config.obstacle_avoider_obstacles_safe_distance, 1, NULL},
 
-		{(char *) "semi_trailer",	 (char *) "initial_type",						CARMEN_PARAM_INT, 	 &(semi_trailer_config.type), 					0, NULL},
+		{(char *) "semi_trailer",	 (char *) "initial_type",						CARMEN_PARAM_INT, 	 &(semi_trailer_config.semi_trailers.type), 					0, NULL},
 
 		{(char *) "robot", (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 
@@ -3863,11 +3863,11 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
-	if (semi_trailer_config.type > 0)
+	if (semi_trailer_config.semi_trailers.type > 0)
 	{
-		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.type);
+		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.semi_trailers.type);
 		globalpos.semi_trailer_engaged = 1;
-		globalpos.semi_trailer_type = semi_trailer_config.type;
+		globalpos.semi_trailer_type = semi_trailer_config.semi_trailers.type;
 	}
 
 	carmen_param_allow_unfound_variables(1);

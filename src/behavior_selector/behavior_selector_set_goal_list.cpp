@@ -253,7 +253,11 @@ datmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *current
 				if (mo.in_front)
 				{
 					carmen_robot_and_trailers_traj_point_t cp = rddf->poses[rddf_pose_index];
-					carmen_robot_and_trailers_pose_t car_pose = {cp.x, cp.y, cp.theta, cp.num_trailers , {cp.trailer_theta[0], cp.trailer_theta[1], cp.trailer_theta[2], cp.trailer_theta[3], cp.trailer_theta[4]}};
+
+					carmen_robot_and_trailers_pose_t car_pose = {cp.x, cp.y, cp.theta, cp.num_trailers , {0.0}}; // 0.0 para facilitar futuro trabalho caso o valor de MAX_NUM_TRAILERS seja alterado
+					for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+						car_pose.trailer_theta[z] = cp.trailer_theta[z];
+
 					carmen_point_t moving_object_pose = {mo.object_pose.x, mo.object_pose.y, mo.orientation};
 					if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_object_pose, &mo, 0.0, 0.0))
 					{
@@ -438,11 +442,8 @@ behavior_selector_add_goal(carmen_point_t goal)
 	goal_list[goal_list_size].y = goal.y;
 	goal_list[goal_list_size].theta = goal.theta;
 	goal_list[goal_list_size].num_trailers = 0;
-	goal_list[goal_list_size].trailer_theta[0] = 0.0;
-	goal_list[goal_list_size].trailer_theta[1] = 0.0;
-	goal_list[goal_list_size].trailer_theta[2] = 0.0;
-	goal_list[goal_list_size].trailer_theta[3] = 0.0;
-	goal_list[goal_list_size].trailer_theta[4] = 0.0;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		goal_list[goal_list_size].trailer_theta[z] = 0.0;
 
 	goal_list[goal_list_size].v = 0.0;
 

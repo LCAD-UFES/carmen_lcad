@@ -17,7 +17,7 @@ static int num_motion_commands_in_vector[NUM_MOTION_COMMANDS_VECTORS];
 static double timestamp_of_motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS];
 
 static carmen_robot_ackerman_config_t carmen_robot_ackerman_config;
-static carmen_semi_trailer_config_t carmen_semi_trailer_config;
+static carmen_semi_trailers_config_t carmen_semi_trailer_config;
 static double carmen_robot_ackerman_collision_avoidance_frequency;
 static double carmen_robot_ackerman_sensor_time_of_last_update = -1.0;
 static double carmen_robot_ackerman_motion_command_time_of_last_update = -1.0;
@@ -405,11 +405,9 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	pose.y = msg->globalpos.y;
 	pose.theta = msg->globalpos.theta;
 	pose.num_trailers = msg->num_trailers;
-	pose.trailer_theta[0] = msg->trailer_theta[0];
-	pose.trailer_theta[1] = msg->trailer_theta[1];
-	pose.trailer_theta[2] = msg->trailer_theta[2];
-	pose.trailer_theta[3] = msg->trailer_theta[3];
-	pose.trailer_theta[4] = msg->trailer_theta[4];
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		pose.trailer_theta[z] = msg->trailer_theta[z];
+
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -417,10 +415,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 
-	if (msg->semi_trailer_type != carmen_semi_trailer_config.type)
+	if (msg->semi_trailer_type != carmen_semi_trailer_config.semi_trailers.type)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.type);
+		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.semi_trailers.type);
 	}
 }
 
@@ -437,11 +435,9 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	pose.y = msg->truepose.y;
 	pose.theta = msg->truepose.theta;
 	pose.num_trailers = msg->num_trailers;
-	pose.trailer_theta[0] = msg->trailer_theta[0];
-	pose.trailer_theta[1] = msg->trailer_theta[1];
-	pose.trailer_theta[2] = msg->trailer_theta[2];
-	pose.trailer_theta[3] = msg->trailer_theta[3];
-	pose.trailer_theta[4] = msg->trailer_theta[4];
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		pose.trailer_theta[z] = msg->trailer_theta[z];
+
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -659,7 +655,7 @@ read_parameters(int argc, char **argv)
 		{"robot", "collision_avoidance", CARMEN_PARAM_ONOFF, &ackerman_collision_avoidance, 1, NULL},
 		{"robot", "collision_avoidance_frequency", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_collision_avoidance_frequency, 1, NULL},
 		{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL},
-		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.type, 0, NULL},
+		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.semi_trailers.type, 0, NULL},
 		{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 		{"rrt", "log_mode", CARMEN_PARAM_ONOFF,	&log_mode, 1, NULL},
 
@@ -675,8 +671,8 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 
-	if (carmen_semi_trailer_config.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.type);
+	if (carmen_semi_trailer_config.semi_trailers.type > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.semi_trailers.type);
 
 	return (0);
 }

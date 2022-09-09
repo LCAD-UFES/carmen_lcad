@@ -2,7 +2,7 @@
 
 extern carmen_robot_ackerman_config_t robot_config;
 extern carmen_path_planner_astar_t astar_config;
-carmen_semi_trailer_config_t   semi_trailer_config;
+carmen_semi_trailers_config_t   semi_trailer_config;
 
 extern carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map;
 extern carmen_map_p map_occupancy;

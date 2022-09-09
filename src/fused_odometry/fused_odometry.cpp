@@ -58,11 +58,8 @@ sample_motion_model(carmen_fused_odometry_particle x_t_1, carmen_fused_odometry_
 		x_t.state.phi = -fused_odometry_parameters->maximum_phi;
 
 	x_t.state.num_trailers = 0;
-	x_t.state.trailer_theta[0] = 0.0;
-	x_t.state.trailer_theta[1] = 0.0;
-	x_t.state.trailer_theta[2] = 0.0;
-	x_t.state.trailer_theta[3] = 0.0;
-	x_t.state.trailer_theta[4] = 0.0;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		x_t.state.trailer_theta[z] = 0.0;
 
 	//sensor_vector_imu imu_zt = create_sensor_vector_imu(xsens_matrix_message);
 	//x_t.state.pose.orientation.roll = imu_zt.orientation.roll;
@@ -131,11 +128,8 @@ sample_motion_model_simple(carmen_fused_odometry_particle x_t_1, carmen_fused_od
 					fused_odometry_parameters->phi_noise_velocity * ut.v * ut.v);
 
 	x_t.state.num_trailers = 0;
-	x_t.state.trailer_theta[0] = 0.0;
-	x_t.state.trailer_theta[1] = 0.0;
-	x_t.state.trailer_theta[2] = 0.0;
-	x_t.state.trailer_theta[3] = 0.0;
-	x_t.state.trailer_theta[4] = 0.0;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		x_t.state.trailer_theta[z] = 0.0;
 
 	x_t.state.ang_velocity.roll = 0.0;
 	x_t.state.ang_velocity.yaw = 0.0;

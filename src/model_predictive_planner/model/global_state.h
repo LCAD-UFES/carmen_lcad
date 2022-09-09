@@ -23,7 +23,7 @@ class GlobalState
 {
 public:
 	static carmen_robot_ackerman_config_t robot_config;
-	static carmen_semi_trailer_config_t semi_trailer_config;
+	static carmen_semi_trailers_config_t semi_trailer_config;
 
 	static double param_max_vel;
 

@@ -4,7 +4,7 @@
 
 void
 carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point,
-										 carmen_robot_ackerman_config_t robot_config, carmen_semi_trailer_config_t semi_trailer_config, double dt)
+										 carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config, double dt)
 {
 	if (!filter->initialized)
 			return;
@@ -21,7 +21,10 @@ carmen_localize_ackerman_beta_prediction(carmen_localize_ackerman_particle_filte
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
-		robot_pose = {robot_and_trailer_traj_point.x ,robot_and_trailer_traj_point.y, robot_and_trailer_traj_point.theta, robot_and_trailer_traj_point.num_trailers, {robot_and_trailer_traj_point.trailer_theta[0], robot_and_trailer_traj_point.trailer_theta[1], robot_and_trailer_traj_point.trailer_theta[2], robot_and_trailer_traj_point.trailer_theta[3], robot_and_trailer_traj_point.trailer_theta[4]}, robot_and_trailer_traj_point.v, robot_and_trailer_traj_point.phi};
+		robot_pose = {robot_and_trailer_traj_point.x ,robot_and_trailer_traj_point.y, robot_and_trailer_traj_point.theta, robot_and_trailer_traj_point.num_trailers, {0.0}, robot_and_trailer_traj_point.v, robot_and_trailer_traj_point.phi};
+
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			robot_pose.trailer_theta[z] = robot_and_trailer_traj_point.trailer_theta[z];
 
 		if (i != 0)
 		{

@@ -25,7 +25,7 @@ bool GlobalState::last_goal = true;
 bool GlobalState::last_path_received_is_empty = false;
 
 Robot_Config GlobalState::robot_config;
-carmen_semi_trailer_config_t GlobalState::semi_trailer_config;
+carmen_semi_trailers_config_t GlobalState::semi_trailer_config;
 
 double GlobalState::param_max_vel = 0.0;
 

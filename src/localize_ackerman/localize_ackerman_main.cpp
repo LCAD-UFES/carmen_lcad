@@ -62,7 +62,7 @@ carmen_xsens_global_quat_message *xsens_global_quat_message = NULL;
 
 // Variables read via read_parameters()
 carmen_robot_ackerman_config_t 	car_config;
-carmen_semi_trailer_config_t 	semi_trailer_config;
+carmen_semi_trailers_config_t 	semi_trailer_config;
 
 extern int robot_publish_odometry;
 
@@ -165,7 +165,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	static double last_timestamp = 0.0;
 	if (last_timestamp == 0.0)
 		last_timestamp = timestamp;
-	if (semi_trailer_config.type > 0)
+	if (semi_trailer_config.semi_trailers.type > 0)
 	{
 		globalpos.semi_trailer_engaged = 1;
 		carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point =
@@ -174,10 +174,14 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 				globalpos.globalpos.y,
 				globalpos.globalpos.theta,
 				globalpos.num_trailers,
-				{globalpos.trailer_theta[0], globalpos.trailer_theta[1], globalpos.trailer_theta[2], globalpos.trailer_theta[3], globalpos.trailer_theta[4]},
+				{0.0},
 				globalpos.v,
 				globalpos.phi
 		};
+
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			robot_and_trailer_traj_point.trailer_theta[z] = globalpos.trailer_theta[z];
+
 		double delta_t = globalpos.timestamp - last_timestamp;
 //		globalpos.beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
 		globalpos.trailer_theta[0] = compute_semi_trailer_beta_using_velodyne(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
@@ -187,7 +191,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		globalpos.semi_trailer_engaged = 0;
 		globalpos.trailer_theta[0] = 0.0;
 	}
-	globalpos.semi_trailer_type = semi_trailer_config.type;
+	globalpos.semi_trailer_type = semi_trailer_config.semi_trailers.type;
 	last_timestamp = timestamp;
 
 	if (g_fused_odometry_index == -1)
@@ -287,17 +291,11 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 	globalpos_ackerman_message.v = 0.0;
 
 	globalpos_ackerman_message.num_trailers = initialize_msg->num_trailers;
-	globalpos_ackerman_message.trailer_theta[0] = initialize_msg->trailer_theta[0];
-	globalpos_ackerman_message.trailer_theta[1] = initialize_msg->trailer_theta[1];
-	globalpos_ackerman_message.trailer_theta[2] = initialize_msg->trailer_theta[2];
-	globalpos_ackerman_message.trailer_theta[3] = initialize_msg->trailer_theta[3];
-	globalpos_ackerman_message.trailer_theta[4] = initialize_msg->trailer_theta[4];
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		globalpos_ackerman_message.trailer_theta[z] = initialize_msg->trailer_theta[z];
 	globalpos.num_trailers = initialize_msg->num_trailers;
-	globalpos.trailer_theta[0] = initialize_msg->trailer_theta[0];
-	globalpos.trailer_theta[1] = initialize_msg->trailer_theta[1];
-	globalpos.trailer_theta[2] = initialize_msg->trailer_theta[2];
-	globalpos.trailer_theta[3] = initialize_msg->trailer_theta[3];
-	globalpos.trailer_theta[4] = initialize_msg->trailer_theta[4];
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		globalpos.trailer_theta[z] = initialize_msg->trailer_theta[z];
 	
 	globalpos_ackerman_message.semi_trailer_engaged = globalpos.semi_trailer_engaged;
 	globalpos_ackerman_message.semi_trailer_type = globalpos.semi_trailer_type;
@@ -809,8 +807,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	{
 			globalpos.semi_trailer_engaged,
 			globalpos.semi_trailer_type,
-			semi_trailer_config.d,
-			semi_trailer_config.M,
+			semi_trailer_config.semi_trailers.d,
+			semi_trailer_config.semi_trailers.M,
 			globalpos.trailer_theta[0]
 	};
 
@@ -975,8 +973,8 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	{
 			globalpos.semi_trailer_engaged,
 			globalpos.semi_trailer_type,
-			semi_trailer_config.d,
-			semi_trailer_config.M,
+			semi_trailer_config.semi_trailers.d,
+			semi_trailer_config.semi_trailers.M,
 			globalpos.trailer_theta[0]
 	};
 
@@ -1334,16 +1332,13 @@ map_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __a
 static void
 carmen_task_manager_set_semi_trailer_type_and_beta_message_handler(carmen_task_manager_set_semi_trailer_type_and_beta_message *message)
 {
-	if (semi_trailer_config.type != message->semi_trailer_type)
+	if (semi_trailer_config.semi_trailers.type != message->semi_trailer_type)
 	{
 		char *fake_module_name = (char *) "carmen_task_manager_set_semi_trailer_type_and_beta_message_handler()";
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, 1, &fake_module_name, message->semi_trailer_type);
 		globalpos.num_trailers = message->num_trailers;
-		globalpos.trailer_theta[0] = message->trailer_theta[0];
-		globalpos.trailer_theta[1] = message->trailer_theta[1];
-		globalpos.trailer_theta[2] = message->trailer_theta[2];
-		globalpos.trailer_theta[3] = message->trailer_theta[3];
-		globalpos.trailer_theta[4] = message->trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			globalpos.trailer_theta[z] = message->trailer_theta[z];
 	}
 }
 
@@ -1680,27 +1675,27 @@ timer_handler()
         switch (c)
         {
         case '1':
-           	semi_trailer_config.beta_correct_velodyne_ray = 0;
+           	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 0;
             break;
 
         case '2':
             // increase Velodyne single ray
-        	semi_trailer_config.beta_correct_velodyne_ray++;
-            if (semi_trailer_config.beta_correct_velodyne_ray > 31)
-            	semi_trailer_config.beta_correct_velodyne_ray = 0;
-            if (semi_trailer_config.beta_correct_velodyne_ray < 0)
-            	semi_trailer_config.beta_correct_velodyne_ray = 31;
+        	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray++;
+            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray > 31)
+            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 0;
+            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray < 0)
+            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 31;
             break;
         case '3':
             // decrease Velodyne single ray
-        	semi_trailer_config.beta_correct_velodyne_ray--;
-            if (semi_trailer_config.beta_correct_velodyne_ray > 31)
-            	semi_trailer_config.beta_correct_velodyne_ray = 0;
-            if (semi_trailer_config.beta_correct_velodyne_ray < 0)
-            	semi_trailer_config.beta_correct_velodyne_ray = 31;
+        	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray--;
+            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray > 31)
+            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 0;
+            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray < 0)
+            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 31;
             break;
         }
-        printf("semi_trailer_config.beta_correct_velodyne_ray %d\n", semi_trailer_config.beta_correct_velodyne_ray);
+        printf("semi_trailer_config.beta_correct_velodyne_ray %d\n", semi_trailer_config.semi_trailers.beta_correct_velodyne_ray);
 	}
 }
 

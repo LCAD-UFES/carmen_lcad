@@ -280,7 +280,7 @@ namespace View
 		carmen_localize_ackerman_globalpos_message *globalpos;
 
 		carmen_robot_config_t	 		*robot_config;
-		carmen_semi_trailer_config_t	*semi_trailer_config;
+		carmen_semi_trailers_config_t	*semi_trailer_config;
 		carmen_polygon_config_t			*robot_poly_config;
 		carmen_polygon_config_t			*semi_trailer_poly_config;
 		carmen_navigator_config_t 		*nav_config;
@@ -385,7 +385,7 @@ namespace View
 		Controls *getControls() { return &controls_; }
 
 		void navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-						carmen_robot_config_t *robot_conf_param, carmen_semi_trailer_config_t *semi_trailer_conf_param,
+						carmen_robot_config_t *robot_conf_param, carmen_semi_trailers_config_t *semi_trailer_conf_param,
 						carmen_polygon_config_t *robot_poly_config_param, carmen_polygon_config_t *semi_trailer_poly_config_param,
 						carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param);
 

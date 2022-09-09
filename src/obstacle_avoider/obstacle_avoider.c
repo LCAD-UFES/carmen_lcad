@@ -116,7 +116,7 @@ initialize_map_vector(int number_of_maps)
 
 static int
 build_predicted_trajectory(carmen_robot_and_trailers_motion_command_t *motion_commands_vector, int *num_motion_commands,
-		carmen_robot_and_trailers_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
+		carmen_robot_and_trailers_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailers_config_t *carmen_semi_trailer_config)
 {
 	int i, trajectory_vector_of_points_size = 0;
 	carmen_robot_and_trailers_traj_point_t pose;
@@ -136,11 +136,8 @@ build_predicted_trajectory(carmen_robot_and_trailers_motion_command_t *motion_co
 		motion_commands_vector[i].y = pose.y;
 		motion_commands_vector[i].theta = pose.theta;
 		motion_commands_vector[i].num_trailers = pose.num_trailers;
-		motion_commands_vector[i].trailer_theta[0] = pose.trailer_theta[0];
-		motion_commands_vector[i].trailer_theta[1] = pose.trailer_theta[1];
-		motion_commands_vector[i].trailer_theta[2] = pose.trailer_theta[2];
-		motion_commands_vector[i].trailer_theta[3] = pose.trailer_theta[3];
-		motion_commands_vector[i].trailer_theta[4] = pose.trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			motion_commands_vector[i].trailer_theta[z] = pose.trailer_theta[z];
 
 		trajectory_vector_of_points[trajectory_vector_of_points_size] = pose;
 		trajectory_vector_of_points_size++;
@@ -155,7 +152,7 @@ build_predicted_trajectory(carmen_robot_and_trailers_motion_command_t *motion_co
 
 carmen_navigator_ackerman_plan_message
 build_navigator_ackerman_plan_message(carmen_robot_and_trailers_motion_command_t *motion_commands_vector, int *num_motion_commands,
-			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config, double timestamp)
+			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailers_config_t *carmen_semi_trailer_config, double timestamp)
 {
 	int i, trajectory_vector_of_points_size;
 	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
@@ -171,11 +168,8 @@ build_navigator_ackerman_plan_message(carmen_robot_and_trailers_motion_command_t
 		predicted_trajectory_message.path[i].y 		= trajectory_vector_of_points[i].y;
 		predicted_trajectory_message.path[i].theta 	= trajectory_vector_of_points[i].theta;
 		predicted_trajectory_message.path[i].num_trailers 	= trajectory_vector_of_points[i].num_trailers;
-		predicted_trajectory_message.path[i].trailer_theta[0] 	= trajectory_vector_of_points[i].trailer_theta[0];
-		predicted_trajectory_message.path[i].trailer_theta[1] 	= trajectory_vector_of_points[i].trailer_theta[1];
-		predicted_trajectory_message.path[i].trailer_theta[2] 	= trajectory_vector_of_points[i].trailer_theta[2];
-		predicted_trajectory_message.path[i].trailer_theta[3] 	= trajectory_vector_of_points[i].trailer_theta[3];
-		predicted_trajectory_message.path[i].trailer_theta[4] 	= trajectory_vector_of_points[i].trailer_theta[4];
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			predicted_trajectory_message.path[i].trailer_theta[z] 	= trajectory_vector_of_points[i].trailer_theta[z];
 		predicted_trajectory_message.path[i].v 		= trajectory_vector_of_points[i].v;
 		predicted_trajectory_message.path[i].phi 	= trajectory_vector_of_points[i].phi;
 	}
@@ -315,7 +309,7 @@ velocity_recalculate(carmen_robot_and_trailers_motion_command_t *motion_commands
 
 
 int
-obstacle_avoider(carmen_robot_and_trailers_motion_command_t *motion_commands_vector, int *num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailer_config_t *carmen_semi_trailer_config)
+obstacle_avoider(carmen_robot_and_trailers_motion_command_t *motion_commands_vector, int *num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_semi_trailers_config_t *carmen_semi_trailer_config)
 {
 	int pose_index = current_pose;
 	int hit_obstacle = 0;

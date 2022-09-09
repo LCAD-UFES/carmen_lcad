@@ -34,7 +34,7 @@
 #endif
 
 static carmen_robot_config_t	 	robot_config;
-static carmen_semi_trailer_config_t semi_trailer_config;
+static carmen_semi_trailers_config_t semi_trailer_config;
 static carmen_polygon_config_t		robot_poly_config;
 static carmen_polygon_config_t		semi_trailer_poly_config;
 static carmen_navigator_config_t nav_config;
@@ -735,28 +735,28 @@ carmen_parse_polygon_file(carmen_polygon_config_t *poly_config, char *poly_file)
 static void
 read_parameters_semi_trailer(int argc, char **argv, int semi_trailer_type)
 {
-	semi_trailer_config.type = semi_trailer_type;
+	semi_trailer_config.semi_trailers.type = semi_trailer_type;
 	if (semi_trailer_type == 0)
 		return;
 
 	char semi_trailer_string[2048];
 
-	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.semi_trailers.type);
 
 	char *semi_trailer_poly_file;
 
 	carmen_param_t semi_trailer_param_list[] = {
-		{semi_trailer_string, (char *) "d",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							   	  0, NULL},
-		{semi_trailer_string, (char *) "M",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							   	  0, NULL},
-		{semi_trailer_string, (char *) "width",							 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),							  0, NULL},
-		{semi_trailer_string, (char *) "distance_between_axle_and_front", 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-		{semi_trailer_string, (char *) "distance_between_axle_and_back",	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),  0, NULL},
-		{semi_trailer_string, (char *) "max_beta",						 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.max_beta),						  0, NULL},
+		{semi_trailer_string, (char *) "d",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.d),							   	  0, NULL},
+		{semi_trailer_string, (char *) "M",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.M),							   	  0, NULL},
+		{semi_trailer_string, (char *) "width",							 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.width),							  0, NULL},
+		{semi_trailer_string, (char *) "distance_between_axle_and_front", 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.distance_between_axle_and_front), 0, NULL},
+		{semi_trailer_string, (char *) "distance_between_axle_and_back",	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.distance_between_axle_and_back),  0, NULL},
+		{semi_trailer_string, (char *) "max_beta",						 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.max_beta),						  0, NULL},
 		{semi_trailer_string, (char *) "polygon_file",					 	CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 							  	0, NULL}
 	};
 	carmen_param_install_params(argc, argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
 
-	semi_trailer_config.max_beta = carmen_degrees_to_radians(semi_trailer_config.max_beta);
+	semi_trailer_config.semi_trailers.max_beta = carmen_degrees_to_radians(semi_trailer_config.semi_trailers.max_beta);
 
 	char polygon_file[1024];
 	strcpy(polygon_file, getenv("CARMEN_HOME"));
@@ -1134,7 +1134,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	else
 		gui->navigator_graphics_update_display(&new_robot, msg, NULL, autonomous);
 
-	if (msg->semi_trailer_type != semi_trailer_config.type)
+	if (msg->semi_trailer_type != semi_trailer_config.semi_trailers.type)
 		read_parameters_semi_trailer(argc_global, argv_global, msg->semi_trailer_type);
 }
 
@@ -1403,7 +1403,10 @@ void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
 	gui->final_goal.map = gui->controls_.map_view->internal_map;
-	gui->final_goal.pose = {rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta, rddf_end_point_message->point.num_trailers, {rddf_end_point_message->point.trailer_theta[0], rddf_end_point_message->point.trailer_theta[1], rddf_end_point_message->point.trailer_theta[2], rddf_end_point_message->point.trailer_theta[3], rddf_end_point_message->point.trailer_theta[4]}};
+	gui->final_goal.pose = {rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta, rddf_end_point_message->point.num_trailers, {0.0}};
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		gui->final_goal.pose.trailer_theta[z] = rddf_end_point_message->point.trailer_theta[z];
+
 	gui->final_goal_placed_and_oriented = 1;
 }
 
@@ -1457,7 +1460,7 @@ nav_shutdown(int signo __attribute__ ((unused)))
 static void
 read_parameters(int argc, char *argv[],
 		carmen_robot_config_t *robot_config,
-		carmen_semi_trailer_config_t *semi_trailer_config,
+		carmen_semi_trailers_config_t *semi_trailer_config,
 		carmen_polygon_config_t *robot_poly_config,
 		carmen_navigator_config_t *nav_config,
 		carmen_navigator_panel_config_t *navigator_panel_config)
@@ -1472,7 +1475,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "robot",			 (char *) "acceleration",			CARMEN_PARAM_DOUBLE, &(robot_config->acceleration),					1, NULL},
 		{(char *) "robot",			 (char *) "rectangular",			CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),					1, NULL},
 		{(char *) "robot", 			 (char *) "polygon_file",			CARMEN_PARAM_STRING, &(robot_poly_file), 							0, NULL},
-		{(char *) "semi_trailer",	 (char *) "initial_type",			CARMEN_PARAM_INT, 	 &(semi_trailer_config->type), 					0, NULL},
+		{(char *) "semi_trailer",	 (char *) "initial_type",			CARMEN_PARAM_INT, 	 &(semi_trailer_config->semi_trailers.type), 					0, NULL},
 
 		{(char *) "navigator",		 (char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),		1, NULL},
 		{(char *) "navigator",		 (char *) "goal_size",				CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
@@ -1527,8 +1530,8 @@ read_parameters(int argc, char *argv[],
 	printf("%s\n", polygon_file);
 	carmen_parse_polygon_file(robot_poly_config, polygon_file);
 
-	if (semi_trailer_config->type > 0)
-		read_parameters_semi_trailer(argc, argv, semi_trailer_config->type);
+	if (semi_trailer_config->semi_trailers.type > 0)
+		read_parameters_semi_trailer(argc, argv, semi_trailer_config->semi_trailers.type);
 
 	carmen_param_t param_cmd_list[] =
 	{

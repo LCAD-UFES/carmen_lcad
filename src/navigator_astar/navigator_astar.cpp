@@ -290,10 +290,13 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 		rddf_end_point_message->point.y,
 		rddf_end_point_message->point.theta,
 		rddf_end_point_message->point.num_trailers,
-		{rddf_end_point_message->point.trailer_theta[0], rddf_end_point_message->point.trailer_theta[1], rddf_end_point_message->point.trailer_theta[2], rddf_end_point_message->point.trailer_theta[3], rddf_end_point_message->point.trailer_theta[4]},
+		{0.0},
 		0.0,
 		0.0
 	};
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		point.trailer_theta[z] = rddf_end_point_message->point.trailer_theta[z];
+
 	messageControl.carmen_planner_ackerman_update_goal(&point);
 }
 
