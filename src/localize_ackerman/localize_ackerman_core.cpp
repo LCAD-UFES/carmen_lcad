@@ -84,8 +84,8 @@ extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR
 #define PLOT_GRAPH 1
 
 #define PREDICT_BETA_GSL_ERROR_CODE 100.0
-//#define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
-#define MIN_DISTANCE_BETWEEN_POINTS	(1.0)
+// #define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
+#define MIN_DISTANCE_BETWEEN_POINTS	(0.02)
 
 #define MIN_CLUSTER_SIZE			10
 
@@ -184,21 +184,27 @@ compute_points_with_respect_to_king_pin(carmen_vector_3D_t *points_position_with
 	carmen_velodyne_partial_scan_message *velodyne_message, double *vertical_correction)
 {
 	int num_valid_points = 0;
-	double h_angle, v_angle, range, angle, distance_to_king_pin;
+	double h_angle, v_angle, range;
 	tf::Point p3d_velodyne_reference, p3d_kingpin_reference;
+	// mirror increment in case of king pink at front of the car, like as "virtualization"
+	double mirror_increment = semi_trailer_config.M < 0 ? 180.0 : 0.0;
 	int j = spherical_sensor_params[0].ray_order[semi_trailer_config.beta_correct_velodyne_ray];	// raio d interesse
 
 	for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
 		if (velodyne_message->partial_scan[i].distance[j] != 0)
 		{
-			h_angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle);
+			h_angle = -carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + mirror_increment);
 			v_angle = carmen_normalize_theta(carmen_degrees_to_radians(vertical_correction[j]));
 			range = (((double) velodyne_message->partial_scan[i].distance[j]) / 500.0);
 			p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
 			p3d_kingpin_reference = move_to_kingpin_reference(p3d_velodyne_reference);
 
 			points_position_with_respect_to_car[num_valid_points++] = tf_vector3_to_carmen_vector3(p3d_kingpin_reference);
+
+			// double distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[num_valid_points-1], points_position_with_respect_to_car[num_valid_points-1]));
+			// if (distance_to_king_pin < fabs(semi_trailer_config.beta_correct_max_distance))
+			// 		printf("%lf\t%lf\n", p3d_velodyne_reference.getX(), p3d_kingpin_reference.getX());
 		}
 	}
 
@@ -286,29 +292,56 @@ remove_begin_and_end_points(int num_filtered_points, carmen_vector_3D_t *points_
 int
 remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
 {
+	unsigned int i;
+	static unsigned int last_cluster_size;
+	unsigned int largest_cluster_size;
+	unsigned int n_valid_cluster = 0, valid_clusters[3];
+	int largest_cluster = 0, chosen_cluster = 0;
+	unsigned int min_cluster_size = 60, max_cluster_size = 90;
+
 	dbscan::Cluster single_cluster = generate_cluster_with_all_points(points_position_with_respect_to_car, num_filtered_points);
 	dbscan::Clusters clusters = dbscan::dbscan(MIN_DISTANCE_BETWEEN_POINTS, MIN_CLUSTER_SIZE, single_cluster);
 	if (clusters.size() > 0)
 	{
-		int largest_cluster = 0;
-		unsigned int largest_cluster_size = clusters[0].size();
-		for (unsigned int i = 1; i < clusters.size(); i++)
+		largest_cluster_size = clusters[0].size();
+		for (i = 1; i < clusters.size(); i++)
 		{
 			if (clusters[i].size() > largest_cluster_size)
 			{
 				largest_cluster_size = clusters[i].size();
 				largest_cluster = i;
 			}
+			if ((clusters[i].size() >= min_cluster_size) && (clusters[i].size() <= max_cluster_size) && (n_valid_cluster < 4))
+				valid_clusters[n_valid_cluster++] = i;
 		}
+		if (n_valid_cluster < 2) // single cluster
+		{
+			chosen_cluster = largest_cluster;
+			last_cluster_size = clusters[chosen_cluster].size();
+		}
+		else // closer to the last
+		{
+			chosen_cluster = 0;
+			largest_cluster_size = fabs(clusters[valid_clusters[0]].size() - last_cluster_size); // closer
+			for (i = 1; i < n_valid_cluster; i++)
+			{
+				if (fabs(clusters[valid_clusters[i]].size() - last_cluster_size) < largest_cluster_size)
+				{
+					largest_cluster_size = fabs(clusters[valid_clusters[i]].size() - last_cluster_size);
+					chosen_cluster = i;
+				}
+			}
+		}
+		
 //		plot_cluster_graph(clusters[largest_cluster_size]);
 
-//		printf("num_c %d, largest_c %d, lcs %d\n", clusters.size(), largest_cluster, clusters[largest_cluster].size());
-		for (unsigned int i = 0; i < clusters[largest_cluster].size(); i++)
+		//printf("num_c %d, largest_c %d, lcs %d\n", clusters.size(), chosen_cluster, clusters[chosen_cluster].size());
+		for (i = 0; i < clusters[chosen_cluster].size(); i++)
 		{
-			points_position_with_respect_to_car[i].x = clusters[largest_cluster][i].x;
-			points_position_with_respect_to_car[i].y = clusters[largest_cluster][i].y;
+			points_position_with_respect_to_car[i].x = clusters[chosen_cluster][i].x;
+			points_position_with_respect_to_car[i].y = clusters[chosen_cluster][i].y;
 		}
-		num_filtered_points = clusters[largest_cluster].size();
+		num_filtered_points = clusters[chosen_cluster].size();
 	}
 	else
 		num_filtered_points = 0;
@@ -317,10 +350,35 @@ remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *poi
 }
 
 
+void 
+_plot_graph(carmen_vector_3D_t *points_position_with_respect_to_car, int num_valid_points)
+{
+    static FILE *gnuplot_pipe = NULL;
+    static bool first_time = true;
+
+    if (first_time)
+    {
+        first_time = false;
+        gnuplot_pipe = popen("taskset -c 0 gnuplot", "w"); // -persist to keep last plot after program closes
+    }
+
+    FILE *graph_file;
+	remove("debug_beta.dat");
+    graph_file = fopen("debug_beta.dat", "w");
+	for (size_t i = 0; i < (size_t) num_valid_points; i++)
+		fprintf(graph_file, "%lf\t%lf\n", points_position_with_respect_to_car[i].x, points_position_with_respect_to_car[i].y);
+    fclose(graph_file);
+    fprintf(gnuplot_pipe, "plot 'debug_beta.dat' using 1:2\n");
+    fflush(gnuplot_pipe);
+}
+
+
 int
 compute_points_regression(carmen_vector_3D_t *points_position_with_respect_to_car)
 {
-	double angle, distance_to_king_pin;
+	double angle, distance_to_king_pin, 
+		   beta_correct_max_distance_mirrored = fabs(semi_trailer_config.beta_correct_max_distance);
+
 	int num_valid_points = compute_points_with_respect_to_king_pin(
 		points_position_with_respect_to_car, 
 		last_velodyne_message, spherical_sensor_params[0].vertical_correction
@@ -333,14 +391,13 @@ compute_points_regression(carmen_vector_3D_t *points_position_with_respect_to_ca
 	for (int i = 0; i < num_valid_points; i++)
 	{
 		angle = atan2(points_position_with_respect_to_car[i].y, points_position_with_respect_to_car[i].x);
-		angle = -(angle + M_PI); // positive comparisson
 		distance_to_king_pin = sqrt(DOT2D(points_position_with_respect_to_car[i], points_position_with_respect_to_car[i]));
 		if ((angle > (-semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
 			(angle < (semi_trailer_config.beta_correct_angle_factor * semi_trailer_config.max_beta)) &&
-			(distance_to_king_pin < fabs(semi_trailer_config.beta_correct_max_distance)))
+			(distance_to_king_pin < beta_correct_max_distance_mirrored))
 		{
-			double x = points_position_with_respect_to_car[i].x;// * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
-			double y = points_position_with_respect_to_car[i].y;// * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
+			double x = points_position_with_respect_to_car[i].x * cos(M_PI / 2.0) - points_position_with_respect_to_car[i].y * sin(M_PI / 2.0);
+			double y = points_position_with_respect_to_car[i].x * sin(M_PI / 2.0) + points_position_with_respect_to_car[i].y * cos(M_PI / 2.0);
 			points_position_with_respect_to_car[num_filtered_points].x = x;
 			points_position_with_respect_to_car[num_filtered_points].y = y;
 			num_filtered_points++;
@@ -351,6 +408,7 @@ compute_points_regression(carmen_vector_3D_t *points_position_with_respect_to_ca
 	if(PLOT_GRAPH)
 		save_points_file_to_debug(num_filtered_points, points_position_with_respect_to_car);
 
+	// _plot_graph(points_position_with_respect_to_car, num_filtered_points);
 	num_filtered_points = remove_begin_and_end_points(num_filtered_points, points_position_with_respect_to_car);
 
 	num_filtered_points = remove_small_clusters_of_points(num_filtered_points, points_position_with_respect_to_car);
