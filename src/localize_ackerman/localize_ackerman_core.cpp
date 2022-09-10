@@ -87,7 +87,8 @@ extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR
 // #define MIN_DISTANCE_BETWEEN_POINTS	(semi_trailer_config.beta_correct_max_distance / 80.0)
 #define MIN_DISTANCE_BETWEEN_POINTS	(0.02)
 
-#define MIN_CLUSTER_SIZE			10
+#define MIN_CLUSTER_SIZE			30
+#define MAX_CLUSTER_SIZE			80
 
 FILE *gnuplot_pipe = NULL;
 carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
@@ -293,14 +294,15 @@ int
 remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *points_position_with_respect_to_car)
 {
 	unsigned int i;
-	static unsigned int last_cluster_size;
+	unsigned int n_clusters = 16;
 	unsigned int largest_cluster_size;
-	unsigned int n_valid_cluster = 0, valid_clusters[3];
+	static unsigned int last_cluster_size;
+	unsigned int n_valid_cluster = 0, valid_clusters[n_clusters];
 	int largest_cluster = 0, chosen_cluster = 0;
-	unsigned int min_cluster_size = 60, max_cluster_size = 90;
+	unsigned int min_cluster_size = MIN_CLUSTER_SIZE, max_cluster_size = MAX_CLUSTER_SIZE;
 
 	dbscan::Cluster single_cluster = generate_cluster_with_all_points(points_position_with_respect_to_car, num_filtered_points);
-	dbscan::Clusters clusters = dbscan::dbscan(MIN_DISTANCE_BETWEEN_POINTS, MIN_CLUSTER_SIZE, single_cluster);
+	dbscan::Clusters clusters = dbscan::dbscan(MIN_DISTANCE_BETWEEN_POINTS, MIN_CLUSTER_SIZE/4.0, single_cluster);
 	if (clusters.size() > 0)
 	{
 		largest_cluster_size = clusters[0].size();
@@ -311,31 +313,35 @@ remove_small_clusters_of_points(int num_filtered_points, carmen_vector_3D_t *poi
 				largest_cluster_size = clusters[i].size();
 				largest_cluster = i;
 			}
-			if ((clusters[i].size() >= min_cluster_size) && (clusters[i].size() <= max_cluster_size) && (n_valid_cluster < 4))
+			if ((clusters[i].size() >= min_cluster_size) && (clusters[i].size() <= max_cluster_size) && (n_valid_cluster < n_clusters))
 				valid_clusters[n_valid_cluster++] = i;
 		}
-		if (n_valid_cluster < 2) // single cluster
+		if (n_valid_cluster == 0) // take the best
 		{
 			chosen_cluster = largest_cluster;
 			last_cluster_size = clusters[chosen_cluster].size();
 		}
+		else if (n_valid_cluster <= 1) // single cluster
+		{
+			chosen_cluster = valid_clusters[0];
+			last_cluster_size = clusters[chosen_cluster].size();
+		}
 		else // closer to the last
 		{
-			chosen_cluster = 0;
+			chosen_cluster = valid_clusters[0];
 			largest_cluster_size = fabs(clusters[valid_clusters[0]].size() - last_cluster_size); // closer
 			for (i = 1; i < n_valid_cluster; i++)
 			{
 				if (fabs(clusters[valid_clusters[i]].size() - last_cluster_size) < largest_cluster_size)
 				{
 					largest_cluster_size = fabs(clusters[valid_clusters[i]].size() - last_cluster_size);
-					chosen_cluster = i;
+					chosen_cluster = valid_clusters[i];
+					last_cluster_size = clusters[chosen_cluster].size();
 				}
 			}
 		}
-		
-//		plot_cluster_graph(clusters[largest_cluster_size]);
 
-		//printf("num_c %d, largest_c %d, lcs %d\n", clusters.size(), chosen_cluster, clusters[chosen_cluster].size());
+		// printf("num_c %d, largest_c %d, lcs %d, %d\n", clusters.size(), chosen_cluster, clusters[chosen_cluster].size(), n_valid_cluster);
 		for (i = 0; i < clusters[chosen_cluster].size(); i++)
 		{
 			points_position_with_respect_to_car[i].x = clusters[chosen_cluster][i].x;
@@ -378,6 +384,8 @@ compute_points_regression(carmen_vector_3D_t *points_position_with_respect_to_ca
 {
 	double angle, distance_to_king_pin, 
 		   beta_correct_max_distance_mirrored = fabs(semi_trailer_config.beta_correct_max_distance);
+	if (semi_trailer_config.M < 0)
+		beta_correct_max_distance_mirrored += beta_correct_max_distance_mirrored; // cause of virtualization
 
 	int num_valid_points = compute_points_with_respect_to_king_pin(
 		points_position_with_respect_to_car, 
