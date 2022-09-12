@@ -63,5 +63,8 @@ void audit_write_offline_map_message(carmen_mapper_map_message *msg, carmen_FILE
 void audit_write_map_server_compact_cost_map_message(carmen_map_server_compact_cost_map_message *msg, carmen_FILE *outfile, double timestamp);
 void audit_write_obstacle_distance_mapper_compact_map_message(carmen_obstacle_distance_mapper_compact_map_message *msg, carmen_FILE *outfile, double timestamp);
 void audit_write_robot_ackerman_motion_command_message(carmen_robot_ackerman_motion_command_message *msg, carmen_FILE *outfile, double timestamp);
-
+void audit_write_ford_escape_error_message(carmen_ford_escape_error_message *msg, carmen_FILE *outfile, double timestamp);
+void audit_write_extra_keys_message(carmen_extra_keys_message_t *msg, carmen_FILE *outfile, double timestamp);
+void audit_write_ford_escape_velocity_pid_data_message(velocity_pid_data_message *msg, carmen_FILE *outfile, double timestamp);
+void audit_write_ford_escape_steering_pid_data_message(steering_pid_data_message *msg, carmen_FILE *outfile, double timestamp);
 #endif
