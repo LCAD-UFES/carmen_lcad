@@ -6,8 +6,6 @@
 #include "ford_escape_hybrid_messages.h"
 
 
-
-
 using namespace std;
 
 typedef double (*MotionControlFunction)(double v, double w, double t);
@@ -27,6 +25,9 @@ static MotionControlFunction v_function;
 static MotionControlFunction phi_function;
 
 static int wave_form = 0;
+
+carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
+
 
 static void
 signal_handler(int signo __attribute__ ((unused)) )
