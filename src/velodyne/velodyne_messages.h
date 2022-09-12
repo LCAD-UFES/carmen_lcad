@@ -72,8 +72,8 @@ typedef struct {
 typedef struct
 {
 	int shot_size;
-	unsigned int  *distance;
-	unsigned short *intensity;
+	unsigned int  *distance; // m * lidarID_range_division_factor
+	unsigned short *intensity; // 0 to 255
 	double angle;              // In degrees
 }carmen_velodyne_shot;
 
