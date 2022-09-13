@@ -70,7 +70,7 @@ get_pose_vector_from_spline_descriptors_old(EFFORT_SPLINE_DESCRIPTOR *descriptor
 	robot_state.theta = param->global_pos.globalpos.theta;
 	robot_state.num_trailers = param->global_pos.num_trailers;
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		robot_state.trailer_theta[z] = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
+		robot_state.trailer_theta[z] = param->global_pos.trailer_theta[z]; // Tem que tratar isso no futuro, se for usar este codigo
 
 	carmen_semi_trailers_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
 
@@ -115,7 +115,7 @@ get_pose_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, P
 	robot_state.theta = param->global_pos.globalpos.theta;
 	robot_state.num_trailers = param->global_pos.num_trailers;
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		robot_state.trailer_theta[z] = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
+		robot_state.trailer_theta[z] = param->global_pos.trailer_theta[z]; // Tem que tratar isso no futuro, se for usar este codigo
 
 	carmen_semi_trailers_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
 

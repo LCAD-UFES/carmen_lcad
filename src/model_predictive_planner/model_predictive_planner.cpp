@@ -492,6 +492,10 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 			for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 				point_to_check.trailer_theta[z] = path[i].trailer_theta[z];
 
+			point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
+			localizer.trailer_theta[0] = localizer.theta - localizer.trailer_theta[0];
+
+
 			if (GlobalState::distance_map != NULL)
 			{
 				double circle_invasion = sqrt(carmen_obstacle_avoider_proximity_to_obstacles(&localizer,
@@ -500,7 +504,10 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 				if (circle_invasion > max_circle_invasion)
 					max_circle_invasion = circle_invasion;
 			}
+			point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
+			localizer.trailer_theta[0] = localizer.theta - localizer.trailer_theta[0];
 		}
+
 
 		if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
 			path.erase(path.begin() + (int) (0.7 * (double) path.size()), path.begin() + path.size());

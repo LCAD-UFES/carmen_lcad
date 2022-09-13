@@ -1466,7 +1466,7 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
         last_localize_ackerman_trail -= localize_ackerman_size;
 
 
-    beta = localize_ackerman_message->trailer_theta[0];
+    beta = localize_ackerman_message->pose.orientation.yaw - localize_ackerman_message->trailer_theta[0];
 	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
 	if (localize_ackerman_message->semi_trailer_type != semi_trailer_config.semi_trailers.type)

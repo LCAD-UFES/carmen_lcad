@@ -24,10 +24,23 @@ compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trail
 		return (0.0);
 
 	double L = robot_config.distance_between_front_and_rear_axles;
-	double beta = robot_and_trailer_traj_point.trailer_theta[0] + dt *
+	double beta1 = robot_and_trailer_traj_point.trailer_theta[0] + dt *
 			robot_and_trailer_traj_point.v * (tan(robot_and_trailer_traj_point.phi) / L -
 						   sin(robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d +
 						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
+
+	double M = semi_trailer_config.semi_trailers.M;
+	double d1 = semi_trailer_config.semi_trailers.d;
+
+
+
+	double beta = robot_and_trailer_traj_point.theta + dt *
+			robot_and_trailer_traj_point.v * (
+					- sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d +
+						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
+
+//	printf("Teste: %f %f %f\n", beta, beta1, robot_and_trailer_traj_point.theta);
+
 
 	return (beta);
 }
@@ -53,8 +66,9 @@ ode_func(double t, const double x[], double dxdt[], void *params)
 	dxdt[1] = v * sin(theta);
 	dxdt[2] = (v / L) * tan(phi);
 
-	double beta = x[3];
-	dxdt[3] = dxdt[2] - v * (sin(beta) / d + (M / (L * d)) * cos(beta) * tan(phi));
+	double beta = dxdt[2] - x[3];
+//	dxdt[3] = dxdt[2] - v * (sin(beta) / d + (M / (L * d)) * cos(beta) * tan(phi));
+	dxdt[3] = v * (sin(beta) / d + (M / (L * d)) * cos(beta) * tan(phi));
 	dxdt[4] = a;
 	dxdt[5] = v;
 
