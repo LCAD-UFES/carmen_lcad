@@ -16,7 +16,7 @@
 #include "ouster/client.h"
 #include "ouster/lidar_scan.h"
 #include "ouster/os_pcap.h"
-#include "ouster/types.h"
+#include <ouster/types.h>
 #include <json/json.h>
 
 using namespace ouster::sensor;
