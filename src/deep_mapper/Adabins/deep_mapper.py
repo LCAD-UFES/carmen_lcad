@@ -92,7 +92,7 @@ class ToTensor(object):
             return img
 
 class InferenceHelper:
-    def __init__(self, dataset='nyu', device='cuda:0'):
+    def __init__(self, dataset='kitti', device='cuda:0'):
         self.toTensor = ToTensor()
         self.device = device
         if dataset == 'nyu':
@@ -150,7 +150,7 @@ class InferenceHelper:
         #plasma = plt.get_cmap('plasma')
         #pred = plasma(pred)[:, :, :3]
 
-        pred = (pred * 256).astype('uint16')
+        pred = (pred * 256.0).astype('uint16')
         pred[0:cut,:] = 1000
         pred[pred.shape[0]-down:pred.shape[0],:] = 0
         return (pred).astype('uint16')

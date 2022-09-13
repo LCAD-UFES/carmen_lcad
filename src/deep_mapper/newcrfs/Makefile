@@ -8,7 +8,7 @@ MODULE_NAME = NeWCRFs Neural Network
 MODULE_COMMENT = Depth Estimation with NeWCRFs
 
 IFLAGS += -I/usr/include/python3.8
-LFLAGS += `python3.8-config --libs`
+LFLAGS += `python3.8-config --libs` -L /usr/lib/x86_64-linux-gnu/ -lpython3.8
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 

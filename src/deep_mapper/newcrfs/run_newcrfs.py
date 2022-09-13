@@ -74,15 +74,16 @@ def newcrfs_process_image(image, cut, down_cut):
 
     with torch.no_grad():
         depth_est = model(input_RGB)
-        post_process = True
+        post_process = False
         if post_process:
             image_flipped = flip_lr(image)
             depth_est_flipped = model(image_flipped)
             depth_est = post_process_depth(depth_est, depth_est_flipped)
-        pred_d = depth_est.cpu().numpy().squeeze() * 256.0
+        pred_d_numpy = depth_est.squeeze().cpu().numpy() * 256.0
         
     #print(pred_d)
-    pred_d_numpy = (pred_d / pred_d.max()) * 255
+    pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 256.0 * 1.256
+    #pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 400.0
     pred_d_numpy[0:cut.item(0),:] = 1000
     #print(pred_d_numpy.shape[0]-down_cut.item(0),pred_d_numpy.shape[0])
     pred_d_numpy[pred_d_numpy.shape[0]-down_cut.item(0):pred_d_numpy.shape[0],:] = 0

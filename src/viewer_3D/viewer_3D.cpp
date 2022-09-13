@@ -2623,7 +2623,7 @@ stereo_point_cloud_message_handler(carmen_stereo_point_cloud_message* stereo_poi
 
     int num_points = stereo_point_cloud_message->num_points;
 
-    //printf("Stereo point cloud: %d points.\n", num_points);
+    printf("Stereo point cloud: %d points.\n", num_points);
 
     if (num_points > stereo_point_cloud[last_stereo_point_cloud].num_points)
     {
@@ -4299,7 +4299,7 @@ subscribe_ipc_messages(void)
     //                                               (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
     //                                               CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
+    carmen_stereo_velodyne_subscribe_scan_message(3, NULL,
                                                   (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 

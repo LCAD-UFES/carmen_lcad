@@ -3,6 +3,7 @@
 #include <carmen/libadabins.h>
 #include <carmen/libdpt.h>
 #include <carmen/libglpdepth.h>
+#include <carmen/libnewcrfs.h>
 #include <string.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -48,8 +49,8 @@ static IplImage *reference_image;
 static IplImage *reference_image_gray;
 
 /*Message stereo*/
-// static carmen_stereo_point_cloud_message point_cloud_message;
-// static stereo_util su;
+static carmen_stereo_point_cloud_message point_cloud_message;
+static stereo_util su;
 
 Mat cameraMatrix, distCoeffs, newcameramtx, R1;
 double fx, fy, cu, camera_cv, k1, k2, p1, p2, k3;
@@ -83,34 +84,57 @@ inline double round(double val)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 /*Message stereo*/
+static void 
+register_ipc_messages(void)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_STEREO_POINT_CLOUD_NAME, IPC_VARIABLE_LENGTH, CARMEN_STEREO_POINT_CLOUD_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_STEREO_POINT_CLOUD_NAME);
+
+}
+
+
+IPC_RETURN_TYPE
+publish_stereo_point_cloud(void)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_publishData(CARMEN_STEREO_POINT_CLOUD_NAME, &point_cloud_message);
+	carmen_test_ipc_exit(err, "Could not publish stereo point cloud", CARMEN_STEREO_POINT_CLOUD_NAME);
+
+	return err;
+}
 // IPC_RETURN_TYPE
-// publish_stereo_point_cloud(void)
+// carmen_velodyne_publish_variable_scan_message(carmen_velodyne_variable_scan_message *message, int sensor_id)
 // {
 // 	IPC_RETURN_TYPE err;
 
-// 	err = IPC_publishData(CARMEN_STEREO_POINT_CLOUD_NAME, &point_cloud_message);
-// 	carmen_test_ipc_exit(err, "Could not publish stereo point cloud", CARMEN_STEREO_POINT_CLOUD_NAME);
+// 	static char message_name[64];
+// 	carmen_velodyne_create_variable_velodyne_message_name(sensor_id, message_name);
+// 	err = IPC_publishData(message_name, message);
+// 	carmen_test_ipc_exit(err, "Could not publish", message_name);
 
 // 	return err;
 // }
-// /*Message stereo*/
-// void convert_depth_to_stereo_point_cloud(unsigned char *depth, int vertical_resolution,
-// 										 int horizontal_resolution,	 unsigned char *reference_image, double timestamp)
-// {
-// 	carmen_vector_3D_t *image3D = (carmen_vector_3D_t *) malloc(vertical_resolution * horizontal_resolution * sizeof(carmen_vector_3D_t));
-// 	float *points = (float *)depth;
-// 	reproject_to_3D(points, image3D, 0.0, su);
 
-// 	point_cloud_message.num_points = vertical_resolution * horizontal_resolution;
+// /*Message stereo*/
+// void convert_depth_to_stereo_point_cloud(unsigned char *depth, unsigned char *reference_image, double timestamp,carmen_velodyne_shot *stereo_velodyne_scan)
+// {
+// 	carmen_vector_3D_t *image3D = (carmen_vector_3D_t *) malloc(camera_width * camera_height * sizeof(carmen_vector_3D_t));
+// 	float *points = (float *)depth;
+
+// 	point_cloud_message.num_points = camera_width * camera_height;
 // 	point_cloud_message.points = (carmen_vector_3D_t *)realloc(point_cloud_message.points, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
 // 	point_cloud_message.point_color = (carmen_vector_3D_t *)realloc(point_cloud_message.point_color, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
-
+// 	//reproject_to_3D(points, image3D, 0.0, su);
 // 	int i;
 // 	for (i = 0; i < point_cloud_message.num_points; i++)
 // 	{
-// 		point_cloud_message.points[i].x = image3D[i].x;
-// 		point_cloud_message.points[i].y = image3D[i].y;
-// 		point_cloud_message.points[i].z = image3D[i].z;
+		
+// 		 point_cloud_message.points[i].x = image3D[i].x;
+// 		 point_cloud_message.points[i].y = image3D[i].y;
+// 		 point_cloud_message.points[i].z = image3D[i].z;
 
 // 		point_cloud_message.point_color[i].x = ((double)reference_image[3 * i]) / 255.0;
 // 		point_cloud_message.point_color[i].y = ((double)reference_image[3 * i + 1]) / 255.0;
@@ -127,8 +151,12 @@ inline double round(double val)
 
 void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resolution,
 									 int horizontal_resolution, carmen_velodyne_shot *stereo_velodyne_scan,
-									 double range_max, unsigned char *image_gray)
+									 double range_max, unsigned char *image_gray, unsigned char *reference_image, double timestamp)
 {
+	point_cloud_message.num_points = camera_width * camera_height;
+	point_cloud_message.points = (carmen_vector_3D_t *)realloc(point_cloud_message.points, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
+	point_cloud_message.point_color = (carmen_vector_3D_t *)realloc(point_cloud_message.point_color, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
+
 	int i, j, x, y;
 
 	unsigned short int *points = (unsigned short int *)depth;
@@ -148,8 +176,22 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 			range = range > range_max ? 0.0 : range;
 			stereo_velodyne_scan[j].distance[i] = (unsigned short)(range * range_multiplier_factor);
 			stereo_velodyne_scan[j].intensity[i] = image_gray[(int)(y * (double)horizontal_resolution + x)];
+			
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, sorted_lidar0_vertical_angles[y], range);
+			point_cloud_message.points[int(y * (double)horizontal_resolution + x)].x = velodyne_p3d.x();
+			point_cloud_message.points[int(y * (double)horizontal_resolution + x)].y = velodyne_p3d.y();
+			point_cloud_message.points[int(y * (double)horizontal_resolution + x)].z = velodyne_p3d.z();
+
+			point_cloud_message.point_color[int(y * (double)horizontal_resolution + x)].x = ((double)reference_image[int(3 * (y * (double)horizontal_resolution + x))]) / 255.0;
+			point_cloud_message.point_color[int(y * (double)horizontal_resolution + x)].y = ((double)reference_image[int(3 * (y * (double)horizontal_resolution + x) + 1)]) / 255.0;
+			point_cloud_message.point_color[int(y * (double)horizontal_resolution + x)].z = ((double)reference_image[int(3 * (y * (double)horizontal_resolution + x) + 2)]) / 255.0;
 		}
 	}
+	point_cloud_message.timestamp = timestamp;
+	point_cloud_message.host = carmen_get_host();
+
+	publish_stereo_point_cloud();
+	
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -168,7 +210,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
-	// unsigned char *image_color = open_cv_image.data;
+	
 	cv::cvtColor(open_cv_image, open_cv_image, cv::COLOR_BGR2RGB);
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
@@ -176,14 +218,17 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
 		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
+	if (!strcmp(neural_network, "newcrfs"))
+		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 
 	// cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	// open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-
+	
+	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
-									range_max, image_gray);
+									range_max, image_gray, image_color, stereo_image->timestamp);
 
 	velodyne_partial_scan.partial_scan = scan;
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
@@ -192,6 +237,9 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	// write_pointcloud_variable_txt(&velodyne_partial_scan, (char *)"lidar8");
 
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
+	
+	
+	// convert_depth_to_stereo_point_cloud(depth_pred, image_color, stereo_image->timestamp);
 	
 
 	cv::imshow("Bumblebee Image", open_cv_image) ;
@@ -217,15 +265,17 @@ void image_handler(camera_message *msg)
 		depth_pred = libdpt_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 	if (!strcmp(neural_network, "glpdepth"))
 		depth_pred = libglpdepth_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
+	if (!strcmp(neural_network, "newcrfs"))
+		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 
 	// img(cv::Rect(xMin,yMin,xMax-xMin,yMax-yMin)).copyTo(croppedImg);
 	// cv::Rect myROI(0, camera_height - vertical_resolution, stereo_image->width, camera_height - (camera_height - vertical_resolution));
 	// open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-
+	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
-									range_max, image_gray);
+									range_max, image_gray, image_color, msg->timestamp);
 
 	velodyne_partial_scan.partial_scan = scan;
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
@@ -473,7 +523,8 @@ int read_parameters(int argc, char **argv)
 		// {(char *)camera_string, (char *)"p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL},
 		// {(char *)camera_string, (char *)"p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL}
 		};
-
+	su = get_stereo_instance(camera,camera_width,camera_height);
+	point_cloud_message.points = NULL;
 	/*SU stereo*/
 	// if ((camera_width > 0) && (camera_height > 0))
 	// {
@@ -523,7 +574,7 @@ int main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
-
+	register_ipc_messages();
 	if (argc - 1 != 3)
 		carmen_die("%s: Wrong number of parameters. stereo requires 3 parameters and received %d parameter(s). \n"
 				   "Usage:\n %s <camera_number>"
@@ -532,6 +583,7 @@ int main(int argc, char **argv)
 
 	camera = atoi(argv[1]);
 	read_parameters(argc, argv);
+	
 
 	if (!strcmp(neural_network, "adabins"))
 		initialize_python_context_adabins();
@@ -543,7 +595,10 @@ int main(int argc, char **argv)
 	{
 		initialize_python_context_glpdepth();
 	}
-
+	if (!strcmp(neural_network, "newcrfs"))
+	{
+		initialize_python_context_newcrfs();
+	}
 	init_stereo_velodyne();
 
 	carmen_velodyne_define_messages();

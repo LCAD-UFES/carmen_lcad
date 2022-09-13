@@ -73,7 +73,7 @@ def glp_process_image(image, cut, down_cut):
     with torch.no_grad():
         pred = model(input_RGB)
     pred_d = pred['pred_d']
-    pred_d_numpy = pred_d.squeeze().cpu().numpy() * 255
+    pred_d_numpy = pred_d.squeeze().cpu().numpy() #* 256.0
     #print(pred_d)
     pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 255
     pred_d_numpy[0:cut.item(0),:] = 1000

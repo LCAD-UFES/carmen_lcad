@@ -76,7 +76,7 @@ PUBLIC_LIBRARIES =
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = stereo_velodyne_depth 
-TARGETS = libtf libprob_models.a velodyne_camera_calibration  stereo_velodyne stereo_velodyne_depth libadabins.a libglpdepth.a libdpt.a
+TARGETS = libtf libprob_models.a velodyne_camera_calibration  stereo_velodyne stereo_velodyne_depth libadabins.a libglpdepth.a libdpt.a libnewcrfs.a
 
 # # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -92,7 +92,7 @@ endif
 
 stereo_velodyne_message_stereo: stereo_velodyne_message_stereo.o $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a  $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a
 
-stereo_velodyne_depth: stereo_velodyne_depth.o $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a $(CARMEN_HOME)/src/deep_mapper/DPT/libdpt.a $(CARMEN_HOME)/src/deep_mapper/GLPDepth/libglpdepth.a 
+stereo_velodyne_depth: stereo_velodyne_depth.o $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne_interface.a $(CARMEN_HOME)/src/stereo_velodyne/libstereo_velodyne.a $(CARMEN_HOME)/src/deep_mapper/Adabins/libadabins.a $(CARMEN_HOME)/src/deep_mapper/DPT/libdpt.a $(CARMEN_HOME)/src/deep_mapper/GLPDepth/libglpdepth.a $(CARMEN_HOME)/src/deep_mapper/newcrfs/libnewcrfs.a 
 
 # rules
 
@@ -107,6 +107,10 @@ libglpdepth.a:
 
 libdpt.a: 
 	$(MAKE) -C $(CARMEN_HOME)/src/deep_mapper/DPT
+
+libnewcrfs.a: 
+	$(MAKE) -C $(CARMEN_HOME)/src/deep_mapper/newcrfs
+
 
 camera_drivers:
 	$(MAKE) -C $(CARMEN_HOME)/src/camera_drivers/
