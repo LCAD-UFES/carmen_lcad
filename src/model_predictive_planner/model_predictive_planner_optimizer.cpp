@@ -958,51 +958,108 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 
 
 #ifdef USE_STANLEY_METHOD
+
+
+void
+get_between_points(carmen_robot_and_trailer_path_point_t robot, carmen_robot_and_trailer_path_point_t point_before, carmen_robot_and_trailer_path_point_t center, carmen_robot_and_trailer_path_point_t point_next,
+		int index_center, int &index_p1, int &index_p2, int &mais_proxima)
+{
+
+    double centro = DIST2D(center, robot);
+    double d = DIST2D(point_before, robot);
+    double d2 = DIST2D(point_next, robot);
+
+    if (d < d2)
+    {
+//        index_p1 = index_p1;
+        index_p2 = index_center;
+        mais_proxima = index_p1;
+        if(centro < d)
+            mais_proxima = index_center;
+    }
+    else
+    {
+        index_p1 = index_center;
+//        index_p2 = index_center+1;
+        mais_proxima = index_p2;
+        if(centro < d2)
+            mais_proxima = index_center;
+    }
+}
+
+
+double
+get_distance_between_point_to_line2(carmen_robot_and_trailer_path_point_t p1,
+		carmen_robot_and_trailer_path_point_t p2,
+		carmen_robot_and_trailer_path_point_t robot)
+{
+    //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+    double delta_x = p2.x - p1.x;
+    double delta_y = p2.y - p1.y;
+    double d = sqrt(delta_x * delta_x + delta_y * delta_y);
+    double x2y1 =  p2.x * p1.y;
+    double y2x1 =  p2.y * p1.x;
+
+    if (d < 0.0000001)
+        return DIST2D(p2, robot);
+
+    return fabs((delta_y * robot.x) - (delta_x * robot.y) + x2y1 - y2x1) / d;
+
+}
+
+
 double
 compute_error_using_stanley_method(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path)
 {
 
 	double total_steering_error = 0;
 	double theta_error = 0.0;
-	int look_ahead;
-	double k = 1.0;
+	int look_ahead = 5;
+	double k = GlobalState::look_ahead_horizon;
 	int total_points = 1; //How many
 	double steerig_stanley = 0.0;
 	carmen_robot_and_trailer_path_point_t robot_point;
 	int index_p1;
 	int index_p2;
 	int index_mais_proximo;
+	double error_steering = 0;
+	unsigned int predicted_index = 0;
 
-	if (use_unity_simulator)
-		look_ahead = 1;
-	else
-		look_ahead = 3;
 	for (unsigned int i = look_ahead; i < path.size(); i += look_ahead)
 	{
 		if ((i < param->path_point_nearest_to_lane.size()) &&
 				(param->path_point_nearest_to_lane.at(i) < param->detailed_lane.size()))
 		{
-			robot_point = move_to_front_axle(path.at(i));
-
 			if (!GlobalState::reverse_planning)
 				robot_point = move_to_front_axle(path.at(i));
-			index_p1 = (i>0?(i-1):i);
-			index_p2 = (i<path.size()?(i+1):i);
+
+			index_p1 = (i > 0 ? (i-1) : i);
+			index_p2 = (i < (path.size()-2))? (i+1):i;
+			index_mais_proximo = i;
 			get_between_points(robot_point, param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p1)), param->detailed_lane.at(param->path_point_nearest_to_lane.at(i)), param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p2)), i, index_p1, index_p2, index_mais_proximo);//Calcular distancia pro ponto mais proximo no path, eles usam ponto pra reta
 			//	get_points2();
 			theta_error = carmen_normalize_theta(robot_point.theta - param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_mais_proximo)).theta);
-			double Efa = get_distance_between_point_to_line(param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p1)),  param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p2)), robot_point);
+			double Efa = get_distance_between_point_to_line2(param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p1)),  param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p2)), robot_point);
 
-			steerig_stanley = theta_error + atan(k*Efa/robot_point.v);
+			double vt = (path.at(index_mais_proximo).v != 0.0) ? path.at(index_mais_proximo).v : path.at(index_mais_proximo + 1).v;
+
+			steerig_stanley = theta_error + atan(k*Efa/vt);
+
+			steerig_stanley = (steerig_stanley > GlobalState::robot_config.max_phi) ? GlobalState::robot_config.max_phi : steerig_stanley;
+			steerig_stanley = (steerig_stanley < -GlobalState::robot_config.max_phi) ? -GlobalState::robot_config.max_phi : steerig_stanley;
+
+			predicted_index = round(k*Efa/0.10) + index_mais_proximo;
+			predicted_index = predicted_index < path.size() ? predicted_index : path.size()-1;
+			error_steering = carmen_normalize_theta(steerig_stanley - path.at(index_mais_proximo).phi);
 			total_points += 1.0;
 		}
 		else
-			steerig_stanley = 0.0;
+			error_steering = 0.0;
 
-		total_steering_error += steerig_stanley;
+		total_steering_error += error_steering * error_steering;
 	}
 
-	return total_steering_error;
+	return (total_steering_error/total_points);
 }
 
 #endif
@@ -1181,6 +1238,7 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
 	TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
+	double steering_error = 0.0;
 
 	if (bad_tcp(tcp))
 		return (1000000.0);
@@ -1202,9 +1260,8 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 		path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
 
 #ifdef USE_STANLEY_METHOD
-			double steering_error= 0.0;
-			steering_error = compute_error_using_stanley_method(my_params, path);
-
+		steering_error = compute_error_using_stanley_method(my_params, path);
+		printf("\nSteering: %lf ", steering_error);
 #endif
 #endif
 	}
@@ -1237,17 +1294,19 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 				w4_activation_factor * GlobalState::w4 * path_to_lane_distance + // já é quandrática
 //				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 				GlobalState::w5 * proximity_to_obstacles +
-				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance);
+				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance +
+				GlobalState::w7 * steering_error);
 
 //	if (print_ws)
 //	{
-//		printf("* r % 3.8lf, w1 % 3.8lf, w2 % 3.8lf, w3 % 3.8lf, w4 % 3.8lf, w5 % 3.8lf, ps %d\n", result,
+//		printf("* r % 3.8lf, w1 % 3.8lf, w2 % 3.8lf, w3 % 3.8lf, w4 % 3.8lf, w5 % 3.8lf, ps %d, Steering: % 3.8lf\n", result,
 //				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index,
-//				activate_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index,
+//				w2_activation_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index,
 //				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index,
-//				activate_factor * GlobalState::w4 * path_to_lane_distance,
+//				w4_activation_factor * GlobalState::w4 * path_to_lane_distance,
 //				GlobalState::w5 * proximity_to_obstacles,
-//				(int) path.size());
+//				(int) path.size(),
+//				(GlobalState::w7 * steering_error));
 //		print_tcp(tcp);
 //	}
 
