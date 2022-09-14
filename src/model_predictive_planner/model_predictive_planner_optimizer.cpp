@@ -1012,11 +1012,11 @@ double
 compute_error_using_stanley_method(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path)
 {
 
-	double total_steering_error = 0;
+	double total_steering_error = 0.0;
 	double theta_error = 0.0;
 	int look_ahead = 5;
 	double k = GlobalState::look_ahead_horizon;
-	int total_points = 1; //How many
+	int total_points = 0.0; //How many
 	double steerig_stanley = 0.0;
 	carmen_robot_and_trailer_path_point_t robot_point;
 	int index_p1;
@@ -1024,6 +1024,9 @@ compute_error_using_stanley_method(ObjectiveFunctionParams *param, vector<carmen
 	int index_mais_proximo;
 	double error_steering = 0;
 	unsigned int predicted_index = 0;
+
+	if(param->detailed_lane.size() < look_ahead*4)
+		return 0.0;
 
 	for (unsigned int i = look_ahead; i < path.size(); i += look_ahead)
 	{
@@ -1278,6 +1281,7 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 
 	double w2_activation_factor = get_distance_dependent_activation_factor(2.0, my_params);
 	double w4_activation_factor = get_distance_dependent_activation_factor(6.0, my_params);
+	double w7_activation_factor = get_distance_dependent_activation_factor(6.0, my_params);
 
 	double semi_trailer_to_goal_distance = 0.0;
 //	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
@@ -1295,7 +1299,7 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 //				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 				GlobalState::w5 * proximity_to_obstacles +
 				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance +
-				GlobalState::w7 * steering_error);
+				w7_activation_factor * GlobalState::w7 * steering_error);
 
 //	if (print_ws)
 //	{
