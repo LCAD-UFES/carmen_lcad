@@ -47,6 +47,9 @@ public:
 	static double w4; // path_to_lane_distance
 	static double w5; // proximity_to_obstacles
 	static double w6; // traveled_distance
+	static double w7; // look_ahead_based_on_stanley_method
+	static double look_ahead_horizon; //fraction of the path (in meters it is about N*0.10m) based_on_stanley_method
+
 
 	static double time_to_change_gears;
 

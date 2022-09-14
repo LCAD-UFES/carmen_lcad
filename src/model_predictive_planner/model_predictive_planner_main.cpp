@@ -958,6 +958,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "model",				 (char *) "predictive_planner_w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5,														 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6,														 1, NULL},
+//		{(char *) "model",				 (char *) "predictive_planner_w7_look_ahead_error",                    	CARMEN_PARAM_DOUBLE, &GlobalState::w7,														 1, NULL},
+//		{(char *) "model",				 (char *) "predictive_planner_look_ahead_horizon",                    	CARMEN_PARAM_DOUBLE, &GlobalState::look_ahead_horizon,										 1, NULL},
 
 		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower",					CARMEN_PARAM_ONOFF,	 &GlobalState::eliminate_path_follower,									 1, NULL},
 		{(char *) "model",				 (char *) "predictive_planner_eliminate_path_follower_transition_v",    CARMEN_PARAM_DOUBLE, &GlobalState::eliminate_path_follower_transition_v,					 1, NULL},
