@@ -16,17 +16,18 @@ traria mais problemas do que ganho (Opnião do Vinicius)
 
 ###Instalação
 
-Baixe o SDK 0.4.1 usado -> https://drive.google.com/file/d/1L5wQ-yqk9REpW62EWWOS1pmnvYHFsHPE/view?usp=sharing
-baixe as dependencias:
+Baixe o SDK 0.4.1 usado -> https://drive.google.com/file/d/1L5wQ-yqk9REpW62EWWOS1pmnvYHFsHPE/view?usp=sharing \
+baixe as dependencias: \
 sudo apt install build-essential cmake libjsoncpp-dev libeigen3-dev libcurl4-openssl-dev \
-                   libtins-dev libpcap-dev libglfw3-dev libglew-dev
-mova a pasta baixada com nome ouster_example-master para a pasta packages_carmen
-	build
-	cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_VIZ=ON -DBUILD_PCAP=ON -DBUILD_EXAMPLES=ON ..
-	make
-	sudo make instal
+                   libtins-dev libpcap-dev libglfw3-dev libglew-dev \
+                   
+mova a pasta baixada com nome ouster_example-master para a pasta packages_carmen \
+	build \
+	cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_VIZ=ON -DBUILD_PCAP=ON -DBUILD_EXAMPLES=ON .. \
+	make \
+	sudo make instal \
 
-compile o modulo ouster_sdk_driver em $CARMEN_HOME/src/ouster_sdk_driver
+compile o modulo ouster_sdk_driver em $CARMEN_HOME/src/ouster_sdk_driver \
 
 ## how to run the driver: 
 ./ouster -sensor_ip <SENSOR IP> -host_ip<IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -sensor_id <ID TO THE VARIABLE VELODYNE MESSAGE AND CAMEN.INI PARAMETER: [0-9]> -mode<512x10|512x20|1024x10|1024x20|2048x10> -publish_imu [on | off]  -intensity_type [1 | 2 | 3]
