@@ -15,7 +15,7 @@
 #include "helpers.h"
 #include <ouster/client.h>
 #include <ouster/lidar_scan.h>
-#include "types.h"
+#include <ouster/types.h>
 #include "ouster/os_pcap.h"
 #include <json/json.h>
 
