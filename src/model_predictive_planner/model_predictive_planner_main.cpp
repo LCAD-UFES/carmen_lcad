@@ -182,13 +182,13 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 		msg.path[i].p1.x = it->p1.pose.x;
 		msg.path[i].p1.y = it->p1.pose.y;
 		msg.path[i].p1.theta = it->p1.pose.theta;
-		msg.path[i].p1.trailer_theta[0] = it->p1.pose.beta;
+		msg.path[i].p1.trailer_theta[0] = it->p1.pose.theta - it->p1.pose.beta;
 		msg.path[i].p1.v = it->p1.v_and_phi.v;
 		msg.path[i].p1.phi = it->p1.v_and_phi.phi;
 
 		msg.path[i].p2.x = it->p2.pose.x;
 		msg.path[i].p2.y = it->p2.pose.y;
-		msg.path[i].p2.trailer_theta[0] = it->p2.pose.beta;
+		msg.path[i].p2.trailer_theta[0] = it->p2.pose.theta - it->p2.pose.beta;
 		msg.path[i].p2.theta = it->p2.pose.theta;
 		msg.path[i].p2.v = it->p2.v_and_phi.v;
 		msg.path[i].p2.phi = it->p2.v_and_phi.phi;
@@ -302,7 +302,7 @@ publish_navigator_ackerman_status_message()
 		msg.goal.x = GlobalState::goal_pose->x;
 		msg.goal.y = GlobalState::goal_pose->y;
 		msg.goal.theta = GlobalState::goal_pose->theta;
-		msg.goal.trailer_theta[0] = GlobalState::goal_pose->beta;
+		msg.goal.trailer_theta[0] = msg.goal.theta - GlobalState::goal_pose->beta;
 		msg.goal.v = (path_goals_and_annotations_message != NULL)? path_goals_and_annotations_message->goal_list->v: GlobalState::robot_config.max_v;
 		msg.goal.phi = 0.0; // @@@ Alberto: teria que preencher isso...
 	}
@@ -679,7 +679,7 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	goal_pose.x = msg->goal_list[0].x;
 	goal_pose.y = msg->goal_list[0].y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list[0].theta);
-	goal_pose.beta = msg->goal_list[0].trailer_theta[0];
+	goal_pose.beta = goal_pose.theta - msg->goal_list[0].trailer_theta[0];
 
 	if (GlobalState::reverse_driving_flag)
 	{

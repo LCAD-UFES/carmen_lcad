@@ -163,6 +163,7 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavi
 		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], 0, {lane_in_car_reference[2] - beta, 0.0, 0.0, 0.0, 0.0},
 				path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
 		lane_in_local_pose->push_back(local_reference_lane_point);
+//		printf("%d %f %f %f %f %f\n", k, lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], lane_in_car_reference[2] - beta, beta);
 	}
 }
 
@@ -757,7 +758,7 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailers_pose_t *loc
 	td.goal_pose.x = goal_in_car_reference[0];
 	td.goal_pose.y = goal_in_car_reference[1];
 	td.goal_pose.theta = goal_in_car_reference[2];
-	td.goal_pose.trailer_theta[0] = goal_pose->beta;
+	td.goal_pose.trailer_theta[0] = goal_pose->beta; // Confirmado beta
 //	printf("%d %f %f\t\tb\n", __LINE__, td.goal_pose.trailer_theta[0], td.goal_pose.theta); // Incerto
 
 
@@ -791,6 +792,8 @@ compute_path_to_goal(carmen_robot_and_trailers_pose_t *localizer_pose, Pose *goa
 	}
 
 	move_lane_to_robot_reference_system(localizer_pose, path_goals_and_annotations_message, &lane_in_local_pose);
+	//A partir daqui o trailer_theta do path já está como beta
+	// O beta do goal_pose está correto
 
 	if (GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane)
 	{
