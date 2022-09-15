@@ -137,6 +137,7 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+int debugger = 0;
 
 static void
 publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double phi, double timestamp)
@@ -150,7 +151,17 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 //		globalpos.beta = 0.0;
 //		return;
 	}
-		
+
+//	if (globalpos.trailer_theta[0] < -1.0)
+//	{
+//		printf("Inside If\n");
+//		debugger = 1;
+//
+//	}
+
+	if (debugger)
+		printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 	globalpos.timestamp = timestamp;
 	globalpos.host = carmen_get_host();
 	globalpos.globalpos = summary->mean;
@@ -161,6 +172,8 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.phi = phi;
 	globalpos.converged = summary->converged;
 
+	if (debugger)
+		printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
 
 	static double last_timestamp = 0.0;
 	if (last_timestamp == 0.0)
@@ -181,36 +194,57 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 			robot_and_trailer_traj_point.trailer_theta[z] = globalpos.trailer_theta[z];
+		if (debugger)
+			printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
 
 		double delta_t = globalpos.timestamp - last_timestamp;
 //		globalpos.beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
 		globalpos.trailer_theta[0] = compute_semi_trailer_beta_using_velodyne(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
+		if (debugger)
+			printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 	}
 	else
 	{
 		globalpos.semi_trailer_engaged = 0;
 		globalpos.trailer_theta[0] = 0.0;
+		if (debugger)
+			printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 	}
 	globalpos.semi_trailer_type = semi_trailer_config.semi_trailers.type;
 	last_timestamp = timestamp;
+	if (debugger)
+		printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
 
 	if (g_fused_odometry_index == -1)
 	{
 		globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = globalpos.pose.position.z = 0.0;
 		globalpos.velocity.x = globalpos.velocity.y = globalpos.velocity.z = 0.0;
+		if (debugger)
+			printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 	}
 	else
 	{	// Aproveita alguns dados da fused_odometry. 
 		// Os valores referentes aa globalpos corrente sao escritos abaixo.
 		globalpos.pose = fused_odometry_vector[get_fused_odometry_index_by_timestamp(timestamp)].pose; 	
-		globalpos.velocity = fused_odometry_vector[get_fused_odometry_index_by_timestamp(timestamp)].velocity; 	
+		globalpos.velocity = fused_odometry_vector[get_fused_odometry_index_by_timestamp(timestamp)].velocity;
+		if (debugger)
+			printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 	}
+	if (debugger)
+		printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 	globalpos.pose.orientation.yaw = globalpos.globalpos.theta;
 
 	globalpos.pose.position.x = globalpos.globalpos.x;
 	globalpos.pose.position.y = globalpos.globalpos.y;
 	globalpos.pose.position.z = 0;
 	globalpos.velocity.x = v;
+	if (debugger)
+		printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
 	
 	//globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = 0.0;
 
@@ -223,7 +257,13 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 					globalpos.pose.position.x, globalpos.pose.position.y, globalpos.pose.position.z,
 					globalpos.pose.orientation.yaw, v, phi, timestamp);
 	}
+	if (debugger)
+		printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos);
+	if (debugger)
+		printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
+
 }
 
 

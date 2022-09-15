@@ -196,6 +196,8 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 		msg.path[i].v = it->command.v;
 		msg.path[i].phi = it->command.phi;
 		msg.path[i].time = it->time;
+
+//		printf("MPP: %d %f %f %f %f\n", i, msg.path[i].p1.theta, msg.path[i].p1.trailer_theta[0], msg.path[i].p2.theta, msg.path[i].p2.trailer_theta[0]);
 	}
 
 	Publisher_Util::publish_rrt_path_message(&msg);
@@ -624,6 +626,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 		GlobalState::localizer_pose->trailer_theta[z] = msg->trailer_theta[z];
 
+
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
 	else
@@ -646,7 +649,9 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	if (!GlobalState::localizer_pose)
 			GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 
-	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, 0, {0.0, 0.0, 0.0, 0.0, 0.0}};
+	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, msg->num_trailers, {0.0}};
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		GlobalState::localizer_pose->trailer_theta[z] = msg->trailer_theta[z];
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);

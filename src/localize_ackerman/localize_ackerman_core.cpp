@@ -450,6 +450,8 @@ compute_new_beta(carmen_vector_3D_t *points_position_with_respect_to_car,
 }
 
 
+int debugger2 = 0;
+
 double
 compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
@@ -457,17 +459,33 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t 
 	if (semi_trailer_config.semi_trailers.type == 0)
 		return (0.0);
 
-	double predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
+//	if (robot_and_trailer_traj_point.trailer_theta[0] < -1.0)
+//		{
+//			printf("Inside If\n");
+//			debugger2 = 1;
+//
+//		}
+	if (debugger2)
+			printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 
+	double predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
+	if (debugger2)
+				printf("Here %d %f %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] , predicted_beta);
 	if (!last_velodyne_message ||
 		!spherical_sensor_params[0].sensor_to_support_matrix ||
 		!spherical_sensor_params[0].support_to_car_matrix)
 		return (predicted_beta);
+	if (debugger2)
+				printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 
 	carmen_vector_3D_t *points_position_with_respect_to_car = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
 	carmen_vector_3D_t *points_position_with_respect_to_car_estimated = (carmen_vector_3D_t *) malloc(last_velodyne_message->number_of_32_laser_shots * sizeof(carmen_vector_3D_t));
+	if (debugger2)
+				printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 
 	int size = compute_points_position_with_respect_to_car(points_position_with_respect_to_car);
+	if (debugger2)
+				printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 	if (size < MIN_CLUSTER_SIZE)
 	{
 		free(points_position_with_respect_to_car);
@@ -475,15 +493,19 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t 
 
 		return (predicted_beta);
 	}
-
+	if (debugger2)
+				printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 	double beta = compute_new_beta(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
-
+	if (debugger2)
+				printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 	if (PLOT_GRAPH)
 		plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
-
+	if (debugger2)
+				printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 	free(points_position_with_respect_to_car);
 	free(points_position_with_respect_to_car_estimated);
-
+	if (debugger2)
+				printf("Here %d %f\n", __LINE__, robot_and_trailer_traj_point.trailer_theta[0] );
 	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
 		return (predicted_beta);
 	else

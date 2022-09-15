@@ -301,6 +301,9 @@ convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailers
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 		path_point.trailer_theta[z] = robot_state.trailer_theta[z];
 
+//	printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, robot_state.trailer_theta[0], robot_state.theta); // Confirmado beta
+
+
 	path_point.v = robot_state.v;
 	path_point.phi = robot_state.phi;
 	path_point.time = time;
@@ -324,6 +327,8 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 	robot_state.v = v0;
 	robot_state.phi = tcp.k[0];
 
+//	printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, robot_state.trailer_theta[0], robot_state.theta); // Confirmado beta
+
 	command.v = v0;
 	double multiple_delta_t = 3.0 * delta_t;
 	int i = 0;
@@ -343,7 +348,10 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 
 //		if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
 //			(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
+
+//		printf("%d %f %f \n", __LINE__, robot_state.trailer_theta[0], robot_state.theta);
 		robot_state.trailer_theta[0] = robot_state.theta - robot_state.trailer_theta[0];
+//		printf("%d %f %f \n", __LINE__, robot_state.trailer_theta[0], robot_state.theta);
 
 		if ((GlobalState::semi_trailer_config.semi_trailers.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
 			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
@@ -351,8 +359,9 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 		else
 			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
 					&distance_traveled, delta_t / 3.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
-
+//		printf("%d %f %f \n", __LINE__, robot_state.trailer_theta[0], robot_state.theta);
 		robot_state.trailer_theta[0] = robot_state.theta - robot_state.trailer_theta[0];
+//		printf("%d %f %f \n", __LINE__, robot_state.trailer_theta[0], robot_state.theta);
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
 		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
 
@@ -800,7 +809,9 @@ move_path_to_current_robot_pose(vector<carmen_robot_and_trailers_path_point_t> &
 		it->x = x;
 		it->y = y;
 		it->theta = carmen_normalize_theta(it->theta + localizer_pose->theta);
+//		printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, it->trailer_theta[0], it->theta);
 		it->trailer_theta[0] = it->theta - it->trailer_theta[0];
+//		printf("%d %s %f %f\t\tt\n", __LINE__, __FILE__, it->trailer_theta[0], it->theta);
 	}
 }
 
@@ -1049,10 +1060,16 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 			point_to_check.trailer_theta[z] = path[i].trailer_theta[z];
 
+//		printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, point_to_check.trailer_theta[0], point_to_check.theta); // Confirmado beta
 		point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
+//		printf("%d %s %f %f\t\tt\n", __LINE__, __FILE__, point_to_check.trailer_theta[0], point_to_check.theta); // Confirmado theta
+
+
 		double proximity_point = carmen_obstacle_avoider_proximity_to_obstacles(GlobalState::localizer_pose,
 				point_to_check, GlobalState::distance_map, safety_distance);
 		point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
+//		printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, point_to_check.trailer_theta[0], point_to_check.theta); //Confirmado beta
+
 		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		getchar();
@@ -1107,12 +1124,16 @@ compute_semi_trailer_to_goal_distance(vector<carmen_robot_and_trailers_path_poin
 	carmen_robot_and_trailers_pose_t expected_robot_pose = target_td->goal_pose;
 
 	carmen_point_t semi_trailer_pose, expected_semi_trailer_pose;
+//	printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, robot_pose.trailer_theta[0], robot_pose.theta);
 
-	semi_trailer_pose.x = robot_pose.x - GlobalState::semi_trailer_config.semi_trailers.M * cos(robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * cos(robot_pose.theta - robot_pose.trailer_theta[0]);
-	semi_trailer_pose.y	= robot_pose.y - GlobalState::semi_trailer_config.semi_trailers.M * sin(robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * sin(robot_pose.theta - robot_pose.trailer_theta[0]);
+//	printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, expected_robot_pose.trailer_theta[0], expected_robot_pose.theta);
 
-	expected_semi_trailer_pose.x = expected_robot_pose.x - GlobalState::semi_trailer_config.semi_trailers.M * cos(expected_robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * cos(expected_robot_pose.theta - expected_robot_pose.trailer_theta[0]);
-	expected_semi_trailer_pose.y = expected_robot_pose.y - GlobalState::semi_trailer_config.semi_trailers.M * sin(expected_robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * sin(expected_robot_pose.theta - expected_robot_pose.trailer_theta[0]);
+
+	semi_trailer_pose.x = robot_pose.x - GlobalState::semi_trailer_config.semi_trailers.M * cos(robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * cos(robot_pose.trailer_theta[0]); // De acordo com o que percebi, esse trailer_theta que o mpp utiliza é o "beta", ou seja, já está referente ao theta do carro
+	semi_trailer_pose.y	= robot_pose.y - GlobalState::semi_trailer_config.semi_trailers.M * sin(robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * sin(robot_pose.trailer_theta[0]);
+
+	expected_semi_trailer_pose.x = expected_robot_pose.x - GlobalState::semi_trailer_config.semi_trailers.M * cos(expected_robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * cos(expected_robot_pose.trailer_theta[0]);
+	expected_semi_trailer_pose.y = expected_robot_pose.y - GlobalState::semi_trailer_config.semi_trailers.M * sin(expected_robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * sin(expected_robot_pose.trailer_theta[0]);
 
 //	semi_trailer_pose.x = robot_pose.x - GlobalState::semi_trailer_config.semi_trailers.M * cos(robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * cos(robot_pose.trailer_theta[0]);
 //	semi_trailer_pose.y	= robot_pose.y - GlobalState::semi_trailer_config.semi_trailers.M * sin(robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * sin(robot_pose.trailer_theta[0]);

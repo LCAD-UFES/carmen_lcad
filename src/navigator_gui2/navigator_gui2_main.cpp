@@ -1126,6 +1126,13 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	new_robot.t_vel = msg->v;
 	new_robot.r_vel = msg->phi;
 
+//	if (msg->trailer_theta[0] < -1.0)
+//	{
+//		printf("Inside If\n");
+//
+//	}
+
+
 	if (!is_graphics_up)
 		return;
 

@@ -1493,6 +1493,7 @@ namespace View
 			truepose_with_beta.trailer_theta[z] = globalpos->trailer_theta[z];
 
 		truepose_with_beta.trailer_theta[0] = globalpos->trailer_theta[0];		// remover esta linha quando o beta da truepos estiver tratado!!
+//		printf("Here %d %f\n", __LINE__, truepose_with_beta.trailer_theta[0] );
 		simulator_trueposition.pose = truepose_with_beta;
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
 		last_simulator_update  = carmen_get_time();
@@ -2919,7 +2920,7 @@ namespace View
 			pose_with_beta.x = world_point->pose.x;
 			pose_with_beta.y = world_point->pose.y;
 			pose_with_beta.theta = world_point->pose.theta;
-			pose_with_beta.trailer_theta[0] = world_point->pose.theta;
+//			pose_with_beta.trailer_theta[0] = world_point->pose.theta;
 			carmen_rddf_publish_end_point_message(1, pose_with_beta);
 
 			placement_status = NO_PLACEMENT;
@@ -3146,6 +3147,8 @@ namespace View
 		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, globalpos->num_trailers, {0.0}};
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 			robot_with_beta.pose.trailer_theta[z] = globalpos->trailer_theta[z];
+
+//		printf("Here %d %f\n", __LINE__, robot_with_beta.pose.trailer_theta[0]);
 
 		robot_with_beta.map = robot.map;
 
