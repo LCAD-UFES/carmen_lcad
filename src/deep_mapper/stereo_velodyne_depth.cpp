@@ -493,7 +493,7 @@ int read_parameters(int argc, char **argv)
 
 	sprintf(stereo_string, "%s%d", "stereo", atoi(argv[1]));
 	camera = atoi(argv[1]);
-	if (camera == 3)
+	if (camera == 3 || camera == 5)
 	{
 		sprintf(camera_string, "%s%d", "bumblebee_basic", atoi(argv[1]));
 	}else{
@@ -602,7 +602,7 @@ int main(int argc, char **argv)
 	init_stereo_velodyne();
 
 	carmen_velodyne_define_messages();
-	if (camera == 3)
+	if (camera == 3 || camera == 5)
 	{
 		carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t)bumblebee_basic_handler, CARMEN_SUBSCRIBE_LATEST);
 	}
