@@ -291,6 +291,24 @@ typedef struct
 #define		CARMEN_ROUTE_PLANNER_ROUTE_LIST_RESPONSE_FMT		CARMEN_ROUTE_PLANNER_ROUTE_LIST_REQUEST_FMT
 
 
+typedef struct
+{
+	carmen_point_t initial_point;
+	double meters_ahead;
+	int num_of_node_ids_ahead;
+	int *node_ids_ahead;
+	double timestamp;
+	char *host;
+} carmen_route_planner_node_ids_ahead_message;
+
+
+#define		CARMEN_ROUTE_PLANNER_NODE_IDS_AHEAD_REQUEST_NAME		"carmen_route_planner_node_ids_ahead_request"
+#define		CARMEN_ROUTE_PLANNER_NODE_IDS_AHEAD_REQUEST_FMT			"{{double, double, double}, double, int, <int:3>, double, string}"
+
+#define		CARMEN_ROUTE_PLANNER_NODE_IDS_AHEAD_RESPONSE_NAME		"carmen_route_planner_node_ids_ahead_response"
+#define		CARMEN_ROUTE_PLANNER_NODE_IDS_AHEAD_RESPONSE_FMT		CARMEN_ROUTE_PLANNER_NODE_IDS_AHEAD_REQUEST_FMT
+
+
 #ifdef __cplusplus
 }
 #endif

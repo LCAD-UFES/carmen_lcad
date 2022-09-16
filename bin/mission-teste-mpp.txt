@@ -1,0 +1,12 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+# set final goal 7757732.73, -363563.71, -0.138
+
+set robot pose  7756761.30, -364014.90, 2.725
+
+# Predio Eletrica logo depois do LCAD2
+set course to 7756528.30, -363823.30, 1.434
+go after set course to 7756528.30, -363823.30, 1.434   # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+restart
