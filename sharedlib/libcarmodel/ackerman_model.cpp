@@ -32,8 +32,6 @@ compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trail
 	double M = semi_trailer_config.semi_trailers.M;
 	double d1 = semi_trailer_config.semi_trailers.d;
 
-
-
 	double beta = robot_and_trailer_traj_point.trailer_theta[0] + dt *
 			robot_and_trailer_traj_point.v * (
 					- sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d +
