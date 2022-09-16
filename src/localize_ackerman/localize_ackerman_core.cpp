@@ -3886,7 +3886,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-
+	semi_trailer_config.type = 1;
 	if (semi_trailer_config.type > 0)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.type);
@@ -3932,6 +3932,8 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 
 	sensor_board_1_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 
+	globalpos.semi_trailer_engaged = 1;
+		globalpos.semi_trailer_type = 1;
 	get_alive_sensors(argc, argv);
 	get_sensors_param(argc, argv, param->correction_type);
 	get_alive_LIDARs_and_their_parameters(argc, argv, param->correction_type);
@@ -3954,3 +3956,4 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 
 	param->yaw_uncertainty_due_to_grid_resolution = carmen_degrees_to_radians(param->yaw_uncertainty_due_to_grid_resolution);
 }
+
