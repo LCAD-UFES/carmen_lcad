@@ -92,7 +92,8 @@ carmen_gps_gprmc_message gpsrmc;
 carmen_kinect_depth_message raw_depth_kinect_0, raw_depth_kinect_1;
 carmen_kinect_video_message raw_video_kinect_0, raw_video_kinect_1;
 
-carmen_velodyne_variable_scan_message velodyne_variable_scan, velodyne_variable_scan0, velodyne_variable_scan1, velodyne_variable_scan2, velodyne_variable_scan3, velodyne_variable_scan4, velodyne_variable_scan5, velodyne_variable_scan6, velodyne_variable_scan7, velodyne_variable_scan8, velodyne_variable_scan9;
+carmen_velodyne_variable_scan_message velodyne_variable_scan, velodyne_variable_scan0, velodyne_variable_scan1, velodyne_variable_scan2, velodyne_variable_scan3, velodyne_variable_scan4, velodyne_variable_scan5, velodyne_variable_scan6, velodyne_variable_scan7, velodyne_variable_scan8, velodyne_variable_scan9,
+                                      velodyne_variable_scan10, velodyne_variable_scan11, velodyne_variable_scan12, velodyne_variable_scan13, velodyne_variable_scan14, velodyne_variable_scan15;
 
 carmen_velodyne_partial_scan_message velodyne_partial_scan;
 carmen_velodyne_gps_message velodyne_gps;
@@ -226,6 +227,12 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "VARIABLE_VELODYNE_SCAN7", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan7, 0},
 	{(char *) "VARIABLE_VELODYNE_SCAN8", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan8, 0},
 	{(char *) "VARIABLE_VELODYNE_SCAN9", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan9, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN10", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE10_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan10, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN11", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE11_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan11, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN12", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE12_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan12, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN13", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE13_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan13, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN14", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE14_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan14, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN15", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE15_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan15, 0},
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan, 0},
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE0", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE0_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan0, 0},
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE1", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan1, 0},
@@ -237,6 +244,12 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE7", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan7, 0},
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE8", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan8, 0},
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE9", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan9, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE10", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE10_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan10, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE11", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE11_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan11, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE12", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE12_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan12, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE13", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE13_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan13, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE14", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE14_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan14, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE15", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE15_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan15, 0},
 };
 
 
@@ -349,6 +362,12 @@ check_in_file_message(char *logger_message_name, char *logger_message_line)
 	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE7") == 0) && (velodyne_variable_scan7.number_of_shots <= 0));
 	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE8") == 0) && (velodyne_variable_scan8.number_of_shots <= 0));
 	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE9") == 0) && (velodyne_variable_scan9.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE10") == 0) && (velodyne_variable_scan10.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE11") == 0) && (velodyne_variable_scan11.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE12") == 0) && (velodyne_variable_scan12.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE13") == 0) && (velodyne_variable_scan13.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE14") == 0) && (velodyne_variable_scan14.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE15") == 0) && (velodyne_variable_scan15.number_of_shots <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE1") == 0) && (bumblebee_basic_stereoimage1.image_size <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE2") == 0) && (bumblebee_basic_stereoimage2.image_size <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3") == 0) && (bumblebee_basic_stereoimage3.image_size <= 0));
@@ -1127,6 +1146,12 @@ set_messages()
 	memset(&velodyne_variable_scan7, 0, sizeof(velodyne_variable_scan7));
 	memset(&velodyne_variable_scan8, 0, sizeof(velodyne_variable_scan8));
 	memset(&velodyne_variable_scan9, 0, sizeof(velodyne_variable_scan9));
+	memset(&velodyne_variable_scan10, 0, sizeof(velodyne_variable_scan10));
+	memset(&velodyne_variable_scan11, 0, sizeof(velodyne_variable_scan11));
+	memset(&velodyne_variable_scan12, 0, sizeof(velodyne_variable_scan12));
+	memset(&velodyne_variable_scan13, 0, sizeof(velodyne_variable_scan13));
+	memset(&velodyne_variable_scan14, 0, sizeof(velodyne_variable_scan14));
+	memset(&velodyne_variable_scan15, 0, sizeof(velodyne_variable_scan15));
 	memset(&velodyne_gps, 0, sizeof(velodyne_gps));
 	memset(&xsens_euler, 0, sizeof(xsens_euler));
 	memset(&xsens_quat, 0, sizeof(xsens_quat));
