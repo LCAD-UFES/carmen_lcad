@@ -1057,7 +1057,7 @@ get_best_indexes_and_nearest_point(int i, ObjectiveFunctionParams *param, carmen
 
 	if (point_in_trajectory_is == POINT_AFTER_SEGMENT)
 	{
-		for(unsigned int j = index_p2; j < param->detailed_lane.size() - 1; j++)
+		for(unsigned int j = index_p2; j < param->detailed_lane.size() - 2; j++)
 		{
 			ponto_mais_proximo = carmen_get_point_nearest_to_path(&point_in_trajectory_is, param->detailed_lane.at(j), param->detailed_lane.at(j+1), robot_point, 0.005);
 			if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
@@ -1069,7 +1069,7 @@ get_best_indexes_and_nearest_point(int i, ObjectiveFunctionParams *param, carmen
 
 	else if (point_in_trajectory_is == POINT_BEFORE_SEGMENT)
 	{
-		for(unsigned int j = index_p1; j >= 0; j--)
+		for(unsigned int j = index_p1; j > 0; j--)
 		{
 			ponto_mais_proximo = carmen_get_point_nearest_to_path(&point_in_trajectory_is, param->detailed_lane.at(j), param->detailed_lane.at(j+1), robot_point, 0.005);
 			if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
@@ -1086,7 +1086,7 @@ compute_error_using_stanley_method(ObjectiveFunctionParams *param, vector<carmen
 {
 	double total_steering_error = 0.0;
 	double theta_error = 0.0;
-	int look_ahead = path.size();
+	int look_ahead = 5;
 	double k = GlobalState::look_ahead_horizon;
 	int total_points = 0.0; //How many
 	double steerig_stanley = 0.0;
