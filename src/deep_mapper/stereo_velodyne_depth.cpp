@@ -252,7 +252,7 @@ void image_handler(camera_message *msg)
 	// printf("camera_image_handler\n");
 	camera_image *stereo_image = msg->images;
 	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-	remap(open_cv_image, open_cv_image, MapX, MapY, INTER_LINEAR);											// Transforms the image to compensate for lens distortion
+	//remap(open_cv_image, open_cv_image, MapX, MapY, INTER_LINEAR);											// Transforms the image to compensate for lens distortion
 
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
