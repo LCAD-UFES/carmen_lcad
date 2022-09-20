@@ -341,6 +341,16 @@ void str_replace(char *dest, char *orig, char *rep, char *with) {
 	free(result);
 }
 
+// https://stackoverflow.com/questions/656542/trim-a-string-in-c
+void trim(char *s)
+{
+    int i;
+
+    while (isspace (*s)) s++;
+    for (i = strlen (s) - 1; (isspace (s[i])); i--);
+    s[i + 1] = '\0';
+}
+
 void read_process_ini(char *filename)
 {
 	FILE *fp;
@@ -360,7 +370,7 @@ void read_process_ini(char *filename)
 			/* variable */
 			if(!strncmp("SET", line, 3) && (n_vars < 64))
 			{
-				if (sscanf(line, "SET %[^= ] = %s", var, value))
+				if (sscanf(line, "SET %[^= ] = %s#*", var, value))
 				{
 					sprintf(vars_use[n_vars], "${%s}", var);
 					sprintf(values_use[n_vars], "%s", value);
@@ -374,7 +384,7 @@ void read_process_ini(char *filename)
 
 			for (l = 0; l < n_vars; l++) // replace variables
 				str_replace(line, line, vars_use[l], values_use[l]);
-
+		
 			l = strlen(line);
 			/* strip out comments and newlines */
 			for(i = 0; i < l; i++)
