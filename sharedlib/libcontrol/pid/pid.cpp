@@ -343,11 +343,11 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 	//81.45   -  30.8    =  50.65
 	factor = carmen_clamp(0.0, (v - min_fuzzy_v) / (max_fuzzy_v - min_fuzzy_v), 1.0); // The PID parameters stabilize when the velocity is max_fuzzy_v
 	
-	printf("Chegou o outro kd %lf\n", g_steering_Kd);
+	/*printf("Chegou o outro kd %lf\n", steer_kp);
 	
 	kp = g_steering_Kp + factor * 791.5;
 	ki = g_steering_Ki + factor * 4976.7;
-	kd = g_steering_Kd + factor * 50.65;
+	kd = g_steering_Kd + factor * 50.65;*/
 
 	kp = steer_kp + factor * 791.5;
 	ki = steer_ki + factor * 4976.7;
@@ -732,8 +732,6 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 	
-	printf("REalmente pegou o kd %lf\n",kd);
-
 	msg->brakes_command = *brakes_command;
 	msg->current_velocity = current_velocity;
 	msg->desired_velocity = desired_velocity;
