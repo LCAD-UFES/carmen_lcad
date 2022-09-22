@@ -27,7 +27,7 @@ using namespace std;
 
 extern bool wait_start_moving;
 extern bool autonomous;
-extern bool all_paths_has_collision;
+extern bool all_paths_has_collision_and_goal_is_not_an_annotation;
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 extern carmen_robot_ackerman_config_t robot_config;
@@ -704,7 +704,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_To_Reverse;
 			else if (path_final_pose_reached(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = End_Of_Path_Reached;
-			else if (all_paths_has_collision == true)
+			else if (all_paths_has_collision_and_goal_is_not_an_annotation == true)
 				decision_making_state_msg->low_level_state = Stopping_At_Unavoidable_Obstacle;
 
 			decision_making_state_msg->low_level_state_flags &= ~CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
@@ -732,7 +732,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 
 		case End_Of_Path_Reached:
-			if (wait_for_given_seconds(1.0))// && all_paths_has_collision == false)
+			if (wait_for_given_seconds(1.0))// && all_paths_has_collision_and_goal_is_not_an_annotation == false)
 				decision_making_state_msg->low_level_state = End_Of_Path_Reached2;
 			// else if(path_final_pose_reached(current_robot_pose_v_and_phi) == false)
 			// 	decision_making_state_msg->low_level_state = Stopping_At_Unavoidable_Obstacle;
@@ -740,7 +740,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 
 		case End_Of_Path_Reached2:
-			if (wait_for_given_seconds(1.0))// &&	all_paths_has_collision == false)
+			if (wait_for_given_seconds(1.0))// &&	all_paths_has_collision_and_goal_is_not_an_annotation == false)
 				decision_making_state_msg->low_level_state = Stopped;
 			// else if(path_final_pose_reached(current_robot_pose_v_and_phi) == false)
 			// 	decision_making_state_msg->low_level_state = Stopping_At_Unavoidable_Obstacle;
@@ -753,7 +753,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			break;
 
 		case Stopped_At_Unavoidable_Obstacle_S0:
-			if (route_was_recomputed(decision_making_state_msg->route_planner_state) && all_paths_has_collision == false)
+			if (route_was_recomputed(decision_making_state_msg->route_planner_state) && all_paths_has_collision_and_goal_is_not_an_annotation == false)
 				decision_making_state_msg->low_level_state = Free_Running;
 			else if (wait_for_given_seconds(2.0) && still_in_route(decision_making_state_msg->route_planner_state))
 				decision_making_state_msg->low_level_state = Free_Running;
