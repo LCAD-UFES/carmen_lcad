@@ -23,6 +23,17 @@
 #define TURN_RIGHT_INDICATOR_ON				1
 #define TURN_RIGHT_INDICATOR_OFF			2
 
+#define NO_SET_MAX_GEAR_SIGN_AHEAD	0
+#define SET_MAX_GEAR_1	1
+#define SET_MAX_GEAR_2	2
+#define SET_MAX_GEAR_3	3
+#define SET_MAX_GEAR_4	4
+#define SET_MAX_GEAR_5	5
+#define SET_MAX_GEAR_6	6
+#define SET_MAX_GEAR_7	7
+#define SET_MAX_GEAR_8	8
+#define SET_MAX_GEAR_9	9
+
 using namespace std;
 
 extern bool wait_start_moving;
@@ -294,6 +305,70 @@ turn_right_indicator_sign_ahead(carmen_robot_and_trailer_traj_point_t current_ro
 	}
 	else
 		return (NO_TURN_RIGHT_INDICATOR_SIGN_AHEAD);
+}
+
+
+int
+set_max_gear_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_set_max_gear_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_GEAR,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (nearest_set_max_gear_sign_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D(nearest_set_max_gear_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
+
+	int last_goal_list_size;
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	double distance_to_first_goal = distance_to_annotation;
+	if (last_goal_list_size)
+		distance_to_first_goal = DIST2D(current_robot_pose_v_and_phi, goal_list[0]);
+
+	if ((distance_to_first_goal >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_set_max_gear_sign_annotation->annotation_point))
+	{
+		switch(nearest_set_max_gear_sign_annotation->annotation_code)
+		{
+			case RDDF_ANNOTATION_CODE_GEAR_1:
+				return (SET_MAX_GEAR_1);
+				break;
+
+			case RDDF_ANNOTATION_CODE_GEAR_2:
+				return (SET_MAX_GEAR_2);
+				break;
+			
+			case RDDF_ANNOTATION_CODE_GEAR_3:
+				return (SET_MAX_GEAR_3);
+				break;
+			
+			case RDDF_ANNOTATION_CODE_GEAR_4:
+				return (SET_MAX_GEAR_4);
+				break;
+			
+			case RDDF_ANNOTATION_CODE_GEAR_5:
+				return (SET_MAX_GEAR_5);
+				break;
+			
+			case RDDF_ANNOTATION_CODE_GEAR_6:
+				return (SET_MAX_GEAR_6);
+				break;
+			
+			case RDDF_ANNOTATION_CODE_GEAR_7:
+				return (SET_MAX_GEAR_7);
+				break;
+			
+			case RDDF_ANNOTATION_CODE_GEAR_8:
+				return (SET_MAX_GEAR_8);
+				break;
+			
+			case RDDF_ANNOTATION_CODE_GEAR_9:
+				return (SET_MAX_GEAR_9);
+				break;
+		}
+	}
+	else
+		return (NO_SET_MAX_GEAR_SIGN_AHEAD);
 }
 
 
@@ -1143,6 +1218,13 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 	else if (turn_right_indicator_sign == TURN_RIGHT_INDICATOR_OFF)
 	{
 		signals_msg.turn_signal = SIGNAL_OFF;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+
+	int set_max_gear_sign = set_max_gear_sign_ahead(current_robot_pose_v_and_phi);
+	if (set_max_gear_sign != NO_SET_MAX_GEAR_SIGN_AHEAD)
+	{
+		signals_msg.horn_status = 8 * set_max_gear_sign;  // usa a partir do bit 3. Assume-se que não será publicada ao mesmo tempo que a do task manager (tomada de força e basculamento)
 		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
 	}
 
