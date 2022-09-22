@@ -5,8 +5,12 @@ MODULE_COMMENT = Driver, and Visualizer for Ouster OS-1 64 Sensor
 
 SUBDIRS += libouster_conn
 LINK = g++ 
-
 CXXFLAGS += -std=c++11 -Wno-deprecated
+
+#CFLAGS += -std=c11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
+#CXXFLAGS += -std=c++11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
+#LINK = g++ -fsanitize=address -fno-omit-frame-pointer
+
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
 IFLAGS += -std=c++11
 
