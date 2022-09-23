@@ -1107,82 +1107,82 @@ namespace View
 		pad = "";
 		sprintf(category, "Lidars: ");
 
-		if(message->lidar_status & LIDAR0_ERROR_INDEX)
+		if(message->lidar_status & LIDAR0_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "0 ");
 		}
 
-		if(message->lidar_status & LIDAR1_ERROR_INDEX)
+		if(message->lidar_status & LIDAR1_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "1 ");
 		}
 
-		if(message->lidar_status & LIDAR2_ERROR_INDEX)
+		if(message->lidar_status & LIDAR2_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "2 ");
 		}
 
-		if(message->lidar_status & LIDAR3_ERROR_INDEX)
+		if(message->lidar_status & LIDAR3_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "3 ");
 		}
 
-		if(message->lidar_status & LIDAR4_ERROR_INDEX)
+		if(message->lidar_status & LIDAR4_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "4 ");
 		}
 
-		if(message->lidar_status & LIDAR5_ERROR_INDEX)
+		if(message->lidar_status & LIDAR5_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "5 ");
 		}
 
-		if(message->lidar_status & LIDAR6_ERROR_INDEX)
+		if(message->lidar_status & LIDAR6_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "6 ");
 		}
 
-		if(message->lidar_status & LIDAR7_ERROR_INDEX)
+		if(message->lidar_status & LIDAR7_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "7 ");
 		}
 
-		if(message->lidar_status & LIDAR8_ERROR_INDEX)
+		if(message->lidar_status & LIDAR8_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "8 ");
 		}
 
-		if(message->lidar_status & LIDAR9_ERROR_INDEX)
+		if(message->lidar_status & LIDAR9_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "9 ");
 		}
 
-		if(message->lidar_status & LIDAR10_ERROR_INDEX)
+		if(message->lidar_status & LIDAR10_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "10 ");
 		}
 
-		if(message->lidar_status & LIDAR11_ERROR_INDEX)
+		if(message->lidar_status & LIDAR11_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "11 ");
 		}
 
-		if(message->lidar_status & LIDAR12_ERROR_INDEX)
+		if(message->lidar_status & LIDAR12_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "12 ");
 		}
 
-		if(message->lidar_status & LIDAR13_ERROR_INDEX)
+		if(message->lidar_status & LIDAR13_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "13 ");
 		}
 
-		if(message->lidar_status & LIDAR14_ERROR_INDEX)
+		if(message->lidar_status & LIDAR14_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "14 ");
 		}
 
-		if(message->lidar_status & LIDAR15_ERROR_INDEX)
+		if(message->lidar_status & LIDAR15_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "15 ");
 		}
@@ -1195,102 +1195,102 @@ namespace View
 		pad = "";
 		sprintf(category, "Cameras: ");
 
-		if(message->camera_status & CAMERA1_ERROR_INDEX)
+		if(message->camera_status & CAMERA1_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "1 ");
 		}
 
-		if(message->camera_status & CAMERA2_ERROR_INDEX)
+		if(message->camera_status & CAMERA2_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "2 ");
 		}
 
-		if(message->camera_status & CAMERA3_ERROR_INDEX)
+		if(message->camera_status & CAMERA3_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "3 ");
 		}
 
-		if(message->camera_status & CAMERA4_ERROR_INDEX)
+		if(message->camera_status & CAMERA4_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "4 ");
 		}
 
-		if(message->camera_status & CAMERA5_ERROR_INDEX)
+		if(message->camera_status & CAMERA5_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "5 ");
 		}
 
-		if(message->camera_status & CAMERA6_ERROR_INDEX)
+		if(message->camera_status & CAMERA6_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "6 ");
 		}
 
-		if(message->camera_status & CAMERA7_ERROR_INDEX)
+		if(message->camera_status & CAMERA7_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "7 ");
 		}
 
-		if(message->camera_status & CAMERA8_ERROR_INDEX)
+		if(message->camera_status & CAMERA8_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "8 ");
 		}
 
-		if(message->camera_status & CAMERA9_ERROR_INDEX)
+		if(message->camera_status & CAMERA9_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "9 ");
 		}
 
-		if(message->camera_status & CAMERA10_ERROR_INDEX)
+		if(message->camera_status & CAMERA10_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "10 ");
 		}
 
-		if(message->camera_status & CAMERA11_ERROR_INDEX)
+		if(message->camera_status & CAMERA11_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "11 ");
 		}
 
-		if(message->camera_status & CAMERA12_ERROR_INDEX)
+		if(message->camera_status & CAMERA12_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "12 ");
 		}
 
-		if(message->camera_status & CAMERA13_ERROR_INDEX)
+		if(message->camera_status & CAMERA13_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "13 ");
 		}
 
-		if(message->camera_status & CAMERA14_ERROR_INDEX)
+		if(message->camera_status & CAMERA14_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "14 ");
 		}
 
-		if(message->camera_status & CAMERA15_ERROR_INDEX)
+		if(message->camera_status & CAMERA15_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "15 ");
 		}
 
-		if(message->camera_status & CAMERA16_ERROR_INDEX)
+		if(message->camera_status & CAMERA16_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "16 ");
 		}
 
-		if(message->camera_status & CAMERA17_ERROR_INDEX)
+		if(message->camera_status & CAMERA17_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "17 ");
 		}
 
-		if(message->camera_status & CAMERA18_ERROR_INDEX)
+		if(message->camera_status & CAMERA18_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "18 ");
 		}
 
-		if(message->camera_status & CAMERA19_ERROR_INDEX)
+		if(message->camera_status & CAMERA19_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "19 ");
 		}
 
-		if(message->camera_status & CAMERA20_ERROR_INDEX)
+		if(message->camera_status & CAMERA20_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "20 ");
 		}
