@@ -58,9 +58,9 @@ static double g_throttle_gap = 0.0;
 
 static int robot_model_id = 0;
 
-#ifdef PRINT
+/*#ifdef PRINT
 extern carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
-#endif
+#endif*/
 
 
 void
@@ -742,10 +742,10 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 	msg->throttle_command = *throttle_command;
 	
 #ifdef PRINT
-	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %d, %lf\n",
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 		*throttle_command, *brakes_command,
-		integral_t, derivative_t, behavior_selector_low_level_state, carmen_get_time());
+		integral_t, derivative_t, carmen_get_time());
 	fflush(stdout);
 #endif
 
@@ -944,10 +944,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 #ifdef PRINT
-	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %d, %lf\n",
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 		*throttle_command, *brakes_command,
-		integral_t, derivative_t, behavior_selector_low_level_state, carmen_get_time());
+		integral_t, derivative_t, carmen_get_time());
 	fflush(stdout);
 #endif
 
