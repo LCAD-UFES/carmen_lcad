@@ -356,6 +356,7 @@ carmen_velodyne_copy_variable_velodyne_message(
 
 		memcpy(copy->partial_scan[i].distance, message->partial_scan[i].distance, message->partial_scan[i].shot_size * sizeof(unsigned short));
 		memcpy(copy->partial_scan[i].intensity, message->partial_scan[i].intensity, message->partial_scan[i].shot_size * sizeof(unsigned char));
+		memcpy(copy->partial_scan[i].point_color, message->partial_scan[i].point_color, message->partial_scan[i].shot_size * sizeof(carmen_vector_3D_t));
 	}
 
 	return copy;
@@ -370,6 +371,7 @@ carmen_velodyne_free_variable_velodyne_message(
 	{
 		free(message->partial_scan[i].distance);
 		free(message->partial_scan[i].intensity);
+		free(message->partial_scan[i].point_color);
 	}
 
 	free(message->partial_scan);
