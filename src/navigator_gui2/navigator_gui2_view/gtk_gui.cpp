@@ -1687,6 +1687,9 @@ namespace View
 	GtkGui::get_algorithm_code(char *algorithm_name)
 	{
 		int code = -1;
+		if (nullptr == algorithm_name) // Aqui estava dando seg fault quando rodando o navigate no modo Park
+			return code;
+
 		if(strcmp(algorithm_name, "Gradient") == 0)
 			code =  CARMEN_BEHAVIOR_SELECTOR_GRADIENT;
 		else if(strcmp(algorithm_name, "A*") == 0)
