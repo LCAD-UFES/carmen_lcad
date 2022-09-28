@@ -184,8 +184,8 @@ carmen_libpid_steering_PID_controler_publish_data(steering_pid_data_message * ms
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double desired_curvature = tan(atan_desired_curvature);
 	double current_curvature = tan(atan_current_curvature);
@@ -261,8 +261,8 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double desired_curvature = tan(atan_desired_curvature);
 	double current_curvature = tan(atan_current_curvature);
@@ -325,8 +325,8 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
@@ -403,8 +403,8 @@ carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
@@ -478,8 +478,8 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
