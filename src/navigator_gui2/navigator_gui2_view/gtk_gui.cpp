@@ -488,6 +488,8 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_15] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_20_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_20] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_25_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_25] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_30_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_30] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_40_15.png", carmen_home_path);
@@ -523,6 +525,31 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_RETARDER_BRAKE][RDDF_ANNOTATION_CODE_RETARDER_BRAKE_ON] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/retarder_warning_off_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_RETARDER_BRAKE][RDDF_ANNOTATION_CODE_RETARDER_BRAKE_OFF] = get_annotation_image(annotation_image_filename);
+
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_1.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_1] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_2.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_2] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_3.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_3] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_4.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_4] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_5.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_5] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_6.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_6] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_7.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_7] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_8.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_8] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_9.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_9] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_10.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_10] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_11.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_11] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_12.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_12] = get_annotation_image(annotation_image_filename);
 
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
@@ -1687,6 +1714,9 @@ namespace View
 	GtkGui::get_algorithm_code(char *algorithm_name)
 	{
 		int code = -1;
+		if (nullptr == algorithm_name) // Aqui estava dando seg fault quando rodando o navigate no modo Park
+			return code;
+
 		if(strcmp(algorithm_name, "Gradient") == 0)
 			code =  CARMEN_BEHAVIOR_SELECTOR_GRADIENT;
 		else if(strcmp(algorithm_name, "A*") == 0)

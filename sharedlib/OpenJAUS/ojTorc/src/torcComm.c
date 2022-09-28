@@ -337,7 +337,7 @@ create_xgv_ccu_service_connections(OjCmpt XGV_CCU)
 		JAUS_REPORT_CURVATURE,	  // Command code of the message being requested
 		0x0,			  // Requested presence vector of the desired message
 		addr,		  	  // JausAddress of the desired message source component
-		40.0,			  // Repeat rate (Hz) at which the message is requested
+		FORD_ESCAPE_FREQUENCY,			  // Repeat rate (Hz) at which the message is requested
 		3.0,			  // Maximum allowed time (sec) between receiving these messages
 		1			  // Size of the FIFO queue to store the messages in
 	);
@@ -355,7 +355,7 @@ create_xgv_ccu_service_connections(OjCmpt XGV_CCU)
 		JAUS_REPORT_WHEELS_SPEED,	  // Command code of the message being requested
 		0x0,			  // Requested presence vector of the desired message
 		addr,		  	  // JausAddress of the desired message source component
-		40.0,			  // Repeat rate (Hz) at which the message is requested
+		FORD_ESCAPE_FREQUENCY,			  // Repeat rate (Hz) at which the message is requested
 		3.0,			  // Maximum allowed time (sec) between receiving these messages
 		1			  // Size of the FIFO queue to store the messages in
 	);
@@ -373,7 +373,7 @@ create_xgv_ccu_service_connections(OjCmpt XGV_CCU)
 		JAUS_REPORT_WRENCH_EFFORT,	  // Command code of the message being requested
 		0x01 | 0x20 | 0x40,	  // Requested presence vector of the desired message
 		addr,		  	  // JausAddress of the desired message source component
-		20.0,			  // Repeat rate (Hz) at which the message is requested
+		FORD_ESCAPE_FREQUENCY,			  // Repeat rate (Hz) at which the message is requested
 		3.0,			  // Maximum allowed time (sec) between receiving these messages
 		1			  // Size of the FIFO queue to store the messages in
 	);

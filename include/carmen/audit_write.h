@@ -10,6 +10,7 @@
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/extra_keys_interface.h>
+#include <carmen/rrt_node.h>
 
 #include <prob_map.h>
 #include "audit_messages.h"
@@ -67,4 +68,6 @@ void audit_write_ford_escape_error_message(carmen_ford_escape_error_message *msg
 void audit_write_extra_keys_message(carmen_extra_keys_message_t *msg, carmen_FILE *outfile, double timestamp);
 void audit_write_ford_escape_velocity_pid_data_message(velocity_pid_data_message *msg, carmen_FILE *outfile, double timestamp);
 void audit_write_ford_escape_steering_pid_data_message(steering_pid_data_message *msg, carmen_FILE *outfile, double timestamp);
+void audit_write_rrt_path_message(rrt_path_message *msg, carmen_FILE *outfile, double timestamp);
+//Last_audit_write
 #endif
