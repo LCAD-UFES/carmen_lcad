@@ -34,7 +34,7 @@ compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trail
 
 	double beta = robot_and_trailer_traj_point.trailer_theta[0] + dt *
 			robot_and_trailer_traj_point.v * (
-					- sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d +
+					 sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d -
 						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
 
 //	printf("Teste: %f %f %f\n", beta, beta1, robot_and_trailer_traj_point.theta);
