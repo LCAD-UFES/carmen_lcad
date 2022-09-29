@@ -1,6 +1,6 @@
 publish mission state STARTING_MISSION UFES3
-# RETA LCAD2 P3
-set course to 7757771.47, -363529.96, 0.437
-go after set course to 7757771.47, -363529.96, 0.437
-stop
+# RETA DEPOIS DO LCAD3 P3
+set course to 7757829.68, -363787.02, -2.464
+go after set course to 7757829.68, -363787.02, -2.464
+stop 
 publish mission state MISSION_COMPLETED UFES3
