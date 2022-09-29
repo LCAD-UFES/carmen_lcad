@@ -159,16 +159,19 @@ update_map(char *out_path, cv::Mat &img, int top, int left, carmen_map_t *map, b
 			}
 			else
 			{
-				if (new_map)
-					map->map[x][y] = -1.0;
-
-				if (std::find(g_bad_colors.begin(), g_bad_colors.end(), cell) == g_bad_colors.end())
-				{
-					map->map[x][y] = -1.0;
-					fprintf(stderr, "Invalid image color at position (%d, %d): RGB(%d, %d, %d)\n", (top + img_top), (left + img_left), cell[2], cell[1], cell[0]);
-					g_bad_colors.push_back(cell);
-				}
+				map->map[x][y] = -1.0;
 			}
+			// {
+			// 	if (new_map)
+			// 		map->map[x][y] = -1.0;
+
+			// 	if (std::find(g_bad_colors.begin(), g_bad_colors.end(), cell) == g_bad_colors.end())
+			// 	{
+			// 		map->map[x][y] = -1.0;
+			// 		fprintf(stderr, "Invalid image color at position (%d, %d): RGB(%d, %d, %d)\n", (top + img_top), (left + img_left), cell[2], cell[1], cell[0]);
+			// 		g_bad_colors.push_back(cell);
+			// 	}
+			// }
 		}
 	}
 	save_map(out_path, map);
