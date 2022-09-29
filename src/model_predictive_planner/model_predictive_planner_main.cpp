@@ -624,7 +624,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,  msg->num_trailers, {0.0}}; //Adicionar num_trailers
 
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		GlobalState::localizer_pose->trailer_theta[z] = msg->trailer_theta[z];
+		GlobalState::localizer_pose->trailer_theta[z] =  msg->globalpos.theta - msg->trailer_theta[z];
 
 
 	if (GlobalState::use_mpc)
@@ -651,7 +651,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, msg->num_trailers, {0.0}};
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		GlobalState::localizer_pose->trailer_theta[z] = msg->trailer_theta[z];
+		GlobalState::localizer_pose->trailer_theta[z] = msg->truepose.theta - msg->trailer_theta[z];
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
