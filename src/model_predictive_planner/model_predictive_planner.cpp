@@ -160,7 +160,7 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavi
 	{
 		SE2 lane_in_world_reference(path_goals_and_annotations_message->poses[k].x, path_goals_and_annotations_message->poses[k].y, path_goals_and_annotations_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], 0, {lane_in_car_reference[2] - beta, 0.0, 0.0, 0.0, 0.0},
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], 0, {beta, 0.0, 0.0, 0.0, 0.0},
 				path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
 		lane_in_local_pose->push_back(local_reference_lane_point);
 //		printf("%d %f %f %f %f %f\n", k, lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], lane_in_car_reference[2] - beta, beta);
@@ -499,6 +499,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 				point_to_check.trailer_theta[z] = path[i].trailer_theta[z];
 
 			point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
+			localizer.trailer_theta[0] = localizer.theta - localizer.trailer_theta[0];
 
 
 			if (GlobalState::distance_map != NULL)
@@ -510,6 +511,8 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 					max_circle_invasion = circle_invasion;
 			}
 			point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
+			localizer.trailer_theta[0] = localizer.theta - localizer.trailer_theta[0];
+
 		}
 
 
