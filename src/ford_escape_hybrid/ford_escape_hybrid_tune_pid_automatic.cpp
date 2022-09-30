@@ -2,10 +2,9 @@
 #include <carmen/motion_planner.h>
 #include "ford_escape_hybrid_tune_pid_automatic.h"
 #include <carmen/car_model.h>
+
 #include "ford_escape_hybrid_interface.h"
 #include "ford_escape_hybrid_messages.h"
-
-
 
 
 using namespace std;
@@ -27,6 +26,10 @@ static MotionControlFunction v_function;
 static MotionControlFunction phi_function;
 
 static int wave_form = 0;
+
+
+carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
+
 
 static void
 signal_handler(int signo __attribute__ ((unused)) )
@@ -504,9 +507,9 @@ tune_pid_gain_velocity_parameters_message*
 fill_pid_gain_velocity_parameters_message()
 {
 	tune_pid_gain_velocity_parameters_message *pid_msg = (tune_pid_gain_velocity_parameters_message*) malloc (sizeof (tune_pid_gain_velocity_parameters_message));
-	pid_msg->kd = 0.;
-	pid_msg->ki = 1.;
-	pid_msg->kp = 2.;
+	pid_msg->kd = -0.2;
+	pid_msg->ki = 6.0;
+	pid_msg->kp = 25.0;
 	pid_msg->host = carmen_get_host();
 	pid_msg->timestamp = carmen_get_time();
 	return pid_msg;
@@ -516,12 +519,24 @@ tune_pid_gain_steering_parameters_message*
 fill_pid_gain_steering_parameters_message()
 {
 	tune_pid_gain_steering_parameters_message *pid_msg = (tune_pid_gain_steering_parameters_message*) malloc (sizeof (tune_pid_gain_steering_parameters_message));
-	pid_msg->kd = 0.;
-	pid_msg->ki = 1.;
-	pid_msg->kp = 2.;
+	pid_msg->kd = 30.8;
+	pid_msg->ki = 2008.7;
+	pid_msg->kp = 689.4;
 	pid_msg->host = carmen_get_host();
 	pid_msg->timestamp = carmen_get_time();
 	return pid_msg;
+}
+
+void
+publish_current_state(carmen_behavior_selector_state_message *msg)
+{
+	IPC_RETURN_TYPE err;
+
+	msg->timestamp = carmen_get_time();
+	msg->host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
 }
 
 
@@ -540,6 +555,14 @@ timer_handler()
 		else
 			build_trajectory_trapezoidal_v_phi();
 		first_time = 0;
+
+		carmen_behavior_selector_state_message msg_behavior;
+		msg_behavior.low_level_state = Free_Running;
+		msg_behavior.low_level_state_flags = 0;
+		msg_behavior.host = carmen_get_host();
+		msg_behavior.timestamp = carmen_get_time();
+		publish_current_state(&msg_behavior);
+
 		tune_pid_gain_velocity_parameters_message *pid_vel_msg = fill_pid_gain_velocity_parameters_message();
 		carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(pid_vel_msg , carmen_get_time());
 		tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message();
@@ -665,12 +688,16 @@ main(int argc, char **argv)
 	static PARAMS params;
 	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
 	
-	seed = calibrate_PID_parameters(&params, seed);
+	//seed = calibrate_PID_parameters(&params, seed);
 
+	/*
 	tune_pid_gain_velocity_parameters_message *pid_vel_msg = fill_pid_gain_velocity_parameters_message();
 	carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(pid_vel_msg , carmen_get_time());
 	tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message();
 	carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());
+	*/
+
+	carmen_ipc_addPeriodicTimer(timer_period, (TIMER_HANDLER_TYPE) timer_handler, NULL);
 	
 	carmen_ipc_dispatch();
 

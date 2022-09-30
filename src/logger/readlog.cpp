@@ -1517,16 +1517,25 @@ carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_ve
 	}
 
 	FILE *pointcloud_file = fopen(full_path, "rb");
-
-	for (i = 0; i < msg->number_of_shots; i++)
+	if (pointcloud_file)
 	{
-		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
-		fread(msg->partial_scan[i].distance, sizeof(unsigned int), shot_size, pointcloud_file);
-		fread(msg->partial_scan[i].intensity, sizeof(unsigned short), shot_size, pointcloud_file);
-		msg->partial_scan[i].shot_size = shot_size;
-	}
 
-	fclose(pointcloud_file);
+		for (i = 0; i < msg->number_of_shots; i++)
+		{
+			fread(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
+			fread(msg->partial_scan[i].distance, sizeof(unsigned int), shot_size, pointcloud_file);
+			fread(msg->partial_scan[i].intensity, sizeof(unsigned short), shot_size, pointcloud_file);
+			msg->partial_scan[i].shot_size = shot_size;
+		}
+
+		fclose(pointcloud_file);
+	}
+	else
+	{
+		msg->number_of_shots = 0;
+		printf("Could not load lidar %d:\n%s\n", velodyne_number, path);
+
+	}
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);

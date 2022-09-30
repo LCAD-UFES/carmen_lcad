@@ -884,9 +884,9 @@ tune_pid_gain_steering_handler(tune_pid_gain_steering_parameters_message *msg)
 	printf("valor antes de kp %lf\n", msg->kp);
 	printf("valor antes de kd %lf\n", msg->kd);
 	printf("valor antes de ki %lf\n", msg->ki);
-	msg->kp = rand() % 100000;
-	msg->ki = rand() % 100000;
-	msg->kd = rand() % 100000;
+	msg->kp++;
+	msg->ki++;
+	msg->kd++;
 	printf("valor atual de kp %lf\n", msg->kp);
 	printf("valor atual de kd %lf\n", msg->kd);
 	printf("valor atual de ki %lf\n", msg->ki);
@@ -901,9 +901,9 @@ tune_pid_gain_velocity_handler(tune_pid_gain_velocity_parameters_message *msg)
 	printf("valor antes de kp %lf\n", msg->kp);
 	printf("valor antes de kd %lf\n", msg->kd);
 	printf("valor antes de ki %lf\n", msg->ki);
-	msg->kp = rand() % 100000;
-	msg->ki = rand() % 100000;
-	msg->kd = rand() % 100000;
+	msg->kp++;
+	msg->ki++;
+	msg->kd++;
 	printf("valor atual de kp %lf\n", msg->kp);
 	printf("valor atual de kd %lf\n", msg->kd);
 	printf("valor atual de ki %lf\n", msg->ki);
@@ -1032,8 +1032,8 @@ subscribe_to_relevant_messages()
 
 	carmen_task_manager_subscribe_desired_engage_state_message(NULL, (carmen_handler_t) task_manager_desired_engage_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	//carmen_ford_escape_subscribe_tune_pid_gain_steering_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_steering_handler, CARMEN_SUBSCRIBE_LATEST);
-	//carmen_ford_escape_subscribe_tune_pid_gain_velocity_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_velocity_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_tune_pid_gain_steering_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_steering_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_tune_pid_gain_velocity_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_velocity_handler, CARMEN_SUBSCRIBE_LATEST);
 	//carmen_ford_escape_subscribe_velocity_pid_data_message(NULL, (carmen_handler_t) velocity_pid_data_handler, CARMEN_SUBSCRIBE_LATEST);
 	//carmen_ford_escape_subscribe_steering_pid_data_message(NULL, (carmen_handler_t) steering_pid_data_handler , CARMEN_SUBSCRIBE_LATEST);
 	return (0);

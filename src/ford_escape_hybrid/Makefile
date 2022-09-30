@@ -46,7 +46,8 @@ PUBLIC_INCLUDES = ford_escape_hybrid_messages.h ford_escape_hybrid_interface.h f
 PUBLIC_LIBRARIES = libford_escape_hybrid_interface.a
 PUBLIC_BINARIES = ford_escape_hybrid ford_escape_hybrid_tune_pid ford_escape_hybrid_test ford_escape_hybrid_test_curves fake_odometry
 
-TARGETS = OpenJAUS libcontrol libcarmodel ford_escape_hybrid ford_escape_hybrid_tune_pid  ford_escape_hybrid_tune_pid_automatic fake_odometry libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
+TARGETS = OpenJAUS libcontrol libcarmodel ford_escape_hybrid ford_escape_hybrid_tune_pid \
+		  fake_odometry libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves ford_escape_hybrid_tune_pid_automatic
 
 ifndef NO_PYTHON
 PUBLIC_LIBRARIES_SO = libford_escape_hybrid_interface.so

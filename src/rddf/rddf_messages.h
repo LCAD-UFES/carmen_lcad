@@ -11,7 +11,7 @@ extern "C"
 
 // Atencao!!! Ao adicionar um novo tipo de anotacao, incrementar o NUM_RDDF_ANNOTATION_TYPES
 // (note que comecca de zero; assim, NUM_RDDF_ANNOTATION_TYPES eh igual ao ultimo codigo mais 1)
-	#define NUM_RDDF_ANNOTATION_TYPES						22
+	#define NUM_RDDF_ANNOTATION_TYPES						24
 
 	#define RDDF_ANNOTATION_TYPE_NONE 						0
 	#define RDDF_ANNOTATION_TYPE_END_POINT_AREA 			1
@@ -35,11 +35,13 @@ extern "C"
 	#define RDDF_ANNOTATION_TYPE_TURN_LEFT_INDICATOR		19
 	#define RDDF_ANNOTATION_TYPE_TURN_RIGHT_INDICATOR		20
 	#define RDDF_ANNOTATION_TYPE_GEAR						21
+	#define RDDF_ANNOTATION_TYPE_QUEUE						22
+	#define RDDF_ANNOTATION_TYPE_SINGLE_TRAFFIC_AREA		23
 
 
 // Atencao!!! Ao adicionar um novo tipo de CODE de anotacao, incrementar o NUM_RDDF_ANNOTATION_CODES
 // (note que comecca de zero; assim, NUM_RDDF_ANNOTATION_CODES eh igual ao ultimo codigo mais 1)
-	#define NUM_RDDF_ANNOTATION_CODES						82
+	#define NUM_RDDF_ANNOTATION_CODES						83
 
 	#define RDDF_ANNOTATION_CODE_NONE		 				0
 
@@ -135,6 +137,8 @@ extern "C"
 	#define RDDF_ANNOTATION_CODE_GEAR_RW_1 					79
 	#define RDDF_ANNOTATION_CODE_GEAR_RW_2 					80
 	#define RDDF_ANNOTATION_CODE_GEAR_NEUTRAL 				81
+
+	#define RDDF_ANNOTATION_CODE_SPEED_LIMIT_25 			82
 
 	#define MIN_DISTANCE_TO_CONSIDER_CROSSWALK 1.0
 

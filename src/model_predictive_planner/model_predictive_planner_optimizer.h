@@ -193,7 +193,14 @@ bool bad_tcp(TrajectoryControlParameters tcp);
 TrajectoryControlParameters get_n_knots_tcp_from_detailed_lane(vector<carmen_robot_and_trailers_path_point_t> detailed_lane,
 		int n, double v_i, double phi_i, double d_yaw, double a, double s, double tt);
 
-double compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailers_path_point_t> &path);
+void get_between_points(carmen_robot_and_trailer_path_point_t robot, carmen_robot_and_trailer_path_point_t point_before, carmen_robot_and_trailer_path_point_t center, carmen_robot_and_trailer_path_point_t point_next,
+		int index_center, int &index_p1, int &index_p2, int &mais_proxima);
+
+double get_distance_between_point_to_line2(carmen_robot_and_trailer_path_point_t p1,
+		carmen_robot_and_trailer_path_point_t p2,
+		carmen_robot_and_trailer_path_point_t robot);
+
+double compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailer_path_point_t> &path);
 
 double compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_trailers_path_point_t> path);
 

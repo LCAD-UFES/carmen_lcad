@@ -4,7 +4,7 @@
 #include "../control.h"
 #include <list>
 
-//#define PRINT			// Print Debug
+#define PRINT			// Print Debug
 
 using namespace std;
 
@@ -58,9 +58,9 @@ static double g_throttle_gap = 0.0;
 
 static int robot_model_id = 0;
 
-#ifdef PRINT
+/*#ifdef PRINT
 extern carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
-#endif
+#endif*/
 
 
 void
@@ -184,8 +184,8 @@ carmen_libpid_steering_PID_controler_publish_data(steering_pid_data_message * ms
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double desired_curvature = tan(atan_desired_curvature);
 	double current_curvature = tan(atan_current_curvature);
@@ -261,8 +261,8 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double desired_curvature = tan(atan_desired_curvature);
 	double current_curvature = tan(atan_current_curvature);
@@ -325,8 +325,8 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
@@ -343,11 +343,11 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 	//81.45   -  30.8    =  50.65
 	factor = carmen_clamp(0.0, (v - min_fuzzy_v) / (max_fuzzy_v - min_fuzzy_v), 1.0); // The PID parameters stabilize when the velocity is max_fuzzy_v
 	
-	printf("Chegou o outro kd %lf\n", g_steering_Kd);
+	/*printf("Chegou o outro kd %lf\n", steer_kp);
 	
 	kp = g_steering_Kp + factor * 791.5;
 	ki = g_steering_Ki + factor * 4976.7;
-	kd = g_steering_Kd + factor * 50.65;
+	kd = g_steering_Kd + factor * 50.65;*/
 
 	kp = steer_kp + factor * 791.5;
 	ki = steer_ki + factor * 4976.7;
@@ -403,8 +403,8 @@ carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
@@ -478,8 +478,8 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 	double t = carmen_get_time();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
@@ -732,8 +732,6 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 	
-	printf("REalmente pegou o kd %lf\n",kd);
-
 	msg->brakes_command = *brakes_command;
 	msg->current_velocity = current_velocity;
 	msg->desired_velocity = desired_velocity;
@@ -744,10 +742,10 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 	msg->throttle_command = *throttle_command;
 	
 #ifdef PRINT
-	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %d, %lf\n",
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 		*throttle_command, *brakes_command,
-		integral_t, derivative_t, behavior_selector_low_level_state, carmen_get_time());
+		integral_t, derivative_t, carmen_get_time());
 	fflush(stdout);
 #endif
 
@@ -946,10 +944,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 #ifdef PRINT
-	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %d, %lf\n",
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 		*throttle_command, *brakes_command,
-		integral_t, derivative_t, behavior_selector_low_level_state, carmen_get_time());
+		integral_t, derivative_t, carmen_get_time());
 	fflush(stdout);
 #endif
 
