@@ -45,13 +45,14 @@ main(int argc, char **argv)
 	if (argc >= 5)
 		time = atoi(argv[4]);
 
-	double beta = 0.0;
-	if (argc == 6)
-		beta = atof(argv[5]);
 
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
+
+	double beta = pose.theta;
+	if (argc == 6)
+		beta = atof(argv[5]);
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();

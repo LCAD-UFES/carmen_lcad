@@ -290,15 +290,18 @@ get_discrete_dimensions(TrajectoryDimensions td)
 }
 
 
-carmen_robot_and_trailer_path_point_t
-convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailer_traj_point_t robot_state, const double time)
+carmen_robot_and_trailers_path_point_t
+convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailers_traj_point_t robot_state, const double time)
 {
-	carmen_robot_and_trailer_path_point_t path_point;
+	carmen_robot_and_trailers_path_point_t path_point;
 
 	path_point.x = robot_state.x;
 	path_point.y = robot_state.y;
 	path_point.theta = robot_state.theta;
-	path_point.beta = robot_state.beta;
+	path_point.num_trailers = robot_state.num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		path_point.trailer_theta[z] = robot_state.trailer_theta[z];
+
 	path_point.v = robot_state.v;
 	path_point.phi = robot_state.phi;
 	path_point.time = time;
@@ -308,8 +311,8 @@ convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailer_
 
 
 double
-compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, Command &command,
-		vector<carmen_robot_and_trailer_path_point_t> &path,
+compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state, Command &command,
+		vector<carmen_robot_and_trailers_path_point_t> &path,
 		TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, double v0, double i_beta, double delta_t)
 {
@@ -318,7 +321,7 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;
 	robot_state.theta = 0.0;
-	robot_state.beta = i_beta;
+	robot_state.trailer_theta[0] = i_beta;
 	robot_state.v = v0;
 	robot_state.phi = tcp.k[0];
 
@@ -341,7 +344,7 @@ compute_path_via_simulation(carmen_robot_and_trailer_traj_point_t &robot_state, 
 
 //		if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
 //			(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
-		if ((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
+		if ((GlobalState::semi_trailer_config.semi_trailers.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
 			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
 					&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 		else
@@ -403,7 +406,7 @@ print_phi_profile(gsl_spline *phi_spline, gsl_interp_accel *acc, double total_t,
 
 
 double
-get_max_distance_in_path(vector<carmen_robot_and_trailer_path_point_t> path, carmen_robot_and_trailer_path_point_t &furthest_point)
+get_max_distance_in_path(vector<carmen_robot_and_trailers_path_point_t> path, carmen_robot_and_trailers_path_point_t &furthest_point)
 {
 	double max_dist = 0.0;
 
@@ -450,23 +453,23 @@ get_phi_spline(TrajectoryControlParameters tcp)
 }
 
 
-vector<carmen_robot_and_trailer_path_point_t>
+vector<carmen_robot_and_trailers_path_point_t>
 simulate_car_from_parameters(TrajectoryDimensions &td,
 		TrajectoryControlParameters &tcp, double v0, double i_beta, double delta_t)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path = {};
+	vector<carmen_robot_and_trailers_path_point_t> path = {};
 	if (!tcp.valid)
 		return (path);
 
 	gsl_spline *phi_spline = get_phi_spline(tcp);
 
 	Command command;
-	carmen_robot_and_trailer_traj_point_t robot_state;
+	carmen_robot_and_trailers_traj_point_t robot_state;
 	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, v0, i_beta, delta_t);
 
 	gsl_spline_free(phi_spline);
 
-	carmen_robot_and_trailer_path_point_t furthest_point;
+	carmen_robot_and_trailers_path_point_t furthest_point;
 	td.dist = get_max_distance_in_path(path, furthest_point);	// @@@ Alberto: Por que nao o ultimo do ponto do path?
 	td.theta = atan2(furthest_point.y, furthest_point.x);
 	td.d_yaw = furthest_point.theta;
@@ -481,24 +484,24 @@ simulate_car_from_parameters(TrajectoryDimensions &td,
 
 
 void
-print_path(vector<carmen_robot_and_trailer_path_point_t> path)
+print_path(vector<carmen_robot_and_trailers_path_point_t> path)
 {
 	FILE *path_file = fopen("gnuplot_path.txt", "a");
 	int i = 0;
-	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
+	for (std::vector<carmen_robot_and_trailers_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
 		if ((i % 2) == 0)
-			fprintf(path_file, "%f %f %f %f %f\n", it->x, it->y, 1.0 * cos(it->theta), 1.0 * sin(it->theta), it->beta);
+			fprintf(path_file, "%f %f %f %f %f\n", it->x, it->y, 1.0 * cos(it->theta), 1.0 * sin(it->theta), it->trailer_theta[0]);
 		i++;
 	}
 	fclose(path_file);
 }
 
 void
-print_lane(vector<carmen_robot_and_trailer_path_point_t> path, FILE *path_file)
+print_lane(vector<carmen_robot_and_trailers_path_point_t> path, FILE *path_file)
 {
 	//	int i = 0;
-	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
+	for (std::vector<carmen_robot_and_trailers_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
 		//		if ((i % 2) == 0)
 		fprintf(path_file, "%f %f %f %f\n", it->x, it->y, 1.0 * cos(it->theta), 1.0 * sin(it->theta));
@@ -507,11 +510,11 @@ print_lane(vector<carmen_robot_and_trailer_path_point_t> path, FILE *path_file)
 }
 
 void
-print_lane(vector<carmen_robot_and_trailer_path_point_t> path, char *file_name)
+print_lane(vector<carmen_robot_and_trailers_path_point_t> path, char *file_name)
 {
 	FILE *path_file = fopen(file_name, "w");
-	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
-		fprintf(path_file, "%f %f %f %f %f %f %f\n", it->x, it->y, it->theta, it->beta, it->v, it->phi, it->time);
+	for (std::vector<carmen_robot_and_trailers_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
+		fprintf(path_file, "%f %f %f %f %f %f %f\n", it->x, it->y, it->theta, it->trailer_theta[0], it->v, it->phi, it->time);
 
 	fclose(path_file);
 }
@@ -798,11 +801,11 @@ move_path_to_current_robot_pose(vector<carmen_robot_and_trailers_path_point_t> &
 }
 
 
-carmen_robot_and_trailer_path_point_t
-move_to_front_axle_WORKING(carmen_robot_and_trailer_path_point_t pose)
+carmen_robot_and_trailers_path_point_t
+move_to_front_axle_WORKING(carmen_robot_and_trailers_path_point_t pose)
 {
 	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
-	carmen_robot_and_trailer_path_point_t pose_moved = pose;
+	carmen_robot_and_trailers_path_point_t pose_moved = pose;
 	pose_moved.x += L * cos(pose.theta);
 	pose_moved.y += L * sin(pose.theta);
 
@@ -810,8 +813,8 @@ move_to_front_axle_WORKING(carmen_robot_and_trailer_path_point_t pose)
 }
 
 
-carmen_robot_and_trailer_path_point_t
-move_to_front_axle(carmen_robot_and_trailer_path_point_t pose)
+carmen_robot_and_trailers_path_point_t
+move_to_front_axle(carmen_robot_and_trailers_path_point_t pose)
 {
 	return (pose);
 

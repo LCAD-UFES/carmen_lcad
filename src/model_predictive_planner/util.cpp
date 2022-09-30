@@ -365,7 +365,7 @@ get_points2(vector<carmen_robot_and_trailers_path_point_t> &detailed_goal_list, 
 
 
 void
-get_between_points(carmen_robot_and_trailer_path_point_t robot, carmen_robot_and_trailer_path_point_t point_before, carmen_robot_and_trailer_path_point_t center, carmen_robot_and_trailer_path_point_t point_next,
+get_between_points(carmen_robot_and_trailers_path_point_t robot, carmen_robot_and_trailers_path_point_t point_before, carmen_robot_and_trailers_path_point_t center, carmen_robot_and_trailers_path_point_t point_next,
 		int index_center, int &index_p1, int &index_p2, int &mais_proxima)
 {
 

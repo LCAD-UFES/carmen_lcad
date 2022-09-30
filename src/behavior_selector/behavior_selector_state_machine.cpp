@@ -309,7 +309,7 @@ turn_right_indicator_sign_ahead(carmen_robot_and_trailers_traj_point_t current_r
 
 
 int
-set_max_gear_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+set_max_gear_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_set_max_gear_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_GEAR,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
@@ -320,7 +320,7 @@ set_max_gear_sign_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose
 	double distance_to_annotation = DIST2D(nearest_set_max_gear_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
 
 	int last_goal_list_size;
-	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
+	carmen_robot_and_trailers_traj_point_t *goal_list = behavior_selector_get_last_goal_list(last_goal_list_size);
 	double distance_to_first_goal = distance_to_annotation;
 	if (last_goal_list_size)
 		distance_to_first_goal = DIST2D(current_robot_pose_v_and_phi, goal_list[0]);

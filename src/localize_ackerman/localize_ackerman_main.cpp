@@ -207,7 +207,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	else
 	{
 		globalpos.semi_trailer_engaged = 0;
-		globalpos.trailer_theta[0] = 0.0;
+		globalpos.trailer_theta[0] = globalpos.globalpos.theta;
 		if (debugger)
 			printf("Here %d %f\n", __LINE__,globalpos.trailer_theta[0] );
 

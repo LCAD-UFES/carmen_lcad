@@ -409,7 +409,7 @@ static int selecting_near_waypoint_action(GtkMapViewer *the_map_view __attribute
 		pose_with_beta.theta = world_point->pose.theta;
 		pose_with_beta.num_trailers = 0;
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-			pose_with_beta.trailer_theta[z] = 0.0;
+			pose_with_beta.trailer_theta[z] = world_point->pose.theta;
 
 		carmen_rddf_publish_end_point_message(1, pose_with_beta);
 
@@ -2301,7 +2301,7 @@ orienting_final_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *wo
 		pose_with_beta.theta = final_goal.pose.theta;
 		pose_with_beta.num_trailers = 0;
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-			pose_with_beta.trailer_theta[z] = 0.0;
+			pose_with_beta.trailer_theta[z] =  final_goal.pose.theta;
 
 		carmen_rddf_publish_end_point_message(50, pose_with_beta);
 

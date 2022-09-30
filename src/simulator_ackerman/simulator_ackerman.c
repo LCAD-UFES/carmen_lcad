@@ -329,7 +329,7 @@ publish_truepos(double timestamp)
 	truepos.odometrypose = simulator_config->odom_pose;
 	truepos.num_trailers = 0;
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		truepos.trailer_theta[z] = 0.0;
+		truepos.trailer_theta[z] = truepos.truepose.theta;
 
 	truepos.v = simulator_config->v;
 	truepos.phi = simulator_config->phi;

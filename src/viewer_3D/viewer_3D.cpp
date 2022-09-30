@@ -851,8 +851,8 @@ draw_final_goal()
 
 		if (semi_trailer_config.semi_trailers.type > 0)
 		{
-			glTranslated(-semi_trailer_config.semi_trailers.M - semi_trailer_config.semi_trailers.d * cos(final_goal.trailer_theta[0]), semi_trailer_config.semi_trailers.d * sin(final_goal.trailer_theta[0]), 0.0);
-			glRotated(carmen_radians_to_degrees(-final_goal.trailer_theta[0]), 0.0f, 0.0f, 1.0f);
+			glTranslated(-semi_trailer_config.semi_trailers.M - semi_trailer_config.semi_trailers.d * cos((final_goal.theta - final_goal.trailer_theta[0])), semi_trailer_config.semi_trailers.d * sin((final_goal.theta - final_goal.trailer_theta[0])), 0.0);
+			glRotated(carmen_radians_to_degrees(-(final_goal.theta - final_goal.trailer_theta[0])), 0.0f, 0.0f, 1.0f);
 
 			glBegin(GL_LINE_STRIP);
 				glVertex3d(-semi_trailer_config.semi_trailers.distance_between_axle_and_back, -semi_trailer_config.semi_trailers.width / 2, 0);
@@ -3070,9 +3070,9 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 
 		for (int i = 0; i < message->number_of_poses; i++)
 		{
-			semi_trailer_path[i].x	  = message->poses[i].x - semi_trailer_config.semi_trailers.M * cos(message->poses[i].theta) - semi_trailer_config.semi_trailers.d * cos(message->poses[i].theta - message->poses[i].trailer_theta[0]);
-			semi_trailer_path[i].y	  = message->poses[i].y - semi_trailer_config.semi_trailers.M * sin(message->poses[i].theta) - semi_trailer_config.semi_trailers.d * sin(message->poses[i].theta - message->poses[i].trailer_theta[0]);
-			semi_trailer_path[i].theta = message->poses[i].theta - message->poses[i].trailer_theta[0];
+			semi_trailer_path[i].x	  = message->poses[i].x - semi_trailer_config.semi_trailers.M * cos(message->poses[i].theta) - semi_trailer_config.semi_trailers.d * cos(message->poses[i].trailer_theta[0]);
+			semi_trailer_path[i].y	  = message->poses[i].y - semi_trailer_config.semi_trailers.M * sin(message->poses[i].theta) - semi_trailer_config.semi_trailers.d * sin(message->poses[i].trailer_theta[0]);
+			semi_trailer_path[i].theta = message->poses[i].trailer_theta[0];
 			semi_trailer_path[i].num_trailers  = message->poses[i].num_trailers;
 			for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 				semi_trailer_path[i].trailer_theta[z]  = message->poses[i].trailer_theta[z];
