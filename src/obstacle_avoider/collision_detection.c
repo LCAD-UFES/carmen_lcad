@@ -677,14 +677,14 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 
 	if (global_collision_config.semi_trailer_type > 0)
 	{
-		if (fabs(local_point_to_check.theta - local_point_to_check.trailer_theta[0]) > global_collision_config.semi_trailer_max_beta)
+		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta)
 			return (pow(2.0, global_collision_config.semi_trailer_markers[0].radius + safety_distance));
 		else
 		{
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, local_point_to_check.theta - local_point_to_check.trailer_theta[0]);
+						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[0]));
 
 				// Pega local_point_to_check e coloca no sistema de coordenadas definido por localizer_pose
 				carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
@@ -924,14 +924,14 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 
 	if (global_collision_config.semi_trailer_type > 0)
 	{
-		if (fabs(trajectory_pose.theta - trajectory_pose.trailer_theta[0]) > global_collision_config.semi_trailer_max_beta)
+		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta)
 			return (0.0);
 		else
 		{
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, trajectory_pose.theta - trajectory_pose.trailer_theta[0]);
+						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0]));
 
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);
@@ -986,14 +986,14 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 
 	if (global_collision_config.semi_trailer_type > 0)
 	{
-		if (fabs(trajectory_pose.theta - trajectory_pose.trailer_theta[0]) > global_collision_config.semi_trailer_max_beta)
+		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta)
 			return (1);
 		else
 		{
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, trajectory_pose.theta - trajectory_pose.trailer_theta[0]);
+						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0]));
 
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);

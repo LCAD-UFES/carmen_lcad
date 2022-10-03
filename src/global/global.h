@@ -819,6 +819,9 @@ carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_p
 int
 carmen_line_to_line_intersection(carmen_position_t *I0, carmen_position_t s1_p0, carmen_position_t s1_p1, carmen_position_t s2_p0, carmen_position_t s2_p1);
 
+double convert_theta1_to_beta(double theta, double theta1);
+double convert_beta_to_theta1(double theta, double beta);
+
 extern carmen_inline char *carmen_next_word(char *str)
 {
 	char *mark = str;

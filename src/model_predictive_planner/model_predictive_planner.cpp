@@ -498,8 +498,8 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 			for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 				point_to_check.trailer_theta[z] = path[i].trailer_theta[z];
 
-			point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
-			localizer.trailer_theta[0] = localizer.theta - localizer.trailer_theta[0];
+			point_to_check.trailer_theta[0] = convert_beta_to_theta1(point_to_check.theta, point_to_check.trailer_theta[0]);
+			localizer.trailer_theta[0] = convert_beta_to_theta1(localizer.theta, localizer.trailer_theta[0]);
 
 
 			if (GlobalState::distance_map != NULL)
@@ -510,8 +510,8 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 				if (circle_invasion > max_circle_invasion)
 					max_circle_invasion = circle_invasion;
 			}
-			point_to_check.trailer_theta[0] = point_to_check.theta - point_to_check.trailer_theta[0];
-			localizer.trailer_theta[0] = localizer.theta - localizer.trailer_theta[0];
+			point_to_check.trailer_theta[0] = convert_theta1_to_beta(point_to_check.theta, point_to_check.trailer_theta[0]);
+			localizer.trailer_theta[0] = convert_theta1_to_beta(localizer.theta, localizer.trailer_theta[0]);
 
 		}
 
@@ -797,6 +797,7 @@ compute_path_to_goal(carmen_robot_and_trailers_pose_t *localizer_pose, Pose *goa
 	move_lane_to_robot_reference_system(localizer_pose, path_goals_and_annotations_message, &lane_in_local_pose);
 	//A partir daqui o trailer_theta do path já está como beta
 	// O beta do goal_pose está correto
+//	localizer_pose->trailer_theta[0] = localizer_pose->theta - localizer_pose->trailer_theta[0];
 
 	if (GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane)
 	{
