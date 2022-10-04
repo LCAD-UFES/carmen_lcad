@@ -422,6 +422,8 @@ carmen_map_server_publish_localize_map_message(carmen_localize_ackerman_map_t* l
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 
+	printf("carmen_map_server_publish_localize_map_message publish");
+
 	err = IPC_publishData(CARMEN_MAP_SERVER_LOCALIZE_MAP_NAME, &msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAP_SERVER_LOCALIZE_MAP_NAME);
 }

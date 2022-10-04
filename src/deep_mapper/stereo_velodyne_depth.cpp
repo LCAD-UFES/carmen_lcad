@@ -176,6 +176,8 @@ void image_handler(camera_message *msg)
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
+
+	cv::cvtColor(open_cv_image, open_cv_image, cv::COLOR_BGR2RGB);
 	
 
 	if (!strcmp(neural_network, "adabins"))

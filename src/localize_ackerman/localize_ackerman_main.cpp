@@ -956,10 +956,9 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 		publish_globalpos_on_mapping_mode(&fused_odometry_vector[fused_odometry_index], msg->timestamp);
 		return;
 	}
-
 	if (!necessary_maps_available || !global_localization_requested || ((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
-
+	
 	carmen_current_semi_trailer_data_t semi_trailer_data =
 	{
 			globalpos.semi_trailer_engaged,
@@ -974,7 +973,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	
 	if (!instanteneous_maps_ok)
 		return;
-
+	
 	// TUDO the filter should be one for each lidar?
 	carmen_localize_ackerman_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			msg->timestamp, car_config.distance_between_front_and_rear_axles);
@@ -985,7 +984,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 			&local_compacted_variance_remission_map, &binary_map);
 
 	publish_particles_correction(filter, &summary, msg->timestamp);
-
+	
 	if (filter->initialized)
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 
@@ -993,7 +992,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	{
 		carmen_localize_ackerman_velodyne_resample(filter);
 	}
-
+	// printf("localize_ackerman: filter->initialized %s\n", filter->initialized ? "true": "false");
 	if (filter->initialized)
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
@@ -1002,8 +1001,8 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
 			publish_carmen_base_ackerman_odometry();
 	}
-
-	if (g_reinitiaze_particles)
+	
+	if (g_reinitiaze_particles <= 1)
 		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
 }
 
@@ -1222,6 +1221,7 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 
 //	x_origin = message->config.x_origin;
 //	y_origin = message->config.y_origin;
+	printf("localize_map_update_handler: not necessary_maps_available\n");
 
 	necessary_maps_available = 1;
 }
@@ -1317,6 +1317,7 @@ map_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __a
 
 	err = IPC_respondData(msgRef, CARMEN_LOCALIZE_ACKERMAN_MAP_NAME, &response);
 	carmen_test_ipc(err, "Could not respond", CARMEN_LOCALIZE_ACKERMAN_MAP_NAME);
+	necessary_maps_available = 1;
 }
 
 
@@ -1492,12 +1493,10 @@ subscribe_to_ipc_message()
 		// lidars
 		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive){
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
-			printf("Not mapping: lidar_0 subscribed\n");
 		}
 
 		if ((number_of_sensors > 11) && spherical_sensor_params[11].alive){
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_1, CARMEN_SUBSCRIBE_LATEST, 1);
-			printf("Not mapping: lidar_1 subscribed\n");
 		}
 
 		if ((number_of_sensors > 12) && spherical_sensor_params[12].alive)

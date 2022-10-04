@@ -773,3 +773,4 @@ bin/odometry_graph.txt
 bin/ford_escape/trailer-cargo.obj
 bin/obstacle_distance_map.map
 data/gui/navigator_gui2_annotation.glade
+bin/visible_obstacle_distance_map.map
