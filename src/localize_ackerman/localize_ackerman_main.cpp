@@ -1002,7 +1002,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 			publish_carmen_base_ackerman_odometry();
 	}
 	
-	if (g_reinitiaze_particles <= 1)
+	if (g_reinitiaze_particles)
 		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
 }
 
