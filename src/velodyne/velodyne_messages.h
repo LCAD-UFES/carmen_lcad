@@ -74,7 +74,7 @@ typedef struct
 	int shot_size;
 	unsigned int  *distance;
 	unsigned short *intensity;
-	carmen_vector_3D_t* point_color;
+	// carmen_vector_3D_t* point_color;
 	double angle;              // In degrees
 }carmen_velodyne_shot;
 

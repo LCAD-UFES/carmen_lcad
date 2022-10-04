@@ -61,14 +61,7 @@ static int num_modules;
 
 char *neural_network = (char *)"glpdepth";
 unsigned char *depth_pred;
-const static double sorted_vertical_angles[32] =
-	{
-		-30.67, -29.33, -28.0, -26.67, -25.33, -24.0, -22.67, -21.33, -20.0,
-		-18.67, -17.33, -16.0, -14.67, -13.33, -12.0, -10.67, -9.3299999, -8.0,
-		-6.6700001, -5.3299999, -4.0, -2.6700001, -1.33, 0.0, 1.33, 2.6700001, 4.0,
-		5.3299999, 6.6700001, 8.0, 9.3299999, 10.67};
-const static double sorted_lidar8_vertical_angles[480] = {-25.5000, -25.3938, -25.2875, -25.1813, -25.0750, -24.9688, -24.8625, -24.7563, -24.6500, -24.5438, -24.4375, -24.3313, -24.2250, -24.1188, -24.0125, -23.9063, -23.8000, -23.6938, -23.5875, -23.4813, -23.3750, -23.2688, -23.1625, -23.0563, -22.9500, -22.8438, -22.7375, -22.6313, -22.5250, -22.4188, -22.3125, -22.2063, -22.1000, -21.9938, -21.8875, -21.7813, -21.6750, -21.5688, -21.4625, -21.3563, -21.2500, -21.1438, -21.0375, -20.9313, -20.8250, -20.7188, -20.6125, -20.5063, -20.4000, -20.2938, -20.1875, -20.0813, -19.9750, -19.8688, -19.7625, -19.6563, -19.5500, -19.4438, -19.3375, -19.2313, -19.1250, -19.0188, -18.9125, -18.8063, -18.7000, -18.5938, -18.4875, -18.3813, -18.2750, -18.1688, -18.0625, -17.9563, -17.8500, -17.7438, -17.6375, -17.5313, -17.4250, -17.3188, -17.2125, -17.1063, -17.0000, -16.8938, -16.7875, -16.6813, -16.5750, -16.4688, -16.3625, -16.2563, -16.1500, -16.0438, -15.9375, -15.8313, -15.7250, -15.6188, -15.5125, -15.4063, -15.3000, -15.1938, -15.0875, -14.9813, -14.8750, -14.7688, -14.6625, -14.5563, -14.4500, -14.3438, -14.2375, -14.1313, -14.0250, -13.9188, -13.8125, -13.7063, -13.6000, -13.4938, -13.3875, -13.2813, -13.1750, -13.0688, -12.9625, -12.8563, -12.7500, -12.6438, -12.5375, -12.4313, -12.3250, -12.2188, -12.1125, -12.0063, -11.9000, -11.7938, -11.6875, -11.5813, -11.4750, -11.3688, -11.2625, -11.1563, -11.0500, -10.9438, -10.8375, -10.7313, -10.6250, -10.5188, -10.4125, -10.3063, -10.2000, -10.0938, -9.9875, -9.8813, -9.7750, -9.6688, -9.5625, -9.4563, -9.3500, -9.2438, -9.1375, -9.0313, -8.9250, -8.8188, -8.7125, -8.6063, -8.5000, -8.3938, -8.2875, -8.1813, -8.0750, -7.9688, -7.8625, -7.7563, -7.6500, -7.5438, -7.4375, -7.3313, -7.2250, -7.1188, -7.0125, -6.9063, -6.8000, -6.6938, -6.5875, -6.4813, -6.3750, -6.2688, -6.1625, -6.0563, -5.9500, -5.8438, -5.7375, -5.6313, -5.5250, -5.4188, -5.3125, -5.2063, -5.1000, -4.9938, -4.8875, -4.7813, -4.6750, -4.5688, -4.4625, -4.3563, -4.2500, -4.1438, -4.0375, -3.9313, -3.8250, -3.7188, -3.6125, -3.5063, -3.4000, -3.2938, -3.1875, -3.0813, -2.9750, -2.8688, -2.7625, -2.6563, -2.5500, -2.4438, -2.3375, -2.2313, -2.1250, -2.0188, -1.9125, -1.8063, -1.7000, -1.5938, -1.4875, -1.3813, -1.2750, -1.1688, -1.0625, -0.9563, -0.8500, -0.7438, -0.6375, -0.5313, -0.4250, -0.3188, -0.2125, -0.1063, -0.0000, 0.1062, 0.2125, 0.3187, 0.4250, 0.5312, 0.6375, 0.7437, 0.8500, 0.9562, 1.0625, 1.1687, 1.2750, 1.3812, 1.4875, 1.5937, 1.7000, 1.8062, 1.9125, 2.0187, 2.1250, 2.2312, 2.3375, 2.4437, 2.5500, 2.6562, 2.7625, 2.8687, 2.9750, 3.0812, 3.1875, 3.2937, 3.4000, 3.5062, 3.6125, 3.7187, 3.8250, 3.9312, 4.0375, 4.1437, 4.2500, 4.3562, 4.4625, 4.5687, 4.6750, 4.7812, 4.8875, 4.9937, 5.1000, 5.2062, 5.3125, 5.4187, 5.5250, 5.6312, 5.7375, 5.8437, 5.9500, 6.0562, 6.1625, 6.2687, 6.3750, 6.4812, 6.5875, 6.6937, 6.8000, 6.9062, 7.0125, 7.1187, 7.2250, 7.3312, 7.4375, 7.5437, 7.6500, 7.7562, 7.8625, 7.9687, 8.0750, 8.1812, 8.2875, 8.3937, 8.5000, 8.6062, 8.7125, 8.8187, 8.9250, 9.0312, 9.1375, 9.2437, 9.3500, 9.4562, 9.5625, 9.6687, 9.7750, 9.8812, 9.9875, 10.0937, 10.2000, 10.3062, 10.4125, 10.5187, 10.6250, 10.7312, 10.8375, 10.9437, 11.0500, 11.1562, 11.2625, 11.3687, 11.4750, 11.5812, 11.6875, 11.7937, 11.9000, 12.0062, 12.1125, 12.2187, 12.3250, 12.4312, 12.5375, 12.6437, 12.7500, 12.8562, 12.9625, 13.0687, 13.1750, 13.2812, 13.3875, 13.4937, 13.6000, 13.7062, 13.8125, 13.9187, 14.0250, 14.1312, 14.2375, 14.3437, 14.4500, 14.5562, 14.6625, 14.7687, 14.8750, 14.9812, 15.0875, 15.1937, 15.3000, 15.4062, 15.5125, 15.6187, 15.7250, 15.8312, 15.9375, 16.0437, 16.1500, 16.2562, 16.3625, 16.4687, 16.5750, 16.6812, 16.7875, 16.8937, 17.0000, 17.1062, 17.2125, 17.3187, 17.4250, 17.5312, 17.6375, 17.7437, 17.8500, 17.9562, 18.0625, 18.1687, 18.2750, 18.3812, 18.4875, 18.5937, 18.7000, 18.8062, 18.9125, 19.0187, 19.1250, 19.2312, 19.3375, 19.4437, 19.5500, 19.6562, 19.7625, 19.8687, 19.9750, 20.0812, 20.1875, 20.2937, 20.4000, 20.5062, 20.6125, 20.7187, 20.8250, 20.9312, 21.0375, 21.1437, 21.2500, 21.3562, 21.4625, 21.5687, 21.6750, 21.7812, 21.8875, 21.9937, 22.1000, 22.2062, 22.3125, 22.4187, 22.5250, 22.6312, 22.7375, 22.8437, 22.9500, 23.0562, 23.1625, 23.2687, 23.3750, 23.4812, 23.5875, 23.6937, 23.8000, 23.9062, 24.0125, 24.1187, 24.2250, 24.3312, 24.4375, 24.5437, 24.6500, 24.7562, 24.8625, 24.9687, 25.0750, 25.1812, 25.2875, 25.3937};
-const static double sorted_lidar0_vertical_angles[480] = {-25.5000, -25.3938, -25.2875, -25.1813, -25.0750, -24.9688, -24.8625, -24.7563, -24.6500, -24.5438, -24.4375, -24.3313, -24.2250, -24.1188, -24.0125, -23.9063, -23.8000, -23.6938, -23.5875, -23.4813, -23.3750, -23.2688, -23.1625, -23.0563, -22.9500, -22.8438, -22.7375, -22.6313, -22.5250, -22.4188, -22.3125, -22.2063, -22.1000, -21.9938, -21.8875, -21.7813, -21.6750, -21.5688, -21.4625, -21.3563, -21.2500, -21.1438, -21.0375, -20.9313, -20.8250, -20.7188, -20.6125, -20.5063, -20.4000, -20.2938, -20.1875, -20.0813, -19.9750, -19.8688, -19.7625, -19.6563, -19.5500, -19.4438, -19.3375, -19.2313, -19.1250, -19.0188, -18.9125, -18.8063, -18.7000, -18.5938, -18.4875, -18.3813, -18.2750, -18.1688, -18.0625, -17.9563, -17.8500, -17.7438, -17.6375, -17.5313, -17.4250, -17.3188, -17.2125, -17.1063, -17.0000, -16.8938, -16.7875, -16.6813, -16.5750, -16.4688, -16.3625, -16.2563, -16.1500, -16.0438, -15.9375, -15.8313, -15.7250, -15.6188, -15.5125, -15.4063, -15.3000, -15.1938, -15.0875, -14.9813, -14.8750, -14.7688, -14.6625, -14.5563, -14.4500, -14.3438, -14.2375, -14.1313, -14.0250, -13.9188, -13.8125, -13.7063, -13.6000, -13.4938, -13.3875, -13.2813, -13.1750, -13.0688, -12.9625, -12.8563, -12.7500, -12.6438, -12.5375, -12.4313, -12.3250, -12.2188, -12.1125, -12.0063, -11.9000, -11.7938, -11.6875, -11.5813, -11.4750, -11.3688, -11.2625, -11.1563, -11.0500, -10.9438, -10.8375, -10.7313, -10.6250, -10.5188, -10.4125, -10.3063, -10.2000, -10.0938, -9.9875, -9.8813, -9.7750, -9.6688, -9.5625, -9.4563, -9.3500, -9.2438, -9.1375, -9.0313, -8.9250, -8.8188, -8.7125, -8.6063, -8.5000, -8.3938, -8.2875, -8.1813, -8.0750, -7.9688, -7.8625, -7.7563, -7.6500, -7.5438, -7.4375, -7.3313, -7.2250, -7.1188, -7.0125, -6.9063, -6.8000, -6.6938, -6.5875, -6.4813, -6.3750, -6.2688, -6.1625, -6.0563, -5.9500, -5.8438, -5.7375, -5.6313, -5.5250, -5.4188, -5.3125, -5.2063, -5.1000, -4.9938, -4.8875, -4.7813, -4.6750, -4.5688, -4.4625, -4.3563, -4.2500, -4.1438, -4.0375, -3.9313, -3.8250, -3.7188, -3.6125, -3.5063, -3.4000, -3.2938, -3.1875, -3.0813, -2.9750, -2.8688, -2.7625, -2.6563, -2.5500, -2.4438, -2.3375, -2.2313, -2.1250, -2.0188, -1.9125, -1.8063, -1.7000, -1.5938, -1.4875, -1.3813, -1.2750, -1.1688, -1.0625, -0.9563, -0.8500, -0.7438, -0.6375, -0.5313, -0.4250, -0.3188, -0.2125, -0.1063, -0.0000, 0.1062, 0.2125, 0.3187, 0.4250, 0.5312, 0.6375, 0.7437, 0.8500, 0.9562, 1.0625, 1.1687, 1.2750, 1.3812, 1.4875, 1.5937, 1.7000, 1.8062, 1.9125, 2.0187, 2.1250, 2.2312, 2.3375, 2.4437, 2.5500, 2.6562, 2.7625, 2.8687, 2.9750, 3.0812, 3.1875, 3.2937, 3.4000, 3.5062, 3.6125, 3.7187, 3.8250, 3.9312, 4.0375, 4.1437, 4.2500, 4.3562, 4.4625, 4.5687, 4.6750, 4.7812, 4.8875, 4.9937, 5.1000, 5.2062, 5.3125, 5.4187, 5.5250, 5.6312, 5.7375, 5.8437, 5.9500, 6.0562, 6.1625, 6.2687, 6.3750, 6.4812, 6.5875, 6.6937, 6.8000, 6.9062, 7.0125, 7.1187, 7.2250, 7.3312, 7.4375, 7.5437, 7.6500, 7.7562, 7.8625, 7.9687, 8.0750, 8.1812, 8.2875, 8.3937, 8.5000, 8.6062, 8.7125, 8.8187, 8.9250, 9.0312, 9.1375, 9.2437, 9.3500, 9.4562, 9.5625, 9.6687, 9.7750, 9.8812, 9.9875, 10.0937, 10.2000, 10.3062, 10.4125, 10.5187, 10.6250, 10.7312, 10.8375, 10.9437, 11.0500, 11.1562, 11.2625, 11.3687, 11.4750, 11.5812, 11.6875, 11.7937, 11.9000, 12.0062, 12.1125, 12.2187, 12.3250, 12.4312, 12.5375, 12.6437, 12.7500, 12.8562, 12.9625, 13.0687, 13.1750, 13.2812, 13.3875, 13.4937, 13.6000, 13.7062, 13.8125, 13.9187, 14.0250, 14.1312, 14.2375, 14.3437, 14.4500, 14.5562, 14.6625, 14.7687, 14.8750, 14.9812, 15.0875, 15.1937, 15.3000, 15.4062, 15.5125, 15.6187, 15.7250, 15.8312, 15.9375, 16.0437, 16.1500, 16.2562, 16.3625, 16.4687, 16.5750, 16.6812, 16.7875, 16.8937, 17.0000, 17.1062, 17.2125, 17.3187, 17.4250, 17.5312, 17.6375, 17.7437, 17.8500, 17.9562, 18.0625, 18.1687, 18.2750, 18.3812, 18.4875, 18.5937, 18.7000, 18.8062, 18.9125, 19.0187, 19.1250, 19.2312, 19.3375, 19.4437, 19.5500, 19.6562, 19.7625, 19.8687, 19.9750, 20.0812, 20.1875, 20.2937, 20.4000, 20.5062, 20.6125, 20.7187, 20.8250, 20.9312, 21.0375, 21.1437, 21.2500, 21.3562, 21.4625, 21.5687, 21.6750, 21.7812, 21.8875, 21.9937, 22.1000, 22.2062, 22.3125, 22.4187, 22.5250, 22.6312, 22.7375, 22.8437, 22.9500, 23.0562, 23.1625, 23.2687, 23.3750, 23.4812, 23.5875, 23.6937, 23.8000, 23.9062, 24.0125, 24.1187, 24.2250, 24.3312, 24.4375, 24.5437, 24.6500, 24.7562, 24.8625, 24.9687, 25.0750, 25.1812, 25.2875, 25.3937};
+
 inline double round(double val)
 {
 	if (val < 0)
@@ -95,59 +88,6 @@ register_ipc_messages(void)
 }
 
 
-IPC_RETURN_TYPE
-publish_stereo_point_cloud(void)
-{
-	IPC_RETURN_TYPE err;
-
-	err = IPC_publishData(CARMEN_STEREO_POINT_CLOUD_NAME, &point_cloud_message);
-	carmen_test_ipc_exit(err, "Could not publish stereo point cloud", CARMEN_STEREO_POINT_CLOUD_NAME);
-
-	return err;
-}
-// IPC_RETURN_TYPE
-// carmen_velodyne_publish_variable_scan_message(carmen_velodyne_variable_scan_message *message, int sensor_id)
-// {
-// 	IPC_RETURN_TYPE err;
-
-// 	static char message_name[64];
-// 	carmen_velodyne_create_variable_velodyne_message_name(sensor_id, message_name);
-// 	err = IPC_publishData(message_name, message);
-// 	carmen_test_ipc_exit(err, "Could not publish", message_name);
-
-// 	return err;
-// }
-
-// /*Message stereo*/
-// void convert_depth_to_stereo_point_cloud(unsigned char *depth, unsigned char *reference_image, double timestamp,carmen_velodyne_shot *stereo_velodyne_scan)
-// {
-// 	carmen_vector_3D_t *image3D = (carmen_vector_3D_t *) malloc(camera_width * camera_height * sizeof(carmen_vector_3D_t));
-// 	float *points = (float *)depth;
-
-// 	point_cloud_message.num_points = camera_width * camera_height;
-// 	point_cloud_message.points = (carmen_vector_3D_t *)realloc(point_cloud_message.points, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
-// 	point_cloud_message.point_color = (carmen_vector_3D_t *)realloc(point_cloud_message.point_color, point_cloud_message.num_points * sizeof(carmen_vector_3D_t));
-// 	//reproject_to_3D(points, image3D, 0.0, su);
-// 	int i;
-// 	for (i = 0; i < point_cloud_message.num_points; i++)
-// 	{
-		
-// 		 point_cloud_message.points[i].x = image3D[i].x;
-// 		 point_cloud_message.points[i].y = image3D[i].y;
-// 		 point_cloud_message.points[i].z = image3D[i].z;
-
-// 		point_cloud_message.point_color[i].x = ((double)reference_image[3 * i]) / 255.0;
-// 		point_cloud_message.point_color[i].y = ((double)reference_image[3 * i + 1]) / 255.0;
-// 		point_cloud_message.point_color[i].z = ((double)reference_image[3 * i + 2]) / 255.0;
-// 	}
-
-// 	point_cloud_message.timestamp = timestamp;
-// 	point_cloud_message.host = carmen_get_host();
-
-// 	publish_stereo_point_cloud();
-
-// 	free(image3D);
-// }
 
 void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resolution,
 									 int horizontal_resolution, carmen_velodyne_shot *stereo_velodyne_scan,
@@ -172,10 +112,10 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 			range = range > range_max ? 0.0 : range;
 			stereo_velodyne_scan[j].distance[i] = (unsigned short)(range * range_multiplier_factor);
 			stereo_velodyne_scan[j].intensity[i] = image_gray[(int)(y * (double)horizontal_resolution + x)];
-			stereo_velodyne_scan[j].point_color[i].x = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x))];
-			stereo_velodyne_scan[j].point_color[i].y = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+1)];
-			stereo_velodyne_scan[j].point_color[i].z = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+2)];
-			cout << stereo_velodyne_scan[j].point_color[i].x << endl;
+			// stereo_velodyne_scan[j].point_color[i].x = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x))];
+			// stereo_velodyne_scan[j].point_color[i].y = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+1)];
+			// stereo_velodyne_scan[j].point_color[i].z = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+2)];
+			// cout << stereo_velodyne_scan[j].point_color[i].x << endl;
 		}
 	}
 	
@@ -208,8 +148,6 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	if (!strcmp(neural_network, "newcrfs"))
 		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 
-	// cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
-	// open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
 	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
@@ -220,30 +158,25 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = stereo_image->timestamp;
-	// write_pointcloud_variable_txt(&velodyne_partial_scan, (char *)"lidar8");
 
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
 	
-	
-	// convert_depth_to_stereo_point_cloud(depth_pred, image_color, stereo_image->timestamp);
-	
 
 	cv::imshow("Bumblebee Image", open_cv_image) ;
-	cv::imshow(neural_network, imgdepth * 100.0);
+	cv::imshow(neural_network, imgdepth * 250.0);
 	waitKey(1);
 }
 
 void image_handler(camera_message *msg)
 {
-	// printf("camera_image_handler\n");
 	camera_image *stereo_image = msg->images;
-	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0); // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	Mat open_cv_image = Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0); 
 	//remap(open_cv_image, open_cv_image, MapX, MapY, INTER_LINEAR);											// Transforms the image to compensate for lens distortion
 
 	cv::Mat imggray;
 	cv::cvtColor(open_cv_image, imggray, cv::COLOR_BGR2GRAY);
 	unsigned char *image_gray = imggray.data;
-	// unsigned char *image_color = open_cv_image.data;
+	
 
 	if (!strcmp(neural_network, "adabins"))
 		depth_pred = libadabins_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
@@ -254,9 +187,6 @@ void image_handler(camera_message *msg)
 	if (!strcmp(neural_network, "newcrfs"))
 		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 
-	// img(cv::Rect(xMin,yMin,xMax-xMin,yMax-yMin)).copyTo(croppedImg);
-	// cv::Rect myROI(0, camera_height - vertical_resolution, stereo_image->width, camera_height - (camera_height - vertical_resolution));
-	// open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
 	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
@@ -267,13 +197,11 @@ void image_handler(camera_message *msg)
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = msg->timestamp;
-	// write_pointcloud_variable_txt(&velodyne_partial_scan, (char *)"lidar8");
+	
 	carmen_velodyne_publish_variable_scan_message(&velodyne_partial_scan, lidar_num);
-	// convert_depth_to_stereo_point_cloud(depth_pred, vertical_resolution,
-	// 								horizontal_resolution, image_color, msg->timestamp);
-
-	// cv::imshow("Camera Driver Image", open_cv_image);
-	cv::imshow(neural_network, imgdepth * 500.0);
+	
+	cv::imshow("Camera Driver Image", open_cv_image);
+	cv::imshow(neural_network, imgdepth * 250.0);
 	waitKey(1);
 }
 
@@ -299,8 +227,8 @@ alloc_velodyne_shot_scan_vector(int horizontal_resolution_l, int vertical_resolu
 		carmen_test_alloc(vector[i].distance);
 		vector[i].intensity = (unsigned short *)calloc(vertical_resolution_l, sizeof(unsigned short));
 		carmen_test_alloc(vector[i].intensity);
-		vector[i].point_color = (carmen_vector_3D_t *)calloc(vertical_resolution_l, sizeof(carmen_vector_3D_t));
-		carmen_test_alloc(vector[i].point_color);
+		// vector[i].point_color = (carmen_vector_3D_t *)calloc(vertical_resolution_l, sizeof(carmen_vector_3D_t));
+		// carmen_test_alloc(vector[i].point_color);
 		vector[i].shot_size = vertical_resolution_l;
 	}
 

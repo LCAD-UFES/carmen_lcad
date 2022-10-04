@@ -1451,17 +1451,25 @@ subscribe_to_ipc_message()
 		IPC_setMsgQueueLength(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME, 1);
 
 		// stereo velodyne (cameras stereo)
-		if ((number_of_sensors > 0) && spherical_sensor_params[0].alive)
+		if ((number_of_sensors > 0) && spherical_sensor_params[0].alive){
 			carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			printf("Not mapping: Velodyne subscribed\n");
+		}
 
-		if ((number_of_sensors > 1) && spherical_sensor_params[1].alive)
+		if ((number_of_sensors > 1) && spherical_sensor_params[1].alive){
 			carmen_stereo_velodyne_subscribe_scan_message(1, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler1, CARMEN_SUBSCRIBE_LATEST);
+			printf("Not mapping: stereo_velodyne_1 subscribed\n");
+		}
 
-		if ((number_of_sensors > 2) && spherical_sensor_params[2].alive)
+		if ((number_of_sensors > 2) && spherical_sensor_params[2].alive){
 			carmen_stereo_velodyne_subscribe_scan_message(2, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST);
+			printf("Not mapping: stereo_velodyne_2 subscribed\n");
+		}
 
-		if ((number_of_sensors > 3) && spherical_sensor_params[3].alive)
+		if ((number_of_sensors > 3) && spherical_sensor_params[3].alive){
 			carmen_stereo_velodyne_subscribe_scan_message(3, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST);
+			printf("Not mapping: stereo_velodyne_3 subscribed\n");
+		}
 
 		if ((number_of_sensors > 4) && spherical_sensor_params[4].alive)
 			carmen_stereo_velodyne_subscribe_scan_message(4, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST);
@@ -1482,11 +1490,15 @@ subscribe_to_ipc_message()
 			carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 
 		// lidars
-		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
+		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive){
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+			printf("Not mapping: lidar_0 subscribed\n");
+		}
 
-		if ((number_of_sensors > 11) && spherical_sensor_params[11].alive)
+		if ((number_of_sensors > 11) && spherical_sensor_params[11].alive){
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_1, CARMEN_SUBSCRIBE_LATEST, 1);
+			printf("Not mapping: lidar_1 subscribed\n");
+		}
 
 		if ((number_of_sensors > 12) && spherical_sensor_params[12].alive)
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_2, CARMEN_SUBSCRIBE_LATEST, 2);
@@ -1506,8 +1518,10 @@ subscribe_to_ipc_message()
 		if ((number_of_sensors > 17) && spherical_sensor_params[17].alive)
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_7, CARMEN_SUBSCRIBE_LATEST, 7);
 
-		if ((number_of_sensors > 18) && spherical_sensor_params[18].alive)
+		if ((number_of_sensors > 18) && spherical_sensor_params[18].alive){
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 8);
+			printf("Not mapping: lidar_8 subscribed\n");
+		}
 
 		if ((number_of_sensors > 19) && spherical_sensor_params[19].alive)
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_9, CARMEN_SUBSCRIBE_LATEST, 9);
@@ -1536,20 +1550,40 @@ subscribe_to_ipc_message()
 	}
 	else
 	{
-		if ((number_of_sensors > 0) && spherical_sensor_params[0].alive)
+		if ((number_of_sensors > 0) && spherical_sensor_params[0].alive){
 			carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			printf("Velodyne subscribed\n");
+		}
 
-		// stereo velodyne camera 3
-		if ((number_of_sensors > 3) && spherical_sensor_params[3].alive)
-			carmen_stereo_velodyne_subscribe_scan_message(3, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST);
-
-		// lidar0
-		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+		if ((number_of_sensors > 1) && spherical_sensor_params[1].alive){
+			carmen_stereo_velodyne_subscribe_scan_message(1, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler1, CARMEN_SUBSCRIBE_LATEST);
+			printf("Stereo_velodyne_1 subscribed\n");
+		}
 		
-		// lidar8
-		if ((number_of_sensors > 18) && spherical_sensor_params[18].alive)
+		if ((number_of_sensors > 2) && spherical_sensor_params[2].alive){
+			carmen_stereo_velodyne_subscribe_scan_message(2, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST);
+			printf("Stereo_velodyne_2 subscribed\n");
+		}
+
+		if ((number_of_sensors > 3) && spherical_sensor_params[3].alive){
+			carmen_stereo_velodyne_subscribe_scan_message(3, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST);
+			printf("Stereo_velodyne_3 subscribed\n");
+		}
+
+		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive){
+			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+			printf("lidar_0 subscribed\n");
+		}
+		
+		if ((number_of_sensors > 11) && spherical_sensor_params[11].alive){
+			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_1, CARMEN_SUBSCRIBE_LATEST, 1);
+			printf("lidar_1 subscribed\n");
+		}
+		
+		if ((number_of_sensors > 18) && spherical_sensor_params[18].alive){
 			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 0);
+			printf("lidar_8 subscribed\n");
+		}
 	}
 
 	carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_and_beta_message_handler, CARMEN_SUBSCRIBE_LATEST);

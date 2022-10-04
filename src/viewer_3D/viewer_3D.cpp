@@ -589,13 +589,8 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 
 			lidar_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
 
-			// lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
-			// 		car_interpolated_position.position);
-            cout <<  lidar_message->partial_scan[i].point_color[j].x << " " << lidar_message->partial_scan[i].point_color[j].y << " " << lidar_message->partial_scan[i].point_color[j].z << endl;
-            if (lidar_message->partial_scan[i].distance[j] != 0)
-            {
-                lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_image(lidar_message->partial_scan[i].point_color[j]);
-            }
+			lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
+					car_interpolated_position.position);
 		}
 	}
 	return (discarded_points);
