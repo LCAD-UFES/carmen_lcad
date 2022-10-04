@@ -1221,8 +1221,6 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 
 //	x_origin = message->config.x_origin;
 //	y_origin = message->config.y_origin;
-	printf("localize_map_update_handler: not necessary_maps_available\n");
-
 	necessary_maps_available = 1;
 }
 
