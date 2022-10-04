@@ -974,7 +974,6 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	if (!instanteneous_maps_ok)
 		return;
 	
-	// TUDO the filter should be one for each lidar?
 	carmen_localize_ackerman_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			msg->timestamp, car_config.distance_between_front_and_rear_axles);
 
@@ -982,6 +981,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 
 	carmen_localize_ackerman_velodyne_correction(filter, &localize_map, &local_compacted_map, &local_compacted_mean_remission_map,
 			&local_compacted_variance_remission_map, &binary_map);
+	gps_xyz_correction(filter, msg->timestamp);
 
 	publish_particles_correction(filter, &summary, msg->timestamp);
 	
