@@ -1,0 +1,1 @@
+/home/piumbini/carmen_lcad/src/utilities/scripts/filetypes.sh

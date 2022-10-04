@@ -510,7 +510,18 @@ create_point_colors_height(carmen_vector_3D_t point, carmen_vector_3D_t car_posi
 
     return colors;
 }
+static carmen_vector_3D_t
+create_point_colors_image(carmen_vector_3D_t point)
+{
+    carmen_vector_3D_t colors;
+    
 
+        colors.x = point.x;
+        colors.y = point.y;
+        colors.z = point.z;
+
+    return colors;
+}
 
 carmen_vector_3D_t
 create_point_colors_intensity(double intensity)
@@ -578,8 +589,13 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 
 			lidar_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
 
-			lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
-					car_interpolated_position.position);
+			// lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
+			// 		car_interpolated_position.position);
+            cout <<  lidar_message->partial_scan[i].point_color[j].x << " " << lidar_message->partial_scan[i].point_color[j].y << " " << lidar_message->partial_scan[i].point_color[j].z << endl;
+            if (lidar_message->partial_scan[i].distance[j] != 0)
+            {
+                lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_image(lidar_message->partial_scan[i].point_color[j]);
+            }
 		}
 	}
 	return (discarded_points);
@@ -2623,7 +2639,7 @@ stereo_point_cloud_message_handler(carmen_stereo_point_cloud_message* stereo_poi
 
     int num_points = stereo_point_cloud_message->num_points;
 
-    printf("Stereo point cloud: %d points.\n", num_points);
+    // printf("Stereo point cloud: %d points.\n", num_points);
 
     if (num_points > stereo_point_cloud[last_stereo_point_cloud].num_points)
     {

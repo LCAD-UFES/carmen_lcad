@@ -28,8 +28,8 @@ using namespace std;
 using namespace cv;
 
 static int camera;
-static int vertical_resolution;
-static int horizontal_resolution;
+static int vertical_resolution = 480;
+static int horizontal_resolution = 640;
 static double range_max;
 static double horizontal_camera_angle;
 static double horizontal_start_angle;
@@ -39,8 +39,8 @@ static int vertical_top_cut;
 static int vertical_down_cut;
 static int lidar_num;
 
-static int camera_width = 0;
-static int camera_height = 0;
+static int camera_width = 640;
+static int camera_height = 480;
 
 static carmen_velodyne_shot *scan;
 static carmen_velodyne_variable_scan_message velodyne_partial_scan;
@@ -151,7 +151,7 @@ publish_stereo_point_cloud(void)
 
 void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resolution,
 									 int horizontal_resolution, carmen_velodyne_shot *stereo_velodyne_scan,
-									 double range_max, unsigned char *image_gray, Mat reference_image)
+									 double range_max, unsigned char *image_gray, unsigned char *image_color)
 {
 	int i, j, x, y;
 
@@ -172,9 +172,10 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 			range = range > range_max ? 0.0 : range;
 			stereo_velodyne_scan[j].distance[i] = (unsigned short)(range * range_multiplier_factor);
 			stereo_velodyne_scan[j].intensity[i] = image_gray[(int)(y * (double)horizontal_resolution + x)];
-			stereo_velodyne_scan[j].point_color[i].x = reference_image.at<cv::Vec3b>(y,x)[0] / 255.0;
-			stereo_velodyne_scan[j].point_color[i].y = reference_image.at<cv::Vec3b>(y,x)[1] / 255.0;
-			stereo_velodyne_scan[j].point_color[i].z = reference_image.at<cv::Vec3b>(y,x)[2] / 255.0;
+			stereo_velodyne_scan[j].point_color[i].x = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x))];
+			stereo_velodyne_scan[j].point_color[i].y = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+1)];
+			stereo_velodyne_scan[j].point_color[i].z = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+2)];
+			cout << stereo_velodyne_scan[j].point_color[i].x << endl;
 		}
 	}
 	
@@ -210,10 +211,10 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	// cv::Rect myROI(0, 200, stereo_image->width, stereo_image->height - 200);
 	// open_cv_image = open_cv_image(myROI);
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-	
+	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
-									range_max, image_gray, open_cv_image);
+									range_max, image_gray, image_color);
 
 	velodyne_partial_scan.partial_scan = scan;
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
@@ -260,7 +261,7 @@ void image_handler(camera_message *msg)
 	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
-									range_max, image_gray, open_cv_image);
+									range_max, image_gray, image_color);
 
 	velodyne_partial_scan.partial_scan = scan;
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
@@ -298,7 +299,7 @@ alloc_velodyne_shot_scan_vector(int horizontal_resolution_l, int vertical_resolu
 		carmen_test_alloc(vector[i].distance);
 		vector[i].intensity = (unsigned short *)calloc(vertical_resolution_l, sizeof(unsigned short));
 		carmen_test_alloc(vector[i].intensity);
-		vector[i].point_color = (carmen_vector_3D_t *)malloc(vertical_resolution_l * sizeof(carmen_vector_3D_t));
+		vector[i].point_color = (carmen_vector_3D_t *)calloc(vertical_resolution_l, sizeof(carmen_vector_3D_t));
 		carmen_test_alloc(vector[i].point_color);
 		vector[i].shot_size = vertical_resolution_l;
 	}
