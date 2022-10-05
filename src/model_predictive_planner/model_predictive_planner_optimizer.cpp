@@ -36,8 +36,16 @@ copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_rob
 #define G_EPSABS	0.016
 #define F_EPSABS	G_EPSABS
 
+////////////////////////////////////////////////////////////////////////////////////////
+#define USE_STEFFEN_SPLINE
+
+#define NEW_COMPUTE_A_AND_T_FROM_S
+
+//#define NEW_PATH_TO_LANE_DISTANCE
+
 //#define USE_STANLEY_METHOD
 //TODO NAO ESQUECER DE DESCOMENTAR OS PARAMETROS W7 e LOOK_AHEAD NO MAIN
+////////////////////////////////////////////////////////////////////////////////////////
 
 bool use_obstacles = true;
 
@@ -442,7 +450,11 @@ get_phi_spline(TrajectoryControlParameters tcp)
 		knots_x[2] = tcp.tt / 2.0;
 	}
 
+#ifdef USE_STEFFEN_SPLINE
 	const gsl_interp_type *type = gsl_interp_cspline;
+#else
+	const gsl_interp_type *type = gsl_interp_steffen;
+#endif
 	gsl_spline *phi_spline = gsl_spline_alloc(type, tcp.k.size());
 	gsl_spline_init(phi_spline, &knots_x[0], &knots_y[0], tcp.k.size());
 
@@ -539,7 +551,6 @@ bad_tcp(TrajectoryControlParameters tcp)
 }
 
 
-#define NEW_COMPUTE_A_AND_T_FROM_S
 #ifdef NEW_COMPUTE_A_AND_T_FROM_S
 
 void
@@ -819,8 +830,6 @@ move_to_front_axle(carmen_robot_and_trailer_path_point_t pose)
 
 	return (pose_moved);
 }
-
-//#define NEW_PATH_TO_LANE_DISTANCE
 
 #ifdef NEW_PATH_TO_LANE_DISTANCE
 
@@ -1736,7 +1745,11 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 //		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK) ||
 //		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 	if (((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN)) ||
+#ifdef USE_STEFFEN_SPLINE
+		(target_td.dist < GlobalState::distance_between_waypoints / 3.5))
+#else
 		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
+#endif
 		get_tcp_with_n_knots(tcp_complete, 3);
 	else
 		get_tcp_with_n_knots(tcp_complete, 4);
