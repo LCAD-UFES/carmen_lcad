@@ -501,6 +501,9 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
 		v = 20.0 / 3.6;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+				 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
+			v = 25.0 / 3.6;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
 		v = 30.0 / 3.6;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&

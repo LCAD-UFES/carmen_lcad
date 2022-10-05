@@ -70,6 +70,9 @@
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
 
+// Comment or uncomment this definition to control paths collision states.
+// #define CHECK_IF_ALL_PATHS_HAS_COLLISION
+
 using namespace std;
 
 vector<path_collision_info_t> set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
@@ -193,6 +196,7 @@ double behavior_pedestrian_near_path_min_lateral_distance = 4.0;
 double behavior_selector_pedestrian_near_path_min_longitudinal_distance = 5.0;
 
 bool all_paths_has_collision = false;
+bool all_paths_has_collision_and_goal_is_not_an_annotation = false;
 
 
 int
@@ -730,6 +734,14 @@ publish_new_best_path(int best_path, double timestamp)
 		selected_path_id = best_path;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
+bool
+goal_list_is_not_an_annotation(int goal_type)
+{
+	if(goal_type != ANNOTATION_GOAL1)
+		return true;
+	
+	return false;
+}
 
 
 carmen_robot_and_trailer_traj_point_t *
@@ -1158,6 +1170,8 @@ check_if_all_paths_has_collision(vector<path_collision_info_t> &paths_collision_
 		if(paths_collision_info[i].path_has_no_collision == false)
 			paths_with_collision_counter++;
 	}
+	// if(paths_with_collision_counter == (int)paths_collision_info.size())
+		// printf("paths_with_collision_counter: %d\n", paths_with_collision_counter);
 
 	if(paths_with_collision_counter == frenet_path_planner_num_paths)
 		return true;
@@ -1174,13 +1188,14 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 
 	if (behavior_selector_performs_path_planning)
 	{
-		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
+		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL) && 
+		(behavior_selector_state_message.low_level_state != Stopped_At_Unavoidable_Obstacle_S0))
 		{
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
 					&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
 		}
-		else
+		else if ((road_network_message->number_of_poses == 0) || (road_network_message->poses == NULL))
 			current_set_of_paths = NULL;
 	}
 
@@ -1204,13 +1219,19 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 		else
 			set_of_paths.selected_path = selected_path_id;
 
-		if(check_if_all_paths_has_collision(paths_collision_info))
-		{
-			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
-			all_paths_has_collision = true;
-		}
-		else
-			all_paths_has_collision = false;
+		#ifdef CHECK_IF_ALL_PATHS_HAS_COLLISION
+			if(check_if_all_paths_has_collision(paths_collision_info))
+			{
+				// printf("paths com colisao\n\n");
+				set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
+				all_paths_has_collision = true;
+			}
+			else
+			{
+				set_of_paths.selected_path = selected_path_id;
+				all_paths_has_collision = false;
+			}
+		#endif
 
 		publish_set_of_paths_message(&set_of_paths);
 
@@ -1257,7 +1278,8 @@ set_path(const carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_ph
 //		if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
 //			publish_behavior_selector_road_profile_message(&rddf_msg);
 
-		free(set_of_paths.set_of_paths);
+		if(behavior_selector_state_message.low_level_state != Stopped_At_Unavoidable_Obstacle_S0)
+			free(set_of_paths.set_of_paths);
 	}
 
 	if ((int) paths_collision_info.size() > selected_path_id)
@@ -1284,12 +1306,6 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 
 //	print_poses(last_rddf_message->poses, last_rddf_message->number_of_poses, (char *) "cacox0.txt");
 
-	// if(all_paths_has_collision)
-	// {
-	// 	set_max_v(0.0);
-	// 	soft_stop_on = true;
-	// }
-
 	if (!last_rddf_message)
 	{
 		publish_current_state(&behavior_selector_state_message);
@@ -1310,6 +1326,13 @@ select_behaviour(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 		last_rddf_message_copy->poses[0].beta = current_robot_pose_v_and_phi.beta;
 	carmen_robot_and_trailer_traj_point_t *goal_list = set_goal_list(goal_list_size, first_goal, goal_type, last_rddf_message_copy,
 			path_collision_info, current_moving_objects, behavior_selector_state_message, timestamp);
+
+	#ifdef CHECK_IF_ALL_PATHS_HAS_COLLISION
+		if(all_paths_has_collision && goal_list_is_not_an_annotation(goal_type))
+			all_paths_has_collision_and_goal_is_not_an_annotation = true;
+		else
+			all_paths_has_collision_and_goal_is_not_an_annotation = false;
+	#endif
 
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
