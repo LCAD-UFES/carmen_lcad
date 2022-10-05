@@ -91,10 +91,13 @@ main(int argc, char **argv)
 	{
 		time_value = atoi(argv[4]);
 		if (argc == 6)
-			wait_play = true;
+		{
+			if (argv[5][0] == '-')
+				wait_play = true;
+			else
+				beta = atof(argv[5]); // old code
+		}
 	}
-	// if (argc == 6)
-	// 	beta = atof(argv[5]);
 
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
