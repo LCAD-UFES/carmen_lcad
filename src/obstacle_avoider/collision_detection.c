@@ -870,7 +870,7 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						semi_trailer_markers[i].x, semi_trailer_markers[i].y, ldcp2.theta - ldcp2.trailer_theta[0]);
+						semi_trailer_markers[i].x, semi_trailer_markers[i].y, convert_theta1_to_beta(ldcp2.theta, ldcp2.trailer_theta[0]));
 
 				double radius = semi_trailer_markers[i].radius + mo_radius_plus_safety_margin;
 				double radius_sq = radius * radius;

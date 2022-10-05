@@ -2019,9 +2019,9 @@ convert_theta1_to_beta(double theta, double theta1)
 {
     double ret = M_PI - (fmod(fabs(theta - theta1), 2*M_PI) - M_PI);
     if (theta1 < theta)
-      return(-ret);
+      return(-carmen_normalize_theta(ret));
 
-    return ret;
+    return carmen_normalize_theta(ret);
 }
 
 

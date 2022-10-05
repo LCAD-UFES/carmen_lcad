@@ -797,7 +797,6 @@ compute_path_to_goal(carmen_robot_and_trailers_pose_t *localizer_pose, Pose *goa
 	move_lane_to_robot_reference_system(localizer_pose, path_goals_and_annotations_message, &lane_in_local_pose);
 	//A partir daqui o trailer_theta do path já está como beta
 	// O beta do goal_pose está correto
-//	localizer_pose->trailer_theta[0] = localizer_pose->theta - localizer_pose->trailer_theta[0];
 
 	if (GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane)
 	{
