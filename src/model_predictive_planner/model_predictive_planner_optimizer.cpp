@@ -1746,13 +1746,13 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 //		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 	if (((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN)) ||
 #ifdef USE_STEFFEN_SPLINE
-		(target_td.dist < GlobalState::distance_between_waypoints / 3.5))
+		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 #else
 		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 #endif
 		get_tcp_with_n_knots(tcp_complete, 3);
 	else
-		get_tcp_with_n_knots(tcp_complete, 4);
+		get_tcp_with_n_knots(tcp_complete, 6);
 
 	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, max_iterations, mpp_optimization_function_g);
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
