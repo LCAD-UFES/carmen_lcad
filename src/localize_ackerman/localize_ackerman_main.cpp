@@ -941,7 +941,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	
 	if (!velodyne_initilized)
 		return;
-	printf("velodyne_initilized %s\n", velodyne_initilized ? "true": "false");
+	//printf("velodyne_initilized %s\n", velodyne_initilized ? "true": "false");
 	carmen_localize_ackerman_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			msg->timestamp, car_config.distance_between_front_and_rear_axles);
 
@@ -965,14 +965,14 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, 
 				base_ackerman_odometry_vector[odometry_index].phi,	
 				msg->timestamp);
-		printf("publish_globalpos\n");
+		//printf("publish_globalpos\n");
 		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
 			publish_carmen_base_ackerman_odometry();
 	}
 	
 	if (g_reinitiaze_particles)
 		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
-	// display_maps();
+	//display_maps();
 }
 
 void
