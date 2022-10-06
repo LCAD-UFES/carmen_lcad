@@ -812,41 +812,18 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			&base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			velodyne_message->timestamp, car_config.distance_between_front_and_rear_axles);
 
-//	carmen_robot_and_trailer_traj_point_t robot_and_trailer_traj_point =
-//	{
-//			globalpos.globalpos.x,
-//			globalpos.globalpos.y,
-//			globalpos.globalpos.theta,
-//			globalpos.beta,
-//			globalpos.v,
-//			globalpos.phi
-//	};
-//
-//	carmen_localize_ackerman_beta_prediction(beta_filter, robot_and_trailer_traj_point, car_config, semi_trailer_config, velodyne_message->timestamp - beta_filter->last_timestamp);
-
 	publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
 
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 	gps_xyz_correction(filter, velodyne_message->timestamp);
 
-//	carmen_localize_ackerman_beta_correction(beta_filter,
-//			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
-
 	publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 
 	if (filter->initialized)
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 
-//	if (beta_filter->initialized)
-//		carmen_localize_ackerman_summarize_beta(filter, &summary);
-
-	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
-	{
-		carmen_localize_ackerman_velodyne_resample(filter);
-
-//		carmen_localize_ackerman_beta_resample(beta_filter);
-	}
+	carmen_localize_ackerman_velodyne_resample(filter);
 
 	if (filter->initialized)
 	{
@@ -857,20 +834,6 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
 			publish_carmen_base_ackerman_odometry();
 
-//		static bool ft = true;
-//		static double init_t = 0.0;
-//		if (ft)
-//		{
-//			init_t = globalpos.timestamp;
-//			ft = false;
-//		}
-//
-//		FILE *caco = fopen("caco_gpos.txt", "a");
-//		fprintf(caco, "%lf %lf %lf %lf %lf\n", globalpos.timestamp - init_t, velodyne_message->timestamp - init_t,
-//				base_ackerman_odometry_vector[odometry_index].timestamp - init_t,
-//				base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
-//		fflush(caco);
-//		fclose(caco);
 	}
 
 	if (g_reinitiaze_particles)
@@ -946,7 +909,9 @@ velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *m
 static void
 localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *msg)
 {
-	int odometry_index, fused_odometry_index, instanteneous_maps_ok = 0;
+	// For lidars
+	int odometry_index, fused_odometry_index;
+	int instanteneous_maps_ok = 0;
 
 	odometry_index = get_base_ackerman_odometry_index_by_timestamp(msg->timestamp);
 	fused_odometry_index = get_fused_odometry_index_by_timestamp(msg->timestamp);
@@ -956,7 +921,8 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 		publish_globalpos_on_mapping_mode(&fused_odometry_vector[fused_odometry_index], msg->timestamp);
 		return;
 	}
-	if (!necessary_maps_available || !global_localization_requested || ((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
+	if (!necessary_maps_available || !global_localization_requested || 
+	((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 	
 	carmen_current_semi_trailer_data_t semi_trailer_data =
@@ -981,29 +947,28 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 
 	carmen_localize_ackerman_velodyne_correction(filter, &localize_map, &local_compacted_map, &local_compacted_mean_remission_map,
 			&local_compacted_variance_remission_map, &binary_map);
-	gps_xyz_correction(filter, msg->timestamp);
+	// gps_xyz_correction(filter, msg->timestamp);
 
 	publish_particles_correction(filter, &summary, msg->timestamp);
 	
 	if (filter->initialized)
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 
-	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
-	{
-		carmen_localize_ackerman_velodyne_resample(filter);
-	}
-	// printf("localize_ackerman: filter->initialized %s\n", filter->initialized ? "true": "false");
+	carmen_localize_ackerman_velodyne_resample(filter);
+	
 	if (filter->initialized)
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,	msg->timestamp);
-
+		// printf("localize_ackerman: filter->initialized %s\n", filter->initialized ? "true": "false");
 		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
 			publish_carmen_base_ackerman_odometry();
 	}
 	
-	if (g_reinitiaze_particles)
+	if (g_reinitiaze_particles){
+		// printf("localize_using_lidar: g_reinitiaze_particles %d\n", g_reinitiaze_particles);
 		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
+	}
 }
 
 void
