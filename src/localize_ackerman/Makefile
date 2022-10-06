@@ -65,11 +65,11 @@ TARGETS = libprob_models.a libgl_plotter.a localize_ackerman liblocalize_ackerma
 ifndef NO_GRAPHICS
 #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
 IFLAGS += \
-	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --cflags gtk+-3.0 gmodule-export-2.0` \
 	`pkg-config --cflags gtkglext-1.0`
 LFLAGS += \
 	-lglobal_graphics \
-	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --libs gtk+-3.0 gmodule-export-2.0` \
 	`pkg-config --libs gtkglext-1.0`
 endif
 

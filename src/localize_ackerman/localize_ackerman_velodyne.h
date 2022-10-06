@@ -17,11 +17,13 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 int
-localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *msg, sensor_parameters_t *sensor_params,
+localize_ackerman_variable_scan_build_instanteneous_maps(carmen_compact_map_t *local_compacted_map,
+		carmen_compact_map_t *local_compacted_mean_remission_map, carmen_map_t *local_map, carmen_velodyne_variable_scan_message *msg, sensor_parameters_t *sensor_params,
 		sensor_data_t *sensor_data, double v, double phi, carmen_current_semi_trailer_data_t semi_trailer_data);
 
 int
-localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *msg, sensor_parameters_t *sensor_params,
+localize_ackerman_variable_scan_build_instanteneous_maps(carmen_compact_map_t *local_compacted_map,
+		carmen_compact_map_t *local_compacted_mean_remission_map, carmen_map_t *local_map, carmen_velodyne_variable_scan_message *msg, sensor_parameters_t *sensor_params,
 		sensor_data_t *sensor_data, double v, double phi,
 		double map_center_x, double map_center_y, carmen_current_semi_trailer_data_t semi_trailer_data);
 

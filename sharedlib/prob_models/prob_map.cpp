@@ -1503,11 +1503,11 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 //	double p_0;
 	double sigma;
 	previous_ray_index = ray_index - 1;
-	if (sensor_params->use_index_difference && ray_index < sensor_params->ray_index_difference + 4){
-		ray_index = ray_index + sensor_params->ray_index_difference + 4;
+	if (sensor_params->use_index_difference && ray_index < sensor_params->ray_index_difference + 15){
+		ray_index = ray_index + sensor_params->ray_index_difference + 15;
 		previous_ray_index = ray_index - sensor_params->ray_index_difference;
 	}
-	if (sensor_params->use_index_difference && previous_ray_index > sensor_params->ray_index_difference + 4){
+	if (sensor_params->use_index_difference && previous_ray_index > sensor_params->ray_index_difference + 15){
 		previous_ray_index = ray_index - sensor_params->ray_index_difference;	//DeepMapper
 	}
 	if (previous_ray_index < 0)

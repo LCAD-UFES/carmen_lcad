@@ -281,10 +281,13 @@ variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_m
 			points->sphere_points[i * vertical_resolution + j].horizontal_angle = carmen_normalize_theta(-angle);
 			points->sphere_points[i * vertical_resolution + j].vertical_angle = carmen_degrees_to_radians(vertical_correction[j]);
 			points->sphere_points[i * vertical_resolution + j].length = range;
-			
-			if (use_remission)
-				intensity[i * vertical_resolution + j] = msg->partial_scan[i].intensity[ray_order[j]];
 		}
+	}
+	if (use_remission)
+	{
+		for (int i = 0; i < msg->number_of_shots; i++)
+			for (int j = 0; j < vertical_resolution; j++)
+				intensity[i * vertical_resolution + j] = msg->partial_scan[i].intensity[ray_order[j]];
 	}
 }
 
