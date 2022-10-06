@@ -1520,8 +1520,8 @@ namespace View
 			truepose_with_beta.trailer_theta[z] = globalpos->trailer_theta[z];
 
 		truepose_with_beta.trailer_theta[0] = globalpos->trailer_theta[0];		// remover esta linha quando o beta da truepos estiver tratado!!
-//		printf("Here %d %f\n", __LINE__, truepose_with_beta.trailer_theta[0] );
 		simulator_trueposition.pose = truepose_with_beta;
+//		printf("Here %d %f\n", __LINE__, truepose_with_beta.trailer_theta[0] );
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
 		last_simulator_update  = carmen_get_time();
 		display_needs_updating = 1;
@@ -1812,9 +1812,9 @@ namespace View
 				final_goal.pose.x = destination.x;
 				final_goal.pose.y = destination.y;
 				final_goal.pose.theta = destination.theta;
-				final_goal.pose.num_trailers = 0;
+				final_goal.pose.num_trailers = 1;
 				for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-					final_goal.pose.trailer_theta[z] = 0.0;
+					final_goal.pose.trailer_theta[z] = final_goal.pose.theta;
 
 				final_goal.map = this->controls_.map_view->internal_map;
 
@@ -2450,8 +2450,7 @@ namespace View
 			angle = atan2(world_point->pose.y - (robot_temp.pose.y - semi_trailer_config->semi_trailers.M * sin(robot_temp.pose.theta)),
 					world_point->pose.x - (robot_temp.pose.x - semi_trailer_config->semi_trailers.M * cos(robot_temp.pose.theta)));
 //			robot_temp.pose.trailer_theta[0] = carmen_normalize_theta(robot_temp.pose.theta - angle);
-			robot_temp.pose.trailer_theta[0] = carmen_normalize_theta(angle); // Sem modificação no comportamento
-			printf("trailer_theta: %f\trobot_theta: %f\n", robot_temp.pose.trailer_theta[0], robot_temp.pose.theta );
+			robot_temp.pose.trailer_theta[0] = carmen_normalize_theta(angle);
 			navigator_update_robot(&robot_temp);
 
 			return TRUE;
@@ -2847,6 +2846,9 @@ namespace View
 			final_goal.pose.y = world_point->pose.y;
 			final_goal.pose.theta = world_point->pose.theta;
 			final_goal.pose.trailer_theta[0] = world_point->pose.theta;
+		for (size_t z = 1; z < final_goal.pose.num_trailers; z++)
+			final_goal.pose.trailer_theta[z] = world_point->pose.theta;
+
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 			placement_status = ORIENTING_FINAL_GOAL;
@@ -2914,7 +2916,6 @@ namespace View
 			final_goal.pose.trailer_theta[0] = carmen_normalize_theta(atan2(world_point->pose.y - (final_goal.pose.y - semi_trailer_config->semi_trailers.M * sin(final_goal.pose.theta)),
 					world_point->pose.x - (final_goal.pose.x - semi_trailer_config->semi_trailers.M * cos(final_goal.pose.theta))));
 
-			printf("Gtrailer_theta: %f\trobot_theta: %f\n", final_goal.pose.trailer_theta[0], final_goal.pose.theta );
 
 			int half_meters_to_goal = 2 * DIST2D(world_point->pose, final_goal.pose);
 //			if (use_route_planner_in_graph_mode == 0)
@@ -3175,10 +3176,10 @@ namespace View
 	{
 		carmen_world_robot_and_trailer_pose_t robot_with_beta;
 		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, globalpos->num_trailers, {0.0}};
+//		for (size_t z = 0; z < globalpos->num_trailers; z++)
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 			robot_with_beta.pose.trailer_theta[z] = globalpos->trailer_theta[z];
 
-//		printf("Here %d %f\n", __LINE__, robot_with_beta.pose.trailer_theta[0]);
 
 		robot_with_beta.map = robot.map;
 
