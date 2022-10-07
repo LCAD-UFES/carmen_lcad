@@ -56,6 +56,9 @@
 #define CONTROLLER_STATUS_UPDATE_RATE_HZ		5.0
 #define CONTROLLER_STATUS_QUEUE_SIZE			1
 #define CONTROLLER_STATUS_PRESENCE_VECTOR	0
+#define VELOCITY_CONVERSION_CONSTANT 	5000.0
+#define ANGLE_CONVERSION_CONSTANT 		2000.0
+
 
 typedef struct
 {
@@ -91,18 +94,9 @@ int gear_can_command = 0;
 double wheel_speed_moving_average(double *wheel_speed);
 
 
-void send_gear(int gear_can_command)
-{
-	struct can_frame frame;
-	frame.can_id = 0x405;
-	frame.can_dlc = 1;
-	frame.data[0] = gear_can_command;
-	if (out_can_sockfd != -1)
-		send_frame(out_can_sockfd, &frame);
-}
-
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
+	/*
 	struct can_frame frame;
 	frame.can_id = 0x480;
 	frame.can_dlc = 4;
@@ -147,9 +141,26 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 
 	frame.data[2] = steering_byte0; // Steering
 	frame.data[3] = steering_byte1; // Steering
+	*/
+	struct can_frame frame;
 
-	if (out_can_sockfd != -1)
-		send_frame(out_can_sockfd, &frame);
+	if (out_can_sockfd == -1)
+		return;
+
+	frame.can_id = 0x425;
+	frame.can_dlc = 2;
+	int int_velocity =  throttle_effort  * VELOCITY_CONVERSION_CONSTANT;
+	frame.data[0] = (__u8) ((int_velocity >> 8) & 0xff);
+	frame.data[1] = (__u8) int_velocity & 0xff;
+	send_frame(out_can_sockfd, &frame);
+
+	frame.can_id = 0x80;
+	frame.can_dlc = 2;
+	int int_phi =  steering_effort * ANGLE_CONVERSION_CONSTANT;
+	frame.data[0] = (__u8) ((int_phi >> 8) & 0xff);
+	frame.data[1] = (__u8) int_phi & 0xff;
+	send_frame(out_can_sockfd, &frame);
+
 }
 
 void pdProcessMessage(OjCmpt pd, JausMessage message)
@@ -554,8 +565,6 @@ void pdReadyState(OjCmpt pd)
 	data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
 	pdSendReportComponentStatus(pd);
 
-	if (gear_can_command)
-		send_gear(gear_can_command);
 }
 
 OjCmpt pdCreate(void)

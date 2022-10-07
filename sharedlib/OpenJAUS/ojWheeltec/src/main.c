@@ -466,11 +466,11 @@ void update_Car_state(struct can_frame frame)
 
 void update_Torc_state(struct can_frame frame)
 {
-	if (frame.can_id == 0x600) // Botao amarelo
-		update_manual_override_and_safe_stop(frame);
+	if (frame.can_id == 0x425) // Velocidade da IARA. Frequencia de 60Hz no Ford Escape Hybrid
+		update_car_speed(frame);
 
-	if (frame.can_id == 0x113) // Calibrar volante
-		perform_steering_wheel_calibration(frame);
+	if (frame.can_id == 0x80) // Angulo do volante
+		update_steering_angle(frame);
 }
 
 void *can_in_read_thread_func(void *unused)
@@ -491,14 +491,14 @@ void *can_in_read_thread_func(void *unused)
 
 void *can_out_read_thread_func(void *unused)
 {
-	struct can_frame frame;
+	//struct can_frame frame;
 
 	while (mainRunning)
 	{
 		if (out_can_sockfd != -1)
 		{
-			recv_frame(out_can_sockfd, &frame);
-			update_Torc_state(frame);
+	         //recv_frame(out_can_sockfd, &frame);
+			 //update_Torc_state(frame);
 		}
 	}
 
@@ -535,7 +535,6 @@ void calibrate_steering_wheel_zero_angle_state_machine()
 			state = WAIT_SENSOR_RESET;
 
 		send_efforts(0.0, 0.0, 100.0);
-		send_gear(0x02); // Neutral
 
 		last_annotated_time = ojGetTimeSec();
 	}
@@ -561,7 +560,6 @@ void calibrate_steering_wheel_zero_angle_state_machine()
 		else
 		{
 			send_efforts(0.0, 0.0, -80.0);
-			send_gear(0x02); // Neutral
 		}
 	}
 }
@@ -596,7 +594,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	if (state == MOVE_COUNTER_CLOCKWISE0)
 	{
 		send_efforts(0.0, 0.0, -100.0);
-		send_gear(0x02); // Neutral
 		if ((fabs(steering_angle) > LARGE_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			delta_t_counter_clockwise = ojGetTimeSec() - last_annotated_time;
@@ -609,7 +606,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		if ((fabs(steering_angle) < SMALL_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			send_efforts(0.0, 0.0, 0.0);
-			send_gear(0x02); // Neutral
 
 			if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT)
 			{
@@ -620,13 +616,11 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		else
 		{
 			send_efforts(0.0, 0.0, -steering_angle * PROPORTIONAL_CONSTANT_KP);
-			send_gear(0x02); // Neutral
 		}
 	}
 	if (state == MOVE_CLOCKWISE)
 	{
 		send_efforts(0.0, 0.0, 100.0);
-		send_gear(0x02); // Neutral
 		if ((fabs(steering_angle) > LARGE_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			delta_t_clockwise = ojGetTimeSec() - last_annotated_time;
@@ -639,7 +633,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		if ((fabs(steering_angle) < SMALL_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			send_efforts(0.0, 0.0, 0.0);
-			send_gear(0x02); // Neutral
 
 			if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT)
 			{
@@ -650,13 +643,11 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		else
 		{
 			send_efforts(0.0, 0.0, -steering_angle * PROPORTIONAL_CONSTANT_KP);
-			send_gear(0x02); // Neutral
 		}
 	}
 	if (state == MOVE_COUNTER_CLOCKWISE)
 	{
 		send_efforts(0.0, 0.0, -100.0);
-		send_gear(0x02); // Neutral
 		if ((fabs(steering_angle) > LARGE_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			delta_t_counter_clockwise = ojGetTimeSec() - last_annotated_time;
