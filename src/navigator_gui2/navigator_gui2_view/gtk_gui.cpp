@@ -3176,8 +3176,8 @@ namespace View
 	{
 		carmen_world_robot_and_trailer_pose_t robot_with_beta;
 		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, globalpos->num_trailers, {0.0}};
-//		for (size_t z = 0; z < globalpos->num_trailers; z++)
-		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		for (size_t z = 0; z < globalpos->num_trailers; z++)
+//		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 			robot_with_beta.pose.trailer_theta[z] = globalpos->trailer_theta[z];
 
 
