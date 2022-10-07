@@ -147,18 +147,20 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	if (out_can_sockfd == -1)
 		return;
 
-	frame.can_id = 0x425;
-	frame.can_dlc = 2;
-	int int_velocity =  throttle_effort  * VELOCITY_CONVERSION_CONSTANT;
-	frame.data[0] = (__u8) ((int_velocity >> 8) & 0xff);
-	frame.data[1] = (__u8) int_velocity & 0xff;
-	send_frame(out_can_sockfd, &frame);
+	frame.can_id = 0x100;
+	frame.can_dlc = 4;
+	int int_velocity = (throttle_effort / 100.0) * VELOCITY_CONVERSION_CONSTANT * 2.3;
+	if (gear_can_command == 0x1)
+		int_velocity = -int_velocity;
+	frame.data[1] = (__u8) ((int_velocity >> 8) & 0xff);
+	frame.data[0] = (__u8) int_velocity & 0xff;
+//	send_frame(out_can_sockfd, &frame);
 
-	frame.can_id = 0x80;
-	frame.can_dlc = 2;
-	int int_phi =  steering_effort * ANGLE_CONVERSION_CONSTANT;
-	frame.data[0] = (__u8) ((int_phi >> 8) & 0xff);
-	frame.data[1] = (__u8) int_phi & 0xff;
+//	frame.can_id = 0x80;
+//	frame.can_dlc = 2;
+	int int_phi =  (steering_effort / 100.0) * ANGLE_CONVERSION_CONSTANT;
+	frame.data[3] = (__u8) ((int_phi >> 8) & 0xff);
+	frame.data[2] = (__u8) int_phi & 0xff;
 	send_frame(out_can_sockfd, &frame);
 
 }
