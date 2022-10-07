@@ -966,6 +966,14 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailer_traj_poi
 	static double kp = 1.0;
 	static int damping_frequency = 13;//20	;
 	static bool first_stage_passed = false;
+	int index_number_to_start_acceleration_stage = 500;
+	int index_number_to_detect_if_moving_obstacle_is_far_or_close = 100;
+	int damping_frequency_to_moving_obstacle_close = 1;
+	int damping_frequency_to_moving_obstacle_far_for_first_time = 100;
+	int damping_frequency_to_moving_obstacle_far_for_second_or_beyond_time = 30;
+	double deceleration_constant_to_moving_obstacle_close = 0.0001;
+	double deceleration_constant_to_moving_obstacle_far = 0.0010;
+	double acceleration_constant = 0.0001;
 
 	FILE *caco = fopen("caco.txt", "a");
 
@@ -975,19 +983,16 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailer_traj_poi
 
 		if((distance - desired_distance) > 980 && i > 100)
 		{
-				i = 0;
-				damping_frequency = 1;
-				fprintf(caco, "LOOP DE NOVO\n");
-				first_stage_passed = false;
-				if(goal->v > 8.0)
-					goal->v = 8.0;
-				//return (goal->v);
+			i = 0;
+			damping_frequency = 1;
+			fprintf(caco, "LOOP DE NOVO\n");
+			first_stage_passed = false;
+			if(goal->v > 8.0)
+				goal->v = 8.0;
 		}
 
 	}
-	/*if(first_stage_passed == false)
-		if(goal_type != NONE)
-			return (goal->v);*/
+
 
 
 	if (goal->v > moving_obj_v)
@@ -1013,26 +1018,22 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailer_traj_poi
 	//if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))
 	goal->v = new_goal_v; //carmen_fmin(new_goal_v, goal->v);
 
-	//fprintf(caco, "GOAL %d \n", goal_type);
-
-
-
-
-	if(i < 500)
+	if(i < index_number_to_start_acceleration_stage)
 	{
-		if(i == 100)
+		if(i == index_number_to_detect_if_moving_obstacle_is_far_or_close)
 		{
+
 			if((distance - desired_distance) > 986)
 			{
-				damping_frequency = 1;
+				damping_frequency = damping_frequency_to_moving_obstacle_close;
 			}else
 			{
-				if(damping_frequency != 1)
+				if(damping_frequency != damping_frequency_to_moving_obstacle_close)
 				{
-					damping_frequency = 100;
+					damping_frequency = damping_frequency_to_moving_obstacle_far_for_first_time;
 				}else
 				{
-					damping_frequency = 30;
+					damping_frequency = damping_frequency_to_moving_obstacle_far_for_second_or_beyond_time;
 				}
 			}
 		}
@@ -1041,23 +1042,19 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailer_traj_poi
 		{
 			if(goal->v > 4.6)
 			{
-				//fprintf(caco, "%d\n", dampinmake cg_frequency);
-				if(damping_frequency != 1)
+				if(damping_frequency != damping_frequency_to_moving_obstacle_close)
 				{
-					Kgap = Kgap - 0.0010;
+					Kgap = Kgap - deceleration_constant_to_moving_obstacle_far;
 				}else
 				{
-					//fprintf(caco, "DESACELERIE\n");
-					Kgap = Kgap - 0.0001;
+					Kgap = Kgap - deceleration_constant_to_moving_obstacle_close;
 				}
 			}
 		}
 	}else
 	{
-
-			if(i % 1 == 0 && goal->v < 8.5)
-				Kgap = Kgap + 0.0001;
-
+		if(goal->v < 8.5)
+			Kgap = Kgap + acceleration_constant;
 	}
 	i++;
 	if(goal->v < 0.0)
