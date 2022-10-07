@@ -197,7 +197,6 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 		msg.path[i].phi = it->command.phi;
 		msg.path[i].time = it->time;
 
-//		printf("MPP: %d %f %f %f %f\n", i, msg.path[i].p1.theta, msg.path[i].p1.trailer_theta[0], msg.path[i].p2.theta, msg.path[i].p2.trailer_theta[0]);
 	}
 
 	Publisher_Util::publish_rrt_path_message(&msg);

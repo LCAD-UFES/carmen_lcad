@@ -2015,7 +2015,7 @@ carmen_line_to_point_crossed_rectangle(carmen_position_t *nearest_intersection, 
 }
 
 double
-convert_theta1_to_beta(double theta, double theta1)
+convert_theta1_to_beta(double theta, double theta1) // Função para realizar a conversão entre o theta1 (orientação global de um semi_trailer) para beta (orientação local de um semi_trailer, relativo ao carro)
 {
     double ret = M_PI - (fmod(fabs(theta - theta1), 2*M_PI) - M_PI);
     if (theta1 < theta)

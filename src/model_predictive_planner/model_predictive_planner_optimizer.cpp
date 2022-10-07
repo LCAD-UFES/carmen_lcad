@@ -810,9 +810,7 @@ move_path_to_current_robot_pose(vector<carmen_robot_and_trailers_path_point_t> &
 		it->x = x;
 		it->y = y;
 		it->theta = carmen_normalize_theta(it->theta + localizer_pose->theta);
-//		printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, it->trailer_theta[0], it->theta);
 		it->trailer_theta[0] = convert_beta_to_theta1(it->theta, it->trailer_theta[0]);
-//		printf("%d %s %f %f\t\tt\n", __LINE__, __FILE__, it->trailer_theta[0], it->theta);
 	}
 }
 
@@ -1190,16 +1188,13 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 			point_to_check.trailer_theta[z] = path[i].trailer_theta[z];
 
-//		printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, point_to_check.trailer_theta[0], point_to_check.theta); // Confirmado beta
 		point_to_check.trailer_theta[0] = convert_beta_to_theta1(point_to_check.theta, point_to_check.trailer_theta[0]);
-//		printf("%d %s %f %f\t\tt\n", __LINE__, __FILE__, point_to_check.trailer_theta[0], point_to_check.theta); // Confirmado theta
 
 		GlobalState::localizer_pose->trailer_theta[0] = convert_beta_to_theta1(GlobalState::localizer_pose->theta, GlobalState::localizer_pose->trailer_theta[0]);
 
 		double proximity_point = carmen_obstacle_avoider_proximity_to_obstacles(GlobalState::localizer_pose,
 				point_to_check, GlobalState::distance_map, safety_distance);
 		point_to_check.trailer_theta[0] = convert_theta1_to_beta(point_to_check.theta, point_to_check.trailer_theta[0]);
-//		printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, point_to_check.trailer_theta[0], point_to_check.theta); //Confirmado beta
 		GlobalState::localizer_pose->trailer_theta[0] = convert_theta1_to_beta(GlobalState::localizer_pose->theta, GlobalState::localizer_pose->trailer_theta[0]);
 
 		proximity_to_obstacles_for_path += proximity_point;
@@ -1256,9 +1251,7 @@ compute_semi_trailer_to_goal_distance(vector<carmen_robot_and_trailers_path_poin
 	carmen_robot_and_trailers_pose_t expected_robot_pose = target_td->goal_pose;
 
 	carmen_point_t semi_trailer_pose, expected_semi_trailer_pose;
-//	printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, robot_pose.trailer_theta[0], robot_pose.theta);
 
-//	printf("%d %s %f %f\t\tb\n", __LINE__, __FILE__, expected_robot_pose.trailer_theta[0], expected_robot_pose.theta);
 
 
 	semi_trailer_pose.x = robot_pose.x - GlobalState::semi_trailer_config.semi_trailers.M * cos(robot_pose.theta) - GlobalState::semi_trailer_config.semi_trailers.d * cos(robot_pose.theta - robot_pose.trailer_theta[0]); // De acordo com o que percebi, esse trailer_theta que o mpp utiliza é o "beta", ou seja, já está referente ao theta do carro

@@ -173,7 +173,6 @@ move_lane_to_robot_reference_system(carmen_robot_and_trailers_pose_t *localizer_
 		vector<carmen_robot_and_trailers_path_point_t> *lane_in_local_pose)
 {
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
-//	printf("%d %f %f\t\tt\n", __LINE__, localizer_pose->trailer_theta[0], localizer_pose->theta);
 	move_poses_foward_to_local_reference(robot_pose, localizer_pose->trailer_theta[0], path_goals_and_annotations_message, lane_in_local_pose);
 }
 
@@ -238,8 +237,6 @@ add_points_to_goal_list_interval(carmen_robot_and_trailers_path_point_t p1, carm
 	double delta_y = (p2.y - p1.y) / (double) num_points;
 	double delta_theta = carmen_normalize_theta(p2.theta - p1.theta) / (double) num_points;
 	double delta_beta = carmen_normalize_theta(p2.trailer_theta[0] - p1.trailer_theta[0]) / (double) num_points;
-//	printf("%d %f %f\t\tt\n", __LINE__, p1.trailer_theta[0], p1.theta);
-//	printf("%d %f %f\t\tt\n", __LINE__, p2.trailer_theta[0], p2.theta);
 
 	carmen_robot_and_trailers_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.num_trailers, {0.0}, p1.v, p1.phi, 0.0}; // necessario para capturar v e phi
 
@@ -474,7 +471,6 @@ path_has_collision_or_phi_exceeded(vector<carmen_robot_and_trailers_path_point_t
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 		localizer.trailer_theta[z] = GlobalState::localizer_pose->trailer_theta[z];
 
-//	printf("%d %f %f\t\tt\n", __LINE__, localizer.trailer_theta[0], localizer.theta); // Confirmado theta
 
 	double max_circle_invasion;
 	for (int j = 0; j < 1; j++)
@@ -762,7 +758,6 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailers_pose_t *loc
 	td.goal_pose.y = goal_in_car_reference[1];
 	td.goal_pose.theta = goal_in_car_reference[2];
 	td.goal_pose.trailer_theta[0] = goal_pose->beta; // Confirmado beta
-//	printf("%d %f %f\t\tb\n", __LINE__, td.goal_pose.trailer_theta[0], td.goal_pose.theta); // Incerto
 
 
 	return (td);
