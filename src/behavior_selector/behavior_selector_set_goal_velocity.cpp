@@ -966,7 +966,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailer_traj_poi
 	static double kp = 1.0;
 	static int damping_frequency = 13;//20	;
 	static bool first_stage_passed = false;
-	int index_number_to_start_acceleration_stage = 500;
+	int index_number_to_start_acceleration_stage = 400;
 	int index_number_to_detect_if_moving_obstacle_is_far_or_close = 100;
 	int damping_frequency_to_moving_obstacle_close = 1;
 	int damping_frequency_to_moving_obstacle_far_for_first_time = 100;
