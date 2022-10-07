@@ -835,3 +835,5 @@ src/virtual_depth_estimator/virtual_lidar
 src/virtual_depth_estimator/DPT/.pylintrc
 tmp/loops.txt
 src/virtual_depth_estimator/stereo_velodyne_dpt
+data/mapper_deepmapper/*
+data/mapper_teste_sanity/*
