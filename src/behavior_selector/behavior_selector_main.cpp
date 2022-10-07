@@ -87,7 +87,7 @@ static int activate_tracking = 0;
 bool keep_speed_limit = false;
 double last_speed_limit;
 
-int behavior_selector_use_symotha = 0;
+int behavior_selector_use_symotha = 1;
 double obstacle_probability_threshold 	= 0.5;
 double min_moving_object_velocity 		= 0.3;
 double max_moving_object_velocity 		= 150.0 / 3.6; // 150 km/h

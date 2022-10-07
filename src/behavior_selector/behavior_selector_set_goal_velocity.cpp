@@ -795,6 +795,7 @@ set_goal_velocity_according_to_obstacle_distance(carmen_robot_and_trailer_traj_p
 	double tmp = carmen_fmin(
 				get_velocity_at_goal(current_robot_pose_v_and_phi->v, 0.0, distance_to_obstacle, distance_to_obstacle),
 				fabs(goal->v));
+
 	if (goal->v < 0.0)
 		goal->v = -tmp;
 	else
@@ -959,27 +960,119 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailer_traj_poi
 	double moving_obj_v = datmo_speed_front();
 
 	// ver "The DARPA Urban Challenge" book, pg. 36.
-	double Kgap = 0.1;
+	static double Kgap = 0.0085; //0.1; //0.0085;
+	static int i = 0;
 	double new_goal_v;
+	static double kp = 1.0;
+	static int damping_frequency = 13;//20	;
+	static bool first_stage_passed = false;
+
+	FILE *caco = fopen("caco.txt", "a");
+
+	if(first_stage_passed == true)
+	{
+		fprintf(caco, "ENTREI\n");
+
+		if((distance - desired_distance) > 980 && i > 100)
+		{
+				i = 0;
+				damping_frequency = 1;
+				fprintf(caco, "LOOP DE NOVO\n");
+				first_stage_passed = false;
+				if(goal->v > 8.0)
+					goal->v = 8.0;
+				//return (goal->v);
+		}
+
+	}
+	/*if(first_stage_passed == false)
+		if(goal_type != NONE)
+			return (goal->v);*/
+
+
 	if (goal->v > moving_obj_v)
+	{
+		//fprintf(caco, "%lf %lf\n", moving_obj_v, (distance - desired_distance));
 		new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
-	else
-		new_goal_v = goal->v;
-	SampleFilter_put(&filter2, new_goal_v);
-	new_goal_v = SampleFilter_get(&filter2);
+	}else
+	{
+		new_goal_v = goal->v * kp;
+	}
+	/*SampleFilter_put(&filter2, new_goal_v);
+	new_goal_v = SampleFilter_get(&filter2);*/
 	if (new_goal_v < 0.0)
 		new_goal_v = 0.0;
+	if((distance - desired_distance) < 970.0)
+	{
+		first_stage_passed = true;
+	}
 
-	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))
-		goal->v = carmen_fmin(new_goal_v, goal->v);
+	//fprintf(caco, "DISTANCIA %lf %lf\n", (distance - desired_distance), carmen_get_time());
 
-//	FILE *caco = fopen("caco.txt", "a");
-//	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %lf %lf %lf %d\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
-//			desired_distance, autonomous, goal_type,
-//			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
-//	fflush(caco);
-//	fclose(caco);
 
+	//if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))
+	goal->v = new_goal_v; //carmen_fmin(new_goal_v, goal->v);
+
+	//fprintf(caco, "GOAL %d \n", goal_type);
+
+
+
+
+	if(i < 500)
+	{
+		if(i == 100)
+		{
+			if((distance - desired_distance) > 986)
+			{
+				damping_frequency = 1;
+			}else
+			{
+				if(damping_frequency != 1)
+				{
+					damping_frequency = 100;
+				}else
+				{
+					damping_frequency = 30;
+				}
+			}
+		}
+
+		if(i % damping_frequency == 0)
+		{
+			if(goal->v > 4.6)
+			{
+				//fprintf(caco, "%d\n", dampinmake cg_frequency);
+				if(damping_frequency != 1)
+				{
+					Kgap = Kgap - 0.0010;
+				}else
+				{
+					//fprintf(caco, "DESACELERIE\n");
+					Kgap = Kgap - 0.0001;
+				}
+			}
+		}
+	}else
+	{
+
+			if(i % 1 == 0 && goal->v < 8.5)
+				Kgap = Kgap + 0.0001;
+
+	}
+	i++;
+	if(goal->v < 0.0)
+		goal->v = 0.0;
+	if(goal->v > 8.3)
+	{
+		goal->v = 8.3;
+	}
+	fprintf(caco, "DEPOIS %lf %lf\n", 3.6 * goal->v, carmen_get_time());
+	fprintf(caco, "INDICE i %d\n", i);
+	fflush(caco);
+	fclose(caco);
+
+	if((distance - desired_distance) >= 986.0 && damping_frequency != 13)
+		first_stage_passed = true;
 	return (goal->v);
 }
 
@@ -1107,6 +1200,7 @@ set_goal_velocity(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = MOVING_OBSTACLE;
+	if (goal_type == OBSTACLE_GOAL)
 
 	previous_v = goal->v; //@@@Vinicius Nao fiz nada, apenas coloca o goal pra zero
 	goal->v = set_goal_velocity_according_to_general_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type,
