@@ -37,6 +37,10 @@ using namespace std;
 using namespace g2o;
 
 
+#define _SEED_RAND 1
+
+int n_iterations = 50;
+
 class Line
 {
 	public:
@@ -190,6 +194,8 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 	FILE *caco = fopen("caco.txt", "w");
 	for (i = 0; i < input_data.size(); i++)
 	{
+		//TODO @@@VINICIUS Necessario invesitgar porque a orientacao inicial do gps esta dando problema
+//		double gps_yaw = input_data[i].odom[2]; //Descomentar essa linha e comentar a de baixo caso a orientação inicial do GPS esteja com problema
 		double gps_yaw = input_data[i].gps[2];
 		double gps_x = input_data[i].gps[0] - input_data[0].gps[0];
 		double gps_y = input_data[i].gps[1] - input_data[0].gps[1];
@@ -529,6 +535,8 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 		int argc, char **argv)
 {
 	srand(time(NULL));
+	if (_SEED_RAND)
+		srand(42);
 
 	CarmenParamFile *params = new CarmenParamFile(carmen_ini_file);
 	tf::Transformer *transformer = new tf::Transformer(false);
@@ -546,7 +554,7 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 
 	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
-	optimizer->optimize(50);
+	optimizer->optimize(n_iterations);
 	cerr << "OptimizationDone!" << endl;
 
 	save_corrected_vertices(optimizer);
@@ -563,6 +571,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add_positional<string>("carmen.ini", "Path to a file containing system parameters");
 	args->add_positional<string>("calibrated_odometry.txt", "Path to a file containing the odometry calibration data");
 	args->add_positional<string>("poses_opt.txt", "Path to a file in which the poses will be saved in graphslam format");
+	args->add<int>("n_iterations", "Number of iterations", 50);
 	args->add<double>("gps_xy_std_multiplier", "Multiplier of the standard deviation of the gps position (times meters)", 5.0);
 	args->add<double>("gps_yaw_std", "GPS yaw standard deviation (degrees)", 1000.0);
 	args->add<double>("odom_xy_std", "Odometry position (x, y) standard deviation (meters)", 0.1);
@@ -669,6 +678,7 @@ main(int argc, char **argv)
 	double odom_orient_std = carmen_degrees_to_radians(args.get<double>("odom_orient_std"));
 	double loop_xy_std = args.get<double>("loop_xy_std");
 	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
+	n_iterations = args.get<int>("n_iterations");
 
 	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
 

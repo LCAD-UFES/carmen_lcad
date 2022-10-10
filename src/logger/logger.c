@@ -856,7 +856,7 @@ void
 _increase_file(char *filename, char *outfile)
 {
     int inc = 1;
-    char token[1024], _token[1024], ext[8], _inc[8], __inc[8];
+    char token[1024], _token[1024], ext[8], _inc[4], __inc[4];
     // file extension
     char *_ext = strrchr(filename, '.');
     strcpy(ext, _ext);
@@ -869,11 +869,13 @@ _increase_file(char *filename, char *outfile)
     int hp = 0;
     int j = 0;
     i = strlen(_token) - 1;
-    for (; (i > 0) && isdigit(_token[i]); i--, j++)
+    for (; (i > 0) && isdigit(_token[i]) && (j < 3); i--, j++) // only 3-digit
         __inc[j] = _token[i];
     __inc[j] = '\0';
     if (_token[i] == '-')
         hp = 1;
+    else
+        __inc[0] = '\0';
     int n = strlen(__inc);
     for (j = 0; j < n; j++)
         _inc[j] = __inc[n - j - 1];

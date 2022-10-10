@@ -61,6 +61,8 @@ char variable_scan_message_name[64];
 double initial_time;
 double final_time;
 
+int VERBOSE = 0;
+
 
 template<class message_type> int
 find_nearest_message(vector<message_type> &queue, double reference_sensor_time, const char *sensor_name)
@@ -77,7 +79,7 @@ find_nearest_message(vector<message_type> &queue, double reference_sensor_time, 
 
 		if (time_diff > 0.0)
 		{
-			if (time_diff > 0.3)
+			if ((time_diff > 0.3) && VERBOSE)
 			{
 				printf("Warning %d: %s time_diff > 0.3\n", ++num_warnings, sensor_name);
 				fflush(stdout);
@@ -150,7 +152,7 @@ velodyne_handler(double velodyne_timestamp, double initial_timestamp, double fin
 
 			double gps_std = gps_queue_stds[gpsid];
 
-			if ((dt <= 0) || (dt_gps <= 0))
+			if (((dt <= 0) || (dt_gps <= 0)) && VERBOSE)
 				printf("** ERROR: (dt <= 0) || (dt_gps <= 0) in velodyne_handler()\n");
 
 			if (fabs(odometry_queue[odomid].v) > MIN_VELOCITY)
@@ -519,6 +521,8 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<int>("combined_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
 	args->add<int>("n_particles,n", "Number of particles", 500);
 	args->add<int>("n_iterations,i", "Number of iterations", 300);
+	args->add<double>("tol", "Maximum allowable tolerance", .0);
+	args->add<int>("max_iter_no_changes", "Maximum number of iterations without change", 9999);
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
 	args->add<int>("max_log_lines,m", "Maximum number of lines to read from the log file", -1);
 	args->add<int>("view", "Flag indicating if the visualization should run or not.", 1);

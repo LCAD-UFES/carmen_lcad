@@ -488,6 +488,8 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_15] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_20_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_20] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_25_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_25] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_30_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_30] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_40_15.png", carmen_home_path);
@@ -523,6 +525,36 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_RETARDER_BRAKE][RDDF_ANNOTATION_CODE_RETARDER_BRAKE_ON] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/retarder_warning_off_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_RETARDER_BRAKE][RDDF_ANNOTATION_CODE_RETARDER_BRAKE_OFF] = get_annotation_image(annotation_image_filename);
+
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_1.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_1] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_2.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_2] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_3.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_3] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_4.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_4] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_5.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_5] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_6.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_6] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_7.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_7] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_8.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_8] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_9.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_9] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_10.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_10] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_11.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_11] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_12.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_12] = get_annotation_image(annotation_image_filename);
+
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/queue.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_QUEUE][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/queue_buzy.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_QUEUE][RDDF_ANNOTATION_CODE_QUEUE_BUSY] = get_annotation_image(annotation_image_filename);
 
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
@@ -604,6 +636,7 @@ namespace View
 		controls_.labelOffRoadPlannerState = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerState" ));
 		controls_.labelOffRoadPlannerRequest = GTK_LABEL(gtk_builder_get_object(builder, "labelOffRoadPlannerRequest" ));
 		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
+		controls_.labelMode = GTK_LABEL(gtk_builder_get_object(builder, "labelMode" ));
 		controls_.labelDecisionMakingErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelDecisionMakingErrors" ));
 		controls_.labelBasicPerceptionErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelBasicPerceptionErrors" ));
 		controls_.labelLidarsErrors = GTK_LABEL(gtk_builder_get_object(builder, "labelLidarsErrors" ));
@@ -1019,10 +1052,13 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_errors(carmen_audit_status_message *message)
 	{
+		static char category[2048];
 		static char buffer[2048];
+		const char *format = "<span>%s</span><span foreground=\"red\">\%s</span>";
+		char *markup;
 
 		const char *pad = "";
-		sprintf(buffer, "Decision Making: ");
+		sprintf(category, "Decision Making: ");
 		if(message->decision_making_status & ROUTE_PLANNER_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "%sRP", pad);
@@ -1047,10 +1083,13 @@ namespace View
 			pad = ", ";
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelDecisionMakingErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelDecisionMakingErrors), markup);
 
+		sprintf(buffer, "%s", "");
 		pad = "";
-		sprintf(buffer, "Basic Perception: ");
+		sprintf(category, "Basic Perception: ");
+
 		if(message->basic_perception_status & LOCALIZER_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "%sLOC", pad);
@@ -1093,195 +1132,220 @@ namespace View
 			pad = ", ";
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelBasicPerceptionErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelBasicPerceptionErrors), markup);
 
-		sprintf(buffer, "Lidars: ");
-		if(message->lidar_status & LIDAR0_ERROR_INDEX)
+		sprintf(buffer, "%s", "");
+		pad = "";
+		sprintf(category, "Lidars: ");
+
+		if(message->lidar_status & LIDAR0_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "0 ");
 		}
 
-		if(message->lidar_status & LIDAR1_ERROR_INDEX)
+		if(message->lidar_status & LIDAR1_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "1 ");
 		}
 
-		if(message->lidar_status & LIDAR2_ERROR_INDEX)
+		if(message->lidar_status & LIDAR2_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "2 ");
 		}
 
-		if(message->lidar_status & LIDAR3_ERROR_INDEX)
+		if(message->lidar_status & LIDAR3_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "3 ");
 		}
 
-		if(message->lidar_status & LIDAR4_ERROR_INDEX)
+		if(message->lidar_status & LIDAR4_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "4 ");
 		}
 
-		if(message->lidar_status & LIDAR5_ERROR_INDEX)
+		if(message->lidar_status & LIDAR5_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "5 ");
 		}
 
-		if(message->lidar_status & LIDAR6_ERROR_INDEX)
+		if(message->lidar_status & LIDAR6_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "6 ");
 		}
 
-		if(message->lidar_status & LIDAR7_ERROR_INDEX)
+		if(message->lidar_status & LIDAR7_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "7 ");
 		}
 
-		if(message->lidar_status & LIDAR8_ERROR_INDEX)
+		if(message->lidar_status & LIDAR8_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "8 ");
 		}
 
-		if(message->lidar_status & LIDAR9_ERROR_INDEX)
+		if(message->lidar_status & LIDAR9_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "9 ");
 		}
 
-		if(message->lidar_status & LIDAR10_ERROR_INDEX)
+		if(message->lidar_status & LIDAR10_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "10 ");
 		}
 
-		if(message->lidar_status & LIDAR11_ERROR_INDEX)
+		if(message->lidar_status & LIDAR11_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "11 ");
 		}
 
-		if(message->lidar_status & LIDAR12_ERROR_INDEX)
+		if(message->lidar_status & LIDAR12_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "12 ");
 		}
 
-		if(message->lidar_status & LIDAR13_ERROR_INDEX)
+		if(message->lidar_status & LIDAR13_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "13 ");
 		}
 
-		if(message->lidar_status & LIDAR14_ERROR_INDEX)
+		if(message->lidar_status & LIDAR14_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "14 ");
 		}
 
-		if(message->lidar_status & LIDAR15_ERROR_INDEX)
+		if(message->lidar_status & LIDAR15_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "15 ");
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelLidarsErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelLidarsErrors), markup);
 
-		sprintf(buffer, "Cameras: ");
 
-		if(message->camera_status & CAMERA1_ERROR_INDEX)
+		sprintf(buffer, "%s", "");
+		pad = "";
+		sprintf(category, "Cameras: ");
+
+		if(message->camera_status & CAMERA1_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "1 ");
 		}
 
-		if(message->camera_status & CAMERA2_ERROR_INDEX)
+		if(message->camera_status & CAMERA2_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "2 ");
 		}
 
-		if(message->camera_status & CAMERA3_ERROR_INDEX)
+		if(message->camera_status & CAMERA3_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "3 ");
 		}
 
-		if(message->camera_status & CAMERA4_ERROR_INDEX)
+		if(message->camera_status & CAMERA4_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "4 ");
 		}
 
-		if(message->camera_status & CAMERA5_ERROR_INDEX)
+		if(message->camera_status & CAMERA5_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "5 ");
 		}
 
-		if(message->camera_status & CAMERA6_ERROR_INDEX)
+		if(message->camera_status & CAMERA6_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "6 ");
 		}
 
-		if(message->camera_status & CAMERA7_ERROR_INDEX)
+		if(message->camera_status & CAMERA7_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "7 ");
 		}
 
-		if(message->camera_status & CAMERA8_ERROR_INDEX)
+		if(message->camera_status & CAMERA8_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "8 ");
 		}
 
-		if(message->camera_status & CAMERA9_ERROR_INDEX)
+		if(message->camera_status & CAMERA9_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "9 ");
 		}
 
-		if(message->camera_status & CAMERA10_ERROR_INDEX)
+		if(message->camera_status & CAMERA10_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "10 ");
 		}
 
-		if(message->camera_status & CAMERA11_ERROR_INDEX)
+		if(message->camera_status & CAMERA11_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "11 ");
 		}
 
-		if(message->camera_status & CAMERA12_ERROR_INDEX)
+		if(message->camera_status & CAMERA12_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "12 ");
 		}
 
-		if(message->camera_status & CAMERA13_ERROR_INDEX)
+		if(message->camera_status & CAMERA13_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "13 ");
 		}
 
-		if(message->camera_status & CAMERA14_ERROR_INDEX)
+		if(message->camera_status & CAMERA14_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "14 ");
 		}
 
-		if(message->camera_status & CAMERA15_ERROR_INDEX)
+		if(message->camera_status & CAMERA15_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "15 ");
 		}
 
-		if(message->camera_status & CAMERA16_ERROR_INDEX)
+		if(message->camera_status & CAMERA16_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "16 ");
 		}
 
-		if(message->camera_status & CAMERA17_ERROR_INDEX)
+		if(message->camera_status & CAMERA17_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "17 ");
 		}
 
-		if(message->camera_status & CAMERA18_ERROR_INDEX)
+		if(message->camera_status & CAMERA18_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "18 ");
 		}
 
-		if(message->camera_status & CAMERA19_ERROR_INDEX)
+		if(message->camera_status & CAMERA19_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "19 ");
 		}
 
-		if(message->camera_status & CAMERA20_ERROR_INDEX)
+		if(message->camera_status & CAMERA20_ERROR)
 		{
 			sprintf(buffer + strlen(buffer), "20 ");
 		}
 
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelCamerasErrors), buffer);
+		markup = g_markup_printf_escaped(format, category, buffer);
+		gtk_label_set_markup(GTK_LABEL(this->controls_.labelCamerasErrors), markup);
 
+		sprintf(buffer, "%s", "");
+		g_free(markup);
+		do_redraw();
+	}
+
+	void
+	GtkGui::navigator_graphics_update_mode(int manual_override)
+	{
+		static char buffer[2048];
+
+		if(manual_override == 0)
+			sprintf(buffer, "Mode: %s", "Autonomous");
+		else
+			sprintf(buffer, "Mode: %s", "Manual");
+
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelMode), buffer);
 		do_redraw();
 	}
 
@@ -1655,6 +1719,9 @@ namespace View
 	GtkGui::get_algorithm_code(char *algorithm_name)
 	{
 		int code = -1;
+		if (nullptr == algorithm_name) // Aqui estava dando seg fault quando rodando o navigate no modo Park
+			return code;
+
 		if(strcmp(algorithm_name, "Gradient") == 0)
 			code =  CARMEN_BEHAVIOR_SELECTOR_GRADIENT;
 		else if(strcmp(algorithm_name, "A*") == 0)
@@ -4183,7 +4250,7 @@ namespace View
 	void
 	GtkGui::draw_gl_components_car_panel()
 	{
-		car_panel_gl->set_view(500, 250);
+		car_panel_gl->set_view(500, 240);
 		car_panel_gl->draw();
 	}
 

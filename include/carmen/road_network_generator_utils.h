@@ -183,6 +183,7 @@ void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordi
 lane_graph_t build_lane_graph (lane_graph_t lane_graph, graph_t &graph);
 vector<edge_t> build_graph_edges (vector<node_t> graph);
 graph_t build_graph(vector<string> files, graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, vector< vector<int> > &nearby_indexes, char* option);
+graph_t build_graph_new(graph_t &graph, vector<vector<carmen_rddf_waypoint> > &rddfs);
 void set_graph_lane_size(graph_t &graph, char *offline_map_dir);
 FILE *open_graph_file(char* graph_file, string option);
 graph_t read_graph_file (FILE *f_graph);

@@ -86,6 +86,24 @@ extern "C"
 	void
 	respond_route_list(carmen_position_t center, double range, int number_of_routes, route_t *routes);
 
+	void
+	carmen_route_planner_subscribe_node_ids_ahead_request_message(carmen_route_planner_node_ids_ahead_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+	void
+	carmen_route_planner_unsubscribe_node_ids_ahead_request_message(carmen_handler_t handler);
+
+	void
+	request_node_ids_ahead(carmen_point_t initial_point, double meters_ahead);
+
+	void
+	carmen_route_planner_subscribe_node_ids_ahead_response_message(carmen_route_planner_node_ids_ahead_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+	void
+	carmen_route_planner_unsubscribe_node_ids_ahead_response_message(carmen_handler_t handler);
+
+	void
+	respond_node_ids_ahead(carmen_point_t initial_point, double meters_ahead, int num_of_node_ids_ahead, int *node_ids_ahead);
+
 
 #ifdef __cplusplus
 }

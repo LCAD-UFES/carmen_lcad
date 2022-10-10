@@ -607,6 +607,7 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 			robot_pose.y = filter->particles[i].y;
 			robot_pose.theta = filter->particles[i].theta;
 
+			// printf("IMU: %lf\t%lf\n", v, phi);
 			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
 					fabs(filter->param->velocity_noise_phi * phi));
@@ -691,6 +692,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			robot_pose.y = filter->particles[i].y;
 			robot_pose.theta = filter->particles[i].theta;
 
+			// printf("odometry: %lf\t%lf\n", v, phi);
 			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
 					fabs(filter->param->velocity_noise_phi * phi) + filter->param->v_uncertainty_at_zero_v);
@@ -2391,15 +2393,12 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 				}
 				else
 				{
-					double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) /
-							(filter->param->remission_variance_multiplier * variance);
+					double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) / (filter->param->remission_variance_multiplier * variance);
+					double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
 					if (use_log_odds)
-					{
-						double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
 						temp_weights[i][laser_reading] = carmen_prob_models_probabilistic_to_log_odds(p);
-					}
 					else
-						temp_weights[i][laser_reading] = -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
+						temp_weights[i][laser_reading] = p;// -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
 				}
 				if (temp_weights[i][laser_reading] <= small_log_weight)
 					count[laser_reading] += 1;
@@ -2454,11 +2453,12 @@ localize_map_correlation_plus_mahalanobis_correction_with_remission_map_and_outl
 
 	double temp1 = filter->param->particles_normalize_factor;
 	filter->param->particles_normalize_factor = filter->param->remission_particles_normalize_factor;
-	filter->param->use_log_odds = 0;
+//	double temp2 = filter->param->use_log_odds;
+//	filter->param->use_log_odds = 0;
 	mahalanobis_distance_with_outlier_rejection(localize_map, local_mean_remission_map, filter);
 	filter->param->particles_normalize_factor = temp1;
 	convert_particles_log_odd_weights_to_prob(filter);
-	filter->param->use_log_odds = 1;
+//	filter->param->use_log_odds = temp2;
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 		filter->particles[i].weight = (map_correlation_weights[i] + filter->particles[i].weight) / 2.0;
@@ -3914,7 +3914,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	}
 
 	carmen_param_allow_unfound_variables(1);
-
+	double initial_angle_fastslam = 1000.0;
 	carmen_param_t param_optional_list[] =
 	{
 		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
@@ -3923,7 +3923,8 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
 		{(char *) "commandline", (char *) "save_globalpos_file", CARMEN_PARAM_STRING, &save_globalpos_file, 0, NULL},
-		{(char *) "commandline", (char *) "save_globalpos_timestamp", CARMEN_PARAM_DOUBLE, &save_globalpos_timestamp, 0, NULL}
+		{(char *) "commandline", (char *) "save_globalpos_timestamp", CARMEN_PARAM_DOUBLE, &save_globalpos_timestamp, 0, NULL},
+		{(char *) "commandline", (char *) "initial_angle", CARMEN_PARAM_DOUBLE, &initial_angle_fastslam, 0, NULL}, // only to avoid error
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

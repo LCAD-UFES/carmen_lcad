@@ -18,6 +18,8 @@ static carmen_velodyne_gps_message velodyne_gps;
 static int velodyne_scan_port;
 static int velodyne_gps_port;
 static int velodyne_gps_enabled;
+int use_variable_scan_message = 0;
+int sensor_id = -1;
 
 
 void assembly_velodyne_gps_message_from_gps(velodyne_driver::velodyne_gps_t gps)
@@ -87,37 +89,44 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 }
 
 
-// void
-// publish_velodyne_variable_scan()
-// {
-//     static bool first_time = true;
-// 	static carmen_velodyne_variable_scan_message msg;
+ void
+ publish_velodyne_variable_scan()
+ {
+    static bool first_time = true;
+ 	static carmen_velodyne_variable_scan_message variable_msg;
+ 	int shot_size = 32;
 
-// 	if (first_time)
-// 	{
-// 		msg.partial_scan = (carmen_velodyne_shot *) malloc ((4000 + 1) * sizeof(carmen_velodyne_shot));
-	
-//         for (int i = 0 ; i <= 4000; i++)
-//         {
-//             msg.partial_scan[i].shot_size = 32;
-//             msg.partial_scan[i].distance  = (unsigned short*) malloc (32 * sizeof(unsigned short));
-//             msg.partial_scan[i].intensity = (unsigned char*)  malloc (32 * sizeof(unsigned char));
-//         }
-//         msg.host = carmen_get_host();
-// 		first_time = false;
-// 	}
-// 	msg.number_of_shots = velodyne_partial_scan.number_of_32_laser_shots;
-	
-// 	for(int i = 0; i < velodyne_partial_scan.number_of_32_laser_shots; i++)
-// 	{
-// 		msg.partial_scan[i].distance = velodyne_partial_scan.partial_scan[i].distance;
-// 		msg.partial_scan[i].intensity = velodyne_partial_scan.partial_scan[i].intensity;
-// 		msg.partial_scan[i].angle = velodyne_partial_scan.partial_scan[i].angle;
-// 	}
-// 	msg.timestamp = velodyne_partial_scan.timestamp;
+ 	if (first_time)
+ 	{
+ 		variable_msg.partial_scan = (carmen_velodyne_shot *) malloc ((velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION) * sizeof(carmen_velodyne_shot));
 
-// 	carmen_velodyne_publish_variable_scan_message(&msg, 0);
-// }
+         for (int i = 0 ; i <= velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION; i++)
+         {
+        	 variable_msg.partial_scan[i].shot_size = shot_size;
+        	 variable_msg.partial_scan[i].distance  = (unsigned int*) malloc (shot_size * sizeof(unsigned int));
+        	 variable_msg.partial_scan[i].intensity = (unsigned short*)  malloc (shot_size * sizeof(unsigned short));
+         }
+         variable_msg.host = carmen_get_host();
+ 		first_time = false;
+ 	}
+
+ 	variable_msg.number_of_shots = velodyne_partial_scan.number_of_32_laser_shots;
+
+ 	for(int i = 0; i < velodyne_partial_scan.number_of_32_laser_shots; i++)
+ 	{
+ 		variable_msg.partial_scan[i].angle = velodyne_partial_scan.partial_scan[i].angle;
+ 		variable_msg.partial_scan[i].shot_size = shot_size;
+
+ 		for(int j = 0; j < shot_size; j++)
+ 		{
+ 			variable_msg.partial_scan[i].distance[j] = (unsigned int) velodyne_partial_scan.partial_scan[i].distance[j];
+ 			variable_msg.partial_scan[i].intensity[j] = (unsigned short) velodyne_partial_scan.partial_scan[i].intensity[j];
+ 		}
+ 	}
+ 	variable_msg.timestamp = velodyne_partial_scan.timestamp;
+
+ 	carmen_velodyne_publish_variable_scan_message(&variable_msg, sensor_id);
+ }
 
 
 /*********************************************************
@@ -147,6 +156,14 @@ int read_parameters(int argc, char **argv)
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
+	carmen_param_t param_optional_list[] =
+	{
+			{(char *) "commandline", (char *) "use_variable_scan", CARMEN_PARAM_ONOFF, &use_variable_scan_message, 0, NULL},
+			{(char *) "commandline", (char *) "sensor_id", CARMEN_PARAM_INT, &sensor_id, 0, NULL},
+	};
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
 	return 0;
 }
 
@@ -167,7 +184,16 @@ int main(int argc, char **argv)
 	{
 		if (velodyne->pollScan(velodyne_partial_scan))
 		{
-			publish_velodyne_partial_scan();
+			if(use_variable_scan_message)
+			{
+				if (sensor_id == -1)
+					carmen_die("when using variable_scan set -sensor_id <lidarID>");
+
+				publish_velodyne_variable_scan();
+			}
+			else
+				publish_velodyne_partial_scan();
+
 
 			if (velodyne_gps_enabled && velodyne->pollGps())
 			{

@@ -28,13 +28,13 @@ Steering::drawArrow(void)
 
     glBegin(GL_POLYGON);
     {
-        glVertex3f(-2.5, 85, 0);
-        glVertex3f(-5, 85, 0);
-        glVertex3f(0, 95, 0);
-        glVertex3f(5, 85, 0);
-        glVertex3f(2.5, 85, 0);
-        glVertex3f(2.5, 75, 0);
         glVertex3f(-2.5, 75, 0);
+        glVertex3f(-5, 75, 0);
+        glVertex3f(0, 85, 0);
+        glVertex3f(5, 75, 0);
+        glVertex3f(2.5, 75, 0);
+        glVertex3f(2.5, 65, 0);
+        glVertex3f(-2.5, 65, 0);
     }
     glEnd();
 }
@@ -52,9 +52,9 @@ Steering::drawEdge(void)
         glColor3f((colorSteeringR), (colorSteeringG), 0.0f);
         glVertex3f(5, 0, 0);
         glColor3f(0.0f, 0.0f, 1.0f);
-        glVertex3f(2.5, -70, 0);
+        glVertex3f(2.5, -50, 0);
         glColor3f(0.0f, 0.0f, 1.0f);
-        glVertex3f(-2.5, -70, 0);
+        glVertex3f(-2.5, -50, 0);
     }
     glEnd();
 }
@@ -83,14 +83,14 @@ Steering::draw(float angle)
     glRotatef(angle, 0, 0, 1);
 
     glColor3f(0.0f, 0.0f, 1.0f);
-    glLineWidth(20.0f);
+    glLineWidth(10.0f);
 
     glBegin(GL_LINES);
     {
         float x;
         float y;
 
-        int r = 70;
+        int r = 50;
 
         for (int i = 0; i <= 180; i++)
         {

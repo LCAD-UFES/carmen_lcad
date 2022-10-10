@@ -1039,9 +1039,12 @@ draw_everything()
         if (velodyne_remission_flag)
         {
             glPointSize(2);
-            draw_velodyne_points_color(velodyne_points, velodyne_size);
+//            draw_velodyne_points_color(velodyne_points, velodyne_size);
         }
-        draw_point_cloud(velodyne_drawer);
+//            draw_velodyne_points(velodyne_points, velodyne_size);
+            draw_velodyne_points_color(velodyne_points, velodyne_size);
+
+//        draw_point_cloud(velodyne_drawer);
 
         glPointSize(point_size);
     }
@@ -1608,10 +1611,14 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
             	else
             	{
             		if (velodyne_ray_order[j] == g_velodyne_single_ray)
+            		{
     					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
     							car_interpolated_position.position);
-            		else
+
+            		}
+            		else{
             			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = {g_b_red, g_b_green, g_b_blue};
+            		}
             	}
             }
             else
@@ -1699,7 +1706,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
     last_timestamp = velodyne_message->timestamp;
 }
 
-
+/*
 int
 compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message,
 		double *vertical_correction, int vertical_size,
@@ -1740,7 +1747,7 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_variable_s
 
 	return (range_max_points);
 }
-
+*/
 
 int
 compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message,
@@ -4476,7 +4483,7 @@ set_flag_viewer_3D(int flag_num, int value)
     	else if (value == 4)
     		XMoveResizeWindow(w->g_pDisplay, w->g_window, 1920, 1920, 800, 480);
     	else if (value == 5)
-    		XMoveResizeWindow(w->g_pDisplay, w->g_window, 1920, 1920, 500, 300);
+    		XMoveResizeWindow(w->g_pDisplay, w->g_window, 1920, 1920, 650, 390);
 
         break;
 

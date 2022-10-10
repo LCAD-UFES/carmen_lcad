@@ -290,8 +290,8 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 	i_drawer->butt[77].text = "1920x1080";
 	i_drawer->butt[78].text = "1500x920";
 	i_drawer->butt[79].text = "1000x600";
-	i_drawer->butt[80].text = "800x400";
-	i_drawer->butt[81].text = "500x300";
+	i_drawer->butt[80].text = "800x480";
+	i_drawer->butt[81].text = "650x390";
 
 	//Help
 	i_drawer->butt[HELP_BUTTON_CODE].text = HELP_BUTTON_TEXT;

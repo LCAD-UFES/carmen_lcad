@@ -32,6 +32,9 @@
 #include "proccontrol_ipc.h"
 #include "proccontrol.h"
 
+
+//#define OLD_SIGNALS_CONDITION
+
 process_info_t process[MAX_PROCESSES];
 int num_processes = 0;
 int my_pid;
@@ -131,8 +134,12 @@ void start_signal_handlers(void)
 	int this_signal;
 
 	for(this_signal = 0; this_signal < 128; this_signal++)
+#ifdef OLD_SIGNALS_CONDITION
 		if(this_signal != SIGCHLD && // this_signal != SIGCLD &&
-				this_signal != SIGCONT)
+				this_signal != SIGCONT && this_signal != 28) //28 é o signal de redimensionar terminal
+#else
+		if(this_signal == SIGINT || this_signal == SIGKILL || this_signal == SIGTERM || this_signal == SIGSEGV || this_signal == SIGBUS)
+#endif
 			signal(this_signal, pc_handle_signal);
 }
 
@@ -297,11 +304,59 @@ void heartbeat_handler(carmen_heartbeat_message *heartbeat)
 			process[i].last_heartbeat = carmen_get_time();
 }
 
+// https://stackoverflow.com/questions/779875/what-function-is-to-replace-a-substring-from-a-string-in-c
+void str_replace(char *dest, char *orig, char *rep, char *with) {
+    char *result, *ins, *tmp;
+    int len_rep, len_with, len_front, count;
+
+    if (!orig || !rep)
+        return;
+    len_rep = strlen(rep);
+    if (len_rep == 0)
+        return;
+    if (!with)
+        with = "";
+    len_with = strlen(with);
+
+    ins = orig;
+    for (count = 0; (tmp = strstr(ins, rep)); ++count) {
+        ins = tmp + len_rep;
+    }
+
+    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+        return;
+
+    while (count--) {
+        ins = strstr(orig, rep);
+        len_front = ins - orig;
+        tmp = strncpy(tmp, orig, len_front) + len_front;
+        tmp = strcpy(tmp, with) + len_with;
+        orig += len_front + len_rep;
+    }
+    strcpy(tmp, orig);
+
+	strcpy(dest, result);
+	free(result);
+}
+
+// https://stackoverflow.com/questions/656542/trim-a-string-in-c
+void trim(char *s)
+{
+    int i;
+
+    while (isspace (*s)) s++;
+    for (i = strlen (s) - 1; (isspace (s[i])); i--);
+    s[i + 1] = '\0';
+}
+
 void read_process_ini(char *filename)
 {
 	FILE *fp;
-	char *err, *mark, line[1000];
-	int i, l;
+	char *err, *mark, line[1000], 
+		 var[256], value[256], vars_use[64][259], values_use[64][256];
+	int i, l, n_vars=0;
 
 	num_processes = 0;
 
@@ -312,6 +367,24 @@ void read_process_ini(char *filename)
 	do {
 		err = fgets(line, 1000, fp);
 		if(err != NULL) {
+			/* variable */
+			if(!strncmp("SET", line, 3) && (n_vars < 64))
+			{
+				if (sscanf(line, "SET %[^= ] = %s#*", var, value))
+				{
+					sprintf(vars_use[n_vars], "${%s}", var);
+					sprintf(values_use[n_vars], "%s", value);
+					n_vars++;
+				}
+				for (l = 0; l < n_vars; l++) // replace variables
+					str_replace(line, line, vars_use[l], values_use[l]);
+
+				continue;
+			}
+
+			for (l = 0; l < n_vars; l++) // replace variables
+				str_replace(line, line, vars_use[l], values_use[l]);
+		
 			l = strlen(line);
 			/* strip out comments and newlines */
 			for(i = 0; i < l; i++)

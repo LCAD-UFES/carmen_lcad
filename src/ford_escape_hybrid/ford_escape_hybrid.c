@@ -41,6 +41,8 @@
 #include <control.h>
 #include "ford_escape_hybrid.h"
 
+//#define LATENCY_TEST_PRINT
+
 //#define FORD_ESCAPE_COMMUNICATION_DUMP
 //#define PLOT_PHI
 //#define PLOT_VELOCITY
@@ -706,22 +708,6 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 }
 
 
-static void
-tune_pid_gain_parameters_handler(tune_pid_gain_parameters_message* msg)
-{
-	(void) msg;
-	// printf("valor de ki antes %lf\n", msg->ki);
-	// printf("valor de kd antes %lf\n", msg->kd);
-	// printf("valor de kp antes %lf\n", msg->kp);
-	// printf("timestamp da msg %lf\n",  msg->timestamp);
-	// msg->kp = rand() % 100000;
-	// msg->ki = rand() % 100000;
-	// msg->kd = rand() % 100000;
-	// printf("valor de ki atual %lf\n", msg->ki);
-	// printf("valor de kd atual %lf\n", msg->kd);
-	// printf("valor de kp atual %lf\n", msg->kp);
-}
-
 
 static void 
 shutdown_module()
@@ -844,11 +830,16 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 //		printf("*v %lf, phi %lf, timestamp %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_atan_desired_curvature), ford_escape_hybrid_config), carmen_get_time());
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
-
 		raw_phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(ford_escape_hybrid_config->filtered_v), &(ford_escape_hybrid_config->filtered_phi), 
 						    g_XGV_velocity, raw_phi, 
 						    0.0, v_multiplier, phi_bias, phi_multiplier);
+#ifdef LATENCY_TEST_PRINT
+		//@@@VINICIUS AQUI QUE RECEBE O PHI VINDO DO OJASTRU2
+		fprintf(stdout, "ford_form_oj_feedback (raw_phi_ford_form_oj_feedback, filt_phi_ford_form_oj_feedback, cc_ford_form_oj_feedback, t): %lf, %lf, %lf\n",
+				raw_phi, ford_escape_hybrid_config->filtered_phi, g_XGV_atan_curvature, carmen_get_time());
+		fflush(stdout);
+#endif
 			
 		set_wrench_efforts_desired_v_curvature_and_gear();
 
@@ -978,6 +969,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		#ifdef PLOT_VELOCITY
 			pid_plot_velocity(ford_escape_hybrid_config->filtered_v, g_desired_velocity, 15.0, "vel");
 		#endif
+
+#ifdef LATENCY_TEST_PRINT
+			//@@@VINICIUS Aqui envia o comando para o ojASTRU2
+		fprintf(stdout, "ford->oj_effort (steering_command_ford->oj, dc_Ford->oj, t): %lf, %lf, %lf\n", g_steering_command, g_atan_desired_curvature, carmen_get_time());
+		fflush(stdout);
+#endif
 
 		publish_ford_escape_steering_throttle_and_brakes_command(XGV_CCU);
 
@@ -1165,6 +1162,7 @@ torc_report_error_count_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)),
 		fclose(caco);
 #endif
 		reportErrorCountMessageDestroy(reportErrorCount);
+		check_jaus_reported_errors();
 	}
 	else
 	{
@@ -1274,7 +1272,6 @@ subscribe_to_relevant_messages()
 
 	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_ford_escape_subscribe_tune_pid_gain_parameters_message(NULL, (carmen_handler_t) tune_pid_gain_parameters_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1390,11 +1387,6 @@ main(int argc, char** argv)
 	carmen_ipc_addPeriodicTimer(FORD_ESCAPE_CYCLE_TIME, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 
 	carmen_ipc_dispatch();
-
-	while (1)
-	{
-		check_jaus_reported_errors();
-	}
 
 	return 0;
 }

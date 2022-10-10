@@ -59,7 +59,7 @@ extern "C" {
 #define BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE 	50
 #define FUSED_ODOMETRY_VECTOR_SIZE 			50
 
-#define 	MAX_NUMBER_OF_LIDARS 18   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
+#define 	MAX_NUMBER_OF_LIDARS 15   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
 #define 	STEREO_MAPPING_SENSOR_INDEX 	10
 
 #define     SMALL_PROB        0.01

@@ -1,0 +1,13 @@
+publish mission state STARTING_MISSION UFES1
+# RETA LCAD2 P1
+set course to 7757736.00, -363557.00, 0.644
+go after set course to 7757736.00, -363557.00, 0.644
+stop 
+publish mission state MISSION_COMPLETED UFES1
+
+publish mission state STARTING_MISSION UFES2
+# RETA LCAD2 P2
+set course to 7757752.49, -363544.01, 0.639
+go after set course to 7757752.49, -363544.01, 0.639
+stop
+publish mission state MISSION_COMPLETED UFES2

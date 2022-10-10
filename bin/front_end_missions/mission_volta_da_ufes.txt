@@ -21,5 +21,3 @@ go after set course to 7757651.54, -363622.50, 0.625
 stop
 
 publish mission state MISSION_COMPLETED VOLTA_UFES
-
-mission completed

@@ -89,6 +89,9 @@ vector<double>
 get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, double prediction_horizon);
 
 
+unsigned int
+get_motion_timed_index_to_motion_command(PARAMS* params);
+
 vector<double>
 get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int size);
 

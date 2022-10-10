@@ -68,13 +68,42 @@ void
 carmen_ford_escape_publish_signals_message(carmen_ford_escape_signals_message *msg, double timestamp);
 
 void
-carmen_ford_escape_subscribe_tune_pid_gain_parameters_message(tune_pid_gain_parameters_message *message,  carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+carmen_ford_escape_subscribe_tune_pid_gain_velocity_parameters_message(tune_pid_gain_velocity_parameters_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
-carmen_ford_escape_unsubscribe_tune_pid_gain_parameters_message(carmen_handler_t handler);
+carmen_ford_escape_subscribe_tune_pid_gain_steering_parameters_message(tune_pid_gain_steering_parameters_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
-carmen_ford_escape_publish_tune_pid_gain_parameters_message(tune_pid_gain_parameters_message *msg, double timestamp);
+carmen_ford_escape_subscribe_velocity_pid_data_message(velocity_pid_data_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_ford_escape_subscribe_steering_pid_data_message(steering_pid_data_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_ford_escape_unsubscribe_tune_pid_gain_velocity_parameters_message(carmen_handler_t handler);
+
+void
+carmen_ford_escape_unsubscribe_tune_pid_gain_steering_parameters_message(carmen_handler_t handler);
+
+void
+carmen_ford_escape_unsubscribe_velocity_pid_data_message(carmen_handler_t handler);
+
+void
+carmen_ford_escape_unsubscribe_steering_pid_data_message(carmen_handler_t handler);
+
+void
+carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(tune_pid_gain_velocity_parameters_message *msg, double timestamp);
+
+
+void
+carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(tune_pid_gain_steering_parameters_message *msg, double timestamp);
+
+void
+carmen_ford_escape_publish_velocity_pid_data_message(velocity_pid_data_message *msg, double timestamp);
+
+void
+carmen_ford_escape_publish_steering_pid_data_message(steering_pid_data_message *msg, double timestamp);
+
 
 /*
 void

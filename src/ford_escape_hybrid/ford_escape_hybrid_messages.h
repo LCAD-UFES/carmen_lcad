@@ -103,15 +103,62 @@ typedef struct {
 #define CARMEN_FORD_ESCAPE_SIGNAL_NAME	"carmen_ford_escape_signals"
 #define CARMEN_FORD_ESCAPE_SIGNAL_FMT		"{int, int, int, int, int, double, string}"
 
+
+typedef struct {
+  /* data */
+  int PID_controler_state;
+  double current_velocity;
+  double desired_velocity;
+  double error_t;
+  double integral_t;
+  double derivative_t;
+  double throttle_command;
+  double brakes_command;
+  double timestamp;
+  char *host;
+
+}velocity_pid_data_message;
+
+#define VELOCITY_PID_DATA_PARAMENTERS_NAME	"velocity_pid_data_message"
+#define VELOCITY_PID_DATA_PARAMENTERS_FMT		"{int, double, double, double, double, double, double, double, double, string}"
+
+typedef struct {
+  /* data */
+  double atan_current_curvature;
+  double atan_desired_curvature;
+  double error_t;
+  double integral_t;
+  double derivative_t;
+  double effort;
+  double timestamp;
+  char *host;
+
+
+}steering_pid_data_message;
+
+#define STEERING_PID_DATA_PARAMENTERS_NAME	"steering_pid_data_message"
+#define STEERING_PID_DATA_PARAMENTERS_FMT		"{double, double, double, double, double, double, double, string}"
+
+
 typedef struct {
   double kp, ki, kd;
   double timestamp;
 	char *host;
-} tune_pid_gain_parameters_message;
+} tune_pid_gain_steering_parameters_message;
 
-#define TUNE_PID_GAIN_PARAMENTERS_NAME "tune_pid_gain_parameters"
-#define TUNE_PID_GAIN_PARAMENTERS_FMT "{double, double, double, double, string}"
 
+
+#define TUNE_PID_GAIN_STEERING_PARAMENTERS_NAME "tune_pid_gain_steering_parameters"
+#define TUNE_PID_GAIN_STEERING_PARAMENTERS_FMT "{double, double, double, double, string}"
+
+typedef struct {
+  double kp, ki, kd;
+  double timestamp;
+	char *host;
+} tune_pid_gain_velocity_parameters_message;
+
+#define TUNE_PID_GAIN_VELOCITY_PARAMENTERS_NAME "tune_pid_gain_velocity_parameters"
+#define TUNE_PID_GAIN_VELOCITY_PARAMENTERS_FMT "{double, double, double, double, string}"
 
 #ifdef __cplusplus
 }

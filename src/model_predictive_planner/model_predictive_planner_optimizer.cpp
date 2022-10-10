@@ -36,6 +36,17 @@ copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_rob
 #define G_EPSABS	0.016
 #define F_EPSABS	G_EPSABS
 
+////////////////////////////////////////////////////////////////////////////////////////
+#define USE_STEFFEN_SPLINE
+
+#define NEW_COMPUTE_A_AND_T_FROM_S
+
+//#define NEW_PATH_TO_LANE_DISTANCE
+
+//#define USE_STANLEY_METHOD
+//TODO NAO ESQUECER DE DESCOMENTAR OS PARAMETROS W7 e LOOK_AHEAD NO MAIN
+////////////////////////////////////////////////////////////////////////////////////////
+
 bool use_obstacles = true;
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
@@ -439,7 +450,11 @@ get_phi_spline(TrajectoryControlParameters tcp)
 		knots_x[2] = tcp.tt / 2.0;
 	}
 
+#ifdef USE_STEFFEN_SPLINE
 	const gsl_interp_type *type = gsl_interp_cspline;
+#else
+	const gsl_interp_type *type = gsl_interp_steffen;
+#endif
 	gsl_spline *phi_spline = gsl_spline_alloc(type, tcp.k.size());
 	gsl_spline_init(phi_spline, &knots_x[0], &knots_y[0], tcp.k.size());
 
@@ -536,7 +551,6 @@ bad_tcp(TrajectoryControlParameters tcp)
 }
 
 
-#define NEW_COMPUTE_A_AND_T_FROM_S
 #ifdef NEW_COMPUTE_A_AND_T_FROM_S
 
 void
@@ -793,6 +807,18 @@ move_path_to_current_robot_pose(vector<carmen_robot_and_trailer_path_point_t> &p
 
 
 carmen_robot_and_trailer_path_point_t
+move_to_front_axle_WORKING(carmen_robot_and_trailer_path_point_t pose)
+{
+	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
+	carmen_robot_and_trailer_path_point_t pose_moved = pose;
+	pose_moved.x += L * cos(pose.theta);
+	pose_moved.y += L * sin(pose.theta);
+
+	return (pose_moved);
+}
+
+
+carmen_robot_and_trailer_path_point_t
 move_to_front_axle(carmen_robot_and_trailer_path_point_t pose)
 {
 	return (pose);
@@ -804,8 +830,6 @@ move_to_front_axle(carmen_robot_and_trailer_path_point_t pose)
 
 	return (pose_moved);
 }
-
-//#define NEW_PATH_TO_LANE_DISTANCE
 
 #ifdef NEW_PATH_TO_LANE_DISTANCE
 
@@ -935,10 +959,18 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 	{
 		carmen_robot_and_trailer_path_point_t axle;
 
+#ifdef USE_STANLEY_METHOD
+		if (GlobalState::reverse_planning) //mantem o eixo traseiro
+			axle = path.at(j);
+		else
+			axle = move_to_front_axle_WORKING(path.at(j));
+
+#else
 		if (GlobalState::reverse_planning) //mantem o eixo traseiro
 			axle = path.at(j);
 		else
 			axle = move_to_front_axle(path.at(j));
+#endif
 
 		double min_dist = DIST2D(axle, param->detailed_lane.at(index));
 		for (unsigned int i = index; i < param->detailed_lane.size(); i++)
@@ -954,6 +986,163 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 	}
 }
 
+
+#ifdef USE_STANLEY_METHOD
+
+
+void
+get_between_points(carmen_robot_and_trailer_path_point_t robot, carmen_robot_and_trailer_path_point_t point_before, carmen_robot_and_trailer_path_point_t center, carmen_robot_and_trailer_path_point_t point_next,
+		int index_center, int &index_p1, int &index_p2, int &mais_proxima)
+{
+
+    double centro = DIST2D(center, robot);
+    double d = DIST2D(point_before, robot);
+    double d2 = DIST2D(point_next, robot);
+
+    if (d < d2)
+    {
+//        index_p1 = index_p1;
+        index_p2 = index_center;
+        mais_proxima = index_p1;
+        if(centro < d)
+            mais_proxima = index_center;
+    }
+    else
+    {
+        index_p1 = index_center;
+//        index_p2 = index_center+1;
+        mais_proxima = index_p2;
+        if(centro < d2)
+            mais_proxima = index_center;
+    }
+}
+
+
+double
+get_distance_between_point_to_line2(carmen_robot_and_trailer_path_point_t p1,
+		carmen_robot_and_trailer_path_point_t p2,
+		carmen_robot_and_trailer_path_point_t robot)
+{
+    //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+    double delta_x = p2.x - p1.x;
+    double delta_y = p2.y - p1.y;
+    double d = sqrt(delta_x * delta_x + delta_y * delta_y);
+    double x2y1 =  p2.x * p1.y;
+    double y2x1 =  p2.y * p1.x;
+
+    if (d < 0.0000001)
+        return DIST2D(p2, robot);
+
+    return fabs((delta_y * robot.x) - (delta_x * robot.y) + x2y1 - y2x1) / d;
+
+}
+
+
+carmen_robot_and_trailer_path_point_t
+get_best_indexes_and_nearest_point(int i, ObjectiveFunctionParams *param, carmen_robot_and_trailer_path_point_t robot_point)
+{
+	unsigned int index_p1;
+	unsigned int index_p2;
+	int point_in_trajectory_is = -1;
+	carmen_robot_and_trailer_path_point_t ponto_mais_proximo;
+
+	index_p1 = (param->path_point_nearest_to_lane.at(i) > 0) ? (param->path_point_nearest_to_lane.at(i) - 1) : param->path_point_nearest_to_lane.at(i);
+	if ((param->path_point_nearest_to_lane.at(i) == index_p1) && (param->path_point_nearest_to_lane.at(i) < param->detailed_lane.size() - 2))
+		index_p2 = param->path_point_nearest_to_lane.at(i) + 1;
+	else
+		index_p2 = param->path_point_nearest_to_lane.at(i);
+
+	ponto_mais_proximo = carmen_get_point_nearest_to_path(&point_in_trajectory_is, param->detailed_lane.at(index_p1), param->detailed_lane.at(index_p2), robot_point, 0.005);
+
+	if (point_in_trajectory_is == SEGMENT_TOO_SHORT)
+	{
+		printf("SEGMENT_TOO_SHORT!\n");
+		if(index_p2 < (param->detailed_lane.size() - 2))
+		{
+			index_p2 +=1;
+			ponto_mais_proximo = carmen_get_point_nearest_to_path(&point_in_trajectory_is, param->detailed_lane.at(index_p1), param->detailed_lane.at(index_p2), robot_point, 0.005);
+		}
+	}
+
+	if (point_in_trajectory_is == POINT_AFTER_SEGMENT)
+	{
+		for(unsigned int j = index_p2; j < param->detailed_lane.size() - 2; j++)
+		{
+			ponto_mais_proximo = carmen_get_point_nearest_to_path(&point_in_trajectory_is, param->detailed_lane.at(j), param->detailed_lane.at(j+1), robot_point, 0.005);
+			if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
+				break;
+		}
+		if (point_in_trajectory_is != POINT_WITHIN_SEGMENT)
+			ponto_mais_proximo = carmen_get_point_nearest_to_path(&point_in_trajectory_is, param->detailed_lane.at(index_p1), param->detailed_lane.at(index_p2), robot_point, 0.005);
+	}
+
+	else if (point_in_trajectory_is == POINT_BEFORE_SEGMENT)
+	{
+		for(unsigned int j = index_p1; j > 0; j--)
+		{
+			ponto_mais_proximo = carmen_get_point_nearest_to_path(&point_in_trajectory_is, param->detailed_lane.at(j), param->detailed_lane.at(j+1), robot_point, 0.005);
+			if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
+				break;
+		}
+	}
+
+	return ponto_mais_proximo;
+}
+
+
+double
+compute_error_using_stanley_method(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path)
+{
+	double total_steering_error = 0.0;
+	double theta_error = 0.0;
+	int look_ahead = 5;
+	double k = GlobalState::look_ahead_horizon;
+	int total_points = 0.0; //How many
+	double steerig_stanley = 0.0;
+	carmen_robot_and_trailer_path_point_t robot_point;
+	double error_steering = 0;
+	carmen_robot_and_trailer_path_point_t ponto_mais_proximo;
+
+	for (unsigned int i = 0; i < path.size(); i += look_ahead)
+	{
+		if ((i < param->path_point_nearest_to_lane.size()) &&
+				(param->path_point_nearest_to_lane.at(i) < param->detailed_lane.size()))
+		{
+			if (!GlobalState::reverse_planning)
+				robot_point = move_to_front_axle_WORKING(path.at(i));
+
+			ponto_mais_proximo = get_best_indexes_and_nearest_point(i, param, robot_point);
+
+			theta_error = carmen_normalize_theta(ponto_mais_proximo.theta - path.at(i).theta);
+			double Efa = DIST2D(ponto_mais_proximo, robot_point);
+
+			//double Efa = get_distance_between_point_to_line2(param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p1)),  param->detailed_lane.at(param->path_point_nearest_to_lane.at(index_p2)), robot_point);
+
+			double vt = (ponto_mais_proximo.v != 0.0) ? ponto_mais_proximo.v : (ponto_mais_proximo.v + 0.00001);
+
+			steerig_stanley = theta_error + atan(k*Efa/vt);
+			//vi por ai: usar o atan2(v,k*Efa) < funciona?
+
+			steerig_stanley = (steerig_stanley > GlobalState::robot_config.max_phi) ? GlobalState::robot_config.max_phi : steerig_stanley;
+			steerig_stanley = (steerig_stanley < -GlobalState::robot_config.max_phi) ? -GlobalState::robot_config.max_phi : steerig_stanley;
+
+			error_steering = carmen_normalize_theta(steerig_stanley - path.at(i).phi);
+//			printf("Atan2: %lf Efa: %lf theta_error: %lf atan: %lf \n", atan2(vt,k*Efa), Efa, theta_error, atan(k*Efa/vt));
+			total_points += 1.0;
+		}
+		else
+		{
+			error_steering = 0.0;
+			total_points += 1.0;
+		}
+
+		total_steering_error += (error_steering * error_steering);
+	}
+
+	return (total_steering_error/total_points);
+}
+
+#endif
 
 inline carmen_ackerman_path_point_t
 move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t point, double displacement)
@@ -1122,13 +1311,14 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 	my_df(x, params, df);
 }
 
-//int print_ws = 0;
+int print_ws = 0;
 
 double
 mpp_optimization_function_g(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
 	TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
+	double steering_error = 0.0;
 
 	if (bad_tcp(tcp))
 		return (1000000.0);
@@ -1142,13 +1332,17 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 #ifdef NEW_PATH_TO_LANE_DISTANCE
 		path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
 #else
+
 		if (path.size() != my_params->path_size)
 		{
 			compute_path_points_nearest_to_lane(my_params, path);
-			path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
 		}
-		else
-			path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+		path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+
+#ifdef USE_STANLEY_METHOD
+		steering_error = compute_error_using_stanley_method(my_params, path);
+		printf("\nSteering: %lf ", steering_error);
+#endif
 #endif
 	}
 
@@ -1156,11 +1350,15 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 	if (use_obstacles && GlobalState::distance_map != NULL && path.size() > 0)
 		proximity_to_obstacles = compute_proximity_to_obstacles_using_distance_map(path);
 
+#ifdef USE_STANLEY_METHOD
+		my_params->plan_cost = sqrt((steering_error/2));
+#else
 //	double beta_activation_factor = get_beta_activation_factor();
 	my_params->plan_cost = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / (my_params->theta_by_index * 0.2) +
 //			beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 			(carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / (my_params->d_yaw_by_index * 0.2));
+#endif
 
 	double w2_activation_factor = get_distance_dependent_activation_factor(2.0, my_params);
 	double w4_activation_factor = get_distance_dependent_activation_factor(6.0, my_params);
@@ -1180,19 +1378,21 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 				w4_activation_factor * GlobalState::w4 * path_to_lane_distance + // já é quandrática
 //				beta_activation_factor * (carmen_normalize_theta(td.beta - my_params->target_td->beta) * carmen_normalize_theta(td.beta - my_params->target_td->beta)) / 1.0 +
 				GlobalState::w5 * proximity_to_obstacles +
-				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance);
+				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance +
+				GlobalState::w7 * steering_error);
 
-//	if (print_ws)
-//	{
-//		printf("* r % 3.8lf, w1 % 3.8lf, w2 % 3.8lf, w3 % 3.8lf, w4 % 3.8lf, w5 % 3.8lf, ps %d\n", result,
-//				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index,
-//				activate_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index,
-//				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index,
-//				activate_factor * GlobalState::w4 * path_to_lane_distance,
-//				GlobalState::w5 * proximity_to_obstacles,
-//				(int) path.size());
+	if (print_ws)
+	{
+		printf("* r % 3.8lf, w1 % 3.8lf, w2 % 3.8lf, w3 % 3.8lf, w4 % 3.8lf, w5 % 3.8lf, ps %d, Steering: % 3.8lf\n", result,
+				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index,
+				w2_activation_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index,
+				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index,
+				w4_activation_factor * GlobalState::w4 * path_to_lane_distance,
+				GlobalState::w5 * proximity_to_obstacles,
+				(int) path.size(),
+				(GlobalState::w7 * steering_error));
 //		print_tcp(tcp);
-//	}
+	}
 
 	return (result);
 }
@@ -1545,10 +1745,14 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 //		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK) ||
 //		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 	if (((GlobalState::semi_trailer_config.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN)) ||
+#ifdef USE_STEFFEN_SPLINE
 		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
+#else
+		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
+#endif
 		get_tcp_with_n_knots(tcp_complete, 3);
 	else
-		get_tcp_with_n_knots(tcp_complete, 4);
+		get_tcp_with_n_knots(tcp_complete, 6);
 
 	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, max_iterations, mpp_optimization_function_g);
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);

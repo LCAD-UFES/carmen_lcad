@@ -367,7 +367,7 @@ get_points2(vector<carmen_robot_and_trailer_path_point_t> &detailed_goal_list, i
 void
 save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 					carmen_robot_and_trailer_pose_t *localizer_pose, vector<carmen_robot_and_trailer_path_point_t> &detailed_lane,
-					Command lastOdometry)
+					Command lastOdometry, double target_v)
 {
 	if (detailed_lane.size() > 0)
 	{
@@ -387,10 +387,10 @@ save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message
 		double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
 		double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
 		double erro_theta = fabs(volante_rddf_theta - localizer_pose->theta);
-		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
-		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
+		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-target_v 12-lateralDist 13-volante 14-erro_theta 15-Timestamp
+		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
 				lastOdometry.v, lastOdometry.phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
-				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, path_goals_and_annotations_message->timestamp);
+				detailed_lane.at(mais_proxima).phi, target_v, distance_metric, volante_rddf_theta, erro_theta, path_goals_and_annotations_message->timestamp);
 
 	}
 }

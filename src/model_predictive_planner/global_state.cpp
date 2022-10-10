@@ -43,6 +43,8 @@ double GlobalState::w3 = 15.0  ; // end_of_path_to_goal_delta_theta
 double GlobalState::w4 = 3.0   ; // path_to_lane_distance
 double GlobalState::w5 = 20.0  ; // proximity_to_obstacles
 double GlobalState::w6 = 0.0025; // traveled_distance
+double GlobalState::w7 = 0.0; // look_ahead_based_on_stanley_method
+double GlobalState::look_ahead_horizon = 5.0; //fraction of the path (in meters it is about N*0.10m) based_on_stanley_method
 
 double GlobalState::time_to_change_gears = 1.0;
 

@@ -36,6 +36,14 @@
 extern "C" {
 #endif
 
+extern double global_steer_kp;
+extern double global_steer_kd;
+extern double global_steer_ki;
+
+extern double global_vel_kp;
+extern double global_vel_kd;
+extern double global_vel_ki;
+
 typedef struct {
   double max_range;
   double variance;
