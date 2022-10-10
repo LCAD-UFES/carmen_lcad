@@ -842,8 +842,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 						    0.0, v_multiplier, phi_bias, phi_multiplier);
 #ifdef LATENCY_TEST_PRINT
 		//@@@VINICIUS AQUI QUE RECEBE O PHI VINDO DO OJASTRU2
-		fprintf(stdout, "ford_form_oj_feedback (raw_phi_ford_form_oj_feedback, filt_phi_ford_form_oj_feedback, cc_ford_form_oj_feedback, t): %lf, %lf, %lf\n",
-				raw_phi, ford_escape_hybrid_config->filtered_phi, g_XGV_atan_curvature, carmen_get_time());
+		fprintf(stdout, "ford_form_oj_feedback (filt_phi_ford_form_oj_feedback, cc_ford_form_oj_feedback, t): %lf, %lf, %lf\n",
+				ford_escape_hybrid_config->filtered_phi, g_XGV_atan_curvature, carmen_get_time());
 		fflush(stdout);
 #endif
 			
