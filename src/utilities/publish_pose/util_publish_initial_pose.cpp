@@ -1,6 +1,13 @@
 #include <carmen/carmen.h>
+#include <carmen/playback_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/fused_odometry_interface.h>
+
+bool wait_play = false;
+
+carmen_point_t pose;
+double beta = 0.0;
+int time_value = 4;
 
 
 carmen_point_t
@@ -67,9 +74,6 @@ void playback_handler(carmen_playback_info_message *msg)
 int
 main(int argc, char **argv)
 {
-	carmen_point_t pose;
-	int time = 4;
-
 	if (argc < 4)
 	{
 		printf("Use %s <x> <y> <theta>\n"
@@ -85,7 +89,8 @@ main(int argc, char **argv)
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
-	double beta = pose.theta;
+	beta = pose.theta;
+
 
 	if (argc >= 5)
 	{
@@ -98,8 +103,6 @@ main(int argc, char **argv)
 				beta = atof(argv[5]); // old code
 		}
 	}
-
-
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();
@@ -120,4 +123,3 @@ main(int argc, char **argv)
 
 	return 0;
 }
-
