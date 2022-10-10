@@ -34,6 +34,7 @@ extern double annotation_velocity_bump;
 extern double annotation_velocity_pedestrian_track_stop;
 extern double annotation_velocity_yield;
 extern double annotation_velocity_barrier;
+extern double annotation_velocity_queue;
 
 extern carmen_moving_objects_point_clouds_message *pedestrians_tracked;
 extern int behavior_selector_check_pedestrian_near_path;
@@ -264,6 +265,7 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_QUEUE) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_YIELD) ||
@@ -282,6 +284,29 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 		return (&(annotation_message.annotations[nearest_annotation_index]));
 	else
 		return (NULL);
+}
+
+
+bool
+busy_queue_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	static double last_queue_busy_timestamp = 0.0;
+
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+
+	carmen_annotation_t *nearest_queue_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
+			last_rddf_annotation_message, &displaced_robot_pose);
+
+	if (nearest_queue_annotation == NULL)
+		return (false);
+
+	if ((nearest_queue_annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY))
+		last_queue_busy_timestamp = timestamp;
+
+	if (timestamp - last_queue_busy_timestamp < 1.5)
+		return (true);
+	else
+		return (false);
 }
 
 
@@ -470,6 +495,12 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 		v = annotation_velocity_pedestrian_track_stop;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
 		v = annotation_velocity_pedestrian_track_stop;
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE)
+		v = annotation_velocity_queue;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE) &&
+			 busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))// &&
+			 //(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
+		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD) &&
 			 must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
 		v = 0.0;
@@ -776,6 +807,10 @@ set_goal_velocity_according_to_state_machine(carmen_robot_and_trailer_traj_point
 		(behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1) ||
+
+		(behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||
+		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1) ||
 
 		(behavior_selector_state_message.low_level_state == Stopping_To_Pedestrian) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Pedestrian_S0) ||

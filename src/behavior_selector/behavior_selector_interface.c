@@ -177,6 +177,10 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 	if (state == Stopped_At_Pedestrian_S0) 			return ((char *) "Stopped_At_Pedestrian_S0");
 	if (state == Stopped_At_Pedestrian_S1) 			return ((char *) "Stopped_At_Pedestrian_S1");
 	if (state == Stopped_At_Pedestrian_S2) 			return ((char *) "Stopped_At_Pedestrian_S2");
+	if (state == Stopping_At_Busy_Queue) 			return ((char *) "Stopping_At_Busy_Queue");
+	if (state == Stopped_At_Busy_Queue_S0) 			return ((char *) "Stopped_At_Busy_Queue_S0");
+	if (state == Stopped_At_Busy_Queue_S1) 			return ((char *) "Stopped_At_Busy_Queue_S1");
+	if (state == Stopped_At_Busy_Queue_S2) 			return ((char *) "Stopped_At_Busy_Queue_S2");
 	if (state == Stopping_At_Unavoidable_Obstacle) 			return ((char *) "Stopping_At_Unavoidable_Obstacle");
 	if (state == Stopped_At_Unavoidable_Obstacle_S0) 			return ((char *) "Stopped_At_Unavoidable_Obstacle_S0");
 	if (state == End_Of_Path_Reached) 				return ((char *) "End_Of_Path_Reached");
