@@ -585,6 +585,7 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 			robot_pose.y = filter->particles[i].y;
 			robot_pose.theta = filter->particles[i].theta;
 
+			// printf("IMU: %lf\t%lf\n", v, phi);
 			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
 					fabs(filter->param->velocity_noise_phi * phi));
@@ -669,6 +670,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			robot_pose.y = filter->particles[i].y;
 			robot_pose.theta = filter->particles[i].theta;
 
+			// printf("odometry: %lf\t%lf\n", v, phi);
 			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
 					fabs(filter->param->velocity_noise_phi * phi) + filter->param->v_uncertainty_at_zero_v);
@@ -3871,7 +3873,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	}
 
 	carmen_param_allow_unfound_variables(1);
-
+	double initial_angle_fastslam = 1000.0;
 	carmen_param_t param_optional_list[] =
 	{
 		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
@@ -3880,7 +3882,8 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
 		{(char *) "commandline", (char *) "save_globalpos_file", CARMEN_PARAM_STRING, &save_globalpos_file, 0, NULL},
-		{(char *) "commandline", (char *) "save_globalpos_timestamp", CARMEN_PARAM_DOUBLE, &save_globalpos_timestamp, 0, NULL}
+		{(char *) "commandline", (char *) "save_globalpos_timestamp", CARMEN_PARAM_DOUBLE, &save_globalpos_timestamp, 0, NULL},
+		{(char *) "commandline", (char *) "initial_angle", CARMEN_PARAM_DOUBLE, &initial_angle_fastslam, 0, NULL}, // only to avoid error
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

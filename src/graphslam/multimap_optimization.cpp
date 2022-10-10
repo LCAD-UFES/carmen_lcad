@@ -27,6 +27,8 @@
 using namespace std;
 using namespace g2o;
 
+#define _SEED_RAND 1
+
 /**
  * TODO: Estas estruturas estao replicadas aqui e no graphslam. Colocar em um arquivo .h
  */
@@ -360,6 +362,8 @@ int main(int argc, char **argv)
 	SparseOptimizer* optimizer;
 
 	srand(time(NULL));
+	if (_SEED_RAND)
+		srand(42);
 
 	DlWrapper dlSolverWrapper;
 	loadStandardSolver(dlSolverWrapper, argc, argv);

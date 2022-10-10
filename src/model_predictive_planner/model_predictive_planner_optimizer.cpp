@@ -1752,7 +1752,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 #endif
 		get_tcp_with_n_knots(tcp_complete, 3);
 	else
-		get_tcp_with_n_knots(tcp_complete, 6);
+		get_tcp_with_n_knots(tcp_complete, 4);
 
 	get_optimization_params(params, target_v, &tcp_complete, &target_td, 2.5, max_iterations, mpp_optimization_function_g);
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);

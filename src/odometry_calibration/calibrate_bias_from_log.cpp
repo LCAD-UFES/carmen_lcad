@@ -24,6 +24,8 @@
 using namespace std;
 using namespace tf;
 
+#define _SEED_RAND 1
+
 #define MAX_LINE_LENGTH (5 * 4000000)
 #define NUM_PHI_SPLINE_KNOTS 3
 #define MIN_VELOCITY 0.03
@@ -1081,6 +1083,8 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<int>("combined_odometry", "0 - dont combine; 1 - Combine visual_odometry (ROBOTVELOCITY_ACK) and robot_odometry (ROBOTVELOCITY_ACK)", 0);
 	args->add<int>("n_particles,n", "Number of particles", 500);
 	args->add<int>("n_iterations,i", "Number of iterations", 300);
+	args->add<double>("tol", "Maximum allowable tolerance", .0);
+	args->add<int>("max_iter_no_changes", "Maximum number of iterations without change", 9999);
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
 	args->add<int>("max_log_lines,m", "Maximum number of lines to read from the log file", -1);
 	args->add<int>("view", "Flag indicating if the visualization should run or not.", 1);
@@ -1188,9 +1192,10 @@ main(int argc, char **argv)
 	FILE *f_report = safe_fopen(args.get<string>("output_poses").c_str(), "w");
 
 	srand(time(NULL));
-	srand(rand()); // ??
+	if (_SEED_RAND)
+		srand(42);
 
-	ParticleSwarmOptimization optimizer(fitness, limits, n_params, &pso_data, args.get<int>("n_particles"), args.get<int>("n_iterations"));
+	ParticleSwarmOptimization optimizer(fitness, limits, n_params, &pso_data, args.get<int>("n_particles"), args.get<int>("n_iterations"), args.get<double>("tol"), args.get<int>("max_iter_no_changes"), _SEED_RAND);
 
 	optimizer.Optimize(plot_graph);
 
