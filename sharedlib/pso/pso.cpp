@@ -8,9 +8,11 @@
 #include <carmen/carmen.h>
 
 
-ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data, int particle_id), double **limits, int dim, void *data, int num_particles, int max_iteractions)
+ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data, int particle_id), double **limits, int dim, void *data, int num_particles, int max_iteractions, double tol, int max_iter_no_changes, int set_seed)
 {
 	srand(time(NULL));
+	if (set_seed)
+		srand(42);
 
 	_fitness_function = fitness_function;
 	_max_iteractions = max_iteractions;
@@ -18,6 +20,8 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(
 	_limits = limits;
 	_data = data;
 	_dim = dim;
+	_tol  = tol;
+	_max_iter_no_changes = max_iter_no_changes;
 
 	_alloc_stuff();
 	_initialize_velocities();
@@ -37,6 +41,8 @@ void
 ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOptimization *opt, void *data, int particle_id))
 {
 	int num_iteractions = 0;
+	double last_gbest_fitness = .0, err = .0;
+	int count_max_iter_no_changes = 0;
 
 	while (num_iteractions < _max_iteractions)
 	{
@@ -54,14 +60,28 @@ ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOp
 //			_copy(_particles[random_particle], _gbest);
 //		}
 		_error[num_iteractions] = _gbest_fitness;
+		err = fabs(last_gbest_fitness - _gbest_fitness);
 
-		fprintf(stderr, "Iteraction: %d of %d GbestFitness: %lf\n", 
-			num_iteractions, _max_iteractions, -_gbest_fitness);
+		fprintf(stderr, "Iteraction: %d of %d GbestFitness: %lf, ErrorBetweenIter: %lf\n", 
+			num_iteractions, _max_iteractions, -_gbest_fitness, err);
 
 		if (interaction_function)
 			(*interaction_function)(this, _data, _best_particle_id);
 
 		num_iteractions++;
+
+		if (err < _tol)
+			break;
+		last_gbest_fitness = _gbest_fitness;
+
+		if (fabs(err) < 1e-6)
+		{
+			count_max_iter_no_changes ++;
+			if (count_max_iter_no_changes > _max_iter_no_changes)
+				break;
+		}
+		else
+			count_max_iter_no_changes = 0;
 	}
 }
 
