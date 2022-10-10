@@ -12,6 +12,8 @@ rddf_get_annotation_description_by_type(int type)
         return "RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN";
     case RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK:
         return "RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK";
+    case RDDF_ANNOTATION_TYPE_QUEUE:
+        return "RDDF_ANNOTATION_TYPE_QUEUE";
     case RDDF_ANNOTATION_TYPE_STOP:
         return "RDDF_ANNOTATION_TYPE_STOP";
     case RDDF_ANNOTATION_TYPE_BARRIER:
