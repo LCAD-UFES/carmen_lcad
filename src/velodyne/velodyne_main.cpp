@@ -98,9 +98,9 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 
  	if (first_time)
  	{
- 		variable_msg.partial_scan = (carmen_velodyne_shot *) malloc ((velodyne_partial_scan.number_of_32_laser_shots + 1) * sizeof(carmen_velodyne_shot));
+ 		variable_msg.partial_scan = (carmen_velodyne_shot *) malloc ((velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION) * sizeof(carmen_velodyne_shot));
 
-         for (int i = 0 ; i <= velodyne_partial_scan.number_of_32_laser_shots; i++)
+         for (int i = 0 ; i <= velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION; i++)
          {
         	 variable_msg.partial_scan[i].shot_size = shot_size;
         	 variable_msg.partial_scan[i].distance  = (unsigned int*) malloc (shot_size * sizeof(unsigned int));
@@ -109,6 +109,7 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
          variable_msg.host = carmen_get_host();
  		first_time = false;
  	}
+
  	variable_msg.number_of_shots = velodyne_partial_scan.number_of_32_laser_shots;
 
  	for(int i = 0; i < velodyne_partial_scan.number_of_32_laser_shots; i++)

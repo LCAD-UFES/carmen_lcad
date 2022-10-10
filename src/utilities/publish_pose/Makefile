@@ -2,7 +2,7 @@ include ../../Makefile.conf
 
 CFLAGS += 
 IFLAGS += 
-LFLAGS += -lipc -pthread -lglobal -llocalize_ackerman_interface -lrddf_interface
+LFLAGS += -lipc -pthread -lglobal -llocalize_ackerman_interface -lrddf_interface -lparam_interface -lplayback_interface
 
 MODULE_NAME = PUBLISH_POSE
 MODULE_COMMENT = Publish a fixed globalpose

@@ -41,6 +41,8 @@
 #include <control.h>
 #include "ford_escape_hybrid.h"
 
+//#define LATENCY_TEST_PRINT
+
 //#define FORD_ESCAPE_COMMUNICATION_DUMP
 //#define PLOT_PHI
 //#define PLOT_VELOCITY
@@ -828,11 +830,16 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 //		printf("*v %lf, phi %lf, timestamp %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_atan_desired_curvature), ford_escape_hybrid_config), carmen_get_time());
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
-
 		raw_phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(ford_escape_hybrid_config->filtered_v), &(ford_escape_hybrid_config->filtered_phi), 
 						    g_XGV_velocity, raw_phi, 
 						    0.0, v_multiplier, phi_bias, phi_multiplier);
+#ifdef LATENCY_TEST_PRINT
+		//@@@VINICIUS AQUI QUE RECEBE O PHI VINDO DO OJASTRU2
+		fprintf(stdout, "ford_form_oj_feedback (raw_phi_ford_form_oj_feedback, filt_phi_ford_form_oj_feedback, cc_ford_form_oj_feedback, t): %lf, %lf, %lf\n",
+				raw_phi, ford_escape_hybrid_config->filtered_phi, g_XGV_atan_curvature, carmen_get_time());
+		fflush(stdout);
+#endif
 			
 		set_wrench_efforts_desired_v_curvature_and_gear();
 
@@ -962,6 +969,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		#ifdef PLOT_VELOCITY
 			pid_plot_velocity(ford_escape_hybrid_config->filtered_v, g_desired_velocity, 15.0, "vel");
 		#endif
+
+#ifdef LATENCY_TEST_PRINT
+			//@@@VINICIUS Aqui envia o comando para o ojASTRU2
+		fprintf(stdout, "ford->oj_effort (steering_command_ford->oj, dc_Ford->oj, t): %lf, %lf, %lf\n", g_steering_command, g_atan_desired_curvature, carmen_get_time());
+		fflush(stdout);
+#endif
 
 		publish_ford_escape_steering_throttle_and_brakes_command(XGV_CCU);
 

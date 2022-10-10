@@ -551,6 +551,11 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/gear_12.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_GEAR][RDDF_ANNOTATION_CODE_GEAR_12] = get_annotation_image(annotation_image_filename);
 
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/queue.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_QUEUE][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/queue_buzy.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_QUEUE][RDDF_ANNOTATION_CODE_QUEUE_BUSY] = get_annotation_image(annotation_image_filename);
+
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
 		controls_.drawAreaCarPanel = GTK_WIDGET(gtk_builder_get_object(builder, "drawingAreaCarPanel"));
