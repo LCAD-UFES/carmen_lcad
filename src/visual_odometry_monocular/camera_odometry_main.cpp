@@ -1,12 +1,17 @@
 #include "camera_odomery.h"
 #include <cmath>
 #include "BigFloat.h"
+#include <vector>
 
+#include <carmen/tf.h>
+
+using namespace tf;
 char *log_filename = NULL;
 int initial_pose_found = 0;
 // As variáveis abaixo servem para fornecer as coordenadas iniciais do mapa. Existe um bug no mapper que, quando a origem do x é 0, a construção do mapa fica cortada nesses trechos. Para evitar isso adiciono os valores abaixo nas posições
 double initial_x = 7757721.8;
 double initial_y = -363569.5;
+
 
 std::vector<std::string>
 string_split(std::string s, std::string pattern)
@@ -71,6 +76,16 @@ read_gps(std::string line, int gps_to_use)
 	return (m);
 }
 
+void
+initialize_car_objects_poses_in_transformer(Transformer &tf_transformer, double x_gps_init, double y_gps_init, double yaw_gps, double x_odometry_init, double y_odometry_init, double yaw_odometry)
+{
+
+
+	tf_transformer.setTransform(tf::StampedTransform(Transform(Quaternion(yaw_gps, 0, 0), Vector3(x_gps_init, y_gps_init, 0)), tf::Time(0), "/world", "/gps"));
+	tf_transformer.setTransform(tf::StampedTransform(Transform(Quaternion(yaw_odometry, 0, 0), Vector3(x_odometry_init, y_odometry_init, 0)), tf::Time(0), "/world", "/odometry"));
+}
+
+
 std::vector<std::vector<double>>
 read_data_from_log(char *log_file)
 {
@@ -108,7 +123,6 @@ read_data_from_log(char *log_file)
 			aux_gps.push_back(m.x);
 			aux_gps.push_back(m.y);
 			poses_gps.push_back(aux_gps);
-			aux_gps.clear();
 		}
 		else
 		{
@@ -121,29 +135,29 @@ read_data_from_log(char *log_file)
 				if (m.x != 0.0 && m.y != 0.0)
 					fprintf(poses_gps_file, "%lf %lf\n", m.x, m.y);
 				poses_gps.push_back(aux_gps);
-				aux_gps.clear();
 				x_sum = x_sum + m.x;
 				y_sum = y_sum + m.y;
-				std::cout << y_sum.ToString() << std::endl;
+				//std::cout << y_sum.ToString() << std::endl;
 			}
 		}
     }
 	fclose(poses_gps_file);
 	double centroid_x_gps, centroid_y_gps ;
-	std::cout << BigFloat(x_sum / int(aux_gps.size())).ToString() << std::endl;
-	centroid_x_gps = BigFloat(x_sum / int(aux_gps.size())).ToDouble(); //BigFloat(x_sum / BigFloat(int (aux_gps.size()))).ToDouble();
-	centroid_y_gps = BigFloat(y_sum / int(aux_gps.size())).ToDouble();
+	double yaw_gps = atan2(poses_gps[1][0], poses_gps[1][1]);
+	yaw_gps = yaw_gps + M_PI / 6.0; //+ M_PI / 4.0 ;
+	std::cout << yaw_gps << " " << poses_gps[1][1] << " " << poses_gps[1][0] << std::endl;
 	printf("aaaa %lf %lf\n", centroid_x_gps, centroid_y_gps);
 	logfile.close();
-    std::ifstream poses_file("/home/marcelo/evaluation_tools/convert/kitti2Tum/bin/saida.txt");
+    std::ifstream poses_file("/media/lume/f3bce44c-b721-4f2d-8fd6-91d76b9581b5/voldor-easyuse/saida.txt");
     std::getline(poses_file, line);
     std::vector<std::vector<double>> poses_vector;
 	std::vector<double> aux_vector;
-	//aux_vector.push_back(initial_x);
-	//aux_vector.push_back(initial_y);
-    //poses_vector.push_back(aux_vector);
 	FILE *poses_file_write = fopen("poses_file.txt", "a");
 	int j = 0;
+	double yaw_odometry = atan2(-0.9450341 + 0.93798876, -3.5824656 + 3.594625);
+	bool already_computed = false;
+	double x_odometry_init, y_odometry_init;
+	Transformer tf_transformer;
     while (std::getline(poses_file, line))
     {
         std::vector<std::string> splitted_string = string_split(line, " ");
@@ -155,16 +169,36 @@ read_data_from_log(char *log_file)
 		{	
 			x = std::stod(splitted_string[1]);
 			y = std::stod(splitted_string[2]);
-			x = x  * sin(100 * M_PI / 180.) + y * cos(100 * M_PI / 180.);
-			y = x * cos( 100 * M_PI / 180.) - y * sin(100 * M_PI / 180.);
-			x = 20 * x;
-			y = 90 * y;
+			if(!already_computed)
+			{
+				x_odometry_init = x;
+				y_odometry_init = y;
+
+				initialize_car_objects_poses_in_transformer(tf_transformer, initial_x, initial_y, yaw_gps, x_odometry_init, y_odometry_init, yaw_odometry);
+				already_computed = true;
+			}
+			x = x * -15;//-15.5;//-20;
+			y = y * 150;//155;//60;
+			x = x - 50; //-100;
+			y =y + 300;
+			tf::StampedTransform a_to_b;
+			tf_transformer.lookupTransform("/world", "/gps", tf::Time(0), a_to_b);
+
+			tf::Point point_odometry_tf = tf::Point(x, y, 0.0);
+			tf::Point reference_adjusted = a_to_b * point_odometry_tf;
+			//x = x  * sin(100 * M_PI / 180.) + y * cos(100 * M_PI / 180.);
+			//y = x * cos( 100 * M_PI / 180.) - y * sin(100 * M_PI / 180.);
+
+			x = reference_adjusted.x();
+			y = reference_adjusted.y();
+			//x = x + 7.75735e+06;
+			//y = y + -363846;
+			//std::cout << yaw_gps;
 			//printf("%lf\n", x);
-			//fprintf(poses_file_write, "%lf %lf\n", x, y);
+			fprintf(poses_file_write, "%lf %lf\n", x, y);
 			aux_vector.push_back(x);
 			aux_vector.push_back(y);
 			poses_vector.push_back(aux_vector);
-			aux_vector.clear();
 		}
 		j++;
 		//resize
@@ -191,7 +225,7 @@ read_data_from_log(char *log_file)
 		
     }
 	//x_sum = y_sum = 0.;
-	double x_sum_slam = 0., y_sum_slam = 0.;
+	/*double x_sum_slam = 0., y_sum_slam = 0.;
 	double centroid_x_slam = 0.; 
 	double centroid_y_slam = 0.;
 	
@@ -219,7 +253,7 @@ read_data_from_log(char *log_file)
 	}
 
 
-	printf("%lf %lf\n",centroid_x_gps, centroid_y_gps );
+	printf("%lf %lf\n",centroid_x_gps, centroid_y_gps );*/
 	fclose(poses_file_write);
 	return poses_vector;
 }
