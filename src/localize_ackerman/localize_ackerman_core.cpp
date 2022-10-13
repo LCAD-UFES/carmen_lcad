@@ -489,7 +489,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t 
 	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
 		return (predicted_beta);
 	else
-		return (carmen_normalize_theta(beta - semi_trailer_config.semi_trailers.beta_correct_beta_bias));
+		return (convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(beta - semi_trailer_config.semi_trailers.beta_correct_beta_bias)));
 }
 
 
