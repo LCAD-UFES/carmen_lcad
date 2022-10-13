@@ -718,6 +718,7 @@ src/tracker/tracker.c
 data/mapper_teste2
 data/map_volta_da_ufes-20220614
 data/mapper_log_aeroporto
+data/mapper_piumbini
 logs/inference_results
 /sharedlib/ENet/caffe-enet/build
 
