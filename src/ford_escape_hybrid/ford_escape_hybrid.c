@@ -587,6 +587,7 @@ check_jaus_reported_errors()
 static void
 base_ackerman_motion_command_message_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
 {
+//	printf("recebi a mensagem_base_ackerman\n");
 	int num_motion_commands, i;
 
 	current_motion_command_vetor = (current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS;
@@ -594,13 +595,18 @@ base_ackerman_motion_command_message_handler(carmen_base_ackerman_motion_command
 	num_motion_commands = fmin(NUM_MOTION_COMMANDS_PER_VECTOR, motion_command_message->num_motion_commands);
 
 	for (i = 0; i < num_motion_commands; i++)
+	{
 		motion_commands_vector[current_motion_command_vetor][i] = motion_command_message->motion_command[i];
+//		printf("cv %lf cphi %lf ctime %lf numMotionsC %d\n", motion_command_message->motion_command[i].v, motion_command_message->motion_command[i].phi, motion_command_message->motion_command[i].time, num_motion_commands);
+//		fflush(stdout);
+	}
 
 	nun_motion_commands[current_motion_command_vetor] = num_motion_commands;
 
 	ford_escape_hybrid_config->current_motion_command_vector = motion_commands_vector[current_motion_command_vetor];
 	ford_escape_hybrid_config->nun_motion_commands = nun_motion_commands[current_motion_command_vetor];
 	ford_escape_hybrid_config->time_of_last_command = motion_command_message->timestamp;
+
 
 	if (ford_escape_hybrid_config->use_mpc)
 		ford_escape_hybrid_config->nun_motion_commands = apply_system_latencies(ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands);
@@ -836,8 +842,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 						    0.0, v_multiplier, phi_bias, phi_multiplier);
 #ifdef LATENCY_TEST_PRINT
 		//@@@VINICIUS AQUI QUE RECEBE O PHI VINDO DO OJASTRU2
-		fprintf(stdout, "ford_form_oj_feedback (raw_phi_ford_form_oj_feedback, filt_phi_ford_form_oj_feedback, cc_ford_form_oj_feedback, t): %lf, %lf, %lf\n",
-				raw_phi, ford_escape_hybrid_config->filtered_phi, g_XGV_atan_curvature, carmen_get_time());
+		fprintf(stdout, "ford_form_oj_feedback (filt_phi_ford_form_oj_feedback, cc_ford_form_oj_feedback, t): %lf, %lf, %lf\n",
+				ford_escape_hybrid_config->filtered_phi, g_XGV_atan_curvature, carmen_get_time());
 		fflush(stdout);
 #endif
 			
@@ -932,7 +938,10 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 				else if ((robot_model_name == ROBOT_NAME_ECOTECH4) || (robot_model_name == ROBOT_NAME_MPW700) || (robot_model_name == ROBOT_NAME_ASTRU))
 				{
 					double plan_size;
-					if (ford_escape_hybrid_config->nun_motion_commands > 2)
+
+					if (tune_pid_mode) //ford_escape_tune_pid nao preenche o x,y,theta. Falta tratar para o caso do Joystic tambem
+						plan_size = 5.0;
+					else if (ford_escape_hybrid_config->nun_motion_commands > 2) //calcula tamanho do plano para passar para funcao de PID.
 						plan_size = DIST2D(ford_escape_hybrid_config->current_motion_command_vector[0], ford_escape_hybrid_config->current_motion_command_vector[ford_escape_hybrid_config->nun_motion_commands - 1]);
 					else
 						plan_size = 0.0;
@@ -940,6 +949,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
 							plan_size, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+//					printf("Entrei aqui pra ver o PID e tudo, g_steering_command: %lf\n", g_steering_command);
 				}
 				else
 					printf("ROBOT_MODEL_NAME %d wasnt recognized, check the code number\n "
@@ -971,11 +981,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		#endif
 
 #ifdef LATENCY_TEST_PRINT
-			//@@@VINICIUS Aqui envia o comando para o ojASTRU2
+			//@@@VINICIUS Aqui envia o comando para o ojASTRU2 (a g_atan_desired nao bate com nenhuma mensagem pra baixo, sempre -0.00)
 		fprintf(stdout, "ford->oj_effort (steering_command_ford->oj, dc_Ford->oj, t): %lf, %lf, %lf\n", g_steering_command, g_atan_desired_curvature, carmen_get_time());
 		fflush(stdout);
 #endif
 
+//		printf("mandei pro jaus: %lf\n", g_steering_command);
 		publish_ford_escape_steering_throttle_and_brakes_command(XGV_CCU);
 
 		reportCurvatureMessageDestroy(reportCurvature);

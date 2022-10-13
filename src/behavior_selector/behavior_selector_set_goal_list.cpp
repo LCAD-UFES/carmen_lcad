@@ -833,6 +833,27 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
 			moving_obstacle_trasition = 0.0;
 		}
+		// else if (((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_QUEUE) &&  // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
+		// 		(busy_queue_ahead(robot_pose, timestamp)) &&
+		// 		   ((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) ||
+		// 			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||
+		// 			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1))))// &&
+		// 		//   rddf_pose_hit_obstacle) // e se ela colide com um obstaculo.
+		// {
+		// 	printf("TO FAZENDO MEU SERVICO! %s %d\n", __FILE__, __LINE__);
+		// 	goal_type[goal_index] = ANNOTATION_GOAL2;
+		// 	double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
+		// 	if (distance_to_waypoint >= 0.0)
+		// 	{
+		// 		double displacement = 0.5;
+		// 		if (rddf->poses[rddf_pose_index].v >= 0.0)
+		// 			displacement = -displacement;
+		// 		add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
+		// 	}
+		// 	else
+		// 		add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
+		// 	moving_obstacle_trasition = 0.0;
+		// }
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_YIELD) &&
 				   (must_yield(path_collision_info, timestamp) ||
 					(behavior_selector_state_message.low_level_state == Stopping_At_Yield) ||
@@ -898,6 +919,22 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 			}
 			moving_obstacle_trasition = 0.0;
 		}
+		// else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_QUEUE) &&  // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
+		// 		   !wait_start_moving && busy_queue_ahead(robot_pose, timestamp))) &&
+		// 		   !rddf_pose_hit_obstacle)
+		// {
+		// 	printf("TO FAZENDO MEU SERVICO! %s %d\n", __FILE__, __LINE__);
+		// 	goal_type[goal_index] = ANNOTATION_GOAL2;
+		// 	double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]); // Distancia da extremidade dianteira do robo para a anotacao
+		// 	printf ("ENtrou  ");
+		// 	if (distance_to_waypoint > (MIN_DISTANCE_TO_CONSIDER_CROSSWALK + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)) // Se passou deste ponto, o robo ja está muito encima da faixa e nao adianta mais parar
+		// 	{
+		// 		int	goal_in_pedestrian_track_rddf_index = compute_stop_pose_rddf_index(robot_pose, rddf, rddf->number_of_poses, -1.0, 0.2);  ///////////// TODO ler a desaceleracao e o zero bias do carmen ini
+		// 		printf ("RDDF_I %d %d %lf %lf\n", rddf_pose_index, goal_in_pedestrian_track_rddf_index, (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels), distance_to_waypoint);
+		// 		add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, goal_in_pedestrian_track_rddf_index, rddf);
+		// 	}
+		// 	moving_obstacle_trasition = 0.0;
+		// }
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) && !wait_start_moving)) &&  // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
 				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo
 				 rddf_pose_hit_obstacle) // e se ela colidiu com obstaculo.
@@ -906,6 +943,15 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 			goal_type[goal_index] = ANNOTATION_GOAL3;
 			double displacement = ((rddf->poses[rddf_pose_index].v >= 0.0) ? -2.0 : 2.0);
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, displacement);
+			moving_obstacle_trasition = 0.0;
+		}
+
+		else if ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_QUEUE) 
+				&& (busy_queue_ahead(robot_pose, timestamp)))
+		{
+			goal_type[goal_index] = ANNOTATION_GOAL2;
+			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf);
+			// add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 			moving_obstacle_trasition = 0.0;
 		}
 		else if (behavior_selector_reverse_driving &&

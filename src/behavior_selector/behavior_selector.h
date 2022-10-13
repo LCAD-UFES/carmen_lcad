@@ -126,6 +126,8 @@ extern "C" {
 	
 	bool busy_pedestrian_track_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 
+	bool busy_pedestrian_track_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+	
 	bool pedestrian_near_pose_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 
 	bool going_forward();

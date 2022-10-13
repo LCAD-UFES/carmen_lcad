@@ -189,6 +189,7 @@ double annotation_velocity_bump;
 double annotation_velocity_pedestrian_track_stop;
 double annotation_velocity_yield;
 double annotation_velocity_barrier;
+double annotation_velocity_queue;
 
 carmen_moving_objects_point_clouds_message *pedestrians_tracked = NULL;
 int behavior_selector_check_pedestrian_near_path = 0;
@@ -1219,6 +1220,14 @@ set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_p
 		else
 			set_of_paths.selected_path = selected_path_id;
 
+		if(busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) //&&
+			// ((behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||
+			// (behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1))
+			) //@@@Vinicius teste para nao escolher paths laterais na faixa
+			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
+		else
+			set_of_paths.selected_path = selected_path_id;
+
 		#ifdef CHECK_IF_ALL_PATHS_HAS_COLLISION
 			if(check_if_all_paths_has_collision(paths_collision_info))
 			{
@@ -1915,6 +1924,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "annotation_velocity_pedestrian_track_stop", CARMEN_PARAM_DOUBLE, &annotation_velocity_pedestrian_track_stop, 0, NULL},
 		{(char *) "robot", (char *) "annotation_velocity_yield",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_yield,				  0, NULL},
 		{(char *) "robot", (char *) "annotation_velocity_barrier",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_barrier,				  0, NULL},
+		{(char *) "robot", (char *) "annotation_velocity_queue", 				 CARMEN_PARAM_DOUBLE, &annotation_velocity_queue, 0, NULL},
 
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "move_to_engage_pose_speed_limit", CARMEN_PARAM_DOUBLE, &move_to_engage_pose_speed_limit, 1, NULL},

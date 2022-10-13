@@ -168,6 +168,27 @@ distance_to_waypoint_near_to_nearest_pedestrian_ahead(carmen_robot_and_trailers_
 
 
 bool
+queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_queue_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (nearest_queue_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D(nearest_queue_annotation->annotation_point, current_robot_pose_v_and_phi);
+	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
+	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+
+	if ((distance_to_act_on_annotation >= distance_to_annotation) &&
+		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_queue_annotation->annotation_point))
+		return (true);
+	else
+		return (false);
+}
+
+
+bool
 stop_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_stop_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_STOP,
@@ -567,6 +588,16 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 //			carmen_navigator_ackerman_go();
 			break;
 
+		
+		case Stopping_At_Busy_Queue:
+			break;
+		case Stopped_At_Busy_Queue_S0:
+			break;
+		case Stopped_At_Busy_Queue_S1:
+			break;
+		case Stopped_At_Busy_Queue_S2:
+			break;
+
 
 		case Stopping_At_Yield:
 			break;
@@ -769,6 +800,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
 			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) && !robot_reached_non_return_point(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Busy_Pedestrian_Track;
+			else if (busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopping_At_Busy_Queue;
 			else if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_At_Yield;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
@@ -793,6 +826,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
 			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) && !robot_reached_non_return_point(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Stopping_At_Busy_Pedestrian_Track;
+			else if (busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopping_At_Busy_Queue;
 			else if (must_yield_ahead(path_collision_info, current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_At_Yield;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
@@ -909,6 +944,48 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Free_Running;
 			if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S0;
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
+			break;
+		
+
+		case Stopping_At_Busy_Queue:
+			// printf("Stopping_At_Busy_Queue\n");
+			// if ((current_robot_pose_v_and_phi.v < 0.15))// &&
+				// ((distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) < 2.0) ||
+				//  (distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) == 1000.0)))
+				decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S0;
+			// else 
+			if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Free_Running;
+			break;
+		case Stopped_At_Busy_Queue_S0:
+			// printf("Stopped_At_Busy_Queue_S0\n");
+			decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S1;
+			break;
+		case Stopped_At_Busy_Queue_S1:
+			{
+				// printf("Stopped_At_Busy_Queue_S1\n");
+				static int steps2 = 0;
+
+				if (steps2 > 3)
+				{
+					if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+					{
+						steps2 = 0;
+						decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S2;
+					}
+				}
+				else
+					steps2++;
+			}
+			break;
+		case Stopped_At_Busy_Queue_S2:
+			// printf("Stopped_At_Busy_Queue_S2\n");
+			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))// && (distance_to_pedestrian_track_stop(current_robot_pose_v_and_phi) > 2.0))
+				decision_making_state_msg->low_level_state = Free_Running;
+			if (busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S0;
 			if (!autonomous)
 				decision_making_state_msg->low_level_state = Stopped;
 			break;
