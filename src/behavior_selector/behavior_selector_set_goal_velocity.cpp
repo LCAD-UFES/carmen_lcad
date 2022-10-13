@@ -226,6 +226,25 @@ nearest_pose_is_the_final_pose(carmen_robot_and_trailer_traj_point_t current_rob
 
 
 carmen_annotation_t *
+check_busy_queue_annotations_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
+{
+	int busy_queue_index = -1;
+
+	for (int i = 0; i < annotation_message.num_annotations; i++)
+	{
+		if ((annotation_message.annotations[i].annotation_type == annotation) &&
+			annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY &&
+			carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point))
+		{
+			return (&(annotation_message.annotations[i]));
+		}
+	}
+
+	return (NULL);
+}
+
+
+carmen_annotation_t *
 get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
@@ -292,15 +311,13 @@ busy_queue_ahead(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_
 {
 	static double last_queue_busy_timestamp = 0.0;
 
-	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+	carmen_annotation_t *busy_queue_ahead = check_busy_queue_annotations_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
-	carmen_annotation_t *nearest_queue_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
-			last_rddf_annotation_message, &displaced_robot_pose);
 
-	if (nearest_queue_annotation == NULL)
+	if (busy_queue_ahead == NULL)
 		return (false);
-
-	if ((nearest_queue_annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY))
+	else
 		last_queue_busy_timestamp = timestamp;
 
 	if (timestamp - last_queue_busy_timestamp < 1.5)
@@ -498,7 +515,9 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE)
 		v = annotation_velocity_queue;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE) &&
-			 busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))// &&
+			(annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
+			&&(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
+			//  busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))// &&
 			 //(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
 		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD) &&

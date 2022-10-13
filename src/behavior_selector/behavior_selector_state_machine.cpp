@@ -39,6 +39,7 @@ using namespace std;
 extern bool wait_start_moving;
 extern bool autonomous;
 extern bool all_paths_has_collision_and_goal_is_not_an_annotation;
+extern double distance_car_pose_car_front;
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 extern carmen_robot_ackerman_config_t robot_config;
@@ -549,6 +550,25 @@ distance_to_pedestrian_track_stop(carmen_robot_and_trailer_traj_point_t current_
 }
 
 
+double
+distance_to_busy_queue(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, false);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+	distance_to_annotation -= distance_car_pose_car_front;
+
+	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE && nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
 int
 perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg)
 {
@@ -954,6 +974,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			// if ((current_robot_pose_v_and_phi.v < 0.15))// &&
 				// ((distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) < 2.0) ||
 				//  (distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) == 1000.0)))
+			if (/*(current_robot_pose_v_and_phi.v < 0.15) && */distance_to_busy_queue(current_robot_pose_v_and_phi) < 1.5)
 				decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S0;
 			// else 
 			if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
@@ -970,7 +991,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 				if (steps2 > 3)
 				{
-					if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+					if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) || distance_to_busy_queue(current_robot_pose_v_and_phi) > 1.5)
 					{
 						steps2 = 0;
 						decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S2;
@@ -982,7 +1003,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			break;
 		case Stopped_At_Busy_Queue_S2:
 			// printf("Stopped_At_Busy_Queue_S2\n");
-			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))// && (distance_to_pedestrian_track_stop(current_robot_pose_v_and_phi) > 2.0))
+			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))// && distance_to_queue(current_robot_pose_v_and_phi) > 2.0)
 				decision_making_state_msg->low_level_state = Free_Running;
 			if (busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S0;
