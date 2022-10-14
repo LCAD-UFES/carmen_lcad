@@ -187,7 +187,6 @@ main(int argc, char* argv[])
               << "\n  Scan dimensions:   " << w << " x " << h
               << "\n  Column window:     [" << column_window.first << ", "
               << column_window.second << "]" 
-              << "\n  Publising Lidar Message:   " << ouster_sensor_id
 			  << "\n Esse LiDAR está publicando menssagens com ids "<< std::endl;
     for(size_t i = 0; i < h / number_of_rays_per_message; i++)
     	std::cerr << (h / number_of_rays_per_message) * ouster_sensor_id + i << " ";
