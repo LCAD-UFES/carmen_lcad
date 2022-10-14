@@ -44,7 +44,8 @@ typedef enum
 	TASK_MANAGER_REPEAT,
 	TASK_MANAGER_GO,
 	TASK_MANAGER_STOP,
-	TASK_MANAGER_EXECUTE
+	TASK_MANAGER_EXECUTE,
+	TASK_MANAGER_INIT,
 } carmen_task_manager_task_type;
 
 
@@ -79,7 +80,8 @@ typedef enum
 	(x == TASK_MANAGER_REPEAT)? "REPEAT": \
 	(x == TASK_MANAGER_GO)? "GO": \
 	(x == TASK_MANAGER_STOP)? "STOP": \
-	(x == TASK_MANAGER_EXECUTE)? "EXECUTE": "")
+	(x == TASK_MANAGER_EXECUTE)? "EXECUTE": \
+	(x == TASK_MANAGER_INIT)? "INIT": "")
 
 
 typedef enum
