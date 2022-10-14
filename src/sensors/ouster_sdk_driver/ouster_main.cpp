@@ -187,8 +187,11 @@ main(int argc, char* argv[])
               << "\n  Scan dimensions:   " << w << " x " << h
               << "\n  Column window:     [" << column_window.first << ", "
               << column_window.second << "]" 
-              << "\n  Publising Lidar Message:   " << ouster_sensor_id << std::endl;
-
+              << "\n  Publising Lidar Message:   " << ouster_sensor_id
+			  << "\n Esse LiDAR está publicando menssagens com ids "<< std::endl;
+    for(size_t i = 0; i < h / number_of_rays_per_message; i++)
+    	std::cerr << (h / number_of_rays_per_message) * ouster_sensor_id + i << " ";
+    std::cerr << ", CHECAR SE OS PARÂMETROS COM OS IDS DESSAS MENSSAGENS ESTÃO CORRETOS NO CARMEN.INI\n";
     // A LidarScan holds lidar data for an entire rotation of the device
     std::vector<LidarScan> scans{
         N_SCANS, LidarScan{w, h, info.format.udp_profile_lidar}};
@@ -324,7 +327,7 @@ main(int argc, char* argv[])
 				vector_msgs[i].host = carmen_get_host();
 				vector_msgs[i].timestamp = carmen_get_time();
 				vector_msgs[i].number_of_shots = number_of_shots;
-				carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], ouster_sensor_id + i);
+				carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (h / number_of_rays_per_message) * ouster_sensor_id + i);
 				if (abs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
 					//break para preencher apenas uma menssagem para Lidars com raios alinhados
 					break;
