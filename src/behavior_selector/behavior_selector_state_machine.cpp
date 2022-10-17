@@ -551,7 +551,7 @@ distance_to_pedestrian_track_stop(carmen_robot_and_trailers_traj_point_t current
 
 
 double
-distance_to_busy_queue(carmen_robot_and_trailer_traj_point_t current_robot_pose_v_and_phi)
+distance_to_busy_queue(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, false);
