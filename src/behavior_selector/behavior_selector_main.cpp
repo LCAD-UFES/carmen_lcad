@@ -1181,7 +1181,7 @@ check_if_all_paths_has_collision(vector<path_collision_info_t> &paths_collision_
 	return false;
 }
 
-
+int cont = 0;
 path_collision_info_t
 set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi,
 		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
@@ -1214,19 +1214,16 @@ set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_p
 
 	if (behavior_selector_performs_path_planning && current_set_of_paths)
 	{
-		if((busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
-			((behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
-			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1))) ||
-			(busy_queue_ahead(current_robot_pose_v_and_phi, timestamp)/* &&
-			((behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||
-			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1))*/)) //@@@Vinicius teste para nao escolher paths laterais na faixa
+		if(
+			(busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&	((behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) || (behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1))) ||
+			/*(busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) && */((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) || (behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||	(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1))) //@@@Vinicius teste para nao escolher paths laterais na faixa
+		//)
 		{
-			// printf("escolhendo path central!\n");
+			// printf("%d escolhendo path central!\n", ++cont);
 			set_of_paths.selected_path = frenet_path_planner_num_paths / 2;
 		}
 		else
 			set_of_paths.selected_path = selected_path_id;
-			
 
 		#ifdef CHECK_IF_ALL_PATHS_HAS_COLLISION
 			if(check_if_all_paths_has_collision(paths_collision_info))
@@ -1361,10 +1358,10 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 				path_collision_info, behavior_selector_state_message, timestamp);
 
 		if((busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) && 
-			(behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) ||
+			((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) ||
 			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||
 			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1) ||
-			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S2))
+			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S2)))
 			&& goal_type == ANNOTATION_GOAL2 && goal_list_size > 1)
 				goal_list_size = 1;
 

@@ -775,37 +775,54 @@ carmen_rddf_play_parse_input_command_line_parameters(int argc, char **argv)
 {
 	char *usage[] = { (char*) ("<rddf_filename> [<annotation_filename> [<traffic_lights_camera>]]"),
 					  (char*) ("-use_road_map   [<annotation_filename> [<traffic_lights_camera>]]") };
-
-	if (argc >= 2 && strcmp(argv[1], "-h") == 0)
+	char *carmen_annotation_filename = NULL;
+	for(int i = 0; i < argc; i++)
 	{
-		printf("\nUsage 1: %s %s\nUsage 2: %s %s\n\nCarmen parameters:\n", argv[0], usage[0], argv[0], usage[1]);
-		carmen_rddf_play_get_parameters(argc, argv); // display help and exit
+		printf("%s ", argv[i]);
 	}
-	if (argc < 2 || argc > 7)
-		exit(printf("Error: Usage 1: %s %s\n       Usage 2: %s %s\n", argv[0], usage[0], argv[0], usage[1]));
-
-	if (strcmp(argv[1], "-use_road_map") == 0)
+	printf("\n");
+	if(strcmp(argv[1], "--rddf") == 0)
 	{
-		use_road_map = true;
-		printf("Road map option set.\n");
+		carmen_rddf_filename = argv[2];
+		carmen_annotation_filename = argv[3];
+		printf("RDDF filename: %s.\n", carmen_rddf_filename);
+		printf("Annotation filename: %s.\n", carmen_annotation_filename);
 	}
 	else
 	{
-		carmen_rddf_filename = argv[1];
-		printf("RDDF filename: %s.\n", carmen_rddf_filename);
+		if (argc >= 2 && strcmp(argv[1], "-h") == 0)
+		{
+			printf("\nUsage 1: %s %s\nUsage 2: %s %s\n\nCarmen parameters:\n", argv[0], usage[0], argv[0], usage[1]);
+			carmen_rddf_play_get_parameters(argc, argv); // display help and exit
+		}
+		if (argc < 2 || argc > 7)
+			exit(printf("Error: Usage 1: %s %s\n       Usage 2: %s %s\n", argv[0], usage[0], argv[0], usage[1]));
+
+		if (strcmp(argv[1], "-use_road_map") == 0)
+		{
+			use_road_map = true;
+			printf("Road map option set.\n");
+		}
+		else
+		{
+			if(strcmp(argv[1], "--rddf") == 0)
+				carmen_rddf_filename = argv[2];
+			else
+				carmen_rddf_filename = argv[1];
+			printf("RDDF filename: %s.\n", carmen_rddf_filename);
+		}
+
+		if (argc >= 3)
+			carmen_annotation_filename = argv[2];
+
+		if (carmen_annotation_filename)
+			printf("Annotation filename: %s.\n", carmen_annotation_filename);
+
+		if (argc >= 4)
+			traffic_lights_camera = atoi(argv[3]);
+
+		printf("Traffic lights camera: %d.\n", traffic_lights_camera);
 	}
-
-	char *carmen_annotation_filename = NULL;
-	if (argc >= 3)
-		carmen_annotation_filename = argv[2];
-
-	if (carmen_annotation_filename)
-		printf("Annotation filename: %s.\n", carmen_annotation_filename);
-
-	if (argc >= 4)
-		traffic_lights_camera = atoi(argv[3]);
-
-	printf("Traffic lights camera: %d.\n", traffic_lights_camera);
 
 	return (carmen_annotation_filename);
 }
