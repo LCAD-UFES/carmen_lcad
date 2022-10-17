@@ -729,6 +729,7 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 		}
 		else if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
+			// printf("else if (moving_object_in_front_index != -1)\n");
 			double d = 0;
 			int ideal_rddf_pose_index;
 			for (ideal_rddf_pose_index = current_goal_rddf_index; ideal_rddf_pose_index < rddf->number_of_poses - 1; ideal_rddf_pose_index++)
@@ -801,7 +802,16 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 			double displacement = 0.0;//((rddf->poses[rddf_pose_index].v >= 0.0) ? -2.0 : 2.0);
 			if(!rddf_pose_hit_obstacle)
 			{
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
+				// printf("entrando aqui\n");
+				double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
+				if (distance_to_waypoint <= 0.5)
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, 0.0);
+				else
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
+
+				// int	goal_in_queue_rddf_index = compute_stop_pose_rddf_index(robot_pose, rddf, rddf->number_of_poses, -1.0, 0.2);  ///////////// TODO ler a desaceleracao e o zero bias do carmen ini
+				// // add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, goal_in_queue_rddf_index, rddf);
+				// add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
 			}
 			else
 			{
@@ -841,27 +851,6 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailer_traj_point_t
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
 			moving_obstacle_trasition = 0.0;
 		}
-		// else if (((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_QUEUE) &&  // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
-		// 		(busy_queue_ahead(robot_pose, timestamp)) &&
-		// 		   ((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) ||
-		// 			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||
-		// 			(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1))))// &&
-		// 		//   rddf_pose_hit_obstacle) // e se ela colide com um obstaculo.
-		// {
-		// 	printf("TO FAZENDO MEU SERVICO! %s %d\n", __FILE__, __LINE__);
-		// 	goal_type[goal_index] = ANNOTATION_GOAL2;
-		// 	double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
-		// 	if (distance_to_waypoint >= 0.0)
-		// 	{
-		// 		double displacement = 0.5;
-		// 		if (rddf->poses[rddf_pose_index].v >= 0.0)
-		// 			displacement = -displacement;
-		// 		add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
-		// 	}
-		// 	else
-		// 		add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
-		// 	moving_obstacle_trasition = 0.0;
-		// }
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_YIELD) &&
 				   (must_yield(path_collision_info, timestamp) ||
 					(behavior_selector_state_message.low_level_state == Stopping_At_Yield) ||
