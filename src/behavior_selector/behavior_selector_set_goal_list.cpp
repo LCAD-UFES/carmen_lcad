@@ -801,6 +801,21 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 //			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 //			break;
 //		}
+		else if ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_QUEUE) 
+				&& (rddf->annotations_codes[rddf_pose_index] == RDDF_ANNOTATION_CODE_QUEUE_BUSY))
+		{
+			goal_type[goal_index] = ANNOTATION_GOAL2;
+			double displacement = 0.0;//((rddf->poses[rddf_pose_index].v >= 0.0) ? -2.0 : 2.0);
+			if(!rddf_pose_hit_obstacle)
+			{
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
+			}
+			else
+			{
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, displacement);
+			}
+			moving_obstacle_trasition = 0.0;
+		}
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER)) && // || // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
 //				   (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP)) &&
 				  (distance_to_annotation > distance_to_remove_annotation_goal) && // e se ela esta a uma distancia apropriada da anotacao
@@ -943,15 +958,6 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 			goal_type[goal_index] = ANNOTATION_GOAL3;
 			double displacement = ((rddf->poses[rddf_pose_index].v >= 0.0) ? -2.0 : 2.0);
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, displacement);
-			moving_obstacle_trasition = 0.0;
-		}
-
-		else if ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_QUEUE) 
-				&& (busy_queue_ahead(robot_pose, timestamp)))
-		{
-			goal_type[goal_index] = ANNOTATION_GOAL2;
-			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf);
-			// add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 			moving_obstacle_trasition = 0.0;
 		}
 		else if (behavior_selector_reverse_driving &&

@@ -226,7 +226,26 @@ nearest_pose_is_the_final_pose(carmen_robot_and_trailers_traj_point_t current_ro
 
 
 carmen_annotation_t *
-get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
+check_busy_queue_annotations_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
+{
+	int busy_queue_index = -1;
+
+	for (int i = 0; i < annotation_message.num_annotations; i++)
+	{
+		if ((annotation_message.annotations[i].annotation_type == annotation) &&
+			annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY &&
+			carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point))
+		{
+			return (&(annotation_message.annotations[i]));
+		}
+	}
+
+	return (NULL);
+}
+
+
+carmen_annotation_t *
+get_nearest_specified_annotation_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;
@@ -292,15 +311,15 @@ busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 {
 	static double last_queue_busy_timestamp = 0.0;
 
-	carmen_robot_and_trailers_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+	carmen_annotation_t *busy_queue_ahead = check_busy_queue_annotations_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	carmen_annotation_t *nearest_queue_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
 			last_rddf_annotation_message, &displaced_robot_pose);
 
-	if (nearest_queue_annotation == NULL)
+	if (busy_queue_ahead == NULL)
 		return (false);
-
-	if ((nearest_queue_annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY))
+	else
 		last_queue_busy_timestamp = timestamp;
 
 	if (timestamp - last_queue_busy_timestamp < 1.5)
@@ -397,7 +416,7 @@ get_final_goal()
 
 	int goal_list_size;
 	int *goal_type;
-	carmen_robot_and_trailers_traj_point_t *goal_list = behavior_selector_get_last_goals_and_types(goal_type, goal_list_size);
+	carmen_robot_and_trailer_traj_point_t *goal_list = behavior_selector_get_last_goals_and_types(goal_type, goal_list_size);
 	for (int i = 0; i < goal_list_size; i++)
 	{
 		if (goal_type[i] == FINAL_GOAL)
@@ -498,7 +517,9 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE)
 		v = annotation_velocity_queue;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE) &&
-			 busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))// &&
+			(annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
+			&&(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
+			//  busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))// &&
 			 //(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
 		v = 0.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_YIELD) &&
@@ -826,7 +847,7 @@ set_goal_velocity_according_to_state_machine(carmen_robot_and_trailers_traj_poin
 
 
 double
-set_goal_velocity_according_to_obstacle_distance(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
+set_goal_velocity_according_to_obstacle_distance(carmen_robot_and_trailer_traj_point_t *goal, carmen_robot_and_trailer_traj_point_t *current_robot_pose_v_and_phi)
 {
 	double distance_to_obstacle = DIST2D_P(current_robot_pose_v_and_phi, goal);
 
@@ -843,16 +864,16 @@ set_goal_velocity_according_to_obstacle_distance(carmen_robot_and_trailers_traj_
 
 
 double
-limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_robot_and_trailers_traj_point_t *goal,
-		carmen_robot_and_trailers_traj_point_t *poses_ahead, int number_of_poses)
+limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_robot_and_trailer_traj_point_t *goal,
+		carmen_robot_and_trailer_traj_point_t *poses_ahead, int number_of_poses)
 {
 	if (number_of_poses < 6)
 		return (target_v);
 
-	carmen_robot_and_trailers_traj_point_t *path = (carmen_robot_and_trailers_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
-	memcpy(path, poses_ahead, number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
+	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
+	memcpy(path, poses_ahead, number_of_poses * sizeof(carmen_robot_and_trailer_traj_point_t));
 
-	carmen_robot_and_trailers_traj_point_t *original_path_copy = path;
+	carmen_robot_and_trailer_traj_point_t *original_path_copy = path;
 	path = &(path[1]);
 	number_of_poses -= 1;
 	for (int i = 0; i < ((number_of_poses / 4) - 1); i++)
@@ -1023,7 +1044,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailers_traj_po
 
 
 double
-compute_s_range(carmen_robot_and_trailers_traj_point_t *poses_ahead, int pose_index, int num_poses)
+compute_s_range(carmen_robot_and_trailer_traj_point_t *poses_ahead, int pose_index, int num_poses)
 {
 	double s_range = 0.0;
 	for (int i = 0; (i < (num_poses - 1)) && (i < pose_index); i++)
