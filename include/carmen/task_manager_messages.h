@@ -142,7 +142,7 @@ typedef struct
 } carmen_task_manager_set_semi_trailer_type_and_beta_message;
 
 #define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_NAME	"carmen_task_manager_set_semi_trailer_type_and_beta"
-#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_FMT	"{int,double,double,string}"
+#define	CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_FMT	"{int,int,[double:5],double,string}"
 
 typedef struct
 {
@@ -156,8 +156,7 @@ typedef struct
 } carmen_task_manager_mission_state_message;
 
 #define	CARMEN_TASK_MANAGER_MISSION_STATE_MESSAGE_NAME	"carmen_task_manager_mission_state_message"
-#define	CARMEN_TASK_MANAGER_MISSION_STATE_MESSAGE_FMT "{int,string,string,{double,double,double,double},string,double,string}"
-
+#define	CARMEN_TASK_MANAGER_MISSION_STATE_MESSAGE_FMT "{int,string,string,{double,double,double,int,[double:5]},string,double,string}"
 
 typedef struct
 {
