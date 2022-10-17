@@ -472,7 +472,7 @@ carmen_rddf_play_save_rddf_to_file(char *rddf_filename, carmen_rddf_waypoint *wa
 
 
 bool
-carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
+carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailers_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
 {
 	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
 	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
@@ -486,7 +486,7 @@ carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t rob
 
 
 bool
-carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_robot_and_trailer_traj_point_t annotation_point)
+carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailers_traj_point_t robot_pose, carmen_robot_and_trailers_traj_point_t annotation_point)
 {
 	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
 	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
@@ -543,13 +543,13 @@ carmen_rddf_play_clear_annotation_vector()
 void
 displace_car_pose_according_to_car_orientation(carmen_annotation_t *annotation, int direction = -1)
 {
-	carmen_robot_and_trailer_traj_point_t annotation_point;
+	carmen_robot_and_trailers_traj_point_t annotation_point;
 	annotation_point.x = annotation->annotation_point.x;
 	annotation_point.y = annotation->annotation_point.y;
 	annotation_point.theta = annotation->annotation_orientation;
 	double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-	carmen_robot_and_trailer_pose_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(
-			(carmen_robot_and_trailer_traj_point_t *)&annotation_point, distance_car_pose_car_front * direction);
+	carmen_robot_and_trailers_pose_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(
+			(carmen_robot_and_trailers_traj_point_t *)&annotation_point, distance_car_pose_car_front * direction);
 	annotation->annotation_point.x = new_annotation_point.x;
 	annotation->annotation_point.y = new_annotation_point.y;
 }
@@ -836,7 +836,7 @@ carmen_rddf_play_clear_rddf_loop_flag()
 
 
 void
-compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment,
+compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailers_traj_point_t> &rectilinear_route_segment,
 		double size, carmen_annotation_t annotation, double theta, double step_size, bool reverse)
 {
 	if (reverse)
@@ -844,7 +844,7 @@ compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_poin
 		double distance = size;
 		while (distance >= 0.0)
 		{
-			carmen_robot_and_trailer_traj_point_t point = { };
+			carmen_robot_and_trailers_traj_point_t point = { };
 			double theta = carmen_normalize_theta(annotation.annotation_orientation + M_PI);
 			point.x = annotation.annotation_point.x + distance * cos(theta);
 			point.y = annotation.annotation_point.y + distance * sin(theta);
@@ -860,7 +860,7 @@ compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_poin
 		double distance = 0.0;
 		while (distance < size)
 		{
-			carmen_robot_and_trailer_traj_point_t point = { };
+			carmen_robot_and_trailers_traj_point_t point = { };
 			point.x = annotation.annotation_point.x + distance * cos(theta);
 			point.y = annotation.annotation_point.y + distance * sin(theta);
 			point.theta = annotation.annotation_orientation;
@@ -873,10 +873,10 @@ compute_rectilinear_route_half_segment(vector<carmen_robot_and_trailer_traj_poin
 }
 
 
-vector<carmen_robot_and_trailer_traj_point_t>
+vector<carmen_robot_and_trailers_traj_point_t>
 carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back, double step_size)
 {
-	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment;
+	vector<carmen_robot_and_trailers_traj_point_t> rectilinear_route_segment;
 
 	double theta = annotation.annotation_orientation;
 	compute_rectilinear_route_half_segment(rectilinear_route_segment, size_back, annotation, theta, step_size, true);
@@ -887,8 +887,8 @@ carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, do
 
 
 int
-carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment,
-		carmen_robot_and_trailer_traj_point_t point)
+carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailers_traj_point_t> rectilinear_route_segment,
+		carmen_robot_and_trailers_traj_point_t point)
 {
 	int j;
 

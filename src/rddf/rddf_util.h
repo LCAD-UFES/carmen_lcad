@@ -43,8 +43,8 @@ carmen_rddf_waypoint * carmen_rddf_play_load_rddf_from_file(char *rddf_filename,
 void carmen_rddf_play_save_rddf_to_file(char *rddf_filename, carmen_rddf_waypoint *waypoint_vector, int size);
 
 //bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_ackerman_traj_point_t annotation_point);
-bool carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
-bool carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_robot_and_trailer_traj_point_t annotation_point);
+bool carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailers_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
+bool carmen_rddf_play_annotation_is_forward(carmen_robot_and_trailers_traj_point_t robot_pose, carmen_robot_and_trailers_traj_point_t annotation_point);
 //bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
 bool carmen_rddf_play_annotation_is_forward(carmen_point_t robot_pose, carmen_vector_3D_t annotation_point);
 
@@ -57,31 +57,31 @@ void carmen_rddf_play_load_index(char *rddf_filename);
 int carmen_rddf_play_pose_out_of_map_coordinates(carmen_point_t pose, carmen_map_p map);
 void carmen_rddf_play_check_reset_traffic_sign_state(carmen_point_t new_pose);
 int carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
-		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back,
+		carmen_robot_and_trailers_traj_point_t *poses_ahead, carmen_robot_and_trailers_traj_point_t *poses_back,
 		int *num_poses_back, int num_poses_ahead_max);
 int carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double v, double timestamp /* only for debugging */,
-		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back,
+		carmen_robot_and_trailers_traj_point_t *poses_ahead, carmen_robot_and_trailers_traj_point_t *poses_back,
 		int *num_poses_back, int num_poses_ahead_max, int *rddf_annotations);
 void carmen_rddf_play_clear_annotations(int *rddf_annotations, int num_annotations);
 void carmen_rddf_play_clear_annotations();
 void carmen_rddf_play_set_annotations(carmen_point_t robot_pose);
 void carmen_check_for_annotations(carmen_point_t robot_pose,
-		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
+		carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back, double timestamp);
 void carmen_rddf_play_updade_annotation_vector(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation);
 
-vector<carmen_robot_and_trailer_traj_point_t>
+vector<carmen_robot_and_trailers_traj_point_t>
 carmen_rddf_compute_rectilinear_route_segment(carmen_annotation_t annotation, double size_front, double size_back, double step_size);
 
 int
-carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment,
-		carmen_robot_and_trailer_traj_point_t point);
+carmen_rddf_index_of_point_within_rectlinear_route_segment(const vector<carmen_robot_and_trailers_traj_point_t> rectilinear_route_segment,
+		carmen_robot_and_trailers_traj_point_t point);
 
 int
-smooth_rddf_using_conjugate_gradient(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_ahead,
-		carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses_back);
+smooth_rddf_using_conjugate_gradient(carmen_robot_and_trailers_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_robot_and_trailers_traj_point_t *poses_back, int num_poses_back);
 
 void
-plot_state(carmen_robot_and_trailer_traj_point_t *path, int num_points, carmen_robot_and_trailer_traj_point_t *path2, int num_points2, bool display);
+plot_state(carmen_robot_and_trailers_traj_point_t *path, int num_points, carmen_robot_and_trailers_traj_point_t *path2, int num_points2, bool display);
 
 #endif

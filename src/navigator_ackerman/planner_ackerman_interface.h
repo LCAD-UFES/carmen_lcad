@@ -53,7 +53,7 @@ extern "C" {
       the shortest path from the current robot position to the goal. **/
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t *points;
+	carmen_robot_and_trailers_traj_point_t *points;
 	int length;
 	int capacity;
 } carmen_planner_path_t, *carmen_planner_path_p;
@@ -62,8 +62,8 @@ typedef struct {
       is the current robot position, goal and current plan. **/
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t robot;
-	carmen_robot_and_trailer_traj_point_t goal;
+	carmen_robot_and_trailers_traj_point_t robot;
+	carmen_robot_and_trailers_traj_point_t goal;
 	carmen_planner_path_t path;
 	int goal_set;
 } carmen_planner_status_t, *carmen_planner_status_p;
@@ -73,13 +73,13 @@ typedef struct {
       and regenerates the trajectory. 
       Returns 1 if a new path was generated, otherwise returns 0 **/
 
-int carmen_planner_ackerman_update_robot(carmen_robot_and_trailer_traj_point_t *new_position,
+int carmen_planner_ackerman_update_robot(carmen_robot_and_trailers_traj_point_t *new_position,
 		carmen_navigator_config_t *nav_conf);
 
 /** Updates the current goal, replans and regenerates the trajectory.
       Returns 1 if a new path was generated, otherwise returns 0 */
 
-int carmen_planner_ackerman_update_goal(carmen_robot_and_trailer_traj_point_t *new_goal, int any_orientation,
+int carmen_planner_ackerman_update_goal(carmen_robot_and_trailers_traj_point_t *new_goal, int any_orientation,
 		carmen_navigator_config_t *nav_conf);
 
 /** Assumes value of waypoint passed in is current robot position.
@@ -93,7 +93,7 @@ int carmen_planner_ackerman_update_goal(carmen_robot_and_trailer_traj_point_t *n
      waypoint. waypoint_index is the index of the waypoint in the 
      trajectory **/
 
-int carmen_planner_ackerman_next_waypoint(carmen_robot_and_trailer_traj_point_t *waypoint,
+int carmen_planner_ackerman_next_waypoint(carmen_robot_and_trailers_traj_point_t *waypoint,
 		int* waypoint_index,
 		carmen_navigator_config_t *nav_conf);
 
@@ -121,7 +121,7 @@ void carmen_planner_ackerman_update_map(carmen_robot_ackerman_laser_message *las
  **/
 
 void carmen_planner_ackerman_update_grid(carmen_map_p new_map,
-		carmen_robot_and_trailer_traj_point_t *new_position,
+		carmen_robot_and_trailers_traj_point_t *new_position,
 		carmen_robot_ackerman_config_t *robot_conf,
 		carmen_navigator_config_t *nav_conf);
 
@@ -152,7 +152,7 @@ double *carmen_planner_ackerman_get_utility(void);
 
 int carmen_planner_ackerman_goal_reachable(void);
 
-void carmen_planner_ackerman_set_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int list_size, carmen_navigator_config_t *nav_conf);
+void carmen_planner_ackerman_set_goal_list(carmen_robot_and_trailers_traj_point_t *goal_list, int list_size, carmen_navigator_config_t *nav_conf);
 
 int carmen_planner_ackerman_change_goal(carmen_navigator_config_t *nav_conf);
 

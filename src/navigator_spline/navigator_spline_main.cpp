@@ -12,12 +12,12 @@ carmen_point_t globalpos = {0, 0, 0};
 std::vector<carmen_localize_ackerman_globalpos_message>  global_localize_ackerman_globalpos_message;
 #define MAX_POSITIONS 20
 #define EXTRA_POSITIONS 20
-static carmen_robot_and_trailer_traj_point_t poses[MAX_POSITIONS + EXTRA_POSITIONS + 100];
+static carmen_robot_and_trailers_traj_point_t poses[MAX_POSITIONS + EXTRA_POSITIONS + 100];
 
 
 static void tracker_position_handler(carmen_tracker_position_message *message);
-void publish_spline_path_message(carmen_robot_and_trailer_traj_point_t *poses, int number_of_poses);
-static void publish_spline_goal_message(carmen_robot_and_trailer_traj_point_t poses);
+void publish_spline_path_message(carmen_robot_and_trailers_traj_point_t *poses, int number_of_poses);
+static void publish_spline_goal_message(carmen_robot_and_trailers_traj_point_t poses);
 //void publish_spline_goal_list_message(carmen_robot_and_trailer_traj_point_t *poses, int number_of_poses);
 
 
@@ -45,7 +45,7 @@ periodic_publish_spline_path_message()
 
 
 void
-publish_spline_path_message(carmen_robot_and_trailer_traj_point_t *poses, int number_of_poses)
+publish_spline_path_message(carmen_robot_and_trailers_traj_point_t *poses, int number_of_poses)
 {
 	IPC_RETURN_TYPE err;
 	carmen_navigator_spline_path_message spline_path_message;
@@ -60,7 +60,7 @@ publish_spline_path_message(carmen_robot_and_trailer_traj_point_t *poses, int nu
 }
 
 
-void publish_spline_goal_message(carmen_robot_and_trailer_traj_point_t poses)
+void publish_spline_goal_message(carmen_robot_and_trailers_traj_point_t poses)
 {
 	IPC_RETURN_TYPE err;
 	carmen_navigator_ackerman_set_goal_message goal_msg;

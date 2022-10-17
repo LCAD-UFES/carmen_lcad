@@ -24,7 +24,7 @@ struct CarDrawer
 
 	carmen_vector_3D_t semi_trailer_size;
 	carmen_pose_3D_t semi_trailer_pose;
-	carmen_semi_trailer_config_t semi_trailer_config;
+	carmen_semi_trailers_config_t semi_trailer_config;
 
 	carmen_vector_3D_t robot_size;
 

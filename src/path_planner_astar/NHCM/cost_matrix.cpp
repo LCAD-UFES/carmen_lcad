@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 carmen_robot_ackerman_config_t robot_config;
-carmen_semi_trailer_config_t semi_trailer_config;
+carmen_semi_trailers_config_t semi_trailer_config;
 nonholonomic_heuristic_cost_p ***cost_map;
 
 int precomputed_cost_size, precomputed_cost_theta_size;
@@ -63,7 +63,7 @@ carmen_compute_abs_angular_distance(double theta_1, double theta_2)
 
 
 double
-reed_shepp_cost(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_trailer_traj_point_t goal)
+reed_shepp_cost(carmen_robot_and_trailers_traj_point_t current, carmen_robot_and_trailers_traj_point_t goal)
 {
 	int rs_pathl;
 	int rs_numero;
@@ -72,11 +72,11 @@ reed_shepp_cost(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_
 	double vr;
 	double distance_traveled = 0.0;
 	double distance_traveled_old = 0.0;
-	carmen_robot_and_trailer_traj_point_t rs_points[6]; // Por alguma razão, com o valor 5 acontece stack smashing às vezes quando o rs_pathl == 5
+	carmen_robot_and_trailers_traj_point_t rs_points[6]; // Por alguma razão, com o valor 5 acontece stack smashing às vezes quando o rs_pathl == 5
 	double v_step;
 	double step_weight;
 	double path_cost = 0.0;
-	carmen_robot_and_trailer_traj_point_t point_old = {0, 0, 0, 0, 0};
+	carmen_robot_and_trailers_traj_point_t point_old = {0, 0, 0, 0, 0};
 
 	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
 	double rs_length = reed_shepp(current, goal, &rs_numero, &tr, &ur, &vr);
@@ -84,7 +84,7 @@ reed_shepp_cost(carmen_robot_and_trailer_traj_point_t current, carmen_robot_and_
 	rs_pathl = constRS(rs_numero, tr, ur, vr, current, rs_points);
 	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
 	{
-		carmen_robot_and_trailer_traj_point_t point = rs_points[i];
+		carmen_robot_and_trailers_traj_point_t point = rs_points[i];
 		if (rs_points[i].v < 0.0)
 		{
 			v_step = 2.0;
@@ -126,8 +126,8 @@ make_matrix_cost()
 	int x_size = round(precomputed_cost_size  / precomputed_cost_resolution);
 	int y_size = round(precomputed_cost_size / precomputed_cost_resolution);
 	printf("sizemap = %d %d \n", x_size, y_size);
-	carmen_robot_and_trailer_traj_point_t current;
-	carmen_robot_and_trailer_traj_point_t goal;
+	carmen_robot_and_trailers_traj_point_t current;
+	carmen_robot_and_trailers_traj_point_t goal;
 	goal.x = round(x_size/2 * precomputed_cost_resolution);
 	goal.y = round(y_size/2 * precomputed_cost_resolution);
 	goal.theta = 0.0;
@@ -211,7 +211,7 @@ carmen_get_parameters(int argc, char** argv)
 			{(char *) "robot", 				(char *) "maximum_deceleration_reverse",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_reverse,					1, NULL},
 			{(char *) "robot", 				(char *) "maximum_steering_command_rate",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_steering_command_rate,					1, NULL},
 			{(char *) "robot", 				(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &robot_config.understeer_coeficient,							1, NULL},
-			{(char *) "semi_trailer",	 	(char *) "initial_type",								CARMEN_PARAM_INT, 	 &(semi_trailer_config.type), 									0, NULL},
+			{(char *) "semi_trailer",	 	(char *) "initial_type",								CARMEN_PARAM_INT, 	 &(semi_trailer_config.semi_trailers.type), 					0, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_size", 				CARMEN_PARAM_INT, 	 &precomputed_cost_size, 										1, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_theta_size", 		CARMEN_PARAM_INT, 	 &precomputed_cost_theta_size, 									1, NULL},
 			{(char *) "offroad",			(char *) "planner_precomputed_cost_resolution", 		CARMEN_PARAM_DOUBLE, &precomputed_cost_resolution,									1, NULL},

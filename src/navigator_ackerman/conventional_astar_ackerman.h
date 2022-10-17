@@ -46,19 +46,19 @@ typedef struct {
     int astar_call_cont;
     double direction;
     struct fibheap_el* fh_node;
-    carmen_robot_and_trailer_traj_point_t point;
-    carmen_robot_and_trailer_traj_point_t prev_point;
+    carmen_robot_and_trailers_traj_point_t point;
+    carmen_robot_and_trailers_traj_point_t prev_point;
 }carmen_astar_node_t, *carmen_astar_node_p;
 
-carmen_robot_and_trailer_traj_point_t carmen_conventional_astar_ackerman_kinematic(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v);
+carmen_robot_and_trailers_traj_point_t carmen_conventional_astar_ackerman_kinematic(carmen_robot_and_trailers_traj_point_t point, double lenght, double phi, double v);
 void open_node(carmen_astar_node_p tree);
-void carmen_conventional_astar_ackerman_astar(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal,carmen_planner_path_p path);
+void carmen_conventional_astar_ackerman_astar(carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t goal,carmen_planner_path_p path);
 void add_list_fh(carmen_astar_node_p new_state);
 carmen_astar_node_p open_node_fh();
 void get_astar_path(carmen_astar_node_p node, carmen_planner_path_p path);
-int is_obstacle(carmen_robot_and_trailer_traj_point_t point);
-int is_obstacle_1d(carmen_robot_and_trailer_traj_point_t point);
-double h_score(carmen_robot_and_trailer_traj_point_t point);
+int is_obstacle(carmen_robot_and_trailers_traj_point_t point);
+int is_obstacle_1d(carmen_robot_and_trailers_traj_point_t point);
+double h_score(carmen_robot_and_trailers_traj_point_t point);
 double calc_delta_theta(double theta1, double theta2);
 void free_astar_map();
 void clean_astar_map();

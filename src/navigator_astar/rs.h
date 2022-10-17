@@ -17,14 +17,14 @@ typedef struct {
 
 rs_move* rs_get_moves(int numero);
 
-int fct_curve(int ty, int orientation, double val, carmen_robot_and_trailer_traj_point_t *start, double delta,
-		carmen_robot_and_trailer_traj_point_t *points, int n);
+int fct_curve(int ty, int orientation, double val, carmen_robot_and_trailers_traj_point_t *start, double delta,
+		carmen_robot_and_trailers_traj_point_t *points, int n);
 
 void rs_init_parameters(double max_phi, double distance_between_front_and_rear_axles);
 
-double reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *tr, double *ur, double *vr);
+double reed_shepp(carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t goal, int *numero, double *tr, double *ur, double *vr);
 
-int constRS(int num, double t, double u, double v, carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t *points);
+int constRS(int num, double t, double u, double v, carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t *points);
 
 #ifdef __cplusplus
 }

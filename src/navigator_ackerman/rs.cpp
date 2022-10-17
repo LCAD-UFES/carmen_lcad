@@ -456,7 +456,7 @@ double csc2_cb(double x, double y, double phi, double rs, double rc, double *t, 
 
 
 /***********************************************************/
-double reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *tr, double *ur, double *vr)
+double reed_shepp(carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t goal, int *numero, double *tr, double *ur, double *vr)
 {
 	double x, y, phi;
 	double t, u, v, tn, un, vn;
@@ -1032,7 +1032,7 @@ double reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_
 }
 
 /***********************************************************/
-double min_length_rs(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *t, double *u, double *v)
+double min_length_rs(carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t goal, int *numero, double *t, double *u, double *v)
 {
 	double length_rs;
 
@@ -1050,7 +1050,7 @@ double min_length_rs(carmen_robot_and_trailer_traj_point_t start, carmen_robot_a
 }
 
 /***********************************************************/
-int fct_curve(int ty, int orientation, double val, carmen_robot_and_trailer_traj_point_t *start, carmen_robot_and_trailer_traj_point_t *points, int n)
+int fct_curve(int ty, int orientation, double val, carmen_robot_and_trailers_traj_point_t *start, carmen_robot_and_trailers_traj_point_t *points, int n)
 {
 	double va1, va2;
 	//todo verificar uma maneira mais correta de fazer essa verificação
@@ -1092,7 +1092,7 @@ int fct_curve(int ty, int orientation, double val, carmen_robot_and_trailer_traj
 
 
 /***********************************************************/
-int constRS(int num, double t, double u, double v, carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t *points)
+int constRS(int num, double t, double u, double v, carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t *points)
 {
 	int left, right, straight, fwd, bwd;
 	int n = 0;

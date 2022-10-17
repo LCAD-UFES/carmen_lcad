@@ -171,18 +171,18 @@ typedef struct
 {
     int number_of_poses;
     int number_of_poses_back;
-    carmen_robot_and_trailer_traj_point_t *poses;
-    carmen_robot_and_trailer_traj_point_t *poses_back;
+    carmen_robot_and_trailers_traj_point_t *poses;
+    carmen_robot_and_trailers_traj_point_t *poses_back;
     int *annotations;
     int *annotations_codes;
 	int goal_list_size;
-	carmen_robot_and_trailer_traj_point_t *goal_list;
+	carmen_robot_and_trailers_traj_point_t *goal_list;
     double timestamp;
     char *host;
 } carmen_behavior_selector_path_goals_and_annotations_message;
 
 #define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME "carmen_behavior_selector_path_goals_and_annotations_message"
-#define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_FMT "{int, int, <{double, double, double, double, double, double}:1>, <{double, double, double, double, double, double}:2>, <int:1>, <int:1>, int, <{double, double, double, double, double, double}:7>, double, string}"
+#define CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_FMT "{int, int, <{double, double, double, int, [double:5], double, double}:1>, <{double, double, double, int, [double:5], double, double}:2>, <int:1>, <int:1>, int, <{double, double, double, int, [double:5], double, double}:7>, double, string}"
 
 #ifdef __cplusplus
 }

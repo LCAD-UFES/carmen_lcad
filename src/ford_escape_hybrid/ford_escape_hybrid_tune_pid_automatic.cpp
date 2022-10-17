@@ -13,7 +13,7 @@ typedef double (*MotionControlFunction)(double v, double w, double t);
 
 static carmen_robot_ackerman_config_t motion_planner_config;
 
-static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailers_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_PER_VECTOR];
 
 static double max_v = 0.0;
 static double max_phi = 0.0;

@@ -66,14 +66,14 @@ typedef struct {
 				      receives a stop message, and change to 1 whenever
 				      the navigator receives a go message. */
 	int goal_set;                  /**< Is there a current goal? */
-	carmen_robot_and_trailer_traj_point_t goal;           /**< Undefined if goal_set is 0 */
-	carmen_robot_and_trailer_traj_point_t robot;     /**< The current position of the robot. */
+	carmen_robot_and_trailers_traj_point_t goal;           /**< Undefined if goal_set is 0 */
+	carmen_robot_and_trailers_traj_point_t robot;     /**< The current position of the robot. */
 	double timestamp;
 	char *host;
 } carmen_navigator_ackerman_status_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME       "carmen_navigator_ackerman_status"
-#define CARMEN_NAVIGATOR_ACKERMAN_STATUS_FMT        "{int,int,{double, double, double, double, double, double},{double, double, double, double, double, double},double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_STATUS_FMT        "{int,int,{double, double, double, int, [double:5], double, double},{double, double, double, int, [double:5], double, double},double,string}"
 
 /** This message is published by the navigator. The current path of the
       navigator. Should never be emitted without a goal. If the goal is
@@ -84,14 +84,14 @@ typedef struct {
  */
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 	int path_length;
 	double timestamp;
 	char *host;
 } carmen_navigator_ackerman_plan_message;
 
 #define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME       "carmen_navigator_ackerman_plan"
-#define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT        "{<{double, double, double, double, double, double}:2>,int,double,string}"
+#define      CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT        "{<{double, double, double, int, [double:5], double, double}:2>,int,double,string}"
 
 
 /** This message is sent to the navigator by other programs wishing to plan
@@ -113,7 +113,7 @@ typedef struct {
  */
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t goal;   /**< It is assumed that (x, y) is in the reference
+	carmen_robot_and_trailers_traj_point_t goal;   /**< It is assumed that (x, y) is in the reference
 			      frame of the current map. Using this function causes
                               the planner to also arrive at the goal with an orientation
                               that matches the theta field of the goal point.  */ 
@@ -122,7 +122,7 @@ typedef struct {
 } carmen_navigator_ackerman_set_goal_triplet_message;
 
 #define      CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_TRIPLET_NAME         "carmen_navigator_ackerman_set_goal_triplet"
-#define      CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_TRIPLET_FMT          "{{double,double,double,double,double,double},double,string}"
+#define      CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_TRIPLET_FMT          "{{double,double,double,int,[double:5],double,double},double,string}"
 
 typedef enum{CARMEN_NAVIGATOR_ACKERMAN_GOAL_REACHED_v,
 	CARMEN_NAVIGATOR_ACKERMAN_USER_STOPPED_v,
@@ -256,11 +256,11 @@ typedef enum{CARMEN_NAVIGATOR_ACKERMAN_GOAL_REACHED_v,
 typedef struct
 {
 	int	   num_edges;//int
-	carmen_robot_and_trailer_traj_point_t *p1;//<{double,double,double,double,double}:1>
-	carmen_robot_and_trailer_traj_point_t *p2;//<{double,double,double,double,double}:1>
+	carmen_robot_and_trailers_traj_point_t *p1;//<{double,double,double,double,double}:1>
+	carmen_robot_and_trailers_traj_point_t *p2;//<{double,double,double,double,double}:1>
 	int *mask;//<int:1>
 
-	carmen_robot_and_trailer_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE];//[{double,double,double,double,double}:100, 1000]
+	carmen_robot_and_trailers_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE];//[{double,double,double,double,double}:100, 1000]
 	int path_size[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS];//[int:100]
 	int num_path;//int
 
@@ -269,7 +269,7 @@ typedef struct
 } carmen_navigator_ackerman_plan_tree_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME "carmen_navigator_ackerman_plan_tree"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double,double}:1>,<{double,double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double,double}:100, 500],[int:100],int,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,int,[double:5],double,double}:1>,<{double,double,double,int,[double:5],double,double}:1>,<int:1>,[{double,double,double,int,[double:5],double,double}:100, 500],[int:100],int,double,string}"
 
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_NAME "carmen_navigator_ackerman_goal_plan_tree"
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_FMT CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT
@@ -277,13 +277,13 @@ typedef struct
 typedef struct
 {
 	int path_size;
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 	double timestamp;//double
 	char  *host;//string
 } carmen_navigator_ackerman_plan_to_draw_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME "carmen_navigator_ackerman_plan_to_draw_message"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT "{int,<{double,double,double,double,double,double}:1>,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT "{int,<{double,double,double,int,[double:5],double,double}:1>,double,string}"
 
 #ifdef __cplusplus
 }

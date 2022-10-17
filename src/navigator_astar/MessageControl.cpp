@@ -25,7 +25,7 @@ MessageControl::carmen_planner_ackerman_regenerate_trajectory()
 		return;
 
 	this->path.capacity = 20;
-	this->path.points = (carmen_robot_and_trailer_traj_point_t *) calloc(path.capacity, sizeof(carmen_robot_and_trailer_traj_point_t));
+	this->path.points = (carmen_robot_and_trailers_traj_point_t *) calloc(path.capacity, sizeof(carmen_robot_and_trailers_traj_point_t));
 	carmen_test_alloc(path.points);
 
 	this->astarAckeman.carmen_planner_map =carmen_planner_map;
@@ -35,9 +35,9 @@ MessageControl::carmen_planner_ackerman_regenerate_trajectory()
 
 
 int 
-MessageControl::carmen_planner_ackerman_update_robot(carmen_robot_and_trailer_traj_point_t *new_position, carmen_robot_ackerman_config_t *robot_conf)
+MessageControl::carmen_planner_ackerman_update_robot(carmen_robot_and_trailers_traj_point_t *new_position, carmen_robot_ackerman_config_t *robot_conf)
 {
-	static carmen_robot_and_trailer_traj_point_t lastPosition;
+	static carmen_robot_and_trailers_traj_point_t lastPosition;
 	static int first_time = 1;
 	robot_conf_g = robot_conf;
 
@@ -81,7 +81,7 @@ MessageControl::carmen_planner_ackerman_set_cost_map(carmen_map_t *new_map)
 
 
 int
-MessageControl::carmen_planner_ackerman_update_goal(carmen_robot_and_trailer_traj_point_t *goal)
+MessageControl::carmen_planner_ackerman_update_goal(carmen_robot_and_trailers_traj_point_t *goal)
 {
 	if (!carmen_planner_map)
 		return false;
@@ -109,7 +109,7 @@ MessageControl::carmen_planner_ackerman_get_status(carmen_planner_status_p statu
 
 	if (status->path.length > 0)
 	{
-		status->path.points = (carmen_robot_and_trailer_traj_point_t *) calloc(status->path.length, sizeof(carmen_robot_and_trailer_traj_point_t));
+		status->path.points = (carmen_robot_and_trailers_traj_point_t *) calloc(status->path.length, sizeof(carmen_robot_and_trailers_traj_point_t));
 		carmen_test_alloc(status->path.points);
 		for (index = 0; index < status->path.length; index++)
 			status->path.points[index] = path.points[index];

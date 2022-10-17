@@ -35,9 +35,9 @@ MessageControl::carmen_planner_ackerman_regenerate_trajectory()
 
 
 int 
-MessageControl::carmen_planner_ackerman_update_robot(carmen_robot_and_trailer_traj_point_t *new_position, carmen_robot_ackerman_config_t *robot_conf)
+MessageControl::carmen_planner_ackerman_update_robot(carmen_robot_and_trailers_traj_point_t *new_position, carmen_robot_ackerman_config_t *robot_conf)
 {
-	static carmen_robot_and_trailer_traj_point_t lastPosition;
+	static carmen_robot_and_trailers_traj_point_t lastPosition;
 	static int first_time = 1;
 	robot_conf_g = robot_conf;
 

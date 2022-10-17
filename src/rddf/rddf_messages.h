@@ -149,8 +149,8 @@ extern "C"
     {
         int number_of_poses;
         int number_of_poses_back;
-        carmen_robot_and_trailer_traj_point_t *poses;
-        carmen_robot_and_trailer_traj_point_t *poses_back;
+        carmen_robot_and_trailers_traj_point_t *poses;
+        carmen_robot_and_trailers_traj_point_t *poses_back;
         int *annotations;
         int *annotations_codes;
         double timestamp;
@@ -158,31 +158,31 @@ extern "C"
     } carmen_rddf_road_profile_message;
 
 	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME "carmen_rddf_road_profile_message"
-	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double, double}:1>, <{double, double, double, double, double, double}:2>, <int:1>, <int:1>, double, string}"
+	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, int, [double:5], double, double}:1>, <{double, double, double, int, [double:5], double, double}:2>, <int:1>, <int:1>, double, string}"
 
 
     typedef struct
     {
         int half_meters_to_final_goal;	// number of waypoints to consider near end_point (point)
-        carmen_robot_and_trailer_pose_t point;
+        carmen_robot_and_trailers_pose_t point;
         double timestamp;
         char *host;
     } carmen_rddf_end_point_message;
 
 	#define CARMEN_RDDF_END_POINT_MESSAGE_NAME "carmen_rddf_end_point_message"
-	#define CARMEN_RDDF_END_POINT_MESSAGE_FMT "{int, {double, double, double, double}, double, string}"
+	#define CARMEN_RDDF_END_POINT_MESSAGE_FMT "{int, {double, double, double, int, [double:5]}, double, string}"
 
 
     typedef struct
     {
         int number_of_poses;
-        carmen_robot_and_trailer_traj_point_t *poses;
+        carmen_robot_and_trailers_traj_point_t *poses;
         double timestamp;
         char *host;
     } carmen_rddf_waypoints_around_end_point_message;
 
 	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_NAME "carmen_rddf_waypoints_around_end_point_message"
-	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT "{int, <{double,double,double,double,double,double}:1>, double, string}"
+	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT "{int, <{double,double,double,int, [double:5],double,double}:1>, double, string}"
 
 
     // TODO: update this message to use carmen_annotation_t.

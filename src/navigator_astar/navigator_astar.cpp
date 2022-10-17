@@ -35,7 +35,7 @@ add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_
     route_planner_road_network_message.nearby_lanes_sizes = (int *) malloc(route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
     route_planner_road_network_message.nearby_lanes_size = NUM_LANES *
     		(route_planner_road_network_message.number_of_poses_back + route_planner_road_network_message.number_of_poses - 1);	// a primeira pose do poses e poses back eh igual
-    route_planner_road_network_message.nearby_lanes = (carmen_robot_and_trailer_traj_point_t *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(carmen_robot_and_trailer_traj_point_t));
+    route_planner_road_network_message.nearby_lanes = (carmen_robot_and_trailers_traj_point_t *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(carmen_robot_and_trailers_traj_point_t));
     route_planner_road_network_message.traffic_restrictions =  (int *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(int));
 
     // Coloca o rddf como a lane 0, isto eh, a rota escolhida
@@ -72,7 +72,7 @@ free_lanes(carmen_route_planner_road_network_message route_planner_road_network_
 
 
 int
-get_index_of_nearest_pose_in_path(carmen_robot_and_trailer_traj_point_t *path, carmen_point_t globalpos, int path_length)
+get_index_of_nearest_pose_in_path(carmen_robot_and_trailers_traj_point_t *path, carmen_point_t globalpos, int path_length)
 {
 	int nearest_pose_index = 0;
 	double min_dist = DIST2D(path[nearest_pose_index], globalpos);
@@ -90,10 +90,10 @@ get_index_of_nearest_pose_in_path(carmen_robot_and_trailer_traj_point_t *path, c
 }
 
 
-carmen_robot_and_trailer_traj_point_t *
-get_poses_back(carmen_robot_and_trailer_traj_point_t *path, int nearest_pose_index)
+carmen_robot_and_trailers_traj_point_t *
+get_poses_back(carmen_robot_and_trailers_traj_point_t *path, int nearest_pose_index)
 {
-	carmen_robot_and_trailer_traj_point_t *poses_back = (carmen_robot_and_trailer_traj_point_t *) malloc((nearest_pose_index + 1) * sizeof(carmen_robot_and_trailer_traj_point_t));
+	carmen_robot_and_trailers_traj_point_t *poses_back = (carmen_robot_and_trailers_traj_point_t *) malloc((nearest_pose_index + 1) * sizeof(carmen_robot_and_trailers_traj_point_t));
 	for (int i = 0; i < (nearest_pose_index + 1); i++)
 		poses_back[i] = path[nearest_pose_index - i];
 
@@ -150,12 +150,12 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 //		return;
 	IPC_RETURN_TYPE err = IPC_OK;
 	static int roundValue = 2;
-	static carmen_robot_and_trailer_traj_point_t robot_position;
+	static carmen_robot_and_trailers_traj_point_t robot_position;
 
 	robot_position.x = round(msg->globalpos.x * roundValue) / roundValue;
 	robot_position.y = round(msg->globalpos.y * roundValue) / roundValue;
 	robot_position.theta = round(msg->globalpos.theta * roundValue) / roundValue;
-	robot_position.beta = round(msg->beta * roundValue) / roundValue;
+	robot_position.trailer_theta[0] = round(msg->trailer_theta[0] * roundValue) / roundValue;
 	robot_position.v = msg->v;
 	robot_position.phi = msg->phi;
 
@@ -214,7 +214,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 			return;
 		}
 		plan_tree_msg.num_path = 1;
-		memcpy(plan_tree_msg.paths[0], status.path.points, sizeof(carmen_robot_and_trailer_traj_point_t) * status.path.length);
+		memcpy(plan_tree_msg.paths[0], status.path.points, sizeof(carmen_robot_and_trailers_traj_point_t) * status.path.length);
 		plan_tree_msg.path_size[0] = status.path.length;
 		err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
 
@@ -284,15 +284,19 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
-	carmen_robot_and_trailer_traj_point_t point =
+	carmen_robot_and_trailers_traj_point_t point =
 	{
 		rddf_end_point_message->point.x,
 		rddf_end_point_message->point.y,
 		rddf_end_point_message->point.theta,
-		rddf_end_point_message->point.beta,
+		rddf_end_point_message->point.num_trailers,
+		{0.0},
 		0.0,
 		0.0
 	};
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		point.trailer_theta[z] = rddf_end_point_message->point.trailer_theta[z];
+
 	messageControl.carmen_planner_ackerman_update_goal(&point);
 }
 

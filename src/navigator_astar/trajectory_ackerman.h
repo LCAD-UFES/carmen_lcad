@@ -36,15 +36,15 @@ extern "C" {
 #include "navigator_astar_messages.h"
 
 	void check_path_capacity(carmen_planner_path_p path);
-	int	carmen_planner_util_add_path_point(carmen_robot_and_trailer_traj_point_t point, carmen_planner_path_p path);
+	int	carmen_planner_util_add_path_point(carmen_robot_and_trailers_traj_point_t point, carmen_planner_path_p path);
 
-	carmen_robot_and_trailer_traj_point_t *carmen_planner_util_get_path_point(int index, carmen_planner_path_p path);
+	carmen_robot_and_trailers_traj_point_t *carmen_planner_util_get_path_point(int index, carmen_planner_path_p path);
 
-	void carmen_planner_util_set_path_point(int index, carmen_robot_and_trailer_traj_point_t *path_point,
+	void carmen_planner_util_set_path_point(int index, carmen_robot_and_trailers_traj_point_t *path_point,
 			carmen_planner_path_p path);
 
 	void carmen_planner_util_insert_blank(int index, carmen_planner_path_p path);
-	void carmen_planner_util_insert_path_point(int index, carmen_robot_and_trailer_traj_point_t *current_point,
+	void carmen_planner_util_insert_path_point(int index, carmen_robot_and_trailers_traj_point_t *current_point,
 			carmen_planner_path_p path);
 	void carmen_planner_util_set_path_velocities(int index, double v,
 			double phi,

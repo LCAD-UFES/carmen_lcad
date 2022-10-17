@@ -47,9 +47,9 @@ int navigator_graphics_init(int argc, char *argv[],
 void navigator_graphics_update_display(carmen_traj_point_p	new_robot, carmen_world_point_p new_goal, int Autonomous);
 void navigator_graphics_update_simulator_truepos(carmen_point_t truepose);
 void navigator_graphics_update_fused_odometry(carmen_point_t fused_odometry_pose);
-void navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length);
-void navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t* new_plan, int path_length, int path_id);
-void navigator_graphics_update_plan_tree(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2, int plan_tree_length);
+void navigator_graphics_update_plan(carmen_robot_and_trailers_traj_point_t *new_plan, int plan_length);
+void navigator_graphics_update_path(carmen_robot_and_trailers_traj_point_t* new_plan, int path_length, int path_id);
+void navigator_graphics_update_plan_tree(carmen_robot_and_trailers_traj_point_t *p1, carmen_robot_and_trailers_traj_point_t *p2, int plan_tree_length);
 void navigator_graphics_update_people(carmen_world_point_p people_array, int num_people);
 void navigator_graphics_start(char *path);
 void navigator_graphics_add_ipc_handler(GdkInputFunction handle_ipc);
@@ -57,8 +57,8 @@ carmen_world_point_p navigator_graphics_get_current_path();
 void navigator_graphics_change_map(carmen_map_p New_Map);
 void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
 void navigator_graphics_add_placelist(carmen_map_placelist_p new_placelist);
-void navigator_graphics_update_goal_list(carmen_robot_and_trailer_traj_point_t* goal_list, int size);
-void navigator_graphics_update_waypoint_list(carmen_robot_and_trailer_traj_point_t* waypoint_list, int size);
+void navigator_graphics_update_goal_list(carmen_robot_and_trailers_traj_point_t* goal_list, int size);
+void navigator_graphics_update_waypoint_list(carmen_robot_and_trailers_traj_point_t* waypoint_list, int size);
 
 void navigator_graphics_update_xsens_pos(carmen_point_t xsenspose);
 

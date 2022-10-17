@@ -67,7 +67,7 @@ typedef struct
 {
 	int lane_id;
 	int size;
-	carmen_robot_and_trailer_traj_point_t *lane_points;
+	carmen_robot_and_trailers_traj_point_t *lane_points;
 	int *traffic_restrictions;
 	vector<bool> examined;
 	vector<moving_object_t> moving_objects;
@@ -235,7 +235,7 @@ obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map, carmen_map_s
 
 
 static int
-get_index_of_the_nearest_lane_pose(carmen_robot_and_trailer_traj_point_t pose, lane_t *lane)
+get_index_of_the_nearest_lane_pose(carmen_robot_and_trailers_traj_point_t pose, lane_t *lane)
 {
 	int nearest_pose_index = 0;
 	double min_distance = DIST2D(pose, lane->lane_points[0]);
@@ -1621,11 +1621,11 @@ get_robot_lane_id_and_index_in_lane(int &robot_lane_id, int &robot_index_in_lane
 	if (road_network->number_of_poses == 0)
 		return (false);
 
-	carmen_robot_and_trailer_traj_point_t robot_pose = road_network->poses[0];
+	carmen_robot_and_trailers_traj_point_t robot_pose = road_network->poses[0];
 	double min_distance = 100000000.0;
 	for (int lane = 0; lane < road_network->number_of_nearby_lanes; lane++)
 	{
-		carmen_robot_and_trailer_traj_point_t *lane_poses = &(road_network->nearby_lanes[road_network->nearby_lanes_indexes[lane]]);
+		carmen_robot_and_trailers_traj_point_t *lane_poses = &(road_network->nearby_lanes[road_network->nearby_lanes_indexes[lane]]);
 		for (int i = 0; i < road_network->nearby_lanes_sizes[lane]; i++)
 		{
 			double distance = DIST2D(robot_pose, lane_poses[i]);
@@ -1645,7 +1645,7 @@ get_robot_lane_id_and_index_in_lane(int &robot_lane_id, int &robot_index_in_lane
 }
 
 
-carmen_robot_and_trailer_traj_point_t *
+carmen_robot_and_trailers_traj_point_t *
 get_poses_ahead_lane_and_lane_size(int &size, carmen_route_planner_road_network_message *road_network, int robot_lane_id)
 {
 	int lane = 0;
@@ -1661,7 +1661,7 @@ get_poses_ahead_lane_and_lane_size(int &size, carmen_route_planner_road_network_
 
 
 double
-get_s_displacement(carmen_robot_and_trailer_traj_point_t *path, int i, int last_path_pose)
+get_s_displacement(carmen_robot_and_trailers_traj_point_t *path, int i, int last_path_pose)
 {
 	double s_range = 0.0;
 	for ( ; (i < (last_path_pose - 1)); i++)
@@ -1672,7 +1672,7 @@ get_s_displacement(carmen_robot_and_trailer_traj_point_t *path, int i, int last_
 
 
 double
-simulate_moving_object_in_its_lane(moving_object_t *moving_object, carmen_robot_and_trailer_traj_point_t *lane_poses,
+simulate_moving_object_in_its_lane(moving_object_t *moving_object, carmen_robot_and_trailers_traj_point_t *lane_poses,
 		int index_in_lane, int target_node_index_in_lane)
 {
 	double S = get_s_displacement(lane_poses, index_in_lane, target_node_index_in_lane);
@@ -1683,7 +1683,7 @@ simulate_moving_object_in_its_lane(moving_object_t *moving_object, carmen_robot_
 
 
 double
-get_robot_acc(carmen_robot_and_trailer_traj_point_t pose)
+get_robot_acc(carmen_robot_and_trailers_traj_point_t pose)
 {
 	if (!path_goals_and_annotations_message)
 		return (0.0);
@@ -1692,7 +1692,7 @@ get_robot_acc(carmen_robot_and_trailer_traj_point_t pose)
 	if (last_goal_list_size == 0)
 		return (0.0);
 
-	carmen_robot_and_trailer_traj_point_t goal = path_goals_and_annotations_message->goal_list[0];
+	carmen_robot_and_trailers_traj_point_t goal = path_goals_and_annotations_message->goal_list[0];
 	double S = DIST2D(pose, goal);
 	double acc;
 	if (S < 0.1)
@@ -1707,7 +1707,7 @@ get_robot_acc(carmen_robot_and_trailer_traj_point_t pose)
 
 
 double
-simulate_robot_in_its_lane(carmen_robot_and_trailer_traj_point_t *lane_poses, int index_in_lane, int target_node_index_in_lane)
+simulate_robot_in_its_lane(carmen_robot_and_trailers_traj_point_t *lane_poses, int index_in_lane, int target_node_index_in_lane)
 {
 	double a = get_robot_acc(lane_poses[index_in_lane]);
 	double v = 0.0;
@@ -1750,7 +1750,7 @@ moving_object_arrives_first(moving_object_t *moving_object,
 		int target_node_index_in_robot_lane, int target_node_index_in_moving_object_lane)
 {
 	int lane_size;
-	carmen_robot_and_trailer_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
+	carmen_robot_and_trailers_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
 	double robot_time_to_merge = simulate_robot_in_its_lane(lane_poses, robot_index_in_lane, target_node_index_in_robot_lane);
 
 	lane_poses = &(road_network->nearby_lanes[moving_object_lane_index]);
@@ -1797,7 +1797,7 @@ move_robot_index_in_lane_to_consider_robot_and_moving_object_dimensions(int robo
 			int robot_lane_id, carmen_route_planner_road_network_message *road_network, double mo_length)
 {
 	int lane_size;
-	carmen_robot_and_trailer_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
+	carmen_robot_and_trailers_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
 	double distance_to_move = distance_car_pose_car_front - mo_length / 2.0;
 	if (distance_to_move >= 0.0)
 	{
@@ -1856,7 +1856,7 @@ get_moving_object_index_in_poses_ahead(carmen_route_planner_road_network_message
 		return (-1);
 
 	int lane_size;
-	carmen_robot_and_trailer_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
+	carmen_robot_and_trailers_traj_point_t *lane_poses = get_poses_ahead_lane_and_lane_size(lane_size, road_network, robot_lane_id);
 	double distance_to_move = mo_length / 2.0;
 	for (int i = moving_object_index_in_poses_ahead; i > 0; i--)
 	{

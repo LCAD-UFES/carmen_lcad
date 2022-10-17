@@ -102,6 +102,15 @@ typedef enum
 	(x == MISSION_FILE_FINISHED)	? "MISSION_FILE_FINISHED": \
 	(x == IDLE_MODE)		? "IDLE_MODE": "")
 
+//Sugestao-pensar-sobre
+//typedef enum
+//{
+//	NEW_MISSION_FILE_STARTED,
+//	LOAD,
+//	UNLOAD,
+//	PARK
+//} carmen_task_manager_mission_id_t;
+
 
 typedef struct
 {
@@ -126,7 +135,8 @@ typedef struct
 typedef struct
 {
 	int semi_trailer_type;
-	double beta;
+	int num_trailers;
+	double trailer_theta[MAX_NUM_TRAILERS];
 	double timestamp;
 	char *host;
 } carmen_task_manager_set_semi_trailer_type_and_beta_message;
@@ -139,7 +149,7 @@ typedef struct
 	carmen_task_manager_mission_level_state_t mission_state;
 	char *mission_id;
 	char *mission_filename;
-	carmen_robot_and_trailer_pose_t pose;
+	carmen_robot_and_trailers_pose_t pose;
 	char *info;
 	double timestamp;
 	char *host;

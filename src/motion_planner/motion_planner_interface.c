@@ -22,7 +22,7 @@ carmen_motion_planner_subscribe_path_message(
 
 
 void carmen_motion_planner_publish_path_message(
-		carmen_robot_and_trailer_traj_point_t *path, int size, int algorithm)
+		carmen_robot_and_trailers_traj_point_t *path, int size, int algorithm)
 {
 	IPC_RETURN_TYPE err;
 	static int firsttime = 1;

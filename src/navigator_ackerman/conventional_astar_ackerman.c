@@ -52,14 +52,14 @@ double ***precomputed_cost_map;
 struct fibheap*  heap = NULL;
 
 
-carmen_robot_and_trailer_traj_point_t GOAL;
+carmen_robot_and_trailers_traj_point_t GOAL;
 //double RAIO;
 
 double ORIENTATION[ORIENTATION_LENGHT];
 double DIRECTION[DIRECTION_LENGHT];
 
-int is_obstacle_cost(carmen_robot_and_trailer_traj_point_t point);
-int is_obstacle_new(carmen_robot_and_trailer_traj_point_t point);
+int is_obstacle_cost(carmen_robot_and_trailers_traj_point_t point);
+int is_obstacle_new(carmen_robot_and_trailers_traj_point_t point);
 
 
 void print_path(carmen_planner_path_p path)
@@ -104,8 +104,8 @@ get_astar_map_theta_2(double theta)
 }
 
 
-carmen_robot_and_trailer_traj_point_t
-carmen_conventional_astar_ackerman_kinematic_2(carmen_robot_and_trailer_traj_point_t point, float lenght, float phi, float v)
+carmen_robot_and_trailers_traj_point_t
+carmen_conventional_astar_ackerman_kinematic_2(carmen_robot_and_trailers_traj_point_t point, float lenght, float phi, float v)
 {
 	double interval_time = 1;
 	double time, rest;
@@ -166,8 +166,8 @@ carmen_conventional_astar_ackerman_kinematic_2(carmen_robot_and_trailer_traj_poi
 	return point;
 }
 
-carmen_robot_and_trailer_traj_point_t
-carmen_conventional_astar_ackerman_kinematic(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v)
+carmen_robot_and_trailers_traj_point_t
+carmen_conventional_astar_ackerman_kinematic(carmen_robot_and_trailers_traj_point_t point, double lenght, double phi, double v)
 {
 	point.theta += v * ((tan(phi)) / lenght);
 	point.theta = carmen_normalize_theta(point.theta);
@@ -179,8 +179,8 @@ carmen_conventional_astar_ackerman_kinematic(carmen_robot_and_trailer_traj_point
 }
 
 
-carmen_robot_and_trailer_traj_point_t
-carmen_conventional_astar_ackerman_kinematic_3(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v)
+carmen_robot_and_trailers_traj_point_t
+carmen_conventional_astar_ackerman_kinematic_3(carmen_robot_and_trailers_traj_point_t point, double lenght, double phi, double v)
 {
 
 	double	radcurv = lenght / tan(fabs(phi));
@@ -260,7 +260,7 @@ void merging_astar_path(carmen_planner_path_p path_start, carmen_planner_path_p 
 }
 
 
-int rs_get_astar_path(int rs_pathl, carmen_robot_and_trailer_traj_point_t *points, carmen_planner_path_p path)
+int rs_get_astar_path(int rs_pathl, carmen_robot_and_trailers_traj_point_t *points, carmen_planner_path_p path)
 {
 	int i, j;
 	path->capacity = 0;
@@ -302,7 +302,7 @@ int rs_get_astar_path(int rs_pathl, carmen_robot_and_trailer_traj_point_t *point
 
 
 void
-astar_init_parameters(carmen_robot_and_trailer_traj_point_t goal)
+astar_init_parameters(carmen_robot_and_trailers_traj_point_t goal)
 {
 
 	DIRECTION[0] = astar_config.path_interval;
@@ -321,9 +321,9 @@ astar_init_parameters(carmen_robot_and_trailer_traj_point_t goal)
 
 
 void
-carmen_conventional_astar_ackerman_astar(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, carmen_planner_path_p path)
+carmen_conventional_astar_ackerman_astar(carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t goal, carmen_planner_path_p path)
 {
-	carmen_robot_and_trailer_traj_point_t rs_points[5];
+	carmen_robot_and_trailers_traj_point_t rs_points[5];
 	carmen_planner_path_t rs_path;
 	int index;
 	int rs_pathl;
@@ -474,7 +474,7 @@ open_node(carmen_astar_node_p node)
 {
 	int i, j;
 	double cost_weight;
-	carmen_robot_and_trailer_traj_point_t new_point;
+	carmen_robot_and_trailers_traj_point_t new_point;
 	carmen_astar_node_p new_node;
 
 	for (i = 0; i < DIRECTION_LENGHT; i++)
@@ -527,7 +527,7 @@ open_node(carmen_astar_node_p node)
 
 
 double
-h_score(carmen_robot_and_trailer_traj_point_t point)
+h_score(carmen_robot_and_trailers_traj_point_t point)
 {
 	double obstacle_cost, precomputed_cost, euclidean_cost, h_score;
 	int x, y, theta;
@@ -624,7 +624,7 @@ add_list_fh(carmen_astar_node_p new_node)
 }
 
 
-int  is_obstacle_new(carmen_robot_and_trailer_traj_point_t point)
+int  is_obstacle_new(carmen_robot_and_trailers_traj_point_t point)
 {
 	int vertical_size   = ceil((robot_conf_g.length + astar_config.robot_fat_space) / carmen_planner_map->config.resolution);
 	int horizontal_size = ceil(((robot_conf_g.width + astar_config.robot_fat_space) / carmen_planner_map->config.resolution) / 2.0);
@@ -632,7 +632,7 @@ int  is_obstacle_new(carmen_robot_and_trailer_traj_point_t point)
 	double obstacle_value = 0;
 	int v, h, i;
 
-	carmen_robot_and_trailer_traj_point_t vertical_pose, horizontal_pose[2];
+	carmen_robot_and_trailers_traj_point_t vertical_pose, horizontal_pose[2];
 	double delta_vertical_x, delta_vertical_y, delta_horizontal_x, delta_horizontal_y;
 
 	point.x = (point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution;
@@ -677,7 +677,7 @@ int  is_obstacle_new(carmen_robot_and_trailer_traj_point_t point)
 
 
 int
-is_obstacle(carmen_robot_and_trailer_traj_point_t point)
+is_obstacle(carmen_robot_and_trailers_traj_point_t point)
 {
 	double width_m = (robot_conf_g.width + astar_config.robot_fat_space) / carmen_planner_map->config.resolution;
 	double height_m = (robot_conf_g.length + astar_config.robot_fat_space) / carmen_planner_map->config.resolution;
@@ -729,7 +729,7 @@ is_obstacle(carmen_robot_and_trailer_traj_point_t point)
 
 
 int
-is_obstacle_1d(carmen_robot_and_trailer_traj_point_t point)
+is_obstacle_1d(carmen_robot_and_trailers_traj_point_t point)
 {
 	double x = (point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution;
 	double y = (point.y - carmen_planner_map->config.y_origin) / carmen_planner_map->config.resolution;
@@ -750,7 +750,7 @@ is_obstacle_1d(carmen_robot_and_trailer_traj_point_t point)
 
 
 int
-is_obstacle_cost(carmen_robot_and_trailer_traj_point_t point)
+is_obstacle_cost(carmen_robot_and_trailers_traj_point_t point)
 {
 	int obstacle_value = carmen_conventional_get_cost(
 			(point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution,

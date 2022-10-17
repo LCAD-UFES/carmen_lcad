@@ -143,7 +143,7 @@ typedef struct nonholonomic_heuristic_cost
 
 typedef struct param_otimization
 {
-	carmen_robot_and_trailer_traj_point_t *points;
+	carmen_robot_and_trailers_traj_point_t *points;
 	int *anchor_points;
 	int path_size;
 	int problem_size;
@@ -175,26 +175,26 @@ rs_move*
 rs_get_moves(int numero);
 
 int
-fct_curve(int ty, int orientation, double val, carmen_robot_and_trailer_traj_point_t * start, double delta, carmen_robot_and_trailer_traj_point_t * points, int n);
+fct_curve(int ty, int orientation, double val, carmen_robot_and_trailers_traj_point_t * start, double delta, carmen_robot_and_trailers_traj_point_t * points, int n);
 
 void
 rs_init_parameters(double max_phi, double distance_between_front_and_rear_axles);
 
 double
-reed_shepp(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal, int *numero, double *tr, double *ur, double *vr);
+reed_shepp(carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t goal, int *numero, double *tr, double *ur, double *vr);
 
 int
-constRS(int num, double t, double u, double v, carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t * points);
+constRS(int num, double t, double u, double v, carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t * points);
 
 int
-get_index_of_nearest_pose_in_path(carmen_robot_and_trailer_traj_point_t *path, carmen_point_t globalpos, int path_length);
+get_index_of_nearest_pose_in_path(carmen_robot_and_trailers_traj_point_t *path, carmen_point_t globalpos, int path_length);
 
-carmen_robot_and_trailer_traj_point_t *
-get_poses_back(carmen_robot_and_trailer_traj_point_t *path, int nearest_pose_index);
+carmen_robot_and_trailers_traj_point_t *
+get_poses_back(carmen_robot_and_trailers_traj_point_t *path, int nearest_pose_index);
 
 void
 add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_message,
-		carmen_robot_and_trailer_traj_point_t *path_copy);
+		carmen_robot_and_trailers_traj_point_t *path_copy);
 
 void
 free_lanes(carmen_route_planner_road_network_message route_planner_road_network_message);
@@ -202,16 +202,16 @@ free_lanes(carmen_route_planner_road_network_message route_planner_road_network_
 double *
 get_goal_distance_map(carmen_point_t goal_pose, carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map);
 
-std::vector<carmen_robot_and_trailer_traj_point_t>
+std::vector<carmen_robot_and_trailers_traj_point_t>
 carmen_path_planner_astar_search(pose_node *initial_pose, pose_node *goal_pose,
 		carmen_obstacle_distance_mapper_map_message *obstacle_distance_grid_map, double *goal_distance_map,
 		nonholonomic_heuristic_cost_p ***nonholonomic_heuristic_cost_map);
 
 int
-smooth_rddf_using_conjugate_gradient(std::vector<carmen_robot_and_trailer_traj_point_t> &astar_path);
+smooth_rddf_using_conjugate_gradient(std::vector<carmen_robot_and_trailers_traj_point_t> &astar_path);
 
 offroad_planner_plan_t
-astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_robot_and_trailer_pose_t *goal_pose, std::vector<carmen_robot_and_trailer_traj_point_t> path_result);
+astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_robot_and_trailers_pose_t *goal_pose, std::vector<carmen_robot_and_trailers_traj_point_t> path_result);
 
 carmen_map_t *
 copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map);
