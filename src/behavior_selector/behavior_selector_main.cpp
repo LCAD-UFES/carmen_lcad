@@ -1924,7 +1924,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "annotation_velocity_pedestrian_track_stop", CARMEN_PARAM_DOUBLE, &annotation_velocity_pedestrian_track_stop, 0, NULL},
 		{(char *) "robot", (char *) "annotation_velocity_yield",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_yield,				  0, NULL},
 		{(char *) "robot", (char *) "annotation_velocity_barrier",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_barrier,				  0, NULL},
-		{(char *) "robot", (char *) "annotation_velocity_queue", 				 CARMEN_PARAM_DOUBLE, &annotation_velocity_queue, 0, NULL},
+//		{(char *) "robot", (char *) "annotation_velocity_queue", 				 CARMEN_PARAM_DOUBLE, &annotation_velocity_queue, 0, NULL},
 
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "move_to_engage_pose_speed_limit", CARMEN_PARAM_DOUBLE, &move_to_engage_pose_speed_limit, 1, NULL},

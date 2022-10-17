@@ -178,7 +178,7 @@ queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 
 	double distance_to_annotation = DIST2D(nearest_queue_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_robot_and_trailer_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+	carmen_robot_and_trailers_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
 	if ((distance_to_act_on_annotation >= distance_to_annotation) &&
 		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_queue_annotation->annotation_point))

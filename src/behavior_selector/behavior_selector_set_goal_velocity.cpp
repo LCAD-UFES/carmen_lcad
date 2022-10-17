@@ -288,6 +288,29 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 
 
 bool
+busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	static double last_queue_busy_timestamp = 0.0;
+
+	carmen_robot_and_trailers_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+
+	carmen_annotation_t *nearest_queue_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
+			last_rddf_annotation_message, &displaced_robot_pose);
+
+	if (nearest_queue_annotation == NULL)
+		return (false);
+
+	if ((nearest_queue_annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY))
+		last_queue_busy_timestamp = timestamp;
+
+	if (timestamp - last_queue_busy_timestamp < 1.5)
+		return (true);
+	else
+		return (false);
+}
+
+
+bool
 busy_pedestrian_track_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 //	return (false);
