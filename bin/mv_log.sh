@@ -1,1 +1,1 @@
-/home/piumbini/carmen_lcad/src/utilities/scripts/mv_log.sh
+/home/lcad/carmen_lcad/src/utilities/scripts/mv_log.sh

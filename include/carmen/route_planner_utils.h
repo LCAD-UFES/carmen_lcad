@@ -38,6 +38,8 @@
 #include <opencv/highgui.h>
 #endif
 
+#include "g2o/types/slam2d/se2.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -109,13 +111,16 @@ float h_n_manh (int vertex_id, int vertex_end, graph_t graph);
 float h_n_eucl(carmen_point_t pose_ini, carmen_point_t pose_end);
 a_star_utils_t a_star_in_lane_graph(graph_t &graph, lane_graph_t &lane_graph, vector<int> &route, int vertex_ini, int vertex_end);
 a_star_utils_t a_star_k_neighbours(graph_t &graph, lane_graph_t &lane_graph, int k, int vertex_ini, int vertex_end);
-int find_closest_point_in_graph_ternium(graph_t graph, carmen_point_t point, char *direction);
+void set_new_origin_and_destination_index_in_lane_graph(graph_t &graph, lane_graph_t &lane_graph, int origin_index, int destination_index, int *origin_index_in_lane_graph, int *destination_index_in_lane_graph);
+bool destination_index_is_ahead_robot(graph_t &graph, int destination_index, carmen_point_t robot_pose);
 int find_closest_point_in_graph (graph_t &graph, carmen_point_t point);
 //carmen_point_t set_destination(vector<carmen_annotation_t> annotations);
 carmen_point_t set_destination(vector<carmen_annotation_t> annotations, char *goal);
 void get_annotation_from_rddf(char *carmen_annotation_filename, vector<carmen_annotation_t> &annotations);
 void get_graph_from_file(graph_t *graph, lane_graph_t *lane_graph, char *filename);
-void get_route_list(graph_t graph, carmen_position_t center, double range, int *number_of_routes, route_t *routes[]);
+void get_route_list(graph_t &graph, carmen_position_t center, double range, int *number_of_routes, route_t *routes[]);
+void get_node_ids_ahead(graph_t &graph, int initial_node_id, double meters_ahead, int *qtd_node_ids_ahead, int *node_ids_ahead, vector<int> &node_ids);
+void get_node_ids_ahead_rddf(carmen_route_planner_road_network_message *route_msg, double meters_ahead, int *qtd_node_ids_ahead, int *node_ids_ahead, vector<int> &node_ids);
 
 #ifdef __cplusplus
 }
