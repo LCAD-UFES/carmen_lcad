@@ -2,6 +2,8 @@
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/rrt_node.h>
 
+#define PUBLISH_MAP_VIEW 0
+
 using namespace std;
 extern int record_screen;
 extern int use_glade_with_annotations;
@@ -2262,7 +2264,9 @@ namespace View
 			y_origin += (mapv->y_scroll_adj->upper - mapv->y_scroll_adj->value - height) * resolution;
 		}
 
+#if PUBLISH_MAP_VIEW
 		carmen_navigator_gui_publish_map_view_message(width, height, image_size, raw_image, x_origin, y_origin, resolution);
+#endif
 	}
 
 
