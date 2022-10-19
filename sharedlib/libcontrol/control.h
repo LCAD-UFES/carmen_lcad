@@ -37,7 +37,8 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double at
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks);
 
 double
-carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int manual_override);
+carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int tune_pid_mode,
+		int manual_override);
 
 
 double carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),

@@ -9,7 +9,9 @@ double
 carmen_libpid_steering_PID_controler_publish_data(steering_pid_data_message * msg, double atan_desired_curvature, double atan_current_curvature, double plan_size,
 		int manual_override, double kp, double kd, double ki);
 		
-double carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int manual_override);
+double
+carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int tune_pid_mode,
+		int manual_override);
 
 
 double

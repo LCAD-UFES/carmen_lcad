@@ -939,16 +939,14 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 				{
 					double plan_size;
 
-					if (tune_pid_mode) //ford_escape_tune_pid nao preenche o x,y,theta. Falta tratar para o caso do Joystic tambem
-						plan_size = 5.0;
-					else if (ford_escape_hybrid_config->nun_motion_commands > 2) //calcula tamanho do plano para passar para funcao de PID.
+					if (ford_escape_hybrid_config->nun_motion_commands > 2) //calcula tamanho do plano para passar para funcao de PID.
 						plan_size = DIST2D(ford_escape_hybrid_config->current_motion_command_vector[0], ford_escape_hybrid_config->current_motion_command_vector[ford_escape_hybrid_config->nun_motion_commands - 1]);
 					else
 						plan_size = 0.0;
 
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
-							plan_size, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+							plan_size, tune_pid_mode, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 //					printf("Entrei aqui pra ver o PID e tudo, g_steering_command: %lf\n", g_steering_command);
 				}
 				else
