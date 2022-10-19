@@ -693,7 +693,8 @@ timer_handler()
 void
 get_velocity_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	simulator_velocity->beta = msg->beta;
+	simulator_velocity->trailer_theta[0] = msg->trailer_theta[0];
+	simulator_velocity->num_trailers = msg->num_trailers;
 	simulator_velocity->v = msg->v;
 	simulator_velocity->odometrypose = msg->odometrypose;
 	simulator_velocity->phi = msg->phi;
