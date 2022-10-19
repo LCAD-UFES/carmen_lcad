@@ -21,7 +21,7 @@ publish_interface_message(vector<carmen_point_t> &interpolated_path)
 	message.timestamp = carmen_get_time();
 	message.host = carmen_get_host();
 
-	message.path = (carmen_robot_and_trailer_traj_point_t *) calloc (interpolated_path.size(), sizeof(carmen_robot_and_trailer_traj_point_t));
+	message.path = (carmen_robot_and_trailers_traj_point_t *) calloc (interpolated_path.size(), sizeof(carmen_robot_and_trailers_traj_point_t));
 
 	for (uint i = 0; i < interpolated_path.size(); i++)
 	{
@@ -53,9 +53,9 @@ publish_interface_message(vector<carmen_point_t> &interpolated_path)
 void
 publish_path_planner_message(vector<carmen_point_t> &interpolated_path)
 {
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 
-	path = (carmen_robot_and_trailer_traj_point_t *) calloc (interpolated_path.size(), sizeof(carmen_robot_and_trailer_traj_point_t));
+	path = (carmen_robot_and_trailers_traj_point_t *) calloc (interpolated_path.size(), sizeof(carmen_robot_and_trailers_traj_point_t));
 
 	for (uint i = 0; i < interpolated_path.size(); i++)
 	{

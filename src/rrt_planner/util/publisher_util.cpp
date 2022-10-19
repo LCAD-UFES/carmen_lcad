@@ -41,7 +41,7 @@ Publisher_Util::get_path(list<RRT_Path_Edge> &path)
 	}
 
 	msg.path_length = path.size() + 1;
-	msg.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * (msg.path_length));
+	msg.path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * (msg.path_length));
 
 	it = path.begin();
 
@@ -50,7 +50,7 @@ Publisher_Util::get_path(list<RRT_Path_Edge> &path)
 		msg.path[i].x	  = it->p1.pose.x;
 		msg.path[i].y	  = it->p1.pose.y;
 		msg.path[i].theta = it->p1.pose.theta;
-		msg.path[i].beta  = it->p1.pose.beta;
+		msg.path[i].trailer_theta[0]  = it->p1.pose.beta;
 		msg.path[i].v	  = it->command.v;
 		msg.path[i].phi	  = it->command.phi;
 
@@ -62,7 +62,7 @@ Publisher_Util::get_path(list<RRT_Path_Edge> &path)
 	msg.path[i].x	  = it->p2.pose.x;
 	msg.path[i].y	  = it->p2.pose.y;
 	msg.path[i].theta = it->p2.pose.theta;
-	msg.path[i].beta  = it->p2.pose.beta;
+	msg.path[i].trailer_theta[0]  = it->p2.pose.beta;
 	msg.path[i].v	  = it->command.v;
 	msg.path[i].phi	  = it->command.phi;
 
@@ -124,7 +124,7 @@ Publisher_Util::get_path_or_old_path(const vector<RRT_Node *> reaches_goal_nodes
 			printf("Error: msg.path_length > 100 in Publisher_Util::publish_plan_tree_message()\n");
 			exit(1);
 		}
-		memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_robot_and_trailer_traj_point_t) * msg.path_length);
+		memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_robot_and_trailers_traj_point_t) * msg.path_length);
 		free(msg.path);
 		plan_tree_msg.path_size[0] = msg.path_length;
 
@@ -158,8 +158,8 @@ Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> reac
 		plan_tree_msg.num_edges += t.nodes[i]->adjacency_nodes.size();
 	}
 
-	plan_tree_msg.p1 = (carmen_robot_and_trailer_traj_point_t *) malloc (sizeof(carmen_robot_and_trailer_traj_point_t) * plan_tree_msg.num_edges);
-	plan_tree_msg.p2 = (carmen_robot_and_trailer_traj_point_t *) malloc (sizeof(carmen_robot_and_trailer_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p1 = (carmen_robot_and_trailers_traj_point_t *) malloc (sizeof(carmen_robot_and_trailers_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p2 = (carmen_robot_and_trailers_traj_point_t *) malloc (sizeof(carmen_robot_and_trailers_traj_point_t) * plan_tree_msg.num_edges);
 	plan_tree_msg.mask = (int *) malloc(sizeof(int) * plan_tree_msg.num_edges);
 
 	int aux = 0;
@@ -176,14 +176,14 @@ Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> reac
 			plan_tree_msg.p1[aux].x	 = adj_it->n1->robot_state.pose.x;
 			plan_tree_msg.p1[aux].y	 = adj_it->n1->robot_state.pose.y;
 			plan_tree_msg.p1[aux].theta = adj_it->n1->robot_state.pose.theta;
-			plan_tree_msg.p1[aux].beta = adj_it->n1->robot_state.pose.beta;
+			plan_tree_msg.p1[aux].trailer_theta[0] = adj_it->n1->robot_state.pose.beta;
 			plan_tree_msg.p1[aux].v = adj_it->n1->robot_state.v_and_phi.v;
 			plan_tree_msg.p1[aux].phi = adj_it->n1->robot_state.v_and_phi.phi;
 
 			plan_tree_msg.p2[aux].x	 = adj_it->n2->robot_state.pose.x;
 			plan_tree_msg.p2[aux].y	 = adj_it->n2->robot_state.pose.y;
 			plan_tree_msg.p2[aux].theta = adj_it->n2->robot_state.pose.theta;
-			plan_tree_msg.p2[aux].beta = adj_it->n2->robot_state.pose.beta;
+			plan_tree_msg.p2[aux].trailer_theta[0] = adj_it->n2->robot_state.pose.beta;
 			plan_tree_msg.p2[aux].v = adj_it->n2->robot_state.v_and_phi.v;
 			plan_tree_msg.p2[aux].phi = adj_it->n2->robot_state.v_and_phi.phi;
 
@@ -227,8 +227,8 @@ Publisher_Util::publish_principal_path_message(list<RRT_Path_Edge> &path)
 	plan_tree_msg.timestamp = carmen_get_time();
 	plan_tree_msg.num_edges = 0;
 
-	plan_tree_msg.p1 = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * plan_tree_msg.num_edges);
-	plan_tree_msg.p2 = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p1 = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p2 = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * plan_tree_msg.num_edges);
 	plan_tree_msg.mask = (int *) malloc(sizeof(int) * plan_tree_msg.num_edges);
 
 	carmen_navigator_ackerman_plan_message msg;
@@ -243,7 +243,7 @@ Publisher_Util::publish_principal_path_message(list<RRT_Path_Edge> &path)
 		exit(1);
 	}
 
-	memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_robot_and_trailer_traj_point_t) * msg.path_length);
+	memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_robot_and_trailers_traj_point_t) * msg.path_length);
 
 	plan_tree_msg.path_size[0] = msg.path_length;
 

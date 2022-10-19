@@ -17,7 +17,7 @@ static char *carmen_driving_playback_filename = NULL;
 static int carmen_driving_playback_num_poses_ahead_max = 0;
 static double carmen_driving_playback_distance_between_waypoints = 0.0;
 
-static carmen_robot_and_trailer_traj_point_t *carmen_driving_playback_poses_ahead;
+static carmen_robot_and_trailers_traj_point_t *carmen_driving_playback_poses_ahead;
 static int carmen_driving_playback_num_poses_ahead;
 
 int *annotations;
@@ -42,7 +42,7 @@ carmen_driving_playback_play_shutdown_module (int signo)
 
 static int
 carmen_driving_playback_play_find_nearest_poses_ahead(double x, double y, double yaw, double timestamp /* only for debugging */,
-		carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses_ahead_max, int *rddf_annotations, double distance_between_waypoints)
+		carmen_robot_and_trailers_traj_point_t *poses_ahead, int num_poses_ahead_max, int *rddf_annotations, double distance_between_waypoints)
 {
 	return carmen_search_next_poses_index(x, y, yaw, timestamp, poses_ahead, num_poses_ahead_max, rddf_annotations,  distance_between_waypoints);
 }
@@ -174,7 +174,7 @@ main(int argc, char **argv)
 	carmen_motion_planner_define_path_message();
 	carmen_driving_playback_play_get_parameters(argc, argv);
 
-	carmen_driving_playback_poses_ahead = (carmen_robot_and_trailer_traj_point_t *) calloc (carmen_driving_playback_num_poses_ahead_max, sizeof(carmen_robot_and_trailer_traj_point_t));
+	carmen_driving_playback_poses_ahead = (carmen_robot_and_trailers_traj_point_t *) calloc (carmen_driving_playback_num_poses_ahead_max, sizeof(carmen_robot_and_trailers_traj_point_t));
 	annotations = (int *) calloc (carmen_driving_playback_num_poses_ahead_max, sizeof(int));
 
 	carmen_test_alloc(carmen_driving_playback_poses_ahead);

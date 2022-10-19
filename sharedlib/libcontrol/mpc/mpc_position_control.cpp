@@ -5,14 +5,14 @@ using namespace std;
 
 
 double
-dist(carmen_robot_and_trailer_traj_point_t v, carmen_robot_and_trailer_motion_command_t w)
+dist(carmen_robot_and_trailers_traj_point_t v, carmen_robot_and_trailers_motion_command_t w)
 {
     return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 }
 
 
 double
-distance_point_to_line(carmen_robot_and_trailer_traj_point_t point, carmen_robot_and_trailer_motion_command_t line_a, carmen_robot_and_trailer_motion_command_t line_b)
+distance_point_to_line(carmen_robot_and_trailers_traj_point_t point, carmen_robot_and_trailers_motion_command_t line_a, carmen_robot_and_trailers_motion_command_t line_b)
 {
 	//printf("%lf %lf %lf %lf %lf %lf\n", point.x, point.y, line_a->x, line_a->y, line_b->x, line_b->y);
 	//yA - yB = a, xB - xA = b e xAyB - xByA=c
@@ -48,7 +48,7 @@ distance_point_to_line2(double point_x, double point_y, double line_a_x, double 
 }
 
 
-vector<carmen_robot_and_trailer_traj_point_t>
+vector<carmen_robot_and_trailers_traj_point_t>
 get_pose_vector_from_spline_descriptors_old(EFFORT_SPLINE_DESCRIPTOR *descriptors, PARAMS *param)
 {
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
@@ -57,19 +57,22 @@ get_pose_vector_from_spline_descriptors_old(EFFORT_SPLINE_DESCRIPTOR *descriptor
 	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, POSITION_PREDICTION_HORIZON);
 	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(param, effort_vector.size());
 	//vector<double> phi_vector;
-	vector<carmen_robot_and_trailer_traj_point_t> pose_vector;
+	vector<carmen_robot_and_trailers_traj_point_t> pose_vector;
 
 	double atan_current_curvature = param->atan_current_curvature;
 
 	param->optimized_path.x.clear();
 	param->optimized_path.y.clear();
 
-	carmen_robot_and_trailer_traj_point_t robot_state;
+	carmen_robot_and_trailers_traj_point_t robot_state;
 	robot_state.x = param->global_pos.globalpos.x;
 	robot_state.y = param->global_pos.globalpos.y;
 	robot_state.theta = param->global_pos.globalpos.theta;
-	robot_state.beta = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
-	carmen_semi_trailer_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
+	robot_state.num_trailers = param->global_pos.num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		robot_state.trailer_theta[z] = param->global_pos.trailer_theta[z]; // Tem que tratar isso no futuro, se for usar este codigo
+
+	carmen_semi_trailers_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
 
 	double distance_traveled = 0.0;
 
@@ -81,7 +84,7 @@ get_pose_vector_from_spline_descriptors_old(EFFORT_SPLINE_DESCRIPTOR *descriptor
 
 		robot_state.v = velocity_vector[i];
 		robot_state.phi = phi;
-		carmen_robot_and_trailer_traj_point_t pose = carmen_libcarmodel_recalc_pos_ackerman(robot_state, velocity_vector[i], phi, DELTA_T, &distance_traveled, DELTA_T, *param->robot_config, semi_trailer_config);
+		carmen_robot_and_trailers_traj_point_t pose = carmen_libcarmodel_recalc_pos_ackerman(robot_state, velocity_vector[i], phi, DELTA_T, &distance_traveled, DELTA_T, *param->robot_config, semi_trailer_config);
 		pose_vector.push_back(pose);
 
 		param->optimized_path.x.push_back(pose.x);
@@ -106,14 +109,17 @@ get_pose_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, P
 	param->optimized_path.x.clear();
 	param->optimized_path.y.clear();
 
-	carmen_robot_and_trailer_traj_point_t robot_state;
+	carmen_robot_and_trailers_traj_point_t robot_state;
 	robot_state.x = param->global_pos.globalpos.x;
 	robot_state.y = param->global_pos.globalpos.y;
 	robot_state.theta = param->global_pos.globalpos.theta;
-	robot_state.beta = 0.0; // Tem que tratar isso no futuro, se for usar este codigo
-	carmen_semi_trailer_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
+	robot_state.num_trailers = param->global_pos.num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		robot_state.trailer_theta[z] = param->global_pos.trailer_theta[z]; // Tem que tratar isso no futuro, se for usar este codigo
 
-	carmen_robot_and_trailer_traj_point_t pose;
+	carmen_semi_trailers_config_t semi_trailer_config = {}; // Tem que tratar isso no futuro, se for usar este codigo
+
+	carmen_robot_and_trailers_traj_point_t pose;
 
 	int max = effort_vector.size() - 1;
 	for (int i = 0; i < max; i++)
@@ -155,7 +161,7 @@ my_f_old(const gsl_vector *v, void *params)
 	d.k3 = gsl_vector_get(v, 2);
 	d.k4 = gsl_vector_get(v, 3);
 
-	vector<carmen_robot_and_trailer_traj_point_t> pose_vector = get_pose_vector_from_spline_descriptors_old(&d, p);
+	vector<carmen_robot_and_trailers_traj_point_t> pose_vector = get_pose_vector_from_spline_descriptors_old(&d, p);
 
 	// TODO: por que nao da para substituir isso pela funcao que (aparentemente) faz a mesma coisa?
 	double motion_commands_vector_time = p->motion_commands_vector[0].time;
@@ -427,7 +433,7 @@ plot_position2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double under
 
 bool
 init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double atan_current_curvature,
-		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands,
+		carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands,
 		double v, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks)
@@ -478,13 +484,13 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double
 
 
 void
-publish_mpc_plan_message(vector<carmen_robot_and_trailer_traj_point_t> pose_vector)
+publish_mpc_plan_message(vector<carmen_robot_and_trailers_traj_point_t> pose_vector)
 {
 	int i;
 	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
 
 	predicted_trajectory_message.path_length = pose_vector.size();
-	predicted_trajectory_message.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * predicted_trajectory_message.path_length);
+	predicted_trajectory_message.path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * predicted_trajectory_message.path_length);
 
 	for (i = 0; i < predicted_trajectory_message.path_length; i++)
 		predicted_trajectory_message.path[i] = pose_vector[i];
@@ -500,7 +506,7 @@ publish_mpc_plan_message(vector<carmen_robot_and_trailer_traj_point_t> pose_vect
 
 double
 carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double atan_current_curvature,
-		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector,	int nun_motion_commands,
+		carmen_robot_and_trailers_motion_command_t *current_motion_command_vector,	int nun_motion_commands,
 		double v, double yp, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks)

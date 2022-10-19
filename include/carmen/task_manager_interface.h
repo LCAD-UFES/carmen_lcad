@@ -10,7 +10,11 @@ extern "C" {
 
 
 void
-carmen_task_manager_subscribe_state_message(carmen_task_manager_state_message *msg,
+carmen_task_manager_subscribe_mission_state_message(carmen_task_manager_mission_state_message *msg,
+				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_subscribe_task_state_message(carmen_task_manager_task_state_message *msg,
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
@@ -27,8 +31,11 @@ carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(carmen_task
 
 
 void
-carmen_task_manager_publish_state_message(carmen_task_manager_mission_level_state_t mission_state, char* mission_id, char *mission_filename,
-											carmen_robot_and_trailer_pose_t pose, char *info);
+carmen_task_manager_publish_mission_state_message(carmen_task_manager_mission_level_state_t mission_state, char* mission_id, char *mission_filename,
+											carmen_robot_and_trailers_pose_t pose, char *info);
+
+void
+carmen_task_manager_publish_task_state_message(carmen_task_manager_task_state_message msg);
 
 void
 carmen_task_manager_publish_set_collision_geometry_message(int geometry, double timestamp);
@@ -40,7 +47,7 @@ void
 carmen_task_manager_publish_set_semi_trailer_type_and_beta_message(int semi_trailer_type, double beta, double timestamp);
 
 void
-carmen_task_manager_read_semi_trailer_parameters(carmen_semi_trailer_config_t *semi_trailer_config, int argc, char **argv, int semi_trailer_type);
+carmen_task_manager_read_semi_trailer_parameters(carmen_semi_trailers_config_t *semi_trailer_config, int argc, char **argv, int semi_trailer_type);
 
 #ifdef __cplusplus
 }

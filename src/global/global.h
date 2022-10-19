@@ -157,6 +157,8 @@ extern "C" {
 #define	POINT_BEFORE_SEGMENT		2
 #define	POINT_AFTER_SEGMENT			3
 
+#define MAX_NUM_TRAILERS 5
+
 typedef struct {
 	double x;
 	double y;
@@ -222,8 +224,9 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
-	double beta;
-} carmen_robot_and_trailer_pose_t;
+	int num_trailers;
+	double trailer_theta[MAX_NUM_TRAILERS];
+} carmen_robot_and_trailers_pose_t;
 
 
 typedef struct {
@@ -248,10 +251,11 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
-	double beta;
+	int num_trailers;
+	double trailer_theta[MAX_NUM_TRAILERS];
 	double v;
 	double phi;
-} carmen_robot_and_trailer_traj_point_t;
+} carmen_robot_and_trailers_traj_point_t;
 
 
 typedef struct {
@@ -268,22 +272,24 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
-	double beta;
+	int num_trailers;
+	double trailer_theta[MAX_NUM_TRAILERS];
 	double v;
 	double phi;
 	double time;
-} carmen_robot_and_trailer_path_point_t;
+} carmen_robot_and_trailers_path_point_t;
 
 
 typedef struct {
 	double x;
 	double y;
 	double theta;
-	double beta;
+	int num_trailers;
+	double trailer_theta[MAX_NUM_TRAILERS];
 	double v;
 	double phi;
 	double time;
-} carmen_robot_and_trailer_motion_command_t;
+} carmen_robot_and_trailers_motion_command_t;
 
 
 typedef struct {
@@ -366,11 +372,17 @@ typedef struct {
 
 
 typedef struct {
+	int num_semi_trailers;
+	carmen_semi_trailer_config_t semi_trailers;
+} carmen_semi_trailers_config_t;
+
+
+typedef struct {
 	int semi_trailer_engaged;
 	int type;
 	double d;
 	double M;
-	double beta;
+	double current_trailer_theta;
 } carmen_current_semi_trailer_data_t;
 
 typedef struct {
@@ -665,7 +677,7 @@ extern carmen_inline double carmen_distance_traj(carmen_traj_point_p p1, carmen_
 	return sqrt((p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y));
 }
 
-extern carmen_inline double carmen_distance_ackerman_traj(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2)
+extern carmen_inline double carmen_distance_ackerman_traj(carmen_robot_and_trailers_traj_point_t *p1, carmen_robot_and_trailers_traj_point_t *p2)
 {
 	return sqrt((p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y));
 }
@@ -789,23 +801,26 @@ void carmen_alloc_spherical_point_cloud(spherical_point_cloud *velodyne_points, 
 void carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, 
 					    double v_bias, double v_multiplier, double phi_bias, double phi_multiplier);
 
-carmen_robot_and_trailer_traj_point_t
+carmen_robot_and_trailers_traj_point_t
 carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
-		carmen_robot_and_trailer_traj_point_t v,
-		carmen_robot_and_trailer_traj_point_t w,
-		carmen_robot_and_trailer_traj_point_t p, double min_segment_size);
+		carmen_robot_and_trailers_traj_point_t v,
+		carmen_robot_and_trailers_traj_point_t w,
+		carmen_robot_and_trailers_traj_point_t p, double min_segment_size);
 
-carmen_robot_and_trailer_path_point_t
+carmen_robot_and_trailers_path_point_t
 carmen_get_point_nearest_to_path(int *point_in_trajectory_is,
-		carmen_robot_and_trailer_path_point_t v,
-		carmen_robot_and_trailer_path_point_t w,
-		carmen_robot_and_trailer_path_point_t p, double min_segment_size);
+		carmen_robot_and_trailers_path_point_t v,
+		carmen_robot_and_trailers_path_point_t w,
+		carmen_robot_and_trailers_path_point_t p, double min_segment_size);
 
 int
 carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle);
 
 int
 carmen_line_to_line_intersection(carmen_position_t *I0, carmen_position_t s1_p0, carmen_position_t s1_p1, carmen_position_t s2_p0, carmen_position_t s2_p1);
+
+double convert_theta1_to_beta(double theta, double theta1);
+double convert_beta_to_theta1(double theta, double beta);
 
 extern carmen_inline char *carmen_next_word(char *str)
 {

@@ -60,10 +60,10 @@ double original_model_predictive_planner_obstacles_safe_distance;
 double voice_interface_max_vel = 0.0;
 
 
-vector<carmen_robot_and_trailer_path_point_t>
-smooth_short_path(vector<carmen_robot_and_trailer_path_point_t> &original_path)
+vector<carmen_robot_and_trailers_path_point_t>
+smooth_short_path(vector<carmen_robot_and_trailers_path_point_t> &original_path)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path = original_path;
+	vector<carmen_robot_and_trailers_path_point_t> path = original_path;
 
 	static double stable_phi = 0.0;	// Ultimo phi de um path nao short
 	double distance_travelled = 0.0;
@@ -94,15 +94,15 @@ smooth_short_path(vector<carmen_robot_and_trailer_path_point_t> &original_path)
 
 
 void
-publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer_path_point_t> path, double timestamp)
+publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailers_path_point_t> path, double timestamp)
 {
 	if (!GlobalState::following_path)
 		return;
 
-	carmen_robot_and_trailer_motion_command_t *commands =
-			(carmen_robot_and_trailer_motion_command_t *) (malloc(path.size() * sizeof(carmen_robot_and_trailer_motion_command_t)));
+	carmen_robot_and_trailers_motion_command_t *commands =
+			(carmen_robot_and_trailers_motion_command_t *) (malloc(path.size() * sizeof(carmen_robot_and_trailers_motion_command_t)));
 	int i = 0;
-	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
+	for (std::vector<carmen_robot_and_trailers_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
 	{
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;
@@ -110,7 +110,10 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 		commands[i].x = it->x;
 		commands[i].y = it->y;
 		commands[i].theta = it->theta;
-		commands[i].beta = it->beta;
+		commands[i].num_trailers = it->num_trailers;
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			commands[i].trailer_theta[z] = it->trailer_theta[z];
+
 
 		i++;
 	}
@@ -131,9 +134,9 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 
 
 void
-publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailer_path_point_t> &original_path, double timestamp)
+publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailers_path_point_t> &original_path, double timestamp)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path = smooth_short_path(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
+	vector<carmen_robot_and_trailers_path_point_t> path = smooth_short_path(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
 //	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
 //	print_path_(path);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
@@ -179,13 +182,13 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 		msg.path[i].p1.x = it->p1.pose.x;
 		msg.path[i].p1.y = it->p1.pose.y;
 		msg.path[i].p1.theta = it->p1.pose.theta;
-		msg.path[i].p1.beta = it->p1.pose.beta;
+		msg.path[i].p1.trailer_theta[0] = it->p1.pose.beta;
 		msg.path[i].p1.v = it->p1.v_and_phi.v;
 		msg.path[i].p1.phi = it->p1.v_and_phi.phi;
 
 		msg.path[i].p2.x = it->p2.pose.x;
 		msg.path[i].p2.y = it->p2.pose.y;
-		msg.path[i].p2.beta = it->p2.pose.beta;
+		msg.path[i].p2.trailer_theta[0] = it->p2.pose.beta;
 		msg.path[i].p2.theta = it->p2.pose.theta;
 		msg.path[i].p2.v = it->p2.v_and_phi.v;
 		msg.path[i].p2.phi = it->p2.v_and_phi.phi;
@@ -193,6 +196,7 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 		msg.path[i].v = it->command.v;
 		msg.path[i].phi = it->command.phi;
 		msg.path[i].time = it->time;
+
 	}
 
 	Publisher_Util::publish_rrt_path_message(&msg);
@@ -202,7 +206,7 @@ publish_model_predictive_planner_rrt_path_message(list<RRT_Path_Edge> path, doub
 
 
 void
-publish_path_follower_motion_commands(carmen_robot_and_trailer_motion_command_t *commands, int num_commands, double timestamp)
+publish_path_follower_motion_commands(carmen_robot_and_trailers_motion_command_t *commands, int num_commands, double timestamp)
 {
 	if (GlobalState::use_obstacle_avoider)
 	{
@@ -219,7 +223,7 @@ publish_path_follower_motion_commands(carmen_robot_and_trailer_motion_command_t 
 void
 publish_path_follower_single_motion_command(double v, double phi, double timestamp)
 {
-	carmen_robot_and_trailer_motion_command_t commands[2];
+	carmen_robot_and_trailers_motion_command_t commands[2];
 
 	commands[0].v = v;
 	commands[0].phi = phi;
@@ -232,16 +236,19 @@ publish_path_follower_single_motion_command(double v, double phi, double timesta
 void
 publish_model_predictive_planner_single_motion_command(double v, double phi, double timestamp)
 {
-	vector<carmen_robot_and_trailer_path_point_t> path;
+	vector<carmen_robot_and_trailers_path_point_t> path;
 
-	carmen_robot_and_trailer_path_point_t traj;
+	carmen_robot_and_trailers_path_point_t traj;
 	traj.v = v;
 	traj.phi = phi;
 	traj.time = 1.0;
 	traj.x = GlobalState::localizer_pose->x;
 	traj.y = GlobalState::localizer_pose->y;
 	traj.theta = GlobalState::localizer_pose->theta;
-	traj.beta = GlobalState::localizer_pose->beta;
+	traj.num_trailers = GlobalState::localizer_pose->num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		traj.trailer_theta[z] =	convert_beta_to_theta1(traj.theta, GlobalState::localizer_pose->trailer_theta[z]);
+
 	path.push_back(traj);
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
@@ -252,7 +259,7 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 
 
 void
-publish_navigator_ackerman_plan_message(carmen_robot_and_trailer_traj_point_t *path, int path_size)
+publish_navigator_ackerman_plan_message(carmen_robot_and_trailers_traj_point_t *path, int path_size)
 {
 	carmen_navigator_ackerman_plan_message msg;
 
@@ -294,7 +301,7 @@ publish_navigator_ackerman_status_message()
 		msg.goal.x = GlobalState::goal_pose->x;
 		msg.goal.y = GlobalState::goal_pose->y;
 		msg.goal.theta = GlobalState::goal_pose->theta;
-		msg.goal.beta = GlobalState::goal_pose->beta;
+		msg.goal.trailer_theta[0] = convert_beta_to_theta1(msg.goal.theta, GlobalState::goal_pose->beta);
 		msg.goal.v = (path_goals_and_annotations_message != NULL)? path_goals_and_annotations_message->goal_list->v: GlobalState::robot_config.max_v;
 		msg.goal.phi = 0.0; // @@@ Alberto: teria que preencher isso...
 	}
@@ -346,60 +353,62 @@ free_tree(Tree *tree)
 
 
 void
-copy_path_to_traj(carmen_robot_and_trailer_traj_point_t *traj, vector<carmen_robot_and_trailer_path_point_t> path)
+copy_path_to_traj(carmen_robot_and_trailers_traj_point_t *traj, vector<carmen_robot_and_trailers_path_point_t> path)
 {
 	int i = 0;
-	for (std::vector<carmen_robot_and_trailer_path_point_t>::iterator it = path.begin(); it != path.end(); ++it, ++i)
+	for (std::vector<carmen_robot_and_trailers_path_point_t>::iterator it = path.begin(); it != path.end(); ++it, ++i)
 	{
 		traj[i].x = it->x;
 		traj[i].y = it->y;
 		traj[i].theta = it->theta;
-		traj[i].beta = it->beta;
+		traj[i].num_trailers = it->num_trailers;
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			traj[i].trailer_theta[z] = it->trailer_theta[z];
 		traj[i].v = it->v;
 		traj[i].phi = it->phi;
 	}
 }
 
 
-vector<carmen_robot_and_trailer_path_point_t>
+vector<carmen_robot_and_trailers_path_point_t>
 compute_plan(Tree *tree)
 {
 	if (!path_goals_and_annotations_message || (path_goals_and_annotations_message->number_of_poses == 0))
 	{
 		tree->num_paths = 0;
 		tree->paths = NULL;
-		vector<carmen_robot_and_trailer_path_point_t> voidVector;
+		vector<carmen_robot_and_trailers_path_point_t> voidVector;
 
 		return (voidVector);
 	}
 
 	free_tree(tree);
-	vector<vector<carmen_robot_and_trailer_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
+	vector<vector<carmen_robot_and_trailers_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
 			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, path_goals_and_annotations_message);
 
 	if (path.size() == 0)
 	{
 		tree->num_paths = 0;
 		tree->paths = NULL;
-		vector<carmen_robot_and_trailer_path_point_t> voidVector;
+		vector<carmen_robot_and_trailers_path_point_t> voidVector;
 
 		return (voidVector);
 	}
 	else
 	{
 		tree->num_paths = path.size();
-		tree->paths = (carmen_robot_and_trailer_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_robot_and_trailer_traj_point_t *));
+		tree->paths = (carmen_robot_and_trailers_traj_point_t **) malloc(tree->num_paths * sizeof(carmen_robot_and_trailers_traj_point_t *));
 		tree->paths_sizes = (int *) malloc(tree->num_paths * sizeof(int));
 
 		for (unsigned int i = 0; i < path.size(); i++)
 		{
-			tree->paths[i] = (carmen_robot_and_trailer_traj_point_t *) malloc(path[i].size() * sizeof(carmen_robot_and_trailer_traj_point_t));
+			tree->paths[i] = (carmen_robot_and_trailers_traj_point_t *) malloc(path[i].size() * sizeof(carmen_robot_and_trailers_traj_point_t));
 			copy_path_to_traj(tree->paths[i], path[i]);
 			tree->paths_sizes[i] = path[i].size();
 		}
 
 		if (!GlobalState::last_plan_pose)
-			GlobalState::last_plan_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
+			GlobalState::last_plan_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 		*GlobalState::last_plan_pose = *GlobalState::localizer_pose;
 
 		return (path[0]);
@@ -423,7 +432,7 @@ stop()
 
 
 list<RRT_Path_Edge>
-build_path_follower_path(vector<carmen_robot_and_trailer_path_point_t> path)
+build_path_follower_path(vector<carmen_robot_and_trailers_path_point_t> path)
 {
 	list<RRT_Path_Edge> path_follower_path;
 	RRT_Path_Edge path_edge;
@@ -436,14 +445,14 @@ build_path_follower_path(vector<carmen_robot_and_trailer_path_point_t> path)
 		path_edge.p1.pose.x = path[i].x;
 		path_edge.p1.pose.y = path[i].y;
 		path_edge.p1.pose.theta = path[i].theta;
-		path_edge.p1.pose.beta = path[i].beta;
+		path_edge.p1.pose.beta = path[i].trailer_theta[0];
 		path_edge.p1.v_and_phi.v = path[i].v;
 		path_edge.p1.v_and_phi.phi = path[i].phi;
 
 		path_edge.p2.pose.x = path[i + 1].x;
 		path_edge.p2.pose.y = path[i + 1].y;
 		path_edge.p2.pose.theta = path[i + 1].theta;
-		path_edge.p2.pose.beta = path[i + 1].beta;
+		path_edge.p2.pose.beta = path[i + 1].trailer_theta[0];
 		path_edge.p1.v_and_phi.v = path[i + 1].v;
 		path_edge.p1.v_and_phi.phi = path[i + 1].phi;
 
@@ -518,7 +527,7 @@ build_and_follow_path(double timestamp)
 		}
 		else
 		{
-			vector<carmen_robot_and_trailer_path_point_t> path = compute_plan(&tree);
+			vector<carmen_robot_and_trailers_path_point_t> path = compute_plan(&tree);
 			if (!GlobalState::path_has_collision_or_phi_exceeded && (tree.num_paths > 0) && (path.size() > 0))
 			{
 				if (GlobalState::eliminate_path_follower)
@@ -583,7 +592,7 @@ build_and_follow_path_new(double timestamp)
 		}
 		else
 		{
-			vector<carmen_robot_and_trailer_path_point_t> path = compute_plan(&tree);
+			vector<carmen_robot_and_trailers_path_point_t> path = compute_plan(&tree);
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
 				publish_model_predictive_planner_motion_commands(path, timestamp);
@@ -609,19 +618,23 @@ static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	if (!GlobalState::localizer_pose)
-		GlobalState::localizer_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
+		GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 
-	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta, msg->beta};
+	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,  msg->num_trailers, {0.0}}; //Adicionar num_trailers
+
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		GlobalState::localizer_pose->trailer_theta[z] = convert_theta1_to_beta(msg->globalpos.theta, msg->trailer_theta[z]); // Transformar em beta para o build_and_follow_path funcionar corretamente
+
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
 	else
 		build_and_follow_path(msg->timestamp);
 
-	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.type)
+	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.semi_trailers.type)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.type);
+		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.semi_trailers.type);
 	}
 }
 
@@ -633,9 +646,11 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	GlobalState::last_odometry.phi = msg->phi;
 
 	if (!GlobalState::localizer_pose)
-			GlobalState::localizer_pose = (carmen_robot_and_trailer_pose_t *) malloc(sizeof(carmen_robot_and_trailer_pose_t));
+			GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 
-	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, 0.0};
+	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, msg->num_trailers, {0.0}};
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		GlobalState::localizer_pose->trailer_theta[z] = convert_theta1_to_beta(msg->truepose.theta, msg->trailer_theta[z]); // Transformar em beta para o build_and_follow_path funcionar corretamente
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
@@ -663,7 +678,7 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	goal_pose.x = msg->goal_list[0].x;
 	goal_pose.y = msg->goal_list[0].y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list[0].theta);
-	goal_pose.beta = msg->goal_list[0].beta;
+	goal_pose.beta = convert_theta1_to_beta(goal_pose.theta, msg->goal_list[0].trailer_theta[0]);
 
 	if (GlobalState::reverse_driving_flag)
 	{
@@ -946,7 +961,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot",				 (char *) "max_velocity_reverse",										CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,									 1, NULL},
 		{(char *) "robot",				 (char *) "parking_speed_limit",										CARMEN_PARAM_DOUBLE, &GlobalState::param_parking_speed_limit,									 1, NULL},
 
-		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.type,								 0, NULL},
+		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.semi_trailers.type,								 0, NULL},
 		{(char *) "rddf",				 (char *) "source_tracker",												CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,								 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "goal_source_path_planner",									CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner,										 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "use_truepos",												CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos,												 0, NULL},
@@ -985,8 +1000,8 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	if (GlobalState::semi_trailer_config.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.type);
+	if (GlobalState::semi_trailer_config.semi_trailers.type > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.semi_trailers.type);
 }
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;

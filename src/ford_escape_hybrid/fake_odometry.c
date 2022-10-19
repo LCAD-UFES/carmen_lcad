@@ -32,7 +32,7 @@
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
-static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailers_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 static int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
 static int current_motion_command_vetor = 0;
 

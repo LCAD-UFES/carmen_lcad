@@ -86,6 +86,11 @@ main(int argc, char **argv)
 	poses can be obtained from the tmp/poses_opt.txt file.
 	the waiting time can be obtained from the difference of the initial timestamp by the timestamp of the desired pose.
 	*/
+	pose.x = atof(argv[1]);
+	pose.y = atof(argv[2]);
+	pose.theta = atof(argv[3]);
+	beta = pose.theta;
+
 
 	if (argc >= 5)
 	{
@@ -98,10 +103,6 @@ main(int argc, char **argv)
 				beta = atof(argv[5]); // old code
 		}
 	}
-
-	pose.x = atof(argv[1]);
-	pose.y = atof(argv[2]);
-	pose.theta = atof(argv[3]);
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();

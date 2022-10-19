@@ -22,7 +22,7 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 							carmen_rddf_road_profile_message *rddf,
 							int goal_index,
 							int rddf_pose_index,
-							carmen_robot_and_trailer_traj_point_t robot_pose,
+							carmen_robot_and_trailers_traj_point_t robot_pose,
 							double timestamp);
 
 double udatmo_speed_front(void);
@@ -30,13 +30,13 @@ double udatmo_speed_left(void);
 double udatmo_speed_right(void);
 double udatmo_speed_center(void);
 
-carmen_robot_and_trailer_traj_point_t udatmo_get_moving_obstacle_position(void);
+carmen_robot_and_trailers_traj_point_t udatmo_get_moving_obstacle_position(void);
 
-carmen_robot_and_trailer_traj_point_t udatmo_get_moving_obstacle_position_left(void);
+carmen_robot_and_trailers_traj_point_t udatmo_get_moving_obstacle_position_left(void);
 
-carmen_robot_and_trailer_traj_point_t udatmo_get_moving_obstacle_position_right(void);
+carmen_robot_and_trailers_traj_point_t udatmo_get_moving_obstacle_position_right(void);
 
-double udatmo_get_moving_obstacle_distance(carmen_robot_and_trailer_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config);
+double udatmo_get_moving_obstacle_distance(carmen_robot_and_trailers_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config);
 
 void udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(double behaviour_selector_central_lane_obstacles_safe_distance);
 void udatmo_set_model_predictive_planner_obstacles_safe_distance(double model_predictive_planner_obstacles_safe_distance);

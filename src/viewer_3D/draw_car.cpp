@@ -130,7 +130,7 @@ createCarDrawer(int argc, char** argv)
 		{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 1, NULL},
 		{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 1, NULL},
 		{"robot", "collision_file", CARMEN_PARAM_STRING, &robot_collision_file, 1, NULL},
-		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.type), 0, NULL},
+		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.semi_trailers.type), 0, NULL},
 		{"sensor", "board_1_x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 1, NULL},
 		{"sensor", "board_1_y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 1, NULL},
 		{"sensor", "board_1_z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 1, NULL},
@@ -176,19 +176,19 @@ createCarDrawer(int argc, char** argv)
 
 	glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
 
-	if (carDrawer->semi_trailer_config.type > 0)
+	if (carDrawer->semi_trailer_config.semi_trailers.type > 0)
 	{
 		char semi_trailer_string[256];
 		char semi_trailer_model_string[256];
 
-		sprintf(semi_trailer_string, "%s%d", "semi_trailer", carDrawer->semi_trailer_config.type);
-		sprintf(semi_trailer_model_string, "%s%d", "semi_trailer_model", carDrawer->semi_trailer_config.type);
+		sprintf(semi_trailer_string, "%s%d", "semi_trailer", carDrawer->semi_trailer_config.semi_trailers.type);
+		sprintf(semi_trailer_model_string, "%s%d", "semi_trailer_model", carDrawer->semi_trailer_config.semi_trailers.type);
 
 		carmen_param_t param_list2[] =
 		{
-			{semi_trailer_string, "width", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.width), 0, NULL},
-			{semi_trailer_string, "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_front), 0, NULL},
-			{semi_trailer_string, "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.distance_between_axle_and_back), 0, NULL},
+			{semi_trailer_string, "width", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers.width), 0, NULL},
+			{semi_trailer_string, "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front), 0, NULL},
+			{semi_trailer_string, "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back), 0, NULL},
 			{semi_trailer_model_string, "file_name", CARMEN_PARAM_STRING, &semi_trailer_model_file, 0, NULL},
 			{semi_trailer_model_string, "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.x), 0, NULL},
 			{semi_trailer_model_string, "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.y), 0, NULL},
@@ -204,9 +204,9 @@ createCarDrawer(int argc, char** argv)
 		num_items = sizeof(param_list2)/sizeof(param_list2[0]);
 		carmen_param_install_params(argc, argv, param_list2, num_items);
 
-		carDrawer->semi_trailer_config.max_beta = carmen_degrees_to_radians(carDrawer->semi_trailer_config.max_beta);
-		carDrawer->semi_trailer_config.d = carDrawer->robot_collision_config->semi_trailer_d;
-		carDrawer->semi_trailer_config.M = carDrawer->robot_collision_config->semi_trailer_M;
+		carDrawer->semi_trailer_config.semi_trailers.max_beta = carmen_degrees_to_radians(carDrawer->semi_trailer_config.semi_trailers.max_beta);
+		carDrawer->semi_trailer_config.semi_trailers.d = carDrawer->robot_collision_config->semi_trailer_d;
+		carDrawer->semi_trailer_config.semi_trailers.M = carDrawer->robot_collision_config->semi_trailer_M;
 
 		if (semi_trailer_model_file == NULL)
 			carDrawer->semiTrailerModel = glmReadOBJ("ford_escape_model.obj");
@@ -396,20 +396,20 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 						 0.0);
 
 			glBegin(GL_LINE_STRIP);
-				glVertex3f(-carDrawer->semi_trailer_config.distance_between_axle_and_back, -carDrawer->semi_trailer_config.width / 2, 0);
-				glVertex3f(carDrawer->semi_trailer_config.distance_between_axle_and_front, -carDrawer->semi_trailer_config.width / 2, 0);
-				glVertex3f(carDrawer->semi_trailer_config.distance_between_axle_and_front, carDrawer->semi_trailer_config.width / 2, 0);
-				glVertex3f(-carDrawer->semi_trailer_config.distance_between_axle_and_back, carDrawer->semi_trailer_config.width / 2, 0);
-				glVertex3f(-carDrawer->semi_trailer_config.distance_between_axle_and_back, -carDrawer->semi_trailer_config.width / 2, 0);
+				glVertex3f(-carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3f(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3f(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3f(-carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3f(-carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
 			glEnd();
 
 			glBegin(GL_LINES);
-				glVertex3d(0.0, -carDrawer->semi_trailer_config.width / 2, 0.0);
-				glVertex3d(0.0, carDrawer->semi_trailer_config.width / 2, 0.0);
+				glVertex3d(0.0, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0.0);
+				glVertex3d(0.0, carDrawer->semi_trailer_config.semi_trailers.width / 2, 0.0);
 			glEnd();
 
 			glBegin(GL_POINTS);
-				glVertex3d(carDrawer->semi_trailer_config.d, 0.0, 0.0);
+				glVertex3d(carDrawer->semi_trailer_config.semi_trailers.d, 0.0, 0.0);
 			glEnd();
 
 		glPopMatrix();

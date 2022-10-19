@@ -41,7 +41,7 @@ extern "C"
 
 // Atencao!!! Ao adicionar um novo tipo de CODE de anotacao, incrementar o NUM_RDDF_ANNOTATION_CODES
 // (note que comecca de zero; assim, NUM_RDDF_ANNOTATION_CODES eh igual ao ultimo codigo mais 1)
-	#define NUM_RDDF_ANNOTATION_CODES						84
+	#define NUM_RDDF_ANNOTATION_CODES						94
 
 	#define RDDF_ANNOTATION_CODE_NONE		 				0
 
@@ -142,6 +142,17 @@ extern "C"
 
 	#define RDDF_ANNOTATION_CODE_QUEUE_BUSY					83
 
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_1		84
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_2		85
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_3		86
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_4		87
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_5		88
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_6		89
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_7		90
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_8		91
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_9		92
+	#define RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_10	93
+
 	#define MIN_DISTANCE_TO_CONSIDER_CROSSWALK 1.0
 
 
@@ -149,8 +160,8 @@ extern "C"
     {
         int number_of_poses;
         int number_of_poses_back;
-        carmen_robot_and_trailer_traj_point_t *poses;
-        carmen_robot_and_trailer_traj_point_t *poses_back;
+        carmen_robot_and_trailers_traj_point_t *poses;
+        carmen_robot_and_trailers_traj_point_t *poses_back;
         int *annotations;
         int *annotations_codes;
         double timestamp;
@@ -158,31 +169,31 @@ extern "C"
     } carmen_rddf_road_profile_message;
 
 	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME "carmen_rddf_road_profile_message"
-	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double, double}:1>, <{double, double, double, double, double, double}:2>, <int:1>, <int:1>, double, string}"
+	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, int, [double:5], double, double}:1>, <{double, double, double, int, [double:5], double, double}:2>, <int:1>, <int:1>, double, string}"
 
 
     typedef struct
     {
         int half_meters_to_final_goal;	// number of waypoints to consider near end_point (point)
-        carmen_robot_and_trailer_pose_t point;
+        carmen_robot_and_trailers_pose_t point;
         double timestamp;
         char *host;
     } carmen_rddf_end_point_message;
 
 	#define CARMEN_RDDF_END_POINT_MESSAGE_NAME "carmen_rddf_end_point_message"
-	#define CARMEN_RDDF_END_POINT_MESSAGE_FMT "{int, {double, double, double, double}, double, string}"
+	#define CARMEN_RDDF_END_POINT_MESSAGE_FMT "{int, {double, double, double, int, [double:5]}, double, string}"
 
 
     typedef struct
     {
         int number_of_poses;
-        carmen_robot_and_trailer_traj_point_t *poses;
+        carmen_robot_and_trailers_traj_point_t *poses;
         double timestamp;
         char *host;
     } carmen_rddf_waypoints_around_end_point_message;
 
 	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_NAME "carmen_rddf_waypoints_around_end_point_message"
-	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT "{int, <{double,double,double,double,double,double}:1>, double, string}"
+	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT "{int, <{double,double,double,int, [double:5],double,double}:1>, double, string}"
 
 
     // TODO: update this message to use carmen_annotation_t.

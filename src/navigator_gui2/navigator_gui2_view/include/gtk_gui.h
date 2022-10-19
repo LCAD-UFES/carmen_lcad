@@ -64,6 +64,10 @@ typedef enum
 	PLACING_ROBOT,
 	ORIENTING_ROBOT,
 	ORIENTING_ROBOT_SEMI_TRAILER,
+	ORIENTING_ROBOT_SEMI_TRAILER2,
+	ORIENTING_ROBOT_SEMI_TRAILER3,
+	ORIENTING_ROBOT_SEMI_TRAILER4,
+	ORIENTING_ROBOT_SEMI_TRAILER5,
 	PLACING_GOAL,
 	ORIENTING_GOAL,
 	PLACING_PERSON,
@@ -74,6 +78,10 @@ typedef enum
 	PLACING_FINAL_GOAL,
 	ORIENTING_FINAL_GOAL,
 	ORIENTING_FINAL_GOAL_SEMI_TRAILER,
+	ORIENTING_FINAL_GOAL_SEMI_TRAILER2,
+	ORIENTING_FINAL_GOAL_SEMI_TRAILER3,
+	ORIENTING_FINAL_GOAL_SEMI_TRAILER4,
+	ORIENTING_FINAL_GOAL_SEMI_TRAILER5,
 	SELECTING_NEAR_WAYPOINT,
 	EDITING_NEAR_RDDF,
 	PLACING_LINE_FOLLOWER,
@@ -272,7 +280,7 @@ namespace View
 
 		carmen_traj_point_t	 robot_traj;
 		carmen_world_point_t	 robot;
-		carmen_robot_and_trailer_traj_point_t	 goal;
+		carmen_robot_and_trailers_traj_point_t	 goal;
 
 		double last_navigator_update;
 		GdkColor RedBlueGradient[GRADIENT_COLORS];
@@ -280,7 +288,7 @@ namespace View
 		carmen_localize_ackerman_globalpos_message *globalpos;
 
 		carmen_robot_config_t	 		*robot_config;
-		carmen_semi_trailer_config_t	*semi_trailer_config;
+		carmen_semi_trailers_config_t	*semi_trailer_config;
 		carmen_polygon_config_t			*robot_poly_config;
 		carmen_polygon_config_t			*semi_trailer_poly_config;
 		carmen_navigator_config_t 		*nav_config;
@@ -385,19 +393,19 @@ namespace View
 		Controls *getControls() { return &controls_; }
 
 		void navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-						carmen_robot_config_t *robot_conf_param, carmen_semi_trailer_config_t *semi_trailer_conf_param,
+						carmen_robot_config_t *robot_conf_param, carmen_semi_trailers_config_t *semi_trailer_conf_param,
 						carmen_polygon_config_t *robot_poly_config_param, carmen_polygon_config_t *semi_trailer_poly_config_param,
 						carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param);
 
 		int navigator_graphics_update_map();
 		void navigator_graphics_update_display(carmen_traj_point_p new_robot, carmen_localize_ackerman_globalpos_message *current_globalpos,
-				carmen_robot_and_trailer_traj_point_t *new_goal, int autonomous);
+				carmen_robot_and_trailers_traj_point_t *new_goal, int autonomous);
 		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
-		void navigator_graphics_update_goal_list(carmen_robot_and_trailer_traj_point_t *goal_list, int size);
-		void navigator_graphics_update_waypoint_list(carmen_robot_and_trailer_traj_point_t *waypoint_list, int size);
-		void navigator_graphics_update_path_plans(carmen_robot_and_trailer_traj_point_t **plans, int number_of_plans, int number_of_poses, int selected_plan);
-		void navigator_graphics_update_path(carmen_robot_and_trailer_traj_point_t *new_path, int path_length, int path_id);
-		void navigator_graphics_update_plan(carmen_robot_and_trailer_traj_point_t *new_plan, int plan_length);
+		void navigator_graphics_update_goal_list(carmen_robot_and_trailers_traj_point_t *goal_list, int size);
+		void navigator_graphics_update_waypoint_list(carmen_robot_and_trailers_traj_point_t *waypoint_list, int size);
+		void navigator_graphics_update_path_plans(carmen_robot_and_trailers_traj_point_t **plans, int number_of_plans, int number_of_poses, int selected_plan);
+		void navigator_graphics_update_path(carmen_robot_and_trailers_traj_point_t *new_path, int path_length, int path_id);
+		void navigator_graphics_update_plan(carmen_robot_and_trailers_traj_point_t *new_plan, int plan_length);
 		void navigator_graphics_update_errors(carmen_audit_status_message *message);
 		void navigator_graphics_update_mode(int manual_override);
 		void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
@@ -409,14 +417,14 @@ namespace View
 		void navigator_graphics_update_simulator_objects(int num_objects, carmen_simulator_ackerman_objects_t *objects_list);
 		void navigator_graphics_update_moving_objects(int id, int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking);
 
-		void navigator_graphics_update_plan_to_draw(int path_size, carmen_robot_and_trailer_traj_point_t *path);
+		void navigator_graphics_update_plan_to_draw(int path_size, carmen_robot_and_trailers_traj_point_t *path);
 
 		void navigator_graphics_update_plan_tree(
-				carmen_robot_and_trailer_traj_point_t *p1,
-				carmen_robot_and_trailer_traj_point_t *p2,
+				carmen_robot_and_trailers_traj_point_t *p1,
+				carmen_robot_and_trailers_traj_point_t *p2,
 				int *mask,
 				int plan_tree_length,
-				carmen_robot_and_trailer_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
+				carmen_robot_and_trailers_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
 				int path_size[100],
 				int num_path);
 

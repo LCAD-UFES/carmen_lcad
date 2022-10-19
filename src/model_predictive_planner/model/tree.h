@@ -12,12 +12,12 @@ struct Tree
 {
 	// The tree is composed of branches represented by connected vertice pairs. All branches start in the robot.
 	int	num_edges;
-	carmen_robot_and_trailer_traj_point_t *p1;
-	carmen_robot_and_trailer_traj_point_t *p2;
+	carmen_robot_and_trailers_traj_point_t *p1;
+	carmen_robot_and_trailers_traj_point_t *p2;
 	int *mask;
 
 	// Zero or more branches of the tree might be represented as paths as well.
-	carmen_robot_and_trailer_traj_point_t **paths;
+	carmen_robot_and_trailers_traj_point_t **paths;
 	int *paths_sizes;
 	int num_paths;
 };

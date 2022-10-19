@@ -178,9 +178,9 @@ static carmen_pose_3D_t car_fused_pose;
 static carmen_vector_3D_t robot_size;
 static double distance_between_rear_car_and_rear_wheels;
 
-static carmen_semi_trailer_config_t semi_trailer_config;
+static carmen_semi_trailers_config_t semi_trailer_config;
 
-static carmen_robot_and_trailer_pose_t final_goal;
+static carmen_robot_and_trailers_pose_t final_goal;
 
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
 
@@ -651,7 +651,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 
 	rotation_matrix *lidar_to_board_matrix = create_rotation_matrix(lidar_config.pose.orientation);
 #ifdef USE_REAR_BULLBAR
-	if (semi_trailer_config.type != 0 && lidar_config.sensor_reference == 2)
+	if (semi_trailer_config.semi_trailers.type != 0 && lidar_config.sensor_reference == 2)
 	{
 		choosed_sensor_referenced[lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
 	}
@@ -849,17 +849,17 @@ draw_final_goal()
 			glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 		glEnd();
 
-		if (semi_trailer_config.type > 0)
+		if (semi_trailer_config.semi_trailers.type > 0)
 		{
-			glTranslated(-semi_trailer_config.M - semi_trailer_config.d * cos(final_goal.beta), semi_trailer_config.d * sin(final_goal.beta), 0.0);
-			glRotated(carmen_radians_to_degrees(-final_goal.beta), 0.0f, 0.0f, 1.0f);
+			glTranslated(-semi_trailer_config.semi_trailers.M - semi_trailer_config.semi_trailers.d * cos((final_goal.theta - final_goal.trailer_theta[0])), semi_trailer_config.semi_trailers.d * sin((final_goal.theta - final_goal.trailer_theta[0])), 0.0);
+			glRotated(carmen_radians_to_degrees(-(final_goal.theta - final_goal.trailer_theta[0])), 0.0f, 0.0f, 1.0f);
 
 			glBegin(GL_LINE_STRIP);
-				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, -semi_trailer_config.width / 2, 0);
-				glVertex3d(semi_trailer_config.distance_between_axle_and_front, -semi_trailer_config.width / 2, 0);
-				glVertex3d(semi_trailer_config.distance_between_axle_and_front, semi_trailer_config.width / 2, 0);
-				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, semi_trailer_config.width / 2, 0);
-				glVertex3d(-semi_trailer_config.distance_between_axle_and_back, -semi_trailer_config.width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers.distance_between_axle_and_back, -semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3d(semi_trailer_config.semi_trailers.distance_between_axle_and_front, -semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3d(semi_trailer_config.semi_trailers.distance_between_axle_and_front, semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers.distance_between_axle_and_back, semi_trailer_config.semi_trailers.width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers.distance_between_axle_and_back, -semi_trailer_config.semi_trailers.width / 2, 0);
 			glEnd();
 		}
 
@@ -1466,16 +1466,16 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
         last_localize_ackerman_trail -= localize_ackerman_size;
 
 
-    beta = localize_ackerman_message->beta;
+    beta = localize_ackerman_message->pose.orientation.yaw - localize_ackerman_message->trailer_theta[0];
 	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
-	if (localize_ackerman_message->semi_trailer_type != semi_trailer_config.type)
+	if (localize_ackerman_message->semi_trailer_type != semi_trailer_config.semi_trailers.type)
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc_g, argv_g, localize_ackerman_message->semi_trailer_type);
 
 	if (semi_trailer_engaged)
 	{
-		pos.x -= semi_trailer_config.M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.d * cos(localize_ackerman_message->globalpos.theta - beta);
-		pos.y -= semi_trailer_config.M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.d * sin(localize_ackerman_message->globalpos.theta - beta);
+		pos.x -= semi_trailer_config.semi_trailers.M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers.d * cos(localize_ackerman_message->globalpos.theta - beta);
+		pos.y -= semi_trailer_config.semi_trailers.M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers.d * sin(localize_ackerman_message->globalpos.theta - beta);
 
 		localize_ackerman_semi_trailer_trail[last_localize_ackerman_semi_trailer_trail] = pos;
 
@@ -2896,13 +2896,15 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 		for (int j = 0; j < number_of_paths; j++)
 		{
 			carmen_navigator_ackerman_plan_message *frenet_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
-			carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
+			carmen_robot_and_trailers_traj_point_t *path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * message->number_of_poses);
 			for (int i = 0; i < message->number_of_poses; i++)
 			{
 				path[i].x	  = message->set_of_paths[j * message->number_of_poses + i].x;
 				path[i].y	  = message->set_of_paths[j * message->number_of_poses + i].y;
 				path[i].theta = message->set_of_paths[j * message->number_of_poses + i].theta;
-				path[i].beta  = message->set_of_paths[j * message->number_of_poses + i].beta;
+				path[i].num_trailers = message->set_of_paths[j * message->number_of_poses + i].num_trailers;
+				for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+					path[i].trailer_theta[z]  = message->set_of_paths[j * message->number_of_poses + i].trailer_theta[z];
 				path[i].v	  = message->set_of_paths[j * message->number_of_poses + i].v;
 				path[i].phi	  = message->set_of_paths[j * message->number_of_poses + i].phi;
 			}
@@ -2933,7 +2935,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 		{
 			int lane_size = message->nearby_lanes_sizes[j];
 			carmen_navigator_ackerman_plan_message *nearby_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
-			carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * lane_size);
+			carmen_robot_and_trailers_traj_point_t *path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * lane_size);
 
 			int lane_start = message->nearby_lanes_indexes[j];
 			for (int i = 0; i < lane_size; i++)
@@ -2941,7 +2943,9 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				path[i].x	  	= message->nearby_lanes[lane_start + i].x;
 				path[i].y	  	= message->nearby_lanes[lane_start + i].y;
 				path[i].theta   = message->nearby_lanes[lane_start + i].theta;
-				path[i].beta   = message->nearby_lanes[lane_start + i].beta;
+				path[i].num_trailers   = message->nearby_lanes[lane_start + i].num_trailers;
+				for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+					path[i].trailer_theta[z]   = message->nearby_lanes[lane_start + i].trailer_theta[z];
 				path[i].v		= 0;
 				path[i].phi		= 0;
 			}
@@ -3035,14 +3039,16 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 	}
 
 	carmen_navigator_ackerman_plan_message *offroad_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
-	carmen_robot_and_trailer_traj_point_t *path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
+	carmen_robot_and_trailers_traj_point_t *path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * message->number_of_poses);
 
 	for (int i = 0; i < message->number_of_poses; i++)
 	{
 		path[i].x	  = message->poses[i].x;
 		path[i].y	  = message->poses[i].y;
 		path[i].theta = message->poses[i].theta;
-		path[i].beta  = message->poses[i].beta;
+		path[i].num_trailers  = message->poses[i].num_trailers;
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			path[i].trailer_theta[z]  = message->poses[i].trailer_theta[z];
 		path[i].v	  = message->poses[i].v;
 		path[i].phi	  = message->poses[i].phi;
 	}
@@ -3060,14 +3066,16 @@ offroad_planner_plan_handler(carmen_offroad_planner_plan_message *message)
 	if (semi_trailer_engaged)
 	{
 		carmen_navigator_ackerman_plan_message *offroad_semi_trailer_trajectory = (carmen_navigator_ackerman_plan_message *) malloc(sizeof(carmen_navigator_ackerman_plan_message));
-		carmen_robot_and_trailer_traj_point_t *semi_trailer_path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * message->number_of_poses);
+		carmen_robot_and_trailers_traj_point_t *semi_trailer_path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * message->number_of_poses);
 
 		for (int i = 0; i < message->number_of_poses; i++)
 		{
-			semi_trailer_path[i].x	  = message->poses[i].x - semi_trailer_config.M * cos(message->poses[i].theta) - semi_trailer_config.d * cos(message->poses[i].theta - message->poses[i].beta);
-			semi_trailer_path[i].y	  = message->poses[i].y - semi_trailer_config.M * sin(message->poses[i].theta) - semi_trailer_config.d * sin(message->poses[i].theta - message->poses[i].beta);
-			semi_trailer_path[i].theta = message->poses[i].theta - message->poses[i].beta;
-			semi_trailer_path[i].beta  = message->poses[i].beta;
+			semi_trailer_path[i].x	  = message->poses[i].x - semi_trailer_config.semi_trailers.M * cos(message->poses[i].theta) - semi_trailer_config.semi_trailers.d * cos(message->poses[i].trailer_theta[0]);
+			semi_trailer_path[i].y	  = message->poses[i].y - semi_trailer_config.semi_trailers.M * sin(message->poses[i].theta) - semi_trailer_config.semi_trailers.d * sin(message->poses[i].trailer_theta[0]);
+			semi_trailer_path[i].theta = message->poses[i].trailer_theta[0];
+			semi_trailer_path[i].num_trailers  = message->poses[i].num_trailers;
+			for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+				semi_trailer_path[i].trailer_theta[z]  = message->poses[i].trailer_theta[z];
 			semi_trailer_path[i].v	  = message->poses[i].v;
 			semi_trailer_path[i].phi	  = message->poses[i].phi;
 		}
@@ -3769,7 +3777,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 1, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 1, NULL},
 
-			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.type), 0, NULL},
+			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.semi_trailers.type), 0, NULL},
 
 			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &mapper_map_grid_res, 0, NULL}
         };
@@ -3777,8 +3785,8 @@ read_parameters_and_init_stuff(int argc, char** argv)
         num_items = sizeof (param_list) / sizeof (param_list[0]);
         carmen_param_install_params(argc, argv, param_list, num_items);
 
-        if (semi_trailer_config.type > 0)
-        	carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.type);
+        if (semi_trailer_config.semi_trailers.type > 0)
+        	carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.semi_trailers.type);
 
         if (stereo_velodyne_vertical_resolution > (stereo_velodyne_vertical_roi_end - stereo_velodyne_vertical_roi_ini))
             carmen_die("The stereo_velodyne_vertical_resolution is bigger than stereo point cloud height");
@@ -3858,7 +3866,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 1, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 1, NULL},
 
-			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.type), 0, NULL},
+			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.semi_trailers.type), 0, NULL},
 
 			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &mapper_map_grid_res, 0, NULL},
         };
@@ -3866,18 +3874,18 @@ read_parameters_and_init_stuff(int argc, char** argv)
         num_items = sizeof (param_list) / sizeof (param_list[0]);
         carmen_param_install_params(argc, argv, param_list, num_items);
 
-        if (semi_trailer_config.type > 0)
+        if (semi_trailer_config.semi_trailers.type > 0)
 		{
 			char semi_trailer_string[256];
 
-			sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.type);
+			sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.semi_trailers.type);
 
 			carmen_param_t param_semi_trailer_list[] = {
-			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.d),							  	0, NULL},
-			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.M),							  	0, NULL},
-			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.width),						  	0, NULL},
-			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_front),	0, NULL},
-			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.distance_between_axle_and_back),	0, NULL},
+			{semi_trailer_string, (char *) "d",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.d),							  	0, NULL},
+			{semi_trailer_string, (char *) "M",								  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.M),							  	0, NULL},
+			{semi_trailer_string, (char *) "width",							  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.width),						  	0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.distance_between_axle_and_front),	0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_back",  CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.distance_between_axle_and_back),	0, NULL},
 			};
 
 			num_items = sizeof(param_semi_trailer_list)/sizeof(param_semi_trailer_list[0]);
@@ -4636,8 +4644,10 @@ set_flag_viewer_3D(int flag_num, int value)
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_15);
             else if (value == 20)
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_20);
+            else if (value == 25)
+            	carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_25);
             else if (value == 30)
-                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_30);
+            	carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_30);
             else if (value == 40)
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_40);
             else if (value == 60)

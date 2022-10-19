@@ -52,7 +52,7 @@ static char **argv_global;
 
 
 void
-Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_robot_and_trailer_motion_command_t *commands, int num_commands, double timestamp)
+Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_robot_and_trailers_motion_command_t *commands, int num_commands, double timestamp)
 {
 //	double x0 = path_msg->path[0].p1.x;
 //	double y0 = path_msg->path[0].p1.y;
@@ -99,7 +99,7 @@ Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_robot_and_t
 void
 Path_Follower_Ackerman::publish_path_follower_single_motion_command(double v, double phi, double timestamp)
 {
-	carmen_robot_and_trailer_motion_command_t commands[2];
+	carmen_robot_and_trailers_motion_command_t commands[2];
 
 	commands[0].v = v;
 	commands[0].phi = phi;
@@ -124,7 +124,7 @@ publish_navigator_ackerman_plan_message(list<RRT_Path_Edge> &path)
 		return;
 
 	msg.path_length = path.size() + 1;
-	msg.path = (carmen_robot_and_trailer_traj_point_t *) malloc(sizeof(carmen_robot_and_trailer_traj_point_t) * (msg.path_length));
+	msg.path = (carmen_robot_and_trailers_traj_point_t *) malloc(sizeof(carmen_robot_and_trailers_traj_point_t) * (msg.path_length));
 
 	it = path.begin();
 
@@ -133,7 +133,7 @@ publish_navigator_ackerman_plan_message(list<RRT_Path_Edge> &path)
 		msg.path[i].x	  = it->p1.pose.x;
 		msg.path[i].y	  = it->p1.pose.y;
 		msg.path[i].theta = it->p1.pose.theta;
-		msg.path[i].beta  = it->p1.pose.beta;
+		msg.path[i].trailer_theta[0]  = it->p1.pose.beta;
 		msg.path[i].v	  = it->command.v;
 		msg.path[i].phi	  = it->command.phi;
 		i++;
@@ -144,7 +144,7 @@ publish_navigator_ackerman_plan_message(list<RRT_Path_Edge> &path)
 	msg.path[i].x	  = rit->p2.pose.x;
 	msg.path[i].y	  = rit->p2.pose.y;
 	msg.path[i].theta = rit->p2.pose.theta;
-	msg.path[i].beta  = rit->p2.pose.beta;
+	msg.path[i].trailer_theta[0]  = rit->p2.pose.beta;
 	msg.path[i].v	  = rit->command.v;
 	msg.path[i].phi	  = rit->command.phi;
 
@@ -195,14 +195,14 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		Follower::go();
 
 	if (!eliminate_path_follower)
-		build_and_follow_path(msg->globalpos, msg->beta, msg->timestamp);
+		build_and_follow_path(msg->globalpos, msg->trailer_theta[0], msg->timestamp);
 
 	globalpos_message_received = true;
 
-	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.type)
+	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.semi_trailers.type)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.type);
+		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.semi_trailers.type);
 	}
 }
 
@@ -215,7 +215,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 		GlobalState::last_odometry.v = msg->v;
 		GlobalState::last_odometry.phi = msg->phi;
 
-		build_and_follow_path(msg->truepose, msg->beta, msg->timestamp);
+		build_and_follow_path(msg->truepose, msg->trailer_theta[0], msg->timestamp);
 	}
 }
 
@@ -429,7 +429,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", 	(char *) "desired_steering_command_rate",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.desired_steering_command_rate,					1, NULL},
 		{(char *) "robot", 	(char *) "understeer_coeficient",							CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
 		{(char *) "robot", 	(char *) "maximum_steering_command_rate", 					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate, 					1, NULL},
-		{(char *) "semi_trailer", (char *) "initial_type",								CARMEN_PARAM_INT, &GlobalState::semi_trailer_config.type,								 0, NULL},
+		{(char *) "semi_trailer", (char *) "initial_type",								CARMEN_PARAM_INT, &GlobalState::semi_trailer_config.semi_trailers.type,								 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", 							CARMEN_PARAM_ONOFF, &GlobalState::use_truepos, 0, NULL},
 		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower",   	CARMEN_PARAM_ONOFF, &eliminate_path_follower, 1, NULL},
 		{(char *) "model", (char *) "predictive_planner_eliminate_path_follower_transition_v", CARMEN_PARAM_DOUBLE, &eliminate_path_follower_transition_v, 1, NULL}
@@ -460,8 +460,8 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	if (GlobalState::semi_trailer_config.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.type);
+	if (GlobalState::semi_trailer_config.semi_trailers.type > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.semi_trailers.type);
 }
 
 

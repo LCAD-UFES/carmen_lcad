@@ -69,14 +69,14 @@ void carmen_base_ackerman_subscribe_odometry_message_2(carmen_base_ackerman_odom
 void carmen_base_ackerman_subscribe_motion_command(carmen_base_ackerman_motion_command_message *motion_command,
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
-void carmen_base_ackerman_publish_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp);
+void carmen_base_ackerman_publish_motion_command(carmen_robot_and_trailers_motion_command_t *motion_command, int num_motion_commands, double timestamp);
 
 
 // Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
 void carmen_base_ackerman_subscribe_motion_command_2(carmen_base_ackerman_motion_command_message *motion_command,
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
-void carmen_base_ackerman_publish_motion_command_2(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp);
+void carmen_base_ackerman_publish_motion_command_2(carmen_robot_and_trailers_motion_command_t *motion_command, int num_motion_commands, double timestamp);
 
 #ifdef __cplusplus
 }

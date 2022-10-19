@@ -685,7 +685,7 @@ carmen_distance_traj(carmen_traj_point_p p1, carmen_traj_point_p p2)
 
 
 carmen_inline double
-carmen_distance_ackerman_traj(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2)
+carmen_distance_ackerman_traj(carmen_robot_and_trailers_traj_point_t *p1, carmen_robot_and_trailers_traj_point_t *p2)
 {
 	long double sqr_ld, sqrt_ld;
 
@@ -1687,24 +1687,24 @@ carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry
 
 
 static double
-dist2(carmen_robot_and_trailer_traj_point_t v, carmen_robot_and_trailer_traj_point_t w)
+dist2(carmen_robot_and_trailers_traj_point_t v, carmen_robot_and_trailers_traj_point_t w)
 {
 	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
 }
 
 
 static double
-dist2_path(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w)
+dist2_path(carmen_robot_and_trailers_path_point_t v, carmen_robot_and_trailers_path_point_t w)
 {
 	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
 }
 
 
-carmen_robot_and_trailer_path_point_t
+carmen_robot_and_trailers_path_point_t
 carmen_get_point_nearest_to_path(int *point_in_trajectory_is,
-		carmen_robot_and_trailer_path_point_t v,
-		carmen_robot_and_trailer_path_point_t w,
-		carmen_robot_and_trailer_path_point_t p, double min_segment_size)
+		carmen_robot_and_trailers_path_point_t v,
+		carmen_robot_and_trailers_path_point_t w,
+		carmen_robot_and_trailers_path_point_t p, double min_segment_size)
 {
 	// Return minimum distance between line segment vw and point p
 	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
@@ -1743,11 +1743,11 @@ carmen_get_point_nearest_to_path(int *point_in_trajectory_is,
 }
 
 
-carmen_robot_and_trailer_traj_point_t
+carmen_robot_and_trailers_traj_point_t
 carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
-		carmen_robot_and_trailer_traj_point_t v,
-		carmen_robot_and_trailer_traj_point_t w,
-		carmen_robot_and_trailer_traj_point_t p, double min_segment_size)
+		carmen_robot_and_trailers_traj_point_t v,
+		carmen_robot_and_trailers_traj_point_t w,
+		carmen_robot_and_trailers_traj_point_t p, double min_segment_size)
 {
 	// Return minimum distance between line segment vw and point p
 	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
@@ -2012,4 +2012,21 @@ carmen_line_to_point_crossed_rectangle(carmen_position_t *nearest_intersection, 
 	min_distance = check_if_crossed_rectangle_edge(&crossed, nearest_intersection, origin, point, rectangle_vertice1, rectangle_vertice2, min_distance);
 
 	return (crossed);
+}
+
+double
+convert_theta1_to_beta(double theta, double theta1) // Função para realizar a conversão entre o theta1 (orientação global de um semi_trailer) para beta (orientação local de um semi_trailer, relativo ao carro)
+{
+    double ret = M_PI - (fmod(fabs(theta - theta1), 2*M_PI) - M_PI);
+    if (theta1 < theta)
+      return(-carmen_normalize_theta(ret));
+
+    return carmen_normalize_theta(ret);
+}
+
+
+double
+convert_beta_to_theta1(double theta, double beta)
+{
+  return(theta - beta);
 }

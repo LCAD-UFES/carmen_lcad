@@ -204,10 +204,10 @@ Util::convert_to_carmen_point_t(const Pose pose)
 }
 
 
-carmen_robot_and_trailer_traj_point_t
+carmen_robot_and_trailers_traj_point_t
 Util::convert_to_carmen_ackerman_traj_point_t(const Robot_State robot_state)
 {
-	carmen_robot_and_trailer_traj_point_t traj_point;
+	carmen_robot_and_trailers_traj_point_t traj_point;
 
 	traj_point.x = robot_state.pose.x;
 	traj_point.y = robot_state.pose.y;
@@ -306,7 +306,7 @@ Util::between(const Pose *pose1, const carmen_ackerman_path_point_t pose2, const
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
-dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_point_t w)
+dist(carmen_robot_and_trailers_path_point_t v, carmen_robot_and_trailers_path_point_t w)
 {
     return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 }
@@ -315,9 +315,9 @@ dist(carmen_robot_and_trailer_path_point_t v, carmen_robot_and_trailer_path_poin
  * Encontra distancia do eixo traseiro pra lane/path
  * */
 double
-get_distance_between_point_to_line(carmen_robot_and_trailer_path_point_t p1,
-		carmen_robot_and_trailer_path_point_t p2,
-		carmen_robot_and_trailer_path_point_t robot)
+get_distance_between_point_to_line(carmen_robot_and_trailers_path_point_t p1,
+		carmen_robot_and_trailers_path_point_t p2,
+		carmen_robot_and_trailers_path_point_t robot)
 {
     //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
     double delta_x = p2.x - p1.x;
@@ -339,7 +339,7 @@ get_distance_between_point_to_line(carmen_robot_and_trailer_path_point_t p1,
  *
  */
 void
-get_points2(vector<carmen_robot_and_trailer_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
+get_points2(vector<carmen_robot_and_trailers_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
 {
 
     double d = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
@@ -365,13 +365,41 @@ get_points2(vector<carmen_robot_and_trailer_path_point_t> &detailed_goal_list, i
 
 
 void
+get_between_points(carmen_robot_and_trailers_path_point_t robot, carmen_robot_and_trailers_path_point_t point_before, carmen_robot_and_trailers_path_point_t center, carmen_robot_and_trailers_path_point_t point_next,
+		int index_center, int &index_p1, int &index_p2, int &mais_proxima)
+{
+
+    double centro = DIST2D(center, robot);
+    double d = DIST2D(point_before, robot);
+    double d2 = DIST2D(point_next, robot);
+
+    if (d < d2)
+    {
+        index_p1 = (index_center - 1);
+        index_p2 = (index_center);
+        mais_proxima = (index_center - 1);
+        if(centro < d)
+            mais_proxima = centro;
+    }
+    else
+    {
+        index_p1 = index_center;
+        index_p2 = index_center+1;
+        mais_proxima = index_p2;
+        if(centro < d2)
+            mais_proxima = centro;
+    }
+}
+
+
+void
 save_experiment_data(carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
-					carmen_robot_and_trailer_pose_t *localizer_pose, vector<carmen_robot_and_trailer_path_point_t> &detailed_lane,
+					carmen_robot_and_trailers_pose_t *localizer_pose, vector<carmen_robot_and_trailers_path_point_t> &detailed_lane,
 					Command lastOdometry, double target_v)
 {
 	if (detailed_lane.size() > 0)
 	{
-		carmen_robot_and_trailer_path_point_t localize;
+		carmen_robot_and_trailers_path_point_t localize;
 		localize.x = 0.0;
 		localize.y = 0.0;
 		//Metric evaluation

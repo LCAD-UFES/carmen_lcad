@@ -3,13 +3,15 @@
 
 
 void
-publish_final_goal(carmen_robot_and_trailer_pose_t pose)
+publish_final_goal(carmen_robot_and_trailers_pose_t pose)
 {
-	carmen_robot_and_trailer_pose_t pose_with_beta;
+	carmen_robot_and_trailers_pose_t pose_with_beta;
 	pose_with_beta.x = pose.x;
 	pose_with_beta.y = pose.y;
 	pose_with_beta.theta = pose.theta;
-	pose_with_beta.beta = pose.beta;
+	pose_with_beta.num_trailers = pose.num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		pose_with_beta.trailer_theta[z] = pose.trailer_theta[z];
 	carmen_rddf_publish_end_point_message(50, pose_with_beta);
 }
 
@@ -27,7 +29,7 @@ define_messages()
 int
 main(int argc, char **argv)
 {
-	carmen_robot_and_trailer_pose_t pose;
+	carmen_robot_and_trailers_pose_t pose;
 	int time = 4;
 
 	if (argc < 4)
@@ -43,7 +45,7 @@ main(int argc, char **argv)
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
 	if (argc == 6)
-		pose.beta = atof(argv[5]);
+		pose.trailer_theta[0] = atof(argv[5]);
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();
