@@ -165,7 +165,7 @@ carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, 
 	atan_desired_curvature = carmen_get_curvature_from_phi(desired_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
 	//PID
-	steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, time, 0);
+	steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, time, 0, 0);
 
 	//RL_PID
 	//steering_effort = carmen_librlpid_compute_new_phi_with_ann (current_phi, desired_phi, /*next_desired_phi*/desired_phi, steering_ann_input,
@@ -223,7 +223,7 @@ carmen_libcarneuralmodel_compute_new_velocity_with_ann(double desired_v, double 
 
 
 void
-update_target_v_and_target_phi(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands, double &target_v,
+update_target_v_and_target_phi(carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands, double &target_v,
 								double &target_phi, double time_of_last_command, int &current_motion_command_vector_index)
 {
 	double time_elapsed_since_last_motion_command, motion_command_time_consumed;
@@ -269,7 +269,7 @@ update_target_v_and_target_phi(carmen_robot_and_trailer_motion_command_t *curren
 
 
 void
-carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands, double &target_v,
+carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands, double &target_v,
 													double &current_v, double &target_phi, double &current_phi, double time_of_last_command,
 													int &current_motion_command_vector_index, double delta_t, double understeer_coeficient,
 													double distance_between_front_and_rear_axles, double max_phi, carmen_point_t &odom_pose, carmen_point_t &true_pose)

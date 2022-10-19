@@ -101,7 +101,7 @@ int carmen_navigator_ackerman_set_goal(double x, double y, double theta);
       orientation. This function does not start the robot moving:
       carmen_navigator_ackerman_go() must be called. 
  */
-int carmen_navigator_ackerman_set_goal_triplet(carmen_robot_and_trailer_traj_point_t *goal);
+int carmen_navigator_ackerman_set_goal_triplet(carmen_robot_and_trailers_traj_point_t *goal);
 
 /** Using this function causes the robot to try and reach specific place, as
       specified in the current map. The navigator queries the current set of

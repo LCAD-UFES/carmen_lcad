@@ -28,7 +28,7 @@ typedef struct {
 } carmen_rgb;
 
 typedef struct {
-	carmen_robot_and_trailer_traj_point_t *path;
+	carmen_robot_and_trailers_traj_point_t *path;
 	int path_length;
 	int path_id; //unsigned number that identifies the path
 	carmen_rgb path_color;
@@ -38,7 +38,7 @@ typedef struct {
 
 
 #define      CARMEN_NAVIGATOR_GUI_PATH_NAME       "carmen_navigator_gui_path"
-#define      CARMEN_NAVIGATOR_GUI_PATH_FMT        "{<{double, double, double, double, double, double}:2>,int,int,{int, int, int},double,string}"
+#define      CARMEN_NAVIGATOR_GUI_PATH_FMT        "{<{double, double, double, int, [double:5], double, double}:2>,int,int,{int, int, int},double,string}"
 
 #ifdef __cplusplus
 }

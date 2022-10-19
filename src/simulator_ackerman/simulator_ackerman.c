@@ -105,7 +105,7 @@ int g_XGV_horn_status = 0;
 
 
 int
-apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
+apply_system_latencies(carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
 	int i, j;
 
@@ -327,7 +327,10 @@ publish_truepos(double timestamp)
 
 	truepos.truepose = simulator_config->true_pose;
 	truepos.odometrypose = simulator_config->odom_pose;
-	truepos.beta = 0.0;
+	truepos.num_trailers = 1;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		truepos.trailer_theta[z] = truepos.truepose.theta;
+
 	truepos.v = simulator_config->v;
 	truepos.phi = simulator_config->phi;
 	truepos.timestamp = timestamp;

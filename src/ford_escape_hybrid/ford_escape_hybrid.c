@@ -58,7 +58,7 @@
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
-static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailers_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 static int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
 static int current_motion_command_vetor = 0;
 
@@ -518,7 +518,7 @@ publish_ford_escape_gear_command(OjCmpt XGV_CCU)
 
 
 int
-apply_system_latencies(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
+apply_system_latencies(carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
 	int i, j;
 	double lat;
@@ -769,7 +769,7 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 
 
 void
-clear_current_motion_command_vector(carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands)
+clear_current_motion_command_vector(carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands)
 {
 	for (int i = 0; i < nun_motion_commands; i++)
 		current_motion_command_vector[i].phi = 0.0;
@@ -939,16 +939,14 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 				{
 					double plan_size;
 
-					if (tune_pid_mode) //ford_escape_tune_pid nao preenche o x,y,theta. Falta tratar para o caso do Joystic tambem
-						plan_size = 5.0;
-					else if (ford_escape_hybrid_config->nun_motion_commands > 2) //calcula tamanho do plano para passar para funcao de PID.
+					if (ford_escape_hybrid_config->nun_motion_commands > 2) //calcula tamanho do plano para passar para funcao de PID.
 						plan_size = DIST2D(ford_escape_hybrid_config->current_motion_command_vector[0], ford_escape_hybrid_config->current_motion_command_vector[ford_escape_hybrid_config->nun_motion_commands - 1]);
 					else
 						plan_size = 0.0;
 
 					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
-							plan_size, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+							plan_size, tune_pid_mode, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 //					printf("Entrei aqui pra ver o PID e tudo, g_steering_command: %lf\n", g_steering_command);
 				}
 				else

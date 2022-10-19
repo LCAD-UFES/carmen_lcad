@@ -32,9 +32,9 @@ extern "C"
 
     void carmen_rddf_define_messages();
 
-    void carmen_rddf_publish_road_profile_message(carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int * annotations_codes);
-    void carmen_rddf_publish_end_point_message(int number_of_poses_considered_near_endpoint, carmen_robot_and_trailer_pose_t point);
-    void carmen_rddf_publish_road_profile_around_end_point_message(carmen_robot_and_trailer_traj_point_t *poses_around_end_point, int num_poses);
+    void carmen_rddf_publish_road_profile_message(carmen_robot_and_trailers_traj_point_t *poses_ahead, carmen_robot_and_trailers_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int * annotations_codes);
+    void carmen_rddf_publish_end_point_message(int number_of_poses_considered_near_endpoint, carmen_robot_and_trailers_pose_t point);
+    void carmen_rddf_publish_road_profile_around_end_point_message(carmen_robot_and_trailers_traj_point_t *poses_around_end_point, int num_poses);
     void carmen_rddf_publish_add_annotation_message(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description, int annotation_type, int annotation_code);
     void carmen_rddf_publish_update_annotation_message(crud_t action, carmen_annotation_t old_annotation, carmen_annotation_t new_annotation);
     void carmen_rddf_publish_dynamic_annotation_message(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description, int annotation_type, int annotation_code, double timestamp);

@@ -194,7 +194,7 @@ carmen_localize_ackerman_initialize_gaussian_command(carmen_point_t mean, carmen
 	init.num_modes = 1;
 	init.mean = &mean;
 	init.std = &std;
-	init.beta = beta;
+	init.trailer_theta[0] = beta;
 
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, &init);
 	carmen_test_ipc(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);

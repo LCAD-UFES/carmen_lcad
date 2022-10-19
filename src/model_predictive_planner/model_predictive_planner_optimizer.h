@@ -92,7 +92,7 @@ typedef struct
 	double phi_i;		// Initial steering wheel angle
 	double beta_i;		// Initial semitrailer beta angle
 	double v_i;			// Initial velocity
-	carmen_robot_and_trailer_pose_t goal_pose;	// Goal pose in car coordinates
+	carmen_robot_and_trailers_pose_t goal_pose;	// Goal pose in car coordinates
 	TrajectoryControlParameters control_parameters;
 } TrajectoryDimensions;
 
@@ -120,7 +120,7 @@ struct ObjectiveFunctionParams
 	double d_yaw_by_index;
 	TrajectoryControlParameters *tcp_seed;
 	TrajectoryDimensions *target_td;
-	vector<carmen_robot_and_trailer_path_point_t> detailed_lane;
+	vector<carmen_robot_and_trailers_path_point_t> detailed_lane;
 	vector<unsigned int> path_point_nearest_to_lane;
 	unsigned int path_size;
 	bool use_lane;
@@ -142,7 +142,7 @@ TrajectoryDiscreteDimensions get_discrete_dimensions(TrajectoryDimensions td);
 bool has_valid_discretization(TrajectoryDiscreteDimensions tdd);
 TrajectoryControlParameters search_lookup_table(TrajectoryDiscreteDimensions tdd);
 
-vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(TrajectoryDimensions &td,
+vector<carmen_robot_and_trailers_path_point_t> simulate_car_from_parameters(TrajectoryDimensions &td,
 		TrajectoryControlParameters &tcp, double v0, double i_beta,
 		double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
@@ -150,7 +150,7 @@ vector<carmen_robot_and_trailer_path_point_t> simulate_car_from_parameters(Traje
 //		bool display_phi_profile, double delta_t = 0.1);
 
 bool path_has_loop(double dist, double sf);
-void move_path_to_current_robot_pose(vector<carmen_robot_and_trailer_path_point_t> &path, carmen_robot_and_trailer_pose_t *localizer_pose);
+void move_path_to_current_robot_pose(vector<carmen_robot_and_trailers_path_point_t> &path, carmen_robot_and_trailers_pose_t *localizer_pose);
 
 float get_d_yaw_by_index(int index);
 float get_theta_by_index(int index);
@@ -159,15 +159,15 @@ float get_distance_by_index(int index);
 gsl_spline *get_phi_spline(TrajectoryControlParameters tcp);
 
 
-vector<carmen_robot_and_trailer_path_point_t> apply_robot_delays(vector<carmen_robot_and_trailer_path_point_t> &original_path);
+vector<carmen_robot_and_trailers_path_point_t> apply_robot_delays(vector<carmen_robot_and_trailers_path_point_t> &original_path);
 
 void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
 		  vector<carmen_ackerman_path_point_t> &pSeed, std::string titles[]);
 
-void print_lane(vector<carmen_robot_and_trailer_path_point_t> path, char *file_name);
+void print_lane(vector<carmen_robot_and_trailers_path_point_t> path, char *file_name);
 
 TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters previous_good_tcp,
-		TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
+		TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailers_path_point_t> detailed_lane,
 		bool use_lane);
 
 TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params);
@@ -190,21 +190,21 @@ void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 bool bad_tcp(TrajectoryControlParameters tcp);
 
-TrajectoryControlParameters get_n_knots_tcp_from_detailed_lane(vector<carmen_robot_and_trailer_path_point_t> detailed_lane,
+TrajectoryControlParameters get_n_knots_tcp_from_detailed_lane(vector<carmen_robot_and_trailers_path_point_t> detailed_lane,
 		int n, double v_i, double phi_i, double d_yaw, double a, double s, double tt);
 
-void get_between_points(carmen_robot_and_trailer_path_point_t robot, carmen_robot_and_trailer_path_point_t point_before, carmen_robot_and_trailer_path_point_t center, carmen_robot_and_trailer_path_point_t point_next,
+void get_between_points(carmen_robot_and_trailers_path_point_t robot, carmen_robot_and_trailers_path_point_t point_before, carmen_robot_and_trailers_path_point_t center, carmen_robot_and_trailers_path_point_t point_next,
 		int index_center, int &index_p1, int &index_p2, int &mais_proxima);
 
-double get_distance_between_point_to_line2(carmen_robot_and_trailer_path_point_t p1,
-		carmen_robot_and_trailer_path_point_t p2,
-		carmen_robot_and_trailer_path_point_t robot);
+double get_distance_between_point_to_line2(carmen_robot_and_trailers_path_point_t p1,
+		carmen_robot_and_trailers_path_point_t p2,
+		carmen_robot_and_trailers_path_point_t robot);
 
-double compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailer_path_point_t> &path);
+double compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_robot_and_trailers_path_point_t> &path);
 
-double compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_trailer_path_point_t> path);
+double compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_trailers_path_point_t> path);
 
-void compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailer_path_point_t> &path);
+void compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_robot_and_trailers_path_point_t> &path);
 
 double mpp_optimization_function_g(const gsl_vector *x, void *params);
 

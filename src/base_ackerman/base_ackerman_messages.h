@@ -69,17 +69,17 @@ typedef struct {
 typedef struct
 {
 	int num_motion_commands;
-	carmen_robot_and_trailer_motion_command_t *motion_command;
+	carmen_robot_and_trailers_motion_command_t *motion_command;
 	double timestamp;
 	char *host;                 /**< The host from which this message was sent **/
 } carmen_base_ackerman_motion_command_message;
 
 #define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME         "carmen_base_ackerman_motion_command"
-#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT          "{int,<{double,double,double,double,double,double,double}:1>,double,string}"
+#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT          "{int,<{double,double,double,int,[double:5],double,double,double}:1>,double,string}"
 
 // Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
 #define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME         "carmen_base_ackerman_motion_command_2"
-#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_FMT          "{int,<{double,double,double,double,double,double,double}:1>,double,string}"
+#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_FMT          "{int,<{double,double,double,int,[double:5],double,double,double}:1>,double,string}"
 
 
 #ifdef __cplusplus

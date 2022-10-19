@@ -53,7 +53,7 @@ static int cheat = 0;
 static int autonomous_status = 0;
 int steering_model = 0;
 
-static carmen_robot_and_trailer_traj_point_t robot_position;
+static carmen_robot_and_trailers_traj_point_t robot_position;
 
 static carmen_base_ackerman_odometry_message odometry;
 static carmen_base_ackerman_odometry_message corrected_odometry;
@@ -230,7 +230,7 @@ carmen_navigator_ackerman_set_max_velocity(double vel)
 void
 carmen_navigator_ackerman_goal(double x, double y, double theta)
 {
-	carmen_robot_and_trailer_traj_point_t point;
+	carmen_robot_and_trailers_traj_point_t point;
 
 	point.x = x;
 	point.y = y;
@@ -241,7 +241,7 @@ carmen_navigator_ackerman_goal(double x, double y, double theta)
 
 
 void
-carmen_navigator_ackerman_goal_triplet(carmen_robot_and_trailer_traj_point_t *point)
+carmen_navigator_ackerman_goal_triplet(carmen_robot_and_trailers_traj_point_t *point)
 {
 	carmen_planner_ackerman_update_goal(point, 0, &nav_config);
 }
@@ -251,7 +251,7 @@ int
 carmen_navigator_ackerman_goal_place(char *name)
 {
 	int index;
-	carmen_robot_and_trailer_traj_point_t goal;
+	carmen_robot_and_trailers_traj_point_t goal;
 
 	for (index = 0; index < placelist.num_places; index++)
 	{

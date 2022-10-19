@@ -37,7 +37,7 @@
 #include "navigator_astar.hpp"
 
 
-void carmen_navigator_ackerman_publish_plan_tree(carmen_robot_and_trailer_traj_point_t *p1, carmen_robot_and_trailer_traj_point_t *p2, int num_edges)
+void carmen_navigator_ackerman_publish_plan_tree(carmen_robot_and_trailers_traj_point_t *p1, carmen_robot_and_trailers_traj_point_t *p2, int num_edges)
 {
 	static int first_time = 1;
 

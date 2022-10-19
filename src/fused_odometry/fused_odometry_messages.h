@@ -14,7 +14,8 @@ typedef struct
 	carmen_vector_3D_t 	velocity;
 	carmen_orientation_3D_t angular_velocity;
 	double 				phi;
-	double				beta;
+	int 				num_trailers;
+	double 				trailer_theta[MAX_NUM_TRAILERS];
 	
 	carmen_vector_3D_t	gps_position_at_turn_on;
 
@@ -23,7 +24,7 @@ typedef struct
 } carmen_fused_odometry_message;
   
 #define      CARMEN_FUSED_ODOMETRY_NAME			"carmen_fused_odometry_message"
-#define      CARMEN_FUSED_ODOMETRY_FMT			"{{{double,double,double},{double,double,double}},double,{double,double,double},{double,double,double},double,double,{double,double,double},double,string}"
+#define      CARMEN_FUSED_ODOMETRY_FMT			"{{{double,double,double},{double,double,double}},double,{double,double,double},{double,double,double},double,int,[double:5],{double,double,double},double,string}"
 
 typedef struct 
 {
@@ -33,7 +34,8 @@ typedef struct
 	carmen_vector_3D_t 	velocity;
 	carmen_orientation_3D_t angular_velocity;
 	double 				phi;
-	double				beta;
+	int 				num_trailers;
+	double 				trailer_theta[MAX_NUM_TRAILERS];
 	
 	carmen_vector_3D_t	gps_position_at_turn_on;
 
@@ -48,7 +50,7 @@ typedef struct
 } carmen_fused_odometry_particle_message;
   
 #define      CARMEN_FUSED_ODOMETRY_PARTICLE_NAME	"carmen_fused_odometry_particle_message"
-#define      CARMEN_FUSED_ODOMETRY_PARTICLE_FMT		"{{{double,double,double},{double,double,double}},double,{double,double,double},{double,double,double},double,double,{double,double,double},int,<{double,double,double}:8>,<{double}:8>,int,double,string}"
+#define      CARMEN_FUSED_ODOMETRY_PARTICLE_FMT		"{{{double,double,double},{double,double,double}},double,{double,double,double},{double,double,double},double,int,[double:5],{double,double,double},int,*{double,double,double},*double,int,double,string}"
 
 
 #ifdef __cplusplus

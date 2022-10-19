@@ -75,7 +75,7 @@ int number_of_sensors;
 
 // const int number_of_lidars = 12; //lidar parameters
 const int first_lidar_number = 10;
-carmen_semi_trailer_config_t semi_trailer_config;
+carmen_semi_trailers_config_t semi_trailer_config;
 carmen_pose_3D_t velodyne_pose;
 
 char *map_path;
@@ -180,9 +180,9 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			{
 					globalpos_message->semi_trailer_engaged,
 					globalpos_message->semi_trailer_type,
-					semi_trailer_config.d,
-					semi_trailer_config.M,
-					globalpos_message->beta
+					semi_trailer_config.semi_trailers.d,
+					semi_trailer_config.semi_trailers.M,
+					globalpos_message->trailer_theta[0]
 			};
 
 			if (use_merge_between_maps)
@@ -215,9 +215,9 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		{
 				globalpos_message->semi_trailer_engaged,
 				globalpos_message->semi_trailer_type,
-				semi_trailer_config.d,
-				semi_trailer_config.M,
-				globalpos_message->beta
+				semi_trailer_config.semi_trailers.d,
+				semi_trailer_config.semi_trailers.M,
+				globalpos_message->trailer_theta[0]
 		};
 
 		if (use_merge_between_maps)
@@ -451,13 +451,13 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		robot_near_strong_slow_down_annotation = 0;
 	}
 
-	if (globalpos_message->semi_trailer_type != semi_trailer_config.type)
+	if (globalpos_message->semi_trailer_type != semi_trailer_config.semi_trailers.type)
 		read_parameters_semi_trailer(globalpos_message->semi_trailer_type);
 
 #ifdef USE_REAR_BULLBAR
 	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
 	if (globalpos_message->semi_trailer_type != 0) // se for igual a 0 ele não é articulado e não precisa atualizar a rear_bullbar_pose
-		update_sensor_reference_pose(globalpos_message->beta);
+		update_sensor_reference_pose(globalpos_message->trailer_theta[0]);
 #endif
 
 	if (ok_to_publish)

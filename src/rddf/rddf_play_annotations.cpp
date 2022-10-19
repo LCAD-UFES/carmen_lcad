@@ -49,7 +49,7 @@ extern carmen_point_t carmen_rddf_end_point;
 extern carmen_point_t carmen_rddf_nearest_waypoint_to_end_point;
 extern int carmen_rddf_num_poses_ahead;
 extern int *annotations;
-extern carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead;
+extern carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_ahead;
 
 
 void
@@ -77,7 +77,7 @@ clear_annotations(int *rddf_annotations, int num_annotations)
 
 
 int
-carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses,
+carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_robot_and_trailers_traj_point_t *poses_ahead, int num_poses,
 		int nearest_end_waypoint_position, int *rddf_annotations)
 {
 	int position_nearest_waypoint = nearest_end_waypoint_position;
@@ -109,7 +109,7 @@ carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_robot_and_t
 
 
 int
-carmen_rddf_play_nearest_waypoint_reached(carmen_robot_and_trailer_traj_point_t pose)
+carmen_rddf_play_nearest_waypoint_reached(carmen_robot_and_trailers_traj_point_t pose)
 {
 	if (sqrt(pow(pose.x - carmen_rddf_nearest_waypoint_to_end_point.x, 2) + pow(pose.y - carmen_rddf_nearest_waypoint_to_end_point.y, 2)) < 2.0)
 		return 1;
@@ -119,7 +119,7 @@ carmen_rddf_play_nearest_waypoint_reached(carmen_robot_and_trailer_traj_point_t 
 
 
 int
-carmen_rddf_play_find_position_of_nearest_waypoint(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses)
+carmen_rddf_play_find_position_of_nearest_waypoint(carmen_robot_and_trailers_traj_point_t *poses_ahead, int num_poses)
 {
 	int i, position = -1;
 
@@ -137,7 +137,7 @@ carmen_rddf_play_find_position_of_nearest_waypoint(carmen_robot_and_trailer_traj
 
 
 int
-carmen_rddf_play_check_if_end_point_is_reachable(carmen_robot_and_trailer_traj_point_t *poses_ahead, int num_poses, int *rddf_annotations)
+carmen_rddf_play_check_if_end_point_is_reachable(carmen_robot_and_trailers_traj_point_t *poses_ahead, int num_poses, int *rddf_annotations)
 {
 	if (carmen_rddf_nearest_waypoint_is_set)
 	{
@@ -174,7 +174,7 @@ carmen_rddf_play_check_if_end_point_is_reachable(carmen_robot_and_trailer_traj_p
 
 int
 carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double v, double timestamp /* only for debugging */,
-		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back,
+		carmen_robot_and_trailers_traj_point_t *poses_ahead, carmen_robot_and_trailers_traj_point_t *poses_back, int *num_poses_back,
 		int num_poses_ahead_max, int *rddf_annotations)
 {
 	clear_annotations(rddf_annotations, num_poses_ahead_max);
@@ -187,7 +187,7 @@ carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double
 
 int
 carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double v,
-		carmen_robot_and_trailer_traj_point_t *poses_ahead, carmen_robot_and_trailer_traj_point_t *poses_back, int *num_poses_back,
+		carmen_robot_and_trailers_traj_point_t *poses_ahead, carmen_robot_and_trailers_traj_point_t *poses_back, int *num_poses_back,
 		int num_poses_ahead_max, int *rddf_annotations, int test_orientation)
 {
 	clear_annotations(rddf_annotations, num_poses_ahead_max);
@@ -412,8 +412,8 @@ check_nearst_pedestrian_track_state()
 
 
 void
-set_rectilinear_route_points(carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, int carmen_rddf_num_poses_ahead,
-		const vector<carmen_robot_and_trailer_traj_point_t> &rectilinear_route_segment)
+set_rectilinear_route_points(carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_ahead, int carmen_rddf_num_poses_ahead,
+		const vector<carmen_robot_and_trailers_traj_point_t> &rectilinear_route_segment)
 {
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
 	{
@@ -426,7 +426,7 @@ set_rectilinear_route_points(carmen_robot_and_trailer_traj_point_t *carmen_rddf_
 
 void
 set_rectilinear_route_segment(carmen_annotation_t annotation,
-		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
+		carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
 {
 	double size_front;
@@ -436,7 +436,7 @@ set_rectilinear_route_segment(carmen_annotation_t annotation,
 	if ((size_front == 0.0) && (size_back == 0.0))
 		return;
 
-	vector<carmen_robot_and_trailer_traj_point_t> rectilinear_route_segment = carmen_rddf_compute_rectilinear_route_segment(annotation, size_front, size_back, 0.2);
+	vector<carmen_robot_and_trailers_traj_point_t> rectilinear_route_segment = carmen_rddf_compute_rectilinear_route_segment(annotation, size_front, size_back, 0.2);
 	set_rectilinear_route_points(carmen_rddf_poses_ahead, carmen_rddf_num_poses_ahead, rectilinear_route_segment);
 	set_rectilinear_route_points(carmen_rddf_poses_back, carmen_rddf_num_poses_back, rectilinear_route_segment);
 }
@@ -444,7 +444,7 @@ set_rectilinear_route_segment(carmen_annotation_t annotation,
 
 bool
 add_annotation(double x, double y, double theta, size_t annotation_index,
-		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
+		carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
 {
 	double dx = annotation_read_from_file[annotation_index].annotation_point.x - x;
@@ -560,7 +560,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index,
 
 void
 carmen_check_for_annotations(carmen_point_t robot_pose,
-		carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailer_traj_point_t *carmen_rddf_poses_back,
+		carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_ahead, carmen_robot_and_trailers_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back, double timestamp)
 {
 	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)

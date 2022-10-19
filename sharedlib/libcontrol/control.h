@@ -19,25 +19,26 @@ extern "C" {
 
 double
 carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvature,
-		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands,
+		carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands,
 		double v, double yp, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config, int initialize_neural_networks);
 
 
 void
 carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_command, int *gear_command,
-		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector, int nun_motion_commands,
+		carmen_robot_and_trailers_motion_command_t *current_motion_command_vector, int nun_motion_commands,
 		double current_velocity, double time_of_last_motion_command, carmen_robot_ackerman_config_t *robot_config);
 
 double
 carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double atan_current_curvature,
-		carmen_robot_and_trailer_motion_command_t *current_motion_command_vector,	int nun_motion_commands,
+		carmen_robot_and_trailers_motion_command_t *current_motion_command_vector,	int nun_motion_commands,
 		double v, double yp, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks);
 
 double
-carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int manual_override);
+carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int tune_pid_mode,
+		int manual_override);
 
 
 double carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),

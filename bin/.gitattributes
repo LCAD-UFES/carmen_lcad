@@ -12,3 +12,4 @@ radar_Continental_ARS_408_21 binary
 cargo binary
 user_app_server binary
 set_goals binary
+point_cloud_odometry binary

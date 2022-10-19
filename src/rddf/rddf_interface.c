@@ -188,18 +188,20 @@ carmen_rddf_define_messages()
 }
 
 void
-carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_robot_and_trailer_pose_t point)
+carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_robot_and_trailers_pose_t point)
 {
     IPC_RETURN_TYPE err;
     carmen_rddf_end_point_message rddf_end_point_message;
 
     rddf_end_point_message.half_meters_to_final_goal = half_meters_to_final_goal;
 
-    carmen_robot_and_trailer_pose_t end_point;
+    carmen_robot_and_trailers_pose_t end_point;
     end_point.x = point.x;
     end_point.y = point.y;
     end_point.theta = point.theta;
-    end_point.beta = point.beta;
+    end_point.num_trailers = point.num_trailers;
+    for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+    	end_point.trailer_theta[z] = point.trailer_theta[z];
 
     rddf_end_point_message.point = end_point;
     rddf_end_point_message.timestamp = carmen_get_time();
@@ -210,8 +212,8 @@ carmen_rddf_publish_end_point_message(int half_meters_to_final_goal, carmen_robo
 }
 
 void
-carmen_rddf_publish_road_profile_message(carmen_robot_and_trailer_traj_point_t *poses_ahead,
-		carmen_robot_and_trailer_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int * annotations_codes)
+carmen_rddf_publish_road_profile_message(carmen_robot_and_trailers_traj_point_t *poses_ahead,
+		carmen_robot_and_trailers_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int * annotations_codes)
 {
     IPC_RETURN_TYPE err;
     carmen_rddf_road_profile_message rddf_road_profile_message;
@@ -230,7 +232,7 @@ carmen_rddf_publish_road_profile_message(carmen_robot_and_trailer_traj_point_t *
 }
 
 void
-carmen_rddf_publish_road_profile_around_end_point_message(carmen_robot_and_trailer_traj_point_t *poses_around_end_point, int num_poses)
+carmen_rddf_publish_road_profile_around_end_point_message(carmen_robot_and_trailers_traj_point_t *poses_around_end_point, int num_poses)
 {
     IPC_RETURN_TYPE err;
     carmen_rddf_waypoints_around_end_point_message rddf_road_profile_around_end_point_message;

@@ -184,7 +184,7 @@ carmen_robot_ackerman_move_along_vector(double distance, double theta)
 
 
 void
-carmen_robot_ackerman_follow_trajectory(carmen_robot_and_trailer_traj_point_t *trajectory, int trajectory_length, carmen_robot_and_trailer_traj_point_t *robot)
+carmen_robot_ackerman_follow_trajectory(carmen_robot_and_trailers_traj_point_t *trajectory, int trajectory_length, carmen_robot_and_trailers_traj_point_t *robot)
 {
 	IPC_RETURN_TYPE err;
 	static carmen_robot_ackerman_follow_trajectory_message msg;
@@ -222,7 +222,7 @@ define_motion_command_message(const char *name, const char *fmt)
 
 
 void
-publish_motion_command_with_name(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp, const char *name)
+publish_motion_command_with_name(carmen_robot_and_trailers_motion_command_t *motion_command, int num_motion_commands, double timestamp, const char *name)
 {
 	IPC_RETURN_TYPE err;
 
@@ -262,7 +262,7 @@ carmen_robot_ackerman_publish_velocity(double v, double phi, double timestamp)
 
 
 void
-carmen_robot_ackerman_publish_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp)
+carmen_robot_ackerman_publish_motion_command(carmen_robot_and_trailers_motion_command_t *motion_command, int num_motion_commands, double timestamp)
 {
 	static int first_time = 1;
 
@@ -278,7 +278,7 @@ carmen_robot_ackerman_publish_motion_command(carmen_robot_and_trailer_motion_com
 
 
 void
-carmen_robot_ackerman_publish_teacher_motion_command(carmen_robot_and_trailer_motion_command_t *motion_command, int num_motion_commands, double timestamp)
+carmen_robot_ackerman_publish_teacher_motion_command(carmen_robot_and_trailers_motion_command_t *motion_command, int num_motion_commands, double timestamp)
 {
 	static int first_time = 1;
 

@@ -18,7 +18,7 @@ class MessageControl
 private:
 	carmen_map_t *carmen_planner_map;
 	carmen_ackerman_traj_point_p requested_goal;
-	carmen_robot_and_trailer_traj_point_t robot;
+	carmen_robot_and_trailers_traj_point_t robot;
 	carmen_robot_ackerman_config_t *robot_conf_g;
 	carmen_planner_path_t path;
 	AstarAckerman astarAckeman;
@@ -37,7 +37,7 @@ public:
 
 	void plan();
 	void carmen_planner_ackerman_regenerate_trajectory();
-	int carmen_planner_ackerman_update_robot(carmen_robot_and_trailer_traj_point_t *new_position, carmen_robot_ackerman_config_t *robot_conf);
+	int carmen_planner_ackerman_update_robot(carmen_robot_and_trailers_traj_point_t *new_position, carmen_robot_ackerman_config_t *robot_conf);
 	void carmen_planner_ackerman_set_cost_map(carmen_map_t *new_map);
 	int carmen_planner_ackerman_setDistanceMap(carmen_obstacle_distance_mapper_map_message *newDistanceMap);
 

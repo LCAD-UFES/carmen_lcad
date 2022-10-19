@@ -4,7 +4,7 @@
 #include "../control.h"
 #include <list>
 
-//#define PRINT			// Print Debug
+#define PRINT			// Print Debug
 
 using namespace std;
 
@@ -243,7 +243,7 @@ carmen_libpid_steering_PID_controler_publish_data(steering_pid_data_message * ms
 
 
 double
-carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size,
+carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double plan_size, int tune_pid_mode,
 		int manual_override)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
@@ -270,7 +270,12 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double command_curvature_signal = (current_curvature < desired_curvature) ? 1.0 : -1.0;
 	double max_curvature_change = carmen_clamp(0.05, (0.6 * fabs(plan_size)), 1.2) * g_maximum_steering_command_rate * delta_t;
 
-	double achieved_curvature = current_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
+	double achieved_curvature;
+	if (!tune_pid_mode)
+		achieved_curvature = current_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
+	else
+		achieved_curvature = current_curvature + command_curvature_signal * delta_curvature;
+
 	atan_desired_curvature = atan(achieved_curvature);
 
 	double error_t = atan_desired_curvature - atan_current_curvature;

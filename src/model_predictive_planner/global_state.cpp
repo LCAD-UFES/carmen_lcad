@@ -8,8 +8,8 @@
 #include "model/global_state.h"
 #include "util.h"
 
-carmen_robot_and_trailer_pose_t *GlobalState::localizer_pose = NULL;
-carmen_robot_and_trailer_pose_t *GlobalState::last_plan_pose = NULL;
+carmen_robot_and_trailers_pose_t *GlobalState::localizer_pose = NULL;
+carmen_robot_and_trailers_pose_t *GlobalState::last_plan_pose = NULL;
 double GlobalState::localizer_pose_timestamp = 0;
 
 Command GlobalState::last_odometry;
@@ -20,7 +20,7 @@ bool GlobalState::last_goal = true;
 bool GlobalState::last_path_received_is_empty = false;
 
 carmen_robot_ackerman_config_t GlobalState::robot_config;
-carmen_semi_trailer_config_t GlobalState::semi_trailer_config;
+carmen_semi_trailers_config_t GlobalState::semi_trailer_config;
 
 double GlobalState::robot_max_centripetal_acceleration = 0.0;
 
@@ -59,7 +59,7 @@ bool GlobalState::use_mpc = false;
 
 carmen_moving_objects_point_clouds_message *GlobalState::objects_message = NULL;
 bool GlobalState::moving_objects_initialized = false;
-std::vector<carmen_robot_and_trailer_traj_point_t*> GlobalState::moving_objects_trajectories;
+std::vector<carmen_robot_and_trailers_traj_point_t*> GlobalState::moving_objects_trajectories;
 
 int  GlobalState::use_truepos = 0;
 bool GlobalState::following_path = false;

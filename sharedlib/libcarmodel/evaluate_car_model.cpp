@@ -5,7 +5,7 @@
 
 
 carmen_robot_ackerman_config_t robot_config;
-carmen_semi_trailer_config_t   semi_trailer_config;
+carmen_semi_trailers_config_t   semi_trailer_config;
 
 
 static void
@@ -31,12 +31,12 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "understeer_coeficient",		 CARMEN_PARAM_DOUBLE, &robot_config.understeer_coeficient,							1, NULL},
 		{(char *) "robot", (char *) "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &robot_config.maximum_steering_command_rate, 					1, NULL},
 
-		{(char *) "semi_trailer",	   (char *) "initial_type", CARMEN_PARAM_INT,	 &semi_trailer_config.type,								 0, NULL},
+		{(char *) "semi_trailer",	   (char *) "initial_type", CARMEN_PARAM_INT,	 &semi_trailer_config.semi_trailers.type,								 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
-	if (semi_trailer_config.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.type);
+	if (semi_trailer_config.semi_trailers.type > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.semi_trailers.type);
 }
 
 
@@ -48,7 +48,7 @@ main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-	carmen_robot_and_trailer_traj_point_t robot_state = {};
+	carmen_robot_and_trailers_traj_point_t robot_state = {};
 //	robot_state.v = 1.0;
 	double v = 1.0;
 	double phi = 0.2;
@@ -63,7 +63,7 @@ main(int argc, char **argv)
 	double total_time = carmen_get_time() - time0;
 
 	printf("total_time %lf, pose (%lf %lf %lf %lf %lf %lf %lf)\n", total_time,
-			robot_state.x, robot_state.y, robot_state.theta, robot_state.phi, robot_state.beta, robot_state.v, distance_traveled);
+			robot_state.x, robot_state.y, robot_state.theta, robot_state.phi, robot_state.trailer_theta[0], robot_state.v, distance_traveled);
 
 
 	robot_state = {};
@@ -76,7 +76,7 @@ main(int argc, char **argv)
 	total_time = carmen_get_time() - time0;
 
 	printf("total_time %lf, pose (%lf %lf %lf %lf %lf %lf %lf)\n", total_time,
-			robot_state.x, robot_state.y, robot_state.theta, robot_state.phi, robot_state.beta, robot_state.v, distance_traveled);
+			robot_state.x, robot_state.y, robot_state.theta, robot_state.phi, robot_state.trailer_theta[0], robot_state.v, distance_traveled);
 
 	return (0);
 }

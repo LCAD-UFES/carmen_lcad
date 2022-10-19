@@ -14,8 +14,8 @@ typedef struct
 	carmen_vector_3D_t 	velocity;	// relative to the car and not to the global frame of reference. X points to the front of the car, Y to the side and Z up. Because this is relative to the car, Y and Z should be zero unless the car is slipping or flying.
 	carmen_orientation_3D_t ang_velocity;	// rate at which orientation is changing
 	double 			phi;		// This is the angle the wheels are turned.
-	double			beta;
-		
+	int num_trailers;
+	double trailer_theta[MAX_NUM_TRAILERS];
 	double 			timestamp;
 } carmen_fused_odometry_state_vector;
 

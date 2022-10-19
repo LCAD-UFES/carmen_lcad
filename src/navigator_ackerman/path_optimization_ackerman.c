@@ -20,8 +20,8 @@ double Ws = 1;
 double Wk = 1;
 
 
-carmen_robot_and_trailer_traj_point_t
-carmen_conventional_astar_ackerman_kinematic_optimization_2(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v)
+carmen_robot_and_trailers_traj_point_t
+carmen_conventional_astar_ackerman_kinematic_optimization_2(carmen_robot_and_trailers_traj_point_t point, double lenght, double phi, double v)
 {
 	//int phi_signal = phi >= 0 ? 1 : -1;
 	//phi = carmen_degrees_to_radians(phi);
@@ -71,8 +71,8 @@ carmen_conventional_astar_ackerman_kinematic_optimization_2(carmen_robot_and_tra
 	return point;
 }
 
-carmen_robot_and_trailer_traj_point_t
-carmen_conventional_astar_ackerman_kinematic_optimization(carmen_robot_and_trailer_traj_point_t point, double lenght, double phi, double v)
+carmen_robot_and_trailers_traj_point_t
+carmen_conventional_astar_ackerman_kinematic_optimization(carmen_robot_and_trailers_traj_point_t point, double lenght, double phi, double v)
 {
 	//phi = carmen_degrees_to_radians(phi);
 	point.theta += v * ((tan(phi)) / lenght);
@@ -86,7 +86,7 @@ carmen_conventional_astar_ackerman_kinematic_optimization(carmen_robot_and_trail
 
 
 
-double delta_phi(carmen_robot_and_trailer_traj_point_t x1, carmen_robot_and_trailer_traj_point_t x2, carmen_robot_and_trailer_traj_point_t x3)
+double delta_phi(carmen_robot_and_trailers_traj_point_t x1, carmen_robot_and_trailers_traj_point_t x2, carmen_robot_and_trailers_traj_point_t x3)
 {
 	double delta_phi;
 	delta_phi = fabs(1 / tan((x3.y - x2.y) / (x3.x - x2.x)) - 1 / tan((x2.y - x1.y) / (x2.x - x1.x)));
@@ -95,19 +95,19 @@ double delta_phi(carmen_robot_and_trailer_traj_point_t x1, carmen_robot_and_trai
 }
 
 
-carmen_robot_and_trailer_traj_point_t delta_X(carmen_robot_and_trailer_traj_point_t x1, carmen_robot_and_trailer_traj_point_t x2)
+carmen_robot_and_trailers_traj_point_t delta_X(carmen_robot_and_trailers_traj_point_t x1, carmen_robot_and_trailers_traj_point_t x2)
 {
-	carmen_robot_and_trailer_traj_point_t delta_X;
+	carmen_robot_and_trailers_traj_point_t delta_X;
 	delta_X.x = (x1.x - x2.x);
 	delta_X.y = (x1.y - x2.y);
 	return delta_X;
 }
 
 
-double curvature_measure(carmen_robot_and_trailer_traj_point_t *points, int length)
+double curvature_measure(carmen_robot_and_trailers_traj_point_t *points, int length)
 {
 	int index;
-	carmen_robot_and_trailer_traj_point_t X;
+	carmen_robot_and_trailers_traj_point_t X;
 	double soma = 0;
 	for (index = 1; index < length - 1; index++)
 	{
@@ -120,10 +120,10 @@ double curvature_measure(carmen_robot_and_trailer_traj_point_t *points, int leng
 }
 
 
-double smoothness_measure(carmen_robot_and_trailer_traj_point_t *points, int length)
+double smoothness_measure(carmen_robot_and_trailers_traj_point_t *points, int length)
 {
 	int index;
-	carmen_robot_and_trailer_traj_point_t X;
+	carmen_robot_and_trailers_traj_point_t X;
 	double soma = 0;
 	for (index = 1; index < length - 1; index++)
 	{
@@ -135,7 +135,7 @@ double smoothness_measure(carmen_robot_and_trailer_traj_point_t *points, int len
 	return soma;
 }
 
-double avaliation(carmen_robot_and_trailer_traj_point_t *points, int length)
+double avaliation(carmen_robot_and_trailers_traj_point_t *points, int length)
 {
 	double result = 0;
 	result = curvature_measure(points, length) + smoothness_measure(points, length);
@@ -153,7 +153,7 @@ int RandomInteger( int low, int high)
 }
 
 
-void pertubation(carmen_robot_and_trailer_traj_point_t *points, int length)
+void pertubation(carmen_robot_and_trailers_traj_point_t *points, int length)
 {
 	int index;
 	for (index = 0; index < length; index++)
@@ -183,7 +183,7 @@ void pertubation(carmen_robot_and_trailer_traj_point_t *points, int length)
 	}
 }
 
-void copy_points(carmen_robot_and_trailer_traj_point_t *points1, carmen_robot_and_trailer_traj_point_t *points2, int length)
+void copy_points(carmen_robot_and_trailers_traj_point_t *points1, carmen_robot_and_trailers_traj_point_t *points2, int length)
 {
 	int index;
 	for (index = 0; index < length; index++)
@@ -193,7 +193,7 @@ void copy_points(carmen_robot_and_trailer_traj_point_t *points1, carmen_robot_an
 }
 
 
-void carmen_path_optimization(carmen_robot_and_trailer_traj_point_t start, carmen_robot_and_trailer_traj_point_t goal,carmen_planner_path_p path)
+void carmen_path_optimization(carmen_robot_and_trailers_traj_point_t start, carmen_robot_and_trailers_traj_point_t goal,carmen_planner_path_p path)
 {
 
 	if (start.phi && goal.v)
@@ -204,11 +204,11 @@ void carmen_path_optimization(carmen_robot_and_trailer_traj_point_t start, carme
 	double current_avaliation = 0;
 	int length = path->length;
 	double best_avaliation = 9999999999999999;
-	carmen_robot_and_trailer_traj_point_t last_point = path->points[length-1];
-	carmen_robot_and_trailer_traj_point_t *best_points;
-	carmen_robot_and_trailer_traj_point_t *new_points;
-	best_points = calloc(length, sizeof(carmen_robot_and_trailer_traj_point_t));
-	new_points = calloc(length, sizeof(carmen_robot_and_trailer_traj_point_t));
+	carmen_robot_and_trailers_traj_point_t last_point = path->points[length-1];
+	carmen_robot_and_trailers_traj_point_t *best_points;
+	carmen_robot_and_trailers_traj_point_t *new_points;
+	best_points = calloc(length, sizeof(carmen_robot_and_trailers_traj_point_t));
+	new_points = calloc(length, sizeof(carmen_robot_and_trailers_traj_point_t));
 
 
 	//carmen_planner_path_t best_path = *path;

@@ -12,12 +12,12 @@
 static int necessary_maps_available = 0;
 
 static int current_motion_command_vetor = 0;
-static carmen_robot_and_trailer_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+static carmen_robot_and_trailers_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 static int num_motion_commands_in_vector[NUM_MOTION_COMMANDS_VECTORS];
 static double timestamp_of_motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS];
 
 static carmen_robot_ackerman_config_t carmen_robot_ackerman_config;
-static carmen_semi_trailer_config_t carmen_semi_trailer_config;
+static carmen_semi_trailers_config_t carmen_semi_trailer_config;
 static double carmen_robot_ackerman_collision_avoidance_frequency;
 static double carmen_robot_ackerman_sensor_time_of_last_update = -1.0;
 static double carmen_robot_ackerman_motion_command_time_of_last_update = -1.0;
@@ -116,9 +116,9 @@ consume_motion_command_time(int motion_command_vetor)
 
 
 int
-apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int original_size)
+apply_robot_delays(carmen_robot_and_trailers_motion_command_t *original_path, int original_size)
 {
-	carmen_robot_and_trailer_motion_command_t *path = original_path;
+	carmen_robot_and_trailers_motion_command_t *path = original_path;
 	int size = original_size;
 
 	// Velocity delay
@@ -196,13 +196,13 @@ apply_robot_delays(carmen_robot_and_trailer_motion_command_t *original_path, int
 
 
 static void
-obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_motion_command_t *motion_commands,
+obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailers_motion_command_t *motion_commands,
 		int num_motion_commands, double timestamp)
 {
 	if (eliminate_path_follower)
 	{
-		carmen_robot_and_trailer_motion_command_t *motion_commands_copy = (carmen_robot_and_trailer_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
-		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailer_motion_command_t));
+		carmen_robot_and_trailers_motion_command_t *motion_commands_copy = (carmen_robot_and_trailers_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
+		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 
 		apply_robot_delays(motion_commands_copy, num_motion_commands);
 		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_copy, num_motion_commands, timestamp);
@@ -215,7 +215,7 @@ obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailer_m
 
 
 static void
-publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
+publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_and_trailers_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
 	return;
@@ -232,7 +232,7 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_robot_
 
 
 void
-publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_robot_and_trailer_motion_command_t *motion_commands_vector,
+publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_robot_and_trailers_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
 	return;
@@ -352,7 +352,7 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 //	print_path(motion_command_message->motion_command, motion_command_message->num_motion_commands);
 
 	static double time_of_last_call = 0.0;
-	carmen_robot_and_trailer_motion_command_t *next_motion_command_vector;
+	carmen_robot_and_trailers_motion_command_t *next_motion_command_vector;
 	int i, num_motion_commands;
 
 	if (motion_command_message->num_motion_commands < 1)
@@ -396,7 +396,7 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	carmen_robot_and_trailer_traj_point_t pose;
+	carmen_robot_and_trailers_traj_point_t pose;
 
 	if (!necessary_maps_available)
 		return;
@@ -404,7 +404,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	pose.x = msg->globalpos.x;
 	pose.y = msg->globalpos.y;
 	pose.theta = msg->globalpos.theta;
-	pose.beta = msg->beta;
+	pose.num_trailers = msg->num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		pose.trailer_theta[z] = msg->trailer_theta[z];
+
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -412,10 +415,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 
-	if (msg->semi_trailer_type != carmen_semi_trailer_config.type)
+	if (msg->semi_trailer_type != carmen_semi_trailer_config.semi_trailers.type)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.type);
+		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.semi_trailers.type);
 	}
 }
 
@@ -423,7 +426,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	carmen_robot_and_trailer_traj_point_t pose;
+	carmen_robot_and_trailers_traj_point_t pose;
 
 	if (!necessary_maps_available)
 		return;
@@ -431,7 +434,10 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	pose.x = msg->truepose.x;
 	pose.y = msg->truepose.y;
 	pose.theta = msg->truepose.theta;
-	pose.beta = msg->beta;
+	pose.num_trailers = msg->num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		pose.trailer_theta[z] = msg->trailer_theta[z];
+
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -649,7 +655,7 @@ read_parameters(int argc, char **argv)
 		{"robot", "collision_avoidance", CARMEN_PARAM_ONOFF, &ackerman_collision_avoidance, 1, NULL},
 		{"robot", "collision_avoidance_frequency", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_collision_avoidance_frequency, 1, NULL},
 		{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL},
-		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.type, 0, NULL},
+		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.semi_trailers.type, 0, NULL},
 		{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 		{"rrt", "log_mode", CARMEN_PARAM_ONOFF,	&log_mode, 1, NULL},
 
@@ -665,8 +671,8 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 
-	if (carmen_semi_trailer_config.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.type);
+	if (carmen_semi_trailer_config.semi_trailers.type > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.semi_trailers.type);
 
 	return (0);
 }
