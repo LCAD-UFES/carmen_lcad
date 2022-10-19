@@ -29,8 +29,8 @@ typedef struct {
 
 
 #define      CARMEN_NAVIGATOR_GUI_MAP_VIEW_NAME       "carmen_navigator_gui2_map_view"
-#define      CARMEN_NAVIGATOR_GUI_MAP_VIEW_FMT        "{int,int,int,*ubyte,double,double,double,double,string}"
-//#define      CARMEN_NAVIGATOR_GUI_MAP_VIEW_FMT        "{int,int,int,<ubyte:3>,double,double,double,double,string}" // Essa mensagem, de acordo com testes, está fazendo o navigator gui travar quando orienta o final goal
+//#define      CARMEN_NAVIGATOR_GUI_MAP_VIEW_FMT        "{int,int,int,*ubyte,double,double,double,double,string}"
+#define      CARMEN_NAVIGATOR_GUI_MAP_VIEW_FMT        "{int,int,int,<ubyte:3>,double,double,double,double,string}" // Essa mensagem, de acordo com testes, está fazendo o navigator gui travar quando orienta o final goal
 
 
 #ifdef __cplusplus

@@ -90,7 +90,7 @@ carmen_navigator_gui_publish_map_view_message(int width, int height, int image_s
 	msg.width = width;
 	msg.height = height;
 	msg.image_size = image_size;
-	msg.image_size = width * height * 3; /* width*height*bytes_per_pixel */
+//	msg.image_size = width * height * 3; /* width*height*bytes_per_pixel */
 	msg.raw_image = raw_image;
 	msg.x_origin = x_origin;
 	msg.y_origin = y_origin;
