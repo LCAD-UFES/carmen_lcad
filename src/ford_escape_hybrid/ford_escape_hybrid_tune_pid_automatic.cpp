@@ -2,10 +2,12 @@
 #include <carmen/motion_planner.h>
 #include "ford_escape_hybrid_tune_pid_automatic.h"
 #include <carmen/car_model.h>
+#include <vector>
 
 #include "ford_escape_hybrid_interface.h"
 #include "ford_escape_hybrid_messages.h"
-
+#include <carmen/behavior_selector_interface.h>
+#include <carmen/simulator_ackerman_interface.h>
 
 using namespace std;
 
@@ -27,9 +29,14 @@ static MotionControlFunction phi_function;
 
 static int wave_form = 0;
 
+static bool moved = false;
 
-carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
+static double time_ant = 0.;
+static double time_elapsed = 0.;
 
+carmen_simulator_ackerman_truepos_message *simulator_velocity;
+velocity_pid_data_message *velocity_msg ;
+vector<double> current_velocity_vector, desired_velocity_vector, error_vector, timestamp_vector;
 
 static void
 signal_handler(int signo __attribute__ ((unused)) )
@@ -173,7 +180,119 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 	return (phi_vector);
 }
 
+/*
+double
+my_f(const gsl_vector *v, void *params_ptr)
+{
+	carmen_base_ackerman_motion_command_message *motion_command_message = (carmen_base_ackerman_motion_command_message *);
 
+	double error = 0.0;
+	double error_sum = 0.0;
+
+	double kp = gsl_vector_get(v, 0);
+	double ki = gsl_vector_get(v, 1);
+	double kd = gsl_vector_get(v, 2);
+
+	execute_motion_command();  // TODO ???
+
+	return (error_sum);
+}
+
+
+void
+my_df(const gsl_vector *v, void *params, gsl_vector *df)
+{
+	double h = 5.0;                  // This value influences the result
+	double f_x = my_f(v, params);
+	gsl_vector *x_h;
+
+	double kp = gsl_vector_get(v, 0);
+	double ki = gsl_vector_get(v, 1);
+	double kd = gsl_vector_get(v, 2);
+
+	x_h = gsl_vector_alloc(3);
+
+	k1 = gsl_vector_get(v, 0);
+	k2 = gsl_vector_get(v, 1);
+	k3 = gsl_vector_get(v, 2);
+
+	gsl_vector_set(x_h, 0, k1 + h);
+	gsl_vector_set(x_h, 1, k2);
+	gsl_vector_set(x_h, 2, k3);
+	double f_k1_h = my_f(x_h, params);
+	double df_k1_h = (f_k1_h - f_x) / h;
+
+	gsl_vector_set(x_h, 0, k1);
+	gsl_vector_set(x_h, 1, k2 + h);
+	gsl_vector_set(x_h, 2, k3);
+	double f_k2_h = my_f(x_h, params);
+	double df_k2_h = (f_k2_h - f_x) / h;
+
+	// gsl_vector_set(x_h, 0, k1);
+	// gsl_vector_set(x_h, 1, k2);
+	// gsl_vector_set(x_h, 2, k3 + h);
+	// double f_k3_h = my_f(x_h, params);
+	// double df_k3_h = (f_k3_h - f_x) / h;
+
+	gsl_vector_set(df, 0, df_k1_h);
+	gsl_vector_set(df, 1, df_k2_h);
+	gsl_vector_set(df, 2, df_k3_h);
+
+	gsl_vector_free(x_h);
+}
+
+
+void
+my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
+{
+	*f = my_f (x, params);
+	my_df (x, params, df);
+}
+
+void
+optimize_PID_gains(carmen_base_ackerman_motion_command_message *motion_command_message))
+{
+	gsl_vector *x;
+	gsl_multimin_function_fdf my_func;
+	size_t iter = 0;
+	int status;
+
+	my_func.n = 3;            // Num of parameters to optimize
+	my_func.f = my_f;
+	my_func.df = my_df;
+	my_func.fdf = my_fdf;
+	my_func.params = motion_command_message;
+
+	x = gsl_vector_alloc (3);  // Num of parameters to optimize
+	gsl_vector_set(x, 0, seed.k1);
+	gsl_vector_set(x, 1, seed.k2);
+	gsl_vector_set(x, 2, seed.k3);
+
+	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
+	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 3);
+
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 2.5, 0.001);     //(function_fdf, gsl_vector, step_size, tol)
+
+	do
+	{
+		iter++;
+		status = gsl_multimin_fdfminimizer_iterate(s);
+
+		if (status)
+			break;
+
+		status = gsl_multimin_test_gradient(s->gradient, 0.2);
+
+	} while ((status == GSL_CONTINUE) && (iter < 15));
+
+	gsl_multimin_fdfminimizer_free(s);
+	gsl_vector_free(x);
+
+	return;
+}
+*/
+
+/*
 double
 my_f_new(const gsl_vector *v, void *params_ptr)
 {
@@ -333,7 +452,7 @@ get_optimized_effort_new(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 	return (seed);
 }
 
-
+*/
 static void
 build_trajectory(double t)
 {
@@ -565,9 +684,106 @@ timer_handler()
 
 		tune_pid_gain_velocity_parameters_message *pid_vel_msg = fill_pid_gain_velocity_parameters_message();
 		carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(pid_vel_msg , carmen_get_time());
-		tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message();
-		carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());
+		/*tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message();
+		carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());*/
+
 	}
+}
+
+void
+get_velocity_message_handler(carmen_simulator_ackerman_truepos_message *msg)
+{
+	simulator_velocity->beta = msg->beta;
+	simulator_velocity->v = msg->v;
+	simulator_velocity->odometrypose = msg->odometrypose;
+	simulator_velocity->phi = msg->phi;
+	simulator_velocity->truepose = msg->truepose;
+	simulator_velocity->host = msg->host;
+	simulator_velocity->timestamp = msg->timestamp;
+}
+
+void
+get_pid_velocity_feedback_handler(velocity_pid_data_message *msg)
+{
+	velocity_msg->PID_controler_state = msg->PID_controler_state;
+	velocity_msg->brakes_command = msg->brakes_command;
+	velocity_msg->current_velocity = msg->current_velocity;
+	velocity_msg->derivative_t = msg->derivative_t;
+	velocity_msg->desired_velocity = msg->desired_velocity;
+	velocity_msg->error_t = msg->error_t;
+	velocity_msg->integral_t = msg->integral_t;
+	velocity_msg->throttle_command = msg->throttle_command;
+	velocity_msg->timestamp = msg->timestamp;
+	static FILE *gnuplot_pipe;
+	double currrent_time = 0.0;
+	if(msg->current_velocity > 0.0)
+		moved = true;
+	//printf("CHEGOU MSG !!!!!!!!!!");
+	current_velocity_vector.push_back(msg->current_velocity);
+	desired_velocity_vector.push_back(msg->desired_velocity);
+	error_vector.push_back(msg->error_t);
+	timestamp_vector.push_back(msg->timestamp);
+	if(moved)
+	{
+		if(msg->current_velocity == 0.0)
+		{
+			if(time_ant == 0)
+			{
+				time_ant = carmen_get_time();
+				return;
+			}
+			currrent_time = carmen_get_time();
+			time_elapsed += currrent_time - time_ant;
+			time_ant = currrent_time;
+			printf("%lf TEMPO PASSS!!!\n", time_elapsed);
+			if(time_elapsed >= 2.0)
+			{
+				FILE *arquivo_teste = fopen("velocidade_pid.txt", "w");
+				for(long unsigned int i = 0 ; i < current_velocity_vector.size(); i++)
+					fprintf(arquivo_teste, "%lf %lf %lf %lf\n",
+						current_velocity_vector[i], desired_velocity_vector[i], error_vector[i], timestamp_vector[i] );
+				fflush(arquivo_teste);
+				fclose(arquivo_teste);
+				gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+				fprintf(gnuplot_pipe, "plot "
+						"'./velocidade_pid.txt' using ($4) : ($1) with lines title 'current velocity',"
+						"'./velocidade_pid.txt' using ($4) : ($2) with lines title 'desired velocity', "
+						"'./velocidade_pid.txt' using ($4) : ($3) with lines title 'error'\n");
+				fflush(gnuplot_pipe);
+				moved = false;
+				time_elapsed = 0.;
+				time_ant = 0;
+				current_velocity_vector.clear();
+				desired_velocity_vector.clear();
+				error_vector.clear();
+				timestamp_vector.clear();
+			}
+		}
+	}
+	/*FILE *arquivo_teste = fopen("velocidade_pid.txt", "a");
+	fprintf(arquivo_teste, "%lf %lf %lf %lf %lf %lf %lf %lf\n",
+	    velocity_msg->current_velocity, velocity_msg->desired_velocity, velocity_msg->error_t,
+		velocity_msg->throttle_command, velocity_msg->brakes_command,
+		velocity_msg->integral_t, velocity_msg->derivative_t, velocity_msg->timestamp);
+	fflush(arquivo_teste);
+	fclose(arquivo_teste);*/
+}
+
+static int
+subscribe_to_relevant_messages()
+{
+	static int first_time = 1;
+	if(first_time)
+	{
+		simulator_velocity = (carmen_simulator_ackerman_truepos_message *) malloc (1 * sizeof(carmen_simulator_ackerman_truepos_message));
+		velocity_msg = (velocity_pid_data_message *) malloc (sizeof (velocity_pid_data_message));
+
+		first_time = 0;
+	}
+
+	carmen_simulator_ackerman_subscribe_external_truepos_message(NULL, (carmen_handler_t) get_velocity_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_velocity_pid_data_message(NULL, (carmen_handler_t) get_pid_velocity_feedback_handler, CARMEN_SUBSCRIBE_LATEST);
+	return (0);
 }
 
 static void
@@ -631,9 +847,9 @@ calibrate_PID_parameters(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 	int status;
 
 	my_func.n = 3;
-	my_func.f = my_f_new;
+	/*my_func.f = my_f_new;
 	my_func.df = my_df_new;
-	my_func.fdf = my_fdf_new;
+	my_func.fdf = my_fdf_new;*/
 	my_func.params = params;
 
 	x = gsl_vector_alloc (3);  // Num of parameters to minimize
@@ -675,6 +891,7 @@ calibrate_PID_parameters(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 int
 main(int argc, char **argv)
 {
+	printf("FOI!!!!\n");
 	signal(SIGINT, signal_handler);
 
 	carmen_ipc_initialize(argc, argv);
@@ -697,8 +914,10 @@ main(int argc, char **argv)
 	carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());
 	*/
 
+
+
 	carmen_ipc_addPeriodicTimer(timer_period, (TIMER_HANDLER_TYPE) timer_handler, NULL);
-	
+	subscribe_to_relevant_messages();
 	carmen_ipc_dispatch();
 
 	return 0;
