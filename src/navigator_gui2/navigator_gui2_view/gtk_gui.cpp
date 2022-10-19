@@ -2851,8 +2851,10 @@ namespace View
 			final_goal.pose.y = world_point->pose.y;
 			final_goal.pose.theta = world_point->pose.theta;
 			final_goal.pose.trailer_theta[0] = world_point->pose.theta;
-		for (size_t z = 1; z < final_goal.pose.num_trailers; z++)
+		for (int z = 1; z < final_goal.pose.num_trailers; z++)
+		{
 			final_goal.pose.trailer_theta[z] = world_point->pose.theta;
+		}
 
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
@@ -3181,9 +3183,10 @@ namespace View
 	{
 		carmen_world_robot_and_trailer_pose_t robot_with_beta;
 		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, globalpos->num_trailers, {0.0}};
-		for (size_t z = 0; z < globalpos->num_trailers; z++)
-//		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		for (int z = 0; z < globalpos->num_trailers; z++)
+		{
 			robot_with_beta.pose.trailer_theta[z] = globalpos->trailer_theta[z];
+		}
 
 
 		robot_with_beta.map = robot.map;

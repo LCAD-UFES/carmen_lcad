@@ -90,12 +90,17 @@ carmen_navigator_gui_publish_map_view_message(int width, int height, int image_s
 	msg.width = width;
 	msg.height = height;
 	msg.image_size = image_size;
+	msg.image_size = width * height * 3; /* width*height*bytes_per_pixel */
 	msg.raw_image = raw_image;
 	msg.x_origin = x_origin;
 	msg.y_origin = y_origin;
 	msg.resolution = resolution;
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
+
+//	printf("Here %d %d %d %d\n", __LINE__, msg.width, msg.height, msg.image_size);
+//	printf("Here %d %f %f %f\n", __LINE__, msg.x_origin, msg.y_origin, msg.resolution);
+
 
 	err = IPC_publishData(CARMEN_NAVIGATOR_GUI_MAP_VIEW_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_GUI_MAP_VIEW_NAME);
