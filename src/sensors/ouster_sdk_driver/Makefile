@@ -22,7 +22,7 @@ LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 
 # carmen related libraries
 
-SOURCES = ouster_main.cpp ouster_log_raw_data.cpp ouster_read_pcad_file.cpp ouster_publish_from_pcap.cpp types.cpp helpers.cpp # ouster_viewer_main.cpp
+SOURCES = ouster_main.cpp types.cpp helpers.cpp # ouster_log_raw_data.cpp ouster_read_pcad_file.cpp ouster_publish_from_pcap.cpp types.cpp helpers.cpp # ouster_viewer_main.cpp
 
 PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
