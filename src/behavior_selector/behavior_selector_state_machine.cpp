@@ -14,6 +14,11 @@
 #define NO_ENGINE_BRAKE_SIGN_AHEAD	0
 #define ENGINE_BRAKE_ON				1
 #define ENGINE_BRAKE_OFF			2
+#define ENGINE_BRAKE_LEVEL_1		3
+#define ENGINE_BRAKE_LEVEL_2		4
+#define ENGINE_BRAKE_LEVEL_3		5
+#define ENGINE_BRAKE_LEVEL_4		6
+#define ENGINE_BRAKE_LEVEL_5		7
 
 #define NO_TURN_LEFT_INDICATOR_SIGN_AHEAD	0
 #define TURN_LEFT_INDICATOR_ON				1
@@ -260,10 +265,30 @@ engine_brake_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pos
 	if ((distance_to_first_goal >= distance_to_annotation) &&
 		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_engine_brake_sign_annotation->annotation_point))
 	{
-		if (nearest_engine_brake_sign_annotation->annotation_code == RDDF_ANNOTATION_CODE_RETARDER_BRAKE_ON)
-			return (ENGINE_BRAKE_ON);
-		else
-			return (ENGINE_BRAKE_OFF);
+		switch (nearest_engine_brake_sign_annotation->annotation_code)
+		{
+			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_OFF:
+				return (ENGINE_BRAKE_OFF);
+				break;
+			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_ON:
+				return (ENGINE_BRAKE_ON);
+				break;
+			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_1:
+				return (ENGINE_BRAKE_LEVEL_1);
+				break;
+			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_2:
+				return (ENGINE_BRAKE_LEVEL_2);
+				break;
+			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_3:
+				return (ENGINE_BRAKE_LEVEL_3);
+				break;
+			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_4:
+				return (ENGINE_BRAKE_LEVEL_4);
+				break;
+			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_5:
+				return (ENGINE_BRAKE_LEVEL_5);
+				break;
+		}
 	}
 	else
 		return (NO_ENGINE_BRAKE_SIGN_AHEAD);
@@ -1282,15 +1307,39 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 		carmen_task_manager_publish_set_collision_geometry_message(DEFAULT_GEOMETRY, timestamp);
 
 	int engine_brake_sign = engine_brake_sign_ahead(current_robot_pose_v_and_phi);
-	if (engine_brake_sign == ENGINE_BRAKE_ON)
+	if (engine_brake_sign == ENGINE_BRAKE_LEVEL_1)
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;
+		signals_msg.high_beams = 2;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_2)
+	{
+		signals_msg.headlight_status = HEADLIGHT_ON;
+		signals_msg.high_beams = 3;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_3)
+	{
+		signals_msg.headlight_status = HEADLIGHT_ON;
+		signals_msg.high_beams = 4;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_4)
+	{
+		signals_msg.headlight_status = HEADLIGHT_ON;
+		signals_msg.high_beams = 5;
+		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+	}
+	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_5 || engine_brake_sign == ENGINE_BRAKE_ON)
+	{
+		signals_msg.headlight_status = HEADLIGHT_ON;  // para compatibilidade com o Mart
 		signals_msg.high_beams = 1;
 		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
 	}
 	else if (engine_brake_sign == ENGINE_BRAKE_OFF)
 	{
-		signals_msg.headlight_status = HEADLIGHT_OFF;
+		signals_msg.headlight_status = HEADLIGHT_OFF;  // para compatibilidade com o Mart
 		signals_msg.high_beams = 0;
 		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
 	}
