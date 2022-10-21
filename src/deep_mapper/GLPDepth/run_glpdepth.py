@@ -76,7 +76,7 @@ def glp_process_image(image, cut, down_cut):
     pred_d_numpy = pred_d.squeeze().cpu().numpy() #* 256.0
     #print(pred_d)
     pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 255
-    pred_d_numpy[0:cut.item(0),:] = 1000
+    pred_d_numpy[0:cut.item(0),:] = 0
     #print(pred_d_numpy.shape[0]-down_cut.item(0),pred_d_numpy.shape[0])
     pred_d_numpy[pred_d_numpy.shape[0]-down_cut.item(0):pred_d_numpy.shape[0],:] = 0
     # Put less lines to see the result

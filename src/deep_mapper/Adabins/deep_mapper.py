@@ -151,7 +151,7 @@ class InferenceHelper:
         #pred = plasma(pred)[:, :, :3]
 
         pred = (pred * 256.0).astype('uint16')
-        pred[0:cut,:] = 1000
+        pred[0:cut,:] = 0
         pred[pred.shape[0]-down:pred.shape[0],:] = 0
         return (pred).astype('uint16')
         

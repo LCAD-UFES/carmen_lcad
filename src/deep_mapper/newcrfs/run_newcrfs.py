@@ -84,7 +84,7 @@ def newcrfs_process_image(image, cut, down_cut):
     #print(pred_d)
     pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 256.0 * 1.256
     #pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 400.0
-    pred_d_numpy[0:cut.item(0),:] = 1000
+    pred_d_numpy[0:cut.item(0),:] = 0
     #print(pred_d_numpy.shape[0]-down_cut.item(0),pred_d_numpy.shape[0])
     pred_d_numpy[pred_d_numpy.shape[0]-down_cut.item(0):pred_d_numpy.shape[0],:] = 0
     
