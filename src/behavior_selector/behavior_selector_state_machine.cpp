@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <vector>
 #include <carmen/collision_detection.h>
 #include <carmen/global_graphics.h>
@@ -222,7 +223,7 @@ narrow_lane_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_narrow_lane_sign_annotation == NULL)
-		return (false);
+		return (NO_NARROW_LANE_SIGN_AHEAD);
 
 	double distance_to_annotation = DIST2D(nearest_narrow_lane_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
 
@@ -248,11 +249,12 @@ narrow_lane_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose
 int
 engine_brake_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
+//	return (ENGINE_BRAKE_OFF);
 	carmen_annotation_t *nearest_engine_brake_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_RETARDER_BRAKE,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_engine_brake_sign_annotation == NULL)
-		return (false);
+		return (NO_ENGINE_BRAKE_SIGN_AHEAD);
 
 	double distance_to_annotation = DIST2D(nearest_engine_brake_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
 
@@ -288,6 +290,8 @@ engine_brake_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pos
 			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_5:
 				return (ENGINE_BRAKE_LEVEL_5);
 				break;
+			default:
+				return (NO_ENGINE_BRAKE_SIGN_AHEAD);
 		}
 	}
 	else
@@ -362,7 +366,7 @@ set_max_gear_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pos
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_set_max_gear_sign_annotation == NULL)
-		return (false);
+		return (NO_SET_MAX_GEAR_SIGN_AHEAD);
 
 	double distance_to_annotation = DIST2D(nearest_set_max_gear_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
 
@@ -412,6 +416,8 @@ set_max_gear_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pos
 			case RDDF_ANNOTATION_CODE_GEAR_9:
 				return (SET_MAX_GEAR_9);
 				break;
+			default:
+				return (NO_SET_MAX_GEAR_SIGN_AHEAD);
 		}
 	}
 	else
@@ -1331,7 +1337,7 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 		signals_msg.high_beams = 5;
 		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
 	}
-	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_5 || engine_brake_sign == ENGINE_BRAKE_ON)
+	else if ((engine_brake_sign == ENGINE_BRAKE_LEVEL_5) || (engine_brake_sign == ENGINE_BRAKE_ON))
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;  // para compatibilidade com o Mart
 		signals_msg.high_beams = 1;
