@@ -30,6 +30,7 @@ char *host_ip = NULL;
 int ouster_sensor_id = 0;
 int ouster_publish_imu = 0;
 int ouster_intensity_type = 1;
+bool is_alternated = false;
 
 
 void 
@@ -150,14 +151,17 @@ main(int argc, char* argv[])
 //TODO Checar se eh o de 64 raios para publicar o modo de 4 mensagens
     std::vector<carmen_velodyne_variable_scan_message> vector_msgs;
 	//checa se os raios do Lidar estão alinhados ou alternados
-    if (abs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
+    if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
     {
     	//RAIOS ALINHADOS
     	carmen_velodyne_variable_scan_message message;
     	setup_message(message, w, h);
 		vector_msgs.push_back(message);
+    	is_alternated = false;
+
     }else
     {
+    	is_alternated = true;
     	//RAIOS ALTERNADOS
     	if (h < 32)
     	{
@@ -186,11 +190,17 @@ main(int argc, char* argv[])
               << "\n  Product line:      " << info.prod_line
               << "\n  Scan dimensions:   " << w << " x " << h
               << "\n  Column window:     [" << column_window.first << ", "
-              << column_window.second << "]" 
-			  << "\n Esse LiDAR está publicando menssagens com ids "<< std::endl;
-    for(size_t i = 0; i < h / number_of_rays_per_message; i++)
-    	std::cerr << (h / number_of_rays_per_message) * ouster_sensor_id + i << " ";
-    std::cerr << ", CHECAR SE OS PARÂMETROS COM OS IDS DESSAS MENSSAGENS ESTÃO CORRETOS NO CARMEN.INI\n";
+              << column_window.second << "]" << std::endl;
+    if (is_alternated)
+    {
+    	std::cerr << "\n Esse LiDAR está publicando menssagens com ids ";
+    	for(size_t i = 0; i < h / number_of_rays_per_message; i++)
+    		std::cerr << (h / number_of_rays_per_message) * ouster_sensor_id + i << " ";
+    	std::cerr << ", CHECAR SE OS PARÂMETROS COM OS IDS DESSAS MENSSAGENS ESTÃO CORRETOS NO CARMEN.INI\n" << std::endl;
+    }
+    else
+    	std::cerr << "\n Esse LiDAR está publicando menssagens com ids " << ouster_sensor_id << std::endl;
+
     // A LidarScan holds lidar data for an entire rotation of the device
     std::vector<LidarScan> scans{
         N_SCANS, LidarScan{w, h, info.format.udp_profile_lidar}};
@@ -279,7 +289,7 @@ main(int argc, char* argv[])
 				double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);//Calculo do angulo, no ouster os shots sao fixos
 				// TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus na linha abaixo
 				//checa se os raios do Lidar estão alinhados ou alternados
-				if (abs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
+				if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
 				{
 					//RAIOS ALINAHDOS
 					double shot_angle_correction = carmen_normalize_angle_degree(carmen_radians_to_degrees(shot_angle) + (info.beam_azimuth_angles.at(0)) + 180);
@@ -321,15 +331,25 @@ main(int argc, char* argv[])
 				}
 				number_of_shots++;
 			}
-			for (size_t i = 0; i < h / number_of_rays_per_message; i++)
+			if (is_alternated)
 			{
-				vector_msgs[i].host = carmen_get_host();
-				vector_msgs[i].timestamp = carmen_get_time();
-				vector_msgs[i].number_of_shots = number_of_shots;
-				carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (h / number_of_rays_per_message) * ouster_sensor_id + i);
-				if (abs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
-					//break para preencher apenas uma menssagem para Lidars com raios alinhados
-					break;
+				for (size_t i = 0; i < h / number_of_rays_per_message; i++)
+				{
+					vector_msgs[i].host = carmen_get_host();
+					vector_msgs[i].timestamp = carmen_get_time();
+					vector_msgs[i].number_of_shots = number_of_shots;
+					carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (h / number_of_rays_per_message) * ouster_sensor_id + i);
+					if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
+						//break para preencher apenas uma menssagem para Lidars com raios alinhados
+						break;
+				}
+			}
+			else
+			{
+				vector_msgs[0].host = carmen_get_host();
+				vector_msgs[0].timestamp = carmen_get_time();
+				vector_msgs[0].number_of_shots = number_of_shots;
+				carmen_velodyne_publish_variable_scan_message(&vector_msgs[0], ouster_sensor_id);
 			}
 
         }
