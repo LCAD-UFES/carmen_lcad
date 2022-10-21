@@ -22,12 +22,12 @@ LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 
 # carmen related libraries
 
-SOURCES = ouster_main.cpp ouster_log_raw_data.cpp ouster_read_pcad_file.cpp ouster_publish_from_pcap.cpp types.cpp helpers.cpp # ouster_viewer_main.cpp
+SOURCES = ouster_main.cpp types.cpp helpers.cpp # ouster_log_raw_data.cpp ouster_read_pcad_file.cpp ouster_publish_from_pcap.cpp types.cpp helpers.cpp # ouster_viewer_main.cpp
 
 PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = ouster2 # ouster_viewer
-TARGETS = ouster2 ouster_log_raw_data ouster_read_pcad_file ouster_publish_from_pcap # ouster_viewer
+TARGETS = ouster2 #ouster_log_raw_data ouster_read_pcad_file ouster_publish_from_pcap # ouster_viewer
 
 # The libsegmap.a is added as a dependency to make the program be compiled when a .cpp file in the lib is changed.
 # Without adding the lib as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
