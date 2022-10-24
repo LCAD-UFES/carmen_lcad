@@ -634,12 +634,14 @@ ford_escape_signals_message_handler(carmen_ford_escape_signals_message *msg)
 	g_turn_signal_command = msg->turn_signal;
 	g_horn_status_command = msg->horn_status;
 	g_headlights_status_command = msg->headlight_status;
-	if (msg->high_beams)
+	if (msg->high_beams & 0x1)
 		if ((g_headlights_status_command & 7) == 2)
 			g_headlights_status_command ^= 8;
 	if (msg->fog_lights)
 		if ((g_headlights_status_command & 7) == 2)
 			g_headlights_status_command ^= 0x10;
+
+	g_headlights_status_command = (g_headlights_status_command & 0x1F) | ((msg->high_beams & 0x7) << 5);
 
 //	printf("g_horn_status_command %d, g_headlights_status_command %d\n", g_horn_status_command, g_headlights_status_command);
 	publish_ford_escape_turn_horn_and_headlight_signals(XGV_CCU);
