@@ -123,6 +123,8 @@ extern "C" {
 	double distance_between_waypoints_and_goals();
 
 	bool red_traffic_light_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+
+	bool queue_still_busy(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi);
 	
 	bool busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 
@@ -168,6 +170,9 @@ extern "C" {
 	int	run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
 			carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, path_collision_info_t path_collision_info,
 			carmen_robot_and_trailers_traj_point_t *last_valid_goal, double timestamp);
+
+	carmen_annotation_t *check_busy_queue_annotations(int annotation, carmen_rddf_annotation_message annotation_message, 
+	carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi);
 
 	carmen_annotation_t *get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
 			carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving);
