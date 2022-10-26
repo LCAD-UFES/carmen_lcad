@@ -942,7 +942,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 					double plan_size;
 
 					if (ford_escape_hybrid_config->nun_motion_commands > 2) //calcula tamanho do plano para passar para funcao de PID.
-						plan_size = DIST2D(ford_escape_hybrid_config->current_motion_command_vector[0], ford_escape_hybrid_config->current_motion_command_vector[ford_escape_hybrid_config->nun_motion_commands - 1]);
+						plan_size = 1.0 / 0.6; // DIST2D(ford_escape_hybrid_config->current_motion_command_vector[0], ford_escape_hybrid_config->current_motion_command_vector[ford_escape_hybrid_config->nun_motion_commands - 1]);
 					else
 						plan_size = 0.0;
 
