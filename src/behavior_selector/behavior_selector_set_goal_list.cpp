@@ -805,24 +805,19 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 		else if ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_QUEUE) 
 				&& (rddf->annotations_codes[rddf_pose_index] == RDDF_ANNOTATION_CODE_QUEUE_BUSY))
 		{
+			double displacement = -1.0;
 			goal_type[goal_index] = ANNOTATION_GOAL2;
-			double displacement = 0.0;//((rddf->poses[rddf_pose_index].v >= 0.0) ? -2.0 : 2.0);
 			if(!rddf_pose_hit_obstacle)
 			{
-				// printf("entrando aqui\n");
 				double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
-				if (distance_to_waypoint <= 0.5)
-					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, 0.0);
+				if (distance_to_waypoint > 0.0)
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
 				else
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
-
-				// int	goal_in_queue_rddf_index = compute_stop_pose_rddf_index(robot_pose, rddf, rddf->number_of_poses, -1.0, 0.2);  ///////////// TODO ler a desaceleracao e o zero bias do carmen ini
-				// // add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, goal_in_queue_rddf_index, rddf);
-				// add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, displacement);
 			}
 			else
 			{
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, displacement);
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf);
 			}
 			moving_obstacle_trasition = 0.0;
 		}

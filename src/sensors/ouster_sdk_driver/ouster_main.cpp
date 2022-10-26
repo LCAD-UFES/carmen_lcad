@@ -185,6 +185,15 @@ main(int argc, char* argv[])
     int column_window_length =
         (column_window.second - column_window.first + w) % w + 1;
 
+    int number_of_messages_to_publish;
+    if (is_alternated)
+    {
+    	number_of_messages_to_publish = (h / number_of_rays_per_message);
+    }else
+    {
+    	number_of_messages_to_publish = 1;
+    }
+
     std::cerr << "  Firmware version:  " << info.fw_rev
               << "\n  Serial number:     " << info.sn
               << "\n  Product line:      " << info.prod_line
@@ -194,9 +203,11 @@ main(int argc, char* argv[])
     if (is_alternated)
     {
     	std::cerr << "\n Esse LiDAR está publicando menssagens com ids ";
-    	for(size_t i = 0; i < h / number_of_rays_per_message; i++)
-    		std::cerr << (h / number_of_rays_per_message) * ouster_sensor_id + i << " ";
-    	std::cerr << ", CHECAR SE OS PARÂMETROS COM OS IDS DESSAS MENSSAGENS ESTÃO CORRETOS NO CARMEN.INI\n" << std::endl;
+    	for(int i = 0; i < number_of_messages_to_publish; i++)
+    	{
+    		std::cerr << ouster_sensor_id + i << " ";
+    	}
+		std::cerr << ", CHECAR SE OS PARÂMETROS COM OS IDS DESSAS MENSSAGENS ESTÃO CORRETOS NO CARMEN.INI\n" << std::endl;
     }
     else
     	std::cerr << "\n Esse LiDAR está publicando menssagens com ids " << ouster_sensor_id << std::endl;
@@ -287,6 +298,7 @@ main(int argc, char* argv[])
 			for (int m_id = column_window.first; m_id <= column_window.second; m_id++)
 			{
 				double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);//Calculo do angulo, no ouster os shots sao fixos
+
 				// TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus na linha abaixo
 				//checa se os raios do Lidar estão alinhados ou alternados
 				if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
@@ -331,14 +343,16 @@ main(int argc, char* argv[])
 				}
 				number_of_shots++;
 			}
+
 			if (is_alternated)
 			{
-				for (size_t i = 0; i < h / number_of_rays_per_message; i++)
+				for (int i = 0; i < number_of_messages_to_publish; i++)
 				{
 					vector_msgs[i].host = carmen_get_host();
 					vector_msgs[i].timestamp = carmen_get_time();
 					vector_msgs[i].number_of_shots = number_of_shots;
-					carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (h / number_of_rays_per_message) * ouster_sensor_id + i);
+					carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (ouster_sensor_id + i));
+
 					if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
 						//break para preencher apenas uma menssagem para Lidars com raios alinhados
 						break;
@@ -350,6 +364,7 @@ main(int argc, char* argv[])
 				vector_msgs[0].timestamp = carmen_get_time();
 				vector_msgs[0].number_of_shots = number_of_shots;
 				carmen_velodyne_publish_variable_scan_message(&vector_msgs[0], ouster_sensor_id);
+
 			}
 
         }

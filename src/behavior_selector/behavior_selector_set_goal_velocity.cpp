@@ -226,6 +226,29 @@ nearest_pose_is_the_final_pose(carmen_robot_and_trailers_traj_point_t current_ro
 
 
 carmen_annotation_t *
+check_busy_queue_annotations(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
+{
+	// int cont = 0;
+	// for (int i = 0; i < annotation_message.num_annotations; i++)
+	// {
+	// 	if (annotation_message.annotations[i].annotation_type == annotation)
+	// 		cont++;
+	// }
+	// printf("NUM RDDF_ANNOTATION_CODE_QUEUE_BUSY: %d\n", cont);
+	for (int i = 0; i < annotation_message.num_annotations; i++)
+	{
+		if ((annotation_message.annotations[i].annotation_type == annotation) &&
+			annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
+		{
+			return (&(annotation_message.annotations[i]));
+		}
+	}
+
+	return (NULL);
+}
+
+
+carmen_annotation_t *
 check_busy_queue_annotations_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int busy_queue_index = -1;
@@ -297,6 +320,7 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 			distance_to_nearest_annotation = distance_to_annotation;
 			nearest_annotation_index = i;
 		}
+		
 	}
 
 	if (nearest_annotation_index != -1)
@@ -322,10 +346,12 @@ busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 	else
 		last_queue_busy_timestamp = timestamp;
 
-	if (timestamp - last_queue_busy_timestamp < 1.5)
-		return (true);
-	else
-		return (false);
+	return (true);
+
+	// if (timestamp - last_queue_busy_timestamp < 1.5)
+	// 	return (true);
+	// else
+	// 	return (false);
 }
 
 
@@ -517,8 +543,8 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_robot_an
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE)
 		v = annotation_velocity_queue;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE) &&
-			(annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
-			&&(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
+			(annotation->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY))
+			// &&(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
 			//  busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))// &&
 			 //(DIST2D(current_robot_pose_v_and_phi, annotation->annotation_point) > (1.5 + robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels)))
 		v = 0.0;
@@ -829,7 +855,7 @@ set_goal_velocity_according_to_state_machine(carmen_robot_and_trailers_traj_poin
 		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1) ||
 
-		(behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) ||
+		// (behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||
 		(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1) ||
 
@@ -1247,8 +1273,8 @@ set_goal_velocity(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STATE_MACHINE;
 
-//	printf("timestamp %lf, goal->v %lf, who_set_the_goal_v %d, bs_state %d, rp_state %d\n",
-//			behavior_selector_state_message.timestamp, goal->v, who_set_the_goal_v, behavior_selector_state_message.low_level_state, behavior_selector_state_message.route_planner_state);
+	// printf("timestamp %lf, goal->v %lf, who_set_the_goal_v %d, bs_state %d, rp_state %d\n",
+	// 		behavior_selector_state_message.timestamp, goal->v, who_set_the_goal_v, behavior_selector_state_message.low_level_state, behavior_selector_state_message.route_planner_state);
 
 	return (who_set_the_goal_v);
 }
