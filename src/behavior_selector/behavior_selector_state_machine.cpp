@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <vector>
 #include <carmen/collision_detection.h>
 #include <carmen/global_graphics.h>
@@ -222,7 +223,7 @@ narrow_lane_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_narrow_lane_sign_annotation == NULL)
-		return (false);
+		return (NO_NARROW_LANE_SIGN_AHEAD);
 
 	double distance_to_annotation = DIST2D(nearest_narrow_lane_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
 
@@ -248,11 +249,12 @@ narrow_lane_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose
 int
 engine_brake_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
+//	return (ENGINE_BRAKE_OFF);
 	carmen_annotation_t *nearest_engine_brake_sign_annotation = get_nearest_specified_annotation_in_front(RDDF_ANNOTATION_TYPE_RETARDER_BRAKE,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_engine_brake_sign_annotation == NULL)
-		return (false);
+		return (NO_ENGINE_BRAKE_SIGN_AHEAD);
 
 	double distance_to_annotation = DIST2D(nearest_engine_brake_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
 
@@ -288,6 +290,8 @@ engine_brake_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pos
 			case RDDF_ANNOTATION_CODE_RETARDER_BRAKE_LEVEL_5:
 				return (ENGINE_BRAKE_LEVEL_5);
 				break;
+			default:
+				return (NO_ENGINE_BRAKE_SIGN_AHEAD);
 		}
 	}
 	else
@@ -362,7 +366,7 @@ set_max_gear_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pos
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
 
 	if (nearest_set_max_gear_sign_annotation == NULL)
-		return (false);
+		return (NO_SET_MAX_GEAR_SIGN_AHEAD);
 
 	double distance_to_annotation = DIST2D(nearest_set_max_gear_sign_annotation->annotation_point, current_robot_pose_v_and_phi);
 
@@ -412,6 +416,8 @@ set_max_gear_sign_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pos
 			case RDDF_ANNOTATION_CODE_GEAR_9:
 				return (SET_MAX_GEAR_9);
 				break;
+			default:
+				return (NO_SET_MAX_GEAR_SIGN_AHEAD);
 		}
 	}
 	else
@@ -575,8 +581,50 @@ distance_to_pedestrian_track_stop(carmen_robot_and_trailers_traj_point_t current
 }
 
 
+bool
+queue_still_busy(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *busy_queue_ahead = check_busy_queue_annotations(RDDF_ANNOTATION_TYPE_QUEUE,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	// double distance_to_annotation = DIST2D(busy_queue_ahead->annotation_point, current_robot_pose_v_and_phi);
+	// distance_to_annotation -= distance_car_pose_car_front;
+
+	// if (busy_queue_ahead->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE && busy_queue_ahead->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
+	if(busy_queue_ahead != NULL)
+	{
+		printf("fila ocupada\n");
+		return (true);
+	}
+	else
+	{
+		printf("fila nao ocupada\n");
+		return (false);
+	}
+}
+
+
 double
 distance_to_busy_queue(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *busy_queue_ahead = check_busy_queue_annotations(RDDF_ANNOTATION_TYPE_QUEUE,
+			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
+
+	if (busy_queue_ahead == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(busy_queue_ahead->annotation_point, current_robot_pose_v_and_phi);
+	// distance_to_annotation -= distance_car_pose_car_front;
+
+	if (busy_queue_ahead->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE && busy_queue_ahead->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
+double
+distance_to_busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, false);
@@ -995,29 +1043,34 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		
 
 		case Stopping_At_Busy_Queue:
-			// printf("Stopping_At_Busy_Queue\n");
+			printf("Stopping_At_Busy_Queue\n\n");
 			// if ((current_robot_pose_v_and_phi.v < 0.15))// &&
 				// ((distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) < 2.0) ||
 				//  (distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) == 1000.0)))
-			if (/*(current_robot_pose_v_and_phi.v < 0.15) && */distance_to_busy_queue(current_robot_pose_v_and_phi) < 1.5)
+			if (/*(current_robot_pose_v_and_phi.v < 0.15) && */distance_to_busy_queue_ahead(current_robot_pose_v_and_phi) < 1.5)
 				decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S0;
 			// else 
 			if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Stopped_At_Busy_Queue_S0:
-			// printf("Stopped_At_Busy_Queue_S0\n");
+			printf("Stopped_At_Busy_Queue_S0\n\n");
 			decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S1;
 			break;
 		case Stopped_At_Busy_Queue_S1:
 			{
-				// printf("Stopped_At_Busy_Queue_S1\n");
+				printf("Stopped_At_Busy_Queue_S1\n");
 				static int steps2 = 0;
 
 				if (steps2 > 3)
 				{
-					if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) || distance_to_busy_queue(current_robot_pose_v_and_phi) > 1.5)
+					// printf("busy_queue_ahead: %d\n", queue_still_busy(current_robot_pose_v_and_phi));
+					printf("queue_still_busy: %d distance_to_busy_queue: %lf\n\n", queue_still_busy(current_robot_pose_v_and_phi), distance_to_busy_queue(current_robot_pose_v_and_phi));
+					// if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) || distance_to_busy_queue_ahead(current_robot_pose_v_and_phi) > 1.5)
+					// if(!queue_still_busy(current_robot_pose_v_and_phi) || distance_to_busy_queue(current_robot_pose_v_and_phi) < 1.5)
+					if(queue_still_busy(current_robot_pose_v_and_phi) && distance_to_busy_queue(current_robot_pose_v_and_phi) < 1.5)
 					{
+						printf("\tinside if\n");
 						steps2 = 0;
 						decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S2;
 					}
@@ -1027,11 +1080,14 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			}
 			break;
 		case Stopped_At_Busy_Queue_S2:
-			// printf("Stopped_At_Busy_Queue_S2\n");
-			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))// && distance_to_queue(current_robot_pose_v_and_phi) > 2.0)
+			printf("Stopped_At_Busy_Queue_S2\n\n");
+			// if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))// && distance_to_queue(current_robot_pose_v_and_phi) > 2.0)
+			// if (!busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+			if(distance_to_busy_queue(current_robot_pose_v_and_phi) > 1.5)
+			// if(!queue_still_busy(current_robot_pose_v_and_phi))
 				decision_making_state_msg->low_level_state = Free_Running;
-			if (busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
-				decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S0;
+			// if (busy_queue_ahead(current_robot_pose_v_and_phi, timestamp))
+			// 	decision_making_state_msg->low_level_state = Stopped_At_Busy_Queue_S0;
 			if (!autonomous)
 				decision_making_state_msg->low_level_state = Stopped;
 			break;
@@ -1331,7 +1387,7 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 		signals_msg.high_beams = 5;
 		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
 	}
-	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_5 || engine_brake_sign == ENGINE_BRAKE_ON)
+	else if ((engine_brake_sign == ENGINE_BRAKE_LEVEL_5) || (engine_brake_sign == ENGINE_BRAKE_ON))
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;  // para compatibilidade com o Mart
 		signals_msg.high_beams = 1;

@@ -1216,7 +1216,7 @@ set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_p
 	{
 		if(
 			(busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&	((behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S0) || (behavior_selector_state_message.low_level_state == Stopped_At_Busy_Pedestrian_Track_S1))) ||
-			/*(busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) && */((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Pedestrian_Track) || (behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||	(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1))) //@@@Vinicius teste para nao escolher paths laterais na faixa
+			/*(busy_queue_ahead(current_robot_pose_v_and_phi, timestamp) && */((behavior_selector_state_message.low_level_state == Stopping_At_Busy_Queue) || (behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S0) ||	(behavior_selector_state_message.low_level_state == Stopped_At_Busy_Queue_S1))) //@@@Vinicius teste para nao escolher paths laterais na faixa
 		//)
 		{
 			// printf("%d escolhendo path central!\n", ++cont);
@@ -1930,7 +1930,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "annotation_velocity_pedestrian_track_stop", CARMEN_PARAM_DOUBLE, &annotation_velocity_pedestrian_track_stop, 0, NULL},
 		{(char *) "robot", (char *) "annotation_velocity_yield",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_yield,				  0, NULL},
 		{(char *) "robot", (char *) "annotation_velocity_barrier",				 CARMEN_PARAM_DOUBLE, &annotation_velocity_barrier,				  0, NULL},
-//		{(char *) "robot", (char *) "annotation_velocity_queue", 				 CARMEN_PARAM_DOUBLE, &annotation_velocity_queue, 0, NULL},
+		{(char *) "robot", (char *) "annotation_velocity_queue", 				 CARMEN_PARAM_DOUBLE, &annotation_velocity_queue, 0, NULL},
 
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "move_to_engage_pose_speed_limit", CARMEN_PARAM_DOUBLE, &move_to_engage_pose_speed_limit, 1, NULL},
