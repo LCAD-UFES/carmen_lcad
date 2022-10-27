@@ -24,6 +24,7 @@
 #include <carmen/obstacle_distance_mapper_datmo.h>
 #include <carmen/task_manager_messages.h>
 #include <carmen/task_manager_interface.h>
+#include <carmen/extra_keys_interface.h>
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -198,6 +199,7 @@ double behavior_selector_pedestrian_near_path_min_longitudinal_distance = 5.0;
 
 bool all_paths_has_collision = false;
 bool all_paths_has_collision_and_goal_is_not_an_annotation = false;
+int soft_stop_active = 0;
 
 
 int
@@ -1351,6 +1353,7 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
 	int who_set_the_goal_v = NONE;
+	
 
 	if (goal_list_size > 0)
 	{
@@ -1759,6 +1762,35 @@ task_manager_set_collision_geometry_message_handler(carmen_task_manager_set_coll
 }
 
 
+void
+lume_extra_keys_message_handler(carmen_extra_keys_message_t *msg)
+{
+	if (msg == NULL)
+		return;
+
+	if (!soft_stop_active)
+	{
+		carmen_voice_interface_command_message message;
+		message.command_id = SET_SPEED;
+		message.command = "0.0";
+		message.host = carmen_get_host();
+		message.timestamp = carmen_get_time();
+		carmen_voice_interface_publish_command_message(&message);
+		soft_stop_active = 1;
+	}
+	else
+	{
+		carmen_voice_interface_command_message message;
+		message.command_id = SET_SPEED;
+		message.command = "MAX_SPEED";
+		message.host = carmen_get_host();
+		message.timestamp = carmen_get_time();
+		carmen_voice_interface_publish_command_message(&message);
+		soft_stop_active = 0;
+	}
+}
+
+
 static void
 shutdown_module(int signo)
 {
@@ -1864,6 +1896,8 @@ register_handlers()
 	carmen_moving_objects_point_clouds_subscribe_message_generic(0, NULL, (carmen_handler_t) moving_objects_point_clouds_message_handler_0, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_task_manager_subscribe_set_collision_geometry_message(NULL, (carmen_handler_t) task_manager_set_collision_geometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_extra_keys_subscribe(NULL, (carmen_handler_t) lume_extra_keys_message_handler,	CARMEN_SUBSCRIBE_LATEST);
 }
 
 

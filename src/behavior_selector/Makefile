@@ -53,6 +53,7 @@ LFLAGS += \
 	-lcarmodel \
 	-ltask_manager_interface \
 	-lgsl -lgslcblas \
+	-lextra_keys_interface \
 	`pkg-config --libs opencv`
 	
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
