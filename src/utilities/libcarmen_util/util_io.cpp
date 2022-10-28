@@ -73,7 +73,7 @@ read_line(FILE *fptr)
 
 
 vector<string>
-string_split(string s, string pattern)
+string_split_compress(string s, string pattern)
 {
 	vector<string> splitted, splitted_without_empties;
 
@@ -92,7 +92,7 @@ carmen_line_content
 create_carmen_line_content(std::string current_string, char* token)
 {
 	carmen_line_content return_carmen_line_content;
-	std::vector<std::string> splitted_string = string_split(current_string, token);
+	std::vector<std::string> splitted_string = string_split_compress(current_string, token);
 	return_carmen_line_content.size  = splitted_string.size();
 	return_carmen_line_content.splitted_string = splitted_string;
 

@@ -56,11 +56,15 @@ static double g_maximum_steering_command_rate;
 
 static double g_throttle_gap = 0.0;
 
+static double g_fuzzy_factor = 1.0;
+
 static int robot_model_id = 0;
 
 /*#ifdef PRINT
 extern carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
 #endif*/
+
+static double g_v = 0.0;
 
 
 void
@@ -268,17 +272,22 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double current_curvature = tan(atan_current_curvature);
 	double delta_curvature = fabs(desired_curvature - current_curvature);
 	double command_curvature_signal = (current_curvature < desired_curvature) ? 1.0 : -1.0;
-	double max_curvature_change = carmen_clamp(0.05, plan_size, 1.0) * g_maximum_steering_command_rate * delta_t;
+	double max_curvature_change = carmen_clamp(0.1, plan_size, 1.0) * 1.2 * g_maximum_steering_command_rate * delta_t;
 
 	double achieved_curvature;
-	if (!tune_pid_mode)
-		achieved_curvature = current_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
-	else
+	double fuzzy_factor = (fabs(g_v) * (g_fuzzy_factor / 8.33) + 1.0);
+	if (tune_pid_mode)
+	{
 		achieved_curvature = current_curvature + command_curvature_signal * delta_curvature;
+		fuzzy_factor = 1.0;
+	}
+	else
+		achieved_curvature = current_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
 
 	atan_desired_curvature = atan(achieved_curvature);
 
-	double error_t = atan_desired_curvature - atan_current_curvature;
+	printf("g_maximum_steering_command_rate %lf, v %lf, plan_size %lf, fuzzy_factor %lf\n", g_maximum_steering_command_rate, g_v, plan_size, fuzzy_factor);
+	double error_t = (atan_desired_curvature - atan_current_curvature) * fuzzy_factor;
 
 	if (manual_override == 0)
 		integral_t = integral_t + error_t * delta_t;
@@ -795,6 +804,8 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		desired_velocity = 0.0;
 		g_velocity_PID_controler_state = STOP_CAR;
 	}
+
+	g_v = current_velocity;
 
 	double error_t = desired_velocity - current_velocity;
 	if (manual_override == 0)
