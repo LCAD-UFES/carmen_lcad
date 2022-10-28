@@ -1498,55 +1498,6 @@ subscribe_to_ipc_message()
 		if ((number_of_sensors > 9) && spherical_sensor_params[9].alive)
 			carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 
-		// lidars
-		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
-
-		if ((number_of_sensors > 11) && spherical_sensor_params[11].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_1, CARMEN_SUBSCRIBE_LATEST, 1);
-
-		if ((number_of_sensors > 12) && spherical_sensor_params[12].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_2, CARMEN_SUBSCRIBE_LATEST, 2);
-
-		if ((number_of_sensors > 13) && spherical_sensor_params[13].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_3, CARMEN_SUBSCRIBE_LATEST, 3);
-
-		if ((number_of_sensors > 14) && spherical_sensor_params[14].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_4, CARMEN_SUBSCRIBE_LATEST, 4);
-
-		if ((number_of_sensors > 15) && spherical_sensor_params[15].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_5, CARMEN_SUBSCRIBE_LATEST, 5);
-
-		if ((number_of_sensors > 16) && spherical_sensor_params[16].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_6, CARMEN_SUBSCRIBE_LATEST, 6);
-
-		if ((number_of_sensors > 17) && spherical_sensor_params[17].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_7, CARMEN_SUBSCRIBE_LATEST, 7);
-
-		if ((number_of_sensors > 18) && spherical_sensor_params[18].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 8);
-
-		if ((number_of_sensors > 19) && spherical_sensor_params[19].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_9, CARMEN_SUBSCRIBE_LATEST, 9);
-
-		if ((number_of_sensors > 20) && spherical_sensor_params[20].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_10, CARMEN_SUBSCRIBE_LATEST, 10);
-
-		if ((number_of_sensors > 21) && spherical_sensor_params[21].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_11, CARMEN_SUBSCRIBE_LATEST, 11);
-
-		if ((number_of_sensors > 22) && spherical_sensor_params[22].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_12, CARMEN_SUBSCRIBE_LATEST, 12);
-
-		if ((number_of_sensors > 23) && spherical_sensor_params[23].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_13, CARMEN_SUBSCRIBE_LATEST, 13);
-
-		if ((number_of_sensors > 24) && spherical_sensor_params[24].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_14, CARMEN_SUBSCRIBE_LATEST, 14);
-
-		if ((number_of_sensors > 25) && spherical_sensor_params[25].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 15);
-
 		// IMU
 		if (filter->param->prediction_type == 2) // use IMU based prediction
 			carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1559,15 +1510,56 @@ subscribe_to_ipc_message()
 		// stereo velodyne camera 3
 		if ((number_of_sensors > 3) && spherical_sensor_params[3].alive)
 			carmen_stereo_velodyne_subscribe_scan_message(3, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST);
-
-		// lidar0
-		if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
-		
-		// lidar8
-		if ((number_of_sensors > 18) && spherical_sensor_params[18].alive)
-			carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 0);
 	}
+
+	// lidars
+	if ((number_of_sensors > 10) && spherical_sensor_params[10].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
+
+	if ((number_of_sensors > 11) && spherical_sensor_params[11].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_1, CARMEN_SUBSCRIBE_LATEST, 1);
+
+	if ((number_of_sensors > 12) && spherical_sensor_params[12].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_2, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if ((number_of_sensors > 13) && spherical_sensor_params[13].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_3, CARMEN_SUBSCRIBE_LATEST, 3);
+
+	if ((number_of_sensors > 14) && spherical_sensor_params[14].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_4, CARMEN_SUBSCRIBE_LATEST, 4);
+
+	if ((number_of_sensors > 15) && spherical_sensor_params[15].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_5, CARMEN_SUBSCRIBE_LATEST, 5);
+
+	if ((number_of_sensors > 16) && spherical_sensor_params[16].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_6, CARMEN_SUBSCRIBE_LATEST, 6);
+
+	if ((number_of_sensors > 17) && spherical_sensor_params[17].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_7, CARMEN_SUBSCRIBE_LATEST, 7);
+
+	if ((number_of_sensors > 18) && spherical_sensor_params[18].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 8);
+
+	if ((number_of_sensors > 19) && spherical_sensor_params[19].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_9, CARMEN_SUBSCRIBE_LATEST, 9);
+
+	if ((number_of_sensors > 20) && spherical_sensor_params[20].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_10, CARMEN_SUBSCRIBE_LATEST, 10);
+
+	if ((number_of_sensors > 21) && spherical_sensor_params[21].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_11, CARMEN_SUBSCRIBE_LATEST, 11);
+
+	if ((number_of_sensors > 22) && spherical_sensor_params[22].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_12, CARMEN_SUBSCRIBE_LATEST, 12);
+
+	if ((number_of_sensors > 23) && spherical_sensor_params[23].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_13, CARMEN_SUBSCRIBE_LATEST, 13);
+
+	if ((number_of_sensors > 24) && spherical_sensor_params[24].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_14, CARMEN_SUBSCRIBE_LATEST, 14);
+
+	if ((number_of_sensors > 25) && spherical_sensor_params[25].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 15);
 
 	carmen_task_manager_subscribe_set_semi_trailer_type_and_beta_message(NULL, (carmen_handler_t) carmen_task_manager_set_semi_trailer_type_and_beta_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
