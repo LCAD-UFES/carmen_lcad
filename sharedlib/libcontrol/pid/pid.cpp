@@ -268,7 +268,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double current_curvature = tan(atan_current_curvature);
 	double delta_curvature = fabs(desired_curvature - current_curvature);
 	double command_curvature_signal = (current_curvature < desired_curvature) ? 1.0 : -1.0;
-	double max_curvature_change = carmen_clamp(0.05, (0.6 * fabs(plan_size)), 1.2) * g_maximum_steering_command_rate * delta_t;
+	double max_curvature_change = carmen_clamp(0.05, plan_size, 1.0) * g_maximum_steering_command_rate * delta_t;
 
 	double achieved_curvature;
 	if (!tune_pid_mode)
