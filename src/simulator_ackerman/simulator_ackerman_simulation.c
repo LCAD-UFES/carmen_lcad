@@ -635,16 +635,18 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 			}
 		}
 		else
-		{   // PID
-			//steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0);
+		{   // PID normal
+			double plan_size;
 
-			steering_effort = carmen_libpid_steering_PID_controler_FUZZY(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0, simulator_config->v);
+			if (simulator_config->nun_motion_commands > 1) //calcula tamanho do plano para passar para funcao de PID.
+				plan_size = 0.7 * DIST2D(simulator_config->current_motion_command_vector[0], simulator_config->current_motion_command_vector[simulator_config->nun_motion_commands - 1]);
+			else
+				plan_size = 0.0;
 
-			/*steering_pid_data_message *msg = (steering_pid_data_message *) malloc (sizeof (steering_pid_data_message));
-			steering_effort = carmen_libpid_steering_PID_controler_FUZZY_publish_data(msg, atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0, simulator_config->v, global_steer_kp, global_steer_kd, global_steer_ki);
-			steering_effort = msg->effort;
-			carmen_ford_escape_publish_steering_pid_data_message(msg, carmen_get_time());*/
+			steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, plan_size, 0, 0);
 
+			// PID normal FUZZY
+//			steering_effort = carmen_libpid_steering_PID_controler_FUZZY(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0, simulator_config->v);
 		}
 		#ifdef PLOT
 				pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.55, "phi");
