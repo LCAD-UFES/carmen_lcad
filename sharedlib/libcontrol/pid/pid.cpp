@@ -56,6 +56,8 @@ static double g_maximum_steering_command_rate;
 
 static double g_throttle_gap = 0.0;
 
+static double g_fuzzy_factor = 1.0;
+
 static int robot_model_id = 0;
 
 /*#ifdef PRINT
@@ -273,7 +275,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double max_curvature_change = carmen_clamp(0.1, plan_size, 1.0) * 1.2 * g_maximum_steering_command_rate * delta_t;
 
 	double achieved_curvature;
-	double fuzzy_factor = (fabs(g_v) * (1.0 / 8.33) + 1.0);
+	double fuzzy_factor = (fabs(g_v) * (g_fuzzy_factor / 8.33) + 1.0);
 	if (tune_pid_mode)
 	{
 		achieved_curvature = current_curvature + command_curvature_signal * delta_curvature;
