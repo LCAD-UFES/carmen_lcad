@@ -54,9 +54,9 @@ static double g_brake_gap;
 static double g_max_brake_effort;
 static double g_maximum_steering_command_rate;
 
-static double g_throttle_gap = 0.0;
+static double g_throttle_gap = 20.0;
 
-static double g_fuzzy_factor = 1.0;
+static double g_fuzzy_factor = 0.5;
 
 static int robot_model_id = 0;
 
