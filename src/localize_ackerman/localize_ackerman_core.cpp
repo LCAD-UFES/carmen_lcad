@@ -655,6 +655,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 	robot_pose.x = filter->particles[0].x;
 	robot_pose.y = filter->particles[0].y;
 	robot_pose.theta = filter->particles[0].theta;
+	robot_pose.phi = filter->particles[0].phi;
 	double distance_to_goal_factor = 1.0;
 	if (behavior_selector_path_goals_and_annotations_message &&
 		(behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
@@ -671,6 +672,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			robot_pose.x = filter->particles[i].x;
 			robot_pose.y = filter->particles[i].y;
 			robot_pose.theta = filter->particles[i].theta;
+			robot_pose.phi = filter->particles[i].phi;
 
 			// printf("odometry: %lf\t%lf\n", v, phi);
 			v_step = v + carmen_gaussian_random(0.0,
@@ -694,6 +696,9 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 					fabs(filter->param->phi_noise_phi * phi) +
 					fabs(filter->param->phi_noise_velocity * v));
 			phi_step = carmen_clamp(-car_config.max_phi, phi_step, car_config.max_phi);
+
+//			if (i == 10)
+//				printf("phi_step %lf, car_config.max_phi %lf\n", phi_step, car_config.max_phi);
 
 			double distance_traveled;
 			robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
@@ -719,6 +724,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			robot_pose.x = filter->particles[i].x;
 			robot_pose.y = filter->particles[i].y;
 			robot_pose.theta = filter->particles[i].theta;
+			robot_pose.phi = filter->particles[i].phi;
 
 			v_step = v;
 			phi_step = phi + filter->particles[i].phi_bias;

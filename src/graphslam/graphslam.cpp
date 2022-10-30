@@ -195,8 +195,8 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 	for (i = 0; i < input_data.size(); i++)
 	{
 		//TODO @@@VINICIUS Necessario invesitgar porque a orientacao inicial do gps esta dando problema
-//		double gps_yaw = input_data[i].odom[2]; //Descomentar essa linha e comentar a de baixo caso a orientação inicial do GPS esteja com problema
-		double gps_yaw = input_data[i].gps[2];
+		double gps_yaw = input_data[i].odom[2]; //Descomentar essa linha e comentar a de baixo caso a orientação inicial do GPS esteja com problema
+//		double gps_yaw = input_data[i].gps[2];
 		double gps_x = input_data[i].gps[0] - input_data[0].gps[0];
 		double gps_y = input_data[i].gps[1] - input_data[0].gps[1];
 		double car_pose_in_the_world_x = x_ * cos(gps_yaw) - y_ * sin(gps_yaw) + gps_x;
@@ -647,7 +647,13 @@ plot_graph(int gps_id)
 
 	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 
-	fprintf(gnuplot_pipe, "set size square; set size ratio -1; plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', 'tmp/poses_opt.txt' u 1:2 w l t 'car', 'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'car in gps coords', 'tmp/poses_opt_in_gps_coordinates.txt' u 1:2:4:5 with vectors title 'car in gps coords vectors'\n");
+	fprintf(gnuplot_pipe, "set size square; set size ratio -1; "
+						  "plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', "
+							   "'tmp/sync.txt' u 4:5:(0.5 * cos($6)):(0.5 * sin($6)) with vectors title 'gps xyz vectors', "
+						       "'tmp/poses_opt.txt' u 1:2 w l t 'car', "
+							   "'tmp/poses_opt.txt' u 1:2:(0.5 * cos($3)):(0.5 * sin($3)) with vectors title 'car vectors', "
+							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'car in gps coords', "
+							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2:4:5 with vectors title 'car in gps coords vectors'\n");
 
 	fflush(gnuplot_pipe);
 }

@@ -91,7 +91,7 @@ extern carmen_velodyne_partial_scan_message *last_velodyne_message;
 
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
-carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
+carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS + 10];
 double robot_wheel_radius;
 double highest_sensor;
 char *calibration_file = NULL;
@@ -160,13 +160,14 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.v = v;
 	globalpos.phi = phi;
 	globalpos.converged = summary->converged;
-	globalpos.num_trailers = 1;
+	globalpos.num_trailers = 0;
 
 	static double last_timestamp = 0.0;
 	if (last_timestamp == 0.0)
 		last_timestamp = timestamp;
 	if (semi_trailer_config.semi_trailers.type > 0)
 	{
+		globalpos.num_trailers = 1;
 		globalpos.semi_trailer_engaged = 1;
 		carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point =
 		{

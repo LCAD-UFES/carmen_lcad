@@ -179,6 +179,9 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailers_traj_point_t ro
 
 	double max_curvature_change = robot_config.maximum_steering_command_rate * delta_t;
 
+//	printf("target_phi %lf, curvature %lf, new_curvature %lf, max_curvature_change %lf, robot_state.phi %lf, delta_t %lf, robot_config.maximum_steering_command_rate %lf\n",
+//			target_phi, curvature, new_curvature, max_curvature_change, robot_state.phi, delta_t, robot_config.maximum_steering_command_rate);
+
 	// Euler method
 	for (int i = 0; i < n; i++)
 	{

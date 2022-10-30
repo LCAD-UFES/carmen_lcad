@@ -57,7 +57,7 @@ PUBLIC_BINARIES = localize_ackerman localize_ackerman_particle_viewer
 
 MAN_PAGES =
 
-TARGETS = libprob_models.a libgl_plotter.a localize_ackerman liblocalize_ackerman_interface.a \
+TARGETS = libprob_models.a libcontrol.a libcarmodel.a libgl_plotter.a localize_ackerman liblocalize_ackerman_interface.a \
 		liblocalize_ackerman_core.a liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a model_learn_ackerman/model_learner_ackerman \
 		localize_ackerman_particle_viewer		
 
@@ -84,6 +84,12 @@ endif
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
 
+libcontrol.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/
+
+libcarmodel.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel/
+
 libgl_plotter.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/gl_plotter/
 
@@ -98,16 +104,22 @@ liblocalize_ackerman_motion.a: localize_ackerman_motion.o
 liblocalize_ackerman_beta_particle_filter.a: localize_ackerman_beta_particle_filter.o
 
 localize_ackerman:	localize_ackerman_main.o localize_ackerman_using_map.o localize_ackerman_velodyne.o liblocalize_ackerman_core.a liblocalize_ackerman_interface.a \
-	liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a
+	liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a 
 
 localize_ackerman_graph:	localize_ackerman_graph.o localize_ackerman_likelihood_map.o liblocalize_ackerman_interface.a
 
 localize_ackerman_particle_viewer: localize_ackerman_particle_viewer.o localize_ackerman_interface.o
 
-clean: clean_prob_models clean_gl_plotter
+clean: clean_prob_models clean_gl_plotter clean_libcontrol clean_libcarmodel
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
+
+clean_libcontrol: 
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/
+
+clean_libcarmodel: 
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel/
 
 clean_gl_plotter:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/gl_plotter/
