@@ -1777,8 +1777,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 //		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER) ||
 //		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK) ||
 //		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
-#ifdef USE_STEFFEN_SPLINE
 	if (((GlobalState::semi_trailer_config.semi_trailers.type != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN)) ||
+#ifdef USE_STEFFEN_SPLINE
 		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 #else
 		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
