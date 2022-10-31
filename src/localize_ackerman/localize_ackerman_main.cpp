@@ -88,6 +88,8 @@ int g_reinitiaze_particles = 10;
 bool global_localization_requested = false;
 
 extern carmen_velodyne_partial_scan_message *last_velodyne_message;
+extern carmen_velodyne_variable_scan_message *last_variable_message;
+extern int lidar_to_compute_theta;
 
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
@@ -963,6 +965,9 @@ static void
 localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *msg)
 {
 	int odometry_index, fused_odometry_index, instanteneous_maps_ok = 0;
+
+	if (sensor_number == lidar_to_compute_theta)
+		last_variable_message = msg;
 
 	odometry_index = get_base_ackerman_odometry_index_by_timestamp(msg->timestamp);
 	fused_odometry_index = get_fused_odometry_index_by_timestamp(msg->timestamp);
