@@ -9,14 +9,15 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", ATTRS{seria
  dmesg
   
   Vai aparecer no final dos print do dmesg o conteúdo com esses campos:
-[ 4894.968469] usb 1-1: Product: 
-[ 4894.968472] usb 1-1: Manufacturer: 
+[ 4894.968469] usb 1-1: Product: u-blox GNSS receiver
+[ 4894.968472] usb 1-1: Manufacturer: u-blox AG - www.u-blox.com
 [ 4894.968474] usb 1-1: SerialNumber: 0
 
   Use o SerialNumber no serial do arquivo que você criou na linha do SYMLINK+="gps_ZED_F9P_back"
 Faça o mesmo processo para o GPS com antena dianteira.
 APROVEITE PARA VERIFICAR SE OS OUTROS CAMPOS DO CONTEUDO NO ARQUIVO /etc/udev/rules.d/99-gps-ZED-F9P.rules batem com a saída do dmesg.
  
-  Para testar, reinicie a máquina. Alternativamente, remova os CANables das USBs e digite o comando:
+  Para testar, reinicie a máquina.
+  * Alternativamente, remova os GPS das USBs e digite o comando:
  sudo udevadm control --reload-rules && sudo systemctl restart systemd-udevd && sudo udevadm trigger
 
