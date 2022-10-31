@@ -892,7 +892,7 @@ get_pid_steer_feedback_handler(steering_pid_data_message *msg)
 	steer_msg->timestamp = msg->timestamp;
 	static FILE *gnuplot_pipe;
 	double currrent_time = 0.0;
-	if(msg->atan_current_curvature != 0.0)
+	if(msg->atan_current_curvature >=  0.01)
 		moved = true;
 	//printf("CHEGOU MSG !!!!!!!!!!");
 	double error_v = msg->error_t;
@@ -902,7 +902,10 @@ get_pid_steer_feedback_handler(steering_pid_data_message *msg)
 	timestamp_vector.push_back(msg->timestamp);
 	if(moved)
 	{
-		if(msg->atan_current_curvature == 0.0)
+		//printf("CHECANDO %lf!!!\n", msg->atan_current_curvature);
+		//if(msg->atan_current_curvature >= -0.000015 && msg->atan_current_curvature <= -0.0)
+		//if(msg->atan_current_curvature == 0.0)
+		if(msg->atan_current_curvature >= -0.00005 && msg->atan_current_curvature <= -0.0)
 		{
 			if(time_ant == 0)
 			{
@@ -913,7 +916,7 @@ get_pid_steer_feedback_handler(steering_pid_data_message *msg)
 			time_elapsed += currrent_time - time_ant;
 			time_ant = currrent_time;
 			printf("%lf TEMPO PASSS!!!\n", time_elapsed);
-			if(time_elapsed >= 2.0)
+			if(time_elapsed >= 0.5)
 			{
 				FILE *arquivo_teste = fopen("steer_pid.txt", "w");
 				for(long unsigned int i = 0 ; i < current_steer_angle_vector.size(); i++)
