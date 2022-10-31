@@ -138,8 +138,7 @@ velodyne_handler(double velodyne_timestamp, double initial_timestamp, double fin
 	int gpsid = find_nearest_message<StampedPose>(gps_queue, velodyne_timestamp, "gps to velodyne");
 	int odomid = find_nearest_message<StampedOdometry>(odometry_queue, velodyne_timestamp, "odometry to velodyne");
 
-	if ((velodyne_timestamp >= initial_timestamp) && (velodyne_timestamp <= final_timestamp) &&
-		(gpsid >= 0) && (odomid >= 0))
+	if ((velodyne_timestamp >= initial_timestamp) && (velodyne_timestamp <= final_timestamp) &&	(gpsid >= 0) && (odomid >= 0))
 	{
 		if (!is_first) // ignore the first message to get a valid last_time
 		{

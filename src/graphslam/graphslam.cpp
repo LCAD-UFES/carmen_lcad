@@ -275,7 +275,7 @@ add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure,
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
-	cov.data()[8] = pow(carmen_degrees_to_radians(gps_yaw_std), 2.0);
+	cov.data()[8] = pow(gps_std_from_quality_flag * gps_yaw_std, 2.0);
 
 	information = cov.inverse();
 
