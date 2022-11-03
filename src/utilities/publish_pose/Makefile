@@ -2,22 +2,24 @@ include ../../Makefile.conf
 
 CFLAGS += 
 IFLAGS += 
-LFLAGS += -lipc -pthread -lglobal -llocalize_ackerman_interface -lrddf_interface -lparam_interface -lplayback_interface
+LFLAGS += -lipc -pthread -lglobal -llocalize_ackerman_interface -lrddf_interface -lparam_interface -lplayback_interface -lgps_nmea_interface
 
 MODULE_NAME = PUBLISH_POSE
 MODULE_COMMENT = Publish a fixed globalpose
 
-SOURCES = util_publish_pose.cpp util_publish_initial_pose.cpp util_publish_final_goal.cpp
+SOURCES = util_publish_pose.cpp util_publish_initial_pose.cpp util_publish_final_goal.cpp util_publish_dummy_gps.cpp
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES =  
-PUBLIC_BINARIES = util_publish_pose util_publish_initial_pose util_publish_final_goal
+PUBLIC_BINARIES = util_publish_pose util_publish_initial_pose util_publish_final_goal util_publish_dummy_gps
 
-TARGETS = util_publish_pose util_publish_initial_pose util_publish_final_goal
+TARGETS = util_publish_pose util_publish_initial_pose util_publish_final_goal util_publish_dummy_gps
 
 util_publish_pose: util_publish_pose.o 
 
 util_publish_initial_pose: util_publish_initial_pose.o
 
 util_publish_final_goal: util_publish_final_goal.o
+
+util_publish_dummy_gps: util_publish_dummy_gps.o
 
 include ../../Makefile.rules
