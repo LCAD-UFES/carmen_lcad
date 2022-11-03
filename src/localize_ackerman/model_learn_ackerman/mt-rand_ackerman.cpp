@@ -58,6 +58,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+int point_cloud_odometry_using_fake_gps = 0; // Para permitir que o código seja compilado
 
 /*
  * uint32 must be an unsigned integer type capable of holding at least 32

@@ -60,6 +60,8 @@ int basic_messages = 0;
 char *ignore_list = NULL;
 
 int g_publish_odometry = 1;
+int point_cloud_odometry_using_fake_gps = 0;
+
 
 double timestamp_last_message_published = 0.0;
 
@@ -983,7 +985,9 @@ read_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] =
 	{
-		{(char *) "robot",			(char *) "publish_odometry",CARMEN_PARAM_ONOFF,		&(g_publish_odometry),	0, NULL},
+		{(char *) "robot",			(char *) "publish_odometry", CARMEN_PARAM_ONOFF,		&(g_publish_odometry),	0, NULL},
+		{(char *) "point",			(char *) "cloud_odometry_using_fake_gps", CARMEN_PARAM_INT,		&(point_cloud_odometry_using_fake_gps),	0, NULL},
+
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

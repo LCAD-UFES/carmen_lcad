@@ -43,6 +43,7 @@ using namespace cv;
 #define GETINDEX(a) isalpha(a) ? a - 'a' + 10 : a - '0'
 
 extern char *log_filename;
+extern int point_cloud_odometry_using_fake_gps;
 
 int string_up_to_double_length(char *str)
 {
@@ -721,6 +722,13 @@ char *carmen_string_to_gps_gpgga_message(char *string,
 	gps_msg->lat_orient       = CLF_READ_CHAR(&current_pos);
 	gps_msg->longitude_dm     = CLF_READ_DOUBLE(&current_pos);
 	gps_msg->longitude        = carmen_global_convert_degmin_to_double(gps_msg->longitude_dm);
+
+	if (point_cloud_odometry_using_fake_gps)
+	{
+		gps_msg->latitude         = gps_msg->latitude_dm;
+		gps_msg->longitude        = gps_msg->longitude_dm;
+	}
+
 	current_pos = carmen_next_word(current_pos);
 	gps_msg->long_orient      = CLF_READ_CHAR(&current_pos);
 	gps_msg->gps_quality      = CLF_READ_INT(&current_pos);
