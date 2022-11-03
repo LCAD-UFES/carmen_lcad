@@ -13,6 +13,8 @@
 carmen_FILE *logfile = NULL;
 carmen_FILE *logfile_to_fix = NULL;
 char *log_filename = NULL;
+int point_cloud_odometry_using_fake_gps = 0; // Para permitir que o código seja compilado
+
 carmen_logfile_index_p logfile_index = NULL;
 carmen_robot_ackerman_velocity_message *velocity_ackerman_msg;
 

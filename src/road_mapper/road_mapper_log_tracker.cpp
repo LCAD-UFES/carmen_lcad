@@ -12,6 +12,7 @@ using namespace std;
 FILE * open_file(char *fname);
 
 char *log_filename = NULL;
+int point_cloud_odometry_using_fake_gps = 0; // Para permitir que o código seja compilado
 
 // logger/playback.c
 carmen_logfile_index_p
