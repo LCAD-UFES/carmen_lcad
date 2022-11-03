@@ -20,6 +20,7 @@
 carmen_gps_gpgga_message *carmen_gpgga_ptr = NULL;
 carmen_gps_gphdt_message *carmen_gphdt_ptr = NULL;
 int gps_number = 1;
+int autonomous = 0;
 
 
 void
@@ -173,7 +174,8 @@ char *carmen_string_to_publish_gps_gpgga_message(char *string,
 
 	gps_number = gps_msg->nr;
 
-	gps_msg->timestamp = carmen_get_time();
+	if(autonomous == 1)
+		gps_msg->timestamp = carmen_get_time();
 
 	publish_carmen_gps_gpgga_message(gps_number);
 
@@ -196,7 +198,8 @@ char *carmen_string_to_publish_gps_gphdt_message(char *string,
 
 	if(gps_number == 1)
 	{
-		gps_msg->timestamp = gps_msg->timestamp;
+		if(autonomous == 1)
+			gps_msg->timestamp = carmen_get_time();
 		publish_carmen_gps_gphdt_message(gps_number);
 	}
 
@@ -220,28 +223,43 @@ main(int argc, char **argv)
 
 	FILE *dummy_gps_file = fopen(argv[1], "r");
 	num_messages_per_second = atoi(argv[2]);
+	if(argc == 4 && strcmp("-autonomous", argv[3]) == 0)
+		autonomous = 1;
 
 	double sleep_time = (1.0 / (double) num_messages_per_second) * 10e5;
+	int cont = 0;
 
-	while (1)
-	{
+
+//	while (1)
+//	{
+//		FILE *dummy_gps_file = fopen(argv[1], "r");
 		while (fgets(line, size, dummy_gps_file) != NULL)
 		{
 			if(strncmp(line, "NMEAGGA", 7) == 0)
 			{
 				printf("%s\n", line);
 				carmen_string_to_publish_gps_gpgga_message(line, carmen_gpgga_ptr);
+				cont++;
 
 			}
 			else if(strncmp(line, "NMEAHDT", 7) == 0)
 			{
 				carmen_string_to_publish_gps_gphdt_message(line, carmen_gphdt_ptr);
+				cont++;
+			}
+
+			if(cont != 0 && cont % 2 == 0)
+			{
+				usleep((int) sleep_time);
+				printf("Published GPS!\n");
 			}
 
 		}
-		usleep((int) sleep_time);
-		printf("Published GPS!\n");
-	}
+//		fclose(dummy_gps_file);
+//		usleep((int) sleep_time);
+//		printf("Published GPS!\n");
+//	}
+	fclose(dummy_gps_file);
 
 	return 0;
 }
