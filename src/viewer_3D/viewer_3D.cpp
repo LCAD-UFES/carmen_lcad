@@ -395,6 +395,8 @@ int remission_map_side_size_in_meters = 70;
 int remission_map_directory_exists = 1;
 int first_remission_directory_check = 1;
 
+int map_mode = 0;
+
 static carmen_vector_3D_t
 get_position_offset(void)
 {
@@ -3604,6 +3606,31 @@ update_sensos_pose(char *p1 __attribute__ ((unused)), char *p2 __attribute__ ((u
 	car_drawer->laser_pose = velodyne_pose;
 }
 
+void
+update_map_mode_from_parameters()
+{
+	if (map_mode == 1)
+	{
+		draw_map_flag = 1;
+	}
+	else if (map_mode == 2)
+	{
+		draw_costs_map_flag = 1;
+	}
+	else if (map_mode == 3)
+	{
+		draw_offline_map_flag = 1;
+	}
+	else if (map_mode == 4)
+	{
+		draw_remission_map_flag = 1;
+	}
+	else if (map_mode == 5)
+	{
+		draw_map_image_flag = 1;
+	}
+}
+
 
 void
 read_parameters_and_init_stuff(int argc, char** argv)
@@ -3779,7 +3806,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 
 			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.semi_trailers.type), 0, NULL},
 
-			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &mapper_map_grid_res, 0, NULL}
+			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &mapper_map_grid_res, 0, NULL},
         };
 
         num_items = sizeof (param_list) / sizeof (param_list[0]);
@@ -3962,8 +3989,18 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	num_items = sizeof(param_publish_list) / sizeof(param_publish_list[0]);
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_install_params(argc, argv, param_publish_list, num_items);
-}
 
+	carmen_param_t optional_param_list[] =
+	{
+			{(char *) "viewer_3D", (char *) "map_mode", CARMEN_PARAM_INT, &map_mode, 0, NULL},
+	};
+
+	num_items = sizeof(optional_param_list) / sizeof(optional_param_list[0]);
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, optional_param_list, num_items);
+
+	update_map_mode_from_parameters();
+}
 
 void
 destroy_stuff()

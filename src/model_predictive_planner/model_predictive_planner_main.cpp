@@ -830,7 +830,7 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 		if (strcmp(message->command, "MAX_SPEED") == 0)
 			GlobalState::robot_config.max_v = GlobalState::param_max_vel = voice_interface_max_vel;
 		else if (strcmp(message->command, "0.0") == 0)
-			GlobalState::robot_config.max_v = GlobalState::param_max_vel = 0.0;
+			GlobalState::robot_config.max_v = GlobalState::robot_config.max_v; // não faz nada, até ter implementação melhor do soft stop
 		else
 			GlobalState::robot_config.max_v = GlobalState::param_max_vel = strtod(message->command, NULL);
 	}
@@ -907,7 +907,7 @@ register_handlers()
 	carmen_behaviour_selector_subscribe_compact_lane_contents_message(NULL,
 			(carmen_handler_t) carmen_behaviour_selector_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	// carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
