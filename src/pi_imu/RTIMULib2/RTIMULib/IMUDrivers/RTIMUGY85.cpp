@@ -37,7 +37,7 @@ RTIMU5883L_GY85::RTIMU5883L_GY85(RTIMUSettings *settings) : RTIMU(settings)
     m_gyroSlaveAddr = ITG3205_ADDRESS;
     m_accelSlaveAddr = ADXL345_ADDRESS;
     m_compassScale = 1.0;
-    m_gyroScale = 0.00675; //0.00875;
+    m_gyroScale = 0.00875 * 0.05; //0.00875;
     m_accelScale = 0.0384;
 }
 
