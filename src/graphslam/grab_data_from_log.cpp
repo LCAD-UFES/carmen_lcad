@@ -54,7 +54,7 @@ double distance_between_front_and_rear_axles;
 int use_velodyne_timestamp_in_odometry = 0;
 
 int combined_odometry = 0;
-
+int point_cloud_odometry_using_fake_gps = 0;
 int use_variable_scan_message = -1;
 char variable_scan_message_name[64];
 
@@ -313,9 +313,16 @@ read_gps(FILE *f, int gps_to_use)
 
 		fscanf(f, "%lf", &m.timestamp);
 
-		lt = carmen_global_convert_degmin_to_double(lt_dm);
-		lg = carmen_global_convert_degmin_to_double(lg_dm);
-
+		if (point_cloud_odometry_using_fake_gps == 0)
+		{
+			lt = carmen_global_convert_degmin_to_double(lt_dm);
+			lg = carmen_global_convert_degmin_to_double(lg_dm);
+		}
+		else
+		{
+			lt = lt_dm;
+			lg = lg_dm;
+		}
 		// verify the latitude and longitude orientations
 		if ('S' == lt_orientation) lt = -lt;
 		if ('W' == lg_orientation) lg = -lg;
@@ -557,6 +564,8 @@ initialize_parameters(CommandLineArguments *args, CarmenParamFile *carmen_ini_pa
 	// See the carmen ini file
 	combine_odometry_phi = carmen_ini_params->get<int>("robot_combine_odometry_phi");
 	combine_odometry_vel = carmen_ini_params->get<int>("robot_combine_odometry_vel");
+	point_cloud_odometry_using_fake_gps = carmen_ini_params->get<int>("point_cloud_odometry_using_fake_gps");
+
 }
 
 
