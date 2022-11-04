@@ -1,0 +1,7 @@
+wait for button 1 of button set 0
+
+# Escadaria do Teatro
+set course to 7757259.47, -364086.05, 2.979
+go after set course to 7757259.47, -364086.05, 2.979  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
