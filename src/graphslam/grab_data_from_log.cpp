@@ -568,12 +568,8 @@ initialize_parameters(CommandLineArguments *args, CarmenParamFile *carmen_ini_pa
 	// See the carmen ini file
 	combine_odometry_phi = carmen_ini_params->get<int>("robot_combine_odometry_phi");
 	combine_odometry_vel = carmen_ini_params->get<int>("robot_combine_odometry_vel");
-<<<<<<< HEAD
 	gps_nmea_1_yaw = carmen_ini_params->get<double>("gps_nmea_1_yaw");
-=======
 	point_cloud_odometry_using_fake_gps = carmen_ini_params->get<int>("point_cloud_odometry_using_fake_gps");
-
->>>>>>> 4a64fc5741af67867537e1126d0403d85a2ba480
 }
 
 
