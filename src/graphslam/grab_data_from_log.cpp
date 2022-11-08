@@ -61,8 +61,6 @@ char variable_scan_message_name[64];
 double initial_time;
 double final_time;
 
-double gps_nmea_1_yaw = 0.0;
-
 int VERBOSE = 0;
 
 
@@ -190,8 +188,7 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message, int gps_to_use, double 
 			pose.pose.orientation.yaw = hdt_yaw;
 		else
 			pose.pose.orientation.yaw = carmen_normalize_theta(atan2(message->y - gps_queue[gps_queue.size() - 1].pose.position.y,
-						  	  	  	  	  	  	  	  	  	  	  	 message->x - gps_queue[gps_queue.size() - 1].pose.position.x) -
-															   gps_nmea_1_yaw);
+						  	  	  	  	  	  	  	  	  	  	  	 message->x - gps_queue[gps_queue.size() - 1].pose.position.x));
 	}
 	else
 		pose.pose.orientation.yaw = 0.0; // A primeira mensagem nao é usada em velodyne_handler()
@@ -568,7 +565,6 @@ initialize_parameters(CommandLineArguments *args, CarmenParamFile *carmen_ini_pa
 	// See the carmen ini file
 	combine_odometry_phi = carmen_ini_params->get<int>("robot_combine_odometry_phi");
 	combine_odometry_vel = carmen_ini_params->get<int>("robot_combine_odometry_vel");
-	gps_nmea_1_yaw = carmen_ini_params->get<double>("gps_nmea_1_yaw");
 	point_cloud_odometry_using_fake_gps = carmen_ini_params->get<int>("point_cloud_odometry_using_fake_gps");
 }
 
