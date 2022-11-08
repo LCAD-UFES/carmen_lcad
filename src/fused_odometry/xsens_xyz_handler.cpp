@@ -28,6 +28,9 @@ double xsens_magnetic_declination = 0.0;
 
 extern carmen_vector_3D_t gps_initial_pos;
 
+int use_gps = 1;
+double initial_pose[3] = {1000.0, 1000.0, 0.0}; // x, y, yaw
+
 
 int
 is_global_pos_initialized()
@@ -504,6 +507,23 @@ initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 			globalpos_ackerman_initialize_from_xsens(initial_state, xsens_mti->timestamp);
 			xsens_handler.initial_state_initialized = 1;
 		}
+		else if (!use_gps)
+		{
+			carmen_fused_odometry_state_vector initial_state;
+
+			initial_state.pose.position = {initial_pose[0], initial_pose[1], .0};
+			initial_state.xsens_yaw_bias = 0.0;
+			initial_state.pose.orientation =  {.0, .0, initial_pose[2]};
+			initial_state.velocity = {0.0, 0.0, 0.0};
+			initial_state.ang_velocity = get_car_ang_velocity_from_message(xsens_mti);
+			initial_state.phi = 0.0;
+			initial_state.timestamp = xsens_mti->timestamp;
+
+			globalpos_ackerman_initialize_from_xsens(initial_state, xsens_mti->timestamp);
+			xsens_handler.initial_state_initialized = 1;
+
+			printf("initial pose: %lf\t%lf\t%lf\n", initial_pose[0], initial_pose[1], initial_pose[2]);
+		}
 	}
 }
 
@@ -776,7 +796,7 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 		got_gps_message = false;
 	}
 
-	if (request_global_localization && got_gps_message)
+	if (request_global_localization && (got_gps_message || !use_gps))
 	{
 		carmen_fused_odometry_initialize(fused_odometry_parameters);
 		initialize_states(xsens_mti);
@@ -1040,6 +1060,16 @@ initialize_carmen_parameters(xsens_xyz_handler *xsens_handler, int argc, char **
 	
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *)"commandline", (char *)"use_gps", CARMEN_PARAM_ONOFF, &use_gps, 0, NULL},
+		{(char *)"commandline", (char *)"initial_x", CARMEN_PARAM_DOUBLE, &initial_pose[0], 0, NULL},
+		{(char *)"commandline", (char *)"initial_y", CARMEN_PARAM_DOUBLE, &initial_pose[1], 0, NULL},
+		{(char *)"commandline", (char *)"initial_theta", CARMEN_PARAM_DOUBLE, &initial_pose[2], 0, NULL},
+	};
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	xsens_magnetic_declination = carmen_degrees_to_radians(xsens_magnetic_declination);
 }

@@ -36,7 +36,8 @@ static double time_elapsed = 0.;
 
 carmen_simulator_ackerman_truepos_message *simulator_velocity;
 velocity_pid_data_message *velocity_msg =NULL;
-vector<double> current_velocity_vector, desired_velocity_vector, error_vector, timestamp_vector;
+steering_pid_data_message *steer_msg = NULL;
+vector<double> current_steer_angle_vector, desired_steer_angle_vector, error_vector, timestamp_vector;
 
 double velocity_kp = 35.0;
 double velocity_ki = 9.0;
@@ -641,12 +642,12 @@ fill_pid_gain_velocity_parameters_message(double kp,double ki, double kd)
 }
 
 tune_pid_gain_steering_parameters_message* 
-fill_pid_gain_steering_parameters_message()
+fill_pid_gain_steering_parameters_message(double kp,double ki, double kd)
 {
 	tune_pid_gain_steering_parameters_message *pid_msg = (tune_pid_gain_steering_parameters_message*) malloc (sizeof (tune_pid_gain_steering_parameters_message));
-	pid_msg->kd = 30.8;
-	pid_msg->ki = 2008.7;
-	pid_msg->kp = 689.4;
+	pid_msg->kd = kd; //30.8;
+	pid_msg->ki = ki; //2008.7;
+	pid_msg->kp = kp; //689.4;
 	pid_msg->host = carmen_get_host();
 	pid_msg->timestamp = carmen_get_time();
 	return pid_msg;
@@ -736,8 +737,8 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 	//return (execute_motion_command(kp, ki, kd));  // TODO ??? send the motion command to the car and wait for the return
 
 	//chamar o publisher e publicar a mensagem com os parametros kp, ki, kd
-	tune_pid_gain_velocity_parameters_message *pid_vel_msg = fill_pid_gain_velocity_parameters_message(kp, ki, kd);
-	carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(pid_vel_msg , carmen_get_time());
+	tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message(kp, ki, kd);
+	carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());
 	//chamar o publisher e publicar o plano a ser executado (trapezio)
 	//send_trajectory_to_robot();
 
@@ -843,9 +844,9 @@ optimize_PID_gains()
 	// my_func.params = motion_command_message; ???? usar algum parametro?
 
 	v = gsl_vector_alloc (my_func.n);
-	gsl_vector_set(v, 0, 35.0);
-	gsl_vector_set(v, 1, 9.0);
-	gsl_vector_set(v, 2, -0.3);
+	gsl_vector_set(v, 0, 965.0); //gsl_vector_set(v, 0, 35.0);
+	gsl_vector_set(v, 1, 2811.0); // gsl_vector_set(v, 1, 9.0);
+	gsl_vector_set(v, 2, 42.0); //gsl_vector_set(v, 2, -0.3);
 
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, my_func.n);
@@ -865,9 +866,9 @@ optimize_PID_gains()
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
 
-	double kp = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
-	double ki = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
-	double kd = carmen_clamp(-100.0, gsl_vector_get(s->x, 2), 100.0);
+	double kp = gsl_vector_get(s->x, 0); //carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
+	double ki = gsl_vector_get(s->x, 1); //carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
+	double kd = gsl_vector_get(s->x, 2); //carmen_clamp(-100.0, gsl_vector_get(s->x, 2), 100.0);
 	printf("VALOR Kp %lf\n", kp);
 	printf("VALOR Ki %lf\n", ki);
 	printf("VALOR Kd %lf\n", kd);
@@ -880,30 +881,31 @@ optimize_PID_gains()
 
 
 void
-get_pid_velocity_feedback_handler(velocity_pid_data_message *msg)
+get_pid_steer_feedback_handler(steering_pid_data_message *msg)
 {
-	velocity_msg->PID_controler_state = msg->PID_controler_state;
-	velocity_msg->brakes_command = msg->brakes_command;
-	velocity_msg->current_velocity = msg->current_velocity;
-	velocity_msg->derivative_t = msg->derivative_t;
-	velocity_msg->desired_velocity = msg->desired_velocity;
-	velocity_msg->error_t = msg->error_t;
-	velocity_msg->integral_t = msg->integral_t;
-	velocity_msg->throttle_command = msg->throttle_command;
-	velocity_msg->timestamp = msg->timestamp;
+	steer_msg->atan_current_curvature = msg->atan_current_curvature;
+	steer_msg->atan_desired_curvature = msg->atan_desired_curvature;
+	steer_msg->derivative_t = msg->derivative_t;
+	steer_msg->effort = msg->effort;
+	steer_msg->error_t = msg->error_t;
+	steer_msg->integral_t = msg->integral_t;
+	steer_msg->timestamp = msg->timestamp;
 	static FILE *gnuplot_pipe;
 	double currrent_time = 0.0;
-	if(msg->current_velocity > 0.0)
+	if(msg->atan_current_curvature >=  0.01)
 		moved = true;
 	//printf("CHEGOU MSG !!!!!!!!!!");
 	double error_v = msg->error_t;
-	current_velocity_vector.push_back(msg->current_velocity);
-	desired_velocity_vector.push_back(msg->desired_velocity);
+	current_steer_angle_vector.push_back(msg->atan_current_curvature);
+	desired_steer_angle_vector.push_back(msg->atan_desired_curvature);
 	error_vector.push_back(error_v);
 	timestamp_vector.push_back(msg->timestamp);
 	if(moved)
 	{
-		if(msg->current_velocity == 0.0)
+		//printf("CHECANDO %lf!!!\n", msg->atan_current_curvature);
+		//if(msg->atan_current_curvature >= -0.000015 && msg->atan_current_curvature <= -0.0)
+		//if(msg->atan_current_curvature == 0.0)
+		if(msg->atan_current_curvature >= -0.00005 && msg->atan_current_curvature <= -0.0)
 		{
 			if(time_ant == 0)
 			{
@@ -914,26 +916,26 @@ get_pid_velocity_feedback_handler(velocity_pid_data_message *msg)
 			time_elapsed += currrent_time - time_ant;
 			time_ant = currrent_time;
 			printf("%lf TEMPO PASSS!!!\n", time_elapsed);
-			if(time_elapsed >= 2.0)
+			if(time_elapsed >= 0.5)
 			{
-				FILE *arquivo_teste = fopen("velocidade_pid.txt", "w");
-				for(long unsigned int i = 0 ; i < current_velocity_vector.size(); i++)
+				FILE *arquivo_teste = fopen("steer_pid.txt", "w");
+				for(long unsigned int i = 0 ; i < current_steer_angle_vector.size(); i++)
 					fprintf(arquivo_teste, "%lf %lf %lf %lf %lf %lf %lf\n",
-						current_velocity_vector[i], desired_velocity_vector[i], error_vector[i], timestamp_vector[i],
+						current_steer_angle_vector[i], desired_steer_angle_vector[i], error_vector[i], timestamp_vector[i],
 						velocity_kp, velocity_ki, velocity_kd);
 				fflush(arquivo_teste);
 				fclose(arquivo_teste);
 				gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 				fprintf(gnuplot_pipe, "plot "
-						"'./velocidade_pid.txt' using ($4) : ($1) with lines title 'current velocity',"
-						"'./velocidade_pid.txt' using ($4) : ($2) with lines title 'desired velocity', "
-						"'./velocidade_pid.txt' using ($4) : ($3) with lines title 'error'\n");
+						"'./steer_pid.txt' using ($4) : ($1) with lines title 'current steer angle',"
+						"'./steer_pid.txt' using ($4) : ($2) with lines title 'desired steer angle', "
+						"'./steer_pid.txt' using ($4) : ($3) with lines title 'error'\n");
 				fflush(gnuplot_pipe);
 				moved = false;
 				//time_elapsed = 0.;
 				time_ant = 0;
-				current_velocity_vector.clear();
-				desired_velocity_vector.clear();
+				current_steer_angle_vector.clear();
+				desired_steer_angle_vector.clear();
 				//error_vector.clear();
 				timestamp_vector.clear();
 				optimize_PID_gains();
@@ -958,13 +960,13 @@ subscribe_to_relevant_messages()
 	if(first_time)
 	{
 		simulator_velocity = (carmen_simulator_ackerman_truepos_message *) malloc (1 * sizeof(carmen_simulator_ackerman_truepos_message));
-		velocity_msg = (velocity_pid_data_message *) malloc (sizeof (velocity_pid_data_message));
-		velocity_msg->desired_velocity = 0.0;
+		steer_msg = (steering_pid_data_message *) malloc (sizeof (steering_pid_data_message));
+		steer_msg->atan_current_curvature = 0.0;
 		first_time = 0;
 	}
 
 	carmen_simulator_ackerman_subscribe_external_truepos_message(NULL, (carmen_handler_t) get_velocity_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_ford_escape_subscribe_velocity_pid_data_message(NULL, (carmen_handler_t) get_pid_velocity_feedback_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_steering_pid_data_message(NULL, (carmen_handler_t) get_pid_steer_feedback_handler, CARMEN_SUBSCRIBE_LATEST);
 	return (0);
 }
 

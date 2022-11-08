@@ -79,6 +79,7 @@ DEPS    = $(RTIMULIBPATH)/RTMath.h \
     $(RTIMULIBPATH)/IMUDrivers/RTIMUBMX055.h \
     $(RTIMULIBPATH)/IMUDrivers/RTIMUBNO055.h \
     $(RTIMULIBPATH)/IMUDrivers/RTIMUHMC5883LADXL345.h \
+    $(RTIMULIBPATH)/IMUDrivers/RTIMUGY85.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressure.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressureBMP180.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressureLPS25H.h \
@@ -106,6 +107,7 @@ OBJECTS = objects/pi_imu_server_driver.o \
     objects/RTIMUBMX055.o \
     objects/RTIMUBNO055.o \
     objects/RTIMUHMC5883LADXL345.o \
+    objects/RTIMUGY85.o \
     objects/RTPressure.o \
     objects/RTPressureBMP180.o \
     objects/RTPressureLPS25H.o \
@@ -133,6 +135,7 @@ OBJECTS_TEST = objects/pi_imu_test.o \
     objects/RTIMUBMX055.o \
     objects/RTIMUBNO055.o \
     objects/RTIMUHMC5883LADXL345.o \
+    objects/RTIMUGY85.o \
     objects/RTPressure.o \
     objects/RTPressureBMP180.o \
     objects/RTPressureLPS25H.o \

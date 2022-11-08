@@ -648,12 +648,12 @@ plot_graph(int gps_id)
 	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 
 	fprintf(gnuplot_pipe, "set size square; set size ratio -1; "
-						  "plot 'tmp/sync.txt' u 4:5 w l t 'gps xyz', "
-							   "'tmp/sync.txt' u 4:5:(0.5 * cos($6)):(0.5 * sin($6)) with vectors title 'gps xyz vectors', "
-						       "'tmp/poses_opt.txt' u 1:2 w l t 'car', "
-							   "'tmp/poses_opt.txt' u 1:2:(0.5 * cos($3)):(0.5 * sin($3)) with vectors title 'car vectors', "
-							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'car in gps coords', "
-							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2:4:5 with vectors title 'car in gps coords vectors'\n");
+						  "plot 'tmp/sync.txt' u 4:5 w l t 'Poses do GPS' linecolor rgb 'red', "
+							   "'tmp/sync.txt' u 4:5:(0.5 * cos($6)):(0.5 * sin($6)) with vectors title 'Poses do GPS vectors' linecolor rgb 'red', "
+						       "'tmp/poses_opt.txt' u 1:2 w l t 'Poses do GraphSLAM' linecolor rgb 'green', "
+							   "'tmp/poses_opt.txt' u 1:2:(0.5 * cos($3)):(0.5 * sin($3)) with vectors title 'Poses do GraphSLAM vectors' linecolor rgb 'green', "
+							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'Poses do carro em função do GPS' linecolor rgb 'blue', "
+							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2:4:5 with vectors title 'Poses do carro em função do GPS vectors' linecolor rgb 'blue'\n");
 
 	fflush(gnuplot_pipe);
 }

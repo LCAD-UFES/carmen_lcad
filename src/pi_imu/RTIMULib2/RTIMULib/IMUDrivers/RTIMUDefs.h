@@ -44,6 +44,8 @@
 #define RTIMU_TYPE_BMX055                   9                   // Bosch BMX055
 #define RTIMU_TYPE_BNO055                   10                  // Bosch BNO055
 #define RTIMU_TYPE_HMC5883LADXL345          11                  // HMC5883L with ADXL345 and L3G4200D
+#define RTIMU_TYPE_GY85                     12                 // GY85 HMC5833 with ADXL345 and ITG3205
+
 //----------------------------------------------------------
 //
 //  MPU-9150
@@ -148,6 +150,11 @@
 #define HMC5883L_ADDRESS            0x1e
 #define HMC5883L_WHO_AM_I           0x0a
 #define HMC5883L_ID                 0x48
+// ITG3205
+
+#define ITG3205_ADDRESS            0x68
+#define ITG3205_WHO_AM_I           0x00
+#define ITG3205_ID                 0x68
 
 //----------------------------------------------------------
 //
@@ -157,7 +164,7 @@
 
 #define MPU9250_ADDRESS0            0x68
 #define MPU9250_ADDRESS1            0x69
-#define MPU9250_ID                  0x73
+#define MPU9250_ID                  0x75 // pode ser 0x73 ou 0x71...
 
 #define AK8963_ADDRESS              0x0c
 
