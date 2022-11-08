@@ -54,7 +54,6 @@
 #define GPS_1 1
 #define GPS_2 2
 #define SMALL_DELTA_T 0.02
-#define REFERENCE_ANGLE 0.0 // (M_PI)
 
 using namespace std;
 
@@ -78,7 +77,7 @@ double
 //get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
 get_angle_between_gpss(carmen_gps_xyz_message reach1, carmen_gps_xyz_message reach2)
 {
-	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) + REFERENCE_ANGLE;
+	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) - gps_pose_in_the_car.orientation.yaw;
 	angle = carmen_normalize_theta(angle);
 
 	return (angle);
