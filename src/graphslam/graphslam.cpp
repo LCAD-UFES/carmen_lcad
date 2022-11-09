@@ -79,6 +79,8 @@ char protecao0[10000];
 DlWrapper dlSolverWrapper;
 char protecao1[10000];
 
+tf::Transformer *transformer;
+
 
 void
 read_data(char *filename)
@@ -529,7 +531,7 @@ initialize_tf_transfoms(CarmenParamFile *params, Transformer *transformer, int g
 
 
 void
-graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
+graphslam(double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
 		int argc, char **argv)
@@ -537,10 +539,6 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 	srand(time(NULL));
 	if (_SEED_RAND)
 		srand(42);
-
-	CarmenParamFile *params = new CarmenParamFile(carmen_ini_file);
-	tf::Transformer *transformer = new tf::Transformer(false);
-	initialize_tf_transfoms(params, transformer, gps_id);
 
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 
@@ -603,7 +601,7 @@ get_gps_pose_given_car_pose(double &gps_x, double &gps_y, double &gps_yaw, doubl
 
 
 void
-generate_poses_in_gps_coordinates(char *filename, char *filename_in_gps_coordinates, int gps_id)
+generate_poses_in_gps_coordinates(char *filename, char *filename_in_gps_coordinates)
 {
 	FILE *f, *f2;
 	double x, y, theta, timestamp;
@@ -613,10 +611,6 @@ generate_poses_in_gps_coordinates(char *filename, char *filename_in_gps_coordina
 
 	if ((f2 = fopen(filename_in_gps_coordinates, "w")) == NULL)
 		exit(printf("Error: Unable to open file '%s' for wrinting!\n", filename_in_gps_coordinates));
-
-	CarmenParamFile *params = new CarmenParamFile(carmen_ini_file);
-	tf::Transformer *transformer = new tf::Transformer(false);
-	initialize_tf_transfoms(params, transformer, gps_id);
 
 	// Para plotar em forma de vetor, a primeira pose não será plotada
 	double previous_timestamp, previous_gps_x, previous_gps_y, previous_gps_theta;
@@ -641,9 +635,9 @@ generate_poses_in_gps_coordinates(char *filename, char *filename_in_gps_coordina
 
 
 static void
-plot_graph(int gps_id)
+plot_graph()
 {
-	generate_poses_in_gps_coordinates((char *) "tmp/poses_opt.txt", (char *) "tmp/poses_opt_in_gps_coordinates.txt", gps_id);
+	generate_poses_in_gps_coordinates((char *) "tmp/poses_opt.txt", (char *) "tmp/poses_opt_in_gps_coordinates.txt");
 
 	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 
@@ -686,9 +680,13 @@ main(int argc, char **argv)
 	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
 	n_iterations = args.get<int>("n_iterations");
 
-	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
+	CarmenParamFile *params = new CarmenParamFile(carmen_ini_file);
+	transformer = new tf::Transformer(false);
+	initialize_tf_transfoms(params, transformer, gps_id);
 
-	plot_graph(gps_id);
+	graphslam(gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
+
+	plot_graph();
 	
 	printf("Programa concluído normalmente. Tecle qualquer tecla para terminar.\n");
 	fflush(stdout);

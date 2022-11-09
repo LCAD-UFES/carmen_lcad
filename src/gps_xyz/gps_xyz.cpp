@@ -72,12 +72,14 @@ carmen_pose_3D_t gps_pose_in_the_car;
 carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 int base_ackerman_odometry_index = -1;
 
+double vector_antenna_angle = 0.0;
+
 
 double
 //get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
 get_angle_between_gpss(carmen_gps_xyz_message reach1, carmen_gps_xyz_message reach2)
 {
-	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) - gps_pose_in_the_car.orientation.yaw;
+	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) - vector_antenna_angle;
 	angle = carmen_normalize_theta(angle);
 
 	return (angle);
@@ -395,8 +397,8 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 	static double first_timestamp = 0.0;
 	if (first_timestamp == 0)
 		first_timestamp = gps_xyz_message.timestamp;
-	if (gps_xyz_message.timestamp - first_timestamp < 5.0) // wait for deep_vgl
-		return;
+//	if (gps_xyz_message.timestamp - first_timestamp < 5.0) // wait for deep_vgl
+//		return;
 
 	if ((gps_xyz_message.gps_quality < 4) && (graphslam_poses_opt.size() > 0))
 	{
@@ -593,6 +595,7 @@ gps_xyz_read_parameters(int argc, char **argv)
 		{(char *) "gps", (char *) "nmea_1_roll",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.roll,		1, NULL},
 		{(char *) "gps", (char *) "nmea_1_pitch",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.pitch,	1, NULL},
 		{(char *) "gps", (char *) "nmea_1_yaw",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.yaw,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_vector_antenna_angle",		CARMEN_PARAM_DOUBLE, &vector_antenna_angle,		1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
