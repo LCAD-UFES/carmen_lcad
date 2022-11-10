@@ -4022,7 +4022,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	carmen_param_t param_optional_list[] =
 	{
 		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
-		{(char *) "localize_ackerman", (char *) "gps_correction_factor", CARMEN_PARAM_ONOFF, &gps_correction_factor, 0, NULL},
+		{(char *) "localize_ackerman", (char *) "gps_correction_factor", CARMEN_PARAM_DOUBLE, &gps_correction_factor, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
 		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
