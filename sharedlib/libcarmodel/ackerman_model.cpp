@@ -24,13 +24,13 @@ compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trail
 		return (0.0);
 
 	double L = robot_config.distance_between_front_and_rear_axles;
-	double beta1 = robot_and_trailer_traj_point.trailer_theta[0] + dt *
-			robot_and_trailer_traj_point.v * (tan(robot_and_trailer_traj_point.phi) / L -
-						   sin(robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d +
-						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
-
-	double M = semi_trailer_config.semi_trailers.M;
-	double d1 = semi_trailer_config.semi_trailers.d;
+//	double beta1 = robot_and_trailer_traj_point.trailer_theta[0] + dt *
+//			robot_and_trailer_traj_point.v * (tan(robot_and_trailer_traj_point.phi) / L -
+//						   sin(robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d +
+//						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
+//
+//	double M = semi_trailer_config.semi_trailers.M;
+//	double d1 = semi_trailer_config.semi_trailers.d;
 
 	double beta = robot_and_trailer_traj_point.trailer_theta[0] + dt *
 			robot_and_trailer_traj_point.v * (
@@ -38,7 +38,6 @@ compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trail
 						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
 
 //	printf("Teste: %f %f %f\n", beta, beta1, robot_and_trailer_traj_point.theta);
-
 
 	return (beta);
 }
@@ -128,7 +127,7 @@ predict_next_pose_step_new(carmen_robot_and_trailers_traj_point_t *robot_state, 
 
 
 double
-predict_next_pose_step(carmen_robot_and_trailers_traj_point_t *new_robot_state, double target_v, double a, double delta_t,
+predict_next_pose_step(carmen_robot_and_trailers_traj_point_t *new_robot_state, double a, double delta_t,
 		double &achieved_curvature, const double &desired_curvature, double &max_curvature_change,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
@@ -154,7 +153,7 @@ predict_next_pose_step(carmen_robot_and_trailers_traj_point_t *new_robot_state, 
 	new_robot_state->theta += s * tan(new_robot_state->phi) / robot_config.distance_between_front_and_rear_axles;
 	new_robot_state->trailer_theta[0] = compute_semi_trailer_beta(*new_robot_state, delta_t, robot_config, semi_trailer_config);
 
-	new_robot_state->v = target_v;
+	new_robot_state->v = v0 + a * delta_t;
 
 	return (sqrt(move_x * move_x + move_y * move_y));
 }
@@ -185,7 +184,7 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailers_traj_point_t ro
 	// Euler method
 	for (int i = 0; i < n; i++)
 	{
-		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, a, delta_t,
+		double dist_walked = predict_next_pose_step(&achieved_robot_state, a, delta_t,
 				new_curvature, curvature, max_curvature_change, robot_config, semi_trailer_config);
 
 		if (distance_traveled)
@@ -194,7 +193,7 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_robot_and_trailers_traj_point_t ro
 
 	if (remaining_time > 0.0)
 	{
-		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, a, remaining_time,
+		double dist_walked = predict_next_pose_step(&achieved_robot_state, a, remaining_time,
 				new_curvature, curvature, max_curvature_change, robot_config, semi_trailer_config);
 
 		if (distance_traveled)

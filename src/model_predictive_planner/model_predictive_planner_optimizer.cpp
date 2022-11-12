@@ -362,10 +362,9 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 
 		robot_state.trailer_theta[0] = convert_theta1_to_beta(robot_state.theta, robot_state.trailer_theta[0]);
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
-		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
-
 		if (GlobalState::eliminate_path_follower && (i > 70))
 			delta_t = multiple_delta_t;
+		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
 
 		i++;
 	}
