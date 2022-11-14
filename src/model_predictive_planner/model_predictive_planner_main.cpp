@@ -41,6 +41,7 @@ static char **argv_global;
 
 int use_unity_simulator = 0;
 
+extern double desired_v;
 
 //static void
 //print_path_(vector<carmen_robot_and_trailer_path_point_t> path)
@@ -658,7 +659,6 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 		build_and_follow_path(msg->timestamp);
 }
 
-double desired_v = 0.0;
 
 static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)

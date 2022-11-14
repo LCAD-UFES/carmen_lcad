@@ -55,7 +55,7 @@ bool use_obstacles = true;
 
 extern int use_unity_simulator;
 
-extern double desired_v;
+double desired_v = 0.001;
 
 
 void
