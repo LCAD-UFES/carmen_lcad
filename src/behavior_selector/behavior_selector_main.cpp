@@ -1773,7 +1773,7 @@ lume_extra_keys_message_handler(carmen_extra_keys_message_t *msg)
 	{
 		carmen_voice_interface_command_message message;
 		message.command_id = SET_SPEED;
-		message.command = "0.0";
+		message.command = (char *) "0.0";
 		message.host = carmen_get_host();
 		message.timestamp = carmen_get_time();
 		carmen_voice_interface_publish_command_message(&message);
@@ -1783,7 +1783,7 @@ lume_extra_keys_message_handler(carmen_extra_keys_message_t *msg)
 	{
 		carmen_voice_interface_command_message message;
 		message.command_id = SET_SPEED;
-		message.command = "MAX_SPEED";
+		message.command = (char *) "MAX_SPEED";
 		message.host = carmen_get_host();
 		message.timestamp = carmen_get_time();
 		carmen_voice_interface_publish_command_message(&message);
