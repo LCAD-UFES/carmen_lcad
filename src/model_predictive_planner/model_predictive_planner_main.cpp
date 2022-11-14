@@ -658,6 +658,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 		build_and_follow_path(msg->timestamp);
 }
 
+double desired_v = 0.0;
 
 static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
@@ -665,7 +666,6 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	path_goals_and_annotations_message = msg;
 
 	Pose goal_pose;
-	double desired_v;
 
 	if ((msg->goal_list_size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
 	{
