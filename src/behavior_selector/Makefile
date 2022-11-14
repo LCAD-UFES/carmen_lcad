@@ -5,7 +5,7 @@ MODULE_COMMENT = Change path planner algorithms and speed limits
 
 LINK=g++ 
 CFLAGS += -std=c99 
-CXXFLAGS += -std=c++11 
+CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
 
 #LINK=g++ -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
 #CFLAGS += -std=c99 -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined

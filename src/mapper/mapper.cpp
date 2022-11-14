@@ -35,6 +35,8 @@
 
 extern double safe_range_above_sensors;
 extern double safe_height_from_ground;
+extern int level_msg;
+extern double safe_height_from_ground_level;
 
 extern double robot_wheel_radius;
 
@@ -345,6 +347,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 
 	for (int j = 0; j < N; j += 1)
 	{
+		printf("safe_height_from_ground %lf\n", safe_height_from_ground);
 		i = j * sensor_params->vertical_resolution;
 		double dt2 = j * dt;
 		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(
@@ -2834,13 +2837,18 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "commandline", (char *) "num_clouds", CARMEN_PARAM_INT, &neural_map_num_clouds, 0, NULL},
 		{(char *) "commandline", (char *) "time_secs_between_map_save", CARMEN_PARAM_DOUBLE, &time_secs_between_map_save, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
+		{(char *) "commandline", (char *) "level_msg", CARMEN_PARAM_INT, &level_msg, 0, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map",		   CARMEN_PARAM_ONOFF,  &publish_diff_map, 		    1, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map_interval", CARMEN_PARAM_DOUBLE, &publish_diff_map_interval, 1, NULL},
+		{(char *) "mapper", 	 (char *) "safe_height_from_ground_level1", CARMEN_PARAM_DOUBLE, &safe_height_from_ground_level, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	if (mapping_mode == 0 || mapping_mode == 1)
 		carmen_mapper_override_mapping_mode_params(argc, argv);
+	
+	if (level_msg == 1)
+		safe_height_from_ground = safe_height_from_ground_level;
 
 	// FILL THE sensor_params STRUCTURE VECTOR
 	carmen_mapper_get_sensors_param(argc, argv);

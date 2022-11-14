@@ -41,6 +41,7 @@ static char **argv_global;
 
 int use_unity_simulator = 0;
 
+extern double desired_v;
 
 //static void
 //print_path_(vector<carmen_robot_and_trailer_path_point_t> path)
@@ -665,7 +666,6 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	path_goals_and_annotations_message = msg;
 
 	Pose goal_pose;
-	double desired_v;
 
 	if ((msg->goal_list_size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
 	{
@@ -822,7 +822,7 @@ ford_escape_status_handler(carmen_ford_escape_status_message *msg)
 }
 
 
-static void
+void
 carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
 {
 	if (message->command_id == SET_SPEED)

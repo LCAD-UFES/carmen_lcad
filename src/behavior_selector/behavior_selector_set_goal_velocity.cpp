@@ -226,7 +226,7 @@ nearest_pose_is_the_final_pose(carmen_robot_and_trailers_traj_point_t current_ro
 
 
 carmen_annotation_t *
-check_busy_queue_annotations(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
+check_busy_queue_annotations(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi __attribute__ ((unused)))
 {
 	// int cont = 0;
 	// for (int i = 0; i < annotation_message.num_annotations; i++)
@@ -251,8 +251,6 @@ check_busy_queue_annotations(int annotation, carmen_rddf_annotation_message anno
 carmen_annotation_t *
 check_busy_queue_annotations_in_front(int annotation, carmen_rddf_annotation_message annotation_message, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi)
 {
-	int busy_queue_index = -1;
-
 	for (int i = 0; i < annotation_message.num_annotations; i++)
 	{
 		if ((annotation_message.annotations[i].annotation_type == annotation) &&
@@ -331,9 +329,9 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 
 
 bool
-busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi, double timestamp __attribute__ ((unused)))
 {
-	static double last_queue_busy_timestamp = 0.0;
+//	static double last_queue_busy_timestamp = 0.0;
 
 	carmen_annotation_t *busy_queue_ahead = check_busy_queue_annotations_in_front(RDDF_ANNOTATION_TYPE_QUEUE,
 			last_rddf_annotation_message, &current_robot_pose_v_and_phi);
@@ -343,8 +341,8 @@ busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 
 	if (busy_queue_ahead == NULL)
 		return (false);
-	else
-		last_queue_busy_timestamp = timestamp;
+//	else
+//		last_queue_busy_timestamp = timestamp;
 
 	return (true);
 
@@ -1249,7 +1247,7 @@ set_goal_velocity(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
 	previous_v = goal->v;
-	if ((fabs(goal->v) < 1.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.5) &&
+	if ((fabs(goal->v) < 1.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.3) &&
 //		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
 		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 0.5))
 	{
