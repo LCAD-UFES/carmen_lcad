@@ -17,7 +17,7 @@ LFLAGS += -ljsoncpp
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 IFLAGS += -I /usr/local/include/ouster -I /usr/local/include/optional-lite -I /usr/local/include/ouster/imp
 
-LFLAGS += -lparam_interface -lglobal -lipc -pthread -lvelodyne_interface -louster_client -louster_viz -louster_pcap -ltins -lpcap
+LFLAGS += -lparam_interface -lglobal -lipc -pthread -lvelodyne_interface -louster_client -louster_viz -louster_pcap -ltins -lpcap -lcurl
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 
 # carmen related libraries

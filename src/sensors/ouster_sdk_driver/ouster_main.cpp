@@ -20,7 +20,7 @@
 
 using namespace ouster;
 
-#define number_of_rays_per_message 16
+#define number_of_rays_per_message 32
 
 const size_t N_SCANS = 1;
 const size_t UDP_BUF_SIZE = 65536;
@@ -104,7 +104,7 @@ read_parameters(int argc, char **argv)
 int 
 main(int argc, char* argv[]) 
 {
-    std::cerr << "Ouster client SDK Version " << ouster::CLIENT_VERSION << std::endl;
+    std::cerr << "Ouster client SDK Version " << ouster::SDK_VERSION_FULL << std::endl;
     /*
      * The sensor client consists of the network client and a library for
      * reading and working with data.
@@ -169,7 +169,7 @@ main(int argc, char* argv[])
     		carmen_ipc_disconnect();
     		exit(0);
     	}
-    	for (size_t i = 0; i < h / number_of_rays_per_message; i++)
+    	for (size_t i = 0; i < 4; i++)
 		{
 			carmen_velodyne_variable_scan_message message;
 			setup_message(message, w, number_of_rays_per_message);
@@ -188,7 +188,7 @@ main(int argc, char* argv[])
     int number_of_messages_to_publish;
     if (is_alternated)
     {
-    	number_of_messages_to_publish = (h / number_of_rays_per_message);
+    	number_of_messages_to_publish = (4);
     }else
     {
     	number_of_messages_to_publish = 1;
@@ -319,21 +319,22 @@ main(int argc, char* argv[])
 				}else
 				{
 					//RAIOS ALTERNADOS
-					for (size_t i = 0; i < h / number_of_rays_per_message; i++)
+					//std::cerr << "entrei alternado " << h / number_of_rays_per_message << std::endl;
+					for (size_t i = 0; i < 4; i++)
 					{
-						double shot_angle_correction = carmen_normalize_angle_degree(carmen_radians_to_degrees(shot_angle) +  (info.beam_azimuth_angles.at(i % (h / number_of_rays_per_message))) + 180);
+						double shot_angle_correction = carmen_normalize_angle_degree(carmen_radians_to_degrees(shot_angle) +  (info.beam_azimuth_angles.at(i % (4))) + 180);
 						//std::cout<< info.beam_azimuth_angles.at(i % (h / number_of_rays_per_message)) << "\n";
 						// std::cerr << "\n angle " << shot_angle << " shot_angle_correction " << shot_angle_correction << std::endl;
-						vector_msgs[i % (h / number_of_rays_per_message)].partial_scan[m_id].angle = shot_angle_correction;
+						vector_msgs[i % (4)].partial_scan[m_id].angle = shot_angle_correction;
 
-						vector_msgs[i % (h / number_of_rays_per_message)].partial_scan[m_id].shot_size = number_of_rays_per_message;
+						vector_msgs[i % (4)].partial_scan[m_id].shot_size = number_of_rays_per_message;
 					}
 					// std::cerr << "angle_correction " << angle_correction << std::endl;
 
 					for (size_t ipx = 0; ipx < h ; ipx++)
 					{
-						vector_msgs[ipx % (h / number_of_rays_per_message)].partial_scan[m_id].distance[(int) (ipx / (h / number_of_rays_per_message))] = (unsigned int)range(ipx, m_id);
-						vector_msgs[ipx % (h / number_of_rays_per_message)].partial_scan[m_id].intensity[(int) (ipx / (h / number_of_rays_per_message))] = (unsigned short)intensity(ipx, m_id);
+						vector_msgs[ipx % (4)].partial_scan[m_id].distance[(int) (ipx / (4))] = (unsigned int)range(ipx, m_id);
+						vector_msgs[ipx % (4)].partial_scan[m_id].intensity[(int) (ipx / (4))] = (unsigned short)intensity(ipx, m_id);
 						/*std::cout<< "indice msg " << ipx % (h / number_of_rays_per_message) << "\n";
 						std::cout<< "indice raio " << m_id << "\n";
 						std::cout<< "indice shot " << ipx << "\n";
@@ -346,16 +347,16 @@ main(int argc, char* argv[])
 
 			if (is_alternated)
 			{
-				for (int i = 0; i < number_of_messages_to_publish; i++)
+				for (int i = 0; i < 4; i++)
 				{
 					vector_msgs[i].host = carmen_get_host();
 					vector_msgs[i].timestamp = carmen_get_time();
 					vector_msgs[i].number_of_shots = number_of_shots;
 					carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (ouster_sensor_id + i));
 
-					if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
+					/*if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
 						//break para preencher apenas uma menssagem para Lidars com raios alinhados
-						break;
+						break;*/
 				}
 			}
 			else
