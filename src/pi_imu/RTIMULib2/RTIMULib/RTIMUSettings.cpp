@@ -308,7 +308,14 @@ bool RTIMUSettings::discoverIMU(int& imuType, bool& busIsI2C, unsigned char& sla
                 busIsI2C = true;
                 HAL_INFO("Detected BMX055 at standard address\n");
                 return true;
+            }else   if (result == ITG3205_ID) {
+            		imuType = RTIMU_TYPE_GY85;
+            		slaveAddress = ITG3205_ADDRESS;
+            		busIsI2C = true;
+            		HAL_INFO("Detected GY85 at standard address\n");
+            		return true;
             }
+                
         }
         if (HALRead(BMX055_GYRO_ADDRESS1, BMX055_GYRO_WHO_AM_I, 1, &result, "")) {
             if (result == BMX055_GYRO_ID) {
@@ -340,13 +347,17 @@ bool RTIMUSettings::discoverIMU(int& imuType, bool& busIsI2C, unsigned char& sla
         }
 	if (HALRead(HMC5883_ADDRESS, HMC5883L_WHO_AM_I, 1, &result, "")) {
 	    if (result == HMC5883L_ID) {
+
+          
 		imuType = RTIMU_TYPE_HMC5883LADXL345;
 		slaveAddress = HMC5883_ADDRESS;
 		busIsI2C = true;
 		HAL_INFO("Detected HMC5883L at standard address\n");
 		return true;
+                
 	    }
 	}
+    
         HALClose();
     }
 
@@ -945,6 +956,7 @@ bool RTIMUSettings::saveSettings()
     setComment("  9 = Bosch BMX055");
     setComment("  10 = Bosch BNX055");
     setComment("  11 = HMC5883L + ADXL345 + L3G4200D");
+    setComment("  12 = HMC5883L + ADXL345 + ITG3202");
     setValue(RTIMULIB_IMU_TYPE, m_imuType);
 
     setBlank();

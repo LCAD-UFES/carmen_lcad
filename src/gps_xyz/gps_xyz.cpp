@@ -26,6 +26,7 @@
  *
  ********************************************************/
 
+#include <tf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,7 +55,6 @@
 #define GPS_1 1
 #define GPS_2 2
 #define SMALL_DELTA_T 0.02
-#define REFERENCE_ANGLE 0.0 // (M_PI)
 
 using namespace std;
 
@@ -69,16 +69,21 @@ vector<carmen_gps_xyz_message> gps_xyz_message_queue;
 
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t gps_pose_in_the_car;
+carmen_pose_3D_t gps_vector_antenna_pose;
+double distance_between_gpss_atennnas = 0.0;
 
 carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 int base_ackerman_odometry_index = -1;
 int use_kalman = 0;
 
+double vector_antenna_angle = 0.0;
+
+
 double
 //get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
 get_angle_between_gpss(carmen_gps_xyz_message reach1, carmen_gps_xyz_message reach2)
 {
-	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) + REFERENCE_ANGLE;
+	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) - vector_antenna_angle;
 	angle = carmen_normalize_theta(angle);
 
 	return (angle);
@@ -101,6 +106,11 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 				{
 					if ((gps_xyz_message_queue[j].nr == GPS_2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
 					{
+						double distance = DIST2D(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
+						double ratio_between_phisical_and_current_distances = distance_between_gpss_atennnas / distance;
+						if ((ratio_between_phisical_and_current_distances > 1.2) || (ratio_between_phisical_and_current_distances < 0.8))
+							break;
+
 						angle = get_angle_between_gpss(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
 						break;
 					}
@@ -200,8 +210,6 @@ publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gphdt_p
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-#include <tf.h>
 
 tf::Transformer tf_transformer;
 
@@ -446,8 +454,8 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 		lng = gps_xyz_message.y;
 		last_timestamp = first_timestamp;
 	}
-	if (gps_xyz_message.timestamp - first_timestamp < 5.0) // wait for deep_vgl
-		return;
+//	if (gps_xyz_message.timestamp - first_timestamp < 5.0) // wait for deep_vgl
+//		return;
 
 	if ((gps_xyz_message.gps_quality < 4) && (graphslam_poses_opt.size() > 0))
 	{
@@ -657,6 +665,13 @@ gps_xyz_read_parameters(int argc, char **argv)
 		{(char *) "gps", (char *) "nmea_1_roll",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.roll,		1, NULL},
 		{(char *) "gps", (char *) "nmea_1_pitch",	CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.pitch,	1, NULL},
 		{(char *) "gps", (char *) "nmea_1_yaw",		CARMEN_PARAM_DOUBLE, &gps_pose_in_the_car.orientation.yaw,		1, NULL},
+		{(char *) "gps", (char *) "nmea_1_vector_antenna_angle",		CARMEN_PARAM_DOUBLE, &vector_antenna_angle,		1, NULL},
+		{(char *) "gps", (char *) "nmea_2_x",		CARMEN_PARAM_DOUBLE, &gps_vector_antenna_pose.position.x,		1, NULL},
+		{(char *) "gps", (char *) "nmea_2_y",		CARMEN_PARAM_DOUBLE, &gps_vector_antenna_pose.position.y,		1, NULL},
+		{(char *) "gps", (char *) "nmea_2_z",		CARMEN_PARAM_DOUBLE, &gps_vector_antenna_pose.position.z,		1, NULL},
+		{(char *) "gps", (char *) "nmea_2_roll",	CARMEN_PARAM_DOUBLE, &gps_vector_antenna_pose.orientation.roll,		1, NULL},
+		{(char *) "gps", (char *) "nmea_2_pitch",	CARMEN_PARAM_DOUBLE, &gps_vector_antenna_pose.orientation.pitch,	1, NULL},
+		{(char *) "gps", (char *) "nmea_2_yaw",		CARMEN_PARAM_DOUBLE, &gps_vector_antenna_pose.orientation.yaw,		1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -669,8 +684,10 @@ gps_xyz_read_parameters(int argc, char **argv)
 	};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	if (kalman)
+	if (use_kalman)
 		printf("Using Kalman filter\n");
+
+	distance_between_gpss_atennnas = DIST2D(gps_pose_in_the_car.position, gps_vector_antenna_pose.position);
 }
 
 

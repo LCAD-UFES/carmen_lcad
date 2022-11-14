@@ -822,7 +822,7 @@ ford_escape_status_handler(carmen_ford_escape_status_message *msg)
 }
 
 
-static void
+void
 carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
 {
 	if (message->command_id == SET_SPEED)

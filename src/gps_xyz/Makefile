@@ -3,8 +3,8 @@ include ../Makefile.conf
 MODULE_NAME = "GPS XYZ"
 MODULE_COMMENT = "GPS Module XYZ"
 
-CFLAGS += -std=c++11 #-DPARSE_DEBUG
-CXXFLAGS += -std=c++11 
+CFLAGS += 
+CXXFLAGS += -std=c++11 -Wno-parentheses
 IFLAGS += 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ 
