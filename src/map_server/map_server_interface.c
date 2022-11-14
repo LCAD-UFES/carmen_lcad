@@ -158,6 +158,19 @@ carmen_map_server_subscribe_offline_map(carmen_map_server_offline_map_message *m
 			handler, subscribe_how);
 }
 
+
+void
+carmen_map_server_subscribe_offline_map_level1(carmen_map_server_offline_map_message *message,
+		carmen_handler_t handler,
+		carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_MAP_SERVER_OFFLINE_MAP_LEVEL1_NAME,
+			CARMEN_MAP_SERVER_OFFLINE_MAP_FMT,
+			message, sizeof(carmen_map_server_offline_map_message),
+			handler, subscribe_how);
+}
+
+
 void
 carmen_map_server_subscribe_road_map(carmen_map_server_road_map_message *message,
 		carmen_handler_t handler,
@@ -221,6 +234,16 @@ carmen_map_server_define_offline_map_message(void)
 	err = IPC_defineMsg(CARMEN_MAP_SERVER_OFFLINE_MAP_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_MAP_SERVER_OFFLINE_MAP_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAP_SERVER_OFFLINE_MAP_NAME);
+}
+
+void
+carmen_map_server_define_offline_map_level1_message(void)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_MAP_SERVER_OFFLINE_MAP_LEVEL1_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_MAP_SERVER_OFFLINE_MAP_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAP_SERVER_OFFLINE_MAP_LEVEL1_NAME);
 }
 
 void
@@ -356,6 +379,25 @@ carmen_map_server_publish_offline_map_message(carmen_map_t *carmen_map, double t
 	err = IPC_publishData(CARMEN_MAP_SERVER_OFFLINE_MAP_NAME, &msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAP_SERVER_OFFLINE_MAP_NAME);
 }
+
+
+void
+carmen_map_server_publish_offline_map_level1_message(carmen_map_t *carmen_map, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+	static carmen_map_server_offline_map_message msg;
+
+//	strcpy(msg.config.origin, carmen_map->config.origin);
+	msg.complete_map = carmen_map->complete_map;
+	msg.size = carmen_map->config.x_size * carmen_map->config.y_size;
+	msg.config = carmen_map->config;
+	msg.host = carmen_get_host();
+	msg.timestamp = timestamp;
+
+	err = IPC_publishData(CARMEN_MAP_SERVER_OFFLINE_MAP_LEVEL1_NAME, &msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAP_SERVER_OFFLINE_MAP_LEVEL1_NAME);
+}
+
 
 void
 carmen_map_server_publish_road_map_message(carmen_map_t *carmen_road_map, double timestamp)

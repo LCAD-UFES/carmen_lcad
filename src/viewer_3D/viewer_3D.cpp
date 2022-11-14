@@ -4363,9 +4363,9 @@ subscribe_ipc_messages(void)
     										(carmen_handler_t) mapper_map_message_handler,
 											CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_mapper_subscribe_map_level1_message(NULL,
-                                    		(carmen_handler_t) mapper_map_level1_message_handler,
-											CARMEN_SUBSCRIBE_LATEST);
+    // carmen_mapper_subscribe_map_level1_message(NULL,
+    //                                 		(carmen_handler_t) mapper_map_level1_message_handler,
+	// 										CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_cost_map(NULL,
 											(carmen_handler_t) map_server_compact_cost_map_message_handler,

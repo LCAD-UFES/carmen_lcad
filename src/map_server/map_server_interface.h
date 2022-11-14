@@ -27,6 +27,11 @@ void carmen_map_server_subscribe_offline_map(
 		carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how);
 
+void carmen_map_server_subscribe_offline_map_level1(
+		carmen_map_server_offline_map_message *message,
+		carmen_handler_t handler,
+		carmen_subscribe_t subscribe_how);
+
 void
 carmen_map_server_subscribe_road_map(
 		carmen_map_server_road_map_message *message,
@@ -45,6 +50,8 @@ void carmen_map_server_subscribe_cost_map(
 
 void carmen_map_server_publish_offline_map_message(carmen_map_t *carmen_map, double timestamp);
 
+void carmen_map_server_publish_offline_map_level1_message(carmen_map_t *carmen_map, double timestamp);
+
 void carmen_map_server_publish_road_map_message(carmen_map_t *carmen_road_map, double timestamp);
 
 void carmen_map_server_publish_cost_map_message(carmen_map_t *carmen_map, double timestamp);
@@ -52,6 +59,8 @@ void carmen_map_server_publish_cost_map_message(carmen_map_t *carmen_map, double
 void carmen_map_server_publish_lane_map_message(carmen_map_t *carmen_map, double timestamp);
 
 void carmen_map_server_define_offline_map_message(void);
+
+void carmen_map_server_define_offline_map_level1_message(void);
 
 void carmen_map_server_define_road_map_message(void);
 

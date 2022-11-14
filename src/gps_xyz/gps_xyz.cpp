@@ -26,6 +26,7 @@
  *
  ********************************************************/
 
+#include <tf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,6 +74,7 @@ double distance_between_gpss_atennnas = 0.0;
 
 carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 int base_ackerman_odometry_index = -1;
+int use_kalman = 0;
 
 double vector_antenna_angle = 0.0;
 
@@ -209,8 +211,6 @@ publish_carmen_gps_gphdt_message(carmen_gps_gphdt_message *carmen_extern_gphdt_p
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <tf.h>
-
 tf::Transformer tf_transformer;
 
 
@@ -334,6 +334,48 @@ get_nearest_graphslam_gps_pose_opt(double timestamp)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+double min_accuracy = 1.0;
+double kalman_Q = 3.0; // in meters per second
+/*
+	parâmetro livre Q, expresso em metros por segundo, que descreve a rapidez com que a precisão diminui na 
+	ausência de novas estimativas de localização. Um parâmetro Q mais alto significa que a precisão diminui mais rapidamente. 
+	Os filtros Kalman geralmente funcionam melhor quando a precisão diminui um pouco mais rápido do que o esperado.
+*/
+
+double last_timestamp = 0.0;
+double lat = 0.0;
+double lng = 0.0;
+double variance = -1.0;
+void kalman(double lat_measurement, double lng_measurement, double accuracy, double timestamp) {
+    if (accuracy < min_accuracy) accuracy = min_accuracy;
+    if (variance < 0) {
+        // if variance < 0, object is unitialised, so initialise with current values
+        last_timestamp = timestamp;
+        lat = lat_measurement; lng = lng_measurement; variance = accuracy*accuracy; 
+    } else {
+        // else apply Kalman filter methodology
+
+       double timestamp_inc = timestamp - last_timestamp;
+        if (timestamp_inc > 0) {
+            // time has moved on, so the uncertainty in the current position increases
+            variance += timestamp_inc * kalman_Q * kalman_Q / 1000.0;
+            last_timestamp = timestamp;
+            // TO DO: USE VELOCITY INFORMATION HERE TO GET A BETTER ESTIMATE OF CURRENT POSITION
+        }
+
+        // Kalman gain matrix K = Covarariance * Inverse(Covariance + MeasurementVariance)
+        // NB: because K is dimensionless, it doesn't matter that variance has different units to lat and lng
+        double K = variance / (variance + accuracy * accuracy);
+        // apply K
+        lat += K * (lat_measurement - lat);
+        lng += K * (lng_measurement - lng);
+        // new Covarariance  matrix is (IdentityMatrix - K) * Covarariance 
+        variance = (1 - K) * variance;
+    }
+}
+
+char *filename = NULL;
+FILE *fgps;
 void
 carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 {
@@ -391,7 +433,7 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 	gps_xyz_message.z = 0.0;
 	gps_xyz_message.zone = (double)utm.zone;
 
-	//printf("%lf %lf -> %lf %lf %lf\n", latitude, longitude, gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.z);
+	// printf("%lf %lf -> %lf %lf %lf\n", latitude, longitude, gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.z);
 
 	if (utm.hemisphere_north == true)
 		gps_xyz_message.hemisphere_north = 1;
@@ -403,7 +445,15 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 
 	static double first_timestamp = 0.0;
 	if (first_timestamp == 0)
+	{
+		if (use_kalman || filename)
+			fgps = fopen(filename, "w");
+
 		first_timestamp = gps_xyz_message.timestamp;
+		lat = gps_xyz_message.x;
+		lng = gps_xyz_message.y;
+		last_timestamp = first_timestamp;
+	}
 //	if (gps_xyz_message.timestamp - first_timestamp < 5.0) // wait for deep_vgl
 //		return;
 
@@ -417,7 +467,18 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 			gps_xyz_message.y = graphslam_gps_pose->y;
 		}
 	}
-//	printf("%lf %lf %d\n", gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.gps_quality);
+
+	double accuracy = 1.0;
+	
+	if (use_kalman)
+	{
+		kalman(gps_xyz_message.x, gps_xyz_message.y, accuracy, gps_xyz_message.timestamp);
+		fprintf(fgps, "%lf\t%lf\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.x, gps_xyz_message.y, lat, lng, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
+		gps_xyz_message.x = lat;
+		gps_xyz_message.y = lng;
+	}
+	else if (filename)
+		fprintf(fgps, "%lf\t%lf\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
 
 	carmen_gps_xyz_publish_message(gps_xyz_message);
 
@@ -532,7 +593,9 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 void
 shutdown_module(int signo)
 {
-		carmen_ipc_disconnect();
+	if (use_kalman || filename)
+		fclose(fgps);
+	carmen_ipc_disconnect();
 	if (signo == SIGINT)
 	{
 		printf("gps_xyz: disconnected.\n");
@@ -612,6 +675,18 @@ gps_xyz_read_parameters(int argc, char **argv)
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "kalman", CARMEN_PARAM_ONOFF, &use_kalman, 0, NULL},
+		{(char *) "commandline", (char *) "save_file", CARMEN_PARAM_STRING, &filename, 0, NULL},
+	};
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
+	if (use_kalman)
+		printf("Using Kalman filter\n");
+
 	distance_between_gpss_atennnas = DIST2D(gps_pose_in_the_car.position, gps_vector_antenna_pose.position);
 }
 
@@ -623,7 +698,7 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, shutdown_module);
 
-	if (argc == 2)
+	if ((argc == 2) && (argv[1][0] != '-'))
 		read_poses_opt_data_file(argv[1]);
 
 	gps_xyz_read_parameters(argc, argv);
