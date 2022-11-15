@@ -18,7 +18,7 @@
 #include "util.h"
 #include "model_predictive_planner_optimizer.h"
 
-#define LINEAR_ACCELERATION true
+#define LINEAR_ACCELERATION false
 
 //#define PUBLISH_PLAN_TREE
 #ifdef PUBLISH_PLAN_TREE
@@ -55,7 +55,7 @@ bool use_obstacles = true;
 
 extern int use_unity_simulator;
 
-extern double desired_v;
+double desired_v = 0.001;
 
 
 void
