@@ -18,7 +18,7 @@
 #include "util.h"
 #include "model_predictive_planner_optimizer.h"
 
-#define LINEAR_ACCELERATION true
+#define LINEAR_ACCELERATION false
 
 //#define PUBLISH_PLAN_TREE
 #ifdef PUBLISH_PLAN_TREE
