@@ -73,6 +73,7 @@ int use_truepos = 0;
 
 double lane_width = 0.0;
 
+int level_msg = 0;
 
 
 //static void
@@ -379,6 +380,12 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 //		carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
 
 		strcpy(current_map->config.origin, "from_param_daemon");
+		if (level_msg == 1)
+		{
+			carmen_map_server_publish_offline_map_level1_message(current_map, timestamp);
+			offline_map_published = 1;
+			return;
+		}
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
 		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
 		offline_map_published = 1;
@@ -451,7 +458,12 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	if (first_time)
 	{
 		if (current_map->complete_map != NULL)
-			carmen_map_server_publish_offline_map_message(current_map, msg->timestamp);
+		{
+			if (level_msg == 1)
+				carmen_map_server_publish_offline_map_level1_message(current_map, msg->timestamp);
+			else
+				carmen_map_server_publish_offline_map_message(current_map, msg->timestamp);
+		}
 
 		first_time = 0;
 	}
@@ -471,7 +483,12 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	if (first_time)
 	{
 		if (current_map->complete_map != NULL)
-			carmen_map_server_publish_offline_map_message(current_map, msg->timestamp);
+		{
+			if (level_msg == 1)
+				carmen_map_server_publish_offline_map_level1_message(current_map, msg->timestamp);
+			else
+				carmen_map_server_publish_offline_map_message(current_map, msg->timestamp);
+		}
 
 		first_time = 0;
 	}
@@ -572,6 +589,28 @@ map_request_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData _
 		carmen_test_ipc(err, "Could not respond", CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_NAME);
 	}
 }
+
+static void
+map_level1_request_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __attribute__ ((unused)))
+{
+	carmen_mapper_map_message map_msg;
+	IPC_RETURN_TYPE err;
+
+	if (current_map->complete_map != NULL)
+	{
+		IPC_freeByteArray(callData);
+
+		map_msg.config = current_map->config;
+		map_msg.complete_map = current_map->complete_map;
+		map_msg.size = current_map->config.x_size * current_map->config.y_size;
+		map_msg.host = carmen_get_host();
+		map_msg.timestamp = carmen_get_time();
+
+		err = IPC_respondData(msgRef, CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_LEVEL1_NAME, &map_msg);
+		carmen_test_ipc(err, "Could not respond", CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_LEVEL1_NAME);
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -664,13 +703,14 @@ read_optional_map_server_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 
 	carmen_param_t optional_param_list[] = {
-			{"commandline", "block_map", CARMEN_PARAM_ONOFF, &block_map, 0, NULL},
-			{"commandline", "map_x", CARMEN_PARAM_INT, &initial_map_x, 0, NULL},
-			{"commandline", "map_y", CARMEN_PARAM_INT, &initial_map_y, 0, NULL},
-			{"commandline", "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
-			{"commandline", "map", CARMEN_PARAM_STRING, &map_file_name, 0, NULL},
-			{"commandline", "publish_grid_mapping_map_at_startup", CARMEN_PARAM_ONOFF, &publish_grid_mapping_map_at_startup, 0, NULL},
-			{"commandline", "lanemap_incoming_message_type", CARMEN_PARAM_INT, &lanemap_incoming_message_type, 0, NULL} // 0 - road_profile (RDDF), 1 - astar, 2 - spline
+		{(char *) "commandline", (char *) "block_map", CARMEN_PARAM_ONOFF, &block_map, 0, NULL},
+		{(char *) "commandline", (char *) "map_x", CARMEN_PARAM_INT, &initial_map_x, 0, NULL},
+		{(char *) "commandline", (char *) "map_y", CARMEN_PARAM_INT, &initial_map_y, 0, NULL},
+		{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
+		{(char *) "commandline", (char *) "map", CARMEN_PARAM_STRING, &map_file_name, 0, NULL},
+		{(char *) "commandline", (char *) "publish_grid_mapping_map_at_startup", CARMEN_PARAM_ONOFF, &publish_grid_mapping_map_at_startup, 0, NULL},
+		{(char *) "commandline", (char *) "lanemap_incoming_message_type", CARMEN_PARAM_INT, &lanemap_incoming_message_type, 0, NULL}, // 0 - road_profile (RDDF), 1 - astar, 2 - spline
+		{(char *) "commandline", (char *) "level_msg", CARMEN_PARAM_INT, &level_msg, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
@@ -691,15 +731,27 @@ define_messages()
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_NAME, IPC_VARIABLE_LENGTH,
-			CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_NAME);
+	if (level_msg == 1)
+	{
+		err = IPC_defineMsg(CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_LEVEL1_NAME, IPC_VARIABLE_LENGTH,
+				CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_FMT);
+		carmen_test_ipc_exit(err, "Could not define", CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_LEVEL1_NAME);
+	}
+	else
+	{
+		err = IPC_defineMsg(CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_NAME, IPC_VARIABLE_LENGTH,
+				CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_FMT);
+		carmen_test_ipc_exit(err, "Could not define", CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_NAME);
+	}
 
 	err = IPC_defineMsg(CARMEN_NAVIGATOR_SPLINE_PATH_NAME, IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_SPLINE_PATH_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_SPLINE_PATH_NAME);
 
 	carmen_mapper_define_messages();
-	carmen_map_server_define_offline_map_message();
+	if (level_msg == 1)
+		carmen_map_server_define_offline_map_level1_message();
+	else
+		carmen_map_server_define_offline_map_message();
 	carmen_map_server_define_road_map_message();
 	// carmen_map_server_define_cost_map_message();
 	carmen_map_server_define_compact_lane_map_message();
@@ -716,10 +768,20 @@ register_handlers()
 	else
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	err = IPC_subscribe(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME, map_request_handler, NULL);
-	carmen_test_ipc(err, "Could not subscribe", CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME);
+	if (level_msg == 1)
+	{
+		err = IPC_subscribe(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_LEVEL1_NAME, map_level1_request_handler, NULL);
+		carmen_test_ipc(err, "Could not subscribe", CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_LEVEL1_NAME);
 
-	IPC_setMsgQueueLength(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME, 100);
+		IPC_setMsgQueueLength(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_LEVEL1_NAME, 100);
+	}
+	else
+	{
+		err = IPC_subscribe(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME, map_request_handler, NULL);
+		carmen_test_ipc(err, "Could not subscribe", CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME);
+
+		IPC_setMsgQueueLength(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME, 100);
+	}
 
 	carmen_localize_ackerman_subscribe_initialize_message(NULL,
 			(carmen_handler_t) localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -826,6 +888,13 @@ map_server_get_first_map()
 		carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map, current_sum_remission_map,
 				current_sum_sqr_remission_map, current_count_remission_map);
 		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
+		if (level_msg == 1)
+		{
+			printf("level_msg 1!\n");
+			carmen_map_server_publish_offline_map_level1_message(current_map, timestamp);
+			return;
+		}
+		
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
 		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
 		carmen_map_server_publish_localize_map_message(&localize_map);

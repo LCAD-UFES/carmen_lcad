@@ -145,6 +145,12 @@ carmen_mapper_unsubscribe_diff_map_message(carmen_handler_t handler)
 	carmen_unsubscribe_message(CARMEN_MAPPER_DIFF_MAP_MESSAGE_NAME, handler);
 }
 
+void
+carmen_mapper_unsubscribe_map_level1_message(carmen_handler_t handler)
+{
+	carmen_unsubscribe_message(CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME, handler);
+}
+
 
 void
 carmen_mapper_moving_objects_raw_map_unsubscribe_message(carmen_handler_t handler)
@@ -271,6 +277,46 @@ carmen_mapper_publish_map_message(carmen_map_t *carmen_map, double timestamp)
 
 	err = IPC_publishData(CARMEN_MAPPER_MAP_MESSAGE_NAME, &mapper_message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAPPER_MAP_MESSAGE_NAME);
+}
+
+
+void
+carmen_mapper_publish_map_level_message(carmen_map_t *carmen_map, double timestamp, int height_level)
+{
+	IPC_RETURN_TYPE err;
+	static carmen_mapper_map_message mapper_message;
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		printf("Publishing map level1\n");
+		carmen_mapper_define_map_message();
+		first_time = 0;
+	}
+
+	strcpy(mapper_message.config.origin, "from_mapping");
+	mapper_message.complete_map = carmen_map->complete_map;
+	mapper_message.size = carmen_map->config.x_size * carmen_map->config.y_size;
+	mapper_message.config = carmen_map->config;
+	mapper_message.host = carmen_get_host();
+	mapper_message.timestamp = timestamp;
+
+	char* message_name= "\0";
+
+	switch(height_level)
+	{
+		case 0:
+			message_name = CARMEN_MAPPER_MAP_MESSAGE_NAME;
+			break;
+		case 1:
+			message_name = CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME;
+			break;
+		default:
+			carmen_die("INVALID LAYER HEIGHT - Get this parameter from command line");
+	}
+
+	err = IPC_publishData(message_name, &mapper_message);
+	carmen_test_ipc_exit(err, "Could not publish", message_name);
 }
 
 

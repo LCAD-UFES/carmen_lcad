@@ -522,7 +522,7 @@ set_semi_trailer_collision_config(int semi_trailer_type)
 
 	char *carmen_home = getenv("CARMEN_HOME");
 	char collision_file_[2048];
-	FILE *collision_file_pointer;
+	FILE *collision_file_pointer = NULL;
 	if (global_collision_config.geometry == DEFAULT_GEOMETRY)
 	{
 		sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_collision_file);
@@ -538,6 +538,8 @@ set_semi_trailer_collision_config(int semi_trailer_type)
 			collision_file_pointer = fopen(collision_file_, "r");
 		}
 	}
+	else
+		exit(printf("Error: global_collision_config.geometry unknown in set_semi_trailer_collision_config()\n"));
 
 	setlocale(LC_NUMERIC, "C");
 

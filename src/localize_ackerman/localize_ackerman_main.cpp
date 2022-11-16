@@ -504,12 +504,22 @@ gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, double time
 		return;
 
 	double gps_sigma_squared = 100.0 * 100.0;
-	if (gps_xyz_message->gps_quality == 4)
+	switch (gps_xyz_message->gps_quality)
+	{
+	case 1:
+		gps_sigma_squared = 8.0 * 8.0;
+		break;
+	case 2:
+		gps_sigma_squared = 4.0 * 4.0;
+		break;
+	case 4:
 		gps_sigma_squared = 1.0 * 1.0;
-	else if (gps_xyz_message->gps_quality == 5)
+		break;
+	case 5:
+	case 6:
 		gps_sigma_squared = 2.0 * 2.0;
-	else if (gps_xyz_message->gps_quality == 6)	// graphslam pose
-		gps_sigma_squared = 2.0 * 2.0;
+		break;
+	}
 
 //	int i = xt_1->param->num_particles / 2;
 //	carmen_vector_3D_t estimated_car_pose = get_car_pose_from_gps_pose(gps_xyz_message, xt_1->particles[i].theta,
@@ -528,9 +538,8 @@ gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, double time
 		double distance_squared = distance * distance;
 		double gps_weight = exp(-distance_squared / gps_sigma_squared) / sqrt(gps_sigma_squared * 2.0 * M_PI);
 
-//		printf("gps_sigma_squared %lf, distance[%d] %lf, weight %lf, gps_weight %lf\n", gps_sigma_squared, i, distance,
-//				xt_1->particles[i].weight, gps_weight * normalization_factor);
-
+		// if ((xt_1->particles[i].weight + gps_weight * gps_correction_factor * normalization_factor) > 0)
+		// 	printf("gps_correction: %lf %lf\n", xt_1->particles[i].weight, xt_1->particles[i].weight + gps_weight * gps_correction_factor * normalization_factor);
 		xt_1->particles[i].weight = xt_1->particles[i].weight + gps_weight * gps_correction_factor * normalization_factor;
 	}
 //	printf("\n");
@@ -569,7 +578,7 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 
 	carmen_localize_ackerman_velodyne_correction(filter, &localize_map, &local_compacted_map, &local_compacted_mean_remission_map,
 			&local_compacted_variance_remission_map, &binary_map);
-//	gps_xyz_correction(filter, message->timestamp);
+	gps_xyz_correction(filter, message->timestamp);
 
 	publish_particles_correction(filter, &summary, message->timestamp);
 

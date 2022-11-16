@@ -3,23 +3,22 @@
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/fused_odometry_interface.h>
 
-bool wait_play = false;
 
 carmen_point_t pose;
-double beta = 0.0;
-int time_value = 4;
+double wait_time = 4.;
+bool wait_play = false;
 
 
 carmen_point_t
-publish_starting_pose(carmen_point_t pose, double beta)
+publish_starting_pose(carmen_point_t pose)
 {
 	carmen_point_t std;
-
 	std.x = 0.001;
 	std.y = 0.001;
 	std.theta = carmen_degrees_to_radians(0.01);
+	double theta_semi_trailer = pose.theta;
 
-	carmen_localize_ackerman_initialize_gaussian_command(pose, std, beta);
+	carmen_localize_ackerman_initialize_gaussian_command(pose, std, theta_semi_trailer);
 
 	return pose;
 }
@@ -37,37 +36,47 @@ define_messages()
 }
 
 
-int
-build_and_send_pose()
+void
+send_pose()
 {
-	printf("sleeping %ds\n", time_value);
-	sleep(time_value);
 	printf("publishing %lf %lf %lf\n", pose.x, pose.y, pose.theta);
 	for (int i = 0; i < 2; i++)
 	{
-		publish_starting_pose(pose, beta);
+		publish_starting_pose(pose);
 		carmen_ipc_sleep(0.1);
 	}
 	printf("programa concluido normalmente. tecle qualquer tecla para terminar.\n");
 	fflush(stdout);
-
-	return 0;
 }
 
 
-void playback_handler(carmen_playback_info_message *msg)
+void
+playback_handler(carmen_playback_info_message *msg)
 {
-	static int wait_playback = 0;
-	
-	// wait for play: first message, then second message when plays
-	wait_playback ++;
-	printf("playback message timestamp %lfs\n", msg->message_timestamp);
-
-	if (wait_playback == 2)
+	static double first_timestamp = -1, last_timestamp = 0.0;
+	if (first_timestamp < 0)
 	{
-		carmen_unsubscribe_playback_info_message((carmen_handler_t) playback_handler);
-		build_and_send_pose();
+		first_timestamp = msg->message_timestamp;
+		last_timestamp = msg->message_timestamp;
+		return;
 	}
+
+	if ((msg->message_timestamp - last_timestamp) > 0.3) // manual
+	{
+		first_timestamp = msg->message_timestamp;
+		last_timestamp = msg->message_timestamp;
+		return;
+	}
+	
+	if ((msg->message_timestamp - first_timestamp) >= wait_time)
+	{
+		send_pose();
+		carmen_unsubscribe_playback_info_message((carmen_handler_t) playback_handler);
+
+		while (1)
+			sleep(10);
+	}
+	last_timestamp = msg->message_timestamp;
 }
 
 
@@ -89,26 +98,16 @@ main(int argc, char **argv)
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
-	beta = pose.theta;
-
 
 	if (argc >= 5)
-	{
-		time_value = atoi(argv[4]);
-		if (argc == 6)
-		{
-			if (argv[5][0] == '-')
-				wait_play = true;
-			else
-				beta = atof(argv[5]); // old code
-		}
-	}
+		wait_time = atof(argv[4]);
+	if (argc == 6 && (argv[5][0] == '-'))
+		wait_play = true;
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();
 
 	carmen_param_check_version(argv[0]);
-
 	if (wait_play)
 	{
 		carmen_subscribe_playback_info_message(NULL, (carmen_handler_t) playback_handler, CARMEN_SUBSCRIBE_ALL);
@@ -116,9 +115,10 @@ main(int argc, char **argv)
 	}
 	else
 	{
-		build_and_send_pose();
+		sleep((int) wait_time);
+		send_pose();
 		while (1)
-			sleep(10); // Para não morrer nunca e não gastar CPU
+			sleep(10);
 	}
 
 	return 0;
