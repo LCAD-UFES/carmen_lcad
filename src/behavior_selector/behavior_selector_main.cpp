@@ -148,6 +148,7 @@ static bool soft_stop_on = false;
 carmen_frenet_path_planner_set_of_paths *current_set_of_paths = NULL;
 carmen_moving_objects_point_clouds_message *current_moving_objects = NULL;
 
+int original_frenet_path_planner_num_paths;
 extern int frenet_path_planner_num_paths;
 extern double frenet_path_planner_paths_displacement;
 double frenet_path_planner_time_horizon;
@@ -2015,7 +2016,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "obstacle_distance_mapper",	(char *) "moving_object_merge_distance",	CARMEN_PARAM_DOUBLE,	&moving_object_merge_distance,		1, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
-
+	original_frenet_path_planner_num_paths = frenet_path_planner_num_paths;
 
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
