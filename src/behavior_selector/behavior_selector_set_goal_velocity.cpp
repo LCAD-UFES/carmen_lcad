@@ -791,7 +791,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailers_traj_point_t
 	return (goal->v);
 }
 
-double xxx = 0.0;
+//double xxx = 0.0;
 
 double
 set_goal_velocity_according_to_final_goal(carmen_robot_and_trailers_traj_point_t *goal, int goal_type,
@@ -826,7 +826,7 @@ set_goal_velocity_according_to_final_goal(carmen_robot_and_trailers_traj_point_t
 			clearing_final_goal = true;
 			//TODO tem que Certificar de que ou ta tudo negativo ou positivo (acho que deveria tratar tudo positivo)
 			goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_final_goal, distance_to_goal, distance_to_final_goal), goal->v);
-			xxx = (velocity_at_final_goal * velocity_at_final_goal - current_robot_pose_v_and_phi->v * current_robot_pose_v_and_phi->v) / (2.0 * distance_to_final_goal);
+//			xxx = (velocity_at_final_goal * velocity_at_final_goal - current_robot_pose_v_and_phi->v * current_robot_pose_v_and_phi->v) / (2.0 * distance_to_final_goal);
 			if (goal_type == FINAL_GOAL)
 				goal->v = 0.0;
 		}
@@ -1280,7 +1280,7 @@ set_goal_velocity(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and
 	// printf("timestamp %lf, goal->v %lf, who_set_the_goal_v %d, bs_state %d, rp_state %d\n",
 	// 		behavior_selector_state_message.timestamp, goal->v, who_set_the_goal_v, behavior_selector_state_message.low_level_state, behavior_selector_state_message.route_planner_state);
 
-	printf("t %lf, goal_v %lf, v %lf, wsgv %d, xxx %lf\n", behavior_selector_state_message.timestamp, goal->v, current_robot_pose_v_and_phi->v, who_set_the_goal_v, xxx);
+//	printf("t %lf, goal_v %lf, v %lf, wsgv %d, xxx %lf\n", behavior_selector_state_message.timestamp, goal->v, current_robot_pose_v_and_phi->v, who_set_the_goal_v, xxx);
 
 	return (who_set_the_goal_v);
 }
