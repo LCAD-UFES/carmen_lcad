@@ -25,6 +25,7 @@
 #include "model_predictive_planner_interface.h"
 
 #include <carmen/collision_detection.h>
+#include <car_model.h>
 
 
 //#define save_rddf_to_file
@@ -137,8 +138,8 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 void
 publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailers_path_point_t> &original_path, double timestamp)
 {
-	vector<carmen_robot_and_trailers_path_point_t> path = smooth_short_path(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
-//	vector<carmen_robot_and_trailer_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
+//	vector<carmen_robot_and_trailers_path_point_t> path = smooth_short_path(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
+	vector<carmen_robot_and_trailers_path_point_t> path = original_path;//apply_robot_delays(original_path);	// A plicacao dos atrazos do robo agora são na saida do obstacle_avoider
 //	print_path_(path);
 	publish_model_predictive_planner_motion_commands(path, timestamp);
 }
@@ -501,6 +502,10 @@ build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
 	static double last_phi = 0.0;
+//	static int count = 0;
+//
+//	if ((count++ % 40) != 0)
+//		return;
 
 	if (GlobalState::goal_pose && (GlobalState::route_planner_state != PLANNING_FROM_POSE_TO_LANE))
 	{
@@ -626,6 +631,26 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 		GlobalState::localizer_pose->trailer_theta[z] = convert_theta1_to_beta(msg->globalpos.theta, msg->trailer_theta[z]); // Transformar em beta para o build_and_follow_path funcionar corretamente
 
+//	double delta_t = 0.15;
+//	double distance_traveled = 0.0;
+//	carmen_robot_and_trailers_traj_point_t robot_state = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta,
+//			GlobalState::localizer_pose->num_trailers, {
+//					GlobalState::localizer_pose->trailer_theta[0],
+//					GlobalState::localizer_pose->trailer_theta[1],
+//					GlobalState::localizer_pose->trailer_theta[2],
+//					GlobalState::localizer_pose->trailer_theta[3],
+//					GlobalState::localizer_pose->trailer_theta[4]},
+//					GlobalState::last_odometry.v, GlobalState::last_odometry.phi};
+//
+//	robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, GlobalState::last_odometry.v, GlobalState::last_odometry.phi, delta_t,
+//						&distance_traveled, delta_t, GlobalState::robot_config, GlobalState::semi_trailer_config);
+//
+//	*GlobalState::localizer_pose = {robot_state.x, robot_state.y, robot_state.theta, robot_state.num_trailers, {
+//			robot_state.trailer_theta[0],
+//			robot_state.trailer_theta[1],
+//			robot_state.trailer_theta[2],
+//			robot_state.trailer_theta[3],
+//			robot_state.trailer_theta[4]}};
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
@@ -714,6 +739,8 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 		else
 			GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 	}
+
+//	printf("t %lf, goal_v %lf, v %lf\n", msg->timestamp, msg->goal_list[0].v, GlobalState::last_odometry.v);
 
 //	if (fabs(GlobalState::robot_config.max_v) < 0.0005)	// Para evitar aproximacoes que nunca chegam a zero.
 //		GlobalState::robot_config.max_v = 0.0;

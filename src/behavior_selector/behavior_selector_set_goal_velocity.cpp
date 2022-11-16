@@ -464,7 +464,7 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 	// da = va * t + 0.5 * a * t * t
 
 	double a;
-	if (v0 > 0.0)
+	if (v0 >= 0.0)
 		a = -get_robot_config()->desired_decelaration_forward; // Desaceleracao para anotacoes
 	else
 		a = -get_robot_config()->desired_decelaration_reverse; // Desaceleracao para reh
@@ -613,7 +613,7 @@ distance_to_moving_obstacle_annotation(carmen_robot_and_trailers_traj_point_t cu
 
 
 double
-get_velocity_at_goal(double v0, double va, double dg, double da)
+get_velocity_at_goal(double v0, double va, double distance_to_goal, double da)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*((g-v)%2F(2*a)))+for+a
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*((g-v)%2Fa)%2B0.5*a*((g-v)%2Fa)%5E2+for+g
@@ -622,7 +622,7 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 //	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
 	double a = (va * va - v0 * v0) / (2.0 * da);
 	// TODO: @@@ Alberto: nao deveria ser 2.0 ao inves de 1.0 abaixo? Com 2.0 freia esponencialmente nos quebra molas...
-	double sqrt_val = get_robot_config()->behaviour_selector_goal_velocity_tuning_factor * a * dg + v0 * v0;
+	double sqrt_val = get_robot_config()->behaviour_selector_goal_velocity_tuning_factor * a * distance_to_goal + v0 * v0;
 	double vg = va;
 	if (sqrt_val > 0.0)
 		vg = sqrt(sqrt_val);
@@ -791,6 +791,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailers_traj_point_t
 	return (goal->v);
 }
 
+double xxx = 0.0;
 
 double
 set_goal_velocity_according_to_final_goal(carmen_robot_and_trailers_traj_point_t *goal, int goal_type,
@@ -804,12 +805,15 @@ set_goal_velocity_according_to_final_goal(carmen_robot_and_trailers_traj_point_t
 
 	carmen_robot_and_trailers_traj_point_t *final_goal = get_final_goal();
 
+	int size;
+	int *goals_type;
+	behavior_selector_get_last_goals_and_types(goals_type, size);
+
 	if (final_goal != NULL)
 	{
 		double distance_to_final_goal = DIST2D_P(final_goal, current_robot_pose_v_and_phi);
 		double velocity_at_final_goal = 0.0;
-		double distance_to_act_on_final_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_final_goal,
-				distance_to_final_goal);
+		double distance_to_act_on_final_goal = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_final_goal, distance_to_final_goal);
 		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
 
 		if (clearing_final_goal ||
@@ -821,10 +825,8 @@ set_goal_velocity_according_to_final_goal(carmen_robot_and_trailers_traj_point_t
 
 			clearing_final_goal = true;
 			//TODO tem que Certificar de que ou ta tudo negativo ou positivo (acho que deveria tratar tudo positivo)
-			goal->v = carmen_fmin(
-					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_final_goal, distance_to_goal, distance_to_final_goal),
-					goal->v);
-
+			goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_final_goal, distance_to_goal, distance_to_final_goal), goal->v);
+			xxx = (velocity_at_final_goal * velocity_at_final_goal - current_robot_pose_v_and_phi->v * current_robot_pose_v_and_phi->v) / (2.0 * distance_to_final_goal);
 			if (goal_type == FINAL_GOAL)
 				goal->v = 0.0;
 		}
@@ -1245,6 +1247,10 @@ set_goal_velocity(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and
 		goal->v = 0.0;
 	if (previous_v != goal->v)
 		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
+	previous_v = goal->v;
+	goal->v = set_goal_velocity_according_to_final_goal(goal, goal_type, current_robot_pose_v_and_phi);
+	if (previous_v != goal->v)
+		who_set_the_goal_v = STOP_AT_FINAL_GOAL;
 
 	previous_v = goal->v;
 	if ((fabs(goal->v) < 1.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.3) &&
@@ -1273,6 +1279,8 @@ set_goal_velocity(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and
 
 	// printf("timestamp %lf, goal->v %lf, who_set_the_goal_v %d, bs_state %d, rp_state %d\n",
 	// 		behavior_selector_state_message.timestamp, goal->v, who_set_the_goal_v, behavior_selector_state_message.low_level_state, behavior_selector_state_message.route_planner_state);
+
+	printf("t %lf, goal_v %lf, v %lf, wsgv %d, xxx %lf\n", behavior_selector_state_message.timestamp, goal->v, current_robot_pose_v_and_phi->v, who_set_the_goal_v, xxx);
 
 	return (who_set_the_goal_v);
 }
