@@ -10,6 +10,8 @@
 #include <carmen/simulator_ackerman_interface.h>
 
 using namespace std;
+bool plan_in_progress = false;
+double error_sum = 0.0;
 
 typedef double (*MotionControlFunction)(double v, double w, double t);
 
@@ -503,13 +505,13 @@ build_trajectory_trapezoidal_v_phi()
 	double t4 = 2.0;
 	delta_t = (t0 + t1 + t2 + t3 + t4) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
 
-	printf("max_v %lf\n", max_v);
+	//printf("max_v %lf\n", max_v);
 	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
 	{
 		motion_commands_vector[i].v = 0.0;
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = delta_t;
-		printf("av %lf\n", motion_commands_vector[i].v);
+		//printf("av %lf\n", motion_commands_vector[i].v);
 	}
 
 	for (t = 0.0; t < t1; t += delta_t, i++)
@@ -517,7 +519,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = t * (max_v / t1);
 		motion_commands_vector[i].phi = t * (max_phi / t1);
 		motion_commands_vector[i].time = delta_t;
-		printf("bv %lf\n", motion_commands_vector[i].v);
+		//printf("bv %lf\n", motion_commands_vector[i].v);
 	}
 
 	for (t = 0.0; t < t2; t += delta_t, i++)
@@ -525,7 +527,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = max_v;
 		motion_commands_vector[i].phi = max_phi;
 		motion_commands_vector[i].time = delta_t;
-		printf("cv %lf\n", motion_commands_vector[i].v);
+		//printf("cv %lf\n", motion_commands_vector[i].v);
 	}
 
 	for (t = 0.0; t <= t3; t += delta_t, i++)
@@ -533,7 +535,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = max_v - t * (max_v / t3);
 		motion_commands_vector[i].phi = max_phi - t * (max_phi / t3);;
 		motion_commands_vector[i].time = delta_t;
-		printf("dv %lf\n", motion_commands_vector[i].v);
+		//printf("dv %lf\n", motion_commands_vector[i].v);
 	}
 
 	for (t = 0.0; t <= (t4 + delta_t); t += delta_t, i++)
@@ -541,9 +543,9 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = 0.0;
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = delta_t;
-		printf("ev %lf\n", motion_commands_vector[i].v);
+		//printf("ev %lf\n", motion_commands_vector[i].v);
 	}
-	printf("max_phi = %lf, i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", max_phi, i, NUM_MOTION_COMMANDS_PER_VECTOR);
+	//printf("max_phi = %lf, i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", max_phi, i, NUM_MOTION_COMMANDS_PER_VECTOR);
 	send_trajectory_to_robot();
 }
 
@@ -732,7 +734,10 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 	double kp = gsl_vector_get(v, 0);
 	double ki = gsl_vector_get(v, 1);
 	double kd = gsl_vector_get(v, 2);
-	printf("CALIBREI PID %lf!!!\n", time_elapsed);
+	//printf("CALIBREI PID %lf!!!\n", time_elapsed);
+	printf("VALOR Kp %lf\n", kp);
+	printf("VALOR Ki %lf\n", ki);
+	printf("VALOR Kd %lf\n", kd);
 
 	//return (execute_motion_command(kp, ki, kd));  // TODO ??? send the motion command to the car and wait for the return
 
@@ -743,6 +748,7 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 	//send_trajectory_to_robot();
 
 	send_trajectory_to_robot();
+	plan_in_progress = true;
 
 	/*int flag_to_break = 0;
 	while(1)
@@ -757,28 +763,32 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 	}
 	return (velocity_errror_sum);*/
 
-	static double error_sum = 0.0;
-	static bool first_zero = false;
-	if(first_zero)
-		error_sum = 0.0;
-	if(time_elapsed > 1.8)
+	while(plan_in_progress)
 	{
-
-		for(long unsigned int i= 0; i < error_vector.size(); i++)
-		{
-			error_sum += error_vector[i];
-		}
-		printf("ERROR TOTAL %lf\n", error_sum);
-
-		//carmen_ipc_addPeriodicTimer(timer_period, (TIMER_HANDLER_TYPE) timer_handler, NULL);
-
+		sleep(1);
+		carmen_ipc_dispatch_nonblocking();
 	}
-	if(error_sum != 0.0)
-		first_zero = true;
-	if(error_sum < 0)
-	{
-		error_sum = error_sum * -1;
-	}
+
+	//static double error_sum = 0.0;
+//	static bool first_zero = false;
+//	if(first_zero)
+//		error_sum = 0.0;
+//	if(time_elapsed > 0.4)
+//	{
+//
+//		for(long unsigned int i= 0; i < error_vector.size(); i++)
+//		{
+//			error_sum += error_vector[i];
+//		}
+//		printf("ERROR TOTAL %lf\n", error_sum);
+//
+//		//carmen_ipc_addPeriodicTimer(timer_period, (TIMER_HANDLER_TYPE) timer_handler, NULL);
+//
+//	}
+//	if(error_sum != 0.0)
+//		first_zero = true;
+	printf("ERROR SUM %lf\n", error_sum);
+
 	return (error_sum);
 }
 
@@ -858,8 +868,8 @@ optimize_PID_gains()
 		iter++;
 		status = gsl_multimin_fdfminimizer_iterate(s);
 		printf("FUI EVOCADO !!!\n");
-		if (status)
-			break;
+		//if (status)
+			//break;
 
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.2);
@@ -869,9 +879,9 @@ optimize_PID_gains()
 	double kp = gsl_vector_get(s->x, 0); //carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
 	double ki = gsl_vector_get(s->x, 1); //carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
 	double kd = gsl_vector_get(s->x, 2); //carmen_clamp(-100.0, gsl_vector_get(s->x, 2), 100.0);
-	printf("VALOR Kp %lf\n", kp);
-	printf("VALOR Ki %lf\n", ki);
-	printf("VALOR Kd %lf\n", kd);
+//	printf("VALOR Kp %lf\n", kp);
+//	printf("VALOR Ki %lf\n", ki);
+//	printf("VALOR Kd %lf\n", kd);
 	//send_trajectory_to_robot();
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(v);
@@ -883,6 +893,17 @@ optimize_PID_gains()
 void
 get_pid_steer_feedback_handler(steering_pid_data_message *msg)
 {
+	error_sum +=  msg->error_t;
+	static int count = 0;
+	count++;
+	if(count > 10 && msg->atan_current_curvature < 0.1 )
+	{
+		plan_in_progress = false;
+		count = 0;
+		//TODO criar uma função pra plotar o gráfico
+		//TODO achar comando pra não plotar janelas infinitas
+	}
+
 	steer_msg->atan_current_curvature = msg->atan_current_curvature;
 	steer_msg->atan_desired_curvature = msg->atan_desired_curvature;
 	steer_msg->derivative_t = msg->derivative_t;
@@ -932,11 +953,9 @@ get_pid_steer_feedback_handler(steering_pid_data_message *msg)
 						"'./steer_pid.txt' using ($4) : ($3) with lines title 'error'\n");
 				fflush(gnuplot_pipe);
 				moved = false;
-				//time_elapsed = 0.;
 				time_ant = 0;
 				current_steer_angle_vector.clear();
 				desired_steer_angle_vector.clear();
-				//error_vector.clear();
 				timestamp_vector.clear();
 				optimize_PID_gains();
 				error_vector.clear();
