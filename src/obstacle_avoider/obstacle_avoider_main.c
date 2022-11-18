@@ -8,7 +8,6 @@
 #include "obstacle_avoider.h"
 #include <carmen/car_model.h>
 
-#define USE_OLD_LATENCY_CONTROL
 //#define USE_MAIN_LOOP_TO_PUBLISH
 
 static int necessary_maps_available = 0;
@@ -64,6 +63,7 @@ typedef struct
 
 int move_i = 0;
 int move_index = 0;
+int new_latency_control = 0;
 
 
 int
@@ -445,7 +445,7 @@ align_current_trajetory_to_updated_previous_trajectory(carmen_robot_and_trailers
 			break;
 
 		latency += trajectory[i].time;
-		if (latency < robot_velocity_delay * 2.0)
+		if (latency < robot_velocity_delay)
 		{
 			max_latency = latency;
 			i_max_latency = i;
@@ -462,7 +462,7 @@ align_current_trajetory_to_updated_previous_trajectory(carmen_robot_and_trailers
 		max_latency = 0.0;
 	}
 
-	if (latency >= robot_velocity_delay * 2.0)
+	if (latency >= robot_velocity_delay)
 		i = i_max_latency;
 
 //	if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
@@ -544,13 +544,17 @@ obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailers_
 		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 
 		print_trajectory(motion_commands_copy, num_motion_commands);
-#ifndef USE_OLD_LATENCY_CONTROL
-		int new_num_motion_commands = apply_robot_delays(motion_commands_copy, num_motion_commands, carmen_get_time());
-		plot_velocity_future(motion_commands, num_motion_commands);
-#else
-		int new_num_motion_commands = apply_robot_delays_old(motion_commands_copy, num_motion_commands);
-		plot_velocity_future_old(motion_commands, num_motion_commands, motion_commands_copy, new_num_motion_commands);
-#endif
+		int new_num_motion_commands;
+		if (new_latency_control)
+		{
+			new_num_motion_commands = apply_robot_delays(motion_commands_copy, num_motion_commands, carmen_get_time());
+			plot_velocity_future(motion_commands, num_motion_commands);
+		}
+		else
+		{
+			new_num_motion_commands = apply_robot_delays_old(motion_commands_copy, num_motion_commands);
+			plot_velocity_future_old(motion_commands, num_motion_commands, motion_commands_copy, new_num_motion_commands);
+		}
 		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_copy, new_num_motion_commands, timestamp);
 
 		free(motion_commands_copy);
@@ -1019,6 +1023,14 @@ read_parameters(int argc, char **argv)
 
 	if (carmen_semi_trailer_config.semi_trailers.type > 0)
 		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.semi_trailers.type);
+
+    carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "new_latency_control",	CARMEN_PARAM_ONOFF,	&(new_latency_control), 0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	return (0);
 }
