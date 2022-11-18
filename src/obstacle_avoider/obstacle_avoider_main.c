@@ -6,7 +6,9 @@
 #include "obstacle_avoider_messages.h"
 #include "obstacle_avoider_interface.h"
 #include "obstacle_avoider.h"
+#include <carmen/car_model.h>
 
+#define USE_OLD_LATENCY_CONTROL
 //#define USE_MAIN_LOOP_TO_PUBLISH
 
 static int necessary_maps_available = 0;
@@ -60,6 +62,9 @@ typedef struct
 #define GRAPH_SAMPLES	2300
 #define GOAL_DISTANCE	1000.0
 
+int move_i = 0;
+int move_index = 0;
+
 
 int
 plot_graph(velocities_t velocities[VEC_SIZE], carmen_robot_and_trailers_motion_command_t *motion_command, int size, int index,
@@ -93,14 +98,16 @@ plot_graph(velocities_t velocities[VEC_SIZE], carmen_robot_and_trailers_motion_c
 			fclose(velocities_file);
 			if (first_time)
 			{
-				fprintf(gnuplot_pipeMP, "plot '%s' using 1:2 with points title 'v' lt rgb '%s', '%s' using 1:3 w l title 'a'", filename, color, filename);
-				fprintf(gnuplot_pipeMP, ", point using (%lf):(%lf) title 'first v' pt 7 lc 3\n", velocities[initial_index].timestamp - first_timestamp, velocities[initial_index].v);
+				fprintf(gnuplot_pipeMP, "plot '%s' using 1:2 with lines title 'v' lt rgb '%s', '%s' using 1:3 w l title 'a'", filename, color, filename);
+//				fprintf(gnuplot_pipeMP, ", point using (%lf):(%lf) title 'first v' pt 7 lc 3\n", velocities[initial_index].timestamp - first_timestamp, velocities[initial_index].v);
+				fprintf(gnuplot_pipeMP, ", point using (%d):(%d) title 'move_i' pt 7 lc 3\n", 0, move_i);
 				first_time = 0;
 			}
 			else
 			{
-				fprintf(gnuplot_pipeMP, "replot '%s' using 1:2 with points title 'v delay' lt rgb '%s', '%s' using 1:3 w l title 'a'", filename, color, filename);
-				fprintf(gnuplot_pipeMP, ", point using (%lf):(%lf) title 'first v delay' pt 7 lc 3\n", velocities[initial_index].timestamp - first_timestamp, velocities[initial_index].v);
+				fprintf(gnuplot_pipeMP, "replot '%s' using 1:2 with lines title 'v delay' lt rgb '%s', '%s' using 1:3 w l title 'a'", filename, color, filename);
+//				fprintf(gnuplot_pipeMP, ", point using (%lf):(%lf) title 'first v delay' pt 7 lc 3\n", velocities[initial_index].timestamp - first_timestamp, velocities[initial_index].v);
+				fprintf(gnuplot_pipeMP, ", point using (%d):(%d) title 'move_index' pt 5 lc 4\n", 0, move_index);
 			}
 			fflush(gnuplot_pipeMP);
 			if (i < (index - 1))
@@ -114,7 +121,7 @@ plot_graph(velocities_t velocities[VEC_SIZE], carmen_robot_and_trailers_motion_c
 
 
 void
-plot_velocity_future(carmen_robot_and_trailers_motion_command_t *motion_command, int size,
+plot_velocity_future_old(carmen_robot_and_trailers_motion_command_t *motion_command, int size,
 		carmen_robot_and_trailers_motion_command_t *motion_command_delay, int size_delay)
 {
 	static bool first_time = true;
@@ -147,6 +154,53 @@ plot_velocity_future(carmen_robot_and_trailers_motion_command_t *motion_command,
 		first_timestamp = carmen_get_time();
 		plot_graph(velocities, motion_command, size, index, first_timestamp, timestamp, gnuplot_pipeMP, "velocities.txt", "red", 0);
 		plot_graph(velocities_delay, motion_command_delay, size_delay, index_delay, first_timestamp, timestamp, gnuplot_pipeMP, "velocities_delay.txt", "blue", 1);
+	}
+}
+
+
+void
+plot_velocity_future(carmen_robot_and_trailers_motion_command_t *motion_command, int size)
+{
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+	static velocities_t velocities[VEC_SIZE];
+	static velocities_t previous_velocities[VEC_SIZE];
+	static int index = 0;
+	static int index_delay = 0;
+	static double first_timestamp = 0.0;
+	static carmen_robot_and_trailers_motion_command_t *previous_motion_command;
+	static int previous_size;
+
+	if (first_time && (size > 1) && (DIST2D(motion_command[0], motion_command[size - 1]) < GOAL_DISTANCE))
+	{
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:15]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-6.0:6.0]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'v'\n");
+		fprintf(gnuplot_pipeMP, "set mytics 2\n");
+		fprintf(gnuplot_pipeMP, "set grid\n");
+		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
+		fprintf(gnuplot_pipeMP, "array point[1]\n"); // dummy array
+
+		previous_motion_command = (carmen_robot_and_trailers_motion_command_t *) calloc(size, sizeof(carmen_robot_and_trailers_motion_command_t));
+		previous_size = size;
+
+		first_time = false;
+		first_timestamp = carmen_get_time();
+	}
+
+	double timestamp = carmen_get_time();
+	if (first_timestamp && (index < GRAPH_SAMPLES))
+	{
+		first_timestamp = carmen_get_time();
+		plot_graph(velocities, motion_command, size, index, first_timestamp, timestamp, gnuplot_pipeMP, "velocities.txt", "red", 0);
+		plot_graph(previous_velocities, previous_motion_command, previous_size, index_delay, first_timestamp, timestamp, gnuplot_pipeMP, "previous_velocities.txt", "blue", 1);
+
+		free(previous_motion_command);
+		previous_size = size;
+		previous_motion_command = (carmen_robot_and_trailers_motion_command_t *) malloc(previous_size * sizeof(carmen_robot_and_trailers_motion_command_t));
+		memcpy(previous_motion_command, motion_command, previous_size * sizeof(carmen_robot_and_trailers_motion_command_t));
 	}
 }
 
@@ -216,7 +270,7 @@ consume_motion_command_time(int motion_command_vetor)
 
 
 int
-apply_robot_delays(carmen_robot_and_trailers_motion_command_t *original_path, int original_size)
+apply_robot_delays_old(carmen_robot_and_trailers_motion_command_t *original_path, int original_size)
 {
 	carmen_robot_and_trailers_motion_command_t *path = original_path;
 	int size = original_size;
@@ -288,6 +342,187 @@ apply_robot_delays(carmen_robot_and_trailers_motion_command_t *original_path, in
 
 	return (original_size - size_decrease);
 }
+
+
+void
+print_trajectory(carmen_robot_and_trailers_motion_command_t *trajectory, int size)
+{
+	for (int i = 0; (i < size) && (i < 5); i++)
+		printf("x %lf, y %lf, v %lf, time %lf\n", trajectory[i].x, trajectory[i].y, trajectory[i].v, trajectory[i].time);
+
+	printf("\n");
+	fflush(stdout);
+}
+
+
+carmen_robot_and_trailers_traj_point_t
+from_motion_command_to_traj_point(carmen_robot_and_trailers_motion_command_t motion_command)
+{
+	carmen_robot_and_trailers_traj_point_t traj_point;
+
+	traj_point.x = motion_command.x;
+	traj_point.y = motion_command.y;
+	traj_point.theta = motion_command.theta;
+	traj_point.v = motion_command.v;
+	traj_point.phi = motion_command.phi;
+	traj_point.num_trailers = motion_command.num_trailers;
+
+	for (int i = 0; i < MAX_NUM_TRAILERS; i++)
+		traj_point.trailer_theta[i] = motion_command.trailer_theta[i];
+
+	return (traj_point);
+}
+
+
+carmen_robot_and_trailers_motion_command_t
+from_traj_point_to_motion_command(carmen_robot_and_trailers_traj_point_t traj_point, double time)
+{
+	carmen_robot_and_trailers_motion_command_t motion_command;
+
+	motion_command.x = traj_point.x;
+	motion_command.y = traj_point.y;
+	motion_command.theta = traj_point.theta;
+	motion_command.v = traj_point.v;
+	motion_command.phi = traj_point.phi;
+	motion_command.time = time;
+	motion_command.num_trailers = traj_point.num_trailers;
+
+	for (int i = 0; i < MAX_NUM_TRAILERS; i++)
+		motion_command.trailer_theta[i] = traj_point.trailer_theta[i];
+
+	return (motion_command);
+}
+
+
+int
+move_previous_trajectory_to_current_timestamp(carmen_robot_and_trailers_motion_command_t *previous_trajectory, int previous_size, double previous_timestamp, double timestamp)
+{
+	double delta_t = timestamp - previous_timestamp;
+
+	double consumed_t = 0.0;
+	int i;
+	for (i = 0; i < previous_size; i++)
+	{
+		if ((consumed_t + previous_trajectory[i].time) > delta_t)
+			break;
+		consumed_t += previous_trajectory[i].time;
+	}
+
+	double remaining_t = delta_t - consumed_t; // tempo que falta para ir de previous_trajectory[i] para um ponto em que vai completar o delta_t
+	carmen_robot_and_trailers_traj_point_t robot_state = from_motion_command_to_traj_point(previous_trajectory[i]);
+	double distance_traveled = 0.0;
+	robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, previous_trajectory[i].v, previous_trajectory[i].phi, remaining_t,
+						&distance_traveled, remaining_t / 5.0, carmen_robot_ackerman_config, carmen_semi_trailer_config);
+
+	previous_trajectory[i] = from_traj_point_to_motion_command(robot_state, previous_trajectory[i].time - remaining_t);
+
+	move_i = i;
+	printf("move_i %d\n", move_i);
+	int j;
+	for (j = 0; i < previous_size; j++, i++)
+		previous_trajectory[j] = previous_trajectory[i];
+
+	return (previous_size - move_i);
+}
+
+
+int
+align_current_trajetory_to_updated_previous_trajectory(carmen_robot_and_trailers_motion_command_t *trajectory, int size,
+		carmen_robot_and_trailers_motion_command_t *previous_trajectory)
+{
+	// find trajectory[i] nearest to previous_trajectory[0]
+	int point_in_trajectory_is;
+	int i;
+//	carmen_robot_and_trailers_motion_command_t point;
+	double latency = 0.0;
+	double max_latency = 0.0;
+	int i_max_latency = 0;
+	for (i = 0; i < (size - 1); i++)
+	{
+//		point = carmen_get_point_nearest_to_motion_command(&point_in_trajectory_is, trajectory[i], trajectory[i + 1], previous_trajectory[0], 0.000000000000000000000001);
+		carmen_get_point_nearest_to_motion_command(&point_in_trajectory_is, trajectory[i], trajectory[i + 1], previous_trajectory[0], 0.000000000000000000000001);
+		if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
+			break;
+
+		latency += trajectory[i].time;
+		if (latency < robot_velocity_delay * 2.0)
+		{
+			max_latency = latency;
+			i_max_latency = i;
+		}
+	}
+
+	if (i >= (size - 1))
+	{
+		carmen_get_point_nearest_to_motion_command(&point_in_trajectory_is, trajectory[0], trajectory[1], previous_trajectory[0], 0.000000000000000000000001);
+		printf("zica %d\n", point_in_trajectory_is);
+		fflush(stdout);
+		i = 0;
+		latency = 0.0;
+		max_latency = 0.0;
+	}
+
+	if (latency >= robot_velocity_delay * 2.0)
+		i = i_max_latency;
+
+//	if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
+//	{
+//		double distance_i_i_1 = DIST2D(trajectory[i], trajectory[i + 1]);
+//		double distance_i_t0 = DIST2D(trajectory[i], point);
+//		double remaining_t = (distance_i_t0 / distance_i_i_1) * trajectory[i].time;
+//
+//		carmen_robot_and_trailers_traj_point_t robot_state = from_motion_command_to_traj_point(trajectory[i]);
+//		double distance_traveled = 0.0;
+//		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, trajectory[i].v, trajectory[i].phi, remaining_t,
+//							&distance_traveled, remaining_t / 5.0, carmen_robot_ackerman_config, carmen_semi_trailer_config);
+//
+//		trajectory[i] = from_traj_point_to_motion_command(robot_state, trajectory[i].time - remaining_t);
+//	}
+
+//	if (i < 2)
+//		i = 2;
+
+	move_index = i;
+	static double first_timestamp = 0.0;
+	if (!first_timestamp)
+		first_timestamp = carmen_get_time();
+	printf("move_index %d, l %lf, v %lf, t %lf, v_gp %lf\n", move_index, max_latency, trajectory[i].v, carmen_get_time() - first_timestamp, get_current_pose().v);
+
+	for (int j = 0; (j + i) < size; j++)
+		trajectory[j] = trajectory[j + i];
+
+	return (size - move_index);
+}
+
+
+int
+apply_robot_delays(carmen_robot_and_trailers_motion_command_t *trajectory, int size, double timestamp)
+{
+	static carmen_robot_and_trailers_motion_command_t *previous_trajectory = NULL;
+	static int previous_size;
+	static double previous_timestamp;
+
+	if (!previous_trajectory)
+	{
+		previous_trajectory = (carmen_robot_and_trailers_motion_command_t *) malloc(size * sizeof(carmen_robot_and_trailers_motion_command_t));
+		memcpy(previous_trajectory, trajectory, size * sizeof(carmen_robot_and_trailers_motion_command_t));
+		previous_size = size;
+		previous_timestamp = timestamp;
+
+		return (size);
+	}
+
+	previous_size = move_previous_trajectory_to_current_timestamp(previous_trajectory, previous_size, previous_timestamp, timestamp);
+	size = align_current_trajetory_to_updated_previous_trajectory(trajectory, size, previous_trajectory);
+
+	free(previous_trajectory);
+	previous_trajectory = (carmen_robot_and_trailers_motion_command_t *) malloc(size * sizeof(carmen_robot_and_trailers_motion_command_t));
+	memcpy(previous_trajectory, trajectory, size * sizeof(carmen_robot_and_trailers_motion_command_t));
+	previous_size = size;
+	previous_timestamp = timestamp;
+
+	return (size);
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -308,8 +543,14 @@ obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailers_
 		carmen_robot_and_trailers_motion_command_t *motion_commands_copy = (carmen_robot_and_trailers_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 
-		int new_num_motion_commands = apply_robot_delays(motion_commands_copy, num_motion_commands);
-//		plot_velocity_future(motion_commands, num_motion_commands, motion_commands_copy, new_num_motion_commands);
+		print_trajectory(motion_commands_copy, num_motion_commands);
+#ifndef USE_OLD_LATENCY_CONTROL
+		int new_num_motion_commands = apply_robot_delays(motion_commands_copy, num_motion_commands, carmen_get_time());
+		plot_velocity_future(motion_commands, num_motion_commands);
+#else
+		int new_num_motion_commands = apply_robot_delays_old(motion_commands_copy, num_motion_commands);
+		plot_velocity_future_old(motion_commands, num_motion_commands, motion_commands_copy, new_num_motion_commands);
+#endif
 		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_copy, new_num_motion_commands, timestamp);
 
 		free(motion_commands_copy);

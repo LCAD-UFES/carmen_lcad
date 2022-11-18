@@ -1700,6 +1700,13 @@ dist2_path(carmen_robot_and_trailers_path_point_t v, carmen_robot_and_trailers_p
 }
 
 
+static double
+dist2_motion_command(carmen_robot_and_trailers_motion_command_t v, carmen_robot_and_trailers_motion_command_t w)
+{
+	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
+}
+
+
 carmen_robot_and_trailers_path_point_t
 carmen_get_point_nearest_to_path(int *point_in_trajectory_is,
 		carmen_robot_and_trailers_path_point_t v,
@@ -1754,6 +1761,49 @@ carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
 	double l2, t;
 
 	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
+	if (l2 < min_segment_size)	  // v ~== w case // @@@ Alberto: Checar isso
+	{
+		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
+		return (v);
+	}
+
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find the projection of point p onto the line.
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+
+	if (t < 0.0) 	// p beyond the v end of the segment
+	{
+		*point_in_trajectory_is = POINT_BEFORE_SEGMENT;
+		return (v);
+	}
+	if (t > 1.0)	// p beyond the w end of the segment
+	{
+		*point_in_trajectory_is = POINT_AFTER_SEGMENT;
+		return (w);
+	}
+
+	// Projection falls on the segment
+	p = v; // Copy other elements, like theta, etc.
+	p.x = v.x + t * (w.x - v.x);
+	p.y = v.y + t * (w.y - v.y);
+	*point_in_trajectory_is = POINT_WITHIN_SEGMENT;
+
+	return (p);
+}
+
+
+carmen_robot_and_trailers_motion_command_t
+carmen_get_point_nearest_to_motion_command(int *point_in_trajectory_is,
+		carmen_robot_and_trailers_motion_command_t v,
+		carmen_robot_and_trailers_motion_command_t w,
+		carmen_robot_and_trailers_motion_command_t p, double min_segment_size)
+{
+	// Return minimum distance between line segment vw and point p
+	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+	double l2, t;
+
+	l2 = dist2_motion_command(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
 	if (l2 < min_segment_size)	  // v ~== w case // @@@ Alberto: Checar isso
 	{
 		*point_in_trajectory_is = SEGMENT_TOO_SHORT;

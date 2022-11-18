@@ -415,7 +415,7 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 					&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 		else
 			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
-					&distance_traveled, delta_t / 3.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
+					&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 
 		robot_state.trailer_theta[0] = convert_theta1_to_beta(robot_state.theta, robot_state.trailer_theta[0]);
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
