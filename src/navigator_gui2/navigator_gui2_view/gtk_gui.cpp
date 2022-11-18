@@ -814,7 +814,7 @@ namespace View
 			}
 		}
 
-		sprintf(buffer, "Dist. Traveled: %'.3lf (Km), (%'.3lf Km/h average)", dist_traveled / 1000.0,
+		sprintf(buffer, "Dist. Traveled: %'.3lf (Km) (%'.3lf Km/h average)", dist_traveled / 1000.0,
 				(dist_traveled / 1000.0) / ((carmen_get_time() - first_timestamp + 0.01) / 3600));
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelDistTraveled), buffer);
 	}
@@ -884,17 +884,17 @@ namespace View
 
 		if (!freeze_status)
 		{
-			sprintf(buffer, "Robot: %.2f, %.2f, %2.3f (%3.2f), %5.1f km/h (%.2f m/s)", robot.pose.x,
+			sprintf(buffer, "Robot: %.2f %.2f %2.3f (%3.2f) %5.1f km/h (%.2f m/s)", robot.pose.x,
 					robot.pose.y, robot.pose.theta, carmen_radians_to_degrees(robot.pose.theta),
 					globalpos->v * 3.6, globalpos->v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
 
-			sprintf(buffer, "Velocity: %5.1f km/h (%.2f m/s), %.2f %s (%.3f %s)", robot_traj.t_vel * 3.6, robot_traj.t_vel,
+			sprintf(buffer, "Velocity: %5.1f km/h (%.2f m/s) %.2f %s (%.3f %s)", robot_traj.t_vel * 3.6, robot_traj.t_vel,
 					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"),
 					robot_traj.r_vel, (nav_panel_config->use_ackerman ? "rad" : "rad/s"));
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
-			sprintf(buffer, "Goal: %.2f, %.2f, %.3f (%.2f deg) (%.2lf Km/h, %.2f m/s)", goal.x, goal.y, goal.theta,
+			sprintf(buffer, "Goal: %.2f %.2f %.3f (%.2f deg) (%.2lf Km/h %.2f m/s)", goal.x, goal.y, goal.theta,
 					carmen_radians_to_degrees(goal.theta), 3.6 * goal.v, goal.v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
@@ -1503,7 +1503,7 @@ namespace View
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelStatusMap), buffer);
 			}
 
-			sprintf(buffer, "Origin: (%ld, %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
+			sprintf(buffer, "Origin: (%ld %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelOrigin), buffer);
 
 			//Descomentar para gravacao automatica
@@ -1714,7 +1714,7 @@ namespace View
 		fused_odometry_position.map = this->controls_.map_view->internal_map;
 		fused_odometry_position.pose = fused_odometry_pose;
 
-		sprintf(buffer, "Fused Odom: %5.1f m, %5.1f m, %6.2f", fused_odometry_pose.x,
+		sprintf(buffer, "Fused Odom: %5.1f m %5.1f m %6.2f", fused_odometry_pose.x,
 				fused_odometry_pose.y, carmen_radians_to_degrees(fused_odometry_pose.theta));
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelFusedOdometry), buffer);
 

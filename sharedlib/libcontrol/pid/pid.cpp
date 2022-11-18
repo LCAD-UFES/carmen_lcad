@@ -805,6 +805,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		g_velocity_PID_controler_state = STOP_CAR;
 	}
 
+	double a = (current_velocity - g_v) / delta_t;
 	g_v = current_velocity;
 
 	double error_t = desired_velocity - current_velocity;
@@ -960,10 +961,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 #ifdef PRINT
-	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 		*throttle_command, *brakes_command,
-		integral_t, derivative_t, carmen_get_time());
+		integral_t, derivative_t, carmen_get_time(), a);
 	fflush(stdout);
 #endif
 

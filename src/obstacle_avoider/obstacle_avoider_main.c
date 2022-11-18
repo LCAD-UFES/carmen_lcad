@@ -58,7 +58,7 @@ typedef struct
 
 #define VEC_SIZE		10000
 #define GRAPH_SAMPLES	2300
-#define GOAL_DISTANCE	2.0
+#define GOAL_DISTANCE	1000.0
 
 
 int
@@ -69,11 +69,17 @@ plot_graph(velocities_t velocities[VEC_SIZE], carmen_robot_and_trailers_motion_c
 	double t = timestamp;
 	int initial_index = index;
 
+	double a[10000];
 	for (int i = initial_index; (i < (size + initial_index)) && (i < VEC_SIZE); i++, index++)
 	{
 		velocities[i].v = motion_command[i - initial_index].v;
 		velocities[i].timestamp = t;
 		t += motion_command[i - initial_index].time;
+
+		if (i == initial_index)
+			a[i] = 0.0;
+		else
+			a[i] = 10.0 * (motion_command[i - initial_index].v - motion_command[i - initial_index - 1].v) / motion_command[i - initial_index].time;
 	}
 
 	int first_time = !replot;
@@ -81,19 +87,19 @@ plot_graph(velocities_t velocities[VEC_SIZE], carmen_robot_and_trailers_motion_c
 	double previous_timestamp = velocities[0].timestamp;
 	for (int i = 0; i < index; i++)
 	{
-		fprintf(velocities_file, "%lf %lf\n", velocities[i].timestamp - first_timestamp, velocities[i].v);
+		fprintf(velocities_file, "%lf %lf %lf\n", velocities[i].timestamp - first_timestamp, velocities[i].v, a[i]);
 		if ((velocities[i].timestamp < previous_timestamp) || (i == (index - 1)))
 		{
 			fclose(velocities_file);
 			if (first_time)
 			{
-				fprintf(gnuplot_pipeMP, "plot '%s' using 1:2 with points title 'v' lt rgb '%s'", filename, color);
+				fprintf(gnuplot_pipeMP, "plot '%s' using 1:2 with points title 'v' lt rgb '%s', '%s' using 1:3 w l title 'a'", filename, color, filename);
 				fprintf(gnuplot_pipeMP, ", point using (%lf):(%lf) title 'first v' pt 7 lc 3\n", velocities[initial_index].timestamp - first_timestamp, velocities[initial_index].v);
 				first_time = 0;
 			}
 			else
 			{
-				fprintf(gnuplot_pipeMP, "replot '%s' using 1:2 with points title 'v delay' lt rgb '%s'", filename, color);
+				fprintf(gnuplot_pipeMP, "replot '%s' using 1:2 with points title 'v delay' lt rgb '%s', '%s' using 1:3 w l title 'a'", filename, color, filename);
 				fprintf(gnuplot_pipeMP, ", point using (%lf):(%lf) title 'first v delay' pt 7 lc 3\n", velocities[initial_index].timestamp - first_timestamp, velocities[initial_index].v);
 			}
 			fflush(gnuplot_pipeMP);
@@ -122,8 +128,8 @@ plot_velocity_future(carmen_robot_and_trailers_motion_command_t *motion_command,
 	if (first_time && (size > 1) && (DIST2D(motion_command[0], motion_command[size - 1]) < GOAL_DISTANCE))
 	{
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:7]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-1.0:3.0]\n");
+		fprintf(gnuplot_pipeMP, "set xrange [0:15]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-6.0:6.0]\n");
 		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
 		fprintf(gnuplot_pipeMP, "set ylabel 'v'\n");
 		fprintf(gnuplot_pipeMP, "set mytics 2\n");
@@ -138,9 +144,9 @@ plot_velocity_future(carmen_robot_and_trailers_motion_command_t *motion_command,
 	double timestamp = carmen_get_time();
 	if (first_timestamp && (index < GRAPH_SAMPLES))
 	{
+		first_timestamp = carmen_get_time();
 		plot_graph(velocities, motion_command, size, index, first_timestamp, timestamp, gnuplot_pipeMP, "velocities.txt", "red", 0);
 		plot_graph(velocities_delay, motion_command_delay, size_delay, index_delay, first_timestamp, timestamp, gnuplot_pipeMP, "velocities_delay.txt", "blue", 1);
-		first_time = false;
 	}
 }
 
@@ -245,7 +251,7 @@ apply_robot_delays(carmen_robot_and_trailers_motion_command_t *original_path, in
 	for (int j = size - 1; j < original_size; j++)
 	{
 		original_path[j].v = path[size - 1].v;
-		original_path[j].time = path[j].time;
+		original_path[j].time = path[size - 1].time;
 	}
 
 	// Steering delay

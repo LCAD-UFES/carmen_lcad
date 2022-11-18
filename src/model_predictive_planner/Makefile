@@ -64,8 +64,8 @@ clean: clean_libcarmodel
 clean_libcarmodel:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
-model_predictive_planner: model_predictive_planner_main.o model_predictive_planner.o \
-	model_predictive_planner_optimizer.o global_state.o publisher_util.o util.o pose.o command.o model_predictive_planner_interface.o
+model_predictive_planner: model_predictive_planner.o \
+	libmodel_predictive_planner_optimizer.a global_state.o publisher_util.o util.o pose.o command.o model_predictive_planner_interface.o model_predictive_planner_main.o 
 
 
 libmodel_predictive_planner_interface.a: model_predictive_planner_interface.o

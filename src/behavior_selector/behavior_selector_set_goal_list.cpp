@@ -1004,6 +1004,13 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 ////					keep_goal_time = 0.0;
 //			}
 //		}
+
+		else if ((rddf_pose_index == (rddf->number_of_poses - 1)) &&
+				 !rddf_pose_hit_obstacle) //-> Se o ultimo ponto do path eh o final goal, adiciona o goal la
+		{
+			goal_type[goal_index] = FINAL_GOAL;
+			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
+		}
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) ||  // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
 				  ((distance_from_car_to_rddf_point >= distance_between_waypoints / 1.0) && (rddf->poses[rddf_pose_index].v < 0.0))) && // -> Trocando a constante que divide distance_between_waypoints pode-se alterar a distância entre waypoints em caso de reh
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo
@@ -1014,15 +1021,8 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 			moving_obstacle_trasition = 0.0;
 		}
 
-		else if ((rddf_pose_index == (rddf->number_of_poses - 1)) &&
-				 !rddf_pose_hit_obstacle) //-> Se o ultimo ponto do path eh o final goal, adiciona o goal la
-		{
-			goal_type[goal_index] = FINAL_GOAL;
-			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
-		}
-
-		if (goal_index > 2) // Para mostrar no máximo 3 goals a frente
-			break;
+//		if (goal_index > 2) // Para mostrar no máximo 3 goals a frente
+//			break;
 	}
 
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);

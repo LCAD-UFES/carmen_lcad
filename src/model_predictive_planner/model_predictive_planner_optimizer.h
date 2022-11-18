@@ -184,10 +184,6 @@ void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 TrajectoryControlParameters fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params);
 
-void compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
-		TrajectoryControlParameters &tcp_seed,
-		TrajectoryDimensions target_td, double target_v);
-
 bool bad_tcp(TrajectoryControlParameters tcp);
 
 TrajectoryControlParameters get_n_knots_tcp_from_detailed_lane(vector<carmen_robot_and_trailers_path_point_t> detailed_lane,
