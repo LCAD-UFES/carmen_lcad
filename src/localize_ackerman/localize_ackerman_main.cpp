@@ -227,8 +227,8 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		if (globalpos_file == NULL)
 			globalpos_file = fopen(save_globalpos_file, "w");
 		if (globalpos_file && (timestamp >= save_globalpos_timestamp))
-			fprintf(globalpos_file, "%lf %lf %lf %lf %lf %lf %lf\n",
-					globalpos.pose.position.x, globalpos.pose.position.y, globalpos.pose.position.z,
+			fprintf(globalpos_file, "%lf %lf %lf %lf %lf %lf\n",
+					globalpos.pose.position.x, globalpos.pose.position.y,
 					globalpos.pose.orientation.yaw, v, phi, timestamp);
 	}
 
