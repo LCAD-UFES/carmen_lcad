@@ -4,7 +4,7 @@ MODULE_NAME = SIMULATOR ACKERMAN
 MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
 
 LINK = g++
-CFLAGS += -DOLD_MOTION_MODEL -std=c99
+CFLAGS += -DOLD_MOTION_MODEL -std=c99 -Wno-deprecated-declarations
 
 #LINK = g++ -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
 #CFLAGS += -DOLD_MOTION_MODEL -std=c99 -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined

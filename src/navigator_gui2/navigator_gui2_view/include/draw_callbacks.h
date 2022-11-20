@@ -132,19 +132,19 @@ extern "C" G_MODULE_EXPORT
 void on_buttonZoomOut_clicked(GtkWidget *widget __attribute__((unused)), GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventMotion *event);
+void motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventMotion *event);
 
 extern "C" G_MODULE_EXPORT
-int button_release_handler(GtkMapViewer		   *the_map_view,
+void button_release_handler(GtkMapViewer		   *the_map_view,
 		carmen_world_point_t *world_point,
 		GdkEventButton	   *event  );
 
 extern "C" G_MODULE_EXPORT
-int keyboard_press_handler(GtkMapViewer *the_map_view,
+void keyboard_press_handler(GtkMapViewer *the_map_view, carmen_world_point_t *point,
 		GdkEventKey	   *event);
 
 extern "C" G_MODULE_EXPORT
-int button_press_handler(GtkMapViewer		*the_map_view  ,
+void button_press_handler(GtkMapViewer		*the_map_view  ,
 		carmen_world_point_p world_point  ,
 		GdkEventButton		*event  );
 
