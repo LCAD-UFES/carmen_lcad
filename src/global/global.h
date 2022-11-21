@@ -813,6 +813,12 @@ carmen_get_point_nearest_to_path(int *point_in_trajectory_is,
 		carmen_robot_and_trailers_path_point_t w,
 		carmen_robot_and_trailers_path_point_t p, double min_segment_size);
 
+carmen_robot_and_trailers_motion_command_t
+carmen_get_point_nearest_to_motion_command(int *point_in_trajectory_is,
+		carmen_robot_and_trailers_motion_command_t v,
+		carmen_robot_and_trailers_motion_command_t w,
+		carmen_robot_and_trailers_motion_command_t p, double min_segment_size);
+
 int
 carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle);
 

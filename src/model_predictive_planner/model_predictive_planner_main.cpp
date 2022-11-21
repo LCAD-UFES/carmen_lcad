@@ -135,6 +135,70 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 }
 
 
+vector<carmen_robot_and_trailers_path_point_t>
+apply_robot_delays(vector<carmen_robot_and_trailers_path_point_t> &original_path)
+{
+	// Velocity delay
+	vector<carmen_robot_and_trailers_path_point_t> path = original_path;
+	double time_delay = 0.0;
+	double distance_travelled = 0.0;
+	int i = 0;
+	while ((time_delay < GlobalState::robot_velocity_delay) && (path.size() > 1))
+	{
+		time_delay += path[0].time;
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	while ((distance_travelled < GlobalState::robot_min_v_distance_ahead) && (path.size() > 1))
+	{
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	for (unsigned int j = 0; j < path.size(); j++)
+		original_path[j].v = path[j].v;
+
+	int size_decrease_due_to_velocity_delay = i;
+
+	// Steering delay
+	path = original_path;
+	time_delay = 0.0;
+	distance_travelled = 0.0;
+	i = 0;
+	while ((time_delay < GlobalState::robot_steering_delay) && (path.size() > 1))
+	{
+		time_delay += path[0].time;
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	while ((distance_travelled < GlobalState::robot_min_s_distance_ahead) && (path.size() > 1))
+	{
+		distance_travelled += DIST2D(path[0], path[1]);
+		path.erase(path.begin());
+		i++;
+	}
+
+	for (unsigned int j = 0; j < path.size(); j++)
+		original_path[j].phi = path[j].phi;
+
+	int size_decrease_due_to_steering_delay = i;
+
+	int size_decrease = (size_decrease_due_to_velocity_delay > size_decrease_due_to_steering_delay) ?
+							size_decrease_due_to_velocity_delay : size_decrease_due_to_steering_delay;
+
+	original_path.erase(original_path.begin() + original_path.size() - size_decrease, original_path.end());
+
+	path = original_path;
+
+	return (path);
+}
+
+
 void
 publish_robot_ackerman_motion_commands_eliminating_path_follower(vector<carmen_robot_and_trailers_path_point_t> &original_path, double timestamp)
 {

@@ -911,17 +911,21 @@ tune_pid_gain_velocity_handler(tune_pid_gain_velocity_parameters_message *msg)
 	global_vel_kd = msg->kd;
 	global_vel_ki = msg->ki;
 }
-static void
+
+
+void
 velocity_pid_data_handler(velocity_pid_data_message *msg)
 {
 	printf("Velocidade atual %lf\n", msg->current_velocity);
 }
 
-static void
+
+void
 steering_pid_data_handler(steering_pid_data_message *msg)
 {
 	printf("Effort ataul %lf\n", msg->effort);
 }
+
 
 /* handles ctrl+c */
 static void

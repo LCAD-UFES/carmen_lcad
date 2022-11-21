@@ -64,7 +64,7 @@ static carmen_param_t *installed_parameters = NULL;
 static int installed_list_length = 0;
 static int installed_list_capacity = 0;
 
-static char error_buffer[1024];
+static char error_buffer[2048];
 
 static char *usage_line = NULL;
 

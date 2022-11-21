@@ -107,7 +107,7 @@ void carmen_ps_close(carmen_ps_doc_p doc)
 
 void carmen_ps_comment(carmen_ps_doc_p doc, char *comment)
 {
-  char temp[100];
+  char temp[101];
   int i;
 
   strncpy(temp, comment, 100);
