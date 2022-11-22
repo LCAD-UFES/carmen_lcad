@@ -58,6 +58,9 @@ static double g_throttle_gap = 0.0;
 
 static double g_fuzzy_factor = 0.5;
 
+static double g_v_error_multiplier = 0.0; // quando igual a 1.0, o erro de v eh multiplicado por 2 qundo v eh igual a g_target_velocity (error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity))
+static double g_target_velocity = 5.55;
+
 static int robot_model_id = 0;
 
 /*#ifdef PRINT
@@ -286,7 +289,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	atan_desired_curvature = atan(achieved_curvature);
 
-	printf("g_maximum_steering_command_rate %lf, v %lf, plan_size %lf, fuzzy_factor %lf\n", g_maximum_steering_command_rate, g_v, plan_size, fuzzy_factor);
+//	printf("g_maximum_steering_command_rate %lf, v %lf, plan_size %lf, fuzzy_factor %lf\n", g_maximum_steering_command_rate, g_v, plan_size, fuzzy_factor);
 	double error_t = (atan_desired_curvature - atan_current_curvature) * fuzzy_factor;
 
 	if (manual_override == 0)
@@ -808,7 +811,11 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double a = (current_velocity - g_v) / delta_t;
 	g_v = current_velocity;
 
-	double error_t = desired_velocity - current_velocity;
+	double error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity);
+	if (error_multiplier > (1.0 + g_v_error_multiplier))
+		error_multiplier = 1.0 + g_v_error_multiplier;
+	double error_t = (desired_velocity - current_velocity) * error_multiplier;
+
 	if (manual_override == 0)
 		integral_t = integral_t + error_t * delta_t;
 	else

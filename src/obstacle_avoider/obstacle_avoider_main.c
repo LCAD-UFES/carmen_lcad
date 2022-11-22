@@ -61,6 +61,8 @@ typedef struct
 #define GRAPH_SAMPLES	2300
 #define GOAL_DISTANCE	1000.0
 
+#define MAX_LATENCY 	1.5
+
 int move_i = 0;
 int move_index = 0;
 int new_latency_control = 0;
@@ -462,7 +464,7 @@ move_previous_trajectory_to_current_timestamp(carmen_robot_and_trailers_motion_c
 	previous_trajectory[i] = from_traj_point_to_motion_command(robot_state, previous_trajectory[i].time - remaining_t);
 
 	move_i = i;
-	printf("move_i %d\n", move_i);
+//	printf("move_i %d\n", move_i);
 	int j;
 	for (j = 0; i < previous_size; j++, i++)
 		previous_trajectory[j] = previous_trajectory[i];
@@ -490,7 +492,7 @@ align_current_trajetory_to_updated_previous_trajectory(carmen_robot_and_trailers
 			break;
 
 		latency += trajectory[i].time;
-		if (latency < (robot_velocity_delay * 2.0))
+		if (latency < MAX_LATENCY)
 		{
 			max_latency = latency;
 			i_max_latency = i;
@@ -507,7 +509,7 @@ align_current_trajetory_to_updated_previous_trajectory(carmen_robot_and_trailers
 		max_latency = 0.0;
 	}
 
-	if (latency >= (robot_velocity_delay * 2.0))
+	if (latency >= MAX_LATENCY)
 		i = i_max_latency;
 
 //	if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
@@ -590,13 +592,14 @@ obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailers_
 		carmen_robot_and_trailers_motion_command_t *motion_commands_copy = (carmen_robot_and_trailers_motion_command_t *) malloc(num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 		memcpy(motion_commands_copy, motion_commands, num_motion_commands * sizeof(carmen_robot_and_trailers_motion_command_t));
 
-		print_trajectory(motion_commands_copy, num_motion_commands);
+//		print_trajectory(motion_commands_copy, num_motion_commands);
 		int new_num_motion_commands;
 		if (new_latency_control)
 		{
 			double total_latency;
-			new_num_motion_commands = apply_robot_delays(motion_commands_copy, num_motion_commands, timestamp, &total_latency);
-			new_num_motion_commands = apply_extra_phi_robot_delays(motion_commands_copy, num_motion_commands, total_latency);
+			new_num_motion_commands = apply_robot_delays_old(motion_commands_copy, num_motion_commands);
+			new_num_motion_commands = apply_robot_delays(motion_commands_copy, new_num_motion_commands, timestamp, &total_latency);
+//			new_num_motion_commands = apply_extra_phi_robot_delays(motion_commands_copy, num_motion_commands, total_latency);
 //			plot_velocity_future(motion_commands, num_motion_commands);
 		}
 		else
