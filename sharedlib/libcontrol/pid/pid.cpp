@@ -58,7 +58,7 @@ static double g_throttle_gap = 0.0;
 
 static double g_fuzzy_factor = 0.5;
 
-static double g_v_error_multiplier = 0.0; // quando igual a 1.0, o erro de v eh multiplicado por 2 qundo v eh igual a g_target_velocity (error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity))
+static double g_v_error_multiplier = 3.0; // quando igual a 1.0, o erro de v eh multiplicado por 2 qundo v eh igual a g_target_velocity (error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity))
 static double g_target_velocity = 5.55;
 
 static int robot_model_id = 0;
@@ -787,7 +787,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		return;
 	}
 	double t = carmen_get_time();
-	double delta_t = t - previous_t;
+	double delta_t = 0.025; // t - previous_t;
 
 //	double g_maximum_acceleration = 0.5;
 //	double delta_velocity = fabs(desired_velocity - current_velocity);
@@ -968,10 +968,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
 
 #ifdef PRINT
-	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, bs, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 		*throttle_command, *brakes_command,
-		integral_t, derivative_t, carmen_get_time(), a);
+		integral_t, derivative_t, carmen_get_time(), a, delta_t);
 	fflush(stdout);
 #endif
 
