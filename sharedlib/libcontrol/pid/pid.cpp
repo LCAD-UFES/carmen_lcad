@@ -787,7 +787,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		return;
 	}
 	double t = carmen_get_time();
-	double delta_t = 0.025; // t - previous_t;
+	double delta_t = t - previous_t;
 
 //	double g_maximum_acceleration = 0.5;
 //	double delta_velocity = fabs(desired_velocity - current_velocity);
