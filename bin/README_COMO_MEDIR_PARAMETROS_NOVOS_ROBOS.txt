@@ -13,8 +13,12 @@ semi_trailer1_M                                             Distância do ponto 
 
 
 semi_trailer1_width                                         Comprimento total do reboque/trailer
-semi_trailer1_distance_between_axle_and_front               Distancia do eixo do trailer (normalmente tem apenas 1 eixo) até o eixo 
+semi_trailer1_distance_between_axle_and_front               Distancia do eixo do trailer (normalmente tem apenas 1 eixo) até o a frente do reboque 
 semi_trailer1_distance_between_axle_and_back                Distancia do eixo do trailer (normalmente tem apenas 1 eixo) até o traseira do reboque 
+
+Para Modelo de Colisão: 
+Largura total do trailer
+
 
 Se houver mais de 1 eixo especificar a distância entre os eixos e o eixo principal escolhido
 ###
