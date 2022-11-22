@@ -5,7 +5,7 @@ MODULE_COMMENT = teste_grab_data
 
 LINK = g++ 
 
-CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations
+CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations -Wno-parentheses -Wno-ignored-qualifiers
 
 CFLAGS += -std=c11 -Wno-comment
 CXXFLAGS += -std=c++11 -Wno-comment

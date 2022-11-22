@@ -261,11 +261,11 @@ namespace View
 
 		if (controls_.map_view != NULL)
 		{
-			carmen_map_graphics_add_motion_event (controls_.map_view, (carmen_graphics_mapview_callback_t)motion_handler);
-			carmen_map_graphics_add_button_release_event (controls_.map_view, (carmen_graphics_mapview_callback_t)button_release_handler);
-			carmen_map_graphics_add_button_press_event (controls_.map_view, (carmen_graphics_mapview_callback_t)button_press_handler);
-			carmen_map_graphics_add_drawing_func (controls_.map_view, (carmen_graphics_mapview_drawing_func_t)draw_robot_objects);
-			carmen_map_graphics_add_keyboard_press_event (controls_.map_view, (carmen_graphics_mapview_callback_t)keyboard_press_handler);
+			carmen_map_graphics_add_motion_event(controls_.map_view, (carmen_graphics_mapview_callback_t) motion_handler);
+			carmen_map_graphics_add_button_release_event(controls_.map_view, (carmen_graphics_mapview_callback_t)button_release_handler);
+			carmen_map_graphics_add_button_press_event(controls_.map_view, (carmen_graphics_mapview_callback_t)button_press_handler);
+			carmen_map_graphics_add_drawing_func(controls_.map_view, (carmen_graphics_mapview_drawing_func_t)draw_robot_objects);
+			carmen_map_graphics_add_keyboard_press_event(controls_.map_view, (carmen_graphics_mapview_callback_t)keyboard_press_handler);
 
 			gtk_box_pack_start(GTK_BOX(controls_.box_map_2d), controls_.map_view->map_box, TRUE, TRUE, 0);
 		}
@@ -814,7 +814,7 @@ namespace View
 			}
 		}
 
-		sprintf(buffer, "Dist. Traveled: %'.3lf (Km), (%'.3lf Km/h average)", dist_traveled / 1000.0,
+		sprintf(buffer, "Dist. Traveled: %'.3lf (Km) (%'.3lf Km/h average)", dist_traveled / 1000.0,
 				(dist_traveled / 1000.0) / ((carmen_get_time() - first_timestamp + 0.01) / 3600));
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelDistTraveled), buffer);
 	}
@@ -884,17 +884,17 @@ namespace View
 
 		if (!freeze_status)
 		{
-			sprintf(buffer, "Robot: %.2f, %.2f, %2.3f (%3.2f), %5.1f km/h (%.2f m/s)", robot.pose.x,
+			sprintf(buffer, "Robot: %.2f %.2f %2.3f (%3.2f) %5.1f km/h (%.2f m/s)", robot.pose.x,
 					robot.pose.y, robot.pose.theta, carmen_radians_to_degrees(robot.pose.theta),
 					globalpos->v * 3.6, globalpos->v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
 
-			sprintf(buffer, "Velocity: %5.1f km/h (%.2f m/s), %.2f %s (%.3f %s)", robot_traj.t_vel * 3.6, robot_traj.t_vel,
+			sprintf(buffer, "Velocity: %5.1f km/h (%.2f m/s) %.2f %s (%.3f %s)", robot_traj.t_vel * 3.6, robot_traj.t_vel,
 					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"),
 					robot_traj.r_vel, (nav_panel_config->use_ackerman ? "rad" : "rad/s"));
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
-			sprintf(buffer, "Goal: %.2f, %.2f, %.3f (%.2f deg) (%.2lf Km/h, %.2f m/s)", goal.x, goal.y, goal.theta,
+			sprintf(buffer, "Goal: %.2f %.2f %.3f (%.2f deg) (%.2lf Km/h %.2f m/s)", goal.x, goal.y, goal.theta,
 					carmen_radians_to_degrees(goal.theta), 3.6 * goal.v, goal.v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
@@ -1503,7 +1503,7 @@ namespace View
 				gtk_label_set_text(GTK_LABEL(this->controls_.labelStatusMap), buffer);
 			}
 
-			sprintf(buffer, "Origin: (%ld, %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
+			sprintf(buffer, "Origin: (%ld %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelOrigin), buffer);
 
 			//Descomentar para gravacao automatica
@@ -1714,7 +1714,7 @@ namespace View
 		fused_odometry_position.map = this->controls_.map_view->internal_map;
 		fused_odometry_position.pose = fused_odometry_pose;
 
-		sprintf(buffer, "Fused Odom: %5.1f m, %5.1f m, %6.2f", fused_odometry_pose.x,
+		sprintf(buffer, "Fused Odom: %5.1f m %5.1f m %6.2f", fused_odometry_pose.x,
 				fused_odometry_pose.y, carmen_radians_to_degrees(fused_odometry_pose.theta));
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelFusedOdometry), buffer);
 
@@ -1973,13 +1973,18 @@ namespace View
 	GtkGui::navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message *msg)
 	{
 		static char buffer[2048];
+		char aux[2100];
 		sprintf(buffer, "Traffic Sign State: %s", get_traffic_sign_state_name(msg->traffic_sign_state));
 		if (msg->traffic_sign_state != RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF && msg->traffic_sign_data != 0.0)
 		{
 			int actual_state = (msg->traffic_sign_data > 0.0) ? RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT : RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT;
 			if (msg->traffic_sign_state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT)
-				sprintf(buffer, "%s/%s", buffer, get_traffic_sign_state_name(actual_state));
-			sprintf(buffer, "%s   %.3lf (%.3lf deg/m)", buffer, msg->traffic_sign_data, carmen_radians_to_degrees(msg->traffic_sign_data));
+			{
+				sprintf(aux, "%s/%s", buffer, get_traffic_sign_state_name(actual_state));
+				strcpy(buffer, aux);
+			}
+			sprintf(aux, "%s   %.3lf (%.3lf deg/m)", buffer, msg->traffic_sign_data, carmen_radians_to_degrees(msg->traffic_sign_data));
+			strcpy(buffer, aux);
 		}
 //		strcpy(ndata.traffic_sign_state_navigator,buffer);
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelTrafficSignState), buffer);
@@ -2253,7 +2258,6 @@ namespace View
 		memcpy(raw_image, gdk_pixbuf_read_pixels(pixbuf), pixbuf_size);
 		g_clear_object(&pixbuf);
 
-		int width  = mapv->port_size_x;
 		int height = mapv->port_size_y;
 		double x_origin = mapv->internal_map->config.x_origin;
 		double y_origin = mapv->internal_map->config.y_origin;
@@ -3295,7 +3299,7 @@ namespace View
 //		}
 
 		//draw navigator goal list
-		for (i = 0; i < goal_list_size; i++)
+		for (i = 0; (i < 1) && (i < goal_list_size); i++)
 		{
 			draw_robot_shape(the_map_view, &navigator_goal_list[i], TRUE, &goal_colour);
 			draw_robot_shape(the_map_view, &navigator_goal_list[i], FALSE, &carmen_black);

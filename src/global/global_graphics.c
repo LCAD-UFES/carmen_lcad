@@ -188,14 +188,14 @@ void carmen_graphics_draw_ellipse(GdkPixmap *pixmap, GdkGC *GC, double x,
 static void write_pixbuf_as_png(GdkPixbuf *pixbuf, char *user_filename) 
 {
   char basefilename[100] = "video";
-  char filename[100];
+  char filename[1024];
   GError *error;
   static int image_count = 0;
   
   if (user_filename == NULL)
     sprintf(filename, "%s%04d.png", basefilename, image_count);
   else
-    snprintf(filename, 100, "%s", user_filename);
+    snprintf(filename, 1023, "%s", user_filename);
 
   carmen_verbose("Saving image to %s... ", filename);
   

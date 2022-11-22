@@ -14,6 +14,9 @@ else
 CFLAGS += -DNO_GRAPHICS
 endif
 
+CFLAGS += -Wno-deprecated-declarations
+CXXFLAGS += -Wno-deprecated-copy
+
 MODULE_NAME = "GLOBAL"
 MODULE_COMMENT = "CARMEN global functions"
 

@@ -1007,7 +1007,7 @@ void on_buttonPlaceSimulator_clicked(GtkWidget *widget __attribute__((unused)),
 
 
 //extern "C" G_MODULE_EXPORT
-gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point,
+void motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point,
 		GdkEventMotion *event __attribute__ ((unused)))
 {
 	char buffer[1024];
@@ -1015,17 +1015,17 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 	carmen_map_t *the_map;
 
 	if (global_gui == NULL || the_map_view == NULL || the_map_view->internal_map == NULL)
-		return TRUE;
+		return;
 
 	the_map = the_map_view->internal_map;
 
 	global_gui->world_point_to_global_world_point(world_point);
 	if (carmen_world_to_map(world_point, &point) == -1)
-		return TRUE;
+		return;
 
 	if (!global_gui->freeze_status)
 	{
-		sprintf(buffer, "Grid Cell: %d, %d  (%.1f, %.1f)", point.x, point.y,
+		sprintf(buffer, "Grid Cell: %d %d  (%.1f %.1f)", point.x, point.y,
 				world_point->pose.x, world_point->pose.y);
 		gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelGridCell), buffer);
 
@@ -1064,8 +1064,6 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 		global_gui->display_needs_updating = 1;
 		global_gui->do_redraw();
 	}
-
-	return TRUE;
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1116,7 +1114,7 @@ void on_buttonZoomOut_clicked(GtkWidget *widget __attribute__((unused)),
 }
 
 //extern "C" G_MODULE_EXPORT
-int button_release_handler(GtkMapViewer		   *the_map_view,
+void button_release_handler(GtkMapViewer		   *the_map_view,
 		carmen_world_point_t *world_point,
 		GdkEventButton	   *event __attribute__ ((unused)))
 {
@@ -1125,73 +1123,71 @@ int button_release_handler(GtkMapViewer		   *the_map_view,
 	global_gui->world_point_to_global_world_point(world_point);
 
 	if (the_map_view->internal_map == NULL)
-		return TRUE;
+		return;
 
 	rtr = global_gui->placing_robot_action(the_map_view, world_point, event);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->placing_goal_action(the_map_view, world_point, event);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->placing_person_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->placing_simulator_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->orienting_robot_action(the_map_view, world_point, event);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->orienting_robot_semi_trailer_action(the_map_view, world_point, event);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->orienting_goal_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->orienting_person_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->orienting_simulator_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->selecting_final_region_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->placing_final_goal_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->orienting_final_goal_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->orienting_final_goal_semi_trailer_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->selecting_near_waypoint_action(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
+		return;
 
 	rtr = global_gui->select_near_rddf_point(the_map_view, world_point);
 	if (rtr)
-		return TRUE;
-
-	return TRUE;
+		return;
 }
 
 //extern "C" G_MODULE_EXPORT
-int keyboard_press_handler(GtkMapViewer *the_map_view,
+void keyboard_press_handler(GtkMapViewer *the_map_view, carmen_world_point_t *point,
 		GdkEventKey	   *event)
 {
 	if (global_gui->placement_status == EDITING_NEAR_RDDF && global_gui->near_rddf_point != NULL)
@@ -1265,7 +1261,7 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 				break;
 
 			default:
-				return FALSE;
+				return;
 		}
 //
 //		global_gui->near_rddf_point
@@ -1344,24 +1340,18 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 			break;
 
 			default:
-				return FALSE;
+				return;
 		}
 	}
-
-	return FALSE;
 }
 
 //extern "C" G_MODULE_EXPORT
-int button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
+void button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
 		carmen_world_point_p world_point __attribute__ ((unused)),
 		GdkEventButton		*event __attribute__ ((unused)))
 {
 	if (the_map_view->internal_map == NULL)
-	{
-		return TRUE;
-	}
-
-	return TRUE;
+		return;
 }
 
 //extern "C" G_MODULE_EXPORT

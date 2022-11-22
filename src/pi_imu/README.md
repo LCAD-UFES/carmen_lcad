@@ -178,7 +178,7 @@ disponivel no diretorio.
  $ ./Linux/build/RTIMULibDemoGL/RTIMULibDemoGL 
  {or ./Linux/build/RTIMULibDemo/RTIMULibDemo if OpenGL is not working}
  {or ./Linux/build/RTIMULibCal/RTIMULibCal for terminal only calibration}
- ```
+```
 
 For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
 
@@ -246,7 +246,14 @@ Ou seja, coloque para calibrar, retire a sensorbox de sua fixacao e gire-a de po
 normal para ajustar o maximo de z. Depois, fize-a e dirija o Art em circulos para obter o maximo e minimo de
 x e y.
 
-Quando a calibracao estiver OK, voce pode verifica-la junto ao resto do sistema carmen_lcad rodando:
+Quando a calibracao estiver OK, copie o arquivo com a calibracao, RTIMULib.ini, para o diretorio apropriado:
+
+```bash
+ $ cd ~/carmen_lcad/src/pi_imu/RTIMULib2
+ $ cp RTIMULib.ini ~/carmen_lcad/src/pi_imu/pi_imu_server
+```
+
+Voce pode verificar a calibracao junto ao resto do sistema carmen_lcad rodando:
 
 No Raspberry Pi:
 
@@ -259,10 +266,17 @@ No PC (um comando abaixo por terminal e dentro do ~/carmen_lcad/bin):
 
 ```bash
  $ ./central
- $ ./param_deamon ../src/carmen-ford-escape.ini
+ $ ./param_deamon ../src/carmen-ford-escape-sensorbox.ini
+ $ ./pi_imu_client_driver
  $ ./viewer_3D
- $ ./pi_imu_client_driver <IP do Raspbery pi>
 ```
+
+ ./central
+ ./param_daemon ../src/carmen-ford-escape-sensorbox.ini
+ ssh -t pi@192.168.1.15 'cd carmen_lcad/src/pi_imu/pi_imu_server; Output/pi_imu_server_driver'
+ ./pi_imu_client_driver
+ ./viewer_3D
+
 (Este teste requer o programa pi_imu_client_driver. Sua compilacao eh descrita mais abaixo.)
 
 No viewer_3D, deligue o GPS Axis e ligue o XSENS Axis. 
@@ -353,15 +367,38 @@ mensagens de apenas uma sejam publicadas).
 # Para permitir rodar comandos remotamente no Raspberry Pi siga os passos abaixo:
 
 1- Se você ainda não tem uma chave pública no computador que vai acessar o Pi, execute os comando abaixo 
-  para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+
+```bash
  cd
  ssh-keygen -t rsa
+```
 
 2- Copie a chave pública do computador que vai acessar o Pi para o Pi com os comando abaixo
+
+```bash
  cd
  ssh pi@192.168.1.15 mkdir -p .ssh
  cat ~/.ssh/id_rsa.pub | ssh pi@192.168.1.15 'cat >> .ssh/authorized_keys'
+```
 
 3- Teste se funcionou com o comando abaixo
+
+```bash
  ssh pi@192.168.1.15 'ls'
+```
+
+O ls remoto deve ocorrer sem necessidade de senha.
+
+# Para testar a IMU no carmen_lcad
+
+Abra x terminais e rode os programas abaixo do diretório bin em sequencia, um em cada terminal.
+
+```bash
+ ./central
+ ./param_daemon ../src/carmen-ford-escape-sensorbox.ini
+ ssh -t pi@192.168.1.15 'cd carmen_lcad/src/pi_imu/pi_imu_server; Output/pi_imu_server_driver'
+ ./pi_imu_client_driver
+ ./viewer_3D
+```
 

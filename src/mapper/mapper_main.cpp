@@ -49,6 +49,9 @@ int use_simulator_pose = 0;
 double highest_sensor = 0.0;
 double safe_height_from_ground;
 
+int level_msg = 0;
+double safe_height_from_ground_level = 0.0;
+
 extern int merge_with_offline_map;
 int build_snapshot_map;
 extern int update_cells_below_car;
@@ -384,6 +387,12 @@ publish_map(double timestamp)
 
 	add_moving_objects(map_set->occupancy_map, moving_objects_message);
 
+	if (level_msg == 1)
+	{
+		carmen_mapper_publish_map_level_message(map_set->occupancy_map, timestamp, 1);
+		return;
+	}
+
 	// Publica o mapa compactado apenas com as celulas com probabilidade igual ou maior que 0.5
 	carmen_compact_map_t cmap;
 	carmen_prob_models_create_compact_map_with_cells_larger_than_value(&cmap, map_set->occupancy_map, 0.5);
@@ -392,6 +401,7 @@ publish_map(double timestamp)
 
 	// Publica o mapa nao compactado
 	carmen_mapper_publish_map_message(map_set->occupancy_map, timestamp);
+
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
 //	printf("n = %d\n", virtual_laser_message.num_positions);
 	do_publish_diff_map(map_set->offline_map, map_set->occupancy_map, timestamp);
@@ -1059,7 +1069,10 @@ subscribe_to_ipc_messages()
 	if (sensors_params[25].alive)
 		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 15);
 
-	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+	if (level_msg == 1)
+		carmen_map_server_subscribe_offline_map_level1(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (!use_truepos) // This flag is for a special kind of operation where the sensor pipeline listen to the globalpos and the planning pipeline to the truepos
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) true_pos_message_handler, CARMEN_SUBSCRIBE_LATEST);

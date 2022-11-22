@@ -5,11 +5,11 @@ MODULE_NAME = NAVIGATOR GUI 2
 MODULE_COMMENT = Carmen Navigation Tool
 SUBDIRS = navigator_gui2_view
 
-LINK = g++ -pg
+LINK = g++
 
-CXXFLAGS += -std=c++11 -pg
+CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
 
-CFLAGS += -pg # -fopenmp
+CFLAGS += -Wno-deprecated-declarations
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src

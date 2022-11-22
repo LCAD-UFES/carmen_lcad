@@ -35,6 +35,10 @@
 
 extern double safe_range_above_sensors;
 extern double safe_height_from_ground;
+extern int level_msg;
+extern double safe_height_from_ground_level;
+
+int clean_map_bellow_car = 0;
 
 extern double robot_wheel_radius;
 
@@ -137,8 +141,14 @@ extern double time_secs_between_map_save;
 static void
 change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 {
+	if (clean_map_bellow_car)
+	{
+		sensor_params->current_range_max = 0.0;
+		return;
+	}
+
 	if ((angle > M_PI / 2.0) || (angle < -M_PI / 2.0))
-		sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
+			sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
 	else
 		sensor_params->current_range_max = sensor_params->range_max;
 }
@@ -1669,7 +1679,7 @@ mapper_set_robot_pose_into_the_map(carmen_map_set_t *map_set, carmen_localize_ac
 
 	if (UPDATE_CELLS_BELOW_CAR)
 		carmen_mapper_update_cells_bellow_robot(globalpos_message->globalpos, map_set->occupancy_map, 0.0);
-//		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
+		// carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
 }
 
 
@@ -1973,6 +1983,28 @@ carmen_mapper_override_mapping_mode_params(int argc, char **argv)
 		};
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+	}
+
+	if (level_msg == 1)
+	{
+		carmen_param_t param_list[] =
+		{
+			{(char *) "mapper",  (char *) "level1_update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_merge_with_offline_map", CARMEN_PARAM_ONOFF, &merge_with_offline_map, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_build_snapshot_map", CARMEN_PARAM_ONOFF, &build_snapshot_map, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_velodyne_range_max", CARMEN_PARAM_DOUBLE, &mapper_velodyne_range_max, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &mapper_range_max_factor, 1, NULL},
+			{(char *) "mapper",  (char *) "level1_create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
+			{(char *) "mapper",  (char *) "level1_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, carmen_mapper_sensors_params_handler},
+			{(char *) "mapper",  (char *) "level1_use_merge_between_maps", CARMEN_PARAM_ONOFF, &use_merge_between_maps, 0, NULL},
+
+		};
+		carmen_param_allow_unfound_variables(1);
+		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+		carmen_param_allow_unfound_variables(0);
 	}
 }
 
@@ -2834,13 +2866,22 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "commandline", (char *) "num_clouds", CARMEN_PARAM_INT, &neural_map_num_clouds, 0, NULL},
 		{(char *) "commandline", (char *) "time_secs_between_map_save", CARMEN_PARAM_DOUBLE, &time_secs_between_map_save, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
+		{(char *) "commandline", (char *) "level_msg", CARMEN_PARAM_INT, &level_msg, 0, NULL},
+		{(char *) "commandline", (char *) "clean_bellow_car", CARMEN_PARAM_ONOFF, &clean_map_bellow_car, 0, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map",		   CARMEN_PARAM_ONOFF,  &publish_diff_map, 		    1, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map_interval", CARMEN_PARAM_DOUBLE, &publish_diff_map_interval, 1, NULL},
+		{(char *) "mapper", 	 (char *) "safe_height_from_ground_level1", CARMEN_PARAM_DOUBLE, &safe_height_from_ground_level, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	if (mapping_mode == 0 || mapping_mode == 1)
 		carmen_mapper_override_mapping_mode_params(argc, argv);
+	
+	if (level_msg == 1)
+		safe_height_from_ground = safe_height_from_ground_level;
+
+	if (clean_map_bellow_car)
+		update_and_merge_with_mapper_saved_maps = 1;
 
 	// FILL THE sensor_params STRUCTURE VECTOR
 	carmen_mapper_get_sensors_param(argc, argv);

@@ -259,6 +259,8 @@ static int draw_gps_flag;
 static int draw_odometry_flag;
 static int draw_xsens_gps_flag;
 static int draw_map_flag;
+static int draw_map_level1_flag;
+static int has_map_level1;
 static int draw_costs_map_flag;
 static int draw_offline_map_flag;
 static int draw_remission_map_flag;
@@ -1157,7 +1159,7 @@ draw_everything()
         draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
     }
 
-    if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag)
+    if (draw_map_flag || draw_map_level1_flag || draw_costs_map_flag || draw_offline_map_flag)
     {
         carmen_pose_3D_t camera_pose = get_camera_pose();
         double map_zoom = camera_pose.position.z / 120.0;
@@ -2741,6 +2743,7 @@ mapper_map_message_handler(carmen_mapper_map_message *message)
 static void
 mapper_map_level1_message_handler(carmen_mapper_map_message *message)
 {
+    has_map_level1 = 1;
 	if (!first_map_received)
     {
         first_map_received = 1;
@@ -2755,7 +2758,7 @@ mapper_map_level1_message_handler(carmen_mapper_map_message *message)
         first_map_origin.z = 0.0;
     }
 
-	if (!draw_map_flag)
+	if (!draw_map_level1_flag)
 		return;
 
 	carmen_pose_3D_t camera_pose = get_camera_pose();
@@ -3462,6 +3465,8 @@ init_flags(void)
     draw_xsens_gps_flag = 0;
     follow_car_flag = 1;
     draw_map_flag = 0;
+    draw_map_level1_flag = 0;
+    has_map_level1 = 0;
     draw_costs_map_flag = 0;
     draw_offline_map_flag = 0;
     draw_remission_map_flag = 0;
@@ -4220,7 +4225,7 @@ draw_while_picking()
 		draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
 	}
 
-	if (draw_map_flag || draw_costs_map_flag || draw_offline_map_flag)
+	if (draw_map_flag || draw_map_level1_flag || draw_costs_map_flag || draw_offline_map_flag)
 	{
 		carmen_pose_3D_t camera_pose = get_camera_pose();
 		double map_zoom = camera_pose.position.z / 120.0;
@@ -4561,7 +4566,28 @@ set_flag_viewer_3D(int flag_num, int value)
 
     	if (value == 0)
     	{
-    		draw_map_flag = !draw_map_flag;
+            if (has_map_level1)
+            {
+                if ((draw_map_flag == 0) && (draw_map_level1_flag == 0))
+                {
+                    draw_map_flag = 1;
+                    draw_map_level1_flag = 0;
+                }
+                else if ((draw_map_flag == 1) && (draw_map_level1_flag == 0))
+                {
+                    draw_map_flag = 0;
+                    draw_map_level1_flag = 1;
+                }
+                else
+                {
+                    draw_map_flag = 0;
+                    draw_map_level1_flag = 0;
+                }
+            }
+            else
+            {
+                draw_map_flag = !draw_map_flag;
+            }
 
     		draw_costs_map_flag = 0;
     		draw_offline_map_flag = 0;
@@ -4571,6 +4597,7 @@ set_flag_viewer_3D(int flag_num, int value)
     		draw_costs_map_flag = !draw_costs_map_flag;
 
     		draw_map_flag = 0;
+            draw_map_level1_flag = 0;
     		draw_offline_map_flag = 0;
 
     	}
@@ -4579,6 +4606,7 @@ set_flag_viewer_3D(int flag_num, int value)
     		draw_offline_map_flag = !draw_offline_map_flag;
 
     		draw_map_flag = 0;
+            draw_map_level1_flag = 0;
     		draw_costs_map_flag = 0;
     	}
     	else if (value == 3)

@@ -497,7 +497,7 @@ char *carmen_get_host(void)
   // "The pointer returned [by a getenv() call] points to an internal memory block,
   // whose content or validity may be altered by further calls to getenv
   // (but not by other library functions)."
-  static char hostname[1024];
+  static char hostname[1026];
   FILE *bin_host;
 
   if (getenv("HOST") == NULL) {

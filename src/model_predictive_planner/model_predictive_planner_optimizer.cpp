@@ -18,6 +18,8 @@
 #include "util.h"
 #include "model_predictive_planner_optimizer.h"
 
+#define LINEAR_ACCELERATION false
+
 //#define PUBLISH_PLAN_TREE
 #ifdef PUBLISH_PLAN_TREE
 #include "model/tree.h"
@@ -52,6 +54,8 @@ bool use_obstacles = true;
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 extern int use_unity_simulator;
+
+double desired_v = 0.001;
 
 
 void
@@ -118,6 +122,52 @@ plot_phi_profile(TrajectoryControlParameters tcp)
 
 	for (unsigned int i = 0; i < tcp.k.size(); i++)
 		fprintf(gnuplot_pipeMP, "%lf %lf\ne\n", knots_x[i], knots_y[i]);
+
+	fflush(gnuplot_pipeMP);
+}
+
+
+void
+plot_a_profile(TrajectoryControlParameters tcp)
+{
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:7]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-2.0:2.0]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 't'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'a'\n");
+		fprintf(gnuplot_pipeMP, "set mytics 2\n");
+		fprintf(gnuplot_pipeMP, "set grid\n");
+		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
+	}
+
+	if (!tcp.valid)
+	{
+		fprintf(gnuplot_pipeMP, "plot 0\n");
+		fflush(gnuplot_pipeMP);
+		return;
+	}
+
+	FILE *mpp_file = fopen("mpp.txt", "w");
+
+	for (double t = 0.0; t < tcp.tt; t += tcp.tt / 100.0)
+	{
+		if ((desired_v == 0.0) && LINEAR_ACCELERATION)
+			fprintf(mpp_file, "%f %f\n", t, ((tcp.tt - t) / tcp.tt) * tcp.a);
+		else
+			fprintf(mpp_file, "%f %f\n", t, tcp.a);
+	}
+	fclose(mpp_file);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./mpp.txt' using 1:2 w l title 'a' lt rgb 'red'");
+	fprintf(gnuplot_pipeMP, "\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -342,7 +392,14 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 	path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
 	for (t = delta_t; t < tcp.tt; t += delta_t)
 	{
-		command.v = v0 + tcp.a * t;
+		if ((desired_v == 0.0) && LINEAR_ACCELERATION)
+		{
+			double a = tcp.a * ((tcp.tt - t) / tcp.tt);
+			command.v += a * delta_t;
+		}
+		else
+			command.v = v0 + tcp.a * t;
+
 		if (command.v > GlobalState::param_max_vel)
 			command.v = GlobalState::param_max_vel;
 		else if (command.v < GlobalState::param_max_vel_reverse)
@@ -358,14 +415,13 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 					&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 		else
 			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t,
-					&distance_traveled, delta_t / 3.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
+					&distance_traveled, delta_t / 10.0, GlobalState::robot_config, GlobalState::semi_trailer_config);
 
 		robot_state.trailer_theta[0] = convert_theta1_to_beta(robot_state.theta, robot_state.trailer_theta[0]);
 		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
-		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
-
 		if (GlobalState::eliminate_path_follower && (i > 70))
 			delta_t = multiple_delta_t;
+		path.push_back(convert_to_carmen_robot_and_trailer_path_point_t(robot_state, delta_t));
 
 		i++;
 	}
@@ -374,7 +430,14 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 	{
 		double final_delta_t = tcp.tt - (t - delta_t);
 
-		command.v = v0 + tcp.a * tcp.tt;
+		if ((desired_v == 0.0) && LINEAR_ACCELERATION)
+		{
+			double a = tcp.a * ((tcp.tt - t) / tcp.tt);
+			command.v += a * final_delta_t;
+		}
+		else
+			command.v = v0 + tcp.a * tcp.tt;
+
 		if (command.v > GlobalState::param_max_vel)
 			command.v = GlobalState::param_max_vel;
 		else if (command.v < GlobalState::param_max_vel_reverse)
@@ -567,8 +630,14 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
+	double a;
+
+	if ((desired_v == 0.0) && LINEAR_ACCELERATION)
+		a = 1.33333333 * (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	else
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
+		a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+
 	a = (-1.0) * a;
 	if (a == 0.0)
 	{
@@ -592,8 +661,12 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
 	}
 	else
-		tcp_seed.tt = (target_v - target_td.v_i) / a;
-
+	{
+		if ((desired_v == 0.0) && LINEAR_ACCELERATION)
+			tcp_seed.tt = 2.0 * (target_v - target_td.v_i) / a;
+		else
+			tcp_seed.tt = (target_v - target_td.v_i) / a;
+	}
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
 	if (tcp_seed.tt < 0.05)
@@ -613,9 +686,14 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 		TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
+	double a;
+
+	if ((desired_v == 0.0) && LINEAR_ACCELERATION)
+		a = 1.33333333 * (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	else
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
-	double v = target_td.v_i;
+		a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+
 	if (a == 0.0)
 	{
 		if (target_v != 0.0)
@@ -626,15 +704,22 @@ compute_a_and_t_from_s_foward(double s, double target_v,
 	else if (a > GlobalState::robot_config.maximum_acceleration_forward)
 	{
 		a = GlobalState::robot_config.maximum_acceleration_forward;
+		double v = target_td.v_i;
 		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
 	}
 	else if (a < -GlobalState::robot_config.maximum_deceleration_forward)
 	{
 		a = -GlobalState::robot_config.maximum_deceleration_forward;
+		double v = target_td.v_i;
 		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
 	}
 	else
-		tcp_seed.tt = (target_v - target_td.v_i) / a;
+	{
+		if ((desired_v == 0.0) && LINEAR_ACCELERATION)
+			tcp_seed.tt = 2.0 * (target_v - target_td.v_i) / a;
+		else
+			tcp_seed.tt = (target_v - target_td.v_i) / a;
+	}
 
 	if (tcp_seed.tt > 200.0)
 		tcp_seed.tt = 200.0;
@@ -1791,6 +1876,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_complete, params);
 
 //	plot_phi_profile(tcp_complete);
+//	plot_a_profile(tcp_complete);
 //	print_tcp(tcp_complete, carmen_get_time());
 
 #ifdef PUBLISH_PLAN_TREE

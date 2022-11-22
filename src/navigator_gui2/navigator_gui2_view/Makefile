@@ -4,9 +4,9 @@ include ../../Makefile.conf
 MODULE_NAME = NAVIGATOR GUI - VIEW	
 MODULE_COMMENT = Carmen Navigation Tool 
 
-LINK = g++ -pg
+LINK = g++
 
-CXXFLAGS += -std=c++11 -pg
+CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
 

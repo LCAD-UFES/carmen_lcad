@@ -47,6 +47,7 @@ extern carmen_localize_ackerman_globalpos_message *localize_ackerman_globalpos_m
 extern carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message;
 extern double maximum_acceleration_forward;
 
+int level_msg = 0;
 
 using namespace std;
 
@@ -402,8 +403,12 @@ shutdown_module(int signo)
 static void
 register_handlers()
 {
-	if (behavior_selector_use_symotha)
-		carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) carmen_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	if (level_msg == 1)
+	{
+		carmen_mapper_subscribe_map_level1_message(NULL, (carmen_handler_t) carmen_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	}
+	else if (behavior_selector_use_symotha)
+		carmen_mapper_subscribe_map_level1_message(NULL, (carmen_handler_t) carmen_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	else
 		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_compact_lane_map(NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -441,6 +446,14 @@ read_parameters(int argc, char **argv)
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t optional_param_list[] =
+	{
+		{(char *) "commandline",	(char *) "level_msg",	CARMEN_PARAM_INT,	&level_msg,	0, NULL},
+	};
+	num_items = sizeof(optional_param_list) / sizeof(optional_param_list[0]);
+	carmen_param_install_params(argc, argv, optional_param_list, num_items);
 
 	distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
 

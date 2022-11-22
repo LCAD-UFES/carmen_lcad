@@ -1428,7 +1428,7 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 }
 
 
-static gint
+static void
 handle_ipc(gpointer			*data __attribute__ ((unused)),
 		gint				 source __attribute__ ((unused)),
 		GdkInputCondition condition __attribute__ ((unused)))
@@ -1436,8 +1436,6 @@ handle_ipc(gpointer			*data __attribute__ ((unused)),
 	carmen_ipc_sleep(0.01);
 
 	carmen_graphics_update_ipc_callbacks((GdkInputFunction) handle_ipc);
-
-	return 1;
 }
 
 
