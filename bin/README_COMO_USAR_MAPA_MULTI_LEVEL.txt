@@ -52,8 +52,8 @@ este modo limpa apenas os obstáculos do mapa embaixo do robô, com a geometria 
 2. como a localização pode ser prejudicada neste modo, crie uma cópia do mapa que você deseja limpar e rode ele no movo multi level. veja acima.
 
 
-3. no mapper level1, adicione a flag *-clean_bellow_car on*
+3. no mapper level1, adicione a flag *-clean_bellow_car on* e *-mapping_mode on*
 
-    ./mapper -map_path ${MAP_NAME_N} -mapping_mode off -calibration_file ${CALIBRATION_FILE} -level_msg 1 -clean_bellow_car on
+    ./mapper -map_path ${MAP_NAME_N} -mapping_mode on -calibration_file ${CALIBRATION_FILE} -level_msg 1 -clean_bellow_car on
 
 o mapa limpo estará salvo na pasta ${MAP_NAME_N}.
