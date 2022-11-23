@@ -30,7 +30,7 @@ localize_globalpos_from_file(FILE *fptr_input)
 		distance = DIST2D(current_pose, last_pose);
 
 	if (distance < carmen_rddf_min_distance_between_waypoints)
-		return;
+		continue;
 
 	last_pose = current_pose;
 
