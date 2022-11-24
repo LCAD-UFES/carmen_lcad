@@ -818,7 +818,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			globalpos.semi_trailer_type,
 			semi_trailer_config.semi_trailers.d,
 			semi_trailer_config.semi_trailers.M,
-			globalpos.trailer_theta[0]
+			convert_theta1_to_beta(globalpos.globalpos.theta, globalpos.trailer_theta[0])
 	};
 
 	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(&local_compacted_map, &local_compacted_mean_remission_map, &local_map,
@@ -987,7 +987,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 			globalpos.semi_trailer_type,
 			semi_trailer_config.semi_trailers.d,
 			semi_trailer_config.semi_trailers.M,
-			globalpos.trailer_theta[0]
+			convert_theta1_to_beta(globalpos.globalpos.theta, globalpos.trailer_theta[0])
 	};
 
 	instanteneous_maps_ok = localize_ackerman_variable_scan_build_instanteneous_maps(msg, &spherical_sensor_params[sensor_number], 
