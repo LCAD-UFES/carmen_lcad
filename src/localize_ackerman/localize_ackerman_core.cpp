@@ -85,6 +85,7 @@ int PLOT_GRAPH = 0;
 
 #define MIN_CLUSTER_SIZE			10
 double lidar_h_dist_appx = .0;
+double lidar_h_dist_factor = 2.0;
 
 FILE *gnuplot_pipe = NULL;
 carmen_velodyne_partial_scan_message *last_velodyne_message = NULL;
@@ -457,7 +458,7 @@ compute_points_position_with_respect_to_car(carmen_vector_3D_t *points_position_
 	}
 
 	lidar_h_dist_appx /= num_filtered_points;
-	lidar_h_dist_appx *= 2.5;
+	lidar_h_dist_appx *= lidar_h_dist_factor;
 
 	qsort((void *) (points_position_with_respect_to_car), (size_t) num_filtered_points, sizeof(carmen_vector_3D_t), compare_x);
 
@@ -623,6 +624,7 @@ compute_semi_trailer_beta_using_velodyne(carmen_robot_and_trailers_traj_point_t 
 	// 	plot_graph(points_position_with_respect_to_car, points_position_with_respect_to_car_estimated, size);
 	free(points_position_with_respect_to_car);
 	free(points_position_with_respect_to_car_estimated);
+
 	if (beta == PREDICT_BETA_GSL_ERROR_CODE)
 		return (predicted_beta);
 	else

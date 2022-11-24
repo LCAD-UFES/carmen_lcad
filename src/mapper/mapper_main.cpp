@@ -502,22 +502,54 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 
 		// O codigo abaixo publica mensagens de Velodyne fake ateh que o mecanismo padrao de publicacao de mapas comece a funcionar
 		// Quando comeca, ok_to_publish se torna 1. ok_to_publish indica quando esta ok para a publicacao de mapas.
-		carmen_velodyne_partial_scan_message fake_velodyne_message;
-		fake_velodyne_message.number_of_32_laser_shots = 1;
-
-		carmen_velodyne_32_laser_shot fake_shot;
-		fake_shot.angle = 0.0;
-
-		for (int i = 0; i < 32; i++)
+		if (sensors_params[VELODYNE].alive)
 		{
-			fake_shot.distance[i] = 1; // Bem curtinho, mas nao zero. Zero eh tratado como infinito e gera escrita no mapa por ray casting.
-			fake_shot.intensity[i] = 0;
+			carmen_velodyne_partial_scan_message fake_velodyne_message;
+			fake_velodyne_message.number_of_32_laser_shots = 1;
+
+			carmen_velodyne_32_laser_shot fake_shot;
+			fake_shot.angle = 0.0;
+
+			for (int i = 0; i < 32; i++)
+			{
+				fake_shot.distance[i] = 1; // Bem curtinho, mas nao zero. Zero eh tratado como infinito e gera escrita no mapa por ray casting.
+				fake_shot.intensity[i] = 0;
+			}
+
+			fake_velodyne_message.partial_scan = &fake_shot;
+			fake_velodyne_message.timestamp = pose->timestamp;
+			fake_velodyne_message.host = carmen_get_host();
+			mapper_velodyne_partial_scan(VELODYNE, &fake_velodyne_message);
+		}
+		else
+		{
+
+			carmen_velodyne_variable_scan_message fake_lidar_message;
+			fake_lidar_message.number_of_shots = 1;
+
+			carmen_velodyne_shot fake_shot;
+			fake_shot.angle = 0.0;
+
+			for (int i = 0; i < 32; i++)
+			{
+				fake_shot.distance[i] = 1; // Bem curtinho, mas nao zero. Zero eh tratado como infinito e gera escrita no mapa por ray casting.
+				fake_shot.intensity[i] = 0;
+			}
+
+			fake_lidar_message.partial_scan = &fake_shot;
+			fake_lidar_message.timestamp = pose->timestamp;
+			fake_lidar_message.host = carmen_get_host();
+
+			for(int i = 10; i < number_of_sensors; i++)
+			{
+				if (sensors_params[10].alive)
+				{
+					update_data_params_with_lidar_data(10, &fake_lidar_message);
+					break;
+				}
+			}
 		}
 
-		fake_velodyne_message.partial_scan = &fake_shot;
-		fake_velodyne_message.timestamp = pose->timestamp;
-		fake_velodyne_message.host = carmen_get_host();
-		mapper_velodyne_partial_scan(VELODYNE, &fake_velodyne_message);
 		#ifdef OBSTACLE_PROBABILY_MESSAGE
 			// carmen_mapper_fill_lidar_point_cloud_each_ray_hit_obstacle_probabily_message()
 			// publish()
