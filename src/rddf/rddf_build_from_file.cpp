@@ -26,19 +26,19 @@ localize_globalpos_from_file(FILE *fptr_input)
 			distance = carmen_rddf_min_distance_between_waypoints;
 			first_time = 0;
 		}
-	else
-		distance = DIST2D(current_pose, last_pose);
+		else
+			distance = DIST2D(current_pose, last_pose);
 
-	if (distance < carmen_rddf_min_distance_between_waypoints)
-		return;
+		if (distance < carmen_rddf_min_distance_between_waypoints)
+			continue;
 
-	last_pose = current_pose;
+		last_pose = current_pose;
 
-	fptr = fopen(carmen_rddf_filename, "a");
-	fprintf(fptr, "%lf %lf %lf %lf %lf %lf\n",
-			current_pose.x, current_pose.y, current_pose.theta, 
-			v, phi, timestamp);
-	fclose(fptr);
+		fptr = fopen(carmen_rddf_filename, "a");
+		fprintf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+				current_pose.x, current_pose.y, current_pose.theta, 
+				v, phi, timestamp);
+		fclose(fptr);
 	}
 }
 
@@ -48,8 +48,8 @@ main (int argc, char **argv)
 {
 	printf("This script standardizes localizer poses according to the minimum distance\n");
 
-	if (argc < 2)
-		exit(printf("Use %s <rddf-file> <poses-input: x y theta v phi timestamp> <min-distance-between-waypoints>\n", argv[0]));
+	if (argc < 2 || argc < 3)
+		exit(printf("Use %s <rddf-file> <poses-input-file in format: x y theta v phi timestamp> <min-distance-between-waypoints>\n", argv[0]));
 
 	FILE *fptr_input = NULL;
 	carmen_rddf_filename = argv[1];
