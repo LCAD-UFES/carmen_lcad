@@ -61,7 +61,7 @@ typedef struct
 #define GRAPH_SAMPLES	2300
 #define GOAL_DISTANCE	1000.0
 
-#define MAX_LATENCY 	1.5
+#define MAX_LATENCY 	2.0
 
 int move_i = 0;
 int move_index = 0;

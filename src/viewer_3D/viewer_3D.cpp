@@ -886,6 +886,7 @@ draw_everything()
     carmen_ipc_sleep(sleepTime);
     lastDisplayTime = carmen_get_time();
 
+    glPointSize(point_size);
     draw_variable_velodyne(var_v_drawer);
 
     if (follow_car_flag)
@@ -1033,19 +1034,20 @@ draw_everything()
     if (draw_velodyne_flag == 1)
     {
 //        if (draw_annotation_flag || velodyne_remission_flag)
-            glPointSize(1);
-        draw_velodyne_points(velodyne_points, velodyne_size);
+//            glPointSize(1);
         glPointSize(point_size);
+        draw_velodyne_points(velodyne_points, velodyne_size);
     }
     else if (draw_velodyne_flag == 2)
     {
         //draw_velodyne_points(&(velodyne_points[last_velodyne_position]), 1);
         if (velodyne_remission_flag)
         {
-            glPointSize(2);
+//            glPointSize(2);
 //            draw_velodyne_points_color(velodyne_points, velodyne_size);
         }
 //            draw_velodyne_points(velodyne_points, velodyne_size);
+        	glPointSize(point_size);
             draw_velodyne_points_color(velodyne_points, velodyne_size);
 
 //        draw_point_cloud(velodyne_drawer);
@@ -1054,14 +1056,17 @@ draw_everything()
     }
     else if (draw_velodyne_flag == 3)
     {
+    	glPointSize(point_size);
         draw_velodyne_360(v_360_drawer, car_fused_pose);
     }
     else if (draw_velodyne_flag == 4)
     {
+    	glPointSize(point_size);
         draw_variable_velodyne(var_v_drawer);
     }
     else if (draw_velodyne_flag == 5)
     {
+    	glPointSize(point_size);
         draw_velodyne_intensity(v_int_drawer);
     }
 

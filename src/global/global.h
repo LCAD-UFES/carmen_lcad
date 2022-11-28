@@ -382,7 +382,7 @@ typedef struct {
 	int type;
 	double d;
 	double M;
-	double current_trailer_theta;
+	double current_trailer_theta; //Essa struct está carregando o BETA do trailer, isso é, o ângulo relativo ao theta do veículo.
 } carmen_current_semi_trailer_data_t;
 
 typedef struct {
