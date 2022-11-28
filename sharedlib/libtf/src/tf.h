@@ -388,7 +388,8 @@ protected:
   CompactFrameID lookupFrameNumber(const std::string& frameid_str) const
   {
     unsigned int retval = 0;
-    boost::recursive_mutex::scoped_lock(frame_mutex_);
+    // boost::recursive_mutex::scoped_lock(frame_mutex_);
+    boost::recursive_mutex::scoped_lock frame_mutex_;
     M_StringToCompactFrameID::const_iterator map_it = frameIDs_.find(frameid_str);
     if (map_it == frameIDs_.end())
     {
@@ -405,7 +406,8 @@ protected:
   CompactFrameID lookupOrInsertFrameNumber(const std::string& frameid_str)
   {
     unsigned int retval = 0;
-    boost::recursive_mutex::scoped_lock(frame_mutex_);
+    // boost::recursive_mutex::scoped_lock(frame_mutex_);
+    boost::recursive_mutex::scoped_lock frame_mutex_;
     M_StringToCompactFrameID::iterator map_it = frameIDs_.find(frameid_str);
     if (map_it == frameIDs_.end())
     {
