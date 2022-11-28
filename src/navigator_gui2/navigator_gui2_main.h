@@ -3,6 +3,7 @@
 
 #include <carmen/carmen_graphics.h>
 #include <carmen/behavior_selector_messages.h>
+#include <carmen/util_io.h>
 
 #define	XGV_MANUAL_OVERRIDE_FLAG	0x10000
 

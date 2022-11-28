@@ -11,6 +11,8 @@
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/carmen_gps_wrapper.h>
 #include <carmen/collision_detection.h>
+#include <carmen/util_io.h>
+
 
 #include "rddf_util.h"
 #include "rddf_index.h"
@@ -340,7 +342,7 @@ carmen_rddf_play_copy_kml(kmldom::PlacemarkPtr waypoint, carmen_fused_odometry_m
 
 
 carmen_rddf_waypoint *
-carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vector_size)
+carmen_rddf_play_load_rddf_from_file_old(char *rddf_filename, int *out_waypoint_vector_size)
 {
 	setlocale(LC_NUMERIC, "C");
 	unsigned int i, n;
@@ -399,6 +401,111 @@ carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vect
 			messages.push_back(message);
 		}
 		fclose(fptr);
+
+		carmen_rddf_waypoint *waypoint_vector = (carmen_rddf_waypoint *) calloc (sizeof(carmen_rddf_waypoint), messages.size());
+		for (i = 0; i < messages.size(); i++)
+		{
+			waypoint_vector[i].timestamp = messages[i].timestamp;
+			waypoint_vector[i].pose.x = messages[i].pose.position.x;
+			waypoint_vector[i].pose.y = messages[i].pose.position.y;
+			waypoint_vector[i].pose.theta = messages[i].pose.orientation.yaw;
+			waypoint_vector[i].driver_velocity = messages[i].velocity.x;
+			waypoint_vector[i].max_velocity = messages[i].velocity.x;
+			waypoint_vector[i].phi = messages[i].phi;
+		}
+
+		*out_waypoint_vector_size = messages.size();
+		return (waypoint_vector);
+	}
+}
+
+
+carmen_rddf_waypoint *
+carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vector_size)
+{
+	setlocale(LC_NUMERIC, "C");
+	unsigned int i, n;
+	carmen_fused_odometry_message message;
+
+	if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
+	{
+		int annotation = 0;
+		placemark_vector_t placemark_vector;
+
+		carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
+		carmen_rddf_waypoint *waypoint_vector = (carmen_rddf_waypoint *) calloc (sizeof(carmen_rddf_waypoint), placemark_vector.size());
+
+		n = 0;
+
+		for (i = 0; i < placemark_vector.size(); i++)
+		{
+			if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
+			{
+				waypoint_vector[n].timestamp = message.timestamp;
+				waypoint_vector[n].pose.x = message.pose.position.x;
+				waypoint_vector[n].pose.y = message.pose.position.y;
+				waypoint_vector[n].pose.theta = message.pose.orientation.yaw;
+				waypoint_vector[n].driver_velocity = message.velocity.x;
+
+				// TODO: aparentemente esse valor nao esta sendo salvo no rddf. No rddf_build, ele
+				// esta sendo inicializado com o robot_max_velocity do carmen.ini.
+				waypoint_vector[n].max_velocity = 2.0;
+
+				n++;
+			}
+		}
+
+		*out_waypoint_vector_size = n;
+		return (waypoint_vector);
+	}
+	else
+	{
+		vector<carmen_fused_odometry_message> messages;
+
+		std::string line;
+		std::ifstream logfile(rddf_filename);
+
+		if (!logfile.is_open())
+		{
+			OPEN_FILE_ERROR(rddf_filename);
+			exit(1);
+		}
+		else
+		{
+			while (std::getline(logfile, line))
+			{
+				carmen_line_content current_content = create_carmen_line_content(line);
+				memset(&message, 0, sizeof(message));
+
+				if (current_content.size == 6) // Esse é o if para tratar o rddf antigo, onde tinha apenas 6 campos, sem o trailer_theta.
+				{
+					message.pose.position.x = 		std::stod(get_string_from_carmen_line_content(current_content, 0));
+					message.pose.position.y = 		std::stod(get_string_from_carmen_line_content(current_content, 1));
+					message.pose.orientation.yaw = 	std::stod(get_string_from_carmen_line_content(current_content, 2));
+					message.velocity.x = 			std::stod(get_string_from_carmen_line_content(current_content, 3));
+					message.phi = 					std::stod(get_string_from_carmen_line_content(current_content, 4));
+					message.timestamp = 			std::stod(get_string_from_carmen_line_content(current_content, -1)); // -1 se refere ao último elemento nesse método, igual ao python
+//					carmen_print_line_content(current_content);
+				}
+				else if (current_content.size > 6)
+				{
+					// Nesse caso seria o rddf com os campos correspondentes ao trailer_theta, sendo que a quantidade de trailer_theta pode chegar a ser maior que 5
+					message.pose.position.x = 		std::stod(get_string_from_carmen_line_content(current_content, 0));
+					message.pose.position.y = 		std::stod(get_string_from_carmen_line_content(current_content, 1));
+					message.pose.orientation.yaw = 	std::stod(get_string_from_carmen_line_content(current_content, 2));
+					message.velocity.x = 			std::stod(get_string_from_carmen_line_content(current_content, 3));
+					message.phi = 					std::stod(get_string_from_carmen_line_content(current_content, 4));
+					message.num_trailers = 			std::stoi(get_string_from_carmen_line_content(current_content, 5));
+					size_t i; // Declarado fora do for porque se algum dia for incluído novos itens após os trailer_theta, pode-se usar o valor de i para conseguir seus índices
+					for (i = 0; i < MAX_NUM_TRAILERS; i++) // Esse for serve para funcionar caso algum dia o número de MAX_NUM_TRAILERS aumente
+						message.trailer_theta[i] = 	std::stod(get_string_from_carmen_line_content(current_content, 6 + i));
+
+					message.timestamp= 				std::stod(get_string_from_carmen_line_content(current_content, -1)); // -1 se refere ao último elemento nesse método, igual ao python
+
+				messages.push_back(message);
+				}
+			}
+		}
 
 		carmen_rddf_waypoint *waypoint_vector = (carmen_rddf_waypoint *) calloc (sizeof(carmen_rddf_waypoint), messages.size());
 		for (i = 0; i < messages.size(); i++)
@@ -645,7 +752,7 @@ carmen_rddf_play_updade_annotation_vector(crud_t action, carmen_annotation_t old
 
 
 void
-carmen_rddf_play_load_index(char *rddf_filename)
+carmen_rddf_play_load_index_old(char *rddf_filename)
 {
 	int annotation = 0;
 	carmen_fused_odometry_message message;
@@ -683,6 +790,83 @@ carmen_rddf_play_load_index(char *rddf_filename)
 
 			carmen_rddf_index_save(rddf_filename);
 			fclose(fptr);
+		}
+	}
+
+	carmen_rddf_load_index(rddf_filename);
+}
+
+
+void
+carmen_rddf_play_load_index(char *rddf_filename)
+{
+	int annotation = 0;
+	carmen_fused_odometry_message message;
+	placemark_vector_t placemark_vector;
+
+	if (!carmen_rddf_index_exists(rddf_filename))
+	{
+		if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
+		{
+			carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
+
+			for (unsigned int i = 0; i < placemark_vector.size(); i++)
+			{
+				if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
+					carmen_rddf_index_add(&message, 0, 0, annotation);
+			}
+
+			carmen_rddf_index_save(rddf_filename);
+		}
+		else
+		{
+			std::string line;
+			std::ifstream logfile(rddf_filename);
+
+			if (!logfile.is_open())
+			{
+				OPEN_FILE_ERROR(rddf_filename);
+				exit(1);
+			}
+			else
+			{
+				while (std::getline(logfile, line))
+				{
+					carmen_line_content current_content = create_carmen_line_content(line);
+
+					if (current_content.size == 6) // Esse é o if para tratar o rddf antigo, onde tinha apenas 6 campos, sem o trailer_theta.
+					{
+						message.pose.position.x = 		std::stod(get_string_from_carmen_line_content(current_content, 0));
+						message.pose.position.y = 		std::stod(get_string_from_carmen_line_content(current_content, 1));
+						message.pose.orientation.yaw = 	std::stod(get_string_from_carmen_line_content(current_content, 2));
+						message.velocity.x = 			std::stod(get_string_from_carmen_line_content(current_content, 3));
+						message.phi = 					std::stod(get_string_from_carmen_line_content(current_content, 4));
+						message.timestamp = 			std::stod(get_string_from_carmen_line_content(current_content, -1)); // -1 se refere ao último elemento nesse método, igual ao python
+	//					carmen_print_line_content(current_content);
+					}
+					else if (current_content.size > 6)
+					{
+						// Nesse caso seria o rddf com os campos correspondentes ao trailer_theta, sendo que a quantidade de trailer_theta pode chegar a ser maior que 5
+						message.pose.position.x = 		std::stod(get_string_from_carmen_line_content(current_content, 0));
+						message.pose.position.y = 		std::stod(get_string_from_carmen_line_content(current_content, 1));
+						message.pose.orientation.yaw = 	std::stod(get_string_from_carmen_line_content(current_content, 2));
+						message.velocity.x = 			std::stod(get_string_from_carmen_line_content(current_content, 3));
+						message.phi = 					std::stod(get_string_from_carmen_line_content(current_content, 4));
+						message.num_trailers = 			std::stoi(get_string_from_carmen_line_content(current_content, 5));
+						size_t i; // Declarado fora do for porque se algum dia for incluído novos itens após os trailer_theta, pode-se usar o valor de i para conseguir seus índices
+						for (i = 0; i < MAX_NUM_TRAILERS; i++) // Esse for serve para funcionar caso algum dia o número de MAX_NUM_TRAILERS aumente
+							message.trailer_theta[i] = 	std::stod(get_string_from_carmen_line_content(current_content, 6 + i));
+
+						message.timestamp= 				std::stod(get_string_from_carmen_line_content(current_content, -1)); // -1 se refere ao último elemento nesse método, igual ao python
+
+	//					carmen_print_line_content(current_content);
+
+					}
+					carmen_rddf_index_add(&message, 0, 0, 0);
+				}
+			}
+
+			carmen_rddf_index_save(rddf_filename);
 		}
 	}
 

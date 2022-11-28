@@ -17,6 +17,8 @@
 #include <queue>
 #include <list>
 #include <utility>
+#include <carmen/util_io.h>
+#include <fstream>
 
 #include <opencv2/core/version.hpp>
 #if CV_MAJOR_VERSION == 3
@@ -179,7 +181,7 @@ void load_rddfs (vector<string> files, vector< vector<carmen_rddf_waypoint> > &r
 void process_crossroads_around_nodes(graph_t &graph, double nearby_lane_range);
 void build_nearby_lanes(graph_t &graph, double nearby_lane_range, vector< vector<int> > nearby_indexes, std::vector<std::vector<carmen_rddf_waypoint>>);
 double euclidean_distance(double x1, double y1, double x2, double y2);
-void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordinate);
+void convert_utm_to_lat_long (class struct_with_x_y pose, Gdc_Coord_3d &lat_long_coordinate);
 lane_graph_t build_lane_graph (lane_graph_t lane_graph, graph_t &graph);
 vector<edge_t> build_graph_edges (vector<node_t> graph);
 graph_t build_graph(vector<string> files, graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, vector< vector<int> > &nearby_indexes, char* option);

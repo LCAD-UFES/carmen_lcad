@@ -5,6 +5,7 @@
 #include <vector>
 #include <carmen/carmen.h>
 #include "rddf_messages.h"
+#include <carmen/util_io.h>
 
 #include <kml/base/file.h>
 #include <kml/engine.h>
@@ -16,7 +17,7 @@ using namespace std;
 
 typedef struct
 {
-	carmen_point_t pose;
+	carmen_robot_and_trailers_pose_t pose;
 	double phi;
 	double max_velocity;
 	double timestamp;
