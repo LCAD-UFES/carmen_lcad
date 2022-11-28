@@ -35,7 +35,7 @@ LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lma
 
 LFLAGS += `pkg-config --libs opencv`
 
-LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -ltask_manager_interface
+LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -ltask_manager_interface -lcarmen_util
 LFLAGS += -luser_preferences
 
 #CFLAGS += -Wno-unknown-pragmas

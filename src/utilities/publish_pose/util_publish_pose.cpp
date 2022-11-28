@@ -142,7 +142,6 @@ main(int argc, char **argv)
 		publish_fused(x, y, theta, timestamp);
 		publish_globalpos(x, y, theta, timestamp);
 		usleep((int) sleep_time);
-
 		printf("Published globalpos(%lf, %lf, %lf) at timestamp %lf\n", x, y, theta, timestamp);
 	}
 

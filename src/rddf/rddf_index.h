@@ -10,6 +10,7 @@
 
 #include <carmen/carmen.h>
 #include <vector>
+#include <carmen/util_io.h>
 
 using namespace std;
 

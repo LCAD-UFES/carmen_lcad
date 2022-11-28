@@ -3312,7 +3312,10 @@ namespace View
 			for (i = 0; i < edited_rddf_goal_size; i++)
 			{
 				carmen_world_point_t world_point;
-				world_point.pose = edited_rddf_goal_list[i].pose;
+//				world_point.pose = edited_rddf_goal_list[i].pose;
+				world_point.pose.x = edited_rddf_goal_list[i].pose.x;
+				world_point.pose.y = edited_rddf_goal_list[i].pose.y;
+				world_point.pose.theta = edited_rddf_goal_list[i].pose.theta;
 				world_point.map = the_map_view->internal_map;
 
 				if (i != near_rddf_point_index)
