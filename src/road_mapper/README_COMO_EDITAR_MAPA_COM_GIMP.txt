@@ -1,4 +1,6 @@
 
+rm -r /dados/tmp/img/ && rm -r /dados/tmp/map
+
 1) Transforme todos os arquivos de mapas (.map) numa unica imagem (.png)
 
    mkdir -p /dados/tmp/img/ ; $CARMEN_HOME/bin/save_map_images  -input_dir $CARMEN_HOME/data/map_volta_da_ufes-20190915  -out_dir /dados/tmp/img/
