@@ -94,6 +94,31 @@ typedef struct
 	char	*error_description;
 } ErrorDescription;
 
+enum
+{
+	GEAR_1 = 3,
+	GEAR_2,
+	GEAR_3,
+	GEAR_4,
+	GEAR_5,
+	GEAR_6,
+	GEAR_7,
+	GEAR_8,
+	GEAR_9,
+	GEAR_10,
+	GEAR_11,
+	GEAR_12,
+	GEAR_13,
+	GEAR_14,
+	GEAR_15,
+	GEAR_16,
+	GEAR_17,
+	GEAR_18,
+	GEAR_19,
+	GEAR_20,
+	REVERSE_GEAR_1 = 130,
+	REVERSE_GEAR_2
+} GEAR_NUMBER;
 
 // Externs
 extern double g_throttle_command;

@@ -185,7 +185,7 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 					globalpos_message->semi_trailer_type,
 					semi_trailer_config.semi_trailers.d,
 					semi_trailer_config.semi_trailers.M,
-					globalpos_message->trailer_theta[0]
+					convert_theta1_to_beta(globalpos_message->globalpos.theta, globalpos_message->trailer_theta[0])
 			};
 
 			if (use_merge_between_maps)
@@ -220,7 +220,7 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 				globalpos_message->semi_trailer_type,
 				semi_trailer_config.semi_trailers.d,
 				semi_trailer_config.semi_trailers.M,
-				globalpos_message->trailer_theta[0]
+				convert_theta1_to_beta(globalpos_message->globalpos.theta, globalpos_message->trailer_theta[0])
 		};
 
 		if (use_merge_between_maps)

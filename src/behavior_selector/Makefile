@@ -54,7 +54,8 @@ LFLAGS += \
 	-ltask_manager_interface \
 	-lgsl -lgslcblas \
 	-lextra_keys_interface \
-	`pkg-config --libs opencv`
+	`pkg-config --libs opencv` \
+  -lcarmen_util
 	
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))

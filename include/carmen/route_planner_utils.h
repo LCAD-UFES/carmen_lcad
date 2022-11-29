@@ -108,7 +108,7 @@ a_star_utils_t add_vertex_to_closed_set(a_star_utils_t r, int vertex_id);
 //void add_vertex_to_open_set(a_star_utils_t r, int vertex_id);
 float h_n_manh (int vertex_id, int vertex_end, graph_t graph);
 // float h_n_eucl (int vertex_id, int vertex_end, graph_t graph);
-float h_n_eucl(carmen_point_t pose_ini, carmen_point_t pose_end);
+float h_n_eucl(class struct_with_x_y pose_ini, class struct_with_x_y pose_end);
 a_star_utils_t a_star_in_lane_graph(graph_t &graph, lane_graph_t &lane_graph, vector<int> &route, int vertex_ini, int vertex_end);
 a_star_utils_t a_star_k_neighbours(graph_t &graph, lane_graph_t &lane_graph, int k, int vertex_ini, int vertex_end);
 void set_new_origin_and_destination_index_in_lane_graph(graph_t &graph, lane_graph_t &lane_graph, int origin_index, int destination_index, int *origin_index_in_lane_graph, int *destination_index_in_lane_graph);
