@@ -92,6 +92,8 @@ carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
 
 carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
+double *gear_ratios_vector;
+
 
 static double
 get_delta_t(double *previous_t)
@@ -1195,6 +1197,7 @@ static void
 read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 {
 	int num_items;
+	char *gear_ratio_string;
 
 	carmen_param_t param_list[]= 
 	{
@@ -1216,6 +1219,7 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 		{"robot", "publish_combined_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_odometry), 0, NULL},
 		{"robot", "combine_odometry_phi", CARMEN_PARAM_INT, &(combine_odometry_phi), 0, NULL},
 		{"robot", "combine_odometry_vel", CARMEN_PARAM_INT, &(combine_odometry_vel), 0, NULL},
+		{"robot", "gear_ratio", CARMEN_PARAM_STRING, &gear_ratio_string, 0, NULL},
 
 		{"rrt",   "use_mpc",          CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
 		{"rrt",   "use_rlpid",        CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL}
@@ -1223,6 +1227,13 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	int num_gears = CLF_READ_INT(&gear_ratio_string);
+	gear_ratios_vector = (double*) malloc(num_gears * sizeof(double));
+	for (int i = 0; i < num_gears; i++)
+	{
+		gear_ratios_vector[i] = CLF_READ_DOUBLE(&gear_ratio_string);
+	}
 
     carmen_param_t param_optional_list[] =
 	{
