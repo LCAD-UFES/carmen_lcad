@@ -200,7 +200,7 @@ carmen_libcarneuralmodel_compute_new_velocity_with_ann(double desired_v, double 
 		carmen_libcarneuralmodel_init_velocity_ann_input(velocity_ann_input);
 	}
 
-	carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command, desired_v, v, time, 0);
+	carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command, desired_v, v, time, 0, 1.0);
 
 	if (gear_command == 129) // marcha reh
 	{

@@ -93,6 +93,9 @@ carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
 carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
 double *gear_ratios_vector;
+double *reverse_gear_ratios_vector;
+int num_gears = 0;
+int num_reverse_gears = 0;
 
 
 static double
@@ -974,9 +977,29 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		delta_t = get_velocity_delta_t();
 
+		double gear_ratio;
+		int gear_index;
+
+		if (g_XGV_gear >= FIRST_REVERSE_GEAR_CODE)
+		{
+			gear_index = g_XGV_gear - FIRST_REVERSE_GEAR_CODE;
+			if ((gear_index >= 0) && (gear_index < num_reverse_gears))
+				gear_ratio = reverse_gear_ratios_vector[gear_index];
+			else
+				gear_ratio = 1.0;
+		}
+		else
+		{
+			gear_index = g_XGV_gear - FIRST_GEAR_CODE;
+			if ((gear_index >= 0) && (gear_index < num_gears))
+				gear_ratio = gear_ratios_vector[gear_index];
+			else
+				gear_ratio = 1.0;
+		}
+
 		// PID VELOCITY
 		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command, g_desired_velocity,
-				ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+				ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, gear_ratio);
 
 		#ifdef PLOT_VELOCITY
 			pid_plot_velocity(ford_escape_hybrid_config->filtered_v, g_desired_velocity, 15.0, "vel");
@@ -1198,6 +1221,7 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 {
 	int num_items;
 	char *gear_ratio_string;
+	char *reverse_gear_ratio_string;
 
 	carmen_param_t param_list[]= 
 	{
@@ -1219,7 +1243,6 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 		{"robot", "publish_combined_odometry", CARMEN_PARAM_ONOFF, &(publish_combined_odometry), 0, NULL},
 		{"robot", "combine_odometry_phi", CARMEN_PARAM_INT, &(combine_odometry_phi), 0, NULL},
 		{"robot", "combine_odometry_vel", CARMEN_PARAM_INT, &(combine_odometry_vel), 0, NULL},
-		{"robot", "gear_ratio", CARMEN_PARAM_STRING, &gear_ratio_string, 0, NULL},
 
 		{"rrt",   "use_mpc",          CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
 		{"rrt",   "use_rlpid",        CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL}
@@ -1228,21 +1251,30 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
-	int num_gears = CLF_READ_INT(&gear_ratio_string);
+    carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "robot_model_name",   CARMEN_PARAM_INT,    &(robot_model_name), 0, NULL},
+		{(char *) "commandline", (char *) "tune_pid_mode",      CARMEN_PARAM_ONOFF,  &(tune_pid_mode),    0, NULL},
+		{"robot",                "gear_ratio",                  CARMEN_PARAM_STRING, &gear_ratio_string,  0, NULL},
+		{"robot",                "reverse_gear_ratio",          CARMEN_PARAM_STRING, &reverse_gear_ratio_string,  0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
+	num_gears = CLF_READ_INT(&gear_ratio_string);
 	gear_ratios_vector = (double*) malloc(num_gears * sizeof(double));
 	for (int i = 0; i < num_gears; i++)
 	{
 		gear_ratios_vector[i] = CLF_READ_DOUBLE(&gear_ratio_string);
 	}
 
-    carmen_param_t param_optional_list[] =
+	num_reverse_gears = CLF_READ_INT(&reverse_gear_ratio_string);
+	reverse_gear_ratios_vector = (double*) malloc(num_reverse_gears * sizeof(double));
+	for (int i = 0; i < num_reverse_gears; i++)
 	{
-		{(char *) "commandline", (char *) "robot_model_name",	CARMEN_PARAM_INT, &(robot_model_name),0, NULL},
-		{(char *) "commandline", (char *) "tune_pid_mode",		CARMEN_PARAM_ONOFF, &(tune_pid_mode),0, NULL},
-	};
-
-	carmen_param_allow_unfound_variables(1);
-	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+		reverse_gear_ratios_vector[i] = CLF_READ_DOUBLE(&reverse_gear_ratio_string);
+	}
 }
 
 

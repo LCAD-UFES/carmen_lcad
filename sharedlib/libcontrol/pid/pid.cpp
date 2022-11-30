@@ -771,7 +771,7 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 void
 carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,
 										double desired_velocity, double current_velocity, double delta_t_old __attribute__ ((unused)),
-										int manual_override)
+										int manual_override, double gear_ratio)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	static double 	error_t_1 = 0.0;	// error in time t-1
