@@ -12,6 +12,11 @@
 using namespace std;
 bool plan_in_progress = false;
 double error_sum = 0.0;
+bool first_time = true;
+
+double kp_final = 965.0;
+double ki_final = 2811.0;
+double kd_final = 42.0;
 
 typedef double (*MotionControlFunction)(double v, double w, double t);
 
@@ -411,12 +416,19 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 	printf("VALOR Ki %lf\n", ki);
 	printf("VALOR Kd %lf\n", kd);
 
+	kp_final = kp;
+	ki_final = ki;
+	kd_final = kd;
 	//return (execute_motion_command(kp, ki, kd));  // TODO ??? send the motion command to the car and wait for the return
 
 	//chamar o publisher e publicar a mensagem com os parametros kp, ki, kd
 	tune_pid_gain_steering_parameters_message *pid_steer_msg = fill_pid_gain_steering_parameters_message(kp, ki, kd);
 	carmen_ford_escape_publish_tune_pid_gain_steering_parameters_message(pid_steer_msg , carmen_get_time());
 
+	if(!first_time)
+		error_sum = 0.0;
+
+	first_time = false;
 	send_trajectory_to_robot();
 	plan_in_progress = true;
 
@@ -460,15 +472,15 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	double f_ki_h = my_f(x_h, params);
 	double df_ki_h = (f_ki_h - f_x) / h;
 
-	// gsl_vector_set(x_h, 0, kp);         // Do not optimize the derivative initialy
-	// gsl_vector_set(x_h, 1, ki);
-	// gsl_vector_set(x_h, 2, kd + h);
-	// double f_kd_h = my_f(x_h, params);
-	// double df_kd_h = (f_kd_h - f_x) / h;
+//	gsl_vector_set(x_h, 0, kp);         // Do not optimize the derivative initialy
+//	gsl_vector_set(x_h, 1, ki);
+//	gsl_vector_set(x_h, 2, kd + h);
+//	double f_kd_h = my_f(x_h, params);
+//	double df_kd_h = (f_kd_h - f_x) / h;
 
 	gsl_vector_set(df, 0, df_kp_h);
 	gsl_vector_set(df, 1, df_ki_h);
-	// gsl_vector_set(df, 2, df_kd_h);
+//	gsl_vector_set(df, 2, df_kd_h);
 
 	gsl_vector_free(x_h);
 }
@@ -496,9 +508,9 @@ optimize_PID_gains()
 	// my_func.params = motion_command_message; ???? usar algum parametro?
 
 	v = gsl_vector_alloc (my_func.n);
-	gsl_vector_set(v, 0, 965.0); //gsl_vector_set(v, 0, 35.0);
-	gsl_vector_set(v, 1, 2811.0); // gsl_vector_set(v, 1, 9.0);
-	gsl_vector_set(v, 2, 42.0); //gsl_vector_set(v, 2, -0.3);
+	gsl_vector_set(v, 0, kp_final); //gsl_vector_set(v, 0, 35.0);
+	gsl_vector_set(v, 1, ki_final); // gsl_vector_set(v, 1, 9.0);
+	gsl_vector_set(v, 2, kd_final); //gsl_vector_set(v, 2, -0.3);
 
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, my_func.n);
@@ -510,11 +522,14 @@ optimize_PID_gains()
 		iter++;
 		status = gsl_multimin_fdfminimizer_iterate(s);
 		printf("FUI EVOCADO !!!\n");
-		//if (status)
-			//break;
-
+		if (status)
+		{
+			printf("Entrei break \n");
+			break;
+		}
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.2);
+		printf("DEpois GSL\n");
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
 
@@ -526,6 +541,8 @@ optimize_PID_gains()
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(v);
 
+	optimize_PID_gains();
+
 	return;
 }
 
@@ -534,6 +551,10 @@ void make_plot()
 	static FILE *gnuplot_pipe;
 	if (gnuplot_pipe != NULL) {
 	    fclose(gnuplot_pipe);
+	}
+	if(error_vector.empty())
+	{
+		return;
 	}
 	FILE *arquivo_teste = fopen("steer_pid.txt", "w");
 	for(long unsigned int i = 0 ; i < current_steer_angle_vector.size(); i++)
@@ -548,10 +569,7 @@ void make_plot()
 			"'./steer_pid.txt' using ($4) : ($2) with lines title 'desired steer angle', "
 			"'./steer_pid.txt' using ($4) : ($3) with lines title 'error'\n");
 	fflush(gnuplot_pipe);
-	current_steer_angle_vector.clear();
-	desired_steer_angle_vector.clear();
-	timestamp_vector.clear();
-	error_vector.clear();
+
 }
 
 
@@ -568,6 +586,11 @@ subscribe_pid_steer_feedback_handler(steering_pid_data_message *msg)
 		//TODO criar uma função pra plotar o gráfico
 		make_plot();
 		//TODO achar comando pra não plotar janelas infinitas
+		current_steer_angle_vector.clear();
+		desired_steer_angle_vector.clear();
+		timestamp_vector.clear();
+		error_vector.clear();
+		//error_sum = 0;
 	}
 
 
@@ -639,7 +662,6 @@ define_messages()
 int
 main(int argc, char **argv)
 {
-	printf("FOI!!!!\n");
 	signal(SIGINT, signal_handler);
 
 	carmen_ipc_initialize(argc, argv);

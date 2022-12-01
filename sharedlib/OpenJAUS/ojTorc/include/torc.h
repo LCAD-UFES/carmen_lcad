@@ -85,6 +85,10 @@
 #define XGV_ERROR				1
 #define	MAX_ERRORS				255
 
+// Defines para indexar corretamente vetores relacionados a marchas (associado ao enum abaixo)
+#define FIRST_GEAR_CODE 3
+#define FIRST_REVERSE_GEAR_CODE 130
+
 
 // Types
 typedef struct
