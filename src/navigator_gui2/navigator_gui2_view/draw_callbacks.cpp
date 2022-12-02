@@ -1517,16 +1517,16 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 						double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions);
 
 						carmen_robot_and_trailers_traj_point_t lane_point = global_gui->route_planner_route->nearby_lanes[lane_start + i];
-						lane_line_start.pose.x = lane_point.x + (lane_left_width * cos(lane_point.theta + M_PI / 2.0));
-						lane_line_start.pose.y = lane_point.y + (lane_left_width * sin(lane_point.theta + M_PI / 2.0));
+						lane_line_start.pose.x = lane_point.x + (lane_left_width * cos(lane_point.theta - M_PI / 2.0));
+						lane_line_start.pose.y = lane_point.y + (lane_left_width * sin(lane_point.theta - M_PI / 2.0));
 						lane_line_end.pose.x = lane_point.x;
 						lane_line_end.pose.y = lane_point.y;
 						carmen_map_graphics_draw_line(the_map_view, &carmen_green, &lane_line_start, &lane_line_end);
 
 						lane_line_start.pose.x = lane_point.x;
 						lane_line_start.pose.y = lane_point.y;
-						lane_line_end.pose.x = lane_point.x - lane_right_width * cos(lane_point.theta + M_PI / 2.0);
-						lane_line_end.pose.y = lane_point.y - lane_right_width * sin(lane_point.theta + M_PI / 2.0);
+						lane_line_end.pose.x = lane_point.x - lane_right_width * cos(lane_point.theta - M_PI / 2.0);
+						lane_line_end.pose.y = lane_point.y - lane_right_width * sin(lane_point.theta - M_PI / 2.0);
 						carmen_map_graphics_draw_line(the_map_view, &carmen_red, &lane_line_start, &lane_line_end);
 					}
 				}
