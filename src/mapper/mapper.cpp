@@ -2095,6 +2095,7 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 		{(char *) "mapper", (char *) "lidar14", CARMEN_PARAM_ONOFF, &sensors_params[24].alive, 1, NULL},
 		{(char *) "mapper", (char *) "lidar15", CARMEN_PARAM_ONOFF, &sensors_params[25].alive, 1, NULL},
 
+		{(char *) "mapper", (char *) "lidar1_locc", CARMEN_PARAM_ONOFF, &sensors_params[11].log_odds.log_odds_occ, 1, NULL},
 		{(char *) "mapper", (char *) "lidar8_locc", CARMEN_PARAM_ONOFF, &sensors_params[18].log_odds.log_odds_occ, 1, NULL},
 		{(char *) "mapper", (char *) "velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 1, NULL},
 		{(char *) "mapper", (char *) "laser_ldmrs_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 1, NULL},
@@ -2108,6 +2109,7 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 		{(char *) "mapper", (char *) "stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 1, NULL},
 //			{(char *) "mapper", (char *) "stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 1, NULL},
 
+		{(char *) "mapper", (char *) "lidar1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[11].log_odds.log_odds_free, 1, NULL},
 		{(char *) "mapper", (char *) "lidar8_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[18].log_odds.log_odds_free, 1, NULL},
 		{(char *) "mapper", (char *) "velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 1, NULL},
 		{(char *) "mapper", (char *) "laser_ldmrs_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 1, NULL},
@@ -2121,6 +2123,7 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 		{(char *) "mapper", (char *) "stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_free, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_free, 1, NULL},
 //			{(char *) "mapper", (char *) "stereo_mapping_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "lidar1_l0", CARMEN_PARAM_DOUBLE, &sensors_params[11].log_odds.log_odds_l0, 1, NULL},
 		{(char *) "mapper", (char *) "lidar8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[18].log_odds.log_odds_l0, 1, NULL},
 		{(char *) "mapper", (char *) "velodyne_l0", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_l0, 1, NULL},
 		{(char *) "mapper", (char *) "laser_ldmrs_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 1, NULL},
@@ -2133,7 +2136,10 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 		{(char *) "mapper", (char *) "stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_l0, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_l0, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_l0, 1, NULL},
-
+		
+		{(char *) "mapper", (char *) "lidar1_ray_index_difference", CARMEN_PARAM_DOUBLE, &sensors_params[11].ray_index_difference, 1, NULL},
+		{(char *) "mapper", (char *) "lidar1_use_index_difference", CARMEN_PARAM_DOUBLE, &sensors_params[11].use_index_difference, 1, NULL},
+		{(char *) "mapper", (char *) "lidar1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[11].unexpeted_delta_range_sigma, 1, NULL},
 		{(char *) "mapper", (char *) "lidar8_ray_index_difference", CARMEN_PARAM_DOUBLE, &sensors_params[18].ray_index_difference, 1, NULL},
 		{(char *) "mapper", (char *) "lidar8_use_index_difference", CARMEN_PARAM_DOUBLE, &sensors_params[18].use_index_difference, 1, NULL},
 		{(char *) "mapper", (char *) "lidar8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[18].unexpeted_delta_range_sigma, 1, NULL},
