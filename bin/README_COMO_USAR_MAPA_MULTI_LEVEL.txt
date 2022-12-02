@@ -1,6 +1,6 @@
 # COMO USAR MAPA MULTI LEVEL
 
-este modo publica a mensagem CARMEN_MAPPER_MAP_MESSAGE_NAME como sendo CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME.
+este modo publica a mensagem CARMEN_MAPPER_MAP_MESSAGE_NAME como sendo CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME, podendo utilizar duas instâncias de mapas.
 note que apenas o esta mensagem é publicada no mapper extra, as demais NÃO SÃO DUPLICADAS!
 
 
@@ -44,6 +44,8 @@ depois é só subscrever os módulos com a nova mensagem:
 # COMO LIMPAR MAPA COM O ROBO
 
 este modo limpa apenas os obstáculos do mapa embaixo do robô, com a geometria definida no arquivo de colisão *_col.txt.
+veja que neste caso é necessário utilizar duas instâncias de mapas rodando, como neste exemplo do multi level. uma para a localização do robô, e outra para realizar a limpeza.
+isto ocorre pois a limpeza é realizada descartando todos os raios do LiDAR, e limpando apenas as células dentro do raio de colisão do robô.
 
 
 1. defina o arquivo *_col.txt com a geometria adequada
