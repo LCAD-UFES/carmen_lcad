@@ -1,0 +1,36 @@
+#CARMEN
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
+export CARMEN_HOME=~/carmen_lcad
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu/:/usr/lib/libkml:$CARMEN_HOME/lib
+export PATH=$PATH:$CARMEN_HOME/bin
+
+#OpenJaus
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CARMEN_HOME/sharedlib/OpenJAUS/libopenJaus/lib:$CARMEN_HOME/sharedlib/OpenJAUS/libjaus/lib:$CARMEN_HOME/sharedlib/OpenJAUS/ojTorc/lib:$CARMEN_HOME/sharedlib/OpenJAUS/ojIARASim/lib
+
+#MAE
+export MAEHOME=~/MAE
+export PATH=$PATH:$MAEHOME/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MAEHOME/lib
+
+#Darknet
+export DARKNET_HOME=$CARMEN_HOME/sharedlib/darknet
+export LD_LIBRARY_PATH=$DARKNET_HOME/lib:$LD_LIBRARY_PATH
+
+#Darknet2
+export DARKNET2_HOME=$CARMEN_HOME/sharedlib/darknet2
+export LD_LIBRARY_PATH=$DARKNET2_HOME/lib:$LD_LIBRARY_PATH
+
+#CUDA
+export PATH=$PATH:/usr/local/cuda/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
+export CUDA_LIBS=/usr/local/cuda/lib64
+
+#Voice Interface
+export GOOGLE_APPLICATION_CREDENTIALS=~/credentials/voice_interface_credentials.json
+export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
+export SYSTEM=linux
+export MACHINE=x86_64
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CARMEN_HOME/packages_carmen/Porcupine/lib/linux/x86_64
+
+#NOD_Tracker - sempre por ultimo
+export PYTHONPATH=$CARMEN_HOME/src/neural_object_detector3/pedestrian_tracker:$PYTHONPATH
