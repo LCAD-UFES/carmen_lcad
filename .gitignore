@@ -838,3 +838,5 @@ tmp/loops.txt
 src/virtual_depth_estimator/stereo_velodyne_dpt
 data/mapper_deepmapper/*
 data/mapper_teste_sanity/*
+data/mapper_dissertacao1_lidar/*
+data/mapper_dissertacao1/*

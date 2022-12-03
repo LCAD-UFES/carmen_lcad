@@ -91,7 +91,7 @@ register_ipc_messages(void)
 
 void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resolution,
 									 int horizontal_resolution, carmen_velodyne_shot *stereo_velodyne_scan,
-									 double range_max, unsigned char *image_gray, unsigned char *image_color)
+									 double range_max, unsigned char *image_gray, int cut_top, int cut_down)
 {
 	int i, j, x, y;
 
@@ -103,13 +103,16 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 	{
 		stereo_velodyne_scan[j].angle = angle;
 		angle += delta_angle;
-		for (y = 0, i = vertical_resolution - 1; y < vertical_resolution; y += 1, i--)
+		for (y = cut_down, i = vertical_resolution - cut_top - cut_down - 1; y < vertical_resolution - cut_top; y += 1, i--)
 		{
 			// double horizontal_angle = carmen_normalize_theta(-stereo_velodyne_scan[j].angle) / 180.0;
 			//  double horizontal_angle = stereo_velodyne_scan[j].angle * M_PI / 180.0;
 			double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(stereo_velodyne_scan[j].angle));
 			double range = points[(int)(y * (double)horizontal_resolution + x)] * cos(abs(horizontal_angle));
-			range = range > range_max ? 0.0 : range;
+			
+			//double range = points[(int)(y * (double)horizontal_resolution + x)];
+			
+			//range = range > range_max ? 0.0 : range;
 			stereo_velodyne_scan[j].distance[i] = (unsigned short)(range * range_multiplier_factor);
 			stereo_velodyne_scan[j].intensity[i] = image_gray[(int)(y * (double)horizontal_resolution + x)];
 			// stereo_velodyne_scan[j].point_color[i].x = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x))];
@@ -152,7 +155,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
-									range_max, image_gray, image_color);
+									range_max, image_gray, vertical_top_cut, vertical_down_cut);
 
 	velodyne_partial_scan.partial_scan = scan;
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
@@ -193,7 +196,7 @@ void image_handler(camera_message *msg)
 	unsigned char *image_color = open_cv_image.data;
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
-									range_max, image_gray, image_color);
+									range_max, image_gray, vertical_top_cut, vertical_down_cut);
 
 	velodyne_partial_scan.partial_scan = scan;
 	velodyne_partial_scan.number_of_shots = horizontal_resolution;
@@ -484,7 +487,7 @@ int read_parameters(int argc, char **argv)
 
 	// initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, Size(camera_width, camera_height), CV_16SC2, MapX, MapY);
 
-	init_params_edit();
+	//init_params_edit();
 	return (0);
 }
 
