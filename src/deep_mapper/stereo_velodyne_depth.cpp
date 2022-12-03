@@ -97,7 +97,7 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 
 	unsigned short int *points = (unsigned short int *)depth;
 
-	double angle = horizontal_start_angle; // Horizontal angle
+	double angle = horizontal_start_angle;
 	double delta_angle = horizontal_camera_angle / (double)horizontal_resolution;
 	for (x = 0, j = horizontal_resolution - 1; x < horizontal_resolution; x += 1, j--)
 	{
@@ -110,15 +110,9 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 			double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(stereo_velodyne_scan[j].angle));
 			double range = points[(int)((y + cut_top) * (double)horizontal_resolution + x)] * cos(abs(horizontal_angle));
 			
-			//double range = points[(int)(y * (double)horizontal_resolution + x)];
-			
-			//range = range > range_max ? 0.0 : range;
+			range = range > range_max ? 0.0 : range;
 			stereo_velodyne_scan[j].distance[i] = (unsigned short)(range * range_multiplier_factor);
-			stereo_velodyne_scan[j].intensity[i] = image_gray[(int)(y * (double)horizontal_resolution + x)];
-			// stereo_velodyne_scan[j].point_color[i].x = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x))];
-			// stereo_velodyne_scan[j].point_color[i].y = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+1)];
-			// stereo_velodyne_scan[j].point_color[i].z = (double) image_color[(int)(3*(y * (double)horizontal_resolution + x)+2)];
-			// cout << stereo_velodyne_scan[j].point_color[i].x << endl;
+			stereo_velodyne_scan[j].intensity[i] = image_gray[(int)((y + cut_top) * (double)horizontal_resolution + x)];
 		}
 	}
 	
@@ -152,7 +146,7 @@ void bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_
 		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-	unsigned char *image_color = open_cv_image.data;
+	
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
 									range_max, image_gray, vertical_top_cut, vertical_down_cut);
@@ -193,7 +187,7 @@ void image_handler(camera_message *msg)
 		depth_pred = libnewcrfs_process_image(open_cv_image.cols, open_cv_image.rows, open_cv_image.data, vertical_top_cut, vertical_down_cut);
 
 	cv::Mat imgdepth = cv::Mat(open_cv_image.rows, open_cv_image.cols, CV_16U, depth_pred);
-	unsigned char *image_color = open_cv_image.data;
+	
 	convert_depth_to_velodyne_beams(depth_pred, vertical_resolution,
 									horizontal_resolution, scan,
 									range_max, image_gray, vertical_top_cut, vertical_down_cut);
