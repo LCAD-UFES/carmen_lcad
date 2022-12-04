@@ -107,8 +107,8 @@ void convert_depth_to_velodyne_beams(unsigned char *depth, int vertical_resoluti
 		{
 			// double horizontal_angle = carmen_normalize_theta(-stereo_velodyne_scan[j].angle) / 180.0;
 			//  double horizontal_angle = stereo_velodyne_scan[j].angle * M_PI / 180.0;
-			double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(stereo_velodyne_scan[j].angle));
-			double range = points[(int)((y + cut_top) * (double)horizontal_resolution + x)] * cos(abs(horizontal_angle));
+			//double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(stereo_velodyne_scan[j].angle));
+			double range = points[(int)((y + cut_top) * (double)horizontal_resolution + x)];// * cos(horizontal_angle);
 			
 			range = range > range_max ? 0.0 : range;
 			stereo_velodyne_scan[j].distance[i] = (unsigned short)(range * range_multiplier_factor);
