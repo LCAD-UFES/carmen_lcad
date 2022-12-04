@@ -299,12 +299,18 @@ static void init_params_edit()
 
 	char value_string[256];
 	char value_ray_string[256];
+	int shot_size = camera_height - vertical_top_cut - vertical_down_cut;
+	int j = shot_size;
 	for (int i = 0; i < camera_height; i++)
 	{ // 480
-		sprintf(value_string, "%0.4f ", v_angle);
-		concatenate(vertical_angles, value_string);
-		sprintf(value_ray_string, "%d ", camera_height - i - 1);
-		concatenate(ray_order, value_ray_string);
+		if(i > vertical_down_cut && j > 0)
+		{
+			sprintf(value_string, "%0.4f ", v_angle);
+			concatenate(vertical_angles, value_string);
+			sprintf(value_ray_string, "%d ", j - 1);
+			concatenate(ray_order, value_ray_string);
+			j -=1 ;
+		}
 		v_angle += delta_v_angle;
 	}
 	char *return_value;
@@ -318,7 +324,7 @@ static void init_params_edit()
 	strcpy(char_ray_order, ray_order.c_str());
 
 	char char_shot_size[256];
-	sprintf(char_shot_size, "%d", camera_height);
+	sprintf(char_shot_size, "%d", shot_size);
 
 	for (m = 0; m < num_modules; m++)
 	{
@@ -481,7 +487,7 @@ int read_parameters(int argc, char **argv)
 
 	// initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, Size(camera_width, camera_height), CV_16SC2, MapX, MapY);
 
-	//init_params_edit();
+	init_params_edit();
 	return (0);
 }
 
