@@ -16,10 +16,10 @@ extern "C" {
 #endif
 
 
-#define ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions)  (((double) (traffic_restrictions & 0x3f)) * 0.1)
-#define ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions) (((double) ((traffic_restrictions & (0x3f << 6)) >> 6)) * 0.1)
-#define ROUTE_PLANNER_SET_LANE_LEFT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~0x3f) | ((int) (lane_width * 10.0) & 0x3f))
-#define ROUTE_PLANNER_SET_LANE_RIGHT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~(0x3f << 6)) | (((int) (lane_width * 10.0) & 0x3f) << 6))
+#define ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions)  (((double) (traffic_restrictions & 0x3ff)) * 0.1)
+#define ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions) (((double) ((traffic_restrictions & (0x3ff << 10)) >> 10)) * 0.1)
+#define ROUTE_PLANNER_SET_LANE_LEFT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~0x3ff) | ((int) (lane_width * 10.0) & 0x3ff))
+#define ROUTE_PLANNER_SET_LANE_RIGHT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~(0x3ff << 10)) | (((int) (lane_width * 10.0) & 0x3ff) << 10))
 
 typedef enum
 {
