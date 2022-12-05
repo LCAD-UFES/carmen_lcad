@@ -74,20 +74,11 @@ def glp_process_image(image, cut, down_cut):
         pred = model(input_RGB)
     pred_d = pred['pred_d']
     pred_d_numpy = pred_d.squeeze().cpu().numpy() #* 256.0
-    #print(pred_d)
     pred_d_numpy = (pred_d_numpy / pred_d_numpy.max()) * 255
     pred_d_numpy[0:cut.item(0),:] = 0
-    #print(pred_d_numpy.shape[0]-down_cut.item(0),pred_d_numpy.shape[0])
+    
     pred_d_numpy[pred_d_numpy.shape[0]-down_cut.item(0):pred_d_numpy.shape[0],:] = 0
-    # Put less lines to see the result
-    # i = cut.item(0) + 2
-    # max = pred_d_numpy.shape[0]-down_cut.item(0)-4
-    # while i < max:
-    #     pred_d_numpy[i,:] = 0
-    #     pred_d_numpy[i+1,:] = 0
-    #     pred_d_numpy[i+2,:] = 0
-    #     i += 4
-    #print((pred_d_numpy).astype('uint16'))
+    
     return (pred_d_numpy).astype('uint16')
             
         
