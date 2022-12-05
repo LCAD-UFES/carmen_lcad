@@ -138,7 +138,7 @@ extern bool offline_map_available;
 extern double time_secs_between_map_save;
 
 
-static void
+void
 change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 {
 	if (clean_map_bellow_car)

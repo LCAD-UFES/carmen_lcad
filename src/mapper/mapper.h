@@ -106,4 +106,6 @@ carmen_map_set_t *get_a_map_set(carmen_map_config_t map_config, bool use_merge_b
 
 bool map_valid(carmen_map_t *map);
 
+void change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle);
+
 #endif /* MAPPER_H_ */
