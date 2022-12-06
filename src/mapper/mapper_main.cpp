@@ -332,9 +332,9 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 {
 	int cloud_index = sensor_data->point_cloud_index;
 	int vertical_resolution = sensor_params->vertical_resolution;
-//	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / vertical_resolution;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / vertical_resolution;
 	int thread_id = omp_get_thread_num();
-	int number_of_laser_shots = prob_msg->number_of_shots;
+//	int number_of_laser_shots = prob_msg->number_of_shots;
 	if (number_of_laser_shots <= 0 || number_of_laser_shots > 10000) // Sem essa condição, pode acontecer segfault. Essa variável pode ter um valor muito grande de vez em quando e trava o programa no alloc.
 		return;
 
