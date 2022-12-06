@@ -342,7 +342,8 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 		carmen_mapper_alloc_probability_of_each_ray_of_lidar_hit_obstacle_message(prob_msg, vertical_resolution, number_of_laser_shots);  // TODO realocar caso mude o tamanho
 
 	prob_msg->timestamp = sensor_data->last_timestamp; // timestamp precisa ser igual ao da mensagem variable scan
-	for (int j = 0; j < number_of_laser_shots; j++)
+//	for (int j = 0; j < number_of_laser_shots; j++) // Por alguma razão esse valor está sendo alterado, fazendo com que o j alcance um valor que não deveria, dando seg fault
+	for (int j = 0; j < prob_msg->number_of_shots; j++)
 	{
 		int scan_index = j * vertical_resolution;
 		double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
