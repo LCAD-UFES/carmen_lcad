@@ -1,6 +1,6 @@
 #include "driver.h"
 
-static carmen_velodyne_partial_scan_message velodyne_partial_scan;
+static carmen_velodyne_variable_scan_message velodyne_partial_scan;
 
 
 int main()

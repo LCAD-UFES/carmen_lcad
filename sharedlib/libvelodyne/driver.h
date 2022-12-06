@@ -48,17 +48,17 @@ class VelodyneDriver
 public:
 
 
-	VelodyneDriver(int laser_udp_port, int gps_upd_port, carmen_velodyne_partial_scan_message &velodyne_partial_scan);
+	VelodyneDriver(int laser_udp_port, int gps_upd_port, carmen_velodyne_variable_scan_message &velodyne_partial_scan);
 	~VelodyneDriver();
 
-	bool pollScan(carmen_velodyne_partial_scan_message &scan);
+	bool pollScan(carmen_velodyne_variable_scan_message &scan);
 	bool pollGps(void);
 
 	velodyne_gps_t getVelodyneGps() { return gps_; }
 	velodyne_config_t getVelodyneConfig() { return config_; }
 
 	void printVelodyneGps();
-	void printVelodyneScan(carmen_velodyne_partial_scan_message velodyne_partial_scan);
+	void printVelodyneScan(carmen_velodyne_variable_scan_message velodyne_partial_scan);
 
 private:
 
@@ -70,7 +70,7 @@ private:
 	velodyne_config_t config_;
 
 	void copy_packet_to_scan_buffer(int i, int j, const velodyne_packet_t& packet);
-	void copy_scan_buffer_to_scan(carmen_velodyne_partial_scan_message &scan, int l, int m);
+	void copy_scan_buffer_to_scan(carmen_velodyne_variable_scan_message &scan, int l, int m);
 };
 
 } // namespace velodyne_driver

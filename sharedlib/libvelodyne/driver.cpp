@@ -22,9 +22,18 @@
 namespace velodyne_driver
 {
 
-VelodyneDriver::VelodyneDriver(int laser_udp_port, int gps_upd_port, carmen_velodyne_partial_scan_message &scan)
+VelodyneDriver::VelodyneDriver(int laser_udp_port, int gps_upd_port, carmen_velodyne_variable_scan_message &scan)
 {
-	scan.partial_scan = (carmen_velodyne_32_laser_shot *) malloc (velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION * sizeof(carmen_velodyne_32_laser_shot));
+
+	scan.partial_scan = (carmen_velodyne_shot *) malloc (velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION * sizeof(carmen_velodyne_shot));
+
+	for (int i = 0 ; i <= velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION; i++)
+	{
+		scan.partial_scan[i].shot_size = velodyne_driver::VELODYNE_NUM_LASERS;
+		scan.partial_scan[i].distance  = (unsigned int*) malloc (velodyne_driver::VELODYNE_NUM_LASERS * sizeof(unsigned int));
+		scan.partial_scan[i].intensity = (unsigned short*)  malloc (velodyne_driver::VELODYNE_NUM_LASERS * sizeof(unsigned short));
+	}
+
 	scan_buffer_.partial_scan = (carmen_velodyne_32_laser_shot *) malloc (velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION * sizeof(carmen_velodyne_32_laser_shot));
 
 	laser_input_ = new velodyne_driver::InputSocket(laser_udp_port);
@@ -44,7 +53,7 @@ void VelodyneDriver::copy_packet_to_scan_buffer(int i, int j, const velodyne_pac
 }
 
 
-void VelodyneDriver::copy_scan_buffer_to_scan(carmen_velodyne_partial_scan_message &scan, int l, int m)
+void VelodyneDriver::copy_scan_buffer_to_scan(carmen_velodyne_variable_scan_message &scan, int l, int m)
 {
 	for (int k = 0; k < velodyne_driver::VELODYNE_NUM_LASERS; k++)
 	{
@@ -58,7 +67,7 @@ void VelodyneDriver::copy_scan_buffer_to_scan(carmen_velodyne_partial_scan_messa
  *
  *  @returns true unless end of file reached
  */
-bool VelodyneDriver::pollScan(carmen_velodyne_partial_scan_message &scan)
+bool VelodyneDriver::pollScan(carmen_velodyne_variable_scan_message &scan)
 {
 	static int i = -1;
 	static int begin_previous_scan_i;
@@ -119,7 +128,7 @@ bool VelodyneDriver::pollScan(carmen_velodyne_partial_scan_message &scan)
 				if ((scan_buffer_.partial_scan[m].angle >= 180.0) && (scan_buffer_.partial_scan[previous_m].angle < 180.0))
 					break;
 			}
-			scan.number_of_32_laser_shots = l < velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION ?  l + 1 : l; // quando liga o velodyne ele pode estar muito lento
+			scan.number_of_shots = l < velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION ?  l + 1 : l; // quando liga o velodyne ele pode estar muito lento
 			scan.timestamp = last_package_timestamp -
 					((double) (velodyne_driver::VELODYNE_NUM_SHOTS - 1 - fraction_of_VELODYNE_NUM_SHOTS) /
 					 (double) (velodyne_driver::VELODYNE_PACKAGE_RATE * velodyne_driver::VELODYNE_NUM_SHOTS));
@@ -154,9 +163,9 @@ void VelodyneDriver::printVelodyneGps()
 	gps_input_->printGpsPacket(gps_.packet);
 }
 
-void VelodyneDriver::printVelodyneScan(carmen_velodyne_partial_scan_message scan)
+void VelodyneDriver::printVelodyneScan(carmen_velodyne_variable_scan_message scan)
 {
-	for(int i=0; i < scan.number_of_32_laser_shots; i++)
+	for(int i=0; i < scan.number_of_shots; i++)
 	{
 		printf("angle (%d): %6.2f\n", i, scan.partial_scan[i].angle);
 
