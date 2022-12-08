@@ -1012,7 +1012,7 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 		{(char *)"robot", (char *)"PID_velocity_brake_gap", CARMEN_PARAM_DOUBLE, &g_brake_gap, 1, NULL},
 		{(char *)"robot", (char *)"PID_velocity_max_brake_effort", CARMEN_PARAM_DOUBLE, &g_max_brake_effort, 1, NULL},
 		{(char *)"robot", (char *)"maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &g_maximum_steering_command_rate, 1, NULL},
-		{(char *)"robot", (char *)"throttle_gap", CARMEN_PARAM_DOUBLE, &g_throttle_gap, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_throttle_gap", CARMEN_PARAM_DOUBLE, &g_throttle_gap, 1, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
