@@ -1,1 +1,1 @@
-/home/victor/carmen_lcad/src/utilities/scripts/filetypes.sh
+/home/lume/carmen_lcad/src/utilities/scripts/filetypes.sh

@@ -464,7 +464,6 @@ publish_objects(double timestamp, carmen_moving_objects_point_clouds_message *ms
 		current_objects[i].theta = msg->point_clouds->orientation;
 		current_objects[i].v = msg->point_clouds->linear_velocity;
 	}
-	int *num = msg->num_point_clouds;
 	objects.objects = current_objects;
 
 //	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
