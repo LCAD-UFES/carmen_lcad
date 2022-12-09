@@ -20,7 +20,7 @@ double
 compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config)
 {
-	if (semi_trailer_config.semi_trailers.type == 0)
+	if (semi_trailer_config.num_semi_trailers == 0)
 		return (0.0);
 
 	double L = robot_config.distance_between_front_and_rear_axles;
@@ -34,8 +34,8 @@ compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trail
 
 	double beta = robot_and_trailer_traj_point.trailer_theta[0] + dt *
 			robot_and_trailer_traj_point.v * (
-					 sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers.d -
-						   (semi_trailer_config.semi_trailers.M / (L * semi_trailer_config.semi_trailers.d)) * cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
+					 sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers[0].d -
+						   (semi_trailer_config.semi_trailers[0].M / (L * semi_trailer_config.semi_trailers[0].d)) * cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
 
 //	printf("Teste: %f %f %f\n", beta, beta1, robot_and_trailer_traj_point.theta);
 
@@ -232,8 +232,8 @@ carmen_libcarmodel_recalc_pos_ackerman_new(carmen_robot_and_trailers_traj_point_
 	params.understeer_coeficient = robot_config.understeer_coeficient;
 	params.max_phi = robot_config.max_phi;
 
-	params.d = semi_trailer_config.semi_trailers.d;
-	params.M = semi_trailer_config.semi_trailers.M;
+	params.d = semi_trailer_config.semi_trailers[0].d;
+	params.M = semi_trailer_config.semi_trailers[0].M;
 
 	params.a = a;
 

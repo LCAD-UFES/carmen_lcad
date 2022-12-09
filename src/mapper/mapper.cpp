@@ -2232,28 +2232,31 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 void
 read_parameters_semi_trailer(int semi_trailer_type)
 {
-	semi_trailer_config.semi_trailers.type = semi_trailer_type;
+	semi_trailer_config.num_semi_trailers = semi_trailer_type;
 	if (semi_trailer_type == 0)
 		return;
 
-	char semi_trailer_string[2048];
+	for (int semi_trailer_id=1; semi_trailer_id <= semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+	{
+		char semi_trailer_string[2048];
 
-	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_config.semi_trailers.type);
+		sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_id);
 
-	char *semi_trailer_poly_file;
+		char *semi_trailer_poly_file;
 
-	carmen_param_t semi_trailer_param_list[] = {
-		{semi_trailer_string, (char *) "d",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.d),							   	  0, NULL},
-		{semi_trailer_string, (char *) "M",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.M),							   	  0, NULL},
-		{semi_trailer_string, (char *) "width",							 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.width),							  0, NULL},
-		{semi_trailer_string, (char *) "distance_between_axle_and_front", 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.distance_between_axle_and_front), 0, NULL},
-		{semi_trailer_string, (char *) "distance_between_axle_and_back",	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.distance_between_axle_and_back),  0, NULL},
-		{semi_trailer_string, (char *) "max_beta",						 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers.max_beta),						  0, NULL},
-		{semi_trailer_string, (char *) "polygon_file",					 	CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 							  	0, NULL}
-	};
-	carmen_param_install_params(g_argc, g_argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+		carmen_param_t semi_trailer_param_list[] = {
+			{semi_trailer_string, (char *) "d",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[semi_trailer_id-1].d),							   	  0, NULL},
+			{semi_trailer_string, (char *) "M",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[semi_trailer_id-1].M),							   	  0, NULL},
+			{semi_trailer_string, (char *) "width",							 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[semi_trailer_id-1].width),							  0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_front", 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front), 0, NULL},
+			{semi_trailer_string, (char *) "distance_between_axle_and_back",	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back),  0, NULL},
+			{semi_trailer_string, (char *) "max_beta",						 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[semi_trailer_id-1].max_beta),						  0, NULL},
+			{semi_trailer_string, (char *) "polygon_file",					 	CARMEN_PARAM_STRING, &(semi_trailer_poly_file), 							  	0, NULL}
+		};
+		carmen_param_install_params(g_argc, g_argv, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
 
-	semi_trailer_config.semi_trailers.max_beta = carmen_degrees_to_radians(semi_trailer_config.semi_trailers.max_beta);
+		semi_trailer_config.semi_trailers[semi_trailer_id-1].max_beta = carmen_degrees_to_radians(semi_trailer_config.semi_trailers[semi_trailer_id-1].max_beta);
+	}
 }
 
 
@@ -2700,7 +2703,7 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "model", 		(char *) "predictive_planner_obstacles_safe_distance", 	CARMEN_PARAM_DOUBLE, &(p_car_config->model_predictive_planner_obstacles_safe_distance), 1, NULL},
 		{(char *) "obstacle", 	(char *) "avoider_obstacles_safe_distance", 			CARMEN_PARAM_DOUBLE, &(p_car_config->obstacle_avoider_obstacles_safe_distance), 1, NULL},
 
-		{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.semi_trailers.type), 0, NULL},
+		{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.num_semi_trailers), 0, NULL},
 
 		{(char *) "sensor",  (char *) "board_1_x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	1, get_sensors_param_pose_handler},
 		{(char *) "sensor",  (char *) "board_1_y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	1, get_sensors_param_pose_handler},
@@ -2832,8 +2835,8 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 
 	ultrasonic_sensor_params.current_range_max = ultrasonic_sensor_params.range_max;
 
-	if (semi_trailer_config.semi_trailers.type > 0)
-		read_parameters_semi_trailer(semi_trailer_config.semi_trailers.type);
+	if (semi_trailer_config.num_semi_trailers > 0)
+		read_parameters_semi_trailer(semi_trailer_config.num_semi_trailers);
 
 	if (map_width != map_height)
 		carmen_die("Wrong map size: width (%f) must be equal to height (%f).", map_width, map_height);

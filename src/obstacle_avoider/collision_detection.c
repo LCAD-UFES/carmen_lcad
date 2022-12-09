@@ -504,55 +504,58 @@ set_semi_trailer_collision_config(int semi_trailer_type)
 	if (semi_trailer_type == 0)
 		return;
 
-	char semi_trailer_string[2048];
-	sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_type);
+	for (int semi_trailer_id=1; semi_trailer_id <= semi_trailer_type; semi_trailer_id++)
+	{
+		char semi_trailer_string[2048];
+		sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_id);
 
-	char *semi_trailer_collision_file;
-	char *semi_trailer_engage_collision_file;
-	carmen_param_t param_list[] =
-	{
-		{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_d), 0, NULL},
-		{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_M), 0, NULL},
-		{semi_trailer_string, "max_beta", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_max_beta), 0, NULL},
-		{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 0, NULL},
-		{semi_trailer_string, "engage_collision_file", CARMEN_PARAM_STRING, &semi_trailer_engage_collision_file, 0, NULL},
-	};
-	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
-	global_collision_config.semi_trailer_max_beta = carmen_degrees_to_radians(global_collision_config.semi_trailer_max_beta);
+		char *semi_trailer_collision_file;
+		char *semi_trailer_engage_collision_file;
+		carmen_param_t param_list[] =
+		{
+			{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_d[semi_trailer_id-1]), 0, NULL},
+			{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_M[semi_trailer_id-1]), 0, NULL},
+			{semi_trailer_string, "max_beta", CARMEN_PARAM_DOUBLE, &(global_collision_config.semi_trailer_max_beta[semi_trailer_id-1]), 0, NULL},
+			{semi_trailer_string, "collision_file", CARMEN_PARAM_STRING, &semi_trailer_collision_file, 0, NULL},
+			{semi_trailer_string, "engage_collision_file", CARMEN_PARAM_STRING, &semi_trailer_engage_collision_file, 0, NULL},
+		};
+		carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
+		global_collision_config.semi_trailer_max_beta[semi_trailer_id-1] = carmen_degrees_to_radians(global_collision_config.semi_trailer_max_beta[semi_trailer_id-1]);
 
-	char *carmen_home = getenv("CARMEN_HOME");
-	char collision_file_[2048];
-	FILE *collision_file_pointer = NULL;
-	if (global_collision_config.geometry == DEFAULT_GEOMETRY)
-	{
-		sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_collision_file);
-		collision_file_pointer = fopen(collision_file_, "r");
-	}
-	else if (global_collision_config.geometry == ENGAGE_GEOMETRY)
-	{
-		sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_engage_collision_file);
-		collision_file_pointer = fopen(collision_file_, "r");
-		if (!collision_file_pointer)	// engage collision file nao definido no carmen ini?
+		char *carmen_home = getenv("CARMEN_HOME");
+		char collision_file_[2048];
+		FILE *collision_file_pointer = NULL;
+		if (global_collision_config.geometry == DEFAULT_GEOMETRY)
 		{
 			sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_collision_file);
 			collision_file_pointer = fopen(collision_file_, "r");
 		}
+		else if (global_collision_config.geometry == ENGAGE_GEOMETRY)
+		{
+			sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_engage_collision_file);
+			collision_file_pointer = fopen(collision_file_, "r");
+			if (!collision_file_pointer)	// engage collision file nao definido no carmen ini?
+			{
+				sprintf(collision_file_, "%s/bin/%s", carmen_home, semi_trailer_collision_file);
+				collision_file_pointer = fopen(collision_file_, "r");
+			}
+		}
+		else
+			exit(printf("Error: global_collision_config.geometry unknown in set_semi_trailer_collision_config()\n"));
+
+		setlocale(LC_NUMERIC, "C");
+
+		fscanf(collision_file_pointer, "%d", &(global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]));
+		int max_h_level;
+		fscanf(collision_file_pointer, "%d", &max_h_level);	// Para compatibilidade multi height
+		global_collision_config.semi_trailer_markers[semi_trailer_id-1] = (carmen_collision_marker_t *) malloc(global_collision_config.n_semi_trailer_markers[semi_trailer_id-1] * sizeof(carmen_collision_marker_t));
+
+		for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
+			fscanf(collision_file_pointer,"%lf %lf %lf %d", &(global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].x) , &(global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].y),
+					&(global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].radius), &(global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].height_level));
+
+		fclose(collision_file_pointer);
 	}
-	else
-		exit(printf("Error: global_collision_config.geometry unknown in set_semi_trailer_collision_config()\n"));
-
-	setlocale(LC_NUMERIC, "C");
-
-	fscanf(collision_file_pointer, "%d", &(global_collision_config.n_semi_trailer_markers));
-	int max_h_level;
-	fscanf(collision_file_pointer, "%d", &max_h_level);	// Para compatibilidade multi height
-	global_collision_config.semi_trailer_markers = (carmen_collision_marker_t *) malloc(global_collision_config.n_semi_trailer_markers * sizeof(carmen_collision_marker_t));
-
-	for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
-		fscanf(collision_file_pointer,"%lf %lf %lf %d", &(global_collision_config.semi_trailer_markers[i].x) , &(global_collision_config.semi_trailer_markers[i].y),
-				&(global_collision_config.semi_trailer_markers[i].radius), &(global_collision_config.semi_trailer_markers[i].height_level));
-
-	fclose(collision_file_pointer);
 }
 
 
@@ -641,13 +644,13 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 
 
 carmen_position_t
-move_semi_trailer_marker_to_robot_coordinate_frame(double x, double y, double beta)
+move_semi_trailer_marker_to_robot_coordinate_frame(double x, double y, double beta, double d, double M)
 {
 	carmen_position_t displaced_marker;
 
 	beta = -beta;
-	displaced_marker.x = (x - global_collision_config.semi_trailer_d) * cos(beta) - y * sin(beta) - global_collision_config.semi_trailer_M;
-	displaced_marker.y = (x - global_collision_config.semi_trailer_d) * sin(beta) + y * cos(beta);
+	displaced_marker.x = (x - d) * cos(beta) - y * sin(beta) - M;
+	displaced_marker.y = (x - d) * sin(beta) + y * cos(beta);
 
 	return displaced_marker;
 }
@@ -677,16 +680,17 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 		}
 	}
 
-	if (global_collision_config.semi_trailer_type > 0)
+	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
-		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta)
-			return (pow(2.0, global_collision_config.semi_trailer_markers[0].radius + safety_distance));
+		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
+			return (pow(2.0, global_collision_config.semi_trailer_markers[semi_trailer_id-1][0].radius + safety_distance));
 		else
 		{
-			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[0]));
+						global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].x, global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1]),
+						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
 
 				// Pega local_point_to_check e coloca no sistema de coordenadas definido por localizer_pose
 				carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
@@ -695,7 +699,7 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 				// distance equals to -1000.0 when the coordinates are outside of map
 				if (distance != -1000.0)
 				{
-					double delta = distance - (global_collision_config.semi_trailer_markers[i].radius + safety_distance);
+					double delta = distance - (global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].radius + safety_distance);
 					if (delta < 0.0)
 						proximity_to_obstacles += delta * delta;
 				}
@@ -839,7 +843,6 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer
 //	printf("id %d, mo_points_size %d\n", moving_object->num_associated, mo_points_size);
 	double mo_radius_plus_safety_margin = moving_object->width / 2.0 + lateral_safety_margin;
 	carmen_collision_marker_t *markers = global_collision_config.markers;
-	carmen_collision_marker_t *semi_trailer_markers = global_collision_config.semi_trailer_markers;
 	int n_markers = global_collision_config.n_markers;
 	for (double displacement = -longitudinal_safety_magin; displacement <= longitudinal_safety_magin; displacement += 0.5)
 	{
@@ -867,12 +870,14 @@ carmen_obstacle_avoider_car_collides_with_moving_object(carmen_robot_and_trailer
 			}
 		}
 
-		if (global_collision_config.semi_trailer_type > 0)
+		for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 		{
-			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+			carmen_collision_marker_t *semi_trailer_markers = global_collision_config.semi_trailer_markers[semi_trailer_id-1];
+			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						semi_trailer_markers[i].x, semi_trailer_markers[i].y, convert_theta1_to_beta(ldcp2.theta, ldcp2.trailer_theta[0]));
+						semi_trailer_markers[i].x, semi_trailer_markers[i].y, convert_theta1_to_beta(ldcp2.theta, ldcp2.trailer_theta[semi_trailer_id-1]),
+						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
 
 				double radius = semi_trailer_markers[i].radius + mo_radius_plus_safety_margin;
 				double radius_sq = radius * radius;
@@ -924,16 +929,18 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 		}
 	}
 
-	if (global_collision_config.semi_trailer_type > 0)
+	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
-		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta)
+		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
 			return (0.0);
 		else
 		{
-			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+			carmen_collision_marker_t *semi_trailer_markers = global_collision_config.semi_trailer_markers[semi_trailer_id-1];
+			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0]));
+						semi_trailer_markers[i].x, semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1]),
+						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
 
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);
@@ -941,7 +948,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 				//distance equals to -1000.0 when the coordinates are outside of map
 				if (distance != -1000.0)
 				{	// A fucao retorna valor negativo se o carro encobrir um obstaculo.
-					distance = distance - global_collision_config.semi_trailer_markers[i].radius;
+					distance = distance - semi_trailer_markers[i].radius;
 					if (distance < min_distance)
 						min_distance = distance;
 				}
@@ -986,16 +993,18 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 			return (2);
 	}
 
-	if (global_collision_config.semi_trailer_type > 0)
+	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
-		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta)
+		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
 			return (1);
 		else
 		{
-			for (int i = 0; i < global_collision_config.n_semi_trailer_markers; i++)
+			carmen_collision_marker_t *semi_trailer_markers = global_collision_config.semi_trailer_markers[semi_trailer_id-1];
+			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						global_collision_config.semi_trailer_markers[i].x, global_collision_config.semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0]));
+						semi_trailer_markers[i].x, semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1]),
+						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
 
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);
@@ -1003,7 +1012,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 				//distance equals to -1000.0 when the coordinates are outside of map
 				if (distance != -1000.0)
 				{
-					if (distance < global_collision_config.semi_trailer_markers[i].radius + safety_distance)
+					if (distance < semi_trailer_markers[i].radius + safety_distance)
 					{
 //						virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
 //						virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;

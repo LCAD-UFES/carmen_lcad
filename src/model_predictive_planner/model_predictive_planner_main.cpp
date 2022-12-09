@@ -721,10 +721,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	else
 		build_and_follow_path(msg->timestamp);
 
-	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.semi_trailers.type)
+	if (msg->semi_trailer_type != GlobalState::semi_trailer_config.num_semi_trailers)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.semi_trailers.type);
+		carmen_collision_detection_set_semi_trailer_type(GlobalState::semi_trailer_config.num_semi_trailers);
 	}
 }
 
@@ -1052,7 +1052,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot",				 (char *) "max_velocity_reverse",										CARMEN_PARAM_DOUBLE, &GlobalState::param_max_vel_reverse,									 1, NULL},
 		{(char *) "robot",				 (char *) "parking_speed_limit",										CARMEN_PARAM_DOUBLE, &GlobalState::param_parking_speed_limit,									 1, NULL},
 
-		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.semi_trailers.type,								 0, NULL},
+		{(char *) "semi_trailer",		 (char *) "initial_type",												CARMEN_PARAM_INT,	 &GlobalState::semi_trailer_config.num_semi_trailers,								 0, NULL},
 		{(char *) "rddf",				 (char *) "source_tracker",												CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,								 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "goal_source_path_planner",									CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner,										 0, NULL},
 		{(char *) "behavior_selector",	 (char *) "use_truepos",												CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos,												 0, NULL},
@@ -1091,8 +1091,8 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	if (GlobalState::semi_trailer_config.semi_trailers.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.semi_trailers.type);
+	if (GlobalState::semi_trailer_config.num_semi_trailers > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&GlobalState::semi_trailer_config, argc, argv, GlobalState::semi_trailer_config.num_semi_trailers);
 }
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;

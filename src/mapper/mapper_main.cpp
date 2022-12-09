@@ -185,8 +185,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			{
 					globalpos_message->semi_trailer_engaged,
 					globalpos_message->semi_trailer_type,
-					semi_trailer_config.semi_trailers.d,
-					semi_trailer_config.semi_trailers.M,
+					semi_trailer_config.semi_trailers[0].d,
+					semi_trailer_config.semi_trailers[0].M,
 					convert_theta1_to_beta(globalpos_message->globalpos.theta, globalpos_message->trailer_theta[0])
 			};
 
@@ -220,8 +220,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		{
 				globalpos_message->semi_trailer_engaged,
 				globalpos_message->semi_trailer_type,
-				semi_trailer_config.semi_trailers.d,
-				semi_trailer_config.semi_trailers.M,
+				semi_trailer_config.semi_trailers[0].d,
+				semi_trailer_config.semi_trailers[0].M,
 				convert_theta1_to_beta(globalpos_message->globalpos.theta, globalpos_message->trailer_theta[0])
 		};
 
@@ -568,7 +568,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		robot_near_strong_slow_down_annotation = 0;
 	}
 
-	if (globalpos_message->semi_trailer_type != semi_trailer_config.semi_trailers.type)
+	if (globalpos_message->semi_trailer_type != semi_trailer_config.num_semi_trailers)
 		read_parameters_semi_trailer(globalpos_message->semi_trailer_type);
 
 #ifdef USE_REAR_BULLBAR

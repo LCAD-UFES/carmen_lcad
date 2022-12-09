@@ -22,8 +22,8 @@ struct CarDrawer
 	double distance_between_rear_car_and_rear_wheels;
 	double car_wheel_radius;
 
-	carmen_vector_3D_t semi_trailer_size;
-	carmen_pose_3D_t semi_trailer_pose;
+	carmen_vector_3D_t semi_trailer_size[MAX_NUM_TRAILERS];
+	carmen_pose_3D_t semi_trailer_pose[MAX_NUM_TRAILERS];
 	carmen_semi_trailers_config_t semi_trailer_config;
 
 	carmen_vector_3D_t robot_size;
@@ -40,9 +40,9 @@ struct CarDrawer
 	carmen_pose_3D_t xsens_pose;
 
 	GLMmodel *carModel;
-	GLMmodel *semiTrailerModel;
+	GLMmodel *semiTrailerModel[MAX_NUM_TRAILERS];
 
-	carmen_collision_config_t *robot_collision_config;
+	carmen_collision_config_t *robot_collision_config; //FIXME Add [MAX_NUM_TRAILERS]
 };
 
 typedef struct CarDrawer CarDrawer;

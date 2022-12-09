@@ -817,10 +817,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 
-	if (msg->semi_trailer_type != carmen_semi_trailer_config.semi_trailers.type)
+	if (msg->semi_trailer_type != carmen_semi_trailer_config.num_semi_trailers)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.semi_trailers.type);
+		carmen_collision_detection_set_semi_trailer_type(carmen_semi_trailer_config.num_semi_trailers);
 	}
 }
 
@@ -1057,7 +1057,7 @@ read_parameters(int argc, char **argv)
 		{"robot", "collision_avoidance", CARMEN_PARAM_ONOFF, &ackerman_collision_avoidance, 1, NULL},
 		{"robot", "collision_avoidance_frequency", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_collision_avoidance_frequency, 1, NULL},
 		{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL},
-		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.semi_trailers.type, 0, NULL},
+		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &carmen_semi_trailer_config.num_semi_trailers, 0, NULL},
 		{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 		{"rrt", "log_mode", CARMEN_PARAM_ONOFF,	&log_mode, 1, NULL},
 
@@ -1073,8 +1073,8 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 
-	if (carmen_semi_trailer_config.semi_trailers.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.semi_trailers.type);
+	if (carmen_semi_trailer_config.num_semi_trailers > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&carmen_semi_trailer_config, argc, argv, carmen_semi_trailer_config.num_semi_trailers);
 
     carmen_param_t param_optional_list[] =
 	{
