@@ -57,8 +57,8 @@ static double g_throttle_gap;
 
 static double g_fuzzy_factor = 0.5;
 
-static double g_v_error_multiplier = 3.0; // quando igual a 1.0, o erro de v eh multiplicado por 2 qundo v eh igual a g_target_velocity (error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity))
-static double g_target_velocity = 5.55;
+//static double g_v_error_multiplier = 0.0; // quando igual a 1.0, o erro de v eh multiplicado por 2 qundo v eh igual a g_target_velocity (error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity))
+//static double g_target_velocity = 5.55;
 
 static int robot_model_id = 0;
 
@@ -810,10 +810,11 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double a = (current_velocity - g_v) / delta_t;
 	g_v = current_velocity;
 
-	double error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity);
-	if (error_multiplier > (1.0 + g_v_error_multiplier))
-		error_multiplier = 1.0 + g_v_error_multiplier;
-	double error_t = (desired_velocity - current_velocity) * error_multiplier;
+//	double error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity);
+//	if (error_multiplier > (1.0 + g_v_error_multiplier))
+//		error_multiplier = 1.0 + g_v_error_multiplier;
+//	double error_t = (desired_velocity - current_velocity) * error_multiplier;
+	double error_t = (desired_velocity - current_velocity) * 1.0;
 
 	if (manual_override == 0)
 		integral_t = integral_t + error_t * delta_t;
