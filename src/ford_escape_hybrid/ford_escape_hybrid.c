@@ -92,8 +92,8 @@ carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
 
 carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
-double *gear_ratios_vector;
-double *reverse_gear_ratios_vector;
+double *gear_ratios_vector = NULL;
+double *reverse_gear_ratios_vector = NULL;
 int num_gears = 0;
 int num_reverse_gears = 0;
 
@@ -1220,8 +1220,8 @@ static void
 read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 {
 	int num_items;
-	char *gear_ratio_string;
-	char *reverse_gear_ratio_string;
+	char *gear_ratio_string = NULL;
+	char *reverse_gear_ratio_string = NULL;
 
 	carmen_param_t param_list[]= 
 	{
@@ -1262,18 +1262,24 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	num_gears = CLF_READ_INT(&gear_ratio_string);
-	gear_ratios_vector = (double*) malloc(num_gears * sizeof(double));
-	for (int i = 0; i < num_gears; i++)
+	if (gear_ratio_string != NULL)
 	{
-		gear_ratios_vector[i] = CLF_READ_DOUBLE(&gear_ratio_string);
+		num_gears = CLF_READ_INT(&gear_ratio_string);
+		gear_ratios_vector = (double*) malloc(num_gears * sizeof(double));
+		for (int i = 0; i < num_gears; i++)
+		{
+			gear_ratios_vector[i] = CLF_READ_DOUBLE(&gear_ratio_string);
+		}
 	}
 
-	num_reverse_gears = CLF_READ_INT(&reverse_gear_ratio_string);
-	reverse_gear_ratios_vector = (double*) malloc(num_reverse_gears * sizeof(double));
-	for (int i = 0; i < num_reverse_gears; i++)
+	if (reverse_gear_ratio_string != NULL)
 	{
-		reverse_gear_ratios_vector[i] = CLF_READ_DOUBLE(&reverse_gear_ratio_string);
+		num_reverse_gears = CLF_READ_INT(&reverse_gear_ratio_string);
+		reverse_gear_ratios_vector = (double*) malloc(num_reverse_gears * sizeof(double));
+		for (int i = 0; i < num_reverse_gears; i++)
+		{
+			reverse_gear_ratios_vector[i] = CLF_READ_DOUBLE(&reverse_gear_ratio_string);
+		}
 	}
 }
 
