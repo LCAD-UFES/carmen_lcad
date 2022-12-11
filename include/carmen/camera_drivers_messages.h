@@ -52,13 +52,14 @@ typedef struct {
 typedef struct {
     int number_of_images;
     camera_image *images;
+    int undistorted;
     double timestamp;
     char *host;
 } camera_message;
 
 
 #define      CAMERA_NAME       "camera"
-#define      CAMERA_FMT        "{int, <{int, int, int, int, int, int, <byte:1>}:1>, double, string}"
+#define      CAMERA_FMT        "{int, <{int, int, int, int, int, int, <byte:1>}:1>, int, double, string}"
 
 #define      CAMERA1_NAME         "camera1"
 #define      CAMERA2_NAME         "camera2"

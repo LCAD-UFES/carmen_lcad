@@ -158,8 +158,8 @@ detect_markers(cv::Mat &image)
 
     if (first)
     {
-        cv::Mat camMatrix = (cv::Mat_<double>(3, 3) << _fx, .0, _cu, .0, _fy, _cv, .0, .0, 1.);
-        cv::Mat distCoeffs = (cv::Mat_<double>(5, 1) << _k1, _k2, _p1, _p2, _k3);
+        cv::Mat camMatrix = (cv::Mat_<double>(3, 3) << 522.81945837, 0., 321.80096339, 0., 700.16902439, 244.4899013, 0., 0., 1.);
+        cv::Mat distCoeffs = (cv::Mat_<double>(5, 1) << -0.7826785, 0.83042721, 0.00100615, -0.00125759, -0.44771437);
 
         camera.setParams(camMatrix, distCoeffs, image.size());
         Detector.setDictionary(aruco_dictionary || "ARUCO_MIP_36h12");

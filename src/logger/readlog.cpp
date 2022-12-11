@@ -1803,6 +1803,16 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 }
 
 
+int
+count_camera_message_arguments(char* string)
+{
+	int count = 1;
+	for (size_t i = 0; string[i]; i++)
+		if (string[i] == ' ')
+			count++;
+	return count;
+}
+
 char*
 camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 {
@@ -1810,9 +1820,15 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 	int camera_id, compress_image = 0;
 	char path[1024];
 
+	int n_args = count_camera_message_arguments(string);
+
 	compress_image = CLF_READ_INT(&string);
 	camera_id = CLF_READ_INT(&string);
 	msg->number_of_images = CLF_READ_INT(&string);
+	if (n_args > 13)
+		msg->undistorted = CLF_READ_INT(&string);
+	else
+		msg->undistorted = 2;
 	msg->timestamp = CLF_READ_DOUBLE(&string);
 
 	if (msg->images == NULL)
