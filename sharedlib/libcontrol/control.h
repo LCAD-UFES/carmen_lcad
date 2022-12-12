@@ -47,7 +47,7 @@ double carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature,
 
 void
 carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,
-											double desired_velocity, double current_velocity, double delta_t, int manual_override);
+											double desired_velocity, double current_velocity, double delta_t, int manual_override, double gear_ratio);
 
 
 void

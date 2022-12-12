@@ -13,3 +13,4 @@ cargo binary
 user_app_server binary
 set_goals binary
 point_cloud_odometry binary
+camera_check binary

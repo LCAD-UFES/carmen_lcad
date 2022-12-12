@@ -5,6 +5,7 @@
 #include "camera_drivers_messages.h"
 
 #ifdef __cplusplus
+
 extern "C"
 {
 #endif

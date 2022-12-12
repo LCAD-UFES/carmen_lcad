@@ -270,22 +270,25 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 
 				if (semi_trailer_engaged)
 				{
-					glPushMatrix();
-						glRotatef(-carmen_radians_to_degrees(t_drawer->path[i].trailer_theta[0]), 0.0, 0.0, 1.0);
+					for (int semi_trailer_id=1; semi_trailer_id <= t_drawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+					{
+						glPushMatrix();
+							glRotatef(-carmen_radians_to_degrees(t_drawer->path[i].trailer_theta[semi_trailer_id-1]), 0.0, 0.0, 1.0);
 
-						glTranslatef(-t_drawer->semi_trailer_config.semi_trailers.d - t_drawer->semi_trailer_config.semi_trailers.M * cos(t_drawer->path[i].trailer_theta[0]),
-									 -t_drawer->semi_trailer_config.semi_trailers.M * sin(t_drawer->path[i].trailer_theta[0]),
-									 0.0);
+							glTranslatef(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].d - t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * cos(t_drawer->path[i].trailer_theta[semi_trailer_id-1]),
+										 -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * sin(t_drawer->path[i].trailer_theta[semi_trailer_id-1]),
+										 0.0);
 
-						glBegin(GL_LINE_STRIP);
-							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
-							glVertex3f(t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, -t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
-							glVertex3f(t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
-							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
-							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers.width / 2, 0);
-						glEnd();
+							glBegin(GL_LINE_STRIP);
+								glVertex3f(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+								glVertex3f(t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+								glVertex3f(t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+								glVertex3f(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+								glVertex3f(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+							glEnd();
 
-					glPopMatrix();
+						glPopMatrix();
+					}
 				}
 			glPopMatrix();
 		}

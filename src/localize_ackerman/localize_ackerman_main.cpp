@@ -167,7 +167,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	static double last_timestamp = 0.0;
 	if (last_timestamp == 0.0)
 		last_timestamp = timestamp;
-	if (semi_trailer_config.semi_trailers.type > 0)
+	if (semi_trailer_config.num_semi_trailers > 0)
 	{
 		globalpos.num_trailers = 1;
 		globalpos.semi_trailer_engaged = 1;
@@ -196,7 +196,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		globalpos.trailer_theta[0] = globalpos.globalpos.theta;
 
 	}
-	globalpos.semi_trailer_type = semi_trailer_config.semi_trailers.type;
+	globalpos.semi_trailer_type = semi_trailer_config.num_semi_trailers;
 	last_timestamp = timestamp;
 
 	if (g_fused_odometry_index == -1)
@@ -825,8 +825,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	{
 			globalpos.semi_trailer_engaged,
 			globalpos.semi_trailer_type,
-			semi_trailer_config.semi_trailers.d,
-			semi_trailer_config.semi_trailers.M,
+			semi_trailer_config.semi_trailers[0].d,
+			semi_trailer_config.semi_trailers[0].M,
 			convert_theta1_to_beta(globalpos.globalpos.theta, globalpos.trailer_theta[0])
 	};
 
@@ -994,8 +994,8 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	{
 			globalpos.semi_trailer_engaged,
 			globalpos.semi_trailer_type,
-			semi_trailer_config.semi_trailers.d,
-			semi_trailer_config.semi_trailers.M,
+			semi_trailer_config.semi_trailers[0].d,
+			semi_trailer_config.semi_trailers[0].M,
 			convert_theta1_to_beta(globalpos.globalpos.theta, globalpos.trailer_theta[0])
 	};
 
@@ -1353,7 +1353,7 @@ map_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __a
 static void
 carmen_task_manager_set_semi_trailer_type_and_beta_message_handler(carmen_task_manager_set_semi_trailer_type_and_beta_message *message)
 {
-	if (semi_trailer_config.semi_trailers.type != message->semi_trailer_type)
+	if (semi_trailer_config.num_semi_trailers != message->semi_trailer_type)
 	{
 		char *fake_module_name = (char *) "carmen_task_manager_set_semi_trailer_type_and_beta_message_handler()";
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, 1, &fake_module_name, message->semi_trailer_type);
@@ -1688,27 +1688,27 @@ timer_handler()
         switch (c)
         {
         case '1':
-           	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 0;
+           	semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray = 0;
             break;
 
         case '2':
             // increase Velodyne single ray
-        	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray++;
-            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray > 31)
-            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 0;
-            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray < 0)
-            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 31;
+        	semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray++;
+            if (semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray > 31)
+            	semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray = 0;
+            if (semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray < 0)
+            	semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray = 31;
             break;
         case '3':
             // decrease Velodyne single ray
-        	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray--;
-            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray > 31)
-            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 0;
-            if (semi_trailer_config.semi_trailers.beta_correct_velodyne_ray < 0)
-            	semi_trailer_config.semi_trailers.beta_correct_velodyne_ray = 31;
+        	semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray--;
+            if (semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray > 31)
+            	semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray = 0;
+            if (semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray < 0)
+            	semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray = 31;
             break;
         }
-        printf("semi_trailer_config.beta_correct_velodyne_ray %d\n", semi_trailer_config.semi_trailers.beta_correct_velodyne_ray);
+        printf("semi_trailer_config.beta_correct_velodyne_ray %d\n", semi_trailer_config.semi_trailers[0].beta_correct_velodyne_ray);
 	}
 }
 

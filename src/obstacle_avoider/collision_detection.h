@@ -54,12 +54,12 @@ typedef struct
 	carmen_collision_marker_t *markers;
 
 	int semi_trailer_type;
-	double semi_trailer_d;
-	double semi_trailer_M;
-	double semi_trailer_max_beta;
+	double semi_trailer_d[MAX_NUM_TRAILERS];
+	double semi_trailer_M[MAX_NUM_TRAILERS];
+	double semi_trailer_max_beta[MAX_NUM_TRAILERS];
 
-	int n_semi_trailer_markers;
-	carmen_collision_marker_t *semi_trailer_markers;
+	int n_semi_trailer_markers[MAX_NUM_TRAILERS];
+	carmen_collision_marker_t *semi_trailer_markers[MAX_NUM_TRAILERS];
 } carmen_collision_config_t;
 
 

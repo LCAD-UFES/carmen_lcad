@@ -884,7 +884,7 @@ set_behaviours_parameters(carmen_robot_and_trailers_traj_point_t current_robot_p
 		change_goal_distance = distance_between_waypoints = min_radius_of_curvature;
 	else
 		min_radius_of_curvature = distance_between_waypoints;
-	if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.semi_trailers.type != 0))
+	if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.num_semi_trailers != 0))
 	{
 		distance_between_waypoints /= 5.0;
 		change_goal_distance /= 5.0;
@@ -1250,14 +1250,15 @@ set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_p
 		rddf_msg.number_of_poses = set_of_paths.number_of_poses;
 		rddf_msg.number_of_poses_back = set_of_paths.number_of_poses_back;
 
-		if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.semi_trailers.type != 0))
+		if ((road_network_message->route_planner_state == EXECUTING_OFFROAD_PLAN) && (semi_trailer_config.num_semi_trailers != 0))
+		{
 			for (int i = 0; i < rddf_msg.number_of_poses; i++)
 			{
 				rddf_msg.poses[i].num_trailers = road_network_message->poses[i].num_trailers;
 				for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 					rddf_msg.poses[i].trailer_theta[z] = road_network_message->poses[i].trailer_theta[z];
 			}
-
+		}
 		if (!road_network_message->annotations && (set_of_paths.number_of_poses != 0))
 		{
 			rddf_msg.annotations = (int *) malloc(set_of_paths.number_of_poses * sizeof(int));
@@ -1448,10 +1449,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 //
 //	t = carmen_get_time();
 
-	if (msg->semi_trailer_type != semi_trailer_config.semi_trailers.type)
+	if (msg->semi_trailer_type != semi_trailer_config.num_semi_trailers)
 	{
 		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc_global, argv_global, msg->semi_trailer_type);
-		carmen_collision_detection_set_semi_trailer_type(semi_trailer_config.semi_trailers.type);
+		carmen_collision_detection_set_semi_trailer_type(semi_trailer_config.num_semi_trailers);
 	}
 }
 
@@ -1970,7 +1971,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "move_to_engage_pose_speed_limit", CARMEN_PARAM_DOUBLE, &move_to_engage_pose_speed_limit, 1, NULL},
 		{(char *) "robot", (char *) "max_velocity_reverse", CARMEN_PARAM_DOUBLE, &robot_max_velocity_reverse, 1, NULL},
-		{(char *) "semi_trailer",	   (char *) "initial_type", CARMEN_PARAM_INT,	 &semi_trailer_config.semi_trailers.type,								 0, NULL},
+		{(char *) "semi_trailer",	   (char *) "initial_type", CARMEN_PARAM_INT,	 &semi_trailer_config.num_semi_trailers,								 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_symotha", CARMEN_PARAM_ONOFF, &behavior_selector_use_symotha, 1, NULL},
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
 		{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},
@@ -2043,8 +2044,8 @@ read_parameters(int argc, char **argv)
 
 	distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
-	if (semi_trailer_config.semi_trailers.type > 0)
-		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.semi_trailers.type);
+	if (semi_trailer_config.num_semi_trailers > 0)
+		carmen_task_manager_read_semi_trailer_parameters(&semi_trailer_config, argc, argv, semi_trailer_config.num_semi_trailers);
 }
 
 

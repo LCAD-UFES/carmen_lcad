@@ -1233,7 +1233,7 @@ camera_drivers_write_camera_message_to_log(int camera_id, int compress_image, ca
 	sprintf(mkdir_string, "mkdir -p %s", dir);
 	system(mkdir_string);
 
-	carmen_fprintf(outfile, "CAMERA%d_MESSAGE %d %d %d %lf %s ", camera_id, compress_image, camera_id, message->number_of_images, message->timestamp, message->host);
+	carmen_fprintf(outfile, "CAMERA%d_MESSAGE %d %d %d %d %lf %s ", camera_id, compress_image, camera_id, message->number_of_images, message->undistorted, message->timestamp, message->host);
 	
 	for (int i = 0; i < message->number_of_images; i++)
 	{

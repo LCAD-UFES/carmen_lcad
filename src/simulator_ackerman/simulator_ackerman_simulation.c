@@ -306,7 +306,7 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 	else
 	{
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
-				simulator_config->target_v, simulator_config->v, simulator_config->delta_t, 0);
+				simulator_config->target_v, simulator_config->v, simulator_config->delta_t, 0, 1.0);
 
 		/*velocity_pid_data_message *msg = (velocity_pid_data_message *) malloc (sizeof (velocity_pid_data_message));
 		carmen_libpid_velocity_PID_controler_publish_data(msg, &throttle_command, &brakes_command, &gear_command,

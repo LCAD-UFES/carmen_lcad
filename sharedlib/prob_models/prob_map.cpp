@@ -3484,7 +3484,7 @@ compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double be
 {
 	beta = -beta;
 	carmen_pose_3D_t temp_rear_bullbar_pose;
-	temp_rear_bullbar_pose.position.x 			= -semi_trailer_config.semi_trailers.M + rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
+	temp_rear_bullbar_pose.position.x 			= -semi_trailer_config.semi_trailers[0].M + rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
 	temp_rear_bullbar_pose.position.y 			= 						   rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
 
 //	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);

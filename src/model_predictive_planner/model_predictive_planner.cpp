@@ -746,7 +746,7 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailers_pose_t *loc
 	td.phi_i = last_odometry.phi;
 	td.v_i = last_odometry.v;
 
-	if (GlobalState::semi_trailer_config.semi_trailers.type == 0)
+	if (GlobalState::semi_trailer_config.num_semi_trailers == 0)
 		td.beta_i = 0.0;
 	else
 		td.beta_i = localizer_pose->trailer_theta[0];

@@ -357,7 +357,7 @@ typedef struct {
 
 
 typedef struct {
-	int type;
+//	int type;
 	double d;
 	double M;
 	double width;
@@ -373,7 +373,7 @@ typedef struct {
 
 typedef struct {
 	int num_semi_trailers;
-	carmen_semi_trailer_config_t semi_trailers;
+	carmen_semi_trailer_config_t semi_trailers[MAX_NUM_TRAILERS];
 } carmen_semi_trailers_config_t;
 
 

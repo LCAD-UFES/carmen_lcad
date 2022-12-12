@@ -1,7 +1,20 @@
 ## Ouster from ouster C++ SDK version 0.4.1
 
-Esse módulo usa o SDK mais atual da ouster (09/08/2022) e está pronto para rodar todos os sensores pegando os parâmetros 
+Esse módulo usa o SDK mais atual da ouster (09/08/2022) e está pronto para rodar todos os sensores pegando os parâmetros principais
 do sensor automaticamente (sem necessidade de gravar no carmen-ini ou fixar para sempre um numero de laser)
+
+Para instalar siga o topico Instalação mais abaixo, para só lembrar como rodar:
+
+## how to run the driver: 
+./ouster -sensor_id <ID TO THE VARIABLE VELODYNE MESSAGE AND CAMEN.INI PARAMETER: [0-16]>
+
+Optional parameters:             -host_ip  {IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS}  -num_rays_per_message {Depends on the lidar ray alignment}
+                                 -intensity_type {1-Intensity 2-REFLECTIVITY 3-NEAR_IR} 
+default value: -host_ip  192.168.1.1    -num_rays_per_message 16       -intensity_type 3
+
+## example
+./ouster -lidar_id 1
+This will find the lidar1_ parameters in camen...ini and load the IP of the sensor
 
 TODO:
 
@@ -30,16 +43,16 @@ mova a pasta baixada com nome ouster_example-master para ~/packages_carmen/ouste
 compile o modulo ouster_sdk_driver em $CARMEN_HOME/src/sensors/ouster_sdk_driver \
 
 ## how to run the driver: 
-./ouster2 -sensor_ip <SENSOR IP> -host_ip<IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -sensor_id <ID TO THE VARIABLE VELODYNE MESSAGE AND CAMEN.INI PARAMETER: [0-9]> -mode<512x10|512x20|1024x10|1024x20|2048x10> -publish_imu [on | off]  -intensity_type [1 | 2 | 3]
+./ouster -sensor_id <ID TO THE VARIABLE VELODYNE MESSAGE AND CAMEN.INI PARAMETER: [0-16]>
+
+Optional parameters:             -host_ip  {IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS}  -num_rays_per_message {Depends on the lidar ray alignment}
+                                 -intensity_type {1-Intensity 2-REFLECTIVITY 3-NEAR_IR} 
+default value: -host_ip  192.168.1.1    -num_rays_per_message 16       -intensity_type 3
 
 ## example
-./ouster2 -sensor_ip 192.168.1.200 -host_ip 192.168.1.1 -sensor_id 0 -mode 1024x20 -publish_imu off -intensity_type 1
+./ouster -lidar_id 1
+This will find the lidar1_ parameters in camen...ini and load the IP of the sensor
 
-## if intensity_type == 1 -> INTENSITY 
-## if intensity_type == 2 -> REFLECTIVITY
-## if intensity_type == 3 -> NOISE
-
-## if mode == 1024x20 -> horizontal resolution 1024, frequency 20Hz
 
 ##ANY QUESTION ABOUT PARAMETERS, CHECK: $CARMEN_HOME/src/sensors/ouster/PARAMETROS_LIDAR_OUSTER.txt
 
@@ -52,6 +65,7 @@ our sensors ip list:
 
 to access sensors configuration page http://os-<IP or Serial>.local/
  ex: http://os-122144000315.local/
+
 ---------------------------------------------------------------------------------
 Initial Configuration
 ---------------------------------------------------------------------------------
@@ -89,6 +103,50 @@ OS132 is Aligned (this driver publish only one message)
 OS032 is not Aligned ALL RAYS have differet azimuth angles (this driver doesn't work with this one yet) 
 
 
+##Filling the parameters in carmen...ini
+---------------------------------------------------------------------------------
+Basic connectivity test using netcat (program from linux)
+---------------------------------------------------------------------------------
+## Connect to "os1-991901000584" (the sensor IP can be used instead) in port 7501. If the command fails, the sensor is unreachable.
+## After using the command, the terminal will lock waiting for requests.
+>> nc os1-991901000584 7501
+
+## Send a request of sensor information. The expected output is presented bellow (note the "running" status in the end).
+## Use Ctrl+C to close the netcat program.
+>> get_sensor_info
+{"prod_line": "OS-1-64", "prod_pn": "840-101396-03", "prod_sn": "991901000584", "base_pn": "000-101323-03", "base_sn": "101837000389", "image_rev": "ousteros-image-prod-aries-v1.10.0-20181211235856", "build_rev": "v1.10.0", "proto_rev": "v1.1.1", "build_date": "2018-12-11T23:23:23Z", "status": "RUNNING"}
+
+#In order to see the angles use:
+>> get_beam_intrinsics
+beam_altitude_angles": [43.88, 40.91, 37.95, 35.01, 32.08, 29.17, 26.27, 23.38, 20.52, 17.67, 14.84, 12.01, 9.19, 6.38, 3.57, 0.77, -2.04, -4.85, -7.65, -10.46, -13.29, -16.12, -18.96, -21.81, -24.68, -27.56, -30.46, -33.38, -36.32, -39.29, -42.28, -45.32]
+beam_azimuth_angles": [-3.28, -3.19, -3.11, -3.04, -2.98, -2.93, -2.88, -2.85, -2.83, -2.8, -2.79, -2.78, -2.77, -2.77, -2.77, -2.78, -2.8, -2.82, -2.84, -2.88, -2.9, -2.95, -2.99, -3.04, -3.11, -3.16, -3.25, -3.35, -3.44, -3.56, -3.7, -3.86], 
+"lidar_origin_to_beam_origin_mm": 27.67}
+
+The beam_azimuth_angles will define how many messages the driver will publish, if the angles changes more than 0.5º there is at least two sets of aligned rays
+The beam_altitude_angles needs to go to the carmen.ini as a lidarX_vertical_angles
+To use more than one message in carmen...ini use the program below to split the angles to put in the lidarX_vertical_angles
+
+---------------------------------------------------------------------------------
+How to split vertical angles list to help LIDAR configuration on Carmen.ini
+---------------------------------------------------------------------------------
+
+##How to run split_vertical_angles_list program
+how to run split_vertical_angles_list:
+./split_vertical_angles_list -sensor_ip <SENSOR IP> -host_ip <IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -num_split <integer number of splits to make>
+## example
+./split_vertical_angles_list  -sensor_ip 192.168.1.207 -host_ip 192.168.1.1 -num_split 4
+
+
+---------------------------------------------------------------------------------
+Sensor Angles
+---------------------------------------------------------------------------------
+
+## OS1-32-BH
+{"beam_altitude_angles": [-0.98, -1.67, -2.38, -3.07, -3.77, -4.49, -5.18, -5.89, -6.59, -7.27, -7.96, -8.66, -9.34, -10.04, -10.72, -11.4, -12.08, -12.75, -13.43, -14.09, -14.75, -15.41, -16.08, -16.72, -17.38, -18, -18.66, -19.27, -19.91, -20.52, -21.14, -21.74], "beam_azimuth_angles": [4.2, -1.4, 4.21, -1.4, 4.22, -1.41, 4.2, -1.41, 4.2, -1.39, 4.22, -1.4, 4.22, -1.4, 4.22, -1.39, 4.22, -1.39, 4.23, -1.39, 4.23, -1.39, 4.24, -1.39, 4.23, -1.38, 4.23, -1.38, 4.24, -1.38, 4.24, -1.37], "lidar_origin_to_beam_origin_mm": 15.806}
+## OS1-32-U
+{"beam_altitude_angles": [20.51, 19.25, 17.99, 16.68, 15.38, 14.06, 12.72, 11.37, 10.01, 8.619999999999999, 7.24, 5.87, 4.46, 3.06, 1.64, 0.23, -1.17, -2.58, -3.99, -5.39, -6.78, -8.16, -9.539999999999999, -10.92, -12.28, -13.63, -14.94, -16.26, -17.56, -18.85, -20.1, -21.33], "beam_azimuth_angles": [-1.5, -1.49, -1.48, -1.49, -1.48, -1.47, -1.46, -1.45, -1.45, -1.45, -1.44, -1.42, -1.43, -1.42, -1.42, -1.41, -1.4, -1.4, -1.39, -1.38, -1.37, -1.36, -1.36, -1.37, -1.35, -1.35, -1.33, -1.33, -1.33, -1.33, -1.31, -1.29], "lidar_origin_to_beam_origin_mm": 15.806}
+## OS2-32-BH
+"beam_altitude_angles": [-0.04, -0.41, -0.74, -1.11, -1.46, -1.8, -2.15, -2.5, -2.85, -3.19, -3.54, -3.89, -4.23, -4.58, -4.93, -5.29, -5.62, -5.98, -6.31, -6.67, -7, -7.34, -7.68, -8.039999999999999, -8.380000000000001, -8.73, -9.039999999999999, -9.4, -9.73, -10.08, -10.41, -10.75], "beam_azimuth_angles": [2.08, -0.6899999999999999, 2.08, -0.6899999999999999, 2.08, -0.68, 2.1, -0.67, 2.08, -0.67, 2.09, -0.6899999999999999, 2.08, -0.67, 2.1, -0.68, 2.09, -0.68, 2.09, -0.68, 2.09, -0.67, 2.1, -0.68, 2.1, -0.68, 2.1, -0.68, 2.09, -0.68, 2.1, -0.67], "lidar_origin_to_beam_origin_mm": 13.762
 
 ---------------------------------------------------------------------------------
 General Informatios About OS1 Sensor
@@ -118,34 +176,3 @@ General Informatios About OS1 Sensor
 - sensor hostname: "os1-991901000584.local"
 - Vertical: ±0.01degrees / Horizontal: ±0.01degrees 
 
-
----------------------------------------------------------------------------------
-Basic connectivity test using netcat (program from linux)
----------------------------------------------------------------------------------
-## Connect to "os1-991901000584" (the sensor IP can be used instead) in port 7501. If the command fails, the sensor is unreachable.
-## After using the command, the terminal will lock waiting for requests.
->> nc os1-991901000584 7501
-
-## Send a request of sensor information. The expected output is presented bellow (note the "running" status in the end).
-## Use Ctrl+C to close the netcat program.
->> get_sensor_info
-{"prod_line": "OS-1-64", "prod_pn": "840-101396-03", "prod_sn": "991901000584", "base_pn": "000-101323-03", "base_sn": "101837000389", "image_rev": "ousteros-image-prod-aries-v1.10.0-20181211235856", "build_rev": "v1.10.0", "proto_rev": "v1.1.1", "build_date": "2018-12-11T23:23:23Z", "status": "RUNNING"}
----------------------------------------------------------------------------------
-Sensor Angles
----------------------------------------------------------------------------------
-## OS1-32-BH
-{"beam_altitude_angles": [-0.98, -1.67, -2.38, -3.07, -3.77, -4.49, -5.18, -5.89, -6.59, -7.27, -7.96, -8.66, -9.34, -10.04, -10.72, -11.4, -12.08, -12.75, -13.43, -14.09, -14.75, -15.41, -16.08, -16.72, -17.38, -18, -18.66, -19.27, -19.91, -20.52, -21.14, -21.74], "beam_azimuth_angles": [4.2, -1.4, 4.21, -1.4, 4.22, -1.41, 4.2, -1.41, 4.2, -1.39, 4.22, -1.4, 4.22, -1.4, 4.22, -1.39, 4.22, -1.39, 4.23, -1.39, 4.23, -1.39, 4.24, -1.39, 4.23, -1.38, 4.23, -1.38, 4.24, -1.38, 4.24, -1.37], "lidar_origin_to_beam_origin_mm": 15.806}
-## OS1-32-U
-{"beam_altitude_angles": [20.51, 19.25, 17.99, 16.68, 15.38, 14.06, 12.72, 11.37, 10.01, 8.619999999999999, 7.24, 5.87, 4.46, 3.06, 1.64, 0.23, -1.17, -2.58, -3.99, -5.39, -6.78, -8.16, -9.539999999999999, -10.92, -12.28, -13.63, -14.94, -16.26, -17.56, -18.85, -20.1, -21.33], "beam_azimuth_angles": [-1.5, -1.49, -1.48, -1.49, -1.48, -1.47, -1.46, -1.45, -1.45, -1.45, -1.44, -1.42, -1.43, -1.42, -1.42, -1.41, -1.4, -1.4, -1.39, -1.38, -1.37, -1.36, -1.36, -1.37, -1.35, -1.35, -1.33, -1.33, -1.33, -1.33, -1.31, -1.29], "lidar_origin_to_beam_origin_mm": 15.806}
-## OS2-32-BH
-"beam_altitude_angles": [-0.04, -0.41, -0.74, -1.11, -1.46, -1.8, -2.15, -2.5, -2.85, -3.19, -3.54, -3.89, -4.23, -4.58, -4.93, -5.29, -5.62, -5.98, -6.31, -6.67, -7, -7.34, -7.68, -8.039999999999999, -8.380000000000001, -8.73, -9.039999999999999, -9.4, -9.73, -10.08, -10.41, -10.75], "beam_azimuth_angles": [2.08, -0.6899999999999999, 2.08, -0.6899999999999999, 2.08, -0.68, 2.1, -0.67, 2.08, -0.67, 2.09, -0.6899999999999999, 2.08, -0.67, 2.1, -0.68, 2.09, -0.68, 2.09, -0.68, 2.09, -0.67, 2.1, -0.68, 2.1, -0.68, 2.1, -0.68, 2.09, -0.68, 2.1, -0.67], "lidar_origin_to_beam_origin_mm": 13.762
-
----------------------------------------------------------------------------------
-How to split vertical angles list to help LIDAR configuration on Carmen.ini
----------------------------------------------------------------------------------
-
-##How to run split_vertical_angles_list program
-how to run split_vertical_angles_list:
-./split_vertical_angles_list -sensor_ip <SENSOR IP> -host_ip <IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -num_split <integer number of splits to make>
-## example
-./split_vertical_angles_list  -sensor_ip 192.168.1.207 -host_ip 192.168.1.1 -num_split 4

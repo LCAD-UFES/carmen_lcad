@@ -130,7 +130,7 @@ createCarDrawer(int argc, char** argv)
 		{"robot", "length", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.x), 1, NULL},
 		{"robot", "width", CARMEN_PARAM_DOUBLE, &(carDrawer->robot_size.y), 1, NULL},
 		{"robot", "collision_file", CARMEN_PARAM_STRING, &robot_collision_file, 1, NULL},
-		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.semi_trailers.type), 0, NULL},
+		{"semi_trailer", "initial_type", CARMEN_PARAM_INT, &(carDrawer->semi_trailer_config.num_semi_trailers), 0, NULL},
 		{"sensor", "board_1_x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.x), 1, NULL},
 		{"sensor", "board_1_y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.y), 1, NULL},
 		{"sensor", "board_1_z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.position.z), 1, NULL},
@@ -176,45 +176,48 @@ createCarDrawer(int argc, char** argv)
 
 	glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
 
-	if (carDrawer->semi_trailer_config.semi_trailers.type > 0)
+	for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 	{
 		char semi_trailer_string[256];
 		char semi_trailer_model_string[256];
 
-		sprintf(semi_trailer_string, "%s%d", "semi_trailer", carDrawer->semi_trailer_config.semi_trailers.type);
-		sprintf(semi_trailer_model_string, "%s%d", "semi_trailer_model", carDrawer->semi_trailer_config.semi_trailers.type);
+		sprintf(semi_trailer_string, "%s%d", "semi_trailer", semi_trailer_id);
+		sprintf(semi_trailer_model_string, "%s%d", "semi_trailer_model", semi_trailer_id);
 
 		carmen_param_t param_list2[] =
 		{
-			{semi_trailer_string, "width", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers.width), 0, NULL},
-			{semi_trailer_string, "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front), 0, NULL},
-			{semi_trailer_string, "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back), 0, NULL},
+			{semi_trailer_string, "d", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].d), 0, NULL},
+			{semi_trailer_string, "M", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M), 0, NULL},
+			{semi_trailer_string, "width", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width), 0, NULL},
+			{semi_trailer_string, "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front), 0, NULL},
+			{semi_trailer_string, "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back), 0, NULL},
 			{semi_trailer_model_string, "file_name", CARMEN_PARAM_STRING, &semi_trailer_model_file, 0, NULL},
-			{semi_trailer_model_string, "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.x), 0, NULL},
-			{semi_trailer_model_string, "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.y), 0, NULL},
-			{semi_trailer_model_string, "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size.z), 0, NULL},
-			{semi_trailer_model_string, "x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.x), 0, NULL},
-			{semi_trailer_model_string, "y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.y), 0, NULL},
-			{semi_trailer_model_string, "z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.position.z), 0, NULL},
-			{semi_trailer_model_string, "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.roll), 0, NULL},
-			{semi_trailer_model_string, "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.pitch), 0, NULL},
-			{semi_trailer_model_string, "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose.orientation.yaw), 0, NULL}
+			{semi_trailer_model_string, "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].x), 0, NULL},
+			{semi_trailer_model_string, "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].y), 0, NULL},
+			{semi_trailer_model_string, "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].z), 0, NULL},
+			{semi_trailer_model_string, "x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x), 0, NULL},
+			{semi_trailer_model_string, "y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y), 0, NULL},
+			{semi_trailer_model_string, "z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z), 0, NULL},
+			{semi_trailer_model_string, "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.roll), 0, NULL},
+			{semi_trailer_model_string, "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.pitch), 0, NULL},
+			{semi_trailer_model_string, "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.yaw), 0, NULL}
 		};
 
 		num_items = sizeof(param_list2)/sizeof(param_list2[0]);
 		carmen_param_install_params(argc, argv, param_list2, num_items);
 
-		carDrawer->semi_trailer_config.semi_trailers.max_beta = carmen_degrees_to_radians(carDrawer->semi_trailer_config.semi_trailers.max_beta);
-		carDrawer->semi_trailer_config.semi_trailers.d = carDrawer->robot_collision_config->semi_trailer_d;
-		carDrawer->semi_trailer_config.semi_trailers.M = carDrawer->robot_collision_config->semi_trailer_M;
+		carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].max_beta = carmen_degrees_to_radians(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].max_beta);
+//		FIXME Avelino
+//		carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].d = carDrawer->robot_collision_config->semi_trailer_d;
+//		carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M = carDrawer->robot_collision_config->semi_trailer_M;
 
 		if (semi_trailer_model_file == NULL)
-			carDrawer->semiTrailerModel = glmReadOBJ("ford_escape_model.obj");
+			carDrawer->semiTrailerModel[semi_trailer_id-1] = glmReadOBJ("ford_escape_model.obj");
 		else
-			carDrawer->semiTrailerModel = glmReadOBJ(semi_trailer_model_file);
-		glmUnitize(carDrawer->semiTrailerModel);
+			carDrawer->semiTrailerModel[semi_trailer_id-1] = glmReadOBJ(semi_trailer_model_file);
+		glmUnitize(carDrawer->semiTrailerModel[semi_trailer_id-1]);
 
-		glmScale(carDrawer->semiTrailerModel, carDrawer->semi_trailer_size.x / 2.0);
+		glmScale(carDrawer->semiTrailerModel[semi_trailer_id-1], carDrawer->semi_trailer_size[semi_trailer_id-1].x / 2.0);
 	}
 
 	return (carDrawer);
@@ -263,16 +266,19 @@ draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, i
 
 		if (semi_trailer_engaged)
 		{
-			glTranslatef(-carDrawer->robot_collision_config->semi_trailer_M, 0.0, 0.0);
-			glRotatef(-carmen_radians_to_degrees(beta), 0.0f, 0.0f, 1.0f);
-			for (int i = 0; i < carDrawer->robot_collision_config->n_semi_trailer_markers; i++)
+			for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 			{
-				glPushMatrix();
-					glTranslatef(carDrawer->robot_collision_config->semi_trailer_markers[i].x - carDrawer->robot_collision_config->semi_trailer_d, carDrawer->robot_collision_config->semi_trailer_markers[i].y, 0.0);
-					draw_cylinder(carDrawer->robot_collision_config->semi_trailer_markers[i].radius, 0.0);
-				glPopMatrix();
+				glTranslatef(-carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1], 0.0, 0.0);
+				glRotatef(-carmen_radians_to_degrees(beta), 0.0f, 0.0f, 1.0f);
+				for (int i = 0; i < carDrawer->robot_collision_config->n_semi_trailer_markers[semi_trailer_id-1]; i++)
+				{
+					glPushMatrix();
+						glTranslatef(carDrawer->robot_collision_config->semi_trailer_markers[semi_trailer_id-1][i].x - carDrawer->robot_collision_config->semi_trailer_d[semi_trailer_id-1],
+								carDrawer->robot_collision_config->semi_trailer_markers[semi_trailer_id-1][i].y, 0.0);
+						draw_cylinder(carDrawer->robot_collision_config->semi_trailer_markers[semi_trailer_id-1][i].radius, 0.0);
+					glPopMatrix();
+				}
 			}
-
 		}
 	glPopMatrix();
 }
@@ -388,31 +394,34 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 
 	if (semi_trailer_engaged)
 	{
-		glPushMatrix();
-			glRotatef(-carmen_radians_to_degrees(beta), 0.0, 0.0, 1.0);
+		for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+		{
+			glPushMatrix();
+				glRotatef(-carmen_radians_to_degrees(beta), 0.0, 0.0, 1.0);
 
-			glTranslatef(-carDrawer->robot_collision_config->semi_trailer_d - carDrawer->robot_collision_config->semi_trailer_M * cos(beta),
-						 -carDrawer->robot_collision_config->semi_trailer_M * sin(beta),
-						 0.0);
+				glTranslatef(-carDrawer->robot_collision_config->semi_trailer_d[semi_trailer_id-1] - carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1] * cos(beta),
+							 -carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1] * sin(beta),
+							 0.0);
 
-			glBegin(GL_LINE_STRIP);
-				glVertex3f(-carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
-				glVertex3f(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
-				glVertex3f(carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_front, carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
-				glVertex3f(-carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
-				glVertex3f(-carDrawer->semi_trailer_config.semi_trailers.distance_between_axle_and_back, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0);
-			glEnd();
+				glBegin(GL_LINE_STRIP);
+					glVertex3f(-carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+					glVertex3f(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, -carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+					glVertex3f(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+					glVertex3f(-carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+					glVertex3f(-carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+				glEnd();
 
-			glBegin(GL_LINES);
-				glVertex3d(0.0, -carDrawer->semi_trailer_config.semi_trailers.width / 2, 0.0);
-				glVertex3d(0.0, carDrawer->semi_trailer_config.semi_trailers.width / 2, 0.0);
-			glEnd();
+				glBegin(GL_LINES);
+					glVertex3d(0.0, -carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0.0);
+					glVertex3d(0.0, carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0.0);
+				glEnd();
 
-			glBegin(GL_POINTS);
-				glVertex3d(carDrawer->semi_trailer_config.semi_trailers.d, 0.0, 0.0);
-			glEnd();
+				glBegin(GL_POINTS);
+					glVertex3d(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].d, 0.0, 0.0);
+				glEnd();
 
-		glPopMatrix();
+			glPopMatrix();
+		}
 	}
 }
 
@@ -446,22 +455,28 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 	
 	if (semi_trailer_engaged)
 	{
-		// Semi-trailer
-		glPushMatrix();
+		for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+		{
+			// Semi-trailer
+			glPushMatrix();
 
-			glRotatef(90.0, 1.0, 0.0, 0.0);
-			glRotatef(0.0, 0.0, 1.0, 0.0);
-			glRotatef(-carmen_radians_to_degrees(beta), 0.0, 1.0, 0.0);
+				glRotatef(90.0, 1.0, 0.0, 0.0);
+				glRotatef(0.0, 0.0, 1.0, 0.0);
+				glRotatef(-carmen_radians_to_degrees(beta), 0.0, 1.0, 0.0);
+//				FIXME Avelino
+//				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->robot_collision_config->semi_trailer_d - carDrawer->robot_collision_config->semi_trailer_M * cos(beta),
+//							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z,
+//							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->robot_collision_config->semi_trailer_M * sin(beta));
+				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].d - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * cos(beta),
+							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z,
+							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * sin(beta));
 
-			glTranslatef(carDrawer->semi_trailer_pose.position.x - carDrawer->robot_collision_config->semi_trailer_d - carDrawer->robot_collision_config->semi_trailer_M * cos(beta),
-						 carDrawer->semi_trailer_pose.position.z,
-						 carDrawer->semi_trailer_pose.position.y + carDrawer->robot_collision_config->semi_trailer_M * sin(beta));
+				glColor3f(0.3,0.3,0.3);
+				//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
+				glmDraw(carDrawer->semiTrailerModel[semi_trailer_id-1], GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
 
-			glColor3f(0.3,0.3,0.3);
-			//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
-			glmDraw(carDrawer->semiTrailerModel, GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
-
-		glPopMatrix();
+			glPopMatrix();
+		}
 	}
 
 

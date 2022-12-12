@@ -53,13 +53,12 @@ static double g_velocity_backward_deccelerating_Kd;
 static double g_brake_gap;
 static double g_max_brake_effort;
 static double g_maximum_steering_command_rate;
-
-static double g_throttle_gap = 0.0;
+static double g_throttle_gap;
 
 static double g_fuzzy_factor = 0.5;
 
-static double g_v_error_multiplier = 3.0; // quando igual a 1.0, o erro de v eh multiplicado por 2 qundo v eh igual a g_target_velocity (error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity))
-static double g_target_velocity = 5.55;
+//static double g_v_error_multiplier = 0.0; // quando igual a 1.0, o erro de v eh multiplicado por 2 qundo v eh igual a g_target_velocity (error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity))
+//static double g_target_velocity = 5.55;
 
 static int robot_model_id = 0;
 
@@ -771,7 +770,7 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 void
 carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,
 										double desired_velocity, double current_velocity, double delta_t_old __attribute__ ((unused)),
-										int manual_override)
+										int manual_override, double gear_ratio)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	static double 	error_t_1 = 0.0;	// error in time t-1
@@ -811,10 +810,11 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	double a = (current_velocity - g_v) / delta_t;
 	g_v = current_velocity;
 
-	double error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity);
-	if (error_multiplier > (1.0 + g_v_error_multiplier))
-		error_multiplier = 1.0 + g_v_error_multiplier;
-	double error_t = (desired_velocity - current_velocity) * error_multiplier;
+//	double error_multiplier = 1.0 + g_v_error_multiplier * fabs(current_velocity / g_target_velocity);
+//	if (error_multiplier > (1.0 + g_v_error_multiplier))
+//		error_multiplier = 1.0 + g_v_error_multiplier;
+//	double error_t = (desired_velocity - current_velocity) * error_multiplier;
+	double error_t = (desired_velocity - current_velocity) * 1.0;
 
 	if (manual_override == 0)
 		integral_t = integral_t + error_t * delta_t;
@@ -1013,6 +1013,7 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 		{(char *)"robot", (char *)"PID_velocity_brake_gap", CARMEN_PARAM_DOUBLE, &g_brake_gap, 1, NULL},
 		{(char *)"robot", (char *)"PID_velocity_max_brake_effort", CARMEN_PARAM_DOUBLE, &g_max_brake_effort, 1, NULL},
 		{(char *)"robot", (char *)"maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &g_maximum_steering_command_rate, 1, NULL},
+		{(char *)"robot", (char *)"PID_velocity_throttle_gap", CARMEN_PARAM_DOUBLE, &g_throttle_gap, 1, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
