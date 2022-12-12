@@ -20,7 +20,7 @@
 
 using namespace ouster;
 
-#define number_of_rays_per_message 32
+int number_of_rays_per_message = 16;
 
 const size_t N_SCANS = 1;
 const size_t UDP_BUF_SIZE = 65536;
@@ -29,7 +29,7 @@ char *ouster_ip = NULL;
 char *host_ip = NULL;
 int ouster_sensor_id = 0;
 int ouster_publish_imu = 0;
-int ouster_intensity_type = 1;
+int ouster_intensity_type = 3;
 bool is_alternated = false;
 
 
@@ -72,13 +72,18 @@ read_parameters(int argc, char **argv)
 {
 
 	carmen_param_t comand_line_param_list[] = {
-		{(char*) "commandline", (char*) "sensor_ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL},
-		{(char*) "commandline", (char*) "host_ip", CARMEN_PARAM_STRING, &host_ip, 0, NULL},
-        {(char*) "commandline", (char*) "sensor_id", CARMEN_PARAM_INT, &ouster_sensor_id, 0, NULL},
-        {(char*) "commandline", (char*) "intensity_type", CARMEN_PARAM_INT, &ouster_intensity_type, 0, NULL}, 
-		{(char*) "commandline", (char*) "publish_imu", CARMEN_PARAM_ONOFF, &ouster_publish_imu, 0, NULL}
+        {(char*) "commandline", (char*) "lidar_id", CARMEN_PARAM_INT, &ouster_sensor_id, 0, NULL},
+//        {(char*) "commandline", (char*) "intensity_type", CARMEN_PARAM_INT, &ouster_intensity_type, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, comand_line_param_list, sizeof(comand_line_param_list)/sizeof(comand_line_param_list[0]));
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t comand_line_param_list_2[] = {
+			{(char*) "commandline", (char*) "host_ip", CARMEN_PARAM_STRING, &host_ip, 0, NULL},
+			{(char*) "commandline", (char*) "num_rays_per_message", CARMEN_PARAM_STRING, &number_of_rays_per_message, 0, NULL},
+			{(char*) "commandline", (char*) "intensity_type", CARMEN_PARAM_INT, &ouster_intensity_type, 0, NULL},
+	};
+	carmen_param_install_params(argc, argv, comand_line_param_list_2, sizeof(comand_line_param_list_2)/sizeof(comand_line_param_list_2[0]));
 
     if (ouster_intensity_type < 1 || ouster_intensity_type > 3)// 1-Intensity 2-REFLECTIVITY 3-NEAR_IR
     {
@@ -86,24 +91,50 @@ read_parameters(int argc, char **argv)
         exit(0);
     }
 
+    if (host_ip == NULL)
+    {
+    	host_ip = (char*) malloc (12 * sizeof(char));
+    	sprintf(host_ip, "192.168.1.1");
+    }
+
     char lidar_string[256];
 
     sprintf(lidar_string, "lidar%d", ouster_sensor_id);        // Geather the lidar id
 
-    // carmen_param_t param_list[] =
-    // {
-	// 		{lidar_string, (char *) "port", CARMEN_PARAM_INT, &ouster_port, 0, NULL},
-	// 		{lidar_string, (char *) "imu_port", CARMEN_PARAM_INT, &ouster_imu_port, 0, NULL}
-    // };
+    carmen_param_allow_unfound_variables(0);
+     carmen_param_t param_list[] =
+     {
+	 		{lidar_string, (char *) "ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL}
+     };
 
-    // int num_items = sizeof(param_list) / sizeof(param_list[0]);
-    // carmen_param_install_params(argc, argv, param_list, num_items);
+     int num_items = sizeof(param_list) / sizeof(param_list[0]);
+     carmen_param_install_params(argc, argv, param_list, num_items);
 }
+
+
+void
+prog_usage(char *prog_name, const char *error_msg = NULL, const char *error_msg2 = NULL)
+{
+	if (error_msg)
+		fprintf(stderr, "\n%s", error_msg);
+	if (error_msg2)
+		fprintf(stderr, "%s", error_msg2);
+
+	fprintf(stderr, "\n\nUsage:   %s   -lidar_id {lidar from Carmen.ini number} \n", prog_name);
+	fprintf(stderr,   " Optional parameters: %*c   -host_ip  {PC network IP that is running this program}  -num_rays_per_message {Depends on the lidar ray alignment}\n", (int) strlen(prog_name), ' ');
+	fprintf(stderr,   "                      %*c   -intensity_type {1-Intensity 2-REFLECTIVITY 3-NEAR_IR} \n", (int) strlen(prog_name), ' ');
+	fprintf(stderr,   "default value: -host_ip  192.168.1.1    -num_rays_per_message 16       -intensity_type 3\n");
+
+	exit(-1);
+}
+
 
 
 int 
 main(int argc, char* argv[]) 
 {
+    if (argc > 1 && strcmp(argv[1], "-h") == 0)
+		prog_usage(argv[0]);
     std::cerr << "Ouster client SDK Version " << ouster::SDK_VERSION_FULL << std::endl;
     /*
      * The sensor client consists of the network client and a library for
@@ -130,7 +161,7 @@ main(int argc, char* argv[])
     std::cerr << "Connecting to \"" << sensor_hostname << "\"... ";
     
 //TODO checar se vai precisa de porta com varios sensores conectados
-    auto handle = sensor::init_client(sensor_hostname, data_destination);
+    auto handle = sensor::init_client(sensor_hostname, 7502, 7503);
     if (!handle) FATAL("Failed to connect");
     std::cerr << "ok" << std::endl;
 
@@ -163,13 +194,13 @@ main(int argc, char* argv[])
     {
     	is_alternated = true;
     	//RAIOS ALTERNADOS
-    	if (h < 32)
+    	if (h < number_of_rays_per_message)
     	{
     		std::cerr << "Esse código não trata Lidars que têm raios alternados com número de shots menor do que 32\n";
     		carmen_ipc_disconnect();
     		exit(0);
     	}
-    	for (size_t i = 0; i < 4; i++)
+    	for (size_t i = 0; i < h / number_of_rays_per_message; i++)
 		{
 			carmen_velodyne_variable_scan_message message;
 			setup_message(message, w, number_of_rays_per_message);
@@ -188,7 +219,7 @@ main(int argc, char* argv[])
     int number_of_messages_to_publish;
     if (is_alternated)
     {
-    	number_of_messages_to_publish = (4);
+    	number_of_messages_to_publish = (h / number_of_rays_per_message);
     }else
     {
     	number_of_messages_to_publish = 1;
@@ -199,7 +230,10 @@ main(int argc, char* argv[])
               << "\n  Product line:      " << info.prod_line
               << "\n  Scan dimensions:   " << w << " x " << h
               << "\n  Column window:     [" << column_window.first << ", "
-              << column_window.second << "]" << std::endl;
+              << column_window.second << "]"
+    		  << "\n  Lidar_IP:   " << sensor_hostname
+			  << "\n  Destination IP (Usually The PC with Sensorbox Network->192.168.1.1):" << data_destination << std::endl;
+
     if (is_alternated)
     {
     	std::cerr << "\n Esse LiDAR está publicando menssagens com ids ";
@@ -320,21 +354,21 @@ main(int argc, char* argv[])
 				{
 					//RAIOS ALTERNADOS
 					//std::cerr << "entrei alternado " << h / number_of_rays_per_message << std::endl;
-					for (size_t i = 0; i < 4; i++)
+					for (size_t i = 0; i < h / number_of_rays_per_message; i++)
 					{
-						double shot_angle_correction = carmen_normalize_angle_degree(carmen_radians_to_degrees(shot_angle) +  (info.beam_azimuth_angles.at(i % (4))) + 180);
+						double shot_angle_correction = carmen_normalize_angle_degree(carmen_radians_to_degrees(shot_angle) +  (info.beam_azimuth_angles.at(i % (h / number_of_rays_per_message))) + 180);
 						//std::cout<< info.beam_azimuth_angles.at(i % (h / number_of_rays_per_message)) << "\n";
 						// std::cerr << "\n angle " << shot_angle << " shot_angle_correction " << shot_angle_correction << std::endl;
-						vector_msgs[i % (4)].partial_scan[m_id].angle = shot_angle_correction;
+						vector_msgs[i % (h / number_of_rays_per_message)].partial_scan[m_id].angle = shot_angle_correction;
 
-						vector_msgs[i % (4)].partial_scan[m_id].shot_size = number_of_rays_per_message;
+						vector_msgs[i % (h / number_of_rays_per_message)].partial_scan[m_id].shot_size = number_of_rays_per_message;
 					}
 					// std::cerr << "angle_correction " << angle_correction << std::endl;
 
 					for (size_t ipx = 0; ipx < h ; ipx++)
 					{
-						vector_msgs[ipx % (4)].partial_scan[m_id].distance[(int) (ipx / (4))] = (unsigned int)range(ipx, m_id);
-						vector_msgs[ipx % (4)].partial_scan[m_id].intensity[(int) (ipx / (4))] = (unsigned short)intensity(ipx, m_id);
+						vector_msgs[ipx % (h / number_of_rays_per_message)].partial_scan[m_id].distance[(int) (ipx / (h / number_of_rays_per_message))] = (unsigned int)range(ipx, m_id);
+						vector_msgs[ipx % (h / number_of_rays_per_message)].partial_scan[m_id].intensity[(int) (ipx / (h / number_of_rays_per_message))] = (unsigned short)intensity(ipx, m_id);
 						/*std::cout<< "indice msg " << ipx % (h / number_of_rays_per_message) << "\n";
 						std::cout<< "indice raio " << m_id << "\n";
 						std::cout<< "indice shot " << ipx << "\n";
@@ -347,7 +381,7 @@ main(int argc, char* argv[])
 
 			if (is_alternated)
 			{
-				for (int i = 0; i < 4; i++)
+				for (int i = 0; i < number_of_messages_to_publish; i++)
 				{
 					vector_msgs[i].host = carmen_get_host();
 					vector_msgs[i].timestamp = carmen_get_time();
@@ -369,7 +403,7 @@ main(int argc, char* argv[])
 			}
 
         }
-        // std::cerr << "Publiquei   " << std::endl;
+//        std::cerr << "Publiquei   " << std::endl;
     }
 
     return 0;
