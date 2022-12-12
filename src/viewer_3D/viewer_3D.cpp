@@ -779,7 +779,7 @@ format_map_path(int x_origin, int y_origin, char* map_filename)
 	}
 
 	sprintf(map_filename,
-			"%s/data/map_voltadaufes-201903025-4/remission_images/i%d_%d.png",
+			"%s/data/remission_201903025-4_images/i%d_%d.png",
 			carmen_home,
 			x_origin,
 			y_origin);
