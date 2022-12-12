@@ -937,11 +937,12 @@ remove_moving_objects_from_distance_map_old(carmen_route_planner_road_network_me
 	{
 		carmen_robot_and_trailers_traj_point_t *lane = &(road_network_message->nearby_lanes[road_network_message->nearby_lanes_indexes[i]]);
 		int *traffic_restrictions = &(road_network_message->traffic_restrictions[road_network_message->nearby_lanes_indexes[i]]);
+		int new_traffic_restrictions = road_network_message->new_traffic_restrictions;
 		int lane_size = road_network_message->nearby_lanes_sizes[i];
 		for (int j = 0; j < lane_size - 1; j++)
 		{
-			double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions[j]);
-			double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions[j]);
+			double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions[j], new_traffic_restrictions);
+			double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions[j], new_traffic_restrictions);
 			for (double s = 0.0; s < DIST2D(lane[j], lane[j + 1]); s += distance_map.config.resolution * 0.5)
 			{
 				double lane_x = lane[j].x + s * cos(lane[j].theta);

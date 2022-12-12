@@ -1513,8 +1513,9 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 					for (int i = 0; i < lane_size; i++)
 					{
 						int traffic_restrictions = global_gui->route_planner_route->traffic_restrictions[lane_start + i];
-						double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions);
-						double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions);
+						int new_traffic_restrictions = global_gui->route_planner_route->new_traffic_restrictions;
+						double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions, new_traffic_restrictions);
+						double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions, new_traffic_restrictions);
 
 						carmen_robot_and_trailers_traj_point_t lane_point = global_gui->route_planner_route->nearby_lanes[lane_start + i];
 						lane_line_start.pose.x = lane_point.x + (lane_left_width * cos(lane_point.theta - M_PI / 2.0));

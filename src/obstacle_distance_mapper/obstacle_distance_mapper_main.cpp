@@ -171,8 +171,8 @@ compute_orm_and_irm_occupancy_maps(carmen_map_t *orm_occupancy_map, carmen_map_t
 		int lane_size = road_network_message->nearby_lanes_sizes[i];
 		for (int j = 0; j < lane_size - 1; j++)
 		{
-			double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions[j]);
-			double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions[j]);
+			double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions[j], road_network_message->new_traffic_restrictions);
+			double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions[j], road_network_message->new_traffic_restrictions);
 			for (double s = 0.0; s < DIST2D(lane[j], lane[j + 1]); s += occupancy_map->config.resolution * 0.5)
 			{
 				double lane_x = lane[j].x + s * cos(lane[j].theta);

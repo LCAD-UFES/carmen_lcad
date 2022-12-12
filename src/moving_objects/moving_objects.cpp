@@ -1109,9 +1109,9 @@ association_list_point_clouds(std::list<object_point_cloud_data_t> &list_point_c
 	std::list<object_point_cloud_data_t> list_current_point_clouds;
 	//std::list<object_point_cloud_data_t> list_point_clouds;
 
-	get_current_list_point_clouds(list_current_point_clouds, pcl_cloud_ptr, cluster_indices, car_global_pose, timestamp);
+//	get_current_list_point_clouds(list_current_point_clouds, pcl_cloud_ptr, cluster_indices, car_global_pose, timestamp);
 	/*** VERSÃO DO EDUARDO: ***/
-	//list_current_point_clouds = get_current_list_point_clouds2(pcl_cloud_ptr, cluster_indices, car_global_pose, timestamp);
+	list_current_point_clouds = get_current_list_point_clouds2(pcl_cloud_ptr, cluster_indices, car_global_pose, timestamp);
 	associate_object_point_clouds(list_point_clouds, list_current_point_clouds, occupancy_grid_map, moving_objects_input);
 	include_unassociated_objects_point_clouds(list_point_clouds, list_current_point_clouds);
 	exclude_unecessary_objects_from_point_clouds(list_point_clouds, car_global_pose);
@@ -1591,6 +1591,7 @@ convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3D_t
 			pcl_cloud_ptr->push_back(pcl_point_3D);
 		}
 	}
+	printf("pcl_cloud_ptr->size: %d\n", (int)pcl_cloud_ptr->size());
 }
 
 
@@ -2037,7 +2038,7 @@ detect_and_follow_moving_objects(std::list<object_point_cloud_data_t> &list_poin
 	{
 		set_object_models(object_models);
 		/*** VERSÃO DO EDUARDO: ***/
-		//set_object_models2(object_models);
+		// set_object_models2(object_models);
 	}
 	/*if (object_models_3d.empty())
 	{
@@ -2047,10 +2048,14 @@ detect_and_follow_moving_objects(std::list<object_point_cloud_data_t> &list_poin
 	/*** GET POINTS FROM LASER SCAN ***/
 	size_of_point_cloud = build_point_cloud_using_velodyne_message(velodyne_message, velodyne_params, velodyne_data,
 			robot_velocity, phi, moving_objects_input, carmen_vector_3d_point_cloud);
+	printf("size_of_point_cloud: %d\n", size_of_point_cloud);
 
 	/*** CONVERT TO PCL POINT CLOUD FORMAT SUBTRACTING GLOBAL POSE ***/
 	convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3d_point_cloud, size_of_point_cloud,
 			pcl_cloud_ptr, moving_objects_input);
+
+	size_t num_points_pcl_cloud_ptr = pcl_cloud_ptr->size();
+	printf("num_points_pcl_cloud_ptr: %d\n", num_points_pcl_cloud_ptr);
 
 	/*** SEGMENT POINT CLOUDS - RETURNS CLUSTER INDICES ***/
 	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);

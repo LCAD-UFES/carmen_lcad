@@ -36,7 +36,6 @@
 using namespace std;
 using namespace cv;
 
-
 typedef struct
 {
 	int nearby_lane_id;
@@ -186,9 +185,9 @@ lane_graph_t build_lane_graph (lane_graph_t lane_graph, graph_t &graph);
 vector<edge_t> build_graph_edges (vector<node_t> graph);
 graph_t build_graph(vector<string> files, graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, vector< vector<int> > &nearby_indexes, char* option);
 graph_t build_graph_new(graph_t &graph, vector<vector<carmen_rddf_waypoint> > &rddfs);
-void set_graph_lane_size(graph_t &graph, char *offline_map_dir);
+void set_graph_lane_size(graph_t &graph, char *offline_map_dir, double max_lane_size);
 FILE *open_graph_file(char* graph_file, string option);
-graph_t read_graph_file (FILE *f_graph);
+graph_t read_graph_file (FILE *f_graph, int *new_graph);
 lane_graph_t read_lane_graph_file (FILE *f_graph);
 void save_graph_to_file(graph_t graph, FILE *f_graph);
 void save_lane_graph_to_file(lane_graph_t lane_graph, FILE *f_graph);
