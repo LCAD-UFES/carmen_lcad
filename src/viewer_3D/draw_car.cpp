@@ -443,9 +443,10 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 	// Car
 	glPushMatrix();
 
-		glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
+		glTranslatef(carDrawer->car_pose.position.x, carDrawer->car_pose.position.y, carDrawer->car_pose.position.z + carDrawer->car_wheel_radius);
 		glRotatef(90.0, 1.0, 0.0, 0.0);
-		glRotatef(0.0, 0.0, 1.0, 0.0);
+		glRotatef(-carmen_radians_to_degrees(carDrawer->car_pose.orientation.yaw), 0.0, 1.0, 0.0);
+		glRotatef(0.0, 0.0, 0.0, 1.0);
 
 		glColor3f(0.3,0.3,0.3);
 //		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
