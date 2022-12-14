@@ -145,7 +145,7 @@ int mapping_mode = 0;
 
 carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message probability_of_each_ray_msg_array[17];
 extern carmen_robot_ackerman_config_t car_config; // TODO essa variável deveria mesmo ser extern???????
-//#define OBSTACLE_PROBABILY_MESSAGE
+#define OBSTACLE_PROBABILY_MESSAGE
 
 /**
  * The map
@@ -328,7 +328,7 @@ get_occupancy_log_odds_of_each_ray_target(sensor_parameters_t *sensor_params, se
 
 void
 carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
-		carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *prob_msg)
+		carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message *prob_msg, int index)
 {
 	int cloud_index = sensor_data->point_cloud_index;
 	int vertical_resolution = sensor_params->vertical_resolution;
@@ -362,7 +362,11 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 			prob = prob < 0.0 ? 0.0 : prob;
 //			printf("prob = %f\n", prob);
 			// Retirar a parte inteira (caso exista), e multiplicar a parte decimal por 50.000 para caber em um short. Quando esse valor for usado em outros módulos, é necessário dividir por 50.000
-			prob_msg->scan[j].probability[i] = (prob - floor(prob)) * 50000;
+			if (index != 16) // Por alguma razão a mensagem do ouster está invertida, por isso precisamos fazer a o vertical_resolution - i na linha abaixo
+				prob_msg->scan[j].probability[vertical_resolution - i] = (prob - floor(prob)) * 50000;
+			else
+				prob_msg->scan[j].probability[i] = (prob - floor(prob)) * 50000;
+
 //			printf("probabi = %d\n", prob_msg->scan[j].probability[i]);
 //			prob_msg->scan[j]->probability[i] = prob;
 
@@ -377,7 +381,7 @@ fill_and_publish_probabilities_message()
 	// Esse primeiro if serve para tratar o partial scan
 	if (sensors_params[0].alive)
 	{
-		carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0], &sensors_data[0], &probability_of_each_ray_msg_array[16]);
+		carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[0], &sensors_data[0], &probability_of_each_ray_msg_array[16], 16);
 		carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_array[16], 16);
 	}
 
@@ -385,7 +389,7 @@ fill_and_publish_probabilities_message()
 	{
 		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
 		{
-			carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[i + 10], &sensors_data[i + 10], &probability_of_each_ray_msg_array[i]);
+			carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(&sensors_params[i + 10], &sensors_data[i + 10], &probability_of_each_ray_msg_array[i], i);
 			carmen_mapper_publish_probability_of_each_ray_of_lidar_hit_obstacle_message(&probability_of_each_ray_msg_array[i], i);
 		}
 	}
