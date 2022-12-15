@@ -59,7 +59,7 @@ MAN_PAGES =
 
 TARGETS = libprob_models.a libcontrol.a libcarmodel.a libgl_plotter.a localize_ackerman liblocalize_ackerman_interface.a \
 		liblocalize_ackerman_core.a liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a model_learn_ackerman/model_learner_ackerman \
-		localize_ackerman_particle_viewer		
+		localize_ackerman_particle_viewer liblocalize_ackerman_trailers_theta.a
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -109,6 +109,8 @@ localize_ackerman:	localize_ackerman_main.o localize_ackerman_using_map.o locali
 localize_ackerman_graph:	localize_ackerman_graph.o localize_ackerman_likelihood_map.o liblocalize_ackerman_interface.a
 
 localize_ackerman_particle_viewer: localize_ackerman_particle_viewer.o localize_ackerman_interface.o
+
+liblocalize_ackerman_trailers_theta.a: localize_ackerman_trailers_theta.o
 
 clean: clean_prob_models clean_gl_plotter clean_libcontrol clean_libcarmodel
 
