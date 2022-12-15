@@ -52,7 +52,7 @@ SOURCES = localize_ackerman_main.cpp localize_ackerman_using_map.cpp localize_ac
 PUBLIC_INCLUDES = localize_ackerman_messages.h localize_ackerman_interface.h localize_ackerman_core.h \
 	          localize_ackerman_likelihood_map.h localize_ackerman_motion.h localize_ackerman_velodyne.h localize_ackerman_beta_particle_filter.h
 		  
-PUBLIC_LIBRARIES = liblocalize_ackerman_interface.a liblocalize_ackerman_core.a liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a
+PUBLIC_LIBRARIES = liblocalize_ackerman_interface.a liblocalize_ackerman_core.a liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a liblocalize_ackerman_trailers_theta.a
 PUBLIC_BINARIES = localize_ackerman localize_ackerman_particle_viewer
 
 MAN_PAGES =
@@ -109,6 +109,8 @@ localize_ackerman:	localize_ackerman_main.o localize_ackerman_using_map.o locali
 localize_ackerman_graph:	localize_ackerman_graph.o localize_ackerman_likelihood_map.o liblocalize_ackerman_interface.a
 
 localize_ackerman_particle_viewer: localize_ackerman_particle_viewer.o localize_ackerman_interface.o
+
+localize_ackerman_trailers_theta: localize_ackerman_trailers_theta.o
 
 clean: clean_prob_models clean_gl_plotter clean_libcontrol clean_libcarmodel
 
