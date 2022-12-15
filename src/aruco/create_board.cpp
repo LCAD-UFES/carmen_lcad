@@ -27,7 +27,7 @@ int main(int argc, char **argv)
             Dict.createMarkerMap(Size(XSize, YSize), pixSize, interMarkerDistance, ids, false);
         // create a printable image to save
         cv::Mat MarkerMapImage = BInfo.getImage();
-        cv::copyMakeBorder(MarkerMapImage, MarkerMapImage, interMarkerDistance, interMarkerDistance+80*factor_quality, interMarkerDistance, interMarkerDistance, cv::BORDER_CONSTANT, 255);
+        cv::copyMakeBorder(MarkerMapImage, MarkerMapImage, interMarkerDistance, interMarkerDistance, interMarkerDistance, interMarkerDistance, cv::BORDER_CONSTANT, 255);
 
         // save
         BInfo.saveToFile(argv[4]);
