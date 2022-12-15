@@ -722,7 +722,7 @@ update_current_path(int best_path, int number_of_paths, carmen_frenet_path_plann
 	{
 		for (int i = 0; i < number_of_paths; i++)
 			path_temporal_value[i] = 0.0;
-		path_temporal_value[best_path] = 350.0;
+		path_temporal_value[best_path] = 500.0;
 
 		last_update_timestamp = timestamp;
 
