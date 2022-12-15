@@ -203,9 +203,10 @@ initialize_map(carmen_map_t *map, int gridmap_size_x, int gridmap_size_y, double
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-void
-carmen_map_server_offline_map_message_handler(carmen_map_server_offline_map_message *message)
+static void
+carmen_map_server_offline_map_handler(carmen_map_server_offline_map_message *message)
 {
+	printf("entrei!\n");
 	if (message != NULL)
 	{
 		if (first_offline_map_message_flag == 0)
@@ -213,6 +214,7 @@ carmen_map_server_offline_map_message_handler(carmen_map_server_offline_map_mess
 			first_offline_map_message_flag = 1;
 		}
 	}
+	printf("first_offline_map_message_flag: %d\n", first_offline_map_message_flag);
 
 	if (offline_grid_map == NULL)
 	{
@@ -354,6 +356,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	if (localize_initialized)
 	{
 		num_points = velodyne_message->number_of_32_laser_shots * spherical_sensor_params[0].vertical_resolution;
+		// printf("num_velodyne_points: %d\n", num_points);
 
 		if (first_velodyne_message_flag)
 		{
@@ -374,9 +377,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		num_point_clouds = list_point_clouds.size();
 
 		/*** PRINT FRAME ID, TIMESTAMP AND NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
-//		printf("%d ", frame);
-//		printf("%.10f\n", velodyne_message->timestamp);
-//		printf("clouds: %d\n\n", num_point_clouds);
+		printf("%d ", frame);
+		printf("%.10f\n", velodyne_message->timestamp);
+		printf("clouds: %d\n\n", num_point_clouds);
 		frame++;
 
 		if (num_point_clouds == 0)
@@ -440,7 +443,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 			i++;
 		}
-
+		printf("num of tracked objects: %d\n", num_point_clouds);
 		moving_objects_point_clouds_message.timestamp = velodyne_message->timestamp;
 		/*** PUBLISH MESSAGE ***/
 		carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
@@ -959,6 +962,8 @@ main(int argc, char **argv)
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
 				(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_map_server_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+
     carmen_velodyne_subscribe_partial_scan_message(NULL,
     		(carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -967,10 +972,6 @@ main(int argc, char **argv)
 
 //    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
 //			(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_map_server_subscribe_offline_map(NULL,
-    		(carmen_handler_t) carmen_map_server_offline_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 
 
 	carmen_ipc_dispatch();

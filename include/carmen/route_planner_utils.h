@@ -117,7 +117,7 @@ int find_closest_point_in_graph (graph_t &graph, carmen_point_t point);
 //carmen_point_t set_destination(vector<carmen_annotation_t> annotations);
 carmen_point_t set_destination(vector<carmen_annotation_t> annotations, char *goal);
 void get_annotation_from_rddf(char *carmen_annotation_filename, vector<carmen_annotation_t> &annotations);
-void get_graph_from_file(graph_t *graph, lane_graph_t *lane_graph, char *filename);
+void get_graph_from_file(graph_t *graph, lane_graph_t *lane_graph, char *filename, int *new_traffic_restrictions);
 void get_route_list(graph_t &graph, carmen_position_t center, double range, int *number_of_routes, route_t *routes[]);
 void get_node_ids_ahead(graph_t &graph, int initial_node_id, double meters_ahead, int *qtd_node_ids_ahead, int *node_ids_ahead, vector<int> &node_ids);
 void get_node_ids_ahead_rddf(carmen_route_planner_road_network_message *route_msg, double meters_ahead, int *qtd_node_ids_ahead, int *node_ids_ahead, vector<int> &node_ids);

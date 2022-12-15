@@ -16,10 +16,10 @@ extern "C" {
 #endif
 
 
-#define ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions)  (((double) (traffic_restrictions & 0x3f)) * 0.1)
-#define ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions) (((double) ((traffic_restrictions & (0x3f << 6)) >> 6)) * 0.1)
-#define ROUTE_PLANNER_SET_LANE_LEFT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~0x3f) | ((int) (lane_width * 10.0) & 0x3f))
-#define ROUTE_PLANNER_SET_LANE_RIGHT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~(0x3f << 6)) | (((int) (lane_width * 10.0) & 0x3f) << 6))
+#define ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(traffic_restrictions, new_traffic_restrictions) (new_traffic_restrictions == 1) ? (((double) (traffic_restrictions & 0x3ff)) * 0.1) : (((double) (traffic_restrictions & 0x3f)) * 0.1)
+#define ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(traffic_restrictions, new_traffic_restrictions) (new_traffic_restrictions == 1) ? (((double) ((traffic_restrictions & (0x3ff << 10)) >> 10)) * 0.1) : (((double) ((traffic_restrictions & (0x3f << 6)) >> 6)) * 0.1)
+#define ROUTE_PLANNER_SET_LANE_LEFT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~0x3ff) | ((int) (lane_width * 10.0) & 0x3ff))
+#define ROUTE_PLANNER_SET_LANE_RIGHT_WIDTH(traffic_restrictions, lane_width) ((traffic_restrictions & ~(0x3ff << 10)) | (((int) (lane_width * 10.0) & 0x3ff) << 10))
 
 typedef enum
 {
@@ -146,6 +146,8 @@ typedef struct
 	offroad_planner_request_t offroad_planner_request;
 	carmen_route_planner_state_t route_planner_state;
 
+	int new_traffic_restrictions;
+
     double timestamp;
     char *host;
 } carmen_route_planner_road_network_message;
@@ -180,6 +182,7 @@ typedef struct
 	<int:11>, \
 	int, \
 	<{{double, double, double, int, [double:5], double, double}, int, int}:27>, \
+	int, \
 	int, \
 	int, \
 	double, \

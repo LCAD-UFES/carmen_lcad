@@ -67,6 +67,7 @@ typedef struct
 {
 	int lane_id;
 	int size;
+	int new_traffic_restrictions;
 	carmen_robot_and_trailers_traj_point_t *lane_points;
 	int *traffic_restrictions;
 	vector<bool> examined;
@@ -199,8 +200,8 @@ obstacle_detected(lane_t *lane, int i, carmen_map_t *occupancy_map, carmen_map_s
 	if ((i < 0) || (i >= (lane->size - 1)))
 		carmen_die("Fatal error: (i < 0) || (i >= (lane->size - 1)) in obstacle_detected().");
 
-	double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(lane->traffic_restrictions[i]);
-	double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(lane->traffic_restrictions[i]);
+	double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(lane->traffic_restrictions[i], lane->new_traffic_restrictions);
+	double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(lane->traffic_restrictions[i], lane->new_traffic_restrictions);
 	double distance = DIST2D(lane->lane_points[i], lane->lane_points[i + 1]);
 	if (distance > 2.5)
 	{
@@ -504,8 +505,8 @@ get_object_points(vector <carmen_position_t> &moving_object_points, lane_t *lane
 		carmen_die("Fatal error: (i < 0) || (i + signal >= lane->size) || (i + signal < 0) in get_object_points().");
 
 	bool found = false;
-	double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(lane->traffic_restrictions[i]);
-	double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(lane->traffic_restrictions[i]);
+	double lane_left_width = ROUTE_PLANNER_GET_LANE_LEFT_WIDTH(lane->traffic_restrictions[i], lane->new_traffic_restrictions);
+	double lane_right_width = ROUTE_PLANNER_GET_LANE_RIGHT_WIDTH(lane->traffic_restrictions[i], lane->new_traffic_restrictions);
 	double s_distance = DIST2D(lane->lane_points[i], lane->lane_points[i + (int) signal]);
 	if (s_distance > 2.5)
 	{
@@ -1327,6 +1328,7 @@ include_new_lanes_in_road_network(vector<lane_t> &lanes, carmen_route_planner_ro
 			lane_t new_lane;
 			new_lane.lane_id = lane_id;
 			new_lane.size = road_network->nearby_lanes_sizes[i];
+			new_lane.new_traffic_restrictions = road_network->new_traffic_restrictions;
 			new_lane.lane_points = &(road_network->nearby_lanes[road_network->nearby_lanes_indexes[i]]);
 			new_lane.traffic_restrictions = &(road_network->traffic_restrictions[road_network->nearby_lanes_indexes[i]]);
 			vector<bool> examined(new_lane.size, false);

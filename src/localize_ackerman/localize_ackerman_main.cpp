@@ -22,7 +22,7 @@
 #include "localize_ackerman_interface.h"
 #include "localize_ackerman_velodyne.h"
 #include "localize_ackerman_beta_particle_filter.h"
-
+#include "localize_ackerman_trailers_theta.h"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -60,9 +60,9 @@ carmen_robot_ackerman_laser_message front_laser;
 
 carmen_xsens_global_quat_message *xsens_global_quat_message = NULL;
 
-// Variables read via read_parameters()
-carmen_robot_ackerman_config_t 	car_config;
-carmen_semi_trailers_config_t 	semi_trailer_config;
+// variables read via read_parameters()
+carmen_robot_ackerman_config_t car_config;
+carmen_semi_trailers_config_t semi_trailer_config;
 
 extern int robot_publish_odometry;
 
@@ -87,10 +87,6 @@ carmen_point_t g_std;
 int g_reinitiaze_particles = 10;
 bool global_localization_requested = false;
 
-extern carmen_velodyne_partial_scan_message *last_velodyne_message;
-extern carmen_velodyne_variable_scan_message *last_variable_message;
-extern int lidar_to_compute_theta;
-
 carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message = NULL;
 
 carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS + 10];
@@ -110,6 +106,11 @@ tf::Transformer tf_transformer;
 extern double gps_correction_factor;
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern carmen_pose_3D_t gps_pose_in_the_car;
+
+// theta parameters
+carmen_velodyne_partial_scan_message *last_velodyne_message;
+carmen_velodyne_variable_scan_message *last_variable_message;
+extern int lidar_to_compute_theta;
 
 
 static void
@@ -182,13 +183,15 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 				globalpos.phi
 		};
 
-		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-			robot_and_trailer_traj_point.trailer_theta[z] = globalpos.trailer_theta[z];
-
 		double delta_t = globalpos.timestamp - last_timestamp;
-//		globalpos.beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
-		globalpos.trailer_theta[0] = compute_semi_trailer_beta_using_velodyne(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
 
+		if (last_velodyne_message)
+			globalpos.trailer_theta[0] = compute_semi_trailer_theta1(robot_and_trailer_traj_point, delta_t,
+				car_config, semi_trailer_config, spherical_sensor_params, (void*)last_velodyne_message, -1);
+		else if (last_variable_message)
+			globalpos.trailer_theta[0] = compute_semi_trailer_theta1(robot_and_trailer_traj_point, delta_t,
+				car_config, semi_trailer_config, spherical_sensor_params, (void*)last_variable_message, lidar_to_compute_theta);
+	
 	}
 	else
 	{
@@ -521,14 +524,6 @@ gps_xyz_correction(carmen_localize_ackerman_particle_filter_t *xt_1, double time
 		break;
 	}
 
-//	int i = xt_1->param->num_particles / 2;
-//	carmen_vector_3D_t estimated_car_pose = get_car_pose_from_gps_pose(gps_xyz_message, xt_1->particles[i].theta,
-//			xt_1->particles[i].v, timestamp);
-//	double distance = DIST2D(xt_1->particles[i], estimated_car_pose);
-//	double distance_squared = distance * distance;
-//	double gps_weight = exp(-distance_squared / gps_sigma_squared) + 0.000001;
-//	printf("gps_sigma_squared %lf, distance[%d] %lf, weight %lf, gps_weight %lf\n", gps_sigma_squared, i, distance,
-//			xt_1->particles[i].weight, gps_weight);
 	double normalization_factor = sqrt((2.0 * 2.0) * 2.0 * M_PI); // gps_weight = 1.0 no máximo com gps_xyz_message->gps_quality == 5
 	for (int i = 0; i < xt_1->param->num_particles; i++)
 	{
@@ -1027,7 +1022,9 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	if (filter->initialized)
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,	msg->timestamp);
+		//TODO Transformar em parametro @@@Vinicius
+//		if (sensor_number == 10)
+			publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,	msg->timestamp);
 
 		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
 			publish_carmen_base_ackerman_odometry();
