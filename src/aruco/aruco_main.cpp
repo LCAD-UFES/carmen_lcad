@@ -1,6 +1,5 @@
 #include <carmen/carmen.h>
 #include <aruco/aruco.h>
-#include <carmen/bumblebee_basic_interface.h>
 #include <carmen/camera_drivers_interface.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -13,6 +12,7 @@
 
 int SHOW_ON_TERMINAL = 0;
 
+double _fx_factor = 0., _fy_factor = 0., _cu_factor = 0., _cv_factor = 0.;
 double _fx = 0., _fy = 0., _cu = 0., _cv = 0.;
 double _k1 = 0., _k2 = 0., _p1 = 0., _p2 = 0., _k3 = 0.;
 
@@ -25,7 +25,6 @@ char* aruco_dictionary = NULL; // "ARUCO_MIP_36h12"
 double marker_size_in_meters = 0.2;
 
 
-
 carmen_aruco_pose
 setup_aruco_pose(int n_markers_detected, int _id_markers_detected, cv::Mat _tvec, cv::Mat _rvec)
 {
@@ -35,8 +34,8 @@ setup_aruco_pose(int n_markers_detected, int _id_markers_detected, cv::Mat _tvec
 
     pose.n_markers_detected = n_markers_detected;
     pose.ids_markers_detected = ids_markers_detected;
-    pose.rvec[0] = _tvec.at<double>(0); pose.rvec[1] = _tvec.at<double>(1); pose.rvec[2] = _tvec.at<double>(2);
-    pose.tvec[0] = _rvec.at<double>(0); pose.tvec[1] = _rvec.at<double>(1); pose.tvec[2] = _rvec.at<double>(2);
+    pose.rvec[0] = (double) _tvec.at<float>(0); pose.rvec[1] = (double) _tvec.at<float>(1); pose.rvec[2] = (double) _tvec.at<float>(2);
+    pose.tvec[0] = (double) _rvec.at<float>(0); pose.tvec[1] = (double) _rvec.at<float>(1); pose.tvec[2] = (double) _rvec.at<float>(2);
     return pose;
 }
 
@@ -51,8 +50,8 @@ setup_aruco_pose(int n_markers_detected, std::vector<int> _ids_markers_detected,
 
     pose.n_markers_detected = n_markers_detected;
     pose.ids_markers_detected = ids_markers_detected;
-    pose.rvec[0] = _tvec.at<double>(0); pose.rvec[1] = _tvec.at<double>(1); pose.rvec[2] = _tvec.at<double>(2);
-    pose.tvec[0] = _rvec.at<double>(0); pose.tvec[1] = _rvec.at<double>(1); pose.tvec[2] = _rvec.at<double>(2);
+    pose.rvec[0] = (double) _tvec.at<float>(0); pose.rvec[1] = (double) _tvec.at<float>(1); pose.rvec[2] = (double) _tvec.at<float>(2);
+    pose.tvec[0] = (double) _rvec.at<float>(0); pose.tvec[1] = (double) _rvec.at<float>(1); pose.tvec[2] = (double) _rvec.at<float>(2);
     return pose;
 }
 
@@ -126,8 +125,8 @@ detect_posetracker(cv::Mat image)
             for (size_t i = 0; i < n_markers_detected; i++)
                 std::cout << markers_from_set[i]+1 << " ";
             std::cout << std::endl;
-            std::cout << _tvec.at<double>(0) << " " << _tvec.at<double>(1) << " " << _tvec.at<double>(2) << std::endl;
-            std::cout << _rvec.at<double>(0) << " " << _rvec.at<double>(1) << " " << _rvec.at<double>(2) << std::endl;
+            std::cout << _tvec.at<float>(0) << " " << _tvec.at<float>(1) << " " << _tvec.at<float>(2) << std::endl;
+            std::cout << _rvec.at<float>(0) << " " << _rvec.at<float>(1) << " " << _rvec.at<float>(2) << std::endl;
             std::cout << std::endl;
         }
 
@@ -136,8 +135,8 @@ detect_posetracker(cv::Mat image)
 
     if (show_output)
     {
-        cv::cvtColor(image, bgr, cv::COLOR_BGR2RGB);
-        cv::imshow(camera_name, bgr);
+        // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+        cv::imshow(camera_name, image);
         cv::waitKey(1);
     }
 
@@ -158,8 +157,8 @@ detect_markers(cv::Mat &image)
 
     if (first)
     {
-        cv::Mat camMatrix = (cv::Mat_<double>(3, 3) << 522.81945837, 0., 321.80096339, 0., 700.16902439, 244.4899013, 0., 0., 1.);
-        cv::Mat distCoeffs = (cv::Mat_<double>(5, 1) << -0.7826785, 0.83042721, 0.00100615, -0.00125759, -0.44771437);
+        cv::Mat camMatrix = (cv::Mat_<double>(3, 3) << _fx, .0, _cu, .0, _fy, _cv, .0, .0, 1.);
+        cv::Mat distCoeffs = (cv::Mat_<double>(5, 1) << _k1, _k2, _p1, _p2, _k3);
 
         camera.setParams(camMatrix, distCoeffs, image.size());
         Detector.setDictionary(aruco_dictionary || "ARUCO_MIP_36h12");
@@ -175,8 +174,8 @@ detect_markers(cv::Mat &image)
         if (SHOW_ON_TERMINAL)
         {
             std::cout << markers[i].id << std::endl;
-            std::cout << markers[i].Tvec.at<double>(0) << " " <<  markers[i].Tvec.at<double>(1) << " " <<  markers[i].Tvec.at<double>(2) << std::endl;
-            std::cout << markers[i].Rvec.at<double>(0) << " " << markers[i].Rvec.at<double>(1) << " " << markers[i].Rvec.at<double>(2) << std::endl;
+            std::cout << markers[i].Tvec.at<float>(0) << " " <<  markers[i].Tvec.at<float>(1) << " " <<  markers[i].Tvec.at<float>(2) << std::endl;
+            std::cout << markers[i].Rvec.at<float>(0) << " " << markers[i].Rvec.at<float>(1) << " " << markers[i].Rvec.at<float>(2) << std::endl;
             std::cout << std::endl;
         }
     }
@@ -192,93 +191,13 @@ detect_markers(cv::Mat &image)
 
     if (show_output)
     {
-        cv::cvtColor(image, bgr, cv::COLOR_BGR2RGB);
-        cv::imshow(camera_name, bgr);
+        // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+        cv::imshow(camera_name, image);
         cv::waitKey(1);
     }
 
     if (poses.size() > 0)
         publish_message(detector_id, poses);
-}
-
-
-static int msg_fps = 0, msg_last_fps = 0;
-static int disp_fps = 0, disp_last_fps = 0;
-
-void 
-update_fps(carmen_bumblebee_basic_stereoimage_message *image_msg)
-{
-    static int received_image = 0;
-    static double last_timestamp = 0.0;
-    static double last_time = 0.0;
-    double time_now = carmen_get_time();
-    static carmen_bumblebee_basic_stereoimage_message last_message;
-
-    if (!received_image)
-    {
-        received_image = 1;
-        last_timestamp = image_msg->timestamp;
-        last_time = time_now;
-    }
-
-    if ((image_msg->timestamp - last_timestamp) > 1.0)
-    {
-        msg_last_fps = msg_fps;
-        msg_fps = 0;
-        last_timestamp = image_msg->timestamp;
-    }
-
-    msg_fps++;
-
-    if ((time_now - last_time) > 1.0)
-    {
-        disp_last_fps = disp_fps;
-        disp_fps = 0;
-        last_time = time_now;
-    }
-
-    disp_fps++;
-
-    last_message = *image_msg;
-}
-
-
-void
-image_handler_bumblebee(carmen_bumblebee_basic_stereoimage_message *msg)
-{
-    static int show_left = 1;
-    static int show_right = 0;
-
-    static char msg_fps_string[256];
-    static char disp_fps_string[256];
-    static char img_resol_string[256];
-    cv::Mat src_image_left, src_image_right, text_image, concat;
-
-    update_fps(msg);
-
-    if (show_left)
-        src_image_left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
-    if (show_right)
-        src_image_right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
-
-    sprintf(msg_fps_string, "MSG_FPS: %d", msg_last_fps);
-    sprintf(disp_fps_string, "DISP_FPS: %d", disp_last_fps);
-    sprintf(img_resol_string, "%dx%d", msg->width, msg->height);
-
-    text_image = show_left ? src_image_left : src_image_right;
-    putText(text_image, msg_fps_string, cv::Point(7, 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 0));
-    putText(text_image, disp_fps_string, cv::Point(7, 42), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 0));
-    putText(text_image, img_resol_string, cv::Point(7, 64), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 0));
-
-    if (show_left && show_right)
-        cv::hconcat(src_image_left, src_image_right, concat);
-    else
-        concat = show_left ? src_image_left : src_image_right;
-
-    if (board_config_file)
-        detect_posetracker(concat);
-    else
-        detect_markers(concat);
 }
 
 
@@ -321,8 +240,18 @@ filter_fps(double timestamp)
 void 
 image_handler_intelbras(camera_message *msg)
 {
+    static int first_time = 1;
 	camera_image *stereo_image = msg->images;
 	cv::Mat cv_image = cv::Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0);
+    
+    if (first_time)
+    {
+        _fx = _fx_factor*cv_image.cols;
+        _fy = _fy_factor*cv_image.rows;
+        _cu = _cu_factor*cv_image.cols;
+        _cv = _cv_factor*cv_image.rows;
+        first_time = 0;
+    }
 
     char info[25];
     sprintf(info, "%dx%d", stereo_image->width, stereo_image->height);
@@ -397,10 +326,10 @@ read_parameters(int argc, char **argv)
     carmen_param_allow_unfound_variables(0);
     carmen_param_t param_list[] =
         {
-            {camera_name, (char *)"fx", CARMEN_PARAM_DOUBLE, &_fx, 0, NULL},
-            {camera_name, (char *)"fy", CARMEN_PARAM_DOUBLE, &_fy, 0, NULL},
-            {camera_name, (char *)"cu", CARMEN_PARAM_DOUBLE, &_cu, 0, NULL},
-            {camera_name, (char *)"cv", CARMEN_PARAM_DOUBLE, &_cv, 0, NULL},
+            {camera_name, (char *)"fx", CARMEN_PARAM_DOUBLE, &_fx_factor, 0, NULL},
+            {camera_name, (char *)"fy", CARMEN_PARAM_DOUBLE, &_fy_factor, 0, NULL},
+            {camera_name, (char *)"cu", CARMEN_PARAM_DOUBLE, &_cu_factor, 0, NULL},
+            {camera_name, (char *)"cv", CARMEN_PARAM_DOUBLE, &_cv_factor, 0, NULL},
             {camera_name, (char *)"k1", CARMEN_PARAM_DOUBLE, &_k1, 0, NULL},
             {camera_name, (char *)"k2", CARMEN_PARAM_DOUBLE, &_k2, 0, NULL},
             {camera_name, (char *)"p1", CARMEN_PARAM_DOUBLE, &_p1, 0, NULL},
@@ -418,8 +347,6 @@ read_parameters(int argc, char **argv)
 void 
 subscribe_messages()
 {
-    if (strncmp("bumblebee", camera_name, 9) == 0)
-        carmen_bumblebee_basic_subscribe_stereoimage(message_id, NULL, (carmen_handler_t)image_handler_bumblebee, CARMEN_SUBSCRIBE_LATEST);
     if (strncmp("intelbras", camera_name, 9) == 0)
         camera_drivers_subscribe_message(message_id, NULL, (carmen_handler_t)image_handler_intelbras, CARMEN_SUBSCRIBE_LATEST);
 }
