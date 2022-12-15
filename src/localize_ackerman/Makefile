@@ -50,7 +50,7 @@ SOURCES = localize_ackerman_main.cpp localize_ackerman_using_map.cpp localize_ac
 	  localize_ackerman_initialize.c localize_ackerman_motion.c localize_ackerman_velodyne.cpp localize_ackerman_particle_viewer.c localize_ackerman_beta_particle_filter.cpp
 	  
 PUBLIC_INCLUDES = localize_ackerman_messages.h localize_ackerman_interface.h localize_ackerman_core.h \
-	          localize_ackerman_likelihood_map.h localize_ackerman_motion.h localize_ackerman_velodyne.h localize_ackerman_beta_particle_filter.h
+	          localize_ackerman_likelihood_map.h localize_ackerman_motion.h localize_ackerman_velodyne.h localize_ackerman_beta_particle_filter.h localize_ackerman_trailers_theta.h
 		  
 PUBLIC_LIBRARIES = liblocalize_ackerman_interface.a liblocalize_ackerman_core.a liblocalize_ackerman_motion.a liblocalize_ackerman_beta_particle_filter.a liblocalize_ackerman_trailers_theta.a
 PUBLIC_BINARIES = localize_ackerman localize_ackerman_particle_viewer
