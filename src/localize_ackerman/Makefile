@@ -110,8 +110,6 @@ localize_ackerman_graph:	localize_ackerman_graph.o localize_ackerman_likelihood_
 
 localize_ackerman_particle_viewer: localize_ackerman_particle_viewer.o localize_ackerman_interface.o
 
-localize_ackerman_trailers_theta: localize_ackerman_trailers_theta.o
-
 clean: clean_prob_models clean_gl_plotter clean_libcontrol clean_libcarmodel
 
 clean_prob_models:
