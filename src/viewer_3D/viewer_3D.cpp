@@ -177,6 +177,7 @@ static carmen_pose_3D_t car_fused_pose;
 
 static carmen_vector_3D_t robot_size;
 static double distance_between_rear_car_and_rear_wheels;
+static double car_axis_distance;
 
 static carmen_semi_trailers_config_t semi_trailer_config;
 
@@ -853,6 +854,13 @@ draw_final_goal()
 			glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 		glEnd();
 
+		glBegin(GL_LINES);
+			glVertex3d(0.0, -length_y / 2, 0.0);
+			glVertex3d(0.0, length_y / 2, 0.0);
+			glVertex3d(car_axis_distance, -length_y / 2, 0.0);
+			glVertex3d(car_axis_distance, length_y / 2, 0.0);
+		glEnd();
+
 		for (int semi_trailer_id=1; semi_trailer_id <= semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 		{
 			glTranslated(-semi_trailer_config.semi_trailers[semi_trailer_id-1].M - semi_trailer_config.semi_trailers[semi_trailer_id-1].d * cos((final_goal.theta - final_goal.trailer_theta[0])), semi_trailer_config.semi_trailers[semi_trailer_id-1].d * sin((final_goal.theta - final_goal.trailer_theta[0])), 0.0);
@@ -979,7 +987,7 @@ draw_everything()
 		else
 			glColor3f(1.0, 0.5, 0.0);
 
-        draw_gps_orientation(gps_heading, gps_heading_valid, xsens_orientation, gps_pose, sensor_board_1_pose, car_fused_pose);
+        draw_gps_orientation(gps_heading, gps_heading_valid, gps_pose, sensor_board_1_pose, car_fused_pose);
     }
 
     if (show_plan_tree_flag)
@@ -3813,6 +3821,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 1, NULL},
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 1, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 1, NULL},
+			{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &car_axis_distance, 1, NULL},
 
 			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.num_semi_trailers), 0, NULL},
 
@@ -3902,6 +3911,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &(robot_size.x), 1, NULL},
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &(robot_size.y), 1, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &distance_between_rear_car_and_rear_wheels, 1, NULL},
+			{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &car_axis_distance, 1, NULL},
 
 			{(char *) "semi_trailer", (char *) "initial_type", CARMEN_PARAM_INT, &(semi_trailer_config.num_semi_trailers), 0, NULL},
 

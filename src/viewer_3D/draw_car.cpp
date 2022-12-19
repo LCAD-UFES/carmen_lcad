@@ -174,7 +174,8 @@ createCarDrawer(int argc, char** argv)
 		carDrawer->carModel = glmReadOBJ(carmodel_file);
 	glmUnitize(carDrawer->carModel);
 
-	glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
+//	glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
+	glmScaleXYZ(carDrawer->carModel, carDrawer->car_size.x / 2.0, carDrawer->car_size.y / 2.0, carDrawer->car_size.z / 2.0);
 
 	for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 	{
@@ -429,13 +430,19 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 void
 draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 {
-	static double previous_size = 0.0;
+	static double previous_size_x = 0.0;
+	static double previous_size_y = 0.0;
+	static double previous_size_z = 0.0;
 
-	if (carDrawer->car_size.x != previous_size)
+//	if (carDrawer->car_size.x != previous_size)
+	if ((carDrawer->car_size.x != previous_size_x) || (carDrawer->car_size.y != previous_size_y) || (carDrawer->car_size.z != previous_size_z))
 	{
 		glmUnitize(carDrawer->carModel);
-		glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
-		previous_size = carDrawer->car_size.x;
+//		glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
+		glmScaleXYZ(carDrawer->carModel, carDrawer->car_size.x / 2.0, carDrawer->car_size.y / 2.0, carDrawer->car_size.z / 2.0);
+		previous_size_x = carDrawer->car_size.x;
+		previous_size_y = carDrawer->car_size.y;
+		previous_size_z = carDrawer->car_size.z;
 	}
 
 	//draw_axis(500.0);

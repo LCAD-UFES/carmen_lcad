@@ -1126,6 +1126,25 @@ GLvoid glmScale(GLMmodel* model, GLfloat scale)
 	}
 }
 
+/* glmScale: Scales a model by a given amount in x, y, and z.
+ *
+ * model - properly initialized GLMmodel structure
+ * scale_x - scalefactor (0.5 = half as large, 2.0 = twice as large)
+ * scale_y - scalefactor (0.5 = half as large, 2.0 = twice as large)
+ * scale_z - scalefactor (0.5 = half as large, 2.0 = twice as large)
+ */
+GLvoid glmScaleXYZ(GLMmodel* model, GLfloat scale_x, GLfloat scale_y, GLfloat scale_z)
+{
+	GLuint i;
+
+	for (i = 1; i <= model->numvertices; i++)
+	{
+		model->vertices[3 * i + 0] *= scale_x;
+		model->vertices[3 * i + 1] *= scale_y;
+		model->vertices[3 * i + 2] *= scale_z;
+	}
+}
+
 /* glmReverseWinding: Reverse the polygon winding for all polygons in
  * this model.   Default winding is counter-clockwise.  Also changes
  * the direction of the normals.
