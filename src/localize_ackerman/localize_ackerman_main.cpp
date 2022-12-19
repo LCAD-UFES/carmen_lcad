@@ -1023,7 +1023,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 		//TODO Transformar em parametro @@@Vinicius
-//		if (sensor_number == 10)
+		if (sensor_number == 10)
 			publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,	msg->timestamp);
 
 		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
