@@ -132,9 +132,9 @@ How to split vertical angles list to help LIDAR configuration on Carmen.ini
 
 ##How to run split_vertical_angles_list program
 how to run split_vertical_angles_list:
-./split_vertical_angles_list -sensor_ip <SENSOR IP> -host_ip <IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -num_split <integer number of splits to make>
+./split_vertical_angles_list -sensor_ip <SENSOR IP> -port <LIDAR-PORT> -imu_port <IMU-LIDAR-PORT> -host_ip <IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -num_split <integer number of splits to make>
 ## example
-./split_vertical_angles_list  -sensor_ip 192.168.1.207 -host_ip 192.168.1.1 -num_split 4
+./split_vertical_angles_list  -sensor_ip 192.168.1.207 -port 7502 -imu_port 7503 -host_ip 192.168.1.1 -num_split 4
 
 
 ---------------------------------------------------------------------------------

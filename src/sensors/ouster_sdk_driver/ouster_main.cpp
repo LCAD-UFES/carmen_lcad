@@ -27,6 +27,8 @@ const size_t UDP_BUF_SIZE = 65536;
 
 char *ouster_ip = NULL;
 char *host_ip = NULL;
+int ouster_port = 7502;
+int ouster_imu_port = 7503;
 int ouster_sensor_id = 0;
 int ouster_publish_imu = 0;
 int ouster_intensity_type = 3;
@@ -104,7 +106,9 @@ read_parameters(int argc, char **argv)
     carmen_param_allow_unfound_variables(0);
      carmen_param_t param_list[] =
      {
-	 		{lidar_string, (char *) "ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL}
+	 		{lidar_string, (char *) "ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL},
+	 		{lidar_string, (char *) "port", CARMEN_PARAM_INT, &ouster_port, 0, NULL},
+	 		{lidar_string, (char *) "imu_port", CARMEN_PARAM_INT, &ouster_imu_port, 0, NULL}
      };
 
      int num_items = sizeof(param_list) / sizeof(param_list[0]);
@@ -162,7 +166,7 @@ main(int argc, char* argv[])
     std::cerr << "Connecting to \"" << sensor_hostname << "\"... ";
     
 //TODO checar se vai precisa de porta com varios sensores conectados
-    auto handle = sensor::init_client(sensor_hostname, data_destination);
+    auto handle = sensor::init_client(sensor_hostname, ouster_port, ouster_imu_port);
     if (!handle) FATAL("Failed to connect");
     std::cerr << "ok" << std::endl;
 

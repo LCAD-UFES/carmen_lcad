@@ -13,6 +13,8 @@
 char *ouster_ip = NULL;
 char *host_ip = NULL;
 char *num_split = NULL;
+int ouster_port = 7502;
+int ouster_imu_port = 7503;
 
 using namespace ouster;
 
@@ -24,6 +26,8 @@ read_parameters(int argc, char **argv)
 		{(char*) "commandline", (char*) "sensor_ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL},
 		{(char*) "commandline", (char*) "host_ip", CARMEN_PARAM_STRING, &host_ip, 0, NULL},
 		{(char*) "commandline", (char*) "num_split", CARMEN_PARAM_STRING, &num_split, 0, NULL},
+		{(char*) "commandline", (char*) "port", CARMEN_PARAM_INT, &ouster_port, 0, NULL},
+		{(char*) "commandline", (char*) "imu_port", CARMEN_PARAM_INT, &ouster_imu_port, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, comand_line_param_list, sizeof(comand_line_param_list)/sizeof(comand_line_param_list[0]));
 
@@ -52,7 +56,7 @@ main(int argc, char* argv[])
 	std::cerr << "Connecting to \"" << sensor_hostname << "\"... ";
 
 //TODO checar se vai precisa de porta com varios sensores conectados
-	auto handle = sensor::init_client(sensor_hostname, data_destination);
+	auto handle = sensor::init_client(sensor_hostname, ouster_port, ouster_imu_port);
 	if (!handle) FATAL("Failed to connect");
 	std::cerr << "ok" << std::endl;
 

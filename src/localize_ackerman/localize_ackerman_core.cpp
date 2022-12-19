@@ -78,8 +78,9 @@ extern carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_
 extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
 
 // theta parameters
-int plot_beta_points = 0;
 int lidar_to_compute_theta = 0;
+double triangulation_max_beta = 18.0;
+int triangulation_min_cluster_size = 5;
 
 
 int
@@ -3471,17 +3472,22 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 
 	carmen_param_allow_unfound_variables(1);
 
+	char semi_trailer_str[256];
+	sprintf(semi_trailer_str, "semi_trailer%d_beta_correct", semi_trailer_config.num_semi_trailers);
+	// semi_trailer1_beta_correct_triangulation_max_beta
+	// semi_trailer1_beta_correct_triangulation_min_cluster_size
 	carmen_param_t param_optional_list[] =
 	{
-		{(char *) "localize_ackerman", (char *) "use_raw_laser", 			CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
+		{(char *) "localize_ackerman", (char *) "use_raw_laser", 			CARMEN_PARAM_ONOFF,  &use_raw_laser, 0, NULL},
 		{(char *) "localize_ackerman", (char *) "gps_correction_factor", 	CARMEN_PARAM_DOUBLE, &gps_correction_factor, 0, NULL},
-		{(char *) "commandline", 	   (char *) "mapping_mode", 			CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
-		{(char *) "commandline", 	   (char *) "velodyne_viewer", 			CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
+		{semi_trailer_str, 			   (char *) "triangulation_max_beta", 			CARMEN_PARAM_DOUBLE, &triangulation_max_beta, 0, NULL},
+		{semi_trailer_str,             (char *) "triangulation_min_cluster_size", 	CARMEN_PARAM_INT, 	 &triangulation_min_cluster_size, 0, NULL},
+		{(char *) "commandline", 	   (char *) "mapping_mode", 			CARMEN_PARAM_ONOFF,  &mapping_mode, 0, NULL},
+		{(char *) "commandline", 	   (char *) "velodyne_viewer", 			CARMEN_PARAM_ONOFF,  &velodyne_viewer, 0, NULL},
 		{(char *) "commandline", 	   (char *) "calibration_file", 		CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
 		{(char *) "commandline", 	   (char *) "save_globalpos_file", 		CARMEN_PARAM_STRING, &save_globalpos_file, 0, NULL},
 		{(char *) "commandline", 	   (char *) "save_globalpos_timestamp", CARMEN_PARAM_DOUBLE, &save_globalpos_timestamp, 0, NULL},
-		{(char *) "commandline",	   (char *) "lidar_to_compute_theta", 	CARMEN_PARAM_INT, &lidar_to_compute_theta, 0, NULL},
-		{(char *) "commandline", 	   (char *) "plot_beta", 				CARMEN_PARAM_ONOFF, &plot_beta_points, 0, NULL},
+		{(char *) "commandline",	   (char *) "lidar_to_compute_theta", 	CARMEN_PARAM_INT, 	 &lidar_to_compute_theta, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
