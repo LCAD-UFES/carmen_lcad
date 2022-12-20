@@ -861,17 +861,26 @@ draw_final_goal()
 			glVertex3d(car_axis_distance, length_y / 2, 0.0);
 		glEnd();
 
-		for (int semi_trailer_id=1; semi_trailer_id <= semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+		for (int semi_trailer_id = 1; semi_trailer_id <= semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 		{
-			glTranslated(-semi_trailer_config.semi_trailers[semi_trailer_id-1].M - semi_trailer_config.semi_trailers[semi_trailer_id-1].d * cos((final_goal.theta - final_goal.trailer_theta[0])), semi_trailer_config.semi_trailers[semi_trailer_id-1].d * sin((final_goal.theta - final_goal.trailer_theta[0])), 0.0);
+			glTranslated(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].M - semi_trailer_config.semi_trailers[semi_trailer_id - 1].d * cos((final_goal.theta - final_goal.trailer_theta[0])), semi_trailer_config.semi_trailers[semi_trailer_id - 1].d * sin((final_goal.theta - final_goal.trailer_theta[0])), 0.0);
 			glRotated(carmen_radians_to_degrees(-(final_goal.theta - final_goal.trailer_theta[0])), 0.0f, 0.0f, 1.0f);
 
 			glBegin(GL_LINE_STRIP);
-				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, -semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_front, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_front, semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_back, semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+			glEnd();
+
+			glBegin(GL_LINES);
+				glVertex3d(0.0, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0.0);
+				glVertex3d(0.0, semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0.0);
+			glEnd();
+
+			glBegin(GL_POINTS);
+				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id - 1].d, 0.0, 0.0);
 			glEnd();
 		}
 

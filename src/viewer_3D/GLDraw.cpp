@@ -330,7 +330,7 @@ draw_box (double length_x, double length_y, double length_z)
 }
 
 void
-draw_particles (carmen_vector_3D_t *particles_pos, double *particles_weight, int num_particles, int color)
+draw_particles(carmen_vector_3D_t *particles_pos, double *particles_weight, int num_particles, int color)
 {
     int i;
     double minWeight;
