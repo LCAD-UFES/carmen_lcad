@@ -346,14 +346,14 @@ carmen_mapper_fill_probability_of_each_ray_of_lidar_hit_obstacle_message(sensor_
 	for (int j = 0; j < prob_msg->number_of_shots; j++)
 	{
 		int scan_index = j * vertical_resolution;
-		double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
+		// double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
 
 		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
 
 		for (int i = 1; i < vertical_resolution; i++)
 		{
-			double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle);
-			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+			// double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle);
+			// double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
 
 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
