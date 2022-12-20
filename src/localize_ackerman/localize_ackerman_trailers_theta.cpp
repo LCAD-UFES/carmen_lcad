@@ -8,22 +8,42 @@
 
 #define BETA_ERROR 						100.0
 #define PLOT_BETA						1
-#define PLOT_BETA_ESTIMATED_DIFFERENCE	1
 
 FILE *gnuplot_pipe = NULL;
 int SEMI_TRAILER1 = 0;
+int TRUST_IN_MODEL = 0; // 1: kalman filter trusting in motion model, 0: kalman trusting in LiDAR estimation, -1: no kalman
+double remove_by_mean_dist_between_rays_factor = 4.0; // remove if dist between rays > X*last_mean
 
 extern double triangulation_max_beta;
 extern int triangulation_min_cluster_size;
+
+
+void copy_file(char *src, const char *dst) {
+    FILE *fp1, *fp2;
+    int a;
+
+    fp1 = fopen(src, "r");
+    fp2 = fopen(dst, "w");
+    while( (a = fgetc(fp1)) != EOF )
+    	fputc(a, fp2);
+
+    fclose(fp1);
+    fclose(fp2);
+}
 
 
 void
 plot_groups(carmen_vector_3D_t *points_position_with_respect_to_car, double *estimated, 
 	int num_filtered_points, int *group, int n_groups, double* angles, int choosen_group)
 {
+	if (n_groups <= 0)
+	{
+		fflush(gnuplot_pipe);
+		return;
+	}
+
 	FILE *graph_files[n_groups+1];
 	char outfile[256];
-	bool flag_plot = false;
 	static bool first_time = true;
 	struct stat st;
 
@@ -38,78 +58,37 @@ plot_groups(carmen_vector_3D_t *points_position_with_respect_to_car, double *est
 	
 	for (int i = -1; i < n_groups; i++)
 	{
-		sprintf(outfile, "debug-%d.txt", i);
+		sprintf(outfile, "debug-beta-%d.txt", i);
 		remove(outfile);
 		graph_files[i+1] = fopen(outfile, "w");
 	}
-	for (int i = 1; i < num_filtered_points-1; i++)
+	for (int i = 0; i < num_filtered_points; i++)
 		fprintf(graph_files[group[i]+1], "%lf\t%lf\t%lf\t%lf\n", points_position_with_respect_to_car[i].x, points_position_with_respect_to_car[i].y, estimated[i], angles[i]);
 
-	sprintf(outfile, "debug-%d.txt", -1);
+	sprintf(outfile, "debug-beta-%d.txt", -1);
 	fclose(graph_files[0]);
-	stat(outfile, &st);
-	if (st.st_size > 0)
-	{
-		fprintf(gnuplot_pipe, "plot '%s' u 1:2 t 'not used'", outfile);
-		flag_plot = true;
-	}
+	fprintf(gnuplot_pipe, "plot '%s' u 1:2 t 'not used'", outfile);
 	for (int i = 0; i < n_groups; i++)
 	{
-		sprintf(outfile, "debug-%d.txt", i);
+		sprintf(outfile, "debug-beta-%d.txt", i);
 		fclose(graph_files[i+1]);
 		stat(outfile, &st);
 		if (st.st_size > 0)
 		{
-			if (!flag_plot)
-			{
-				if (i == choosen_group)
-				fprintf(gnuplot_pipe, "plot '%s' u 1:2 t 'chosen', '%s' u 1:3 every ::1 t 'rl' w l", outfile, outfile);
-				else
-					fprintf(gnuplot_pipe, "plot '%s' u 1:2 t '%d'", outfile, i);
-				flag_plot = true;
-			}
+			if (i == choosen_group)
+				fprintf(gnuplot_pipe, ", '%s' u 1:2 t '%d', '%s' u 1:3 t 'gsl' w l", outfile, i, outfile);
 			else
-			{
-				if (i == choosen_group)
-					fprintf(gnuplot_pipe, ", '%s' u 1:2 t 'chosen', '%s' u 1:3 every ::1 t 'rl' w l", outfile, outfile);
-				else
-					fprintf(gnuplot_pipe, ", '%s' u 1:2 t '%d'", outfile, i);
-			}
+				fprintf(gnuplot_pipe, ", '%s' u 1:2 t '%d'", outfile, i);
 		}
 	}
 
-	fprintf(gnuplot_pipe, "\n");
+	// happend in compute_semi_trailer_theta1()
+	// fprintf(gnuplot_pipe, "\n");
 
-	fflush(gnuplot_pipe);
-}
+	// fflush(gnuplot_pipe);
 
-
-void 
-plot_beta_diff(double beta_calculated, double beta_estimated)
-{
-    static FILE *gnuplot_pipe = NULL;
-    static int count = 0;
-    static bool first_time = true;
-
-    if (first_time)
-    {
-        first_time = false;
-        gnuplot_pipe = popen("taskset -c 0 gnuplot", "w");
-        fprintf(gnuplot_pipe, "set yrange [-3:3]\n");
-        remove("beta_comparison_error.dat");
-    }
-    fprintf(gnuplot_pipe, "set xrange [0:%d]\n", count++);
-
-    FILE *graph_file;
-    graph_file = fopen("beta_comparison_error.dat", "a");
-    fprintf(graph_file, "%d\t%lf\n", 
-             count,
-             (beta_calculated - beta_estimated)*57.2958);
-
-    fclose(graph_file);
-    fprintf(gnuplot_pipe, "plot "
-                          "'beta_comparison_error.dat' using 1:2 title 'diff'\n");
-    fflush(gnuplot_pipe);
+	sprintf(outfile, "debug-beta-%d.txt", choosen_group);
+	copy_file(outfile, "debug-choosen.txt");
 }
 
 
@@ -253,7 +232,6 @@ remove_begin_and_end_points(int num_filtered_points, carmen_vector_3D_t *points_
 }
 
 
-
 double
 compute_new_beta(carmen_vector_3D_t *points, double *estimated, int size)
 {
@@ -272,44 +250,54 @@ compute_new_beta(carmen_vector_3D_t *points, double *estimated, int size)
 }
 
 
-double
-remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_position_with_respect_to_car, int num_filtered_points)
+int
+remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_position_with_respect_to_car, int num_filtered_points, double &beta)
 {
 	int actual_group = 0, group_counter = 0, choosen_group = 0, first_time = 1, bigger_group = 0, 
 		group[num_filtered_points] = {0};
-	double max_angle = triangulation_max_beta*M_PI/180.0, estimated_beta = 0.0, choosen_beta = M_PI, 
-		   angles[num_filtered_points] = {0.0}, estimated[num_filtered_points] = {0.0};
-	static double last_beta = 0.0;
+	double estimated_beta = 0.0, choosen_beta = M_PI, 
+		   angles[num_filtered_points] = {0.0}, estimated[num_filtered_points] = {0.0}, 
+		   mean_dist_bt_rays = 0.0, actual_mean_dist_bt_rays = 0.0, dist;
+	static double last_beta = 0.0, last_mean_dist_bt_rays = 180.0;
 	carmen_vector_3D_t *points = (carmen_vector_3D_t*) malloc(sizeof(carmen_vector_3D_t)*num_filtered_points);
 	double *points_estimated = (double*) malloc(sizeof(double)*num_filtered_points);
 
-	for (int i = 1; i < (num_filtered_points-1); i++)
+	group[0] = -1;
+	group[1] = -1;
+	for (int i = 2; i < num_filtered_points; i++)
 	{
 		points[group_counter] = points_position_with_respect_to_car[i];
-		angles[i] = (atan2(points_position_with_respect_to_car[i+1].y - points_position_with_respect_to_car[i-1].y, 
-						  points_position_with_respect_to_car[i+1].x - points_position_with_respect_to_car[i-1].x) - 
-    				atan2(points_position_with_respect_to_car[i].y - points_position_with_respect_to_car[i-1].y, 
-						  points_position_with_respect_to_car[i].x - points_position_with_respect_to_car[i-1].x));
+		angles[i] = (atan2(points_position_with_respect_to_car[i].y - points_position_with_respect_to_car[i-2].y, 
+						  points_position_with_respect_to_car[i].x - points_position_with_respect_to_car[i-2].x) - 
+    				atan2(points_position_with_respect_to_car[i-1].y - points_position_with_respect_to_car[i-2].y, 
+						  points_position_with_respect_to_car[i-1].x - points_position_with_respect_to_car[i-2].x));
 		group[i] = actual_group;
 
-		if ((abs(angles[i] > max_angle) || (i == (num_filtered_points-2))))
+		dist = DOT2D(points_position_with_respect_to_car[i-1], points_position_with_respect_to_car[i]);
+		mean_dist_bt_rays += dist;
+
+		if ((abs(angles[i] > triangulation_max_beta) || (i == (num_filtered_points-1))) || (dist > remove_by_mean_dist_between_rays_factor*last_mean_dist_bt_rays))
 		{
 			if (group_counter > triangulation_min_cluster_size)
 			{
 				// more closest from last beta
 				estimated_beta = compute_new_beta(points, points_estimated, group_counter);
-				
 				if (first_time && (group_counter > bigger_group))
 				{
 					choosen_beta = estimated_beta;
 					choosen_group = actual_group;
 					bigger_group = group_counter;
+
+					actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
 					first_time = 0;
 				}
 				else if (fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta))
 				{
 					choosen_beta = estimated_beta;
 					choosen_group = actual_group;
+					bigger_group = group_counter;
+
+					actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
 				}
 				if (PLOT_BETA)
 					for (int j = group_counter; j > 0; j--)
@@ -321,9 +309,10 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 
 			group[i] = -1;
 			actual_group++;
-			group_counter = 0;
+			group_counter = -1;
+			mean_dist_bt_rays = 0.0;
 		}
-
+	
 		group_counter++;
 	}
 
@@ -333,9 +322,14 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 	free(points);
 	free(points_estimated);
 
+	if (fabs(actual_mean_dist_bt_rays) > 1e-5)
+		last_mean_dist_bt_rays = actual_mean_dist_bt_rays;
+
 	if (fabs(choosen_beta - M_PI) > 1e-5)
 		last_beta = choosen_beta;
-	return last_beta;
+
+	beta = last_beta;
+	return bigger_group;
 }
 
 
@@ -358,7 +352,6 @@ compute_points_position_with_respect_to_car(carmen_semi_trailers_config_t semi_t
 			spherical_sensor_params[0].sensor_to_support_matrix, spherical_sensor_params[0].support_to_car_matrix,
 			spherical_sensor_params[0].pose.position, spherical_sensor_params[0].sensor_support_pose.position);
     }
-		
 	else
     {
         points_position_with_respect_to_car = (carmen_vector_3D_t *) malloc(variable_message->number_of_shots * sizeof(carmen_vector_3D_t));
@@ -396,12 +389,50 @@ compute_points_position_with_respect_to_car(carmen_semi_trailers_config_t semi_t
 	qsort((void *) (points_position_with_respect_to_car), (size_t) num_filtered_points, sizeof(carmen_vector_3D_t), compare_x);
 
 	num_filtered_points = remove_begin_and_end_points(num_filtered_points, points_position_with_respect_to_car);
+	if (num_filtered_points <= 0)
+		return BETA_ERROR;
 
-	estimated_beta = remove_points_by_triangulation_and_compute_beta(points_position_with_respect_to_car, num_filtered_points);
+	num_filtered_points = remove_points_by_triangulation_and_compute_beta(points_position_with_respect_to_car, num_filtered_points, estimated_beta);
+	if (num_filtered_points <= 0)
+		return BETA_ERROR;
 
     free(points_position_with_respect_to_car);
 
 	return (estimated_beta);
+}
+
+
+// x_measurement (best) being corrected with x_predicted
+void kalman(double x_predicted, double x_measurement, double timestamp, double &x_corrected) {
+	double kalman_Q = 30.0; // how quickly the accuracy decays in the absence of any new location estimates, in meters per second
+							// chute alto, mas sem estourar
+	static double last_timestamp = 0.0, variance = -1.0, timestamp_inc = -1, accuracy = 1.0;
+
+    if (variance < 0)
+	{
+        last_timestamp = timestamp;
+		variance = accuracy*accuracy; 
+    }
+	else
+	{
+        timestamp_inc = timestamp - last_timestamp;
+        if (timestamp_inc > 0) {
+            // time has moved on, so the uncertainty in the current position increases
+            variance += timestamp_inc * kalman_Q * kalman_Q / 1000.0;
+            last_timestamp = timestamp;
+        }
+
+        // Kalman gain matrix K = Covarariance * Inverse(Covariance + MeasurementVariance)
+        // NB: because K is dimensionless, it doesn't matter that variance has different units to x
+        double K = variance / (variance + accuracy * accuracy);
+        // apply K
+		if (TRUST_IN_MODEL)
+        	x_corrected = x_predicted + K * (x_measurement - x_predicted);
+		else
+			x_corrected = x_measurement + K * (x_predicted - x_measurement);
+        // new Covarariance  matrix is (IdentityMatrix - K) * Covarariance 
+        variance = (1 - K) * variance;
+    }
 }
 
 
@@ -415,7 +446,7 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 	if (semi_trailer_config.num_semi_trailers <= 0)
 		return (0.0);
 
-	double predicted_beta = .0, estimated_beta = .0;
+	double predicted_beta = .0, estimated_beta = .0, estimated_theta1 = .0, estimated_beta_corrected = .0;
 	
 	predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
 	
@@ -433,12 +464,40 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 	if (fabs(estimated_beta - BETA_ERROR) < 1e-5)
 		return predicted_beta;
 
-	estimated_beta = convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(estimated_beta - semi_trailer_config.semi_trailers[SEMI_TRAILER1].beta_correct_beta_bias));
+	estimated_theta1 = convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(estimated_beta - semi_trailer_config.semi_trailers[SEMI_TRAILER1].beta_correct_beta_bias));
+	if (TRUST_IN_MODEL > 0)
+	{
+		if (lidar_to_compute_theta < 0)
+			kalman(predicted_beta, estimated_theta1, partial_message->timestamp, estimated_theta1);
+		else
+			kalman(predicted_beta, estimated_theta1, variable_message->timestamp, estimated_theta1);
+	}
+	estimated_beta_corrected = convert_theta1_to_beta(robot_and_trailer_traj_point.theta, estimated_theta1);
 
-	if (PLOT_BETA_ESTIMATED_DIFFERENCE)
-		plot_beta_diff(predicted_beta, estimated_beta);
+	if (PLOT_BETA)
+	{
+		size_t count = 0;
+		FILE *fp = fopen("debug-choosen.txt", "r");
+		double points_x[1024] = {0.0}, points_y[1024], angles[1024] = {0.0}, estimated[1024] = {0.0}, c0;
+		while ((fp != NULL) && !feof(fp) && (count < 1024))
+		{
+			fscanf(fp, "%lf\t%lf\t%lf\t%lf\n", &points_x[count], &points_y[count], &estimated[count], &angles[count]);
+			count++;
+		} 	
+		fclose(fp);
+		c0 = estimated[0] + tan(estimated_beta)*points_x[0];
 
-	return estimated_beta;
+		fp = fopen("debug-choosen-beta.txt", "w");
+		for (size_t i = 0; i < count; i++)
+			fprintf(fp, "%lf\t%lf\t%lf\t%lf\t%lf\n", points_x[i], points_y[i], estimated[i], angles[i], -tan(estimated_beta_corrected)*points_x[i] + c0);
+		fclose(fp);
+		fprintf(gnuplot_pipe, ", 'debug-choosen-beta.txt' u 1:5 t 'corrected' w l");
+
+		fprintf(gnuplot_pipe, "\n");
+		fflush(gnuplot_pipe);
+	}
+
+	return estimated_theta1;
 }
 
 

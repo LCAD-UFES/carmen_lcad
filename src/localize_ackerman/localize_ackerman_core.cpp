@@ -3494,6 +3494,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	lidar_to_compute_theta += 10;
 
 	param->integrate_angle = carmen_degrees_to_radians(integrate_angle_deg);
+	triangulation_max_beta = carmen_degrees_to_radians(triangulation_max_beta);
 
 	sensor_board_1_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 

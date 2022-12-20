@@ -1394,6 +1394,14 @@ shutdown_localize(int x)
 {
 	if (x == SIGINT)
 	{
+		char outfile[256];
+		for (int i = -1; i < 60; i++)
+		{
+			sprintf(outfile, "debug-beta-%d.txt", i);
+			remove(outfile);
+		}
+		remove("debug-choosen.txt");
+		
 		if (globalpos_file)
 			fclose(globalpos_file);
 
