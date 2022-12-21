@@ -583,10 +583,18 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 
 			lidar_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
 
-			lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
-					car_interpolated_position.position);
+        	if (g_velodyne_single_ray == -1)
+            	lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
+        	else
+        	{
+        		if (lidar_config.ray_order[j] == g_velodyne_single_ray)
+                	lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
+        		else
+        			lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = {g_b_red, g_b_green, g_b_blue};
+        	}
 		}
 	}
+
 	return (discarded_points);
 }
 
@@ -861,17 +869,26 @@ draw_final_goal()
 			glVertex3d(car_axis_distance, length_y / 2, 0.0);
 		glEnd();
 
-		for (int semi_trailer_id=1; semi_trailer_id <= semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+		for (int semi_trailer_id = 1; semi_trailer_id <= semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 		{
-			glTranslated(-semi_trailer_config.semi_trailers[semi_trailer_id-1].M - semi_trailer_config.semi_trailers[semi_trailer_id-1].d * cos((final_goal.theta - final_goal.trailer_theta[0])), semi_trailer_config.semi_trailers[semi_trailer_id-1].d * sin((final_goal.theta - final_goal.trailer_theta[0])), 0.0);
+			glTranslated(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].M - semi_trailer_config.semi_trailers[semi_trailer_id - 1].d * cos((final_goal.theta - final_goal.trailer_theta[0])), semi_trailer_config.semi_trailers[semi_trailer_id - 1].d * sin((final_goal.theta - final_goal.trailer_theta[0])), 0.0);
 			glRotated(carmen_radians_to_degrees(-(final_goal.theta - final_goal.trailer_theta[0])), 0.0f, 0.0f, 1.0f);
 
 			glBegin(GL_LINE_STRIP);
-				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, -semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
-				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_front, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_front, semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_back, semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+				glVertex3d(-semi_trailer_config.semi_trailers[semi_trailer_id - 1].distance_between_axle_and_back, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0);
+			glEnd();
+
+			glBegin(GL_LINES);
+				glVertex3d(0.0, -semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0.0);
+				glVertex3d(0.0, semi_trailer_config.semi_trailers[semi_trailer_id - 1].width / 2, 0.0);
+			glEnd();
+
+			glBegin(GL_POINTS);
+				glVertex3d(semi_trailer_config.semi_trailers[semi_trailer_id - 1].d, 0.0, 0.0);
 			glEnd();
 		}
 
@@ -1623,19 +1640,13 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
             if (!velodyne_remission_flag)
             {
             	if (g_velodyne_single_ray == -1)
-					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
-							car_interpolated_position.position);
+					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
             	else
             	{
             		if (velodyne_ray_order[j] == g_velodyne_single_ray)
-            		{
-    					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
-    							car_interpolated_position.position);
-
-            		}
-            		else{
+    					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
+            		else
             			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = {g_b_red, g_b_green, g_b_blue};
-            		}
             	}
             }
             else
