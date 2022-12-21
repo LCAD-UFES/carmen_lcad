@@ -19,7 +19,7 @@ PUBLIC_LIBRARIES = libgps_nmea_interface.a
 
 PUBLIC_BINARIES = gps_nmea gps_test gps_nmea_trimble gps_reachm_server gps_reachm_client
 
-TARGETS = gps_nmea gps_nmea_trimble gps_reachm_server gps_reachm_client libgps_nmea_interface.a gps_test 
+TARGETS = gps_nmea gps_nmea_trimble gps_reachm_server gps_reachm_client libgps_nmea_interface.a gps_test correct_hdt_message
 
 PUBLIC_LIBRARIES_SO = libgps_nmea_interface.so
 ifndef NO_PYTHON
@@ -29,6 +29,8 @@ endif
 gps_nmea:			gps-io.o gps-ipc.o gps-nmea.o gps-main.o
 
 gps_nmea_trimble:	gps-ipc.o gps-nmea.o gps_nmea_interface.o gps-trimble-main.o
+
+correct_hdt_message:	correct_hdt_message_main.o
 
 gps_reachm_server:	gps-io.o gps-ipc.o gps-nmea.o gps_reachm_server.o
 
