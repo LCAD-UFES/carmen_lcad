@@ -7,7 +7,7 @@ class ParticleSwarmOptimization
 {
 public:
 
-	ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data, int particle_id), double **limits, int dim, void *data = NULL, int num_particles = 70, int max_iteractions = 100, double tol = .0, int max_iter_no_changes = 9999, int set_seed = 0);
+	ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data, int particle_id), double **limits, int dim, void *data = NULL, int num_particles = 70, int max_iteractions = 100, double tol = .0, int max_iter_no_changes = 9999, int set_seed = 0, int show_output = 1);
 	~ParticleSwarmOptimization();
 	
 	void Optimize(void (*interaction_function)(ParticleSwarmOptimization *opt, void *data, int particle_id) = NULL);
@@ -36,6 +36,7 @@ protected:
 	int _dim;
 	double _tol;
 	int _max_iter_no_changes;
+	int _show_output;
 
 	double **_velocities;	// [num_particles][dim];
 	double **_particles;	// [num_particles][dim];

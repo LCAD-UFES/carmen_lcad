@@ -1205,7 +1205,7 @@ main(int argc, char **argv)
 	if (_SEED_RAND)
 		srand(42);
 
-	ParticleSwarmOptimization optimizer(fitness, limits, n_params, &pso_data, args.get<int>("n_particles"), args.get<int>("n_iterations"), args.get<double>("tol"), args.get<int>("max_iter_no_changes"), _SEED_RAND);
+	ParticleSwarmOptimization optimizer(fitness, limits, n_params, &pso_data, args.get<int>("n_particles"), args.get<int>("n_iterations"), args.get<double>("tol"), args.get<int>("max_iter_no_changes"), _SEED_RAND, args.get<int>("view"));
 
 	optimizer.Optimize(plot_graph);
 

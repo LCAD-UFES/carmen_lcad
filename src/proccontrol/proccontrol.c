@@ -341,6 +341,34 @@ void str_replace(char *dest, char *orig, char *rep, char *with) {
 	free(result);
 }
 
+void env_replace(char *dest, char *orig)
+{
+	int is_env = 0;
+	char env_name[1021], _env_name[1024], *val;
+	for (size_t i = 0, j = 0; orig[i] && orig[i+1]; i++)
+	{
+		if (!is_env && (orig[i] == '$') && (orig[i+1] == '{'))
+		{
+			j = 0;
+			i+=1;
+			is_env = 1;
+			continue;
+		}
+		else if(is_env && (orig[i] == '}'))
+		{
+			env_name[j] = '\0';
+			is_env = 0;
+			val = getenv(env_name);
+			sprintf(_env_name, "${%s}", env_name);
+			str_replace(dest, orig, _env_name, val);
+			continue;
+		}
+		if (is_env)
+			env_name[j++] = orig[i];
+	}
+
+}
+
 // https://stackoverflow.com/questions/656542/trim-a-string-in-c
 void trim(char *s)
 {
@@ -354,7 +382,7 @@ void trim(char *s)
 void read_process_ini(char *filename)
 {
 	FILE *fp;
-	char *err, *mark, line[1000], 
+	char *err, *mark, line[4096], 
 		 var[256], value[256], vars_use[64][259], values_use[64][256];
 	int i, l, n_vars=0;
 
@@ -384,7 +412,9 @@ void read_process_ini(char *filename)
 
 			for (l = 0; l < n_vars; l++) // replace variables
 				str_replace(line, line, vars_use[l], values_use[l]);
-		
+
+			env_replace(line, line);
+
 			l = strlen(line);
 			/* strip out comments and newlines */
 			for(i = 0; i < l; i++)

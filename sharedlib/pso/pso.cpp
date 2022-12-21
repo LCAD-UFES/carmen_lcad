@@ -8,7 +8,7 @@
 #include <carmen/carmen.h>
 
 
-ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data, int particle_id), double **limits, int dim, void *data, int num_particles, int max_iteractions, double tol, int max_iter_no_changes, int set_seed)
+ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data, int particle_id), double **limits, int dim, void *data, int num_particles, int max_iteractions, double tol, int max_iter_no_changes, int set_seed, int show_output)
 {
 	srand(time(NULL));
 	if (set_seed)
@@ -22,6 +22,7 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(
 	_dim = dim;
 	_tol  = tol;
 	_max_iter_no_changes = max_iter_no_changes;
+	_show_output = show_output;
 
 	_alloc_stuff();
 	_initialize_velocities();
@@ -44,6 +45,9 @@ ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOp
 	double last_gbest_fitness = .0, err = .0;
 	int count_max_iter_no_changes = 0;
 
+	if (!_show_output)
+		fprintf(stderr, "Optimizing...\n");
+
 	while (num_iteractions < _max_iteractions)
 	{
 		_evaluate_fitness();
@@ -62,8 +66,9 @@ ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOp
 		_error[num_iteractions] = _gbest_fitness;
 		err = fabs(last_gbest_fitness - _gbest_fitness);
 
-		fprintf(stderr, "Iteraction: %d of %d GbestFitness: %lf, ErrorBetweenIter: %lf\n", 
-			num_iteractions, _max_iteractions, -_gbest_fitness, err);
+		if (_show_output)
+			fprintf(stderr, "Iteraction: %d of %d GbestFitness: %lf, ErrorBetweenIter: %lf\n", 
+				num_iteractions, _max_iteractions, -_gbest_fitness, err);
 
 		if (interaction_function)
 			(*interaction_function)(this, _data, _best_particle_id);

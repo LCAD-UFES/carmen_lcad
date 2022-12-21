@@ -39,8 +39,6 @@ using namespace g2o;
 
 #define _SEED_RAND 1
 
-int n_iterations = 50;
-
 class Line
 {
 	public:
@@ -531,11 +529,36 @@ initialize_tf_transfoms(CarmenParamFile *params, Transformer *transformer, int g
 
 
 void
+declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
+{
+	args->add_positional<string>("sync.txt", "Synchronized sensors data");
+	args->add_positional<string>("loops.txt", "Points cloud pairs closing loops");
+	args->add_positional<string>("carmen.ini", "Path to a file containing system parameters");
+	args->add_positional<string>("calibrated_odometry.txt", "Path to a file containing the odometry calibration data");
+	args->add_positional<string>("poses_opt.txt", "Path to a file in which the poses will be saved in graphslam format");
+	args->add<int>("view", "Flag indicating if the visualization should run or not.", 1);
+	args->add<int>("n_iterations", "Number of iterations", 50);
+	args->add<double>("gps_xy_std_multiplier", "Multiplier of the standard deviation of the gps position (times meters)", 5.0);
+	args->add<double>("gps_yaw_std", "GPS yaw standard deviation (degrees)", 1000.0);
+	args->add<double>("odom_xy_std", "Odometry position (x, y) standard deviation (meters)", 0.1);
+	args->add<double>("odom_orient_std", "Odometry orientation (yaw) standard deviation (degrees)", 1.0);
+	args->add<double>("loop_xy_std", "Loop closure delta position (x, y) standard deviation (meters)", 3.0);
+	args->add<double>("loop_orient_std", "Loop closure orientation (yaw) standard deviation (degrees)", 34.0);
+
+	args->parse(argc, argv);
+	args->save_config_file("graphslam_config_default.txt");
+}
+
+
+void
 graphslam(double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
 		int argc, char **argv)
 {
+	CommandLineArguments args;
+	declare_and_parse_args(argc, argv, &args);
+
 	srand(time(NULL));
 	if (_SEED_RAND)
 		srand(42);
@@ -548,37 +571,17 @@ graphslam(double gps_xy_std_multiplier, double gps_yaw_std,
 
 	SparseOptimizer *optimizer = initialize_optimizer();
 	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);
-	optimizer->setVerbose(true);
+	optimizer->setVerbose(args.get<int>("view"));
 
 	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
-	optimizer->optimize(n_iterations);
+	optimizer->optimize(args.get<int>("n_iterations"));
 	cerr << "OptimizationDone!" << endl;
 
+	cerr << "vertices= " << optimizer->vertices().size() << "\tedges= " << optimizer->edges().size() << "\tchi2= " << optimizer->chi2() << endl;
 	save_corrected_vertices(optimizer);
 
 	cerr << "OutputSaved!" << endl;
-}
-
-
-void
-declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
-{
-	args->add_positional<string>("sync.txt", "Synchronized sensors data");
-	args->add_positional<string>("loops.txt", "Points cloud pairs closing loops");
-	args->add_positional<string>("carmen.ini", "Path to a file containing system parameters");
-	args->add_positional<string>("calibrated_odometry.txt", "Path to a file containing the odometry calibration data");
-	args->add_positional<string>("poses_opt.txt", "Path to a file in which the poses will be saved in graphslam format");
-	args->add<int>("n_iterations", "Number of iterations", 50);
-	args->add<double>("gps_xy_std_multiplier", "Multiplier of the standard deviation of the gps position (times meters)", 5.0);
-	args->add<double>("gps_yaw_std", "GPS yaw standard deviation (degrees)", 1000.0);
-	args->add<double>("odom_xy_std", "Odometry position (x, y) standard deviation (meters)", 0.1);
-	args->add<double>("odom_orient_std", "Odometry orientation (yaw) standard deviation (degrees)", 1.0);
-	args->add<double>("loop_xy_std", "Loop closure delta position (x, y) standard deviation (meters)", 3.0);
-	args->add<double>("loop_orient_std", "Loop closure orientation (yaw) standard deviation (degrees)", 34.0);
-
-	args->parse(argc, argv);
-	args->save_config_file("graphslam_config_default.txt");
 }
 
 
@@ -678,7 +681,6 @@ main(int argc, char **argv)
 	double odom_orient_std = carmen_degrees_to_radians(args.get<double>("odom_orient_std"));
 	double loop_xy_std = args.get<double>("loop_xy_std");
 	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
-	n_iterations = args.get<int>("n_iterations");
 
 	CarmenParamFile *params = new CarmenParamFile(carmen_ini_file);
 	transformer = new tf::Transformer(false);
@@ -686,12 +688,15 @@ main(int argc, char **argv)
 
 	graphslam(gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
 
-	plot_graph();
+	if (args.get<int>("view"))
+	{
+		plot_graph();
 	
-	printf("Programa concluído normalmente. Tecle qualquer tecla para terminar.\n");
-	fflush(stdout);
-	getchar();
-	fclose(gnuplot_pipe);
+		printf("Programa concluído normalmente. Tecle qualquer tecla para terminar.\n");
+		fflush(stdout);
+		getchar();
+		fclose(gnuplot_pipe);
+	}
 
 	return (0);
 }

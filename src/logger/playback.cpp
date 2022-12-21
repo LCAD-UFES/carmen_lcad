@@ -49,6 +49,7 @@ double stop_time = DBL_MAX;
 double stop_x = 0.0;
 double stop_y = 0.0;
 double search_radius = 10.0;
+int killall_after_finish = 0;
 
 int offset = 0;
 int autostart = 0;
@@ -715,6 +716,7 @@ playback_command_handler(carmen_playback_command_message *command)
 			playback_timestamp_is_updated = 0;
 			playback_pose_is_updated = 0;
 			print_playback_status();
+
 			break;
 
 		case CARMEN_PLAYBACK_COMMAND_FORWARD:
@@ -893,6 +895,16 @@ main_playback_loop(void)
 			playback_timestamp_is_updated = 0;
 			playback_pose_is_updated = 0;
 			print_playback_status();
+
+			if (killall_after_finish)
+			{
+				char buf[512];
+				FILE *cmd_pipe = popen("pidof -s proccontrol", "r");
+				fgets(buf, 512, cmd_pipe);
+				pid_t pid = strtoul(buf, NULL, 10);
+				pclose( cmd_pipe );
+				kill(pid, SIGINT);
+			}
 		}
 		else if (!paused && current_position < logfile_index->num_messages - 1)
 		{
@@ -977,6 +989,7 @@ usage(char *fmt, ...)
 	fprintf(stderr, "        -play_pose_x   <num>   -stop_pose_x  <num>\n");
 	fprintf(stderr, "        -play_pose_y   <num>   -stop_pose_y  <num>\n");
 	fprintf(stderr, "        -search_radius <num>\n");
+	fprintf(stderr, "        -killall_after_finish {on|off}\n");
 	exit(-1);
 }
 
@@ -1003,19 +1016,20 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list2[] =
 	{
-		{(char *) "commandline",	(char *) "fast",			CARMEN_PARAM_ONOFF,		&(fast),				0, NULL},
-		{(char *) "commandline",	(char *) "autostart",		CARMEN_PARAM_ONOFF, 	&(autostart),			0, NULL},
-		{(char *) "commandline",	(char *) "basic",			CARMEN_PARAM_ONOFF, 	&(basic_messages),		0, NULL},
-		{(char *) "commandline",	(char *) "ignore",			CARMEN_PARAM_STRING, 	&(ignore_list),			0, NULL},
-		{(char *) "commandline",	(char *) "play_message",	CARMEN_PARAM_INT, 		&(current_position),	0, NULL},
-		{(char *) "commandline",	(char *) "stop_message",	CARMEN_PARAM_INT, 		&(stop_position),		0, NULL},
-		{(char *) "commandline",	(char *) "play_time",		CARMEN_PARAM_DOUBLE,	&(current_time),		0, NULL},
-		{(char *) "commandline",	(char *) "stop_time",		CARMEN_PARAM_DOUBLE,	&(stop_time),			0, NULL},
-		{(char *) "commandline",	(char *) "play_pose_x",		CARMEN_PARAM_DOUBLE,	&(current_x),			0, NULL},
-		{(char *) "commandline",	(char *) "play_pose_y",		CARMEN_PARAM_DOUBLE,	&(current_y),			0, NULL},
-		{(char *) "commandline",	(char *) "stop_pose_x",		CARMEN_PARAM_DOUBLE,	&(stop_x),				0, NULL},
-		{(char *) "commandline",	(char *) "stop_pose_y",		CARMEN_PARAM_DOUBLE,	&(stop_y),				0, NULL},
-		{(char *) "commandline",	(char *) "search_radius",	CARMEN_PARAM_DOUBLE,	&(search_radius),		0, NULL},
+		{(char *) "commandline",	(char *) "fast",				CARMEN_PARAM_ONOFF,		&(fast),				0, NULL},
+		{(char *) "commandline",	(char *) "autostart",			CARMEN_PARAM_ONOFF, 	&(autostart),			0, NULL},
+		{(char *) "commandline",	(char *) "basic",				CARMEN_PARAM_ONOFF, 	&(basic_messages),		0, NULL},
+		{(char *) "commandline",	(char *) "ignore",				CARMEN_PARAM_STRING, 	&(ignore_list),			0, NULL},
+		{(char *) "commandline",	(char *) "play_message",		CARMEN_PARAM_INT, 		&(current_position),	0, NULL},
+		{(char *) "commandline",	(char *) "stop_message",		CARMEN_PARAM_INT, 		&(stop_position),		0, NULL},
+		{(char *) "commandline",	(char *) "play_time",			CARMEN_PARAM_DOUBLE,	&(current_time),		0, NULL},
+		{(char *) "commandline",	(char *) "stop_time",			CARMEN_PARAM_DOUBLE,	&(stop_time),			0, NULL},
+		{(char *) "commandline",	(char *) "play_pose_x",			CARMEN_PARAM_DOUBLE,	&(current_x),			0, NULL},
+		{(char *) "commandline",	(char *) "play_pose_y",			CARMEN_PARAM_DOUBLE,	&(current_y),			0, NULL},
+		{(char *) "commandline",	(char *) "stop_pose_x",			CARMEN_PARAM_DOUBLE,	&(stop_x),				0, NULL},
+		{(char *) "commandline",	(char *) "stop_pose_y",			CARMEN_PARAM_DOUBLE,	&(stop_y),				0, NULL},
+		{(char *) "commandline",	(char *) "search_radius",		CARMEN_PARAM_DOUBLE,	&(search_radius),		0, NULL},
+		{(char *) "commandline",	(char *) "killall_after_finish",	CARMEN_PARAM_ONOFF,		&(killall_after_finish),0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
