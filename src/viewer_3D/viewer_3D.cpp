@@ -583,10 +583,18 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 
 			lidar_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
 
-			lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
-					car_interpolated_position.position);
+        	if (g_velodyne_single_ray == -1)
+            	lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
+        	else
+        	{
+        		if (lidar_config.ray_order[j] == g_velodyne_single_ray)
+                	lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
+        		else
+        			lidar_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = {g_b_red, g_b_green, g_b_blue};
+        	}
 		}
 	}
+
 	return (discarded_points);
 }
 
@@ -1632,19 +1640,13 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
             if (!velodyne_remission_flag)
             {
             	if (g_velodyne_single_ray == -1)
-					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
-							car_interpolated_position.position);
+					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
             	else
             	{
             		if (velodyne_ray_order[j] == g_velodyne_single_ray)
-            		{
-    					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
-    							car_interpolated_position.position);
-
-            		}
-            		else{
+    					velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
+            		else
             			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = {g_b_red, g_b_green, g_b_blue};
-            		}
             	}
             }
             else

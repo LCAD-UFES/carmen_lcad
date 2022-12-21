@@ -545,7 +545,7 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_m
 {
 	int i;
 	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
-	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
+	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = sensor_params->log_odds.log_odds_l0;
 
 	cell_hit_by_nearest_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / log_odds_map->config.resolution);
 	cell_hit_by_nearest_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / log_odds_map->config.resolution);
@@ -574,7 +574,8 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_m
 	{
 		log_odds_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
 
-		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
+		if (log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target > sensor_params->log_odds.log_odds_l0 &&
+			!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
 			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
 			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
