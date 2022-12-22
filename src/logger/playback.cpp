@@ -638,6 +638,12 @@ playback_command_set_message(char *message)
     if (!carmen_playback_is_valid_message(message, &msg1, &msg2, &t1, &t2, &r1, &r2, &x1, &y1, &x2, &y2, &r))
     	return;
 
+    recur = false;
+	recur_play_time = 0.0;
+	stop_position = INT_MAX;
+	stop_time = DBL_MAX;
+	stop_x = stop_y = 0.0;
+
     if (msg1 >= 0 || msg2 >= 0)
     {
 		if (msg1 >= 0)
@@ -648,22 +654,14 @@ playback_command_set_message(char *message)
 			current_position = logfile_index->current_position - 1;
 		}
 		if (msg2 >= 0)
-		{
 			stop_position = msg2;
-			stop_time = DBL_MAX;
-			stop_x = stop_y = 0.0;
-		}
     }
     else if (t1 >= 0.0 || t2 >= 0.0)
     {
     	if (t1 >= 0.0)
     		find_current_position_by_timestamp(t1);
     	if (t2 >= 0.0)
-    	{
     		stop_time = t2;
-			stop_position = INT_MAX;
-			stop_x = stop_y = 0.0;
-    	}
     }
     else if (r1 >= 0.0 || r2 >= 0.0)
     {
@@ -674,11 +672,7 @@ playback_command_set_message(char *message)
     		find_current_position_by_timestamp(r1);
     	}
     	if (r2 >= 0.0)
-    	{
     		stop_time = r2;
-			stop_position = INT_MAX;
-			stop_x = stop_y = 0.0;
-    	}
     }
     else
     {
@@ -687,11 +681,7 @@ playback_command_set_message(char *message)
     	if (x1 != 0.0 && y1 != 0.0)
     		find_current_position_by_pose(x1, y1);
     	if (x2 != 0.0 && y2 != 0.0)
-    	{
     		stop_x = x2, stop_y = y2;
-			stop_position = INT_MAX;
-			stop_time = DBL_MAX;
-    	}
     }
 }
 
@@ -934,7 +924,7 @@ main_playback_loop(void)
 			{
 				if (recur)
 				{
-		    		find_current_position_by_timestamp(recur_play_time);
+					find_current_position_by_timestamp(recur_play_time);
 					print_playback_status();
 				}
 				else
