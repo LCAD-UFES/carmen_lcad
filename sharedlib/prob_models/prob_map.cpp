@@ -3483,6 +3483,10 @@ void carmen_prob_models_create_masked_distance_map_old(carmen_prob_models_distan
 carmen_pose_3D_t
 compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta, carmen_semi_trailers_config_t semi_trailer_config)
 {
+	// Linha adicionada após a mudança de beta para trailer_theta. A variável beta recebida pela função é trailer_theta, a linha abaixo transforma em beta novamente para funcionar nas fórmulas
+	beta = convert_theta1_to_beta(temp_rear_bullbar_pose.orientation.yaw, beta);
+	//
+	
 	beta = -beta;
 	carmen_pose_3D_t temp_rear_bullbar_pose;
 	temp_rear_bullbar_pose.position.x 			= -semi_trailer_config.semi_trailers[0].M + rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
