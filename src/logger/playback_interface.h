@@ -49,7 +49,7 @@ extern "C" {
 void carmen_playback_command (int cmd, char *message, int offset, float speed);
 int  carmen_playback_is_valid_speed(char *value, double *speed);
 int  carmen_playback_is_valid_message(char *message, int *start_msg, int *stop_msg, double *start_ts, double *stop_ts,
-		double *start_x, double *start_y, double *stop_x, double *stop_y, double *radius);
+		double *recur_start_ts, double *recur_stop_ts, double *start_x, double *start_y, double *stop_x, double *stop_y, double *radius);
 
 void carmen_subscribe_playback_info_message (carmen_playback_info_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 void carmen_unsubscribe_playback_info_message (carmen_handler_t handler);

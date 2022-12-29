@@ -10,6 +10,7 @@ carmen_point_t pose_to_wait;
 double wait_time = 4.;
 bool wait_play = false;
 bool wait_pose = false;
+double theta_semi_trailer = 0.0;
 
 
 carmen_point_t
@@ -19,7 +20,6 @@ publish_starting_pose(carmen_point_t pose)
 	std.x = 0.001;
 	std.y = 0.001;
 	std.theta = carmen_degrees_to_radians(0.01);
-	double theta_semi_trailer = pose.theta;
 
 	carmen_localize_ackerman_initialize_gaussian_command(pose, std, theta_semi_trailer);
 
@@ -62,7 +62,6 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 			send_pose();
 
 	}
-	
 }
 
 
@@ -120,15 +119,15 @@ main(int argc, char **argv)
 		wait_time = atof(argv[4]);
 	if (argc >= 6 && strcmp("--wait-playback", argv[5]) == 0)
 		wait_play = true;
-	if (argc >= 6 && strcmp("--wait-pose", argv[5]) == 0)
+	else if (argc >= 6 && strcmp("--wait-pose", argv[5]) == 0)
 	{
 		wait_pose = true;
 		pose_to_wait.x = atof(argv[6]);
 		pose_to_wait.y = atof(argv[7]);
 		pose_to_wait.theta = atof(argv[8]);
 	}
-	// if (argc = 6 && (argv[5][0] == '-'))
-	// 	wait_play = true;
+	else if (argc >= 6)
+		theta_semi_trailer = atof(argv[5]);
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();

@@ -1609,6 +1609,109 @@ carmen_parse_collision_file(double **polygon)
 }
 
 
+int
+carmen_parse_collision_semitrailer_file(double **polygon, int type)
+{
+	FILE *poly;
+	int n_points, h_lvl;
+	char *poly_file;
+	char semitrailer_string[1024];
+	sprintf(semitrailer_string, "semi_trailer%d_engage", type);
+
+	carmen_param_allow_unfound_variables(0);
+	carmen_param_t param_list[] =
+	{
+		{ semitrailer_string, (char *) "collision_file", CARMEN_PARAM_STRING, &poly_file, 1, NULL },
+	};
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	poly = fopen(poly_file, "r");
+	setlocale(LC_NUMERIC, "C");
+
+	if (poly == NULL)
+		printf("Can not load Col Semitrailer File\n");
+
+	fscanf(poly, "%d\n", &n_points);
+	fscanf(poly, "%d\n", &h_lvl);
+	*polygon = (double*) malloc(n_points * 4 * sizeof(double));
+	for (int i = 0; i < n_points; i++)
+	{
+		fscanf(poly, "%lf %lf %lf %lf\n", *polygon + (4 * i), *polygon + (4 * i + 1), *polygon + (4 * i + 2), *polygon + (4 * i + 3));
+		printf("%lf %lf %lf %lf\n", (*polygon)[4 * i], (*polygon)[4 * i + 1], (*polygon)[4 * i + 2], (*polygon)[4 * i + 3]);
+	}
+	fclose(poly);
+
+	return n_points;
+}
+
+
+void
+read_parameters_semi_trailer(carmen_semi_trailers_config_t &semi_trailer_config, int type)
+{
+	char semi_trailer_string[2048];
+
+	sprintf(semi_trailer_string, "semi_trailer%d", type);
+
+	carmen_param_t semi_trailer_param_list[] = {
+		{semi_trailer_string, (char *) "d",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[0].d),							   0, NULL},
+		{semi_trailer_string, (char *) "M",								 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[0].M),							   0, NULL},
+		{semi_trailer_string, (char *) "width",							 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[0].width),						   0, NULL},
+		{semi_trailer_string, (char *) "distance_between_axle_and_front", 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[0].distance_between_axle_and_front), 0, NULL},
+		{semi_trailer_string, (char *) "distance_between_axle_and_back",	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[0].distance_between_axle_and_back),  0, NULL},
+		{semi_trailer_string, (char *) "max_beta",						 	CARMEN_PARAM_DOUBLE, &(semi_trailer_config.semi_trailers[0].max_beta),						   0, NULL},
+	};
+	carmen_param_install_params(0, NULL, semi_trailer_param_list, sizeof(semi_trailer_param_list)/sizeof(semi_trailer_param_list[0]));
+}
+
+
+void
+carmen_mapper_update_cells_bellow_semitrailer(carmen_point_t pose, carmen_map_t *map, double prob, int type, double beta)
+{
+	static int load_polygon = 1;
+	static double *collision_model_circles;
+	static int col_n_points = 0;
+	static carmen_semi_trailers_config_t semi_trailer_config;
+
+	if (load_polygon)
+	{
+		read_parameters_semi_trailer(semi_trailer_config, type);
+		col_n_points = carmen_parse_collision_semitrailer_file(&collision_model_circles, type);
+		load_polygon = 0;
+		printf("Col Semitrailer Loaded\n");
+	}
+
+	double collision_model_circles_center_in_world[4 * col_n_points];
+	int collision_model_circles_center_in_map[4 * col_n_points];
+
+	for (int i = 0; i < col_n_points; i++)
+	{
+		collision_model_circles_center_in_world[4 * i] = (collision_model_circles[4 * i] - semi_trailer_config.semi_trailers[0].d - semi_trailer_config.semi_trailers[0].M) * cos(beta) + collision_model_circles[4 * i + 1] * sin(beta);
+		collision_model_circles_center_in_world[4 * i + 1] = (collision_model_circles[4 * i] - semi_trailer_config.semi_trailers[0].d - semi_trailer_config.semi_trailers[0].M) * sin(beta) - collision_model_circles[4 * i + 1] * cos(beta);
+	}
+	for (int i = 0; i < col_n_points; i++)
+	{
+		collision_model_circles_center_in_map[4 * i] = (collision_model_circles_center_in_world[4 * i] + pose.x - map->config.x_origin) / map->config.resolution;
+		collision_model_circles_center_in_map[4 * i + 1] = (collision_model_circles_center_in_world[4 * i + 1] + pose.y - map->config.y_origin) / map->config.resolution;
+	}
+	for (int i = 0; i < col_n_points; i++)
+	{
+		int pix_radius = ceil(collision_model_circles[4 * i + 2] / map->config.resolution);
+		for (int j = -pix_radius; j <= pix_radius; j++)
+		{
+			for (int k = -pix_radius; k <= pix_radius; k++)
+			{
+				if ((collision_model_circles_center_in_map[4 * i] + j >= 0) &&
+					(collision_model_circles_center_in_map[4 * i] + j < map->config.x_size) &&
+					(collision_model_circles_center_in_map[4 * i + 1] + k >= 0) &&
+					(collision_model_circles_center_in_map[4 * i + 1] + k < map->config.y_size) &&
+					(j * j + k * k <= pix_radius * pix_radius))
+					map->complete_map[(int) (collision_model_circles_center_in_map[4 * i] + j) * map->config.y_size + (int) (collision_model_circles_center_in_map[4 * i + 1] + k)] = prob;
+			}
+		}
+	}
+}
+
+
 void
 carmen_mapper_update_cells_bellow_robot(carmen_point_t pose, carmen_map_t *map, double prob)
 {
@@ -1678,8 +1781,11 @@ mapper_set_robot_pose_into_the_map(carmen_map_set_t *map_set, carmen_localize_ac
 	map_set->occupancy_map->config.y_origin = map_set->y_origin;
 
 	if (UPDATE_CELLS_BELOW_CAR)
+	{
 		carmen_mapper_update_cells_bellow_robot(globalpos_message->globalpos, map_set->occupancy_map, 0.0);
-		// carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
+		if (globalpos_message->semi_trailer_engaged)
+			carmen_mapper_update_cells_bellow_semitrailer(globalpos_message->globalpos, map_set->occupancy_map, 0.0, globalpos_message->semi_trailer_type, globalpos_message->trailer_theta[0]);
+	}
 }
 
 

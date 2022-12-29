@@ -38,7 +38,7 @@ mova a pasta baixada com nome ouster_example-master para ~/packages_carmen/ouste
 	mkdir build && cd build \
 	cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_VIZ=ON -DBUILD_PCAP=ON -DBUILD_EXAMPLES=ON .. \
 	make \
-	sudo make instal \
+	sudo make install \
 
 compile o modulo ouster_sdk_driver em $CARMEN_HOME/src/sensors/ouster_sdk_driver \
 

@@ -79,6 +79,8 @@ main(int argc, char* argv[])
 			aux_vector.push_back(info.beam_altitude_angles.at(j));
 		list_vertical_angles.push_back(aux_vector);
 	}
+	//if((list_vertical_angles[0].at(0) - list_vertical_angles[1].at(0)) < 0)
+	//{
 	for(int i = 0 ; i < n_split; i++)
 	{
 		std::cout << "Lista " << i << ": ";
@@ -88,5 +90,19 @@ main(int argc, char* argv[])
 		}
 		std::cout << "\n";
 	}
+	/*}else
+	{
+		int c = 0;
+		for(int i = (n_split -1) ; i >= 0; i--)
+		{
+			std::cout << "Lista " << c << ": ";
+			for (unsigned int j = (list_vertical_angles[i].size() -1); j >= 0; j--)
+			{
+				std::cout<< list_vertical_angles[i].at(j) << " ";
+			}
+			std::cout << "\n";
+			c++;
+		}
+	}*/
 	return (0);
 }

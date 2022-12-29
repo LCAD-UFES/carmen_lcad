@@ -590,6 +590,8 @@ get_active_maps_from_menu(char **map, char **superimposed_map)
 void
 set_window_size_and_position()
 {
+	gtk_window_maximize(GTK_WINDOW(gui->controls_.main_window));
+
 	if (window_width > 0 && window_height > 0)
 		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), window_width, window_height);
 	if (window_x >= 0 && window_y >= 0)

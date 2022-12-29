@@ -48,7 +48,7 @@ void draw_localize_ackerman(carmen_vector_3D_t* localize_ackerman_trail, int siz
 void draw_particles(carmen_vector_3D_t* particles_pos, double* particles_weight, int num_particles, int color);
 void draw_laser_rays(point_cloud current_reading, carmen_vector_3D_t laser_position);
 void draw_xsens_orientation(carmen_orientation_3D_t xsens_orientation, double xsens_yaw_bias, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose);
-void draw_gps_orientation (double gps_orientation, int gps_heading_valid, carmen_orientation_3D_t xsens_orientation, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose);
+void draw_gps_orientation(double gps_orientation, int gps_heading_valid, carmen_pose_3D_t gps_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose);
 void draw_orientation_instruments(carmen_orientation_3D_t orientation, double r, double g, double b);
 void draw_gps_fault_signal(void);
 void draw_map_image(carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img, double robot_wheel_radius);

@@ -174,7 +174,8 @@ createCarDrawer(int argc, char** argv)
 		carDrawer->carModel = glmReadOBJ(carmodel_file);
 	glmUnitize(carDrawer->carModel);
 
-	glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
+//	glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
+	glmScaleXYZ(carDrawer->carModel, carDrawer->car_size.x / 2.0, carDrawer->car_size.y / 2.0, carDrawer->car_size.z / 2.0);
 
 	for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 	{
@@ -192,15 +193,15 @@ createCarDrawer(int argc, char** argv)
 			{semi_trailer_string, "distance_between_axle_and_front", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front), 0, NULL},
 			{semi_trailer_string, "distance_between_axle_and_back", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back), 0, NULL},
 			{semi_trailer_model_string, "file_name", CARMEN_PARAM_STRING, &semi_trailer_model_file, 0, NULL},
-			{semi_trailer_model_string, "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].x), 0, NULL},
-			{semi_trailer_model_string, "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].y), 0, NULL},
-			{semi_trailer_model_string, "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].z), 0, NULL},
-			{semi_trailer_model_string, "x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x), 0, NULL},
-			{semi_trailer_model_string, "y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y), 0, NULL},
-			{semi_trailer_model_string, "z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z), 0, NULL},
-			{semi_trailer_model_string, "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.roll), 0, NULL},
-			{semi_trailer_model_string, "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.pitch), 0, NULL},
-			{semi_trailer_model_string, "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.yaw), 0, NULL}
+			{semi_trailer_model_string, "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].x), 1, NULL},
+			{semi_trailer_model_string, "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].y), 1, NULL},
+			{semi_trailer_model_string, "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_size[semi_trailer_id-1].z), 1, NULL},
+			{semi_trailer_model_string, "x", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x), 1, NULL},
+			{semi_trailer_model_string, "y", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y), 1, NULL},
+			{semi_trailer_model_string, "z", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z), 1, NULL},
+			{semi_trailer_model_string, "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.roll), 1, NULL},
+			{semi_trailer_model_string, "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.pitch), 1, NULL},
+			{semi_trailer_model_string, "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->semi_trailer_pose[semi_trailer_id-1].orientation.yaw), 1, NULL}
 		};
 
 		num_items = sizeof(param_list2)/sizeof(param_list2[0]);
@@ -212,12 +213,16 @@ createCarDrawer(int argc, char** argv)
 //		carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M = carDrawer->robot_collision_config->semi_trailer_M;
 
 		if (semi_trailer_model_file == NULL)
-			carDrawer->semiTrailerModel[semi_trailer_id-1] = glmReadOBJ("ford_escape_model.obj");
+			carDrawer->semiTrailerModel[semi_trailer_id - 1] = glmReadOBJ("ford_escape_model.obj");
 		else
-			carDrawer->semiTrailerModel[semi_trailer_id-1] = glmReadOBJ(semi_trailer_model_file);
-		glmUnitize(carDrawer->semiTrailerModel[semi_trailer_id-1]);
+			carDrawer->semiTrailerModel[semi_trailer_id - 1] = glmReadOBJ(semi_trailer_model_file);
+		glmUnitize(carDrawer->semiTrailerModel[semi_trailer_id - 1]);
 
-		glmScale(carDrawer->semiTrailerModel[semi_trailer_id-1], carDrawer->semi_trailer_size[semi_trailer_id-1].x / 2.0);
+//		glmScale(carDrawer->semiTrailerModel[semi_trailer_id - 1], carDrawer->semi_trailer_size[semi_trailer_id - 1].x / 2.0);
+		glmScaleXYZ(carDrawer->semiTrailerModel[semi_trailer_id - 1],
+				carDrawer->semi_trailer_size[semi_trailer_id - 1].x / 2.0,
+				carDrawer->semi_trailer_size[semi_trailer_id - 1].y / 2.0,
+				carDrawer->semi_trailer_size[semi_trailer_id - 1].z / 2.0);
 	}
 
 	return (carDrawer);
@@ -429,13 +434,19 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 void
 draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 {
-	static double previous_size = 0.0;
+	static double previous_size_x = 0.0;
+	static double previous_size_y = 0.0;
+	static double previous_size_z = 0.0;
 
-	if (carDrawer->car_size.x != previous_size)
+//	if (carDrawer->car_size.x != previous_size)
+	if ((carDrawer->car_size.x != previous_size_x) || (carDrawer->car_size.y != previous_size_y) || (carDrawer->car_size.z != previous_size_z))
 	{
 		glmUnitize(carDrawer->carModel);
-		glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
-		previous_size = carDrawer->car_size.x;
+//		glmScale(carDrawer->carModel, carDrawer->car_size.x / 2.0);
+		glmScaleXYZ(carDrawer->carModel, carDrawer->car_size.x / 2.0, carDrawer->car_size.y / 2.0, carDrawer->car_size.z / 2.0);
+		previous_size_x = carDrawer->car_size.x;
+		previous_size_y = carDrawer->car_size.y;
+		previous_size_z = carDrawer->car_size.z;
 	}
 
 	//draw_axis(500.0);
@@ -448,7 +459,7 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 		glRotatef(-carmen_radians_to_degrees(carDrawer->car_pose.orientation.yaw), 0.0, 1.0, 0.0);
 		glRotatef(0.0, 0.0, 0.0, 1.0);
 
-		glColor3f(0.3,0.3,0.3);
+		glColor3f(0.3, 0.3, 0.3);
 //		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
 		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
 		
@@ -456,30 +467,29 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 	
 	if (semi_trailer_engaged)
 	{
-		for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+		for (int semi_trailer_id = 1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 		{
 			// Semi-trailer
 			glPushMatrix();
 
 				glRotatef(90.0, 1.0, 0.0, 0.0);
-				glRotatef(0.0, 0.0, 1.0, 0.0);
 				glRotatef(-carmen_radians_to_degrees(beta), 0.0, 1.0, 0.0);
+				glRotatef(0.0, 0.0, 0.0, 1.0);
 //				FIXME Avelino
 //				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->robot_collision_config->semi_trailer_d - carDrawer->robot_collision_config->semi_trailer_M * cos(beta),
 //							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z,
 //							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->robot_collision_config->semi_trailer_M * sin(beta));
-				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].d - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * cos(beta),
+				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].d - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].M * cos(beta),
 							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z,
-							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * sin(beta));
+							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].M * sin(beta));
 
-				glColor3f(0.3,0.3,0.3);
+				glColor3f(0.3, 0.3, 0.3);
 				//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
 				glmDraw(carDrawer->semiTrailerModel[semi_trailer_id-1], GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
 
 			glPopMatrix();
 		}
 	}
-
 
 	// Sensor Board
 	glPushMatrix();

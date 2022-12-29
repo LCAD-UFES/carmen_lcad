@@ -134,9 +134,9 @@ initial_time_params_save(GtkWidget *w, // __attribute__ ((unused)),
     	playback_message = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
 
     	int start_msg, stop_msg;
-    	double start_ts, stop_ts, start_x, start_y, stop_x, stop_y, radius;
+    	double start_ts, stop_ts, recur_start_ts, recur_stop_ts, start_x, start_y, stop_x, stop_y, radius;
 
-        if (carmen_playback_is_valid_message(playback_message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
+        if (carmen_playback_is_valid_message(playback_message, &start_msg, &stop_msg, &start_ts, &stop_ts, &recur_start_ts, &recur_stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
         {
 			initial_time_pending_update = 0;
 			gtk_label_set_pattern(GTK_LABEL(playback_initial_time_widget_label), "");
@@ -253,9 +253,9 @@ read_parameters(int argc, char *argv[])
         gtk_entry_set_text(GTK_ENTRY(playback_initial_time_widget), message);
 
     	int start_msg, stop_msg;
-    	double start_ts, stop_ts, start_x, start_y, stop_x, stop_y, radius;
+    	double start_ts, stop_ts, recur_start_ts, recur_stop_ts, start_x, start_y, stop_x, stop_y, radius;
 
-        if (carmen_playback_is_valid_message(message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
+        if (carmen_playback_is_valid_message(message, &start_msg, &stop_msg, &start_ts, &stop_ts, &recur_start_ts, &recur_stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
         {
         	playback_message = message;
 			gtk_label_set_pattern(GTK_LABEL(playback_initial_time_widget_label), "");
@@ -336,6 +336,9 @@ void usage(char *fmt, ...)
 	fprintf(stderr, "\tplay from time (s):          t <num>\n");
 	fprintf(stderr, "\tstop at time (s):            t :<num>\n");
 	fprintf(stderr, "\tplay:stop times (s):         t <num>:<num>\n");
+	fprintf(stderr, "\trecur play from time (s):    r <num>\n");
+	fprintf(stderr, "\trecur stop at time (s):      r :<num>\n");
+	fprintf(stderr, "\trecur play:stop times (s):   r <num>:<num>\n");
 	fprintf(stderr, "\tplay from pose:              p <x> <y>\n");
 	fprintf(stderr, "\tstop at pose:                p :<x> <y>\n");
 	fprintf(stderr, "\tplay:stop poses:             p <x> <y>:<x> <y>\n");

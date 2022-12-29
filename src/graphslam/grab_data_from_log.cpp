@@ -595,9 +595,9 @@ main(int argc, char **argv)
 
 	fclose(output_file);
 
-	printf("Programa concluído normalmente. Tecle Ctrl+C para terminar\n");
+	printf("Programa concluído normalmente.\n");
 	fflush(stdout);
-	getchar();
+	// getchar();
 
 	return (0);
 }

@@ -330,7 +330,7 @@ draw_box (double length_x, double length_y, double length_z)
 }
 
 void
-draw_particles (carmen_vector_3D_t *particles_pos, double *particles_weight, int num_particles, int color)
+draw_particles(carmen_vector_3D_t *particles_pos, double *particles_weight, int num_particles, int color)
 {
     int i;
     double minWeight;
@@ -483,16 +483,16 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
 }
 
 void
-draw_gps_orientation(double gps_orientation, int gps_heading_valid, carmen_orientation_3D_t xsens_orientation, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose)
+draw_gps_orientation(double gps_orientation, int gps_heading_valid, carmen_pose_3D_t gps_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose)
 {
-    carmen_vector_3D_t xsens_global_position = get_xsens_position_global_reference(xsens_pose, sensor_board_pose, car_pose);
+    carmen_vector_3D_t xsens_global_position = get_xsens_position_global_reference(gps_pose, sensor_board_pose, car_pose);
 
     glPushMatrix ();
 
     glTranslatef (xsens_global_position.x, xsens_global_position.y, xsens_global_position.z);
     glRotatef (carmen_radians_to_degrees(gps_orientation), 0.0f, 0.0f, 1.0f);
-    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.pitch - xsens_pose.orientation.pitch)), 0.0f, 1.0f, 0.0f);
-    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.roll - xsens_pose.orientation.roll)), 1.0f, 0.0f, 0.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(gps_pose.orientation.pitch)), 0.0f, 1.0f, 0.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(gps_pose.orientation.roll)), 1.0f, 0.0f, 0.0f);
 
     if (gps_heading_valid)
     	draw_gps_axis(1.0);

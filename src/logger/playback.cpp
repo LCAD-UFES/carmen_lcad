@@ -45,10 +45,13 @@ double playback_speed = 1.0;
 
 int current_position = 0;
 int stop_position = INT_MAX;
+bool recur = false;
+double recur_play_time = 0.0;
 double stop_time = DBL_MAX;
 double stop_x = 0.0;
 double stop_y = 0.0;
 double search_radius = 10.0;
+int killall_after_finish = 0;
 
 int offset = 0;
 int autostart = 0;
@@ -630,10 +633,16 @@ void
 playback_command_set_message(char *message)
 {
 	int msg1 = -1, msg2 = -1;
-	double t1 = -1.0, t2 = -1.0, x1 = 0.0, y1 = 0.0, x2 = 0.0, y2 = 0.0, r = -1.0;
+	double t1 = -1.0, t2 = -1.0, r1 = -1.0, r2 = -1.0, x1 = 0.0, y1 = 0.0, x2 = 0.0, y2 = 0.0, r = -1.0;
 
-    if (!carmen_playback_is_valid_message(message, &msg1, &msg2, &t1, &t2, &x1, &y1, &x2, &y2, &r))
+    if (!carmen_playback_is_valid_message(message, &msg1, &msg2, &t1, &t2, &r1, &r2, &x1, &y1, &x2, &y2, &r))
     	return;
+
+    recur = false;
+	recur_play_time = 0.0;
+	stop_position = INT_MAX;
+	stop_time = DBL_MAX;
+	stop_x = stop_y = 0.0;
 
     if (msg1 >= 0 || msg2 >= 0)
     {
@@ -645,22 +654,25 @@ playback_command_set_message(char *message)
 			current_position = logfile_index->current_position - 1;
 		}
 		if (msg2 >= 0)
-		{
 			stop_position = msg2;
-			stop_time = DBL_MAX;
-			stop_x = stop_y = 0.0;
-		}
     }
     else if (t1 >= 0.0 || t2 >= 0.0)
     {
     	if (t1 >= 0.0)
     		find_current_position_by_timestamp(t1);
     	if (t2 >= 0.0)
-    	{
     		stop_time = t2;
-			stop_position = INT_MAX;
-			stop_x = stop_y = 0.0;
+    }
+    else if (r1 >= 0.0 || r2 >= 0.0)
+    {
+    	recur = true;
+    	if (r1 >= 0.0)
+    	{
+    		recur_play_time = r1;
+    		find_current_position_by_timestamp(r1);
     	}
+    	if (r2 >= 0.0)
+    		stop_time = r2;
     }
     else
     {
@@ -669,11 +681,7 @@ playback_command_set_message(char *message)
     	if (x1 != 0.0 && y1 != 0.0)
     		find_current_position_by_pose(x1, y1);
     	if (x2 != 0.0 && y2 != 0.0)
-    	{
     		stop_x = x2, stop_y = y2;
-			stop_position = INT_MAX;
-			stop_time = DBL_MAX;
-    	}
     }
 }
 
@@ -715,6 +723,7 @@ playback_command_handler(carmen_playback_command_message *command)
 			playback_timestamp_is_updated = 0;
 			playback_pose_is_updated = 0;
 			print_playback_status();
+
 			break;
 
 		case CARMEN_PLAYBACK_COMMAND_FORWARD:
@@ -893,6 +902,16 @@ main_playback_loop(void)
 			playback_timestamp_is_updated = 0;
 			playback_pose_is_updated = 0;
 			print_playback_status();
+
+			if (killall_after_finish)
+			{
+				char buf[512];
+				FILE *cmd_pipe = popen("pidof -s proccontrol", "r");
+				fgets(buf, 512, cmd_pipe);
+				pid_t pid = strtoul(buf, NULL, 10);
+				pclose( cmd_pipe );
+				kill(pid, SIGINT);
+			}
 		}
 		else if (!paused && current_position < logfile_index->num_messages - 1)
 		{
@@ -903,12 +922,20 @@ main_playback_loop(void)
 				(playback_timestamp_is_updated && playback_timestamp >= stop_time) ||
 				(playback_pose_is_updated && DIST2D(current_pose, stop_pose) <= search_radius))
 			{
-				offset = 0;
-				paused = 1;
-				print_playback_status();
-				stop_position = INT_MAX;
-				stop_time = DBL_MAX;
-				stop_x = stop_y = 0.0;
+				if (recur)
+				{
+					find_current_position_by_timestamp(recur_play_time);
+					print_playback_status();
+				}
+				else
+				{
+					offset = 0;
+					paused = 1;
+					print_playback_status();
+					stop_position = INT_MAX;
+					stop_time = DBL_MAX;
+					stop_x = stop_y = 0.0;
+				}
 			}
 		}
 		else if (paused && advance_frame)
@@ -972,11 +999,13 @@ usage(char *fmt, ...)
 	fprintf(stderr, "Usage: playback <log_filename> [args]\n");
 	fprintf(stderr, "[args]: -fast {on|off} -autostart {on|off} -basic {on|off}\n");
 	fprintf(stderr, "        -ignore <comma-separated log message list with wildcards>\n");
-	fprintf(stderr, "        -play_message  <num>   -stop_message <num>\n");
-	fprintf(stderr, "        -play_time     <num>   -stop_time    <num>\n");
-	fprintf(stderr, "        -play_pose_x   <num>   -stop_pose_x  <num>\n");
-	fprintf(stderr, "        -play_pose_y   <num>   -stop_pose_y  <num>\n");
-	fprintf(stderr, "        -search_radius <num>\n");
+	fprintf(stderr, "        -play_message     <num>   -stop_message     <num>\n");
+	fprintf(stderr, "        -play_time        <num>   -stop_time        <num>\n");
+	fprintf(stderr, "        -recur_play_time  <num>   -recur_stop_time  <num>\n");
+	fprintf(stderr, "        -play_pose_x      <num>   -stop_pose_x      <num>\n");
+	fprintf(stderr, "        -play_pose_y      <num>   -stop_pose_y      <num>\n");
+	fprintf(stderr, "        -search_radius    <num>\n");
+	fprintf(stderr, "        -killall_after_finish {on|off}\n");
 	exit(-1);
 }
 
@@ -999,23 +1028,26 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list_, sizeof(param_list_) / sizeof(param_list_[0]));
 	carmen_param_allow_unfound_variables(0);
 
-	double current_time = 0.0, current_x = 0.0, current_y = 0.0;
+	double current_time = 0.0, recur_stop_time = DBL_MAX, current_x = 0.0, current_y = 0.0;
 
 	carmen_param_t param_list2[] =
 	{
-		{(char *) "commandline",	(char *) "fast",			CARMEN_PARAM_ONOFF,		&(fast),				0, NULL},
-		{(char *) "commandline",	(char *) "autostart",		CARMEN_PARAM_ONOFF, 	&(autostart),			0, NULL},
-		{(char *) "commandline",	(char *) "basic",			CARMEN_PARAM_ONOFF, 	&(basic_messages),		0, NULL},
-		{(char *) "commandline",	(char *) "ignore",			CARMEN_PARAM_STRING, 	&(ignore_list),			0, NULL},
-		{(char *) "commandline",	(char *) "play_message",	CARMEN_PARAM_INT, 		&(current_position),	0, NULL},
-		{(char *) "commandline",	(char *) "stop_message",	CARMEN_PARAM_INT, 		&(stop_position),		0, NULL},
-		{(char *) "commandline",	(char *) "play_time",		CARMEN_PARAM_DOUBLE,	&(current_time),		0, NULL},
-		{(char *) "commandline",	(char *) "stop_time",		CARMEN_PARAM_DOUBLE,	&(stop_time),			0, NULL},
-		{(char *) "commandline",	(char *) "play_pose_x",		CARMEN_PARAM_DOUBLE,	&(current_x),			0, NULL},
-		{(char *) "commandline",	(char *) "play_pose_y",		CARMEN_PARAM_DOUBLE,	&(current_y),			0, NULL},
-		{(char *) "commandline",	(char *) "stop_pose_x",		CARMEN_PARAM_DOUBLE,	&(stop_x),				0, NULL},
-		{(char *) "commandline",	(char *) "stop_pose_y",		CARMEN_PARAM_DOUBLE,	&(stop_y),				0, NULL},
-		{(char *) "commandline",	(char *) "search_radius",	CARMEN_PARAM_DOUBLE,	&(search_radius),		0, NULL},
+		{(char *) "commandline",	(char *) "fast",				CARMEN_PARAM_ONOFF,		&(fast),				0, NULL},
+		{(char *) "commandline",	(char *) "autostart",			CARMEN_PARAM_ONOFF, 	&(autostart),			0, NULL},
+		{(char *) "commandline",	(char *) "basic",				CARMEN_PARAM_ONOFF, 	&(basic_messages),		0, NULL},
+		{(char *) "commandline",	(char *) "ignore",				CARMEN_PARAM_STRING, 	&(ignore_list),			0, NULL},
+		{(char *) "commandline",	(char *) "play_message",		CARMEN_PARAM_INT, 		&(current_position),	0, NULL},
+		{(char *) "commandline",	(char *) "stop_message",		CARMEN_PARAM_INT, 		&(stop_position),		0, NULL},
+		{(char *) "commandline",	(char *) "play_time",			CARMEN_PARAM_DOUBLE,	&(current_time),		0, NULL},
+		{(char *) "commandline",	(char *) "stop_time",			CARMEN_PARAM_DOUBLE,	&(stop_time),			0, NULL},
+		{(char *) "commandline",	(char *) "recur_play_time",		CARMEN_PARAM_DOUBLE,	&(recur_play_time),		0, NULL},
+		{(char *) "commandline",	(char *) "recur_stop_time",		CARMEN_PARAM_DOUBLE,	&(recur_stop_time),		0, NULL},
+		{(char *) "commandline",	(char *) "play_pose_x",			CARMEN_PARAM_DOUBLE,	&(current_x),			0, NULL},
+		{(char *) "commandline",	(char *) "play_pose_y",			CARMEN_PARAM_DOUBLE,	&(current_y),			0, NULL},
+		{(char *) "commandline",	(char *) "stop_pose_x",			CARMEN_PARAM_DOUBLE,	&(stop_x),				0, NULL},
+		{(char *) "commandline",	(char *) "stop_pose_y",			CARMEN_PARAM_DOUBLE,	&(stop_y),				0, NULL},
+		{(char *) "commandline",	(char *) "search_radius",		CARMEN_PARAM_DOUBLE,	&(search_radius),		0, NULL},
+		{(char *) "commandline",	(char *) "killall_after_finish",	CARMEN_PARAM_ONOFF,		&(killall_after_finish),0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
@@ -1030,6 +1062,8 @@ read_parameters(int argc, char **argv)
     	sprintf(message, "%d:%d", current_position, stop_position);
     else if (current_time > 0.0 || stop_time < DBL_MAX)
 		sprintf(message, "t %lf:%lf", current_time, stop_time);
+    else if (recur_play_time > 0.0 || recur_stop_time < DBL_MAX)
+		sprintf(message, "r %lf:%lf", recur_play_time, recur_stop_time);
     else if (current_x != 0.0 || current_y != 0.0)
     	sprintf(message, "p %lf %lf : %lf %lf", current_x, current_y, stop_x, stop_y);
     else if (stop_x != 0.0 || stop_y != 0.0)

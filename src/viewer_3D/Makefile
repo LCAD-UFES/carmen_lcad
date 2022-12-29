@@ -4,7 +4,7 @@ include ../Makefile.conf
 #LINK = g++
 
 CFLAGS += -fopenmp
-CXXFLAGS += -std=c++11 -Wno-write-strings
+CXXFLAGS += -std=c++11 -Wno-write-strings -Wno-deprecated-declarations
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models

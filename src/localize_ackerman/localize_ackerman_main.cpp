@@ -235,7 +235,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		if (globalpos_file == NULL)
 			globalpos_file = fopen(save_globalpos_file, "w");
 		if (globalpos_file && (timestamp >= save_globalpos_timestamp))
-			fprintf(globalpos_file, "%lf %lf %lf %lf %lf %lf\n",
+			fprintf(globalpos_file, "%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",
 					globalpos.pose.position.x, globalpos.pose.position.y,
 					globalpos.pose.orientation.yaw, v, phi, timestamp);
 	}
@@ -348,8 +348,8 @@ publish_globalpos_on_mapping_mode(carmen_fused_odometry_message *msg, double tim
 			if (globalpos_file == NULL)
 				globalpos_file = fopen(save_globalpos_file, "w");
 			if (globalpos_file && (timestamp >= save_globalpos_timestamp))
-				fprintf(globalpos_file, "%lf %lf %lf %lf %lf %lf %lf\n",
-						globalpos.globalpos.x, globalpos.globalpos.y, 0.0,
+				fprintf(globalpos_file, "%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",
+						globalpos.globalpos.x, globalpos.globalpos.y,
 						globalpos.globalpos.theta, globalpos.v, globalpos.phi, timestamp);
 		}
 
@@ -1394,6 +1394,14 @@ shutdown_localize(int x)
 {
 	if (x == SIGINT)
 	{
+		char outfile[256];
+		for (int i = -1; i < 60; i++)
+		{
+			sprintf(outfile, "debug-beta-%d.txt", i);
+			remove(outfile);
+		}
+		remove("debug-choosen.txt");
+		
 		if (globalpos_file)
 			fclose(globalpos_file);
 

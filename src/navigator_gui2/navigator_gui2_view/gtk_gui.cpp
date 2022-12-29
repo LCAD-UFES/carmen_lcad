@@ -22,6 +22,8 @@ extern int publish_final_goal_at_place_of_interest;
 int button_record_verification=0;
 int unsubscribe_map_server = 0;
 
+int semi_trailer_being_oriented = 0;
+
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
@@ -1527,6 +1529,10 @@ namespace View
 			truepose_with_beta.trailer_theta[z] = globalpos->trailer_theta[z];
 
 		truepose_with_beta.trailer_theta[0] = globalpos->trailer_theta[0];		// remover esta linha quando o beta da truepos estiver tratado!!
+
+//		for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)					// @braian: temporario
+//			truepose_with_beta.trailer_theta[i] = robot_temp.pose.trailer_theta[i]; 		// @braian: temporario
+
 		simulator_trueposition.pose = truepose_with_beta;
 //		printf("Here %d %f\n", __LINE__, truepose_with_beta.trailer_theta[0] );
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
@@ -1914,13 +1920,11 @@ namespace View
 		// printf("%s\n", mission);
 	}
 
-
 	void
 	GtkGui::reset_mission()
 	{
 		strcpy(mission, "None");
 	}
-
 
 	int
 	GtkGui::get_task_code(char *task_name)
@@ -2389,16 +2393,12 @@ namespace View
 			robot_temp.pose.x = world_point->pose.x;
 			robot_temp.pose.y = world_point->pose.y;
 			robot_temp.pose.theta = world_point->pose.theta;
-//			robot_temp.pose.trailer_theta[0] = world_point->pose.theta;
 
 			placement_status = ORIENTING_ROBOT;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
-
-
 			return TRUE;
 		}
-
 		return FALSE;
 	}
 
@@ -2406,21 +2406,20 @@ namespace View
 	GtkGui::orienting_robot_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event)
 	{
 		GdkCursor *cursor;
-		double angle;
+//		double angle;
 
 		if ((placement_status == ORIENTING_ROBOT) ||
 			((placement_status == NO_PLACEMENT) && (((event->button == 2) && (event->state & GDK_CONTROL_MASK)) ||
 			((event->button == 3) && (event->state & GDK_CONTROL_MASK)))))
 		{
-			angle = atan2(world_point->pose.y - robot_temp.pose.y,
-					world_point->pose.x - robot_temp.pose.x);
-			robot_temp.pose.theta = angle;
+//			angle = atan2(world_point->pose.y - robot_temp.pose.y,
+//					world_point->pose.x - robot_temp.pose.x);
+//			robot_temp.pose.theta = angle;
 
 			if (globalpos->semi_trailer_engaged)
 			{
-//				robot_temp.pose.trailer_theta[0] = angle;
 				placement_status = ORIENTING_ROBOT_SEMI_TRAILER;
-
+				semi_trailer_being_oriented = 0;
 				return TRUE;
 			}
 			else
@@ -2446,27 +2445,34 @@ namespace View
 	GtkGui::orienting_robot_semi_trailer_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventButton *event)
 	{
 		GdkCursor *cursor;
-		double angle;
+//		double angle;
 
 		if (placement_status == ORIENTING_ROBOT_SEMI_TRAILER)
 		{
-			placement_status = NO_PLACEMENT;
-
-			cursor = gdk_cursor_new(GDK_LEFT_PTR);
-			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
-
-			angle = atan2(world_point->pose.y - robot_temp.pose.y,
-					world_point->pose.x - robot_temp.pose.x);
+//			angle = atan2(world_point->pose.y - robot_temp.pose.y,
+//					world_point->pose.x - robot_temp.pose.x);
 
 //			angle = robot_temp.pose.theta - atan2(world_point->pose.y - (robot_temp.pose.y - semi_trailer_config->semi_trailers.M * sin(robot_temp.pose.theta)),
 //					world_point->pose.x - (robot_temp.pose.x - semi_trailer_config->semi_trailers.M * cos(robot_temp.pose.theta)));
-			angle = atan2(world_point->pose.y - (robot_temp.pose.y - semi_trailer_config->semi_trailers[0].M * sin(robot_temp.pose.theta)),
-					world_point->pose.x - (robot_temp.pose.x - semi_trailer_config->semi_trailers[0].M * cos(robot_temp.pose.theta)));
+//			angle = atan2(world_point->pose.y - (robot_temp.pose.y - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * sin(robot_temp.pose.theta)),
+//					world_point->pose.x - (robot_temp.pose.x - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * cos(robot_temp.pose.theta)));
+
 //			robot_temp.pose.trailer_theta[0] = carmen_normalize_theta(robot_temp.pose.theta - angle);
-			robot_temp.pose.trailer_theta[0] = carmen_normalize_theta(angle);
-			navigator_update_robot(&robot_temp);
+//			robot_temp.pose.trailer_theta[semi_trailer_being_oriented] = carmen_normalize_theta(angle);
+
+			if (semi_trailer_being_oriented == semi_trailer_config->num_semi_trailers - 1)
+			{
+				navigator_update_robot(&robot_temp);
+				placement_status = NO_PLACEMENT;
+				semi_trailer_being_oriented = 0;
+				cursor = gdk_cursor_new(GDK_LEFT_PTR);
+				gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
+			}
+			else
+				semi_trailer_being_oriented++;
 
 			return TRUE;
+
 		}
 		return FALSE;
 	}
@@ -2858,11 +2864,12 @@ namespace View
 			final_goal.pose.x = world_point->pose.x;
 			final_goal.pose.y = world_point->pose.y;
 			final_goal.pose.theta = world_point->pose.theta;
-			final_goal.pose.trailer_theta[0] = world_point->pose.theta;
-		for (int z = 1; z < final_goal.pose.num_trailers; z++)
-		{
-			final_goal.pose.trailer_theta[z] = world_point->pose.theta;
-		}
+//			final_goal.pose.trailer_theta[0] = world_point->pose.theta;
+
+//		for (int z = 1; z < final_goal.pose.num_trailers; z++)
+//		{
+//			final_goal.pose.trailer_theta[z] = world_point->pose.theta;
+//		}
 
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
@@ -2889,14 +2896,14 @@ namespace View
 			f_final_goal = fopen("final_goal_pose.txt", "w");
 			if(f_final_goal == NULL)
 				printf("Could not open f_final_goal file\n");
-			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, 0.0);
+			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, 0.0); // @braian: adicionar thetas dos semi-trailers
 			fclose(f_final_goal);
 
 
 			if (globalpos->semi_trailer_engaged)
 			{
 				placement_status = ORIENTING_FINAL_GOAL_SEMI_TRAILER;
-
+				semi_trailer_being_oriented = 0;
 				return TRUE;
 			}
 			else
@@ -2924,32 +2931,38 @@ namespace View
 	int
 	GtkGui::orienting_final_goal_semi_trailer_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_point)
 	{
+//		double angle;
+
 		if (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER)
 		{
-			placement_status = NO_PLACEMENT;
-
-			final_goal.pose.trailer_theta[0] = carmen_normalize_theta(atan2(world_point->pose.y - (final_goal.pose.y - semi_trailer_config->semi_trailers[0].M * sin(final_goal.pose.theta)),
-					world_point->pose.x - (final_goal.pose.x - semi_trailer_config->semi_trailers[0].M * cos(final_goal.pose.theta))));
-
+//			angle = carmen_normalize_theta(atan2(world_point->pose.y - (final_goal.pose.y - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * sin(final_goal.pose.theta)),
+//					world_point->pose.x - (final_goal.pose.x - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * cos(final_goal.pose.theta))));
+//			final_goal.pose.trailer_theta[semi_trailer_being_oriented] = angle;
 
 			int half_meters_to_goal = 2 * DIST2D(world_point->pose, final_goal.pose);
 //			if (use_route_planner_in_graph_mode == 0)
 				carmen_rddf_publish_end_point_message(half_meters_to_goal, final_goal.pose);
 
-			final_goal_placed_and_oriented = 1;
 
-			f_final_goal = fopen("final_goal_pose.txt", "w");
-			if(f_final_goal == NULL)
-				printf("Could not open f_final_goal file\n");
+			if (semi_trailer_being_oriented == semi_trailer_config->num_semi_trailers - 1)
+			{
+				placement_status = NO_PLACEMENT;
+				final_goal_placed_and_oriented = 1;
 
-			fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, final_goal.pose.trailer_theta[0]);
-			fclose(f_final_goal);
+				f_final_goal = fopen("final_goal_pose.txt", "w");
+				if(f_final_goal == NULL)
+					printf("Could not open f_final_goal file\n");
 
+				fprintf(f_final_goal, "%lf, %lf, %lf, %lf\n", final_goal.pose.x, final_goal.pose.y, final_goal.pose.theta, final_goal.pose.trailer_theta[0]); // @braian: adicionar thetas dos semi-trailers
+				fclose(f_final_goal);
 
-			GdkCursor *cursor = gdk_cursor_new(GDK_LEFT_PTR);
-			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
+				GdkCursor *cursor = gdk_cursor_new(GDK_LEFT_PTR);
+				gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
-			update_local_map = 1;
+				update_local_map = 1;
+			}
+			else
+				semi_trailer_being_oriented++;
 
 			return TRUE;
 		}
@@ -3191,11 +3204,12 @@ namespace View
 	{
 		carmen_world_robot_and_trailer_pose_t robot_with_beta;
 		robot_with_beta.pose = {robot.pose.x, robot.pose.y, robot.pose.theta, globalpos->num_trailers, {0.0}};
-		for (int z = 0; z < globalpos->num_trailers; z++)
-		{
-			robot_with_beta.pose.trailer_theta[z] = globalpos->trailer_theta[z];
-		}
 
+		for (int z = 0; z < globalpos->num_trailers; z++)
+			robot_with_beta.pose.trailer_theta[z] = globalpos->trailer_theta[z];
+
+//		for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)				// @braian: temporario
+//			robot_with_beta.pose.trailer_theta[i] = robot_temp.pose.trailer_theta[i]; 	// @braian: temporario
 
 		robot_with_beta.map = robot.map;
 
@@ -3204,6 +3218,7 @@ namespace View
 
 		if (!nav_panel_config->show_gaussians)
 			draw_robot_shape(the_map_view, &robot_with_beta, FALSE, &carmen_black);
+
 
 		draw_orientation_mark(the_map_view, &robot);
 	}
@@ -3673,21 +3688,68 @@ namespace View
 			carmen_world_robot_and_trailer_pose_t *draw_point;
 			GdkColor *colour;
 
+			carmen_point_t semi_trailers_poses[MAX_NUM_TRAILERS];
+
+			for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)
+			{
+				double semi_trailer_M = semi_trailer_config->semi_trailers[i].M;
+				double semi_trailer_d = semi_trailer_config->semi_trailers[i].d;
+
+				if (i == 0)
+				{
+					semi_trailers_poses[i].x = robot_temp.pose.x - semi_trailer_M * cos(robot_temp.pose.theta) - semi_trailer_d * cos(robot_temp.pose.trailer_theta[i]);
+					semi_trailers_poses[i].y = robot_temp.pose.y - semi_trailer_M * sin(robot_temp.pose.theta) - semi_trailer_d * sin(robot_temp.pose.trailer_theta[i]);
+				}
+				else
+				{
+					semi_trailers_poses[i].x = semi_trailers_poses[i-1].x - semi_trailer_M * cos(robot_temp.pose.trailer_theta[i-1]) - semi_trailer_d * cos(robot_temp.pose.trailer_theta[i]);
+					semi_trailers_poses[i].y = semi_trailers_poses[i-1].y - semi_trailer_M * sin(robot_temp.pose.trailer_theta[i-1]) - semi_trailer_d * sin(robot_temp.pose.trailer_theta[i]);
+				}
+			}
+
 			if ((placement_status == ORIENTING_FINAL_GOAL) || (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER))
 			{
 				colour = &carmen_red;
 				draw_point = &final_goal;
 
+				for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)
+				{
+					double semi_trailer_M = semi_trailer_config->semi_trailers[i].M;
+					double semi_trailer_d = semi_trailer_config->semi_trailers[i].d;
+
+					if (i == 0)
+					{
+						semi_trailers_poses[i].x = draw_point->pose.x - semi_trailer_M * cos(draw_point->pose.theta) - semi_trailer_d * cos(draw_point->pose.trailer_theta[i]);
+						semi_trailers_poses[i].y = draw_point->pose.y - semi_trailer_M * sin(draw_point->pose.theta) - semi_trailer_d * sin(draw_point->pose.trailer_theta[i]);
+					}
+					else
+					{
+						semi_trailers_poses[i].x = semi_trailers_poses[i-1].x - semi_trailer_M * cos(draw_point->pose.trailer_theta[i-1]) - semi_trailer_d * cos(draw_point->pose.trailer_theta[i]);
+						semi_trailers_poses[i].y = semi_trailers_poses[i-1].y - semi_trailer_M * sin(draw_point->pose.trailer_theta[i-1]) - semi_trailer_d * sin(draw_point->pose.trailer_theta[i]);
+					}
+				}
+
 				if (placement_status == ORIENTING_FINAL_GOAL)
 				{
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
-					if (globalpos->semi_trailer_engaged)
-						draw_point->pose.trailer_theta[0] = draw_point->pose.theta;
 
+					if (globalpos->semi_trailer_engaged)
+					{
+						for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)
+							draw_point->pose.trailer_theta[i] = draw_point->pose.theta;
+					}
 				}
 				else if (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER)
-					draw_point->pose.trailer_theta[0] = carmen_normalize_theta(atan2(cursor_pos.pose.y - (final_goal.pose.y - semi_trailer_config->semi_trailers[0].M * sin(final_goal.pose.theta)),
-							cursor_pos.pose.x - (final_goal.pose.x - semi_trailer_config->semi_trailers[0].M * cos(final_goal.pose.theta))));
+				{
+					if (semi_trailer_being_oriented == 0)
+						draw_point->pose.trailer_theta[semi_trailer_being_oriented] = carmen_normalize_theta(atan2(cursor_pos.pose.y - (draw_point->pose.y - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * sin(draw_point->pose.theta)),
+								cursor_pos.pose.x - (draw_point->pose.x - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * cos(draw_point->pose.theta))));
+					else
+						draw_point->pose.trailer_theta[semi_trailer_being_oriented] = carmen_normalize_theta(atan2(cursor_pos.pose.y - semi_trailers_poses[semi_trailer_being_oriented-1].y, cursor_pos.pose.x - semi_trailers_poses[semi_trailer_being_oriented-1].x));
+
+					for (int i = semi_trailer_being_oriented + 1; i < semi_trailer_config->num_semi_trailers; i++)
+						draw_point->pose.trailer_theta[i] = draw_point->pose.trailer_theta[semi_trailer_being_oriented];
+				}
 
 				draw_robot_shape(the_map_view, draw_point, TRUE, colour);
 				draw_robot_shape(the_map_view, draw_point, FALSE, &carmen_black);
@@ -3695,16 +3757,24 @@ namespace View
 				carmen_world_point_t mirrored_cursor_pos = cursor_pos;
 				if (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER)
 				{
-					mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (draw_point->pose.x - semi_trailer_config->semi_trailers[0].M * cos(draw_point->pose.theta)));
-					mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (draw_point->pose.y - semi_trailer_config->semi_trailers[0].M * sin(draw_point->pose.theta)));
+					if (semi_trailer_being_oriented == 0)
+					{
+						mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (draw_point->pose.x - semi_trailer_config->semi_trailers[0].M * cos(draw_point->pose.theta)));
+						mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (draw_point->pose.y - semi_trailer_config->semi_trailers[0].M * sin(draw_point->pose.theta)));
+					}
+					else
+					{
+						mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (semi_trailers_poses[semi_trailer_being_oriented-1].x - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * cos(draw_point->pose.trailer_theta[semi_trailer_being_oriented-1])));
+						mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (semi_trailers_poses[semi_trailer_being_oriented-1].y - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * sin(draw_point->pose.trailer_theta[semi_trailer_being_oriented-1])));
+					}
 				}
 				else
 				{
 					mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
 					mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
 				}
-				carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
-						&cursor_pos);
+
+				carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos, &cursor_pos);
 
 				carmen_world_point_t draw_point_without_beta;
 				draw_point_without_beta.map = draw_point->map;
@@ -3721,19 +3791,30 @@ namespace View
 				if (placement_status == ORIENTING_ROBOT)
 				{
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
+
 					if (globalpos->semi_trailer_engaged)
-						draw_point->pose.trailer_theta[0] = draw_point->pose.theta;
+					{
+						for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)
+							draw_point->pose.trailer_theta[i] = draw_point->pose.theta;
+					}
 				}
 				else if (placement_status == ORIENTING_ROBOT_SEMI_TRAILER)
-					draw_point->pose.trailer_theta[0] = carmen_normalize_theta(atan2(cursor_pos.pose.y - (robot_temp.pose.y - semi_trailer_config->semi_trailers[0].M * sin(robot_temp.pose.theta)),
-							cursor_pos.pose.x - (robot_temp.pose.x - semi_trailer_config->semi_trailers[0].M * cos(robot_temp.pose.theta))));
+				{
+					if (semi_trailer_being_oriented == 0)
+						draw_point->pose.trailer_theta[semi_trailer_being_oriented] = carmen_normalize_theta(atan2(cursor_pos.pose.y - (robot_temp.pose.y - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * sin(robot_temp.pose.theta)),
+								cursor_pos.pose.x - (robot_temp.pose.x - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * cos(robot_temp.pose.theta))));
+					else
+						draw_point->pose.trailer_theta[semi_trailer_being_oriented] = carmen_normalize_theta(atan2(cursor_pos.pose.y - semi_trailers_poses[semi_trailer_being_oriented-1].y, cursor_pos.pose.x - semi_trailers_poses[semi_trailer_being_oriented-1].x));
+
+					for (int i = semi_trailer_being_oriented + 1; i < semi_trailer_config->num_semi_trailers; i++)
+						draw_point->pose.trailer_theta[i] = draw_point->pose.trailer_theta[semi_trailer_being_oriented];
+				}
+
 //				draw_point->pose.trailer_theta[0] = carmen_normalize_theta(robot_temp.pose.theta - atan2(cursor_pos.pose.y - (robot_temp.pose.y - semi_trailer_config->semi_trailers.M * sin(robot_temp.pose.theta)),
 //										cursor_pos.pose.x - (robot_temp.pose.x - semi_trailer_config->semi_trailers.M * cos(robot_temp.pose.theta)))); // inverte o angulo ao orientar o semi_trailer
 
 				draw_robot_shape(the_map_view, draw_point, TRUE, colour);
 				draw_robot_shape(the_map_view, draw_point, FALSE, &carmen_black);
-
-
 
 				carmen_world_point_t draw_point_without_beta;
 				draw_point_without_beta.map = draw_point->map;
@@ -3741,21 +3822,29 @@ namespace View
 				draw_point_without_beta.pose.y = draw_point->pose.y;
 				draw_point_without_beta.pose.theta = draw_point->pose.theta;
 				draw_orientation_mark(the_map_view, &draw_point_without_beta);
-			}
 
-			carmen_world_point_t mirrored_cursor_pos = cursor_pos;
-			if ((placement_status == ORIENTING_ROBOT_SEMI_TRAILER) || (placement_status == ORIENTING_FINAL_GOAL_SEMI_TRAILER))
-			{
-				mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (draw_point->pose.x - semi_trailer_config->semi_trailers[0].M * cos(draw_point->pose.theta)));
-				mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (draw_point->pose.y - semi_trailer_config->semi_trailers[0].M * sin(draw_point->pose.theta)));
+				carmen_world_point_t mirrored_cursor_pos = cursor_pos;
+				if ((placement_status == ORIENTING_ROBOT_SEMI_TRAILER))
+				{
+					if (semi_trailer_being_oriented == 0)
+					{
+						mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (draw_point->pose.x - semi_trailer_config->semi_trailers[0].M * cos(draw_point->pose.theta)));
+						mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (draw_point->pose.y - semi_trailer_config->semi_trailers[0].M * sin(draw_point->pose.theta)));
+					}
+					else
+					{
+						mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - (semi_trailers_poses[semi_trailer_being_oriented-1].x - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * cos(draw_point->pose.trailer_theta[semi_trailer_being_oriented-1])));
+						mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - (semi_trailers_poses[semi_trailer_being_oriented-1].y - semi_trailer_config->semi_trailers[semi_trailer_being_oriented].M * sin(draw_point->pose.trailer_theta[semi_trailer_being_oriented-1])));
+					}
+				}
+				else
+				{
+					mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
+					mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
+				}
+
+				carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos, &cursor_pos);
 			}
-			else
-			{
-				mirrored_cursor_pos.pose.x -= 2.0 * (cursor_pos.pose.x - draw_point->pose.x);
-				mirrored_cursor_pos.pose.y -= 2.0 * (cursor_pos.pose.y - draw_point->pose.y);
-			}
-			carmen_map_graphics_draw_line(the_map_view, colour, &mirrored_cursor_pos,
-					&cursor_pos);
 		}
 		else
 		{
@@ -4067,15 +4156,17 @@ namespace View
 		carmen_world_point_t location_without_beta;
 		location_without_beta.pose = {location->pose.x, location->pose.y, location->pose.theta};
 		location_without_beta.map = location->map;
+		double semi_trailer_M, semi_trailer_d, beta;
+		carmen_world_point_t semi_trailers_poses[MAX_NUM_TRAILERS];
 
 		draw_ackerman_shape(the_map_view, &location_without_beta, filled, colour);
 
 		if (globalpos->semi_trailer_engaged)
 		{
 			//FIXME seria melhor usar theta de cada trailer no lugar de beta relativo entre eles
-			double semi_trailer_M = semi_trailer_config->semi_trailers[0].M;
-			double semi_trailer_d = semi_trailer_config->semi_trailers[0].d;
-			double beta = location->pose.theta - location->pose.trailer_theta[0];
+//			double semi_trailer_M = semi_trailer_config->semi_trailers[0].M;
+//			double semi_trailer_d = semi_trailer_config->semi_trailers[0].d;
+//			double beta = location->pose.theta - location->pose.trailer_theta[0];
 
 			if (nav_panel_config->show_collision_range)
 			{
@@ -4083,16 +4174,47 @@ namespace View
 				for (int semi_trailer_id=1; semi_trailer_id <= collision_config->semi_trailer_type; semi_trailer_id++)
 				{
 					carmen_collision_marker_t *semi_trailer_markers = collision_config->semi_trailer_markers[semi_trailer_id-1];
+					semi_trailer_M = semi_trailer_config->semi_trailers[semi_trailer_id-1].M;
+					semi_trailer_d = semi_trailer_config->semi_trailers[semi_trailer_id-1].d;
+
+					if (semi_trailer_id == 1)
+						beta = convert_theta1_to_beta(location->pose.theta, location->pose.trailer_theta[semi_trailer_id-1]);
+					else
+						beta = convert_theta1_to_beta(location->pose.trailer_theta[semi_trailer_id-2], location->pose.trailer_theta[semi_trailer_id-1]);
+
 					for (int i = 0; i < collision_config->n_semi_trailer_markers[semi_trailer_id-1]; i++)
 					{
 						double trailer_x = semi_trailer_markers[i].x * cos(-beta) - semi_trailer_markers[i].y * sin(-beta) - semi_trailer_d * cos(beta) - semi_trailer_M;
 						double trailer_y = semi_trailer_markers[i].x * sin(-beta) + semi_trailer_markers[i].y * cos(-beta) + semi_trailer_d * sin(beta);
 						carmen_world_point_t center;
-						center.pose.x = x_coord(trailer_x, trailer_y, &location_without_beta);
-						center.pose.y = y_coord(trailer_x, trailer_y, &location_without_beta);
+
+						if (semi_trailer_id == 1)
+						{
+							center.pose.x = x_coord(trailer_x, trailer_y, &location_without_beta);
+							center.pose.y = y_coord(trailer_x, trailer_y, &location_without_beta);
+						}
+						else
+						{
+							center.pose.x = x_coord(trailer_x, trailer_y, &semi_trailers_poses[semi_trailer_id-2]);
+							center.pose.y = y_coord(trailer_x, trailer_y, &semi_trailers_poses[semi_trailer_id-2]);
+						}
+
 						center.map = location->map;
+
 						carmen_map_graphics_draw_circle(the_map_view, colour, filled, &center, semi_trailer_markers[i].radius);
 					}
+
+					if (semi_trailer_id == 1)
+					{
+						semi_trailers_poses[semi_trailer_id-1].pose.x = location->pose.x - semi_trailer_M * cos(location->pose.theta) - semi_trailer_d * cos(location->pose.trailer_theta[semi_trailer_id-1]);
+						semi_trailers_poses[semi_trailer_id-1].pose.y = location->pose.y - semi_trailer_M * sin(location->pose.theta) - semi_trailer_d * sin(location->pose.trailer_theta[semi_trailer_id-1]);
+					}
+					else
+					{
+						semi_trailers_poses[semi_trailer_id-1].pose.x = semi_trailers_poses[semi_trailer_id-2].pose.x - semi_trailer_M * cos(location->pose.trailer_theta[semi_trailer_id-1]) - semi_trailer_d * cos(location->pose.trailer_theta[semi_trailer_id-1]);
+						semi_trailers_poses[semi_trailer_id-1].pose.y = semi_trailers_poses[semi_trailer_id-2].pose.y - semi_trailer_M * sin(location->pose.trailer_theta[semi_trailer_id-1]) - semi_trailer_d * sin(location->pose.trailer_theta[semi_trailer_id-1]);
+					}
+					semi_trailers_poses[semi_trailer_id-1].pose.theta = location->pose.trailer_theta[semi_trailer_id-1];
 				}
 			}
 			else
@@ -4100,16 +4222,48 @@ namespace View
 				for (int semi_trailer_id=1; semi_trailer_id <= semi_trailer_config->num_semi_trailers; semi_trailer_id++)
 				{
 					carmen_world_point_t wp[semi_trailer_poly_config[semi_trailer_id-1].n_points];
+					semi_trailer_M = semi_trailer_config->semi_trailers[semi_trailer_id-1].M;
+					semi_trailer_d = semi_trailer_config->semi_trailers[semi_trailer_id-1].d;
+
+					if (semi_trailer_id == 1)
+						beta = convert_theta1_to_beta(location->pose.theta, location->pose.trailer_theta[semi_trailer_id-1]);
+					else
+						beta = convert_theta1_to_beta(location->pose.trailer_theta[semi_trailer_id-2], location->pose.trailer_theta[semi_trailer_id-1]);
+
 					for (int i = 0; i < semi_trailer_poly_config[semi_trailer_id-1].n_points; i++)
 					{
 						double trailer_x = semi_trailer_poly_config[semi_trailer_id-1].points[2 * i] * cos(-beta) - semi_trailer_poly_config[semi_trailer_id-1].points[2 * i + 1] * sin(-beta) - semi_trailer_d * cos(beta) - semi_trailer_M;
 						double trailer_y = semi_trailer_poly_config[semi_trailer_id-1].points[2 * i] * sin(-beta) + semi_trailer_poly_config[semi_trailer_id-1].points[2 * i + 1] * cos(-beta) + semi_trailer_d * sin(beta);
-						wp[i].pose.x = x_coord(trailer_x, trailer_y, &location_without_beta);
-						wp[i].pose.y = y_coord(trailer_x, trailer_y, &location_without_beta);
+
+						if (semi_trailer_id == 1)
+						{
+							wp[i].pose.x = x_coord(trailer_x, trailer_y, &location_without_beta);
+							wp[i].pose.y = y_coord(trailer_x, trailer_y, &location_without_beta);
+						}
+						else
+						{
+							wp[i].pose.x = x_coord(trailer_x, trailer_y, &semi_trailers_poses[semi_trailer_id-2]);
+							wp[i].pose.y = y_coord(trailer_x, trailer_y, &semi_trailers_poses[semi_trailer_id-2]);
+						}
+
 						wp[i].map = location->map;
 					}
 
 					carmen_map_graphics_draw_polygon(the_map_view, colour, wp, semi_trailer_poly_config[semi_trailer_id-1].n_points, filled);
+
+					if (semi_trailer_id == 1)
+					{
+						semi_trailers_poses[semi_trailer_id-1].pose.x = location->pose.x - semi_trailer_M * cos(location->pose.theta) - semi_trailer_d * cos(location->pose.trailer_theta[semi_trailer_id-1]);
+						semi_trailers_poses[semi_trailer_id-1].pose.y = location->pose.y - semi_trailer_M * sin(location->pose.theta) - semi_trailer_d * sin(location->pose.trailer_theta[semi_trailer_id-1]);
+					}
+					else
+					{
+						semi_trailers_poses[semi_trailer_id-1].pose.x = semi_trailers_poses[semi_trailer_id-2].pose.x - semi_trailer_M * cos(location->pose.trailer_theta[semi_trailer_id-1]) - semi_trailer_d * cos(location->pose.trailer_theta[semi_trailer_id-1]);
+						semi_trailers_poses[semi_trailer_id-1].pose.y = semi_trailers_poses[semi_trailer_id-2].pose.y - semi_trailer_M * sin(location->pose.trailer_theta[semi_trailer_id-1]) - semi_trailer_d * sin(location->pose.trailer_theta[semi_trailer_id-1]);
+					}
+
+					semi_trailers_poses[semi_trailer_id-1].pose.theta = location->pose.trailer_theta[semi_trailer_id-1];
+					semi_trailers_poses[semi_trailer_id-1].map = location->map;
 
 	//				carmen_world_point_t hitching_point;
 	//				hitching_point.pose.x = x_coord(-semi_trailer_M, 0.0, &location_without_beta);

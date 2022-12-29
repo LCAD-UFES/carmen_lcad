@@ -98,7 +98,7 @@ carmen_playback_is_valid_speed(char *value, double *speed)
 
 int
 carmen_playback_is_valid_message(char *message, int *start_msg, int *stop_msg, double *start_ts, double *stop_ts,
-		double *start_x, double *start_y, double *stop_x, double *stop_y, double *radius)
+		double *recur_start_ts, double *recur_stop_ts, double *start_x, double *start_y, double *stop_x, double *stop_y, double *radius)
 {
     setlocale(LC_ALL, "C");
 
@@ -124,6 +124,12 @@ carmen_playback_is_valid_message(char *message, int *start_msg, int *stop_msg, d
     	ok = ((*stop_ts) >= 0.0);
     else if (sscanf(message, " t %lf : %lf %n", start_ts, stop_ts, &pos) == 2 && message[pos] == 0)
     	ok = ((*start_ts) >= 0.0 && (*stop_ts) >= (*start_ts));
+    else if (sscanf(message, " r %lf %n", recur_start_ts, &pos) == 1 && message[pos] == 0)
+    	ok = ((*recur_start_ts) >= 0.0);
+    else if (sscanf(message, " r : %lf %n", recur_stop_ts, &pos) == 1 && message[pos] == 0)
+    	ok = ((*recur_stop_ts) >= 0.0);
+    else if (sscanf(message, " r %lf : %lf %n", recur_start_ts, recur_stop_ts, &pos) == 2 && message[pos] == 0)
+    	ok = ((*recur_start_ts) >= 0.0 && (*recur_stop_ts) >= (*recur_start_ts));
     else if (sscanf(message, " p %lf %lf %n", start_x, start_y, &pos) == 2 && message[pos] == 0)
     	ok = TRUE;
     else if (sscanf(message, " p : %lf %lf %n", stop_x, stop_y, &pos) == 2 && message[pos] == 0)
