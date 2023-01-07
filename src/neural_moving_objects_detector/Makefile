@@ -6,7 +6,7 @@ MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 LINK = g++ -g
 CXXFLAGS = -std=c++11 -g
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src  -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src  -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/include/python3.6m -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet3/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 
@@ -18,16 +18,17 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
 		  -lmoving_objects_interface `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
-		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
+		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.6-config --libs` \
 		  -lcamera_drivers
 
-SOURCES = neural_moving_objects_detector_main.cpp
+SOURCES = neural_moving_objects_detector_main.cpp a.cpp
 
-PUBLIC_BINARIES = neural_moving_objects_detector
+PUBLIC_BINARIES = neural_moving_objects_detector a
 
-TARGETS = neural_moving_objects_detector
+TARGETS = neural_moving_objects_detector a
 
 neural_moving_objects_detector: neural_moving_objects_detector_main.o
+a: a.o
 
 download:
 #	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1rE0lY4d4wyMp4mvcx23y4qGK97bvzTnC/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet3/yolov3.weights

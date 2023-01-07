@@ -1,6 +1,5 @@
 #include "neural_object_detector.hpp"
 
-
 int camera;
 int camera_side;
 
@@ -42,6 +41,22 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*y += offset_y;
 }
 
+void 
+runPython(char* filename)
+{
+	//Initialize the python instance
+	Py_Initialize();
+
+	//Run a simple file
+	FILE* PScriptFile = fopen(filename, "r");
+	if(PScriptFile){
+		PyRun_SimpleFile(PScriptFile, filename);
+		fclose(PScriptFile);
+	}
+
+	//Close the python instance
+	Py_Finalize();
+}
 
 void
 display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
@@ -507,6 +522,7 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 void
 call_neural_network()
 {
+	runPython("YOLOPv2/demo.py");
 	if (image_msg == NULL)
 		return;
 
@@ -527,6 +543,7 @@ call_neural_network()
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
+
 
 	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 //	predictions = filter_predictions_of_interest(predictions);
