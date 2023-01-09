@@ -215,6 +215,9 @@ bin/frenet_path_planner
 bin/offroad_planner
 bin/route_planner
 bin/task_manager
+bin/config_usb_extra_keys.bash  
+bin/extra_keys
+bin/test_extra_keys
 src/clean_map/clean_map
 src/visual_graphslam/bin/visual_grab_data
 src/visual_graphslam/bin/visual_graphslam
