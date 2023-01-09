@@ -209,6 +209,12 @@ bin/realsense_camera_main
 bin/minorucalib
 bin/ouster
 bin/ouster_viewer
+bin/camera_drivers
+bin/camera_viewer
+bin/frenet_path_planner
+bin/offroad_planner
+bin/route_planner
+bin/task_manager
 src/clean_map/clean_map
 src/visual_graphslam/bin/visual_grab_data
 src/visual_graphslam/bin/visual_graphslam
