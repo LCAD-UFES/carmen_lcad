@@ -3975,9 +3975,9 @@ read_parameters_and_init_stuff(int argc, char** argv)
     init_drawers(argc, argv, bumblebee_basic_width, bumblebee_basic_height);
 
     set_background_color(b_red, b_green, b_blue);
-    g_b_red = b_red;
-    g_b_green = b_green;
-    g_b_blue = b_blue;
+    g_b_red = carmen_clamp(0.0, b_red, 1.0);
+    g_b_green = carmen_clamp(0.0, b_green, 1.0);
+    g_b_blue = carmen_clamp(0.0, b_blue, 1.0);
 
     char *calibration_file = NULL;
 
