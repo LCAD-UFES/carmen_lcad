@@ -682,12 +682,13 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 
 	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
-		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
+		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1]) // Essa checagem não vai funcionar com mais de um semi_trailer. É necessário um método para obter o beta de todos os semi_trailers em relação ao semi_trailer anterior
 			return (pow(2.0, global_collision_config.semi_trailer_markers[semi_trailer_id-1][0].radius + safety_distance));
 		else
 		{
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
+				// A checagem abaixo parece correta porque transformo o trailer_theta local em beta, o que permite que a função faça a checagem em coordenadas globais
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
 						global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].x, global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1]),
 						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
