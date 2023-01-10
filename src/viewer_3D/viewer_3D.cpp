@@ -508,12 +508,12 @@ create_point_colors_height(carmen_vector_3D_t point, carmen_vector_3D_t car_posi
     }
     else
     {
-        colors.x = 0.0 - z;
-        colors.y = 0.1 + z / 10.0;
-        colors.z = (z + 3.0) / 6.0;
+        colors.x = carmen_clamp(0.0, 0.0 - z, 1.0);
+        colors.y = carmen_clamp(0.0, 0.1 + z / 10.0, 1.0);
+        colors.z = carmen_clamp(0.0, (z + 3.0) / 6.0, 1.0);
     }
 
-    return colors;
+    return (colors);
 }
 
 
