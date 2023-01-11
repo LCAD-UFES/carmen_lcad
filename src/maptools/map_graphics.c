@@ -435,13 +435,11 @@ static gint motion_event (GtkWidget *widget __attribute__ ((unused)),
 static int keyboard_press_event(GtkWidget *widget __attribute__ ((unused)),
 		GdkEventKey *event, GtkMapViewer *map_view)
 {
-	carmen_world_point_t point;
-
 	if (!(map_view->internal_map))
 		return TRUE;
 
 	if (map_view->keyboard_press_handler) {
-		(map_view->keyboard_press_handler)(map_view, &point, event);
+		(map_view->keyboard_press_handler)(map_view, event);
 	}
 
 	return TRUE;
@@ -982,7 +980,7 @@ carmen_map_graphics_add_button_release_event(GtkMapViewer *map_view,
 
 void 
 carmen_map_graphics_add_keyboard_press_event(GtkMapViewer *map_view,
-		carmen_graphics_mapview_callback_t
+		carmen_graphics_mapview_keyboard_press_callback_t
 		keyboard_press_handler)
 {
 	map_view->keyboard_press_handler = keyboard_press_handler;
