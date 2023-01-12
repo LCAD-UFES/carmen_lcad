@@ -267,7 +267,7 @@ namespace View
 			carmen_map_graphics_add_button_release_event(controls_.map_view, (carmen_graphics_mapview_callback_t)button_release_handler);
 			carmen_map_graphics_add_button_press_event(controls_.map_view, (carmen_graphics_mapview_callback_t)button_press_handler);
 			carmen_map_graphics_add_drawing_func(controls_.map_view, (carmen_graphics_mapview_drawing_func_t)draw_robot_objects);
-			carmen_map_graphics_add_keyboard_press_event(controls_.map_view, (carmen_graphics_mapview_callback_t)keyboard_press_handler);
+			carmen_map_graphics_add_keyboard_press_event(controls_.map_view, (carmen_graphics_mapview_keyboard_press_callback_t)keyboard_press_handler);
 
 			gtk_box_pack_start(GTK_BOX(controls_.box_map_2d), controls_.map_view->map_box, TRUE, TRUE, 0);
 		}

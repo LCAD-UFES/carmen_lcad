@@ -1187,10 +1187,8 @@ void button_release_handler(GtkMapViewer		   *the_map_view,
 }
 
 //extern "C" G_MODULE_EXPORT
-void keyboard_press_handler(GtkMapViewer *the_map_view, carmen_world_point_t *point,
-		GdkEventKey	   *event)
+void keyboard_press_handler(GtkMapViewer *the_map_view, GdkEventKey *event)
 {
-	global_gui->freeze_status = (global_gui->freeze_status)? false: true;
 	if (global_gui->placement_status == EDITING_NEAR_RDDF && global_gui->near_rddf_point != NULL)
 	{
 		double resolution = the_map_view->internal_map->config.resolution / 2.0;
@@ -1249,7 +1247,6 @@ void keyboard_press_handler(GtkMapViewer *the_map_view, carmen_world_point_t *po
 
 			case GDK_c:
 				global_gui->freeze_status = (global_gui->freeze_status)? false: true;
-				printf("entrei %d\n", (int) global_gui->freeze_status);
 
 				global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_CAR;
 				break;
@@ -1287,7 +1284,6 @@ void keyboard_press_handler(GtkMapViewer *the_map_view, carmen_world_point_t *po
 		case GDK_c:
 			global_gui->freeze_status = (global_gui->freeze_status)? false: true;
 			global_gui->object_type = CARMEN_SIMULATOR_ACKERMAN_CAR;
-			printf("* entrei %d\n", (int) global_gui->freeze_status);
 			break;
 
 		case GDK_j:
