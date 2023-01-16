@@ -75,6 +75,12 @@ double distance_between_gpss_atennnas = 0.0;
 carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 int base_ackerman_odometry_index = -1;
 int use_kalman = 0;
+double kalman_Q = -1.0; // in meters per second, 3.0 is a good value
+/*
+	parâmetro livre Q, expresso em metros por segundo, que descreve a rapidez com que a precisão diminui na 
+	ausência de novas estimativas de localização. Um parâmetro Q mais alto significa que a precisão diminui mais rapidamente. 
+	Os filtros Kalman geralmente funcionam melhor quando a precisão diminui um pouco mais rápido do que o esperado.
+*/
 
 double vector_antenna_angle = 0.0;
 
@@ -328,7 +334,6 @@ get_nearest_graphslam_gps_pose_opt(double timestamp)
 
 void
 kalman(double lat_measurement, double lng_measurement, double timestamp, double &lat_corrected, double &lng_corrected) {
-	double kalman_Q = 3.0; // in meters per second
 	double accuracy = 1.0;
 	static double last_timestamp = 0.0, variance = -1.0;
 
@@ -455,10 +460,10 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 			gps_xyz_message.y = graphslam_gps_pose->y;
 		}
 	}
-	
+
+	static double x_corrected = 0.0, y_corrected = 0.0;
 	if (use_kalman)
 	{
-		double x_corrected = 0.0, y_corrected = 0.0;
 		kalman(gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.timestamp, x_corrected, y_corrected);
 		fprintf(fgps, "%lf\t%lf\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.x, gps_xyz_message.y, x_corrected, y_corrected, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
 		gps_xyz_message.x = x_corrected;
@@ -666,13 +671,16 @@ gps_xyz_read_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t param_optional_list[] =
 	{
-		{(char *) "commandline", (char *) "kalman", CARMEN_PARAM_ONOFF, &use_kalman, 0, NULL},
-		{(char *) "commandline", (char *) "save_file", CARMEN_PARAM_STRING, &filename, 0, NULL},
+		{(char *) "commandline", (char *) "kalman", 		CARMEN_PARAM_DOUBLE, 	&kalman_Q, 0, NULL},
+		{(char *) "commandline", (char *) "save_file", 		CARMEN_PARAM_STRING, 	&filename, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
-	if (use_kalman)
-		printf("Using Kalman filter\n");
+	if (kalman_Q > 0.0)
+	{
+		use_kalman = 1;
+		printf("using Kalman filter\n");
+	}
 
 	distance_between_gpss_atennnas = DIST2D(gps_pose_in_the_car.position, gps_vector_antenna_pose.position);
 }
