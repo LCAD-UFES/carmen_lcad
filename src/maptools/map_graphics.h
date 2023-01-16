@@ -73,9 +73,9 @@ typedef struct {
 
 typedef void (*carmen_graphics_mapview_drawing_func_t)(GtkMapViewer *map_view);
 
-typedef void (*carmen_graphics_mapview_callback_t)(GtkMapViewer *map_view, carmen_world_point_p world_point, GdkEvent *event);
-
-typedef void (*carmen_graphics_mapview_keyboard_press_callback_t)(GtkMapViewer *map_view, GdkEvent *event);
+typedef void (*carmen_graphics_mapview_callback_t)(GtkMapViewer *map_view,
+						   carmen_world_point_p point,
+						   GdkEvent *event);
 
 GtkMapViewer *carmen_map_graphics_new_viewer(int x_size, int y_size,
 					     double initial_zoom);
@@ -138,7 +138,7 @@ void carmen_map_graphics_add_button_release_event(GtkMapViewer
 
 void 
 carmen_map_graphics_add_keyboard_press_event(GtkMapViewer *map_view,
-		carmen_graphics_mapview_keyboard_press_callback_t
+		carmen_graphics_mapview_callback_t
 		keyboard_press_handler);
 
 void
