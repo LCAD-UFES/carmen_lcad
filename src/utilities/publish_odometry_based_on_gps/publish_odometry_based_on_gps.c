@@ -19,7 +19,7 @@ shutdown_module(int signo)
 		{
 			free(outfile);
 			if (fp)
-				free(fp);
+				fclose(fp);
 		}
 
 		carmen_ipc_disconnect();
@@ -69,13 +69,12 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 void
 gps_xyz_handler(carmen_gps_xyz_message *message)
 {
-	printf("%d\n", message->nr );
 	if (message->nr != gps_to_use)
 		return;
-printf("%d\n", message->nr );
+
 	static int first_time = 1;
-	double v, theta;
-	static double last_v, last_theta, last_x, last_y, last_timestamp;
+	double v, phi, theta;
+	static double last_v, last_phi, last_theta, last_x, last_y, last_timestamp;
 
 	if (first_time)
 	{
@@ -86,20 +85,28 @@ printf("%d\n", message->nr );
 		last_timestamp = message->timestamp;
 
 		first_time = 0;
+
+		if (outfile)
+			fp = fopen(outfile, "w");
+
 		return;
 	}
 
 	v = sqrt((message->x - last_x)*(message->x - last_x) + (message->y - last_y)*(message->y - last_y)) / (message->timestamp - last_timestamp);
-	theta = atan2(message->y - last_y, message->x - last_x);
+	theta = carmen_normalize_theta(atan2(message->y - last_y, message->x - last_x));
+	// phi = theta;
+	phi = .0;
 
 	if (v > max_velocity)
 	{
 		v = last_v;
 		theta = last_theta;
+		phi = last_phi;
 	}
 	else
 	{
 		last_v = v;
+		last_phi = phi;
 		last_theta = theta;
 		last_x = message->x;
 		last_y = message->y;
@@ -108,12 +115,10 @@ printf("%d\n", message->nr );
 
 	if (last_odometry && outfile)
 	{
-		if (!fp)
-			fp = fopen(outfile, "w");
 		fprintf(fp, "%lf\t%lf\t%lf\t%lf\n", v, last_odometry->v, theta, last_odometry->theta);
 	}
 
-	publish_odometry(last_x, last_y, theta, v, 0.0, message->timestamp);
+	publish_odometry(last_x, last_y, theta, v, phi, message->timestamp);
 }
 
 
@@ -136,7 +141,7 @@ main(int argc, char **argv)
 	if (argc == 3)
 	{
 		outfile = (char*) malloc(strlen(argv[2])*sizeof(char));
-		strcpy(outfile, argv[1]);
+		strcpy(outfile, argv[2]);
 	}
 
 	signal(SIGINT, shutdown_module);
