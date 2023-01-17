@@ -106,6 +106,7 @@ tf::Transformer tf_transformer;
 extern double gps_correction_factor;
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern carmen_pose_3D_t gps_pose_in_the_car;
+extern int lidars_used_in_globalpos[MAX_NUMBER_OF_LIDARS + 10];
 
 // theta parameters
 carmen_velodyne_partial_scan_message *last_velodyne_message;
@@ -1027,8 +1028,7 @@ localize_using_lidar(int sensor_number, carmen_velodyne_variable_scan_message *m
 	if (filter->initialized)
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-		//TODO Transformar em parametro @@@Vinicius
-		if (sensor_number == 10)
+		if (lidars_used_in_globalpos[sensor_number])
 			publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,	msg->timestamp);
 
 		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
