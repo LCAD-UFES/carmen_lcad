@@ -333,32 +333,33 @@ get_nearest_graphslam_gps_pose_opt(double timestamp)
 
 
 void
-kalman(double lat_measurement, double lng_measurement, double timestamp, double &lat_corrected, double &lng_corrected) {
+kalman(double lat_measurement, double lng_measurement, double timestamp, double &lat_corrected, double &lng_corrected, int nr) {
 	double accuracy = 1.0;
-	static double last_timestamp = 0.0, variance = -1.0;
+	static double last_timestamp[2] = {0.0}, variance[2] = {-1.0};
 
     if (accuracy < 1.0)
 		accuracy = 1.0;
-    if (variance < 0)
+    
+	if (variance[nr] < 0)
 	{
-        last_timestamp = timestamp;
+        last_timestamp[nr] = timestamp;
         lat_corrected = lat_measurement;
 		lng_corrected = lng_measurement;
-		variance = accuracy*accuracy; 
+		variance[nr] = accuracy*accuracy; 
     }
 	else
 	{
-        double timestamp_inc = timestamp - last_timestamp;
+        double timestamp_inc = timestamp - last_timestamp[nr];
         if (timestamp_inc > 0)
 		{
-            variance += timestamp_inc * kalman_Q * kalman_Q / 1000.0;
-            last_timestamp = timestamp;
+            variance[nr] += timestamp_inc * kalman_Q * kalman_Q / 1000.0;
+            last_timestamp[nr] = timestamp;
         }
 
-        double K = variance / (variance + accuracy * accuracy);
+        double K = variance[nr] / (variance[nr] + accuracy * accuracy);
         lat_corrected += K * (lat_measurement - lat_corrected);
         lng_corrected += K * (lng_measurement - lng_corrected);
-        variance = (1 - K) * variance;
+        variance[nr] = (1 - K) * variance[nr];
     }
 }
 
@@ -461,16 +462,16 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 		}
 	}
 
-	static double x_corrected = 0.0, y_corrected = 0.0;
-	if (use_kalman)
+	static double x_corrected[2] = {0.0}, y_corrected[2] = {0.0};
+	if (use_kalman && ((gps_xyz_message.nr == GPS_1) || (gps_xyz_message.nr == GPS_2)))
 	{
-		kalman(gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.timestamp, x_corrected, y_corrected);
-		fprintf(fgps, "%lf\t%lf\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.x, gps_xyz_message.y, x_corrected, y_corrected, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
-		gps_xyz_message.x = x_corrected;
-		gps_xyz_message.y = y_corrected;
+		kalman(gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.timestamp, x_corrected[gps_xyz_message.nr], y_corrected[gps_xyz_message.nr], gps_xyz_message.nr);
+		fprintf(fgps, "%d\t%lf\t%lf\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.nr, gps_xyz_message.x, gps_xyz_message.y, x_corrected[gps_xyz_message.nr], y_corrected[gps_xyz_message.nr], gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
+		gps_xyz_message.x = x_corrected[gps_xyz_message.nr];
+		gps_xyz_message.y = y_corrected[gps_xyz_message.nr];
 	}
 	else if (filename)
-		fprintf(fgps, "%lf\t%lf\t%d\t%lf\n", gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
+		fprintf(fgps, "%d\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.nr, gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
 
 	carmen_gps_xyz_publish_message(gps_xyz_message);
 

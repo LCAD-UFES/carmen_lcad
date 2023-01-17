@@ -4,6 +4,7 @@
 #include <carmen/base_ackerman_interface.h>
 
 
+int gps_to_use = 1;
 double max_velocity = 0.0;
 carmen_base_ackerman_odometry_message *last_odometry = NULL;
 char *outfile = NULL;
@@ -68,6 +69,10 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 void
 gps_xyz_handler(carmen_gps_xyz_message *message)
 {
+	printf("%d\n", message->nr );
+	if (message->nr != gps_to_use)
+		return;
+printf("%d\n", message->nr );
 	static int first_time = 1;
 	double v, theta;
 	static double last_v, last_theta, last_x, last_y, last_timestamp;
@@ -126,9 +131,11 @@ read_parameters(int argc, char *argv[])
 int
 main(int argc, char **argv)
 {
-	if (argc == 2)
+	gps_to_use = atoi(argv[1]);
+
+	if (argc == 3)
 	{
-		outfile = (char*) malloc(strlen(argv[1])*sizeof(char));
+		outfile = (char*) malloc(strlen(argv[2])*sizeof(char));
 		strcpy(outfile, argv[1]);
 	}
 
