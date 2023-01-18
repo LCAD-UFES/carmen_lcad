@@ -84,6 +84,11 @@ double kalman_Q = -1.0; // in meters per second, 3.0 is a good value
 
 double vector_antenna_angle = 0.0;
 
+char *filename = NULL;
+FILE *fgps = NULL;
+FILE *gnuplot_pipe = NULL;
+int show_kalman_err = 0;
+
 
 double
 //get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
@@ -334,32 +339,35 @@ get_nearest_graphslam_gps_pose_opt(double timestamp)
 
 void
 kalman(double lat_measurement, double lng_measurement, double timestamp, double &lat_corrected, double &lng_corrected, int nr) {
+	if ((nr != GPS_1) && (nr != GPS_2))
+		return;
+	
 	double accuracy = 1.0;
-	static double last_timestamp[2] = {0.0}, variance[2] = {-1.0};
+	static double last_timestamp[2] = {0.0, 0.0}, variance[2] = {-1.0, -1.0};
 
     if (accuracy < 1.0)
 		accuracy = 1.0;
     
-	if (variance[nr] < 0)
+	if (variance[nr-1] < 0)
 	{
-        last_timestamp[nr] = timestamp;
+        last_timestamp[nr-1] = timestamp;
         lat_corrected = lat_measurement;
 		lng_corrected = lng_measurement;
-		variance[nr] = accuracy*accuracy; 
+		variance[nr-1] = accuracy*accuracy; 
     }
 	else
 	{
-        double timestamp_inc = timestamp - last_timestamp[nr];
+        double timestamp_inc = timestamp - last_timestamp[nr-1];
         if (timestamp_inc > 0)
 		{
-            variance[nr] += timestamp_inc * kalman_Q * kalman_Q / 1000.0;
-            last_timestamp[nr] = timestamp;
+            variance[nr-1] += timestamp_inc * kalman_Q * kalman_Q / 1000.0;
+            last_timestamp[nr-1] = timestamp;
         }
 
-        double K = variance[nr] / (variance[nr] + accuracy * accuracy);
+        double K = variance[nr-1] / (variance[nr-1] + accuracy * accuracy);
         lat_corrected += K * (lat_measurement - lat_corrected);
         lng_corrected += K * (lng_measurement - lng_corrected);
-        variance[nr] = (1 - K) * variance[nr];
+        variance[nr-1] = (1 - K) * variance[nr-1];
     }
 }
 
@@ -371,8 +379,36 @@ kalman(double lat_measurement, double lng_measurement, double timestamp, double 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-char *filename = NULL;
-FILE *fgps;
+void
+plot(double x, double x_crr, double y, double y_crr, double timestamp)
+{
+	FILE *fp;
+	static bool first_time = true;
+	static double first_timestamp;
+
+	if (first_time)
+	{
+		first_time = false;
+		gnuplot_pipe = popen("taskset -c 0 gnuplot", "w");
+		fprintf(gnuplot_pipe, "set size square\n");
+
+		fp = fopen("caco-gps.dat", "w");
+		fclose(fp);
+
+		first_timestamp = timestamp;
+	}
+
+	fp = fopen("caco-gps.dat", "a");
+	fprintf(fp, "%lf\t%lf\n", timestamp - first_timestamp, fabs(sqrt((x - x_crr)*(x - x_crr) + (y - y_crr)*(y - y_crr))));
+	fclose(fp);
+
+	fprintf(gnuplot_pipe, "set xrange [-0:%d]\n", (int) ceil(timestamp - first_timestamp));
+	fprintf(gnuplot_pipe, "plot 'caco-gps.dat' u 1:2 t 'err'\n");
+
+	fflush(gnuplot_pipe);
+}
+
+
 void
 carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 {
@@ -443,7 +479,7 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 	static double first_timestamp = 0.0;
 	if (first_timestamp == 0)
 	{
-		if (use_kalman || filename)
+		if (filename)
 			fgps = fopen(filename, "w");
 
 		first_timestamp = gps_xyz_message.timestamp;
@@ -465,12 +501,21 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 	static double x_corrected[2] = {0.0}, y_corrected[2] = {0.0};
 	if (use_kalman && ((gps_xyz_message.nr == GPS_1) || (gps_xyz_message.nr == GPS_2)))
 	{
-		kalman(gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.timestamp, x_corrected[gps_xyz_message.nr], y_corrected[gps_xyz_message.nr], gps_xyz_message.nr);
-		fprintf(fgps, "%d\t%lf\t%lf\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.nr, gps_xyz_message.x, gps_xyz_message.y, x_corrected[gps_xyz_message.nr], y_corrected[gps_xyz_message.nr], gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
-		gps_xyz_message.x = x_corrected[gps_xyz_message.nr];
-		gps_xyz_message.y = y_corrected[gps_xyz_message.nr];
+		kalman(gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.timestamp, x_corrected[gps_xyz_message.nr-1], y_corrected[gps_xyz_message.nr-1], gps_xyz_message.nr);
+		if (fgps)
+			fprintf(fgps, "%d\t%lf\t%lf\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.nr, gps_xyz_message.x, gps_xyz_message.y, x_corrected[gps_xyz_message.nr-1], y_corrected[gps_xyz_message.nr-1], gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
+		
+		// printf("%d\t%lf\n", gps_xyz_message.nr, sqrt((gps_xyz_message.x - x_corrected[gps_xyz_message.nr-1])*(gps_xyz_message.x - x_corrected[gps_xyz_message.nr-1]) + 
+		// 					  gps_xyz_message.y - y_corrected[gps_xyz_message.nr-1])*(gps_xyz_message.y - y_corrected[gps_xyz_message.nr-1]));
+
+		if (show_kalman_err)
+			plot(gps_xyz_message.x, x_corrected[gps_xyz_message.nr-1], 
+				gps_xyz_message.y, y_corrected[gps_xyz_message.nr-1], gps_xyz_message.timestamp);
+
+		gps_xyz_message.x = x_corrected[gps_xyz_message.nr-1];
+		gps_xyz_message.y = y_corrected[gps_xyz_message.nr-1];
 	}
-	else if (filename)
+	else if (fgps)
 		fprintf(fgps, "%d\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.nr, gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
 
 	carmen_gps_xyz_publish_message(gps_xyz_message);
@@ -586,8 +631,11 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 void
 shutdown_module(int signo)
 {
-	if (use_kalman || filename)
+	if (fgps)
 		fclose(fgps);
+	if (gnuplot_pipe)
+		fclose(gnuplot_pipe);
+
 	carmen_ipc_disconnect();
 	if (signo == SIGINT)
 	{
@@ -672,8 +720,9 @@ gps_xyz_read_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t param_optional_list[] =
 	{
-		{(char *) "commandline", (char *) "kalman", 		CARMEN_PARAM_DOUBLE, 	&kalman_Q, 0, NULL},
-		{(char *) "commandline", (char *) "save_file", 		CARMEN_PARAM_STRING, 	&filename, 0, NULL},
+		{(char *) "commandline", (char *) "kalman", 		 CARMEN_PARAM_DOUBLE, 	&kalman_Q, 		  0, NULL},
+		{(char *) "commandline", (char *) "save_file", 		 CARMEN_PARAM_STRING, 	&filename, 		  0, NULL},
+		{(char *) "commandline", (char *) "show_kalman_err", CARMEN_PARAM_ONOFF, 	&show_kalman_err, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 

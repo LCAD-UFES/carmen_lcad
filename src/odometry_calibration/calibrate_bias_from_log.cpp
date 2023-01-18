@@ -38,6 +38,8 @@ int n_params;
 double **limits;
 int use_variable_scan_message = -1;
 char variable_scan_message_name[64];
+int odometry_based_on_gps = 0;
+double max_velocity = 0.0;
 
 int combined_odometry = 0;
 int point_cloud_odometry_using_fake_gps = 0;
@@ -202,6 +204,7 @@ read_gps(FILE *f, int gps_to_use)
 
 		m.x = utm.y;
 		m.y = -utm.x;
+		m.nr = gps_id;
 	}
 
 	return (m);
@@ -378,6 +381,62 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+carmen_robot_ackerman_velocity_message
+estimate_odometry(carmen_gps_xyz_message *message)
+{
+	carmen_robot_ackerman_velocity_message m;
+	m.v = 0.0;
+	m.phi= 0.0;
+	m.timestamp= 0.0;
+
+	if (message->nr != gps_to_use)
+		return m;
+
+	static int first_time = 1;
+	double v, phi, theta, dist;
+	static double last_v, last_phi, last_theta, last_x, last_y, last_timestamp;
+
+	if (first_time)
+	{
+		last_v = 0.0;
+		last_theta = 0.0;
+		last_x = message->x;
+		last_y = message->y;
+		last_timestamp = message->timestamp;
+
+		first_time = 0;
+		return m;
+	}
+
+	dist = sqrt((message->x - last_x)*(message->x - last_x) + (message->y - last_y)*(message->y - last_y));
+	v = dist / (message->timestamp - last_timestamp);
+	theta = carmen_normalize_theta(atan2(message->y - last_y, message->x - last_x));
+	phi = atan2(L * (theta - last_theta), dist);
+
+	if (v > max_velocity)
+	{
+		v = last_v;
+		theta = last_theta;
+		phi = last_phi;
+	}
+	else
+	{
+		last_v = v;
+		last_phi = phi;
+		last_theta = theta;
+		last_x = message->x;
+		last_y = message->y;
+		last_timestamp = message->timestamp;
+	}
+
+	m.v = v;
+	m.phi = phi;
+	m.timestamp = message->timestamp;
+
+	return m;
+}
+
+
 void
 read_data(const char *filename, int gps_to_use, int initial_log_line, int max_log_lines,
 		double initial_time, double final_time, int use_velodyne_timestamp_in_odometry, PsoData *pso_data)
@@ -413,6 +472,18 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 				first_gps_timestamp = m.timestamp;
 			if ((m.timestamp >= (first_gps_timestamp + initial_time)) && (m.timestamp <= (first_gps_timestamp + final_time)))
 				process_gps_data(m, odoms, pso_data);
+			
+			if (odometry_based_on_gps)
+			{
+				carmen_robot_ackerman_velocity_message m_odometry;
+				m_odometry = estimate_odometry(&m);
+
+				if ((m_odometry.timestamp >= (first_gps_timestamp + initial_time)) && (m_odometry.timestamp <= (first_gps_timestamp + final_time)))
+				{
+					odoms.push_back(m_odometry);
+					process_odometry_data(pso_data, m_odometry);
+				}
+			}
 		}
 		else if (!strcmp(tag, "ROBOTVELOCITY_ACK") && (first_gps_timestamp != 0.0))
 		{
@@ -1113,6 +1184,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("min_k2", "Lower limit of k2 spline coefficient", -0.15);
 	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
 	args->add<int>("use_velodyne_timestamp_in_odometry", "Use Velodyne timestamp in ROBOTVELOCITY_ACK messages", 0);
+	args->add<int>("odometry_based_on_gps", "Generate odometry based on GPS", 0);
 	args->parse(argc, argv);
 }
 
@@ -1122,6 +1194,8 @@ initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParam
 {
 	gps_to_use = args->get<int>("gps_to_use");
 	board_to_use = args->get<int>("board_to_use");
+
+	odometry_based_on_gps = args->get<int>("odometry_based_on_gps");
 
 	use_non_linear_phi = args->get<int>("use_non_linear_phi");
 
@@ -1134,6 +1208,8 @@ initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParam
 
 	pso_data.max_steering_angle = carmen_ini_params->get<double>("robot_max_steering_angle");
 	L = pso_data.distance_between_front_and_rear_axles = carmen_ini_params->get<double>("robot_distance_between_front_and_rear_axles");
+
+	max_velocity = carmen_ini_params->get<double>("robot_max_velocity");
 
 	acc = gsl_interp_accel_alloc();
 	const gsl_interp_type *type = gsl_interp_cspline;
