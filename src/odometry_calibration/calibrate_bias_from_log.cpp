@@ -411,9 +411,10 @@ estimate_odometry(carmen_gps_xyz_message *message)
 	dist = sqrt((message->x - last_x)*(message->x - last_x) + (message->y - last_y)*(message->y - last_y));
 	v = dist / (message->timestamp - last_timestamp);
 	theta = carmen_normalize_theta(atan2(message->y - last_y, message->x - last_x));
-	phi = atan2(L * (theta - last_theta), dist);
+	// phi = atan2(L * (theta - last_theta), dist);
+	phi = 0.0;
 
-	if (v > max_velocity)
+	if ((v > max_velocity) || (fabs(message->timestamp - last_timestamp) < 1e-5))
 	{
 		v = last_v;
 		theta = last_theta;
