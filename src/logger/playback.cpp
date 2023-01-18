@@ -978,7 +978,18 @@ main_playback_loop(void)
 			rewind_frame = 0;
 		}
 		if (paused)
+		{
+			if (killall_after_finish)
+			{
+				char buf[512];
+				FILE *cmd_pipe = popen("pidof -s proccontrol", "r");
+				fgets(buf, 512, cmd_pipe);
+				pid_t pid = strtoul(buf, NULL, 10);
+				pclose( cmd_pipe );
+				kill(pid, SIGINT);
+			}
 			carmen_ipc_sleep(0.01);
+		}
 		if (fast)
 			carmen_ipc_sleep(0.000001);
 		else
