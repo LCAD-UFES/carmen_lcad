@@ -74,7 +74,7 @@ gps_xyz_handler(carmen_gps_xyz_message *message)
 		return;
 printf("%d\n", message->nr );
 	static int first_time = 1;
-	double v, theta;
+	double v, theta, phi;
 	static double last_v, last_theta, last_x, last_y, last_timestamp;
 
 	if (first_time)
@@ -91,6 +91,15 @@ printf("%d\n", message->nr );
 
 	v = sqrt((message->x - last_x)*(message->x - last_x) + (message->y - last_y)*(message->y - last_y)) / (message->timestamp - last_timestamp);
 	theta = atan2(message->y - last_y, message->x - last_x);
+	carmen_point_t p1;
+	carmen_point_t p2;
+	p1.x = last_x;
+	p1.y = last_y;
+	p2.x = message->x;
+	p2.y = message->y;
+	double delta_theta = theta-last_theta;
+
+	phi = 0.0;//atan2( 5.812 * delta_theta , DIST2D(p1,p2) );
 
 	if (v > max_velocity)
 	{
@@ -113,7 +122,7 @@ printf("%d\n", message->nr );
 		fprintf(fp, "%lf\t%lf\t%lf\t%lf\n", v, last_odometry->v, theta, last_odometry->theta);
 	}
 
-	publish_odometry(last_x, last_y, theta, v, 0.0, message->timestamp);
+	publish_odometry(last_x, last_y, theta, v, phi, message->timestamp);
 }
 
 
