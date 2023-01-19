@@ -1,4 +1,5 @@
 #include "neural_lane_localizer.hpp"
+#include "YOLOPv2-ncnn/src/yolopv2.hpp"
 
 
 int camera;
@@ -527,6 +528,11 @@ call_neural_network()
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
+
+	std::vector<Object> objects;
+    Mat da_seg_mask, ll_seg_mask;
+    detect_yolopv2(image, objects, da_seg_mask, ll_seg_mask);
+    draw_objects(image, objects,da_seg_mask, ll_seg_mask);
 
 	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 //	predictions = filter_predictions_of_interest(predictions);

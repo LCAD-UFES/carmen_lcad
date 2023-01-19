@@ -1,7 +1,7 @@
 include ../Makefile.conf
 
-MODULE_NAME = Neural Object Detector
-MODULE_COMMENT = Detect vehicles using convolutional neural networks.
+MODULE_NAME = Neural Lane Detector
+MODULE_COMMENT = Detect lane using convolutional neural networks.
 
 LINK = g++ -g
 CXXFLAGS = -std=c++11 -g
@@ -21,11 +21,11 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
 		  -lcamera_drivers
 
-SOURCES = neural_lane_localizer_main.cpp
+SOURCES = neural_lane_localizer_main.cpp YOLOPv2-ncnn/src/yolopv2.cpp
 
 PUBLIC_BINARIES = neural_lane_localizer
 
-TARGETS = neural_lane_localizer
+TARGETS = neural_lane_localizer YOLOPv2-ncnn/src/yolopv2
 
 neural_lane_localizer: neural_lane_localizer_main.o
 
