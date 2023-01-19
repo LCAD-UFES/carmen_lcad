@@ -6,6 +6,7 @@
 
 int gps_to_use = 1;
 double max_velocity = 0.0;
+double L = 0.0; // distância entre os eixos dianteiro e traseiro do veículo
 carmen_base_ackerman_odometry_message *last_odometry = NULL;
 char *outfile = NULL;
 FILE *fp = NULL;
@@ -73,7 +74,7 @@ gps_xyz_handler(carmen_gps_xyz_message *message)
 		return;
 
 	static int first_time = 1;
-	double v, phi, theta;
+	double v, phi, theta, dist;
 	static double last_v, last_phi, last_theta, last_x, last_y, last_timestamp;
 
 	if (first_time)
@@ -92,12 +93,13 @@ gps_xyz_handler(carmen_gps_xyz_message *message)
 		return;
 	}
 
-	v = sqrt((message->x - last_x)*(message->x - last_x) + (message->y - last_y)*(message->y - last_y)) / (message->timestamp - last_timestamp);
+	dist = sqrt((message->x - last_x)*(message->x - last_x) + (message->y - last_y)*(message->y - last_y));
+	v = dist / (message->timestamp - last_timestamp);
 	theta = carmen_normalize_theta(atan2(message->y - last_y, message->x - last_x));
-	// phi = theta;
-	phi = .0;
+	// phi = atan2(L * (theta - last_theta), dist);
+	phi = 0.0;
 
-	if (v > max_velocity)
+	if ((v > max_velocity) || (fabs(message->timestamp - last_timestamp) < 1e-5))
 	{
 		v = last_v;
 		theta = last_theta;
@@ -114,20 +116,19 @@ gps_xyz_handler(carmen_gps_xyz_message *message)
 	}
 
 	if (last_odometry && outfile)
-	{
 		fprintf(fp, "%lf\t%lf\t%lf\t%lf\n", v, last_odometry->v, theta, last_odometry->theta);
-	}
 
 	publish_odometry(last_x, last_y, theta, v, phi, message->timestamp);
 }
 
 
-static void 
+void 
 read_parameters(int argc, char *argv[])
 {
 	carmen_param_t param_list[]= 
 	{
-		{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &max_velocity, 1, NULL}
+		{"robot", "max_velocity", 						   CARMEN_PARAM_DOUBLE, &max_velocity, 1, NULL},
+		{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &L, 		   1, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 }
