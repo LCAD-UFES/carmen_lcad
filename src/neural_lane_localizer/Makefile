@@ -21,11 +21,11 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
 		  -lcamera_drivers
 
-SOURCES = neural_lane_localizer_main.cpp YOLOPv2-ncnn/src/yolopv2.cpp
+SOURCES = neural_lane_localizer_main.cpp
 
 PUBLIC_BINARIES = neural_lane_localizer
 
-TARGETS = neural_lane_localizer YOLOPv2-ncnn/src/yolopv2
+TARGETS = neural_lane_localizer
 
 neural_lane_localizer: neural_lane_localizer_main.o
 
