@@ -58,8 +58,13 @@ int point_cloud_odometry_using_fake_gps = 0;
 int use_variable_scan_message = -1;
 char variable_scan_message_name[64];
 
+int gps_to_use = 1;
+
 double initial_time;
 double final_time;
+
+int odometry_based_on_gps = 0;
+double max_velocity = 0.0;
 
 int VERBOSE = 0;
 
@@ -422,6 +427,63 @@ build_combined_visual_and_car_odometry(carmen_robot_ackerman_velocity_message *r
 }
 
 
+carmen_robot_ackerman_velocity_message
+estimate_odometry(carmen_gps_xyz_message *message)
+{
+	carmen_robot_ackerman_velocity_message m;
+	m.v = 0.0;
+	m.phi= 0.0;
+	m.timestamp= 0.0;
+
+	if (message->nr != gps_to_use)
+		return m;
+
+	static int first_time = 1;
+	double v, phi, theta, dist;
+	static double last_v, last_phi, last_theta, last_x, last_y, last_timestamp;
+
+	if (first_time)
+	{
+		last_v = 0.0;
+		last_theta = 0.0;
+		last_x = message->x;
+		last_y = message->y;
+		last_timestamp = message->timestamp;
+
+		first_time = 0;
+		return m;
+	}
+
+	dist = sqrt((message->x - last_x)*(message->x - last_x) + (message->y - last_y)*(message->y - last_y));
+	v = dist / (message->timestamp - last_timestamp);
+	theta = carmen_normalize_theta(atan2(message->y - last_y, message->x - last_x));
+	// phi = atan2(L * (theta - last_theta), dist);
+	phi = 0.0;
+
+	if ((v > max_velocity) || (fabs(message->timestamp - last_timestamp) < 1e-5))
+	{
+		v = last_v;
+		theta = last_theta;
+		phi = last_phi;
+	}
+	else
+	{
+		last_v = v;
+		last_phi = phi;
+		last_theta = theta;
+		last_x = message->x;
+		last_y = message->y;
+		last_timestamp = message->timestamp;
+	}
+
+	m.v = v;
+	m.phi = phi;
+	m.timestamp = message->timestamp;
+
+	return m;
+}
+
+
 void
 generate_sync_file(const char *filename, int gps_to_use, double gps_latency, double initial_time, double final_time,
 		double v_multiplier, double phi_multiplier, double phi_bias, double distance_between_front_and_rear_axles,
@@ -449,6 +511,13 @@ generate_sync_file(const char *filename, int gps_to_use, double gps_latency, dou
 			carmen_gps_xyz_message m = read_gps(f, gps_to_use);
 			gps_xyz_message_handler(&m, gps_to_use, gps_latency, hdt_yaw, hdt_timestamp);
 			num_gps_messages++;
+
+			if (odometry_based_on_gps)
+			{
+				carmen_robot_ackerman_velocity_message m_odometry;
+				m_odometry = estimate_odometry(&m);
+				robot_ackerman_handler(&m_odometry, v_multiplier, phi_multiplier, phi_bias);
+			}
 		}
 		else if (!strcmp(tag, "NMEAHDT"))
 		{
@@ -550,6 +619,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("min_k2", "Lower limit of k2 spline coefficient", -0.15);
 	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
 	args->add<int>("use_velodyne_timestamp_in_odometry", "Use Velodyne timestamp in ROBOTVELOCITY_ACK messages", 0);
+	args->add<int>("odometry_based_on_gps", "Generate odometry based on GPS", 0);
 
 	args->parse(argc, argv);
 }
@@ -566,6 +636,9 @@ initialize_parameters(CommandLineArguments *args, CarmenParamFile *carmen_ini_pa
 	combine_odometry_phi = carmen_ini_params->get<int>("robot_combine_odometry_phi");
 	combine_odometry_vel = carmen_ini_params->get<int>("robot_combine_odometry_vel");
 	point_cloud_odometry_using_fake_gps = carmen_ini_params->get<int>("point_cloud_odometry_using_fake_gps");
+
+	odometry_based_on_gps = args->get<int>("odometry_based_on_gps");
+	max_velocity = carmen_ini_params->get<double>("robot_max_velocity");
 }
 
 
@@ -582,7 +655,7 @@ main(int argc, char **argv)
 
 	FILE *odometry_calibration_file = safe_fopen(args.get<string>("odometry_calibration_path").c_str(), "r");
 	double v_multiplier, v_bias, phi_multiplier, phi_bias, initial_angle, gps_latency, L;
-	int gps_to_use;
+
 	fscanf(odometry_calibration_file, "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf, GPS to use: %d, GPS Latency: %lf, L: %lf",
 			&v_multiplier, &v_bias, &phi_multiplier, &phi_bias, &initial_angle, &gps_to_use, &gps_latency, &L);
 //	printf("v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf, GPS to use: %d, GPS Latency: %lf, L: %lf\n",

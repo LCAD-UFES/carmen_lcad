@@ -6,7 +6,9 @@
 #include <string>
 #include <sstream>
 
+std::string trim(std::string s);
 std::vector<std::string> string_split(std::string s, std::string pattern);
+std::vector<std::string> string_split_once(std::string s, std::string pattern);
 std::string replace(const std::string &base, const std::string &from, const std::string &to);
 
 template<class T>
