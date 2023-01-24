@@ -158,12 +158,17 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavi
 
 	for (int k = index; k < path_goals_and_annotations_message->number_of_poses; k++)
 	{
-		double current_beta = convert_theta1_to_beta(path_goals_and_annotations_message->poses[k].theta, path_goals_and_annotations_message->poses[k].trailer_theta[0]); // Necessário para trocar a referência do trailer_theta
-
 		SE2 lane_in_world_reference(path_goals_and_annotations_message->poses[k].x, path_goals_and_annotations_message->poses[k].y, path_goals_and_annotations_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], 0, {convert_beta_to_theta1(lane_in_car_reference[2], current_beta), 0.0, 0.0, 0.0, 0.0},
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2], 0, {0.0, 0.0, 0.0, 0.0, 0.0},
 				path_goals_and_annotations_message->poses[k].v, path_goals_and_annotations_message->poses[k].phi, 0.0};
+
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		{
+			double current_beta = convert_theta1_to_beta(path_goals_and_annotations_message->poses[k].theta, path_goals_and_annotations_message->poses[k].trailer_theta[z]); // Necessário para trocar a referência do trailer_theta
+			local_reference_lane_point.trailer_theta[z] = convert_beta_to_theta1(lane_in_car_reference[2], current_beta);
+		}
+
 		lane_in_local_pose->push_back(local_reference_lane_point);
 	}
 }
@@ -250,6 +255,11 @@ add_points_to_goal_list_interval(carmen_robot_and_trailers_path_point_t p1, carm
 		new_point.y = p1.y + (double) i * delta_y;
 		new_point.theta = carmen_normalize_theta(p1.theta + (double) i * delta_theta);
 		new_point.trailer_theta[0] = carmen_normalize_theta(p1.trailer_theta[0] + (double) i * delta_beta);
+		for (size_t z = 1; z < MAX_NUM_TRAILERS; z++)
+		{
+			double current_delta_trailer_theta = carmen_normalize_theta(p2.trailer_theta[z] - p1.trailer_theta[z]) / (double) num_points;
+			new_point.trailer_theta[z] = carmen_normalize_theta(p1.trailer_theta[z] + (double) i * current_delta_trailer_theta);
+		}
 
 		detailed_lane.push_back(new_point);
 	}
@@ -609,13 +619,14 @@ get_path_from_optimized_tcp(vector<carmen_robot_and_trailers_path_point_t> &path
 		carmen_robot_and_trailers_pose_t *localizer_pose)
 {
 	if (GlobalState::use_mpc)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i, 0.025);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.025);
 	else if (use_unity_simulator)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.02);
 	else if (GlobalState::eliminate_path_follower)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.02);
 	else
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.beta_i);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i);
+
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
@@ -741,12 +752,16 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailers_pose_t *loc
 	td.v_i = last_odometry.v;
 
 	if (GlobalState::semi_trailer_config.num_semi_trailers == 0)
-		td.beta_i = 0.0;
+	{
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			td.trailer_theta_i[z] = 0.0;
+	}
 	else
-		td.beta_i = carmen_normalize_theta(-convert_theta1_to_beta(localizer_pose->theta, localizer_pose->trailer_theta[0])); // Só funcionou dessa forma, utilizando o beta nessa linha com o -
+	{
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			td.trailer_theta_i[z] = carmen_normalize_theta(-convert_theta1_to_beta(localizer_pose->theta, localizer_pose->trailer_theta[z])); // Só funcionou dessa forma, utilizando o beta nessa linha com o -
+	}
 
-
-	double goal_beta = convert_theta1_to_beta(goal_pose->theta, goal_pose->beta); // Esse beta do goal_pose é trailer_theta. Aqui é feito a conversão para o beta para conseguir trocar o trailer_theta de referência
 
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y,localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
@@ -754,8 +769,12 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailers_pose_t *loc
 	td.goal_pose.x = goal_in_car_reference[0];
 	td.goal_pose.y = goal_in_car_reference[1];
 	td.goal_pose.theta = goal_in_car_reference[2];
-	td.goal_pose.trailer_theta[0] = convert_beta_to_theta1(goal_in_car_reference[2], goal_beta);
 
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+	{
+		double goal_beta = convert_theta1_to_beta(goal_pose->theta, goal_pose->trailer_theta[z]); // Esse beta do goal_pose é trailer_theta. Aqui é feito a conversão para o beta para conseguir trocar o trailer_theta de referência
+		td.goal_pose.trailer_theta[z] = convert_beta_to_theta1(goal_in_car_reference[2], goal_beta);
+	}
 
 	return (td);
 }

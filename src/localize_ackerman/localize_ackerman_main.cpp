@@ -170,7 +170,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		last_timestamp = timestamp;
 	if (semi_trailer_config.num_semi_trailers > 0)
 	{
-		globalpos.num_trailers = 1;
+		globalpos.num_trailers = semi_trailer_config.num_semi_trailers;
 		globalpos.semi_trailer_engaged = 1;
 		carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point =
 		{
@@ -195,7 +195,11 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 			globalpos.trailer_theta[0] = compute_semi_trailer_theta1(robot_and_trailer_traj_point, delta_t,
 				car_config, semi_trailer_config, spherical_sensor_params, (void*)last_variable_message, lidar_to_compute_theta);
 		else
-			globalpos.trailer_theta[0] = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
+		{
+//			globalpos.trailer_theta[0] = compute_semi_trailer_beta(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config);
+			for (int i = 0; i < semi_trailer_config.num_semi_trailers; i++)
+				globalpos.trailer_theta[i] = compute_semi_trailer_thetas(robot_and_trailer_traj_point, delta_t, car_config, semi_trailer_config, i);
+		}
 	
 	}
 	else

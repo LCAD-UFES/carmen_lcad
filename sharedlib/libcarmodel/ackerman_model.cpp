@@ -43,6 +43,44 @@ compute_semi_trailer_beta(carmen_robot_and_trailers_traj_point_t robot_and_trail
 }
 
 
+double
+compute_semi_trailer_thetas(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
+		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config, int trailer_index)
+{
+	double return_trailer_thetas[MAX_NUM_TRAILERS];
+
+	if (semi_trailer_config.num_semi_trailers == 0)
+		return ( robot_and_trailer_traj_point.theta);
+
+	double L = robot_config.distance_between_front_and_rear_axles;
+
+	robot_and_trailer_traj_point.trailer_theta[0] = robot_and_trailer_traj_point.trailer_theta[0] + dt *
+			robot_and_trailer_traj_point.v * (
+					 sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers[0].d -
+						   (semi_trailer_config.semi_trailers[0].M / (L * semi_trailer_config.semi_trailers[0].d)) * cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
+
+	return_trailer_thetas[0] = robot_and_trailer_traj_point.trailer_theta[0];
+
+	// Apesar da fórmula acima utilizar o valor M, a de baixo ainda não utiliza. A variáveis num_semi_trailers também provavelmente vai ser substituída pela num_trailers da carmen_robot_and_trailers_traj_point_t
+//	for (int i = 1; i < (trailer_index + 1); i++)
+	if (trailer_index > 0)
+	{
+		double step = (dt * robot_and_trailer_traj_point.v) / semi_trailer_config.semi_trailers[trailer_index].d;
+
+		//produto
+		double product = cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]);
+		for (int j = 1; j < (trailer_index); j++)
+			product = product * (cos(robot_and_trailer_traj_point.trailer_theta[j - 1] - robot_and_trailer_traj_point.trailer_theta[j]));
+
+		double current_trailer_theta = step * product * ( sin(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]) );
+		robot_and_trailer_traj_point.trailer_theta[trailer_index] += current_trailer_theta ;
+		return_trailer_thetas[trailer_index] = robot_and_trailer_traj_point.trailer_theta[trailer_index];
+	}
+
+	return (return_trailer_thetas[trailer_index]);
+}
+
+
 int
 ode_func(double t, const double x[], double dxdt[], void *params)
 {
@@ -151,7 +189,9 @@ predict_next_pose_step(carmen_robot_and_trailers_traj_point_t *new_robot_state, 
 	new_robot_state->x	   += move_x;
 	new_robot_state->y	   += move_y;
 	new_robot_state->theta += s * tan(new_robot_state->phi) / robot_config.distance_between_front_and_rear_axles;
-	new_robot_state->trailer_theta[0] = compute_semi_trailer_beta(*new_robot_state, delta_t, robot_config, semi_trailer_config);
+//	new_robot_state->trailer_theta[0] = compute_semi_trailer_beta(*new_robot_state, delta_t, robot_config, semi_trailer_config);
+	for (int i = 0; i < semi_trailer_config.num_semi_trailers; i ++)
+		new_robot_state->trailer_theta[i] = compute_semi_trailer_thetas(*new_robot_state, delta_t, robot_config, semi_trailer_config, i);
 
 	new_robot_state->v = v0 + a * delta_t;
 

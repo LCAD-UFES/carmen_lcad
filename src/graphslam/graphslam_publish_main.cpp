@@ -177,7 +177,7 @@ base_ackerman_message_handler(carmen_base_ackerman_odometry_message *message)
 
 		// Set the if condition to 1 to use the Ackerman motion model to predict the vehicle's pose 
 		// in the base_ackerman timestamp. 
-		if (0) 
+		if (0)
 		{
 			double dt = message->timestamp - poses_array[index].second;
 

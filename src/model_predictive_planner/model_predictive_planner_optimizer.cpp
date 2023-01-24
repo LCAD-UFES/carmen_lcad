@@ -372,14 +372,17 @@ double
 compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state, Command &command,
 		vector<carmen_robot_and_trailers_path_point_t> &path,
 		TrajectoryControlParameters tcp,
-		gsl_spline *phi_spline, double v0, double i_beta, double delta_t)
+		gsl_spline *phi_spline, double v0, double *i_trailer_theta, double delta_t)
 {
 	gsl_interp_accel *acc = gsl_interp_accel_alloc();
 
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;
 	robot_state.theta = 0.0;
-	robot_state.trailer_theta[0] = i_beta;
+//	robot_state.trailer_theta[0] = i_beta;
+	for (size_t j = 0; j < MAX_NUM_TRAILERS; j++)
+		robot_state.trailer_theta[j] = i_trailer_theta[j];
+
 	robot_state.v = v0;
 	robot_state.phi = tcp.k[0];
 
@@ -530,7 +533,7 @@ get_phi_spline(TrajectoryControlParameters tcp)
 
 vector<carmen_robot_and_trailers_path_point_t>
 simulate_car_from_parameters(TrajectoryDimensions &td,
-		TrajectoryControlParameters &tcp, double v0, double i_beta, double delta_t)
+		TrajectoryControlParameters &tcp, double v0, double *i_trailer_theta, double delta_t)
 {
 	vector<carmen_robot_and_trailers_path_point_t> path = {};
 	if (!tcp.valid)
@@ -540,7 +543,7 @@ simulate_car_from_parameters(TrajectoryDimensions &td,
 
 	Command command;
 	carmen_robot_and_trailers_traj_point_t robot_state;
-	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, v0, i_beta, delta_t);
+	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, v0, i_trailer_theta, delta_t);
 
 	gsl_spline_free(phi_spline);
 
@@ -886,13 +889,17 @@ move_path_to_current_robot_pose(vector<carmen_robot_and_trailers_path_point_t> &
 {
 	for (std::vector<carmen_robot_and_trailers_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
-		double beta = convert_theta1_to_beta(it->theta, it->trailer_theta[0]);
 		double x = localizer_pose->x + it->x * cos(localizer_pose->theta) - it->y * sin(localizer_pose->theta);
 		double y = localizer_pose->y + it->x * sin(localizer_pose->theta) + it->y * cos(localizer_pose->theta);
 		it->x = x;
 		it->y = y;
+		double old_theta = it->theta;
 		it->theta = carmen_normalize_theta(it->theta + localizer_pose->theta);
-		it->trailer_theta[0] = convert_beta_to_theta1(it->theta, beta);
+		for (size_t j = 0; j < MAX_NUM_TRAILERS; j++)
+		{
+			double beta = convert_theta1_to_beta(old_theta, it->trailer_theta[j]);
+			it->trailer_theta[j] = convert_beta_to_theta1(it->theta, beta);
+		}
 
 	}
 }
@@ -1278,7 +1285,35 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_robot_and_traile
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		getchar();
 	}
+/*
+	if (proximity_to_obstacles_for_path > 100.0)
+	{
+		for (unsigned int i = 0; i < path.size(); i += 1)
+		{
+			carmen_robot_and_trailers_pose_t point_to_check = {path[i].x, path[i].y, path[i].theta, path[i].num_trailers, {0.0}};
 
+					for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+						point_to_check.trailer_theta[z] = path[i].trailer_theta[z];
+
+					double proximity_point = carmen_obstacle_avoider_proximity_to_obstacles(GlobalState::localizer_pose,
+							point_to_check, GlobalState::distance_map, safety_distance);
+
+//			printf("p %d %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", i, path[i].x, path[i].y, path[i].theta, path[i].trailer_theta[0], path[i].trailer_theta[1], path[i].trailer_theta[2], path[i].trailer_theta[3], path[i].trailer_theta[4], proximity_point);
+
+			carmen_robot_and_trailers_pose_t temp_pose;
+
+
+			temp_pose.x = GlobalState::localizer_pose->x + (path[i].x * cos(GlobalState::localizer_pose->theta + path[i].theta) - path[i].y * sin(GlobalState::localizer_pose->theta + path[i].theta));
+			temp_pose.y = GlobalState::localizer_pose->y + (path[i].x * sin(GlobalState::localizer_pose->theta + path[i].theta) + path[i].y * cos(GlobalState::localizer_pose->theta + path[i].theta));
+			temp_pose.theta = GlobalState::localizer_pose->theta + path[i].theta;
+			temp_pose.trailer_theta[0] = convert_beta_to_theta1(temp_pose.theta, convert_theta1_to_beta(path[i].theta, path[i].trailer_theta[0]));
+			temp_pose.trailer_theta[1] = convert_beta_to_theta1(temp_pose.theta, convert_theta1_to_beta(path[i].theta, path[i].trailer_theta[1]));
+//			printf("l %d %lf %lf %lf %lf %lf\n", i, temp_pose.x, temp_pose.y, temp_pose.theta, temp_pose.trailer_theta[0], temp_pose.trailer_theta[1]);
+
+		}
+
+	}
+*/
 	return (proximity_to_obstacles_for_path);
 }
 
@@ -1341,6 +1376,27 @@ compute_semi_trailer_to_goal_distance(vector<carmen_robot_and_trailers_path_poin
 
 	double semi_trailer_to_goal_distance = DIST2D(semi_trailer_pose, expected_semi_trailer_pose);
 
+	if (GlobalState::semi_trailer_config.num_semi_trailers > 1)
+	{
+		carmen_point_t semi_trailers_poses[MAX_NUM_TRAILERS];
+		carmen_point_t expected_semi_trailers_poses[MAX_NUM_TRAILERS];
+		semi_trailers_poses[0] = semi_trailer_pose;
+		expected_semi_trailers_poses[0] = expected_semi_trailer_pose;
+
+		for (int i = 1; i < GlobalState::semi_trailer_config.num_semi_trailers; i++)
+		{
+			semi_trailers_poses[i].x = semi_trailers_poses[i-1].x - GlobalState::semi_trailer_config.semi_trailers[i - 1].M * cos(robot_pose.trailer_theta[i-1]) - GlobalState::semi_trailer_config.semi_trailers[i - 1].d * cos(robot_pose.trailer_theta[i]);
+			semi_trailers_poses[i].y = semi_trailers_poses[i-1].y - GlobalState::semi_trailer_config.semi_trailers[i - 1].M * sin(robot_pose.trailer_theta[i-1]) - GlobalState::semi_trailer_config.semi_trailers[i - 1].d * sin(robot_pose.trailer_theta[i]);
+			semi_trailers_poses[i].theta = robot_pose.trailer_theta[i];
+
+			expected_semi_trailers_poses[i].x = expected_semi_trailers_poses[i-1].x - GlobalState::semi_trailer_config.semi_trailers[i - 1].M * cos(expected_robot_pose.trailer_theta[i-1]) - GlobalState::semi_trailer_config.semi_trailers[i - 1].d * cos(expected_robot_pose.trailer_theta[i]);
+			expected_semi_trailers_poses[i].y = expected_semi_trailers_poses[i-1].y - GlobalState::semi_trailer_config.semi_trailers[i - 1].M * sin(expected_robot_pose.trailer_theta[i-1]) - GlobalState::semi_trailer_config.semi_trailers[i - 1].d * sin(expected_robot_pose.trailer_theta[i]);
+			expected_semi_trailers_poses[i].theta = expected_robot_pose.trailer_theta[i];
+			semi_trailer_to_goal_distance += DIST2D(semi_trailers_poses[i], expected_semi_trailers_poses[i]);
+		}
+
+	}
+
 	return (semi_trailer_to_goal_distance);
 }
 
@@ -1355,7 +1411,7 @@ mpp_optimization_function_f(const gsl_vector *x, void *params)
 		return (1000000.0);
 
 	TrajectoryDimensions td;
-	vector<carmen_robot_and_trailers_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->beta_i);
+	vector<carmen_robot_and_trailers_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->trailer_theta_i);
 
 //	double beta_activation_factor = get_beta_activation_factor();
 	my_params->plan_cost = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
@@ -1366,7 +1422,7 @@ mpp_optimization_function_f(const gsl_vector *x, void *params)
 	double semi_trailer_to_goal_distance = 0.0;
 //	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
 //		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
-	if ((GlobalState::semi_trailer_config.num_semi_trailers != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
+	if (( (GlobalState::semi_trailer_config.num_semi_trailers != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN) ) || (GlobalState::semi_trailer_config.num_semi_trailers > 1))
 		semi_trailer_to_goal_distance = compute_semi_trailer_to_goal_distance(path, my_params->target_td);
 //		semi_trailer_to_goal_distance = carmen_normalize_theta(carmen_radians_to_degrees(td.trailer_theta[0]) - carmen_radians_to_degrees(my_params->target_td->beta)) *
 //				carmen_normalize_theta(carmen_radians_to_degrees(td.trailer_theta[0]) - carmen_radians_to_degrees(my_params->target_td->beta));
@@ -1429,7 +1485,7 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 		return (1000000.0);
 
 	TrajectoryDimensions td;
-	vector<carmen_robot_and_trailers_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->beta_i);
+	vector<carmen_robot_and_trailers_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->trailer_theta_i);
 
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
@@ -1471,7 +1527,7 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 	double semi_trailer_to_goal_distance = 0.0;
 //	if ((GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_SEMI_TRAILER) ||
 //		(GlobalState::behavior_selector_task == BEHAVIOR_SELECTOR_PARK_TRUCK_SEMI_TRAILER))
-	if ((GlobalState::semi_trailer_config.num_semi_trailers != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN))
+	if (( (GlobalState::semi_trailer_config.num_semi_trailers != 0) && (GlobalState::route_planner_state ==  EXECUTING_OFFROAD_PLAN) ) || (GlobalState::semi_trailer_config.num_semi_trailers > 1))
 		semi_trailer_to_goal_distance = compute_semi_trailer_to_goal_distance(path, my_params->target_td);
 //		semi_trailer_to_goal_distance = carmen_normalize_theta(carmen_radians_to_degrees(td.trailer_theta[0]) - carmen_radians_to_degrees(my_params->target_td->beta)) *
 //				carmen_normalize_theta(carmen_radians_to_degrees(td.trailer_theta[0]) - carmen_radians_to_degrees(my_params->target_td->beta));
@@ -1488,12 +1544,13 @@ mpp_optimization_function_g(const gsl_vector *x, void *params)
 
 	if (print_ws)
 	{
-		printf("* r % 3.8lf, w1 % 3.8lf, w2 % 3.8lf, w3 % 3.8lf, w4 % 3.8lf, w5 % 3.8lf, ps %d, Steering: % 3.8lf\n", result,
+		printf("* r % 3.8lf, w1 % 3.8lf, w2 % 3.8lf, w3 % 3.8lf, w4 % 3.8lf, w5 % 3.8lf, w6 %lf, ps %d, Steering: % 3.8lf\n", result,
 				GlobalState::w1 * ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist)) / my_params->distance_by_index,
 				w2_activation_factor * GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index,
 				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index,
 				w4_activation_factor * GlobalState::w4 * path_to_lane_distance,
 				GlobalState::w5 * proximity_to_obstacles,
+				GlobalState::w6 * semi_trailer_to_goal_distance * semi_trailer_to_goal_distance,
 				(int) path.size(),
 				(GlobalState::w7 * steering_error));
 //		print_tcp(tcp);
@@ -1654,7 +1711,7 @@ double
 get_path_to_lane_distance(TrajectoryDimensions td,
 		TrajectoryControlParameters tcp, ObjectiveFunctionParams *my_params)
 {
-	vector<carmen_robot_and_trailers_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->beta_i);
+	vector<carmen_robot_and_trailers_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->trailer_theta_i);
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
 	{

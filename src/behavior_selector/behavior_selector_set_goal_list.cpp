@@ -140,6 +140,7 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 {
 	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
+//	printf("try_avoiding_obstacle: %d\n", rddf_pose_hit_obstacle);
 #ifdef OVERTAKING
 	return 0;
 #endif

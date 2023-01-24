@@ -108,7 +108,7 @@ carmen_localize_ackerman_unsubscribe_sensor_message(carmen_handler_t handler);
 
 void 
 carmen_localize_ackerman_initialize_gaussian_command(carmen_point_t mean,
-					    carmen_point_t std, double beta);
+					    carmen_point_t std, double *trailer_theta, int num_trailers);
 
 void
 carmen_localize_ackerman_initialize_gaussian_time_command(carmen_point_t mean,

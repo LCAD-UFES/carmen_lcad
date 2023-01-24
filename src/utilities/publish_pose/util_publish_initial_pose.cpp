@@ -21,7 +21,11 @@ publish_starting_pose(carmen_point_t pose)
 	std.y = 0.001;
 	std.theta = carmen_degrees_to_radians(0.01);
 
-	carmen_localize_ackerman_initialize_gaussian_command(pose, std, theta_semi_trailer);
+	double current_trailer_theta[MAX_NUM_TRAILERS];
+	current_trailer_theta[0] = theta_semi_trailer;
+	for (size_t z = 1; z < MAX_NUM_TRAILERS; z++)
+		current_trailer_theta[z] = 0.0;
+	carmen_localize_ackerman_initialize_gaussian_command(pose, std, current_trailer_theta, 1);
 
 	return pose;
 }

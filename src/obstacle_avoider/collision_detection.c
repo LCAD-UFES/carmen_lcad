@@ -664,11 +664,11 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 	check_collision_config_initialization();
 
 	double proximity_to_obstacles = 0.0;
-
+	carmen_position_t displaced_point;
 	for (int i = 0; i < global_collision_config.n_markers; i++)
 	{
 		// Pega local_point_to_check e coloca no sistema de coordenadas definido por localizer_pose
-		carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
+		displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 		// distance equals to -1000.0 when the coordinates are outside of map
@@ -682,27 +682,136 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 
 	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
-		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1]) // Essa checagem não vai funcionar com mais de um semi_trailer. É necessário um método para obter o beta de todos os semi_trailers em relação ao semi_trailer anterior
+//		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1] ) // Essa checagem não vai funcionar com mais de um semi_trailer. É necessário um método para obter o beta de todos os semi_trailers em relação ao semi_trailer anterior
+		// O beta usado para ser comparado com o max beta precisa ser um beta em relação ao trailer anterior, não em relação ao carro
+		if (fabs(convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta[0]
+		|| ( semi_trailer_id > 1 && fabs(convert_theta1_to_beta(local_point_to_check.trailer_theta[semi_trailer_id - 2], local_point_to_check.trailer_theta[semi_trailer_id - 1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id - 1] ))
 			return (pow(2.0, global_collision_config.semi_trailer_markers[semi_trailer_id-1][0].radius + safety_distance));
 		else
 		{
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
-				// A checagem abaixo parece correta porque transformo o trailer_theta local em beta, o que permite que a função faça a checagem em coordenadas globais
-				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
-						global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].x, global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1]),
-						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
+				// A checagem abaixo não funciona para mais de um semi-trailer
+//				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+//						global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].x, global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1]),
+//						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
+
+				carmen_robot_and_trailers_pose_t semi_trailers_poses[MAX_NUM_TRAILERS];
+				carmen_robot_and_trailers_pose_t semi_trailers_poses_localizer[MAX_NUM_TRAILERS];
+
+				for (int j = 0; j < semi_trailer_id; j++)
+				{
+					double semi_trailer_M = global_collision_config.semi_trailer_M[j];
+					double semi_trailer_d = global_collision_config.semi_trailer_d[j];
+//					carmen_position_t displaced_point;
+
+					if (j == 0)
+					{
+						semi_trailers_poses[j].x = local_point_to_check.x - semi_trailer_M * cos(local_point_to_check.theta) - semi_trailer_d * cos(local_point_to_check.trailer_theta[j]);
+						semi_trailers_poses[j].y = local_point_to_check.y - semi_trailer_M * sin(local_point_to_check.theta) - semi_trailer_d * sin(local_point_to_check.trailer_theta[j]);
+						semi_trailers_poses[j].theta = local_point_to_check.trailer_theta[j];
+//						semi_trailers_poses[j].theta = change_trailer_theta_reference(localizer_pose->theta, local_point_to_check.theta, local_point_to_check.trailer_theta[j]);
+
+						carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+							global_collision_config.semi_trailer_markers[j][i].x, global_collision_config.semi_trailer_markers[j][i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[j]),
+							global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
+						displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
+								displaced_marker.x, displaced_marker.y);
+
+//						printf("Displaced_point %d %lf %lf\n", semi_trailer_id, displaced_point.x, displaced_point.y);
+						semi_trailers_poses_localizer[j].theta = change_trailer_theta_reference(local_point_to_check.theta, localizer_pose->theta, local_point_to_check.trailer_theta[j]);
+						semi_trailers_poses_localizer[j].x = localizer_pose->x + (semi_trailers_poses[j].x * cos(semi_trailers_poses_localizer[j].theta) - semi_trailers_poses[j].y * sin(semi_trailers_poses_localizer[j].theta));
+						semi_trailers_poses_localizer[j].y = localizer_pose->y + (semi_trailers_poses[j].x * sin(semi_trailers_poses_localizer[j].theta) + semi_trailers_poses[j].y * cos(semi_trailers_poses_localizer[j].theta));
+					}
+					else
+					{
+						semi_trailers_poses[j].x = semi_trailers_poses[j-1].x - semi_trailer_M * cos(local_point_to_check.trailer_theta[j-1]) - semi_trailer_d * cos(local_point_to_check.trailer_theta[j]);
+						semi_trailers_poses[j].y = semi_trailers_poses[j-1].y - semi_trailer_M * sin(local_point_to_check.trailer_theta[j-1]) - semi_trailer_d * sin(local_point_to_check.trailer_theta[j]);
+						semi_trailers_poses[j].theta = local_point_to_check.trailer_theta[j]; //- semi_trailers_poses_localizer[j].theta;
+//						semi_trailers_poses[j].theta = 0.0;
+//						semi_trailers_poses[j].theta = change_trailer_theta_reference(localizer_pose->theta, local_point_to_check.theta, local_point_to_check.trailer_theta[j]);
+
+						carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+							global_collision_config.semi_trailer_markers[j][i].x, global_collision_config.semi_trailer_markers[j][i].y, convert_theta1_to_beta( local_point_to_check.trailer_theta[j - 1], local_point_to_check.trailer_theta[j]),
+							global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
+
+						semi_trailers_poses_localizer[j].theta = change_trailer_theta_reference(local_point_to_check.theta, localizer_pose->theta, local_point_to_check.trailer_theta[j]);
+						semi_trailers_poses_localizer[j].x = localizer_pose->x + (semi_trailers_poses[j].x * cos(semi_trailers_poses_localizer[j].theta) - semi_trailers_poses[j].y * sin(semi_trailers_poses_localizer[j].theta));
+						semi_trailers_poses_localizer[j].y = localizer_pose->y + (semi_trailers_poses[j].x * sin(semi_trailers_poses_localizer[j].theta) + semi_trailers_poses[j].y * cos(semi_trailers_poses_localizer[j].theta));
+
+//						displaced_point = carmen_collision_detection_in_car_coordinate_frame(semi_trailers_poses[j], localizer_pose, displaced_marker.x, displaced_marker.y);
+//						displaced_point = carmen_collision_detection_in_car_coordinate_frame(semi_trailers_poses[j - 1], &semi_trailers_poses_localizer[j - 1], displaced_marker.x, displaced_marker.y);
+						// Não consegui encontrar o cálculo para fazer a comparação com o semi_trailer_pose local, mas consegui encontrar o cálculo para obter a pose do trailer global. Por essa razão, executamos o collision detection in car coordinate frame com o localize zerado
+						carmen_robot_and_trailers_pose_t null_localize;
+						null_localize.x = 0.0;
+						null_localize.y = 0.0;
+						null_localize.theta = 0.0;
+						null_localize.num_trailers = 0.0;
+						for (size_t temp_i = 0; temp_i < MAX_NUM_TRAILERS; temp_i++)
+							null_localize.trailer_theta[temp_i] = 0.0;
+
+						displaced_point = carmen_collision_detection_in_car_coordinate_frame(semi_trailers_poses_localizer[j], &null_localize, displaced_marker.x, displaced_marker.y);
+//						printf("Displaced_point %d %lf %lf\n", semi_trailer_id, displaced_point.x, displaced_point.y);
+
+					}
+
+
+
+//					printf("%d %lf %lf %lf\n", j, semi_trailers_poses_localizer[j].x, semi_trailers_poses_localizer[j].y, semi_trailers_poses_localizer[j].theta);
+				}
 
 				// Pega local_point_to_check e coloca no sistema de coordenadas definido por localizer_pose
-				carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
-						displaced_marker.x, displaced_marker.y);
+//					carmen_position_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
+//							displaced_marker.x, displaced_marker.y);
+
 				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+
+				//Teste de comparação
+				/*
+				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+										global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].x, global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].y, convert_theta1_to_beta(local_point_to_check.theta, local_point_to_check.trailer_theta[semi_trailer_id-1]),
+										global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
+
+//					 Pega local_point_to_check e coloca no sistema de coordenadas definido por localizer_pose
+				displaced_point = carmen_collision_detection_in_car_coordinate_frame(local_point_to_check, localizer_pose,
+						displaced_marker.x, displaced_marker.y);
+
+				double distance_old = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+
+				static FILE *file_comp;
+				if (file_comp == NULL)
+				{
+					file_comp = fopen("collision_simetry.txt", "w");
+
+				}
+				fprintf(file_comp,"%f %f %f\n", distance, distance_old, distance_old - distance);
+*/
+				// O resultado do teste é que a diferença entre a variável distance e distance_old é 0. Ou seja, o método atual entrega o mesmo resultado para o método antigo quando usamos 1 trailer.
+				//
+
+				// Printar todos as distâncias dos trailers
+				/*
+				static FILE *file_comp_dist;
+				static int cont = 0;
+				if (file_comp_dist == NULL)
+				{
+					file_comp_dist = fopen("collision_simetry.txt", "w");
+
+				}
+				fprintf(file_comp_dist,"%d %d %d %d %f\n", cont++, semi_trailer_id, j, i, distance);
+*/
+				//
+
 				// distance equals to -1000.0 when the coordinates are outside of map
 				if (distance != -1000.0)
 				{
 					double delta = distance - (global_collision_config.semi_trailer_markers[semi_trailer_id-1][i].radius + safety_distance);
 					if (delta < 0.0)
+					{
+//						printf("Collision: %lf %lf %lf\n", localizer_pose->x, localizer_pose->y, localizer_pose->theta);
+//						printf("Trailer: %lf %lf %lf %lf %lf %lf\n", semi_trailers_poses_localizer[0].x,semi_trailers_poses_localizer[0].y,semi_trailers_poses_localizer[0].theta,semi_trailers_poses_localizer[1].x,semi_trailers_poses_localizer[1].y,semi_trailers_poses_localizer[1].theta);
 						proximity_to_obstacles += delta * delta;
+					}
 				}
 			}
 		}
@@ -932,19 +1041,79 @@ carmen_obstacle_distance_mapper_map_message *distance_map)
 
 	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
-		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
+//		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
+		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta[0]
+				|| ( semi_trailer_id > 1 && fabs(convert_theta1_to_beta(trajectory_pose.trailer_theta[semi_trailer_id - 2], trajectory_pose.trailer_theta[semi_trailer_id - 1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id - 1] ))
 			return (0.0);
 		else
 		{
+			carmen_position_t displaced_point;
 			carmen_collision_marker_t *semi_trailer_markers = global_collision_config.semi_trailer_markers[semi_trailer_id-1];
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
+				carmen_robot_and_trailers_pose_t semi_trailers_poses[MAX_NUM_TRAILERS];
+				carmen_robot_and_trailers_pose_t semi_trailers_poses_localizer[MAX_NUM_TRAILERS];
+
+				for (int j = 0; j < semi_trailer_id; j++)
+				{
+					double semi_trailer_M = global_collision_config.semi_trailer_M[j];
+					double semi_trailer_d = global_collision_config.semi_trailer_d[j];
+//					carmen_position_t displaced_point;
+
+					if (j == 0)
+					{
+						semi_trailers_poses[j].x = trajectory_pose.x - semi_trailer_M * cos(trajectory_pose.theta) - semi_trailer_d * cos(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].y = trajectory_pose.y - semi_trailer_M * sin(trajectory_pose.theta) - semi_trailer_d * sin(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].theta = trajectory_pose.trailer_theta[j];
+						carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+							global_collision_config.semi_trailer_markers[j][i].x, global_collision_config.semi_trailer_markers[j][i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[j]),
+							global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
+						displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
+								displaced_marker.x, displaced_marker.y);
+
+//						printf("Displaced_point %d %lf %lf\n", semi_trailer_id, displaced_point.x, displaced_point.y);
+					}
+					else
+					{
+						semi_trailer_M = global_collision_config.semi_trailer_M[j];
+						semi_trailer_d = global_collision_config.semi_trailer_d[j];
+
+						semi_trailers_poses[j].x = semi_trailers_poses[j-1].x - semi_trailer_M * cos(trajectory_pose.trailer_theta[j-1]) - semi_trailer_d * cos(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].y = semi_trailers_poses[j-1].y - semi_trailer_M * sin(trajectory_pose.trailer_theta[j-1]) - semi_trailer_d * sin(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].theta = trajectory_pose.trailer_theta[j];
+						carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+							global_collision_config.semi_trailer_markers[j][i].x, global_collision_config.semi_trailer_markers[j][i].y, convert_theta1_to_beta( trajectory_pose.trailer_theta[j - 1], trajectory_pose.trailer_theta[j]),
+							global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
+
+//						displaced_point = carmen_collision_detection_in_car_coordinate_frame(semi_trailers_poses[j], localizer_pose, displaced_marker.x, displaced_marker.y);
+						carmen_robot_and_trailers_traj_point_t temp_pose;
+
+						temp_pose.x = 		semi_trailers_poses[j].x;
+						temp_pose.y = 		semi_trailers_poses[j].y;
+						temp_pose.theta = 	semi_trailers_poses[j].theta;
+
+						displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&temp_pose,
+								displaced_marker.x, displaced_marker.y);
+//						printf("Displaced_point %d %lf %lf\n", semi_trailer_id, displaced_point.x, displaced_point.y);
+
+					}
+
+					semi_trailers_poses_localizer[j].theta = trajectory_pose.trailer_theta[j];
+					semi_trailers_poses_localizer[j].x = trajectory_pose.x + (semi_trailers_poses[j].x * cos(semi_trailers_poses_localizer[j].theta) - semi_trailers_poses[j].y * sin(semi_trailers_poses_localizer[j].theta));
+					semi_trailers_poses_localizer[j].y = trajectory_pose.y + (semi_trailers_poses[j].x * sin(semi_trailers_poses_localizer[j].theta) + semi_trailers_poses[j].y * cos(semi_trailers_poses_localizer[j].theta));
+
+
+//					printf("%d %lf %lf %lf\n", j, semi_trailers_poses_localizer[j].x, semi_trailers_poses_localizer[j].y, semi_trailers_poses_localizer[j].theta);
+				}
+
+/*
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
 						semi_trailer_markers[i].x, semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1]),
 						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
 
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);
+*/
 				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 				//distance equals to -1000.0 when the coordinates are outside of map
 				if (distance != -1000.0)
@@ -987,28 +1156,101 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 //				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
 //				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
 //				virtual_laser_message.num_positions++;
+//				printf("Here %d\n", __LINE__);
 				return (1);
 			}
 		}
 		else
+		{
+//			printf("Here %d\n", __LINE__);
 			return (2);
+		}
 	}
+//	printf("car: %lf %lf %lf %lf %lf\n", trajectory_pose.x, trajectory_pose.y, trajectory_pose.theta, trajectory_pose.trailer_theta[0], trajectory_pose.trailer_theta[1]);
 
 	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
-		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
+//		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id-1])
+		if (fabs(convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[0])) > global_collision_config.semi_trailer_max_beta[0]
+				|| ( semi_trailer_id > 1 && fabs(convert_theta1_to_beta(trajectory_pose.trailer_theta[semi_trailer_id - 2], trajectory_pose.trailer_theta[semi_trailer_id - 1])) > global_collision_config.semi_trailer_max_beta[semi_trailer_id - 1] ))
+		{
+//			printf("Here %d\n", __LINE__);
 			return (1);
+		}
 		else
 		{
+			carmen_position_t displaced_point;
 			carmen_collision_marker_t *semi_trailer_markers = global_collision_config.semi_trailer_markers[semi_trailer_id-1];
 			for (int i = 0; i < global_collision_config.n_semi_trailer_markers[semi_trailer_id-1]; i++)
 			{
+
+				carmen_robot_and_trailers_pose_t semi_trailers_poses[MAX_NUM_TRAILERS];
+				carmen_robot_and_trailers_pose_t semi_trailers_poses_localizer[MAX_NUM_TRAILERS];
+
+				for (int j = 0; j < semi_trailer_id; j++)
+				{
+					double semi_trailer_M = global_collision_config.semi_trailer_M[j];
+					double semi_trailer_d = global_collision_config.semi_trailer_d[j];
+//					carmen_position_t displaced_point;
+
+					if (j == 0)
+					{
+						semi_trailers_poses[j].x = trajectory_pose.x - semi_trailer_M * cos(trajectory_pose.theta) - semi_trailer_d * cos(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].y = trajectory_pose.y - semi_trailer_M * sin(trajectory_pose.theta) - semi_trailer_d * sin(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].theta = trajectory_pose.trailer_theta[j];
+						carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+							global_collision_config.semi_trailer_markers[j][i].x, global_collision_config.semi_trailer_markers[j][i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[j]),
+							global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
+						displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
+								displaced_marker.x, displaced_marker.y);
+
+//						printf("Displaced_point %d %lf %lf\n", semi_trailer_id, displaced_point.x, displaced_point.y);
+					}
+					else
+					{
+						semi_trailer_M = global_collision_config.semi_trailer_M[j];
+						semi_trailer_d = global_collision_config.semi_trailer_d[j];
+
+						semi_trailers_poses[j].x = semi_trailers_poses[j-1].x - semi_trailer_M * cos(trajectory_pose.trailer_theta[j-1]) - semi_trailer_d * cos(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].y = semi_trailers_poses[j-1].y - semi_trailer_M * sin(trajectory_pose.trailer_theta[j-1]) - semi_trailer_d * sin(trajectory_pose.trailer_theta[j]);
+						semi_trailers_poses[j].theta = trajectory_pose.trailer_theta[j];
+						carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
+							global_collision_config.semi_trailer_markers[j][i].x, global_collision_config.semi_trailer_markers[j][i].y, convert_theta1_to_beta( trajectory_pose.trailer_theta[j - 1], trajectory_pose.trailer_theta[j]),
+							global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
+
+						carmen_robot_and_trailers_traj_point_t temp_pose;
+//						temp_pose.x = semi_trailers_poses_localizer[j].x;
+//						temp_pose.y = semi_trailers_poses_localizer[j].y;
+//						temp_pose.theta = semi_trailers_poses_localizer[j].theta;
+
+						temp_pose.x = 		semi_trailers_poses[j].x;
+						temp_pose.y = 		semi_trailers_poses[j].y;
+						temp_pose.theta = 	semi_trailers_poses[j].theta;
+
+//						displaced_point = carmen_collision_detection_in_car_coordinate_frame(semi_trailers_poses[j], localizer_pose, displaced_marker.x, displaced_marker.y);
+						displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&temp_pose,
+								displaced_marker.x, displaced_marker.y);
+//						printf("Displaced_point %d %lf %lf\n", semi_trailer_id, displaced_point.x, displaced_point.y);
+
+					}
+
+//					semi_trailers_poses_localizer[j].theta = trajectory_pose.trailer_theta[j];
+//					semi_trailers_poses_localizer[j].x = trajectory_pose.x + (semi_trailers_poses[j].x * cos(semi_trailers_poses_localizer[j].theta) - semi_trailers_poses[j].y * sin(semi_trailers_poses_localizer[j].theta));
+//					semi_trailers_poses_localizer[j].y = trajectory_pose.y + (semi_trailers_poses[j].x * sin(semi_trailers_poses_localizer[j].theta) + semi_trailers_poses[j].y * cos(semi_trailers_poses_localizer[j].theta));
+
+
+//					printf("%d %lf %lf %lf\n", j, semi_trailers_poses[j].x, semi_trailers_poses[j].y, semi_trailers_poses[j].theta);
+				}
+
+				/*
 				carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
 						semi_trailer_markers[i].x, semi_trailer_markers[i].y, convert_theta1_to_beta(trajectory_pose.theta, trajectory_pose.trailer_theta[semi_trailer_id-1]),
 						global_collision_config.semi_trailer_d[semi_trailer_id-1], global_collision_config.semi_trailer_M[semi_trailer_id-1]);
 
 				carmen_position_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 						displaced_marker.x, displaced_marker.y);
+						*/
+
 				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 				//distance equals to -1000.0 when the coordinates are outside of map
 				if (distance != -1000.0)
@@ -1019,15 +1261,19 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 //						virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
 //						virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
 //						virtual_laser_message.num_positions++;
+//						printf("Here %d\n", __LINE__);
 						return (1);
 					}
 				}
 				else
+				{
+//					printf("Here %d\n", __LINE__);
 					return (2);
+				}
 			}
 		}
 	}
-
+//	printf("Here %d\n", __LINE__);
 	return (0);
 }
 

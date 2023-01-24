@@ -827,6 +827,7 @@ carmen_line_to_line_intersection(carmen_position_t *I0, carmen_position_t s1_p0,
 
 double convert_theta1_to_beta(double theta, double theta1);
 double convert_beta_to_theta1(double theta, double beta);
+double change_trailer_theta_reference(double original_theta, double new_theta, double original_trailer_theta);
 
 extern carmen_inline char *carmen_next_word(char *str)
 {
