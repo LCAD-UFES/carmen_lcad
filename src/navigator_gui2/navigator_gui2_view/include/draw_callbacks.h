@@ -140,7 +140,7 @@ void button_release_handler(GtkMapViewer		   *the_map_view,
 		GdkEventButton	   *event  );
 
 extern "C" G_MODULE_EXPORT
-void keyboard_press_handler(GtkMapViewer *the_map_view, carmen_world_point_t *point,
+void keyboard_press_handler(GtkMapViewer *the_map_view,
 		GdkEventKey	   *event);
 
 extern "C" G_MODULE_EXPORT

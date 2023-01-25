@@ -7,6 +7,29 @@
 using namespace std;
 
 
+string
+trim(string s) { boost::trim(s); return s; }
+
+vector<string>
+string_split_once(string s, string pattern)
+{
+	vector<string> splitted;
+
+    size_t equals_idx = s.find_first_of(pattern);
+    if (std::string::npos != equals_idx)
+    {
+		splitted.push_back(s.substr(0, equals_idx));
+        splitted.push_back(s.substr(equals_idx + 1));
+    }
+    else
+	{
+		splitted.push_back(s);
+	}
+	
+	return splitted;
+}
+
+
 vector<string>
 string_split(string s, string pattern)
 {
