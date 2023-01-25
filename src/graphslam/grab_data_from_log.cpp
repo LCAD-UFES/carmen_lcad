@@ -620,6 +620,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
 	args->add<int>("use_velodyne_timestamp_in_odometry", "Use Velodyne timestamp in ROBOTVELOCITY_ACK messages", 0);
 	args->add<int>("odometry_based_on_gps", "Generate odometry based on GPS", 0);
+	args->add<int>("kill_after_finish", "Kill after finish", 0);
 
 	args->parse(argc, argv);
 }
@@ -670,7 +671,9 @@ main(int argc, char **argv)
 
 	printf("Programa concluído normalmente.\n");
 	fflush(stdout);
-	// getchar();
+
+	if (!args.get<int>("kill_after_finish"))
+		getchar();
 
 	return (0);
 }
