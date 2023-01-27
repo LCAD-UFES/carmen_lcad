@@ -40,7 +40,7 @@ carmen_simple_subscribe_motion_command(carmen_string_example_message *message,
 				     carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
 	carmen_subscribe_message(CARMEN_STRING_EXAMPLE_MESSAGE_NAME, CARMEN_STRING_EXAMPLE_MESSAGE_FMT,
-                	   message, sizeof(carmen_string_example_message), carmen_simple_handler, subscribe_how);
+                	   message, sizeof(carmen_string_example_message), handler, subscribe_how);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -78,7 +78,5 @@ main(int argc , char **argv)
 
 	carmen_mount_simple_message();
 
-	carmen_ipc_dispatch();
-
 	return 0;
 }
