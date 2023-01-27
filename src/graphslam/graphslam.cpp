@@ -70,6 +70,7 @@ char input_file[1024];
 char loops_file[1024];
 char carmen_ini_file[1024];
 char out_file[1024];
+char out_file_gps[1048];
 
 FILE *gnuplot_pipe;
 
@@ -638,19 +639,18 @@ generate_poses_in_gps_coordinates(char *filename, char *filename_in_gps_coordina
 
 
 static void
-plot_graph()
+plot_graph(char *input_file, char *out_file, char *out_file_gps)
 {
-	generate_poses_in_gps_coordinates((char *) "tmp/poses_opt.txt", (char *) "tmp/poses_opt_in_gps_coordinates.txt");
-
 	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 
 	fprintf(gnuplot_pipe, "set size square; set size ratio -1; "
-						  "plot 'tmp/sync.txt' u 4:5 w l t 'Poses do GPS' linecolor rgb 'red', "
-							   "'tmp/sync.txt' u 4:5:(0.5 * cos($6)):(0.5 * sin($6)) with vectors title 'Poses do GPS vectors' linecolor rgb 'red', "
-						       "'tmp/poses_opt.txt' u 1:2 w l t 'Poses do GraphSLAM' linecolor rgb 'green', "
-							   "'tmp/poses_opt.txt' u 1:2:(0.5 * cos($3)):(0.5 * sin($3)) with vectors title 'Poses do GraphSLAM vectors' linecolor rgb 'green', "
-							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2 w l t 'Poses do carro em função do GPS' linecolor rgb 'blue', "
-							   "'tmp/poses_opt_in_gps_coordinates.txt' u 1:2:4:5 with vectors title 'Poses do carro em função do GPS vectors' linecolor rgb 'blue'\n");
+						  "plot '%s' u 4:5 w l t 'poses do GPS' linecolor rgb 'red', "
+							   "'%s' u 4:5:(0.5 * cos($6)):(0.5 * sin($6)) with vectors title 'poses do GPS vectors' linecolor rgb 'red', "
+						       "'%s' u 1:2 w l t 'poses do GraphSLAM' linecolor rgb 'green', "
+							   "'%s' u 1:2:(0.5 * cos($3)):(0.5 * sin($3)) with vectors title 'poses do GraphSLAM vectors' linecolor rgb 'green', "
+							   "'%s' u 1:2 w l t 'poses do carro em funcao do GPS' linecolor rgb 'blue', "
+							   "'%s' u 1:2:4:5 with vectors title 'poses do carro em funcao do GPS vectors' linecolor rgb 'blue'\n",
+							   input_file, input_file, out_file, out_file, out_file_gps, out_file_gps);
 
 	fflush(gnuplot_pipe);
 }
@@ -667,6 +667,8 @@ main(int argc, char **argv)
 	strcpy(loops_file, (char *) args.get<string>("loops.txt").c_str());
 	strcpy(carmen_ini_file, (char *) args.get<string>("carmen.ini").c_str());
 	strcpy(out_file, (char *) args.get<string>("poses_opt.txt").c_str());
+
+	sprintf(out_file_gps, "%s_in_gps_coordinates.txt", out_file);
 
 	FILE *odometry_calibration_file = safe_fopen(args.get<string>("calibrated_odometry.txt").c_str(), "r");
 	double v_multiplier, v_bias, phi_multiplier, phi_bias, initial_angle, gps_latency, L;
@@ -690,7 +692,8 @@ main(int argc, char **argv)
 
 	if (args.get<int>("view"))
 	{
-		plot_graph();
+		generate_poses_in_gps_coordinates(out_file, out_file_gps);
+		plot_graph(input_file, out_file, out_file_gps);
 	
 		printf("Programa concluído normalmente. Tecle qualquer tecla para terminar.\n");
 		fflush(stdout);

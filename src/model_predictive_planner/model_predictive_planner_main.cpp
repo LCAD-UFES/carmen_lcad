@@ -116,7 +116,6 @@ publish_model_predictive_planner_motion_commands(vector<carmen_robot_and_trailer
 		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
 			commands[i].trailer_theta[z] = it->trailer_theta[z];
 
-
 		i++;
 	}
 
@@ -313,7 +312,7 @@ publish_model_predictive_planner_single_motion_command(double v, double phi, dou
 	traj.theta = GlobalState::localizer_pose->theta;
 	traj.num_trailers = GlobalState::localizer_pose->num_trailers;
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		traj.trailer_theta[z] =	convert_beta_to_theta1(traj.theta, GlobalState::localizer_pose->trailer_theta[z]);
+		traj.trailer_theta[z] =	GlobalState::localizer_pose->trailer_theta[z];
 
 	path.push_back(traj);
 	path.push_back(traj);
@@ -367,7 +366,7 @@ publish_navigator_ackerman_status_message()
 		msg.goal.x = GlobalState::goal_pose->x;
 		msg.goal.y = GlobalState::goal_pose->y;
 		msg.goal.theta = GlobalState::goal_pose->theta;
-		msg.goal.trailer_theta[0] = convert_beta_to_theta1(msg.goal.theta, GlobalState::goal_pose->beta);
+		msg.goal.trailer_theta[0] = GlobalState::goal_pose->beta;
 		msg.goal.v = (path_goals_and_annotations_message != NULL)? path_goals_and_annotations_message->goal_list->v: GlobalState::robot_config.max_v;
 		msg.goal.phi = 0.0; // @@@ Alberto: teria que preencher isso...
 	}
@@ -693,7 +692,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	*GlobalState::localizer_pose = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,  msg->num_trailers, {0.0}}; //Adicionar num_trailers
 
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		GlobalState::localizer_pose->trailer_theta[z] = convert_theta1_to_beta(msg->globalpos.theta, msg->trailer_theta[z]); // Transformar em beta para o build_and_follow_path funcionar corretamente
+		GlobalState::localizer_pose->trailer_theta[z] = msg->trailer_theta[z];
 
 //	double delta_t = 0.15;
 //	double distance_traveled = 0.0;
@@ -740,7 +739,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 	*GlobalState::localizer_pose = {msg->truepose.x, msg->truepose.y, msg->truepose.theta, msg->num_trailers, {0.0}};
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		GlobalState::localizer_pose->trailer_theta[z] = convert_theta1_to_beta(msg->truepose.theta, msg->trailer_theta[z]); // Transformar em beta para o build_and_follow_path funcionar corretamente
+		GlobalState::localizer_pose->trailer_theta[z] = msg->trailer_theta[z];
 
 	if (GlobalState::use_mpc)
 		build_and_follow_path_new(msg->timestamp);
@@ -767,7 +766,7 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 	goal_pose.x = msg->goal_list[0].x;
 	goal_pose.y = msg->goal_list[0].y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list[0].theta);
-	goal_pose.beta = convert_theta1_to_beta(goal_pose.theta, msg->goal_list[0].trailer_theta[0]);
+	goal_pose.beta = msg->goal_list[0].trailer_theta[0];
 
 	if (GlobalState::reverse_driving_flag)
 	{
