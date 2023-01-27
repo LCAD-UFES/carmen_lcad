@@ -51,10 +51,10 @@ void
 carmen_mount_simple_message()
 {
 	carmen_string_example_message main_message;
-	carmen_string_example main_content;
-	main_content.message = "Mensagem enviada através do módulo publish_example";
+	char *main_content;
+	main_content = "Mensagem enviada através do módulo publish_example";
 
-	printf("Enviando mensagem: %s\n",main_content.message);
+	printf("Enviando mensagem: %s\n",main_content);
 
 	main_message.num_message = 1;
 	main_message.content_message = main_content;
