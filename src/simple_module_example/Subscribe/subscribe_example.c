@@ -12,7 +12,7 @@
 static void
 carmen_simple_handler(carmen_string_example_message *current_message)
 {
-	printf("Mensagem recebida: %s\n",current_message->content_message.message);
+	printf("Mensagem recebida: %s\n",current_message->content_message);
 
 }
 
