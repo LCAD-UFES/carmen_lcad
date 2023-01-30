@@ -1121,6 +1121,8 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 						global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
 					displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 							displaced_marker.x, displaced_marker.y);
+
+//					printf("0 %lf %lf %lf\n", semi_trailers_poses[j].x, semi_trailers_poses[j].y, semi_trailers_poses[j].theta);
 				}
 				else
 				{
@@ -1130,6 +1132,8 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 					semi_trailers_poses[j].x = semi_trailers_poses[j-1].x - semi_trailer_M * cos(trajectory_pose.trailer_theta[j-1]) - semi_trailer_d * cos(trajectory_pose.trailer_theta[j]);
 					semi_trailers_poses[j].y = semi_trailers_poses[j-1].y - semi_trailer_M * sin(trajectory_pose.trailer_theta[j-1]) - semi_trailer_d * sin(trajectory_pose.trailer_theta[j]);
 					semi_trailers_poses[j].theta = trajectory_pose.trailer_theta[j];
+
+
 					carmen_position_t displaced_marker = move_semi_trailer_marker_to_robot_coordinate_frame(
 						global_collision_config.semi_trailer_markers[j][i].x, global_collision_config.semi_trailer_markers[j][i].y, convert_theta1_to_beta( trajectory_pose.trailer_theta[j - 1], trajectory_pose.trailer_theta[j]),
 						global_collision_config.semi_trailer_d[j], global_collision_config.semi_trailer_M[j]);
@@ -1141,15 +1145,17 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 
 					displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&temp_pose,
 							displaced_marker.x, displaced_marker.y);
+//					printf("displaced_point %lf %lf \n", displaced_point.x, displaced_point.y);
+
+//					printf("1 %lf %lf %lf\n", semi_trailers_poses[j].x, semi_trailers_poses[j].y, semi_trailers_poses[j].theta);
 
 				}
-
 
 				double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 				//distance equals to -1000.0 when the coordinates are outside of map
 				if (distance != -1000.0)
 				{
-					if (distance < semi_trailer_markers[i].radius + safety_distance)
+					if ((distance < semi_trailer_markers[i].radius + safety_distance ))
 					{
 //						virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
 //						virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
