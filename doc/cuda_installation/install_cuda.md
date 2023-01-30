@@ -87,3 +87,32 @@ sudo apt-get install openjdk-8-jdk
 wget https://github.com/bazelbuild/bazel/releases/download/0.11.1/bazel_0.11.1-linux-x86_64.deb
 sudo dpkg -i bazel_0.11.1-linux-x86_64.deb
 ```
+
+### Correção do bug do display externo
+Esse problema ocorreu até o momento somente com notebooks que estavam utilizando o Ubuntu 20.04 LTS, geralmente ele ocorre quando se seleciona o monitor externo como o único display. Para resolver esse problema foi ultlizados os seguintes passos:
+
+<br/>
+
+#### Pesquise o app NVIDIA X Server Settings: 
+
+<img src="solving_the_display_bug_0.png" width="800" title="App NVIDIA X Server Settings">
+
+<br/>
+
+#### Selecione a opção de menu PRIME Profiles e marque a opção NVIDIA(Performance Mode):
+
+<img src="solving_the_display_bug_1.png" width="800" title="Melhor opção">
+
+<br/>
+
+#### Feche o app e reinicie o computador para validar a configuração realizada,: 
+
+<img src="solving_the_display_bug_2.png" width="800" title="Finalizando">
+
+<br/>
+
+***OBS: Caso a opção NVIDIA(Performance Mode) já esteja marcada:***
+
+- Altere para a outra opção disponível, no caso da imagem usada como referência use a opção NVIDIA on-Demand;
+- saia do app e reinicie o computador; 
+- Após o reboot do computador refaça os passos mudando para a opção NVIDIA(Performance Mode) e reinicie o computador novamente.
