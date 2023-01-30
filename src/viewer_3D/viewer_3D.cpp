@@ -3480,7 +3480,7 @@ init_flags(void)
     draw_map_image_flag = 0;
     draw_localize_image_flag = 1;
     weight_type_flag = 2;
-    draw_gps_flag = 1;
+    draw_gps_flag = 0;
     draw_odometry_flag = 0;
     draw_xsens_gps_flag = 0;
     follow_car_flag = 1;

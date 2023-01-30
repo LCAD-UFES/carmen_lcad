@@ -77,6 +77,8 @@ extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_sel
 extern carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
 
+int lidars_used_in_globalpos[MAX_NUMBER_OF_LIDARS + 10];
+
 // theta parameters
 int lidar_to_compute_theta = 0;
 double triangulation_max_beta = 18.0;
@@ -3330,9 +3332,39 @@ get_sensors_param(int argc, char **argv, int correction_type)
 
 
 void
+get_lidars_used_in_globalpos(int &argc, char **argv)
+{
+	int i, j, is_seted = 0;
+	for (i = 0; i < MAX_NUMBER_OF_LIDARS + 10; i++)
+		lidars_used_in_globalpos[i] = 0;
+
+	for (i = 0; i < argc; i++)
+	{
+		if (!strcmp(argv[i], "-lidar"))
+		{
+			is_seted = 1;
+
+			lidars_used_in_globalpos[atoi(argv[i+1]) + 10] = 1;
+			for (j = i; j < argc-2; j++)
+				argv[j] = argv[j+2];
+
+			argc -= 2;
+			i = -1;
+		}
+	}
+
+	if (!is_seted)
+		for (i = 0; i < MAX_NUMBER_OF_LIDARS + 10; i++)
+			lidars_used_in_globalpos[i] = 1;
+}
+
+
+void
 carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param,
 		ProbabilisticMapParams *p_map_params)
 {
+	get_lidars_used_in_globalpos(argc, argv);
+
 	double integrate_angle_deg, map_width, map_height;
 
 	integrate_angle_deg = 1.0;

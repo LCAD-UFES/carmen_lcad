@@ -188,6 +188,15 @@ well_behaved_origin_string(carmen_map_config_t config)
 	return (true);
 }
 
+void
+get_datetime_from_timestamp(double timestamp, char* datetime, long int size)
+{
+	time_t t = (int)timestamp;
+	struct tm  ts;
+
+	ts = *localtime(&t);
+	strftime(datetime, size, "%Y-%m-%d %H:%M:%S", &ts);
+}
 
 namespace View
 {
@@ -944,11 +953,16 @@ namespace View
 //				}
 			}
 
-			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
+			char datetime[20];
+			get_datetime_from_timestamp(globalpos->timestamp, datetime, sizeof(datetime));
+
+			sprintf(buffer, "globalpos timestamp: %lf  %s", globalpos->timestamp, datetime);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp), buffer);
 		}
 
 		last_navigator_update = carmen_get_time();
+
+
 
 		sprintf(buffer, "NavCon timestamp: %lf", last_navigator_update);
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelNavConTimestamp), buffer);
@@ -2416,7 +2430,7 @@ namespace View
 //					world_point->pose.x - robot_temp.pose.x);
 //			robot_temp.pose.theta = angle;
 
-			if (globalpos->semi_trailer_engaged)
+			if (semi_trailer_config->num_semi_trailers > 0) //@@braian: utilizar do globalpos?
 			{
 				placement_status = ORIENTING_ROBOT_SEMI_TRAILER;
 				semi_trailer_being_oriented = 0;
@@ -2900,7 +2914,7 @@ namespace View
 			fclose(f_final_goal);
 
 
-			if (globalpos->semi_trailer_engaged)
+			if (semi_trailer_config->num_semi_trailers > 0)
 			{
 				placement_status = ORIENTING_FINAL_GOAL_SEMI_TRAILER;
 				semi_trailer_being_oriented = 0;
@@ -3733,7 +3747,7 @@ namespace View
 				{
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
 
-					if (globalpos->semi_trailer_engaged)
+					if (semi_trailer_config->num_semi_trailers > 0)
 					{
 						for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)
 							draw_point->pose.trailer_theta[i] = draw_point->pose.theta;
@@ -3792,7 +3806,7 @@ namespace View
 				{
 					draw_point->pose.theta = atan2(cursor_pos.pose.y - draw_point->pose.y, cursor_pos.pose.x - draw_point->pose.x);
 
-					if (globalpos->semi_trailer_engaged)
+					if (semi_trailer_config->num_semi_trailers > 0)
 					{
 						for (int i = 0; i < semi_trailer_config->num_semi_trailers; i++)
 							draw_point->pose.trailer_theta[i] = draw_point->pose.theta;
@@ -4161,7 +4175,7 @@ namespace View
 
 		draw_ackerman_shape(the_map_view, &location_without_beta, filled, colour);
 
-		if (globalpos->semi_trailer_engaged)
+		if (semi_trailer_config->num_semi_trailers > 0)
 		{
 			//FIXME seria melhor usar theta de cada trailer no lugar de beta relativo entre eles
 //			double semi_trailer_M = semi_trailer_config->semi_trailers[0].M;
