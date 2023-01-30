@@ -34,6 +34,9 @@ int ouster_publish_imu = 0;
 int ouster_intensity_type = 3;
 bool is_alternated = false;
 
+double min_angle = 2.5;
+double max_angle = 4.0;
+
 
 void 
 FATAL(const char* msg) {
@@ -337,7 +340,7 @@ main(int argc, char* argv[])
 			for (int m_id = column_window.first; m_id <= column_window.second; m_id++)
 			{
 				double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);//Calculo do angulo, no ouster os shots sao fixos
-
+//				std::cerr << "angle: " << shot_angle << std::endl;
 				// TODO!!!!!!!!! Investigar o motivo dessa defasagem de 180 graus na linha abaixo
 				//checa se os raios do Lidar estão alinhados ou alternados
 				if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
@@ -348,12 +351,22 @@ main(int argc, char* argv[])
 					vector_msgs[0].partial_scan[m_id].angle = shot_angle_correction;
 					vector_msgs[0].partial_scan[m_id].shot_size = h;
 					//std::cout << h << std::endl;
-					// std::cerr << "angle_correction " << angle_correction << std::endl;
+//					std::cerr << "angle_correction " << shot_angle_correction << std::endl;
 
 					for (size_t ipx = 0; ipx < h; ipx++)
 					{
-						vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) range(ipx, m_id);
-						vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) intensity(ipx, m_id);
+						if (shot_angle > min_angle && shot_angle < max_angle &&
+							range(ipx, m_id) > 100 && range(ipx, m_id) < 70000)
+						{
+							vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) range(ipx, m_id);
+							vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) intensity(ipx, m_id);
+
+						}
+						else
+						{
+							vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) 0;
+							vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) 0;
+						}
 					}
 				}else
 				{
