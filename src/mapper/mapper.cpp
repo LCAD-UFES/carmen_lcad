@@ -356,6 +356,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
+
 		double dt2 = j * dt;
 		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(
 			robot_pose,
@@ -450,6 +451,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 		sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays,
 		int build_snapshot_map __attribute__ ((unused)))
 {
+	double dt2;
 	int tid = omp_get_thread_num();
 	spherical_point_cloud v_zt = sensor_data->points[point_cloud_index];
 	int N = v_zt.num_points / sensor_params->vertical_resolution;
@@ -473,20 +475,41 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 			v, phi, N, point_cloud_index, r_matrix_robot_to_global, sensor_params, sensor_data);
 	for (int j = 0; j < N; j += 1)
 	{
+		if (j == 0)
+		{
+			i = j * sensor_params->vertical_resolution;
+			dt2 = j * dt;
+			robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
+					dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+			r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
+
+			change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
+
+			carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
+					sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
+					robot_wheel_radius, map_set->x_origin, map_set->y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
+
+			if (use_neural_mapper)
+				neural_mapper_update_input_maps(sensor_data, sensor_params, tid, map_set->log_odds_snapshot_map, map_config, map_set->x_origin, map_set->y_origin, highest_sensor, safe_range_above_sensors);
+		}
+		if (j < N-1)
+		{
+			i = (j + 1) * sensor_params->vertical_resolution;
+			dt2 = (j + 1) * dt;
+			robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
+					dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+			r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
+
+			change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
+
+			carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
+					sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
+					robot_wheel_radius, map_set->x_origin, map_set->y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
+
+			if (use_neural_mapper)
+				neural_mapper_update_input_maps(sensor_data, sensor_params, tid, map_set->log_odds_snapshot_map, map_config, map_set->x_origin, map_set->y_origin, highest_sensor, safe_range_above_sensors);
+		}
 		i = j * sensor_params->vertical_resolution;
-		double dt2 = j * dt;
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
-				dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
-		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
-
-		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
-
-		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
-				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
-				robot_wheel_radius, map_set->x_origin, map_set->y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
-
-		if (use_neural_mapper)
-			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, map_set->log_odds_snapshot_map, map_config, map_set->x_origin, map_set->y_origin, highest_sensor, safe_range_above_sensors);
 
 //		fprintf(plot_data, "%lf %lf %lf",
 //				sensor_data->ray_origin_in_the_floor[tid][1].x,

@@ -5,6 +5,7 @@
 #include "prob_measurement_model.h"
 #include "prob_map.h"
 
+#define PLANE_SEGMENTATION_MODE 1
 #define MAX_LOG_ODDS_POSSIBLE	37.0
 
 
@@ -1392,10 +1393,10 @@ carmen_prob_models_compute_expected_delta_ray(double ray_length, int ray_index, 
 	double expected_delta_ray, alpha_plus_theta, theta, ray_size_on_the_floor, beta;
 	
 	theta = carmen_degrees_to_radians(vertical_correction[ray_index] - vertical_correction[ray_index-1]);
-	alpha_plus_theta = carmen_degrees_to_radians(vertical_correction[ray_index] + 90.0);	
+	alpha_plus_theta = carmen_degrees_to_radians(vertical_correction[ray_index] + 90.0);
 	ray_size_on_the_floor = sqrt((sensor_height * sensor_height + ray_length * ray_length) - (2.0 * sensor_height * ray_length * cos(alpha_plus_theta)));
 	beta = asin((sin(alpha_plus_theta) * sensor_height) / ray_size_on_the_floor);
-	
+
 	expected_delta_ray = (ray_length * sin(theta)) / sin(theta + beta);
 
 	return (expected_delta_ray);
@@ -1493,6 +1494,7 @@ get_log_odds_via_unexpeted_delta_range_old(sensor_parameters_t *sensor_params, s
 
 //extern FILE *plot_data;
 
+
 double
 get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
 		bool reduce_sensitivity, int thread_id)
@@ -1528,19 +1530,20 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
 		return (sensor_params->log_odds.log_odds_l0);
 
-//	double ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
-	double previous_ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + previous_ray_index].length;
+	double ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
+	// double previous_ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + previous_ray_index].length;
 
 //	if (sensor_data->maxed[thread_id][previous_ray_index])
 //		ray_size1 = sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index]));
 //	else
-		ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
+	
+	ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
 	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
 
 	delta_ray = ray_size2 - ray_size1;
-	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(sensor_params->height, previous_ray_length,
-			carmen_degrees_to_radians(sensor_params->vertical_correction[ray_index] - sensor_params->vertical_correction[previous_ray_index]));
-//	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(ray_length, ray_index, sensor_params->vertical_correction, sensor_params->height);
+	// expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(sensor_params->height, previous_ray_length,
+	// 		carmen_degrees_to_radians(sensor_params->vertical_correction[ray_index] - sensor_params->vertical_correction[previous_ray_index]));
+	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(ray_length, ray_index, sensor_params->vertical_correction, sensor_params->height);
 //	expected_delta_ray_old = carmen_prob_models_compute_expected_delta_ray_old(ray_size1, ray_index, sensor_params->vertical_correction, sensor_params->height);
 //	printf("r1 %lf, r2 %lf, dr %lf, edr %lf\n", ray_size1, ray_size2, delta_ray, expected_delta_ray);
 	obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
@@ -1593,6 +1596,145 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 
 	return (log_odds);
 }
+
+double
+dist_from_plane(double p1[3], double p2[3], double p3[3], double p[3])
+{
+    double a1, a2, a3, b1, b2, b3, s1, s2, s3, d, D;
+
+    a1 = p2[0] - p1[0]; a2 = p2[1] - p1[1]; a3 = p2[2] - p1[2];
+    b1 = p3[0] - p1[0]; b2 = p3[1] - p1[1]; b3 = p3[2] - p1[2];
+
+    s1 = a2*b3 - a3*b2;
+    s2 = a3*b1 - a1*b3;
+    s3 = a1*b2 - a2*b1;
+    d = - s1*p1[0] - s2*p1[1] - s3*p1[2];
+
+    D = fabs(s1*p[0] + s2*p[1] + s3*p[2] + d)/sqrt(s1*s1 + s2*s2 + s3*s3);
+    return D;
+}
+
+
+void
+spehrical_2cartesian(double rot_angle, double vert_angle, double range, double &x, double &y, double &z)
+{
+    double cos_rot_angle, sin_rot_angle, cos_vert_angle, sin_vert_angle;
+
+    cos_rot_angle = cos(rot_angle);
+    sin_rot_angle = sin(rot_angle);
+
+    cos_vert_angle = cos(vert_angle);
+    sin_vert_angle = sin(vert_angle);
+
+    x = (range * cos_vert_angle * cos_rot_angle);
+    y = (range * cos_vert_angle * sin_rot_angle);
+    z = range * sin_vert_angle;
+}
+
+
+double
+get_log_odds_via_plane_segmentation(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
+		bool reduce_sensitivity, int thread_id)
+{
+    int N, VR, previous_ray_index, next_ray_index;
+    double obstacle_evidence, p_obstacle, log_odds;
+    double p1[3], p2[3], p3[3], p[3];
+    double rot_angle, vert_angle, range, sigma;
+	double ray_size1, ray_size2, delta_ray, expected_delta_ray;
+
+    N = sensor_data->points[sensor_data->point_cloud_index].num_points;
+    VR = sensor_params->vertical_resolution;
+
+    if (scan_index <= 0 || scan_index >= (N - VR))
+    {
+        return get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, ray_index, scan_index, reduce_sensitivity, thread_id);
+    }
+	
+    previous_ray_index = ray_index - 1;
+    next_ray_index = ray_index + 1;
+
+	if ((previous_ray_index < 0) || (next_ray_index >= VR))
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->maxed[thread_id][previous_ray_index] || sensor_data->maxed[thread_id][ray_index] || sensor_data->maxed[thread_id][next_ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->ray_hit_the_robot[thread_id][previous_ray_index] || sensor_data->ray_hit_the_robot[thread_id][ray_index] || sensor_data->ray_hit_the_robot[thread_id][next_ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][next_ray_index] < -2.0))
+		return (sensor_params->log_odds.log_odds_l0);
+
+    rot_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + previous_ray_index].horizontal_angle;
+    vert_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + previous_ray_index].vertical_angle;
+    range = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + previous_ray_index].length;
+    spehrical_2cartesian(rot_angle, vert_angle, range, p1[0], p1[1], p1[2]);
+
+    rot_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index - VR + next_ray_index].horizontal_angle;
+    vert_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index - VR + next_ray_index].vertical_angle;
+    range = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index - VR + next_ray_index].length;
+    spehrical_2cartesian(rot_angle, vert_angle, range, p2[0], p2[1], p2[2]);
+
+    rot_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + VR + next_ray_index].horizontal_angle;
+    vert_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + VR + next_ray_index].vertical_angle;
+    range = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + VR + next_ray_index].length;
+    spehrical_2cartesian(rot_angle, vert_angle, range, p3[0], p3[1], p3[2]);
+
+    rot_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].horizontal_angle;
+    vert_angle = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].vertical_angle;
+    range = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
+    spehrical_2cartesian(rot_angle, vert_angle, range, p[0], p[1], p[2]);
+
+	ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
+	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
+
+	delta_ray = ray_size2 - ray_size1;
+    expected_delta_ray = dist_from_plane(p1, p2, p3, p);
+	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(range, ray_index, sensor_params->vertical_correction, sensor_params->height);
+
+	obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
+	obstacle_evidence = (obstacle_evidence > 1.0) ? 1.0: obstacle_evidence;
+
+	if (reduce_sensitivity)
+	{
+		if (delta_ray > expected_delta_ray)
+			return (sensor_params->log_odds.log_odds_free);
+		if (delta_ray > expected_delta_ray)
+		{
+			obstacle_evidence = (delta_ray - expected_delta_ray) / expected_delta_ray;
+			if (obstacle_evidence > 1.0)
+				return (sensor_params->log_odds.log_odds_l0);
+		}
+		sigma = sensor_params->unexpeted_delta_range_sigma / 2.0;
+	}
+	else
+	{
+		if (delta_ray > expected_delta_ray)
+			return (sensor_params->log_odds.log_odds_l0);
+		if (delta_ray > expected_delta_ray)
+		{
+			obstacle_evidence = (delta_ray - expected_delta_ray) / expected_delta_ray;
+			if (obstacle_evidence > 1.0)
+				return (sensor_params->log_odds.log_odds_l0);
+		}
+		sigma = sensor_params->unexpeted_delta_range_sigma;
+	}
+
+	double p_0 = exp(-1.0 / sigma);
+
+	p_obstacle = (exp(-((1.0 - obstacle_evidence) * (1.0 - obstacle_evidence)) / sigma) - p_0) / (1.0 - p_0);
+
+	if (p_obstacle >= 1.0)
+		log_odds = MAX_LOG_ODDS_POSSIBLE;
+	else
+		log_odds = log(p_obstacle / (1.0 - p_obstacle));
+
+	if (log_odds > MAX_LOG_ODDS_POSSIBLE)
+		log_odds = MAX_LOG_ODDS_POSSIBLE;
+
+	return (log_odds);
+}
+
 
 double
 get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
@@ -1710,7 +1852,7 @@ carmen_prob_models_get_occuppancy_log_odds_by_height(sensor_data_t *sensor_data,
 			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_l0;
 		else
 		{
-			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);// +
+            sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);// +
 			//get_log_odds_via_unexpeted_delta_range_reverse(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);
 
 			if (sensor_data->obstacle_height[thread_id][i] < 0.5)
@@ -1748,7 +1890,10 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_l0;
 		else
 		{
-			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);// +
+            if (PLANE_SEGMENTATION_MODE)
+                sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_plane_segmentation(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);
+			else
+                sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);// +
 			//get_log_odds_via_unexpeted_delta_range_reverse(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);
 
 //			fprintf(plot_data, " oh %lf  uhag %lf # ", sensor_data->obstacle_height[thread_id][i], sensor_params->unsafe_height_above_ground);
