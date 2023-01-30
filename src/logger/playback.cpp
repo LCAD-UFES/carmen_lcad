@@ -31,7 +31,22 @@
 #include <carmen/playback_interface.h>
 #include <carmen/carmen_gps.h>
 #include <carmen/Gdc_To_Utm_Converter.h>
-#include "readlog.h"
+#include <carmen/readlog.h>
+#include <carmen/logger.h>
+#include <carmen/writelog.h>
+#include <carmen/proccontrol_interface.h>
+#include <carmen/proccontrol_messages.h>
+#include <carmen/model_predictive_planner_interface.h>
+#include <carmen/obstacle_avoider_interface.h>
+#include <carmen/frenet_path_planner_interface.h>
+#include <carmen/task_manager_interface.h>
+#include <carmen/audit_interface.h>
+#include <fstream>
+#include <stdio.h>
+#include <iostream>
+#include <string.h>
+#include <carmen/util_io.h>
+
 
 #define        MAX_LINE_LENGTH           (5*4000000)
 
@@ -74,6 +89,8 @@ int playback_timestamp_is_updated = 0;
 double playback_pose_x;
 double playback_pose_y;
 int playback_pose_is_updated = 0;
+
+int audit_version = 0;
 
 carmen_base_ackerman_odometry_message odometry_ackerman;
 carmen_robot_ackerman_velocity_message velocity_ackerman;
@@ -120,6 +137,947 @@ carmen_ultrasonic_sonar_sensor_message ultrasonic_message;
 carmen_ford_escape_status_message ford_escape_status;
 
 carmen_localize_ackerman_globalpos_message globalpos;
+
+carmen_model_predictive_planner_motion_plan_message model_predictive_planner_motion_plan_message;
+carmen_navigator_ackerman_plan_message navigator_ackerman_plan_message;
+carmen_behavior_selector_state_message behavior_selector_state_message;
+carmen_behavior_selector_path_goals_and_annotations_message behavior_selector_path_goals_and_annotations_message;
+carmen_route_planner_road_network_message route_planner_road_network_message;
+carmen_offroad_planner_plan_message offroad_planner_plan_message;
+carmen_rddf_end_point_message rddf_end_point_message;
+carmen_frenet_path_planner_set_of_paths frenet_path_planner_set_of_paths;
+carmen_route_planner_destination_message route_planner_destination_message;
+carmen_task_manager_set_collision_geometry_message task_manager_set_collision_geometry_message;
+carmen_task_manager_desired_engage_state_message task_manager_desired_engage_state_message;
+carmen_task_manager_set_semi_trailer_type_and_beta_message task_manager_set_semi_trailer_type_and_beta_message;
+carmen_audit_status_message audit_status_message;
+
+
+char*
+carmen_string_to_model_predictive_planner_motion_plan_message(char* string, carmen_model_predictive_planner_motion_plan_message *msg)
+{
+	char *current_pos = string;
+	int current_vector_size;
+	if (strncmp(current_pos, "MODEL_PREDICTIVE_PLANNER", 24) == 0)
+		current_pos += 24;
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+	if (msg->plan == NULL)
+	{
+		msg->plan_length = current_vector_size;
+		msg->plan = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->plan_length, sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+	else if (msg->plan_length != current_vector_size)
+	{
+		msg->plan_length = current_vector_size;
+		msg->plan = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->plan, msg->plan_length * sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+
+
+	for (int i = 0; i < msg->plan_length; i++)
+	{
+		msg->plan[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->plan[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->plan[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->plan[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->plan[i].num_trailers; ii++)
+				msg->plan[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->plan[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+
+		msg->plan[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->plan[i].phi = 		CLF_READ_DOUBLE(&current_pos);
+	}
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_navigator_ackerman_plan_message(char* string, carmen_navigator_ackerman_plan_message *msg)
+{
+	int current_vector_size;
+
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "OBSTACLE_AVOIDER", 16) == 0)
+		current_pos += 16;
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+	if (msg->path == NULL)
+	{
+		msg->path_length = current_vector_size;
+		msg->path = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->path_length, sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+	else if (msg->path_length != current_vector_size)
+	{
+		msg->path_length = current_vector_size;
+		msg->path = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->path, msg->path_length * sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+
+
+	for (int i = 0; i < msg->path_length; i++)
+	{
+		msg->path[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->path[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->path[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->path[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->path[i].num_trailers; ii++)
+				msg->path[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->path[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->path[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->path[i].phi = 		CLF_READ_DOUBLE(&current_pos);
+	}
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_behavior_selector_state_message(char* string, carmen_behavior_selector_state_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "BEHAVIOR_SELECTOR_STATE", 23) == 0)
+		current_pos += 23;
+
+	msg->task = (carmen_behavior_selector_task_t) CLF_READ_INT(&current_pos);
+	msg->algorithm = (carmen_behavior_selector_algorithm_t) CLF_READ_INT(&current_pos);
+	msg->low_level_state = (carmen_behavior_selector_low_level_state_t) CLF_READ_INT(&current_pos);
+	msg->low_level_state_flags = CLF_READ_INT(&current_pos);
+	msg->route_planner_state = (carmen_route_planner_state_t) CLF_READ_INT(&current_pos);
+	msg->offroad_planner_request = (offroad_planner_request_t) CLF_READ_INT(&current_pos);
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_behavior_selector_path_goals_and_annotations_message(char* string, carmen_behavior_selector_path_goals_and_annotations_message *msg)
+{
+	int current_vector_size;
+	int current_vector_size_back;
+
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS", 44) == 0)
+		current_pos += 44;
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+	current_vector_size_back = CLF_READ_INT(&current_pos);
+
+	if (msg->poses == NULL)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->poses = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses, sizeof(carmen_robot_and_trailers_traj_point_t));
+
+		msg->annotations = (int *) calloc(msg->number_of_poses, sizeof(int));
+		msg->annotations_codes = (int *) calloc(msg->number_of_poses, sizeof(int));
+	}
+	else if (msg->number_of_poses != current_vector_size)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->poses = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->poses, msg->number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
+
+		msg->annotations = (int *) realloc(msg->annotations, msg->number_of_poses * sizeof(int));
+		msg->annotations_codes = (int *) realloc(msg->annotations_codes, msg->number_of_poses * sizeof(int));
+	}
+
+	if (msg->poses_back == NULL)
+	{
+		msg->number_of_poses_back = current_vector_size_back;
+		msg->poses_back = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses_back, sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+	else if (msg->number_of_poses_back != current_vector_size_back)
+	{
+		msg->number_of_poses_back = current_vector_size_back;
+		msg->poses_back = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->poses_back, msg->number_of_poses_back * sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+	{
+		msg->poses[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->poses[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->poses[i].num_trailers; ii++)
+				msg->poses[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->poses[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_poses_back; i++)
+	{
+		msg->poses_back[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->poses_back[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->poses_back[i].num_trailers; ii++)
+				msg->poses_back[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->poses_back[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+		msg->annotations[i] = CLF_READ_INT(&current_pos);
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+		msg->annotations_codes[i] = CLF_READ_INT(&current_pos);
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->goal_list == NULL)
+	{
+		msg->goal_list_size = current_vector_size;
+		msg->goal_list = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->goal_list_size, sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+	else if (msg->goal_list_size != current_vector_size)
+	{
+		msg->goal_list_size = current_vector_size;
+		msg->goal_list = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->goal_list, msg->goal_list_size * sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+
+	for (int i = 0; i < msg->goal_list_size; i++)
+	{
+		msg->goal_list[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->goal_list[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->goal_list[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->goal_list[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->goal_list[i].num_trailers; ii++)
+				msg->goal_list[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->goal_list[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->goal_list[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->goal_list[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_route_planner_road_network_message(char* string, carmen_route_planner_road_network_message *msg)
+{
+	char *current_pos = string;
+
+	int current_vector_size;
+	int current_vector_size_back;
+
+	if (strncmp(current_pos, "ROUTE_PLANNER_ROAD_NETWORK", 26) == 0)
+		current_pos += 26;
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+	current_vector_size_back = CLF_READ_INT(&current_pos);
+
+	if (msg->poses == NULL)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->poses = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses, sizeof(carmen_robot_and_trailers_traj_point_t));
+
+		msg->annotations = (int *) calloc(msg->number_of_poses, sizeof(int));
+		msg->annotations_codes = (int *) calloc(msg->number_of_poses, sizeof(int));
+	}
+	else if (msg->number_of_poses != current_vector_size)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->poses = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->poses, msg->number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
+
+		msg->annotations = (int *) realloc(msg->annotations, msg->number_of_poses * sizeof(int));
+		msg->annotations_codes = (int *) realloc(msg->annotations_codes, msg->number_of_poses * sizeof(int));
+	}
+
+	if (msg->poses_back == NULL)
+	{
+		msg->number_of_poses_back = current_vector_size_back;
+		msg->poses_back = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses_back, sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+	else if (msg->number_of_poses_back != current_vector_size_back)
+	{
+		msg->number_of_poses_back = current_vector_size_back;
+		msg->poses_back = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->poses_back, msg->number_of_poses_back * sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+	{
+		msg->poses[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->poses[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->poses[i].num_trailers; ii++)
+				msg->poses[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->poses[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_poses_back; i++)
+	{
+		msg->poses_back[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->poses_back[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->poses_back[i].num_trailers; ii++)
+				msg->poses_back[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->poses_back[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+		msg->annotations[i] = CLF_READ_INT(&current_pos);
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+		msg->annotations_codes[i] = CLF_READ_INT(&current_pos);
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->nearby_lanes_indexes == NULL)
+	{
+		msg->number_of_nearby_lanes = current_vector_size;
+		msg->nearby_lanes_indexes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+		msg->nearby_lanes_sizes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+		msg->nearby_lanes_ids = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+
+		msg->nearby_lanes_merges_indexes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+		msg->nearby_lanes_merges_sizes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+
+		msg->nearby_lanes_forks_indexes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+		msg->nearby_lanes_forks_sizes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+
+		msg->nearby_lanes_crossroads_indexes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+		msg->nearby_lanes_crossroads_sizes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+
+		msg->nearby_lanes_node_ids = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+	}
+	else if (msg->number_of_nearby_lanes != current_vector_size)
+	{
+		msg->number_of_nearby_lanes = current_vector_size;
+		msg->nearby_lanes_indexes = (int *) realloc(msg->nearby_lanes_indexes, msg->number_of_nearby_lanes * sizeof(int));
+		msg->nearby_lanes_sizes = (int *) realloc(msg->nearby_lanes_sizes, msg->number_of_nearby_lanes * sizeof(int));
+		msg->nearby_lanes_ids = (int *) realloc(msg->nearby_lanes_ids, msg->number_of_nearby_lanes * sizeof(int));
+
+		msg->nearby_lanes_merges_indexes =(int *) realloc(msg->nearby_lanes_merges_indexes, msg->number_of_nearby_lanes * sizeof(int));
+		msg->nearby_lanes_merges_sizes = (int *) realloc(msg->nearby_lanes_merges_sizes, msg->number_of_nearby_lanes * sizeof(int));
+
+		msg->nearby_lanes_forks_indexes = (int *) realloc(msg->nearby_lanes_forks_indexes, msg->number_of_nearby_lanes * sizeof(int));
+		msg->nearby_lanes_forks_sizes = (int *) realloc(msg->nearby_lanes_forks_sizes, msg->number_of_nearby_lanes * sizeof(int));
+
+		msg->nearby_lanes_crossroads_indexes = (int *) realloc(msg->nearby_lanes_crossroads_indexes, msg->number_of_nearby_lanes * sizeof(int));
+		msg->nearby_lanes_crossroads_sizes = (int *) realloc(msg->nearby_lanes_crossroads_sizes, msg->number_of_nearby_lanes * sizeof(int));
+
+		msg->nearby_lanes_node_ids = (int *) realloc(msg->nearby_lanes_node_ids, msg->number_of_nearby_lanes * sizeof(int));
+	}
+
+	for (int i = 0; i < msg->number_of_nearby_lanes; i++)
+	{
+		msg->nearby_lanes_indexes[i] = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_sizes[i] =	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_ids[i] =		CLF_READ_INT(&current_pos);
+	}
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->nearby_lanes == NULL)
+	{
+		msg->nearby_lanes_size = current_vector_size;
+		msg->nearby_lanes = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->nearby_lanes_size, sizeof(carmen_robot_and_trailers_traj_point_t));
+		msg->traffic_restrictions = (int *) calloc(msg->nearby_lanes_size, sizeof(int));
+	}
+	else if (msg->nearby_lanes_size != current_vector_size)
+	{
+		msg->nearby_lanes_size = current_vector_size;
+		msg->nearby_lanes = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->nearby_lanes, msg->nearby_lanes_size * sizeof(carmen_robot_and_trailers_traj_point_t));
+		msg->traffic_restrictions = (int *) realloc(msg->traffic_restrictions, msg->nearby_lanes_size * sizeof(int));
+	}
+
+	for (int i = 0; i < msg->nearby_lanes_size; i++)
+	{
+		msg->nearby_lanes[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->nearby_lanes[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->nearby_lanes[i].num_trailers; ii++)
+				msg->nearby_lanes[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->nearby_lanes[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->nearby_lanes_size; i++)
+		msg->traffic_restrictions[i] = CLF_READ_INT(&current_pos);
+
+	for (int i = 0; i < msg->number_of_nearby_lanes; i++)
+	{
+		msg->nearby_lanes_merges_indexes[i] = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_merges_sizes[i] =	CLF_READ_INT(&current_pos);
+	}
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->nearby_lanes_merges == NULL)
+	{
+		msg->nearby_lanes_merges_size = current_vector_size;
+		msg->nearby_lanes_merges = (carmen_route_planner_junction_t *) calloc(msg->nearby_lanes_merges_size, sizeof(carmen_route_planner_junction_t));
+	}
+	else if (msg->nearby_lanes_merges_size != current_vector_size)
+	{
+		msg->nearby_lanes_merges_size = current_vector_size;
+		msg->nearby_lanes_merges = (carmen_route_planner_junction_t *) realloc(msg->nearby_lanes_merges, msg->nearby_lanes_merges_size * sizeof(carmen_route_planner_junction_t));
+	}
+
+	for (int i = 0; i < msg->nearby_lanes_merges_size; i++)
+	{
+		msg->nearby_lanes_merges[i].node_id = 		CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_merges[i].index_of_node_in_current_lane = 		CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_merges[i].target_node_index_in_nearby_lane = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_merges[i].target_lane_id = 	CLF_READ_INT(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_nearby_lanes; i++)
+	{
+		msg->nearby_lanes_forks_indexes[i] = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_forks_sizes[i] =	CLF_READ_INT(&current_pos);
+	}
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->nearby_lanes_forks == NULL)
+	{
+		msg->nearby_lanes_forks_size = current_vector_size;
+		msg->nearby_lanes_forks = (carmen_route_planner_junction_t *) calloc(msg->nearby_lanes_forks_size, sizeof(carmen_route_planner_junction_t));
+	}
+	else if (msg->nearby_lanes_forks_size != current_vector_size)
+	{
+		msg->nearby_lanes_forks_size = current_vector_size;
+		msg->nearby_lanes_forks = (carmen_route_planner_junction_t *) realloc(msg->nearby_lanes_forks, msg->nearby_lanes_forks_size * sizeof(carmen_route_planner_junction_t));
+	}
+
+	for (int i = 0; i < msg->nearby_lanes_forks_size; i++)
+	{
+		msg->nearby_lanes_forks[i].node_id = 		CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_forks[i].index_of_node_in_current_lane = 		CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_forks[i].target_node_index_in_nearby_lane = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_forks[i].target_lane_id = 	CLF_READ_INT(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_nearby_lanes; i++)
+	{
+		msg->nearby_lanes_crossroads_indexes[i] = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_crossroads_indexes[i] =	CLF_READ_INT(&current_pos);
+	}
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->nearby_lanes_crossroads == NULL)
+	{
+		msg->nearby_lanes_crossroads_size = current_vector_size;
+		msg->nearby_lanes_crossroads = (carmen_route_planner_junction_t *) calloc(msg->nearby_lanes_crossroads_size, sizeof(carmen_route_planner_junction_t));
+	}
+	else if (msg->nearby_lanes_crossroads_size != current_vector_size)
+	{
+		msg->nearby_lanes_crossroads_size = current_vector_size;
+		msg->nearby_lanes_crossroads = (carmen_route_planner_junction_t *) realloc(msg->nearby_lanes_crossroads, msg->nearby_lanes_crossroads_size * sizeof(carmen_route_planner_junction_t));
+	}
+
+	for (int i = 0; i < msg->nearby_lanes_crossroads_size; i++)
+	{
+		msg->nearby_lanes_crossroads[i].node_id = 		CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_crossroads[i].index_of_node_in_current_lane = 		CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_crossroads[i].target_node_index_in_nearby_lane = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_crossroads[i].target_lane_id = 	CLF_READ_INT(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_nearby_lanes; i++)
+	{
+		msg->nearby_lanes_node_ids[i] = 	CLF_READ_INT(&current_pos);
+	}
+
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->route == NULL)
+	{
+		msg->route_size = current_vector_size_back;
+		msg->route = (carmen_route_planner_route_t *) calloc(msg->route_size, sizeof(carmen_route_planner_route_t));
+	}
+	else if (msg->route_size != current_vector_size_back)
+	{
+		msg->route_size = current_vector_size_back;
+		msg->route = (carmen_route_planner_route_t *) realloc(msg->route, msg->route_size * sizeof(carmen_route_planner_route_t));
+	}
+
+	for (int i = 0; i < msg->route_size; i++)
+	{
+		msg->route[i].pose.x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->route[i].pose.y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->route[i].pose.theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->route[i].pose.num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->route[i].pose.num_trailers; ii++)
+				msg->route[i].pose.trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->route[i].pose.trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->route[i].pose.v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->route[i].pose.phi = 	CLF_READ_DOUBLE(&current_pos);
+		msg->route[i].node_id = 	CLF_READ_INT(&current_pos);
+		msg->route[i].lane_id = 	CLF_READ_INT(&current_pos);
+	}
+
+	msg->offroad_planner_request = (offroad_planner_request_t) CLF_READ_INT(&current_pos);
+	msg->route_planner_state = (carmen_route_planner_state_t) CLF_READ_INT(&current_pos);
+
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_route_planner_destination_message(char* string, carmen_route_planner_destination_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "ROUTE_PLANNER_DESTINATION", 25) == 0)
+		current_pos += 25;
+
+	static char can_line[1024];
+	CLF_READ_STRING(can_line, &current_pos);
+
+	msg->destination = can_line;
+	msg->destination_point.x = CLF_READ_DOUBLE(&current_pos);
+	msg->destination_point.y = CLF_READ_DOUBLE(&current_pos);
+	msg->destination_point.theta = CLF_READ_DOUBLE(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_offroad_planner_plan_message(char* string, carmen_offroad_planner_plan_message *msg)
+{
+	int current_vector_size;
+
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "OFFROAD_PLANNER_PLAN", 20) == 0)
+		current_pos += 20;
+
+	msg->offroad_planner_feedback = (carmen_offroad_planner_feedback_t) CLF_READ_INT(&current_pos);
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->poses == NULL)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->poses = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses, sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+	else if (msg->number_of_poses != current_vector_size)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->poses = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->poses, msg->number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+	{
+		msg->poses[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->poses[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->poses[i].num_trailers; ii++)
+				msg->poses[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->poses[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	msg->pose_id = CLF_READ_INT(&current_pos);
+
+	msg->transition_pose.x = 		CLF_READ_DOUBLE(&current_pos);
+	msg->transition_pose.y = 		CLF_READ_DOUBLE(&current_pos);
+	msg->transition_pose.theta = 	CLF_READ_DOUBLE(&current_pos);
+	if (audit_version == 1)
+	{
+		msg->transition_pose.num_trailers = CLF_READ_INT(&current_pos);
+		for (int ii = 0; ii < msg->transition_pose.num_trailers; ii++)
+			msg->transition_pose.trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+	}
+	else
+		msg->transition_pose.trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+	msg->transition_pose.v = 		CLF_READ_DOUBLE(&current_pos);
+	msg->transition_pose.phi = 		CLF_READ_DOUBLE(&current_pos);
+
+	msg->goal_pose.x = 				CLF_READ_DOUBLE(&current_pos);
+	msg->goal_pose.y = 				CLF_READ_DOUBLE(&current_pos);
+	msg->goal_pose.theta = 			CLF_READ_DOUBLE(&current_pos);
+	if (audit_version == 1)
+	{
+		msg->goal_pose.num_trailers = CLF_READ_INT(&current_pos);
+		for (int ii = 0; ii < msg->goal_pose.num_trailers; ii++)
+			msg->goal_pose.trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+	}
+	else
+		msg->goal_pose.trailer_theta[0] = 			CLF_READ_DOUBLE(&current_pos);
+	msg->goal_pose.v = 				CLF_READ_DOUBLE(&current_pos);
+	msg->goal_pose.phi = 			CLF_READ_DOUBLE(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_rddf_end_point_message(char* string, carmen_rddf_end_point_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "RDDF_PLAY_END_POINT", 19) == 0)
+		current_pos += 19;
+	msg->half_meters_to_final_goal = CLF_READ_INT(&current_pos);
+	msg->point.x =		CLF_READ_DOUBLE(&current_pos);
+	msg->point.y = 		CLF_READ_DOUBLE(&current_pos);
+	msg->point.theta = 	CLF_READ_DOUBLE(&current_pos);
+	if (audit_version == 1)
+	{
+		msg->point.num_trailers = CLF_READ_INT(&current_pos);
+		for (int ii = 0; ii < msg->point.num_trailers; ii++)
+			msg->point.trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+	}
+	else
+		msg->point.trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_frenet_path_planner_set_of_paths(char* string, carmen_frenet_path_planner_set_of_paths *msg)
+{
+	int current_vector_size, current_vector_size2;
+
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "FRENET_PATH_PLANNER", 19) == 0)
+		current_pos += 19;
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+	current_vector_size2 = CLF_READ_INT(&current_pos);
+
+	if (msg->set_of_paths == NULL)
+	{
+		msg->set_of_paths_size = current_vector_size;
+		msg->set_of_paths = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->set_of_paths_size, sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+	else if (msg->set_of_paths_size != current_vector_size)
+	{
+		msg->set_of_paths_size = current_vector_size;
+		msg->set_of_paths = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->set_of_paths, msg->set_of_paths_size * sizeof(carmen_robot_and_trailers_traj_point_t));
+	}
+
+	for (int i = 0; i < msg->set_of_paths_size; i++)
+	{
+		msg->set_of_paths[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->set_of_paths[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->set_of_paths[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->set_of_paths[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->set_of_paths[i].num_trailers; ii++)
+				msg->set_of_paths[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->set_of_paths[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->set_of_paths[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->set_of_paths[i].phi = 		CLF_READ_DOUBLE(&current_pos);
+	}
+	msg->selected_path = CLF_READ_INT(&current_pos);
+	current_vector_size = current_vector_size2;
+	current_vector_size2 = CLF_READ_INT(&current_pos);
+
+	if (msg->poses_back == NULL)
+	{
+		msg->number_of_poses_back = current_vector_size2;
+		msg->poses_back = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses_back, sizeof(carmen_robot_and_trailers_traj_point_t));
+		msg->rddf_poses_back = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses_back, sizeof(carmen_robot_and_trailers_traj_point_t));
+
+	}
+	else if (msg->number_of_poses_back != current_vector_size2)
+	{
+		msg->number_of_poses_back = current_vector_size2;
+		msg->poses_back = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->poses_back, msg->number_of_poses_back * sizeof(carmen_robot_and_trailers_traj_point_t));
+		msg->rddf_poses_back = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->rddf_poses_back, msg->number_of_poses_back * sizeof(carmen_robot_and_trailers_traj_point_t));
+
+	}
+
+	for (int i = 0; i < msg->number_of_poses_back; i++)
+	{
+		msg->poses_back[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->poses_back[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->poses_back[i].num_trailers; ii++)
+				msg->poses_back[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->poses_back[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->poses_back[i].phi = 	CLF_READ_DOUBLE(&current_pos);
+	}
+
+	if (msg->rddf_poses_ahead == NULL)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->rddf_poses_ahead = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->number_of_poses, sizeof(carmen_robot_and_trailers_traj_point_t));
+
+		msg->annotations = (int *) calloc(msg->number_of_poses, sizeof(int));
+		msg->annotations_codes = (int *) calloc(msg->number_of_poses, sizeof(int));
+	}
+	else if (msg->number_of_poses != current_vector_size)
+	{
+		msg->number_of_poses = current_vector_size;
+		msg->rddf_poses_ahead = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->rddf_poses_ahead, msg->number_of_poses * sizeof(carmen_robot_and_trailers_traj_point_t));
+
+		msg->annotations = (int *) realloc(msg->annotations, msg->number_of_poses * sizeof(int));
+		msg->annotations_codes = (int *) realloc(msg->annotations_codes, msg->number_of_poses * sizeof(int));
+	}
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+	{
+		msg->rddf_poses_ahead[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_ahead[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_ahead[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->rddf_poses_ahead[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->rddf_poses_ahead[i].num_trailers; ii++)
+				msg->rddf_poses_ahead[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->rddf_poses_ahead[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_ahead[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_ahead[i].phi = 		CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_poses_back; i++)
+	{
+		msg->rddf_poses_back[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_back[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_back[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->rddf_poses_back[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->rddf_poses_back[i].num_trailers; ii++)
+				msg->rddf_poses_back[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->rddf_poses_back[i].trailer_theta[0] = 		CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_back[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->rddf_poses_back[i].phi = 		CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+		msg->annotations[i] = CLF_READ_INT(&current_pos);
+
+	for (int i = 0; i < msg->number_of_poses; i++)
+		msg->annotations_codes[i] = CLF_READ_INT(&current_pos);
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->nearby_lanes_indexes == NULL)
+	{
+		msg->number_of_nearby_lanes = current_vector_size;
+		msg->nearby_lanes_indexes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+		msg->nearby_lanes_sizes = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+		msg->nearby_lanes_ids = (int *) calloc(msg->number_of_nearby_lanes, sizeof(int));
+	}
+	else if (msg->number_of_nearby_lanes != current_vector_size)
+	{
+		msg->number_of_nearby_lanes = current_vector_size;
+		msg->nearby_lanes_indexes = (int *) realloc(msg->nearby_lanes_indexes, msg->number_of_nearby_lanes * sizeof(int));
+		msg->nearby_lanes_sizes = (int *) realloc(msg->nearby_lanes_sizes, msg->number_of_nearby_lanes * sizeof(int));
+		msg->nearby_lanes_ids = (int *) realloc(msg->nearby_lanes_ids, msg->number_of_nearby_lanes * sizeof(int));
+	}
+
+	for (int i = 0; i < msg->number_of_nearby_lanes; i++)
+	{
+		msg->nearby_lanes_indexes[i] = 	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_sizes[i] =	CLF_READ_INT(&current_pos);
+		msg->nearby_lanes_ids[i] =		CLF_READ_INT(&current_pos);
+	}
+
+	current_vector_size = CLF_READ_INT(&current_pos);
+
+	if (msg->nearby_lanes == NULL)
+	{
+		msg->nearby_lanes_size = current_vector_size;
+		msg->nearby_lanes = (carmen_robot_and_trailers_traj_point_t *) calloc(msg->nearby_lanes_size, sizeof(carmen_robot_and_trailers_traj_point_t));
+		msg->traffic_restrictions = (int *) calloc(msg->nearby_lanes_size, sizeof(int));
+	}
+	else if (msg->nearby_lanes_size != current_vector_size)
+	{
+		msg->nearby_lanes_size = current_vector_size;
+		msg->nearby_lanes = (carmen_robot_and_trailers_traj_point_t *) realloc(msg->nearby_lanes, msg->nearby_lanes_size * sizeof(carmen_robot_and_trailers_traj_point_t));
+		msg->traffic_restrictions = (int *) realloc(msg->traffic_restrictions, msg->nearby_lanes_size * sizeof(int));
+	}
+
+	for (int i = 0; i < msg->nearby_lanes_size; i++)
+	{
+		msg->nearby_lanes[i].x = 		CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].y = 		CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].theta = 	CLF_READ_DOUBLE(&current_pos);
+		if (audit_version == 1)
+		{
+			msg->nearby_lanes[i].num_trailers = CLF_READ_INT(&current_pos);
+			for (int ii = 0; ii < msg->nearby_lanes[i].num_trailers; ii++)
+				msg->nearby_lanes[i].trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+		}
+		else
+			msg->nearby_lanes[i].trailer_theta[0] = 	CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].v = 		CLF_READ_DOUBLE(&current_pos);
+		msg->nearby_lanes[i].phi = 		CLF_READ_DOUBLE(&current_pos);
+	}
+
+	for (int i = 0; i < msg->nearby_lanes_size; i++)
+		msg->traffic_restrictions[i] = CLF_READ_INT(&current_pos);
+
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_task_manager_set_collision_geometry_message(char* string, carmen_task_manager_set_collision_geometry_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "TASK_MANAGER_SET_GEOMETRY", 25) == 0)
+		current_pos += 25;
+
+	msg->geometry = CLF_READ_INT(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_task_manager_desired_engage_state_message(char* string, carmen_task_manager_desired_engage_state_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "TASK_MANAGER_DESIRED_ENGAGE_STATE", 34) == 0)
+		current_pos += 34;
+
+	msg->desired_engage_state = CLF_READ_INT(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_task_manager_set_semi_trailer_type_and_beta_message(char* string, carmen_task_manager_set_semi_trailer_type_and_beta_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA", 43) == 0)
+		current_pos += 43;
+
+	msg->semi_trailer_type = CLF_READ_INT(&current_pos);
+	if (audit_version == 1)
+	{
+		msg->num_trailers = CLF_READ_INT(&current_pos);
+		for (int ii = 0; ii < msg->num_trailers; ii++)
+			msg->trailer_theta[ii] = CLF_READ_DOUBLE(&current_pos);
+	}
+	else
+		msg->trailer_theta[0] = CLF_READ_DOUBLE(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
+
+
+char*
+carmen_string_to_audit_status_message(char* string, carmen_audit_status_message *msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "AUDIT_STATUS_MESSAGE", 20) == 0)
+		current_pos += 20;
+
+	msg->decision_making_status = 	CLF_READ_INT(&current_pos);
+	msg->basic_perception_status = 	CLF_READ_INT(&current_pos);
+	msg->lidar_status = 			CLF_READ_INT(&current_pos);
+	msg->camera_status = 			CLF_READ_INT(&current_pos);
+	msg->other_sensors_status = 	CLF_READ_INT(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+	return current_pos;
+}
 
 
 typedef char *(*converter_func)(char *, void *);
@@ -255,6 +1213,20 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE13", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE13_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan13, 0},
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE14", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE14_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan14, 0},
 	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE15", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE15_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan15, 0},
+	{(char *) "MODEL_PREDICTIVE_PLANNER", 						(char *) CARMEN_MODEL_PREDICTIVE_PLANNER_MOTION_PLAN_MESSAGE_NAME , 		(converter_func) carmen_string_to_model_predictive_planner_motion_plan_message, &model_predictive_planner_motion_plan_message, 0},
+	{(char *) "OBSTACLE_AVOIDER", 								(char *) CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME, 								(converter_func) carmen_string_to_navigator_ackerman_plan_message, &navigator_ackerman_plan_message, 0},
+	{(char *) "BEHAVIOR_SELECTOR_STATE", 						(char *) CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, 						(converter_func) carmen_string_to_behavior_selector_state_message, &behavior_selector_state_message, 0},
+	{(char *) "BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS", 	(char *) CARMEN_BEHAVIOR_SELECTOR_PATH_GOALS_AND_ANNOTATIONS_MESSAGE_NAME, 	(converter_func) carmen_string_to_behavior_selector_path_goals_and_annotations_message, &behavior_selector_path_goals_and_annotations_message, 0},
+	{(char *) "ROUTE_PLANNER_ROAD_NETWORK", 					(char *) CARMEN_ROUTE_PLANNER_ROAD_NETWORK_MESSAGE_NAME, 					(converter_func) carmen_string_to_route_planner_road_network_message, &route_planner_road_network_message, 0},
+	{(char *) "ROUTE_PLANNER_DESTINATION", 						(char *) CARMEN_ROUTE_PLANNER_DESTINATION_MESSAGE_NAME, 					(converter_func) carmen_string_to_route_planner_destination_message, &route_planner_destination_message, 0},
+	{(char *) "OFFROAD_PLANNER_PLAN", 							(char *) CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_NAME, 							(converter_func) carmen_string_to_offroad_planner_plan_message, &offroad_planner_plan_message, 0},
+	{(char *) "RDDF_PLAY_END_POINT", 							(char *) CARMEN_RDDF_END_POINT_MESSAGE_NAME, 								(converter_func) carmen_string_to_rddf_end_point_message, &rddf_end_point_message, 0},
+	{(char *) "FRENET_PATH_PLANNER", 							(char *) CARMEN_FRENET_PATH_PLANNER_SET_OF_PATHS_MESSAGE_NAME, 				(converter_func) carmen_string_to_frenet_path_planner_set_of_paths, &frenet_path_planner_set_of_paths, 0},
+	{(char *) "TASK_MANAGER_SET_COLLISION_GEOMETRY", 			(char *) CARMEN_TASK_MANAGER_SET_GEOMETRY_MESSAGE_NAME, 					(converter_func) carmen_string_to_task_manager_set_collision_geometry_message, &task_manager_set_collision_geometry_message, 0},
+	{(char *) "TASK_MANAGER_DESIRED_ENGAGE_STATE", 				(char *) CARMEN_TASK_MANAGER_DESIRED_ENGAGE_STATE_MESSAGE_NAME, 			(converter_func) carmen_string_to_task_manager_desired_engage_state_message, &task_manager_desired_engage_state_message, 0},
+	{(char *) "TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA", 	(char *) CARMEN_TASK_MANAGER_SET_SEMI_TRAILER_TYPE_AND_BETA_MESSAGE_NAME, 	(converter_func) carmen_string_to_task_manager_set_semi_trailer_type_and_beta_message, &task_manager_set_semi_trailer_type_and_beta_message, 0},
+	{(char *) "AUDIT_STATUS_MESSAGE", 							(char *) CARMEN_AUDIT_STATUS_MESSAGE_NAME, 									(converter_func) carmen_string_to_audit_status_message, &audit_status_message, 0},
+
 };
 
 
@@ -683,6 +1655,42 @@ playback_command_set_message(char *message)
     	if (x2 != 0.0 && y2 != 0.0)
     		stop_x = x2, stop_y = y2;
     }
+}
+
+
+void
+check_audit_version()
+{
+	// Essa função serve apenas para checar a versão do audit usada, que foi inserida após a mudança multi_trailer do carmen. Por causa dessa função, os audits antigos continuam funcionando
+
+	std::string line;
+	std::ifstream logfile_s(log_filename);
+
+	if (!logfile_s.is_open())
+	{
+		std::cerr << "Unable to open the input file: " << log_filename << std::endl;
+		exit(-1);
+	}
+
+	while (std::getline(logfile_s, line))
+	{
+		carmen_line_content current_content = create_carmen_line_content(line);
+		std::string tag = get_string_from_carmen_line_content(current_content, 0);
+		if (tag.at(0) == '#')
+		{
+			std::string tag_1 = get_string_from_carmen_line_content(current_content, 1);
+			if (tag_1.compare("audit") == 0 && get_string_from_carmen_line_content(current_content, 2).compare("id:") == 0)
+			{
+				std::string tag_2 = get_string_from_carmen_line_content(current_content, 3);
+				audit_version = (tag_2.compare("(null)") == 0) ? 0 : std::stoi(tag_2);
+				break;
+			}
+		}
+		else
+			break;
+
+	}
+	logfile_s.close();
 }
 
 
@@ -1252,6 +2260,19 @@ set_messages()
 	memset(&ultrasonic_message, 0, sizeof(ultrasonic_message));
 	memset(&ford_escape_status, 0, sizeof(ford_escape_status));
 	memset(&globalpos, 0, sizeof(globalpos));
+
+	memset(&model_predictive_planner_motion_plan_message, 0, sizeof(model_predictive_planner_motion_plan_message));
+	memset(&navigator_ackerman_plan_message, 0, sizeof(navigator_ackerman_plan_message));
+	memset(&behavior_selector_state_message, 0, sizeof(behavior_selector_state_message));
+	memset(&behavior_selector_path_goals_and_annotations_message, 0, sizeof(behavior_selector_path_goals_and_annotations_message));
+	memset(&route_planner_road_network_message, 0, sizeof(route_planner_road_network_message));
+	memset(&offroad_planner_plan_message, 0, sizeof(offroad_planner_plan_message));
+	memset(&rddf_end_point_message, 0, sizeof(rddf_end_point_message));
+	memset(&frenet_path_planner_set_of_paths, 0, sizeof(frenet_path_planner_set_of_paths));
+	memset(&route_planner_destination_message, 0, sizeof(route_planner_destination_message));
+	memset(&task_manager_set_collision_geometry_message, 0, sizeof(task_manager_set_collision_geometry_message));
+	memset(&task_manager_desired_engage_state_message, 0, sizeof(task_manager_desired_engage_state_message));
+	memset(&task_manager_set_semi_trailer_type_and_beta_message, 0, sizeof(task_manager_set_semi_trailer_type_and_beta_message));
 }
 
 
@@ -1302,6 +2323,9 @@ main(int argc, char **argv)
 	carmen_playback_define_messages();
 
 	signal(SIGINT, shutdown_playback_module);
+
+	// Método para realizar a checagem da versão do audit para manter a retrocompatibilidade. Só é relevante ao usar o audit.
+	check_audit_version();
 
 	main_playback_loop();
 	return 0;
