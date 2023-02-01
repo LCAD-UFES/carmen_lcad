@@ -1608,9 +1608,9 @@ dist_from_plane(double p1[3], double p2[3], double p3[3], double p[3])
     s1 = a2*b3 - a3*b2;
     s2 = a3*b1 - a1*b3;
     s3 = a1*b2 - a2*b1;
-    d = - s1*p1[0] - s2*p1[1] - s3*p1[2];
+    d = s1*p1[0] + s2*p1[1] + s3*p1[2];
 
-    D = fabs(s1*p[0] + s2*p[1] + s3*p[2] + d)/sqrt(s1*s1 + s2*s2 + s3*s3);
+    D = (s1*p[0] + s2*p[1] + s3*p[2] - d)/sqrt(s1*s1 + s2*s2 + s3*s3);
     return D;
 }
 
@@ -1639,8 +1639,8 @@ get_log_odds_via_plane_segmentation(sensor_parameters_t *sensor_params, sensor_d
     int N, VR, previous_ray_index, next_ray_index;
     double obstacle_evidence, p_obstacle, log_odds;
     double p1[3], p2[3], p3[3], p[3];
-    double rot_angle, vert_angle, range, sigma;
-	double ray_size1, ray_size2, delta_ray, expected_delta_ray;
+    double rot_angle, vert_angle, range, sigma, p_0;
+	double ray_size1, ray_size2, delta_ray, expected_delta_ray, expected_delta_ray_;
 
     N = sensor_data->points[sensor_data->point_cloud_index].num_points;
     VR = sensor_params->vertical_resolution;
@@ -1689,10 +1689,10 @@ get_log_odds_via_plane_segmentation(sensor_parameters_t *sensor_params, sensor_d
 	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
 
 	delta_ray = ray_size2 - ray_size1;
-    expected_delta_ray = dist_from_plane(p1, p2, p3, p);
+    expected_delta_ray_ = dist_from_plane(p1, p2, p3, p);
 	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(range, ray_index, sensor_params->vertical_correction, sensor_params->height);
+    obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
 
-	obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
 	obstacle_evidence = (obstacle_evidence > 1.0) ? 1.0: obstacle_evidence;
 
 	if (reduce_sensitivity)
@@ -1720,8 +1720,7 @@ get_log_odds_via_plane_segmentation(sensor_parameters_t *sensor_params, sensor_d
 		sigma = sensor_params->unexpeted_delta_range_sigma;
 	}
 
-	double p_0 = exp(-1.0 / sigma);
-
+	p_0 = exp(-1.0 / sigma);
 	p_obstacle = (exp(-((1.0 - obstacle_evidence) * (1.0 - obstacle_evidence)) / sigma) - p_0) / (1.0 - p_0);
 
 	if (p_obstacle >= 1.0)
