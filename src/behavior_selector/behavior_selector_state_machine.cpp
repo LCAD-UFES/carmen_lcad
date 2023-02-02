@@ -46,6 +46,7 @@ extern bool wait_start_moving;
 extern bool autonomous;
 extern bool all_paths_has_collision_and_goal_is_not_an_annotation;
 extern double distance_car_pose_car_front;
+extern bool set_number_of_frenet_path_to_1;
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 extern carmen_robot_ackerman_config_t robot_config;
@@ -593,11 +594,13 @@ queue_still_busy(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 	// if (busy_queue_ahead->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE && busy_queue_ahead->annotation_code == RDDF_ANNOTATION_CODE_QUEUE_BUSY)
 	if(busy_queue_ahead != NULL)
 	{
+		//set_number_of_frenet_path_to_1 = true;
 		printf("fila ocupada\n");
 		return (true);
 	}
 	else
 	{
+		//set_number_of_frenet_path_to_1 = false;
 		printf("fila nao ocupada\n");
 		return (false);
 	}
@@ -640,6 +643,47 @@ distance_to_busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robo
 	else
 		return (1000.0);
 }
+
+
+bool
+check_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+					&current_robot_pose_v_and_phi, false);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (false);
+
+	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE)
+	{
+		return true;
+	}else
+	{
+		return false;
+	}
+
+}
+
+oid
+set_path_using_symotha(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi,
+		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
+{
+	static carmen_frenet_path_planner_set_of_paths set_of_paths;
+
+	if (behavior_selector_performs_path_planning)
+	{
+		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
+		{
+			set_number_of_frenet_path_to_1 = check_queue_ahead(current_robot_pose_v_and_phi);
+			std::cout << "CHECK FLAG " << set_number_of_frenet_path_to_1 << "\n";
+			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
+					&behavior_selector_state_message, timestamp);
+			current_set_of_paths = &set_of_paths;
+		}
+		else
+			current_set_of_paths = NULL;
+	}
+
 
 
 int

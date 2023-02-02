@@ -29,6 +29,8 @@
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
 
+#include <iostream>
+
 //
 // O obstacle_distance_mapper (ODM) recebe (a) um mapa de ocupação compactado do mapper (apenas as células com probabilidade
 // de ocupação maior que mapper_min_occupied_prob (algo próximo de 0.5) e (b) o road map do route_planner. A partir destes dados,
@@ -201,6 +203,8 @@ double behavior_selector_pedestrian_near_path_min_longitudinal_distance = 5.0;
 bool all_paths_has_collision = false;
 bool all_paths_has_collision_and_goal_is_not_an_annotation = false;
 int soft_stop_active = 0;
+
+bool set_number_of_frenet_path_to_1;
 
 
 int
@@ -996,6 +1000,8 @@ set_path_using_symotha(const carmen_robot_and_trailers_traj_point_t current_robo
 	{
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
 		{
+			set_number_of_frenet_path_to_1 = check_queue_ahead(current_robot_pose_v_and_phi);
+			std::cout << "CHECK FLAG " << set_number_of_frenet_path_to_1 << "\n";
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
 					&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
@@ -1197,6 +1203,8 @@ set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_p
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL) && 
 		(behavior_selector_state_message.low_level_state != Stopped_At_Unavoidable_Obstacle_S0))
 		{
+			set_number_of_frenet_path_to_1 = check_queue_ahead(current_robot_pose_v_and_phi);
+			std::cout << "CHECK FLAG " << set_number_of_frenet_path_to_1 << "\n";
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
 					&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;

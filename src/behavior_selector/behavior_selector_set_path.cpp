@@ -40,6 +40,8 @@ extern double distance_car_pose_car_front;
 
 bool print_path = false;
 
+extern bool set_number_of_frenet_path_to_1;
+
 
 void
 get_s_and_d_values(carmen_robot_and_trailers_traj_point_t *poses, int nearest_pose, t_point_cloud_struct *moving_object,
@@ -637,6 +639,8 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths, double *path_temporal_value)
 {
 	int current_path = current_set_of_paths->selected_path;
+	if(set_number_of_frenet_path_to_1)
+		return current_path;
 	double best_path_value = -1000.0;
 	int best_path = -1;
 	for (unsigned int i = 0; i < paths.size(); i++)
@@ -902,7 +906,7 @@ set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 			who_set_the_goal_v, last_update_timestamp, behavior_selector_state_message, timestamp);
 
 	for (int i = 0; i < number_of_paths; i++)
-		path_temporal_value[i] *= exp(-0.0035 * (timestamp - last_update_timestamp));
+		path_temporal_value[i] *= exp(-0.005 * (timestamp - last_update_timestamp));
 
 //	print_mo(current_moving_objects, robot_acc);
 //	print_path = true;

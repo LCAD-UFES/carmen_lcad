@@ -174,6 +174,8 @@ extern "C" {
 	carmen_annotation_t *check_busy_queue_annotations(int annotation, carmen_rddf_annotation_message annotation_message, 
 	carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi);
 
+	bool check_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi);
+
 	carmen_annotation_t *get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
 			carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving);
 
