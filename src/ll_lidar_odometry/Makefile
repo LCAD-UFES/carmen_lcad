@@ -20,7 +20,7 @@ LFLAGS += -lfused_odometry_interface -llocalize_ackerman_interface -lm -lpthread
 LFLAGS += -lceres -lglog -lgflags  -lcudart -lcublas -lcholmod -lccolamd -lcamd -lcolamd -lamd -llapack -lcxsparse -lrt -lcusolver 
 
 
-SOURCES = laserPosegraphOptimization.cpp Scancontext.cpp LTslam.cpp RosParamServer.cpp Scancontext_slam.cpp Session.cpp utility.cpp scanRegistration.cpp laserOdometry.cpp laserMapping.cpp
+SOURCES = laserPosegraphOptimization.cpp Scancontext.cpp  laserOdometry.cpp laserMapping.cpp #LTslam.cpp RosParamServer.cpp Scancontext_slam.cpp Session.cpp utility.cpp scanRegistration.cpp
 		  
 
  
