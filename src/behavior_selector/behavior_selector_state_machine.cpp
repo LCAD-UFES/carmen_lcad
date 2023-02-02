@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <vector>
+#include <iostream>
 #include <carmen/collision_detection.h>
 #include <carmen/global_graphics.h>
 #include <carmen/rddf_util.h>
@@ -663,27 +664,6 @@ check_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_an
 	}
 
 }
-
-oid
-set_path_using_symotha(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi,
-		carmen_behavior_selector_state_message behavior_selector_state_message, double timestamp)
-{
-	static carmen_frenet_path_planner_set_of_paths set_of_paths;
-
-	if (behavior_selector_performs_path_planning)
-	{
-		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
-		{
-			set_number_of_frenet_path_to_1 = check_queue_ahead(current_robot_pose_v_and_phi);
-			std::cout << "CHECK FLAG " << set_number_of_frenet_path_to_1 << "\n";
-			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
-					&behavior_selector_state_message, timestamp);
-			current_set_of_paths = &set_of_paths;
-		}
-		else
-			current_set_of_paths = NULL;
-	}
-
 
 
 int
