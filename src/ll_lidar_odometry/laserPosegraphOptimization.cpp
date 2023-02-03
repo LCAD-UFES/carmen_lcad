@@ -975,7 +975,7 @@ process_lcd(void)
         performSCLoopClosure();
         double time_final = carmen_get_time();
 		double time_elapsed = time_final - time_init;
-		std::chrono::milliseconds dura(300);
+		std::chrono::milliseconds dura(600);
 		std::this_thread::sleep_for(dura);
 		/*if((1 - time_elapsed) > 0)
 		{
@@ -1018,7 +1018,7 @@ process_icp(void)
         }
 
         // wait (must required for running the while loop)
-        std::chrono::milliseconds dura(2);
+        std::chrono::milliseconds dura(50);
         std::this_thread::sleep_for(dura);
     }
 } // process_icp
@@ -1059,6 +1059,8 @@ process_isam(void)
             saveOdometryVerticesKITTIformat(odomKITTIformat); // pose
             saveGTSAMgraphG2oFormat(isamCurrentEstimate);
         }
+        std::chrono::milliseconds dura(200);
+		std::this_thread::sleep_for(dura);
         /*double time_final = carmen_get_time();
         double time_elapsed = time_final - time_init;
         if((1 - time_elapsed) > 0)
@@ -1132,7 +1134,7 @@ main(int argc, char **argv)
 
     // save directories 
 	//nh.param<std::string>("save_directory", save_directory, "/"); // pose assignment every k m move
-	save_directory = "/home/lume/carmen_lcad/src/ll_mapper/02/";
+	save_directory = "/home/lume/carmen_lcad/src/ll_lidar_odometry/02/";
     pgKITTIformat = save_directory + "optimized_poses.txt";
     odomKITTIformat = save_directory + "odom_poses.txt";
 

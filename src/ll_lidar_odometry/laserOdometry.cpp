@@ -68,7 +68,7 @@ constexpr double SCAN_PERIOD = 0.1;
 constexpr double DISTANCE_SQ_THRESHOLD = 25;
 constexpr double NEARBY_SCAN = 2.5;
 
-int skipFrameNum = 10;
+int skipFrameNum = 5;
 /*bool systemInited = false;
 
 double timeCornerPointsSharp = 0;
@@ -377,10 +377,6 @@ process_odom(std::vector<pcl::PointCloud<PointType>> vector_cloud_in, std::vecto
 		std::vector<float> pointSearchSqDis(1);
 
 		TicToc t_data;
-
-
-
-
 
 		// find correspondence for corner features
 		for (int i = 0; i < cornerPointsSharpNum; ++i)
