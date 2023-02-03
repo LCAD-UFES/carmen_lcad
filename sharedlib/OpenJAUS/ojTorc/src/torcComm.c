@@ -77,7 +77,7 @@ send_set_signals_message(OjCmpt XGV_CCU)
 
 
 void
-send_set_discrete_devices_message(OjCmpt XGV_CCU)
+send_set_gear_message(OjCmpt XGV_CCU)
 {
 	JausAddress addr;
 	SetDiscreteDevicesMessage setDiscreteDevicesMessage;
@@ -94,6 +94,33 @@ send_set_discrete_devices_message(OjCmpt XGV_CCU)
 	
 	setDiscreteDevicesMessage->presenceVector = 4;
 	setDiscreteDevicesMessage->gear = g_gear_command;
+
+	message = setDiscreteDevicesMessageToJausMessage(setDiscreteDevicesMessage);
+	ojCmptSendMessage(XGV_CCU, message);
+
+	jausMessageDestroy(message);
+	setDiscreteDevicesMessageDestroy(setDiscreteDevicesMessage);
+	jausAddressDestroy(addr);
+}
+
+
+void
+send_set_parking_brake_message(OjCmpt XGV_CCU)
+{
+	JausAddress addr;
+	SetDiscreteDevicesMessage setDiscreteDevicesMessage;
+	JausMessage message;
+
+	addr = jausAddressCreate();
+	addr->subsystem = 1;
+	addr->node = 1;
+	addr->component = JAUS_PRIMITIVE_DRIVER;
+	addr->instance = 1;
+
+	setDiscreteDevicesMessage = setDiscreteDevicesMessageCreate();
+	jausAddressCopy(setDiscreteDevicesMessage->destination, addr);
+
+	setDiscreteDevicesMessage->presenceVector = 2;
 	setDiscreteDevicesMessage->parkingBrake = g_parking_brake_command;
 	
 	message = setDiscreteDevicesMessageToJausMessage(setDiscreteDevicesMessage);

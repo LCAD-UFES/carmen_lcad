@@ -511,7 +511,7 @@ publish_ford_escape_turn_horn_and_headlight_signals(OjCmpt XGV_CCU)
 void
 publish_ford_escape_gear_command(OjCmpt XGV_CCU)
 {
-	send_set_discrete_devices_message(XGV_CCU);
+	send_set_gear_message(XGV_CCU);
 
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 	FILE *caco = fopen("ford_dump.txt", "a");
@@ -738,7 +738,8 @@ ford_escape_engine_and_parking_brake_message_handler(carmen_ford_escape_engine_a
 	else
 		g_parking_brake_command = 0;
 
-	send_set_discrete_devices_message(XGV_CCU);
+	send_set_engine_message(XGV_CCU, g_engine_command);
+	send_set_parking_brake_message(XGV_CCU);
 }
 
 static void 

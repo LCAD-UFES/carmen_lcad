@@ -168,8 +168,9 @@ extern double g_atan_curvature_update_freq;
 
 // Prototypes
 void send_set_signals_message(OjCmpt XGV_CCU);
-void send_set_discrete_devices_message(OjCmpt XGV_CCU);
+void send_set_gear_message(OjCmpt XGV_CCU);
 void send_set_engine_message(OjCmpt XGV_CCU, int set_engine_on);
+void send_set_parking_brake_message(OjCmpt XGV_CCU);
 void send_set_wrench_efforts_message(OjCmpt XGV_CCU);
 void send_set_motion_profile_message(OjCmpt XGV_CCU);
 void send_request_control_message(OjCmpt XGV_CCU, int component);
