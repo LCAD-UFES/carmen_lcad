@@ -94,6 +94,7 @@ send_set_discrete_devices_message(OjCmpt XGV_CCU)
 	
 	setDiscreteDevicesMessage->presenceVector = 4;
 	setDiscreteDevicesMessage->gear = g_gear_command;
+	setDiscreteDevicesMessage->parkingBrake = g_parking_brake_command;
 	
 	message = setDiscreteDevicesMessageToJausMessage(setDiscreteDevicesMessage);
 	ojCmptSendMessage(XGV_CCU, message);
