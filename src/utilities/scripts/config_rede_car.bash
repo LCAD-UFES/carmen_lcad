@@ -1,5 +1,11 @@
 #! /bin/bash
 
+user_sem_tratamento=$(env |grep SUDO_USER)
+
+USER=${user_sem_tratamento:10}
+CARMEN_HOME="/home/$USER/carmen_lcad"
+
+
 exist_name_interface() {
  confirmacao=0
 
@@ -67,6 +73,26 @@ ordem_parametros(){
   fi
 }
 
+
+if test "$1" = "-h" || test $# -eq 0; then
+ echo -e "Os elementos wlp2s0 enp1s0 sao nomes das interfaces de rede presente no seu Pc, para saber quais sao esses
+ nomes no seu pc siga o roteiro a seguir:
+
+ caso nao tenha o net-Tools:
+  sudo apt-get update
+  sudo apt-get install net-Tools
+ 
+ caso ja tenha:
+  ifconfig
+ 
+ copie os nomes e acrescente no comando de execucao do script, exemplo: ./config_rede_car.bash enp1s0 wlp2s0\n"
+
+ echo "Para adicionar um novo dispositivo a rede já exitente execute o script usando -n, ex: sudo bash config_rede_car.bash -n enp1s0 wlp2s0.
+Para resetar todas as configurações já inseridas execute o script usando -r, ex: sudo bash config_rede_car.bash -r."
+
+ exit
+fi
+
 user=$(whoami)
 
 if test "$user" != "root"; then
@@ -76,25 +102,7 @@ if test "$user" != "root"; then
 
 fi
 
-if test "$1" = "-h"; then
- echo "Os elementos wlp2s0 enp1s0 sao nomes das interfaces de rede presente no seu Pc, para saber quais sao esses
- nomes no seu pc siga o roteiro a seguir:
-
- caso nao tenha o net-Tools:
-  sudo apt-get update
-  sudo apt-get install net-Tools
- 
- caso ja tenha ou tenha instalado:
-  ifconfig
- 
- copie os nomes e acrescente no comando de execucao do script."
-
- echo "Para adicionar um novo dispositivo a rede já exitente execute o script usando -n, ex: sudo bash config_rede_car.bash -n enp1s0 wlp2s0.
-Para resetar todas as configurações já inseridas execute o script usando -r, ex: sudo bash config_rede_car.bash -r."
-
- exit 
-
-elif test "$1" = "-n" && test "$#" -eq 3; then
+if test "$1" = "-n" && test "$#" -eq 3; then
  exist_name_interface $2 $3 
 
  ordem_parametros $2
@@ -154,15 +162,6 @@ elif test "$1" = "-r"; then
  rm /usr/bin/restore-iptable.sh
 
  solicitacao_shutdown
- 
-elif test "$#" -ne 2; then
- echo "Quantidade errada de parametros, exemplo de comando reconhecido: sudo bash config_rede_car.bash enp1s0 wlp2s0.
- (obs: caso necessite de mais detales insira bash config_rede_car.bash -h)"
-
- echo "$#"
-
- exit 
-
 fi
 
 exist_name_interface $1 $2
@@ -198,9 +197,9 @@ iptables-save | tee /etc/iptables.sav
 
 echo -e "\n\n##########################    copiando restore-iptable.sh para o /usr/bin    ##########################"
 echo "-----------------------------------------------------------------------------------------------------------"
-echo "cp /home/lume/carmen_lcad/src/utilities/scripts/restore-iptable.sh /usr/bin/"
+echo "cp $CARMEN_HOME/src/utilities/scripts/restore-iptable.sh /usr/bin/"
 
-cp /home/lume/carmen_lcad/src/utilities/scripts/restore-iptable.sh /usr/bin/
+cp $CARMEN_HOME/src/utilities/scripts/restore-iptable.sh /usr/bin/
 
 echo -e "\n-----------------------------------------------------------------------------------------------------------"
 echo "chmod +x  /usr/bin/restore-iptable.sh"
@@ -213,7 +212,7 @@ echo -e "\n\n##############  Instalando o serviço systemd e habilitando o para 
 echo -e "\n-----------------------------------------------------------------------------------------------------------"
 echo "sudo cp $CARMEN_HOME/src/utilities/scripts/restore-iptables-connection.service /etc/systemd/system/"
 
-cp /home/lume/carmen_lcad/src/utilities/scripts/restore-iptables-connection.service /etc/systemd/system/ 
+cp $CARMEN_HOME/src/utilities/scripts/restore-iptables-connection.service /etc/systemd/system/ 
 
 echo -e "\n-----------------------------------------------------------------------------------------------------------"
 echo "sudo chmod 664 /etc/systemd/system/restore-iptables-connection.service"

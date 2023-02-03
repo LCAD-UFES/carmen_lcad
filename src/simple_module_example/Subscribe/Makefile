@@ -10,7 +10,7 @@ CXXFLAGS = -std=c++11
 
 IFLAGS += -I/usr/include/python3.5
 
-LFLAGS += -lglobal -lipc -lparam_interface
+LFLAGS += -lglobal -lipc -lparam_interface -lpthread
 
 SOURCES = subscribe_example.c 
 #PUBLIC_INCLUDES = publish_example_messages.h

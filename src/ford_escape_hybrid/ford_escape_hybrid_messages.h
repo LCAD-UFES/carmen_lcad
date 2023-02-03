@@ -110,6 +110,7 @@ typedef struct {
   double current_velocity;
   double desired_velocity;
   double error_t;
+  double error_sum;
   double integral_t;
   double derivative_t;
   double throttle_command;
@@ -120,7 +121,7 @@ typedef struct {
 }velocity_pid_data_message;
 
 #define VELOCITY_PID_DATA_PARAMENTERS_NAME	"velocity_pid_data_message"
-#define VELOCITY_PID_DATA_PARAMENTERS_FMT		"{int, double, double, double, double, double, double, double, double, string}"
+#define VELOCITY_PID_DATA_PARAMENTERS_FMT		"{int, double, double, double, double, double, double, double, double, double, string}"
 
 typedef struct {
   /* data */
@@ -138,6 +139,18 @@ typedef struct {
 
 #define STEERING_PID_DATA_PARAMENTERS_NAME	"steering_pid_data_message"
 #define STEERING_PID_DATA_PARAMENTERS_FMT		"{double, double, double, double, double, double, double, string}"
+
+typedef struct {
+  /* data */
+  double errror_sum;
+  double timestamp;
+  char *host;
+
+}steering_pid_error_message;
+
+
+#define STEERING_PID_ERROR_PARAMENTERS_NAME	"steering_pid_error_message"
+#define STEERING_PID_ERROR_PARAMENTERS_FMT	"{double, double, string}"
 
 
 typedef struct {
