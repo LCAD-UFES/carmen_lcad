@@ -23,8 +23,8 @@ CarmenParamFile::CarmenParamFile(const char *path)
 		if (parts.size() < 2) continue;
 		if (parts[0][0] == '#') continue;
 
-		if (_params.count(parts[0]))
-			std::cout << parts[0] << ": " << _params[parts[0]] << " -> " << std::string(trim(string_split_once(parts[1], "#")[0])) << std::endl;
+		// if (_params.count(parts[0]))
+		// 	std::cout << parts[0] << ": " << _params[parts[0]] << " -> " << std::string(trim(string_split_once(parts[1], "#")[0])) << std::endl;
 
 		_params.insert(std::pair<std::string, std::string>(std::string(parts[0]), std::string(trim(string_split_once(parts[1], "#")[0]))));
 	}

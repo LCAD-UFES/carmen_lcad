@@ -111,6 +111,12 @@ carmen_ford_escape_subscribe_steering_pid_data_message(steering_pid_data_message
   carmen_subscribe_message(STEERING_PID_DATA_PARAMENTERS_NAME, STEERING_PID_DATA_PARAMENTERS_FMT, message, sizeof(steering_pid_data_message), handler, subscribe_how);
 }
 
+void
+carmen_ford_escape_subscribe_steering_pid_error_message(steering_pid_error_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+  carmen_subscribe_message(STEERING_PID_ERROR_PARAMENTERS_NAME, STEERING_PID_ERROR_PARAMENTERS_FMT, message, sizeof(steering_pid_error_message), handler, subscribe_how);
+}
+
 
 void
 carmen_ford_escape_unsubscribe_tune_pid_gain_velocity_parameters_message(carmen_handler_t handler)
@@ -133,6 +139,12 @@ void
 carmen_ford_escape_unsubscribe_steering_pid_data_message(carmen_handler_t handler)
 {
   carmen_unsubscribe_message(STEERING_PID_DATA_PARAMENTERS_NAME,  handler);
+}
+
+void
+carmen_ford_escape_unsubscribe_steering_pid_error_message(carmen_handler_t handler)
+{
+  carmen_unsubscribe_message(STEERING_PID_ERROR_PARAMENTERS_NAME,  handler);
 }
 
 void
@@ -213,6 +225,26 @@ carmen_ford_escape_publish_steering_pid_data_message(steering_pid_data_message *
 
 	err = IPC_publishData(STEERING_PID_DATA_PARAMENTERS_NAME, msg);
 	carmen_test_ipc(err, "Could not publish", STEERING_PID_DATA_PARAMENTERS_NAME);
+}
+
+void
+carmen_ford_escape_publish_steering_pid_error_message(steering_pid_error_message *msg, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		err = IPC_defineMsg(STEERING_PID_ERROR_PARAMENTERS_NAME, IPC_VARIABLE_LENGTH, STEERING_PID_ERROR_PARAMENTERS_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", STEERING_PID_ERROR_PARAMENTERS_NAME);
+		first_time = 0;
+	}
+
+	msg->timestamp = timestamp;
+	msg->host = carmen_get_host();
+
+	err = IPC_publishData(STEERING_PID_ERROR_PARAMENTERS_NAME, msg);
+	carmen_test_ipc(err, "Could not publish", STEERING_PID_ERROR_PARAMENTERS_NAME);
 }
 
 

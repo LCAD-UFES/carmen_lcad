@@ -12,22 +12,14 @@ extern "C"
 
 typedef struct
 {
-	char *message;
-} carmen_string_example;
-
-#define CARMEN_STRING_EXAMPLE_NAME	"carmen_string_example"
-#define CARMEN_STRING_EXAMPLE_FMT		"{string}"
-
-typedef struct
-{
 	int num_message;
-	carmen_string_example content_message;
+	char *content_message; /** Could be anything and any amount **/
 	double timestamp;
 	char *host;                 /**< The host from which this message was sent **/
 } carmen_string_example_message;
 
 #define      CARMEN_STRING_EXAMPLE_MESSAGE_NAME         "carmen_string_example_message"
-#define      CARMEN_STRING_EXAMPLE_MESSAGE_FMT          "{int,<{double,double,double,double,double,double}:1>,double,string}"
+#define      CARMEN_STRING_EXAMPLE_MESSAGE_FMT          "{int,string,double,string}"
 
 #ifdef __cplusplus
 }
