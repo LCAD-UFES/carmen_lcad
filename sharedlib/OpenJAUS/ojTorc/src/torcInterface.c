@@ -64,8 +64,12 @@ JausUnsignedShort g_time_duration_command = MOTION_PROFILE_TIME_DURATION; // mil
 JausByte g_turn_signal_command = 0;
 JausByte g_horn_status_command = 0;
 JausByte g_headlights_status_command = 0;
+
 int g_gear_command = 0;
+
 int g_engine_command = 1; // Engine On
+int g_parking_brake_command = 0; // Parking brake off
+
 int g_windshield_wipers_command = 0;
 
 int g_num_errors = 0;
@@ -192,6 +196,7 @@ print_interface()
 	mvprintw(row++, col, "   SPACE - Maximum Brake, Minimum Throttle, Central Steering");
 	mvprintw(row++, col, "   a, s, d, f - Gear: L, D, N, R");
 	mvprintw(row++, col, "   z, x - Engine: On, Off");
+	mvprintw(row++, col, "   c, v - Prking Brake: On, Off");
 	mvprintw(row++, col, "   1, 2, 3, 4 - Turn Signal: Off, Left, Right, Flashes");
 	mvprintw(row++, col, "   5 - Horn (On/Off)");
 	mvprintw(row++, col, "   6, 7, 8 - Headlights: Off, Parking lights, On");
@@ -450,6 +455,16 @@ user_interface(OjCmpt XGV_CCU)
 					send_set_engine_message(XGV_CCU, g_engine_command);
 					break;
 					
+				case 'c':
+					g_parking_brake_command = 1; // Turn parking brake On
+					send_set_discrete_devices_message(XGV_CCU);
+					break;
+
+				case 'v':
+					g_parking_brake_command = 0; // Turn parking brake Off
+					send_set_discrete_devices_message(XGV_CCU);
+					break;
+
 				case '1':
 					g_turn_signal_command = 0;
 					send_set_signals_message(XGV_CCU);

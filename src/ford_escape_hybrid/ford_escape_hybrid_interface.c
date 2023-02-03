@@ -68,6 +68,24 @@ carmen_ford_escape_unsubscribe_status_message(carmen_handler_t handler)
 }
 
 
+void
+carmen_ford_escape_subscribe_engine_and_parking_brake_message(carmen_ford_escape_engine_and_parking_brake_message *message,
+			       carmen_handler_t handler,
+			       carmen_subscribe_t subscribe_how)
+{
+  carmen_subscribe_message(CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_NAME,
+		  	  	  	  	   CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_FMT,
+                           message, sizeof(carmen_ford_escape_engine_and_parking_brake_message),
+                           handler, subscribe_how);
+}
+
+
+void
+carmen_ford_escape_unsubscribe_engine_and_parking_brake_message(carmen_handler_t handler)
+{
+  carmen_unsubscribe_message(CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_NAME, handler);
+}
+
 
 void
 carmen_ford_escape_subscribe_tune_pid_gain_velocity_parameters_message(tune_pid_gain_velocity_parameters_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
@@ -216,6 +234,27 @@ carmen_ford_escape_publish_status_message(carmen_ford_escape_status_message *msg
 
 	err = IPC_publishData(CARMEN_FORD_ESCAPE_STATUS_NAME, msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_STATUS_NAME);
+}
+
+
+void
+carmen_ford_escape_publish_engine_and_parking_brake_message(carmen_ford_escape_engine_and_parking_brake_message *msg, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		err = IPC_defineMsg(CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_NAME, IPC_VARIABLE_LENGTH, CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_NAME);
+		first_time = 0;
+	}
+
+	msg->timestamp = timestamp;
+	msg->host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_NAME, msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_NAME);
 }
 
 
