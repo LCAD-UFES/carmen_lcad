@@ -323,7 +323,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 }
 
 double
-carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_message *msg, double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
+carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_message *msg, steering_pid_error_message *msg_error , double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
 		int manual_override, double v, double steer_kp, double steer_kd, double steer_ki)
 {
 	static double 	error_t_1 = 0.0;	// error in time t-1
@@ -383,13 +383,19 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 	previous_t = t;
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
+	static double error_sum = 0.0;
 
+	if(atan_desired_curvature == 0.0)
+		error_sum = 0.0;
+
+	error_sum += error_t;
 	msg->atan_current_curvature = atan_current_curvature;
 	msg->atan_desired_curvature = atan_desired_curvature;
 	msg->derivative_t = derivative_t;
 	msg->error_t = error_t;
 	msg->integral_t = integral_t;
 	msg->effort = u_t;
+	msg_error->errror_sum = error_sum;
 
 #ifdef PRINT
 	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
