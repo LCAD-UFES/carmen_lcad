@@ -40,22 +40,92 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*x += offset_x;
 	*y += offset_y;
 }
+void  Initialize ()
+{ 
+    Py_Initialize();
+}
 
-void 
-runPython(char* filename)
+void Finalize ()
 {
-	//Initialize the python instance
-	Py_Initialize();
+    Py_Finalize();
+}
+int 
+runPython(Mat filename, int argc)
+{
+	std::string my_str = "[";
+	std::string ret;
 
-	//Run a simple file
-	FILE* PScriptFile = fopen(filename, "r");
-	if(PScriptFile){
-		PyRun_SimpleFile(PScriptFile, filename);
-		fclose(PScriptFile);
+
+    for(int i = 0; i < filename.rows; i++)
+    {
+		my_str += "[";
+
+       	for(int j = 0; j < filename.cols; j++)
+			my_str += "[" + to_string(filename.at<cv::Vec3b>(i,j)[0]) +
+					  ", " + to_string(filename.at<cv::Vec3b>(i,j)[1]) + 
+					  ", " + to_string(filename.at<cv::Vec3b>(i,j)[2]) +
+					  (j + 1 < filename.cols ? "], " : "]");
+
+		my_str += (i + 1 < filename.rows ? "],\n" : "]");
+    }
+
+	my_str += "]";
+	ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
+	MyFile << "oi" << endl;
+
+	PyObject *pName, *pModule, *pFunc;
+    PyObject *pArgs, *pValue;
+    int i;
+	static int asd;
+
+    setenv("PYTHONPATH", "../src/neural_moving_objects_detector", 1);
+	MyFile << "passou setenv" << endl;
+	Initialize();
+	// if (asd == 0){
+	// 	++asd;
+	// 	Initialize();
+    //     atexit(Finalize);
+	// }
+	pName = PyUnicode_DecodeFSDefault("demo");
+	MyFile << "passou PyUnicode_DecodeFSDefault" << endl;
+	/* Error checking of pName left out */
+
+	pModule = PyImport_Import(pName); // <--------------------------------------------- dando erro 
+	MyFile << "passou PyImport_Import" << endl;
+	Py_DECREF(pName);
+	MyFile << "passou Py_DECREF(pName)" << endl;
+
+	if (pModule != NULL) {
+		pFunc = PyObject_GetAttrString(pModule, "main");
+		MyFile << "passou PyObject_GetAttrString" << endl;
+
+		/* pFunc is a new reference */
+
+		if (pFunc && PyCallable_Check(pFunc)) {
+			MyFile << "passou PyCallable_Check" << endl;
+			pArgs = PyTuple_New(argc - 3);
+			MyFile << "passou PyTuple_New" << endl;
+			pValue = PyUnicode_DecodeFSDefault(my_str.c_str());
+			MyFile << "passou PyUnicode_DecodeFSDefault" << endl;
+			PyTuple_SetItem(pArgs, 0, pValue);
+			MyFile << "passou PyTuple_SetItem" << endl;
+			pValue = PyObject_CallObject(pFunc, pArgs);
+			MyFile << "passou PyObject_CallObject" << endl;
+			Py_DECREF(pArgs);
+			MyFile << "passou Py_DECREF" << endl;
+			if (pValue != NULL) {
+				Py_DECREF(pValue);
+				MyFile << "passou Py_DECREF" << endl;
+			}
+		}
+		Py_XDECREF(pFunc);
+		MyFile << "passou Py_XDECREF" << endl;
+		Py_DECREF(pModule);
+		MyFile << "passou Py_DECREF" << endl;
 	}
+	atexit(Finalize);
+	return 0;
 
-	//Close the python instance
-	Py_Finalize();
 }
 
 void
@@ -522,12 +592,9 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 void
 call_neural_network()
 {
-	runPython("YOLOPv2/demo.py");
 	if (image_msg == NULL)
 		return;
 
-//	int crop_x = 0;
-//	int crop_y = 0;
 	int crop_w = image_msg->images[0].width;// 1280;
 	int crop_h = image_msg->images[0].height;//400; // 500;
 	double timestamp = image_msg->timestamp;
@@ -543,7 +610,11 @@ call_neural_network()
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
-
+	//cv::imwrite("../src/neural_moving_objects_detector/YOLOPv2/data/example.jpg", image);
+	ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
+	int qwe = runPython(image, 4);
+	MyFile << "------------------------FIM DO RUN PYTHON---------------------------" << endl;
+	//image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
 
 	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 //	predictions = filter_predictions_of_interest(predictions);
@@ -883,7 +954,7 @@ subscribe_messages()
 //	if (is_intelbras == false)
 //    	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
 //	else
-		camera_drivers_subscribe_message(message_number, NULL, (carmen_handler_t) camera_image_handler, CARMEN_SUBSCRIBE_LATEST);
+	camera_drivers_subscribe_message(message_number, NULL, (carmen_handler_t) camera_image_handler, CARMEN_SUBSCRIBE_LATEST);
 /*
 	carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
 

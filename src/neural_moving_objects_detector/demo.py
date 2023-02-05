@@ -20,6 +20,8 @@ import cv2
 import numpy as np
 import torch
 import torchvision
+import ast
+
 
 logger = logging.getLogger(__name__)
 
@@ -367,7 +369,6 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
-            print(f'WARNING: NMS time limit {time_limit}s exceeded')
             break  # time limit exceeded
 
     return output
@@ -397,7 +398,8 @@ def box_iou(box1, box2):
     return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
 
 class LoadImages:  # for inference
-    def __init__(self, path, img_size=640, stride=32):
+    def __init__(self, path, filestring, img_size=640, stride=32):
+        #af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
         p = str(Path(path).absolute())  # os-agnostic absolute path
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
@@ -409,56 +411,38 @@ class LoadImages:  # for inference
             raise Exception(f'ERROR: {p} does not exist')
 
         img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
-        vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
         images = [x for x in files if x.split('.')[-1].lower() in img_formats]
-        videos = [x for x in files if x.split('.')[-1].lower() in vid_formats]
-        ni, nv = len(images), len(videos)
+        ni = len(images)
 
+        self.filestring = filestring
         self.img_size = img_size
         self.stride = stride
-        self.files = images + videos
-        self.nf = ni + nv  # number of files
-        self.video_flag = [False] * ni + [True] * nv
+        self.files = images
+        self.nf = ni  # number of files
         self.mode = 'image'
-        if any(videos):
-            self.new_video(videos[0])  # new video
-        else:
-            self.cap = None
-        assert self.nf > 0, f'No images or videos found in {p}. ' \
-                            f'Supported formats are:\nimages: {img_formats}\nvideos: {vid_formats}'
+        
+        self.cap = None
+        #af.write("__init__ foi\n")
 
     def __iter__(self):
         self.count = 0
         return self
 
     def __next__(self):
+        #af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
 
-        if self.video_flag[self.count]:
-            # Read video
-            self.mode = 'video'
-            ret_val, img0 = self.cap.read()
-            if not ret_val:
-                self.count += 1
-                self.cap.release()
-                if self.count == self.nf:  # last video
-                    raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
-                    ret_val, img0 = self.cap.read()
+        # Read image
+        self.count += 1
+        #img0 = cv2.imread(path)  # BGR
+        img0 = ast.literal_eval(self.filestring)
+        img0 = np.array(img0)
+        img0 = np.float32(img0)
 
-            self.frame += 1
-            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.nframes}) {path}: ', end='')
-
-        else:
-            # Read image
-            self.count += 1
-            img0 = cv2.imread(path)  # BGR
-            assert img0 is not None, 'Image Not Found ' + path
-            #print(f'image {self.count}/{self.nf} {path}: ', end='')
+        assert img0 is not None, 'Image Not Found ' + path
+        #print(f'image {self.count}/{self.nf} {path}: ', end='')
 
         # Padded resize
         img0 = cv2.resize(img0, (1280,720), interpolation=cv2.INTER_LINEAR)
@@ -467,7 +451,7 @@ class LoadImages:  # for inference
         # Convert
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
         img = np.ascontiguousarray(img)
-
+        #af.write("__next__ foi\n")
         return path, img, img0, self.cap
 
     def new_video(self, path):
@@ -479,7 +463,9 @@ class LoadImages:  # for inference
         return self.nf  # number of files
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
+    #af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
     # Resize and pad image while meeting stride-multiple constraints
+    #af.write("shape\n")
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
         new_shape = (new_shape, new_shape)
@@ -549,132 +535,129 @@ def make_parser():
     return parser
 
 
-def detect(opt):
+def detect(opt, filestring):
+    af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
+    file_path = os.path.realpath(__file__)[:-7]
     # setting and directories
     source, weights,  save_txt, imgsz = opt.source, opt.weights,  opt.save_txt, opt.img_size
     save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
-
-    save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
+    save_dir = Path.joinpath(Path(file_path), Path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
     inf_time = AverageMeter()
     waste_time = AverageMeter()
     nms_time = AverageMeter()
+    try:
+        # Load model
+        stride =32
+        model  = torch.jit.load(Path.joinpath(Path(file_path), weights))
+        device = select_device(opt.device)
+        half = device.type != 'cpu'  # half precision only supported on CUDA
+        model = model.to(device)
 
-    # Load model
-    stride =32
-    model  = torch.jit.load(weights)
-    device = select_device(opt.device)
-    half = device.type != 'cpu'  # half precision only supported on CUDA
-    model = model.to(device)
+        if half:
+            model.half()  # to FP16  
+        model.eval()
+        
+        # Set Dataloader
+        #af.write("loadImg\n")
+        vid_path, vid_writer = None, None
 
-    if half:
-        model.half()  # to FP16  
-    model.eval()
+        #af.write("array\n")
+        # filestring = ast.literal_eval(filestring)
+        # filestring = np.array(filestring)
+        # filestring = np.float32(filestring)
+        #af.write("resize\n")
+        # filestring = cv2.resize(filestring, (1280,720), interpolation=cv2.INTER_LINEAR)
+        # af.write("letterbox\n")
+        # filestring = letterbox(filestring, imgsz, stride)[0]
+        # filestring = filestring[:, :, ::-1].transpose(2, 0, 1)
+        #af.write("ascontiguousarray\n")
+        # filestring = np.ascontiguousarray(filestring)
+        
+        dataset = LoadImages(Path.joinpath(Path(file_path), source), filestring=filestring, img_size=imgsz, stride=stride)
+        #af.write("deu bom\n")
+        # Run inference
+        if device.type != 'cpu':
+            model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+        t0 = time.time()
+        for path, img, im0s, vid_cap in dataset:
+            img = torch.from_numpy(img).to(device)
+            img = img.half() if half else img.float()  # uint8 to fp16/32
+            img /= 255.0  # 0 - 255 to 0.0 - 1.0
 
-    # Set Dataloader
-    vid_path, vid_writer = None, None
-    dataset = LoadImages(source, img_size=imgsz, stride=stride)
+            if img.ndimension() == 3:
+                img = img.unsqueeze(0)
 
-    # Run inference
-    if device.type != 'cpu':
-        model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-    t0 = time.time()
-    for path, img, im0s, vid_cap in dataset:
-        img = torch.from_numpy(img).to(device)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
-        img /= 255.0  # 0 - 255 to 0.0 - 1.0
+            # Inference
+            t1 = time_synchronized()
+            [pred,anchor_grid],seg,ll= model(img)
+            t2 = time_synchronized()
 
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
+            # waste time: the incompatibility of  torch.jit.trace causes extra time consumption in demo version 
+            # but this problem will not appear in offical version 
+            tw1 = time_synchronized()
+            pred = split_for_trace_model(pred,anchor_grid)
+            tw2 = time_synchronized()
 
-        # Inference
-        t1 = time_synchronized()
-        [pred,anchor_grid],seg,ll= model(img)
-        t2 = time_synchronized()
+            # Apply NMS
+            t3 = time_synchronized()
+            pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+            t4 = time_synchronized()
 
-        # waste time: the incompatibility of  torch.jit.trace causes extra time consumption in demo version 
-        # but this problem will not appear in offical version 
-        tw1 = time_synchronized()
-        pred = split_for_trace_model(pred,anchor_grid)
-        tw2 = time_synchronized()
+            da_seg_mask = driving_area_mask(seg)
+            ll_seg_mask = lane_line_mask(ll)
 
-        # Apply NMS
-        t3 = time_synchronized()
-        pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-        t4 = time_synchronized()
+            # Process detections
+            for i, det in enumerate(pred):  # detections per image
+            
+                p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
+                p = Path(p)  # to Path
+                save_path = str(save_dir / p.name)  # img.jpg
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
+                s += '%gx%g ' % img.shape[2:]  # print string
+                gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+                if len(det):
+                    # Rescale boxes from img_size to im0 size
+                    det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
-        da_seg_mask = driving_area_mask(seg)
-        ll_seg_mask = lane_line_mask(ll)
+                    # Print results
+                    for c in det[:, -1].unique():
+                        n = (det[:, -1] == c).sum()  # detections per class
+                        #s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-        # Process detections
-        for i, det in enumerate(pred):  # detections per image
-          
-            p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
+                    # Write results
+                    for *xyxy, conf, cls in reversed(det):
+                        if save_txt:  # Write to file
+                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+                            with open(txt_path + '.txt', 'a') as f:
+                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-            p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # img.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
-            s += '%gx%g ' % img.shape[2:]  # print string
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-            if len(det):
-                # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+                        if save_img :  # Add bbox to image
+                            plot_one_box(xyxy, im0, line_thickness=3)
 
-                # Print results
-                for c in det[:, -1].unique():
-                    n = (det[:, -1] == c).sum()  # detections per class
-                    #s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
-                # Write results
-                for *xyxy, conf, cls in reversed(det):
-                    if save_txt:  # Write to file
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
-                        with open(txt_path + '.txt', 'a') as f:
-                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
-                    if save_img :  # Add bbox to image
-                        plot_one_box(xyxy, im0, line_thickness=3)
-
-            # Print time (inference)
-            print(f'{s}Done. ({t2 - t1:.3f}s)')
-            show_seg_result(im0, (da_seg_mask,ll_seg_mask), is_demo=True)
-
-            # Save results (image with detections)
-            if save_img:
-                if dataset.mode == 'image':
+                # Print time (inference)
+                show_seg_result(im0, (da_seg_mask,ll_seg_mask), is_demo=True)
+                # Save results (image with detections)
+                if save_img:
                     cv2.imwrite(save_path, im0)
-                    print(f" The image with the result is saved in: {save_path}")
-                else:  # 'video' or 'stream'
-                    if vid_path != save_path:  # new video
-                        vid_path = save_path
-                        if isinstance(vid_writer, cv2.VideoWriter):
-                            vid_writer.release()  # release previous video writer
-                        if vid_cap:  # video
-                            fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                            #w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                            #h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                            w,h = im0.shape[1], im0.shape[0]
-                        else:  # stream
-                            fps, w, h = 30, im0.shape[1], im0.shape[0]
-                            save_path += '.mp4'
-                        vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    vid_writer.write(im0)
-
-    inf_time.update(t2-t1,img.size(0))
-    nms_time.update(t4-t3,img.size(0))
-    waste_time.update(tw2-tw1,img.size(0))
-    print('inf : (%.4fs/frame)   nms : (%.4fs/frame)' % (inf_time.avg,nms_time.avg))
-    print(f'Done. ({time.time() - t0:.3f}s)')
+        inf_time.update(t2-t1,img.size(0))
+        nms_time.update(t4-t3,img.size(0))
+        waste_time.update(tw2-tw1,img.size(0))
+    except Exception as e:
+        af.write(str(e))
+        af.write("erro\n")
+    return im0
 
 
-def main():
+def main(filestring):
     import sys 
-    print(sys.version)
+    af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
+    af.write("entrou\n")
     sys.argv=['']
     opt =  make_parser().parse_args()
 
-    with torch.no_grad():
-        detect(opt)
-    return 0
+    # with torch.no_grad():
+    #     im0 = detect(opt, filestring)
+    af.write("saiu\n")
+    return "1"

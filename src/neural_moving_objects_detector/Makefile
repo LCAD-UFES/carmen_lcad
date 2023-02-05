@@ -21,14 +21,13 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.6-config --libs` \
 		  -lcamera_drivers
 
-SOURCES = neural_moving_objects_detector_main.cpp a.cpp
+SOURCES = neural_moving_objects_detector_main.cpp
 
-PUBLIC_BINARIES = neural_moving_objects_detector a
+PUBLIC_BINARIES = neural_moving_objects_detector
 
-TARGETS = neural_moving_objects_detector a
+TARGETS = neural_moving_objects_detector
 
 neural_moving_objects_detector: neural_moving_objects_detector_main.o
-a: a.o
 
 download:
 #	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1rE0lY4d4wyMp4mvcx23y4qGK97bvzTnC/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet3/yolov3.weights

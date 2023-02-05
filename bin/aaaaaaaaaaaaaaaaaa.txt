@@ -1,0 +1,1332 @@
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
+oi
+passou setenv
+passou PyUnicode_DecodeFSDefault
+passou PyImport_Import
+passou Py_DECREF(pName)
+passou PyObject_GetAttrString
+passou PyCallable_Check
+passou PyTuple_New
+passou PyUnicode_DecodeFSDefault
+passou PyTuple_SetItem
+entrou
+saiu
+passou PyObject_CallObject
+passou Py_DECREF
+passou Py_DECREF
+passou Py_XDECREF
+passou Py_DECREF
+------------------------FIM DO RUN PYTHON---------------------------
