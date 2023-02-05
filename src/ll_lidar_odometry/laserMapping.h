@@ -9,7 +9,7 @@ extern "C"
 
 std::pair<carmen_vector_3D_t, carmen_quaternion_t>
 process_lm(std::vector<pcl::PointCloud<PointType>> vector_cloud_in,
-		std::pair<carmen_vector_3D_t, carmen_quaternion_t> pair_in, pcl::PointCloud<PointType>::Ptr &cloud_out);
+		std::pair<carmen_vector_3D_t, carmen_quaternion_t> pair_in, pcl::PointCloud<PointType> cloud_out);
 
 #ifdef __cplusplus
 }

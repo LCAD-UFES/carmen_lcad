@@ -67,8 +67,7 @@ int corner_correspondence = 0, plane_correspondence = 0;
 constexpr double SCAN_PERIOD = 0.1;
 constexpr double DISTANCE_SQ_THRESHOLD = 25;
 constexpr double NEARBY_SCAN = 2.5;
-
-int skipFrameNum = 5;
+int skipFrameNum = 8;
 /*bool systemInited = false;
 
 double timeCornerPointsSharp = 0;
@@ -355,7 +354,7 @@ process_odom(std::vector<pcl::PointCloud<PointType>> vector_cloud_in, std::vecto
 
 	kdtreeSurfLast->setInputCloud(laser_ptr_2);
 
-	printf("FRAMECOUNT %d\n", frameCount);
+	//printf("FRAMECOUNT %d\n", frameCount);
 
 	for (size_t opti_counter = 0; opti_counter < 2; ++opti_counter)
 	{

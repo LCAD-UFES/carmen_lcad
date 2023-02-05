@@ -115,7 +115,7 @@ void removeClosedPointCloud(const pcl::PointCloud<PointT> &cloud_in,
     cloud_out.is_dense = true;
 }
 
-std::vector<pcl::PointCloud<PointType>> laserCloudHandler(pcl::PointCloud<PointType>::Ptr laserCloudMsg)
+std::vector<pcl::PointCloud<PointType>> laserCloudHandler(pcl::PointCloud<PointType> laserCloudMsg)
 {
 	N_SCANS = 32;
 	LIDAR_TYPE = "KITTI";
@@ -124,9 +124,9 @@ std::vector<pcl::PointCloud<PointType>> laserCloudHandler(pcl::PointCloud<PointT
     std::vector<int> scanStartInd(N_SCANS, 0);
     std::vector<int> scanEndInd(N_SCANS, 0);
     pcl::PointCloud<PointType> laserCloudIn;
-    for(unsigned long int i = 0; i < laserCloudMsg->size(); i++)
+    for(unsigned long int i = 0; i < laserCloudMsg.size(); i++)
 	{
-    	laserCloudIn.push_back(laserCloudMsg->points[i]);
+    	laserCloudIn.push_back(laserCloudMsg.points[i]);
 	}
 
     //pcl::fromROSMsg(*laserCloudMsg, laserCloudIn);

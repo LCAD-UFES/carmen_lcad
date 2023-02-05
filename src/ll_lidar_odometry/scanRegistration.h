@@ -8,7 +8,7 @@
 #include <vector>
 #include "common.h"
 
-std::vector<pcl::PointCloud<PointType>> laserCloudHandler(pcl::PointCloud<PointType>::Ptr laserCloudMsg);
+std::vector<pcl::PointCloud<PointType>> laserCloudHandler(pcl::PointCloud<PointType> laserCloudMsg);
 
 
 
