@@ -54,6 +54,14 @@ void
 carmen_ford_escape_unsubscribe_status_message(carmen_handler_t handler);
 
 void
+carmen_ford_escape_subscribe_engine_and_parking_brake_message(carmen_ford_escape_engine_and_parking_brake_message *message,
+			       carmen_handler_t handler,
+			       carmen_subscribe_t subscribe_how);
+
+void
+carmen_ford_escape_unsubscribe_engine_and_parking_brake_message(carmen_handler_t handler);
+
+void
 carmen_ford_escape_subscribe_error_message(carmen_ford_escape_error_message *message,
 			       carmen_handler_t handler,
 			       carmen_subscribe_t subscribe_how);
@@ -63,6 +71,9 @@ carmen_ford_escape_unsubscribe_error_message(carmen_handler_t handler);
 
 void
 carmen_ford_escape_publish_status_message(carmen_ford_escape_status_message *msg, double timestamp);
+
+void
+carmen_ford_escape_publish_engine_and_parking_brake_message(carmen_ford_escape_engine_and_parking_brake_message *msg, double timestamp);
 
 void
 carmen_ford_escape_publish_signals_message(carmen_ford_escape_signals_message *msg, double timestamp);
