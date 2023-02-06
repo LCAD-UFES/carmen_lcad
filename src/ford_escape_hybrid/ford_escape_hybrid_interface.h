@@ -54,6 +54,14 @@ void
 carmen_ford_escape_unsubscribe_status_message(carmen_handler_t handler);
 
 void
+carmen_ford_escape_subscribe_engine_and_parking_brake_message(carmen_ford_escape_engine_and_parking_brake_message *message,
+			       carmen_handler_t handler,
+			       carmen_subscribe_t subscribe_how);
+
+void
+carmen_ford_escape_unsubscribe_engine_and_parking_brake_message(carmen_handler_t handler);
+
+void
 carmen_ford_escape_subscribe_error_message(carmen_ford_escape_error_message *message,
 			       carmen_handler_t handler,
 			       carmen_subscribe_t subscribe_how);
@@ -63,6 +71,9 @@ carmen_ford_escape_unsubscribe_error_message(carmen_handler_t handler);
 
 void
 carmen_ford_escape_publish_status_message(carmen_ford_escape_status_message *msg, double timestamp);
+
+void
+carmen_ford_escape_publish_engine_and_parking_brake_message(carmen_ford_escape_engine_and_parking_brake_message *msg, double timestamp);
 
 void
 carmen_ford_escape_publish_signals_message(carmen_ford_escape_signals_message *msg, double timestamp);
@@ -80,6 +91,9 @@ void
 carmen_ford_escape_subscribe_steering_pid_data_message(steering_pid_data_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
+carmen_ford_escape_subscribe_steering_pid_error_message(steering_pid_error_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
 carmen_ford_escape_unsubscribe_tune_pid_gain_velocity_parameters_message(carmen_handler_t handler);
 
 void
@@ -90,6 +104,9 @@ carmen_ford_escape_unsubscribe_velocity_pid_data_message(carmen_handler_t handle
 
 void
 carmen_ford_escape_unsubscribe_steering_pid_data_message(carmen_handler_t handler);
+
+void
+carmen_ford_escape_unsubscribe_steering_pid_error_message(carmen_handler_t handler);
 
 void
 carmen_ford_escape_publish_tune_pid_gain_velocity_parameters_message(tune_pid_gain_velocity_parameters_message *msg, double timestamp);
@@ -104,12 +121,16 @@ carmen_ford_escape_publish_velocity_pid_data_message(velocity_pid_data_message *
 void
 carmen_ford_escape_publish_steering_pid_data_message(steering_pid_data_message *msg, double timestamp);
 
+void
+carmen_ford_escape_publish_steering_pid_error_message(steering_pid_error_message *msg, double timestamp);
+
 
 /*
 void
 carmen_ford_escape_hybrid_steering_PID_controler(double *steering_command, 
 	double atan_desired_curvature, double atan_current_curvature, double delta_t);
-
+void
+carmen_ford_escape_subscribe_steering_pid_error_message(steering_pid_error_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 void
 carmen_ford_escape_hybrid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command, 
 	double desired_velocity, double current_velocity, double delta_t);

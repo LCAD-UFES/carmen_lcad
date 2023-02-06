@@ -92,6 +92,8 @@ carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
 
 carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message = NULL;
 
+carmen_ford_escape_engine_and_parking_brake_message *engine_and_parking_brake_message = NULL;
+
 double *gear_ratios_vector = NULL;
 double *reverse_gear_ratios_vector = NULL;
 int num_gears = 0;
@@ -509,7 +511,7 @@ publish_ford_escape_turn_horn_and_headlight_signals(OjCmpt XGV_CCU)
 void
 publish_ford_escape_gear_command(OjCmpt XGV_CCU)
 {
-	send_set_discrete_devices_message(XGV_CCU);
+	send_set_gear_message(XGV_CCU);
 
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 	FILE *caco = fopen("ford_dump.txt", "a");
@@ -721,6 +723,24 @@ path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_a
 }
 
 
+static void
+ford_escape_engine_and_parking_brake_message_handler(carmen_ford_escape_engine_and_parking_brake_message *message)
+{
+	engine_and_parking_brake_message = message;
+
+	if (engine_and_parking_brake_message->engine)
+		g_engine_command = 1;
+	else
+		g_engine_command = 0;
+
+	if (engine_and_parking_brake_message->parking_brake)
+		g_parking_brake_command = 1;
+	else
+		g_parking_brake_command = 0;
+
+	send_set_engine_message(XGV_CCU, g_engine_command);
+	send_set_parking_brake_message(XGV_CCU);
+}
 
 static void 
 shutdown_module()
@@ -1332,6 +1352,7 @@ subscribe_to_relevant_messages()
 
 	carmen_behavior_selector_subscribe_path_goals_and_annotations_message(NULL, (carmen_handler_t) path_goals_and_annotations_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_ford_escape_subscribe_engine_and_parking_brake_message(NULL, (carmen_handler_t) ford_escape_engine_and_parking_brake_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

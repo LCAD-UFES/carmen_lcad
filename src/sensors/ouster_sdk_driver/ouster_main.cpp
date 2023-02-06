@@ -18,6 +18,8 @@
 #include <json/json.h>
 
 
+//#define debug_point_cloud
+
 using namespace ouster;
 
 int number_of_rays_per_message = 16;
@@ -54,6 +56,38 @@ shutdown_module(int signo)
 		printf("\nOuster LiDAR disconnected!\n");
 		exit(0);
 	}
+}
+
+void
+variable_scan_message_printer(FILE * fp, int num_valid_points, double vertical_angle, double azimuth_angle, double shot_angle_in_degrees, unsigned short range_from_sensor, double range_division_factor)
+{
+
+	double rot_angle, vert_angle, range, cos_rot_angle, sin_rot_angle, cos_vert_angle, sin_vert_angle, xy_distance,
+	x, y, z, angle;
+
+	rot_angle = carmen_degrees_to_radians(carmen_normalize_angle_degree(shot_angle_in_degrees + azimuth_angle));
+	vert_angle = carmen_degrees_to_radians(vertical_angle);
+	range = (double) range_from_sensor / range_division_factor;
+
+	cos_rot_angle = cos(rot_angle);
+	sin_rot_angle = sin(rot_angle);
+
+	cos_vert_angle = cos(vert_angle);
+	sin_vert_angle = sin(vert_angle);
+
+	xy_distance = range * cos_vert_angle;
+
+	x = (xy_distance * cos_rot_angle);
+	y = (xy_distance * sin_rot_angle);
+	z = (range * sin_vert_angle);
+
+	angle = atan2(y, x);
+	// if (angle >= 0)
+		//     angle -= M_PI_2;
+	// else if (angle < 0)
+	//     angle += M_PI_2;
+
+	fprintf(fp, "%d\t%lf\t%lf\t%lf\t%lf\t%lf\n", num_valid_points, x, y, z, carmen_radians_to_degrees(angle), range);
 }
 
 
@@ -328,7 +362,7 @@ main(int argc, char* argv[])
             // auto n_returns = (scan.field(sensor::RANGE) != 0).count();
             auto range = scan.field(sensor::RANGE);
 
-            auto intensity = scan.field(sensor::INTENSITY);
+            auto intensity = scan.field(sensor::REFLECTIVITY);
 
             // if (ouster_intensity_type == 2)
             // intensity = scan.field(sensor::REFLECTIVITY);
@@ -337,6 +371,12 @@ main(int argc, char* argv[])
 
             auto measurement_id = scan.measurement_id();
 
+#ifdef debug_point_cloud
+            int num_valid_points = 0;
+
+            FILE *fp = fopen("velodyne_points.dat", "w");
+            fprintf(fp, "i\tx\ty\tz\tangle\trange\n");
+#endif
 			for (int m_id = column_window.first; m_id <= column_window.second; m_id++)
 			{
 				double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);//Calculo do angulo, no ouster os shots sao fixos
@@ -355,18 +395,16 @@ main(int argc, char* argv[])
 
 					for (size_t ipx = 0; ipx < h; ipx++)
 					{
-						if (shot_angle > min_angle && shot_angle < max_angle &&
-							range(ipx, m_id) > 100 && range(ipx, m_id) < 70000)
-						{
-							vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) range(ipx, m_id);
-							vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) intensity(ipx, m_id);
 
-						}
-						else
+						vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) range(ipx, m_id);
+						vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) intensity(ipx, m_id);
+#ifdef debug_point_cloud
+						if (range(ipx, m_id) != 0)
 						{
-							vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) 0;
-							vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) 0;
+							variable_scan_message_printer(fp, num_valid_points, info.beam_altitude_angles.at(ipx), info.beam_azimuth_angles.at(ipx), carmen_radians_to_degrees(shot_angle), (unsigned short) range(ipx, m_id), 1000.0);
+							num_valid_points++;
 						}
+#endif
 					}
 				}else
 				{
@@ -395,7 +433,10 @@ main(int argc, char* argv[])
 				}
 				number_of_shots++;
 			}
-
+#ifdef debug_point_cloud
+			fclose(fp);
+//			getchar();
+#endif
 			if (is_alternated)
 			{
 				for (int i = 0; i < number_of_messages_to_publish; i++)
