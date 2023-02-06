@@ -44,6 +44,8 @@ main(int argc, char **argv)
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
+	pose.trailer_theta[0] = pose.theta;
+
 	if (argc == 6)
 		pose.trailer_theta[0] = atof(argv[5]);
 

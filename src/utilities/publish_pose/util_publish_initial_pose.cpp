@@ -118,7 +118,7 @@ main(int argc, char **argv)
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
-
+	theta_semi_trailer = pose.theta;
 	if (argc >= 5)
 		wait_time = atof(argv[4]);
 	if (argc >= 6 && strcmp("--wait-playback", argv[5]) == 0)
@@ -131,7 +131,9 @@ main(int argc, char **argv)
 		pose_to_wait.theta = atof(argv[8]);
 	}
 	else if (argc >= 6)
-		theta_semi_trailer = atof(argv[5]);
+		theta_semi_trailer = atof(argv[5]); // Por alguma razão esse valor fica 0 ??? Resolver depois como que vamos tratar os parâmetros do multi_trailers
+	theta_semi_trailer = pose.theta;
+
 
 	carmen_ipc_initialize(argc, argv);
 	define_messages();
