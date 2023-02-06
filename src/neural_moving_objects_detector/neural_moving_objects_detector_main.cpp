@@ -614,7 +614,7 @@ call_neural_network()
 	ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
 	int qwe = runPython(image, 4);
 	MyFile << "------------------------FIM DO RUN PYTHON---------------------------" << endl;
-	image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
+	// image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
 
 	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 //	predictions = filter_predictions_of_interest(predictions);
