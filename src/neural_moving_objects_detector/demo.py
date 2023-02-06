@@ -5,11 +5,8 @@
 #     driving_area_mask,lane_line_mask,plot_one_box,show_seg_result,\
 #     AverageMeter,\
 #     LoadImages
-import argparse
 import os
-import subprocess
 from pathlib import Path
-import glob
 import random
 import cv2
 import numpy as np
@@ -258,7 +255,7 @@ def main(filestring):
         return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
 
     class LoadImages:  # for inference
-        def __init__(self, path, filestring, img_size=640, stride=32):
+        def __init__(self, filestring, img_size=640, stride=32):
 
             self.filestring = filestring
             self.img_size = img_size
@@ -350,42 +347,20 @@ def main(filestring):
         return ll_seg_mask
 
 
-    def make_parser():
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--weights', nargs='+', type=str, default='YOLOPv2/data/weights/yolopv2.pt', help='model.pt path(s)')
-        parser.add_argument('--source', type=str, default='YOLOPv2/data/example.jpg', help='source')  # file/folder, 0 for webcam
-        parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-        parser.add_argument('--conf-thres', type=float, default=0.3, help='object confidence threshold')
-        parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
-        parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-        parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-        parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-        parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
-        parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
-        parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-        parser.add_argument('--project', default='YOLOPv2/runs/detect', help='save results to project/name')
-        parser.add_argument('--name', default='exp', help='save results to project/name')
-        parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-
-        return parser
-
-
-    def detect(opt, filestring):
+    def detect(filestring):
         af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
         af.write("file_path\n")
         file_path = os.path.realpath(__file__)[:-7]
         # setting and directories
-        source, weights,  save_txt, imgsz = opt.source, opt.weights,  opt.save_txt, opt.img_size
-        save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
-        save_dir = Path.joinpath(Path(file_path), Path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
-        (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        weights, imgsz = 'YOLOPv2/data/weights/yolopv2.pt', 640
+        save_img = True  # save inference images
         try:
             # Load model
             stride =32
             af.write("torch\n")
             model  = torch.jit.load(Path.joinpath(Path(file_path), weights))
             af.write("select_device\n")
-            device = select_device(opt.device)
+            device = select_device('0')
             half = device.type != 'cpu'  # half precision only supported on CUDA
             af.write("model\n")
             model = model.to(device)
@@ -398,7 +373,7 @@ def main(filestring):
             # Set Dataloader
             vid_path, vid_writer = None, None
             af.write("LoadImages\n")
-            dataset = LoadImages(Path.joinpath(Path(file_path), source), filestring=filestring, img_size=imgsz, stride=stride)
+            dataset = LoadImages( filestring=filestring, img_size=imgsz, stride=stride)
             # Run inference
             af.write("run once\n")
             if device.type != 'cpu':
@@ -423,7 +398,7 @@ def main(filestring):
 
                 # Apply NMS
                 af.write("non_max_suppression\n")
-                pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+                pred = non_max_suppression(pred, 0.3, 0.45, classes=None, agnostic=False)
 
                 af.write("driving_area_mask\n")
                 da_seg_mask = driving_area_mask(seg)
@@ -460,9 +435,8 @@ def main(filestring):
     af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
     af.write("entrou\n")
     sys.argv=['']
-    opt =  make_parser().parse_args()
 
     with torch.no_grad():
-        im0 = detect(opt, filestring)
+        im0 = detect(filestring)
         af.write("saiu\n")
     return "1"
