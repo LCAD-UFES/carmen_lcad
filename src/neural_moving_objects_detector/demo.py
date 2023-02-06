@@ -6,14 +6,9 @@
 #     AverageMeter,\
 #     LoadImages
 import argparse
-import datetime
-import logging
 import os
-import platform
 import subprocess
-import time
 from pathlib import Path
-import re
 import glob
 import random
 import cv2
@@ -23,25 +18,9 @@ import torchvision
 import ast
 
 
-logger = logging.getLogger(__name__)
-
-
-def git_describe(path=Path(__file__).parent):  # path must be a directory
-    # return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
-    s = f'git -C {path} describe --tags --long --always'
-    try:
-        return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
-    except subprocess.CalledProcessError as e:
-        return ''  # not a git repository
-
-def date_modified(path=__file__):
-    # return human-readable file modification date, i.e. '2021-3-26'
-    t = datetime.datetime.fromtimestamp(Path(path).stat().st_mtime)
-    return f'{t.year}-{t.month}-{t.day}'
 
 def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
-    s = f'YOLOPv2 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
     cpu = device.lower() == 'cpu'
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
@@ -54,22 +33,12 @@ def select_device(device='', batch_size=None):
         n = torch.cuda.device_count()
         if n > 1 and batch_size:  # check that batch_size is compatible with device_count
             assert batch_size % n == 0, f'batch-size {batch_size} not multiple of GPU count {n}'
-        space = ' ' * len(s)
         for i, d in enumerate(device.split(',') if device else range(n)):
             p = torch.cuda.get_device_properties(i)
-            s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / 1024 ** 2}MB)\n"  # bytes to MB
-    else:
-        s += 'CPU\n'
+            
 
-    logger.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
     return torch.device('cuda:0' if cuda else 'cpu')
 
-
-def time_synchronized():
-    # pytorch-accurate time
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-    return time.time()
 
 def plot_one_box(x, img, color=None, label=None, line_thickness=3):
     # Plots one bounding box on image img
@@ -82,96 +51,8 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=3):
         t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
         c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
 
-class SegmentationMetric(object):
-    '''
-    imgLabel [batch_size, height(144), width(256)]
-    confusionMatrix [[0(TN),1(FP)],
-                     [2(FN),3(TP)]]
-    '''
-    def __init__(self, numClass):
-        self.numClass = numClass
-        self.confusionMatrix = np.zeros((self.numClass,)*2)
-
-    def pixelAccuracy(self):
-        # return all class overall pixel accuracy
-        # acc = (TP + TN) / (TP + TN + FP + TN)
-        acc = np.diag(self.confusionMatrix).sum() /  self.confusionMatrix.sum()
-        return acc
-        
-    def lineAccuracy(self):
-        Acc = np.diag(self.confusionMatrix) / (self.confusionMatrix.sum(axis=1) + 1e-12)
-        return Acc[1]
-
-    def classPixelAccuracy(self):
-        # return each category pixel accuracy(A more accurate way to call it precision)
-        # acc = (TP) / TP + FP
-        classAcc = np.diag(self.confusionMatrix) / (self.confusionMatrix.sum(axis=0) + 1e-12)
-        return classAcc
-
-    def meanPixelAccuracy(self):
-        classAcc = self.classPixelAccuracy()
-        meanAcc = np.nanmean(classAcc)
-        return meanAcc
-
-    def meanIntersectionOverUnion(self):
-        # Intersection = TP Union = TP + FP + FN
-        # IoU = TP / (TP + FP + FN)
-        intersection = np.diag(self.confusionMatrix)
-        union = np.sum(self.confusionMatrix, axis=1) + np.sum(self.confusionMatrix, axis=0) - np.diag(self.confusionMatrix)
-        IoU = intersection / union
-        IoU[np.isnan(IoU)] = 0
-        mIoU = np.nanmean(IoU)
-        return mIoU
-    
-    def IntersectionOverUnion(self):
-        intersection = np.diag(self.confusionMatrix)
-        union = np.sum(self.confusionMatrix, axis=1) + np.sum(self.confusionMatrix, axis=0) - np.diag(self.confusionMatrix)
-        IoU = intersection / union
-        IoU[np.isnan(IoU)] = 0
-        return IoU[1]
-
-    def genConfusionMatrix(self, imgPredict, imgLabel):
-        # remove classes from unlabeled pixels in gt image and predict
-        # print(imgLabel.shape)
-        mask = (imgLabel >= 0) & (imgLabel < self.numClass)
-        label = self.numClass * imgLabel[mask] + imgPredict[mask]
-        count = np.bincount(label, minlength=self.numClass**2)
-        confusionMatrix = count.reshape(self.numClass, self.numClass)
-        return confusionMatrix
-
-    def Frequency_Weighted_Intersection_over_Union(self):
-        # FWIOU =     [(TP+FN)/(TP+FP+TN+FN)] *[TP / (TP + FP + FN)]
-        freq = np.sum(self.confusionMatrix, axis=1) / np.sum(self.confusionMatrix)
-        iu = np.diag(self.confusionMatrix) / (
-                np.sum(self.confusionMatrix, axis=1) + np.sum(self.confusionMatrix, axis=0) -
-                np.diag(self.confusionMatrix))
-        FWIoU = (freq[freq > 0] * iu[freq > 0]).sum()
-        return FWIoU
 
 
-    def addBatch(self, imgPredict, imgLabel):
-        assert imgPredict.shape == imgLabel.shape
-        self.confusionMatrix += self.genConfusionMatrix(imgPredict, imgLabel)
-
-    def reset(self):
-        self.confusionMatrix = np.zeros((self.numClass, self.numClass))
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count if self.count != 0 else 0
 
 def _make_grid(nx=20, ny=20):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
@@ -225,19 +106,6 @@ def show_seg_result(img, result, palette=None,is_demo=False):
     #img = cv2.resize(img, (1280,720), interpolation=cv2.INTER_LINEAR)
     return 
 
-
-def increment_path(path, exist_ok=True, sep=''):
-    # Increment path, i.e. runs/exp --> runs/exp{sep}0, runs/exp{sep}1 etc.
-    path = Path(path)  # os-agnostic
-    if (path.exists() and exist_ok) or (not path.exists()):
-        return str(path)
-    else:
-        dirs = glob.glob(f"{path}{sep}*")  # similar paths
-        matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
-        i = [int(m.groups()[0]) for m in matches if m]  # indices
-        n = max(i) + 1 if i else 2  # increment number
-        return f"{path}{sep}{n}"  # update path
-
 def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
@@ -260,11 +128,6 @@ def clip_coords(boxes, img_shape):
     boxes[:, 1].clamp_(0, img_shape[0])  # y1
     boxes[:, 2].clamp_(0, img_shape[1])  # x2
     boxes[:, 3].clamp_(0, img_shape[0])  # y2
-
-def set_logging(rank=-1):
-    logging.basicConfig(
-        format="%(message)s",
-        level=logging.INFO if rank in [-1, 0] else logging.WARN)
 
 def xywh2xyxy(x):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
@@ -304,7 +167,6 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
 
-    t = time.time()
     output = [torch.zeros((0, 6), device=prediction.device)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
@@ -368,8 +230,6 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
                 i = i[iou.sum(1) > 1]  # require redundancy
 
         output[xi] = x[i]
-        if (time.time() - t) > time_limit:
-            break  # time limit exceeded
 
     return output
 
@@ -537,50 +397,39 @@ def make_parser():
 
 def detect(opt, filestring):
     af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
+    af.write("file_path\n")
     file_path = os.path.realpath(__file__)[:-7]
     # setting and directories
     source, weights,  save_txt, imgsz = opt.source, opt.weights,  opt.save_txt, opt.img_size
     save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
     save_dir = Path.joinpath(Path(file_path), Path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-    inf_time = AverageMeter()
-    waste_time = AverageMeter()
-    nms_time = AverageMeter()
     try:
         # Load model
         stride =32
+        af.write("torch\n")
         model  = torch.jit.load(Path.joinpath(Path(file_path), weights))
+        af.write("select_device\n")
         device = select_device(opt.device)
         half = device.type != 'cpu'  # half precision only supported on CUDA
+        af.write("model\n")
         model = model.to(device)
 
+        af.write("eval\n")
         if half:
             model.half()  # to FP16  
         model.eval()
         
         # Set Dataloader
-        #af.write("loadImg\n")
         vid_path, vid_writer = None, None
-
-        #af.write("array\n")
-        # filestring = ast.literal_eval(filestring)
-        # filestring = np.array(filestring)
-        # filestring = np.float32(filestring)
-        #af.write("resize\n")
-        # filestring = cv2.resize(filestring, (1280,720), interpolation=cv2.INTER_LINEAR)
-        # af.write("letterbox\n")
-        # filestring = letterbox(filestring, imgsz, stride)[0]
-        # filestring = filestring[:, :, ::-1].transpose(2, 0, 1)
-        #af.write("ascontiguousarray\n")
-        # filestring = np.ascontiguousarray(filestring)
-        
+        af.write("LoadImages\n")
         dataset = LoadImages(Path.joinpath(Path(file_path), source), filestring=filestring, img_size=imgsz, stride=stride)
-        #af.write("deu bom\n")
         # Run inference
+        af.write("run once\n")
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-        t0 = time.time()
         for path, img, im0s, vid_cap in dataset:
+            af.write("from_numpy\n")
             img = torch.from_numpy(img).to(device)
             img = img.half() if half else img.float()  # uint8 to fp16/32
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -589,22 +438,21 @@ def detect(opt, filestring):
                 img = img.unsqueeze(0)
 
             # Inference
-            t1 = time_synchronized()
+            af.write("model(img)\n")
             [pred,anchor_grid],seg,ll= model(img)
-            t2 = time_synchronized()
 
             # waste time: the incompatibility of  torch.jit.trace causes extra time consumption in demo version 
             # but this problem will not appear in offical version 
-            tw1 = time_synchronized()
+            af.write("split_for_trace_model\n")
             pred = split_for_trace_model(pred,anchor_grid)
-            tw2 = time_synchronized()
 
             # Apply NMS
-            t3 = time_synchronized()
+            af.write("non_max_suppression\n")
             pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-            t4 = time_synchronized()
 
+            af.write("driving_area_mask\n")
             da_seg_mask = driving_area_mask(seg)
+            af.write("lane_line_mask\n")
             ll_seg_mask = lane_line_mask(ll)
 
             # Process detections
@@ -614,16 +462,10 @@ def detect(opt, filestring):
                 p = Path(p)  # to Path
                 save_path = str(save_dir / p.name)  # img.jpg
                 txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
-                s += '%gx%g ' % img.shape[2:]  # print string
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
                 if len(det):
                     # Rescale boxes from img_size to im0 size
                     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
-
-                    # Print results
-                    for c in det[:, -1].unique():
-                        n = (det[:, -1] == c).sum()  # detections per class
-                        #s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                     # Write results
                     for *xyxy, conf, cls in reversed(det):
@@ -641,9 +483,6 @@ def detect(opt, filestring):
                 # Save results (image with detections)
                 if save_img:
                     cv2.imwrite(save_path, im0)
-        inf_time.update(t2-t1,img.size(0))
-        nms_time.update(t4-t3,img.size(0))
-        waste_time.update(tw2-tw1,img.size(0))
     except Exception as e:
         af.write(str(e))
         af.write("erro\n")
@@ -657,7 +496,7 @@ def main(filestring):
     sys.argv=['']
     opt =  make_parser().parse_args()
 
-    # with torch.no_grad():
-    #     im0 = detect(opt, filestring)
+    with torch.no_grad():
+        im0 = detect(opt, filestring)
     af.write("saiu\n")
     return "1"
