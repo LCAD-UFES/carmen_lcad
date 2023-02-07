@@ -444,12 +444,12 @@ distance_to_stop_sign(carmen_robot_and_trailers_traj_point_t current_robot_pose_
 
 
 bool
-wait_for_given_seconds(double seconds)
+wait_for_given_seconds(double seconds, double timestamp)
 {
 	if (wait_for_given_seconds_start_time == 0.0)
-		wait_for_given_seconds_start_time = carmen_get_time();
+		wait_for_given_seconds_start_time = timestamp;
 
-	double t = carmen_get_time();
+	double t = timestamp;
 	if (t - wait_for_given_seconds_start_time < seconds)
 	{
 		return (false);
@@ -875,7 +875,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				else
 					decision_making_state_msg->low_level_state_flags |= CARMEN_BEHAVIOR_SELECTOR_GOING_BACKWARDS;
 
-				if (wait_for_given_seconds(2.0))
+				if (wait_for_given_seconds(2.0, timestamp))
 				{
 					if (going_forward())
 						decision_making_state_msg->low_level_state = Free_Running;
@@ -935,7 +935,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 
 		case End_Of_Path_Reached:
-			if (wait_for_given_seconds(1.0))// && all_paths_has_collision_and_goal_is_not_an_annotation == false)
+			if (wait_for_given_seconds(1.0, timestamp))// && all_paths_has_collision_and_goal_is_not_an_annotation == false)
 				decision_making_state_msg->low_level_state = End_Of_Path_Reached2;
 			// else if(path_final_pose_reached(current_robot_pose_v_and_phi) == false)
 			// 	decision_making_state_msg->low_level_state = Stopping_At_Unavoidable_Obstacle;
@@ -943,7 +943,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 
 		case End_Of_Path_Reached2:
-			if (wait_for_given_seconds(1.0))// &&	all_paths_has_collision_and_goal_is_not_an_annotation == false)
+			if (wait_for_given_seconds(1.0, timestamp))// &&	all_paths_has_collision_and_goal_is_not_an_annotation == false)
 				decision_making_state_msg->low_level_state = Stopped;
 			// else if(path_final_pose_reached(current_robot_pose_v_and_phi) == false)
 			// 	decision_making_state_msg->low_level_state = Stopping_At_Unavoidable_Obstacle;
@@ -958,11 +958,11 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped_At_Unavoidable_Obstacle_S0:
 			if (route_was_recomputed(decision_making_state_msg->route_planner_state) && all_paths_has_collision_and_goal_is_not_an_annotation == false)
 				decision_making_state_msg->low_level_state = Free_Running;
-			else if (wait_for_given_seconds(2.0) && still_in_route(decision_making_state_msg->route_planner_state))
+			else if (wait_for_given_seconds(2.0, timestamp) && still_in_route(decision_making_state_msg->route_planner_state))
 				decision_making_state_msg->low_level_state = Free_Running;
 			// else if (could_not_compute_the_route(decision_making_state_msg->route_planner_state))
 			// {
-			// 	if(wait_for_given_seconds(1.0))
+			// 	if(wait_for_given_seconds(1.0, timestamp))
 			// 		decision_making_state_msg->low_level_state = Stopped;
 			// }
 
@@ -1145,7 +1145,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 				if (wait_stopped)
 				{
-					if (wait_for_given_seconds(5.0))
+					if (wait_for_given_seconds(5.0, timestamp))
 						wait_stopped = false;
 				}
 				else
@@ -1175,7 +1175,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				clear_wait_for_given_seconds();
 				decision_making_state_msg->low_level_state = Stopped_At_Reverse_S0;
 			}
-			else if ((fabs(current_robot_pose_v_and_phi.v) < 0.02) && wait_for_given_seconds(60.0))
+			else if ((fabs(current_robot_pose_v_and_phi.v) < 0.02) && wait_for_given_seconds(60.0, timestamp))
 				decision_making_state_msg->low_level_state = Recovering_From_Error;
 			break;
 		case Stopped_At_Reverse_S0:
@@ -1187,7 +1187,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 				if (wait_stopped)
 				{
-					if (wait_for_given_seconds(4.0))
+					if (wait_for_given_seconds(4.0, timestamp))
 						wait_stopped = false;
 				}
 				else
@@ -1204,7 +1204,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 						clear_wait_for_given_seconds();
 						decision_making_state_msg->low_level_state = Stopped;
 					}
-					else if (wait_for_given_seconds(3.0))
+					else if (wait_for_given_seconds(3.0, timestamp))
 					{
 						wait_stopped = true;
 						decision_making_state_msg->low_level_state = Recovering_From_Error;
@@ -1227,7 +1227,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				clear_wait_for_given_seconds();
 				decision_making_state_msg->low_level_state = Stopped_At_Go_Forward_S0;
 			}
-			else if ((fabs(current_robot_pose_v_and_phi.v) < 0.02) && wait_for_given_seconds(60.0))
+			else if ((fabs(current_robot_pose_v_and_phi.v) < 0.02) && wait_for_given_seconds(60.0, timestamp))
 				decision_making_state_msg->low_level_state = Recovering_From_Error;
 			break;
 		case Stopped_At_Go_Forward_S0:
@@ -1239,7 +1239,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 				if (wait_stopped)
 				{
-					if (wait_for_given_seconds(4.0))
+					if (wait_for_given_seconds(4.0, timestamp))
 						wait_stopped = false;
 				}
 				else
@@ -1256,7 +1256,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 						clear_wait_for_given_seconds();
 						decision_making_state_msg->low_level_state = Stopped;
 					}
-					else if (wait_for_given_seconds(3.0))
+					else if (wait_for_given_seconds(3.0, timestamp))
 					{
 						wait_stopped = true;
 						decision_making_state_msg->low_level_state = Recovering_From_Error;
@@ -1310,7 +1310,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 
 		case Recovering_From_Error:
-			if (wait_for_given_seconds(4.0))
+			if (wait_for_given_seconds(4.0, timestamp))
 			{
 				carmen_navigator_ackerman_go();
 				decision_making_state_msg->low_level_state = Stopped;
@@ -1367,68 +1367,68 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;
 		signals_msg.high_beams = 2;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_2)
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;
 		signals_msg.high_beams = 3;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_3)
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;
 		signals_msg.high_beams = 4;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 	else if (engine_brake_sign == ENGINE_BRAKE_LEVEL_4)
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;
 		signals_msg.high_beams = 5;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 	else if ((engine_brake_sign == ENGINE_BRAKE_LEVEL_5) || (engine_brake_sign == ENGINE_BRAKE_ON))
 	{
 		signals_msg.headlight_status = HEADLIGHT_ON;  // para compatibilidade com o Mart
 		signals_msg.high_beams = 1;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 	else if (engine_brake_sign == ENGINE_BRAKE_OFF)
 	{
 		signals_msg.headlight_status = HEADLIGHT_OFF;  // para compatibilidade com o Mart
 		signals_msg.high_beams = 0;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 
 	int turn_left_indicator_sign = turn_left_indicator_sign_ahead(current_robot_pose_v_and_phi);
 	if (turn_left_indicator_sign == TURN_LEFT_INDICATOR_ON)
 	{
 		signals_msg.turn_signal = SIGNAL_LEFT;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 	else if (turn_left_indicator_sign == TURN_LEFT_INDICATOR_OFF)
 	{
 		signals_msg.turn_signal = SIGNAL_OFF;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 
 	int turn_right_indicator_sign = turn_right_indicator_sign_ahead(current_robot_pose_v_and_phi);
 	if (turn_right_indicator_sign == TURN_RIGHT_INDICATOR_ON)
 	{
 		signals_msg.turn_signal = SIGNAL_RIGHT;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 	else if (turn_right_indicator_sign == TURN_RIGHT_INDICATOR_OFF)
 	{
 		signals_msg.turn_signal = SIGNAL_OFF;
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 
 	int set_max_gear_sign = set_max_gear_sign_ahead(current_robot_pose_v_and_phi);
 	if (set_max_gear_sign != NO_SET_MAX_GEAR_SIGN_AHEAD)
 	{
 		signals_msg.horn_status = 8 * set_max_gear_sign;  // usa a partir do bit 3. Assume-se que não será publicada ao mesmo tempo que a do task manager (tomada de força e basculamento)
-		carmen_ford_escape_publish_signals_message(&signals_msg, carmen_get_time());
+		carmen_ford_escape_publish_signals_message(&signals_msg, timestamp);
 	}
 
 	return (0);
