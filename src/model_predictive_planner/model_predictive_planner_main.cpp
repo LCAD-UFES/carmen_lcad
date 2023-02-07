@@ -693,7 +693,6 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		fflush(stdout);
 	}
 	previous_timestamp = msg->timestamp;
-	return;
 
 	if (!GlobalState::localizer_pose)
 		GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
