@@ -49,8 +49,6 @@ def main(filestring):
             c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
 
 
-
-
     def _make_grid(nx=20, ny=20):
             yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
             return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
@@ -68,40 +66,6 @@ def main(filestring):
             z.append(y.view(bs, -1, 85))
         pred = torch.cat(z, 1)
         return pred
-
-    def show_seg_result(img, result, palette=None,is_demo=False):
-
-        if palette is None:
-            palette = np.random.randint(
-                    0, 255, size=(3, 3))
-        palette[0] = [0, 0, 0]
-        palette[1] = [0, 255, 0]
-        palette[2] = [255, 0, 0]
-        palette = np.array(palette)
-        assert palette.shape[0] == 3 # len(classes)
-        assert palette.shape[1] == 3
-        assert len(palette.shape) == 2
-        
-        if not is_demo:
-            color_seg = np.zeros((result.shape[0], result.shape[1], 3), dtype=np.uint8)
-            for label, color in enumerate(palette):
-                color_seg[result == label, :] = color
-        else:
-            color_area = np.zeros((result[0].shape[0], result[0].shape[1], 3), dtype=np.uint8)
-            
-            color_area[result[0] == 1] = [0, 255, 0]
-            color_area[result[1] ==1] = [255, 0, 0]
-            color_seg = color_area
-
-        # convert to BGR
-        color_seg = color_seg[..., ::-1]
-        # print(color_seg.shape)
-        color_mask = np.mean(color_seg, 2)
-        img[color_mask != 0] = img[color_mask != 0] * 0.5 + color_seg[color_mask != 0] * 0.5
-        # img = img * 0.5 + color_seg * 0.5
-        #img = img.astype(np.uint8)
-        #img = cv2.resize(img, (1280,720), interpolation=cv2.INTER_LINEAR)
-        return 
 
     def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
         # Rescale coords (xyxy) from img1_shape to img0_shape
@@ -133,15 +97,6 @@ def main(filestring):
         y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
         y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
         y[:, 3] = x[:, 1] + x[:, 3] / 2  # bottom right y
-        return y
-
-    def xyxy2xywh(x):
-        # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
-        y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
-        y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
-        y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
-        y[:, 2] = x[:, 2] - x[:, 0]  # width
-        y[:, 3] = x[:, 3] - x[:, 1]  # height
         return y
 
     def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
@@ -264,7 +219,7 @@ def main(filestring):
             self.mode = 'image'
             
             self.cap = None
-            #af.write("__init__ foi\n")
+            ## af.write("__init__ foi\n")
 
         def __iter__(self):
             self.count = 0
@@ -291,13 +246,13 @@ def main(filestring):
             # Convert
             img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
             img = np.ascontiguousarray(img)
-            #af.write("__next__ foi\n")
+            ## af.write("__next__ foi\n")
             return img, img0
 
-    def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
+    def letterbox(img, new_shape=(640, 480), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
         #af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
         # Resize and pad image while meeting stride-multiple constraints
-        #af.write("shape\n")
+        ## af.write("shape\n")
         shape = img.shape[:2]  # current shape [height, width]
         if isinstance(new_shape, int):
             new_shape = (new_shape, new_shape)
@@ -332,111 +287,78 @@ def main(filestring):
         
         return img, ratio, (dw, dh)
 
-    def driving_area_mask(seg = None):
-        da_predict = seg[:, :, 12:372,:]
-        da_seg_mask = torch.nn.functional.interpolate(da_predict, scale_factor=2, mode='bilinear')
-        _, da_seg_mask = torch.max(da_seg_mask, 1)
-        da_seg_mask = da_seg_mask.int().squeeze().cpu().numpy()
-        return da_seg_mask
-
-    def lane_line_mask(ll = None):
-        ll_predict = ll[:, :, 12:372,:]
-        ll_seg_mask = torch.nn.functional.interpolate(ll_predict, scale_factor=2, mode='bilinear')
-        ll_seg_mask = torch.round(ll_seg_mask).squeeze(1)
-        ll_seg_mask = ll_seg_mask.int().squeeze().cpu().numpy()
-        return ll_seg_mask
-
-
     def detect(filestring):
-        af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
-        af.write("file_path\n")
+        # af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
+        # af.write("file_path\n")
         file_path = os.path.realpath(__file__)[:-7]
         # setting and directories
-        weights, imgsz = 'YOLOPv2/data/weights/yolopv2.pt', 640
+        weights, imgsz = 'YOLOPv2/data/weights/yolopv2.pt', 480
         save_img = True  # save inference images
-        try:
-            # Load model
-            stride =32
-            af.write("torch\n")
-            model  = torch.jit.load(Path.joinpath(Path(file_path), weights))
-            af.write("select_device\n")
-            device = select_device('0')
-            half = device.type != 'cpu'  # half precision only supported on CUDA
-            af.write("model\n")
-            model = model.to(device)
+        # Load model
+        stride =32
+        # af.write("torch\n")
+        model  = torch.jit.load(Path.joinpath(Path(file_path), weights))
+        # af.write("select_device\n")
+        device = select_device('0')
+        half = device.type != 'cpu'  # half precision only supported on CUDA
+        # af.write("model\n")
+        model = model.to(device)
 
-            af.write("eval\n")
-            if half:
-                model.half()  # to FP16  
-            model.eval()
-            
-            # Set Dataloader
-            vid_path, vid_writer = None, None
-            af.write("LoadImages\n")
-            dataset = LoadImages( filestring=filestring, img_size=imgsz, stride=stride)
-            # Run inference
-            af.write("run once\n")
-            if device.type != 'cpu':
-                model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-            for  img, im0s in dataset:
-                af.write("from_numpy\n")
-                img = torch.from_numpy(img).to(device)
-                img = img.half() if half else img.float()  # uint8 to fp16/32
-                img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        # af.write("eval\n")
+        if half:
+            model.half()  # to FP16  
+        model.eval()
+        
+        # Set Dataloader
+        vid_path, vid_writer = None, None
+        # af.write("LoadImages\n")
+        dataset = LoadImages( filestring=filestring, img_size=imgsz, stride=stride)
+        # Run inference
+        # af.write("run once\n")
+        if device.type != 'cpu':
+            model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+        for  img, im0s in dataset:
+            # af.write("from_numpy\n")
+            img = torch.from_numpy(img).to(device)
+            img = img.half() if half else img.float()  # uint8 to fp16/32
+            img /= 255.0  # 0 - 255 to 0.0 - 1.0
 
-                if img.ndimension() == 3:
-                    img = img.unsqueeze(0)
+            if img.ndimension() == 3:
+                img = img.unsqueeze(0)
 
-                # Inference
-                af.write("model(img)\n")
-                [pred,anchor_grid],seg,ll= model(img)
+            # Inference
+            # af.write("model(img)\n")
+            [pred,anchor_grid],seg,ll= model(img)
 
-                # waste time: the incompatibility of  torch.jit.trace causes extra time consumption in demo version 
-                # but this problem will not appear in offical version 
-                af.write("split_for_trace_model\n")
-                pred = split_for_trace_model(pred,anchor_grid)
+            # waste time: the incompatibility of  torch.jit.trace causes extra time consumption in demo version 
+            # but this problem will not appear in offical version 
+            # af.write("split_for_trace_model\n")
+            pred = split_for_trace_model(pred,anchor_grid)
 
-                # Apply NMS
-                af.write("non_max_suppression\n")
-                pred = non_max_suppression(pred, 0.3, 0.45, classes=None, agnostic=False)
+            # Apply NMS
+            # af.write("non_max_suppression\n")
+            pred = non_max_suppression(pred, 0.3, 0.45, classes=None, agnostic=False)
 
-                af.write("driving_area_mask\n")
-                da_seg_mask = driving_area_mask(seg)
-                af.write("lane_line_mask\n")
-                ll_seg_mask = lane_line_mask(ll)
+            # Process detections
+            for i, det in enumerate(pred):  # detections per image
+                im0 =  im0s
+                if len(det):
+                    # Rescale boxes from img_size to im0 size
+                    det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
-                # Process detections
-                for i, det in enumerate(pred):  # detections per image
-                
-                    im0 =  im0s
-                    if len(det):
-                        # Rescale boxes from img_size to im0 size
-                        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
-
-                        # Write results
-                        for *xyxy, conf, cls in reversed(det):
-
-                            if save_img :  # Add bbox to image
-                                plot_one_box(xyxy, im0, line_thickness=3)
-
-                    # Print time (inference)
-                    show_seg_result(im0, (da_seg_mask,ll_seg_mask), is_demo=True)
-                    # Save results (image with detections)
-                    if save_img:
-                        cv2.imwrite("/home/victor/carmen_lcad/src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", im0)
-        except Exception as e:
-            af.write(str(e))
-            af.write("erro\n")
+                    # Write results
+                    for *xyxy, conf, cls in reversed(det):
+                        if save_img :  # Add bbox to image
+                            plot_one_box(xyxy, im0, line_thickness=3)
+                if save_img:
+                    cv2.imwrite("/home/victor/carmen_lcad/src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", im0)
         return im0
 
 
 
-    import sys 
-    af = open("aaaaaaaaaaaaaaaaaa.txt", "a")
-    af.write("entrou\n")
+    import sys
     sys.argv=['']
 
     with torch.no_grad():
         im0 = detect(filestring)
-        af.write("saiu\n")
-    return "1"
+        return np.array_str(im0)

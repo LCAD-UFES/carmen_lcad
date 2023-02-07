@@ -49,8 +49,9 @@ void Finalize ()
 {
     Py_Finalize();
 }
-int 
-runPython(Mat filename, int argc)
+
+string
+runPython(Mat filename)
 {
 	std::string my_str = "[";
 	std::string ret;
@@ -70,8 +71,8 @@ runPython(Mat filename, int argc)
     }
 
 	my_str += "]";
-	ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
-	MyFile << "oi" << endl;
+	// ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
+	// MyFile << "oi" << endl;
 
 	PyObject *pName, *pModule, *pFunc;
     PyObject *pArgs, *pValue;
@@ -79,52 +80,58 @@ runPython(Mat filename, int argc)
 	static int asd;
 
     setenv("PYTHONPATH", "../src/neural_moving_objects_detector", 1);
-	MyFile << "passou setenv" << endl;
-	Initialize();
-	// if (asd == 0){
-	// 	++asd;
-	// 	Initialize();
-    //     atexit(Finalize);
-	// }
+	// MyFile << "passou setenv" << endl;
+	// Initialize();
+	if (asd == 0){
+		++asd;
+		Initialize();
+        atexit(Finalize);
+	}
 	pName = PyUnicode_DecodeFSDefault("demo");
-	MyFile << "passou PyUnicode_DecodeFSDefault" << endl;
+	// MyFile << "passou PyUnicode_DecodeFSDefault" << endl;
 	/* Error checking of pName left out */
 
-	pModule = PyImport_Import(pName); // <--------------------------------------------- dando erro 
-	MyFile << "passou PyImport_Import" << endl;
+	pModule = PyImport_Import(pName); 
+	// MyFile << "passou PyImport_Import" << endl;
 	Py_DECREF(pName);
-	MyFile << "passou Py_DECREF(pName)" << endl;
+	// MyFile << "passou Py_DECREF(pName)" << endl;
 
 	if (pModule != NULL) {
 		pFunc = PyObject_GetAttrString(pModule, "main");
-		MyFile << "passou PyObject_GetAttrString" << endl;
+		// MyFile << "passou PyObject_GetAttrString" << endl;
 
 		/* pFunc is a new reference */
 
 		if (pFunc && PyCallable_Check(pFunc)) {
-			MyFile << "passou PyCallable_Check" << endl;
-			pArgs = PyTuple_New(argc - 3);
-			MyFile << "passou PyTuple_New" << endl;
+			// MyFile << "passou PyCallable_Check" << endl;
+			pArgs = PyTuple_New(1);
+			// MyFile << "passou PyTuple_New" << endl;
 			pValue = PyUnicode_DecodeFSDefault(my_str.c_str());
-			MyFile << "passou PyUnicode_DecodeFSDefault" << endl;
+			// MyFile << "passou PyUnicode_DecodeFSDefault" << endl;
 			PyTuple_SetItem(pArgs, 0, pValue);
-			MyFile << "passou PyTuple_SetItem" << endl;
-			pValue = PyObject_CallObject(pFunc, pArgs);
-			MyFile << "passou PyObject_CallObject" << endl;
+			// MyFile << "passou PyTuple_SetItem" << endl;
+			pValue = PyObject_CallObject(pFunc, pArgs);// <--------------------------------------------- demora uma vida
+			// MyFile << "passou PyObject_CallObject" << endl;
 			Py_DECREF(pArgs);
-			MyFile << "passou Py_DECREF" << endl;
+			// MyFile << "passou Py_DECREF" << endl;
 			if (pValue != NULL) {
+				Py_ssize_t len;
+				ret = PyUnicode_AsUTF8AndSize(pValue, &len);
+				// MyFile << ret << endl;
 				Py_DECREF(pValue);
-				MyFile << "passou Py_DECREF" << endl;
+				// MyFile << "passou Py_DECREF" << endl;
 			}
 		}
 		Py_XDECREF(pFunc);
-		MyFile << "passou Py_XDECREF" << endl;
+		// MyFile << "passou Py_XDECREF" << endl;
 		Py_DECREF(pModule);
-		MyFile << "passou Py_DECREF" << endl;
+		// MyFile << "passou Py_DECREF" << endl;
 	}
-	atexit(Finalize);
-	return 0;
+	// atexit(Finalize);
+	// std::vector<Byte> vectordata(ret.begin(),ret.end());
+	// cv::Mat data_mat(vectordata,true);
+	// cv::Mat image(cv::imdecode(data_mat,1));
+	return ret;
 
 }
 
@@ -612,9 +619,9 @@ call_neural_network()
 	printf("FPS= %.2f\n", fps);
 	//cv::imwrite("../src/neural_moving_objects_detector/YOLOPv2/data/example.jpg", image);
 	ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
-	int qwe = runPython(image, 4);
-	MyFile << "------------------------FIM DO RUN PYTHON---------------------------" << endl;
-	// image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
+	runPython(image);
+	// MyFile << "------------------------FIM DO RUN PYTHON---------------------------" << endl;
+	image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
 
 	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 //	predictions = filter_predictions_of_interest(predictions);
@@ -644,8 +651,10 @@ call_neural_network()
 //	circle(image, Point((int)object_on_image.x, (int)object_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
 
 //	display(image, predictions, points, points_inside_bbox, filtered_points, fps, crop_w, crop_h);
-    imshow("Neural Object Detector", image);
-    waitKey(1);
+    if(image.data != NULL){
+    	imshow( "Display window", image );
+    	waitKey(200);
+	}
 
     free(img);
 }
