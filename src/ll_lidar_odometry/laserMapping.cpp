@@ -99,7 +99,7 @@ pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMap(new pcl::PointCloud<Poin
 pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMap(new pcl::PointCloud<PointType>());
 
 //input & output: points in one frame. local --> global
-pcl::PointCloud<PointType>::Ptr laserCloudFullRes_1(new pcl::PointCloud<PointType>());
+pcl::PointCloud<PointType> laserCloudFullRes_1;
 
 // points in every cube
 pcl::PointCloud<PointType>::Ptr laserCloudCornerArray[laserCloudNum];
@@ -233,7 +233,7 @@ void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr &laserOdometry)
 
 std::pair<carmen_vector_3D_t, carmen_quaternion_t>
 process(std::vector<pcl::PointCloud<PointType>> vector_cloud_in,
-		std::pair<carmen_vector_3D_t, carmen_quaternion_t> pair_in, pcl::PointCloud<PointType>::Ptr &cloud_out)
+		std::pair<carmen_vector_3D_t, carmen_quaternion_t> pair_in, pcl::PointCloud<PointType> cloud_out)
 {
 	//while(1)
 	//{
@@ -299,7 +299,7 @@ process(std::vector<pcl::PointCloud<PointType>> vector_cloud_in,
 		laserCloudSurfLast_1->push_back(vector_cloud_in[1].points[i]);
 
 	for(unsigned int i = 0; i < vector_cloud_in[2].size(); i++)
-		laserCloudFullRes_1->push_back(vector_cloud_in[2].points[i]);
+		laserCloudFullRes_1.push_back(vector_cloud_in[2].points[i]);
 
 	/*laserCloudCornerLast_1 = vector_cloud_in[0];
 	laserCloudSurfLast_1 = vector_cloud_in[1];
@@ -754,10 +754,6 @@ process(std::vector<pcl::PointCloud<PointType>> vector_cloud_in,
 		}
 		//printf("mapping optimization time %f \n", t_opt.toc());
 	}
-	else
-	{
-		printf("time Map corner and surf num are not enough");
-	}
 	transformUpdate();
 
 	TicToc t_add;
@@ -870,10 +866,10 @@ process(std::vector<pcl::PointCloud<PointType>> vector_cloud_in,
 
 	cloud_out = laserCloudFullRes_1;
 
-	int laserCloudFullResNum = laserCloudFullRes_1->points.size();
+	int laserCloudFullResNum = laserCloudFullRes_1.points.size();
 	for (int i = 0; i < laserCloudFullResNum; i++)
 	{
-		pointAssociateToMap(&laserCloudFullRes_1->points[i], &laserCloudFullRes_1->points[i]);
+		pointAssociateToMap(&laserCloudFullRes_1.points[i], &laserCloudFullRes_1.points[i]);
 	}
 
 	/*sensor_msgs::PointCloud2 laserCloudFullRes3;
@@ -947,7 +943,7 @@ process(std::vector<pcl::PointCloud<PointType>> vector_cloud_in,
 
 std::pair<carmen_vector_3D_t, carmen_quaternion_t>
 process_lm(std::vector<pcl::PointCloud<PointType>> vector_cloud_in,
-		std::pair<carmen_vector_3D_t, carmen_quaternion_t> pair_in, pcl::PointCloud<PointType>::Ptr &cloud_out)
+		std::pair<carmen_vector_3D_t, carmen_quaternion_t> pair_in, pcl::PointCloud<PointType> cloud_out)
 {
 	/*ros::init(argc, argv, "laserMapping");
 	ros::NodeHandle nh;*/
