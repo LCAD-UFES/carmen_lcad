@@ -24,7 +24,7 @@ publish_starting_pose(carmen_point_t pose)
 	double current_trailer_theta[MAX_NUM_TRAILERS];
 	current_trailer_theta[0] = theta_semi_trailer;
 	for (size_t z = 1; z < MAX_NUM_TRAILERS; z++)
-		current_trailer_theta[z] = 0.0;
+		current_trailer_theta[z] = pose.theta;
 	carmen_localize_ackerman_initialize_gaussian_command(pose, std, current_trailer_theta, 1);
 
 	return pose;

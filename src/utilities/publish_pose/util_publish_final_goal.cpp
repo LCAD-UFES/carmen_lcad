@@ -11,7 +11,7 @@ publish_final_goal(carmen_robot_and_trailers_pose_t pose)
 	pose_with_beta.theta = pose.theta;
 	pose_with_beta.num_trailers = pose.num_trailers;
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		pose_with_beta.trailer_theta[z] = pose.trailer_theta[z];
+		pose_with_beta.trailer_theta[z] = pose.trailer_theta[0];
 	carmen_rddf_publish_end_point_message(50, pose_with_beta);
 }
 

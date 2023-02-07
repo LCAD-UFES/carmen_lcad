@@ -54,27 +54,42 @@ compute_semi_trailer_thetas(carmen_robot_and_trailers_traj_point_t robot_and_tra
 
 	double L = robot_config.distance_between_front_and_rear_axles;
 
-	robot_and_trailer_traj_point.trailer_theta[0] = robot_and_trailer_traj_point.trailer_theta[0] + dt *
+	return_trailer_thetas[0] = robot_and_trailer_traj_point.trailer_theta[0] + dt *
 			robot_and_trailer_traj_point.v * (
 					 sin(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) / semi_trailer_config.semi_trailers[0].d -
 						   (semi_trailer_config.semi_trailers[0].M / (L * semi_trailer_config.semi_trailers[0].d)) * cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]) * tan(robot_and_trailer_traj_point.phi));
-
-	return_trailer_thetas[0] = robot_and_trailer_traj_point.trailer_theta[0];
 
 	// Apesar da fórmula acima utilizar o valor M, a de baixo ainda não utiliza. A variáveis num_semi_trailers também provavelmente vai ser substituída pela num_trailers da carmen_robot_and_trailers_traj_point_t
 //	for (int i = 1; i < (trailer_index + 1); i++)
 	if (trailer_index > 0)
 	{
 		double step = (dt * robot_and_trailer_traj_point.v) / semi_trailer_config.semi_trailers[trailer_index].d;
+		double M = semi_trailer_config.semi_trailers[trailer_index].M;
 
 		//produto
 		double product = cos(robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0]);
 		for (int j = 1; j < (trailer_index); j++)
 			product = product * (cos(robot_and_trailer_traj_point.trailer_theta[j - 1] - robot_and_trailer_traj_point.trailer_theta[j]));
 
-		double current_trailer_theta = step * product * ( sin(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]) );
-		robot_and_trailer_traj_point.trailer_theta[trailer_index] += current_trailer_theta ;
-		return_trailer_thetas[trailer_index] = robot_and_trailer_traj_point.trailer_theta[trailer_index];
+		// Teste simulando phi
+		double delta_theta = carmen_normalize_theta(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - return_trailer_thetas[trailer_index - 1]);
+		double current_phi;
+		if (delta_theta < 0.01)
+			current_phi = 0.0;
+		else
+			current_phi = atan(semi_trailer_config.semi_trailers[trailer_index - 1].d * (delta_theta / (dt * robot_and_trailer_traj_point.v)));
+
+		/////
+		/*
+		L = semi_trailer_config.semi_trailers[trailer_index - 1].d;
+		double current_trailer_theta = step * product * ( sin(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]) -
+				(M / (L * semi_trailer_config.semi_trailers[trailer_index].d)) * cos(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]) * tan(current_phi));
+*/
+		double current_trailer_theta = step * product * ( sin(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]) -
+				(M / (L * semi_trailer_config.semi_trailers[trailer_index].d)) * cos(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]) * tan(robot_and_trailer_traj_point.phi));
+
+//		robot_and_trailer_traj_point.trailer_theta[trailer_index] += current_trailer_theta ;
+		return_trailer_thetas[trailer_index] = robot_and_trailer_traj_point.trailer_theta[trailer_index] + current_trailer_theta;
 	}
 
 	return (return_trailer_thetas[trailer_index]);
