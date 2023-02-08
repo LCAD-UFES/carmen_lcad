@@ -137,6 +137,9 @@ carmen_moving_objects_point_clouds_message *moving_objects_message = NULL;
 extern bool offline_map_available;
 extern double time_secs_between_map_save;
 
+double min_force_obstacle_height = 100.0;
+double max_force_obstacle_height = -100.0;
+
 
 void
 change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
@@ -517,7 +520,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 		if (update_and_merge_with_mapper_saved_maps && use_remission)
 			carmen_prob_models_update_intensity_of_cells_hit_by_rays(map_set->sum_remission_map, map_set->sum_sqr_remission_map, map_set->count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid, safe_height_from_ground);
 
-		carmen_prob_models_force_update_log_odds_of_cells_hit_by_rays(map_set->log_odds_snapshot_map, sensor_params, sensor_data, 0.8, 0.8 + 1.5, tid);
+		carmen_prob_models_force_update_log_odds_of_cells_hit_by_rays(map_set->log_odds_snapshot_map, sensor_params, sensor_data, min_force_obstacle_height, max_force_obstacle_height, tid);
 
 		//Lucas: Mapa para deteccao de objetos moveis
 		//carmen_prob_models_update_log_odds_of_cells_hit_by_rays(&moving_objects_raw_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
@@ -2067,10 +2070,18 @@ carmen_mapper_override_mapping_mode_params(int argc, char **argv)
 			{(char *) "mapper",  (char *) "mapping_mode_off_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, carmen_mapper_sensors_params_handler},
 			{(char *) "mapper",  (char *) "mapping_mode_off_use_merge_between_maps", CARMEN_PARAM_ONOFF, &use_merge_between_maps, 0, NULL},
-
 		};
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+		carmen_param_t optional_param_list[] =
+		{
+			{(char *) "mapper",  (char *) "mapping_mode_off_min_force_obstacle_height", CARMEN_PARAM_DOUBLE, &min_force_obstacle_height, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_off_max_force_obstacle_height", CARMEN_PARAM_DOUBLE, &max_force_obstacle_height, 0, NULL},
+		};
+
+		carmen_param_allow_unfound_variables(1);
+		carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 	}
 	else if (mapping_mode == 1)
 	{
@@ -2091,6 +2102,15 @@ carmen_mapper_override_mapping_mode_params(int argc, char **argv)
 		};
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+		carmen_param_t optional_param_list[] =
+		{
+			{(char *) "mapper",  (char *) "mapping_mode_on_min_force_obstacle_height", CARMEN_PARAM_DOUBLE, &min_force_obstacle_height, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_on_max_force_obstacle_height", CARMEN_PARAM_DOUBLE, &max_force_obstacle_height, 0, NULL},
+		};
+
+		carmen_param_allow_unfound_variables(1);
+		carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 	}
 
 	if (level_msg == 1)
