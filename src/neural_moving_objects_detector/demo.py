@@ -240,7 +240,7 @@ def main(filestring):
             #print(f'image {self.count}/{self.nf} {path}: ', end='')
 
             # Padded resize
-            img0 = cv2.resize(img0, (1280,720), interpolation=cv2.INTER_LINEAR)
+            img0 = cv2.resize(img0, (640,480), interpolation=cv2.INTER_LINEAR)
             img = letterbox(img0, self.img_size, stride=self.stride)[0]
 
             # Convert
@@ -318,7 +318,6 @@ def main(filestring):
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         for  img, im0s in dataset:
-            # af.write("from_numpy\n")
             img = torch.from_numpy(img).to(device)
             img = img.half() if half else img.float()  # uint8 to fp16/32
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -326,17 +325,10 @@ def main(filestring):
             if img.ndimension() == 3:
                 img = img.unsqueeze(0)
 
-            # Inference
-            # af.write("model(img)\n")
             [pred,anchor_grid],seg,ll= model(img)
 
-            # waste time: the incompatibility of  torch.jit.trace causes extra time consumption in demo version 
-            # but this problem will not appear in offical version 
-            # af.write("split_for_trace_model\n")
             pred = split_for_trace_model(pred,anchor_grid)
 
-            # Apply NMS
-            # af.write("non_max_suppression\n")
             pred = non_max_suppression(pred, 0.3, 0.45, classes=None, agnostic=False)
 
             # Process detections
@@ -350,8 +342,6 @@ def main(filestring):
                     for *xyxy, conf, cls in reversed(det):
                         if save_img :  # Add bbox to image
                             plot_one_box(xyxy, im0, line_thickness=3)
-                if save_img:
-                    cv2.imwrite("/home/victor/carmen_lcad/src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", im0)
         return im0
 
 
@@ -361,4 +351,13 @@ def main(filestring):
 
     with torch.no_grad():
         im0 = detect(filestring)
-        return np.array_str(im0)
+        lis = ""
+        i = 0
+        for n1 in im0:
+            for n2 in n1:
+                for n3 in n2:
+                    lis += str(int(n3)) + ("," if i < len(n2)*len(n1)-1 else "\n")
+                    i+=1
+            i = 0
+        lis = lis[:-1]
+        return lis

@@ -50,7 +50,37 @@ void Finalize ()
     Py_Finalize();
 }
 
-string
+Mat loadFromCSV(const string& values, int opencv_type)
+{
+    Mat m;
+
+    stringstream ss(values);
+    string line;
+    while (getline(ss, line))
+    {
+        vector<double> dvals;
+
+        stringstream ssline(line);
+        string val;
+        while (getline(ssline, val, ','))
+        {
+            dvals.push_back(stod(val));
+        }
+
+        Mat mline(dvals, true);
+        transpose(mline, mline);
+
+        m.push_back(mline);
+    }
+
+    int ch = CV_MAT_CN(opencv_type);
+
+    m = m.reshape(ch);
+    m.convertTo(m, opencv_type);
+    return m;
+}
+
+Mat
 runPython(Mat filename)
 {
 	std::string my_str = "[";
@@ -117,7 +147,6 @@ runPython(Mat filename)
 			if (pValue != NULL) {
 				Py_ssize_t len;
 				ret = PyUnicode_AsUTF8AndSize(pValue, &len);
-				// MyFile << ret << endl;
 				Py_DECREF(pValue);
 				// MyFile << "passou Py_DECREF" << endl;
 			}
@@ -131,8 +160,23 @@ runPython(Mat filename)
 	// std::vector<Byte> vectordata(ret.begin(),ret.end());
 	// cv::Mat data_mat(vectordata,true);
 	// cv::Mat image(cv::imdecode(data_mat,1));
-	return ret;
+	
 
+	// int k = 0;
+	// for(int i = 0; i < image.rows; i++)		
+    //    	for(int j = 0; j < image.cols; j++)
+	// 	{
+	// 		image.at<cv::Vec3b>(i,j)[0] = ret[k];
+	// 		k++;
+	// 		image.at<cv::Vec3b>(i,j)[1] = ret[k];
+	// 		k++;
+	// 		image.at<cv::Vec3b>(i,j)[2] = ret[k];
+	// 		k++;
+	// 	}
+
+	// return image;
+	return loadFromCSV(ret, CV_8UC3);
+	//return ret;
 }
 
 void
@@ -619,9 +663,9 @@ call_neural_network()
 	printf("FPS= %.2f\n", fps);
 	//cv::imwrite("../src/neural_moving_objects_detector/YOLOPv2/data/example.jpg", image);
 	ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
-	runPython(image);
+	image = runPython(image);
 	// MyFile << "------------------------FIM DO RUN PYTHON---------------------------" << endl;
-	image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
+	//image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
 
 	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 //	predictions = filter_predictions_of_interest(predictions);
@@ -653,7 +697,7 @@ call_neural_network()
 //	display(image, predictions, points, points_inside_bbox, filtered_points, fps, crop_w, crop_h);
     if(image.data != NULL){
     	imshow( "Display window", image );
-    	waitKey(200);
+    	waitKey(25);
 	}
 
     free(img);
