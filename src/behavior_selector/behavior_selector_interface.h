@@ -20,11 +20,11 @@ void carmen_behavior_selector_subscribe_current_state_message(
 		carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how);
 
-void carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task);
+void carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task, double timestamp);
 
-void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task);
+void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task, double timestamp);
 
-void carmen_behavior_selector_add_goal(carmen_point_t goal);
+void carmen_behavior_selector_add_goal(carmen_point_t goal, double timestamp);
 
 void carmen_behavior_selector_clear_goal_list();
 

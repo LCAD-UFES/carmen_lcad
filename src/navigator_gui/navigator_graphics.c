@@ -2402,7 +2402,7 @@ orienting_goal_action(GtkMapViewer *the_map_view, carmen_world_point_t *world_po
 		}
 		else
 		{
-			carmen_behavior_selector_add_goal(goal_temp.pose);
+			carmen_behavior_selector_add_goal(goal_temp.pose, carmen_get_time());
 		}
 
 		update_local_map = 1;
@@ -2673,7 +2673,7 @@ get_state_code(char* state_name)
 static void
 state_selection_handler(GtkWidget *widget __attribute__ ((unused)), gpointer data __attribute__ ((unused)))
 {
-	carmen_behavior_selector_set_task(get_state_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)));
+	carmen_behavior_selector_set_task(get_state_code(gtk_combo_box_text_get_active_text((GtkComboBoxText*)state_selection)), carmen_get_time());
 }
 
 

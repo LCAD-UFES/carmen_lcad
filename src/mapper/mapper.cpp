@@ -517,6 +517,8 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 		if (update_and_merge_with_mapper_saved_maps && use_remission)
 			carmen_prob_models_update_intensity_of_cells_hit_by_rays(map_set->sum_remission_map, map_set->sum_sqr_remission_map, map_set->count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid, safe_height_from_ground);
 
+		carmen_prob_models_force_update_log_odds_of_cells_hit_by_rays(map_set->log_odds_snapshot_map, sensor_params, sensor_data, 0.8, 0.8 + 1.5, tid);
+
 		//Lucas: Mapa para deteccao de objetos moveis
 		//carmen_prob_models_update_log_odds_of_cells_hit_by_rays(&moving_objects_raw_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
 		//build_front_laser_message_from_velodyne_point_cloud (sensor_params, sensor_data, v_zt, i);
