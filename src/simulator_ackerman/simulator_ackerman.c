@@ -84,6 +84,7 @@ double global_vel_ki = 0.0;
 
 carmen_route_planner_road_network_message *road_network_message = NULL;
 int autonomous = 0;
+int moving_objects_without_route = 0;
 
 carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state = Stopped;
 
@@ -1266,7 +1267,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 	{
 			{(char *) "commandline", (char *) "simulate_legacy_500", CARMEN_PARAM_ONOFF, &simulate_legacy_500, 0, NULL},
 			{(char *) "commandline", (char *) "connected_to_iron_bird", CARMEN_PARAM_ONOFF, &connected_to_iron_bird, 0, NULL},
-			{(char *) "commandline", (char *) "use_external_true_pose", CARMEN_PARAM_ONOFF, &use_external_true_pose, 0, NULL}
+			{(char *) "commandline", (char *) "use_external_true_pose", CARMEN_PARAM_ONOFF, &use_external_true_pose, 0, NULL},
+			{(char *) "commandline", (char *) "moving_objects_without_route", CARMEN_PARAM_ONOFF, &moving_objects_without_route, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 

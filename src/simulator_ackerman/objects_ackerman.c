@@ -52,6 +52,7 @@ static double person_speed = .3;
 
 extern carmen_route_planner_road_network_message *road_network_message;
 extern int autonomous;
+extern int moving_objects_without_route;
 
 static void update_other_robot(carmen_object_ackerman_t *object);
 
@@ -261,6 +262,10 @@ find_nearest_pose_in_the_nearest_lane(carmen_object_ackerman_t *object, carmen_r
 
 static void update_object_in_lane(int i, carmen_simulator_ackerman_config_t *simulator_config)
 {
+
+	if (moving_objects_without_route == 1 && road_network_message == 0 && autonomous == 0)
+		return;
+
 	double dt = simulator_config->delta_t;
 	carmen_object_ackerman_t new_object = object_list[i];
 	double dx = new_object.tv * dt * cos(new_object.theta);
@@ -455,7 +460,7 @@ static void update_traj_object(int index)
 void carmen_simulator_ackerman_update_objects(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	// Quem adiciona os objetos no mapa é o behavior_selector. Ele recebe a mensagem de objetos simulados publicada pelo simulator_ackerman
-	if (!road_network_message || !autonomous)
+	if (moving_objects_without_route == 0 && ( !road_network_message || !autonomous ))
 		return;
 
 	for (int index = 0; index < num_objects; index++)
