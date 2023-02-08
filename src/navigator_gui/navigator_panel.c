@@ -562,7 +562,7 @@ void navigator_set_goal(double x, double y, double theta)
 
 void navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_task_t task)
 {
-	carmen_behavior_selector_set_algorithm(algorithm, task);
+	carmen_behavior_selector_set_algorithm(algorithm, task, carmen_get_time());
 }
 
 void navigator_unset_goal(double x, double y)
