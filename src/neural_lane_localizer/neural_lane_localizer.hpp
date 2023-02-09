@@ -16,8 +16,6 @@
 #include <carmen/camera_drivers_interface.h>
 #include <carmen/camera_drivers_messages.h>
 
-#include "YOLOPv2-ncnn/include/ncnn/layer.h"
-#include "YOLOPv2-ncnn/include/ncnn/net.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cmath>
@@ -27,6 +25,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <numeric>
+#include <Python.h>
 
 using namespace std;
 using namespace cv;
