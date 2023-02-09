@@ -145,6 +145,14 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 static void
 publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double phi, double timestamp)
 {
+//	static double previous_timestamp = 0.0;
+//	if (previous_timestamp)
+//	{
+//		printf("globalpos %lf, %lf\n", timestamp, timestamp - previous_timestamp);
+//		fflush(stdout);
+//	}
+//	previous_timestamp = timestamp;
+
 	if (!global_localization_requested)
 		return;
 
@@ -810,6 +818,14 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 {	// Used by Velodyne.
 	int odometry_index, fused_odometry_index;
 	int velodyne_initilized;
+
+	static double previous_timestamp = 0.0;
+	if (previous_timestamp)
+	{
+		printf("globalpos %lf, %lf\n", velodyne_message->timestamp, velodyne_message->timestamp - previous_timestamp);
+		fflush(stdout);
+	}
+	previous_timestamp = velodyne_message->timestamp;
 
 	last_velodyne_message = velodyne_message;
 

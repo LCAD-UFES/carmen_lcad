@@ -982,24 +982,24 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 //			if ((next_pose_change_direction_index > 1) || (fabs(robot_pose.v) > 0.05))
 //			{
 //				if ((goal_index == 0) && (fabs(robot_pose.v) > 0.05))
-//					keep_goal_time = carmen_get_time();
+//					keep_goal_time = timestamp;
 //
 //				goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-////				printf("    aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+////				printf("    aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, timestamp - keep_goal_time, count_v++);
 ////				fflush(stdout);
 //				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 //			}
 //			else
 //			{
-//				if ((carmen_get_time() - keep_goal_time) < 3.5)	// Espera parado um pouco
+//				if ((timestamp - keep_goal_time) < 3.5)	// Espera parado um pouco
 //				{
 //					goal_type[goal_index] = SWITCH_VELOCITY_SIGNAL_GOAL;
-////					printf("*** aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, carmen_get_time() - keep_goal_time, count_v++);
+////					printf("*** aqui pose_i %d, goal_i %d, cd_i %d, %lf %d\n", rddf_pose_index, goal_index, next_pose_change_direction_index, timestamp - keep_goal_time, count_v++);
 ////					fflush(stdout);
 //					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf);
 //
 ////					if (fabs(robot_pose.v) > 0.05)	// nao tem que remover este if ???
-////						keep_goal_time = carmen_get_time();
+////						keep_goal_time = timestamp;
 //				}
 ////				else
 ////					keep_goal_time = 0.0;

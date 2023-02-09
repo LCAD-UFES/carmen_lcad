@@ -10,6 +10,8 @@
 
 //#define PRINT_DEBUG
 
+#define MAX_MOVING_OBJECTS 6
+
 extern bool use_road_map;
 
 static bool robot_pose_queued = false;
@@ -52,6 +54,7 @@ carmen_traffic_light_message *traffic_lights = NULL;
 
 deque<carmen_rddf_dynamic_annotation_message> dynamic_annotation_messages;
 
+carmen_moving_objects_point_clouds_message moving_objects_array[MAX_MOVING_OBJECTS];
 carmen_moving_objects_point_clouds_message *moving_objects = NULL;
 carmen_moving_objects_point_clouds_message *pedestrians_tracked = NULL;
 

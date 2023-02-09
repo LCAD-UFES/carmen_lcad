@@ -706,6 +706,14 @@ build_and_follow_path_new(double timestamp)
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
+	static double previous_timestamp = 0.0;
+	if (previous_timestamp)
+	{
+		printf("globalpos %lf, %lf\n", msg->timestamp, msg->timestamp - previous_timestamp);
+		fflush(stdout);
+	}
+	previous_timestamp = msg->timestamp;
+
 	if (!GlobalState::localizer_pose)
 		GlobalState::localizer_pose = (carmen_robot_and_trailers_pose_t *) malloc(sizeof(carmen_robot_and_trailers_pose_t));
 
@@ -771,6 +779,14 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 static void
 path_goals_and_annotations_message_handler(carmen_behavior_selector_path_goals_and_annotations_message *msg)
 {
+	static double previous_timestamp = 0.0;
+	if (previous_timestamp)
+	{
+		printf("path %lf, %lf\n", msg->timestamp, msg->timestamp - previous_timestamp);
+		fflush(stdout);
+	}
+	previous_timestamp = msg->timestamp;
+
 	path_goals_and_annotations_message = msg;
 
 	Pose goal_pose;

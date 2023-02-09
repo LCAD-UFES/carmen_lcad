@@ -783,7 +783,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailers_traj_point_t
 //				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
 //				goal->v,
 //				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point),
-//				distance_to_goal, velocity_at_next_annotation, carmen_get_time());
+//				distance_to_goal, velocity_at_next_annotation, timestamp);
 //		fflush(caco);
 //		fclose(caco);
 	}
