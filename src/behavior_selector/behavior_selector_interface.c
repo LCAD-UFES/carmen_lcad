@@ -18,7 +18,7 @@ void carmen_behavior_selector_subscribe_current_state_message(
 			handler, subscribe_how);
 }
 
-void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task)
+void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task, double timestamp)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_behavior_selector_set_task_message msg;
@@ -33,14 +33,14 @@ void carmen_behavior_selector_set_task(carmen_behavior_selector_task_t task)
 	}
 
 	msg.task = task;
-	msg.timestamp = carmen_get_time();
+	msg.timestamp = timestamp;
 	msg.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_SET_TASK_NAME);
 }
 
-void carmen_behavior_selector_add_goal(carmen_point_t goal)
+void carmen_behavior_selector_add_goal(carmen_point_t goal, double timestamp)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_behavior_selector_add_goal_message msg;
@@ -58,14 +58,14 @@ void carmen_behavior_selector_add_goal(carmen_point_t goal)
 	}
 
 	msg.goal = goal;
-	msg.timestamp = carmen_get_time();
+	msg.timestamp = timestamp;
 	msg.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ADD_GOAL_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ADD_GOAL_NAME);
 }
 
-void carmen_behavior_selector_clear_goal_list()
+void carmen_behavior_selector_clear_goal_list(double timestamp)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_behavior_selector_clear_goal_list_message msg;
@@ -82,14 +82,14 @@ void carmen_behavior_selector_clear_goal_list()
 		initialized = 1;
 	}
 
-	msg.timestamp = carmen_get_time();
+	msg.timestamp = timestamp;
 	msg.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CLEAR_GOAL_LIST_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CLEAR_GOAL_LIST_NAME);
 }
 
-void carmen_behavior_selector_remove_goal()
+void carmen_behavior_selector_remove_goal(double timestamp)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_behavior_selector_remove_goal_message msg;
@@ -106,7 +106,7 @@ void carmen_behavior_selector_remove_goal()
 		initialized = 1;
 	}
 
-	msg.timestamp = carmen_get_time();
+	msg.timestamp = timestamp;
 	msg.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_REMOVE_GOAL_NAME, &msg);
@@ -114,7 +114,7 @@ void carmen_behavior_selector_remove_goal()
 }
 
 void
-carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm,  carmen_behavior_selector_task_t task)
+carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm,  carmen_behavior_selector_task_t task, double timestamp)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_behavior_selector_set_algorithm_message msg;
@@ -130,7 +130,7 @@ carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algo
 
 	msg.algorithm = algorithm;
 	msg.task = task;
-	msg.timestamp = carmen_get_time();
+	msg.timestamp = timestamp;
 	msg.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME, &msg);

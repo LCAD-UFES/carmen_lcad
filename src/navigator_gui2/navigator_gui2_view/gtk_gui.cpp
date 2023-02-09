@@ -2562,7 +2562,7 @@ namespace View
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
-			carmen_behavior_selector_add_goal(goal_temp.pose);
+			carmen_behavior_selector_add_goal(goal_temp.pose, carmen_get_time());
 
 			update_local_map = 1;
 

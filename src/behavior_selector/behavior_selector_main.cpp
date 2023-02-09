@@ -672,7 +672,7 @@ publish_updated_lane_contents(double timestamp)
 
 
 void
-publish_current_state(carmen_behavior_selector_state_message *msg)
+publish_current_state(carmen_behavior_selector_state_message *msg, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	carmen_behavior_selector_task_t current_task;
@@ -695,7 +695,7 @@ publish_current_state(carmen_behavior_selector_state_message *msg)
 		msg->offroad_planner_request = NO_REQUEST;
 	}
 
-	msg->timestamp = carmen_get_time();
+	msg->timestamp = timestamp;
 	msg->host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, msg);
@@ -713,10 +713,10 @@ publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientati
 
 
 void
-publish_simulated_objects()
+publish_simulated_objects(double timestamp)
 {
 	virtual_laser_message.host = carmen_get_host();
-	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
 	virtual_laser_message.num_positions = 0;
 }
 
@@ -917,9 +917,9 @@ set_behaviours_parameters(carmen_robot_and_trailers_traj_point_t current_robot_p
 		last_not_autonomous_timestamp = timestamp;
 		wait_start_moving = true;
 		selected_path_id = frenet_path_planner_num_paths / 2;
-		localize_ackerman_initialize_message_timestamp = carmen_get_time(); // isso forcca o frenet a reiniciar os paths na pose do robot
+		localize_ackerman_initialize_message_timestamp = timestamp; // isso forcca o frenet a reiniciar os paths na pose do robot
 	}
-	else if (carmen_get_time() - last_not_autonomous_timestamp < 3.0)
+	else if (timestamp - last_not_autonomous_timestamp < 3.0)
 		wait_start_moving = true;
 	else if (wait_start_moving && fabs(current_robot_pose_v_and_phi.v) > 0.15)
 		wait_start_moving = false;
@@ -1104,7 +1104,7 @@ select_behaviour_using_symotha(carmen_robot_and_trailers_traj_point_t current_ro
 	}
 
 	publish_updated_lane_contents(timestamp);
-	publish_current_state(&behavior_selector_state_message);
+	publish_current_state(&behavior_selector_state_message, timestamp);
 
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
@@ -1123,7 +1123,7 @@ select_behaviour_using_symotha(carmen_robot_and_trailers_traj_point_t current_ro
 	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects, current_robot_pose_v_and_phi);
 
 	if (virtual_laser_message.num_positions >= 0)
-		publish_simulated_objects();
+		publish_simulated_objects(timestamp);
 
 	return (who_set_the_goal_v);
 }
@@ -1312,18 +1312,11 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, last_rddf_message, timestamp);
 
-//	double t2 = carmen_get_time();
-
 	path_collision_info_t path_collision_info = set_path(current_robot_pose_v_and_phi, behavior_selector_state_message, timestamp);
-//	set_path(current_robot_pose_v_and_phi, timestamp); path_collision_info_t path_collision_info = {};
-
-//	printf("delta_t funcao %0.3lf\n", carmen_get_time() - t2);
-
-//	print_poses(last_rddf_message->poses, last_rddf_message->number_of_poses, (char *) "cacox0.txt");
 
 	if (!last_rddf_message)
 	{
-		publish_current_state(&behavior_selector_state_message);
+		publish_current_state(&behavior_selector_state_message, timestamp);
 		return (NONE);
 	}
 	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
@@ -1383,7 +1376,7 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 		publish_path_goals_and_annotations_message(last_rddf_message_copy, last_valid_goal_p, 1, timestamp);
 	}
 
-	publish_current_state(&behavior_selector_state_message);
+	publish_current_state(&behavior_selector_state_message, timestamp);
 
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
@@ -1402,7 +1395,7 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 	add_simulator_ackerman_objects_to_map(carmen_simulator_ackerman_simulated_objects, current_robot_pose_v_and_phi);
 
 	if (virtual_laser_message.num_positions >= 0)
-		publish_simulated_objects();
+		publish_simulated_objects(timestamp);
 
 	return (who_set_the_goal_v);
 }
@@ -1419,8 +1412,6 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-//	static double t = carmen_get_time();
-
 	if (!necessary_maps_available || (!behavior_selector_performs_path_planning && !last_rddf_message))
 		return;
 
@@ -1439,16 +1430,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-//	double t2 = carmen_get_time();
 	if (behavior_selector_use_symotha)
 		select_behaviour_using_symotha(current_robot_pose_v_and_phi, msg->timestamp);
 	else
 		select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
-
-//	printf("delta_t handler total %0.3lf, delta_t funcao %0.3lf\n",
-//			carmen_get_time() - t, carmen_get_time() - t2);
-//
-//	t = carmen_get_time();
 
 	if (msg->semi_trailer_type != semi_trailer_config.num_semi_trailers)
 	{
@@ -1562,41 +1547,6 @@ carmen_simulator_ackerman_objects_message_handler(carmen_simulator_ackerman_obje
 {
 	carmen_simulator_ackerman_simulated_objects = msg;
 }
-
-
-//static void
-//path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf_msg)
-//{
-//	if (!necessary_maps_available)
-//		return;
-//
-//	behavior_selector_motion_planner_publish_path_message((carmen_rddf_road_profile_message *) rddf_msg, 0);
-//	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
-//
-//	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL)
-//	{
-//		carmen_behavior_selector_road_profile_message msg;
-//		msg.annotations = rddf_msg->annotations;
-//		msg.number_of_poses = rddf_msg->number_of_poses;
-//		msg.number_of_poses_back = rddf_msg->number_of_poses_back;
-//		msg.poses = rddf_msg->poses;
-//		msg.poses_back = rddf_msg->poses_back;
-//		msg.timestamp = carmen_get_time();
-//		msg.host = carmen_get_host();
-//
-//		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
-//		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
-//	}
-//}
-
-
-//static void
-//carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
-//{
-//	behavior_selector_update_map(message);
-//
-//	necessary_maps_available = 1;
-//}
 
 
 static void
@@ -1777,7 +1727,7 @@ lume_extra_keys_message_handler(carmen_extra_keys_message_t *msg)
 		message.command_id = SET_SPEED;
 		message.command = (char *) "0.0";
 		message.host = carmen_get_host();
-		message.timestamp = carmen_get_time();
+		message.timestamp = msg->timestamp;
 		carmen_voice_interface_publish_command_message(&message);
 		soft_stop_active = 1;
 	}
@@ -1787,7 +1737,7 @@ lume_extra_keys_message_handler(carmen_extra_keys_message_t *msg)
 		message.command_id = SET_SPEED;
 		message.command = (char *) "MAX_SPEED";
 		message.host = carmen_get_host();
-		message.timestamp = carmen_get_time();
+		message.timestamp = msg->timestamp;
 		carmen_voice_interface_publish_command_message(&message);
 		soft_stop_active = 0;
 	}

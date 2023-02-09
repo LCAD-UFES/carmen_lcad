@@ -45,7 +45,8 @@ extern "C" {
 
 #define	XGV_MANUAL_OVERRIDE_FLAG	0x10000
 
-typedef struct {
+typedef struct
+{
   double g_XGV_throttle;
   double g_XGV_steering;
   double g_XGV_brakes;
@@ -68,8 +69,20 @@ typedef struct {
 #define CARMEN_FORD_ESCAPE_STATUS_NAME "carmen_ford_escape_status"
 #define CARMEN_FORD_ESCAPE_STATUS_FMT  "{double,double,double,int,int,int,int,int,int,int,int,double,string}"
 
+typedef struct
+{
+  int engine;			// 1 on, 0 off
+  int parking_brake;	// 1 on, 0 off
 
-typedef struct {
+  double timestamp;
+  char *host;
+} carmen_ford_escape_engine_and_parking_brake_message;
+
+#define CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_NAME "carmen_ford_escape_engine_and_parking_brake"
+#define CARMEN_FORD_ESCAPE_ENGINE_AND_PARKING_BRAKE_FMT  "{int,int,double,string}"
+
+typedef struct
+{
   int num_errors;
   int *error;
   double timestamp;
@@ -79,18 +92,21 @@ typedef struct {
 #define CARMEN_FORD_ESCAPE_ERROR_NAME "carmen_ford_escape_error"
 #define CARMEN_FORD_ESCAPE_ERROR_FMT  "{int,<{int}:1>,double,string}"
 
-typedef enum {
+typedef enum
+{
 	SIGNAL_OFF, SIGNAL_LEFT, SIGNAL_RIGHT, SIGNAL_FLASHERS
 } carmen_base_ackerman_turn_signal_status;
 //high beams farol alto
 //low beams
 
-typedef enum {
+typedef enum
+{
 	HEADLIGHT_OFF, HEADLIGHT_PARKING_LIGHTS, HEADLIGHT_ON
 } carmen_ford_escape_headlights_status;
 
 //IN MESSAGE
-typedef struct {
+typedef struct
+{
 	carmen_base_ackerman_turn_signal_status turn_signal;
 	int horn_status; // 0 or 1
 	carmen_ford_escape_headlights_status headlight_status;
@@ -104,12 +120,14 @@ typedef struct {
 #define CARMEN_FORD_ESCAPE_SIGNAL_FMT		"{int, int, int, int, int, double, string}"
 
 
-typedef struct {
+typedef struct
+{
   /* data */
   int PID_controler_state;
   double current_velocity;
   double desired_velocity;
   double error_t;
+  double error_sum;
   double integral_t;
   double derivative_t;
   double throttle_command;
@@ -120,9 +138,10 @@ typedef struct {
 }velocity_pid_data_message;
 
 #define VELOCITY_PID_DATA_PARAMENTERS_NAME	"velocity_pid_data_message"
-#define VELOCITY_PID_DATA_PARAMENTERS_FMT		"{int, double, double, double, double, double, double, double, double, string}"
+#define VELOCITY_PID_DATA_PARAMENTERS_FMT		"{int, double, double, double, double, double, double, double, double, double, string}"
 
-typedef struct {
+typedef struct
+{
   /* data */
   double atan_current_curvature;
   double atan_desired_curvature;
@@ -139,8 +158,21 @@ typedef struct {
 #define STEERING_PID_DATA_PARAMENTERS_NAME	"steering_pid_data_message"
 #define STEERING_PID_DATA_PARAMENTERS_FMT		"{double, double, double, double, double, double, double, string}"
 
-
 typedef struct {
+  /* data */
+  double errror_sum;
+  double timestamp;
+  char *host;
+
+}steering_pid_error_message;
+
+
+#define STEERING_PID_ERROR_PARAMENTERS_NAME	"steering_pid_error_message"
+#define STEERING_PID_ERROR_PARAMENTERS_FMT	"{double, double, string}"
+
+
+typedef struct
+{
   double kp, ki, kd;
   double timestamp;
 	char *host;
@@ -151,7 +183,8 @@ typedef struct {
 #define TUNE_PID_GAIN_STEERING_PARAMENTERS_NAME "tune_pid_gain_steering_parameters"
 #define TUNE_PID_GAIN_STEERING_PARAMENTERS_FMT "{double, double, double, double, string}"
 
-typedef struct {
+typedef struct
+{
   double kp, ki, kd;
   double timestamp;
 	char *host;

@@ -585,6 +585,31 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_m
 
 
 void
+carmen_prob_models_force_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
+		double min_force_obstacle_height, double max_force_obstacle_height, int thread_id)
+{
+	int i;
+	cell_coords_t cell_hit_by_ray;
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		if (!sensor_data->maxed[thread_id][i] &&
+			!sensor_data->ray_hit_the_robot[thread_id][i])
+		{
+			double obstacle_height = sensor_data->obstacle_height[thread_id][i];
+			if ((obstacle_height > min_force_obstacle_height) && (obstacle_height < max_force_obstacle_height))
+			{
+				cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
+				cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
+				if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y))
+					carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
+			}
+		}
+	}
+}
+
+
+void
 carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground)
 {
 	int i;
@@ -650,7 +675,7 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays_into_log_odds_snaps
 {
 	int i;
 	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
-	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
+	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = sensor_params->log_odds.log_odds_l0;
 
 	cell_hit_by_nearest_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / log_odds_map->config.resolution);
 	cell_hit_by_nearest_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / log_odds_map->config.resolution);
