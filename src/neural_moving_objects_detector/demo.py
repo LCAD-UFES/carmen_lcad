@@ -1,10 +1,4 @@
-# Conclude setting / general reprocessing / plots / metrices / datasets
-# from utils.utils import \
-#     time_synchronized,select_device, increment_path,\
-#     scale_coords,xyxy2xywh,non_max_suppression,split_for_trace_model,\
-#     driving_area_mask,lane_line_mask,plot_one_box,show_seg_result,\
-#     AverageMeter,\
-#     LoadImages
+
 import os
 from pathlib import Path
 import random
@@ -339,18 +333,20 @@ def main(filestring):
                     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                     # Write results
+                    lis = []
                     for *xyxy, conf, cls in reversed(det):
+                        lis.extend([int(xyxy[0]), int(xyxy[1]), int(xyxy[2]) - int(xyxy[0]), int(xyxy[3]) - int(xyxy[1])])
                         if save_img :  # Add bbox to image
                             plot_one_box(xyxy, im0, line_thickness=3)
-        return im0
+        return im0, lis 
 
 
 
     import sys
     sys.argv=['']
-
+        
     with torch.no_grad():
-        im0 = detect(filestring)
+        im0, pred = detect(filestring)
         lis = ""
         i = 0
         for n1 in im0:
@@ -360,4 +356,4 @@ def main(filestring):
                     i+=1
             i = 0
         lis = lis[:-1]
-        return lis
+        return lis + "-----" + str(pred)

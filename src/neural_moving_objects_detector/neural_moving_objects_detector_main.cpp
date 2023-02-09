@@ -80,7 +80,26 @@ Mat loadFromCSV(const string& values, int opencv_type)
     return m;
 }
 
-Mat
+struct pyret{          
+  Mat image;
+  vector<bbox_t> pred; 
+  // string pred; 
+};
+
+vector<string> split(string str, char* delimiter)
+{
+	vector<string> v;
+	char *token = strtok(const_cast<char*>(str.c_str()), delimiter);
+	while (token != nullptr)
+	{
+		v.push_back(string(token));
+		token = strtok(nullptr, delimiter);
+	}
+
+return v;
+}
+
+pyret
 runPython(Mat filename)
 {
 	std::string my_str = "[";
@@ -101,7 +120,6 @@ runPython(Mat filename)
     }
 
 	my_str += "]";
-	// ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
 	// MyFile << "oi" << endl;
 
 	PyObject *pName, *pModule, *pFunc;
@@ -156,27 +174,39 @@ runPython(Mat filename)
 		Py_DECREF(pModule);
 		// MyFile << "passou Py_DECREF" << endl;
 	}
-	// atexit(Finalize);
-	// std::vector<Byte> vectordata(ret.begin(),ret.end());
-	// cv::Mat data_mat(vectordata,true);
-	// cv::Mat image(cv::imdecode(data_mat,1));
+
+	size_t pos = 0;
+	std::string img, pred;
+	std::string delimiter = "-----";
+
+	pos = ret.find(delimiter);
+	img = ret.substr(0, pos);
+	ret.erase(0, pos + delimiter.length());
+
+	pyret retu;
+	retu.image = loadFromCSV(img, CV_8UC3);
+	ret = ret.substr(1, ret.size() - 2);
+	ret = ret.substr(1, ret.size() - 2);
+
+	int j = 0;
+	vector<string> res = split(ret, "],[");
 	
+	
+	vector<bbox_t> predic;
+	for (int i = 0; i < res.size(); i+=4) {
+		bbox_t box;
+		box.x = stoi(res[i]);
+		box.y = stoi(res[i+1]);
+		box.w = stoi(res[i+2]);
+		box.h = stoi(res[i+3]);
+		box.prob = 1;
+		box.obj_id = 1;
+		box.track_id = 1;
+		predic.push_back(box);
+	}
 
-	// int k = 0;
-	// for(int i = 0; i < image.rows; i++)		
-    //    	for(int j = 0; j < image.cols; j++)
-	// 	{
-	// 		image.at<cv::Vec3b>(i,j)[0] = ret[k];
-	// 		k++;
-	// 		image.at<cv::Vec3b>(i,j)[1] = ret[k];
-	// 		k++;
-	// 		image.at<cv::Vec3b>(i,j)[2] = ret[k];
-	// 		k++;
-	// 	}
-
-	// return image;
-	return loadFromCSV(ret, CV_8UC3);
-	//return ret;
+	retu.pred = predic;
+	return retu;
 }
 
 void
@@ -639,6 +669,14 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	//printf("Cont %d\n", count);
 }
 
+void
+publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clouds_message *msg)
+{
+	msg->timestamp = timestamp;
+	msg->host = carmen_get_host();
+
+    carmen_moving_objects_point_clouds_publish_message(msg);
+}
 
 void
 call_neural_network()
@@ -662,42 +700,27 @@ call_neural_network()
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
 	//cv::imwrite("../src/neural_moving_objects_detector/YOLOPv2/data/example.jpg", image);
-	ofstream MyFile("aaaaaaaaaaaaaaaaaa.txt", std::ios_base::app);
-	image = runPython(image);
+	pyret retu = runPython(image);
+	image = retu.image;
+	vector<bbox_t> predictions = retu.pred;
 	// MyFile << "------------------------FIM DO RUN PYTHON---------------------------" << endl;
-	//image = cv::imread("../src/neural_moving_objects_detector/YOLOPv2/runs/detect/exp/example.jpg", 1);
+//
+	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+			crop_w, crop_h, crop_x, crop_y, crop_w, crop_h); 
+//
+	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
+//
+	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+//
+	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+//
+	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
+//
+	publish_moving_objects_message(timestamp, &msg); // <------ poff
 
-	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
-//	predictions = filter_predictions_of_interest(predictions);
-//
-//	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-//			crop_w, crop_h, crop_x, crop_y, crop_w, crop_h);
-//
-//	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
-//
-//	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
-//
-//	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-//
-//	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
-//
-//	publish_moving_objects_message(timestamp, &msg);
-//
-//	if (globalpos_msg == NULL)
-//		return;
-//
-//	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
-//			globalpos_msg->pose.orientation.roll, globalpos_msg->pose.orientation.pitch, globalpos_msg->pose.orientation.yaw);
-//
-//	carmen_position_t object_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
-//			world_to_camera_pose, camera_parameters, crop_w, crop_h);
-//
-//	circle(image, Point((int)object_on_image.x, (int)object_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
-
-//	display(image, predictions, points, points_inside_bbox, filtered_points, fps, crop_w, crop_h);
     if(image.data != NULL){
     	imshow( "Display window", image );
-    	waitKey(25);
+    	waitKey(220);
 	}
 
     free(img);
@@ -711,14 +734,6 @@ call_neural_network()
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void
-publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clouds_message *msg)
-{
-	msg->timestamp = timestamp;
-	msg->host = carmen_get_host();
-
-    carmen_moving_objects_point_clouds_publish_message(msg);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
