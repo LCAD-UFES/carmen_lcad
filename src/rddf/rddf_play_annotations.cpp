@@ -16,6 +16,8 @@
 using namespace std;
 using namespace g2o;
 
+#define MAX_MOVING_OBJECTS 6
+
 typedef enum
 {
 	Free_Crosswalk,
@@ -32,6 +34,7 @@ extern double distance_between_front_car_and_front_wheels;
 extern int carmen_rddf_perform_loop;
 
 extern carmen_localize_ackerman_globalpos_message *current_globalpos_msg;
+extern carmen_moving_objects_point_clouds_message moving_objects_array[MAX_MOVING_OBJECTS];
 extern carmen_moving_objects_point_clouds_message *moving_objects;
 extern carmen_moving_objects_point_clouds_message *pedestrians_tracked;
 extern carmen_traffic_light_message *traffic_lights;
@@ -289,7 +292,7 @@ pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objec
 			(/*pedestrian_about_to_enter_crosswalk(moving_objects_vector->point_clouds[i], pedestrian_track_annotation, radius) ||*/
 			 DIST2D(moving_objects_vector->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius))
 		{
-			//printf("In\n");
+			printf("Pedestre na faixa!!!!\n");
 			return (true);
 		}
 	}
@@ -399,9 +402,12 @@ check_nearst_pedestrian_track_state()
 	// printf("NAI %d %lf %lf\n", nearst_annotation_index, dist, angle);
 	if (nearst_annotation_index != -1)
 	{
-		if (pedestrian_track_busy_new(pedestrians_tracked, annotations_to_publish[nearst_annotation_index].annotation))
+		for(int i = 0; i < MAX_MOVING_OBJECTS; i++)
 		{
-			annotations_to_publish[nearst_annotation_index].annotation.annotation_code = RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY;
+			if (pedestrian_track_busy_new(&moving_objects_array[i], annotations_to_publish[nearst_annotation_index].annotation))
+			{
+				annotations_to_publish[nearst_annotation_index].annotation.annotation_code = RDDF_ANNOTATION_CODE_PEDESTRIAN_TRACK_BUSY;
+			}
 		}
 	}
 	else

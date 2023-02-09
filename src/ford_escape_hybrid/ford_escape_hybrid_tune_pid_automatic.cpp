@@ -213,7 +213,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = 0.0;
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = delta_t;
-		printf("av %lf\n", motion_commands_vector[i].v);
+		//printf("av %lf\n", motion_commands_vector[i].v);
 	}
 
 	for (t = 0.0; t < t1; t += delta_t, i++)
@@ -221,7 +221,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = t * (max_v / t1);
 		motion_commands_vector[i].phi = t * (max_phi / t1);
 		motion_commands_vector[i].time = delta_t;
-		printf("bv %lf\n", motion_commands_vector[i].phi);
+		//printf("bv %lf\n", motion_commands_vector[i].phi);
 		//printf("const %lf\n", (motion_commands_vector[i].phi - motion_commands_vector[i-1].phi));
 	}
 
@@ -230,7 +230,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = max_v;
 		motion_commands_vector[i].phi = max_phi;
 		motion_commands_vector[i].time = delta_t;
-		printf("cv %lf\n", motion_commands_vector[i].phi);
+		//printf("cv %lf\n", motion_commands_vector[i].phi);
 		//printf("const %lf\n", (motion_commands_vector[i].phi - motion_commands_vector[i-1].phi));
 	}
 
@@ -239,7 +239,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = max_v - t * (max_v / t3);
 		motion_commands_vector[i].phi = max_phi - t * (max_phi / t3);;
 		motion_commands_vector[i].time = delta_t;
-		printf("dv %lf\n", motion_commands_vector[i].phi);
+		//printf("dv %lf\n", motion_commands_vector[i].phi);
 		//printf("const %lf\n", (motion_commands_vector[i].phi - motion_commands_vector[i-1].phi));
 	}
 
@@ -248,7 +248,7 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = 0.0;
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = delta_t;
-		printf("ev %lf\n", motion_commands_vector[i].v);
+		//printf("ev %lf\n", motion_commands_vector[i].v);
 	}
 	/*FILE *mcv_file;
 	mcv_file = fopen("plot.txt", "w");
@@ -351,7 +351,7 @@ build_trajectory_sinusoidal_phi()
 
 
 tune_pid_gain_velocity_parameters_message* 
-fill_pid_gain_velocity_parameters_message(double kp,double ki, double kd)
+fill_pid_gain_velocity_parameters_message(double kp, double ki, double kd)
 {
 	tune_pid_gain_velocity_parameters_message *pid_msg = (tune_pid_gain_velocity_parameters_message*) malloc (sizeof (tune_pid_gain_velocity_parameters_message));
 	pid_msg->kd = kd;
@@ -363,7 +363,7 @@ fill_pid_gain_velocity_parameters_message(double kp,double ki, double kd)
 }
 
 tune_pid_gain_steering_parameters_message* 
-fill_pid_gain_steering_parameters_message(double kp,double ki, double kd)
+fill_pid_gain_steering_parameters_message(double kp, double ki, double kd)
 {
 	tune_pid_gain_steering_parameters_message *pid_msg = (tune_pid_gain_steering_parameters_message*) malloc (sizeof (tune_pid_gain_steering_parameters_message));
 	pid_msg->kd = kd; //30.8;
@@ -459,7 +459,7 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 
 	while(plan_in_progress)
 	{
-		sleep(1);
+		usleep(500000);
 		carmen_ipc_dispatch_nonblocking();
 	}
 
@@ -473,7 +473,7 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 void
 my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
-	double h = 50.0;                  // This value influences the result, think how to use it as a function of the size of the error (the biggest the error the biggest h)
+	double h = 110.0;                  // This value influences the result, think how to use it as a function of the size of the error (the biggest the error the biggest h)
 	double f_x = my_f(v, params);
 	gsl_vector *x_h;
 
@@ -544,15 +544,12 @@ optimize_PID_gains()
 	{
 		iter++;
 		status = gsl_multimin_fdfminimizer_iterate(s);
-		printf("FUI EVOCADO !!!\n");
 		if (status)
 		{
-			printf("Entrei break \n");
 			break;
 		}
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.2);
-		printf("DEpois GSL\n");
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
 
@@ -634,7 +631,7 @@ subscribe_pid_steer_feedback_handler(steering_pid_data_message *msg)
 void
 subscribe_pid_steer_error_feedback_handler(steering_pid_error_message * msg)
 {
-	error_sum=  msg->errror_sum;
+	error_sum = msg->errror_sum;
 }
 
 static int
