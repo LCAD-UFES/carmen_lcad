@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <numeric>
+#include <Python.h>
 
 using namespace std;
 using namespace cv;
