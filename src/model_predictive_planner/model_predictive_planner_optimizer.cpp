@@ -1622,6 +1622,8 @@ get_optimized_trajectory_control_parameters(TrajectoryControlParameters tcp_seed
 		status = gsl_multimin_test_gradient(s->gradient, params.o_epsabs); // esta funcao retorna GSL_CONTINUE ou zero
 
 	} while ((status == GSL_CONTINUE) && (iter < params.max_iterations));
+//	} while ((iter < params.max_iterations)); //Force max int to test
+	//	} while ((status == GSL_CONTINUE));//Force max int to test
 
 	TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -1814,6 +1816,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 		max_iterations = 150;
 	else
 		max_iterations = 15;
+//		max_iterations = 30;
 
 	TrajectoryControlParameters tcp_seed;
 	if (!previous_tcp.valid)
