@@ -1,5 +1,5 @@
 #include "neural_lane_localizer.hpp"
-#define MAX_STRIDE 64
+
 
 int camera;
 int camera_side;
@@ -33,7 +33,6 @@ tf::Transformer transformer;
 
 //carmen_bumblebee_basic_stereoimage_message *image_msg = NULL;
 camera_message *image_msg = NULL;
-
 
 void
 carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
