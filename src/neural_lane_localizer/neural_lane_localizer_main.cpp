@@ -1,14 +1,6 @@
 #include "neural_lane_localizer.hpp"
 #define MAX_STRIDE 64
 
-struct Object
-{
-    cv::Rect_<float> rect;
-    int label;
-    float prob;
-};
-
-
 int camera;
 int camera_side;
 
@@ -50,21 +42,165 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*y += offset_y;
 }
 
-void
-runPythonScript(char *filename){
+void Initialize (){
 	//Initialize the python instance
 	Py_Initialize();
+}
 
-	//Run a simple file
-	FILE* PScriptFile = fopen(filename, "r");
-	if(PScriptFile){
-		PyRun_SimpleFile(PScriptFile, filename);
-		fclose(PScriptFile);
+void Finalize (){
+	Py_Finalize();
+}
+
+Mat loadFromCSV(const string& values, int opencv_type)
+{
+    Mat m;
+
+    stringstream ss(values);
+    string line;
+    while (getline(ss, line))
+    {
+        vector<double> dvals;
+
+        stringstream ssline(line);
+        string val;
+        while (getline(ssline, val, ','))
+        {
+            dvals.push_back(stod(val));
+        }
+
+        Mat mline(dvals, true);
+        transpose(mline, mline);
+
+        m.push_back(mline);
+    }
+
+    int ch = CV_MAT_CN(opencv_type);
+
+    m = m.reshape(ch);
+    m.convertTo(m, opencv_type);
+    return m;
+}
+
+struct pyret{          
+  Mat image;
+  vector<bbox_t> pred; 
+  // string pred; 
+};
+
+vector<string> split(string str, char* delimiter)
+{
+	vector<string> v;
+	char *token = strtok(const_cast<char*>(str.c_str()), delimiter);
+	while (token != nullptr)
+	{
+		v.push_back(string(token));
+		token = strtok(nullptr, delimiter);
 	}
 
-	//Close the python instance
-	Py_Finalize()
-} 
+return v;
+}
+
+pyret
+runPythonScript(Mat filename)
+{
+	std::string my_str = "[";
+	std::string ret;
+
+
+    for(int i = 0; i < filename.rows; i++)
+    {
+		my_str += "[";
+
+       	for(int j = 0; j < filename.cols; j++)
+			my_str += "[" + to_string(filename.at<cv::Vec3b>(i,j)[0]) +
+					  ", " + to_string(filename.at<cv::Vec3b>(i,j)[1]) + 
+					  ", " + to_string(filename.at<cv::Vec3b>(i,j)[2]) +
+					  (j + 1 < filename.cols ? "], " : "]");
+
+		my_str += (i + 1 < filename.rows ? "],\n" : "]");
+    }
+
+	my_str += "]";
+	PyObject *pName, *pModule, *pFunc;
+    PyObject *pArgs, *pValue;
+    int i;
+	static int asd;
+
+    setenv("PYTHONPATH", "../src/neural_lane_localizer", 1);
+
+	if (asd == 0){
+		++asd;
+		Initialize();
+        atexit(Finalize);
+	}
+	pName = PyUnicode_DecodeFSDefault("demo");
+	pModule = PyImport_Import(pName); 
+	Py_DECREF(pName);
+	
+	if (pModule != NULL) {
+		pFunc = PyObject_GetAttrString(pModule, "main");
+		// MyFile << "passou PyObject_GetAttrString" << endl;
+
+		/* pFunc is a new reference */
+
+		if (pFunc && PyCallable_Check(pFunc)) {
+			// MyFile << "passou PyCallable_Check" << endl;
+			pArgs = PyTuple_New(1);
+			// MyFile << "passou PyTuple_New" << endl;
+			pValue = PyUnicode_DecodeFSDefault(my_str.c_str());
+			// MyFile << "passou PyUnicode_DecodeFSDefault" << endl;
+			PyTuple_SetItem(pArgs, 0, pValue);
+			// MyFile << "passou PyTuple_SetItem" << endl;
+			pValue = PyObject_CallObject(pFunc, pArgs);// <--------------------------------------------- demora uma vida
+			// MyFile << "passou PyObject_CallObject" << endl;
+			Py_DECREF(pArgs);
+			// MyFile << "passou Py_DECREF" << endl;
+			if (pValue != NULL) {
+				Py_ssize_t len;
+				ret = PyUnicode_AsUTF8AndSize(pValue, &len);
+				Py_DECREF(pValue);
+				// MyFile << "passou Py_DECREF" << endl;
+			}
+		}
+		Py_XDECREF(pFunc);
+		// MyFile << "passou Py_XDECREF" << endl;
+		Py_DECREF(pModule);
+		// MyFile << "passou Py_DECREF" << endl;
+	}
+
+	size_t pos = 0;
+	std::string img, pred;
+	std::string delimiter = "-----";
+
+	pos = ret.find(delimiter);
+	img = ret.substr(0, pos);
+	ret.erase(0, pos + delimiter.length());
+
+	pyret retu;
+	retu.image = loadFromCSV(img, CV_8UC3);
+	ret = ret.substr(1, ret.size() - 2);
+	ret = ret.substr(1, ret.size() - 2);
+
+	int j = 0;
+	vector<string> res = split(ret, "],[");
+	
+	
+	vector<bbox_t> predic;
+	for (int i = 0; i < res.size(); i+=4) {
+		bbox_t box;
+		box.x = stoi(res[i]);
+		box.y = stoi(res[i+1]);
+		box.w = stoi(res[i+2]);
+		box.h = stoi(res[i+3]);
+		box.prob = 1;
+		box.obj_id = 1;
+		box.track_id = 1;
+		predic.push_back(box);
+	}
+
+	retu.pred = predic;
+	return retu;
+}
 
 
 void
@@ -527,11 +663,10 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	//printf("Cont %d\n", count);
 }
 
-
 void
 call_neural_network()
 {
-	runPython("YOLOPv2/demo.py");
+	//runPython("YOLOPv2/demo.py");
 	if (image_msg == NULL)
 		return;
 
@@ -553,11 +688,22 @@ call_neural_network()
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
 
-	std::vector<Object> objects;
-    ncnn::Mat da_seg_mask, ll_seg_mask;
-    detect_yolopv2(image, objects, da_seg_mask, ll_seg_mask);
-    draw_objects(image, objects,da_seg_mask, ll_seg_mask);
+	pyret retu = runPythonScript(image);
+	image = retu.image;
 
+	//std::vector<Object> objects;
+    //ncnn::Mat da_seg_mask, ll_seg_mask;
+    //detect_yolopv2(image, objects, da_seg_mask, ll_seg_mask);
+   // draw_objects(image, objects,da_seg_mask, ll_seg_mask);
+
+	vector<bbox_t> predictions = retu.pred;
+	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+			crop_w, crop_h, crop_x, crop_y, crop_w, crop_h); 
+	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
+	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
+	publish_neural_lane_message(timestamp, &msg); // <------ poff
 	//	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 //	predictions = filter_predictions_of_interest(predictions);
 //
@@ -600,8 +746,7 @@ call_neural_network()
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void
-publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clouds_message *msg)
+void publish_neural_lane_message(double timestamp, carmen_moving_objects_point_clouds_message *msg)
 {
 	msg->timestamp = timestamp;
 	msg->host = carmen_get_host();
