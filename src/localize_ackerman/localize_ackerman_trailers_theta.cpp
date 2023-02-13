@@ -8,6 +8,8 @@
 
 #define BETA_ERROR 						100.0
 #define PLOT_BETA						1
+#define BUFFER_SIZE						5
+
 
 FILE *gnuplot_pipe = NULL;
 int SEMI_TRAILER1 = 0;
@@ -498,7 +500,9 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 	if (semi_trailer_config.num_semi_trailers <= 0)
 		return (0.0);
 
-	double predicted_beta = .0, estimated_beta = .0, estimated_theta1 = .0;
+	double predicted_beta = .0, estimated_beta = .0, estimated_theta1 = .0, buffered_theta1;
+	static int buffer_pos = -1;
+	static double buffer_theta[BUFFER_SIZE] = {0.0};
 	
 	predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
 	
@@ -523,7 +527,16 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 	}
 
 	estimated_theta1 = convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(estimated_beta - semi_trailer_config.semi_trailers[SEMI_TRAILER1].beta_correct_beta_bias));
-	return estimated_theta1;
+	if (buffer_pos < 0)
+		for (int i = 0; i < BUFFER_SIZE; i++)
+			buffer_theta[i] = estimated_theta1;
+	buffer_theta[++buffer_pos % BUFFER_SIZE] = estimated_theta1;
+
+	buffered_theta1 = 0.0;
+	for (int i = 0; i < BUFFER_SIZE; i++)
+		buffered_theta1 += buffer_theta[i];
+	
+	return buffered_theta1 / (double) BUFFER_SIZE;
 }
 
 
@@ -533,6 +546,9 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
         sensor_parameters_t *spherical_sensor_params, 
         void *message, int lidar_to_compute_theta)
 {
+	if (semi_trailer_config.num_semi_trailers <= 0)
+		return (0.0);
+
     if (lidar_to_compute_theta < 0)
         return compute_semi_trailer_theta1(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config, 
             spherical_sensor_params, (carmen_velodyne_partial_scan_message*) message, NULL, -1);
