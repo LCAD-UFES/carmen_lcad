@@ -18,6 +18,8 @@
 #include <json/json.h>
 
 
+//#define debug_point_cloud
+
 using namespace ouster;
 
 int number_of_rays_per_message = 16;
@@ -37,6 +39,7 @@ bool is_alternated = false;
 double min_angle = 2.5;
 double max_angle = 4.0;
 
+int destagger_lidar = 0;
 
 void 
 FATAL(const char* msg) {
@@ -54,6 +57,38 @@ shutdown_module(int signo)
 		printf("\nOuster LiDAR disconnected!\n");
 		exit(0);
 	}
+}
+
+void
+variable_scan_message_printer(FILE * fp, int num_valid_points, double vertical_angle, double azimuth_angle, double shot_angle_in_degrees, unsigned short range_from_sensor, double range_division_factor)
+{
+
+	double rot_angle, vert_angle, range, cos_rot_angle, sin_rot_angle, cos_vert_angle, sin_vert_angle, xy_distance,
+	x, y, z, angle;
+
+	rot_angle = carmen_degrees_to_radians(carmen_normalize_angle_degree(shot_angle_in_degrees + azimuth_angle));
+	vert_angle = carmen_degrees_to_radians(vertical_angle);
+	range = (double) range_from_sensor / range_division_factor;
+
+	cos_rot_angle = cos(rot_angle);
+	sin_rot_angle = sin(rot_angle);
+
+	cos_vert_angle = cos(vert_angle);
+	sin_vert_angle = sin(vert_angle);
+
+	xy_distance = range * cos_vert_angle;
+
+	x = (xy_distance * cos_rot_angle);
+	y = (xy_distance * sin_rot_angle);
+	z = (range * sin_vert_angle);
+
+	angle = atan2(y, x);
+	// if (angle >= 0)
+		//     angle -= M_PI_2;
+	// else if (angle < 0)
+	//     angle += M_PI_2;
+
+	fprintf(fp, "%d\t%lf\t%lf\t%lf\t%lf\t%lf\n", num_valid_points, x, y, z, carmen_radians_to_degrees(angle), range);
 }
 
 
@@ -255,8 +290,8 @@ main(int argc, char* argv[])
     	std::cerr << "\n Esse LiDAR está publicando menssagens com ids " << ouster_sensor_id << std::endl;
 
     // A LidarScan holds lidar data for an entire rotation of the device
-    std::vector<LidarScan> scans{
-        N_SCANS, LidarScan{w, h, info.format.udp_profile_lidar}};
+//    std::vector<LidarScan> scans{N_SCANS, LidarScan{w, h, info.format.udp_profile_lidar}};
+     LidarScan scans  = LidarScan{w, h, info.format.udp_profile_lidar};
 
     // A ScanBatcher can be used to batch packets into scans
     sensor::packet_format pf = sensor::get_format(info);
@@ -291,11 +326,11 @@ main(int argc, char* argv[])
                     FATAL("Failed to read a packet of the expected size!");
 
                 // batcher will return "true" when the current scan is complete
-                if (batch_to_scan(packet_buf.get(), scans[i]))
+                if (batch_to_scan(packet_buf.get(), scans))
                 {
                     // LidarScan provides access to azimuth block data and headers
                     auto n_invalid = std::count_if(
-                        scans[i].headers.begin(), scans[i].headers.end(),
+                        scans.headers.begin(), scans.headers.end(),
                         [](const LidarScan::BlockHeader &h)
                         {
                             return !(h.status & 0x01);
@@ -303,7 +338,7 @@ main(int argc, char* argv[])
                     // retry until we receive a full set of valid measurements
                     // (accounting for azimuth_window settings if any)
                     if (n_invalid <= (int)w - column_window_length)
-                        i++;
+                    	i++;
                 }
             }
 
@@ -322,21 +357,29 @@ main(int argc, char* argv[])
         //  *
         //  * [0] http://eigen.tuxfamily.org
         //  */
-        for (const LidarScan &scan : scans)
-        {
             int number_of_shots = 0;
             // auto n_returns = (scan.field(sensor::RANGE) != 0).count();
-            auto range = scan.field(sensor::RANGE);
+            auto range = scans.field(sensor::RANGE);
+            auto intensity = scans.field(sensor::REFLECTIVITY);
+            if (destagger_lidar)
+            {
+            	range = destagger<uint32_t>(scans.field(sensor::RANGE), info.format.pixel_shift_by_row);
+            	intensity = destagger<uint32_t>(scans.field(sensor::REFLECTIVITY), info.format.pixel_shift_by_row);
 
-            auto intensity = scan.field(sensor::INTENSITY);
-
+            }
             // if (ouster_intensity_type == 2)
             // intensity = scan.field(sensor::REFLECTIVITY);
             //     else if (ouster_intensity_type == 3)
             //         intensity = scan.field(sensor::NEAR_IR);
 
-            auto measurement_id = scan.measurement_id();
+            auto measurement_id = scans.measurement_id();
 
+#ifdef debug_point_cloud
+            int num_valid_points = 0;
+
+            FILE *fp = fopen("velodyne_points.dat", "w");
+            fprintf(fp, "i\tx\ty\tz\tangle\trange\n");
+#endif
 			for (int m_id = column_window.first; m_id <= column_window.second; m_id++)
 			{
 				double shot_angle = ((2 * M_PI * measurement_id(m_id)) / w);//Calculo do angulo, no ouster os shots sao fixos
@@ -355,18 +398,16 @@ main(int argc, char* argv[])
 
 					for (size_t ipx = 0; ipx < h; ipx++)
 					{
-						if (shot_angle > min_angle && shot_angle < max_angle &&
-							range(ipx, m_id) > 100 && range(ipx, m_id) < 70000)
-						{
-							vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) range(ipx, m_id);
-							vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) intensity(ipx, m_id);
 
-						}
-						else
+						vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) range(ipx, m_id);
+						vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) intensity(ipx, m_id);
+#ifdef debug_point_cloud
+						if (range(ipx, m_id) != 0)
 						{
-							vector_msgs[0].partial_scan[m_id].distance[ipx] = (unsigned short) 0;
-							vector_msgs[0].partial_scan[m_id].intensity[ipx] = (unsigned char) 0;
+							variable_scan_message_printer(fp, num_valid_points, info.beam_altitude_angles.at(ipx), info.beam_azimuth_angles.at(ipx), carmen_radians_to_degrees(shot_angle), (unsigned short) range(ipx, m_id), 1000.0);
+							num_valid_points++;
 						}
+#endif
 					}
 				}else
 				{
@@ -395,13 +436,17 @@ main(int argc, char* argv[])
 				}
 				number_of_shots++;
 			}
-
+#ifdef debug_point_cloud
+			fclose(fp);
+//			getchar();
+#endif
 			if (is_alternated)
 			{
+				double timestamp_scan = carmen_get_time();
 				for (int i = 0; i < number_of_messages_to_publish; i++)
 				{
 					vector_msgs[i].host = carmen_get_host();
-					vector_msgs[i].timestamp = carmen_get_time();
+					vector_msgs[i].timestamp = timestamp_scan;
 					vector_msgs[i].number_of_shots = number_of_shots;
 					carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (ouster_sensor_id + i));
 
@@ -418,8 +463,6 @@ main(int argc, char* argv[])
 				carmen_velodyne_publish_variable_scan_message(&vector_msgs[0], ouster_sensor_id);
 
 			}
-
-        }
         // std::cerr << "Publiquei   " << std::endl;
     }
 

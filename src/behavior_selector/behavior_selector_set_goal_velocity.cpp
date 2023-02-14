@@ -41,6 +41,8 @@ extern int behavior_selector_check_pedestrian_near_path;
 extern double behavior_pedestrian_near_path_min_lateral_distance;
 extern double behavior_selector_pedestrian_near_path_min_longitudinal_distance;
 
+//#define use_frenet_velocity_regulator false
+
 
 carmen_robot_and_trailers_traj_point_t
 displace_pose(carmen_robot_and_trailers_traj_point_t robot_pose, double displacement)
@@ -783,7 +785,7 @@ set_goal_velocity_according_to_annotation(carmen_robot_and_trailers_traj_point_t
 //				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
 //				goal->v,
 //				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point),
-//				distance_to_goal, velocity_at_next_annotation, carmen_get_time());
+//				distance_to_goal, velocity_at_next_annotation, timestamp);
 //		fflush(caco);
 //		fclose(caco);
 	}
@@ -1034,6 +1036,7 @@ double
 set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and_trailers_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp __attribute__ ((unused)))
 {
+#ifndef use_frenet_velocity_regulator
 	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
@@ -1066,6 +1069,129 @@ set_goal_velocity_according_to_moving_obstacle(carmen_robot_and_trailers_traj_po
 //	fclose(caco);
 
 	return (goal->v);
+#else
+	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
+	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
+	double desired_distance;
+	desired_distance = carmen_fmax(distance_to_moving_object_with_v_multiplier * min_dist_according_to_car_v, car_pose_to_car_front + get_robot_config()->distance_between_front_and_rear_axles);
+
+	double distance = datmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
+	double moving_obj_v = datmo_speed_front();
+
+	// ver "The DARPA Urban Challenge" book, pg. 36.
+	static double Kgap = 0.0085; //0.1; //0.0085;
+	static int i = 0;
+	double new_goal_v;
+	static double kp = 1.0;
+	static int damping_frequency = 13;//20	;
+	static bool first_stage_passed = false;
+	int index_number_to_start_acceleration_stage = 400;
+	int index_number_to_detect_if_moving_obstacle_is_far_or_close = 100;
+	int damping_frequency_to_moving_obstacle_close = 1;
+	int damping_frequency_to_moving_obstacle_far_for_first_time = 100;
+	int damping_frequency_to_moving_obstacle_far_for_second_or_beyond_time = 30;
+	double deceleration_constant_to_moving_obstacle_close = 0.0001;
+	double deceleration_constant_to_moving_obstacle_far = 0.0010;
+	double acceleration_constant = 0.0001;
+
+	FILE *caco = fopen("caco.txt", "a");
+
+	if(first_stage_passed == true)
+	{
+		fprintf(caco, "ENTREI\n");
+
+		if((distance - desired_distance) > 980 && i > 100)
+		{
+			i = 0;
+			damping_frequency = 1;
+			fprintf(caco, "LOOP DE NOVO\n");
+			first_stage_passed = false;
+			if(goal->v > 8.0)
+				goal->v = 8.0;
+		}
+
+	}
+
+
+
+	if (goal->v > moving_obj_v)
+	{
+		//fprintf(caco, "%lf %lf\n", moving_obj_v, (distance - desired_distance));
+		new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+	}else
+	{
+		new_goal_v = goal->v * kp;
+	}
+	/*SampleFilter_put(&filter2, new_goal_v);
+	new_goal_v = SampleFilter_get(&filter2);*/
+	if (new_goal_v < 0.0)
+		new_goal_v = 0.0;
+	if((distance - desired_distance) < 970.0)
+	{
+		first_stage_passed = true;
+	}
+
+	//fprintf(caco, "DISTANCIA %lf %lf\n", (distance - desired_distance), carmen_get_time());
+
+
+	//if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))
+	goal->v = new_goal_v; //carmen_fmin(new_goal_v, goal->v);
+
+	if(i < index_number_to_start_acceleration_stage)
+	{
+		if(i == index_number_to_detect_if_moving_obstacle_is_far_or_close)
+		{
+
+			if((distance - desired_distance) > 986)
+			{
+				damping_frequency = damping_frequency_to_moving_obstacle_close;
+			}else
+			{
+				if(damping_frequency != damping_frequency_to_moving_obstacle_close)
+				{
+					damping_frequency = damping_frequency_to_moving_obstacle_far_for_first_time;
+				}else
+				{
+					damping_frequency = damping_frequency_to_moving_obstacle_far_for_second_or_beyond_time;
+				}
+			}
+		}
+
+		if(i % damping_frequency == 0)
+		{
+			if(goal->v > 4.6)
+			{
+				if(damping_frequency != damping_frequency_to_moving_obstacle_close)
+				{
+					Kgap = Kgap - deceleration_constant_to_moving_obstacle_far;
+				}else
+				{
+					Kgap = Kgap - deceleration_constant_to_moving_obstacle_close;
+				}
+			}
+		}
+	}else
+	{
+		if(goal->v < 8.5)
+			Kgap = Kgap + acceleration_constant;
+	}
+	i++;
+	if(goal->v < 0.0)
+		goal->v = 0.0;
+	if(goal->v > 8.3)
+	{
+		goal->v = 8.3;
+	}
+	fprintf(caco, "DEPOIS %lf %lf\n", 3.6 * goal->v, carmen_get_time());
+	fprintf(caco, "INDICE i %d\n", i);
+	fflush(caco);
+	fclose(caco);
+
+	if((distance - desired_distance) >= 986.0 && damping_frequency != 13)
+		first_stage_passed = true;
+	return (goal->v);
+#endif
 }
 
 

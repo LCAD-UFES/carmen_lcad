@@ -14,9 +14,9 @@ bool plan_in_progress = false;
 double error_sum = 0.0;
 bool first_time = true;
 
-double kp_final = 965.0;
-double ki_final = 2811.0;
-double kd_final = 42.0;
+double kp_final = 551.52;
+double ki_final = 1606.96;
+double kd_final = 30.8;
 
 typedef double (*MotionControlFunction)(double v, double w, double t);
 
@@ -202,6 +202,11 @@ build_trajectory_trapezoidal_v_phi()
 	double t4 = 2.0;
 	delta_t = (t0 + t1 + t2 + t3 + t4) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
 
+	static FILE *gnuplot_pipe = NULL;
+
+	if(gnuplot_pipe != NULL)
+		fclose(gnuplot_pipe);
+
 	//printf("max_v %lf\n", max_v);
 	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
 	{
@@ -216,7 +221,8 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = t * (max_v / t1);
 		motion_commands_vector[i].phi = t * (max_phi / t1);
 		motion_commands_vector[i].time = delta_t;
-		//printf("bv %lf\n", motion_commands_vector[i].v);
+		//printf("bv %lf\n", motion_commands_vector[i].phi);
+		//printf("const %lf\n", (motion_commands_vector[i].phi - motion_commands_vector[i-1].phi));
 	}
 
 	for (t = 0.0; t < t2; t += delta_t, i++)
@@ -224,7 +230,8 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = max_v;
 		motion_commands_vector[i].phi = max_phi;
 		motion_commands_vector[i].time = delta_t;
-		//printf("cv %lf\n", motion_commands_vector[i].v);
+		//printf("cv %lf\n", motion_commands_vector[i].phi);
+		//printf("const %lf\n", (motion_commands_vector[i].phi - motion_commands_vector[i-1].phi));
 	}
 
 	for (t = 0.0; t <= t3; t += delta_t, i++)
@@ -232,7 +239,8 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].v = max_v - t * (max_v / t3);
 		motion_commands_vector[i].phi = max_phi - t * (max_phi / t3);;
 		motion_commands_vector[i].time = delta_t;
-		//printf("dv %lf\n", motion_commands_vector[i].v);
+		//printf("dv %lf\n", motion_commands_vector[i].phi);
+		//printf("const %lf\n", (motion_commands_vector[i].phi - motion_commands_vector[i-1].phi));
 	}
 
 	for (t = 0.0; t <= (t4 + delta_t); t += delta_t, i++)
@@ -242,7 +250,21 @@ build_trajectory_trapezoidal_v_phi()
 		motion_commands_vector[i].time = delta_t;
 		//printf("ev %lf\n", motion_commands_vector[i].v);
 	}
-	//printf("max_phi = %lf, i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", max_phi, i, NUM_MOTION_COMMANDS_PER_VECTOR);
+	/*FILE *mcv_file;
+	mcv_file = fopen("plot.txt", "w");
+	for(i = 0; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
+	{
+		//printf("i = %d\n", i);
+		fprintf(mcv_file, "%lf %lf\n", motion_commands_vector[i].phi,(double) i);
+	}
+	fclose(mcv_file);
+
+	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+
+	fprintf(gnuplot_pipe, "plot "
+			"'./plot.txt' using ($2) : ($1) with lines title 'phi'\n");
+
+	fflush(gnuplot_pipe);*/
 	send_trajectory_to_robot();
 }
 
@@ -329,7 +351,7 @@ build_trajectory_sinusoidal_phi()
 
 
 tune_pid_gain_velocity_parameters_message* 
-fill_pid_gain_velocity_parameters_message(double kp,double ki, double kd)
+fill_pid_gain_velocity_parameters_message(double kp, double ki, double kd)
 {
 	tune_pid_gain_velocity_parameters_message *pid_msg = (tune_pid_gain_velocity_parameters_message*) malloc (sizeof (tune_pid_gain_velocity_parameters_message));
 	pid_msg->kd = kd;
@@ -341,7 +363,7 @@ fill_pid_gain_velocity_parameters_message(double kp,double ki, double kd)
 }
 
 tune_pid_gain_steering_parameters_message* 
-fill_pid_gain_steering_parameters_message(double kp,double ki, double kd)
+fill_pid_gain_steering_parameters_message(double kp, double ki, double kd)
 {
 	tune_pid_gain_steering_parameters_message *pid_msg = (tune_pid_gain_steering_parameters_message*) malloc (sizeof (tune_pid_gain_steering_parameters_message));
 	pid_msg->kd = kd; //30.8;
@@ -375,10 +397,10 @@ timer_handler()
 	
 	if (first_time)
 	{
-		if (frequency != 0.0)
+		/*if (frequency != 0.0)
 			build_trajectory_sinusoidal_phi();
-		else
-			build_trajectory_trapezoidal_v_phi();
+		else*/
+		build_trajectory_trapezoidal_v_phi();
 		first_time = 0;
 
 		carmen_behavior_selector_state_message msg_behavior;
@@ -429,14 +451,15 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 		error_sum = 0.0;
 
 	first_time = false;
-	send_trajectory_to_robot();
+	//send_trajectory_to_robot();
+	build_trajectory_trapezoidal_v_phi();
 	plan_in_progress = true;
 
 
 
 	while(plan_in_progress)
 	{
-		sleep(1);
+		usleep(500000);
 		carmen_ipc_dispatch_nonblocking();
 	}
 
@@ -450,7 +473,7 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 void
 my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
-	double h = 5.0;                  // This value influences the result, think how to use it as a function of the size of the error (the biggest the error the biggest h)
+	double h = 110.0;                  // This value influences the result, think how to use it as a function of the size of the error (the biggest the error the biggest h)
 	double f_x = my_f(v, params);
 	gsl_vector *x_h;
 
@@ -521,15 +544,12 @@ optimize_PID_gains()
 	{
 		iter++;
 		status = gsl_multimin_fdfminimizer_iterate(s);
-		printf("FUI EVOCADO !!!\n");
 		if (status)
 		{
-			printf("Entrei break \n");
 			break;
 		}
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.2);
-		printf("DEpois GSL\n");
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
 
@@ -546,9 +566,12 @@ optimize_PID_gains()
 	return;
 }
 
-void make_plot()
+void
+make_plot()
 {
 	static FILE *gnuplot_pipe;
+	double y_range = 0.55;
+	static int iter = 0;
 	if (gnuplot_pipe != NULL) {
 	    fclose(gnuplot_pipe);
 	}
@@ -558,28 +581,32 @@ void make_plot()
 	}
 	FILE *arquivo_teste = fopen("steer_pid.txt", "w");
 	for(long unsigned int i = 0 ; i < current_steer_angle_vector.size(); i++)
-		fprintf(arquivo_teste, "%lf %lf %lf %lf %lf %lf %lf\n",
-			current_steer_angle_vector[i], desired_steer_angle_vector[i], error_vector[i], timestamp_vector[i],
+		fprintf(arquivo_teste, "%lf %lf %lf %ld %lf %lf %lf\n",
+			current_steer_angle_vector[i], desired_steer_angle_vector[i], error_vector[i], i,
 			velocity_kp, velocity_ki, velocity_kd);
 	fflush(arquivo_teste);
 	fclose(arquivo_teste);
 	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+	fprintf(gnuplot_pipe, "set terminal png size 1000,1000\n");
+	fprintf(gnuplot_pipe, "set output '%d.png'\n", iter);
+	fprintf(gnuplot_pipe, "set title 'KP %lf KI %lf KD %lf Err %lf'\n", kp_final, ki_final , kd_final, error_sum);
+	fprintf(gnuplot_pipe, "set yrange [-%lf:%lf]\n", y_range, y_range);
 	fprintf(gnuplot_pipe, "plot "
-			"'./steer_pid.txt' using ($4) : ($1) with lines title 'current steer angle',"
-			"'./steer_pid.txt' using ($4) : ($2) with lines title 'desired steer angle', "
-			"'./steer_pid.txt' using ($4) : ($3) with lines title 'error'\n");
+			"'./steer_pid.txt' using 4:1 with lines title 'current steer angle',"
+			"'./steer_pid.txt' using 4:2 with lines title 'desired steer angle', "
+			"'./steer_pid.txt' using 4:3 with lines title 'error'\n");
 	fflush(gnuplot_pipe);
+	iter++;
 
 }
-
 
 void
 subscribe_pid_steer_feedback_handler(steering_pid_data_message *msg)
 {
-	error_sum +=  msg->error_t;
+
 	static int count = 0;
 	count++;
-	if(count > 10 && msg->atan_current_curvature < 0.1 )
+	if(count > 10 && msg->atan_current_curvature < 0.01 )
 	{
 		plan_in_progress = false;
 		count = 0;
@@ -592,13 +619,19 @@ subscribe_pid_steer_feedback_handler(steering_pid_data_message *msg)
 		error_vector.clear();
 		//error_sum = 0;
 	}
-
-
 	current_steer_angle_vector.push_back(msg->atan_current_curvature);
 	desired_steer_angle_vector.push_back(msg->atan_desired_curvature);
+	if(msg->atan_desired_curvature == 0.0)
+		msg->error_t = 0.0;
 	error_vector.push_back(msg->error_t);
 	timestamp_vector.push_back(msg->timestamp);
 
+}
+
+void
+subscribe_pid_steer_error_feedback_handler(steering_pid_error_message * msg)
+{
+	error_sum = msg->errror_sum;
 }
 
 static int
@@ -613,6 +646,7 @@ subscribe_to_relevant_messages()
 
 	carmen_simulator_ackerman_subscribe_external_truepos_message(NULL, (carmen_handler_t) get_velocity_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_ford_escape_subscribe_steering_pid_data_message(NULL, (carmen_handler_t) subscribe_pid_steer_feedback_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_steering_pid_error_message(NULL, (carmen_handler_t) subscribe_pid_steer_error_feedback_handler, CARMEN_SUBSCRIBE_LATEST);
 	return (0);
 }
 

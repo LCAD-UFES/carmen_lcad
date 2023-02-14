@@ -15,7 +15,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 
 double
-carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_message *msg, double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
+carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_message *msg, steering_pid_error_message *msg_error , double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
 		int manual_override, double v, double steer_kp, double steer_kd, double steer_ki);
 
 double carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double atan_current_curvature,

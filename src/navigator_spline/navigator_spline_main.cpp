@@ -245,7 +245,7 @@ tracker_position_handler(carmen_tracker_position_message *message)
 	goal.y = poses[I.size() - 1].y;
 	goal.theta = globalpos.theta;
 	carmen_behavior_selector_clear_goal_list();
-	carmen_behavior_selector_add_goal(goal);
+	carmen_behavior_selector_add_goal(goal, message->timestamp);
 	//publish_spline_goal_list_message(poses + I.size() - 1, 1); //todo colocar o menor possivel, pode ajudar.
 //	publish_spline_path_message(poses, I.size() + EXTRA_POSITIONS);
 

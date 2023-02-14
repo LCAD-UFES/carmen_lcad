@@ -832,7 +832,7 @@ void on_comboState_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
-		carmen_behavior_selector_set_task((carmen_behavior_selector_task_t)global_gui->get_task_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)));
+		carmen_behavior_selector_set_task((carmen_behavior_selector_task_t)global_gui->get_task_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)), carmen_get_time());
 }
 
 //extern "C" G_MODULE_EXPORT

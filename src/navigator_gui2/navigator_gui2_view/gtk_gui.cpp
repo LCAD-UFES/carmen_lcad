@@ -188,6 +188,15 @@ well_behaved_origin_string(carmen_map_config_t config)
 	return (true);
 }
 
+void
+get_datetime_from_timestamp(double timestamp, char* datetime, long int size)
+{
+	time_t t = (int)timestamp;
+	struct tm  ts;
+
+	ts = *localtime(&t);
+	strftime(datetime, size, "%Y-%m-%d %H:%M:%S", &ts);
+}
 
 namespace View
 {
@@ -944,11 +953,16 @@ namespace View
 //				}
 			}
 
-			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
+			char datetime[20];
+			get_datetime_from_timestamp(globalpos->timestamp, datetime, sizeof(datetime));
+
+			sprintf(buffer, "globalpos timestamp: %lf  %s", globalpos->timestamp, datetime);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp), buffer);
 		}
 
 		last_navigator_update = carmen_get_time();
+
+
 
 		sprintf(buffer, "NavCon timestamp: %lf", last_navigator_update);
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelNavConTimestamp), buffer);
@@ -2548,7 +2562,7 @@ namespace View
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
-			carmen_behavior_selector_add_goal(goal_temp.pose);
+			carmen_behavior_selector_add_goal(goal_temp.pose, carmen_get_time());
 
 			update_local_map = 1;
 
