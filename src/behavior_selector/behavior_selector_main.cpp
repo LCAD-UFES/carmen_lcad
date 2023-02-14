@@ -1412,6 +1412,14 @@ select_behaviour(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
+//	static double previous_timestamp = 0.0;
+//	if (previous_timestamp)
+//	{
+//		printf("globalpos %lf, %lf\n", msg->timestamp, msg->timestamp - previous_timestamp);
+//		fflush(stdout);
+//	}
+//	previous_timestamp = msg->timestamp;
+
 	if (!necessary_maps_available || (!behavior_selector_performs_path_planning && !last_rddf_message))
 		return;
 

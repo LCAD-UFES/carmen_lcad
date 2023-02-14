@@ -815,13 +815,13 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	int odometry_index, fused_odometry_index;
 	int velodyne_initilized;
 
-	static double previous_timestamp = 0.0;
-	if (previous_timestamp)
-	{
-		printf("globalpos %lf, %lf\n", velodyne_message->timestamp, velodyne_message->timestamp - previous_timestamp);
-		fflush(stdout);
-	}
-	previous_timestamp = velodyne_message->timestamp;
+//	static double previous_timestamp = 0.0;
+//	if (previous_timestamp)
+//	{
+//		printf("globalpos %lf, %lf\n", velodyne_message->timestamp, velodyne_message->timestamp - previous_timestamp);
+//		fflush(stdout);
+//	}
+//	previous_timestamp = velodyne_message->timestamp;
 
 	last_velodyne_message = velodyne_message;
 
