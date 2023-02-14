@@ -310,25 +310,25 @@ main(int argc, char* argv[])
 
 		// print lidar parameters
 
-		std::cout <<"lidar"<< i<<"_model                 "<<  lidar_sensorBox_model <<"\n"; // # HDL32 # VLP16 # RS16
-		std::cout <<"lidar"<< i<<"_port                  "<<  ouster_port <<"\n";
-		std::cout <<"lidar"<< i<<"_imu_port              "<<  ouster_imu_port<<"\n";
-		std::cout <<"lidar"<< i<<"_ip                    "<<  sensor_hostname<<"\n";
-		std::cout <<"lidar"<< i<<"_shot_size             "<<  _shot_size <<"\n";
-		std::cout <<"lidar"<< i<<"_min_sensing           "<<  1000<<"\n"; 			//# 2m in 2mm units
-		std::cout <<"lidar"<< i<<"_max_sensing           "<<  24000<<"\n"; 			//# 1200m in 2mm units
-		std::cout <<"lidar"<< i<<"_range_division_factor "<<  1000 <<"\n";
-		std::cout <<"lidar"<< i<<"_max_range             "<<  75.0 <<"\n";
-		std::cout <<"lidar"<< i<<"_time_between_shots    "<<  0.000048828 <<"\n";
-		std::cout <<"lidar"<< i<<"_x                     "<<  models[model].position.x <<"\n";   // # 2.94 # 0.1085          # Lidar position and orientation in relation to sensor board 1
-		std::cout <<"lidar"<< i<<"_y                     "<<  models[model].position.y <<"\n";
-		std::cout <<"lidar"<< i<<"_z                     "<<  models[model].position.z <<"\n";
-		std::cout <<"lidar"<< i<<"_roll                  "<<  models[model].orientation.roll <<"\n";
-		std::cout <<"lidar"<< i<<"_pitch                  "<<  models[model].orientation.pitch <<"\n";
-		std::cout <<"lidar"<< i<<"_yaw                    "<<  models[model].orientation.yaw <<"\n";
-		std::cout <<"lidar"<< i<<"_ray_order              "<< _ray_order  <<"\n";
-		std::cout <<"lidar"<< i<<"_vertical_angles        "<< string_list_for_vertical_angles[i-lidar_id] << "\n";
-		std::cout <<"lidar"<< i<<"_sensor_reference       0\n";   //# informa em que a posicao do lidar esta referenciada. 0 para sensorboard, 1 para front_bullbar, 2 para rear_bullbar
+		std::cout <<"lidar"<< i <<"_model                 "<<  lidar_sensorBox_model <<"\n"; // # HDL32 # VLP16 # RS16
+		std::cout <<"lidar"<< i <<"_port                  "<<  ouster_port <<"\n";
+		std::cout <<"lidar"<< i <<"_imu_port              "<<  ouster_imu_port<<"\n";
+		std::cout <<"lidar"<< i <<"_ip                    "<<  sensor_hostname<<"\n";
+		std::cout <<"lidar"<< i <<"_shot_size             "<<  _shot_size <<"\n";
+		std::cout <<"lidar"<< i <<"_min_sensing           "<<  1000<<"\n"; 			//# 2m in 2mm units
+		std::cout <<"lidar"<< i <<"_max_sensing           "<<  24000<<"\n"; 			//# 1200m in 2mm units
+		std::cout <<"lidar"<< i <<"_range_division_factor "<<  1000 <<"\n";
+		std::cout <<"lidar"<< i <<"_max_range             "<<  75.0 <<"\n";
+		std::cout <<"lidar"<< i <<"_time_between_shots    "<<  0.000048828 <<"\n";
+		std::cout <<"lidar"<< i <<"_x                     "<<  models[model].position.x <<"\n";   // # 2.94 # 0.1085          # Lidar position and orientation in relation to sensor board 1
+		std::cout <<"lidar"<< i <<"_y                     "<<  models[model].position.y <<"\n";
+		std::cout <<"lidar"<< i <<"_z                     "<<  models[model].position.z <<"\n";
+		std::cout <<"lidar"<< i <<"_roll                  "<<  models[model].orientation.roll <<"\n";
+		std::cout <<"lidar"<< i <<"_pitch                  "<<  models[model].orientation.pitch <<"\n";
+		std::cout <<"lidar"<< i <<"_yaw                    "<<  models[model].orientation.yaw <<"\n";
+		std::cout <<"lidar"<< i <<"_ray_order              "<< _ray_order  <<"\n";
+		std::cout <<"lidar"<< i <<"_vertical_angles        "<< string_list_for_vertical_angles[i-lidar_id] << "\n";
+		std::cout <<"lidar"<< i <<"_sensor_reference       0\n";   //# informa em que a posicao do lidar esta referenciada. 0 para sensorboard, 1 para front_bullbar, 2 para rear_bullbar
 		std::cout<<"\n";
 	}
 
