@@ -1,8 +1,10 @@
 # Linhas vazias, que comecam com espaco ou com # sao ignoradas
 #
+publish mission state MISSION_FILE_STARTED mission2
 #frente lcad
 set robot pose 7757673.30, -363605.10, 0.639
-#frente lcad atrás
+#frente lcad atrás	
 set course to 7757661.49, -363614.25, 0.615
 go   # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
+

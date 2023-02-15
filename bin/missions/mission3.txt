@@ -1,7 +1,7 @@
 # Linhas vazias, que comecam com espaco ou com # sao ignoradas
 #
+publish mission state MISSION_FILE_STARTED mission3
 # set final goal 7757732.73, -363563.71, -0.138
-
 #frente lcad
 set robot pose 7757673.30, -363605.10, 0.639
 #estacionamento ambiental
