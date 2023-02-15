@@ -60,15 +60,19 @@ read_parameters(int argc, char **argv)
 
 	sprintf(bb_name, "bumblebee_basic%d", camera_id);
 
-	carmen_param_t param_list[] =
-	{
-		{bb_name, (char *) "zed_fps", CARMEN_PARAM_INT, &zed_camera_sensor_fps, 0, NULL},
-		{bb_name, (char *) "height", CARMEN_PARAM_INT, &param_height, 0, NULL},
-		{bb_name, (char *) "width", CARMEN_PARAM_INT, &param_width, 0, NULL}
-	};
+	// carmen_param_t param_list[] =
+	// {
+	// 	{bb_name, (char *) "zed_fps", CARMEN_PARAM_INT, &zed_camera_sensor_fps, 0, NULL},
+	// 	{bb_name, (char *) "height", CARMEN_PARAM_INT, &param_height, 0, NULL},
+	// 	{bb_name, (char *) "width", CARMEN_PARAM_INT, &param_width, 0, NULL}
+	// };
 
-	num_items = sizeof(param_list)/sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, param_list, num_items);
+	// num_items = sizeof(param_list)/sizeof(param_list[0]);
+	// carmen_param_install_params(argc, argv, param_list, num_items);
+
+    zed_camera_sensor_fps = 30;
+    param_width = 1280;
+    param_height = 720;
 
 	return 0;
 }
@@ -108,8 +112,8 @@ void
 set_ZED_stream(Camera &zed)
 {
     InitParameters init_parameters;
-    init_parameters.camera_resolution = define_zed_resolution(); //2208*1242 => HD2K: 0; 1920*1080 => HD1080: 1; 1280*720 => HD720: 2, 672*376 => VGA: 3
-    init_parameters.camera_fps = zed_camera_sensor_fps;                        // Set fps at 30
+    init_parameters.camera_resolution = RESOLUTION::HD720; // define_zed_resolution(); //2208*1242 => HD2K: 0; 1920*1080 => HD1080: 1; 1280*720 => HD720: 2, 672*376 => VGA: 3
+    //init_parameters.camera_fps = 30;//zed_camera_sensor_fps;                        // Set fps at 30
 
     ERROR_CODE state = zed.open(init_parameters);
     if (state != ERROR_CODE::SUCCESS)
