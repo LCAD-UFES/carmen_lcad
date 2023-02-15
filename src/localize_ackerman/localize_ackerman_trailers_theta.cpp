@@ -6,8 +6,12 @@
 #include <sys/stat.h>
 
 
-#define BETA_ERROR 						100.0
+#define BETA_ERROR 						1000.0
 #define PLOT_BETA						1
+
+
+double beta_max_change = carmen_degrees_to_radians(40.0); // ponto onde ele passa a computar o beta pela lateral do bau
+double max_admissible_beta_change = carmen_degrees_to_radians(5.0);
 
 FILE *gnuplot_pipe = NULL;
 int SEMI_TRAILER1 = 0;
@@ -254,6 +258,7 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 	int i, j, angle_flag = 0, n_points_triangularization = fmax(5, triangulation_min_cluster_size/2), 
 		actual_group = 0, group_counter = 0, choosen_group = 0, first_time = 1, bigger_group = 0, 
 		group[num_filtered_points] = {0};
+	static int rt = 0;
 	double estimated_beta = 0.0, choosen_beta = M_PI, angle, 
 		   estimated[num_filtered_points] = {0.0}, 
 		   mean_dist_bt_rays = 0.0, actual_mean_dist_bt_rays = 0.0, dist;
@@ -297,6 +302,7 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 				{
 					// more closest from last beta
 					estimated_beta = compute_new_beta(points, points_estimated, group_counter);
+					// printf("%lf\t", carmen_radians_to_degrees(estimated_beta));
 					if (first_time && (group_counter > bigger_group))
 					{
 						choosen_beta = estimated_beta;
@@ -306,7 +312,17 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
 						first_time = 0;
 					}
-					else if (fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta))
+					else if (rt && (fabs(estimated_beta - M_PI_2 - last_beta) < fabs(choosen_beta - last_beta)) && 
+							 (fabs(estimated_beta - M_PI_2 - last_beta) < max_admissible_beta_change))
+					{
+						choosen_beta = estimated_beta - M_PI_2;
+						choosen_group = actual_group;
+						bigger_group = group_counter;
+
+						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
+					}
+					else if ((fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta)) &&
+							 (fabs(estimated_beta - last_beta) < max_admissible_beta_change))
 					{
 						choosen_beta = estimated_beta;
 						choosen_group = actual_group;
@@ -367,6 +383,7 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 				{
 					// more closest from last beta
 					estimated_beta = compute_new_beta(points, points_estimated, group_counter);
+					// printf("%lf\t", carmen_radians_to_degrees(estimated_beta));
 					if (first_time && (group_counter > bigger_group))
 					{
 						choosen_beta = estimated_beta;
@@ -376,7 +393,17 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
 						first_time = 0;
 					}
-					else if (fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta))
+					else if (rt && (fabs(estimated_beta + M_PI_2 - last_beta) < fabs(choosen_beta - last_beta)) &&
+							 (fabs(estimated_beta + M_PI_2 - last_beta) < max_admissible_beta_change))
+					{
+						choosen_beta = estimated_beta + M_PI_2;
+						choosen_group = actual_group;
+						bigger_group = group_counter;
+
+						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
+					}
+					else if ((fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta)) &&
+							 (fabs(estimated_beta - last_beta) < max_admissible_beta_change))
 					{
 						choosen_beta = estimated_beta;
 						choosen_group = actual_group;
@@ -411,10 +438,13 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 	if (fabs(actual_mean_dist_bt_rays) > 1e-5)
 		last_mean_dist_bt_rays = actual_mean_dist_bt_rays;
 
-	if (fabs(choosen_beta - M_PI) > 1e-5)
+	if (fabs(choosen_beta - last_beta) < max_admissible_beta_change)
 		last_beta = choosen_beta;
-
 	beta = last_beta;
+	// printf("%lf\n", carmen_radians_to_degrees(beta));
+
+	rt = fabs(beta) > beta_max_change;
+
 	return bigger_group;
 }
 
