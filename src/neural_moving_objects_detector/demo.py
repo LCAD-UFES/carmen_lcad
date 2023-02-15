@@ -10,6 +10,7 @@ import ast
 
 
 def main(filestring):
+    
     def select_device(device='', batch_size=None):
         # device = 'cpu' or '0' or '0,1,2,3'
         cpu = device.lower() == 'cpu'
@@ -333,12 +334,11 @@ def main(filestring):
                     det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                     # Write results
-                    lis = []
+                    lis = ""
+                    
                     for *xyxy, conf, cls in reversed(det):
-                        lis.extend([int(xyxy[0]), int(xyxy[1]), int(xyxy[2]) - int(xyxy[0]), int(xyxy[3]) - int(xyxy[1])])
-                        if save_img :  # Add bbox to image
-                            plot_one_box(xyxy, im0, line_thickness=3)
-        return im0, lis 
+                        lis += str(int(xyxy[0])) + "," + str(int(xyxy[1])) + "," + str(int(xyxy[2]) - int(xyxy[0])) + "," + str(int(xyxy[3]) - int(xyxy[1])) + " "
+        return lis[:-1]
 
 
 
@@ -346,14 +346,6 @@ def main(filestring):
     sys.argv=['']
         
     with torch.no_grad():
-        im0, pred = detect(filestring)
-        lis = ""
-        i = 0
-        for n1 in im0:
-            for n2 in n1:
-                for n3 in n2:
-                    lis += str(int(n3)) + ("," if i < len(n2)*len(n1)-1 else "\n")
-                    i+=1
-            i = 0
-        lis = lis[:-1]
-        return lis + "-----" + str(pred)
+        pred = detect(filestring)
+
+        return pred

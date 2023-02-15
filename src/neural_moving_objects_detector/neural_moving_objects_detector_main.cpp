@@ -86,25 +86,38 @@ struct pyret{
   // string pred; 
 };
 
-vector<string> split(string str, char* delimiter)
+vector<string> split(string str, string delimiter)
 {
-	vector<string> v;
-	char *token = strtok(const_cast<char*>(str.c_str()), delimiter);
-	while (token != nullptr)
-	{
-		v.push_back(string(token));
-		token = strtok(nullptr, delimiter);
-	}
-
-return v;
+    vector<string> v;
+    if (!str.empty()) {
+        int start = 0;
+        do {
+            // Find the index of occurrence
+            int idx = str.find(delimiter, start);
+            if (idx == string::npos) {
+                break;
+            }
+ 
+            // If found add the substring till that
+            // occurrence in the vector
+            int length = idx - start;
+            v.push_back(str.substr(start, length));
+            start += (length + delimiter.size());
+        } while (true);
+        v.push_back(str.substr(start));
+    }
+ 
+    return v;
 }
 
-pyret
+vector<bbox_t>
 runPython(Mat filename)
 {
 	std::string my_str = "[";
 	std::string ret;
 
+	// std::ofstream outfile;
+	// outfile.open("zzzzzzzzzzzzzzzzzzz.txt", std::ios_base::app);
 
     for(int i = 0; i < filename.rows; i++)
     {
@@ -175,38 +188,32 @@ runPython(Mat filename)
 		// MyFile << "passou Py_DECREF" << endl;
 	}
 
-	size_t pos = 0;
-	std::string img, pred;
-	std::string delimiter = "-----";
-
-	pos = ret.find(delimiter);
-	img = ret.substr(0, pos);
-	ret.erase(0, pos + delimiter.length());
-
-	pyret retu;
-	retu.image = loadFromCSV(img, CV_8UC3);
-	ret = ret.substr(1, ret.size() - 2);
-	ret = ret.substr(1, ret.size() - 2);
-
 	int j = 0;
-	vector<string> res = split(ret, "],[");
-	
-	
+	string tmp; 
+	stringstream ss(ret);
+	vector<string> res = split(ret, " ");
+	// outfile << "-------- oi --------" << endl;
+
+	// for (string c : res){
+	// 	outfile << c << endl;
+	// }
+	// outfile << "-------------------" << endl;
 	vector<bbox_t> predic;
-	for (int i = 0; i < res.size(); i+=4) {
+
+	for (int i = 0; i < res.size(); i++) {
 		bbox_t box;
-		box.x = stoi(res[i]);
-		box.y = stoi(res[i+1]);
-		box.w = stoi(res[i+2]);
-		box.h = stoi(res[i+3]);
+		vector<string> aux = split(res[i], ",");
+		box.x = stoi(aux[0]);
+		box.y = stoi(aux[1]);
+		box.w = stoi(aux[2]);
+		box.h = stoi(aux[3]);
 		box.prob = 1;
-		box.obj_id = 1;
-		box.track_id = 1;
+		box.obj_id = 2;
+		box.track_id = 2;
 		predic.push_back(box);
 	}
 
-	retu.pred = predic;
-	return retu;
+	return predic;
 }
 
 void
@@ -225,22 +232,15 @@ display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, v
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
     	//printf("---%d \n", predictions[i].obj_id);
-        sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
+        //sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
 
         rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
         		Scalar(0, 0, 255), 1);
 
         putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     }
-
-	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-    //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
-    //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
-
-    //resize(image, image, Size(600, 300));
     imshow("Neural Object Detector", image);
-    //imwrite("Image.jpg", image);
-    waitKey(1);
+    waitKey(333);
 }
 
 
@@ -279,10 +279,12 @@ vector<vector<image_cartesian>>
 get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
 	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
+	// std::ofstream outfile;
+	// outfile.open("zzzzzzzzzzzzzzzzzzz.txt", std::ios_base::app);
 
 	//cout << predictions.size() << endl;
 
-	for (unsigned int i = 0; i < predictions.size();)
+	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
 		vector<image_cartesian> lasers_points_inside_bounding_box;
 
@@ -293,19 +295,12 @@ get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_carte
 				velodyne_points_vector[j].image_y >  predictions[i].y &&
 				velodyne_points_vector[j].image_y < (predictions[i].y + predictions[i].h))
 			{
+				// outfile << to_string(predictions[i].x) << " " << to_string(predictions[i].y) << " " << to_string(predictions[i].w) << " " << to_string(predictions[i].h) << endl;
+				// outfile << to_string(velodyne_points_vector[j].image_x) << " " << to_string(velodyne_points_vector[j].image_y) << endl;
 				lasers_points_inside_bounding_box.push_back(velodyne_points_vector[j]);
 			}
 		}
-		if (lasers_points_inside_bounding_box.size() > 0)
-		{
-			laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
-			i++;
-		}
-		else
-		{
-			//cout << predictions.size() << endl;
-			predictions.erase(predictions.begin()+i);
-		}
+		laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
 
 	}
 	return laser_list_inside_each_bounding_box;
@@ -691,6 +686,10 @@ call_neural_network()
 	static double start_time = 0.0;
 	unsigned char *img = (unsigned char *) malloc(3 * crop_w * crop_h);
 
+	// std::ofstream outfile;
+	// outfile.open("zzzzzzzzzzzzzzzzzzz.txt", std::ios_base::app);
+	// outfile << crop_w << " " << crop_h << endl;
+
 	memcpy(img, image_msg->images[0].raw_data, 3 * crop_w * crop_h);
 
 	Mat image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
@@ -700,28 +699,37 @@ call_neural_network()
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
 	//cv::imwrite("../src/neural_moving_objects_detector/YOLOPv2/data/example.jpg", image);
-	pyret retu = runPython(image);
-	image = retu.image;
-	vector<bbox_t> predictions = retu.pred;
+	vector<bbox_t> predictions = runPython(image);
 	// MyFile << "------------------------FIM DO RUN PYTHON---------------------------" << endl;
-//
+	// outfile << to_string(predictions.size()) << endl;
+
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
 			crop_w, crop_h, crop_x, crop_y, crop_w, crop_h); 
-//
-	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
-//
-	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
-//
-	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-//
-	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
-//
-	publish_moving_objects_message(timestamp, &msg); // <------ poff
 
-    if(image.data != NULL){
-    	imshow( "Display window", image );
-    	waitKey(220);
-	}
+	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // <---- da ruim em predictions
+
+	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+
+	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+
+	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
+
+	publish_moving_objects_message(timestamp, &msg);
+
+	// if (globalpos_msg == NULL)
+	// 	return;
+
+	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
+			globalpos_msg->pose.orientation.roll, globalpos_msg->pose.orientation.pitch, globalpos_msg->pose.orientation.yaw);
+
+	// carmen_position_t object_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
+	// 		world_to_camera_pose, camera_parameters, crop_w, crop_h);
+
+	// circle(image, Point((int)object_on_image.x, (int)object_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
+
+	display(image, predictions, points, points_inside_bbox, filtered_points, fps, crop_w, crop_h);
+	// outfile << "-----------bacon----------------" << endl;
+	// outfile << to_string(predictions.size()) << endl;
 
     free(img);
 }
