@@ -71,13 +71,13 @@ compute_semi_trailer_thetas(carmen_robot_and_trailers_traj_point_t robot_and_tra
 		for (int j = 1; j < (trailer_index); j++)
 			product = product * (cos(robot_and_trailer_traj_point.trailer_theta[j - 1] - robot_and_trailer_traj_point.trailer_theta[j]));
 
-		// Teste simulando phi
-		double delta_theta = carmen_normalize_theta(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - return_trailer_thetas[trailer_index - 1]);
-		double current_phi;
-		if (delta_theta < 0.01)
-			current_phi = 0.0;
-		else
-			current_phi = atan(semi_trailer_config.semi_trailers[trailer_index - 1].d * (delta_theta / (dt * robot_and_trailer_traj_point.v)));
+		// // Teste simulando phi
+		// double delta_theta = carmen_normalize_theta(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - return_trailer_thetas[trailer_index - 1]);
+		// double current_phi;
+		// if (delta_theta < 0.01)
+		// 	current_phi = 0.0;
+		// else
+		// 	current_phi = atan(semi_trailer_config.semi_trailers[trailer_index - 1].d * (delta_theta / (dt * robot_and_trailer_traj_point.v)));
 
 		/////
 		/*
