@@ -6,9 +6,11 @@
 #include <sys/stat.h>
 
 
-#define BETA_ERROR 						100.0
+#define BETA_ERROR 						1000.0
 #define PLOT_BETA						1
-#define BUFFER_SIZE						5
+
+double beta_max_change = carmen_degrees_to_radians(40.0); // ponto onde ele passa a computar o beta pela lateral do bau
+double max_admissible_beta_change = carmen_degrees_to_radians(10.0);
 
 
 FILE *gnuplot_pipe = NULL;
@@ -53,8 +55,8 @@ plot_groups(carmen_vector_3D_t *points_position_with_respect_to_car, double *est
 		first_time = false;
 		gnuplot_pipe = popen("taskset -c 0 gnuplot", "w");
 		fprintf(gnuplot_pipe, "set size square\n");
-		fprintf(gnuplot_pipe, "set xrange [-3:3]\n");
-		fprintf(gnuplot_pipe, "set yrange [-3:3]\n");
+		fprintf(gnuplot_pipe, "set xrange [-5:5]\n");
+		fprintf(gnuplot_pipe, "set yrange [-5:5]\n");
 	}
 	
 	for (int i = -1; i < n_groups; i++)
@@ -256,6 +258,7 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 	int i, j, angle_flag = 0, n_points_triangularization = fmax(5, triangulation_min_cluster_size/2), 
 		actual_group = 0, group_counter = 0, choosen_group = 0, first_time = 1, bigger_group = 0, 
 		group[num_filtered_points] = {0};
+	static int rt = 0;
 	double estimated_beta = 0.0, choosen_beta = M_PI, angle, 
 		   estimated[num_filtered_points] = {0.0}, 
 		   mean_dist_bt_rays = 0.0, actual_mean_dist_bt_rays = 0.0, dist;
@@ -263,6 +266,7 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 	carmen_vector_3D_t *points = (carmen_vector_3D_t*) malloc(sizeof(carmen_vector_3D_t)*num_filtered_points);
 	double *points_estimated = (double*) malloc(sizeof(double)*num_filtered_points);
 
+	// printf("%lf |\t", carmen_radians_to_degrees(last_beta));
 	if (last_beta < 0)
 	{
 		points[0] = points_position_with_respect_to_car[0];
@@ -299,6 +303,7 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 				{
 					// more closest from last beta
 					estimated_beta = compute_new_beta(points, points_estimated, group_counter);
+					// printf("%lf\t", carmen_radians_to_degrees(estimated_beta));
 					if (first_time && (group_counter > bigger_group))
 					{
 						choosen_beta = estimated_beta;
@@ -308,7 +313,17 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
 						first_time = 0;
 					}
-					else if (fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta))
+					else if (rt && (fabs(estimated_beta - M_PI_2 - last_beta) < fabs(choosen_beta - last_beta)) && 
+							 (fabs(estimated_beta - M_PI_2 - last_beta) < max_admissible_beta_change))
+					{
+						choosen_beta = estimated_beta - M_PI_2;
+						choosen_group = actual_group;
+						bigger_group = group_counter;
+
+						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
+					}
+					else if ((fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta)) &&
+							 (fabs(estimated_beta - last_beta) < max_admissible_beta_change))
 					{
 						choosen_beta = estimated_beta;
 						choosen_group = actual_group;
@@ -369,6 +384,7 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 				{
 					// more closest from last beta
 					estimated_beta = compute_new_beta(points, points_estimated, group_counter);
+					// printf("%lf\t", carmen_radians_to_degrees(estimated_beta));
 					if (first_time && (group_counter > bigger_group))
 					{
 						choosen_beta = estimated_beta;
@@ -378,7 +394,17 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
 						first_time = 0;
 					}
-					else if (fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta))
+					else if (rt && (fabs(estimated_beta + M_PI_2 - last_beta) < fabs(choosen_beta - last_beta)) &&
+							 (fabs(estimated_beta + M_PI_2 - last_beta) < max_admissible_beta_change))
+					{
+						choosen_beta = estimated_beta + M_PI_2;
+						choosen_group = actual_group;
+						bigger_group = group_counter;
+
+						actual_mean_dist_bt_rays = mean_dist_bt_rays/(group_counter-1);
+					}
+					else if ((fabs(estimated_beta - last_beta) < fabs(choosen_beta - last_beta)) &&
+							 (fabs(estimated_beta - last_beta) < max_admissible_beta_change))
 					{
 						choosen_beta = estimated_beta;
 						choosen_group = actual_group;
@@ -413,12 +439,16 @@ remove_points_by_triangulation_and_compute_beta(carmen_vector_3D_t *points_posit
 	if (fabs(actual_mean_dist_bt_rays) > 1e-5)
 		last_mean_dist_bt_rays = actual_mean_dist_bt_rays;
 
-	if (fabs(choosen_beta - M_PI) > 1e-5)
+	if (fabs(choosen_beta - last_beta) < max_admissible_beta_change)
 		last_beta = choosen_beta;
-
 	beta = last_beta;
+	// printf("[%lf]\n", carmen_radians_to_degrees(beta));
+
+	rt = fabs(beta) > beta_max_change;
+
 	return bigger_group;
 }
+
 
 
 double
@@ -500,10 +530,8 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 	if (semi_trailer_config.num_semi_trailers <= 0)
 		return (0.0);
 
-	double predicted_beta = .0, estimated_beta = .0, estimated_theta1 = .0, buffered_theta1;
-	static int buffer_pos = -1;
-	static double buffer_theta[BUFFER_SIZE] = {0.0};
-	
+	double predicted_beta = .0, estimated_beta = .0, estimated_theta1 = .0;
+
 	predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
 	
 	if (((lidar_to_compute_theta < 0) && !partial_message) ||
@@ -527,16 +555,8 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 	}
 
 	estimated_theta1 = convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(estimated_beta - semi_trailer_config.semi_trailers[SEMI_TRAILER1].beta_correct_beta_bias));
-	if (buffer_pos < 0)
-		for (int i = 0; i < BUFFER_SIZE; i++)
-			buffer_theta[i] = estimated_theta1;
-	buffer_theta[++buffer_pos % BUFFER_SIZE] = estimated_theta1;
 
-	buffered_theta1 = 0.0;
-	for (int i = 0; i < BUFFER_SIZE; i++)
-		buffered_theta1 += buffer_theta[i];
-	
-	return buffered_theta1 / (double) BUFFER_SIZE;
+	return estimated_theta1;
 }
 
 
