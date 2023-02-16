@@ -322,6 +322,42 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	return u_t;
 }
 
+void
+make_plot_pid_automatic(double steer_kp, double steer_kd, double steer_ki, double error_sum)
+{
+
+	FILE *gnuplot_pipe;
+	double y_range = 0.55;
+	static int iter = 0;
+	if (gnuplot_pipe != NULL) {
+	    fclose(gnuplot_pipe);
+	}
+	if(error_vector.empty())
+	{
+		return;
+	}
+	FILE *arquivo_teste = fopen("/home/lume/carmen_lcad/src/ford_escape_hybrid/steer_pid.txt", "w");
+	for(long unsigned int i = 0 ; i < current_steer_angle_vector.size(); i++)
+		fprintf(arquivo_teste, "%lf %lf %lf %ld\n",
+			current_steer_angle_vector[i], desired_steer_angle_vector[i], error_vector[i], i);
+	//fflush(arquivo_teste);
+	fclose(arquivo_teste);
+	printf("SAI DO PLOTTT\n");
+	gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+	fprintf(gnuplot_pipe, "set terminal png size 1000,1000\n");
+	fprintf(gnuplot_pipe, "set output '/home/lume/carmen_lcad/src/ford_escape_hybrid/%d.png'\n", iter);
+	fprintf(gnuplot_pipe, "set title 'KP %lf KI %lf KD %lf Err %lf'\n", steer_kp, steer_ki , steer_kd, error_sum);
+	fprintf(gnuplot_pipe, "set yrange [-%lf:%lf]\n", y_range, y_range);
+	fprintf(gnuplot_pipe, "plot "
+			"'/home/lume/carmen_lcad/src/ford_escape_hybrid/steer_pid.txt' using 4:1 with lines title 'current steer angle',"
+			"'/home/lume/carmen_lcad/src/ford_escape_hybrid/steer_pid.txt' using 4:2 with lines title 'desired steer angle', "
+			"'/home/lume/carmen_lcad/src/ford_escape_hybrid/steer_pid.txt' using 4:3 with lines title 'error'\n");
+	fflush(gnuplot_pipe);
+	iter++;
+    fclose(gnuplot_pipe);
+
+}
+
 double
 carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_message *msg, steering_pid_error_message *msg_error , double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
 		int manual_override, double v, double steer_kp, double steer_kd, double steer_ki)
@@ -384,10 +420,26 @@ carmen_libpid_steering_PID_controler_FUZZY_publish_data(steering_pid_data_messag
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 	static double error_sum = 0.0;
+	static bool already_cleaned_vectors = false;
 
 	if(atan_desired_curvature == 0.0)
-		error_sum = 0.0;
-
+	{
+		if(!already_cleaned_vectors)
+		{
+			make_plot_pid_automatic(steer_kp, steer_kd, steer_ki, error_sum);
+			error_sum = 0.0;
+			desired_steer_angle_vector.clear();
+			current_steer_angle_vector.clear();
+			error_vector.clear();
+			already_cleaned_vectors = true;
+		}
+	}else
+	{
+		already_cleaned_vectors = false;
+		desired_steer_angle_vector.push_back(atan_desired_curvature);
+		current_steer_angle_vector.push_back(atan_current_curvature);
+		error_vector.push_back(error_t);
+	}
 	error_sum += error_t;
 	msg->atan_current_curvature = atan_current_curvature;
 	msg->atan_desired_curvature = atan_desired_curvature;
