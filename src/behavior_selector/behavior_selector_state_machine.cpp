@@ -641,6 +641,24 @@ distance_to_busy_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robo
 		return (1000.0);
 }
 
+bool
+check_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+					&current_robot_pose_v_and_phi, false);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (false);
+
+	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_QUEUE)
+	{
+		return true;
+	}else
+	{
+		return false;
+	}
+
+}
 
 int
 perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg)

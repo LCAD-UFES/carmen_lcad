@@ -190,6 +190,8 @@ extern "C" {
 	double datmo_get_moving_obstacle_distance(carmen_robot_and_trailers_traj_point_t robot_pose,
 			carmen_robot_ackerman_config_t *robot_config);
 
+	bool check_queue_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi);
+
 #ifdef __cplusplus
 }
 #endif

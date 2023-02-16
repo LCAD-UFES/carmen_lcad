@@ -38,6 +38,8 @@ extern int behavior_selector_use_symotha;
 
 extern double distance_car_pose_car_front;
 
+extern bool set_number_of_frenet_path_to_1;
+
 bool print_path = false;
 
 
@@ -637,6 +639,8 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths, double *path_temporal_value)
 {
 	int current_path = current_set_of_paths->selected_path;
+	if(set_number_of_frenet_path_to_1)
+			return current_path;
 	double best_path_value = -1000.0;
 	int best_path = -1;
 	for (unsigned int i = 0; i < paths.size(); i++)
@@ -684,9 +688,14 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 	}
 
 	if (paths[best_path].path_has_no_collision)
+	{
+		printf("ACHEI CAMINHO\n");
 		return (best_path);
-	else
+	}else
+	{
+		printf("NAO ACHEI\n");
 		return (-1);
+	}
 }
 
 

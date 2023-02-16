@@ -202,6 +202,9 @@ bool all_paths_has_collision = false;
 bool all_paths_has_collision_and_goal_is_not_an_annotation = false;
 int soft_stop_active = 0;
 
+bool set_number_of_frenet_path_to_1 = false;
+
+//#define test_return_central_path_with_no_avaliable_path
 
 int
 compute_max_rddf_num_poses_ahead(carmen_robot_and_trailers_traj_point_t current_pose)
@@ -996,6 +999,9 @@ set_path_using_symotha(const carmen_robot_and_trailers_traj_point_t current_robo
 	{
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL))
 		{
+			#ifdef test_return_central_path_with_no_avaliable_path
+				set_number_of_frenet_path_to_1 = check_queue_ahead(current_robot_pose_v_and_phi);
+			#endif
 			set_of_paths = frenet_path_planner_build_frenet_path_plan(road_network_message, current_robot_pose_v_and_phi,
 					&behavior_selector_state_message, timestamp);
 			current_set_of_paths = &set_of_paths;
@@ -1194,6 +1200,9 @@ set_path(const carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_p
 
 	if (behavior_selector_performs_path_planning)
 	{
+		#ifdef test_return_central_path_with_no_avaliable_path
+			set_number_of_frenet_path_to_1 = check_queue_ahead(current_robot_pose_v_and_phi);
+		#endif
 		if ((road_network_message->number_of_poses != 0) && (road_network_message->poses != NULL) && 
 		(behavior_selector_state_message.low_level_state != Stopped_At_Unavoidable_Obstacle_S0))
 		{
