@@ -230,9 +230,47 @@ remove_begin_and_end_points(int num_filtered_points, carmen_vector_3D_t *points_
 }
 
 
+// Remember to deallocate the gsl_vector returned
+gsl_vector *
+compute_estimated_z_multiple_regression(carmen_vector_3D_t *points, double *estimated_z, int n_points){
+	gsl_matrix *X, *cov;
+	gsl_vector *z, *c;
+
+	double chisq; // Sum of squares of the residuals from the best-fit
+
+	X = gsl_matrix_alloc(n_points, 3);
+	cov = gsl_matrix_alloc(3, 3);
+	z = gsl_vector_alloc(n_points);
+	c = gsl_vector_alloc(3);
+
+	for(int i = 0; i < n_points; i++){
+		gsl_matrix_set (X, i, 0, 1.0);
+    	gsl_matrix_set (X, i, 1, points[i].x);
+    	gsl_matrix_set (X, i, 2, points[i].y);
+
+    	gsl_vector_set (z, i, points[i].z);
+	}
+
+	gsl_multifit_linear_workspace *work = gsl_multifit_linear_alloc(n_points, 3);
+    gsl_multifit_linear(X, z, c, cov, &chisq, work);
+    gsl_multifit_linear_free(work);
+
+	for(int i = 0; i < n_points; i++){
+		estimated_z[i] = gsl_vector_get(c, 0) + gsl_vector_get(c, 1) * points[i].x + gsl_vector_get(c, 2) * points[i].y;
+	}
+
+	gsl_matrix_free(X);
+	gsl_matrix_free(cov);
+	gsl_vector_free(z);
+	return c;
+}
+
 double
 compute_new_beta(carmen_vector_3D_t *points, double *estimated, int size)
 {
+	double estimated_z[size];
+
+	gsl_vector* c = compute_estimated_z_multiple_regression(points, estimated_z, size);
 	// https://www.gnu.org/software/gsl/doc/html/lls.html
 	const double *x = (double *) points;
 	const double *y = (double *) points;
@@ -243,6 +281,10 @@ compute_new_beta(carmen_vector_3D_t *points, double *estimated, int size)
 
 	for (int i = 0; i < size; i++)
 		estimated[i] = points[i].x*c1 + c0;
+
+	double real_beta = (-atan(c1));
+	printf("Real beta: %lf, c1: %lf, c2: %lf\n", real_beta, gsl_vector_get(c, 1), gsl_vector_get(c, 2));
+	gsl_vector_free(c);
 
 	return (-atan(c1));
 }
@@ -539,40 +581,4 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
     else
         return compute_semi_trailer_theta1(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config, 
             spherical_sensor_params, NULL, (carmen_velodyne_variable_scan_message*) message, lidar_to_compute_theta);
-}
-
-// O que é o beta?? Como calcular nessa função?
-// Remember to deallocate the gsl_vector returned
-gsl_vector *
-compute_estimated_z_multiple_regression(carmen_vector_3D_t *points, double *estimated_z, int n_points){
-	gsl_matrix *X, *cov;
-	gsl_vector *z, *c;
-
-	double chisq; // Sum of squares of the residuals from the best-fit
-
-	X = gsl_matrix_alloc(n_points, 3);
-	cov = gsl_matrix_alloc(3, 3);
-	z = gsl_vector_alloc(n_points);
-	c = gsl_vector_alloc(3);
-
-	for(int i = 0; i < n_points; i++){
-		gsl_matrix_set (X, i, 0, 1.0);
-    	gsl_matrix_set (X, i, 1, points[i].x);
-    	gsl_matrix_set (X, i, 2, points[i].y);
-
-    	gsl_vector_set (z, i, points[i].z);
-	}
-
-	gsl_multifit_linear_workspace *work = gsl_multifit_linear_alloc(n_points, 3);
-    gsl_multifit_linear(X, z, c, cov, &chisq, work);
-    gsl_multifit_linear_free(work);
-
-	for(int i = 0; i < n_points; i++){
-		estimated_z[i] = gsl_vector_get(c, 0) + gsl_vector_get(c, 1) * points[i].x + gsl_vector_get(c, 2) * points[i].y;
-	}
-
-	gsl_matrix_free(X);
-	gsl_matrix_free(cov);
-	gsl_vector_free(z);
-	return c;
 }
