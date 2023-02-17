@@ -39,7 +39,7 @@ static int wave_form = 0;
 
 carmen_simulator_ackerman_truepos_message *simulator_velocity;
 velocity_pid_data_message *velocity_msg =NULL;
-vector<double> current_steer_angle_vector, desired_steer_angle_vector, error_vector, timestamp_vector;
+//vector<double> current_steer_angle_vector, desired_steer_angle_vector, error_vector, timestamp_vector;
 
 double velocity_kp = 35.0;
 double velocity_ki = 9.0;
@@ -473,7 +473,7 @@ my_f(const gsl_vector *v,__attribute__((unused)) void *params_ptr)
 void
 my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
-	double h = 110.0;                  // This value influences the result, think how to use it as a function of the size of the error (the biggest the error the biggest h)
+	double h = 105.0;                  // This value influences the result, think how to use it as a function of the size of the error (the biggest the error the biggest h)
 	double f_x = my_f(v, params);
 	gsl_vector *x_h;
 
@@ -566,7 +566,7 @@ optimize_PID_gains()
 	return;
 }
 
-void
+/*void
 make_plot()
 {
 	static FILE *gnuplot_pipe;
@@ -598,7 +598,7 @@ make_plot()
 	fflush(gnuplot_pipe);
 	iter++;
 
-}
+}*/
 
 void
 subscribe_pid_steer_feedback_handler(steering_pid_data_message *msg)
@@ -611,20 +611,20 @@ subscribe_pid_steer_feedback_handler(steering_pid_data_message *msg)
 		plan_in_progress = false;
 		count = 0;
 		//TODO criar uma função pra plotar o gráfico
-		make_plot();
+		//make_plot();
 		//TODO achar comando pra não plotar janelas infinitas
-		current_steer_angle_vector.clear();
+		/*current_steer_angle_vector.clear();
 		desired_steer_angle_vector.clear();
 		timestamp_vector.clear();
-		error_vector.clear();
+		error_vector.clear();*/
 		//error_sum = 0;
 	}
-	current_steer_angle_vector.push_back(msg->atan_current_curvature);
-	desired_steer_angle_vector.push_back(msg->atan_desired_curvature);
+	//current_steer_angle_vector.push_back(msg->atan_current_curvature);
+	//desired_steer_angle_vector.push_back(msg->atan_desired_curvature);
 	if(msg->atan_desired_curvature == 0.0)
 		msg->error_t = 0.0;
-	error_vector.push_back(msg->error_t);
-	timestamp_vector.push_back(msg->timestamp);
+	//error_vector.push_back(msg->error_t);
+	//timestamp_vector.push_back(msg->timestamp);
 
 }
 
