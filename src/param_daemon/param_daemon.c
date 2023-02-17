@@ -140,7 +140,7 @@ static void add_module(char *module_name)
 				"currently supports.\n", MAX_NUM_MODULES, MAX_NUM_MODULES);
 	modules[num_modules] = (char*) calloc(strlen(module_name) + 1, sizeof(char));
 	carmen_test_alloc(modules[num_modules]);
-	strncpy(modules[num_modules], module_name, strlen(module_name) + 1);
+	strcpy(modules[num_modules], module_name);
 	num_modules++;
 }
 
@@ -305,32 +305,62 @@ void generate_parameters_file_from_log()
 
 	fprintf(fp, "[*]\n\n");
 
-	char *pch, *line = NULL, last_param_name[256], param_name[256], param_value[1024];
-	last_param_name[0] = '\0';
+	char *pch, *line = NULL, **param_name, **param_value, _param_name[256], _param_value[1024];
+	param_name = (char**) malloc(8192*sizeof(char*));
+	param_value = (char**) malloc(8192*sizeof(char*));
+	int n_parameters = 0;
 	size_t len = 0;
 	ssize_t read;
 	while ((read = getline (&line, &len, fp_log)) != -1) {
 		if (!strncmp (line, "PARAM", 5))
 		{
-			sscanf(line, "PARAM %s %[^\t\n]\n", param_name, param_value);
-			pch = strrchr (param_value, ' ');
+			sscanf(line, "PARAM %s %[^\t\n]\n", _param_name, _param_value);
+			pch = strrchr (_param_value, ' ');
 			if (pch)
 			{
 				pch[0] = '\0';
-				pch = strrchr (param_value, ' ');
+				pch = strrchr (_param_value, ' ');
 				if (pch)
 				{
 					pch[0] = '\0';
-					pch = strrchr (param_value, ' ');
+					pch = strrchr (_param_value, ' ');
 					if (pch)
 						pch[0] = '\0';
 				}
 			}
-			if (strncmp(last_param_name, param_name, 5))
-				fprintf(fp, "\n");
-			fprintf(fp, "%s %s\n", param_name, param_value);
-			strcpy(last_param_name, param_name);
+			param_name[n_parameters] = (char*) malloc((strlen(_param_name)+1)*sizeof(char*));
+			param_value[n_parameters] = (char*) malloc((strlen(_param_value)+1)*sizeof(char*));
+			strcpy(param_name[n_parameters], _param_name);
+			strcpy(param_value[n_parameters], _param_value);
+			n_parameters++;
 		}
+	}
+
+	// sort
+    for (int i = 0; i < n_parameters - 1; i++)
+	{
+		for (int j = 0; j < n_parameters - i - 1; j++)
+		{
+			if (strcmp(param_name[j], param_name[j+1]) > 0)
+			{
+				pch = param_name[j];
+				param_name[j] = param_name[j+1];
+				param_name[j+1] = pch;
+
+				pch = param_value[j];
+				param_value[j] = param_value[j+1];
+				param_value[j+1] = pch;
+			}
+		}
+	}
+
+	pch = param_name[0];
+	for (int i = 0; i < n_parameters; i++)
+	{
+		if (strncmp(pch, param_name[i], 5))
+			fprintf(fp, "\n");
+		fprintf(fp, "%s %s\n", param_name[i], param_value[i]);
+		pch = param_name[i];
 	}
 
 	fclose(fp);
