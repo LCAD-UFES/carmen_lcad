@@ -3,7 +3,7 @@
 #include "pid.h"
 #include "../control.h"
 #include <list>
-
+#include <vector>
 #define PRINT			// Print Debug
 
 using namespace std;
@@ -61,6 +61,7 @@ static double g_fuzzy_factor = 0.5;
 //static double g_target_velocity = 5.55;
 
 static int robot_model_id = 0;
+std::vector<double> current_steer_angle_vector, desired_steer_angle_vector, error_vector, timestamp_vector;
 
 /*#ifdef PRINT
 extern carmen_behavior_selector_low_level_state_t behavior_selector_low_level_state;
