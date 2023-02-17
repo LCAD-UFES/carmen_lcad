@@ -778,9 +778,9 @@ void on_comboMission_changed(GtkWidget *widget __attribute__((unused)),
 	if (global_gui)
 	{
 		global_gui->get_mission(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboMission));
-		if (strcmp(mission, "None") != 0)
+		if (strcmp(mission, "None") != 0 && strcmp(mission, "Abort mission") != 0)
 		{
-			printf("%s\n", mission);
+//			printf("%s\n", mission);
 			string mission_as_string = read_file_to_string(mission);
 			if (mission_as_string.size() == 0)
 				exit(printf("Could not read mission file %s\n", mission));
@@ -791,6 +791,10 @@ void on_comboMission_changed(GtkWidget *widget __attribute__((unused)),
 					carmen_user_app_server_publish_update_mission_message(1, carmen_get_time());
 					carmen_user_app_server_publish_execute_mission_message(mission_as_string.c_str(), carmen_get_time());
 				}
+		}
+		else if (strcmp(mission, "Abort mission") == 0)
+		{
+			carmen_user_app_server_publish_update_mission_message(1, carmen_get_time());
 		}
 		// global_gui->get_predefined_route(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboMission));
 		// if (strcmp(predefined_route, "None") != 0)
