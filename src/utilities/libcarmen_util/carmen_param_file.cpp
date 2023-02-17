@@ -7,6 +7,9 @@
 #include <carmen/util_io.h>
 
 
+CarmenParamFile::CarmenParamFile() { }
+
+
 CarmenParamFile::CarmenParamFile(const char *path)
 {
 	char line[4096];

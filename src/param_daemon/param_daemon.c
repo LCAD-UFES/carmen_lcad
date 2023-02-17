@@ -32,6 +32,7 @@
 #endif
 
 #include <ctype.h>
+#include <string.h>
 #include <getopt.h>
 #include <sys/stat.h>
 
@@ -71,6 +72,7 @@ static char *selected_robot = NULL;
 static char *param_filename = NULL;
 
 static int alphabetize = 0;
+static int generate_from_log = 0;
 
 static void publish_new_param(int index);
 static int read_parameters_from_file(void);
@@ -285,6 +287,59 @@ static int find_valid_robots(char **robot_names, int *num_robots, int max_robots
 	free(line);
 	return 0;
 }
+
+
+void generate_parameters_file_from_log()
+{
+	char _param_filename[1048];
+	sprintf(_param_filename, "%s_parameters", param_filename);
+	printf("writing on [31;1m%s[0m\n", _param_filename);
+
+	FILE *fp_log = fopen(param_filename, "r");
+	FILE *fp = fopen(_param_filename, "w");
+	if (!fp_log || !fp)
+	{
+		carmen_die("Could not open %s %s\n", param_filename, _param_filename);
+		exit(1);
+	}
+
+	fprintf(fp, "[*]\n\n");
+
+	char *pch, *line = NULL, last_param_name[256], param_name[256], param_value[1024];
+	last_param_name[0] = '\0';
+	size_t len = 0;
+	ssize_t read;
+	while ((read = getline (&line, &len, fp_log)) != -1) {
+		if (!strncmp (line, "PARAM", 5))
+		{
+			sscanf(line, "PARAM %s %[^\t\n]\n", param_name, param_value);
+			pch = strrchr (param_value, ' ');
+			if (pch)
+			{
+				pch[0] = '\0';
+				pch = strrchr (param_value, ' ');
+				if (pch)
+				{
+					pch[0] = '\0';
+					pch = strrchr (param_value, ' ');
+					if (pch)
+						pch[0] = '\0';
+				}
+			}
+			if (strncmp(last_param_name, param_name, 5))
+				fprintf(fp, "\n");
+			fprintf(fp, "%s %s\n", param_name, param_value);
+			strcpy(last_param_name, param_name);
+		}
+	}
+
+	fclose(fp);
+	fclose(fp_log);
+
+	strcpy(param_filename, _param_filename);
+	// "PARAM %s_%s %s %f %s %f\n", module, variable, value, ipc_time, hostname, timestamp);
+}
+
 
 static int read_parameters_from_file(void)
 {
@@ -561,7 +616,7 @@ static int read_commandline(int argc, char **argv)
 	opterr = 0;
 	while (1)
 	{
-		c = getopt_long(argc, argv, "ahr:", long_options, &option_index);
+		c = getopt_long(argc, argv, "ahrl:", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -588,6 +643,9 @@ static int read_commandline(int argc, char **argv)
 			selected_robot = (char*) calloc(strlen(optarg) + 1, sizeof(char));
 			carmen_test_alloc(selected_robot);
 			strcpy(selected_robot, optarg);
+			break;
+		case 'l':
+			generate_from_log = 1;
 			break;
 		case 'a':
 			alphabetize = 1;
@@ -644,6 +702,16 @@ static int read_commandline(int argc, char **argv)
 		strcpy(param_filename, argv[cur_arg]);
 	}
 
+	if (generate_from_log)
+	{
+		if (argc >= 2 && carmen_file_exists(argv[2]))
+		{
+			param_filename = (char*) calloc(strlen(argv[2]) + 1, sizeof(char));
+			carmen_test_alloc(param_filename);
+			strcpy(param_filename, argv[2]);
+		}
+	}
+
 	if (!param_filename)
 	{
 		for (index = 0; default_list[index]; index++)
@@ -660,6 +728,12 @@ static int read_commandline(int argc, char **argv)
 	carmen_test_alloc(robot_names);
 	find_valid_robots(robot_names, &num_robots, MAX_ROBOTS);
 
+	if (generate_from_log)
+	{
+		carmen_warn("Loading parameters for default robot using log file "
+				"[31;1m%s[0m\n", param_filename);
+		return 0;
+	}
 	if (num_robots == 0)
 	{
 		carmen_warn("Loading parameters for default robot using param file "
@@ -1271,6 +1345,8 @@ int main(int argc, char **argv)
 
 	carmen_verbose("Read %d parameters\n", num_params);
 
+	if (generate_from_log)
+		generate_parameters_file_from_log();
 	read_parameters_from_file();
 
 	carmen_ipc_initialize(argc, argv);
