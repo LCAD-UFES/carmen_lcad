@@ -327,7 +327,7 @@ void
 make_plot_pid_automatic(double steer_kp, double steer_kd, double steer_ki, double error_sum)
 {
 
-	FILE *gnuplot_pipe;
+	FILE *gnuplot_pipe = NULL;
 	double y_range = 0.55;
 	static int iter = 0;
 	if (gnuplot_pipe != NULL) {
