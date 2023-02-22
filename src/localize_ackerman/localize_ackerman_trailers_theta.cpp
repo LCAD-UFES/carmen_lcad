@@ -620,14 +620,17 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 		return predicted_beta;
 	}
 
-	estimated_beta_corr = estimated_beta;
 	if (USE_KALMAN)
 	{
 		if (lidar_to_compute_theta < 0)
 			kalman(estimated_beta, partial_message->timestamp, v, estimated_beta_corr);
 		else
 			kalman(estimated_beta, variable_message->timestamp, v, estimated_beta_corr);
+		
+		// plot_beta_diff(estimated_beta, estimated_beta_corr);
 	}
+	else
+		estimated_beta_corr = estimated_beta;
 	estimated_theta1 = convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(estimated_beta_corr - semi_trailer_config.semi_trailers[SEMI_TRAILER1].beta_correct_beta_bias));
 
 	return estimated_theta1;
