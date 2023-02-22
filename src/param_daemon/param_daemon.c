@@ -333,6 +333,9 @@ void generate_parameters_file_from_log()
 			strcpy(param_name[n_parameters], _param_name);
 			strcpy(param_value[n_parameters], _param_value);
 			n_parameters++;
+
+			if (n_parameters >= 8192)
+				break;
 		}
 	}
 
