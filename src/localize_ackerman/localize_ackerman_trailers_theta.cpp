@@ -4,8 +4,10 @@
 #include <gsl/gsl_multifit.h>
 #include <gsl/gsl_errno.h>
 #include <sys/stat.h>
+#include <vector>
 
 
+#define USE_KALMAN						1
 #define BETA_ERROR 						1000.0
 #define PLOT_BETA						1
 
@@ -19,6 +21,38 @@ double remove_by_mean_dist_between_rays_factor = 4.0; // remove if dist between 
 
 extern double triangulation_max_beta;
 extern int triangulation_min_cluster_size;
+
+
+void 
+plot_beta_diff(double _beta_velodyne, double _beta_aruco)
+{
+    static FILE *gnuplot_pipe = NULL;
+    static int count = 0;
+    static bool first_time = true;
+
+    if (first_time)
+    {
+        first_time = false;
+        gnuplot_pipe = popen("taskset -c 0 gnuplot", "w"); // -persist to keep last plot after program closes
+        fprintf(gnuplot_pipe, "set yrange [-100:100]\n");
+        remove("beta_comparison.dat");
+    }
+    fprintf(gnuplot_pipe, "set xrange [0:%d]\n", ++count);
+
+    FILE *graph_file;
+    graph_file = fopen("beta_comparison.dat", "a");
+    fprintf(graph_file, "%d\t%lf\t%lf\n", 
+            count,
+            _beta_velodyne * 57.2958, 
+            _beta_aruco * 57.2958);
+
+    fclose(graph_file);
+    fprintf(gnuplot_pipe, "plot "
+                          "'beta_comparison.dat' using 1:2 title 'velodyne', "
+                          "'beta_comparison.dat' using 1:3 title 'aruco'"
+                          "\n");
+    fflush(gnuplot_pipe);
+}
 
 
 void copy_file(char *src, const char *dst) {
@@ -520,8 +554,39 @@ compute_points_position_with_respect_to_car(carmen_semi_trailers_config_t semi_t
 }
 
 
+void
+kalman(double measurement, double timestamp, double v, double &corrected) {
+	double kalman_Q = fmax(30.0, v*v*v);
+	double accuracy = 0.01;
+	static double last_timestamp = 0.0, variance = -1.0;
+
+    if (accuracy < 1.0)
+		accuracy = 1.0;
+    
+	if (variance < 0)
+	{
+        last_timestamp = timestamp;
+        corrected = measurement;
+		variance = accuracy*accuracy;
+    }
+	else
+	{
+        double timestamp_inc = timestamp - last_timestamp;
+        if (timestamp_inc > 0)
+		{
+            variance += timestamp_inc * kalman_Q * kalman_Q / 1000.0;
+            last_timestamp = timestamp;
+        }
+
+        double K = variance / (variance + accuracy * accuracy);
+        corrected += K * (measurement - corrected);
+        variance = (1.0 - K) * variance;
+    }
+}
+
+
 double
-compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
+compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt, double v,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config, 
         sensor_parameters_t *spherical_sensor_params, 
         carmen_velodyne_partial_scan_message *partial_message,
@@ -531,6 +596,7 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 		return (0.0);
 
 	double predicted_beta = .0, estimated_beta = .0, estimated_theta1 = .0;
+	static double estimated_beta_corr = .0;
 
 	predicted_beta = compute_semi_trailer_beta(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config);
 	
@@ -554,14 +620,22 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 		return predicted_beta;
 	}
 
-	estimated_theta1 = convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(estimated_beta - semi_trailer_config.semi_trailers[SEMI_TRAILER1].beta_correct_beta_bias));
+	estimated_beta_corr = estimated_beta;
+	if (USE_KALMAN)
+	{
+		if (lidar_to_compute_theta < 0)
+			kalman(estimated_beta, partial_message->timestamp, v, estimated_beta_corr);
+		else
+			kalman(estimated_beta, variable_message->timestamp, v, estimated_beta_corr);
+	}
+	estimated_theta1 = convert_beta_to_theta1(robot_and_trailer_traj_point.theta, carmen_normalize_theta(estimated_beta_corr - semi_trailer_config.semi_trailers[SEMI_TRAILER1].beta_correct_beta_bias));
 
 	return estimated_theta1;
 }
 
 
 double
-compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt,
+compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_trailer_traj_point, double dt, double v,
 		carmen_robot_ackerman_config_t robot_config, carmen_semi_trailers_config_t semi_trailer_config, 
         sensor_parameters_t *spherical_sensor_params, 
         void *message, int lidar_to_compute_theta)
@@ -570,9 +644,9 @@ compute_semi_trailer_theta1(carmen_robot_and_trailers_traj_point_t robot_and_tra
 		return (0.0);
 
     if (lidar_to_compute_theta < 0)
-        return compute_semi_trailer_theta1(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config, 
+        return compute_semi_trailer_theta1(robot_and_trailer_traj_point, dt, v, robot_config, semi_trailer_config, 
             spherical_sensor_params, (carmen_velodyne_partial_scan_message*) message, NULL, -1);
     else
-        return compute_semi_trailer_theta1(robot_and_trailer_traj_point, dt, robot_config, semi_trailer_config, 
+        return compute_semi_trailer_theta1(robot_and_trailer_traj_point, dt, v, robot_config, semi_trailer_config, 
             spherical_sensor_params, NULL, (carmen_velodyne_variable_scan_message*) message, lidar_to_compute_theta);
 }
