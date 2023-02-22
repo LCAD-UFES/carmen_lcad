@@ -1908,7 +1908,7 @@ namespace View
 		std::vector <string> sorted_items;
 		int index = 0;
 
-		if (strcmp(new_mission, "None") != 0)
+		if (strcmp(new_mission, "None") != 0 && strcmp(new_mission, "Abort mission") != 0)
 		{
 			std::string nm = new_mission;
 			for (unsigned int i = 0; i < missions_filenames.size(); i++)
@@ -1926,11 +1926,16 @@ namespace View
 				}
 				// printf("%s\n", sorted_items[i].c_str());
 			}
+			strcpy(mission, missions_filenames[index].c_str());
+		}
+		else
+		{
+			strcpy(mission, new_mission);
 		}
 		// printf("%s\n", new_mission);
 		// printf("Mission is: %s\n", missions_filenames[index].c_str());
 
-		strcpy(mission, missions_filenames[index].c_str());
+
 		// printf("%s\n", mission);
 	}
 
@@ -2255,39 +2260,62 @@ namespace View
 	void
 	GtkGui::do_publish_map_view(GtkMapViewer *mapv)
 	{
-		static unsigned char *raw_image = NULL;
-		static int image_size = 0;
+//		static unsigned char *raw_image = NULL;
+//		static int image_size = 0;
+//
+//		if (mapv == NULL || mapv->drawing_pixmap == NULL)
+//			return;
+//
+//		GdkPixbuf *pixbuf = gdk_pixbuf_get_from_drawable(NULL, (GdkDrawable *) mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
+//		int pixbuf_size = gdk_pixbuf_get_byte_length(pixbuf);
+//		if (image_size == 0 && pixbuf_size > 0)
+//			raw_image = (unsigned char *) malloc(pixbuf_size);
+//		else if (image_size < pixbuf_size)
+//			raw_image = (unsigned char *) realloc(raw_image, pixbuf_size);
+//		if (raw_image == NULL || pixbuf == NULL || pixbuf_size <= 0)
+//		{
+//			fprintf(stderr, "\nError: Failed to allocate memory for image buffer in GtkGui::do_publish_map_view\n");
+//			return;
+//		}
+//		image_size = pixbuf_size;
+//		memcpy(raw_image, gdk_pixbuf_read_pixels(pixbuf), pixbuf_size);
+//		g_clear_object(&pixbuf);
+//
+//		int height = mapv->port_size_y;
+//		double x_origin = mapv->internal_map->config.x_origin;
+//		double y_origin = mapv->internal_map->config.y_origin;
+//		double resolution = mapv->internal_map->config.resolution / mapv->rescale_size;
+//		if (mapv->zoom != 100.0)
+//		{
+//			x_origin += (mapv->x_scroll_adj->value) * resolution;
+//			y_origin += (mapv->y_scroll_adj->upper - mapv->y_scroll_adj->value - height) * resolution;
+//		}
 
-		if (mapv == NULL || mapv->drawing_pixmap == NULL)
-			return;
+//		int height = mapv->port_size_y;
+//		int width = 1312; //@@braian: único valor que funcionou
 
-		GdkPixbuf *pixbuf = gdk_pixbuf_get_from_drawable(NULL, (GdkDrawable *) mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
-		int pixbuf_size = gdk_pixbuf_get_byte_length(pixbuf);
-		if (image_size == 0 && pixbuf_size > 0)
-			raw_image = (unsigned char *) malloc(pixbuf_size);
-		else if (image_size < pixbuf_size)
-			raw_image = (unsigned char *) realloc(raw_image, pixbuf_size);
-		if (raw_image == NULL || pixbuf == NULL || pixbuf_size <= 0)
-		{
-			fprintf(stderr, "\nError: Failed to allocate memory for image buffer in GtkGui::do_publish_map_view\n");
-			return;
-		}
-		image_size = pixbuf_size;
-		memcpy(raw_image, gdk_pixbuf_read_pixels(pixbuf), pixbuf_size);
-		g_clear_object(&pixbuf);
+//		static unsigned char *raw_image = gdk_pixbuf_get_pixels(pixbuf);
 
-		int height = mapv->port_size_y;
-		double x_origin = mapv->internal_map->config.x_origin;
-		double y_origin = mapv->internal_map->config.y_origin;
-		double resolution = mapv->internal_map->config.resolution / mapv->rescale_size;
-		if (mapv->zoom != 100.0)
-		{
-			x_origin += (mapv->x_scroll_adj->value) * resolution;
-			y_origin += (mapv->y_scroll_adj->upper - mapv->y_scroll_adj->value - height) * resolution;
-		}
+//		cv::Mat image = cv::Mat(height, width, CV_8UC3, raw_image);
+//
+//		std::vector<uchar> jpeg_data;
+//		cv::imencode(".jpeg", image, jpeg_data);
+//
+//		cv::Mat bgr;
+//		vector<uchar> img_buff;
+//		vector<int> params;
+//
+//		cv::cvtColor(image, bgr, CV_RGB2BGR);
+//
+//		params.push_back(CV_IMWRITE_JPEG_QUALITY);
+//		params.push_back(50);
+//
+//		cv::imencode(".jpeg", bgr, img_buff, params);
+//
+//		cv::imwrite("screenshot.jpeg", bgr);
 
 #if PUBLISH_MAP_VIEW
-		carmen_navigator_gui_publish_map_view_message(width, height, image_size, raw_image, x_origin, y_origin, resolution);
+		carmen_navigator_gui_publish_map_view_message(width, height, 0, raw_image, 0, 0, 0);
 #endif
 	}
 
