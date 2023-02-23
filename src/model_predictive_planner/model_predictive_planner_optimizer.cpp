@@ -1872,8 +1872,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters
 		(target_td.dist < GlobalState::distance_between_waypoints / 1.5))
 		max_iterations = 150;
 	else
-		max_iterations = 15;
-//		max_iterations = 30;
+//		max_iterations = 15;
+		max_iterations = 30;
 
 	TrajectoryControlParameters tcp_seed;
 	if (!previous_tcp.valid)
