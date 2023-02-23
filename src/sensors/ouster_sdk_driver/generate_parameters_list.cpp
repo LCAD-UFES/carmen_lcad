@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <string.h>
-#include<vector>
+#include <vector>
 
 #include "build.h"
 #include <ouster/client.h>
@@ -16,7 +16,6 @@ std::string lidar_sensorBox_model;
 std::string _ray_order;
 char *ouster_ip = NULL;
 char *host_ip = NULL;
-char *num_split = NULL;
 int ouster_port;
 int ouster_imu_port;
 int _shot_size;
@@ -60,12 +59,11 @@ main(int argc, char* argv[])
 	//TODO pegar o ip etc daqui, rodar o modulo soh com o numero da mensagem / -sensor_ip -host_ip -port -imu_purt -lidar_id
 	read_parameters(argc, argv);
 
-	const std::string sensor_hostname = ouster_ip;
+	std::string sensor_hostname = ouster_ip;
 	const std::string data_destination = host_ip;
-
-
-
 	std::string vehicle_name;
+
+
 	std::cout<< "Digite o nome do veículo: \n";
 	std::cout<< "Veículos disponíveis: Bravo, Arocs, Atego_1730, Atego_2430, Axor, Actros_4844 e Ford_escape. \n";
 	std::cin >>  vehicle_name;
@@ -211,17 +209,18 @@ main(int argc, char* argv[])
 
 	// beam azimuth angles
 	std::vector<double> list_azimuth_angles;
+
 	// Raw metadata can be parsed into a `sensor_info` struct
 	sensor::sensor_info info = sensor::parse_metadata(metadata);
 
 	//get the ouster model
 	lidar_sensorBox_model = info.prod_line;
 
-	//get the shot
+	//get the shot size
 	size_t h = info.format.pixels_per_column;
 
 	// check
-	if (fabs(info.beam_azimuth_angles.at(0)) - fabs(info.beam_azimuth_angles.at(1)) < 0.2) //não alernado
+	if (fabs(fabs(info.beam_azimuth_angles.at(0)) - fabs(info.beam_azimuth_angles.at(1))) < 0.2) //não alternado
 	{
 		_shot_size = h;
 		n_split = 1;
@@ -230,8 +229,8 @@ main(int argc, char* argv[])
 			_ray_order += std::to_string(i) + " ";
 		}
 
-		// 4 splits
-	}else if (fabs(info.beam_azimuth_angles.at(0)) - fabs(info.beam_azimuth_angles.at(2)) > 1)
+	// 4 splits
+	}else if (fabs(fabs(info.beam_azimuth_angles.at(0)) - fabs(info.beam_azimuth_angles.at(2))) > 1)
 	{
 
 		_shot_size = h/4;
@@ -241,7 +240,7 @@ main(int argc, char* argv[])
 			_ray_order += std::to_string(i) + " ";
 
 		}
-		// 2 splits
+	// 2 splits
 	}else{
 
 		_shot_size= h/2;
@@ -324,8 +323,8 @@ main(int argc, char* argv[])
 		std::cout <<"lidar"<< i <<"_y                     "<<  models[model].position.y <<"\n";
 		std::cout <<"lidar"<< i <<"_z                     "<<  models[model].position.z <<"\n";
 		std::cout <<"lidar"<< i <<"_roll                  "<<  models[model].orientation.roll <<"\n";
-		std::cout <<"lidar"<< i <<"_pitch                  "<<  models[model].orientation.pitch <<"\n";
-		std::cout <<"lidar"<< i <<"_yaw                    "<<  models[model].orientation.yaw <<"\n";
+		std::cout <<"lidar"<< i <<"_pitch                  "<< models[model].orientation.pitch <<"\n";
+		std::cout <<"lidar"<< i <<"_yaw                    "<< models[model].orientation.yaw <<"\n";
 		std::cout <<"lidar"<< i <<"_ray_order              "<< _ray_order  <<"\n";
 		std::cout <<"lidar"<< i <<"_vertical_angles        "<< string_list_for_vertical_angles[i-lidar_id] << "\n";
 		std::cout <<"lidar"<< i <<"_sensor_reference       0\n";   //# informa em que a posicao do lidar esta referenciada. 0 para sensorboard, 1 para front_bullbar, 2 para rear_bullbar

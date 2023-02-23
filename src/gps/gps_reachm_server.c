@@ -64,7 +64,7 @@ read_parameters(SerialDevice *dev, int argc, char **argv)
 	carmen_param_install_params(argc, argv, gps_dev, 
 			      sizeof(gps_dev) / sizeof(gps_dev[0]));
   
-	strncpy(dev->ttyport, device, MAX_NAME_LENGTH);
+	strncpy(dev->ttyport, device, MAX_NAME_LENGTH - 1);
 
 	free(device);
 
@@ -146,7 +146,7 @@ main(int argc, char *argv[])
 
 	DEVICE_init_params(&dev);
 
-	strncpy(dev.ttyport, argv[1], MAX_NAME_LENGTH);
+	strncpy(dev.ttyport, argv[1], MAX_NAME_LENGTH - 1);
 	dev.baud = atoi(argv[2]);
 	gps_nr = atoi(argv[3]);
 	int port = atoi(argv[4]);

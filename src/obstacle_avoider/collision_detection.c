@@ -1093,7 +1093,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 	}
 
 	carmen_robot_and_trailers_pose_t semi_trailers_poses[MAX_NUM_TRAILERS];
-	carmen_robot_and_trailers_pose_t semi_trailers_poses_localizer[MAX_NUM_TRAILERS];
+	// carmen_robot_and_trailers_pose_t semi_trailers_poses_localizer[MAX_NUM_TRAILERS];
 
 	for (int semi_trailer_id=1; semi_trailer_id <= global_collision_config.semi_trailer_type; semi_trailer_id++)
 	{
