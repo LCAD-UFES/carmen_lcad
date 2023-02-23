@@ -15,6 +15,7 @@
 class CarmenParamFile
 {
 public:
+	CarmenParamFile();
 	CarmenParamFile(const char *path);
 	template<typename T> T get(std::string name);
 	template<typename T> void set(std::string name, T value);
@@ -55,8 +56,8 @@ CarmenParamFile::get(std::string name)
 template<typename T> void
 CarmenParamFile::set(std::string name, T value)
 {
-	if (_params.count(name) == 0)
-		exit(printf("Error: parameter '%s' not found.\n", name.c_str()));
+	// if (_params.count(name) == 0)
+	// 	exit(printf("Error: parameter '%s' not found.\n", name.c_str()));
 
 	assert(typeid(value)==typeid(boost::lexical_cast<T>(_params[name])));
 

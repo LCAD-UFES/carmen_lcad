@@ -550,8 +550,14 @@ void navigator_update_robot(carmen_world_point_p robot)
 				carmen_round(robot->pose.y),
 				carmen_radians_to_degrees(robot->pose.theta));
 
-		carmen_localize_ackerman_initialize_gaussian_command(robot->pose, localize_std, 0.0);
+//		carmen_localize_ackerman_initialize_gaussian_command(robot->pose, localize_std, 0.0);
+		double current_trailer_theta[MAX_NUM_TRAILERS];
+		for (size_t z = 1; z < MAX_NUM_TRAILERS; z++)
+			current_trailer_theta[z] = 0.0;
+		carmen_localize_ackerman_initialize_gaussian_command(robot->pose, localize_std, current_trailer_theta, 1);
+
 	}
+
 }
 
 void navigator_set_goal(double x, double y, double theta)

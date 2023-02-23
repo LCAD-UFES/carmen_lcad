@@ -154,6 +154,7 @@ long find_timestamp_index_position_with_full_index_search(double x, double y, do
 		double timestamp_ignore_neighborhood = 0, int search_only_in_the_begining = 0, double v = 0.0, int test_v = 0);
 carmen_timestamp_index* get_timestamp_index();
 carmen_robot_and_trailers_traj_point_t create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double beta, double yaw);
+carmen_robot_and_trailers_traj_point_t create_ackerman_traj_point_struct_trailer_thetas(double x, double y, double velocity_x, double phi, double *trailer_thetas, double yaw);
 
 void carmen_rddf_index_clear();
 

@@ -8,6 +8,8 @@
 #ifndef POSE_H_
 #define POSE_H_
 
+#include <carmen/carmen.h>
+
 class RRT_Node;
 
 class Pose
@@ -25,7 +27,8 @@ public:
 	double x;
 	double y;
 	double theta;
-	double beta;
+//	double beta;
+	double trailer_theta[MAX_NUM_TRAILERS];
 };
 
 #endif /* POSE_H_ */

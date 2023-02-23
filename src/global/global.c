@@ -2080,3 +2080,11 @@ convert_beta_to_theta1(double theta, double beta)
 {
   return(theta - beta);
 }
+
+double
+change_trailer_theta_reference(double original_theta, double new_theta, double original_trailer_theta)
+{
+	double new_trailer_theta = convert_beta_to_theta1(new_theta, convert_theta1_to_beta(original_theta, original_trailer_theta));
+
+	return new_trailer_theta;
+}

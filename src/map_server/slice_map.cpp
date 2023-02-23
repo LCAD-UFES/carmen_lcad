@@ -20,7 +20,7 @@ int main(int argc __attribute__ ((unused)), char **argv)
 	carmen_map_t map_count;
 
 	char map_image_name[2000];
-	char global_map_path[2000];
+	char global_map_path[2048];
 	char map_path[2000];
 
 

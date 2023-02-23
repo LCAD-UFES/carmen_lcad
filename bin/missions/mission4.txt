@@ -1,5 +1,6 @@
 # Linhas vazias, que comecam com espaco ou com # sao ignoradas
 #
+publish mission state MISSION_FILE_STARTED mission4
 # Predio Eletrica logo depois do LCAD2
 #frente lcad antihorario
 set robot pose 7757674.73, -363600.56, -2.497

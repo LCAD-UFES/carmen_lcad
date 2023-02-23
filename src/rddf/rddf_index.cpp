@@ -423,7 +423,9 @@ void carmen_timestamp_index::add(
 
 	elem.phi = phi;
 
-	elem.trailer_theta[0] = beta;
+	elem.trailer_theta[0] = beta; // Será necessário modificar isso eventualmente por conta do trailer_theta
+	for (size_t z = 1; z < MAX_NUM_TRAILERS; z++)
+		elem.trailer_theta[z] = beta;
 
 	elem.timestamp = timestamp;
 	elem.rddf_offset = rddf_file_offset;
@@ -998,6 +1000,8 @@ find_timestamp_index_position_with_full_index_search_near_timestamp(double x, do
 	return (min_dist_pos);
 }
 
+
+// ATENÇÂO: Esse método está obsoleto por conta da mudança do trailer_theta. Se for usar, utilize o create_ackerman_traj_point_struct_trailer_thetas. Esse método abaixo só não foi apagado para manter a compilação com módulos antigos
 carmen_robot_and_trailers_traj_point_t
 create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double beta, double yaw)
 {
@@ -1014,6 +1018,22 @@ create_ackerman_traj_point_struct(double x, double y, double velocity_x, double 
 }
 
 
+carmen_robot_and_trailers_traj_point_t
+create_ackerman_traj_point_struct_trailer_thetas(double x, double y, double velocity_x, double phi, double* trailer_thetas, double yaw)
+{
+	carmen_robot_and_trailers_traj_point_t point;
+
+	point.x = x;
+	point.y = y;
+	point.v = velocity_x;
+	point.phi = phi;
+	point.theta = yaw;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		point.trailer_theta[z] = trailer_thetas[z];
+
+	return (point);
+}
+
 int
 fill_in_waypoints_array(long timestamp_index_position, carmen_robot_and_trailers_traj_point_t *poses_ahead, int num_poses_desired, carmen_robot_and_trailers_traj_point_t *last_pose_acquired, int *annotations)
 {
@@ -1027,14 +1047,17 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_robot_and_trailers
 
 	num_poses_aquired = 0;
 	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];
-	poses_ahead[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+//	poses_ahead[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+	poses_ahead[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct_trailer_thetas(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta, index_element.yaw);
 	annotations[num_poses_aquired] = index_element.anottation;
+
 	num_poses_aquired++;
 	i = 1;
 	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position + i) < carmen_index_ordered_by_timestamp.size()))
 	{
 		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position + i];
-		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+//		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+		current_pose = create_ackerman_traj_point_struct_trailer_thetas(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta, index_element.yaw);
 
 		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
@@ -1068,14 +1091,17 @@ fill_in_backward_waypoints_array(long timestamp_index_position, carmen_robot_and
 
 	num_poses_aquired = 0;
 	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];
-	poses_back[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+//	poses_back[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+	poses_back[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct_trailer_thetas(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta, index_element.yaw);
+
 	num_poses_aquired++;
 	i = 1;
 
 	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position - i) >= 0))
 	{
 		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position - i];
-		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+//		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+		current_pose = create_ackerman_traj_point_struct_trailer_thetas(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta, index_element.yaw);
 
 		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
@@ -1141,7 +1167,8 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_robot_and_traile
 	while ((num_poses_aquired < num_poses_desired) && (i < carmen_index_ordered_by_timestamp.size()))
 	{
 		index_element = carmen_index_ordered_by_timestamp[i];
-		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+//		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+		current_pose = create_ackerman_traj_point_struct_trailer_thetas(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta, index_element.yaw);
 
 		if (carmen_rddf_play_annotation_is_forward(last_pose, current_pose)) // Esta funcao foi feita para anotacoes mas funciona com quaisquer dois pontos
 		{
@@ -1265,8 +1292,8 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_robot_and_t
 	while ((num_poses_aquired < (num_poses_desired / 2)) && (i > 0))
 	{
 		index_element = carmen_index_ordered_by_timestamp[i];
-		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
-
+//		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+		current_pose = create_ackerman_traj_point_struct_trailer_thetas(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta, index_element.yaw);
 		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
 		//if (dist > 1.0)
@@ -1286,7 +1313,8 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_robot_and_t
 	while ((num_poses_aquired < num_poses_desired) && (i < carmen_index_ordered_by_timestamp.size()))
 	{
 		index_element = carmen_index_ordered_by_timestamp[i];
-		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+//		current_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta[0], index_element.yaw);
+		current_pose = create_ackerman_traj_point_struct_trailer_thetas(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.trailer_theta, index_element.yaw);
 
 		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 

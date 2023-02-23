@@ -11,7 +11,7 @@ publish_final_goal(carmen_robot_and_trailers_pose_t pose)
 	pose_with_beta.theta = pose.theta;
 	pose_with_beta.num_trailers = pose.num_trailers;
 	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
-		pose_with_beta.trailer_theta[z] = pose.trailer_theta[z];
+		pose_with_beta.trailer_theta[z] = pose.trailer_theta[0];
 	carmen_rddf_publish_end_point_message(50, pose_with_beta);
 }
 
@@ -44,6 +44,8 @@ main(int argc, char **argv)
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
 	pose.theta = atof(argv[3]);
+	pose.trailer_theta[0] = pose.theta;
+
 	if (argc == 6)
 		pose.trailer_theta[0] = atof(argv[5]);
 

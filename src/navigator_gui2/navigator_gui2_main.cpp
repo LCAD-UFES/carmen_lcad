@@ -651,7 +651,9 @@ navigator_update_robot(carmen_world_robot_and_trailer_pose_t *robot)
 				carmen_radians_to_degrees(robot->pose.theta));
 
 		carmen_point_t pose_without_beta = {robot->pose.x,robot->pose.y, robot->pose.theta};
-		carmen_localize_ackerman_initialize_gaussian_command(pose_without_beta, localize_std, robot->pose.trailer_theta[0]);
+//		carmen_localize_ackerman_initialize_gaussian_command(pose_without_beta, localize_std, robot->pose.trailer_theta, robot->pose.num_trailers); // Era para funcionar mas esse robot_pose.num_Trailers não está confiável
+		carmen_localize_ackerman_initialize_gaussian_command(pose_without_beta, localize_std, robot->pose.trailer_theta, semi_trailer_config.num_semi_trailers);
+
 		IPC_listen(50);
 	}
 }

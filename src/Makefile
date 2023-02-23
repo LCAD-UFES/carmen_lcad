@@ -13,7 +13,7 @@ phase4:	| phase3
 
 include Makefile.conf
 
-PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
+PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui  \
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu \

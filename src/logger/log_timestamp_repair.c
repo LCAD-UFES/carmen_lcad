@@ -29,7 +29,7 @@
 #include <carmen/carmen.h>
 
 /*
- * This program was written by Dirk Hähnel.
+ * This program was written by Dirk Hï¿½hnel.
  *
  * Log files contained an incorrect parameter and sync output.
  * This program repairs the files by re-sorting and putting the
@@ -78,7 +78,7 @@ getTimeStamp( char * line )
     char * ptr[MAX_LINE_ITEMS];
     double val;
 
-    strncpy( copy, line, MAX_LINE_LENGTH );
+    strncpy( copy, line, MAX_LINE_LENGTH - 1);
     ptr[i] = strtok( copy, " ");
     do {
 	i++;

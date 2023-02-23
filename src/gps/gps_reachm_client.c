@@ -65,7 +65,7 @@ read_parameters(SerialDevice *dev, int argc, char **argv)
 	carmen_param_install_params(argc, argv, gps_dev, 
 			      sizeof(gps_dev) / sizeof(gps_dev[0]));
   
-	strncpy(dev->ttyport, device, MAX_NAME_LENGTH);
+	strncpy(dev->ttyport, device, MAX_NAME_LENGTH - 1);
 
 	free(device);
 
@@ -147,8 +147,8 @@ main(int argc, char *argv[])
 	carmen_ipc_initialize(argc, argv);
 	ipc_initialize_messages();
  
-	strncpy(tcp_ip_address, argv[1], MAX_NAME_LENGTH);
-	strncpy(port, argv[2], MAX_NAME_LENGTH);
+	strncpy(tcp_ip_address, argv[1], MAX_NAME_LENGTH - 1);
+	strncpy(port, argv[2], MAX_NAME_LENGTH - 1);
 
 	carmen_extern_gpgga_ptr = &gpgga;
 	carmen_extern_gpgga_ptr->nr = gps_nr;

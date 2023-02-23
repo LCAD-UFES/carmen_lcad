@@ -138,6 +138,25 @@ how to run split_vertical_angles_list:
 
 
 ---------------------------------------------------------------------------------
+How to generate parameters list for espefic vehicle and lidar position to help LIDAR configuration on Carmen.ini
+---------------------------------------------------------------------------------
+
+##How to run generate_parameters_list program
+how to run ./generate_parameters_list:
+./generate_parameters_list -sensor_ip <SENSOR IP> -port <LIDAR-PORT> -imu_port <IMU-LIDAR-PORT> -host_ip <IP OF THE COMPUTER THAT WILL RECEIVE THE POINTCLOUDS> -lidar_id <integer position for lidar in the vehicle >
+
+Lidar_ id positions:
+
+0 - Sensor-Box
+5 - Left side 
+7 - Right side 
+
+## example
+./generate_parameters_list  -sensor_ip 192.168.1.200 -port 7502 -imu_port 7503 -host_ip 192.168.1.1 -lidar_id 7
+
+
+
+---------------------------------------------------------------------------------
 Sensor Angles
 ---------------------------------------------------------------------------------
 

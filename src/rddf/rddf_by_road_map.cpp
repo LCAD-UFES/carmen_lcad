@@ -687,8 +687,13 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_m
 		previous_pose = rddf_pose = find_nearest_pose_by_road_map(initial_pose, road_map);
 		rddf_pose_candidate = add_distance_to_pose(previous_pose, rddf_min_distance_between_waypoints);
 	}
+// create_ackerman_traj_point_struct_trailer_thetas
+//	poses_ahead[0] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
+	double temp_trailer_thetas[MAX_NUM_TRAILERS];
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		temp_trailer_thetas[z] = rddf_pose.theta;
+	poses_ahead[0] = create_ackerman_traj_point_struct_trailer_thetas(rddf_pose.x, rddf_pose.y, velocity, phi, temp_trailer_thetas, rddf_pose.theta);
 
-	poses_ahead[0] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
 	num_poses = 1;
 	do
 	{
@@ -710,7 +715,10 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_m
 		if (pose_out_of_map_coordinates(rddf_pose, road_map))
 			break;
 
-		poses_ahead[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
+//		poses_ahead[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			temp_trailer_thetas[z] = rddf_pose.theta;
+		poses_ahead[num_poses] = create_ackerman_traj_point_struct_trailer_thetas(rddf_pose.x, rddf_pose.y, velocity, phi, temp_trailer_thetas, rddf_pose.theta);
 		num_poses++;
 	} while (num_poses < num_poses_desired);
 
@@ -746,7 +754,13 @@ fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_ma
 		rddf_pose_candidate = add_distance_to_pose(previous_pose, -rddf_min_distance_between_waypoints);
 	}
 
-	poses_back[0] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
+	double temp_trailer_thetas[MAX_NUM_TRAILERS];
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		temp_trailer_thetas[z] = rddf_pose.theta;
+
+//	poses_back[0] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
+	poses_back[0] = create_ackerman_traj_point_struct_trailer_thetas(rddf_pose.x, rddf_pose.y, velocity, phi, temp_trailer_thetas, rddf_pose.theta);
+
 	num_poses = 1;
 	do
 	{
@@ -767,8 +781,10 @@ fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_ma
 		}
 //		if (pose_out_of_map_coordinates(rddf_pose, road_map))
 			break;
-
-		poses_back[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			temp_trailer_thetas[z] = rddf_pose.theta;
+//		poses_back[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, 0.0, rddf_pose.theta);
+		poses_back[num_poses] = create_ackerman_traj_point_struct_trailer_thetas(rddf_pose.x, rddf_pose.y, velocity, phi, temp_trailer_thetas, rddf_pose.theta);
 		num_poses++;
 	} while (num_poses < num_poses_desired);
 
