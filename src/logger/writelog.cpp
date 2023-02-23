@@ -864,8 +864,8 @@ void carmen_logwrite_write_to_file_velodyne(
 			* LOW_LEVEL_SUBDIR_TIME;
 
 	static char directory[1024];
-	static char subdir[1024];
-	static char path[1024];
+	static char subdir[1536];
+	static char path[2048];
 
 	/**
 	 * TODO: @Filipe: Check if the mkdir call is time consuming.
@@ -906,8 +906,8 @@ carmen_logwrite_write_to_file_velodyne_variable(carmen_velodyne_variable_scan_me
 	int low_level_subdir  = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME))  * LOW_LEVEL_SUBDIR_TIME;
 	int i;
 	static char directory[1024];
-	static char subdir[1024];
-	static char path[1024];
+	static char subdir[1536];
+	static char path[2048];
 
 	sprintf(directory, "%s_lidar%d", log_filename, velodyne_number);
 	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
@@ -1147,8 +1147,8 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 			* LOW_LEVEL_SUBDIR_TIME;
 
 	static char directory[1024];
-	static char subdir[1024];
-	static char path[1024];
+	static char subdir[1536];
+	static char path[2048];
 
 	/**
 	 * TODO: @Filipe: Check if the mkdir call is time consuming.
@@ -1218,7 +1218,7 @@ camera_drivers_write_camera_message_to_log(int camera_id, int compress_image, ca
 	static bool first_time = true;
 	static vector<int> compression_params;
 
-	static char dir[1024], path[1024], mkdir_string[1024];
+	static char dir[1024], path[1536], path_with_extension[2048], mkdir_string[2048];
 
 	if (first_time && compress_image)
 	{
@@ -1244,17 +1244,17 @@ camera_drivers_write_camera_message_to_log(int camera_id, int compress_image, ca
 
 		if (compress_image)
 		{
-			sprintf(path, "%s.png", path);
+			sprintf(path_with_extension, "%s.png", path);
 			Mat img = cv::Mat(message->images[i].height, message->images[i].width, CV_8UC3, message->images[i].raw_data, 0);
-			imwrite(path, img, compression_params);
+			imwrite(path_with_extension, img, compression_params);
 		}
 		else
 		{
-			sprintf(path, "%s.image", path);
-			FILE *image_file = fopen(path, "wb");
+			sprintf(path_with_extension, "%s.image", path);
+			FILE *image_file = fopen(path_with_extension, "wb");
 			if (!image_file)
 			{
-				printf("Could not load image:\n%s\n", path);
+				printf("Could not load image:\n%s\n", path_with_extension);
 				return;
 			}
 			fwrite(message->images[i].raw_data, message->images[i].size_in_bytes_of_each_element, message->images[i].image_size, image_file);

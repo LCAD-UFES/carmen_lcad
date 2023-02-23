@@ -149,7 +149,7 @@ plot_state_goals(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_acke
 
 
 void
-move_poses_foward_to_local_reference(SE2 &robot_pose, double beta, carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
+move_poses_foward_to_local_reference(SE2 &robot_pose, double beta __attribute__((unused)), carmen_behavior_selector_path_goals_and_annotations_message *path_goals_and_annotations_message,
 		vector<carmen_robot_and_trailers_path_point_t> *lane_in_local_pose)
 {
 	carmen_robot_and_trailers_path_point_t local_reference_lane_point;

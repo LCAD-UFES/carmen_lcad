@@ -349,7 +349,7 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 		carmen_rddf_index_clear();
 
 		char *carmen_home = getenv("CARMEN_HOME");
-		static char rddf_file_name[2048];
+		static char rddf_file_name[2033];
 		strcpy(rddf_file_name, carmen_home);
 		strcat(rddf_file_name, "/");
 		strcat(rddf_file_name, message->command);

@@ -67,7 +67,7 @@ read_parameters(SerialDevice *dev, int argc, char **argv)
 		};
 		carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
   
-	strncpy(dev->ttyport, device, MAX_NAME_LENGTH);
+	strncpy(dev->ttyport, device, MAX_NAME_LENGTH - 1);
 
 	free(device);
 

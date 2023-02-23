@@ -42,7 +42,7 @@ void test_carmen_int_random(void)
   }
 
   for (index = 0; index < 100; index++) {
-    if (fabs(bins[index] - 100) > 30)
+    if (abs(bins[index] - 100) > 30)
       carmen_warn("Failed: %d %d\n", index, bins[index]);
   }
     

@@ -1819,6 +1819,7 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 	static Mat img;
 	int camera_id, compress_image = 0;
 	char path[1024];
+	char path_with_extension[2048];
 
 	int n_args = count_camera_message_arguments(string);
 
@@ -1868,17 +1869,17 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 		
 		if (compress_image)
 		{
-			sprintf(path, "%s.png", path);
-			img = imread(path, CV_LOAD_IMAGE_COLOR);
+			sprintf(path_with_extension, "%s.png", path);
+			img = imread(path_with_extension, CV_LOAD_IMAGE_COLOR);
 			msg->images[i].raw_data = img.data;
 		}
 		else
 		{
-			sprintf(path, "%s.image", path);
-			FILE *image_file = fopen(path, "rb");
+			sprintf(path_with_extension, "%s.image", path);
+			FILE *image_file = fopen(path_with_extension, "rb");
 			if (!image_file)
 			{
-				printf("Could not load image:\n%s\n", path);
+				printf("Could not load image:\n%s\n", path_with_extension);
 				return (string);
 			}
 			fread(msg->images[i].raw_data, msg->images[i].size_in_bytes_of_each_element, msg->images[i].image_size, image_file);

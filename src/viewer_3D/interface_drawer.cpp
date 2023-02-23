@@ -1107,7 +1107,7 @@ drawText(float x, float y, const char* msg, int font_help, ...)
 {
 	char buf[1024];
 	va_list args;
-	va_start(args, msg);
+	va_start(args, font_help);
 	vsprintf(buf, msg, args);
 	va_end(args);
 
