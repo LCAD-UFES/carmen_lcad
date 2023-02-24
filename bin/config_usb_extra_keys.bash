@@ -1,1 +1,0 @@
-/home/lume/carmen_lcad/src/lume_extra_keys/config_usb_extra_keys.bash

@@ -83,6 +83,21 @@ typedef struct {
 #define CARMEN_PARAM_RESPONSE_ROBOT_NAME  "carmen_param_respond_robot"
 #define CARMEN_PARAM_RESPONSE_ROBOT_FMT  "{string,int,double,string}"
 
+  /** This message reports the param filename that has been loaded into the param_daemon.
+  */
+
+typedef carmen_default_message carmen_param_query_param_filename_message;
+#define CARMEN_PARAM_QUERY_PARAM_FILENAME_NAME  "carmen_param_query_param_filename"
+
+typedef struct {
+  char *param_filename;
+  double timestamp;
+  char *host;
+} carmen_param_response_param_filename_message;
+
+#define CARMEN_PARAM_RESPONSE_PARAM_FILENAME_NAME  "carmen_param_respond_param_filename"
+#define CARMEN_PARAM_RESPONSE_PARAM_FILENAME_FMT  "{string,double,string}"
+
 #define CARMEN_PARAM_QUERY_MODULES_NAME   "carmen_param_query_modules"
 
   /** This message reports a complete list of module names (as determined from

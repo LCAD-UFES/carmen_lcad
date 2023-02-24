@@ -148,6 +148,9 @@ typedef struct
 
 	int new_traffic_restrictions;
 
+	double remaining_distance;
+	double remaining_time;
+
     double timestamp;
     char *host;
 } carmen_route_planner_road_network_message;
@@ -185,6 +188,8 @@ typedef struct
 	int, \
 	int, \
 	int, \
+	double, \
+	double, \
 	double, \
 	string}"
 
