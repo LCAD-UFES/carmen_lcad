@@ -143,10 +143,10 @@ compute_semi_trailer_thetas(carmen_robot_and_trailers_traj_point_t robot_and_tra
 		return (return_trailer_thetas[trailer_index]);
 
 	// Fórmulas retiradas do artigo Some properties of the general n-trailer de C. Altafini
-	double betas[trailer_index]; // serve para armazenar os "betas" usados na fórmula (24) do artigo. O beta1 do artigo se refere ao steering angle
+	double betas[trailer_index + 1]; // serve para armazenar os "betas" usados na fórmula (24) do artigo. O beta1 do artigo se refere ao steering angle
 	betas[0] = robot_and_trailer_traj_point.phi;
 	betas[1] = robot_and_trailer_traj_point.theta - robot_and_trailer_traj_point.trailer_theta[0];
-	for (int i = 2; i < trailer_index; i++)
+	for (int i = 2; i < trailer_index + 1; i++)
 		betas[i] = robot_and_trailer_traj_point.trailer_theta[i - 1] - robot_and_trailer_traj_point.trailer_theta[i];
 
 
@@ -164,7 +164,7 @@ compute_semi_trailer_thetas(carmen_robot_and_trailers_traj_point_t robot_and_tra
 	double restante = (sin(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]) / semi_trailer_config.semi_trailers[trailer_index].d) -
 					(semi_trailer_config.semi_trailers[trailer_index].M / (Li * semi_trailer_config.semi_trailers[trailer_index].d))
 					*
-					(tan(betas[trailer_index - 1])) * cos(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]);
+					(tan(betas[trailer_index])) * cos(robot_and_trailer_traj_point.trailer_theta[trailer_index - 1] - robot_and_trailer_traj_point.trailer_theta[trailer_index]);
 
 	return_trailer_thetas[trailer_index] = robot_and_trailer_traj_point.trailer_theta[trailer_index]  + s * product * product2 * restante;
 
