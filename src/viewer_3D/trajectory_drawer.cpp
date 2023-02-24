@@ -194,6 +194,7 @@ draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 
 	for(int i = 0; i < t_drawer->goals_size; i++)
 	{
+		glDisable(GL_LIGHTING);
 		glPushMatrix();
 
 			glColor3f(1.0f, 1.0f, 0.0f);
@@ -202,15 +203,16 @@ draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
 			glRotated(carmen_radians_to_degrees(t_drawer->goals[i].orientation.pitch), 0.0f, 1.0f, 0.0f);
 			glRotated(carmen_radians_to_degrees(t_drawer->goals[i].orientation.roll), 1.0f, 0.0f, 0.0f);
 
-			glBegin(GL_LINE_STRIP);
+			glBegin(GL_POLYGON);
 				glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 				glVertex3d(car_middle_to_rear_wheels + length_x/2, -length_y/2, 0);
 				glVertex3d(car_middle_to_rear_wheels + length_x/2, length_y/2, 0);
 				glVertex3d(car_middle_to_rear_wheels - length_x/2, length_y/2, 0);
-				glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
+				//glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 			glEnd();
 
 		glPopMatrix();
+		glEnable(GL_LIGHTING);
 	}
 
 	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
