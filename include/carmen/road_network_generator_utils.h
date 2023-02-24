@@ -192,6 +192,6 @@ lane_graph_t read_lane_graph_file (FILE *f_graph);
 void save_graph_to_file(graph_t graph, FILE *f_graph);
 void save_lane_graph_to_file(lane_graph_t lane_graph, FILE *f_graph);
 void save_graph_to_gpx (graph_t graph);
-
+void set_utm_zone(int zone);
 
 #endif /* GRAPH_UTILS_H_ */

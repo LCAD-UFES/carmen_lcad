@@ -27,6 +27,10 @@
  ********************************************************/
 
 #include <carmen/carmen_graphics.h>
+#include <limits.h>
+#include <libgen.h>
+#include <sys/stat.h>
+#include <wordexp.h>
 
 #define MAX_VARIABLE_LENGTH 2048
 
@@ -39,6 +43,10 @@ static const int DEFAULT_WINDOW_HEIGHT = 500;
 static const int TABLE_COLUMN_SPACINGS = 5;
 
 static char *robot_name;
+static char *param_filename = NULL;
+static char **include_list = NULL;
+static int num_includes = 0;
+static int max_num_includes = 20;
 
 static char **modules;
 static int num_modules;
@@ -64,9 +72,17 @@ static GtkWidget *file_dialog_label = NULL;
 static GtkWidget *notebook_init();
 
 
-static void check_status_message(char *checked_message, const char *message) {
-
-  strncpy(checked_message + 1, message, status_message_max_size);
+static void
+check_status_message(char *checked_message, const char *message)
+{
+  if (strlen(message) > status_message_max_size)
+  {
+	  strncpy(checked_message + 1, message, 7);
+	  strcpy(checked_message + 8, "...");
+  	  strcpy(checked_message + 11, message + strlen(message) - status_message_max_size + 10);
+  }
+  else
+	  strncpy(checked_message + 1, message, status_message_max_size);
   checked_message[0] = ' ';
   checked_message[status_message_max_size + 1] = '\0';
 
@@ -75,8 +91,10 @@ static void check_status_message(char *checked_message, const char *message) {
       *checked_message = ' ';
 }
 
-guint status_print(const char *message, const char *context) {
 
+static guint
+status_print(const char *message, const char *context)
+{
   char checked_message[1024];
   guint message_id, context_id;
 
@@ -85,20 +103,21 @@ guint status_print(const char *message, const char *context) {
 
   check_status_message(checked_message, message);
 
-  context_id = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusbar),
-					    context);
-  message_id = gtk_statusbar_push(GTK_STATUSBAR(statusbar),
-				  context_id, checked_message);
+  context_id = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusbar), context);
+  message_id = gtk_statusbar_push(GTK_STATUSBAR(statusbar), context_id, checked_message);
   return message_id;
 }
 
 
-static void params_shutdown() {
-
+static void
+params_shutdown()
+{
   int m, p;
 
-  for (m = 0; m < num_modules; m++) {
-    for (p = 0; p < num_params[m]; p++) {
+  for (m = 0; m < num_modules; m++)
+  {
+    for (p = 0; p < num_params[m]; p++)
+    {
       free(variables[m][p]);
       free(values[m][p]);
     }
@@ -117,28 +136,33 @@ static void params_shutdown() {
   free(num_param_mask);
 }
 
-static void param_change_handler(char *module, char *variable, char *value) {
 
+static void
+param_change_handler(char *module, char *variable, char *value)
+{
   char buf[1024];
   int m, p;
 
-  for (m = 0; m < num_modules; m++) {
-    if (!strcmp(modules[m], module)) {
-      for (p = 0; p < num_params[m]; p++) {
-	if (!strcmp(variables[m][p], variable)) {
-	  update_param_mask[m][p] = -2;
-	  if (entries[m][p]) {
-	    gtk_entry_set_text(GTK_ENTRY(entries[m][p]), value);
-	    update_param_mask[m][p] = 0;
-	  }
-	  else if (!carmen_strncasecmp(values[m][p], "on", 256))
-	    gtk_toggle_button_set_active
-	      (GTK_TOGGLE_BUTTON(radio_buttons[m][p][0]), TRUE);
-	  else
-	    gtk_toggle_button_set_active
-	      (GTK_TOGGLE_BUTTON(radio_buttons[m][p][1]), TRUE);
-	  break;
-	}
+  for (m = 0; m < num_modules; m++)
+  {
+    if (!strcmp(modules[m], module))
+    {
+      for (p = 0; p < num_params[m]; p++)
+      {
+		if (!strcmp(variables[m][p], variable))
+		{
+		  update_param_mask[m][p] = -2;
+		  if (entries[m][p])
+		  {
+			gtk_entry_set_text(GTK_ENTRY(entries[m][p]), value);
+			update_param_mask[m][p] = 0;
+		  }
+		  else if (!carmen_strncasecmp(values[m][p], "on", 256))
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_buttons[m][p][0]), TRUE);
+		  else
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_buttons[m][p][1]), TRUE);
+		  break;
+		}
       }
       break;
     }
@@ -148,12 +172,14 @@ static void param_change_handler(char *module, char *variable, char *value) {
   status_print(buf, "param_edit");
 }
 
-static int strisnum(char *param) {
 
+static int
+strisnum(char *param)
+{
   char *end;
 
   if (strtod(param, &end) == 0.0 && end == param)
-    return 0;
+	  return 0;
   for (; *end != '\0'; end++)
     if (!isspace(*end))
       return 0;
@@ -161,11 +187,14 @@ static int strisnum(char *param) {
   return 1;
 }
 
-static void params_init() {
 
-  int m, p;
+static void
+params_init()
+{
+  int m, p, total_params = 0;
 
   robot_name = carmen_param_get_robot();
+  param_filename = carmen_param_get_param_filename();
   carmen_param_get_modules(&modules, &num_modules);
   variables = (char ***) calloc(num_modules, sizeof(void *));
   carmen_test_alloc(variables);
@@ -180,45 +209,55 @@ static void params_init() {
   num_param_mask = (int **) calloc(num_modules, sizeof(int *));
   carmen_test_alloc(num_param_mask);
 
-  for (m = 0; m < num_modules; m++) {
-    carmen_param_get_all(modules[m], variables + m, values + m, expert + m,
-			 num_params + m);
+  for (m = 0; m < num_modules; m++)
+  {
+    carmen_param_get_all(modules[m], variables + m, values + m, expert + m, num_params + m);
     update_param_mask[m] = (int *) calloc(num_params[m], sizeof(int));
     carmen_test_alloc(update_param_mask[m]);
     num_param_mask[m] = (int *) calloc(num_params[m], sizeof(int));
     carmen_test_alloc(num_param_mask[m]);
-    for (p = 0; p < num_params[m]; p++) {
-      carmen_param_subscribe_string(modules[m], variables[m][p],
-				    &values[m][p], param_change_handler);
+    for (p = 0; p < num_params[m]; p++)
+    {
+      total_params++;
+      carmen_param_subscribe_string(modules[m], variables[m][p], &values[m][p], param_change_handler);
       if (strisnum(values[m][p]))
-	num_param_mask[m][p] = 1;
+    	  num_param_mask[m][p] = 1;
     }
   }
+  carmen_warn("Loading parameters for robot [31;1m%s[0m using param file "
+			"[31;1m%s[0m\n", robot_name, param_filename);
+  carmen_warn("%d modules and %d parameters loaded\n", num_modules, total_params);
 }
 
-static gint params_save_delayed(gpointer ptr __attribute__ ((unused))) {
 
+static gint
+params_save_delayed(gpointer ptr __attribute__ ((unused)))
+{
   char *return_value;
   int m, p, status = 0;
 
   status_print("Saving parameters...", "param_edit");
 
-  for (m = 0; m < num_modules; m++) {
+  for (m = 0; m < num_modules; m++)
+  {
     carmen_param_set_module(modules[m]);
-    for (p = 0; p < num_params[m]; p++) {
-      if (update_param_mask[m][p] > 0) {
-	if (num_param_mask[m][p] && !strisnum(values[m][p])) {
-	  status = -1;
-	  gtk_editable_select_region(GTK_EDITABLE(entries[m][p]), 0, -1);
-	}
-	else if (carmen_param_set_variable(variables[m][p], values[m][p],
-				      &return_value) < 0)
-	  status = -1;
-	else {
-	  status = 1;
-	  update_param_mask[m][p] = 0;
-	  gtk_label_set_pattern(GTK_LABEL(labels[m][p]), "");
-	}
+    for (p = 0; p < num_params[m]; p++)
+    {
+      if (update_param_mask[m][p] > 0)
+      {
+		if (num_param_mask[m][p] && !strisnum(values[m][p]))
+		{
+		  status = -1;
+		  gtk_editable_select_region(GTK_EDITABLE(entries[m][p]), 0, -1);
+		}
+		else if (carmen_param_set_variable(variables[m][p], values[m][p], &return_value) < 0)
+		  status = -1;
+		else
+		{
+		  status = 1;
+		  update_param_mask[m][p] = 0;
+		  gtk_label_set_pattern(GTK_LABEL(labels[m][p]), "");
+		}
       }
     }
   }
@@ -233,7 +272,9 @@ static gint params_save_delayed(gpointer ptr __attribute__ ((unused))) {
   return FALSE;
 }
 
-static gint radio_key_release(GtkWidget *w __attribute__ ((unused)),
+
+static gint
+radio_key_release(GtkWidget *w __attribute__ ((unused)),
 			      GdkEventKey *event,
 			      gpointer pntr __attribute__ ((unused))) 
 {
@@ -245,13 +286,16 @@ static gint radio_key_release(GtkWidget *w __attribute__ ((unused)),
   return TRUE;
 }
 
-static gint entry_key_release(GtkWidget *w, GdkEventKey *event, 
+
+static gint
+entry_key_release(GtkWidget *w, GdkEventKey *event,
 			      gpointer pntr __attribute__ ((unused))) 
 {
   GType type;
   GtkEntryClass *widget_class;
   if ((event->keyval == gdk_keyval_from_name("Enter")) ||
-      (event->keyval == gdk_keyval_from_name("Return"))) {
+      (event->keyval == gdk_keyval_from_name("Return")))
+  {
     gtk_idle_add(params_save_delayed, NULL); 
     return TRUE;
   }
@@ -263,9 +307,48 @@ static gint entry_key_release(GtkWidget *w, GdkEventKey *event,
   return TRUE;
 }
 
-static int params_save_as_ini(char *filename) {
 
+static void
+add_include_list(const char *filename)
+{
+	if (include_list == NULL)
+	{
+		include_list = (char**) malloc(max_num_includes * sizeof(char*));
+		carmen_test_alloc(include_list);
+	}
+	if (num_includes == max_num_includes)
+	{
+		max_num_includes *= 2;
+		realloc(include_list, max_num_includes * sizeof(char*));
+		carmen_test_alloc(include_list);
+	}
+
+	include_list[num_includes] = (char*) calloc(strlen(filename) + 1, sizeof(char));
+	carmen_test_alloc(include_list[num_includes]);
+	strcpy(include_list[num_includes], filename);
+	num_includes++;
+}
+
+
+static int
+lookup_include_list(const char *filename)
+{
+	int i;
+
+	for (i = 0; i < num_includes; i++)
+		if (strcmp(include_list[i], filename) == 0)
+			return i;
+
+	return -1;
+}
+
+
+static int
+params_save_as_ini(char *filename_out, char* filename_in)
+{
   FILE *fin, *fout;
+  char rpin[PATH_MAX], rpout[PATH_MAX];
+  int rename_filename_out = 0;
   char *line, line_out[MAX_VARIABLE_LENGTH];
   char *mark, *token;
   int token_num;
@@ -274,150 +357,273 @@ static int params_save_as_ini(char *filename) {
   int found_desired_robot = 0;
   int line_length;
   int count;
-  int m, p;
+  int m, p, i;
+  char include_path[PATH_MAX], rp_include_filename[PATH_MAX], buffer[PATH_MAX];
+  int num_items;
 
-  fin = fout = NULL;
+  realpath(filename_in, rpin);
+  if (lookup_include_list(rpin) >= 0)
+	// File was previously included
+	return 0;
 
-  fin = fopen("carmen.ini", "r");
-  if (fin == NULL) {
-    fin = fopen("../carmen.ini", "r");
-    if (fin == NULL)
-      fin = fopen("../src/carmen.ini", "r");
+  add_include_list(rpin);
+  strcpy(include_path, rpin);
+  dirname(include_path);
+  module[0] = '\0';
+  realpath(filename_out, rpout);
+  fin = fopen(rpin, "r");
+  if (fin == NULL)
+  {
+		fin = fopen("carmen.ini", "r");
+		if (fin == NULL)
+			fin = fopen("../carmen.ini", "r");
+		if (fin == NULL)
+			fin = fopen("../src/carmen.ini", "r");
   }
-  fout = fopen(filename, "w");
-  if(fin == NULL || fout == NULL)
-    return -1;
+  if (strcmp(rpin, rpout) == 0)
+  {
+	  rename_filename_out = 1;
+	  sprintf(rpout, "/tmp/%s", rpin);
+	  for (i = 5; i < strlen(rpout); i++)
+		  if (rpout[i] == '/')
+			  rpout[i] = '_';
+  }
+  fout = fopen(rpout, "w");
+  if (fin == NULL || fout == NULL)
+	  return -1;
 
   line = (char *) calloc(MAX_VARIABLE_LENGTH, sizeof(char));
   carmen_test_alloc(line);
 
   count = 0;
-  while (!feof(fin)) {
-    fgets(line, MAX_VARIABLE_LENGTH, fin);
+  while (fgets(line, MAX_VARIABLE_LENGTH, fin) != NULL)
+  {
+	count++;
+    line[MAX_VARIABLE_LENGTH - 1] = '\0';
     strncpy(line_out, line, MAX_VARIABLE_LENGTH - 1);
-    count++;
-    if (feof(fin))
-      break;
+    line_out[MAX_VARIABLE_LENGTH - 1] = '\0';
     mark = strchr(line, '#');
-    if (mark != NULL) {
-      strcpy(comment, mark);
-      mark[0] = '\0';
+    if (mark != NULL)
+    {
+		strcpy(comment, mark);
+		mark[0] = '\0';
     }
     else
-      comment[0] = '\0';
+    	comment[0] = '\0';
     mark = strchr(line, '\n');
     if (mark != NULL)
-      mark[0] = '\0';
+    	mark[0] = '\0';
       
     line_length = strlen(line) - 1;
-    while (line_length >= 0 && 
-	   (line[line_length] == ' ' || line[line_length] == '\t' )) {
-      line[line_length--] = '\0';
-    }
+    while (line_length >= 0 && (line[line_length] == ' ' || line[line_length] == '\t' ))
+    	line[line_length--] = '\0';
     line_length++;
       
-    if (line_length == 0) {
-      fprintf(fout, "%s", line_out);
-      continue;
+    if (line_length == 0)
+    {
+		fprintf(fout, "%s", line_out);
+		continue;
     }
       
     /* Skip over initial blank space */
       
     mark = line + strspn(line, " \t");
-    if (strlen(mark) == 0) {
-      fprintf(fout, "%s", line_out);
-      continue;
+    if (strlen(mark) == 0)
+    {
+		fprintf(fout, "%s", line_out);
+		continue;
     }
       
-    strcpy(lvalue, "");
-    strcpy(rvalue, "");
+    lvalue[0] = '\0';
+    rvalue[0] = '\0';
     token_num = 0;
-      
+
     /* tokenize line */
     token = mark;
     mark = strpbrk(mark, " \t");
-    if (mark) {
-      strncpy(spacing, mark, strspn(mark, " \t"));
-      spacing[strspn(mark, " \t")] = '\0';
+    if (mark)
+    {
+		strncpy(spacing, mark, strspn(mark, " \t"));
+		spacing[strspn(mark, " \t")] = '\0';
     }
     else
-      spacing[0] = '\0';
+    	spacing[0] = '\0';
 
-    if (token != NULL && strlen(token) > 0) {
-      if (mark) {
-	mark[0] = '\0';
-	mark++;
-	mark += strspn(mark, " \t");
+    if (token != NULL && strlen(token) > 0)
+    {
+      if (mark)
+      {
+		mark[0] = '\0';
+		mark++;
+		mark += strspn(mark, " \t");
       }
       strncpy(lvalue, token, 255);
+      lvalue[254] = '\0';
       token_num++;
-      if (mark != NULL && strlen(mark) > 0) {
-	  strncpy(rvalue, mark, MAX_VARIABLE_LENGTH);
-	  token_num++;
+      if (mark != NULL && strlen(mark) > 0)
+      {
+		  strncpy(rvalue, mark, MAX_VARIABLE_LENGTH);
+	      rvalue[MAX_VARIABLE_LENGTH - 1] = '\0';
+		  token_num++;
       }
     } /* End of if (token != NULL && strlen(token)) */
 
-    if (token_num > 0) {
-      if (lvalue[0] == '[') {
-	if (carmen_strncasecmp(lvalue+1, robot_name, strlen(robot_name)) == 0)
-	  found_desired_robot = 1;
-	else if (carmen_strncasecmp(lvalue+1, "expert", 6) == 0)
-	  found_desired_robot = 1;
-	else if (lvalue[1] == '*')
-	  found_desired_robot = 1;
-	else
-	  found_desired_robot = 0;
-	fprintf(fout, "%s", line_out);
+    if (token_num > 0)
+    {
+      if (lvalue[0] == '[')
+      {
+		if (carmen_strncasecmp(lvalue+1, robot_name, strlen(robot_name)) == 0)
+			found_desired_robot = 1;
+		else if (carmen_strncasecmp(lvalue+1, "expert", 6) == 0)
+			found_desired_robot = 1;
+		else if (lvalue[1] == '*')
+			found_desired_robot = 1;
+		else
+			found_desired_robot = 0;
+		fprintf(fout, "%s", line_out);
       }
-      else if(token_num == 2 && found_desired_robot == 1) {
-	fprintf(fout, "%s%s", lvalue, spacing);
-	sscanf(lvalue, "%[^_]_%s", module, variable);
-	for (m = 0; m < num_modules; m++) {
-	  if (!strcmp(modules[m], module)) {
-	    for (p = 0; p < num_params[m]; p++) {
-	      if (!strcmp(variables[m][p], variable)) {
-		fprintf(fout, "%s", values[m][p]);
-		break;
-	      }
-	    }
-	    if (p == num_params[m])
-	      fputs(rvalue, fout);
-	    break;
-	  }
-	}
-	if (m == num_modules)
-	  fputs(rvalue, fout);
-	if (strlen(comment) > 0)
-	  fprintf(fout, "\t%s\n", comment);
-	else
-	  fputs("\n", fout);
+      else if (lvalue[0] == '$')
+      {
+    	if (strcmp(lvalue, "$module") == 0)
+    	{
+			strcpy(module, rvalue);
+    	}
+    	else if (strcmp(lvalue, "$path") == 0)
+    	{
+		  strcpy(include_path, rpin);
+		  dirname(include_path);
+    	  if (token_num == 2)
+  		  {
+			wordexp_t p;
+			wordexp(rvalue, &p, 0);
+			if (p.we_wordc > 0)
+			{
+				char *pathname = p.we_wordv[0];
+				if (pathname[0] == '/')
+					strcpy(buffer, pathname);
+				else
+					sprintf(buffer,"%s/%s", include_path, pathname);
+				realpath(buffer, include_path);
+			}
+			wordfree(&p);
+  		  }
+    	}
+		else if (strcmp(lvalue, "$include") == 0)
+		{
+		  if (token_num == 2)
+		  {
+			wordexp_t p;
+			wordexp(rvalue, &p, 0);
+			if (p.we_wordc > 0)
+			{
+				char *include_filename = p.we_wordv[0];
+				if (include_filename[0] == '/')
+					strcpy(buffer, include_filename);
+				else
+					sprintf(buffer,"%s/%s", include_path, include_filename);
+				realpath(buffer, rp_include_filename);
+
+				struct stat s;
+				if (stat(rp_include_filename, &s) == 0 && !(s.st_mode & S_IFDIR))
+					params_save_as_ini(rp_include_filename, rp_include_filename);
+				else
+					carmen_warn("Could not find $include param file %s\n", rp_include_filename);
+			}
+			wordfree(&p);
+		  }
+		}
+  		fprintf(fout, "%s", line_out);
       }
-      else
-	fprintf(fout, "%s", line_out);
+      else if (token_num == 2 && found_desired_robot == 1)
+      {
+		if (strncmp(lvalue, module, strlen(module)) != 0 || lvalue[strlen(module)] != '_')
+			module[0] = '\0';
+		if (module[0] != '\0')
+		{
+			strcpy(variable, lvalue + strlen(module) + 1);
+			num_items = 2;
+		}
+		else
+			num_items = sscanf(lvalue, "%[^_]_%s", module, variable);
+		if (num_items == 2)
+		{
+			strcpy(line, line_out);
+			mark[0] = '\0';		// line ends at rvalue's initial position
+			fprintf(fout, "%s", line);
+			for (m = 0; m < num_modules; m++)
+			{
+			  if (strcmp(modules[m], module) == 0)
+			  {
+				for (p = 0; p < num_params[m]; p++)
+				{
+				  if (strcmp(variables[m][p], variable) == 0)
+				  {
+					fprintf(fout, "%s", values[m][p]);
+					break;
+				  }
+				}
+				if (p == num_params[m])
+					fprintf(fout, "%s", rvalue);
+				break;
+			  }
+			}
+			if (m == num_modules)
+				fprintf(fout, "%s", rvalue);
+			fprintf(fout, "%s", &line_out[line_length]);	// writes the rest of the line just after rvalue's final position
+		}
+		else
+			fprintf(fout, "%s", line_out);
+      }
+	  else
+		  fprintf(fout, "%s", line_out);
     } /* End of if (token_num > 0) */
     else
-      fprintf(fout, "%s", line_out);
-  } /* End of while (!feof(fin)) */
+    	fprintf(fout, "%s", line_out);
+  } /* End of (fgets(line, MAX_VARIABLE_LENGTH, fin) != NULL) */
   
   fclose(fin);
   fclose(fout);
+  free(line);
+
+  if (rename_filename_out)
+  {
+	  char ch;
+	  fin =  fopen(rpout, "r");
+	  fout = fopen(rpin,  "w");
+	  if (fin == NULL || fout == NULL)
+	    return -1;
+
+	  while ((ch = fgetc(fin)) != EOF)
+	          fputc(ch, fout);
+
+	  fclose(fin);
+	  fclose(fout);
+  }
 
   return 0;
 }
 
-static void file_dialog_destroy(GtkWidget *w __attribute__ ((unused)),
-				gpointer p __attribute__ ((unused))) {
+
+static void
+file_dialog_destroy(GtkWidget *w __attribute__ ((unused)),
+				gpointer p __attribute__ ((unused)))
+{
   file_dialog = NULL;
 }
 
-static void file_dialog_ok() {
 
+static void
+file_dialog_ok()
+{
   char buf[1024];
 
-  if (params_save_as_ini(ini_filename) < 0)
+  if (params_save_as_ini(ini_filename, param_filename) < 0)
     sprintf(buf, "Saving %s...failed", ini_filename);
   else
+  {
     sprintf(buf, "Saving %s...done", ini_filename);
+    carmen_warn("Param file [31;1m%s[0m saved\n", ini_filename);
+  }
   status_print(buf, NULL);
 
   if (file_dialog)
@@ -426,13 +632,17 @@ static void file_dialog_ok() {
     gtk_widget_hide(file_window);
 }
 
-static void file_dialog_cancel() {
 
+static void
+file_dialog_cancel()
+{
   gtk_widget_hide(file_dialog);
 }
 
-static void file_dialog_init() {
 
+static void
+file_dialog_init()
+{
   GtkWidget *ok_button, *cancel_button;
 
   file_dialog = gtk_dialog_new();
@@ -456,8 +666,10 @@ static void file_dialog_init() {
 		     cancel_button, FALSE, FALSE, 10);
 }
 
-static void file_dialog_popup() {
 
+static void
+file_dialog_popup()
+{
   char buf[255];
 
   if (file_dialog == NULL)
@@ -467,31 +679,41 @@ static void file_dialog_popup() {
   gtk_widget_show_all(file_dialog);
 }
 
-static void file_window_destroy(GtkWidget *w __attribute__ ((unused)),
-				gpointer p __attribute__ ((unused))) {
+
+static void
+file_window_destroy(GtkWidget *w __attribute__ ((unused)),
+				gpointer p __attribute__ ((unused)))
+{
   file_window = NULL;
 }
 
-static void file_ok() {
 
+static void
+file_ok()
+{
   strncpy(ini_filename, gtk_file_selection_get_filename
 	  (GTK_FILE_SELECTION(file_window)), 1023);
+  ini_filename[1022] = '\0';
   if (carmen_file_exists(ini_filename))
     file_dialog_popup();
   else
     file_dialog_ok();
 }
 
-static void file_cancel() {
 
+static void
+file_cancel()
+{
   gtk_widget_hide(file_window);
 }
 
-static void file_window_init() {
 
+static void
+file_window_init()
+{
   file_window = gtk_file_selection_new("Save ini");
   gtk_window_set_modal(GTK_WINDOW(file_window), TRUE);
-  gtk_file_selection_complete(GTK_FILE_SELECTION(file_window), "*.ini");
+  gtk_file_selection_complete(GTK_FILE_SELECTION(file_window), param_filename); // "*.ini"
   gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(file_window)->ok_button),
 		     "clicked", GTK_SIGNAL_FUNC(file_ok), NULL);
   gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(file_window)
@@ -501,23 +723,28 @@ static void file_window_init() {
 		     GTK_SIGNAL_FUNC(file_window_destroy), NULL);
 }
 
-static void file_window_popup() {
 
+static void
+file_window_popup()
+{
   if (!file_window)
     file_window_init();
   gtk_widget_show_all(file_window);
 }
 
-static void gui_shutdown() {
 
+static void
+gui_shutdown()
+{
   int m, p;
 
-  for (m = 0; m < num_modules; m++) {
+  for (m = 0; m < num_modules; m++)
+  {
     free(labels[m]);
     free(entries[m]);
     for (p = 0; p < num_params[m]; p++)
       if (radio_buttons[m][p])
-	free(radio_buttons[m][p]);
+    	  free(radio_buttons[m][p]);
     free(radio_buttons[m]);
   }
   free(labels);
@@ -525,25 +752,33 @@ static void gui_shutdown() {
   free(radio_buttons);
 }
 
-static void window_destroy(GtkWidget *w __attribute__ ((unused)),
-			   gpointer p __attribute__ ((unused))) {
+
+static void
+window_destroy(GtkWidget *w __attribute__ ((unused)),
+			   gpointer p __attribute__ ((unused)))
+{
   gui_shutdown();
   params_shutdown();
   gtk_main_quit();
 }
 
-static void view_expert_params(int xview) {
 
+static void
+view_expert_params(int xview)
+{
   int i;
 
   view_expert = xview;
 
-  for(i = 0; i < num_modules; i++) {
-    if (view_expert) {
+  for(i = 0; i < num_modules; i++)
+  {
+    if (view_expert)
+    {
       gtk_widget_show_all(expert_tables[i]);
       gtk_widget_show(separators[i]);
     }
-    else {
+    else
+    {
       gtk_widget_hide(expert_tables[i]);
       gtk_widget_hide(separators[i]);
       gtk_widget_hide(vboxes[i]);
@@ -552,13 +787,17 @@ static void view_expert_params(int xview) {
   }
 }
 
-static void toggle_view() {
 
+static void
+toggle_view()
+{
   view_expert_params(!view_expert);
 }
 
-static GtkWidget *menubar_init(GtkWidget *window) {
 
+static GtkWidget *
+menubar_init(GtkWidget *window)
+{
 #if 0
   GtkItemFactory *item_factory;
   GtkAccelGroup *accel_group;
@@ -585,7 +824,8 @@ static GtkWidget *menubar_init(GtkWidget *window) {
   menubar = gtk_item_factory_get_widget(item_factory, "<main>");
 #endif
 
-  GtkActionEntry action_entries[] = {
+  GtkActionEntry action_entries[] =
+  {
     {"FileMenu", NULL, "_File", NULL, NULL, NULL},
     {"Save_ini", GTK_STOCK_SAVE, "_Save ini", "<control>S", NULL, 
      file_window_popup},
@@ -594,7 +834,8 @@ static GtkWidget *menubar_init(GtkWidget *window) {
     {"ViewMenu", NULL, "_View", NULL, NULL, NULL},
   };
 
-  GtkToggleActionEntry toggle_entries[] = {
+  GtkToggleActionEntry toggle_entries[] =
+  {
     {"Expert_Params", NULL, "E_xpert Params", "<control>X", NULL, toggle_view, 
      FALSE}
   };
@@ -631,8 +872,8 @@ static GtkWidget *menubar_init(GtkWidget *window) {
   gtk_window_add_accel_group (GTK_WINDOW (window), accel_group);
   
   error = NULL;
-  if (!gtk_ui_manager_add_ui_from_string (ui_manager, ui_description, -1, 
-					  &error)) {
+  if (!gtk_ui_manager_add_ui_from_string (ui_manager, ui_description, -1, &error))
+  {
     g_message ("building menus failed: %s", error->message);
     g_error_free (error);
     exit (EXIT_FAILURE);
@@ -643,7 +884,9 @@ static GtkWidget *menubar_init(GtkWidget *window) {
   return menubar;
 }
 
-static void entry_changed(GtkWidget *w, gpointer data) 
+
+static void
+entry_changed(GtkWidget *w, gpointer data)
 {
   int m, p;
   char *value;
@@ -661,13 +904,14 @@ static void entry_changed(GtkWidget *w, gpointer data)
   g_free(value);
   update_param_mask[m][p]++;
   if (update_param_mask[m][p] > 0)
-    gtk_label_set_pattern(GTK_LABEL(labels[m][p]),
-			  "___________________________________________");
+    gtk_label_set_pattern(GTK_LABEL(labels[m][p]), "___________________________________________");
   else
     gtk_label_set_pattern(GTK_LABEL(labels[m][p]), "");
 }
 
-static void radio_button_toggled(GtkWidget *radio_button, gpointer data) 
+
+static void
+radio_button_toggled(GtkWidget *radio_button, gpointer data)
 {
   int m, p;
   carmen_param_id *id_ptr = (carmen_param_id *)data;
@@ -678,7 +922,8 @@ static void radio_button_toggled(GtkWidget *radio_button, gpointer data)
   if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radio_button)))
     return;
 
-  if (update_param_mask[m][p] < 0) {
+  if (update_param_mask[m][p] < 0)
+  {
     update_param_mask[m][p] = 0;
     return;
   }
@@ -699,8 +944,10 @@ static void radio_button_toggled(GtkWidget *radio_button, gpointer data)
   gtk_idle_add(params_save_delayed, NULL);  
 }
 
-static GtkWidget *notebook_init() {
 
+static GtkWidget *
+notebook_init()
+{
   GtkWidget *scrolled_window, *vbox, *vbox2, *hbox, *hbox2, *tab;
   int m, p, num_basic_params, num_expert_params, basic_cnt, expert_cnt;
   carmen_param_id *param_id;
@@ -722,7 +969,8 @@ static GtkWidget *notebook_init() {
   vboxes = (GtkWidget **) calloc(num_modules, sizeof(void *));
   carmen_test_alloc(vboxes);
 
-  for (m = 0; m < num_modules; m++) {
+  for (m = 0; m < num_modules; m++)
+  {
     scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
 				   GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
@@ -734,11 +982,12 @@ static GtkWidget *notebook_init() {
 
     num_basic_params = 0;
     num_expert_params = 0;
-    for (p = 0; p < num_params[m]; p++) {
+    for (p = 0; p < num_params[m]; p++)
+    {
       if (expert[m][p])
-	num_expert_params++;
+    	  num_expert_params++;
       else
-	num_basic_params++;
+    	  num_basic_params++;
     }
     basic_tables[m] = gtk_table_new(num_basic_params, 2, FALSE);
     gtk_table_set_col_spacings(GTK_TABLE(basic_tables[m]), TABLE_COLUMN_SPACINGS);
@@ -755,81 +1004,82 @@ static GtkWidget *notebook_init() {
 
     basic_cnt = 0;
     expert_cnt = 0;
-    for (p = 0; p < num_params[m]; p++) {
+    for (p = 0; p < num_params[m]; p++)
+    {
       labels[m][p] = gtk_label_new(variables[m][p]);
       if (expert[m][p])
-	gtk_table_attach_defaults(GTK_TABLE(expert_tables[m]), labels[m][p],
+    	  gtk_table_attach_defaults(GTK_TABLE(expert_tables[m]), labels[m][p],
 				  0, 1, expert_cnt, expert_cnt + 1);
       else
-	gtk_table_attach_defaults(GTK_TABLE(basic_tables[m]), labels[m][p],
+    	  gtk_table_attach_defaults(GTK_TABLE(basic_tables[m]), labels[m][p],
 				  0, 1, basic_cnt, basic_cnt + 1);
       if (!carmen_strncasecmp(values[m][p], "on", strlen(values[m][p])) ||
-	  !carmen_strncasecmp(values[m][p], "off", strlen(values[m][p]))) {
-	radio_buttons[m][p] = (GtkWidget **) calloc(2, sizeof(void *));
-	carmen_test_alloc(radio_buttons[m][p]);
-	radio_buttons[m][p][0] = gtk_radio_button_new_with_label(NULL, "on");
-	radio_buttons[m][p][1] =
-	  gtk_radio_button_new_with_label(
-	    gtk_radio_button_group(GTK_RADIO_BUTTON(radio_buttons[m][p][0])),
-	    "off");
-	if (!carmen_strncasecmp(values[m][p], "on", strlen(values[m][p])))
-	  gtk_toggle_button_set_active(
-            GTK_TOGGLE_BUTTON(radio_buttons[m][p][0]), TRUE);
-	else
-	  gtk_toggle_button_set_active(
-            GTK_TOGGLE_BUTTON(radio_buttons[m][p][1]), TRUE);
-	hbox2 = gtk_hbox_new(TRUE, 0);
-	gtk_box_pack_start(GTK_BOX(hbox2), radio_buttons[m][p][0],
-			   FALSE, FALSE, 10);
-	gtk_box_pack_start(GTK_BOX(hbox2), radio_buttons[m][p][1],
-			   FALSE, FALSE, 10);
-	param_id = (carmen_param_id *)calloc(1, sizeof(carmen_param_id));
-	carmen_test_alloc(param_id);
-	param_id->m = m;
-	param_id->p = p;
-	gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][0]), "clicked",
-			   GTK_SIGNAL_FUNC(radio_button_toggled),
-			   (gpointer) param_id);
-	gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][1]), "clicked",
-			   GTK_SIGNAL_FUNC(radio_button_toggled),
-			   (gpointer) param_id);
-	gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][0]),
-			   "key_release_event", 
-			   GTK_SIGNAL_FUNC(radio_key_release), NULL);
-	gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][1]),
-			   "key_release_event", 
-			   GTK_SIGNAL_FUNC(radio_key_release), NULL);
+    	  !carmen_strncasecmp(values[m][p], "off", strlen(values[m][p])))
+      {
+		radio_buttons[m][p] = (GtkWidget **) calloc(2, sizeof(void *));
+		carmen_test_alloc(radio_buttons[m][p]);
+		radio_buttons[m][p][0] = gtk_radio_button_new_with_label(NULL, "on");
+		radio_buttons[m][p][1] =
+		  gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(radio_buttons[m][p][0])),	"off");
+		if (!carmen_strncasecmp(values[m][p], "on", strlen(values[m][p])))
+		  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_buttons[m][p][0]), TRUE);
+		else
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radio_buttons[m][p][1]), TRUE);
+			hbox2 = gtk_hbox_new(TRUE, 0);
+			gtk_box_pack_start(GTK_BOX(hbox2), radio_buttons[m][p][0], FALSE, FALSE, 10);
+			gtk_box_pack_start(GTK_BOX(hbox2), radio_buttons[m][p][1], FALSE, FALSE, 10);
+			param_id = (carmen_param_id *)calloc(1, sizeof(carmen_param_id));
+			carmen_test_alloc(param_id);
+			param_id->m = m;
+			param_id->p = p;
+			gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][0]), "clicked",
+					   GTK_SIGNAL_FUNC(radio_button_toggled),
+					   (gpointer) param_id);
+			gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][1]), "clicked",
+					   GTK_SIGNAL_FUNC(radio_button_toggled),
+					   (gpointer) param_id);
+			gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][0]),
+					   "key_release_event",
+					   GTK_SIGNAL_FUNC(radio_key_release), NULL);
+			gtk_signal_connect(GTK_OBJECT(radio_buttons[m][p][1]),
+					   "key_release_event",
+					   GTK_SIGNAL_FUNC(radio_key_release), NULL);
 
-	if (expert[m][p]) {
-	  gtk_table_attach_defaults(GTK_TABLE(expert_tables[m]), hbox2, 1, 2, expert_cnt, expert_cnt + 1);
-	  expert_cnt++;
-	}
-	else {
-	  gtk_table_attach_defaults(GTK_TABLE(basic_tables[m]), hbox2, 1, 2, basic_cnt, basic_cnt + 1);
-	  basic_cnt++;
-	}
+			if (expert[m][p])
+			{
+			  gtk_table_attach_defaults(GTK_TABLE(expert_tables[m]), hbox2, 1, 2, expert_cnt, expert_cnt + 1);
+			  expert_cnt++;
+			}
+			else
+			{
+			  gtk_table_attach_defaults(GTK_TABLE(basic_tables[m]), hbox2, 1, 2, basic_cnt, basic_cnt + 1);
+			  basic_cnt++;
+			}
       }
-      else {
-	entries[m][p] = gtk_entry_new();
-	gtk_entry_set_text(GTK_ENTRY(entries[m][p]), values[m][p]);
-	param_id = (carmen_param_id *)calloc(1, sizeof(carmen_param_id));
-	carmen_test_alloc(param_id);
-	param_id->m = m;
-	param_id->p = p;
-	gtk_signal_connect(GTK_OBJECT(entries[m][p]), "changed",
-			   GTK_SIGNAL_FUNC(entry_changed),
-			   (gpointer) param_id);
-	gtk_signal_connect(GTK_OBJECT(entries[m][p]), "key_release_event",
-			   GTK_SIGNAL_FUNC(entry_key_release), NULL);
+      else
+      {
+		entries[m][p] = gtk_entry_new();
+		gtk_entry_set_text(GTK_ENTRY(entries[m][p]), values[m][p]);
+		param_id = (carmen_param_id *)calloc(1, sizeof(carmen_param_id));
+		carmen_test_alloc(param_id);
+		param_id->m = m;
+		param_id->p = p;
+		gtk_signal_connect(GTK_OBJECT(entries[m][p]), "changed",
+				   GTK_SIGNAL_FUNC(entry_changed),
+				   (gpointer) param_id);
+		gtk_signal_connect(GTK_OBJECT(entries[m][p]), "key_release_event",
+				   GTK_SIGNAL_FUNC(entry_key_release), NULL);
 
-	if (expert[m][p]) {
-	  gtk_table_attach_defaults(GTK_TABLE(expert_tables[m]), entries[m][p], 1, 2, expert_cnt, expert_cnt + 1);
-	  expert_cnt++;
-	}
-	else {
-	  gtk_table_attach_defaults(GTK_TABLE(basic_tables[m]), entries[m][p], 1, 2, basic_cnt, basic_cnt + 1);
-	  basic_cnt++;
-	}
+		if (expert[m][p])
+		{
+		  gtk_table_attach_defaults(GTK_TABLE(expert_tables[m]), entries[m][p], 1, 2, expert_cnt, expert_cnt + 1);
+		  expert_cnt++;
+		}
+		else
+		{
+		  gtk_table_attach_defaults(GTK_TABLE(basic_tables[m]), entries[m][p], 1, 2, basic_cnt, basic_cnt + 1);
+		  basic_cnt++;
+		}
       }
     }
     gtk_box_pack_start(GTK_BOX(vbox2), basic_tables[m], TRUE, TRUE, 10);
@@ -837,16 +1087,17 @@ static GtkWidget *notebook_init() {
     gtk_box_pack_start(GTK_BOX(vbox2), expert_tables[m], TRUE, TRUE, 20);
     gtk_box_pack_start(GTK_BOX(hbox), vbox2, FALSE, FALSE, 20);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 20);
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window),
-					  vbox);
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), vbox);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrolled_window, tab);
   }
 
   return notebook;
 }
 
-static GtkWidget *statusbar_init() {
 
+static GtkWidget *
+statusbar_init()
+{
   GtkWidget *hbox;
 
   hbox = gtk_hbox_new(FALSE, 0);
@@ -856,8 +1107,10 @@ static GtkWidget *statusbar_init() {
   return hbox;
 }
 
-static void gui_init() {
 
+static void
+gui_init()
+{
   GtkWidget *window, *vbox;
   char title[255];
 
@@ -878,7 +1131,8 @@ static void gui_init() {
 
   gtk_widget_show_all(window);
 
-  while(gtk_events_pending()) {
+  while(gtk_events_pending())
+  {
     gtk_main_iteration_do(TRUE);
     usleep(10000);
   }
@@ -886,16 +1140,20 @@ static void gui_init() {
   view_expert_params(0);
 }
 
-static gint updateIPC(gpointer *data __attribute__ ((unused))) {
 
+static gint
+updateIPC(gpointer *data __attribute__ ((unused)))
+{
   carmen_ipc_sleep(0.01);
   carmen_graphics_update_ipc_callbacks((GdkInputFunction) updateIPC);
 
   return 1;
 }
 
-int main(int argc, char *argv[]) {
 
+int
+main(int argc, char *argv[])
+{
   carmen_ipc_initialize(argc, argv);
   carmen_param_check_version(argv[0]);
 

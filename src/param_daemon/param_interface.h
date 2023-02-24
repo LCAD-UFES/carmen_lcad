@@ -90,6 +90,11 @@ typedef struct {
 
   char *carmen_param_get_robot(void);
 
+  /** Returns the param filename that has been loaded into the param_daemon.
+  */
+
+  char *carmen_param_get_param_filename(void);
+
   /** Returns a complete list of module names (as determined from
       the ini file by the set of variables with a prepended module name. 
   */
