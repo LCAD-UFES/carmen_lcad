@@ -198,10 +198,10 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 		double delta_t = globalpos.timestamp - last_timestamp;
 
 		if (last_velodyne_message)
-			globalpos.trailer_theta[0] = compute_semi_trailer_theta1(robot_and_trailer_traj_point, delta_t,
+			globalpos.trailer_theta[0] = compute_semi_trailer_theta1(robot_and_trailer_traj_point, delta_t, v,
 				car_config, semi_trailer_config, spherical_sensor_params, (void*)last_velodyne_message, -1);
 		else if (last_variable_message)
-			globalpos.trailer_theta[0] = compute_semi_trailer_theta1(robot_and_trailer_traj_point, delta_t,
+			globalpos.trailer_theta[0] = compute_semi_trailer_theta1(robot_and_trailer_traj_point, delta_t, v,
 				car_config, semi_trailer_config, spherical_sensor_params, (void*)last_variable_message, lidar_to_compute_theta);
 		else
 		{
