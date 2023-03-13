@@ -55,6 +55,7 @@ carmen_FILE *logfile = NULL;
 carmen_logfile_index_p logfile_index = NULL;
 
 double playback_starttime = 0.0;
+double playback_startlogtime = 0.0;
 double last_logfile_time = 0.0;
 double playback_speed = 1.0;
 
@@ -1264,17 +1265,21 @@ void print_playback_status(void)
 // ts is in logfile time
 void wait_for_timestamp(double playback_ts)
 {
-	double current_time, ts; // in logfile time
+	double system_time, elapsed_system_time, elapsed_log_time;
 	struct timeval tv;
 
 	// playback_starttime is offset between file-start and playback-start
-	ts = carmen_get_time();
+	system_time = carmen_get_time();
 	if(playback_starttime == 0.0)
-		playback_starttime = ts - playback_ts;
-	current_time = (ts - playback_starttime) * playback_speed;
-	if(!fast && !paused && playback_ts > current_time)
 	{
-		double towait = (playback_ts - current_time) / playback_speed;
+		playback_starttime = system_time;
+		playback_startlogtime = playback_ts;
+	}
+	elapsed_system_time = system_time - playback_starttime;
+	elapsed_log_time = (playback_ts - playback_startlogtime) / playback_speed;
+	if(!fast && !paused && elapsed_log_time > elapsed_system_time)
+	{
+		double towait = elapsed_log_time - elapsed_system_time;
 		tv.tv_sec = (int)floor(towait);
 		tv.tv_usec = (towait - tv.tv_sec) * 1e6;
 		select(0, NULL, NULL, NULL, &tv);
@@ -1909,22 +1914,31 @@ main_playback_loop(void)
 
 		if (!paused && current_position >= logfile_index->num_messages - 1)
 		{
-			paused = 1;
-			current_position = 0;
-			playback_starttime = 0.0;
-			playback_timestamp = 0;
-			playback_timestamp_is_updated = 0;
-			playback_pose_is_updated = 0;
-			print_playback_status();
-
-			if (killall_after_finish)
+			if (recur)
 			{
-				char buf[512];
-				FILE *cmd_pipe = popen("pidof -s proccontrol", "r");
-				fgets(buf, 512, cmd_pipe);
-				pid_t pid = strtoul(buf, NULL, 10);
-				pclose( cmd_pipe );
-				kill(pid, SIGINT);
+				playback_starttime = 0.0;
+				find_current_position_by_timestamp(recur_play_time);
+				print_playback_status();
+			}
+			else
+			{
+				paused = 1;
+				current_position = 0;
+				playback_starttime = 0.0;
+				playback_timestamp = 0;
+				playback_timestamp_is_updated = 0;
+				playback_pose_is_updated = 0;
+				print_playback_status();
+
+				if (killall_after_finish)
+				{
+					char buf[512];
+					FILE *cmd_pipe = popen("pidof -s proccontrol", "r");
+					fgets(buf, 512, cmd_pipe);
+					pid_t pid = strtoul(buf, NULL, 10);
+					pclose( cmd_pipe );
+					kill(pid, SIGINT);
+				}
 			}
 		}
 		else if (!paused && current_position < logfile_index->num_messages - 1)
