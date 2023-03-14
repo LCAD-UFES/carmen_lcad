@@ -29,6 +29,8 @@ static int xsens_type = 0;
 // this macro tests for an error and exits the program with a message if there was one
 #define EXIT_ON_ERROR(res,comment) if (res != XRV_OK) { printf("Error %d occurred in " comment ": %s\n",res,xsensResultText(res)); exit(1); }
 
+int disable_xsens = 0;
+
 void 
 shutdown_module(int signo)
 {
@@ -55,8 +57,16 @@ read_parameters(int argc, char **argv)
 		{(char *) "xsens", (char *) "dev",   CARMEN_PARAM_STRING, &(xsens_dev), 0, NULL}
 	};
 
+
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "disable_xsens", CARMEN_PARAM_ONOFF, &disable_xsens, 0, NULL},
+	};
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	return 0;
 }
@@ -596,7 +606,10 @@ main(int argc, char **argv)
 
 	int xsens_initialized = init_xsens(reset_orientation);
 
-//	read_data_from_xsens_without_xsens();
+	//Allow to run without the IMU data-in case of problems with the sensor
+	if(disable_xsens)
+		read_data_from_xsens_without_xsens();
+
 	if (xsens_initialized)
 		read_data_from_xsens();
 

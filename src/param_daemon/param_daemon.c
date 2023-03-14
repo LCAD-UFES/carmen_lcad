@@ -801,7 +801,7 @@ help(char *progname)
 
 	fprintf(stderr,
 			" --alphabetize\talphabetize parameters when listing\n"
-			" --robot=ROBOT\tuse parameters for ROBOT (instead of default robot)\n"
+			" --robot=ROBOT\tuse specific parameters for ROBOT (besides the default)\n"
 			" --log\t\tread parameters from log file (instead of param ini file)\n"
 			"\n"
 #ifndef COMPILE_WITHOUT_MAP_SUPPORT

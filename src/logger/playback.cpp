@@ -55,6 +55,7 @@ carmen_FILE *logfile = NULL;
 carmen_logfile_index_p logfile_index = NULL;
 
 double playback_starttime = 0.0;
+double playback_startlogtime = 0.0;
 double last_logfile_time = 0.0;
 double playback_speed = 1.0;
 
@@ -1262,19 +1263,23 @@ void print_playback_status(void)
 
 
 // ts is in logfile time
-void wait_for_timestamp(double playback_timestamp)
+void wait_for_timestamp(double playback_ts)
 {
-	double current_time; // in logfile time
+	double system_time, elapsed_system_time, elapsed_log_time;
 	struct timeval tv;
 
-	//printf("playback_timestamp = %lf, playback_starttime = %lf, carmen_get_time = %lf\n", playback_timestamp, playback_starttime, carmen_get_time());
 	// playback_starttime is offset between file-start and playback-start
+	system_time = carmen_get_time();
 	if(playback_starttime == 0.0)
-		playback_starttime = (carmen_get_time() - playback_timestamp / playback_speed);
-	current_time = (carmen_get_time() - playback_starttime) * playback_speed;
-	if(!fast && !paused && playback_timestamp > current_time)
 	{
-		double towait = (playback_timestamp - current_time) / playback_speed;
+		playback_starttime = system_time;
+		playback_startlogtime = playback_ts;
+	}
+	elapsed_system_time = system_time - playback_starttime;
+	elapsed_log_time = (playback_ts - playback_startlogtime) / playback_speed;
+	if(!fast && !paused && elapsed_log_time > elapsed_system_time)
+	{
+		double towait = elapsed_log_time - elapsed_system_time;
 		tv.tv_sec = (int)floor(towait);
 		tv.tv_usec = (towait - tv.tv_sec) * 1e6;
 		select(0, NULL, NULL, NULL, &tv);
@@ -1470,25 +1475,28 @@ read_message(int message_num, int publish, int no_wait)
 			if (!basic_messages || !logger_callbacks[i].interpreted)
 			{
 				current_pos = logger_callbacks[i].conv_func(current_pos, logger_callbacks[i].message_data);
-				playback_timestamp = atof(current_pos);
-				playback_timestamp_is_updated = 1;
-				update_playback_pose(logger_callbacks[i].logger_message_name, logger_callbacks[i].message_data);
-				//printf("command = %s, playback_timestamp = %lf\n", command, playback_timestamp);
-				if (publish)
+				if (*current_pos != '\n' && *current_pos != '\0')
 				{
-					current_time = carmen_get_time();
-					if (current_time - last_update > 0.2)
+					playback_timestamp = atof(current_pos);
+					playback_timestamp_is_updated = 1;
+					update_playback_pose(logger_callbacks[i].logger_message_name, logger_callbacks[i].message_data);
+					//printf("command = %s, playback_timestamp = %lf\n", command, playback_timestamp);
+					if (publish)
 					{
-						print_playback_status();
-						last_update = current_time;
-					}
-					if (!no_wait)
-						wait_for_timestamp(playback_timestamp);
+						current_time = carmen_get_time();
+						if (current_time - last_update > 0.2)
+						{
+							print_playback_status();
+							last_update = current_time;
+						}
+						if (!no_wait)
+							wait_for_timestamp(playback_timestamp);
 
-					int do_not_publish = !g_publish_odometry && (strcmp(logger_callbacks[i].ipc_message_name, CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME) == 0);
-					do_not_publish |= check_ignore_list(command) || check_in_file_message(command, line);
-					if (!do_not_publish)
-						IPC_publishData(logger_callbacks[i].ipc_message_name, logger_callbacks[i].message_data);
+						int do_not_publish = !g_publish_odometry && (strcmp(logger_callbacks[i].ipc_message_name, CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME) == 0);
+						do_not_publish |= check_ignore_list(command) || check_in_file_message(command, line);
+						if (!do_not_publish)
+							IPC_publishData(logger_callbacks[i].ipc_message_name, logger_callbacks[i].message_data);
+					}
 				}
 
 				int is_front_laser_message = (strcmp(command, "FLASER") == 0);
@@ -1505,7 +1513,10 @@ read_message(int message_num, int publish, int no_wait)
 int
 find_next_position_with_timestamp(int start_msg, int step)
 {
-	int msg = start_msg;
+	int msg;
+
+	msg = std::max(0, start_msg);
+	msg = std::min(msg, logfile_index->num_messages - 1);
 	read_message(msg, 0, 1);
 
 	while (playback_timestamp_is_updated == 0 && step != 0)
@@ -1903,22 +1914,31 @@ main_playback_loop(void)
 
 		if (!paused && current_position >= logfile_index->num_messages - 1)
 		{
-			paused = 1;
-			current_position = 0;
-			playback_starttime = 0.0;
-			playback_timestamp = 0;
-			playback_timestamp_is_updated = 0;
-			playback_pose_is_updated = 0;
-			print_playback_status();
-
-			if (killall_after_finish)
+			if (recur)
 			{
-				char buf[512];
-				FILE *cmd_pipe = popen("pidof -s proccontrol", "r");
-				fgets(buf, 512, cmd_pipe);
-				pid_t pid = strtoul(buf, NULL, 10);
-				pclose( cmd_pipe );
-				kill(pid, SIGINT);
+				playback_starttime = 0.0;
+				find_current_position_by_timestamp(recur_play_time);
+				print_playback_status();
+			}
+			else
+			{
+				paused = 1;
+				current_position = 0;
+				playback_starttime = 0.0;
+				playback_timestamp = 0;
+				playback_timestamp_is_updated = 0;
+				playback_pose_is_updated = 0;
+				print_playback_status();
+
+				if (killall_after_finish)
+				{
+					char buf[512];
+					FILE *cmd_pipe = popen("pidof -s proccontrol", "r");
+					fgets(buf, 512, cmd_pipe);
+					pid_t pid = strtoul(buf, NULL, 10);
+					pclose( cmd_pipe );
+					kill(pid, SIGINT);
+				}
 			}
 		}
 		else if (!paused && current_position < logfile_index->num_messages - 1)
@@ -1932,6 +1952,7 @@ main_playback_loop(void)
 			{
 				if (recur)
 				{
+					playback_starttime = 0.0;
 					find_current_position_by_timestamp(recur_play_time);
 					print_playback_status();
 				}
