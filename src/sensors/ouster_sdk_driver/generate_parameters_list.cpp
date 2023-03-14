@@ -32,9 +32,6 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t comand_line_param_list[] = {
 			{(char*) "commandline", (char*) "sensor_ip", CARMEN_PARAM_STRING, &ouster_ip, 0, NULL},
-			{(char*) "commandline", (char*) "host_ip", CARMEN_PARAM_STRING, &host_ip, 0, NULL},
-			{(char*) "commandline", (char*) "port", CARMEN_PARAM_INT, &ouster_port, 0, NULL},
-			{(char*) "commandline", (char*) "imu_port", CARMEN_PARAM_INT, &ouster_imu_port, 0, NULL},
 			{(char*) "commandline", (char*) "lidar_id", CARMEN_PARAM_INT, &lidar_id, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, comand_line_param_list, sizeof(comand_line_param_list)/sizeof(comand_line_param_list[0]));
@@ -60,7 +57,6 @@ main(int argc, char* argv[])
 	read_parameters(argc, argv);
 
 	std::string sensor_hostname = ouster_ip;
-	const std::string data_destination = host_ip;
 	std::string vehicle_name;
 
 
@@ -69,7 +65,38 @@ main(int argc, char* argv[])
 	std::cin >>  vehicle_name;
 
 
+	// 1. Get the current config on the sensor
+	std::cerr << "1. Get original config of sensor... ";
 
+	// original_config struct
+	sensor::sensor_config original_config;
+	if (!sensor::get_config(sensor_hostname, original_config)) {
+		std::cerr << "..error: could not connect to sensor!" << std::endl;
+		return EXIT_FAILURE;
+	}
+	//! [doc-etag-cpp-get-config]
+	std::cerr << "success! Got original config\nOriginal config of sensor:\n"
+			<< to_string(original_config) << std::endl;
+
+	// 2. Make an empty sensor config and set a few config parameters
+	std::cerr << "\n2. Make new config and set sensor to it... ";
+
+	// If relevant, use config_flag to set udp dest automatically
+	uint8_t config_flags = 0;
+	const bool udp_dest_auto = false;  // whether or not to use auto destination
+	const bool persist = false;  // whether or not we will persist the settings on the sensor
+
+	if (udp_dest_auto) config_flags |= ouster::sensor::CONFIG_UDP_DEST_AUTO;
+	if (persist) config_flags |= ouster::sensor::CONFIG_PERSIST;
+
+	// config struct
+	sensor::sensor_config config;
+
+	//set the default parameters
+	config.udp_dest = "192.168.1.1";
+
+
+	// Check the vehicle
 	if("Bravo" == vehicle_name){
 		model = 0;
 
@@ -93,10 +120,15 @@ main(int argc, char* argv[])
 
 	}
 
+	// Struct for vehicle models
 	carmen_pose_3D models[6];
 
 	// LIDAR 0
 	if(lidar_id == 0){
+
+		config.udp_port_imu = 7502;
+		config.udp_port_lidar = 7503;
+
 		// Bravo;
 		models[0].position = {0.13 ,0.0 ,0.32};
 		models[0].orientation = {0.0 ,0.0 ,0.02};
@@ -127,6 +159,11 @@ main(int argc, char* argv[])
 
 	}else if(lidar_id == 5){
 
+
+		config.udp_port_imu = 7504;
+		config.udp_port_lidar = 7505;
+
+
 		//carmen_pose_3D Bravo;
 		models[0].position = {1.65 ,1.118 ,-1.90};
 		models[0].orientation = {0.0 ,0.0 ,-0.015};
@@ -156,7 +193,10 @@ main(int argc, char* argv[])
 		models[6].orientation = {0.0, 0.0, 0.0};
 
 
-	}else if(lidar_id == 7 ){
+	}else if(lidar_id == 7){
+
+		config.udp_port_imu = 7506;
+		config.udp_port_lidar = 7507;
 
 		//carmen_pose_3D Bravo;
 		models[0].position = {1.75 ,-1.118 ,-1.85};
@@ -189,11 +229,20 @@ main(int argc, char* argv[])
 	}
 
 
+	//set_config
+
+	if (!sensor::set_config(sensor_hostname, config, config_flags)) {
+		std::cerr << "..error: could not connect to sensor" << std::endl;
+		return EXIT_FAILURE;
+	}
+	std::cerr << "..success! Updated sensor to new config"
+			<< to_string(config) << std::endl;
+
 	std::cerr << "Connecting to \"" << sensor_hostname << "\"... ";
 
 
-	//TODO checar se vai precisa de porta com varios sensores conectados
-	auto handle = sensor::init_client(sensor_hostname, ouster_port, ouster_imu_port);
+	//TODO checar se vai precisar de porta com varios sensores conectados
+	auto handle = sensor::init_client(sensor_hostname, config.udp_port_lidar.value(), config.udp_port_imu.value());
 	if (!handle) FATAL("Failed to connect");
 	std::cerr << "ok" << std::endl;
 
@@ -205,6 +254,7 @@ main(int argc, char* argv[])
 
 	std::cerr << "Gathering metadata..." << std::endl;
 	auto metadata = sensor::get_metadata(*handle);
+
 
 
 	// beam azimuth angles
@@ -229,7 +279,7 @@ main(int argc, char* argv[])
 			_ray_order += std::to_string(i) + " ";
 		}
 
-	// 4 splits
+		// 4 splits
 	}else if (fabs(fabs(info.beam_azimuth_angles.at(0)) - fabs(info.beam_azimuth_angles.at(2))) > 1)
 	{
 
@@ -240,7 +290,7 @@ main(int argc, char* argv[])
 			_ray_order += std::to_string(i) + " ";
 
 		}
-	// 2 splits
+		// 2 splits
 	}else{
 
 		_shot_size= h/2;
@@ -310,8 +360,8 @@ main(int argc, char* argv[])
 		// print lidar parameters
 
 		std::cout <<"lidar"<< i <<"_model                 "<<  lidar_sensorBox_model <<"\n"; // # HDL32 # VLP16 # RS16
-		std::cout <<"lidar"<< i <<"_port                  "<<  ouster_port <<"\n";
-		std::cout <<"lidar"<< i <<"_imu_port              "<<  ouster_imu_port<<"\n";
+		std::cout <<"lidar"<< i <<"_port                  "<<  config.udp_port_lidar.value() <<"\n";
+		std::cout <<"lidar"<< i <<"_imu_port              "<<  config.udp_port_imu.value() <<"\n";
 		std::cout <<"lidar"<< i <<"_ip                    "<<  sensor_hostname<<"\n";
 		std::cout <<"lidar"<< i <<"_shot_size             "<<  _shot_size <<"\n";
 		std::cout <<"lidar"<< i <<"_min_sensing           "<<  1000<<"\n"; 			//# 2m in 2mm units
