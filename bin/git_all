@@ -1,1 +1,257 @@
-/home/lume/carmen_lcad/src/scripts_lume/git_all
+#!/bin/bash
+#====================================================================================================================================
+
+HELP_TEXT1="You may edit the script and fill the GitHub user and password. If not filled, the script will look at git-credentials or prompt for terminal input."
+GIT_USER=""
+GIT_PASSWORD=""
+
+HELP_TEXT2="You may edit the git repository list by either including, deleting or commenting lines with a hashtag."
+GIT_REPOSITORY_LIST=\
+(
+#	Repository						Parent_Directory					Git_User_Repo
+#	=============================	=================================	=============
+	carmen_lcad						${CARMEN_HOME%/*}					LCAD-UFES
+	actros4844_mosaic				$CARMEN_HOME/bin					LumeRobotics
+	atego1730_suzano				$CARMEN_HOME/bin					LumeRobotics
+	atego1730_ype					$CARMEN_HOME/bin					LumeRobotics
+	atego2430_vale					$CARMEN_HOME/bin					LumeRobotics
+	arocs_votorantim				$CARMEN_HOME/bin					LumeRobotics
+	jd_7200j					$CARMEN_HOME/bin					I2CA
+	audit							$CARMEN_HOME/src					LumeRobotics
+	axor_suzano						$CARMEN_HOME/bin					LumeRobotics
+	axor_ufes_ype						$CARMEN_HOME/bin					LumeRobotics
+	atego1730_ufes_ype					$CARMEN_HOME/bin					LumeRobotics
+	bl_ipc_interface				$CARMEN_HOME/src					LumeRobotics
+	buggy							$CARMEN_HOME/bin					LumeRobotics
+	volare_attack8_marcopolo			$CARMEN_HOME/bin					LumeRobotics
+	camera_drivers					$CARMEN_HOME/src					LumeRobotics
+	cargo							$CARMEN_HOME/src					LumeRobotics
+	downstream_api 					$CARMEN_HOME/src					LumeRobotics
+	frenet_path_planner				$CARMEN_HOME/src					LumeRobotics
+#	front_end_api					$CARMEN_HOME/src					LumeRobotics
+#	locomotive_number_detector		$CARMEN_HOME/src					LumeRobotics
+	lume_extra_keys					$CARMEN_HOME/src					LumeRobotics
+#	map_tiles						$CARMEN_HOME/src					LumeRobotics
+#	mol_event_detector				$CARMEN_HOME/src					LumeRobotics
+#	mol_event_generator				$CARMEN_HOME/src					LumeRobotics
+#	mpw700							$CARMEN_HOME/bin					LumeRobotics
+	neural_object_tracker			$CARMEN_HOME/src					LumeRobotics
+	offroad_planner					$CARMEN_HOME/src					LumeRobotics
+	ojArt							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojAstru							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojAstru2						$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojBuggy							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+#	ojEcoTech4						$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojEcoTech4-2					$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojEtios							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+#	ojHB20							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+#	ojStadler						$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojMart							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojMarta							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojBravo							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	ojAstro							$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+#	ojMultiMoverM700				$CARMEN_HOME/sharedlib/OpenJAUS		LumeRobotics
+	libtrailer_nlp					$CARMEN_HOME/sharedlib			I2CA
+#	publish_can_message_from_file	$CARMEN_HOME/src					LumeRobotics
+	radar_drivers					$CARMEN_HOME/src					LumeRobotics
+#	railway_anti_collision_system	$CARMEN_HOME/src					LumeRobotics
+	remote_control					$CARMEN_HOME/src					LumeRobotics
+	road_network_generator			$CARMEN_HOME/src					LumeRobotics
+	route_planner					$CARMEN_HOME/src					LumeRobotics
+	scripts_lume					$CARMEN_HOME/src					LumeRobotics
+	tachograph						$CARMEN_HOME/src					LumeRobotics
+	task_manager					$CARMEN_HOME/src					LumeRobotics
+	upstream_api 					$CARMEN_HOME/src					LumeRobotics
+	lidarodom						$CARMEN_HOME/src					LumeRobotics
+	fastslam						$CARMEN_HOME/src					LumeRobotics
+#	RobotServer						$HOME/LumeRobotics					LumeRobotics
+	UserApp							$CARMEN_HOME/src					LumeRobotics
+	gps_drivers						$CARMEN_HOME/src					LumeRobotics
+	llmp						$CARMEN_HOME/src					LumeRobotics
+#	breast_cancer_analyzer_LCAD		$HOME/lcad							LCAD-UFES
+)
+#====================================================================================================================================
+
+TOTAL=$(( ${#GIT_REPOSITORY_LIST[@]} / 3 ))
+LIGHT_RED_COLOR="\033[1;31m"
+YELLOW_COLOR="\033[1;33m"
+LIGHT_CYAN_COLOR="\033[1;36m"
+NO_COLOR="\033[0m"
+SPACES="                                                                                                   "
+
+
+if [[ ${GIT_USER} ]]; then
+	USER_FROM='(filled in git_all script)'
+else
+	CREDENTIALS=$(head -n1 ~/.git-credentials 2>/dev/null)
+	if [[ ${CREDENTIALS} = https://?*@github.com ]]; then
+		CRED=${CREDENTIALS:8: -11}
+		GIT_USER=${CRED%:*}
+		if [[ ${GIT_USER} ]]; then
+			USER_FROM='(from git-credentials)'
+			[[ ${CRED} = *:* ]] && GIT_PASSWORD=${CRED#*:}
+		fi
+	fi
+fi
+
+
+function tab()
+{
+	TOKEN=${1}
+	TAB=${2}
+	if [[ ${TAB} -lt ${#TOKEN} ]]; then
+		TAB=${#TOKEN}
+	fi
+	TOKEN=${1}${SPACES}
+	echo "${TOKEN::$TAB}"
+}
+
+
+function display_usage_exit()
+{
+	if [[ ${2} ]]; then 
+		echo -e "\n${2}\n"; 
+	fi
+	echo -e "\nThis script performs git commands {clone|pull|commit|push|...} in multiple repositories.\n"
+	echo -e "Usage: $(basename $0)  <command>  <arguments>\n"
+	if [[ ${GIT_USER} ]]; then
+		echo -e 'GitHub username: '"${GIT_USER} ${USER_FROM}"
+	else
+		echo -e 'GitHub username: (terminal input)'
+	fi
+	if [[ ${GIT_PASSWORD} ]]; then
+		echo -e 'GitHub password: *****'
+	else
+		echo -e 'GitHub password: (terminal input)'
+	fi
+	echo -e "GitHub repositories:"
+	echo -e "       $(tab Repository 35)  $(tab Parent_Directory 60)  Git_User_Repo"
+	echo -e "       $(tab ============================= 35)  $(tab ================================= 60)  ============="
+	for (( i=0; i < $TOTAL; i++ )) ; do
+		echo -e "       $(tab ${GIT_REPOSITORY_LIST[i*3]} 35)  $(tab ${GIT_REPOSITORY_LIST[i*3+1]} 60)  ${GIT_REPOSITORY_LIST[i*3+2]}"
+	done
+	echo -e "\n${HELP_TEXT1}\n${HELP_TEXT2}\n"
+	exit ${1}
+}
+
+if [[ $# -eq 0 ]] || [[ "$1" = "-h" ]]; then 
+	display_usage_exit 1
+fi
+
+if ! [[ ${CARMEN_HOME} ]]; then
+	display_usage_exit 2 "CARMEN_HOME environment variable must be set"
+fi
+
+function shutdown()
+{
+	echo -e "\n***** script interrupted! *****\n"
+	exit 999
+}
+
+trap shutdown INT
+
+function rawurlencode()
+{
+  local string="${1}"
+  local strlen=${#string}
+  local encoded=""
+  local pos c o
+
+  for (( pos=0 ; pos<strlen ; pos++ )); do
+     c="${string:$pos:1}"
+     case "${c}" in
+        [-_.~a-zA-Z0-9] ) o="${c}" ;;
+        * )               printf -v o '%%%02x' "'${c}"
+     esac
+     encoded+="${o}"
+  done
+  ENCODED="${encoded}"
+}
+
+echo
+
+if [[ "$1" = "clone" ]] || [[ "$1" = "pull" ]] || [[ "$1" = "commit" ]] || [[ "$1" = "push" ]]; then
+	while ! [[ $GIT_USER ]]; do
+		read -p "GitHub username: " GIT_USER
+	done
+	rawurlencode "${GIT_USER}"; GIT_USER="${ENCODED}"
+	if [[ "$1" = "commit" ]]; then
+		MEMBER=$(curl "https://api.github.com/users/${GIT_USER}/repos?type=member" 2>/dev/null | grep -c '"full_name": "LCAD-UFES/carmen_lcad"')
+		[[ ${MEMBER} -eq 0 ]] && display_usage_exit 3 "${GIT_USER} is not a member of LCAD-UFES/carmen_lcad"
+	else
+		while ! [[ $GIT_PASSWORD ]]; do
+			read -sp "GitHub password: " GIT_PASSWORD
+		done
+		rawurlencode "${GIT_PASSWORD}"; GIT_PASSWORD="${ENCODED}"
+	fi
+fi
+
+SUCCESSFUL_LIST=()
+FAILED_LIST=()
+MISSING_LIST=()
+
+for (( i=0; i < $TOTAL; i++ )) ; do
+	REPO=${GIT_REPOSITORY_LIST[i*3]}
+	PARENT_DIR=${GIT_REPOSITORY_LIST[i*3+1]}
+	GIT_DIR=${PARENT_DIR}/${REPO}
+	GIT_USER_REPO=${GIT_REPOSITORY_LIST[i*3+2]}/${REPO}.git
+	echo -e "\n${LIGHT_CYAN_COLOR}Processing repository $((i + 1)) of ${TOTAL}: ${REPO}${NO_COLOR}: git $@\n"
+	if [[ "$1" = "clone" ]]; then
+		if [[ -d ${GIT_DIR} ]]; then
+			echo -e "${YELLOW_COLOR}${REPO}: directory ${GIT_DIR} already exists${NO_COLOR}\n"
+			MISSING_LIST=( ${MISSING_LIST[@]} ${REPO} )
+		elif [[ -d ${PARENT_DIR} ]]; then
+			cd ${PARENT_DIR}
+			git "$@" https://${GIT_USER}:${GIT_PASSWORD}@github.com/${GIT_USER_REPO}
+			if [[ $? -eq 0 ]]; then
+				SUCCESSFUL_LIST=( ${SUCCESSFUL_LIST[@]} ${REPO} )
+			else
+				FAILED_LIST=( ${FAILED_LIST[@]} ${REPO} )
+			fi
+			if [[ -f ${GIT_DIR}/.git/config ]]; then
+				cd ${GIT_DIR}
+				git remote set-url origin https://github.com/${GIT_USER_REPO}
+			fi
+		else
+			echo -e "${YELLOW_COLOR}${REPO}: parent directory ${PARENT_DIR} does not exist${NO_COLOR}\n"
+			MISSING_LIST=( ${MISSING_LIST[@]} ${REPO} )
+		fi
+	else
+		if [[ -f ${GIT_DIR}/.git/config ]]; then
+			cd ${GIT_DIR}
+			GIT_URL=$(git remote get-url origin)
+			GIT_USER_REPO=${GIT_URL##*github.com/}
+			git remote set-url origin https://${GIT_USER}:${GIT_PASSWORD}@github.com/${GIT_USER_REPO}
+			git -c user.name=${GIT_USER} -c user.email="@"  "$@"
+			if [[ $? -eq 0 ]]; then
+				SUCCESSFUL_LIST=( ${SUCCESSFUL_LIST[@]} ${REPO} )
+			else
+				FAILED_LIST=( ${FAILED_LIST[@]} ${REPO} )
+			fi
+			git remote set-url origin ${GIT_URL}
+		else
+			echo -e "${YELLOW_COLOR}${REPO}: not a valid git repository: ${GIT_DIR}${NO_COLOR}\n"
+			MISSING_LIST=( ${MISSING_LIST[@]} ${REPO} )
+		fi
+	fi
+done
+
+TOTAL_SUCCESSFUL=${#SUCCESSFUL_LIST[@]}
+if [[ ${TOTAL_SUCCESSFUL} -ne 0 ]]; then
+	[[ ${TOTAL_SUCCESSFUL} -eq 1 ]] && OBJ=repository || OBJ=repositories
+	echo -e "\n${TOTAL_SUCCESSFUL} ${OBJ} successfully processed: ${LIGHT_CYAN_COLOR}${SUCCESSFUL_LIST[@]}${NO_COLOR}"
+fi
+
+TOTAL_FAILED=${#FAILED_LIST[@]}
+if [[ ${TOTAL_FAILED} -ne 0 ]]; then
+	[[ ${TOTAL_FAILED} -eq 1 ]] && OBJ=command || OBJ=commands
+	echo -e "${TOTAL_FAILED} git ${OBJ} failed at: ${LIGHT_RED_COLOR}${FAILED_LIST[@]}${NO_COLOR}"
+fi
+
+TOTAL_MISSING=${#MISSING_LIST[@]}
+if [[ ${TOTAL_MISSING} -ne 0 ]]; then
+	[[ ${TOTAL_MISSING} -eq 1 ]] && OBJ=repository || OBJ=repositories
+	[[ "$1" = "clone" ]] && CONDITION=existing || CONDITION=missing
+	echo -e "${TOTAL_MISSING} ${CONDITION} ${OBJ}: ${YELLOW_COLOR}${MISSING_LIST[@]}${NO_COLOR}"
+fi
+echo
