@@ -28,7 +28,7 @@ else
 endif
 
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
-
+IFLAGS += -I/usr/local/carmen_boost/include
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
@@ -55,7 +55,8 @@ endif
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lcarmen_util
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+LFLAGS += -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lcarmen_util
 LFLAGS += -lcarmen_util -lboost_program_options
 
 SOURCES = grab_data.cpp grab_data_from_log.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp loop_closure_via_localization.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp pointcloud_viewer.cpp

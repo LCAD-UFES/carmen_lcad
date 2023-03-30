@@ -12,7 +12,7 @@ IFLAGS += \
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L/usr/local/carmen_boost/lib
 
 LFLAGS += \
 	-lparam_interface \

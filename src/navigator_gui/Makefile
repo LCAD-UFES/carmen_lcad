@@ -4,7 +4,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
 IFLAGS += `$(GTK_CONFIG) --cflags`
 LFLAGS += $(INTERFACE_LIBS) -lgrid_mapping -lprob_models -lX11 -lglobal -lipc \

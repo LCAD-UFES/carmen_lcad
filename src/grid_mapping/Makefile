@@ -10,8 +10,8 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lprob_models -lmap_io -lglobal -lparam_interface -llaser_interface -lipc \

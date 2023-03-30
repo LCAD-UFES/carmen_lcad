@@ -9,10 +9,13 @@ CFLAGS += -Wall
 CXXFLAGS += -Wall -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -DUSE_OPENCV -DNO_NVML -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
+IFLAGS += -I/usr/local/carmen_boost/include
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface `pkg-config --libs opencv` \
           -lvelodyne_camera_calibration \
           -lcamera_boxes_to_world
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lopencv_imgcodecs
+
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib 
+LFLAGS += -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lopencv_imgcodecs
 
 SOURCES = camera_boxes_to_world.cpp show_boxes.cpp
 
