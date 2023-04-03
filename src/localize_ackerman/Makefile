@@ -13,8 +13,8 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/lib/x86_64-linux-gnu
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib -L/usr/lib/x86_64-linux-gnu
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
@@ -27,7 +27,7 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 	  -ltask_manager_interface -lbehavior_selector_interface -lgsl -lgslcblas -lcarmodel -ldbscan \
 	  -lgps_xyz_interface `pkg-config --libs opencv`
 
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system 
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 ifeq ($(UBUNTU_VERSION),"16.04")

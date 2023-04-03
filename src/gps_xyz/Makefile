@@ -7,8 +7,8 @@ CFLAGS +=
 CXXFLAGS += -std=c++11 -Wno-parentheses
 IFLAGS += 
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/lib/x86_64-linux-gnu
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib -L/usr/lib/x86_64-linux-gnu  
 
 LFLAGS += -L../../sharedlib/libtf/src
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lxsens_mtig_interface -lvelodyne_interface -lgps_nmea_interface -lbase_ackerman_interface \

@@ -12,7 +12,7 @@ VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -L/usr/local/carmen_boost/lib
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface \
