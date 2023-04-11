@@ -93,6 +93,8 @@ int gear_can_command = 0;
 
 double wheel_speed_moving_average(double *wheel_speed);
 
+extern double requested_steering_angle;
+
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
@@ -158,6 +160,8 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 
 //	frame.can_id = 0x80;
 //	frame.can_dlc = 2;
+	requested_steering_angle = steering_effort / 100.0;
+
 	int int_phi =  (steering_effort / 100.0) * ANGLE_CONVERSION_CONSTANT;
 	frame.data[3] = (__u8) ((int_phi >> 8) & 0xff);
 	frame.data[2] = (__u8) int_phi & 0xff;

@@ -78,7 +78,7 @@ double front_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 double back_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
-double car_speed = 0.0;
+double car_speed = 1.0;
 double speed_signal = 1.0;
 double steering_angle = 0.0;
 unsigned int manual_override_and_safe_stop;
@@ -92,6 +92,8 @@ int steering_angle_auxiliary_sensor = 0xFFFC;
 int steering_angle_sensor_zero = 20000.0 + 30.0;
 
 int steering_wheel_zero_torque = -30;
+
+double requested_steering_angle = 0.0; // varia de -1.0 a 1.0, sendo os limetes de ângulo para a esquerda e para a direita vindo do carro como esforço (tem o PID no meio...)
 
 
 // Refresh screen in curses mode
@@ -413,18 +415,20 @@ void update_car_speed(struct can_frame frame)
 {
 	car_speed = ((double) frame.data[0] * 256.0 + (double) frame.data[1]) / VELOCITY_CONVERSION_CONSTANT;
 	speed_signal = (car_speed < 0.0)? -1.0: 1.0;
+//	printf("car_speed = %lf\n", car_speed);
 }
 
 
 double wheel_speed_moving_average(double *wheel_speed)
 {
-	int i;
-	double moving_average_wheel_speed = 0.0;
-
-	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
-		moving_average_wheel_speed += wheel_speed[i];
-
-	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
+	return (car_speed);
+//	int i;
+//	double moving_average_wheel_speed = 0.0;
+//
+//	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
+//		moving_average_wheel_speed += wheel_speed[i];
+//
+//	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
 }
 
 void update_steering_angle(struct can_frame frame)
@@ -434,6 +438,8 @@ void update_steering_angle(struct can_frame frame)
 	double v = car_speed;
 	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
+
+//	steering_angle = requested_steering_angle;
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)

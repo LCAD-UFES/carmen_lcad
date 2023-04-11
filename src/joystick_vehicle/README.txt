@@ -3,7 +3,7 @@ Este modulo é o driver de joysticks e permite controlar o simulador ou robôs r
 Para executar o driver, execute:
  ./joystick_vehicle <-show_state on> <-direct_v_and_phi_mode on>
 
-- A flag opcional show_state permite ver o estado bruto dos botões do joystick. v é controlado pelo axix 4 do joystick, equanto que phi, pelo axis 0.
+- A flag opcional show_state permite ver o estado bruto dos botões do joystick. v é controlado pelo axis 4 do joystick, equanto que phi, pelo axis 0.
 - A flag opcional direct_v_and_phi_mode permite ativar o direct_v_and_phi_mode, que torna possível enviar v e phi diretamente para o robô.
   No modo default, o joystick adiciona incrementos a v e phi (variáveis globais mantêm o estado de v e phi).
 
