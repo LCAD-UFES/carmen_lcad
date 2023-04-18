@@ -55,6 +55,9 @@ IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 			-lpcl_segmentation
 
+# Boost flag
+LFLAGS += -I/usr/local/carmen_boost/include
+
 # Source code files (.c, .cpp) 
 SOURCES = moving_objects_main.cpp moving_objects_interface.c moving_objects.cpp monte_carlo_moving_objects_tracking.cpp
 
