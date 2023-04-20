@@ -19,15 +19,15 @@ UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
 	PCL_INC = $(wildcard /usr/local/include/pcl-*)
-	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+#	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 	IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/  
 else
 	PCL_INC = $(wildcard /usr/local/include/pcl-*)
-	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
+#	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 	IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/ 
 endif
 
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) # -I $(VTK_INC)
 IFLAGS += -I/usr/local/carmen_boost/include
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
