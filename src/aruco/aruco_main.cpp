@@ -342,6 +342,8 @@ read_parameters(int argc, char **argv)
         };
     num_items = sizeof(param_list_cm_) / sizeof(param_list_cm_[0]);
     carmen_param_install_params(argc, argv, param_list_cm_, num_items);
+
+    use_left = 1; use_right = 0;
     if (side_to_use != NULL)
     {
         if (strcmp(side_to_use, "L") == 0 || strcmp(side_to_use, "l") == 0 || strcmp(side_to_use, "left") == 0)
