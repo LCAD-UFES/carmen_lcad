@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <aruco/aruco.h>
 #include <carmen/camera_drivers_interface.h>
+#include <carmen/bumblebee_basic_interface.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
@@ -12,9 +13,11 @@
 
 int SHOW_ON_TERMINAL = 0;
 
-double _fx_factor = 0., _fy_factor = 0., _cu_factor = 0., _cv_factor = 0.;
 double _fx = 0., _fy = 0., _cu = 0., _cv = 0.;
 double _k1 = 0., _k2 = 0., _p1 = 0., _p2 = 0., _k3 = 0.;
+int use_left = 1, use_right = 0;
+char *side_to_use = NULL;
+double msg_fps = 0;
 
 int show_output = 1;
 int detector_id = 1;
@@ -136,6 +139,7 @@ detect_posetracker(cv::Mat image)
     if (show_output)
     {
         // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+        cv::resize(image, image, cv::Size(), 640.0/(double)image.cols, 480.0/(double)image.rows);
         cv::imshow(camera_name, image);
         cv::waitKey(1);
     }
@@ -192,6 +196,17 @@ detect_markers(cv::Mat &image)
     if (show_output)
     {
         // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+        char info[25];
+        sprintf(info, "%dx%d", image.cols, image.rows);
+        cv::resize(image, image, cv::Size(), 640.0/(double)image.cols, 480.0/(double)image.rows);
+
+        putText(image, info, cv::Point(10, 25), cv::FONT_HERSHEY_SIMPLEX, .7, cv::Scalar(0, 0, 0), 4);
+        putText(image, info, cv::Point(10, 25), cv::FONT_HERSHEY_SIMPLEX, .7, cv::Scalar(255, 255, 255), 2);
+
+        sprintf(info, "%.2fFPS", msg_fps);
+        putText(image, info, cv::Point(10, 55), cv::FONT_HERSHEY_SIMPLEX, .7, cv::Scalar(0, 0, 0), 4);
+        putText(image, info, cv::Point(10, 55), cv::FONT_HERSHEY_SIMPLEX, .7, cv::Scalar(255, 255, 255), 2);
+
         cv::imshow(camera_name, image);
         cv::waitKey(1);
     }
@@ -240,30 +255,49 @@ filter_fps(double timestamp)
 void 
 image_handler_intelbras(camera_message *msg)
 {
-    static int first_time = 1;
+    // static int first_time = 1;
 	camera_image *stereo_image = msg->images;
 	cv::Mat cv_image = cv::Mat(stereo_image->height, stereo_image->width, CV_8UC3, stereo_image->raw_data, 0);
     
-    if (first_time)
-    {
-        _fx = _fx_factor*cv_image.cols;
-        _fy = _fy_factor*cv_image.rows;
-        _cu = _cu_factor*cv_image.cols;
-        _cv = _cv_factor*cv_image.rows;
-        first_time = 0;
-    }
-
-    char info[25];
-    sprintf(info, "%dx%d", stereo_image->width, stereo_image->height);
-    putText(cv_image, info, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(50, 255, 50), 2);
-    
-    sprintf(info, "%.2ffps", filter_fps(msg->timestamp));
-    putText(cv_image, info, cv::Point(10, 55), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(50, 255, 50), 2);
+    // if (first_time)
+    // {
+    //     _fx = _fx_factor*cv_image.cols;
+    //     _fy = _fy_factor*cv_image.rows;
+    //     _cu = _cu_factor*cv_image.cols;
+    //     _cv = _cv_factor*cv_image.rows;
+    //     first_time = 0;
+    // }
+    msg_fps = filter_fps(msg->timestamp);
 
     if (board_config_file)
         detect_posetracker(cv_image);
     else
         detect_markers(cv_image);
+}
+
+
+static void
+image_handler_bumblebee(carmen_bumblebee_basic_stereoimage_message* msg)
+{
+    cv::Mat src_image_left, src_image_right, concat;
+
+    if (use_left)
+    	src_image_left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
+    if (use_right)
+    	src_image_right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
+
+    msg_fps = filter_fps(msg->timestamp);
+
+    if (use_left && use_right)
+    	cv::hconcat(src_image_left, src_image_right, concat);
+    else
+    	concat = use_left ? src_image_left : src_image_right;
+    
+    cvtColor(concat, concat, cv::COLOR_BGR2RGB);
+    if (board_config_file)
+        detect_posetracker(concat);
+    else
+        detect_markers(concat);
 }
 
 
@@ -304,9 +338,21 @@ read_parameters(int argc, char **argv)
         {
             {(char *) "commandline", (char *) "board",          CARMEN_PARAM_STRING, &board_config_file,     0, NULL},
             {(char *) "commandline", (char *) "show_output",    CARMEN_PARAM_ONOFF,  &show_output,           0, NULL},
+            {(char *) "commandline", (char *) "side",           CARMEN_PARAM_STRING, &side_to_use,           0, NULL},
         };
     num_items = sizeof(param_list_cm_) / sizeof(param_list_cm_[0]);
     carmen_param_install_params(argc, argv, param_list_cm_, num_items);
+
+    use_left = 1; use_right = 0;
+    if (side_to_use != NULL)
+    {
+        if (strcmp(side_to_use, "L") == 0 || strcmp(side_to_use, "l") == 0 || strcmp(side_to_use, "left") == 0)
+			use_left = 1, use_right = 0;
+		else if (strcmp(side_to_use, "R") == 0 || strcmp(side_to_use, "r") == 0 || strcmp(side_to_use, "right") == 0)
+			use_left = 0, use_right = 1;
+		else if (strcmp(side_to_use, "S") == 0 || strcmp(side_to_use, "s") == 0 || strcmp(side_to_use, "stereo") == 0)
+			use_left = 1, use_right = 1;
+    }
 
     if (!board_config_file)
     {
@@ -326,10 +372,10 @@ read_parameters(int argc, char **argv)
     carmen_param_allow_unfound_variables(0);
     carmen_param_t param_list[] =
         {
-            {camera_name, (char *)"fx", CARMEN_PARAM_DOUBLE, &_fx_factor, 0, NULL},
-            {camera_name, (char *)"fy", CARMEN_PARAM_DOUBLE, &_fy_factor, 0, NULL},
-            {camera_name, (char *)"cu", CARMEN_PARAM_DOUBLE, &_cu_factor, 0, NULL},
-            {camera_name, (char *)"cv", CARMEN_PARAM_DOUBLE, &_cv_factor, 0, NULL},
+            {camera_name, (char *)"fx", CARMEN_PARAM_DOUBLE, &_fx, 0, NULL},
+            {camera_name, (char *)"fy", CARMEN_PARAM_DOUBLE, &_fy, 0, NULL},
+            {camera_name, (char *)"cu", CARMEN_PARAM_DOUBLE, &_cu, 0, NULL},
+            {camera_name, (char *)"cv", CARMEN_PARAM_DOUBLE, &_cv, 0, NULL},
             {camera_name, (char *)"k1", CARMEN_PARAM_DOUBLE, &_k1, 0, NULL},
             {camera_name, (char *)"k2", CARMEN_PARAM_DOUBLE, &_k2, 0, NULL},
             {camera_name, (char *)"p1", CARMEN_PARAM_DOUBLE, &_p1, 0, NULL},
@@ -348,7 +394,9 @@ void
 subscribe_messages()
 {
     if (strncmp("intelbras", camera_name, 9) == 0)
-        camera_drivers_subscribe_message(message_id, NULL, (carmen_handler_t)image_handler_intelbras, CARMEN_SUBSCRIBE_LATEST);
+        camera_drivers_subscribe_message(message_id, NULL, (carmen_handler_t) image_handler_intelbras, CARMEN_SUBSCRIBE_LATEST);
+    else
+        carmen_bumblebee_basic_subscribe_stereoimage(message_id, NULL, (carmen_handler_t) image_handler_bumblebee, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
