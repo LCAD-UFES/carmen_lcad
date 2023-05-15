@@ -29,8 +29,8 @@ link_directories($ENV{CARMEN_HOME}/src/localize_ackerman)
 add_executable(aruco-bin aruco_main.cpp aruco_interface.cpp aruco_interface.h aruco_messages.h)
 add_executable(aruco_test aruco_test.cpp aruco_interface.cpp aruco_interface.h aruco_messages.h)
 add_executable(create_board create_board.cpp)
-add_executable(aruco_vs_velodyne aruco_vs_velodyne.cpp aruco_interface.cpp aruco_interface.h aruco_messages.h)
-add_executable(localize_ackerman_interface.c localize_ackerman_interface.h localize_ackerman_messages.h)
+#add_executable(aruco_vs_velodyne aruco_vs_velodyne.cpp aruco_interface.cpp aruco_interface.h aruco_messages.h)
+#add_executable(localize_ackerman_interface.c localize_ackerman_interface.h localize_ackerman_messages.h)
 
 # link_directories($ENV{CARMEN_HOME}/src/camera_drivers)
 
@@ -39,6 +39,6 @@ target_link_libraries(aruco-bin aruco opencv_highgui opencv_calib3d
                       tf boost_thread-mt boost_signals boost_system)
 target_link_libraries(aruco_test global ipc param_interface)
 target_link_libraries(create_board aruco opencv_highgui)
-target_link_libraries(aruco_vs_velodyne aruco localize_ackerman_interface)
+#target_link_libraries(aruco_vs_velodyne aruco localize_ackerman_interface)
 
 set_target_properties(aruco-bin PROPERTIES OUTPUT_NAME aruco)
