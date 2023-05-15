@@ -1,0 +1,10 @@
+142a143,151
+>     // inicio @@@ Alberto: para acabar com o tempo refratário apos receber um caracter
+>     uart_dev_t *hw = UART_LL_GET_HW(uart->num);
+>     hw->idle_conf.tx_idle_num = 0;
+>     hw->idle_conf.tx_brk_num = 0;
+>     hw->idle_conf.rx_idle_thrhd = 0;
+>     hw->conf1.rxfifo_full_thrhd = 1;
+>     hw->conf1.rx_tout_thrhd = 1;
+>     // fim
+> 
