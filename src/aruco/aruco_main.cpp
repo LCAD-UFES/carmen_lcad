@@ -53,8 +53,25 @@ setup_aruco_pose(int n_markers_detected, std::vector<int> _ids_markers_detected,
 
     pose.n_markers_detected = n_markers_detected;
     pose.ids_markers_detected = ids_markers_detected;
-    pose.rvec[0] = (double) _tvec.at<float>(0); pose.rvec[1] = (double) _tvec.at<float>(1); pose.rvec[2] = (double) _tvec.at<float>(2);
-    pose.tvec[0] = (double) _rvec.at<float>(0); pose.tvec[1] = (double) _rvec.at<float>(1); pose.tvec[2] = (double) _rvec.at<float>(2);
+    
+    /*
+    pose.rvec[0] = (double) _tvec.at<float>(0);
+    pose.rvec[1] = (double) _tvec.at<float>(1);
+    pose.rvec[2] = (double) _tvec.at<float>(2);
+    
+    pose.tvec[0] = (double) _rvec.at<float>(0);
+    pose.tvec[1] = (double) _rvec.at<float>(1);
+    pose.tvec[2] = (double) _rvec.at<float>(2);
+    */
+
+
+    pose.rvec[0] = (double) _rvec.at<float>(0);
+    pose.rvec[1] = (double) _rvec.at<float>(1);
+    pose.rvec[2] = (double) _rvec.at<float>(2);
+    
+    pose.tvec[0] = (double) _tvec.at<float>(0);
+    pose.tvec[1] = (double) _tvec.at<float>(1);
+    pose.tvec[2] = (double) _tvec.at<float>(2);
     return pose;
 }
 
@@ -139,7 +156,7 @@ detect_posetracker(cv::Mat image)
     if (show_output)
     {
         // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-        cv::resize(image, image, cv::Size(), 640.0/(double)image.cols, 480.0/(double)image.rows);
+        cv::resize(image, image, cv::Size(), 1280.0/(double)image.cols, 720.0/(double)image.rows); //640.0 x 480.0 (original)
         cv::imshow(camera_name, image);
         cv::waitKey(1);
     }
