@@ -106,15 +106,15 @@ static esp_err_t rmt_step_motor_step_impl(step_motor_t *motor, uint32_t n, uint3
 {
     rmt_step_motor_t *rmt_handle = __containerof(motor, rmt_step_motor_t, base);
 
-    ESP_ERROR_CHECK(rmt_set_tx_loop_mode(rmt_handle->rmt_ch, true));
-    ESP_ERROR_CHECK(rmt_enable_tx_loop_autostop(rmt_handle->rmt_ch, true));
+    //ESP_ERROR_CHECK(rmt_set_tx_loop_mode(rmt_handle->rmt_ch, true));
+    //ESP_ERROR_CHECK(rmt_enable_tx_loop_autostop(rmt_handle->rmt_ch, true));
 
     rmt_handle->rmt_items_loop_count = n;
     if ((rmt_handle->rmt_items_loop_count) > 1023) {
         (rmt_handle->rmt_items_loop_count) -= 1023;
-        ESP_ERROR_CHECK(rmt_set_tx_loop_count(rmt_handle->rmt_ch, 1023));
+        //ESP_ERROR_CHECK(rmt_set_tx_loop_count(rmt_handle->rmt_ch, 1023));
     } else {
-        ESP_ERROR_CHECK(rmt_set_tx_loop_count(rmt_handle->rmt_ch, rmt_handle->rmt_items_loop_count));
+        //ESP_ERROR_CHECK(rmt_set_tx_loop_count(rmt_handle->rmt_ch, rmt_handle->rmt_items_loop_count));
         rmt_handle->rmt_items_loop_count = 0;
     }
     helper_fill_rmt_items(&rmt_handle->rmt_items_loop, speed, rmt_handle->io_driver);
@@ -133,8 +133,8 @@ static esp_err_t rmt_step_motor_step(step_motor_t *handle, uint32_t n, uint32_t 
     ESP_ERROR_CHECK(rmt_tx_stop(rmt_handle->rmt_ch));
 
     if (n == UINT32_MAX) {   // forever loop, non-blocking
-        ESP_ERROR_CHECK(rmt_set_tx_loop_count(rmt_handle->rmt_ch, 0));
-        ESP_ERROR_CHECK(rmt_enable_tx_loop_autostop(rmt_handle->rmt_ch, false));
+        //ESP_ERROR_CHECK(rmt_set_tx_loop_count(rmt_handle->rmt_ch, 0));
+        //ESP_ERROR_CHECK(rmt_enable_tx_loop_autostop(rmt_handle->rmt_ch, false));
         ESP_ERROR_CHECK(rmt_set_tx_loop_mode(rmt_handle->rmt_ch, true));
         helper_fill_rmt_items(&rmt_handle->rmt_items_loop, speed, rmt_handle->io_driver);
         rmt_handle->status = UNLIMITED_LOOP;
@@ -232,7 +232,7 @@ static IRAM_ATTR void rmt_tx_loop_intr(rmt_channel_t channel, void *args)
     if (rmt_step_motor->status == SMOOTH_SPEED_UP) {
         rmt_step_motor->status = SMOOTH_KEEP_SPEED;
         rmt_set_tx_loop_mode(rmt_step_motor->rmt_ch, true);
-        rmt_enable_tx_loop_autostop(rmt_step_motor->rmt_ch, true);
+        //rmt_enable_tx_loop_autostop(rmt_step_motor->rmt_ch, true);
         rmt_set_tx_intr_en(rmt_step_motor->rmt_ch, 0);
         // continue and configure loop count
     }
@@ -242,9 +242,9 @@ static IRAM_ATTR void rmt_tx_loop_intr(rmt_channel_t channel, void *args)
         if ((rmt_step_motor->rmt_items_loop_count) != 0) {
             if ((rmt_step_motor->rmt_items_loop_count) > 1023) {
                 (rmt_step_motor->rmt_items_loop_count) -= 1023;
-                rmt_set_tx_loop_count(rmt_step_motor->rmt_ch, 1023);
+                //rmt_set_tx_loop_count(rmt_step_motor->rmt_ch, 1023);
             } else {
-                rmt_set_tx_loop_count(rmt_step_motor->rmt_ch, rmt_step_motor->rmt_items_loop_count);
+                //rmt_set_tx_loop_count(rmt_step_motor->rmt_ch, rmt_step_motor->rmt_items_loop_count);
                 rmt_step_motor->rmt_items_loop_count = 0;
             }
             rmt_write_items(rmt_step_motor->rmt_ch, &rmt_step_motor->rmt_items_loop, 1, false);
@@ -256,7 +256,7 @@ static IRAM_ATTR void rmt_tx_loop_intr(rmt_channel_t channel, void *args)
     if (rmt_step_motor->status == SMOOTH_KEEP_SPEED) {
         rmt_step_motor->status = SMOOTH_SLOW_DOWN;
         rmt_set_tx_loop_mode(rmt_step_motor->rmt_ch, false);
-        rmt_enable_tx_loop_autostop(rmt_step_motor->rmt_ch, false);
+        //rmt_enable_tx_loop_autostop(rmt_step_motor->rmt_ch, false);
         rmt_set_tx_intr_en(rmt_step_motor->rmt_ch, 1);
         rmt_write_items(rmt_step_motor->rmt_ch, rmt_step_motor->rmt_items_speeddown, rmt_step_motor->rmt_items_smoothstep_count, false);
         return;
