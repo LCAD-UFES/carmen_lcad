@@ -78,7 +78,7 @@ adc1_task(void *arg)
             vTaskDelay(0);
         }
         voltage /= 200;
-        printf("Voltage: %dmV\n", voltage);
+        printf("Voltage: %d mV\n", voltage);
         fflush(stdout);
         vTaskDelay((1000 / 40) / portTICK_PERIOD_MS);
         voltage = 0;

@@ -49,3 +49,4 @@ data/configs/*
 data/images/blobs/*
 !data/configs/sample.xml
 build/*
+/build/

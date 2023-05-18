@@ -34,6 +34,12 @@ Ela é parte (um exemplo) do pacote Heltec_ESP32 (https://github.com/HelTecAutom
  cp -r ../esp-idf-arduino-template/* .
 
 
+Note que sua aplicacao original for FreeRTOS e voce quiser juntar ela com uma aplicacao Arduino, ela tem que ser .cpp . 
+Se for .c, modifique para .cpp e mude sua "void app_main()" para  "extern "C" void app_main()".
+Inclua seu codigo Arduino na CMakeLists.txt no idf_component_register()
+Nao deixe de incluir #include "Arduino.h" em todos os fontes.
+
+
 ## Baixe o git de sua aplicação Arduino e as bibliotecas específicas que usa para o diretório main.
 
  cd main
