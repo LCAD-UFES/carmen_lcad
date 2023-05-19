@@ -5,3 +5,4 @@ pretrained/
 *.o
 *.depend
 __pycache__
+/build/
