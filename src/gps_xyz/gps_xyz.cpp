@@ -108,7 +108,7 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 	double angle = 1000.0;
 	int i;
 
-	astro_extern_gphdt_ptr->valid = 0;
+	carmen_extern_gphdt_ptr->valid = 0;
 	if (gps_xyz_message_queue.size() > 0)
 	{
 		for (i = gps_xyz_message_queue.size() - 1; i >= 0; i--)
@@ -521,7 +521,7 @@ carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 		fprintf(fgps, "%d\t%lf\t%lf\t%d\t%lf\n", gps_xyz_message.nr, gps_xyz_message.x, gps_xyz_message.y, gps_xyz_message.gps_quality, gps_xyz_message.timestamp);
 
 	if (gps_xyz_message.nr  == GPS_MAIN)
-		astro_gps_xyz_publish_message(gps_xyz_message);
+		carmen_gps_xyz_publish_message(gps_xyz_message);
 
 	if ((gps_xyz_message.nr == GPS_1) || (gps_xyz_message.nr == GPS_2))
 		gps_xyz_message_queue.push_back(gps_xyz_message);

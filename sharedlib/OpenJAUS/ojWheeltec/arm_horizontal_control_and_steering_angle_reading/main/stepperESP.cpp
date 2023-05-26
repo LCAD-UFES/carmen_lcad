@@ -105,7 +105,7 @@ void step_motor_setup()
 
 void motor_task(void *arg)
 {
-    calibrate();
+    // calibrate();
 
     while (1)
     {
