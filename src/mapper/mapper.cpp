@@ -1806,7 +1806,13 @@ mapper_save_current_map(carmen_map_set_t *map_set)
 {
 	if (offline_map_available && map_set->occupancy_map->complete_map != NULL && map_set->occupancy_map->config.x_origin != 0.0)
 	{
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', map_set->occupancy_map);
+		int ok = carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', map_set->occupancy_map);
+		if (!ok)
+		{
+			printf("could not write map into map_path %s\n", map_path);
+			fflush(stdout);
+		}
+
 		if (use_remission)
 		{
 			carmen_grid_mapping_save_block_map_by_origin(map_path, 's', map_set->sum_remission_map);

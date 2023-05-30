@@ -521,6 +521,7 @@ carmen_grid_mapping_save_block_map_by_origin(char *map_path, char map_type, carm
 			if (fp == NULL)
 			{
 				fprintf(stderr, "Could not write map to file: %s\n", full_map_path);
+				fflush(stderr);
 				return 0;
 			}
 

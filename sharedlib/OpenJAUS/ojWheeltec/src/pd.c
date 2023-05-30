@@ -154,8 +154,8 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	if (gear_can_command == 0x1)
 		int_velocity = -int_velocity;
 	
-	if (int_velocity == 0)
-		int_velocity = 7;
+//	if (int_velocity == 0)
+//		int_velocity = 7;
 
 	frame.data[1] = (__u8) ((int_velocity >> 8) & 0xff);
 	frame.data[0] = (__u8) int_velocity & 0xff;
