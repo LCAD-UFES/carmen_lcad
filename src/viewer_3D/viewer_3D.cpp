@@ -402,7 +402,7 @@ int map_mode = 0;
 
 double lidars_last_message_timestamp[16];
 double velodyne_last_message_timestamp = 0.0;
-double time_to_stop_cloud_point_draw = 0.15;
+double time_to_stop_cloud_point_draw = 1000000000.15;
 
 static carmen_vector_3D_t
 get_position_offset(void)

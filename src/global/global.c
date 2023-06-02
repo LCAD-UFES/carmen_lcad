@@ -50,7 +50,7 @@ typedef struct {
   char rvalue[200];
 } ini_param;
 
-#define MAX_PARAM_NUM 100
+#define MAX_PARAM_NUM 10000
 static ini_param param_list[MAX_PARAM_NUM];
 static int param_num = 0;
 
