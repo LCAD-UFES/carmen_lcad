@@ -135,7 +135,7 @@ save_map(char *map_file_name, carmen_map_t *map)
 
 
 void
-update_map(char *out_path, cv::Mat &img, int top, int left, carmen_map_t *map, bool new_map = false)
+update_map(char *out_path, cv::Mat &img, int top __attribute__ ((unused)), int left __attribute__ ((unused)), carmen_map_t *map, bool new_map = false)
 {
 	for (int x = 0; x < img.cols; x++)
 	{

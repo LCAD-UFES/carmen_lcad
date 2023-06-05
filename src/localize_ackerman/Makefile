@@ -3,7 +3,7 @@ include ../Makefile.conf
 #SUBDIRS = model_learn_ackerman
 
 CFLAGS += -std=c11 -fopenmp
-CXXFLAGS += -std=c++11 -fopenmp
+CXXFLAGS += -std=c++11 -fopenmp -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 LINK = g++
 
 #CFLAGS += -std=c11 -fopenmp -fsanitize=address -fno-omit-frame-pointer

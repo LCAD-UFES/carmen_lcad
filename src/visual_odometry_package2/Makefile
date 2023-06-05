@@ -4,7 +4,7 @@ MODULE_NAME = VISUAL_ODOMETRY_2
 MODULE_COMMENT = Visual Odometry Package
 
 LINK = g++
-CXXFLAGS += -Wall -msse3
+CXXFLAGS += -Wall -msse3 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11

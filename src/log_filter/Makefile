@@ -4,7 +4,7 @@ MODULE_NAME = "LOG FILTER"
 MODULE_COMMENT = "LOG FILTER Module"
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += #-DPARSE_DEBUG
 IFLAGS += 

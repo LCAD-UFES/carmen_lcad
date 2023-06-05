@@ -149,12 +149,11 @@ initial_time_params_save(GtkWidget *w, // __attribute__ ((unused)),
     return FALSE;
 }
 
-static gint
-updateIPC(gpointer *data __attribute__((unused)))
+static void
+updateIPC(gpointer data __attribute__ ((unused)), gint source __attribute__ ((unused)), GdkInputCondition condition __attribute__ ((unused)))
 {
     carmen_ipc_sleep(0.01);
-    carmen_graphics_update_ipc_callbacks((GdkInputFunction) updateIPC);
-    return 1;
+    carmen_graphics_update_ipc_callbacks(updateIPC);
 }
 
 char playback_info_message_number_string[256];
@@ -597,7 +596,7 @@ main(int argc, char *argv[])
 
     setlocale(LC_ALL, "C");
 
-    carmen_graphics_update_ipc_callbacks((GdkInputFunction) updateIPC);
+    carmen_graphics_update_ipc_callbacks(updateIPC);
 
     gtk_main();
     return 0;

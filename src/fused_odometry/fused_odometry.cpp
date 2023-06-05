@@ -221,9 +221,7 @@ low_variance_sampler(carmen_fused_odometry_particle *xt, carmen_fused_odometry_p
 void 
 prediction(double timestamp, carmen_fused_odometry_parameters *fused_odometry_parameters)
 {
-	int i;
-	
-	for (i = 0; i < num_particles; i++)
+	for (int i = 0; i < num_particles; i++)
 	{	
 		double dt = timestamp - xt[i].state.timestamp;
 
@@ -236,15 +234,28 @@ prediction(double timestamp, carmen_fused_odometry_parameters *fused_odometry_pa
 void 
 correction(double (*weight_func)(carmen_fused_odometry_state_vector, void *, carmen_fused_odometry_parameters *), void *sensor_vector, carmen_fused_odometry_parameters *fused_odometry_parameters)
 {
-	int i;
-	
-	for (i = 0; i < num_particles; i++)
+	for (int i = 0; i < num_particles; i++)
 	{	
 		xt[i].weight = weight_func(xt[i].state, sensor_vector, fused_odometry_parameters);
 		xt[i].weight_type = 0;
 	}
 
 	low_variance_sampler(xt, fused_odometry_parameters);
+}
+
+
+void
+set_all_particles_to_initial_pose(double *initial_pose)
+{
+	for (int i = 0; i < num_particles; i++)
+	{
+		xt[i].state.pose.position.x = initial_pose[0];
+		xt[i].state.pose.position.y = initial_pose[1];
+		xt[i].state.pose.position.z = 0.0;
+		xt[i].state.pose.orientation.roll = 0.0;
+		xt[i].state.pose.orientation.pitch = 0.0;
+		xt[i].state.pose.orientation.yaw = initial_pose[2];
+	}
 }
 
 

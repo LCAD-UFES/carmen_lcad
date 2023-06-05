@@ -122,12 +122,11 @@ key_release_event(GtkWidget *widget __attribute__ ((unused)),
 }
 
 
-static gint
-updateIPC(gpointer *data __attribute__ ((unused)))
+static void
+updateIPC(gpointer data __attribute__ ((unused)), gint source __attribute__ ((unused)), GdkInputCondition condition __attribute__ ((unused)))
 {
   carmen_ipc_sleep(0.01);
-  carmen_graphics_update_ipc_callbacks((GdkInputFunction)updateIPC);
-  return 1;
+  carmen_graphics_update_ipc_callbacks(updateIPC);
 }
 
 

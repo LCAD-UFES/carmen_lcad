@@ -4,7 +4,7 @@ MODULE_NAME = "GPS XYZ"
 MODULE_COMMENT = "GPS Module XYZ"
 
 CFLAGS += 
-CXXFLAGS += -std=c++11 -Wno-parentheses
+CXXFLAGS += -std=c++11 -Wno-deprecated-declarations -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 IFLAGS += 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include

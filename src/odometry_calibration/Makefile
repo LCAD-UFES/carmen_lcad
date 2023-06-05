@@ -6,7 +6,7 @@ MODULE_COMMENT = Module to calibrate the bias of the Odometry
 LINK = g++
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util $(CARMEN_HOME)/sharedlib/pso/ $(CARMEN_HOME)/sharedlib/libtf/src
 

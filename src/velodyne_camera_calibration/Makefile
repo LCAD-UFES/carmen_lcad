@@ -4,7 +4,7 @@ MODULE_NAME = VELODYNE CAMERA CALIBRATION
 MODULE_COMMENT = Velodyne Camera Calibration
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11 -Wno-deprecated
+CXXFLAGS += -std=c++11 -Wno-deprecated -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 #VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)

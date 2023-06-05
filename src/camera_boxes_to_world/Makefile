@@ -6,7 +6,7 @@ MODULE_COMMENT = Find global coordinates of bounding boxes in camera image.
 LINK = g++
 
 CFLAGS += -Wall
-CXXFLAGS += -Wall -std=c++11
+CXXFLAGS += -Wall -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -DUSE_OPENCV -DNO_NVML -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 IFLAGS += -I/usr/local/carmen_boost/include

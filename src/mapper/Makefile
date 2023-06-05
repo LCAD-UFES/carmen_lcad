@@ -8,7 +8,7 @@ MODULE_COMMENT = Mapper Maps using Velodyne!
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
 #CXXFLAGS += -Wall -O4 -mfpmath=sse -msse2 -msse4.2
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
+CXXFLAGS += -std=c++11 -Wno-deprecated-declarations -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 #CFLAGS += -g -pg
 #LINK = gcc
 

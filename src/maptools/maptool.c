@@ -507,7 +507,7 @@ static void add_place(int argc, char *argv[])
   char *input_filename;
   int next_arg;
   int force;
-  char cmd[1024];
+  char cmd[4 * 1024];
   char tmp_filename[1024];
   carmen_FILE *fp_in, *fp_out;
   carmen_map_placelist_t place_list;
@@ -632,7 +632,7 @@ static void add_offset(int argc, char *argv[])
   char *input_filename;
   int next_arg;
   int force;
-  char cmd[1024];
+  char cmd[4 * 1024];
   char tmp_filename[1024];
   carmen_FILE *fp_in, *fp_out;
   carmen_global_offset_t offset;

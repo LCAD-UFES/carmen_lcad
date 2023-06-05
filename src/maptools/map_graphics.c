@@ -819,8 +819,8 @@ carmen_map_graphics_draw_rectangle(GtkMapViewer *map_view, GdkColor *colour,
 	if (world_to_screen(end, &p2, map_view) == -1)
 		return;
 
-	width = abs(p1.x-p2.x);
-	height = abs(p1.y-p2.y);
+	width = fabs(p1.x-p2.x);
+	height = fabs(p1.y-p2.y);
 	x = carmen_fmin(p1.x, p2.x);
 	y = carmen_fmin(p1.y, p2.y);
 

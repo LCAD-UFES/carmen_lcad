@@ -1,8 +1,8 @@
 include ../../src/Makefile.conf
 
 LINK = g++
-CFLAGS += -fopenmp -std=c11
-CXXFLAGS += -fopenmp -std=c++11
+CFLAGS += -fopenmp -std=c11 
+CXXFLAGS += -fopenmp -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet -I/usr/include/bullet -I/usr/local/carmen_boost/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src

@@ -602,7 +602,7 @@ carmen_prob_models_force_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_
 				cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
 				cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
 				if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y))
-					carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
+					carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, MAX_LOG_ODDS_POSSIBLE); //2.0 * sensor_params->log_odds.log_odds_occ);
 			}
 		}
 	}
@@ -1123,6 +1123,8 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	dx = (double) (b.x - a.x);
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
+	if (dr == 0.0)
+		return;
 
 	dx /= dr;
 	dy /= dr;
@@ -1172,6 +1174,8 @@ carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(carmen_map_t *log_odd
 	dx = (double) (b.x - a.x);
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
+	if (dr == 0.0)
+		return;
 
 	dx /= dr;
 	dy /= dr;
@@ -1220,6 +1224,8 @@ carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, 
 	dx = (double) (b.x - a.x);
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
+	if (dr == 0.0)
+		return;
 
 	dx /= dr;
 	dy /= dr;
@@ -1311,7 +1317,6 @@ carmen_prob_models_updade_cells_bellow_robot(carmen_point_t pose, carmen_map_t *
 void
 carmen_prob_models_alloc_sensor_data(sensor_data_t *sensor_data, int vertical_resolution, int number_of_threads)
 {
-
 	sensor_data->vectors_size = vertical_resolution;
 
 	for (int i = 0; i < number_of_threads; i++)
@@ -1530,23 +1535,19 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 //	double p_0;
 	double sigma;
 	previous_ray_index = ray_index - 1;
-	if (sensor_params->use_index_difference && ray_index < sensor_params->ray_index_difference + 4){
+	if (sensor_params->use_index_difference && ray_index < sensor_params->ray_index_difference + 4)
+	{
 		ray_index = ray_index + sensor_params->ray_index_difference + 4;
 		previous_ray_index = ray_index - sensor_params->ray_index_difference;
 	}
-	if (sensor_params->use_index_difference && previous_ray_index > sensor_params->ray_index_difference + 4){
+	if (sensor_params->use_index_difference && previous_ray_index > sensor_params->ray_index_difference + 4)
 		previous_ray_index = ray_index - sensor_params->ray_index_difference;	//DeepMapper
-	}
+
 	if (previous_ray_index < 0)
 		return (sensor_params->log_odds.log_odds_l0);
 
-//	fprintf(plot_data, " > ri %d  pm %d  cm %d  ap %lf  ac %lf ", ray_index, sensor_data->maxed[thread_id][previous_ray_index], sensor_data->maxed[thread_id][ray_index],
-//			sensor_params->vertical_correction[previous_ray_index], sensor_params->vertical_correction[ray_index]);
-
 	if (sensor_data->maxed[thread_id][previous_ray_index] || sensor_data->maxed[thread_id][ray_index])
 		return (sensor_params->log_odds.log_odds_l0);
-//	if (sensor_data->maxed[thread_id][ray_index])
-//		return (sensor_params->log_odds.log_odds_l0);
 
 	if (sensor_data->ray_hit_the_robot[thread_id][previous_ray_index] || sensor_data->ray_hit_the_robot[thread_id][ray_index])
 		return (sensor_params->log_odds.log_odds_l0);
@@ -1554,52 +1555,31 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
 		return (sensor_params->log_odds.log_odds_l0);
 
-//	double ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
 	double previous_ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + previous_ray_index].length;
 
-//	if (sensor_data->maxed[thread_id][previous_ray_index])
-//		ray_size1 = sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index]));
-//	else
-		ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
+	ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
 	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
 
 	delta_ray = ray_size2 - ray_size1;
 	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(sensor_params->height, previous_ray_length,
 			carmen_degrees_to_radians(sensor_params->vertical_correction[ray_index] - sensor_params->vertical_correction[previous_ray_index]));
-//	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(ray_length, ray_index, sensor_params->vertical_correction, sensor_params->height);
-//	expected_delta_ray_old = carmen_prob_models_compute_expected_delta_ray_old(ray_size1, ray_index, sensor_params->vertical_correction, sensor_params->height);
-//	printf("r1 %lf, r2 %lf, dr %lf, edr %lf\n", ray_size1, ray_size2, delta_ray, expected_delta_ray);
 	obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
 	
 	// Testa se tem um obstaculo com um buraco em baixo
 	obstacle_evidence = (obstacle_evidence > 1.0)? 1.0: obstacle_evidence;
 	
-//	fprintf(plot_data, ": r_1 %lf  r1 %lf  r2 %lf  d %lf  ed %lf ",
-//			sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index])),
-//			ray_size1, ray_size2, delta_ray, expected_delta_ray);
-
 	if (reduce_sensitivity)
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_free);
-		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
-		{
-			obstacle_evidence = (delta_ray - expected_delta_ray) / expected_delta_ray;
-			if (obstacle_evidence > 1.0)
-				return (sensor_params->log_odds.log_odds_l0);
-		}
+
 		sigma = sensor_params->unexpeted_delta_range_sigma / 2.0;
 	}
 	else
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_l0);
-		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
-		{
-			obstacle_evidence = (delta_ray - expected_delta_ray) / expected_delta_ray;
-			if (obstacle_evidence > 1.0)
-				return (sensor_params->log_odds.log_odds_l0);
-		}
+
 		sigma = sensor_params->unexpeted_delta_range_sigma;
 	}
 
@@ -1614,8 +1594,6 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 
 	if (log_odds > MAX_LOG_ODDS_POSSIBLE)
 		log_odds = MAX_LOG_ODDS_POSSIBLE;
-
-//	fprintf(plot_data, " p0 %lf  po %lf  lo %lf; ", p_0, p_obstacle, log_odds);
 
 	return (log_odds);
 }
@@ -1775,21 +1753,12 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 		else
 		{
 			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);// +
-			//get_log_odds_via_unexpeted_delta_range_reverse(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);
-
-//			fprintf(plot_data, " oh %lf  uhag %lf # ", sensor_data->obstacle_height[thread_id][i], sensor_params->unsafe_height_above_ground);
 			if (sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground)
 			{
 				if (!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i] && !(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 					sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
 			}
 		}
-
-//		if ((sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground) &&
-//			(!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i]))
-//			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
-//		else
-//			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_l0;
 
 		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) &&
 			(min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
@@ -1798,7 +1767,6 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 			min_ray_size_index = i;
 		}
 	}
-//	fprintf(plot_data, "log odds %lf  ray %d ", sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][min_ray_size_index], min_ray_size_index);
 
 	sensor_data->ray_that_hit_the_nearest_target[thread_id] = min_ray_size_index;
 }
@@ -2275,6 +2243,8 @@ carmen_update_cells_below_robot(carmen_map_t *map, carmen_point_t xt)
 		dx = bx - ax;
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
+		if (dr == 0.0)
+			return;
 
 		dx /= dr;
 		dy /= dr;
@@ -2827,6 +2797,8 @@ update_cells_above_robot(const ProbabilisticMap *map, carmen_point_t xt,
 		dx = bx - ax;
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
+		if (dr == 0.0)
+			return;
 
 		dx /= dr;
 		dy /= dr;
@@ -2920,6 +2892,8 @@ carmen_update_cells_in_the_laser_perceptual_field(carmen_map_t *map, carmen_poin
 		dx = bx - ax;
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
+		if (dr == 0.0)
+			return;
 
 		dx /= dr;
 		dy /= dr;
