@@ -54,6 +54,7 @@ static double wait_for_given_seconds_start_time = 0.0;
 
 carmen_ford_escape_signals_message signals_msg = {};
 
+
 bool
 forward_waypoint_ahead(carmen_robot_and_trailers_traj_point_t current_robot_pose_v_and_phi)
 {
@@ -139,7 +140,7 @@ path_final_pose_reached(carmen_robot_and_trailers_traj_point_t current_robot_pos
 
 	if ((distance_to_path_final_pose < robot_config.distance_between_front_and_rear_axles) &&
 		(fabs(current_robot_pose_v_and_phi.v) < 0.4) &&
-		((distance_to_path_final_pose < 0.5) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
+		((distance_to_path_final_pose < (0.5 * (robot_config.distance_between_front_and_rear_axles / 2.625))) || nearest_pose_is_the_final_pose(current_robot_pose_v_and_phi)))
 		return (true);
 	else
 		return (false);
@@ -1188,7 +1189,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 		// Reverse handling
 		case Stopping_To_Reverse:
-			if ((fabs(current_robot_pose_v_and_phi.v) < 0.5) &&	(distance_to_reverse_waypoint(current_robot_pose_v_and_phi) < 2.0))
+			if ((fabs(current_robot_pose_v_and_phi.v) < 0.5) &&	(distance_to_reverse_waypoint(current_robot_pose_v_and_phi) < (2.0 * (robot_config.distance_between_front_and_rear_axles / 2.625))))
 			{
 				clear_wait_for_given_seconds();
 				decision_making_state_msg->low_level_state = Stopped_At_Reverse_S0;
@@ -1231,7 +1232,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			}
 			break;
 		case Stopped_At_Reverse_S2:
-			if (autonomous && ((current_robot_pose_v_and_phi.v < -0.5) || (distance_to_reverse_waypoint(current_robot_pose_v_and_phi) > 1.0)))
+			if (autonomous && ((current_robot_pose_v_and_phi.v < -0.5) || (distance_to_reverse_waypoint(current_robot_pose_v_and_phi) > (1.0 * (robot_config.distance_between_front_and_rear_axles / 2.625)))))
 				decision_making_state_msg->low_level_state = Free_Reverse_Running;
 			if (!autonomous)
 				decision_making_state_msg->low_level_state = Stopped;
@@ -1240,7 +1241,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 
 		// Reverse handling 2
 		case Stopping_To_Go_Forward:
-			if ((fabs(current_robot_pose_v_and_phi.v) < 0.5) && (distance_to_forward_waypoint(current_robot_pose_v_and_phi) < 2.0))
+			if ((fabs(current_robot_pose_v_and_phi.v) < 0.5) && (distance_to_forward_waypoint(current_robot_pose_v_and_phi) < (2.0 * (robot_config.distance_between_front_and_rear_axles / 2.625))))
 			{
 				clear_wait_for_given_seconds();
 				decision_making_state_msg->low_level_state = Stopped_At_Go_Forward_S0;
@@ -1283,7 +1284,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			}
 			break;
 		case Stopped_At_Go_Forward_S2:
-			if (autonomous && ((current_robot_pose_v_and_phi.v > 0.5) || (distance_to_forward_waypoint(current_robot_pose_v_and_phi) > 1.0)))
+			if (autonomous && ((current_robot_pose_v_and_phi.v > 0.5) || (distance_to_forward_waypoint(current_robot_pose_v_and_phi) > (1.0 * (robot_config.distance_between_front_and_rear_axles / 2.625)))))
 				decision_making_state_msg->low_level_state = Free_Running;
 			if (!autonomous)
 				decision_making_state_msg->low_level_state = Stopped;

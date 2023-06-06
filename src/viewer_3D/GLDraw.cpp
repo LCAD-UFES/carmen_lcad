@@ -41,7 +41,7 @@ double background_b;
 double wheel_displacement = 1.15;
 
 void
-initGl (int width, int height)
+initGl(int width, int height, carmen_vector_3D_t robot_size)
 {
     int zero = 0;
     glutInit (&zero, NULL);
@@ -81,16 +81,13 @@ initGl (int width, int height)
 
     gluPerspective (45.0f, width / height, 0.1f, 4000.0f); // Calculate The Aspect Ratio Of The Window
 
-    set_camera_mode(1);
+    set_camera_mode(1, robot_size);
 
     background_r = 0.0;
     background_g = 0.0;
     background_b = 0.0;
 
     glMatrixMode (GL_MODELVIEW);
-
-
-
 }
 
 void move_front_camera(double moviment)
@@ -128,22 +125,22 @@ get_camera_mode()
 }
 
 void
-set_camera_mode (int mode)
+set_camera_mode(int mode, carmen_vector_3D_t robot_size)
 {
 	camera_mode = mode;
 	free_mode = 0;
-	reset_camera_position();
+	reset_camera_position(robot_size);
 }
 
 void
-reset_camera_position ()
+reset_camera_position(carmen_vector_3D_t robot_size)
 {
 
-	if(camera_mode == 1 || camera_mode == 2)
+	if (camera_mode == 1 || camera_mode == 2)
 	{
 		camera_pose.position.x = 0.0;
 		camera_pose.position.y = 0.0;
-		camera_pose.position.z = 80.0;
+		camera_pose.position.z = 80.0 * (robot_size.x / 4.0);
 		camera_pose.orientation.pitch = carmen_degrees_to_radians (90.0);
 
 		camera_offset.orientation.pitch = 0.0;

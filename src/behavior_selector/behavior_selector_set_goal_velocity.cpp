@@ -1381,7 +1381,7 @@ set_goal_velocity(carmen_robot_and_trailers_traj_point_t *goal, carmen_robot_and
 	previous_v = goal->v;
 	if ((fabs(goal->v) < 1.0) && (fabs(current_robot_pose_v_and_phi->v) < 0.3) &&
 //		(DIST2D_P(current_robot_pose_v_and_phi, goal) < distance_between_waypoints_and_goals()) &&
-		(DIST2D_P(current_robot_pose_v_and_phi, goal) > 0.5))
+		(DIST2D_P(current_robot_pose_v_and_phi, goal) > (0.5 * (robot_config.distance_between_front_and_rear_axles / 2.625))))
 	{
 		double path_dist = compute_dist_walked_from_robot_to_goal(rddf->poses, goal, rddf->number_of_poses);
 		double intermediate_velocity = compute_max_v_using_torricelli(current_robot_pose_v_and_phi->v, get_robot_config()->maximum_acceleration_forward, path_dist / 2.0);

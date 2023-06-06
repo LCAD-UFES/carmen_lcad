@@ -3990,7 +3990,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
     }
 
     w = initWindow(window_width, window_height);
-	initGl(window_width, window_height);
+	initGl(window_width, window_height, robot_size);
 	if (window_x >= 0 && window_y >= 0)
 		XMoveWindow(w->g_pDisplay, w->g_window, window_x, window_y);
 	else
@@ -5248,20 +5248,20 @@ keyPress(int code)
         break;
     case 16: // 7
     {
-    	set_camera_mode(1); // Sattelite View (navigator_gui)
+    	set_camera_mode(1, robot_size); // Sattelite View (navigator_gui)
     	follow_car_flag = 1;
 
     }
        break;
     case 17: // 8
     {
-    	set_camera_mode(2); // Sattelite View (fixed on car)
+    	set_camera_mode(2, robot_size); // Sattelite View (fixed on car)
     	follow_car_flag = 1;
     }
        break;
     case 18: // 9
     {
-    	set_camera_mode(3); // Back view (follow robot)
+    	set_camera_mode(3, robot_size); // Back view (follow robot)
     	follow_car_flag = 1;
     }
        break;

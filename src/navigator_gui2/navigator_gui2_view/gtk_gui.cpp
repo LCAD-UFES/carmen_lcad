@@ -3114,8 +3114,8 @@ namespace View
 				particle.map	= the_map_view->internal_map;
 
 				final_point = particle;
-				final_point.pose.x = final_point.pose.x + cos(final_point.pose.theta) * 5.0;
-				final_point.pose.y = final_point.pose.y + sin(final_point.pose.theta) * 5.0;
+				final_point.pose.x = final_point.pose.x + cos(final_point.pose.theta) * (5.0 * (robot_config->length / 2.625));
+				final_point.pose.y = final_point.pose.y + sin(final_point.pose.theta) * (5.0 * (robot_config->length / 2.625));
 
 				carmen_map_graphics_draw_line(the_map_view, &carmen_yellow, &particle, &final_point);
 			}
@@ -3144,8 +3144,8 @@ namespace View
 				particle.map	= the_map_view->internal_map;
 
 				final_point = particle;
-				final_point.pose.x = final_point.pose.x + cos(final_point.pose.theta) * 5.0;
-				final_point.pose.y = final_point.pose.y + sin(final_point.pose.theta) * 5.0;
+				final_point.pose.x = final_point.pose.x + cos(final_point.pose.theta) * (5.0 * (robot_config->length / 2.625));
+				final_point.pose.y = final_point.pose.y + sin(final_point.pose.theta) * (5.0 * (robot_config->length / 2.625));
 
 				carmen_map_graphics_draw_line(the_map_view, &carmen_yellow, &particle, &final_point);
 			}
