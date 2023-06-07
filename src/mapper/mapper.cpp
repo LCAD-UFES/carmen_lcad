@@ -2195,7 +2195,7 @@ carmen_mapper_read_alive_lidars_configs(int argc, char **argv)
 	char locc_string[64], lfree_string[64], l0_string[64], unexpeted_delta_range_sigma_string[64];
 	carmen_lidar_config *p;
 
-	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
 	{
 		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
 		{
