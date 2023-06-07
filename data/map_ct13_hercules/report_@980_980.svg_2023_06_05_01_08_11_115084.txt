@@ -1,0 +1,67 @@
+
+Graph Summary Report
+--------------
+SVG file: '../data/mapper_teste2/@980_980.svg'
+
+RDDF file #1: '../data/mapper_teste2/rddf-log_ct13-20220531.txt'
+ 214 waypoints in 31.25 meters
+     [  0]  start point                       (x,y)  1000.009000	1000.000000	 (   20.01,    50.00)  
+     [213]  finish point                      (x,y)  1028.354000	995.927000	 (   48.35,    54.07)  
+     [  6]  bad waypoint                      (x,y)  1000.796000	1000.009000	 (   20.80,    49.99)  bad steering angle: | -33.87°| > 30.01°
+     [  9]  bad waypoint                      (x,y)  1001.167000	1000.002000	 (   21.17,    50.00)  bad steering angle: | -31.79°| > 30.01°
+     [ 12]  bad waypoint                      (x,y)  1001.515000	999.968000	 (   21.51,    50.03)  bad steering angle: | -42.18°| > 30.01°
+     [ 13]  bad waypoint                      (x,y)  1001.659000	999.950000	 (   21.66,    50.05)  bad steering angle: | -38.49°| > 30.01°
+     [ 14]  bad waypoint                      (x,y)  1001.785000	999.919000	 (   21.78,    50.08)  bad steering angle: | -43.34°| > 30.01°
+     [ 17]  bad waypoint                      (x,y)  1002.166000	999.812000	 (   22.17,    50.19)  bad steering angle: | -46.12°| > 30.01°
+     [ 18]  bad waypoint                      (x,y)  1002.272000	999.785000	 (   22.27,    50.22)  bad steering angle: | -43.04°| > 30.01°
+     [ 19]  bad waypoint                      (x,y)  1002.376000	999.738000	 (   22.38,    50.26)  bad steering angle: | -44.65°| > 30.01°
+     [ 20]  bad waypoint                      (x,y)  1002.475000	999.696000	 (   22.48,    50.30)  bad steering angle: | -45.42°| > 30.01°
+     [ 21]  bad waypoint                      (x,y)  1002.564000	999.636000	 (   22.56,    50.36)  bad steering angle: | -46.40°| > 30.01°
+     [ 22]  bad waypoint                      (x,y)  1002.661000	999.593000	 (   22.66,    50.41)  bad steering angle: | -42.52°| > 30.01°
+     [ 23]  bad waypoint                      (x,y)  1002.763000	999.516000	 (   22.76,    50.48)  bad steering angle: | -44.31°| > 30.01°
+     [ 24]  bad waypoint                      (x,y)  1002.860000	999.454000	 (   22.86,    50.55)  bad steering angle: | -47.34°| > 30.01°
+     [ 25]  bad waypoint                      (x,y)  1002.967000	999.371000	 (   22.97,    50.63)  bad steering angle: | -47.36°| > 30.01°
+     [ 26]  bad waypoint                      (x,y)  1003.048000	999.299000	 (   23.05,    50.70)  bad steering angle: | -46.75°| > 30.01°
+     [ 27]  bad waypoint                      (x,y)  1003.129000	999.223000	 (   23.13,    50.78)  bad steering angle: | -41.47°| > 30.01°
+     [ 28]  bad waypoint                      (x,y)  1003.227000	999.134000	 (   23.23,    50.87)  bad steering angle: | -43.53°| > 30.01°
+     [ 29]  bad waypoint                      (x,y)  1003.295000	999.046000	 (   23.29,    50.95)  bad steering angle: | -49.35°| > 30.01°
+     [ 30]  bad waypoint                      (x,y)  1003.359000	998.963000	 (   23.36,    51.04)  bad steering angle: | -41.99°| > 30.01°
+     [ 31]  bad waypoint                      (x,y)  1003.447000	998.852000	 (   23.45,    51.15)  bad steering angle: | -49.21°| > 30.01°
+     [ 32]  bad waypoint                      (x,y)  1003.520000	998.728000	 (   23.52,    51.27)  bad steering angle: | -51.39°| > 30.01°
+     [ 33]  bad waypoint                      (x,y)  1003.564000	998.638000	 (   23.56,    51.36)  bad steering angle: | -42.95°| > 30.01°
+     [ 34]  bad waypoint                      (x,y)  1003.638000	998.536000	 (   23.64,    51.46)  bad steering angle: | -48.39°| > 30.01°
+     [ 35]  bad waypoint                      (x,y)  1003.691000	998.429000	 (   23.69,    51.57)  bad steering angle: | -49.56°| > 30.01°
+     [ 36]  bad waypoint                      (x,y)  1003.721000	998.309000	 (   23.72,    51.69)  bad steering angle: | -48.77°| > 30.01°
+     [ 39]  bad waypoint                      (x,y)  1003.840000	997.970000	 (   23.84,    52.03)  bad steering angle: |  38.14°| > 30.01°
+     [ 44]  bad waypoint                      (x,y)  1004.104000	997.348000	 (   24.10,    52.65)  bad steering angle: | -53.86°| > 30.01°
+     [ 46]  bad waypoint                      (x,y)  1004.382000	996.260000	 (   24.38,    53.74)  bad steering angle: |  51.52°| > 30.01°
+     [ 47]  bad waypoint                      (x,y)  1004.625000	995.836000	 (   24.62,    54.16)  bad steering angle: |  49.70°| > 30.01°
+     [ 48]  bad waypoint                      (x,y)  1004.968000	995.469000	 (   24.97,    54.53)  bad steering angle: |  50.73°| > 30.01°
+     [ 49]  bad waypoint                      (x,y)  1005.373000	995.193000	 (   25.37,    54.81)  bad steering angle: |  47.41°| > 30.01°
+     [ 50]  bad waypoint                      (x,y)  1005.821000	994.995000	 (   25.82,    55.00)  bad steering angle: |  41.14°| > 30.01°
+     [ 51]  bad waypoint                      (x,y)  1006.294000	994.863000	 (   26.29,    55.14)  bad steering angle: |  34.85°| > 30.01°
+     [ 52]  bad waypoint                      (x,y)  1006.825125	994.819421	 (   26.83,    55.18)  bad steering angle: |  39.35°| > 30.01°
+     [ 56]  bad waypoint                      (x,y)  1008.489000	994.880000	 (   28.49,    55.12)  bad steering angle: |  64.44°| > 30.01°
+     [ 65]  bad waypoint                      (x,y)  1009.567000	995.114000	 (   29.57,    54.89)  bad steering angle: | -42.79°| > 30.01°
+     [ 84]  bad waypoint                      (x,y)  1011.865000	995.389000	 (   31.87,    54.61)  bad steering angle: | -54.25°| > 30.01°
+     [ 93]  bad waypoint                      (x,y)  1013.061000	995.364000	 (   33.06,    54.64)  bad steering angle: |  43.22°| > 30.01°
+     [ 95]  bad waypoint                      (x,y)  1013.281000	995.374000	 (   33.28,    54.63)  bad steering angle: |  37.06°| > 30.01°
+     [153]  bad waypoint                      (x,y)  1020.688000	995.318000	 (   40.69,    54.68)  bad steering angle: |  36.68°| > 30.01°
+     [154]  bad waypoint                      (x,y)  1020.796000	995.311000	 (   40.80,    54.69)  bad steering angle: |  36.79°| > 30.01°
+     [166]  bad waypoint                      (x,y)  1022.277000	995.369000	 (   42.28,    54.63)  bad steering angle: |  40.65°| > 30.01°
+     [167]  bad waypoint                      (x,y)  1022.378000	995.376000	 (   42.38,    54.62)  bad steering angle: |  35.16°| > 30.01°
+     [203]  bad waypoint                      (x,y)  1027.059000	995.611000	 (   47.06,    54.39)  bad steering angle: |  40.04°| > 30.01°
+     [204]  bad waypoint                      (x,y)  1027.212000	995.623000	 (   47.21,    54.38)  bad steering angle: |  31.60°| > 30.01°
+     [205]  bad waypoint                      (x,y)  1027.340000	995.624000	 (   47.34,    54.38)  bad steering angle: |  36.09°| > 30.01°
+     [206]  bad waypoint                      (x,y)  1027.464000	995.665000	 (   47.46,    54.34)  bad steering angle: |  36.16°| > 30.01°
+     [207]  bad waypoint                      (x,y)  1027.616000	995.670000	 (   47.62,    54.33)  bad steering angle: |  33.96°| > 30.01°
+     [208]  bad waypoint                      (x,y)  1027.714000	995.712000	 (   47.71,    54.29)  bad steering angle: |  34.52°| > 30.01°
+     [209]  bad waypoint                      (x,y)  1027.860000	995.750000	 (   47.86,    54.25)  bad steering angle: |  39.70°| > 30.01°
+     [210]  bad waypoint                      (x,y)  1027.992000	995.785000	 (   47.99,    54.22)  bad steering angle: |  40.59°| > 30.01°
+
+Command for re-editing the RDDF:
+./edit_graph_inkscape.py  -i ../data/mapper_teste2  -o ../data/mapper_teste2  --window  980.0  980.0  70.0  70.0  '../data/mapper_teste2/rddf-log_ct13-20220531.txt' 
+
+Command for generating the graph file:
+# You may modify the content of GRAPH and RANGE:
+GRAPH="../data/mapper_teste2/graph-log_ct13-20220531_150m.gr";  RANGE="150";  echo -e '/home/lume/carmen_lcad/data/mapper_teste2/rddf-log_ct13-20220531.txt' > rddf_files_list.txt;  $CARMEN_HOME/bin/road_network_generator  -c  rddf_files_list.txt  $GRAPH  $RANGE
