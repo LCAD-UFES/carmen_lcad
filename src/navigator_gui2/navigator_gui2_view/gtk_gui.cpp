@@ -3534,6 +3534,89 @@ namespace View
 	}
 
 	void
+	GtkGui::draw_paths_from_moving_points(GtkMapViewer *the_map_view)
+	{
+		if (nav_panel_config->show_dynamic_points)
+		{
+			if (this->frenet_path_planer_set_of_paths_msg.number_of_poses > 0)
+			{
+				// Populate paths
+				int number_of_poses = this->frenet_path_planer_set_of_paths_msg.number_of_poses;
+				int number_of_paths = this->frenet_path_planer_set_of_paths_msg.set_of_paths_size / this->frenet_path_planer_set_of_paths_msg.number_of_poses;
+				carmen_world_point_t **paths = (carmen_world_point_t **) malloc(sizeof(carmen_world_point_t *) * number_of_paths);
+
+				for (int i = 0; i < number_of_paths; i++)
+				{
+					paths[i] = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * number_of_poses);
+
+					for (int j = 0; j < number_of_poses; j++)
+					{
+						carmen_robot_and_trailers_traj_point_t current_pose = this->frenet_path_planer_set_of_paths_msg.set_of_paths[i * number_of_poses + j];
+						paths[i][j].pose.x = current_pose.x;
+						paths[i][j].pose.y = current_pose.y;
+						paths[i][j].pose.theta = 0.0;
+					}
+				}
+
+				// find near pose and path to moving point
+				double MAX_DISTANCE = 5.0;
+
+				for (int i = 0; i < this->virtual_laser_msg.num_positions; i++)
+				{
+					double min_distance = 9999.0;
+					double distance = 0.0;
+					int near_path_index = -1;
+					int near_pose_index = -1;
+
+					carmen_position_t current_moving_point = this->virtual_laser_msg.positions[i];
+
+					for (int path_index = 0; path_index < number_of_paths; path_index++)
+					{
+						for (int pose_index = 0; pose_index < number_of_poses; pose_index++)
+						{
+							distance = DIST2D(current_moving_point, paths[path_index][pose_index].pose);
+
+							if (distance < min_distance)
+							{
+								min_distance = distance;
+								near_path_index = path_index;
+								near_pose_index = pose_index;
+							}
+						}
+					}
+
+					if (min_distance < MAX_DISTANCE)
+					{
+						// drawing path from the moving point
+						int new_number_of_poses = number_of_poses - near_pose_index;
+						carmen_world_point_t *new_path = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * new_number_of_poses);
+
+						int new_index = 0;
+						for (int j = near_pose_index; j < number_of_poses; j++)
+						{
+							new_path[new_index].pose.x = paths[near_path_index][j].pose.x;
+							new_path[new_index].pose.y = paths[near_path_index][j].pose.y;
+							new_path[new_index].pose.theta = paths[near_path_index][j].pose.theta;
+							new_path[new_index].map = the_map_view->internal_map;
+							new_index++;
+						}
+
+						draw_path(new_path, new_number_of_poses, carmen_red, carmen_red, the_map_view);
+
+						free(new_path);
+					}
+				}
+
+				// free memory
+				for (int i = 0; i < number_of_paths; i++)
+					free(paths[i]);
+
+				free(paths);
+			}
+		}
+	}
+
+	void
 	GtkGui::draw_lane_lines(GtkMapViewer *the_map_view, double pixel_size)
 	{
 		if (lane_markings_msg->lane_vector_size == 0 && lane_markings_msg == NULL)

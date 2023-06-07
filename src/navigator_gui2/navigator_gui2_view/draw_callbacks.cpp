@@ -1653,7 +1653,10 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		global_gui->draw_moving_objects(the_map_view);
 
 	if (global_gui->nav_panel_config->show_dynamic_points)
+	{
 		global_gui->draw_moving_points(the_map_view, pixel_size);
+		global_gui->draw_paths_from_moving_points(the_map_view);
+	}
 
 	if (global_gui->nav_panel_config->show_annotations)
 		global_gui->draw_annotations(the_map_view, pixel_size);
