@@ -1700,8 +1700,8 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 			soft_stop_on = false;
 		}
 
-		printf("New speed set by voice command: %lf\n", get_max_v());
-		fflush(stdout);
+//		printf("New speed set by voice command: %lf\n", get_max_v());
+//		fflush(stdout);
 	}
 }
 
