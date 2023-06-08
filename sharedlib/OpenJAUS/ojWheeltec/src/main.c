@@ -414,8 +414,9 @@ void update_wheels_speed(struct can_frame frame)
 
 void update_car_speed(struct can_frame frame)
 {
-	car_speed = ((double) frame.data[0] * 256.0 + (double) frame.data[1]) / VELOCITY_CONVERSION_CONSTANT;
-	speed_signal = (car_speed < 0.0)? -1.0: 1.0;
+	short int int_vel = frame.data[0] << 8 | frame.data[1];
+	car_speed = (double) int_vel / VELOCITY_CONVERSION_CONSTANT;
+//	speed_signal = (car_speed < 0.0)? -1.0: 1.0;
 //	printf("car_speed = %lf\n", car_speed);
 }
 
