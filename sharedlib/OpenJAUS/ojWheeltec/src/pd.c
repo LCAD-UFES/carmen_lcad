@@ -57,7 +57,7 @@
 #define CONTROLLER_STATUS_QUEUE_SIZE			1
 #define CONTROLLER_STATUS_PRESENCE_VECTOR	0
 #define VELOCITY_CONVERSION_CONSTANT 	5000.0
-#define ANGLE_CONVERSION_CONSTANT 		2000.0
+#define ANGLE_CONVERSION_CONSTANT 		1000.0
 
 
 typedef struct
@@ -93,7 +93,6 @@ int gear_can_command = 0;
 
 double wheel_speed_moving_average(double *wheel_speed);
 
-extern double requested_steering_angle;
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
@@ -154,8 +153,17 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	if (gear_can_command == 0x1)
 		int_velocity = -int_velocity;
 	
-//	if (int_velocity == 0)
-//		int_velocity = 7;
+	static int forced_vel = 0;
+	static int count = 0;
+	if (int_velocity == 0)
+	{
+		int_velocity = forced_vel;
+		if (count++ == 10)
+		{
+			forced_vel = -forced_vel;
+			count = 0;
+		}
+	}
 
 	frame.data[1] = (__u8) ((int_velocity >> 8) & 0xff);
 	frame.data[0] = (__u8) int_velocity & 0xff;
@@ -163,7 +171,6 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 
 //	frame.can_id = 0x80;
 //	frame.can_dlc = 2;
-	requested_steering_angle = steering_effort / 100.0;
 
 	int int_phi =  (steering_effort / 100.0) * ANGLE_CONVERSION_CONSTANT;
 	frame.data[3] = (__u8) ((int_phi >> 8) & 0xff);

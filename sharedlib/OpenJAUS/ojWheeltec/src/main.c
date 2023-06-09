@@ -94,8 +94,6 @@ int steering_angle_sensor_zero = 20000.0 + 30.0;
 
 int steering_wheel_zero_torque = -30;
 
-double requested_steering_angle = 0.0; // varia de -1.0 a 1.0, sendo os limetes de ângulo para a esquerda e para a direita vindo do carro como esforço (tem o PID no meio...)
-
 
 // Refresh screen in curses mode
 void updateScreen(int keyboardLock, int keyPress)
@@ -440,8 +438,6 @@ void update_steering_angle(struct can_frame frame)
 	double v = car_speed;
 	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
-
-//	steering_angle = requested_steering_angle;
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)
