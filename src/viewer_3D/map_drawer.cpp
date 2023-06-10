@@ -86,7 +86,7 @@ static int getTotalObstacles(carmen_map_t map, double car_x, double car_y, doubl
 			double x = i * resolution;
 			double y = j * resolution;
 			double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
-			if (distance < ((double) map.config.x_size * resolution * zoom))
+			if (distance < ((double) map.config.x_size * resolution * zoom * 3.0))
 			{
 				double map_value = map.complete_map[i * map.config.x_size + j];
 
@@ -180,7 +180,7 @@ static float *create_vertex_data(carmen_map_t map, int total_size, double car_x,
 			double y = j * resolution;
 			double z = 0.0;
 			double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
-			if (distance < ((double) map.config.x_size * resolution * zoom))
+			if (distance < ((double) map.config.x_size * resolution * zoom * 3.0))
 			{
 				double map_value = map.complete_map[i * map.config.x_size + j];
 				if (map_value > 0.5)
@@ -447,7 +447,7 @@ add_localize_map_message(map_drawer* m_drawer, carmen_map_server_localize_map_me
 //				double x = i * resolution;
 //				double y = j * resolution;
 //				double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
-//				if (distance < ((double) map.config.x_size * resolution * zoom))
+//				if (distance < ((double) map.config.x_size * resolution * zoom * 3.0))
 //				{
 //					double z = 0.0;
 //					double map_value = map.complete_map[i * map.config.x_size + j];
@@ -482,7 +482,7 @@ draw_single_map_optimized(carmen_map_t map, double car_x, double car_y, double z
 			double x = i * resolution;
 			double y = j * resolution;
 			double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
-			if (distance < ((double) map.config.x_size * resolution * zoom))
+			if (distance < ((double) map.config.x_size * resolution * zoom * 3.0))
 			{
 				double z = 0.3;
 				double map_value = map.complete_map[i * map.config.x_size + j];
@@ -555,7 +555,7 @@ draw_single_map_optimized(carmen_map_t map, double car_x, double car_y, double z
 //			double x = i * resolution;
 //			double y = j * resolution;
 //			double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
-//			if (distance < ((double) map.config.x_size * resolution * zoom))
+//			if (distance < ((double) map.config.x_size * resolution * zoom * 3.0))
 //			{
 //				double z = 0.5;
 //				double map_value = map.complete_map[i * map.config.x_size + j];
@@ -717,13 +717,9 @@ draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_f
 	glPushMatrix();
 
 		if (drawVBO)
-		{
 			draw_map_VBO(m_drawer, offset);
-		}
 		else
-		{
 			draw_map_not_VBO(m_drawer, offset, car_fused_pose, map_zoom);
-		}
 
 	glPopMatrix();
 }
