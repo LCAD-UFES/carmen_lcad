@@ -172,11 +172,20 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 //	frame.can_id = 0x80;
 //	frame.can_dlc = 2;
 
-	int int_phi =  (steering_effort / 100.0) * ANGLE_CONVERSION_CONSTANT;
-	frame.data[3] = (__u8) ((int_phi >> 8) & 0xff);
-	frame.data[2] = (__u8) int_phi & 0xff;
-	send_frame(out_can_sockfd, &frame);
+	if (steering_effort > 100.0)
+		steering_effort = 100.0;
+	else if (steering_effort < -100.0)
+		steering_effort = -100.0;
 
+	int int_steering_effort = round(steering_effort);
+	frame.data[3] = (__u8) ((int_steering_effort >> 8) & 0xff);
+	frame.data[2] = (__u8) int_steering_effort & 0xff;
+
+	// int int_phi =  (steering_effort / 100.0) * ANGLE_CONVERSION_CONSTANT;
+	// frame.data[3] = (__u8) ((int_phi >> 8) & 0xff);
+	// frame.data[2] = (__u8) int_phi & 0xff;
+
+	send_frame(out_can_sockfd, &frame);
 }
 
 void pdProcessMessage(OjCmpt pd, JausMessage message)

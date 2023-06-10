@@ -55,7 +55,7 @@
 
 #define VELOCITY_CONVERSION_CONSTANT 	5000.0
 #define ANGLE_CONVERSION_CONSTANT 		(2000.0 / 0.59)
-#define ZERO_ANGLE_CONSTANT				(1578)
+#define ZERO_ANGLE_CONSTANT				(1578.0)
 
 static int mainRunning = FALSE;
 static int verbose = FALSE; // Se verdadeiro, printf() funciona; caso contrario, nao.
