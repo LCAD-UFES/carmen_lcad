@@ -53,7 +53,7 @@
 #define DEFAULT_STRING_LENGTH 128
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
-#define VELOCITY_CONVERSION_CONSTANT 	5000.0
+#define VELOCITY_CONVERSION_CONSTANT 	(5000.0 / 2.0)
 #define ANGLE_CONVERSION_CONSTANT 		(2000.0 / 0.59)
 #define ZERO_ANGLE_CONSTANT				(1578.0)
 
@@ -495,14 +495,14 @@ void *can_in_read_thread_func(void *unused)
 
 void *can_out_read_thread_func(void *unused)
 {
-	//struct can_frame frame;
+	struct can_frame frame;
 
 	while (mainRunning)
 	{
 		if (out_can_sockfd != -1)
 		{
-	         //recv_frame(out_can_sockfd, &frame);
-			 //update_Torc_state(frame);
+	         recv_frame(out_can_sockfd, &frame);
+			 update_Torc_state(frame);
 		}
 	}
 

@@ -12,32 +12,32 @@ go after park at 1004.95, 1000.20, 3.136  # fica nesta task ateh o fim do curso
 stop # tira de modo autonomo
 
 
-# * Pilha A, segundo fardo
-announce "Bale 2, pile A"
-park at 1003.29, 997.74, 1.565
-go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	# * Pilha A, segundo fardo
+	announce "Bale 2, pile A"
+	park at 1003.29, 997.74, 1.565
+	go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
-# Caminhão, segundo fardo
-park at  1004.95, 1000.04, 3.136
-go after park at 1004.95, 1000.04, 3.136  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	# Caminhão, segundo fardo
+	park at  1004.95, 1000.04, 3.136
+	go after park at 1004.95, 1000.04, 3.136  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
 
-# * Pilha A, terceiro fardo
-announce "Bale 3, pile A"
-park at 1003.29, 997.74, 1.565
-go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	# * Pilha A, terceiro fardo
+	announce "Bale 3, pile A"
+	park at 1003.29, 997.74, 1.565
+	go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
-# Caminhão, terceiro fardo
-park at  1004.95, 999.89, 3.136
-go after park at 1004.95, 999.89, 3.136  # fica nesta task ateh o fim do curso 
-stop # tira de modo autonomo
+	# Caminhão, terceiro fardo
+	park at  1004.95, 999.89, 3.136
+	go after park at 1004.95, 999.89, 3.136  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
 
 
 # Retorna ao inicio
-park at  1000.0, 1000.0, 0.0
+park at  999.0, 1000.0, 0.0
 go after park at 1000.0, 1000.0, 0.0  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 

@@ -131,6 +131,72 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	err = IPC_publishData(message_name, &pmsg);
 	carmen_test_ipc_exit(err, "Could not publish", message_name);
 }
+
+
+static void
+publish_truepos(carmen_point_t truepose, double v, double phi, double timestamp)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static carmen_simulator_ackerman_truepos_message truepos;
+	static int first = 1;
+	if (first)
+	{
+		truepos.host = carmen_get_host();
+		first = 0;
+	}
+
+	truepos.truepose = truepose;
+	truepos.odometrypose = truepose;
+	truepos.num_trailers = 1;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		truepos.trailer_theta[z] = truepos.truepose.theta;
+
+	truepos.v = v;
+	truepos.phi = phi;
+	truepos.timestamp = timestamp;
+
+	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, &truepos);
+	carmen_test_ipc(err, "Could not publish simualator_truepos_message", CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME);
+}
+
+
+void
+test_odometry(carmen_localize_ackerman_globalpos_message globalpos)
+{
+	static carmen_localize_ackerman_globalpos_message truepos;
+	static double last_timestamp = 0.0;
+
+	if (!g_reinitiaze_particles)
+	{
+		carmen_robot_and_trailers_traj_point_t robot_pose;
+		robot_pose.x = truepos.globalpos.x;
+		robot_pose.y = truepos.globalpos.y;
+		robot_pose.theta = truepos.globalpos.theta;
+
+		int odometry_index = get_base_ackerman_odometry_index_by_timestamp(globalpos.timestamp);
+		double v = base_ackerman_odometry_vector[odometry_index].v;
+		double phi = base_ackerman_odometry_vector[odometry_index].phi;
+
+		double dt = globalpos.timestamp - last_timestamp;
+		double distance_traveled = 0.0;
+		robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v, phi, dt,
+						&distance_traveled, dt, car_config, semi_trailer_config);
+
+		truepos.globalpos.x = robot_pose.x;
+		truepos.globalpos.y = robot_pose.y;
+		truepos.globalpos.theta = robot_pose.theta;
+		truepos.v = robot_pose.v = v;
+		truepos.phi = robot_pose.phi = phi;
+		truepos.timestamp = globalpos.timestamp;
+		publish_truepos(truepos.globalpos, truepos.v, truepos.phi, truepos.timestamp);
+		last_timestamp = globalpos.timestamp;
+	}
+	else
+	{
+		truepos = globalpos;
+		last_timestamp = globalpos.timestamp;
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -254,6 +320,8 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	}
 
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos);
+
+//	test_odometry(globalpos);
 }
 
 
