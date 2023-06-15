@@ -16,6 +16,7 @@
 
 void step_motor_setup();
 void motor_task(void *arg);
+void serial_task(void *arg);
 
 
 //ADC Channels
@@ -167,8 +168,9 @@ app_main(void)
     ESP_ERROR_CHECK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
     ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_ANGLE_POTENTIOMETER, ADC_EXAMPLE_ATTEN));
 
-    xTaskCreatePinnedToCore(adc1_task, "adc1_task", 1024*2, NULL, 2, NULL, 0);
-    xTaskCreatePinnedToCore(motor_task, "motor_task", 1024*2, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(adc1_task, "adc1_task", 1024 * 2, NULL, 2, NULL, 0);
+    xTaskCreatePinnedToCore(motor_task, "motor_task", 1024 * 2, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(serial_task, "serial_task", 1024 * 2, NULL, 2, NULL, 1);
 
     while (1) 
     {

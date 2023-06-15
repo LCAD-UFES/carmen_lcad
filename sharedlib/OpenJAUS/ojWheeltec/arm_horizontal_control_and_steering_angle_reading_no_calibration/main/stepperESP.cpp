@@ -17,10 +17,14 @@
 
 #define STEPS_PER_REV 200
 #define NUM_REV_0_TO_100 24.0
+
+void set_steering_effort(int steering_effort);
+
 const double percent_to_steps = NUM_REV_0_TO_100 / 300.0;
 
 byte dataReceived[DATA_LENGTH];
 unsigned short receivedValue = 0;
+int new_linear_actuator_command = 0;
 int currentSteps = 0;
 int numSteps;
 
@@ -102,8 +106,6 @@ void step_motor_setup()
     Serial.begin(115200);
 }
 
-void set_steering_effort(int steering_effort);
-
 void motor_task(void *arg)
 {
     // calibrate();
@@ -111,6 +113,22 @@ void motor_task(void *arg)
     while (1)
     {
         digitalWrite(ENA, HIGH);
+        if (new_linear_actuator_command == 1)
+        {
+        	linearActuator();
+            new_linear_actuator_command = 0;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void serial_task(void *arg)
+{
+    // calibrate();
+
+    while (1)
+    {
         if (Serial.available())	// Tem que colocar esta leitura em uma task e as variaveis receivedValue e steering_effort (dentro de set_steering_effort()) protegidas por semaforos
         {
             int data_string_size = Serial.readBytesUntil('\n', data_string, 1023);
@@ -124,25 +142,9 @@ void motor_task(void *arg)
 
             if (strstr(data_string, "linear_actuator_percent: ") != NULL)
             {
-                if (sscanf(data_string, "linear_actuator_percent: %hu", &receivedValue) == 1) // Checa se recebeu linear_actuator_percent
-                	linearActuator();
+                if ((new_linear_actuator_command == 0) && (sscanf(data_string, "linear_actuator_percent: %hu", &receivedValue) == 1)) // Checa se recebeu linear_actuator_percent
+                	new_linear_actuator_command = 1;
             }
-
-        //     Serial.readBytes(dataReceived, DATA_LENGTH);
-        //     if (dataReceived[0] == FRAME_HEADER)
-        //     {
-        //         if (dataReceived[DATA_LENGTH - 1] == FRAME_TAIL)
-        //         {
-        //             if (dataReceived[DATA_LENGTH - 2] == checkSum(3, dataReceived))
-        //             {
-        //                 receivedValue = (unsigned short)((dataReceived[1] << 8) + (dataReceived[2]));
-        //                 // Serial.print("Dado recebido: ");
-        //                 // Serial.println(receivedValue);
-        //                 linearActuator();
-        //                 // Serial.println("---------------");
-        //             }
-        //         }
-        //     }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
