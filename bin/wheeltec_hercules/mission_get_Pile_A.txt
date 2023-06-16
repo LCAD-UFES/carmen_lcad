@@ -6,11 +6,14 @@ park at 1003.29, 997.74, 1.565
 go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
+get bale from pile
+
 # Caminhão, primeiro fardo
 park at  1004.95, 1000.20, 3.136
 go after park at 1004.95, 1000.20, 3.136  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
+put bale on the truck
 
 	# * Pilha A, segundo fardo
 	announce "Bale 2, pile A"
