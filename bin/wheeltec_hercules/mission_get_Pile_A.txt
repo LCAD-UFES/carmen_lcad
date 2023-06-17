@@ -2,17 +2,22 @@
 #
 # * Pilha A, primeiro fardo
 announce "Bale 1, pile A"
+
+	park at 1003.29, 998.74, 1.565
+	go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
+	stop # tira de modo autonomo
+
 park at 1003.29, 997.74, 1.565
 go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
-
+	wait for 8 seconds
 get bale from pile
 
 # Caminhão, primeiro fardo
-park at  1004.95, 1000.20, 3.136
-go after park at 1004.95, 1000.20, 3.136  # fica nesta task ateh o fim do curso 
+park at  1004.95, 1000.20, 3.1416
+go after park at 1004.95, 1000.20, 3.1416  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
-
+	wait for 8 seconds
 put bale on the truck
 
 	# * Pilha A, segundo fardo
@@ -40,8 +45,8 @@ put bale on the truck
 
 
 # Retorna ao inicio
-park at  999.0, 1000.0, 0.0
-go after park at 1000.0, 1000.0, 0.0  # fica nesta task ateh o fim do curso 
+park at  999.0, 1000.0, 3.1416
+go after park at 999.0, 1000.0, 3.1416  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 
