@@ -1,0 +1,5 @@
+put bale on the truck
+wait for 1 seconds
+get bale from pile
+mission completed
+

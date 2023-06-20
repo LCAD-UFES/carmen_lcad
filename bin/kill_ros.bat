@@ -1,1 +1,2 @@
-killall roslaunch rosmaster  rosout linear_actuator_controller can_to_ros_main vel_to_can_main
+./carmenkillall.sh wheeltec_hercules/process-wheeltec_hercules-volta_da_ufes-pid_sensorbox3.ini
+killall roslaunch rosmaster  rosout linear_actuator_controller can_to_ros_main vel_to_can_main open_manipulator_teleop_topic
