@@ -20,9 +20,9 @@ view = 1
 # Initial time to consider for odometry calibration
 initial_time = 0
 # Final time to consider for odometry calibration
-final_time = 85
+final_time = 10000
 # Lower limit of velocity multiplier
-min_multiplicative_v = 0.6
+min_multiplicative_v = 0.2
 # Upper limit of velocity multiplier
 max_multiplicative_v = 1.5001
 # Lower limit of phi multiplier

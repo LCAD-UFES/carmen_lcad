@@ -87,7 +87,6 @@ extern double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
 extern unsigned int manual_override_and_safe_stop;
 extern int door_signal;
-extern int steering_wheel_zero_torque;
 
 int gear_can_command = 0;
 
@@ -96,52 +95,6 @@ double wheel_speed_moving_average(double *wheel_speed);
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
-	/*
-	struct can_frame frame;
-	frame.can_id = 0x480;
-	frame.can_dlc = 4;
-
-	// Throttle
-	if (throttle_effort > 100.0)
-		throttle_effort = 100.0;
-	else if (throttle_effort < 0.0)
-		throttle_effort = 0.0;
-	frame.data[0] = (int) (2.0 * throttle_effort + 0.5); // throttle
-
-	// Breaks
-	if (breaks_effort > 100.0)
-		breaks_effort = 100.0;
-	else if (breaks_effort < 0.0)
-		breaks_effort = 0.0;
-	frame.data[1] = (int) (2.0 * breaks_effort + 0.5); // breaks
-
-	// Steering
-	if (steering_effort > 100.0)
-		steering_effort = 100.0;
-	else if (steering_effort < -100.0)
-		steering_effort = -100.0;
-	int steering_byte0, steering_byte1;
-	if (steering_effort > 0.0)
-		steering_byte0 = (int) round(27.463 * pow(steering_effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can
-	else if (steering_effort < 0.0)
-		steering_byte0 = (int) round(-27.463 * pow(-steering_effort, 0.332));
-	else // effort == 0.0
-		steering_byte0 = 0;
-
-	if ((steering_byte0 + steering_wheel_zero_torque) < 0)
-	{
-		steering_byte0 += steering_wheel_zero_torque + 256;
-		steering_byte1 = 0x01;
-	}
-	else
-	{
-		steering_byte0 += steering_wheel_zero_torque;
-		steering_byte1 = 0x02;
-	}
-
-	frame.data[2] = steering_byte0; // Steering
-	frame.data[3] = steering_byte1; // Steering
-	*/
 	struct can_frame frame;
 
 	if (out_can_sockfd == -1)
@@ -149,29 +102,16 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 
 	frame.can_id = 0x100;
 	frame.can_dlc = 4;
+
+	// Velocity effort
 	int int_velocity = (throttle_effort / 100.0) * VELOCITY_CONVERSION_CONSTANT * 2.3;
 	if (gear_can_command == 0x1)
 		int_velocity = -int_velocity;
 	
-	static int forced_vel = 0;
-	static int count = 0;
-	if (int_velocity == 0)
-	{
-		int_velocity = forced_vel;
-		if (count++ == 10)
-		{
-			forced_vel = -forced_vel;
-			count = 0;
-		}
-	}
-
 	frame.data[1] = (__u8) ((int_velocity >> 8) & 0xff);
 	frame.data[0] = (__u8) int_velocity & 0xff;
-//	send_frame(out_can_sockfd, &frame);
 
-//	frame.can_id = 0x80;
-//	frame.can_dlc = 2;
-
+	// Steering effort
 	if (steering_effort > 100.0)
 		steering_effort = 100.0;
 	else if (steering_effort < -100.0)
@@ -180,10 +120,6 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	int int_steering_effort = round(steering_effort);
 	frame.data[3] = (__u8) ((int_steering_effort >> 8) & 0xff);
 	frame.data[2] = (__u8) int_steering_effort & 0xff;
-
-	// int int_phi =  (steering_effort / 100.0) * ANGLE_CONVERSION_CONSTANT;
-	// frame.data[3] = (__u8) ((int_phi >> 8) & 0xff);
-	// frame.data[2] = (__u8) int_phi & 0xff;
 
 	send_frame(out_can_sockfd, &frame);
 }
