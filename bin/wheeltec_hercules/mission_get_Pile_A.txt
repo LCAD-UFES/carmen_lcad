@@ -4,15 +4,15 @@
 announce "Bale 1, pile A"
 set colision geometry to engage
 
-	park at 1003.29, 998.74, 1.565
-	go after park at 1003.29, 997.74, 1.565  # fica nesta task ateh o fim do curso 
-	stop # tira de modo autonomo
-
-park at 1005.02, 997.70, 1.543
-go after park at 1005.02, 997.70, 1.543  # fica nesta task ateh o fim do curso 
+start_mission:
+	park at 1005.02, 997.70, 1.543
+	go after park at 1005.02, 997.70, 1.543  # fica nesta task ateh o fim do curso 
+park at 1005.02, 997.60, 1.543
+go after park at 1005.02, 997.60, 1.543  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 	wait for 8 seconds
 get bale from pile
+if previous task failed, execute task at label go_to_intermediary_pose
 
 # Caminhão, primeiro fardo
 park at 1007.97, 1000.00, -3.124
@@ -50,6 +50,22 @@ park at  1001.0, 1000.0, 0.0
 go after park at 1001.0, 1000.0, 3.1416  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
+####### Go to Mission completed
+execute task at label mission_completed
+#######
+
+####### Go to Intermediary Pose
+go_to_intermediary_pose:
+
+announce "Out of reach, trying again."
+park at 1005.02, 998.70, 1.543
+go after park at 1005.02, 998.70, 1.543  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+execute task at label start_mission
+
+#######
+mission_completed:
 
 announce "Mission completed!"
 #mission completed
