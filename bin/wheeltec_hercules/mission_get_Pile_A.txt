@@ -15,11 +15,13 @@ get bale from pile
 if previous task failed, execute task at label go_to_intermediary_pose
 
 # Caminhão, primeiro fardo
+put_bale_on_truck:
 park at 1007.97, 1000.00, -3.124
 go after park at 1007.97, 1000.00, -3.124  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 	wait for 8 seconds
 put bale on the truck
+if previous task failed, execute task at label go_to_intermediary_pose2
 
 	# * Pilha A, segundo fardo
 	announce "Bale 2, pile A"
@@ -63,6 +65,18 @@ go after park at 1005.02, 998.70, 1.543  # fica nesta task ateh o fim do curso
 stop # tira de modo autonomo
 
 execute task at label start_mission
+
+#######
+
+####### Go to Intermediary Pose
+go_to_intermediary_pose2:
+
+announce "Out of reach, trying again."
+park at 1006.97, 1000.00, -3.124
+go after park at 1006.97, 1000.00, -3.124  # fica nesta task ateh o fim do curso 
+stop # tira de modo autonomo
+
+execute task at label put_bale_on_truck
 
 #######
 mission_completed:
