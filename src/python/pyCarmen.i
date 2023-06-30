@@ -436,7 +436,7 @@
 
 
 %include base_ackerman_messages.h
-%include camera_messages.h
+// %include camera_messages.h
 %include gps_nmea_messages.h
 %include laser_messages.h
 %include localize_ackerman_messages.h
@@ -460,7 +460,7 @@
 
 
 %include base_ackerman_interface.h
-%include camera_interface.h
+// %include camera_interface.h
 %include gps_nmea_interface.h
 %include laser_interface.h
 %include localize_ackerman_interface.h

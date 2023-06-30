@@ -5,19 +5,18 @@ announce "Bale 1, pile A"
 set colision geometry to engage
 
 start_mission:
-	park at 1005.02, 997.70, 1.543
-	go after park at 1005.02, 997.70, 1.543  # fica nesta task ateh o fim do curso 
-park at 1005.02, 997.60, 1.543
-go after park at 1005.02, 997.60, 1.543  # fica nesta task ateh o fim do curso 
+park at 1005.02, 997.65, 1.543
+go after park at 1005.02, 997.65, 1.543  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 	wait for 8 seconds
 get bale from pile
 if previous task failed, execute task at label go_to_intermediary_pose
 
+
 # Caminhão, primeiro fardo
 put_bale_on_truck:
-park at 1007.97, 1000.00, -3.124
-go after park at 1007.97, 1000.00, -3.124  # fica nesta task ateh o fim do curso 
+park at 1005.97, 1000.00, -3.124
+go after park at 1005.97, 1000.00, -3.124  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 	wait for 8 seconds
 put bale on the truck
@@ -47,8 +46,8 @@ if previous task failed, execute task at label go_to_intermediary_pose2
 	stop # tira de modo autonomo
 
 
-# Retorna ao inicio
-park at  1001.0, 1000.0, 0.0
+# Retorna aa posicao inicial
+park at  1001.0, 1000.0, -3.124
 go after park at 1001.0, 1000.0, 3.1416  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
@@ -60,21 +59,23 @@ execute task at label mission_completed
 go_to_intermediary_pose:
 
 announce "Out of reach, trying again."
-park at 1005.02, 998.70, 1.543
-go after park at 1005.02, 998.70, 1.543  # fica nesta task ateh o fim do curso 
+park at 1005.02, 999.50, 1.543
+go after park at 1005.02, 999.50, 1.543  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
+reinitialize robot pose
 
 execute task at label start_mission
 
 #######
 
-####### Go to Intermediary Pose
+####### Go to Intermediary Pose 2
 go_to_intermediary_pose2:
 
 announce "Out of reach, trying again."
-park at 1006.97, 1000.00, -3.124
-go after park at 1006.97, 1000.00, -3.124  # fica nesta task ateh o fim do curso 
+park at 1005.07, 1000.00, -3.124
+go after park at 1005.07, 1000.00, -3.124  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
+reinitialize robot pose
 
 execute task at label put_bale_on_truck
 
