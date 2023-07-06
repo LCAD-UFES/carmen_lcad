@@ -59,6 +59,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lcarmen_util
 LFLAGS += -lcarmen_util -lboost_program_options
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+
 SOURCES = grab_data.cpp grab_data_from_log.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp loop_closure_via_localization.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp pointcloud_viewer.cpp
 
 PUBLIC_INCLUDES = 

@@ -23,6 +23,9 @@ LFLAGS += -L$(TORCH)/lib -lTH -lluaT -lluajit -llapack
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+
 #CFLAGS += -nostartfiles 
 
 SOURCES = localize_neural_dataset.cpp localize_neural_interface.cpp #localize_neural_main.cpp localize_neural_torch.cpp localize_neural_dataset.cpp 

@@ -24,6 +24,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libstereovgram
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libelas
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lelas -lstereovgram -lstereo -lstdc++ -fopenmp -lm
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+
 CFLAGS += -Wall -fopenmp
 CFLAGS += -w -msse3
 

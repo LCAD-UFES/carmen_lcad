@@ -19,6 +19,9 @@ LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basi
 LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 			-lpcl_segmentation # -lvtkRendering -lvtkFiltering -lvtkCommon
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+
 #SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_calibration_manual.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp save_velodyne_txt.cpp
 SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp save_velodyne_txt.cpp
 
