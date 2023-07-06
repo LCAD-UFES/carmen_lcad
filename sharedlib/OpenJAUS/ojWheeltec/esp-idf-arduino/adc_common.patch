@@ -1,0 +1,13 @@
+diff --git a/components/driver/include/driver/adc_common.h b/components/driver/include/driver/adc_common.h
+index 392eb8a15d..5de37834cf 100644
+--- a/components/driver/include/driver/adc_common.h
++++ b/components/driver/include/driver/adc_common.h
+@@ -95,7 +95,7 @@ typedef enum {
+  * The default (max) bit width of the ADC of current version. You can also get the maximum bitwidth
+  * by `SOC_ADC_MAX_BITWIDTH` defined in soc_caps.h.
+  */
+-#define ADC_WIDTH_BIT_DEFAULT   (ADC_WIDTH_MAX-1)
++#define ADC_WIDTH_BIT_DEFAULT   ((adc_bits_width_t) (ADC_WIDTH_MAX-1))
+ 
+ //this definitions are only for being back-compatible
+ #define ADC_WIDTH_9Bit  ADC_WIDTH_BIT_9
