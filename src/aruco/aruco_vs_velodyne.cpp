@@ -8,16 +8,18 @@
 #include <carmen/carmen.h>
 #include <localize_ackerman_interface.h>
 #include <localize_ackerman_messages.h>
+#include <playback_messages.h>
+#include <playback_interface.h>
+#include <global.h>
 
 //#include "gnuplot_i.hpp"
 
 std::ofstream arq_aruco("dados_aruco.txt");
 std::ofstream arq_velodyne("dados_velodyne.txt");
 
-double tsi_aruco = 0.0;
-double tsi_velodyne = 0.0;
-bool aruco_start = false;
-bool velodyne_start = false;
+double tsi = 0.0; //timestamp inicial
+double tsp = 0.0; //timestamp do playback
+bool playback_start = false;
 
 void shutdown_module(int signo)
 {
@@ -77,43 +79,47 @@ void grafico_beta()
 }
 */
 
+
+void handler_playback(carmen_playback_info_message *msg)
+{
+    if(!playback_start)
+    {
+        tsi = msg->message_timestamp;
+        playback_start = true;
+    }
+    tsp = msg->message_timestamp;
+}
+
+
 void handler_aruco(carmen_aruco_message *msg)
 {
-    for (size_t i = 0; i < msg->n_poses; i++)
-    {   
-        std::cout << "Beta - Aruco:" << std::endl;
-        std::cout << "R: " << msg->poses[i].rvec[0] << " " << msg->poses[i].rvec[1] << " " << msg->poses[i].rvec[2] << std::endl;
-        std::cout << std::endl;
+    //for (size_t i = 0; i < msg->n_poses; i++)
+    //{   
+    std::cout << "Beta - Aruco:" << std::endl;
+    std::cout << -msg->poses[0].rvec[1] << std::endl;
+    std::cout << std::endl;
 
-        if(arq_aruco.is_open())
-        {
-            if(!aruco_start)
-            {
-                tsi_aruco = msg->timestamp;
-                aruco_start = true;
-            }
-            //arq_aruco << msg->poses[i].rvec[0] << " " << msg->poses[i].rvec[1] << " " << msg->poses[i].rvec[2] << std::endl;
-            arq_aruco << msg->timestamp - tsi_aruco << "," << msg->poses[i].rvec[2] << std::endl;
-        }
+    if(arq_aruco.is_open() && playback_start)
+    {
+        //arq_aruco << msg->poses[i].rvec[0] << " " << msg->poses[i].rvec[1] << " " << msg->poses[i].rvec[2] << std::endl;
+        arq_aruco << tsp - tsi << "," << -msg->poses[0].rvec[1] << std::endl;
     }
+    //}
 }
 
 void handler_velodyne(carmen_localize_ackerman_globalpos_message *msg)
 {
     if(msg->num_trailers == 1)
     {
+        double beta = convert_theta1_to_beta(msg->globalpos.theta, msg->trailer_theta[0]);
+
         std::cout << "Beta - Velodyne:" << std::endl;
-        std::cout << msg->trailer_theta[0] << std::endl;
+        std::cout << beta << std::endl;
         std::cout << std::endl;
 
-        if(arq_velodyne.is_open()) // && ((msg->timestamp - timestamp_inicial)>=0) )
+        if(arq_velodyne.is_open() && playback_start) // && ((msg->timestamp - timestamp_inicial)>=0) )
         {
-            if(!velodyne_start)
-            {
-                tsi_velodyne = msg->timestamp;
-                velodyne_start = true;
-            }
-            arq_velodyne << msg->timestamp - tsi_velodyne << "," << msg->trailer_theta[0] << std::endl;
+            arq_velodyne << tsp - tsi << "," << beta << std::endl;
         }
     }
 }
@@ -126,6 +132,7 @@ int main(int argc, char **argv)
 
     signal(SIGINT, shutdown_module);
 
+    carmen_subscribe_playback_info_message(NULL, (carmen_handler_t) handler_playback,  CARMEN_SUBSCRIBE_LATEST);
     aruco_subscribe_message(1, NULL, (carmen_handler_t) handler_aruco, CARMEN_SUBSCRIBE_LATEST);
     carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) handler_velodyne, CARMEN_SUBSCRIBE_LATEST);
 
