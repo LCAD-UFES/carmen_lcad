@@ -50,6 +50,7 @@ typedef enum
 	TASK_MANAGER_STOP,
 	TASK_MANAGER_EXECUTE,
 	TASK_MANAGER_INIT,
+	TASK_MANAGER_REINITIALIZE_ROBOT_POSE,
 } carmen_task_manager_task_type;
 
 

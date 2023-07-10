@@ -56,7 +56,7 @@ class rear_laser{
   static void laser_msg_rear(carmen_robot_ackerman_laser_message *msg)
   {
     _rlaser_callback->set_rear_laser_message(msg);
-    if (_rlaser_callback) _rlaser_callback->run_cb("rear_laser", "get_rear_laser_message()");
+    if (_rlaser_callback) _rlaser_callback->run_cb((char *) "rear_laser", (char *) "get_rear_laser_message()");
   }
 
   rear_laser(MessageHandler *cb)
@@ -74,7 +74,7 @@ class robot_laser1{
   static void robot_laser1_msg(carmen_robot_ackerman_laser_message *msg)
   {
     _robot_laser1_callback->set_robot_laser1_message(msg);
-    if (_robot_laser1_callback) _robot_laser1_callback->run_cb("robot_laser1", "get_robot_laser1_message()");
+    if (_robot_laser1_callback) _robot_laser1_callback->run_cb((char *) "robot_laser1", (char *) "get_robot_laser1_message()");
   }
 
   robot_laser1(MessageHandler *cb)
@@ -91,7 +91,7 @@ class robot_laser2{
   static void robot_laser2_msg(carmen_robot_ackerman_laser_message *msg)
   {
     _robot_laser2_callback->set_robot_laser2_message(msg);
-    if (_robot_laser2_callback) _robot_laser2_callback->run_cb("robot_laser2", "get_robot_laser2_message()");
+    if (_robot_laser2_callback) _robot_laser2_callback->run_cb((char *) "robot_laser2", (char *) "get_robot_laser2_message()");
   }
 
   robot_laser2(MessageHandler *cb)
@@ -110,7 +110,7 @@ class laser1{
   static void laser1_msg(carmen_laser_laser_message *msg)
   {
     _laser1_callback->set_laser1_message(msg);
-    if (_laser1_callback) _laser1_callback->run_cb("laser1", "get_laser1_message()");
+    if (_laser1_callback) _laser1_callback->run_cb((char *) "laser1", (char *) "get_laser1_message()");
   }
 
   laser1(MessageHandler *cb)
@@ -127,7 +127,7 @@ class laser2{
   static void laser2_msg(carmen_laser_laser_message *msg)
   {
     _laser2_callback->set_laser2_message(msg);
-    if (_laser2_callback) _laser2_callback->run_cb("laser2", "get_laser2_message()");
+    if (_laser2_callback) _laser2_callback->run_cb((char *) "laser2", (char *) "get_laser2_message()");
   }
 
   laser2(MessageHandler *cb)
@@ -144,7 +144,7 @@ class laser3{
   static void laser3_msg(carmen_laser_laser_message *msg)
   {
     _laser3_callback->set_laser3_message(msg);
-    if (_laser3_callback) _laser3_callback->run_cb("laser3", "get_laser3_message()");
+    if (_laser3_callback) _laser3_callback->run_cb((char *) "laser3", (char *) "get_laser3_message()");
   }
 
   laser3(MessageHandler *cb)
@@ -161,7 +161,7 @@ class laser4{
   static void laser4_msg(carmen_laser_laser_message *msg)
   {
     _laser4_callback->set_laser4_message(msg);
-    if (_laser4_callback) _laser4_callback->run_cb("laser4", "get_laser4_message()");
+    if (_laser4_callback) _laser4_callback->run_cb((char *) "laser4", (char *) "get_laser4_message()");
   }
 
   laser4(MessageHandler *cb)
@@ -178,7 +178,7 @@ class laser5{
   static void laser5_msg(carmen_laser_laser_message *msg)
   {
     _laser5_callback->set_laser5_message(msg);
-    if (_laser5_callback) _laser5_callback->run_cb("laser5", "get_laser5_message()");
+    if (_laser5_callback) _laser5_callback->run_cb((char *) "laser5", (char *) "get_laser5_message()");
   }
 
   laser5(MessageHandler *cb)
@@ -197,7 +197,7 @@ class global_pose{
   static void my_callback(carmen_localize_ackerman_globalpos_message *msg)
   {
     _global_pose_callback->set_globalpos_message(msg);
-    if (_global_pose_callback) _global_pose_callback->run_cb("global_pose", "get_globalpos_message()");
+    if (_global_pose_callback) _global_pose_callback->run_cb((char *) "global_pose", (char *) "get_globalpos_message()");
   }
 
   global_pose(MessageHandler *cb)
@@ -216,7 +216,7 @@ class odometry {
   static void my_callback(carmen_base_ackerman_odometry_message *msg)
   {
     _odometry_callback->set_odometry_message(msg);
-    if (_odometry_callback) _odometry_callback->run_cb("odometry", "get_odometry_message()");
+    if (_odometry_callback) _odometry_callback->run_cb((char *) "odometry", (char *) "get_odometry_message()");
   }
 
   odometry(MessageHandler *cb)
@@ -236,7 +236,7 @@ class navigator_status {
   static void my_callback(carmen_navigator_ackerman_status_message *msg)
   {
     _navigator_status_callback->set_navigator_status_message(msg);
-    if (_navigator_status_callback) _navigator_status_callback->run_cb("navigator_status", "get_navigator_status_message()");
+    if (_navigator_status_callback) _navigator_status_callback->run_cb((char *) "navigator_status", (char *) "get_navigator_status_message()");
   }
 
   navigator_status(MessageHandler *cb)
@@ -256,7 +256,7 @@ class navigator_plan {
   static void my_callback(carmen_navigator_ackerman_plan_message *msg)
   {
     _navigator_plan_callback->set_navigator_plan_message(msg);
-    if (_navigator_plan_callback) _navigator_plan_callback->run_cb("navigator_plan", "get_navigator_plan_message()");
+    if (_navigator_plan_callback) _navigator_plan_callback->run_cb((char *) "navigator_plan", (char *) "get_navigator_plan_message()");
   }
 
   navigator_plan(MessageHandler *cb)
@@ -276,7 +276,7 @@ class navigator_stopped {
   static void my_callback(carmen_navigator_ackerman_autonomous_stopped_message *msg)
   {
     _navigator_stopped_callback->set_navigator_autonomous_stopped_message(msg);
-    if (_navigator_stopped_callback) _navigator_stopped_callback->run_cb("navigator_stopped", "get_navigator_autonomous_stopped_message()");
+    if (_navigator_stopped_callback) _navigator_stopped_callback->run_cb((char *) "navigator_stopped", (char *) "get_navigator_autonomous_stopped_message()");
   }
 
   navigator_stopped(MessageHandler *cb)
@@ -298,7 +298,7 @@ class map_change{
   static void map_update_handler(carmen_map_p msg) 
     {
       _map_callback->set_map_message(msg);
-      if (_map_callback) _map_callback->run_cb("map_change", "get_map_message()");
+      if (_map_callback) _map_callback->run_cb((char *) "map_change", (char *) "get_map_message()");
     }
 
   map_change(MessageHandler *cb)
@@ -330,7 +330,7 @@ class sim_global_pose{
   static void sim_pose_handler(carmen_simulator_ackerman_truepos_message *msg)
     {
       _sim_pose_callback->set_sim_truepos_message(msg);
-      if (_sim_pose_callback) _sim_pose_callback->run_cb("sim_global_pose", "sim_global_pose_message()");
+      if (_sim_pose_callback) _sim_pose_callback->run_cb((char *) "sim_global_pose", (char *) "sim_global_pose_message()");
     }
 
   sim_global_pose(MessageHandler *cb)
@@ -351,7 +351,7 @@ class gps_xyz{
   static void my_callback(carmen_gps_xyz_message *msg)
   {
 	  _gps_xyz_callback->set_gps_xyz_message(msg);
-	  if (_gps_xyz_callback) _gps_xyz_callback->run_cb("gps_xyz", "get_gps_xyz_message()");
+	  if (_gps_xyz_callback) _gps_xyz_callback->run_cb((char *) "gps_xyz", (char *) "get_gps_xyz_message()");
   }
 
   gps_xyz(MessageHandler *cb)
@@ -370,7 +370,7 @@ class stereoimage8{
   static void my_callback(carmen_bumblebee_basic_stereoimage_message *msg)
   {
 	  _stereoimage8_callback->set_stereoimage8_message(msg);
-	  if (_stereoimage8_callback) _stereoimage8_callback->run_cb("stereoimage8", "get_stereoimage8_message()");
+	  if (_stereoimage8_callback) _stereoimage8_callback->run_cb((char *) "stereoimage8", (char *) "get_stereoimage8_message()");
   }
 
   stereoimage8(MessageHandler *cb)
@@ -389,7 +389,7 @@ class stereoimage3{
   static void my_callback(carmen_bumblebee_basic_stereoimage_message *msg)
   {
 	  _stereoimage3_callback->set_stereoimage3_message(msg);
-	  if (_stereoimage3_callback) _stereoimage3_callback->run_cb("stereoimage3", "get_stereoimage3_message()");
+	  if (_stereoimage3_callback) _stereoimage3_callback->run_cb((char *) "stereoimage3", (char *) "get_stereoimage3_message()");
   }
 
   stereoimage3(MessageHandler *cb)

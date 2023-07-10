@@ -1,14 +1,14 @@
 include ../Makefile.conf
 
 #CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 -g
-CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71
+CFLAGS = -fPIC -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 
 
 #ifndef NO_TCPD
 #CFLAGS += -DACCESS_CONTROL
 #LFLAGS = -lnsl -lwrap
 #endif
 
-LFLAGS = -pthread
+LFLAGS = -pthread -fPIC
 
 MODULE_NAME = IPC
 MODULE_COMMENT = Flexible communications package written by Reid Simmons
