@@ -19,13 +19,13 @@
 #define NUM_REV_0_TO_100 24.0
 
 void set_steering_effort(int steering_effort);
-void set_velocity_command(double velocity_command);
+void set_velocity_command(int velocity_command);
 
 const double percent_to_steps = NUM_REV_0_TO_100 / 300.0;
 
 byte dataReceived[DATA_LENGTH];
 unsigned short receivedValue = 0;
-double velocity_command;
+int velocity_command;
 int new_linear_actuator_command = 0;
 int new_velocity_command = 0;
 int currentSteps = 0;
@@ -135,7 +135,7 @@ void motor_task(void *arg)
         digitalWrite(ENA, HIGH);
         if (new_velocity_command == 1)
         {
-        	set_velocity_command();
+        	set_velocity_command(velocity_command);
             new_velocity_command = 0;
         }
 
@@ -168,7 +168,7 @@ void serial_task(void *arg)
 
             if (strstr(data_string, "velocity_command: ") != NULL)
             {
-                if ((new_velocity_command == 0) && (sscanf(data_string, "velocity_command: %lf", &velocity_command) == 1)) // Checa se recebeu linear_actuator_percent
+                if ((new_velocity_command == 0) && (sscanf(data_string, "velocity_command: %d", &velocity_command) == 1)) // Checa se recebeu linear_actuator_percent
                 	new_velocity_command = 1;
             }
         }

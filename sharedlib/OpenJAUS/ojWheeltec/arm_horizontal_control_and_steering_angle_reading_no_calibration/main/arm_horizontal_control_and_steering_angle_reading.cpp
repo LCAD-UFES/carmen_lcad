@@ -16,6 +16,7 @@
 
 void step_motor_setup();
 void step_motor_task(void *arg);
+void motor_task(void *arg);
 void serial_task(void *arg);
 
 
@@ -153,9 +154,9 @@ set_steering_effort(int steering_effort)
 }
 
 void
-set_velocity_command(double velocity_command)
+set_velocity_command(int velocity_command)
 {
-    ESP_LOGI(TAG, "Velocity command: %f", velocity_command);
+    ESP_LOGI(TAG, "Velocity command: %d", velocity_command);
 }
 
 extern "C" void 
