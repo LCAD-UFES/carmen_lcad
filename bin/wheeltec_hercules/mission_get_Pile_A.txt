@@ -1,7 +1,7 @@
 # Linhas vazias, que comecam com espaco ou com # sao ignoradas
 #
 # * Pilha A, primeiro fardo
-announce "Bale 1, pile A"
+announce "Bale A, pile 1"
 set colision geometry to engage
 
 start_mission:
