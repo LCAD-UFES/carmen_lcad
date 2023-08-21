@@ -19,15 +19,12 @@
 #define NUM_REV_0_TO_100 24.0
 
 void set_steering_effort(int steering_effort);
-void set_velocity_command(double velocity_command);
 
 const double percent_to_steps = NUM_REV_0_TO_100 / 300.0;
 
 byte dataReceived[DATA_LENGTH];
 unsigned short receivedValue = 0;
-double velocity_command;
 int new_linear_actuator_command = 0;
-int new_velocity_command = 0;
 int currentSteps = 0;
 int numSteps;
 
@@ -109,7 +106,7 @@ void step_motor_setup()
     Serial.begin(115200);
 }
 
-void step_motor_task(void *arg)
+void motor_task(void *arg)
 {
     // calibrate();
 
@@ -120,23 +117,6 @@ void step_motor_task(void *arg)
         {
         	linearActuator();
             new_linear_actuator_command = 0;
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
-void motor_task(void *arg)
-{
-    // calibrate();
-
-    while (1)
-    {
-        digitalWrite(ENA, HIGH);
-        if (new_velocity_command == 1)
-        {
-        	set_velocity_command();
-            new_velocity_command = 0;
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -164,12 +144,6 @@ void serial_task(void *arg)
             {
                 if ((new_linear_actuator_command == 0) && (sscanf(data_string, "linear_actuator_percent: %hu", &receivedValue) == 1)) // Checa se recebeu linear_actuator_percent
                 	new_linear_actuator_command = 1;
-            }
-
-            if (strstr(data_string, "velocity_command: ") != NULL)
-            {
-                if ((new_velocity_command == 0) && (sscanf(data_string, "velocity_command: %lf", &velocity_command) == 1)) // Checa se recebeu linear_actuator_percent
-                	new_velocity_command = 1;
             }
         }
 

@@ -15,7 +15,7 @@
 
 
 void step_motor_setup();
-void step_motor_task(void *arg);
+void motor_task(void *arg);
 void serial_task(void *arg);
 
 
@@ -152,12 +152,6 @@ set_steering_effort(int steering_effort)
     set_steering_servo_angle(new_angle);
 }
 
-void
-set_velocity_command(double velocity_command)
-{
-    ESP_LOGI(TAG, "Velocity command: %f", velocity_command);
-}
-
 extern "C" void 
 app_main(void)
 {
@@ -175,9 +169,8 @@ app_main(void)
     ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_ANGLE_POTENTIOMETER, ADC_EXAMPLE_ATTEN));
 
     xTaskCreatePinnedToCore(adc1_task, "adc1_task", 1024 * 2, NULL, 2, NULL, 0);
-    xTaskCreatePinnedToCore(step_motor_task, "step_motor_task", 1024 * 2, NULL, 2, NULL, 1);
-    xTaskCreatePinnedToCore(serial_task, "serial_task", 1024 * 2, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(motor_task, "motor_task", 1024 * 2, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(serial_task, "serial_task", 1024 * 2, NULL, 2, NULL, 1);
 
     while (1) 
     {
