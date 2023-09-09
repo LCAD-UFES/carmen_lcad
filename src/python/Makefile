@@ -3,7 +3,7 @@
 
 SILENT 	   = @
 SWIG      = swig
-SWIGOPT   = -I../../include/carmen -I../maptools -classic
+SWIGOPT   = -I../../include/carmen -I../maptools # -classic
 CXXSRCS    = pyCarmen.cxx pyCarmenMessages.cxx
 TARGET     = pyCarmen
 INTERFACE  = pyCarmen.i
@@ -15,15 +15,15 @@ SWIG      = swig
 #the next line causes make to break... fix this before committing again
 #ECHO	 = $(SILENT) echo
 
-relink::
+# relink::
 
-export::
+# export::
 
-phase1::
+# phase1::
 
-phase2::
+# phase2::
 
-phase3::
+# phase3::
 
 phase4:
 	$(ECHO) $(MAKE) -f Makefile.conf $(SWIGLIB) CXXSRCS='$(CXXSRCS)' SWIG='$(SWIG)' \

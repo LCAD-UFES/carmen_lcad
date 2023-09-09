@@ -38,7 +38,7 @@
 #endif
 
 #define DESOUZA_GUIDOLINI_CONSTANT 					0.0022
-#define robot_distance_between_front_and_rear_axles	2.625
+#define robot_distance_between_front_and_rear_axles	0.5278
 #define robot_understeer_coeficient					0.0015
 
 #define FRONT_RIGHT	0
@@ -53,8 +53,9 @@
 #define DEFAULT_STRING_LENGTH 128
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
-#define VELOCITY_CONVERSION_CONSTANT 	5000.0
-#define ANGLE_CONVERSION_CONSTANT 		2000.0
+#define VELOCITY_CONVERSION_CONSTANT 	(5000.0)
+#define ANGLE_CONVERSION_CONSTANT 		(2000.0 / 0.59)
+#define ZERO_ANGLE_CONSTANT				(1688)
 
 static int mainRunning = FALSE;
 static int verbose = FALSE; // Se verdadeiro, printf() funciona; caso contrario, nao.
@@ -78,7 +79,7 @@ double front_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 double back_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
-double car_speed = 0.0;
+double car_speed = 1.0;
 double speed_signal = 1.0;
 double steering_angle = 0.0;
 unsigned int manual_override_and_safe_stop;
@@ -411,26 +412,30 @@ void update_wheels_speed(struct can_frame frame)
 
 void update_car_speed(struct can_frame frame)
 {
-	car_speed = ((double) frame.data[0] * 256.0 + (double) frame.data[1]) / VELOCITY_CONVERSION_CONSTANT;
-	speed_signal = (car_speed < 0.0)? -1.0: 1.0;
+	short int int_vel = frame.data[0] << 8 | frame.data[1];
+	car_speed = (double) int_vel / VELOCITY_CONVERSION_CONSTANT;
+//	speed_signal = (car_speed < 0.0)? -1.0: 1.0;
+//	printf("car_speed = %lf\n", car_speed);
 }
 
 
 double wheel_speed_moving_average(double *wheel_speed)
 {
-	int i;
-	double moving_average_wheel_speed = 0.0;
-
-	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
-		moving_average_wheel_speed += wheel_speed[i];
-
-	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
+	return (car_speed);
+//	int i;
+//	double moving_average_wheel_speed = 0.0;
+//
+//	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
+//		moving_average_wheel_speed += wheel_speed[i];
+//
+//	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
 }
 
 void update_steering_angle(struct can_frame frame)
 {
 	steering_angle_sensor = frame.data[0] * 256.0 + frame.data[1];
-	double phi = steering_angle_sensor / ANGLE_CONVERSION_CONSTANT;
+	double phi = (steering_angle_sensor - ZERO_ANGLE_CONSTANT) / ANGLE_CONVERSION_CONSTANT;
+//	printf("steering_angle_sensor %d, ZERO_ANGLE_CONSTANT %d\n", steering_angle_sensor, ZERO_ANGLE_CONSTANT);
 	double v = car_speed;
 	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
@@ -491,14 +496,14 @@ void *can_in_read_thread_func(void *unused)
 
 void *can_out_read_thread_func(void *unused)
 {
-	//struct can_frame frame;
+	struct can_frame frame;
 
 	while (mainRunning)
 	{
 		if (out_can_sockfd != -1)
 		{
-	         //recv_frame(out_can_sockfd, &frame);
-			 //update_Torc_state(frame);
+	         recv_frame(out_can_sockfd, &frame);
+			 update_Torc_state(frame);
 		}
 	}
 
@@ -752,6 +757,5 @@ int main(int argCount, char **argString)
 		close(in_can_sockfd);
 		close(out_can_sockfd);
 	}
-
 	return (0);
 }

@@ -584,8 +584,7 @@ apply_robot_delays(carmen_robot_and_trailers_motion_command_t *trajectory, int s
 
 
 static void
-obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailers_motion_command_t *motion_commands,
-		int num_motion_commands, double timestamp)
+obstacle_avoider_publish_base_ackerman_motion_command(carmen_robot_and_trailers_motion_command_t *motion_commands, int num_motion_commands, double timestamp)
 {
 	if (eliminate_path_follower)
 	{

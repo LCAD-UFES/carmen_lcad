@@ -2095,7 +2095,7 @@ void world_point_to_global_world_point(carmen_world_point_t *world_point)
 }
 
 
-static gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point,
+static void motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point,
 		GdkEventMotion *event __attribute__ ((unused)))
 {
 	char buffer[1024];
@@ -2104,7 +2104,7 @@ static gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *wor
 
 
 	if (the_map_view == NULL || the_map_view->internal_map == NULL)
-		return TRUE;
+		return;
 
 	the_map = the_map_view->internal_map;
 
@@ -2133,7 +2133,7 @@ static gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *wor
 		do_redraw();
 	}
 
-	return TRUE;
+	return;
 }
 
 
@@ -2154,16 +2154,14 @@ void resend_coords(GtkWidget *widget __attribute__ ((unused)),
 	}
 }
 
-static int button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
+static void button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
 		carmen_world_point_p world_point __attribute__ ((unused)),
 		GdkEventButton		*event __attribute__ ((unused)))
 {
 	if (the_map_view->internal_map == NULL)
-	{
-		return TRUE;
-	}
+		return;
 
-	return TRUE;
+	return;
 }
 
 static int
@@ -2459,7 +2457,7 @@ orienting_simulator_action(GtkMapViewer *the_map_view, carmen_world_point_t *wor
 }
 
 
-static int
+static void
 button_release_handler(GtkMapViewer		   *the_map_view,
 		carmen_world_point_t *world_point,
 		GdkEventButton	   *event __attribute__ ((unused)))
@@ -2469,57 +2467,57 @@ button_release_handler(GtkMapViewer		   *the_map_view,
 	world_point_to_global_world_point(world_point);
 
 	if (the_map_view->internal_map == NULL)
-		return TRUE;
+		return;
 
 	rtr = placing_robot_action(the_map_view, world_point, event);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = placing_goal_action(the_map_view, world_point, event);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = placing_person_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = placing_simulator_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = orienting_robot_action(the_map_view, world_point, event);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = orienting_goal_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = orienting_person_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = orienting_simulator_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = selecting_final_region_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = placing_final_goal_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = orienting_final_goal_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
 	rtr = selecting_near_waypoint_action(the_map_view, world_point);
 	if(rtr)
-		return TRUE;
+		return;
 
-	return TRUE;
+	return;
 }
 
 

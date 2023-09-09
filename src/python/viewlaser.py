@@ -1,28 +1,28 @@
 import pyCarmen
-from pylab import *
+# from pylab import *
 from pyRobot import pyMessageHandler
-from scipy import *
+# from scipy import *
 from sys import argv
 from time import time, sleep
 from random import random
 
 
-ion()
+# ion()
 X, Y = [], []
-laser_plot, = plot(X, Y)
+# laser_plot, = plot(X, Y)
 
 class myRobot(pyMessageHandler):
     def __init__(self):
         pyMessageHandler.__init__(self)
-        print "starting"
+        print("starting")
         self.timeout = 0.5
         self.prev_time = time()
 
     def callback(self, the_type, message):
         global X, Y
 
-        print "tk:", the_type
-        print time() - self.prev_time 
+        print("tk:", the_type)
+        print(time() - self.prev_time)
         sleep(random()*0.1)
         if(time() - self.prev_time < self.timeout):
 
@@ -41,8 +41,8 @@ class myRobot(pyMessageHandler):
         #print message["laser_config"]["start_angle"]
         th = arange(0.001,increment*len(message["range"]), increment)+(pi/180.0)*message["laser_config"]["start_angle"]
         
-        print "len(th)", len(th)
-        print "len(range)", len(message["range"])
+        print("len(th)", len(th))
+        print("len(range)", len(message["range"]))
         #print "setting message"
         X,Y = [],[]
         i = 0
@@ -73,19 +73,19 @@ if __name__ == "__main__":
     # Create callers
     # the exact syntax of these might change a bit
     if(not len(argv) == 2):
-        print "usage: python viewlaser {frontlaser, rearlaser, laser5}"
+        print("usage: python viewlaser {frontlaser, rearlaser, laser5}")
 
     if(argv[1] == "frontlaser"):
-        print "viewing front laser"
+        print("viewing front laser")
         fl = pyCarmen.front_laser(robot)
         
 
     elif(argv[1] == "rearlaser"):
-        print "viewing rear laser"
+        print("viewing rear laser")
         rl = pyCarmen.rear_laser(robot)
     
     elif(argv[1] == "laser5"):
-        print "viewing laser 5"
+        print("viewing laser 5")
         laser = pyCarmen.laser5(robot)
     
     # Dispatch and don't return

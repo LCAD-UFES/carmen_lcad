@@ -5,7 +5,7 @@ LINK=g++
 LFLAGS +=  -lreadlog -lwritelog -lmap_interface -lglobal -lipc
 
 CFLAGS += -O3
-CXXFLAGS += -O3
+CXXFLAGS += -O3 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 MODULE_NAME = CARMENPP
 MODULE_COMMENT = CPP wrapper tools for CARMEN

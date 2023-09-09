@@ -4,7 +4,7 @@ import pyCarmen
 from threading import Thread
 from time import sleep
 from sys import exit
-from scipy import *
+# from scipy import *
 from pyCarmen import carmen_point_t
 from PIL import Image
 import numpy as np
@@ -13,7 +13,7 @@ import numpy as np
 #to get the functionality of this class
 class pyMessageHandler(pyCarmen.MessageHandler, Thread):
 	def __init__(self):
-		pyCarmen.carmen_ipc_initialize(1, ["python"])
+		pyCarmen.carmen_ipc_initialize(1, [b"python"])
 		pyCarmen.MessageHandler.__init__(self)
 
 		Thread.__init__(self)
@@ -41,8 +41,8 @@ class pyMessageHandler(pyCarmen.MessageHandler, Thread):
 		pyCarmen.carmen_ipc_disconnect()
 		
 	def __del__(self):
-		print "PyCallback.__del__()"
-		pyCarmen.MessageHandler.__del__(self)
+		print("PyCallback.__del__()")
+		# pyCarmen.MessageHandler.__del__(self)
 		
 
 class Robot(pyMessageHandler):

@@ -124,11 +124,12 @@ carmen_rddf_add_annotation_handler(carmen_rddf_add_annotation_message *message)
 
 
 void
-carmen_annotation_manager_timer_handler(char *annotation_filename)
+carmen_annotation_manager_timer_handler(void *clientData, unsigned long currentTime __attribute__ ((unused)), unsigned long scheduledTime __attribute__ ((unused)))
 {
 	uint i;
 	FILE *f;
 
+	char *annotation_filename = (char *) clientData;
 	f = fopen(annotation_filename, "w");
 
 	if (f == NULL)
@@ -174,8 +175,7 @@ carmen_annotation_manager_initialize()
 	memset(&annotation_queue_message, 0, sizeof(annotation_queue_message));
 
 	// save the annotation file every second to avoid data loss
-	carmen_ipc_addPeriodicTimer(1.0, (TIMER_HANDLER_TYPE) carmen_annotation_manager_timer_handler,
-			annotation_filename);
+	carmen_ipc_addPeriodicTimer(1.0, carmen_annotation_manager_timer_handler, annotation_filename);
 }
 
 

@@ -19,7 +19,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -lglobal -lobstacle_distance_mapper_interface \

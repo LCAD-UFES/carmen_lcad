@@ -688,14 +688,9 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 	}
 
 	if (paths[best_path].path_has_no_collision)
-	{
-		printf("ACHEI CAMINHO\n");
 		return (best_path);
-	}else
-	{
-		printf("NAO ACHEI\n");
+	else
 		return (-1);
-	}
 }
 
 

@@ -8,7 +8,7 @@ MODULE_COMMENT = Mapper Maps using Velodyne!
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
 #CXXFLAGS += -Wall -O4 -mfpmath=sse -msse2 -msse4.2
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
+CXXFLAGS += -std=c++11 -Wno-deprecated-declarations -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 #CFLAGS += -g -pg
 #LINK = gcc
 
@@ -16,8 +16,8 @@ CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
 IFLAGS += `pkg-config --cflags opencv`
 

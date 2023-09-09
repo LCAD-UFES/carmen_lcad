@@ -13,6 +13,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcmt/ -I$(CARMEN_HOME)/src/xsens_MTi-G/c_
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcmt/ -L/usr/local/ipc-3.9.1/src/lib/Linux-4.14/
 LFLAGS += -lparam_interface -lipc -lglobal  -lgps_xyz_interface -lrotation_geometry -lcmt -lrt -lncurses -lpthread -lxsens_interface
 CFLAGS += -Wall
+CXXFLAGS += -Wno-address-of-packed-member
 
 SUBDIRS += 
 

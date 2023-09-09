@@ -1029,7 +1029,7 @@ void motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 
 	if (!global_gui->freeze_status)
 	{
-		sprintf(buffer, "Grid Cell: %d %d  (%.1f %.1f)", point.x, point.y,
+		sprintf(buffer, "Grid Cell: %d %d  (%.2f %.2f)", point.x, point.y,
 				world_point->pose.x, world_point->pose.y);
 		gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelGridCell), buffer);
 
@@ -1653,7 +1653,10 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		global_gui->draw_moving_objects(the_map_view);
 
 	if (global_gui->nav_panel_config->show_dynamic_points)
+	{
 		global_gui->draw_moving_points(the_map_view, pixel_size);
+		global_gui->draw_paths_from_moving_points(the_map_view);
+	}
 
 	if (global_gui->nav_panel_config->show_annotations)
 		global_gui->draw_annotations(the_map_view, pixel_size);

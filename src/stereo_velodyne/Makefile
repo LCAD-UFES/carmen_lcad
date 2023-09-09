@@ -14,7 +14,7 @@ IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne -L/usr/local/carmen_boost/lib
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -pthread -lglobal -lstereo_velodyne_interface -lstereo_velodyne -lstereo_interface `pkg-config --libs opencv` 

@@ -7,12 +7,13 @@ MODULE_COMMENT = Transformation Coordinate Library
 LINK = g++
 
 CFLAGS += -std=c11 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
-CXXFLAGS += -std=c++11 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
+CXXFLAGS += -std=c++11 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 # Application specific include directories.
-IFLAGS += -I/usr/include/bullet/ -I/usr/local/include/bullet/ 
+IFLAGS += -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include
 IFLAGS += -Iinclude/tf/
 
 # Required default libraries to comunicate with Carmen Core
+LFLAGS += -L/usr/local/carmen_boost/lib
 LFLAGS += -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 

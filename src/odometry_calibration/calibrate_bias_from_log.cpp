@@ -200,12 +200,53 @@ read_gps(FILE *f, int gps_to_use)
 		// Transformando o z utilizando como altitude a altitude mesmo - que esta vindo como zero
 		Utm_Coord_3d utm;
 		Gdc_To_Utm_Converter::Init();
-		Gdc_To_Utm_Converter::Convert(gdc , utm);
+		Gdc_To_Utm_Converter::Convert(gdc, utm);
 
 		m.x = utm.y;
 		m.y = -utm.x;
 		m.nr = gps_id;
 	}
+
+	return (m);
+}
+
+
+void
+get_gps_pose_given_odomentry_pose(double &gps_x, double &gps_y, double x, double y, double yaw, Transformer *tf_transformer)
+{
+	tf::Transform world_to_car;
+	world_to_car.setOrigin(Vector3(x, y, 0.0));
+	world_to_car.setRotation(Quaternion(yaw, 0.0, 0.0));
+	tf_transformer->setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
+
+	tf::StampedTransform world_to_gps;
+	tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), world_to_gps);
+
+	gps_x = world_to_gps.getOrigin().x();
+	gps_y = world_to_gps.getOrigin().y();
+}
+
+
+carmen_gps_xyz_message
+read_globalpos(FILE *f, int gps_to_use, PsoData *pso_data)
+{
+	carmen_gps_xyz_message m;
+	memset(&m, 0, sizeof(m));
+
+	m.nr = gps_to_use;
+
+	fscanf(f, "%lf", &m.x);
+	fscanf(f, "%lf", &m.y);
+	double yaw;
+	fscanf(f, "%lf", &yaw);
+
+	get_gps_pose_given_odomentry_pose(m.x, m.y, m.x, m.y, yaw, pso_data->tf_transformer[0]);
+
+	double dummy;
+	for (int i = 0; i < 19; i++)
+		fscanf(f, "%lf", &dummy);
+
+	fscanf(f, "%lf", &m.timestamp);
 
 	return (m);
 }
@@ -486,6 +527,26 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 				}
 			}
 		}
+		else if (!strcmp(tag, "GLOBALPOS_ACK"))
+		{
+			carmen_gps_xyz_message m = read_globalpos(f, gps_to_use, pso_data);
+			if (first_gps_timestamp == 0.0)
+				first_gps_timestamp = m.timestamp;
+			if ((m.timestamp >= (first_gps_timestamp + initial_time)) && (m.timestamp <= (first_gps_timestamp + final_time)))
+				process_gps_data(m, odoms, pso_data);
+
+			if (odometry_based_on_gps)
+			{
+				carmen_robot_ackerman_velocity_message m_odometry;
+				m_odometry = estimate_odometry(&m);
+
+				if ((m_odometry.timestamp >= (first_gps_timestamp + initial_time)) && (m_odometry.timestamp <= (first_gps_timestamp + final_time)))
+				{
+					odoms.push_back(m_odometry);
+					process_odometry_data(pso_data, m_odometry);
+				}
+			}
+		}
 		else if (!strcmp(tag, "ROBOTVELOCITY_ACK") && (first_gps_timestamp != 0.0))
 		{
 			carmen_robot_ackerman_velocity_message m;
@@ -706,22 +767,6 @@ transform_car_to_gps(double car_x, double car_y, double *gps_x, double *gps_y, T
 
 	*gps_x = p_gps.getX();
 	*gps_y = p_gps.getY();
-}
-
-
-void
-get_gps_pose_given_odomentry_pose(double &gps_x, double &gps_y, double x, double y, double yaw, Transformer *tf_transformer)
-{
-	tf::Transform world_to_car;
-	world_to_car.setOrigin(Vector3(x, y, 0.0));
-	world_to_car.setRotation(Quaternion(yaw, 0.0, 0.0));
-	tf_transformer->setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
-
-	tf::StampedTransform world_to_gps;
-	tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), world_to_gps);
-
-	gps_x = world_to_gps.getOrigin().x();
-	gps_y = world_to_gps.getOrigin().y();
 }
 
 

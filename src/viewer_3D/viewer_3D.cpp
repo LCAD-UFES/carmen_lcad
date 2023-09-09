@@ -402,7 +402,7 @@ int map_mode = 0;
 
 double lidars_last_message_timestamp[16];
 double velodyne_last_message_timestamp = 0.0;
-double time_to_stop_cloud_point_draw = 0.15;
+double time_to_stop_cloud_point_draw = 1000000000.15;
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -512,7 +512,7 @@ create_point_colors_height(carmen_vector_3D_t point, carmen_vector_3D_t car_posi
     }
     else
     {
-        colors.x = carmen_clamp(0.0, 0.0 - z, 1.0);
+        colors.x = carmen_clamp(0.0, (0.0 - z) / (robot_size.x / 4.0), 1.0);
         colors.y = carmen_clamp(0.0, 0.1 + z / 10.0, 1.0);
         colors.z = carmen_clamp(0.0, (z + 3.0) / 6.0, 1.0);
     }
@@ -1192,7 +1192,7 @@ draw_everything()
         carmen_pose_3D_t camera_pose = get_camera_pose();
         double map_zoom = camera_pose.position.z / 120.0;
 
-        if(get_camera_mode() == 3)
+        if (get_camera_mode() == 3)
         	draw_map(m_drawer, get_position_offset(), car_fused_pose, 0.6); // @@@Braian: Desativa a renderização do mapa baseada no zoom quando tiver no modo de camera back view
         else
         	draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
@@ -4007,7 +4007,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
     }
 
     w = initWindow(window_width, window_height);
-	initGl(window_width, window_height);
+	initGl(window_width, window_height, robot_size);
 	if (window_x >= 0 && window_y >= 0)
 		XMoveWindow(w->g_pDisplay, w->g_window, window_x, window_y);
 	else
@@ -5265,20 +5265,20 @@ keyPress(int code)
         break;
     case 16: // 7
     {
-    	set_camera_mode(1); // Sattelite View (navigator_gui)
+    	set_camera_mode(1, robot_size); // Sattelite View (navigator_gui)
     	follow_car_flag = 1;
 
     }
        break;
     case 17: // 8
     {
-    	set_camera_mode(2); // Sattelite View (fixed on car)
+    	set_camera_mode(2, robot_size); // Sattelite View (fixed on car)
     	follow_car_flag = 1;
     }
        break;
     case 18: // 9
     {
-    	set_camera_mode(3); // Back view (follow robot)
+    	set_camera_mode(3, robot_size); // Back view (follow robot)
     	follow_car_flag = 1;
     }
        break;

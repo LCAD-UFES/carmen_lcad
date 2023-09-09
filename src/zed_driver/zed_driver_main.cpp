@@ -118,7 +118,23 @@ set_ZED_stream(Camera &zed)
         exit(0);
     }
 
-    cout << "\nVideo Stream Sucessfully Opened!!!\n" << endl;
+    sl::CalibrationParameters calibration_params = zed.getCameraInformation().camera_configuration.calibration_parameters;;
+
+    cout << fixed;
+    cout << setprecision(10);
+    cout << "video stream sucessfully opened!!!\n" << endl;
+    cout << init_parameters.camera_resolution << endl;
+
+    cout << "left" << "\t\t\t" << "right" << endl;
+	cout << "fx: " << calibration_params.left_cam.fx << "\t" << calibration_params.right_cam.fx << endl;
+	cout << "fy: " << calibration_params.left_cam.fy << "\t" << calibration_params.right_cam.fy << endl;
+	cout << "cx: " << calibration_params.left_cam.cx << "\t" << calibration_params.right_cam.cx << endl;
+	cout << "cy: " << calibration_params.left_cam.cy << "\t" << calibration_params.right_cam.cy << endl;
+	cout << "k1: " << calibration_params.left_cam.disto[0] << "\t" << calibration_params.right_cam.disto[0] << endl;
+	cout << "k2: " << calibration_params.left_cam.disto[1] << "\t" << calibration_params.right_cam.disto[1] << endl;
+	cout << "k3: " << calibration_params.left_cam.disto[2] << "\t" << calibration_params.right_cam.disto[2] << endl;
+	cout << "p1: " << calibration_params.left_cam.disto[3] << "\t" << calibration_params.right_cam.disto[3] << endl;
+	cout << "p2: " << calibration_params.left_cam.disto[4] << "\t" << calibration_params.right_cam.disto[4] << endl;
 }
 
 

@@ -500,7 +500,7 @@ read_parameters_from_file(const char *filename, const char *robot_name)
 	int expert = 0;
 	int line_length;
 	int count = 0;
-	char include_path[PATH_MAX], rp_filename[PATH_MAX], rp_include_filename[PATH_MAX], buffer[PATH_MAX];
+	char include_path[PATH_MAX], rp_filename[PATH_MAX], rp_include_filename[PATH_MAX], buffer[4 * PATH_MAX];
 	char module_name[255];
 
 	realpath(filename, rp_filename);

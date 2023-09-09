@@ -6,13 +6,17 @@ MODULE_COMMENT = Module to calibrate the bias of the Odometry
 LINK = g++
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util $(CARMEN_HOME)/sharedlib/pso/ $(CARMEN_HOME)/sharedlib/libtf/src
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ 
-LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
-	 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system    
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include 
+
+LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU
+
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system    
+
 LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 	-lmap_io -lmap_util -llaser_interface -lfused_odometry_interface -lvelodyne_interface \
 	-lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \

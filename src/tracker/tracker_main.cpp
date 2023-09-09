@@ -369,12 +369,11 @@ shutdown_visual_search_view(int x)
 	}
 }
 
-static gint
-updateIPC(gpointer *data __attribute__ ((unused)))
+static void
+updateIPC(gpointer data __attribute__ ((unused)), gint source __attribute__ ((unused)), GdkInputCondition condition __attribute__ ((unused)))
 {
-	carmen_ipc_sleep(0.01);
-	carmen_graphics_update_ipc_callbacks((GdkInputFunction)updateIPC);
-	return 1;
+  carmen_ipc_sleep(0.01);
+  carmen_graphics_update_ipc_callbacks(updateIPC);
 }
 
 static gint

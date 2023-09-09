@@ -1806,7 +1806,13 @@ mapper_save_current_map(carmen_map_set_t *map_set)
 {
 	if (offline_map_available && map_set->occupancy_map->complete_map != NULL && map_set->occupancy_map->config.x_origin != 0.0)
 	{
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', map_set->occupancy_map);
+		int ok = carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', map_set->occupancy_map);
+		if (!ok)
+		{
+			printf("could not write map into map_path %s\n", map_path);
+			fflush(stdout);
+		}
+
 		if (use_remission)
 		{
 			carmen_grid_mapping_save_block_map_by_origin(map_path, 's', map_set->sum_remission_map);
@@ -2189,7 +2195,7 @@ carmen_mapper_read_alive_lidars_configs(int argc, char **argv)
 	char locc_string[64], lfree_string[64], l0_string[64], unexpeted_delta_range_sigma_string[64];
 	carmen_lidar_config *p;
 
-	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
 	{
 		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
 		{

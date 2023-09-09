@@ -10,7 +10,7 @@ extern "C"
 {
 #endif
 
-void initGl(int width, int height);
+void initGl(int width, int height, carmen_vector_3D_t robot_size);
 
 void set_camera(carmen_pose_3D_t pose);
 carmen_pose_3D_t get_camera_pose();
@@ -23,9 +23,9 @@ void set_background_color(double r, double g, double b);
 
 void enable_free_mode();
 void disable_free_mode(carmen_orientation_3D_t orientation);
-void reset_camera_position();
+void reset_camera_position(carmen_vector_3D_t robot_size);
 int get_camera_mode();
-void set_camera_mode(int mode);
+void set_camera_mode(int mode, carmen_vector_3D_t robot_size);
 void move_front_camera(double moviment);
 
 void set_laser(float x, float y, float z, float roll, float pitch, float yaw);

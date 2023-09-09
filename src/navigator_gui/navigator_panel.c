@@ -617,15 +617,13 @@ static void nav_shutdown(int signo __attribute__ ((unused)))
 	}
 }
 
-static gint handle_ipc(gpointer			*data __attribute__ ((unused)),
+static void handle_ipc(gpointer			*data __attribute__ ((unused)),
 		gint				 source __attribute__ ((unused)),
 		GdkInputCondition condition __attribute__ ((unused)))
 {
 	carmen_ipc_sleep(0.01);
 
 	carmen_graphics_update_ipc_callbacks((GdkInputFunction)handle_ipc);
-
-	return 1;
 }
 
 static void 

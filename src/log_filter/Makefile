@@ -4,12 +4,12 @@ MODULE_NAME = "LOG FILTER"
 MODULE_COMMENT = "LOG FILTER Module"
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += #-DPARSE_DEBUG
 IFLAGS += 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib  
 LFLAGS += -lparam_interface -lbumblebee_basic_interface -lcarmenserial -lipc -lglobal `pkg-config --libs --cflags opencv`
 LFLAGS += -lgps_nmea_interface -lgps_xyz_interface -lfused_odometry_interface -llocalize_ackerman_interface -lkinect_interface -lweb_cam_interface -lstereo_interface -lbase_ackerman_interface -lxsens_interface
 LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics \

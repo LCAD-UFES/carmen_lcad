@@ -480,6 +480,7 @@ namespace View
 		void draw_simulated_objects(GtkMapViewer *the_map_view);
 		void draw_moving_objects(GtkMapViewer *the_map_view);
 		void draw_moving_points(GtkMapViewer *the_map_view, double pixel_size);
+		void draw_paths_from_moving_points(GtkMapViewer *the_map_view);
 		void draw_lane_lines(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_annotations(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_placing_animation(GtkMapViewer *the_map_view);

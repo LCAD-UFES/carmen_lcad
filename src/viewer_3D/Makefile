@@ -8,10 +8,10 @@ CXXFLAGS += -std=c++11 -Wno-write-strings -Wno-deprecated-declarations
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11 -llaser_interface \
@@ -31,9 +31,9 @@ LFLAGS += `pkg-config --libs opencv`
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
+#VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) # -I $(VTK_INC)
 
 LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
 		  -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system \

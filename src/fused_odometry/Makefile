@@ -4,15 +4,16 @@ MODULE_NAME = FUSED ODOMETRY
 MODULE_COMMENT = This module implements a particle filter that uses IMU, GPS, and odometry data to produce a fused pose.
 
 LINK = g++
-CXXFLAGS += -Wall -msse3
+CXXFLAGS += -Wall -msse3 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -lglobal -lipc -lparam_interface -lxsens_interface -lgps_xyz_interface
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+LFLAGS += -lglobal -lipc -lparam_interface -lxsens_interface -lgps_xyz_interface
 LFLAGS += -llocalize_ackerman_interface -llocalize_ackerman_motion -lvisual_odometry_interface \
 		  -lxsens_mtig_interface -lbase_ackerman_interface -lgps_nmea_interface \
 		  -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics \

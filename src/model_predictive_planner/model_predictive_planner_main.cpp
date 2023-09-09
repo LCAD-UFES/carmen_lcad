@@ -593,7 +593,7 @@ build_and_follow_path(double timestamp)
 	if (GlobalState::goal_pose && (GlobalState::route_planner_state != PLANNING_FROM_POSE_TO_LANE))
 	{
 		double distance_to_goal = DIST2D_P(GlobalState::goal_pose, GlobalState::localizer_pose);
-		if (((distance_to_goal < 1.0) && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03)))// ||
+		if (((distance_to_goal < (1.0 * (GlobalState::robot_config.distance_between_front_and_rear_axles / 2.625))) && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.03)))// ||
 //			((distance_to_goal < 0.3) && (fabs(GlobalState::robot_config.max_v) < 0.07) && (fabs(GlobalState::last_odometry.v) < 0.5) &&
 //					(path_goals_and_annotations_message->number_of_poses == 1)))
 		{

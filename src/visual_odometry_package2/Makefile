@@ -4,13 +4,13 @@ MODULE_NAME = VISUAL_ODOMETRY_2
 MODULE_COMMENT = Visual Odometry Package
 
 LINK = g++
-CXXFLAGS += -Wall -msse3
+CXXFLAGS += -Wall -msse3 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -L$(CARMEN_HOME)/sharedlib/libtf/src
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lbase_ackerman_interface -lvisual_odometry_interface -lstereo_interface -lviso
 LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
  

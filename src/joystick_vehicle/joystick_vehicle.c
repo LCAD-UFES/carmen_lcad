@@ -58,7 +58,7 @@ publish_base_velocity_command(double tv, double rv)
 	msg[0].x = 0.0;
 	msg[0].y = 0.0;
 	msg[0].theta = 0.0;
-	msg[0].beta = 0.0;
+	msg[0].num_trailers = 0;
 	msg[0].time = 1.0;
 
 	carmen_obstacle_avoider_publish_base_ackerman_motion_command(msg, num_commands, v.timestamp);
@@ -80,12 +80,12 @@ void
 direct_v_and_phi_joystick_mode(double *command_v, double *command_phi)
 {
 	if (joystick.axes[4] <= 0)	// para frente (v >= 0.0)
-		*command_v = non_linear_range(-((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_config.max_v;
+		*command_v = *command_v + 0.3 * ((non_linear_range(-((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_config.max_v) - *command_v);
 	else	// para tras (v < 0.0)
-		*command_v = non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse;
-	*command_v = carmen_clamp(-robot_config.max_v, *command_v, robot_config.max_v);
+		*command_v = *command_v + 0.3 * ((non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse) - *command_v);
+	*command_v = carmen_clamp(robot_max_velocity_reverse, *command_v, robot_config.max_v);
 
-	if (*command_v >= 0.0)
+	if (*command_v >= -0.001)
 	{
 		behavior_selector_state_message.low_level_state_flags = 0; //seting state to GOING_FOWARD
 		behavior_selector_state_message.low_level_state = Free_Running;
@@ -96,10 +96,14 @@ direct_v_and_phi_joystick_mode(double *command_v, double *command_phi)
 		behavior_selector_state_message.low_level_state = Free_Reverse_Running;
 	}
 
+	// if (joystick.axes[0] <= 0)	// para frente (v >= 0.0)
+	// 	*command_phi = non_linear_range(-((double) joystick.axes[0] / MAX_AXIS), PHI_NON_LINEARITY) * robot_config.max_phi;
+	// else	// para tras (v < 0.0)
+	// 	*command_phi = -non_linear_range(((double) joystick.axes[0] / MAX_AXIS), PHI_NON_LINEARITY) * robot_config.max_phi;
 	if (joystick.axes[0] <= 0)	// para frente (v >= 0.0)
-		*command_phi = non_linear_range(-((double) joystick.axes[0] / MAX_AXIS), PHI_NON_LINEARITY) * robot_config.max_phi;
+		*command_phi = -((double) joystick.axes[0] / MAX_AXIS) * robot_config.max_phi;
 	else	// para tras (v < 0.0)
-		*command_phi = -non_linear_range(((double) joystick.axes[0] / MAX_AXIS), PHI_NON_LINEARITY) * robot_config.max_phi;
+		*command_phi = -((double) joystick.axes[0] / MAX_AXIS) * robot_config.max_phi;
 	*command_phi = carmen_clamp(-robot_config.max_phi, *command_phi, robot_config.max_phi);
 
 	if (joystick_activated)

@@ -386,7 +386,7 @@ initialize_carmen_parameters(int argc, char** argv, carmen_fused_odometry_parame
 
 		{(char *) "fused_odometry", 	(char *) "publish_particles", CARMEN_PARAM_ONOFF, &publish_particles, 0, NULL},
 
-		{(char *) "robot", 	    	(char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &fused_odometry_parameters->axis_distance, 0, NULL},
+		{(char *) "robot", 	    		(char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &fused_odometry_parameters->axis_distance, 0, NULL},
 	};
 	
 	num_items = sizeof(param_list) / sizeof(param_list[0]);

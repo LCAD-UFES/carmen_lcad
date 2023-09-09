@@ -9,8 +9,8 @@ CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne2
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne2
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne2 -L/usr/local/carmen_boost/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface -lvelodyne2 -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody \

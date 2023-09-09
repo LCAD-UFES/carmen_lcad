@@ -13,12 +13,12 @@ phase4:	| phase3
 
 include Makefile.conf
 
-PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui  \
+PACKAGES = ipc global param_daemon proccontrol \
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu \
-	   fused_odometry bumblebee_basic laser_ldmrs viewer_3D 	\
-	   stereo road_finding v_disparity grid_mapping 	\
+	   fused_odometry bumblebee_basic laser_ldmrs viewer_3D \
+	   stereo road_finding v_disparity grid_mapping \
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G \
 	   rrt_planner subdir_module_example velodyne log_filter rddf \
 	   download_map parking_assistant navigator_astar \
@@ -32,8 +32,8 @@ PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui  \
 	   visual_car_tracking model_predictive_planner utilities \
 	   moving_objects_simulator pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer \
-	   tracker_opentld  \
-	   velodyne_camera_calibration graphslam # zed_driver deep_vgl traffic_light
+	   tracker_opentld  joystick_vehicle \
+	   velodyne_camera_calibration graphslam # zed_driver deep_vgl traffic_light robot_ackerman_gui
 	   
 	   # hypergraphsclam neural_object_detector3
 

@@ -207,7 +207,7 @@ bin/minoru
 bin/minoru_view
 bin/realsense_camera_main
 bin/minorucalib
-bin/ouster
+#bin/ouster
 bin/ouster_viewer
 bin/camera_drivers
 bin/camera_viewer

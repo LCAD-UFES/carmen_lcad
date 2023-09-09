@@ -36,7 +36,7 @@ static carmen_default_message static_message = {0, 0};
 static char *robot_names[] =
 {"flo", "pearl", "robin", "dorothy", "oscar", "xavier", "walker"};
 
-#define SP_SIZE 100
+#define SP_SIZE 1000
 static char *search_path[SP_SIZE];
 static int sp_num = 0;
 #define RSP_SIZE 7
@@ -45,12 +45,12 @@ static const char *relative_search_path[RSP_SIZE] =
 static int rsp_num = RSP_SIZE;
 
 typedef struct {
-  char robot[200];
-  char lvalue[200];
-  char rvalue[200];
+  char robot[1000];
+  char lvalue[1000];
+  char rvalue[1000];
 } ini_param;
 
-#define MAX_PARAM_NUM 100
+#define MAX_PARAM_NUM 10000
 static ini_param param_list[MAX_PARAM_NUM];
 static int param_num = 0;
 

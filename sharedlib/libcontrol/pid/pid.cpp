@@ -6,8 +6,9 @@
 #include <vector>
 #define PRINT			// Print Debug
 
-using namespace std;
+#define VEHICLE_WITH_BRAKES 	0
 
+using namespace std;
 
 enum
 {
@@ -22,7 +23,7 @@ enum
 #define min_fuzzy_v 4.17 // = 20km/h Parameters start variation from this velocity
 #define max_fuzzy_v 9.72 // = 45km/h Parameters stop variation from twice this velocity
 
-#define NEAR_ZERO_V	0.05
+#define NEAR_ZERO_V	0.01
 
 #define ROBOT_ID_FORD_ESCAPE 	0
 #define ROBOT_ID_ECOTECH4 		1
@@ -686,14 +687,17 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 			*brakes_command = g_brake_gap;
 		current_max_break_effort = *brakes_command;
 
+#if (VEHICLE_WITH_BRAKES == 1)
 		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
 		{
 			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_DECCELERATING;
 		}
+#endif
 		if (desired_velocity <= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
+#if (VEHICLE_WITH_BRAKES == 1)
 	else if (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_DECCELERATING)
 	{
 		u_t = 	g_velocity_forward_deccelerating_Kp * error_t +
@@ -716,7 +720,7 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 		if (desired_velocity <= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
-
+#endif
 	if (g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_ACCELERATING)
 	{
 		u_t = 	g_velocity_backward_accelerating_Kp * error_t +
@@ -735,14 +739,17 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 //		current_max_break_effort = *brakes_command;
 		current_max_break_effort = 0.0;
 
+#if (VEHICLE_WITH_BRAKES == 1)
 		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t >= 0.0))
 		{
 			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_DECCELERATING;
 		}
+#endif
 		if (desired_velocity >= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
+#if (VEHICLE_WITH_BRAKES == 1)
 	else if (g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_DECCELERATING)
 	{
 		u_t = 	g_velocity_backward_deccelerating_Kp * error_t +
@@ -766,6 +773,7 @@ carmen_libpid_velocity_PID_controler_publish_data(velocity_pid_data_message *msg
 		if (desired_velocity >= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
+#endif
 	error_t_1 = error_t;
 
 	// Anti windup
@@ -918,14 +926,17 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 			*brakes_command = g_brake_gap;
 		current_max_break_effort = *brakes_command;
 
+#if (VEHICLE_WITH_BRAKES == 1)
 		if ((desired_velocity > 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)) && (u_t <= 0.0))
 		{
 			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_FORWARD_DECCELERATING;
 		}
+#endif
 		if (desired_velocity <= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
+#if (VEHICLE_WITH_BRAKES == 1)
 	else if (g_velocity_PID_controler_state == MOVE_CAR_FORWARD_DECCELERATING)
 	{
 		u_t = 	g_velocity_forward_deccelerating_Kp * error_t +
@@ -944,7 +955,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		if (desired_velocity <= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
-
+#endif
 	if (g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_ACCELERATING)
 	{
 		u_t = 	g_velocity_backward_accelerating_Kp * error_t +
@@ -959,14 +970,17 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 //		current_max_break_effort = *brakes_command;
 		current_max_break_effort = 0.0;
 
+#if (VEHICLE_WITH_BRAKES == 1)
 		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)) && (u_t >= 0.0))
 		{
 			error_t_1 = integral_t = integral_t_1 = 0.0;
 			g_velocity_PID_controler_state = MOVE_CAR_BACKWARD_DECCELERATING;
 		}
+#endif
 		if (desired_velocity >= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
+#if (VEHICLE_WITH_BRAKES == 1)
 	else if (g_velocity_PID_controler_state == MOVE_CAR_BACKWARD_DECCELERATING)
 	{
 		u_t = 	g_velocity_backward_deccelerating_Kp * error_t +
@@ -986,6 +1000,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		if (desired_velocity >= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
+#endif
 	error_t_1 = error_t;
 
 	// Anti windup

@@ -1257,7 +1257,7 @@ check_table_capacity(void)
   carmen_param_t *new_table;
 
   if (installed_parameters == NULL) {
-    installed_list_capacity = 100;
+    installed_list_capacity = 1000;
     installed_list_length = 0;
     installed_parameters = (carmen_param_t *)
       calloc(installed_list_capacity, sizeof(carmen_param_t));
@@ -1266,10 +1266,10 @@ check_table_capacity(void)
   else if (installed_list_capacity == installed_list_length) {
     new_table = (carmen_param_t *)
       realloc(installed_parameters, 
-	      installed_list_capacity*2*sizeof(carmen_param_t));
+	      installed_list_capacity*10*sizeof(carmen_param_t));
     carmen_test_alloc(new_table);
     installed_parameters = new_table;
-    installed_list_capacity *= 2;
+    installed_list_capacity *= 10;
   }
 }
 

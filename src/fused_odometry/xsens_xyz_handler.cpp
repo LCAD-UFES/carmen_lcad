@@ -30,6 +30,7 @@ extern carmen_vector_3D_t gps_initial_pos;
 
 int use_gps = 1;
 double initial_pose[3] = {1000.0, 1000.0, 0.0}; // x, y, yaw
+int force_initial_pose = 0;
 
 
 int
@@ -511,9 +512,9 @@ initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 		{
 			carmen_fused_odometry_state_vector initial_state;
 
-			initial_state.pose.position = {initial_pose[0], initial_pose[1], .0};
+			initial_state.pose.position = {initial_pose[0], initial_pose[1], 0.0};
 			initial_state.xsens_yaw_bias = 0.0;
-			initial_state.pose.orientation =  {.0, .0, initial_pose[2]};
+			initial_state.pose.orientation =  {0.0, 0.0, initial_pose[2]};
 			initial_state.velocity = {0.0, 0.0, 0.0};
 			initial_state.ang_velocity = get_car_ang_velocity_from_message(xsens_mti);
 			initial_state.phi = 0.0;
@@ -831,6 +832,8 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 		}
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
 		correction(measure_weight_orientation, sensor_vector, fused_odometry_parameters);
+		if (force_initial_pose)
+			set_all_particles_to_initial_pose(initial_pose);
 		publish_fused_odometry();
 //		carmen_orientation_3D_t orientation = get_car_orientation_from_message(xsens_mti);
 //		printf("yaw %lf magnetic_declination %lf\n", 180.0 * orientation.yaw / M_PI, 180.0 * xsens_magnetic_declination / M_PI);
@@ -1068,6 +1071,7 @@ initialize_carmen_parameters(xsens_xyz_handler *xsens_handler, int argc, char **
 		{(char *)"commandline", (char *)"initial_x", CARMEN_PARAM_DOUBLE, &initial_pose[0], 0, NULL},
 		{(char *)"commandline", (char *)"initial_y", CARMEN_PARAM_DOUBLE, &initial_pose[1], 0, NULL},
 		{(char *)"commandline", (char *)"initial_theta", CARMEN_PARAM_DOUBLE, &initial_pose[2], 0, NULL},
+		{(char *)"commandline", (char *)"force_initial_pose", CARMEN_PARAM_ONOFF, &force_initial_pose, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 

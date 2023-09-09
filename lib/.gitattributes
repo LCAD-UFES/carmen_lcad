@@ -11,3 +11,4 @@ libuser_app_server_interface.a binary
 libaudit_write.a binary
 libaudit_interface.a binary
 libcamera_drivers_process_image.a binary
+libtrailer_nlp.so binary
