@@ -267,7 +267,7 @@ free_virtual_scan_message()
 
 
 void
-update_sensor_reference_pose(double beta)
+update_sensor_reference_pose(double beta[MAX_NUM_TRAILERS])
 {
 
 	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
@@ -578,7 +578,11 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 #ifdef USE_REAR_BULLBAR
 	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
 	if (globalpos_message->semi_trailer_type != 0) // se for igual a 0 ele não é articulado e não precisa atualizar a rear_bullbar_pose
-		update_sensor_reference_pose(convert_theta1_to_beta(globalpos_message->globalpos.theta, globalpos_message->trailer_theta[0]));
+	{
+		double beta[MAX_NUM_TRAILERS] = {0.0};
+		beta[0] = convert_theta1_to_beta(globalpos_message->globalpos.theta, globalpos_message->trailer_theta[0]);
+		update_sensor_reference_pose(beta);
+	}
 #endif
 
 	if (ok_to_publish)

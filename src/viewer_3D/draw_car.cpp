@@ -228,6 +228,50 @@ createCarDrawer(int argc, char** argv)
 	return (carDrawer);
 }
 
+void
+calculate_trailer_positions(CarDrawer *carDrawer, double beta[MAX_NUM_TRAILERS], int num_semi_trailers, double positions[MAX_NUM_TRAILERS][3], int drawing_model = 1)
+{
+	static double cc = 0.0;
+    // Car position
+    double car_x = carDrawer->semi_trailer_pose[0].position.x;
+    double car_y = carDrawer->semi_trailer_pose[0].position.y;
+    double car_z = carDrawer->semi_trailer_pose[0].position.z;
+
+    // Calculate trailer positions
+    for (int i = 0; i < num_semi_trailers; i++)
+    {
+		double semi_trailer_d = carDrawer->semi_trailer_config.semi_trailers[i].d;
+		double semi_trailer_M = carDrawer->semi_trailer_config.semi_trailers[i].M;
+
+//	   double prev_semi_trailer_x = (i == 0) ? car_x : -car_x*cos(beta[i]); // Esse funcionou por conta do car_y ser 0.0, mas não tenho certeza quanto se o uso da matriz de rotação abaixo funcionaria para uma situação diferente
+//	   double prev_semi_trailer_y = (i == 0) ? car_y : car_x*sin(beta[i]);
+		double prev_semi_trailer_x = 0.0;
+		double prev_semi_trailer_y = 0.0;
+		if (drawing_model)
+		{
+			prev_semi_trailer_x = (i == 0) ? car_x : (-car_x * cos(beta[i])) + (car_y * sin(beta[i])) + car_x;
+			prev_semi_trailer_y = (i == 0) ? car_y : (car_x * sin(beta[i])) - (car_y * cos(beta[i]));
+//			cc+=0.01;
+//			printf("%lf\n", cc);
+		}
+
+		double prev_semi_trailer_z =  car_z ;
+
+		double semi_trailer_x = prev_semi_trailer_x  - (semi_trailer_d + semi_trailer_M * cos(beta[i])) ;
+		double semi_trailer_y = prev_semi_trailer_y + semi_trailer_M * sin(beta[i]);
+		double semi_trailer_z = prev_semi_trailer_z ;
+
+		positions[i][0] = semi_trailer_x;
+		positions[i][1] = semi_trailer_z;
+		positions[i][2] = semi_trailer_y;
+
+//        printf("prev_semi_trailer_x: %f, prev_semi_trailer_y: %f, semi_trailer_d: %f, beta[i]: %f, semi_trailer_M: %f, semi_trailer_x: %f, semi_trailer_y: %f\n", prev_semi_trailer_x, prev_semi_trailer_y, semi_trailer_d, beta[i], semi_trailer_M, semi_trailer_x, semi_trailer_y);
+    }
+
+
+}
+
+
 
 void
 draw_wheel_axis(double wheel_diameter, double wheel_distance)
@@ -253,7 +297,7 @@ draw_wheel_axis(double wheel_diameter, double wheel_distance)
 
 
 void
-draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
+draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta[MAX_NUM_TRAILERS], int semi_trailer_engaged)
 {
 	glPushMatrix();
 		glColor3f (1.0, 0.0, 0.0);
@@ -273,8 +317,15 @@ draw_collision_range(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, i
 		{
 			for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 			{
-				glTranslatef(-carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1], 0.0, 0.0);
-				glRotatef(-carmen_radians_to_degrees(beta), 0.0f, 0.0f, 1.0f);
+				double cont_m_and_d_values = 0.0;
+				if (semi_trailer_id > 1)
+				{
+					cont_m_and_d_values += (carDrawer->robot_collision_config->semi_trailer_d[semi_trailer_id-1] - sin(beta[semi_trailer_id-1]) * carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1]);
+				}
+				glTranslatef(-carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1] - cont_m_and_d_values, 0.0, 0.0);
+
+//				glTranslatef(-carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1], 0.0, 0.0);
+				glRotatef(-carmen_radians_to_degrees(beta[semi_trailer_id-1]), 0.0f, 0.0f, 1.0f);
 				for (int i = 0; i < carDrawer->robot_collision_config->n_semi_trailer_markers[semi_trailer_id-1]; i++)
 				{
 					glPushMatrix();
@@ -374,7 +425,7 @@ draw_axis(double length)
 
 
 void
-draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
+draw_car_outline(CarDrawer *carDrawer, double beta[MAX_NUM_TRAILERS], int semi_trailer_engaged)
 {
 	// Car
 	glPushMatrix();
@@ -399,14 +450,21 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 
 	if (semi_trailer_engaged)
 	{
+		double trailer_positions[MAX_NUM_TRAILERS][3];
+		calculate_trailer_positions(carDrawer, beta, carDrawer->semi_trailer_config.num_semi_trailers, trailer_positions, 0);
 		for (int semi_trailer_id=1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
 		{
 			glPushMatrix();
-				glRotatef(-carmen_radians_to_degrees(beta), 0.0, 0.0, 1.0);
-
-				glTranslatef(-carDrawer->robot_collision_config->semi_trailer_d[semi_trailer_id-1] - carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1] * cos(beta),
-							 -carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1] * sin(beta),
-							 0.0);
+			for (int i = 0; i < semi_trailer_id; i++)
+			{
+				glRotatef(-carmen_radians_to_degrees(beta[i]), 0.0, 0.0, 1.0);
+				glTranslatef(trailer_positions[i][0], -trailer_positions[i][2], trailer_positions[i][1]);
+			}
+//				glRotatef(-carmen_radians_to_degrees(beta[semi_trailer_id-1]), 0.0, 0.0, 1.0);
+//
+//				glTranslatef(-carDrawer->robot_collision_config->semi_trailer_d[semi_trailer_id-1] - carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1] * cos(beta[semi_trailer_id-1]),
+//							 -carDrawer->robot_collision_config->semi_trailer_M[semi_trailer_id-1] * sin(beta[semi_trailer_id-1]),
+//							 0.0);
 
 				glBegin(GL_LINE_STRIP);
 					glVertex3f(-carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
@@ -432,8 +490,9 @@ draw_car_outline(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 
 
 void
-draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
+draw_car(CarDrawer *carDrawer, double beta[MAX_NUM_TRAILERS], int semi_trailer_engaged)
 {
+
 	static double previous_size_x = 0.0;
 	static double previous_size_y = 0.0;
 	static double previous_size_z = 0.0;
@@ -460,35 +519,54 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 		glRotatef(0.0, 0.0, 0.0, 1.0);
 
 		glColor3f(0.3, 0.3, 0.3);
-//		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
 		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
 		
 	glPopMatrix();
 	
+//	if (semi_trailer_engaged)
+//	{
+//
+//		for (int semi_trailer_id = 1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+//		{
+//			// Semi-trailer
+//			glPushMatrix();
+//
+//				glRotatef(90.0, 1.0, 0.0, 0.0);
+//				glRotatef(-carmen_radians_to_degrees(beta[semi_trailer_id-1]), 0.0, 1.0, 0.0);
+//				glRotatef(0.0, 0.0, 0.0, 1.0);
+//				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].d - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].M * cos(beta[semi_trailer_id-1]),
+//							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z,
+//							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].M * sin(beta[semi_trailer_id-1]));
+//
+//				glColor3f(0.3, 0.3, 0.3);
+//				glmDraw(carDrawer->semiTrailerModel[semi_trailer_id-1], GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
+//
+//			glPopMatrix();
+//		}
+//	}
+
 	if (semi_trailer_engaged)
 	{
-		for (int semi_trailer_id = 1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
-		{
-			// Semi-trailer
-			glPushMatrix();
+		double trailer_positions[MAX_NUM_TRAILERS][3];
+		calculate_trailer_positions(carDrawer, beta, carDrawer->semi_trailer_config.num_semi_trailers, trailer_positions);
+	    for (int semi_trailer_id = 1; semi_trailer_id <= carDrawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+	    {
+	        // Semi-trailer
+	        glPushMatrix();
 
-				glRotatef(90.0, 1.0, 0.0, 0.0);
-				glRotatef(-carmen_radians_to_degrees(beta), 0.0, 1.0, 0.0);
-				glRotatef(0.0, 0.0, 0.0, 1.0);
-//				FIXME Avelino
-//				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->robot_collision_config->semi_trailer_d - carDrawer->robot_collision_config->semi_trailer_M * cos(beta),
-//							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z,
-//							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->robot_collision_config->semi_trailer_M * sin(beta));
-				glTranslatef(carDrawer->semi_trailer_pose[semi_trailer_id-1].position.x - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].d - carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].M * cos(beta),
-							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.z,
-							 carDrawer->semi_trailer_pose[semi_trailer_id-1].position.y + carDrawer->semi_trailer_config.semi_trailers[semi_trailer_id - 1].M * sin(beta));
+	        glRotatef(0.0, 0.0, 0.0, 1.0);
+			glRotatef(90.0, 1.0, 0.0, 0.0);
+			for (int i = 0; i < semi_trailer_id; i++)
+			{
+				glRotatef(-carmen_radians_to_degrees(beta[i]), 0.0, 1.0, 0.0);
+				glTranslatef(trailer_positions[i][0], trailer_positions[i][1], trailer_positions[i][2]);
+			}
 
-				glColor3f(0.3, 0.3, 0.3);
-				//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
-				glmDraw(carDrawer->semiTrailerModel[semi_trailer_id-1], GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
+			glColor3f(0.3, 0.3, 0.3);
+			glmDraw(carDrawer->semiTrailerModel[semi_trailer_id-1], GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
 
-			glPopMatrix();
-		}
+	        glPopMatrix();
+	    }
 	}
 
 	// Sensor Board
@@ -537,38 +615,11 @@ draw_car(CarDrawer *carDrawer, double beta, int semi_trailer_engaged)
 
 	glPopMatrix();
 
-	/* TODO: Desenha um cubo para representar o carro. Verificar se pode apagar esse trecho
-	glPushMatrix();
-
-		glPushMatrix();
-
-			glColor3f(0.3,0.3,0.3);
-			draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
-
-			glPushMatrix();
-				glTranslatef(carDrawer->car_axis_distance, 0.0, 0.0);
-				draw_wheel_axis(carDrawer->car_wheel_radius * 2.0,carDrawer->car_size.y);
-			glPopMatrix();
-
-			glColor3f(1.0,0.0,0.0);
-			glPushMatrix();
-				glTranslatef(carDrawer->car_pose.position.x,carDrawer->car_pose.position.y,carDrawer->car_pose.position.z+carDrawer->car_wheel_radius);
-				glRotatef(carDrawer->car_pose.orientation.roll, 1.0f, 0.0f, 0.0f);
-				glRotatef(carDrawer->car_pose.orientation.pitch, 0.0f, 1.0f, 0.0f);
-				glRotatef(carDrawer->car_pose.orientation.yaw,  0.0f, 0.0f, 1.0f);
-				drawBox(carDrawer->car_size.x, carDrawer->car_size.y, carDrawer->car_size.z-carDrawer->car_wheel_radius * 2.0);
-			glPopMatrix();
-
-		glPopMatrix();
-
-	glPopMatrix();
-
-	*/
 }
 
 
 void
-draw_car_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
+draw_car_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta[MAX_NUM_TRAILERS], int semi_trailer_engaged)
 {
 	glPushMatrix();
 		glTranslatef(pose.position.x, pose.position.y, pose.position.z);
@@ -582,7 +633,7 @@ draw_car_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int s
 
 
 void
-draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta, int semi_trailer_engaged)
+draw_car_outline_at_pose(CarDrawer *carDrawer, carmen_pose_3D_t pose, double beta[MAX_NUM_TRAILERS], int semi_trailer_engaged)
 {
 //	printf("car x %lf, car y %lf\n", pose.position.x, pose.position.y);
 	glPushMatrix();

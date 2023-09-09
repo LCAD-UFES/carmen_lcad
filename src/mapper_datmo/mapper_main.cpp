@@ -834,9 +834,9 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 	}
 	
 	sprintf(info, "Camera %d Detections", camera_index);
-    //imwrite("Image.jpg", image);
-    imshow(info, image);
-	waitKey(1);
+    imwrite("Image.jpg", image);
+//    imshow(info, image);
+//	waitKey(1);
 }
 
 
@@ -893,8 +893,8 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 	line(map_img, cvPoint(img_planar_depth, img_planar_depth - 10 / 2), cvPoint(img_planar_depth, img_planar_depth + 5 / 2), CV_RGB(0, 0, 200), 1, 8);
 	
 	resize(map_img, map_img, Size(0, 0), 1.7, 1.7, INTER_NEAREST);
-	imshow("Map Image", map_img);
-	waitKey(1);
+//	imshow("Map Image", map_img);
+//	waitKey(1);
 
 	// static int i = 0; char info[64]; sprintf(info, "%d.png", i); imwrite(info, map_img); i++;
 }
@@ -926,7 +926,7 @@ compute_obstacle_points(sensor_parameters_t *sensor_params, sensor_data_t *senso
 			
 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][j];
 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
-			
+//			printf("%f %f\n", log_odds, prob);
 			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 			{
 				image_cartesian point;

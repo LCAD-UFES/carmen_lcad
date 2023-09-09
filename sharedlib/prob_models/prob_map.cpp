@@ -3506,16 +3506,16 @@ void carmen_prob_models_create_masked_distance_map_old(carmen_prob_models_distan
 }
 
 carmen_pose_3D_t
-compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta, carmen_semi_trailers_config_t semi_trailer_config)
+compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta[MAX_NUM_TRAILERS], carmen_semi_trailers_config_t semi_trailer_config)
 {
 	// Linha adicionada após a mudança de beta para trailer_theta. A variável beta recebida pela função é trailer_theta, a linha abaixo transforma em beta novamente para funcionar nas fórmulas
 //	beta = convert_theta1_to_beta(rear_bullbar_pose.orientation.yaw, beta);
 	//
 	
-	beta = -beta;
+	double current_beta = -beta[0];
 	carmen_pose_3D_t temp_rear_bullbar_pose;
-	temp_rear_bullbar_pose.position.x 			= -semi_trailer_config.semi_trailers[0].M + rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
-	temp_rear_bullbar_pose.position.y 			= 						   rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
+	temp_rear_bullbar_pose.position.x 			= -semi_trailer_config.semi_trailers[0].M + rear_bullbar_pose.position.x * cos(current_beta) - rear_bullbar_pose.position.y * sin(current_beta);
+	temp_rear_bullbar_pose.position.y 			= 						   rear_bullbar_pose.position.x * sin(current_beta) + rear_bullbar_pose.position.y * cos(current_beta);
 
 //	temp_rear_bullbar_pose.position.x 			= rear_bullbar_pose.position.x * cos(beta) - rear_bullbar_pose.position.y * sin(beta);
 //	temp_rear_bullbar_pose.position.y 			= rear_bullbar_pose.position.x * sin(beta) + rear_bullbar_pose.position.y * cos(beta);
@@ -3523,7 +3523,7 @@ compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double be
 	temp_rear_bullbar_pose.position.z 			= rear_bullbar_pose.position.z;
 	temp_rear_bullbar_pose.orientation.pitch 	= rear_bullbar_pose.orientation.pitch;
 	temp_rear_bullbar_pose.orientation.roll 	= rear_bullbar_pose.orientation.roll;
-	temp_rear_bullbar_pose.orientation.yaw 		= carmen_normalize_theta(rear_bullbar_pose.orientation.yaw + beta); // Verificar se soma o beta ou subtrai
+	temp_rear_bullbar_pose.orientation.yaw 		= carmen_normalize_theta(rear_bullbar_pose.orientation.yaw + current_beta); // Verificar se soma o beta ou subtrai
 
 	return (temp_rear_bullbar_pose);
 }

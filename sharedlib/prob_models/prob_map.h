@@ -309,7 +309,7 @@ float ***load_calibration_table(char *calibration_file);
 
 int get_distance_index(double distance);
 
-carmen_pose_3D_t compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta, carmen_semi_trailers_config_t semi_trailer_config);
+carmen_pose_3D_t compute_new_rear_bullbar_from_beta(carmen_pose_3D_t rear_bullbar_pose, double beta[MAX_NUM_TRAILERS], carmen_semi_trailers_config_t semi_trailer_config);
 
 
 #ifdef __cplusplus

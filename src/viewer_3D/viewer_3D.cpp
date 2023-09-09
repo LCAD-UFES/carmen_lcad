@@ -317,7 +317,7 @@ static AnnotationDrawer *annotation_drawer;
 static symotha_drawer_t *symotha_drawer;
 static CargoDrawer *cargoDrawer;
 
-static double beta;
+static double beta[MAX_NUM_TRAILERS];
 static int semi_trailer_engaged = 0;
 
 window *w = NULL;
@@ -1504,7 +1504,14 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 
 
 //    beta = localize_ackerman_message->pose.orientation.yaw - localize_ackerman_message->trailer_theta[0];
-    beta = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[0]);
+//    beta = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[0]);
+     for (int i = 0; i < semi_trailer_config.num_semi_trailers; i++)
+     {
+     	if (i == 0)
+     		beta[i] = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[i]);
+     	else
+     		beta[i] = convert_theta1_to_beta(localize_ackerman_message->trailer_theta[i - 1], localize_ackerman_message->trailer_theta[i]);
+     }
 	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
 	if (localize_ackerman_message->semi_trailer_type != semi_trailer_config.num_semi_trailers)
@@ -1512,15 +1519,25 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 
 	if (semi_trailer_engaged)
 	{
-		pos.x -= semi_trailer_config.semi_trailers[0].M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[0].d * cos(localize_ackerman_message->globalpos.theta - beta);
-		pos.y -= semi_trailer_config.semi_trailers[0].M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[0].d * sin(localize_ackerman_message->globalpos.theta - beta);
-
+		for (int i = 0; i < semi_trailer_config.num_semi_trailers; i++)
+		{
+			if (i == 0)
+			{
+				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - beta[i]);
+				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - beta[i]);
+			}
+			else
+			{
+				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - beta[i]);
+				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - beta[i]);
+			}
 		localize_ackerman_semi_trailer_trail[last_localize_ackerman_semi_trailer_trail] = pos;
 
 		last_localize_ackerman_semi_trailer_trail++;
 
 		if (last_localize_ackerman_semi_trailer_trail >= localize_ackerman_size)
 			last_localize_ackerman_semi_trailer_trail -= localize_ackerman_size;
+		}
 	}
 
     static double time_of_last_publish = carmen_get_time();

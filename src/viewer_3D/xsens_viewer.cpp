@@ -116,7 +116,9 @@ void finalize()
 int main(int argc, char** argv)
 {
 	initialize(argc, argv);
-            
+	double betas[MAX_NUM_TRAILERS];
+		for(int i = 0; i < MAX_NUM_TRAILERS; i++)
+			betas[i] = 0.0;
 
 	while(showWindow(gl_window))
 	{
@@ -140,7 +142,7 @@ int main(int argc, char** argv)
 		glRotatef(car_orientation.pitch, 0.0f, 1.0f, 0.0f);
 		glRotatef(car_orientation.roll, 1.0f, 0.0f, 0.0f);
 
-		draw_car(car_draw, 0.0, 0);
+		draw_car(car_draw, betas, 0);
 	}                                                                                 
 	
 	carmen_ipc_disconnect();  
