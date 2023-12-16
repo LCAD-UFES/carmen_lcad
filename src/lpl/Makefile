@@ -6,7 +6,7 @@ MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 LINK = g++
 CXXFLAGS = -std=c++11
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include -I/usr/include/python3.8 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
 #IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
@@ -22,14 +22,14 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 #LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
 		  -lmoving_objects_interface -ldarknet2 `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
-		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
-		  -lcamera_drivers
+		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
+		  -lcamera_drivers -lpython3.8
 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
 		  -lmoving_objects_interface -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
-		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python2.7-config --libs` \
-		  -lcamera_drivers
+		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
+		  -lcamera_drivers -lpython3.8
 
 SOURCES = neural_object_detector_tracker.cpp
 

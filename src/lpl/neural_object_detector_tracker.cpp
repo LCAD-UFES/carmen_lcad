@@ -4,6 +4,21 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <cmath>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+#include <numeric>
+
+#include <numpy/arrayobject.h>
+
+#include <iostream>
+#include <opencv2/opencv.hpp>
+
 //#define CALIBRATE_CAMERA_LIDAR_ALIGMENT
 //#define USE_TIMER_HANDLER
 
@@ -306,40 +321,35 @@ clean_pedestrians(double max_time)
 PyObject *python_pedestrian_tracker_function;
 npy_intp image_dimensions[3];
 
-void
+int
 init_python(int image_width, int image_height)
 {
 	Py_Initialize();
 
-	PyObject *python_module_name = PyString_FromString((char *) "pedestrian_tracker");
+	
+
+    PyObject *python_module_name = PyUnicode_DecodeFSDefault("demo");
+
 
 	PyObject *python_module = PyImport_Import(python_module_name);
 
 	if (python_module == NULL)
 	{
+        PyErr_Print();
 		Py_Finalize();
 		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
 	}
 	Py_DECREF(python_module_name);
 
-	import_array();
+	try {
+        import_array();  // Lança uma exceção em caso de falha
+    } catch (...) {
+        PyErr_Print();
+        Py_Finalize();
+        return -1;  // Retorna um código de erro
+    }
 
-	PyObject *python_set_image_settings_function = PyObject_GetAttrString(python_module, (char *) "set_image_settings");
-
-	if (python_set_image_settings_function == NULL || !PyCallable_Check(python_set_image_settings_function))
-	{
-		Py_Finalize();
-		exit (printf("Error: Could not load the python_set_image_settings_function.\n"));
-	}
-
-	PyObject *python_arguments = Py_BuildValue("(ii)", image_width, image_height);               // Generic function, create objects from C values by a format string
-
-	PyObject_CallObject(python_set_image_settings_function, python_arguments);
-
-	Py_DECREF(python_arguments);
-	Py_DECREF(python_set_image_settings_function);
-
-	python_pedestrian_tracker_function = PyObject_GetAttrString(python_module, (char *) "run_pedestrian_tracker");
+	python_pedestrian_tracker_function = PyObject_GetAttrString(python_module, (char *) "main");
 
 	if (python_pedestrian_tracker_function == NULL || !PyCallable_Check(python_pedestrian_tracker_function))
 	{
@@ -353,6 +363,7 @@ init_python(int image_width, int image_height)
 	image_dimensions[2] = 3;
 
 	printf("------- Python Tracker Ready -------\n");
+	return 0;
 }
 
 
@@ -374,40 +385,108 @@ convert_predtions_array(vector<bbox_t> predictions)
 	return (array);
 }
 
+cv::Mat numpy_array_to_cv_mat(PyArrayObject* array) {
+	printf("teste entrou aqui2\n");
+	int ndims = PyArray_NDIM(array);    
 
-void
-call_python_function(unsigned char *image, vector<bbox_t> predictions)
+	printf("teste entrou aqui3\n");
+
+    npy_intp* shape = PyArray_DIMS(array);
+
+    // Cria uma matriz OpenCV vazia
+    cv::Mat mat;
+	std::cerr << ndims << std::endl;
+    // Converte a matriz NumPy para uma matriz OpenCV
+    switch (ndims) {
+        case 2:
+            mat = cv::Mat(shape[0], shape[1], CV_8UC3, PyArray_DATA(array)).clone();
+			
+            break;
+        case 3:
+            mat = cv::Mat(shape[0], shape[1], CV_8UC3, PyArray_DATA(array)).clone();			
+            break;
+        default:
+            // Adicione tratamento para outros casos conforme necessário
+            break;
+    }
+
+    return mat;
+}
+
+cv::Mat
+call_python_function(unsigned char* image)
 {
-	if (predictions.size() == 0)
-		return;
+
+
+	printf("teste entrou aqui1\n");
+	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);      //convert testVector to a numpy arrayay
+		
 	
-	npy_intp predictions_dimensions[2] = {(int)predictions.size(), 4};
 
-	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);        //convert testVector to a numpy array
 
-	float *array = convert_predtions_array(predictions);
+	    if (!numpy_image_array)
+    {
+        PyErr_Print();
+         // Ou maneje o erro como achar melhor
+    }
 
-	PyObject* numpy_predictions_array = PyArray_SimpleNewFromData(2, predictions_dimensions, NPY_FLOAT, array);
+	// float *array = convert_predtions_array(predictions);
+	printf("entrou aqui2\n");
+	// PyObject* numpy_predictions_array = PyArray_SimpleNewFromData(2, predictions_dimensions, NPY_FLOAT, array);
+	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array,NULL); //add this line
+	printf("entrou aqui-yolo\n");
+	//PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
 
-	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
+	
 
-	short *predict = (short*)PyArray_DATA(identifications);
+		// Verificar se ocorreu um erro no Python
+	if (PyErr_Occurred()) {
+    	PyErr_Print(); // Imprime o erro e limpa o indicador de erro
+    // Lidar com o erro conforme necessário
+	}
+	if (identifications == NULL) {
+		std::cerr << "vetor vazio" << std::endl;
 
+	}
+
+
+	//short *predict = (short*)PyArray_DATA(identifications);
+
+	/*
 	if (predict == NULL)
 	{
 		Py_Finalize();
 		exit (printf("Error: The predctions erro.\n"));
-	}
+	} 
+	*/
 
-	update_pedestrians(predict);
+	//update_pedestrians(predict); 
+
+	
+
+	cv::Mat img0 = numpy_array_to_cv_mat(identifications);
+	printf("entrou aqui-yolo1\n");
+
+    // Exibe a imagem
+	
+	if (!img0.empty()) {
+		printf("entrou aqui-yolo2\n");
+		//cv::imshow("Resultado", img0);
+		//cv::waitKey(0);
+	} else {
+		std::cerr << "Erro: A matriz OpenCV é inválida." << std::endl;
+	} 
 
 	if (PyErr_Occurred())
 		PyErr_Print();
 
-	free(array);
+	//free(array);
 	Py_DECREF(numpy_image_array);
-	Py_DECREF(numpy_predictions_array);
+	Py_XDECREF(python_pedestrian_tracker_function);
+	//Py_DECREF(numpy_predictions_array);
 	Py_DECREF(identifications);
+
+	return img0;
 }
 ///////////////
 
@@ -441,6 +520,26 @@ display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, v
 
         putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     }
+
+	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
+    //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
+
+    //resize(image, image, Size(600, 300));
+    imshow("Neural Object Detector", image);
+    //imwrite("Image.jpg", image);
+    waitKey(1);
+}
+
+void
+display_yolopv2(Mat image, double fps)
+{
+	char object_info[25];
+    char frame_rate[25];
+
+    sprintf(frame_rate, "FPS = %.2f", fps);
+
+    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
 	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
     //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
@@ -1065,7 +1164,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 
 	if (first_time)
 	{
-//		init_python(open_cv_image.cols, open_cv_image.rows);
+		init_python(open_cv_image.cols, open_cv_image.rows);
 
 		original_img_width = open_cv_image.cols;
 		original_img_height = open_cv_image.rows;
@@ -1083,10 +1182,10 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	// 	velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
 	// else
 	// 	return;
-
+	
 	// Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
-	open_cv_image = open_cv_image(myROI);
+	//Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
+	//open_cv_image = open_cv_image(myROI);
 
 	//dist_to_pedestrian_track = distance_to_pedestrian_track_annotaion();
 	
@@ -1095,12 +1194,13 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	if (max_dist_to_pedestrian_track < 0.0 )//|| dist_to_pedestrian_track < max_dist_to_pedestrian_track)        // 70 meter is above the range of velodyne
 	{
 		//////// Yolo
-		predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
+		//predictions = run_YOLO(open_cv_image.data, 0, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.8, 0.2);
 		
 //		predictions = filter_predictions_of_interest(predictions);
 
 		//////// Python
-//		call_python_function(open_cv_image.data, predictions);
+		
+		open_cv_image = call_python_function(open_cv_image.data);
 		
 		insert_missing_pedestrians_in_the_track(predictions);
 		
@@ -1176,6 +1276,16 @@ yolo_timer_handler()
 
 	Mat open_cv_image = Mat(image_msg->images[image_index].height, image_msg->images[image_index].width, CV_8UC3, image_msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
+	
+	init_python(open_cv_image.cols, open_cv_image.rows);
+
+	printf("teste entrou aqui213\n");
+
+	unsigned char* image_data = open_cv_image.data;
+
+	call_python_function(open_cv_image.data);
+	
+	
 	track_pedestrians(open_cv_image, image_msg->timestamp);
 }
 #endif
@@ -1184,14 +1294,29 @@ void
 camera_image_handler(camera_message *msg)
 {
 	image_msg = msg;
+	
 
 #ifndef USE_TIMER_HANDLER
 	if (image_index > image_msg->number_of_images)
 		carmen_die("Image index %d exceeds the camera number of images %d!\n", image_index, image_msg->number_of_images);
 
 	Mat open_cv_image = Mat(image_msg->images[image_index].height, image_msg->images[image_index].width, CV_8UC3, image_msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	
+	
+	init_python(open_cv_image.cols, open_cv_image.rows);
 
-	track_pedestrians(open_cv_image, image_msg->timestamp);
+	printf("teste entrou aqui21\n");
+
+	cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
+
+	unsigned char* image_data = open_cv_image.data;
+
+	Mat img0 = call_python_function(image_data);
+
+	display_yolopv2(img0, 2);
+
+
+	//track_pedestrians(open_cv_image, image_msg->timestamp);
 #endif
 }
 
@@ -1208,7 +1333,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 
 	Mat open_cv_image = Mat(msg->height, msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
-	track_pedestrians(open_cv_image, msg->timestamp);
+	init_python(open_cv_image.cols, open_cv_image.rows);
+
+	printf("teste entrou aqui0\n");
+	call_python_function(open_cv_image.data);
+
+	//track_pedestrians(open_cv_image, msg->timestamp);
 }
 
 
@@ -1383,28 +1513,28 @@ initializer()
 {
 	// initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
 
-	char* carmen_home = getenv("CARMEN_HOME");
-	char classes_names_path[1024];
-	char yolo_cfg_path[1024];
-	char yolo_weights_path[1024];
+	//char* carmen_home = getenv("CARMEN_HOME");
+	//char classes_names_path[1024];
+	//char yolo_cfg_path[1024];
+	//char yolo_weights_path[1024];
 
 	// sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
 	// sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
 	// sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
 
-	sprintf(classes_names_path, "%s/sharedlib/darknet3/data/coco.names", carmen_home);
-	sprintf(yolo_cfg_path, "%s/sharedlib/darknet3/cfg/yolov4.cfg", carmen_home);
-	sprintf(yolo_weights_path, "%s/sharedlib/darknet3/yolov4.weights", carmen_home);
+	//sprintf(classes_names_path, "%s/sharedlib/darknet3/data/coco.names", carmen_home);
+	//sprintf(yolo_cfg_path, "%s/sharedlib/darknet3/cfg/yolov4.cfg", carmen_home);
+	//sprintf(yolo_weights_path, "%s/sharedlib/darknet3/yolov4.weights", carmen_home);
 
 	// classes_names = get_classes_names(classes_names_path);
 
 	// network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
 
-	classes_names = get_classes_names(classes_names_path);
+	//classes_names = get_classes_names(classes_names_path);
 
-	network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
+	//network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
 
-//	init_python(camera_width, camera_height);
+	//init_python(camera_width, camera_height);
 }
 
 
