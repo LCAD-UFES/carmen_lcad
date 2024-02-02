@@ -20,6 +20,12 @@
 #include "esp_log.h"
 #include "driver/twai.h"
 
+//Depois juntar
+#include "task_wifi_communication.c"
+#include "servo_controller.c"
+
+QueueHandle_t queue_servo;
+
 
 static const char *TAG = "test";
 
@@ -116,7 +122,10 @@ app_main(void)
   
     xTaskCreatePinnedToCore(car_mode_task, "car_mode_task", 1024*2, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(change_car_mode_task, "change_car_mode_task", 1024*2, NULL, 2, NULL, 0);
+    
+    queue_servo = xQueueCreate(5, 5*sizeof(float)); // Queue 
+
+    xTaskCreatePinnedToCore(manage_messages, "Manage mesages", 1024*4, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(manage_servo, "Manage Servo", 1024*2, NULL, 1, NULL, 1);
 
 }
-
-
