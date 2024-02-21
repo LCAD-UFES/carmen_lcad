@@ -1,42 +1,48 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "driver/adc.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
+
+// Functions
+#define CALCULATE_FREQUENCY(f) pdMS_TO_TICKS(1000 / ((float) f))
 
 // Pins
-#define PIN_CAN_TX GPIO_NUM_1
-#define PIN_CAN_RX GPIO_NUM_2
+#define PIN_CAN_TX GPIO_NUM_26
+#define PIN_CAN_RX GPIO_NUM_27
 #define PIN_ENCODER_A GPIO_NUM_3
 #define PIN_ENCODER_B GPIO_NUM_4
 
 // Structs
 typedef struct TaskParameters
 {
-    uint32_t frequency;
+    TickType_t frequency;
 } TaskParameters;
 
 // Global variables
-static int odom_velocity;
-static int odom_steering;
-static int command_velocity;
-static int command_steering;
-static SemaphoreHandle_t odomVelocityMutex;
-static SemaphoreHandle_t odomSteeringMutex;
-static SemaphoreHandle_t commandVelocityMutex;
-static SemaphoreHandle_t commandSteeringMutex;
-static TaskParameters can_reading_task_parameters = { .frequency = 30 };
-static TaskParameters can_writing_task_parameters = { .frequency = 30 };
-static TaskParameters motor_task_parameters = { .frequency = 30 };
-static TaskParameters servo_task_parameters = { .frequency = 30 };
-static TaskParameters encoder_task_parameters = { .frequency = 30 };
-static TaskParameters steering_reading_parameters = { .frequency = 30 };
+extern int odom_velocity;
+extern int odom_steering;
+extern int command_velocity;
+extern int command_steering;
+extern SemaphoreHandle_t odomVelocityMutex;
+extern SemaphoreHandle_t odomSteeringMutex;
+extern SemaphoreHandle_t commandVelocityMutex;
+extern SemaphoreHandle_t commandSteeringMutex;
+static TaskParameters can_reading_task_parameters = { .frequency = CALCULATE_FREQUENCY(1)};
+static TaskParameters can_writing_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+static TaskParameters servo_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+static TaskParameters encoder_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+static TaskParameters steering_reading_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+static TaskParameters fake_odometry_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
 
 // CAN message IDs
 #define ODOM_VELOCITY_CAN_ID 0x425
 #define ODOM_STEERING_CAN_ID 0x80
+#define COMMAND_CAN_ID 0x100
 
 // Encoders
 #define PCNT_HIGH_LIMIT 100
@@ -67,5 +73,6 @@ static TaskParameters steering_reading_parameters = { .frequency = 30 };
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define ADC_CALI_SCHEME ESP_ADC_CAL_VAL_EFUSE_TP_FIT
 #endif
+
 
 #endif /* SYSTEM_H */

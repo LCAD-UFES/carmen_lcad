@@ -90,12 +90,12 @@ encoder_task (void* parameters)
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
             ESP_LOGD (TAG, "Pulse count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
-            xTaskDelayUntil (&xLastWakeTime, xFrequency);
+            vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
 }
 
 void
-steering_reading (void* parameters)
+steering_reading_task (void* parameters)
 {
     // uint32_t voltage = 0;
     // while (1)
@@ -114,4 +114,45 @@ steering_reading (void* parameters)
     //         vTaskDelay ((1000 / 40) / portTICK_PERIOD_MS);
     //         voltage = 0;
     //     }
+}
+
+void
+fake_odometry_task(void* parameters)
+{
+    int frequency = ((TaskParameters*)parameters)->frequency;
+    int current_velocity = 0;
+    int current_steering = 0;
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = frequency;
+    xLastWakeTime = xTaskGetTickCount ();
+    while (1)
+        {
+            current_velocity += 1;
+            current_steering += 1;
+            current_velocity = current_velocity % 100;
+            current_steering = current_steering % 100;
+            if (xSemaphoreTake (odomVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+                odom_velocity = current_velocity;
+                xSemaphoreGive (odomVelocityMutex);
+            }
+            else
+            {
+                ESP_LOGE (TAG, "Failed to take odom velocity mutex");
+                continue;
+            }
+            if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
+                odom_steering = current_steering;
+                xSemaphoreGive (odomSteeringMutex);
+            }
+            else
+            {
+                ESP_LOGE (TAG, "Failed to take odom steering mutex");
+                continue;
+            }
+
+            ESP_LOGI (TAG, "Velocity created: %d", current_velocity);
+            ESP_LOGI (TAG, "Steering created: %d", current_steering);
+            // vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            vTaskDelay (pdMS_TO_TICKS(1000));
+        }
 }
