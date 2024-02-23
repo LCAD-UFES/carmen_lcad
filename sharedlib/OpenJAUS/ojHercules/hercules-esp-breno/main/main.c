@@ -3,29 +3,17 @@
 #include "control.h"
 #include "freertos/task.h"
 #include "odom.h"
+#include "test.h"
 
 static const char* TAG = "Main module";
 SemaphoreHandle_t odomVelocityMutex = NULL;
 SemaphoreHandle_t odomSteeringMutex = NULL;
 SemaphoreHandle_t commandVelocityMutex = NULL;
 SemaphoreHandle_t commandSteeringMutex = NULL;
-int odom_velocity = 0;
+double odom_velocity = 0;
 int odom_steering = 0;
 int command_velocity = 0;
 int command_steering = 0;
-
-void
-test_task ()
-{
-    TickType_t xLastWakeTime;
-    xLastWakeTime = xTaskGetTickCount ();
-    const TickType_t xFrequency = can_reading_task_parameters.frequency;
-    while (1)
-        {
-            ESP_LOGI (TAG, "Hello World");
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
-        }
-}
 
 void
 create_mutexes ()
@@ -51,29 +39,34 @@ app_main ()
             return;
         }
     
+    // Testing tasks
     // xTaskCreate (test_task, "Test Task", 2048, NULL, 1, NULL);
+    // xTaskCreate (fake_odometry_task, "Fake Odometry Task",
+    //              8192, &fake_odometry_task_parameters, 1,
+    //              NULL);
+    xTaskCreate (fake_commands_task, "Fake Commands Task",
+                 8192, &fake_commands_task_parameters, 1,
+                 NULL);
 
     // Communication
-    xTaskCreate (can_reading_task, "CAN Reading Task",
-                 8192, &can_reading_task_parameters, 1,
-                 NULL);
-    xTaskCreate (can_writing_task, "CAN Writing Task",
-                 8192, &can_writing_task_parameters, 1,
-                 NULL);
+    // xTaskCreate (can_reading_task, "CAN Reading Task",
+    //              8192, &can_reading_task_parameters, 1,
+    //              NULL);
+    // xTaskCreate (can_writing_task, "CAN Writing Task",
+    //              8192, &can_writing_task_parameters, 1,
+    //              NULL);
 
     // // Control
-    // xTaskCreate (motor_task, "Motor Task", configMINIMAL_STACK_SIZE,
-    //              &motor_task_parameters, 2, NULL);
-    // xTaskCreate (servo_task, "Servo Task", configMINIMAL_STACK_SIZE,
-    //              &servo_task_parameters, 3, NULL);
+    xTaskCreate (motor_task, "Motor Task", 8192,
+                 &motor_task_parameters, 1, NULL);
+    // xTaskCreate (servo_task, "Servo Task", 8192,
+    //              &servo_task_parameters, 1, NULL);
 
     // // Odometry
-    // xTaskCreate (encoder_task, "Encoder Task", configMINIMAL_STACK_SIZE,
-    //              &encoder_task_parameters, 3, NULL);
+    // xTaskCreate (encoder_task, "Encoder Task", 8192,
+    //              &encoder_task_parameters, 1, NULL);
     // xTaskCreate (steering_reading, "Steering Reading Task",
-    //              configMINIMAL_STACK_SIZE, &steering_reading_parameters, 3,
+    //              8192, &steering_reading_parameters, 1,
     //              NULL);
-    xTaskCreate (fake_odometry_task, "Fake Odometry Task",
-                 8192, &fake_odometry_task_parameters, 1,
-                 NULL);    
+    
 }

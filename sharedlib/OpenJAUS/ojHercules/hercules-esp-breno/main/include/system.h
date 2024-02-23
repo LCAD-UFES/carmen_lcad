@@ -15,6 +15,10 @@
 #define PIN_CAN_RX GPIO_NUM_27
 #define PIN_ENCODER_A GPIO_NUM_3
 #define PIN_ENCODER_B GPIO_NUM_4
+#define PIN_MOTOR_LEFT GPIO_NUM_2
+#define PIN_MOTOR_RIGHT GPIO_NUM_15
+#define PIN_MOTOR_LEFT_DIRECTION GPIO_NUM_0
+#define PIN_MOTOR_RIGHT_DIRECTION GPIO_NUM_5
 
 // Structs
 typedef struct TaskParameters
@@ -23,7 +27,7 @@ typedef struct TaskParameters
 } TaskParameters;
 
 // Global variables
-extern int odom_velocity;
+extern double odom_velocity;
 extern int odom_steering;
 extern int command_velocity;
 extern int command_steering;
@@ -33,16 +37,22 @@ extern SemaphoreHandle_t commandVelocityMutex;
 extern SemaphoreHandle_t commandSteeringMutex;
 static TaskParameters can_reading_task_parameters = { .frequency = CALCULATE_FREQUENCY(1)};
 static TaskParameters can_writing_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(100) };
 static TaskParameters servo_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
 static TaskParameters encoder_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
 static TaskParameters steering_reading_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
 static TaskParameters fake_odometry_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_FREQUENCY(10) };
 
-// CAN message IDs
+// CAN params
 #define ODOM_VELOCITY_CAN_ID 0x425
 #define ODOM_STEERING_CAN_ID 0x80
 #define COMMAND_CAN_ID 0x100
+#define CAN_COMMAND_MAX 32767
+#define VELOCITY_CONVERSION_CONSTANT 5000.0 // Must match carmen value in oj main.c
+
+// Motors
+#define DUTY_RESOLUTION 14
 
 // Encoders
 #define PCNT_HIGH_LIMIT 100
@@ -57,8 +67,8 @@ static TaskParameters fake_odometry_task_parameters = { .frequency = CALCULATE_F
 #define GEAR_RATIO 30.0
 #define WHEEL_SPACING 0.155f
 #define AXLE_SPACING 0.143f
+#define MAX_ANGLE 0.30f
 #define NUMBER_OF_ENCODER_LINES 500
-#define ENCODER_PRECISION
 
 // ADC Attenuation
 #define ADC_ATTEN ADC_ATTEN_DB_11

@@ -5,6 +5,5 @@
 
 void encoder_task(void *parameters);
 void steering_reading(void *parameters);
-void fake_odometry_task(void *parameters);
 
 #endif /* ODOM_H */

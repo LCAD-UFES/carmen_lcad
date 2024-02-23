@@ -9,8 +9,17 @@ send_can_message (uint32_t id, int data)
 {
     twai_message_t message = {.data_length_code = 2};
     message.identifier = id;
-    message.data[0] = data & 0xFF;
-    message.data[1] = (data >> 8) & 0xFF;
+    int16_t data_send = data;
+    if (id == ODOM_VELOCITY_CAN_ID)
+        {
+            data = (int16_t) (data * VELOCITY_CONVERSION_CONSTANT);
+        }
+    else if (id == ODOM_STEERING_CAN_ID)
+        {
+            data = (int16_t) (data * 100);
+        }
+    message.data[0] = (uint8_t) (data_send & 0xFF);
+    message.data[1] = (uint8_t) ((data_send >> 8) & 0xFF);
     ESP_LOGD (TAG, "ID: %lu", message.identifier);
     ESP_LOGD (TAG, "Data0: %u", message.data[0]);
     ESP_LOGD (TAG, "Data1: %u", message.data[1]);
