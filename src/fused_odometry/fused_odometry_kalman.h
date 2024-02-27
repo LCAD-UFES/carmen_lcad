@@ -5,8 +5,8 @@
 #ifndef FUSED_ODOMETY_KALMAN_H_
 #define FUSED_ODOMETY_KALMAN_H_
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 
 #include "fused_odometry.h"
 #include "xsens_xyz_handler.h"

@@ -1,5 +1,5 @@
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 #include <carmen/carmen.h>
 #include <carmen/gps_xyz_interface.h>
 #include "fused_odometry.h"
