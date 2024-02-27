@@ -44,7 +44,7 @@
 #include "time_cache.h"
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/signals.hpp>
+#include <boost/signals2/signal.hpp>
 
 namespace tf
 {
@@ -347,7 +347,7 @@ protected:
   /// transform prefix to apply as necessary
   std::string tf_prefix_;
 
-  typedef boost::signal<void(void)> TransformsChangedSignal;
+  typedef boost::signals2::signal<void(void)> TransformsChangedSignal;
   /// Signal which is fired whenever new transform data has arrived, from the thread the data arrived in
   TransformsChangedSignal transforms_changed_;
   boost::mutex transforms_changed_mutex_;

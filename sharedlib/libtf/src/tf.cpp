@@ -1077,13 +1077,13 @@ void Transformer::transformPose(const std::string& target_frame, const Time& tar
   stamped_out.frame_id_ = target_frame;
 };
 
-boost::signals::connection Transformer::addTransformsChangedListener(boost::function<void(void)> callback)
+boost::signals2::connection Transformer::addTransformsChangedListener(boost::function<void(void)> callback)
 {
   boost::mutex::scoped_lock lock(transforms_changed_mutex_);
   return transforms_changed_.connect(callback);
 }
 
-void Transformer::removeTransformsChangedListener(boost::signals::connection c)
+void Transformer::removeTransformsChangedListener(boost::signals2::connection c)
 {
   boost::mutex::scoped_lock lock(transforms_changed_mutex_);
   c.disconnect();
