@@ -7,9 +7,10 @@ LINK = g++
 CXXFLAGS += -Wall -msse3
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += `pkg-config --cflags opencv4`
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lvisual_odometry_interface -lstereo_interface -lviso
-LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv`
+LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lboost_system `pkg-config --libs opencv4`
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
@@ -29,9 +30,9 @@ endif
 
 ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags`
-IFLGAS += `pkg-config --cflags opencv`  
+IFLGAS += `pkg-config --cflags opencv4`  
 LFLAGS += -lglobal_graphics `$(GTK_CONFIG) --libs`
-LFLAGS += `pkg-config --libs opencv`  
+LFLAGS += `pkg-config --libs opencv4`  
 SOURCES +=
 PUBLIC_BINARIES +=
 TARGETS +=
