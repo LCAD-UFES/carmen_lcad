@@ -7,9 +7,10 @@ LFLAGS += -lipc -lparam_interface -lstdc++
 ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags`
 LFLAGS += `$(GTK_CONFIG) --libs`
-IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore/ -I/usr/include/qt4/QtGui -I/usr/include -I/usr/include/qt4/ -I$CARMEN_HOME/include
-IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include 
-LFLAGS += -lQtGui -lQtCore -lpthread
+IFLAGS += -I. -I/usr/include/x86_64-linux-gnu/qt5/QtCore/ -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include -I/usr/include/x86_64-linux-gnu/qt5 -I$CARMEN_HOME/include
+# IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore/ -I/usr/include/qt4/QtGui -I/usr/include -I/usr/include/qt4/ -I$CARMEN_HOME/include
+# IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include 
+LFLAGS += -lQt5Gui -lQt5Core -lpthread
 else
 CFLAGS += -DNO_GRAPHICS
 endif

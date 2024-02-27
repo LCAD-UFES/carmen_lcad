@@ -10,7 +10,9 @@ CFLAGS +=  `pkg-config --cflags opencv` -fopenmp
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libbee/include/ \
  	-I$(CARMEN_HOME)/sharedlib/libbee/pgr-stereo-examples-libdc-2.0.2/pgrlibdcstereo \
- 	`pkg-config --cflags gtk+-3.0` 
+ 	`pkg-config --cflags gtk+-3.0`  \
+ 	-I/usr/include/opencv4
+LFLAGS += -L/usr/lib/x86_64-linux-gnu
 
 ifeq ($(PROCESSOR),x86_64)
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libbee/triclops_64/include
@@ -27,9 +29,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	-L$(CARMEN_HOME)/sharedlib/libbee/pgr-stereo-examples-libdc-2.0.2/pgrlibdcstereo \
 	-L$(CARMEN_HOME)/sharedlib/libbee/lib -lparam_interface -lipc -lglobal -lbee -ldc1394 \
 	-ltriclops -lpgrlibdcstereo -lpnmutils \
-	`pkg-config --libs opencv` -lflycapture \
+	-lflycapture \
 	-lGL -lGLU -lglut -ltime_profile \
-	`pkg-config --libs opencv` \
+	`pkg-config --cflags --libs opencv4` \
 	-lparam_interface -lipc -lglobal -lglobal_graphics -lbumblebee_basic_interface \
 	`pkg-config --libs gtk+-3.0`
 	

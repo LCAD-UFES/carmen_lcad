@@ -4,8 +4,8 @@ LINK = g++
 CFLAGS += -fopenmp -std=c11 
 CXXFLAGS += -fopenmp -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet -I/usr/include/bullet -I/usr/local/carmen_boost/include
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/include/boost
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/lib/x86_64-linux-gnu
 
 LFLAGS += -lz -lmap_io -lmap_interface -lmap_util -lglobal -lipc -llocalize_ackerman_core  \
 	  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt \

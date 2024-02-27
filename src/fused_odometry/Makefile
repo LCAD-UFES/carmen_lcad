@@ -11,7 +11,7 @@ CXXFLAGS += -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/include/opencv4/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += -lglobal -lipc -lparam_interface -lxsens_interface -lgps_xyz_interface
 LFLAGS += -llocalize_ackerman_interface -llocalize_ackerman_motion -lvisual_odometry_interface \

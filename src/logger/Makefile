@@ -18,7 +18,7 @@ INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface -lobstacle_avoider_in
 
 endif
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/opencv4/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface -lglobal -lipc -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 			-lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv` -luser_preferences
