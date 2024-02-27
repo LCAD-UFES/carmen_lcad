@@ -22,8 +22,8 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libstereovgram
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libstereo
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libelas
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4`
+LFLAGS += `pkg-config --libs opencv4`
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libstereo
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libstereovgram
