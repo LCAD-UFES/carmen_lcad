@@ -26,8 +26,8 @@ LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11
 		
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -ljpeg
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4`
+LFLAGS += `pkg-config --libs opencv4`
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
