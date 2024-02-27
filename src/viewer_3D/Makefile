@@ -6,39 +6,47 @@ include ../Makefile.conf
 CFLAGS += -fopenmp
 CXXFLAGS += -std=c++11 -Wno-write-strings -Wno-deprecated-declarations
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
+# IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
+# IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models 
+# IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
+# IFLAGS += -I/usr/include
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+# LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
+# LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+# LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models 
+# LFLAGS += -L$(CARMEN_HOME)/src/fused_odometry -L/usr/lib/x86_64-linux-gnu
 
-LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11 -llaser_interface \
-		-lfused_odometry_interface -lgps_xyz_interface -lxsens_interface -lstereo_point_cloud_interface -lglm -lrotation_geometry \
-		-lcurl  \
-		-lvelodyne_interface -lcarmen_gps_wrapper -lm -ldownload_map -lstereo_velodyne_interface -lstereo_velodyne \
-		-lstereo_interface -lnavigator_ackerman_interface -lbehavior_selector_interface \
-		-llocalize_ackerman_interface -lobstacle_avoider_interface -lmotion_planner_interface -lrddf_interface \
-		-lmoving_objects_interface -lgps_nmea_interface -llaser_ldmrs_utils -llaser_ldmrs_interface \
-		-lmapper_interface -lmap_server_interface -lprob_models -lgrid_mapping -lmap_interface -lmap_io -lfrenet_path_planner_interface \
-		-lviewer_3D_interface -lbase_ackerman_interface -loffroad_planner_interface -ltask_manager_interface -lcargo_interface #-llane_analysis_interface
+# LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11 -llaser_interface \
+# 		-lfused_odometry_interface -lgps_xyz_interface -lxsens_interface -lstereo_point_cloud_interface -lglm -lrotation_geometry \
+# 		-lcurl  -lvelodyne_interface -lcarmen_gps_wrapper -lm -ldownload_map -lstereo_velodyne_interface -lstereo_velodyne \
+# 		-lstereo_interface -lnavigator_ackerman_interface -lbehavior_selector_interface \
+# 		-llocalize_ackerman_interface -lobstacle_avoider_interface -lmotion_planner_interface -lrddf_interface \
+# 		-lmoving_objects_interface -lgps_nmea_interface -llaser_ldmrs_utils -llaser_ldmrs_interface \
+# 		-lmapper_interface -lmap_server_interface -lprob_models -lgrid_mapping -lmap_interface -lmap_io -lfrenet_path_planner_interface \
+# 		-lviewer_3D_interface -lbase_ackerman_interface -loffroad_planner_interface -ltask_manager_interface -lcargo_interface #-llane_analysis_interface
 		
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -ljpeg
+# LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -ljpeg
 
+# IFLAGS += `pkg-config --cflags opencv4`
+# LFLAGS += `pkg-config --libs opencv4`
+
+# # Application specific include directories.
+# PCL_INC = $(wildcard /usr/local/include/pcl-*)
+# #VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
+
+# IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) # -I $(VTK_INC)
+
+# LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
+# 		  -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system \
+# 		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lcollision_detection
+# LFLAGS += -luser_preferences
+
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 IFLAGS += `pkg-config --cflags opencv4`
 LFLAGS += `pkg-config --libs opencv4`
-
-# Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-*)
-#VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
-
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) # -I $(VTK_INC)
-
-LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
-		  -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system \
-		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lcollision_detection
-LFLAGS += -luser_preferences
 
 SUBDIRS += glm
 
@@ -62,7 +70,7 @@ libvelodyne_360_drawer.a: velodyne_360_drawer.o
 
 viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o velodyne_360_drawer.o \
 	interface_drawer.o map_drawer.o texture_loader.o download_map.o trajectory_drawer.o velodyne_intensity_drawer.o \
-	annotation_drawer.o symotha_drawer.o cargo_drawer.o libviewer_3D_interface.a #lane_analysis_drawer.o
+	annotation_drawer.o symotha_drawer.o cargo_drawer.o libviewer_3D_interface.a #lane_analysis_drawer.o 
 
 xsens_viewer: xsens_viewer.o Window.o draw_car.o texture_loader.o download_map.o
 

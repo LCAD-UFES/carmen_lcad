@@ -10,8 +10,8 @@
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgcodecs/imgcodecs_c.h>
 #else
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 #endif
 
 static IplImage* ipl_image = NULL;

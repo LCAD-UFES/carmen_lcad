@@ -4,7 +4,7 @@
 
 #include <carmen/carmen.h>
 
-#include <opencv/cv.h>
+#include <opencv2/opencv.hpp>
 
 #ifdef __cplusplus
 extern "C"

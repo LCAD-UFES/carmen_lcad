@@ -798,17 +798,17 @@ format_map_path(int x_origin, int y_origin, char* map_filename)
 			y_origin);
 }
 
-IplImage *
+cv::Mat
 find_map_from_data(int x_origin, int y_origin)
 {
-	IplImage *map;
+	cv::Mat map;
 	char map_filename[1024];
 
 	format_map_path(x_origin, y_origin, map_filename);
 
 //	printf("%s\n", map_filename);
 
-	map = cvLoadImage(map_filename, CV_LOAD_IMAGE_ANYCOLOR);
+	map = cv::imread(map_filename, cv::IMREAD_ANYCOLOR);
 
 	return map;
 
@@ -1211,7 +1211,7 @@ draw_everything()
 
     	if(remission_map_directory_exists)
     	{
-    		IplImage *map_img = NULL;
+    		cv::Mat map_img = NULL;
     		carmen_vector_3D_t map_center;
     		int x_origin, y_origin, x_grid_origin, y_grid_origin;
 
@@ -1247,7 +1247,7 @@ draw_everything()
     {
     	if (first_download_map_have_been_aquired)
     	{
-    		IplImage *img = NULL;
+    		cv::Mat img = NULL;
 
     		cleanTexture(); // @@@Braian: Necessario para nao dar conflito com a textura do carro
 
@@ -4312,7 +4312,7 @@ draw_while_picking()
 	{
 		if (first_download_map_have_been_aquired)
 		{
-			IplImage *img = NULL;
+			cv::Mat img = NULL;
 
 			cleanTexture();
 

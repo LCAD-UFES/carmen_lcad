@@ -3,7 +3,7 @@
 #include <carmen/carmen.h>
 #include <carmen/viewer_3D_interface.h>
 #include <carmen/user_preferences.h>
-#include <opencv/cv.h>
+#include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/version.hpp>
