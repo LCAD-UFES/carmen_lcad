@@ -7,8 +7,8 @@
 #include <carmen/bumblebee_basic_interface.h>
 #include <sys/time.h>
 #include <stdio.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 
 #define LEFT 0
 #define RIGHT 1

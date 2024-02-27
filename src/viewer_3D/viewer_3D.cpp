@@ -27,8 +27,8 @@
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 #include <string.h>
 
 #include "viewer_3D.h"

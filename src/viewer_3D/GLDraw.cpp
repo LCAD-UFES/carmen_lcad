@@ -4,8 +4,8 @@
 #include <carmen/rotation_geometry.h>
 #include <carmen/moving_objects_interface.h>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 
 #include <GL/glew.h>
 #include <GL/gl.h>

@@ -1222,7 +1222,7 @@ camera_drivers_write_camera_message_to_log(int camera_id, int compress_image, ca
 
 	if (first_time && compress_image)
 	{
-		compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+		compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
     	compression_params.push_back(9);
 	}
 

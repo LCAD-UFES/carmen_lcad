@@ -1870,7 +1870,7 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 		if (compress_image)
 		{
 			sprintf(path_with_extension, "%s.png", path);
-			img = imread(path_with_extension, CV_LOAD_IMAGE_COLOR);
+			img = imread(path_with_extension, cv::IMREAD_COLOR);
 			msg->images[i].raw_data = img.data;
 		}
 		else
