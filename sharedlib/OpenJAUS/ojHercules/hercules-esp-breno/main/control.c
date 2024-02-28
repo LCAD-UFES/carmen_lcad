@@ -123,9 +123,91 @@ motor_task (void* parameters)
     }   
 }
 
+float target_limit_float(float insert,float low,float high)
+{
+    if (insert < low)
+        return low;
+    else if (insert > high)
+        return high;
+    else
+        return insert;	
+}
+
+float target_limit_int(int insert,int low,int high)
+{
+    if (insert < low)
+        return low;
+    else if (insert > high)
+        return high;
+    else
+        return insert;	
+}
+
+void
+config_servo_pin()
+{
+    // Prepare and then apply the LEDC PWM timer configuration
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_MODE,
+        .timer_num        = LEDC_TIMER,
+        .duty_resolution  = LEDC_DUTY_RES,
+        .freq_hz          = LEDC_FREQUENCY,  
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ledc_timer_config(&ledc_timer);
+
+     // Prepare and then apply the LEDC PWM channel configuration
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_MODE,
+        .channel        = LEDC_CHANNEL,
+        .timer_sel      = LEDC_TIMER,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = LEDC_OUTPUT_IO,
+        .duty           = LEDC_INITIAL_DUTY, // Set duty to 0%
+    };
+    ledc_channel_config(&ledc_channel);
+
+}
+
+void
+update_servo_angle(float angle)
+{
+    // We assume that the Angle and pwm T_High are linear as an aproximation
+    float NEW_T_HIGH = ((angle-MEDIUM_ANGLE)/LINEAR_COEFFICIENT) + MEDIUM_ANGLE_T_HIGH;
+    int duty_cycle = ((LEDC_MAX_DUTY*NEW_T_HIGH)/(LEDC_PERIOD));
+    duty_cycle = target_limit_int(duty_cycle,MAX_ANGLE_T_HIGH, MIN_ANGLE_T_HIGH);
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+
+}
+
 void
 servo_task (void* parameters)
 {
-    // CAN task implementation using the global variables velocity and
-    // velocityMutex
+
+    config_servo_pin();
+    float target_angle = MEDIUM_ANGLE;
+    int need_update = 1;
+    
+    while (1)
+    {
+        if( (xSemaphoreTake( commandSteeringMutex, ( TickType_t ) 10 ) == pdTRUE) && (need_update))
+        {
+            target_angle = command_steering;
+            while (xSemaphoreGive(commandSteeringMutex) != pdTRUE)
+            {
+            }
+            target_angle = target_limit_float(command_steering, MIN_ANGLE, MAX_ANGLE);
+            need_update = 0;
+            
+        }
+        else
+        {
+            need_update = 1;
+        }
+
+        update_servo_angle(target_angle);
+
+    }
+
 }
