@@ -37,8 +37,10 @@ encoder_setup ()
         .level_gpio_num = PIN_ENCODER_B,
     };
     pcnt_channel_handle_t pcnt_chan_a = NULL;
+    
     ESP_ERROR_CHECK (
         pcnt_new_channel (pcnt_unit, &chan_a_config, &pcnt_chan_a));
+    /*
     pcnt_chan_config_t chan_b_config = {
         .edge_gpio_num = PIN_ENCODER_B,
         .level_gpio_num = PIN_ENCODER_A,
@@ -46,20 +48,23 @@ encoder_setup ()
     pcnt_channel_handle_t pcnt_chan_b = NULL;
     ESP_ERROR_CHECK (
         pcnt_new_channel (pcnt_unit, &chan_b_config, &pcnt_chan_b));
+    */
 
     ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
     ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
-        pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_DECREASE,
-        PCNT_CHANNEL_EDGE_ACTION_INCREASE));
+        pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
     ESP_ERROR_CHECK (pcnt_channel_set_level_action (
-        pcnt_chan_a, PCNT_CHANNEL_LEVEL_ACTION_KEEP,
-        PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+        pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
+    /*
     ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
         pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
         PCNT_CHANNEL_EDGE_ACTION_DECREASE));
     ESP_ERROR_CHECK (pcnt_channel_set_level_action (
         pcnt_chan_b, PCNT_CHANNEL_LEVEL_ACTION_KEEP,
         PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+    */
 
     QueueHandle_t queue = xQueueCreate (10, sizeof (int));
     ESP_LOGI (TAG, "enable pcnt unit");
@@ -73,23 +78,26 @@ encoder_setup ()
 }
 
 void
-encoder_task (void* parameters)
+encoder_task ( void )
 {
-    int frequency = ((TaskParameters*)parameters)->frequency;
+    int task_frequency = 10; //Hz
     int pulse_count = 0;
-    int current_velocity = 0;
+    int total_pulses = 0;
+    float current_velocity = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = frequency;
+    const TickType_t xFrequency = 10; //Task frequency in FreeRTOS ticks
     xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup ();
     double meters_per_second_per_pulse
-        = frequency * 2 * PI * WHEEL_DIAMETER
-          / (NUMBER_OF_ENCODER_LINES * GEAR_RATIO);
+        = (task_frequency * 2 * PI * WHEEL_DIAMETER)
+          / NUMBER_OF_ENCODER_LINES ;//* GEAR_RATIO);
     while (1)
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_LOGD (TAG, "Pulse count: %d", pulse_count);
+            ESP_LOGI (TAG, "Pulse count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
+            ESP_LOGI (TAG, "Current_velocity: %.2f", current_velocity);
+            ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
 }
