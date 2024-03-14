@@ -19,7 +19,7 @@ motor_control_setup()
     ledc_timer_config(&pwm_timer);
 
     ledc_channel_config_t pwm_left_channel = {
-        .gpio_num = PIN_MOTOR_LEFT,
+        .gpio_num = PIN_MOTOR_LEFT_PWM,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .channel = LEDC_CHANNEL_0,
         .timer_sel = LEDC_TIMER_0,
@@ -27,7 +27,7 @@ motor_control_setup()
         .hpoint = 0
     };
     ledc_channel_config_t pwm_right_channel = {
-        .gpio_num = PIN_MOTOR_RIGHT,
+        .gpio_num = PIN_MOTOR_RIGHT_PWM,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .channel = LEDC_CHANNEL_1,
         .timer_sel = LEDC_TIMER_0,
@@ -39,7 +39,7 @@ motor_control_setup()
 
     // Setup motor direction control
     gpio_config_t motor_direction_config = {
-        .pin_bit_mask = (1ULL << PIN_MOTOR_LEFT_DIRECTION) | (1ULL << PIN_MOTOR_RIGHT_DIRECTION),
+        .pin_bit_mask = (1ULL << PIN_MOTOR_DRIVE) | (1ULL << PIN_MOTOR_REVERSE),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -63,7 +63,7 @@ motor_task (void* parameters)
 
     double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;
     double velocity_can_to_pwm = pow(2, DUTY_RESOLUTION) / (CAN_COMMAND_MAX * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
-    double lef_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
+    double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
 
 
     // Task frequency control
@@ -98,7 +98,7 @@ motor_task (void* parameters)
         // Calculate the velocity difference between the left and right motors
         velocity_pwm = velocity_can * velocity_can_to_pwm;
         ESP_LOGD (TAG, "Velocity PWM: %f", velocity_pwm);
-        left_to_right_difference = steering_can * lef_to_right_difference_constant * angle_can_to_rad;
+        left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = round(velocity_pwm * (1 + left_to_right_difference));
         command_velocity_left = round(velocity_pwm * (1 - left_to_right_difference));
         ESP_LOGD (TAG, "Velocity left: %d", command_velocity_left);
@@ -106,11 +106,11 @@ motor_task (void* parameters)
 
         // Set the direction of the motors
         if (velocity_pwm < 0) {
-            gpio_set_level(PIN_MOTOR_LEFT_DIRECTION, 1);
-            gpio_set_level(PIN_MOTOR_RIGHT_DIRECTION, 1);
+            gpio_set_level(PIN_MOTOR_DRIVE, 0);
+            gpio_set_level(PIN_MOTOR_REVERSE, 1);
         } else {
-            gpio_set_level(PIN_MOTOR_LEFT_DIRECTION, 0);
-            gpio_set_level(PIN_MOTOR_RIGHT_DIRECTION, 0);
+            gpio_set_level(PIN_MOTOR_DRIVE, 1);
+            gpio_set_level(PIN_MOTOR_REVERSE, 0);
         }
 
         // Set the duty cycle of the PWM signals

@@ -14,8 +14,8 @@
 #define PIN_SERVO GPIO_NUM_21 // pino do servo
 #define PIN_CAN_TX GPIO_NUM_26
 #define PIN_CAN_RX GPIO_NUM_27
-#define PIN_ENCODER_A GPIO_NUM_3
-#define PIN_ENCODER_B GPIO_NUM_4
+#define PIN_ENCODER_A GPIO_NUM_5
+#define PIN_ENCODER_B GPIO_NUM_4    
 #define PIN_MOTOR_LEFT GPIO_NUM_2
 #define PIN_MOTOR_RIGHT GPIO_NUM_15
 #define PIN_MOTOR_LEFT_DIRECTION GPIO_NUM_0
@@ -32,17 +32,25 @@ extern double odom_velocity;
 extern int odom_steering;
 extern int command_velocity;
 extern int command_steering;// Angle Odometry Parameters
+extern int command_steering;
+extern SemaphoreHandle_t odomVelocityMutex;
+extern SemaphoreHandle_t odomSteeringMutex;
+extern SemaphoreHandle_t commandVelocityMutex;
+extern SemaphoreHandle_t commandSteeringMutex;
+
 #define MAX_ANGLE 0.35 // em radianos, calcular com sentido anti-horário (curva para esquerda), talvez valor errado
 #define MEDIUM_ANGLE 0.0 // em radianos, posição neutra
 #define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
 
-#define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH))frequency = CALCULATE_FREQUENCY(1) };
-static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(100) };
-static TaskParameters servo_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-static TaskParameters encoder_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-static TaskParameters steering_reading_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-static TaskParameters fake_odometry_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_FREQUENCY(10) };
+#define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH))frequency = CALCULATE_FREQUENCY(1) ;
+extern static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(100) };
+extern static TaskParameters servo_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+extern static TaskParameters encoder_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+extern static TaskParameters steering_reading_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+extern static TaskParameters fake_odometry_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+extern static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_FREQUENCY(10) };
+extern static TaskParameters can_reading_task_parameters = { .frequency = CALCULATE_FREQUENCY(1)};
+extern static TaskParameters can_writing_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
 
 // CAN params
 #define ODOM_VELOCITY_CAN_ID 0x425
@@ -55,8 +63,8 @@ static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_F
 #define DUTY_RESOLUTION 14
 
 // Encoders
-#define PCNT_HIGH_LIMIT 100
-#define PCNT_LOW_LIMIT -100
+#define PCNT_HIGH_LIMIT 20000
+#define PCNT_LOW_LIMIT -20000
 
 // Steering potentiometer
 #define ADC_ANGLE_POTENTIOMETER ADC1_CHANNEL_7
@@ -69,9 +77,9 @@ static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_F
 #define MEDIUM_ANGLE_T_HIGH 1550 // em us
 #define MAX_ANGLE_T_HIGH 1000 // em us
 
-#define MAX_ANGLE 0.35 // em radianos, calcular com sentido anti-horário (curva para esquerda), talvez valor errado
+//#define MAX_ANGLE 0.35 // em radianos, calcular com sentido anti-horário (curva para esquerda), talvez valor errado
 #define MEDIUM_ANGLE 0.0 // em radianos, posição neutra
-#define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
+//#define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
 
 #define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH)) // usado para estabelecer a relação entre ângulo e T_HIGH
 
@@ -95,7 +103,7 @@ static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_F
 #define GEAR_RATIO 30.0
 #define WHEEL_SPACING 0.155f
 #define AXLE_SPACING 0.143f
-#define MAX_ANGLE 0.30f
+//#define MAX_ANGLE 0.30f
 #define NUMBER_OF_ENCODER_LINES 500
 
 // ADC Attenuation

@@ -15,7 +15,7 @@ pcnt_on_reach (pcnt_unit_handle_t unit, const pcnt_watch_event_data_t* edata,
 }
 
 pcnt_unit_handle_t
-encoder_setup ()
+encoder_setup (int sensor_a, int sensor_b)
 {
     ESP_LOGI (TAG, "install pcnt unit");
     pcnt_unit_config_t unit_config = {
@@ -33,8 +33,8 @@ encoder_setup ()
 
     ESP_LOGI (TAG, "install pcnt channels");
     pcnt_chan_config_t chan_a_config = {
-        .edge_gpio_num = PIN_ENCODER_A,
-        .level_gpio_num = PIN_ENCODER_B,
+        .edge_gpio_num = sensor_a,
+        .level_gpio_num = sensor_b,
     };
     pcnt_channel_handle_t pcnt_chan_a = NULL;
     
@@ -66,7 +66,7 @@ encoder_setup ()
         PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
     */
 
-    QueueHandle_t queue = xQueueCreate (10, sizeof (int));
+    //QueueHandle_t queue = xQueueCreate (10, sizeof (int));
     ESP_LOGI (TAG, "enable pcnt unit");
     ESP_ERROR_CHECK (pcnt_unit_enable (pcnt_unit));
     ESP_LOGI (TAG, "clear pcnt unit");
@@ -78,33 +78,58 @@ encoder_setup ()
 }
 
 void
-encoder_task ( void )
+right_encoder_task ( void *parameters )
+{
+    
+    int task_frequency = 10; //Hz
+    int pulse_count = 0;
+    float current_velocity = 0;
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = (FREERTOS_TICKRATE/task_frequency); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
+    xLastWakeTime = xTaskGetTickCount ();
+    pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
+    double meters_per_second_per_pulse
+        = (task_frequency * 2 * PI * WHEEL_DIAMETER)
+          / NUMBER_OF_ENCODER_LINES ;// *GEAR_RATIO);
+    while (1)
+        {
+            ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
+            ESP_LOGI (TAG, "Right Encoder Pulse Count: %d", pulse_count);
+            current_velocity = pulse_count * meters_per_second_per_pulse;
+            ESP_LOGI (TAG, "Right Motor Current_velocity: %.2f", current_velocity);
+            ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
+            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+        }
+    
+}
+
+void
+left_encoder_task ( void *parameters )
 {
     int task_frequency = 10; //Hz
     int pulse_count = 0;
-    int total_pulses = 0;
     float current_velocity = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 10; //Task frequency in FreeRTOS ticks
+    const TickType_t xFrequency = (FREERTOS_TICKRATE/task_frequency); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
     xLastWakeTime = xTaskGetTickCount ();
-    pcnt_unit_handle_t pcnt_unit = encoder_setup ();
+    pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     double meters_per_second_per_pulse
         = (task_frequency * 2 * PI * WHEEL_DIAMETER)
           / NUMBER_OF_ENCODER_LINES ;//* GEAR_RATIO);
     while (1)
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_LOGI (TAG, "Pulse count: %d", pulse_count);
+            ESP_LOGI (TAG, "Left Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
-            ESP_LOGI (TAG, "Current_velocity: %.2f", current_velocity);
+            ESP_LOGI (TAG, "Left Motor Current velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
 }
 
-void
-steering_reading_task (void* parameters)
-{
+//void
+//steering_reading_task (void* parameters)
+//{
     // uint32_t voltage = 0;
     // while (1)
     //     {
@@ -122,4 +147,4 @@ steering_reading_task (void* parameters)
     //         vTaskDelay ((1000 / 40) / portTICK_PERIOD_MS);
     //         voltage = 0;
     //     }
-}
+//}

@@ -9,7 +9,7 @@ test_task (void* parameters)
 {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount ();
-    const TickType_t xFrequency = can_reading_task_parameters.frequency;
+    const TickType_t xFrequency = 1 ;//can_reading_task_parameters.frequency;
     while (1)
         {
             ESP_LOGI (TAG, "Hello World");
