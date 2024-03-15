@@ -10,16 +10,27 @@
 // Functions
 #define CALCULATE_FREQUENCY(f) pdMS_TO_TICKS(1000 / ((float) f))
 
+//FreeRTOS
+#define FREERTOS_TICKRATE 100
+
+//Task Frequencies in Hz
+#define TASK_ENCODER_FREQUENCY 10 
+
+
 // Pins
-#define PIN_SERVO GPIO_NUM_21 // pino do servo
-#define PIN_CAN_TX GPIO_NUM_26
-#define PIN_CAN_RX GPIO_NUM_27
-#define PIN_ENCODER_A GPIO_NUM_5
-#define PIN_ENCODER_B GPIO_NUM_4    
-#define PIN_MOTOR_LEFT GPIO_NUM_2
-#define PIN_MOTOR_RIGHT GPIO_NUM_15
-#define PIN_MOTOR_LEFT_DIRECTION GPIO_NUM_0
-#define PIN_MOTOR_RIGHT_DIRECTION GPIO_NUM_5
+#define PIN_SERVO GPIO_NUM_18 // pino do servo
+#define PIN_SERVO_POTENTIOMETER GPIO_NUM_35
+#define PIN_CAN_TX GPIO_NUM_26 // change
+#define PIN_CAN_RX GPIO_NUM_27 // change
+#define PIN_LEFT_ENCODER_A GPIO_NUM_4
+#define PIN_LEFT_ENCODER_B GPIO_NUM_15
+#define PIN_RIGHT_ENCODER_A GPIO_NUM_19
+#define PIN_RIGHT_ENCODER_B GPIO_NUM_21   
+#define PIN_MOTOR_DRIVE GPIO_NUM_27
+#define PIN_MOTOR_REVERSE GPIO_NUM_13
+#define PIN_MOTOR_LEFT_PWM GPIO_NUM_26
+#define PIN_MOTOR_RIGHT_PWM GPIO_NUM_25
+
 
 // Structs
 typedef struct TaskParameters
@@ -42,15 +53,15 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define MEDIUM_ANGLE 0.0 // em radianos, posição neutra
 #define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
 
-#define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH))frequency = CALCULATE_FREQUENCY(1) ;
-extern static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(100) };
-extern static TaskParameters servo_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-extern static TaskParameters encoder_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-extern static TaskParameters steering_reading_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-extern static TaskParameters fake_odometry_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
-extern static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_FREQUENCY(10) };
-extern static TaskParameters can_reading_task_parameters = { .frequency = CALCULATE_FREQUENCY(1)};
-extern static TaskParameters can_writing_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+//#define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH))frequency = CALCULATE_FREQUENCY(1) ;
+//extern static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(100) };
+//extern static TaskParameters servo_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+//extern static TaskParameters encoder_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+//extern static TaskParameters steering_reading_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+//extern static TaskParameters fake_odometry_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
+//extern static TaskParameters fake_commands_task_parameters = { .frequency = CALCULATE_FREQUENCY(10) };
+//extern static TaskParameters can_reading_task_parameters = { .frequency = CALCULATE_FREQUENCY(1)};
+//extern static TaskParameters can_writing_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
 
 // CAN params
 #define ODOM_VELOCITY_CAN_ID 0x425
@@ -86,7 +97,7 @@ extern static TaskParameters can_writing_task_parameters = { .frequency = CALCUL
 // PWM
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_LOW_SPEED_MODE
-#define LEDC_OUTPUT_IO          SERVO_PIN // Define the output GPIO
+#define LEDC_OUTPUT_IO          PIN_SERVO // Define the output GPIO
 #define LEDC_CHANNEL            LEDC_CHANNEL_0
 #define LEDC_DUTY_RES           LEDC_TIMER_11_BIT // Set duty resolution to 11 bits
 // duty goes from 0 to (2^11 - 1)

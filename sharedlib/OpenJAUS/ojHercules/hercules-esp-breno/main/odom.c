@@ -81,15 +81,14 @@ void
 right_encoder_task ( void *parameters )
 {
     
-    int task_frequency = 10; //Hz
     int pulse_count = 0;
     float current_velocity = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = (FREERTOS_TICKRATE/task_frequency); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
+    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
     xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
     double meters_per_second_per_pulse
-        = (task_frequency * 2 * PI * WHEEL_DIAMETER)
+        = (TASK_ENCODER_FREQUENCY * 2 * PI * WHEEL_DIAMETER)
           / NUMBER_OF_ENCODER_LINES ;// *GEAR_RATIO);
     while (1)
         {
@@ -106,15 +105,14 @@ right_encoder_task ( void *parameters )
 void
 left_encoder_task ( void *parameters )
 {
-    int task_frequency = 10; //Hz
     int pulse_count = 0;
     float current_velocity = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = (FREERTOS_TICKRATE/task_frequency); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
+    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
     xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     double meters_per_second_per_pulse
-        = (task_frequency * 2 * PI * WHEEL_DIAMETER)
+        = (TASK_ENCODER_FREQUENCY * 2 * PI * WHEEL_DIAMETER)
           / NUMBER_OF_ENCODER_LINES ;//* GEAR_RATIO);
     while (1)
         {
