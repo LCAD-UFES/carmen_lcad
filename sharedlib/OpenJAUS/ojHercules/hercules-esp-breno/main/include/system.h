@@ -14,14 +14,17 @@
 #define FREERTOS_TICKRATE 100
 
 //Task Frequencies in Hz
-#define TASK_ENCODER_FREQUENCY 10 
-
+#define TASK_ENCODER_FREQUENCY 10
+#define TASK_CAN_FREQUENCY 10 
+#define TASK_MOTOR_FREQUENCY 10 
+#define TASK_SERVO_FREQUENCY 10 
+#define TASK_STEERING_FREQUENCY 10 
 
 // Pins
-#define PIN_SERVO GPIO_NUM_18 // pino do servo
+#define PIN_SERVO GPIO_NUM_18 
 #define PIN_SERVO_POTENTIOMETER GPIO_NUM_35
-#define PIN_CAN_TX GPIO_NUM_26 // change
-#define PIN_CAN_RX GPIO_NUM_27 // change
+#define PIN_CAN_TX GPIO_NUM_26 // change pin later (PWM PIN)
+#define PIN_CAN_RX GPIO_NUM_27 // change pin later (PWM PIN)
 #define PIN_LEFT_ENCODER_A GPIO_NUM_4
 #define PIN_LEFT_ENCODER_B GPIO_NUM_15
 #define PIN_RIGHT_ENCODER_A GPIO_NUM_19

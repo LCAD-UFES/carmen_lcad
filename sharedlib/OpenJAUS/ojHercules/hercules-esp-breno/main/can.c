@@ -38,7 +38,7 @@ send_can_message (uint32_t id, int data)
 }
 
 int
-can_setup ()
+can_setup ( void )
 {
     ESP_LOGI(TAG, "Setting up CAN");
     // Initialize configuration structures using macro initializers
@@ -75,12 +75,11 @@ can_setup ()
 }
 
 void
-can_reading_task (void* parameters)
+can_reading_task ( void )
 {
-    TaskParameters* task_parameters = (TaskParameters*)parameters;
     twai_message_t message;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = task_parameters->frequency;
+    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_CAN_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
     int command_velocity_received;
     int command_steering_received;
@@ -131,13 +130,12 @@ can_reading_task (void* parameters)
 }
 
 void
-can_writing_task (void* parameters)
+can_writing_task ( void )
 {
-    TaskParameters* task_parameters = (TaskParameters*)parameters;
     int current_velocity;
     int current_steering;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = task_parameters->frequency;
+    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_CAN_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
     while (1)
         {

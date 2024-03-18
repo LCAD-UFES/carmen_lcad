@@ -78,7 +78,7 @@ encoder_setup (int sensor_a, int sensor_b)
 }
 
 void
-right_encoder_task ( void *parameters )
+right_encoder_task ( void )
 {
     
     int pulse_count = 0;
@@ -103,7 +103,7 @@ right_encoder_task ( void *parameters )
 }
 
 void
-left_encoder_task ( void *parameters )
+left_encoder_task ( void )
 {
     int pulse_count = 0;
     float current_velocity = 0;
@@ -126,7 +126,7 @@ left_encoder_task ( void *parameters )
 }
 
 //void
-//steering_reading_task (void* parameters)
+//steering_reading_task ( void )
 //{
     // uint32_t voltage = 0;
     // while (1)

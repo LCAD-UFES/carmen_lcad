@@ -3,8 +3,8 @@
 
 #include "system.h"
 
-int can_setup ();
-void can_reading_task (void* parameters);
-void can_writing_task (void* parameters);
+int can_setup ( void );
+void can_reading_task ( void) ;
+void can_writing_task ( void );
 
 #endif /* CAN_H */

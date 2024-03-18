@@ -3,7 +3,7 @@
 
 #include "system.h"
 
-void motor_task(void *parameters);
-void servo_task(void *parameters);
+void motor_task( void );
+void servo_task( void );
 
 #endif /* CONTROL_H */

@@ -32,7 +32,7 @@ create_mutexes ()
 void
 app_main ()
 {
-    //create_mutexes ();
+    create_mutexes ();
     //if (!can_setup ())
     //    {
     //        printf ("Failed to setup CAN\n");
@@ -49,18 +49,18 @@ app_main ()
     //             NULL);
 
     // Communication
-    // xTaskCreate (can_reading_task, "CAN Reading Task",
-    //              8192, &can_reading_task_parameters, 1,
-    //              NULL);
-    // xTaskCreate (can_writing_task, "CAN Writing Task",
-    //              8192, &can_writing_task_parameters, 1,
-    //              NULL);
+    xTaskCreate (can_reading_task, "CAN Reading Task",
+                  8192, NULL , 1,
+                  NULL);
+    xTaskCreate (can_writing_task, "CAN Writing Task",
+                  8192, NULL, 1,
+                  NULL);
 
     // // Control
-    //xTaskCreate (motor_task, "Motor Task", 8192,
-    //            NULL, 1, NULL);
-    //xTaskCreate (servo_task, "Servo Task", 8192,
-    //              NULL, 1, NULL);
+    xTaskCreate (motor_task, "Motor Task", 8192,
+              NULL, 1, NULL);
+    xTaskCreate (servo_task, "Servo Task", 8192,
+                 NULL, 1, NULL);
 
     // // Odometry
     xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,

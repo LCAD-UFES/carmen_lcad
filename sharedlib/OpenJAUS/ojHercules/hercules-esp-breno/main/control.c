@@ -6,7 +6,7 @@
 static const char* TAG = "CONTROL module";
 
 void
-motor_control_setup()
+motor_control_setup( void )
 {
     // Setup PWM control
     ledc_timer_config_t pwm_timer = {
@@ -49,7 +49,7 @@ motor_control_setup()
 }
 
 void
-motor_task (void* parameters)
+motor_task ( void )
 {
     motor_control_setup();
 
@@ -67,9 +67,8 @@ motor_task (void* parameters)
 
 
     // Task frequency control
-    int frequency = ((TaskParameters*)parameters)->frequency;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = frequency;
+    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_MOTOR_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
 
     while(1) {
@@ -144,7 +143,7 @@ float target_limit_int(int insert,int low,int high)
 }
 
 void
-config_servo_pin()
+config_servo_pin( void )
 {
     // Prepare and then apply the LEDC PWM timer configuration
     ledc_timer_config_t ledc_timer = {
@@ -182,7 +181,7 @@ update_servo_angle(float angle)
 }
 
 void
-servo_task (void* parameters)
+servo_task ( void )
 {
 
     config_servo_pin();
