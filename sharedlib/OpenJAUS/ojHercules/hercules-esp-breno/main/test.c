@@ -21,13 +21,12 @@ test_task (void* parameters)
 /* Task that writes fake velocity and steering values to the odom_velocity
  * and odom_steering global variables.*/
 void
-fake_odometry_task (void* parameters)
+fake_odometry_task ()
 {
-    int frequency = ((TaskParameters*)parameters)->frequency;
     int current_velocity = 0;
     int current_steering = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = frequency;
+    const TickType_t xFrequency = 10;
     xLastWakeTime = xTaskGetTickCount ();
     while (1)
         {
@@ -66,14 +65,13 @@ fake_odometry_task (void* parameters)
 /*Task that writes fake velocity and steering values to the
  * command_velocity and command_steering global variables.*/
 void
-fake_commands_task (void* parameters)
+fake_commands_task ()
 {
 
-    int frequency = ((TaskParameters*)parameters)->frequency;
     int current_velocity = 0;
     int current_steering = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = frequency;
+    const TickType_t xFrequency = 10;
     xLastWakeTime = xTaskGetTickCount ();
     while (1)
         {

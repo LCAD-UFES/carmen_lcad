@@ -25,7 +25,7 @@ send_can_message (uint32_t id, int data)
     ESP_LOGD (TAG, "Data1: %u", message.data[1]);
     
     // Queue message for transmission
-    if (twai_transmit (&message, pdMS_TO_TICKS (1000)) == ESP_OK)
+    if (    twai_transmit (&message, pdMS_TO_TICKS (1000)) == ESP_OK)
         {
             ESP_LOGD (TAG, "Message queued for transmission");
             return 1;

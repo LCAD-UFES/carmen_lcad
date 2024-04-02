@@ -93,7 +93,7 @@ right_encoder_task ( void )
     while (1)
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_LOGI (TAG, "Right Encoder Pulse Count: %d", pulse_count);
+            //ESP_LOGI (TAG, "Right Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
             ESP_LOGI (TAG, "Right Motor Current_velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
@@ -117,7 +117,7 @@ left_encoder_task ( void )
     while (1)
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_LOGI (TAG, "Left Encoder Pulse Count: %d", pulse_count);
+            //ESP_LOGI (TAG, "Left Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
             ESP_LOGI (TAG, "Left Motor Current velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
@@ -134,7 +134,7 @@ left_encoder_task ( void )
     //         for (int i = 0; i < 200; i++)
     //             {
     //                 uint32_t adc_reading
-    //                     = adc1_get_raw (ADC_ANGLE_POTENTIOMETER);
+    //                     = adc1_get_raw (PIN_SERVO_POTENTIOMETER);
     //                 voltage += esp_adc_cal_raw_to_voltage (adc_reading,
     //                                                        &adc1_chars);
     //                 vTaskDelay (0);

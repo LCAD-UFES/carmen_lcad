@@ -12,7 +12,7 @@ motor_control_setup( void )
     ledc_timer_config_t pwm_timer = {
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .duty_resolution = DUTY_RESOLUTION,
-        .freq_hz = 1000,
+        .freq_hz = 18 * 1000, //kHz
         .timer_num = LEDC_TIMER_0,
         .clk_cfg = LEDC_AUTO_CLK
     };
@@ -23,7 +23,7 @@ motor_control_setup( void )
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .channel = LEDC_CHANNEL_0,
         .timer_sel = LEDC_TIMER_0,
-        .duty = 0,
+        .duty = 100,
         .hpoint = 0
     };
     ledc_channel_config_t pwm_right_channel = {
@@ -31,7 +31,7 @@ motor_control_setup( void )
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .channel = LEDC_CHANNEL_1,
         .timer_sel = LEDC_TIMER_0,
-        .duty = 0,
+        .duty = 100,
         .hpoint = 0
     };
     ledc_channel_config(&pwm_left_channel);
@@ -71,7 +71,8 @@ motor_task ( void )
     const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_MOTOR_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
 
-    while(1) {
+    while(1) 
+    {
         // Read the global variables of command
         if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS)){
             velocity_can = command_velocity;
@@ -91,17 +92,17 @@ motor_task ( void )
             ESP_LOGE (TAG, "Failed to take command steering mutex");
             continue;
         }
-        ESP_LOGD (TAG, "Velocity: %d", velocity_can);
-        ESP_LOGD (TAG, "Steering: %d", steering_can);
+        ESP_LOGI (TAG, "Velocity: %d", velocity_can);
+        ESP_LOGI (TAG, "Steering: %d", steering_can);
 
         // Calculate the velocity difference between the left and right motors
         velocity_pwm = velocity_can * velocity_can_to_pwm;
-        ESP_LOGD (TAG, "Velocity PWM: %f", velocity_pwm);
+        ESP_LOGI (TAG, "Velocity PWM: %f", velocity_pwm);
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = round(velocity_pwm * (1 + left_to_right_difference));
         command_velocity_left = round(velocity_pwm * (1 - left_to_right_difference));
-        ESP_LOGD (TAG, "Velocity left: %d", command_velocity_left);
-        ESP_LOGD (TAG, "Velocity right: %d", command_velocity_right);
+        ESP_LOGI (TAG, "Velocity left: %d", command_velocity_left);
+        ESP_LOGI (TAG, "Velocity right: %d", command_velocity_right);
 
         // Set the direction of the motors
         if (velocity_pwm < 0) {
@@ -113,10 +114,22 @@ motor_task ( void )
         }
 
         // Set the duty cycle of the PWM signals
-        ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, command_velocity_left);
-        ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
-        ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, command_velocity_right);
-        ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
+        
+        if (velocity_pwm < 0)
+        {
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 100 + command_velocity_left);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, 100 + command_velocity_right);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);   
+        }
+        else
+        {
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 100 - command_velocity_left);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, 100 - command_velocity_right);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);         
+        }
+        
 
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }   

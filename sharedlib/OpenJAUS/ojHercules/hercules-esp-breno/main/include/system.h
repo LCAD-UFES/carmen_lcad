@@ -21,18 +21,21 @@
 #define TASK_STEERING_FREQUENCY 10 
 
 // Pins
+// All GPIO's that don't mess with ESP32 boot : 4,13, 16-33, 34-39(Input Only)
+// GPIO's that arent beeing used : 16,17,20,22,23,24,28 // Input Only : 34,36-39 
+
 #define PIN_SERVO GPIO_NUM_18 
-#define PIN_SERVO_POTENTIOMETER GPIO_NUM_35
-#define PIN_CAN_TX GPIO_NUM_26 // change pin later (PWM PIN)
-#define PIN_CAN_RX GPIO_NUM_27 // change pin later (PWM PIN)
-#define PIN_LEFT_ENCODER_A GPIO_NUM_4
-#define PIN_LEFT_ENCODER_B GPIO_NUM_15
-#define PIN_RIGHT_ENCODER_A GPIO_NUM_19
-#define PIN_RIGHT_ENCODER_B GPIO_NUM_21   
-#define PIN_MOTOR_DRIVE GPIO_NUM_27
-#define PIN_MOTOR_REVERSE GPIO_NUM_13
-#define PIN_MOTOR_LEFT_PWM GPIO_NUM_26
-#define PIN_MOTOR_RIGHT_PWM GPIO_NUM_25
+#define PIN_SERVO_POTENTIOMETER GPIO_NUM_21
+#define PIN_CAN_TX GPIO_NUM_34 // change pin later (PWM PIN)
+#define PIN_CAN_RX GPIO_NUM_4 // change pin later (PWM PIN)
+#define PIN_LEFT_ENCODER_A GPIO_NUM_14
+#define PIN_LEFT_ENCODER_B GPIO_NUM_26
+#define PIN_RIGHT_ENCODER_A GPIO_NUM_5
+#define PIN_RIGHT_ENCODER_B GPIO_NUM_17   
+#define PIN_MOTOR_DRIVE GPIO_NUM_32
+#define PIN_MOTOR_REVERSE GPIO_NUM_35
+#define PIN_MOTOR_LEFT_PWM GPIO_NUM_25
+#define PIN_MOTOR_RIGHT_PWM GPIO_NUM_33
 
 
 // Structs
@@ -46,17 +49,11 @@ extern double odom_velocity;
 extern int odom_steering;
 extern int command_velocity;
 extern int command_steering;// Angle Odometry Parameters
-extern int command_steering;
 extern SemaphoreHandle_t odomVelocityMutex;
 extern SemaphoreHandle_t odomSteeringMutex;
 extern SemaphoreHandle_t commandVelocityMutex;
 extern SemaphoreHandle_t commandSteeringMutex;
 
-#define MAX_ANGLE 0.35 // em radianos, calcular com sentido anti-horário (curva para esquerda), talvez valor errado
-#define MEDIUM_ANGLE 0.0 // em radianos, posição neutra
-#define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
-
-//#define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH))frequency = CALCULATE_FREQUENCY(1) ;
 //extern static TaskParameters motor_task_parameters = { .frequency = CALCULATE_FREQUENCY(100) };
 //extern static TaskParameters servo_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
 //extern static TaskParameters encoder_task_parameters = { .frequency = CALCULATE_FREQUENCY(1) };
@@ -74,14 +71,13 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define VELOCITY_CONVERSION_CONSTANT 5000.0 // Must match carmen value in oj main.c
 
 // Motors
-#define DUTY_RESOLUTION 14
+#define DUTY_RESOLUTION 8
 
 // Encoders
 #define PCNT_HIGH_LIMIT 20000
 #define PCNT_LOW_LIMIT -20000
 
 // Steering potentiometer
-#define ADC_ANGLE_POTENTIOMETER ADC1_CHANNEL_7
 #define MIN_ANGLE_RESISTANCE 10500 // em ohms
 #define MEDIUM_RESISTANCE 5350 // em ohms
 #define MAX_ANGLE_RESISTANCE 200 // em ohms
@@ -91,9 +87,9 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define MEDIUM_ANGLE_T_HIGH 1550 // em us
 #define MAX_ANGLE_T_HIGH 1000 // em us
 
-//#define MAX_ANGLE 0.35 // em radianos, calcular com sentido anti-horário (curva para esquerda), talvez valor errado
+#define MAX_ANGLE 0.35 // em radianos, calcular com sentido anti-horário (curva para esquerda), talvez valor errado
 #define MEDIUM_ANGLE 0.0 // em radianos, posição neutra
-//#define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
+#define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
 
 #define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH)) // usado para estabelecer a relação entre ângulo e T_HIGH
 
