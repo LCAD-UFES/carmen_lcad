@@ -6,5 +6,6 @@
 void right_encoder_task( void );
 void left_encoder_task( void );
 void steering_reading( void );
+bool adc_calibration_init(void);
 
 #endif /* ODOM_H */

@@ -1,5 +1,8 @@
 #include "odom.h"
 #include "driver/pulse_cnt.h"
+// #include "driver/adc.h"
+// #include "driver/adc_common.h"
+
 
 static const char* TAG = "ODOM module";
 
@@ -84,7 +87,7 @@ right_encoder_task ( void )
     int pulse_count = 0;
     float current_velocity = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
     xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
     double meters_per_second_per_pulse
@@ -95,6 +98,10 @@ right_encoder_task ( void )
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
             //ESP_LOGI (TAG, "Right Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
+            if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+                odom_right_velocity = current_velocity;
+                xSemaphoreGive (odomRightVelocityMutex);
+            }
             ESP_LOGI (TAG, "Right Motor Current_velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
@@ -108,7 +115,7 @@ left_encoder_task ( void )
     int pulse_count = 0;
     float current_velocity = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     double meters_per_second_per_pulse
@@ -119,30 +126,71 @@ left_encoder_task ( void )
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
             //ESP_LOGI (TAG, "Left Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
+            if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+                odom_left_velocity = current_velocity;
+                xSemaphoreGive (odomLeftVelocityMutex);
+            }
             ESP_LOGI (TAG, "Left Motor Current velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
 }
 
-//void
-//steering_reading_task ( void )
-//{
-    // uint32_t voltage = 0;
-    // while (1)
-    //     {
-    //         for (int i = 0; i < 200; i++)
-    //             {
-    //                 uint32_t adc_reading
-    //                     = adc1_get_raw (PIN_SERVO_POTENTIOMETER);
-    //                 voltage += esp_adc_cal_raw_to_voltage (adc_reading,
-    //                                                        &adc1_chars);
-    //                 vTaskDelay (0);
-    //             }
-    //         voltage /= 200;
-    //         printf ("Voltage: %d mV\n", voltage);
-    //         fflush (stdout);
-    //         vTaskDelay ((1000 / 40) / portTICK_PERIOD_MS);
-    //         voltage = 0;
-    //     }
-//}
+
+// bool
+// adc_calibration_init(void)
+// {
+//     esp_err_t ret;
+//     bool cali_enable = false;
+
+//     ret = esp_adc_cal_check_efuse(ADC_EXAMPLE_CALI_SCHEME);
+//     if (ret == ESP_ERR_NOT_SUPPORTED) 
+//     {
+//         ESP_LOGW(TAG, "Calibration scheme not supported, skip software calibration");
+//     } 
+//     else if (ret == ESP_ERR_INVALID_VERSION) 
+//     {
+//         ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
+//     } 
+//     else if (ret == ESP_OK) 
+//     {
+//         cali_enable = true;
+//         esp_adc_cal_characterize(ADC_UNIT_1, ADC_EXAMPLE_ATTEN, ADC_WIDTH_BIT_DEFAULT, 0, &adc1_chars);
+//     } 
+//     else 
+//     {
+//         ESP_LOGE(TAG, "Invalid arg");
+//     }
+
+//     return cali_enable;
+// }
+
+
+void
+steering_reading_task ( void )
+{
+    uint32_t voltage = 0;
+    // adc_calibration_init();
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
+    xLastWakeTime = xTaskGetTickCount ();
+    while (1)
+        {
+            // for (int i = 0; i < 200; i++)
+            //     {
+            //         uint32_t adc_reading
+            //             = adc1_get_raw (PIN_SERVO_POTENTIOMETER);
+            //         voltage += esp_adc_cal_raw_to_voltage (adc_reading,
+            //                                                &adc1_chars);
+            //         vTaskDelay (0);
+            //     }
+            // voltage /= 200;
+            // // printf ("Voltage: %d mV\n", voltage);
+            // if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
+            //     odom_steering = voltage;
+            //     xSemaphoreGive (odomSteeringMutex);
+            // }
+            // voltage = 0;
+            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+        }
+}

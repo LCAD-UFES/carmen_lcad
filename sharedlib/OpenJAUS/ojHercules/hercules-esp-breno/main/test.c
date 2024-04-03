@@ -9,7 +9,7 @@ test_task (void* parameters)
 {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount ();
-    const TickType_t xFrequency = 1 ;//can_reading_task_parameters.frequency;
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_TEST_FREQUENCY);
     while (1)
         {
             ESP_LOGI (TAG, "Hello World");
@@ -26,7 +26,7 @@ fake_odometry_task ()
     int current_velocity = 0;
     int current_steering = 0;
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 10;
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_TEST_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
     while (1)
         {
@@ -34,14 +34,24 @@ fake_odometry_task ()
             current_steering += 1;
             current_velocity = current_velocity % 100;
             current_steering = current_steering % 100;
-            if (xSemaphoreTake (odomVelocityMutex, 1000 / portTICK_PERIOD_MS))
+            if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS))
                 {
-                    odom_velocity = current_velocity;
-                    xSemaphoreGive (odomVelocityMutex);
+                    odom_right_velocity = current_velocity;
+                    xSemaphoreGive (odomRightVelocityMutex);
                 }
             else
                 {
-                    ESP_LOGE (TAG, "Failed to take odom velocity mutex");
+                    ESP_LOGE (TAG, "Failed to take odom right velocity mutex");
+                    continue;
+                }
+            if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS))
+                {
+                    odom_left_velocity = current_velocity;
+                    xSemaphoreGive (odomLeftVelocityMutex);
+                }
+            else
+                {
+                    ESP_LOGE (TAG, "Failed to take odom left velocity mutex");
                     continue;
                 }
             if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS))

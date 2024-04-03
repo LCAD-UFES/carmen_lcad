@@ -68,7 +68,7 @@ motor_task ( void )
 
     // Task frequency control
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = (FREERTOS_TICKRATE/TASK_MOTOR_FREQUENCY);
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
 
     while(1) 
