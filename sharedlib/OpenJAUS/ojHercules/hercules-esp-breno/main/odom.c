@@ -1,5 +1,6 @@
 #include "odom.h"
 #include "driver/pulse_cnt.h"
+#include "esp_adc/adc_oneshot.h"
 // #include "driver/adc.h"
 // #include "driver/adc_common.h"
 
@@ -137,53 +138,45 @@ left_encoder_task ( void )
 }
 
 
-// bool
-// adc_calibration_init(void)
-// {
-//     esp_err_t ret;
-//     bool cali_enable = false;
-
-//     ret = esp_adc_cal_check_efuse(ADC_EXAMPLE_CALI_SCHEME);
-//     if (ret == ESP_ERR_NOT_SUPPORTED) 
-//     {
-//         ESP_LOGW(TAG, "Calibration scheme not supported, skip software calibration");
-//     } 
-//     else if (ret == ESP_ERR_INVALID_VERSION) 
-//     {
-//         ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
-//     } 
-//     else if (ret == ESP_OK) 
-//     {
-//         cali_enable = true;
-//         esp_adc_cal_characterize(ADC_UNIT_1, ADC_EXAMPLE_ATTEN, ADC_WIDTH_BIT_DEFAULT, 0, &adc1_chars);
-//     } 
-//     else 
-//     {
-//         ESP_LOGE(TAG, "Invalid arg");
-//     }
-
-//     return cali_enable;
-// }
+adc_oneshot_unit_handle_t
+adc_setup(void)
+{
+    adc_oneshot_unit_handle_t adc_handle;
+    adc_oneshot_unit_init_cfg_t init_config = {
+        .unit_id = ADC_UNIT_POTENTIOMETER,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config, &adc_handle));
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = ADC_BITWIDTH_POTENTIOMETER,
+        .atten = ADC_ATTEN_POTENTIOMETER,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_POTENTIOMETER, &config));
+    return adc_handle;
+}
 
 
 void
 steering_reading_task ( void )
 {
-    uint32_t voltage = 0;
-    // adc_calibration_init();
+    int accumulator = 0;
+    int adc_reading = 0;
+    adc_oneshot_unit_handle_t adc_handle = adc_setup();
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
     while (1)
         {
-            // for (int i = 0; i < 200; i++)
-            //     {
-            //         uint32_t adc_reading
-            //             = adc1_get_raw (PIN_SERVO_POTENTIOMETER);
-            //         voltage += esp_adc_cal_raw_to_voltage (adc_reading,
-            //                                                &adc1_chars);
-            //         vTaskDelay (0);
-            //     }
+            accumulator = 0;
+            for (int i = 0; i < 256; i++)
+                {
+                    adc_oneshot_read(adc_handle, ADC_CHANNEL_POTENTIOMETER, &adc_reading);
+                    accumulator += adc_reading;
+                }
+            accumulator /= 256;
+            if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
+                odom_steering = accumulator;
+                xSemaphoreGive (odomSteeringMutex);
+            }
             // voltage /= 200;
             // // printf ("Voltage: %d mV\n", voltage);
             // if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){

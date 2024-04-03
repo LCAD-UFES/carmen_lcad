@@ -13,7 +13,7 @@
 // All GPIO's that don't mess with ESP32 boot : 4,13, 16-33, 34-39(Input Only)
 // GPIO's that arent beeing used : 16,17,20,22,23,24,28 // Input Only : 34,36-39 
 #define PIN_SERVO GPIO_NUM_18 
-#define PIN_SERVO_POTENTIOMETER GPIO_NUM_21
+#define PIN_SERVO_POTENTIOMETER GPIO_NUM_15
 #define PIN_CAN_TX GPIO_NUM_16 // change pin later (PWM PIN)
 #define PIN_CAN_RX GPIO_NUM_4 // change pin later (PWM PIN)
 #define PIN_LEFT_ENCODER_A GPIO_NUM_14
@@ -70,6 +70,10 @@ extern SemaphoreHandle_t commandSteeringMutex;
 
 
 // Steering potentiometer
+#define ADC_CHANNEL_POTENTIOMETER          ADC2_CHANNEL_3
+#define ADC_ATTEN_POTENTIOMETER         ADC_ATTEN_DB_12
+#define ADC_BITWIDTH_POTENTIOMETER     ADC_WIDTH_BIT_12
+#define ADC_UNIT_POTENTIOMETER         ADC_UNIT_1
 #define MIN_ANGLE_RESISTANCE 10500 // em ohms
 #define MEDIUM_RESISTANCE 5350 // em ohms
 #define MAX_ANGLE_RESISTANCE 200 // em ohms
@@ -108,22 +112,6 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define AXLE_SPACING 0.143f
 //#define MAX_ANGLE 0.30f
 #define NUMBER_OF_ENCODER_LINES 500
-
-
-// ADC Attenuation
-#define ADC_ATTEN ADC_ATTEN_DB_11
-
-
-// ADC Calibration
-#if CONFIG_IDF_TARGET_ESP32
-#define ADC_CALI_SCHEME ESP_ADC_CAL_VAL_EFUSE_VREF
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define ADC_CALI_SCHEME ESP_ADC_CAL_VAL_EFUSE_TP
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define ADC_CALI_SCHEME ESP_ADC_CAL_VAL_EFUSE_TP
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define ADC_CALI_SCHEME ESP_ADC_CAL_VAL_EFUSE_TP_FIT
-#endif
 
 
 #endif /* SYSTEM_H */
