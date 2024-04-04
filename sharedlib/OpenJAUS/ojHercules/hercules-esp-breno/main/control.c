@@ -196,30 +196,20 @@ update_servo_angle(float angle)
 void
 servo_task ( void )
 {
-
     config_servo_pin();
     float target_angle = MEDIUM_ANGLE;
-    int need_update = 1;
-    
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
+    xLastWakeTime = xTaskGetTickCount ();
     while (1)
     {
-        if( (xSemaphoreTake( commandSteeringMutex, ( TickType_t ) 10 ) == pdTRUE) && (need_update))
+        if( xSemaphoreTake( commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
         {
             target_angle = command_steering;
-            while (xSemaphoreGive(commandSteeringMutex) != pdTRUE)
-            {
-            }
+            xSemaphoreGive(commandSteeringMutex);
             target_angle = target_limit_float(command_steering, MIN_ANGLE, MAX_ANGLE);
-            need_update = 0;
-            
+            update_servo_angle(target_angle);
         }
-        else
-        {
-            need_update = 1;
-        }
-
-        update_servo_angle(target_angle);
-
+        vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }
-
 }

@@ -6,11 +6,15 @@
 #include "test.h"
 
 static const char* TAG = "Main module";
-SemaphoreHandle_t odomVelocityMutex = NULL;
+// SemaphoreHandle_t odomVelocityMutex = NULL;
+SemaphoreHandle_t odomLeftVelocityMutex = NULL;
+SemaphoreHandle_t odomRightVelocityMutex = NULL;
 SemaphoreHandle_t odomSteeringMutex = NULL;
 SemaphoreHandle_t commandVelocityMutex = NULL;
 SemaphoreHandle_t commandSteeringMutex = NULL;
-double odom_velocity = 0;
+// double odom_velocity = 0;
+double odom_left_velocity = 0;
+double odom_right_velocity = 0;
 int odom_steering = 0;
 int command_velocity = 0;
 int command_steering = 0;
@@ -18,11 +22,13 @@ int command_steering = 0;
 void
 create_mutexes ()
 {
-    odomVelocityMutex = xSemaphoreCreateMutex ();
+    // odomVelocityMutex = xSemaphoreCreateMutex ();
+    odomLeftVelocityMutex = xSemaphoreCreateMutex ();
+    odomRightVelocityMutex = xSemaphoreCreateMutex ();
     odomSteeringMutex = xSemaphoreCreateMutex ();
     commandVelocityMutex = xSemaphoreCreateMutex ();
     commandSteeringMutex = xSemaphoreCreateMutex ();
-    if (odomVelocityMutex == NULL || odomSteeringMutex == NULL ||
+    if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL ||
         commandVelocityMutex == NULL || commandSteeringMutex == NULL)
         {
             ESP_LOGE (TAG, "Failed to create mutexes");
@@ -68,11 +74,11 @@ app_main ()
     //             NULL, 1, NULL);
 
     // // Odometry
-    // xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
-    //           NULL, 1, NULL);
-    // xTaskCreate (left_encoder_task, "L Encoder Task", 1024 * 8,
-    //           NULL, 1, NULL);
-    //xTaskCreate (steering_reading, "Steering Reading Task",
+    xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
+              NULL, 1, NULL);
+    xTaskCreate (left_encoder_task, "L Encoder Task", 1024 * 8,
+              NULL, 1, NULL);
+    // xTaskCreate (steering_reading_task, "Steering Reading Task",
     //              8192, NULL, 1,
     //             NULL);
     

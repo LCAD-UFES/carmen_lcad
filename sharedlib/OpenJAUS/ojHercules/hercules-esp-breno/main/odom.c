@@ -154,6 +154,14 @@ adc_setup(void)
     return adc_handle;
 }
 
+// void
+// config_adc( void )
+// {
+
+//     adc1_config_width(ADC_BITWIDTH_POTENTIOMETER); // Configure to use 12bit resolution
+//     adc1_config_channel_atten(PIN_SERVO_POTENTIOMETER, ADC_ATTEN_POTENTIOMETER); // Sets up attenuation
+
+// }
 
 void
 steering_reading_task ( void )
@@ -161,6 +169,7 @@ steering_reading_task ( void )
     int accumulator = 0;
     int adc_reading = 0;
     adc_oneshot_unit_handle_t adc_handle = adc_setup();
+    // config_adc();
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
@@ -171,12 +180,16 @@ steering_reading_task ( void )
                 {
                     adc_oneshot_read(adc_handle, ADC_CHANNEL_POTENTIOMETER, &adc_reading);
                     accumulator += adc_reading;
+                    // accumulator += adc1_get_raw(PIN_SERVO_POTENTIOMETER);
                 }
             accumulator /= 256;
             if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
                 odom_steering = accumulator;
                 xSemaphoreGive (odomSteeringMutex);
             }
+
+            ESP_LOGD ("Reading", "%d",accumulator);
+
             // voltage /= 200;
             // // printf ("Voltage: %d mV\n", voltage);
             // if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
