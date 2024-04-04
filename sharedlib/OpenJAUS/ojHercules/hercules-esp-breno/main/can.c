@@ -16,7 +16,7 @@ send_can_message (uint32_t id, int data)
         }
     else if (id == ODOM_STEERING_CAN_ID)
         {
-            data = (int16_t) (data * 100);
+            data = (uint16_t) (data);
         }
     message.data[0] = (uint8_t) (data_send & 0xFF);
     message.data[1] = (uint8_t) ((data_send >> 8) & 0xFF);
@@ -117,8 +117,8 @@ can_reading_task ()
                         ESP_LOGE (TAG, "Failed to take command steering mutex");
                         continue;
                     }
-                    ESP_LOGD (TAG, "Velocity: %d", command_velocity);
-                    ESP_LOGD (TAG, "Steering: %d", command_steering);
+                    ESP_LOGD (TAG, "CAN Velocity command: %d", command_velocity);
+                    ESP_LOGD (TAG, "CAN Steering command: %d", command_steering);
                 }                    
             else
                 {

@@ -1,7 +1,0 @@
-[1/4] cd /home/breno/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-breno/build/esp-idf/esptool_py && /home/breno/.espressif/python_env/idf5.3_py3.8_env/bin/python /home/breno/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/breno/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-breno/build/partition_table/partition-table.bin /home/breno/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-breno/build/hercules-esp-breno.bin
-hercules-esp-breno.bin binary size 0x313e0 bytes. Smallest app partition is 0x100000 bytes. 0xcec20 bytes (81%) free.
-[2/4] Performing build step for 'bootloader'
-[1/1] cd /home/breno/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-breno/build/bootloader/esp-idf/esptool_py && /home/breno/.espressif/python_env/idf5.3_py3.8_env/bin/python /home/breno/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 /home/breno/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-breno/build/bootloader/bootloader.bin
-Bootloader binary size 0x6870 bytes. 0x790 bytes (7%) free.
-[3/4] No install step for 'bootloader'
-[4/4] Completed 'bootloader'
