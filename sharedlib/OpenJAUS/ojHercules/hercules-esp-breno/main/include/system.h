@@ -32,10 +32,10 @@
 
 
 //Task Frequencies in Hz
-#define TASK_CAN_FREQUENCY 100
+#define TASK_CAN_FREQUENCY 1
 #define TASK_ENCODER_FREQUENCY 1
 #define TASK_MOTOR_FREQUENCY 1
-#define TASK_SERVO_FREQUENCY 10
+#define TASK_SERVO_FREQUENCY 1
 #define TASK_STEERING_FREQUENCY 1
 #define TASK_TEST_FREQUENCY 1
 
@@ -57,8 +57,8 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define ODOM_VELOCITY_CAN_ID 0x425
 #define ODOM_STEERING_CAN_ID 0x80
 #define COMMAND_CAN_ID 0x100
-#define CAN_COMMAND_MAX 32767
-#define VELOCITY_CONVERSION_CONSTANT 5000.0 // Must match carmen value in oj main.c
+#define CAN_COMMAND_MAX 15000
+#define VELOCITY_CONVERSION_CONSTANT 150.0 // Must match carmen value in oj main.c
 
 
 // Motors

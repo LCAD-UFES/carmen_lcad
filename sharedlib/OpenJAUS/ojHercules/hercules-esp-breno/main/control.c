@@ -92,12 +92,12 @@ motor_task ( void )
             ESP_LOGE (TAG, "Failed to take command steering mutex");
             continue;
         }
-        ESP_LOGI (TAG, "Velocity: %d", velocity_can);
-        ESP_LOGI (TAG, "Steering: %d", steering_can);
+        // ESP_LOGI (TAG, "Velocity: %d", velocity_can);
+        // ESP_LOGI (TAG, "Steering: %d", steering_can);
 
         // Calculate the velocity difference between the left and right motors
         velocity_pwm = velocity_can * velocity_can_to_pwm;
-        ESP_LOGI (TAG, "Velocity PWM: %f", velocity_pwm);
+        // ESP_LOGI (TAG, "Velocity PWM: %f", velocity_pwm);
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = round(velocity_pwm * (1 + left_to_right_difference));
         command_velocity_left = round(velocity_pwm * (1 - left_to_right_difference));

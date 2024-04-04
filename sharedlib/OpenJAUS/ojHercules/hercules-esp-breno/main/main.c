@@ -44,11 +44,6 @@ app_main ()
            printf ("Failed to setup CAN\n");
            return;
        }
-    // if (!adc_calibration_init ())
-    //     {
-    //         printf ("Failed to calibrate ADC\n");
-    //         return;
-    //     }
     
     // Testing tasks
     // xTaskCreate (test_task, "Test Task", 2048, NULL, 1, NULL);
@@ -60,16 +55,16 @@ app_main ()
     //             NULL);
 
     // Communication
-    // xTaskCreate (can_reading_task, "CAN Reading Task",
-    //              8192, NULL , 1,
-    //              NULL);
+    xTaskCreate (can_reading_task, "CAN Reading Task",
+                 8192, NULL , 1,
+                 NULL);
     xTaskCreate (can_writing_task, "CAN Writing Task",
                  8192, NULL, 1,
                  NULL);
 
     // // Control
-    // xTaskCreate (motor_task, "Motor Task", 8192,
-    //          NULL, 1, NULL);
+    xTaskCreate (motor_task, "Motor Task", 8192,
+             NULL, 1, NULL);
     // xTaskCreate (servo_task, "Servo Task", 8192,
     //             NULL, 1, NULL);
 
@@ -78,8 +73,8 @@ app_main ()
               NULL, 1, NULL);
     xTaskCreate (left_encoder_task, "L Encoder Task", 1024 * 8,
               NULL, 1, NULL);
-    // xTaskCreate (steering_reading_task, "Steering Reading Task",
-    //              8192, NULL, 1,
-    //             NULL);
+    xTaskCreate (steering_reading_task, "Steering Reading Task",
+                 8192, NULL, 1,
+                NULL);
     
 }
