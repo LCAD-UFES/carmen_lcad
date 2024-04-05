@@ -117,35 +117,25 @@ motor_task ( void )
         
         if (velocity_pwm < 0)
         {
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 100 + command_velocity_left);
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, command_velocity_left);
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, 100 + command_velocity_right);
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, command_velocity_right);
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);   
         }
         else
         {
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 100 - command_velocity_left);
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, command_velocity_left);
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, 100 - command_velocity_right);
-            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);         
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, command_velocity_right);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
+            ESP_LOGI (TAG, "Duty cycle left: %d", command_velocity_left);
+            ESP_LOGI (TAG, "Duty cycle right: %d", command_velocity_right);
         }
-        
-
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }   
 }
 
-float target_limit_float(float insert,float low,float high)
-{
-    if (insert < low)
-        return low;
-    else if (insert > high)
-        return high;
-    else
-        return insert;	
-}
-
-float target_limit_int(int insert,int low,int high)
+double target_limit_double(double insert,double low,double high)
 {
     if (insert < low)
         return low;
@@ -158,7 +148,7 @@ float target_limit_int(int insert,int low,int high)
 void
 config_servo_pin( void )
 {
-    // Prepare and then apply the LEDC PWM timer configuration
+    // Prepare and then apply the PWM timer configuration
     ledc_timer_config_t ledc_timer = {
         .speed_mode       = LEDC_MODE,
         .timer_num        = LEDC_TIMER,
@@ -168,48 +158,78 @@ config_servo_pin( void )
     };
     ledc_timer_config(&ledc_timer);
 
-     // Prepare and then apply the LEDC PWM channel configuration
+     // Prepare and then apply the PWM channel configuration
     ledc_channel_config_t ledc_channel = {
         .speed_mode     = LEDC_MODE,
         .channel        = LEDC_CHANNEL,
         .timer_sel      = LEDC_TIMER,
         .intr_type      = LEDC_INTR_DISABLE,
         .gpio_num       = LEDC_OUTPUT_IO,
-        .duty           = LEDC_INITIAL_DUTY, // Set duty to 0%
+        .duty           = LEDC_INITIAL_DUTY, // Set duty to medium angle
     };
     ledc_channel_config(&ledc_channel);
 
 }
 
-void
-update_servo_angle(float angle)
-{
-    // We assume that the Angle and pwm T_High are linear as an aproximation
-    float NEW_T_HIGH = ((angle-MEDIUM_ANGLE)/LINEAR_COEFFICIENT) + MEDIUM_ANGLE_T_HIGH;
-    int duty_cycle = ((LEDC_MAX_DUTY*NEW_T_HIGH)/(LEDC_PERIOD));
-    duty_cycle = target_limit_int(duty_cycle,MAX_ANGLE_T_HIGH, MIN_ANGLE_T_HIGH);
-    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
-    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+// void
+// update_servo_angle(float angle)
+// {
+//     // We assume that the Angle and pwm T_High are linear as an aproximation
+//     float NEW_T_HIGH = ((angle-MEDIUM_ANGLE)/LINEAR_COEFFICIENT) + MEDIUM_ANGLE_T_HIGH;
+//     int duty_cycle = ((LEDC_MAX_DUTY*NEW_T_HIGH)/(LEDC_PERIOD));
+//     duty_cycle = target_limit_int(duty_cycle,MAX_ANGLE_T_HIGH, MIN_ANGLE_T_HIGH);
+//     ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
+//     ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 
-}
+// }
 
 void
 servo_task ( void )
 {
-    config_servo_pin();
-    float target_angle = MEDIUM_ANGLE;
+    
+    double received_command_Steering = MEDIUM_T_HIGH; 
+    double target_T_HIGH = received_command_Steering;
+    int duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;
+
+    double angle_can_to_T_HIGH_coefficient = ((MAX_T_HIGH - MIN_T_HIGH) / (2*CAN_COMMAND_MAX));
+
+    // Task frequency control
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
+
+    config_servo_pin();
+    
     while (1)
     {
         if( xSemaphoreTake( commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
         {
-            target_angle = command_steering;
+            received_command_Steering = command_steering;
             xSemaphoreGive(commandSteeringMutex);
-            target_angle = target_limit_float(command_steering, MIN_ANGLE, MAX_ANGLE);
-            update_servo_angle(target_angle);
         }
+
+        if (received_command_Steering > CAN_COMMAND_MAX)
+        {
+            received_command_Steering = received_command_Steering-CAM_LIMIT_MAX;
+        }
+
+        ESP_LOGE ("RECEIVED COMMAND STEERING", "%f", received_command_Steering);
+
+        target_T_HIGH = (received_command_Steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH;
+        
+        ESP_LOGE ("T_HIGH_CALCULATED", "%f", target_T_HIGH);
+
+        target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
+
+        ESP_LOGE ("T_HIGH", "%f", target_T_HIGH);
+
+        duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;
+
+        ESP_LOGE ("DUTY_CYCLE", "%d", duty_cycle);
+
+        ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
+        ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }
 }

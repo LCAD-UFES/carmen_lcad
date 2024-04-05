@@ -59,7 +59,7 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define COMMAND_CAN_ID 0x100
 #define CAN_COMMAND_MAX (100 * 128)
 #define VELOCITY_CONVERSION_CONSTANT 5000.0 // Must match carmen value in oj main.c
-
+#define CAM_LIMIT_MAX 65536
 
 // Motors
 #define DUTY_RESOLUTION 8
@@ -74,19 +74,12 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define ADC_ATTEN_POTENTIOMETER         ADC_ATTEN_DB_11
 #define ADC_BITWIDTH_POTENTIOMETER     ADC_WIDTH_BIT_12
 #define ADC_UNIT_POTENTIOMETER         ADC_UNIT_1
-#define MIN_ANGLE_RESISTANCE 10500 // em ohms
-#define MEDIUM_RESISTANCE 5350 // em ohms
-#define MAX_ANGLE_RESISTANCE 200 // em ohms
 
 
 // Sterring Parameters
-#define MIN_ANGLE_T_HIGH 2100 // em us
-#define MEDIUM_ANGLE_T_HIGH 1550 // em us
-#define MAX_ANGLE_T_HIGH 1000 // em us
-#define MAX_ANGLE 0.35 // em radianos, calcular com sentido anti-horário (curva para esquerda), talvez valor errado
-#define MEDIUM_ANGLE 0.0 // em radianos, posição neutra
-#define MIN_ANGLE (-0.35) // em radianos, calcular com sentido anti-horário (curva para direita), talvez valor errado
-#define LINEAR_COEFFICIENT ((MAX_ANGLE-MEDIUM_ANGLE)/(MAX_ANGLE_T_HIGH-MEDIUM_ANGLE_T_HIGH)) // usado para estabelecer a relação entre ângulo e T_HIGH
+#define MIN_T_HIGH 1000.0 // em us
+#define MAX_T_HIGH 2100.0 // em us
+#define MEDIUM_T_HIGH ((MAX_T_HIGH + MIN_T_HIGH) / 2) // em us
 
 
 // PWM
@@ -100,8 +93,8 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define LEDC_MAX_DUTY 2047
 #endif
 #define LEDC_FREQUENCY          100 // Frequency in Hertz.
-#define LEDC_PERIOD 1000000/LEDC_FREQUENCY // em us
-#define LEDC_INITIAL_DUTY       ((MEDIUM_ANGLE_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY*0.5) // Set duty to (1500us/10000us). ((2 ** 11) - 1) 
+#define LEDC_PERIOD (1000000/LEDC_FREQUENCY) // em us
+#define LEDC_INITIAL_DUTY       ((MEDIUM_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY) // Set duty to (1500us/10000us). ((2 ** 11) - 1) 
 
 
 // CAR measurements
@@ -110,7 +103,7 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define GEAR_RATIO 30.0
 #define WHEEL_SPACING 0.155f
 #define AXLE_SPACING 0.143f
-//#define MAX_ANGLE 0.30f
+#define MAX_ANGLE 0.30f
 #define NUMBER_OF_ENCODER_LINES 500
 
 

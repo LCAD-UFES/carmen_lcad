@@ -65,8 +65,8 @@ app_main ()
     // // Control
     xTaskCreate (motor_task, "Motor Task", 8192,
              NULL, 1, NULL);
-    // xTaskCreate (servo_task, "Servo Task", 8192,
-    //             NULL, 1, NULL);
+    xTaskCreate (servo_task, "Servo Task", 8192,
+                NULL, 1, NULL);
 
     // // Odometry
     xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
