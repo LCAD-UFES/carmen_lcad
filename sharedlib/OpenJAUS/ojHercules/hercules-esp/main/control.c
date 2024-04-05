@@ -171,18 +171,6 @@ config_servo_pin( void )
 
 }
 
-// void
-// update_servo_angle(float angle)
-// {
-//     // We assume that the Angle and pwm T_High are linear as an aproximation
-//     float NEW_T_HIGH = ((angle-MEDIUM_ANGLE)/LINEAR_COEFFICIENT) + MEDIUM_ANGLE_T_HIGH;
-//     int duty_cycle = ((LEDC_MAX_DUTY*NEW_T_HIGH)/(LEDC_PERIOD));
-//     duty_cycle = target_limit_int(duty_cycle,MAX_ANGLE_T_HIGH, MIN_ANGLE_T_HIGH);
-//     ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
-//     ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-
-// }
-
 void
 servo_task ( void )
 {
@@ -213,19 +201,10 @@ servo_task ( void )
             received_command_Steering = received_command_Steering-CAM_LIMIT_MAX;
         }
 
-        ESP_LOGE ("RECEIVED COMMAND STEERING", "%f", received_command_Steering);
-
         target_T_HIGH = (received_command_Steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH;
-        
-        ESP_LOGE ("T_HIGH_CALCULATED", "%f", target_T_HIGH);
-
         target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
 
-        ESP_LOGE ("T_HIGH", "%f", target_T_HIGH);
-
         duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;
-
-        ESP_LOGE ("DUTY_CYCLE", "%d", duty_cycle);
 
         ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
         ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
