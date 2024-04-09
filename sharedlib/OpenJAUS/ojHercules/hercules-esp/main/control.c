@@ -92,8 +92,8 @@ motor_task ( void )
             ESP_LOGE (TAG, "Failed to take command steering mutex");
             continue;
         }
-        // ESP_LOGI (TAG, "Velocity: %d", velocity_can);
-        // ESP_LOGI (TAG, "Steering: %d", steering_can);
+        // ESP_LOGD (TAG, "Velocity: %d", velocity_can);
+        // ESP_LOGD (TAG, "Steering: %d", steering_can);
 
         // Calculate the velocity difference between the left and right motors
         velocity_pwm = velocity_can * velocity_can_to_pwm;
@@ -101,8 +101,8 @@ motor_task ( void )
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = round(velocity_pwm * (1 + left_to_right_difference));
         command_velocity_left = round(velocity_pwm * (1 - left_to_right_difference));
-        ESP_LOGI (TAG, "Velocity left: %d", command_velocity_left);
-        ESP_LOGI (TAG, "Velocity right: %d", command_velocity_right);
+        ESP_LOGD (TAG, "Velocity left: %d", command_velocity_left);
+        ESP_LOGD (TAG, "Velocity right: %d", command_velocity_right);
 
         // Set the direction of the motors
         if (velocity_pwm < 0) {
@@ -117,10 +117,12 @@ motor_task ( void )
         
         if (velocity_pwm < 0)
         {
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, command_velocity_left);
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, -command_velocity_left);
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, command_velocity_right);
-            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);   
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, -command_velocity_right);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
+            ESP_LOGD (TAG, "Duty cycle left: %d", command_velocity_left);
+            ESP_LOGD (TAG, "Duty cycle right: %d", command_velocity_right); 
         }
         else
         {
@@ -128,8 +130,8 @@ motor_task ( void )
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
             ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, command_velocity_right);
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
-            ESP_LOGI (TAG, "Duty cycle left: %d", command_velocity_left);
-            ESP_LOGI (TAG, "Duty cycle right: %d", command_velocity_right);
+            ESP_LOGD (TAG, "Duty cycle left: %d", command_velocity_left);
+            ESP_LOGD (TAG, "Duty cycle right: %d", command_velocity_right);
         }
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }   
@@ -173,11 +175,10 @@ config_servo_pin( void )
 
 void
 servo_task ( void )
-{
-    
-    double received_command_Steering = MEDIUM_T_HIGH; 
-    double target_T_HIGH = received_command_Steering;
-    int duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;
+{   
+    double received_command_steering = MEDIUM_T_HIGH; 
+    double target_T_HIGH = 0;
+    int duty_cycle = 0;
 
     double angle_can_to_T_HIGH_coefficient = ((MAX_T_HIGH - MIN_T_HIGH) / (2*CAN_COMMAND_MAX));
 
@@ -192,16 +193,11 @@ servo_task ( void )
     {
         if( xSemaphoreTake( commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
         {
-            received_command_Steering = command_steering;
+            received_command_steering = command_steering;
             xSemaphoreGive(commandSteeringMutex);
         }
 
-        if (received_command_Steering > CAN_COMMAND_MAX)
-        {
-            received_command_Steering = received_command_Steering-CAM_LIMIT_MAX;
-        }
-
-        target_T_HIGH = (received_command_Steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH;
+        target_T_HIGH = (received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH;
         target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
 
         duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;

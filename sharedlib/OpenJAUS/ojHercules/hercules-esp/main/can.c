@@ -20,9 +20,9 @@ send_can_message (uint32_t id, int data)
         }
     message.data[0] = (uint8_t) (data_send & 0xFF);
     message.data[1] = (uint8_t) ((data_send >> 8) & 0xFF);
-    ESP_LOGD (TAG, "ID: %lu", message.identifier);
-    ESP_LOGD (TAG, "Data0: %u", message.data[0]);
-    ESP_LOGD (TAG, "Data1: %u", message.data[1]);
+    // ESP_LOGD (TAG, "ID: %lu", message.identifier);
+    // ESP_LOGD (TAG, "Data0: %u", message.data[0]);
+    // ESP_LOGD (TAG, "Data1: %u", message.data[1]);
     
     // Queue message for transmission
     if (twai_transmit (&message, pdMS_TO_TICKS (1000)) == ESP_OK)
@@ -81,8 +81,8 @@ can_reading_task ()
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_CAN_FREQUENCY);
     xLastWakeTime = xTaskGetTickCount ();
-    int command_velocity_received;
-    int command_steering_received;
+    int16_t command_velocity_received;
+    int16_t command_steering_received;
     while (1)
         {
             if (twai_receive (&message, pdMS_TO_TICKS (10000)) == ESP_OK)
@@ -117,8 +117,8 @@ can_reading_task ()
                         ESP_LOGE (TAG, "Failed to take command steering mutex");
                         continue;
                     }
-                    ESP_LOGD (TAG, "CAN Velocity command: %d", command_velocity);
-                    ESP_LOGD (TAG, "CAN Steering command: %d", command_steering);
+                    ESP_LOGD (TAG, "CAN Velocity command: %hi", command_velocity);
+                    ESP_LOGD (TAG, "CAN Steering command: %hi", command_steering);
                 }                    
             else
                 {

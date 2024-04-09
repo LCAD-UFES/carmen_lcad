@@ -103,7 +103,7 @@ right_encoder_task ( void )
                 odom_right_velocity = current_velocity;
                 xSemaphoreGive (odomRightVelocityMutex);
             }
-            ESP_LOGI (TAG, "Right Motor Current_velocity: %.2f", current_velocity);
+            ESP_LOGD (TAG, "Right Motor Current_velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
@@ -131,7 +131,7 @@ left_encoder_task ( void )
                 odom_left_velocity = current_velocity;
                 xSemaphoreGive (odomLeftVelocityMutex);
             }
-            ESP_LOGI (TAG, "Left Motor Current velocity: %.2f", current_velocity);
+            ESP_LOGD (TAG, "Left Motor Current velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
