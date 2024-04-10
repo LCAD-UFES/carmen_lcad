@@ -9,6 +9,20 @@
 #include "esp_log.h"
 
 
+// CAR measurements
+#define WHEEL_DIAMETER 0.065
+#define GEAR_RATIO 30.0
+#define WHEEL_SPACING 0.155f
+#define AXLE_SPACING 0.143f
+#define MAX_ANGLE 0.30f
+#define NUMBER_OF_ENCODER_LINES 500
+
+
+// Utils
+#define CALCULATE_FREQUENCY(f) pdMS_TO_TICKS(1000 / ((float) f))
+#define PI 3.14159265359f
+
+
 // Pins
 // All GPIO's that don't mess with ESP32 boot : 4,13, 16-33, 34-39(Input Only)
 // GPIO's that arent beeing used : 16,17,20,22,23,24,28 // Input Only : 34,36-39 
@@ -25,10 +39,9 @@
 #define PIN_MOTOR_REVERSE GPIO_NUM_13
 #define PIN_MOTOR_LEFT_PWM GPIO_NUM_25
 #define PIN_MOTOR_RIGHT_PWM GPIO_NUM_33
-
-
-// Functions
-#define CALCULATE_FREQUENCY(f) pdMS_TO_TICKS(1000 / ((float) f))
+#define PIN_A4988_DIR GPIO_NUM_28
+#define PIN_A4988_STEP GPIO_NUM_23
+#define PIN_A4988_EN GPIO_NUM_21
 
 
 //Task Frequencies in Hz
@@ -37,6 +50,7 @@
 #define TASK_MOTOR_FREQUENCY 10
 #define TASK_SERVO_FREQUENCY 10
 #define TASK_STEERING_FREQUENCY 50
+#define TASK_STEP_MOTOR_FREQUENCY 100
 #define TASK_TEST_FREQUENCY 100
 
 
@@ -45,21 +59,25 @@ extern double odom_left_velocity;
 extern double odom_right_velocity;
 extern int odom_steering;
 extern int command_velocity;
-extern int command_steering;// Angle Odometry Parameters
+extern int command_steering;
+extern int command_step_motor;
 extern SemaphoreHandle_t odomLeftVelocityMutex;
 extern SemaphoreHandle_t odomRightVelocityMutex;
 extern SemaphoreHandle_t odomSteeringMutex;
 extern SemaphoreHandle_t commandVelocityMutex;
 extern SemaphoreHandle_t commandSteeringMutex;
+extern SemaphoreHandle_t commandStepMotorMutex;
 
 
 // CAN params
 #define ODOM_VELOCITY_CAN_ID 0x425
 #define ODOM_STEERING_CAN_ID 0x80
-#define COMMAND_CAN_ID 0x100
+#define COMMAND_CAN_CAR_ID 0x100
+#define COMMAND_CAN_STEP_MOTOR_ID 0x90
 #define CAN_COMMAND_MAX (100 * 128)
 #define VELOCITY_CONVERSION_CONSTANT 5000.0 // Must match carmen value in oj main.c
 #define CAM_LIMIT_MAX 65536
+
 
 // Motors
 #define DUTY_RESOLUTION 8
@@ -77,9 +95,14 @@ extern SemaphoreHandle_t commandSteeringMutex;
 
 
 // Sterring Parameters
-#define MIN_T_HIGH 1000.0 // em us
-#define MAX_T_HIGH 2100.0 // em us
-#define MEDIUM_T_HIGH ((MAX_T_HIGH + MIN_T_HIGH) / 2) // em us
+#define MIN_T_HIGH 1000.0 // in us
+#define MAX_T_HIGH 2100.0 // in us
+#define MEDIUM_T_HIGH ((MAX_T_HIGH + MIN_T_HIGH) / 2) // in us
+
+
+// Step Motor
+#define NUM_STEPS_0_TO_100 24.0
+#define STEP_MOTOR_HALF_PERIOD 1 // in ms
 
 
 // PWM
@@ -93,18 +116,8 @@ extern SemaphoreHandle_t commandSteeringMutex;
 #define LEDC_MAX_DUTY 2047
 #endif
 #define LEDC_FREQUENCY          100 // Frequency in Hertz.
-#define LEDC_PERIOD (1000000/LEDC_FREQUENCY) // em us
+#define LEDC_PERIOD (1000000/LEDC_FREQUENCY) // in us
 #define LEDC_INITIAL_DUTY       ((MEDIUM_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY) // Set duty to (1500us/10000us). ((2 ** 11) - 1) 
-
-
-// CAR measurements
-#define WHEEL_DIAMETER 0.065
-#define PI 3.14159265359f
-#define GEAR_RATIO 30.0
-#define WHEEL_SPACING 0.155f
-#define AXLE_SPACING 0.143f
-#define MAX_ANGLE 0.30f
-#define NUMBER_OF_ENCODER_LINES 500
 
 
 #endif /* SYSTEM_H */

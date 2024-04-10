@@ -6,18 +6,19 @@
 #include "test.h"
 
 static const char* TAG = "Main module";
-// SemaphoreHandle_t odomVelocityMutex = NULL;
+
 SemaphoreHandle_t odomLeftVelocityMutex = NULL;
 SemaphoreHandle_t odomRightVelocityMutex = NULL;
 SemaphoreHandle_t odomSteeringMutex = NULL;
 SemaphoreHandle_t commandVelocityMutex = NULL;
 SemaphoreHandle_t commandSteeringMutex = NULL;
-// double odom_velocity = 0;
+SemaphoreHandle_t commandStepMotorMutex = NULL;
 double odom_left_velocity = 0;
 double odom_right_velocity = 0;
 int odom_steering = 0;
 int command_velocity = 0;
 int command_steering = 0;
+int command_step_motor = 0;
 
 void
 create_mutexes ()
@@ -28,17 +29,22 @@ create_mutexes ()
     odomSteeringMutex = xSemaphoreCreateMutex ();
     commandVelocityMutex = xSemaphoreCreateMutex ();
     commandSteeringMutex = xSemaphoreCreateMutex ();
+    commandStepMotorMutex = xSemaphoreCreateMutex ();
     if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL ||
-        commandVelocityMutex == NULL || commandSteeringMutex == NULL)
+        commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL)
         {
             ESP_LOGE (TAG, "Failed to create mutexes");
+            return 1;
         }
 }
 
 void
 app_main ()
 {
-    create_mutexes ();
+    if (!create_mutexes ())
+       {
+           return;
+       }
     if (!can_setup ())
        {
            printf ("Failed to setup CAN\n");
@@ -62,13 +68,15 @@ app_main ()
                  8192, NULL, 1,
                  NULL);
 
-    // // Control
+    // Control
     xTaskCreate (motor_task, "Motor Task", 8192,
              NULL, 1, NULL);
     xTaskCreate (servo_task, "Servo Task", 8192,
                 NULL, 1, NULL);
+    xTaskCreate (step_motor_task, "Step Motor Task", 8192,
+                NULL, 1, NULL);
 
-    // // Odometry
+    // Odometry
     xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
               NULL, 1, NULL);
     xTaskCreate (left_encoder_task, "L Encoder Task", 1024 * 8,

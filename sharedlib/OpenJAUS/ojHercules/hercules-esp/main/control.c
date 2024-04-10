@@ -121,8 +121,6 @@ motor_task ( void )
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
             ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, -command_velocity_right);
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
-            ESP_LOGD (TAG, "Duty cycle left: %d", command_velocity_left);
-            ESP_LOGD (TAG, "Duty cycle right: %d", command_velocity_right); 
         }
         else
         {
@@ -130,9 +128,10 @@ motor_task ( void )
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
             ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, command_velocity_right);
             ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
-            ESP_LOGD (TAG, "Duty cycle left: %d", command_velocity_left);
-            ESP_LOGD (TAG, "Duty cycle right: %d", command_velocity_right);
         }
+        ESP_LOGD (TAG, "Duty cycle left: %d", command_velocity_left);
+        ESP_LOGD (TAG, "Duty cycle right: %d", command_velocity_right);
+
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }   
 }
@@ -204,6 +203,52 @@ servo_task ( void )
 
         ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
         ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+
+        vTaskDelayUntil (&xLastWakeTime, xFrequency);
+    }
+}
+
+void
+step_motor_task ( void )
+{
+    gpio_set_level(PIN_A4988_EN, 1);
+
+    int current_step_motor_command = 0;
+    int num_steps = 0;
+    double step_motor_can_to_steps = NUM_STEPS_0_TO_100 / CAN_COMMAND_MAX;
+
+    // Task frequency control
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
+    xLastWakeTime = xTaskGetTickCount ();
+    
+    while (1)
+    {
+        if( xSemaphoreTake( commandStepMotorMutex, 1000 / portTICK_PERIOD_MS))
+        {
+            received_command_step_motor = command_step_motor;
+            xSemaphoreGive(commandStepMotorMutex);
+        }
+
+        num_steps = (received_command_step_motor - current_step_motor_command) * step_motor_can_to_steps;
+        if (num_steps < 0)
+        {
+            gpio_set_level(PIN_A4988_DIR, 0);
+            num_steps = -num_steps;
+        }
+        else
+        {
+            gpio_set_level(PIN_A4988_DIR, 1);
+        }
+        gpio_set_level(PIN_A4988_EN, 0);
+        for (int i = 0; i < num_steps; i++)
+        {
+            gpio_set_level(PIN_A4988_STEP, 0);
+            vTaskDelay(pdMS_TO_TICKS(STEP_MOTOR_HALF_PERIOD));
+            gpio_set_level(PIN_A4988_STEP, 1);
+            vTaskDelay(pdMS_TO_TICKS(STEP_MOTOR_HALF_PERIOD));
+        }
+        gpio_set_level(PIN_A4988_EN, 1);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }

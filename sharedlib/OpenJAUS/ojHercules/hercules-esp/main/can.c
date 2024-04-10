@@ -83,6 +83,7 @@ can_reading_task ()
     xLastWakeTime = xTaskGetTickCount ();
     int16_t command_velocity_received;
     int16_t command_steering_received;
+    int16_t command_step_motor_received;
     while (1)
         {
             if (twai_receive (&message, pdMS_TO_TICKS (10000)) == ESP_OK)
@@ -94,7 +95,7 @@ can_reading_task ()
                     ESP_LOGW (TAG, "Failed to receive message\n");
                     continue;
                 }
-            if (message.identifier == COMMAND_CAN_ID)
+            if (message.identifier == COMMAND_CAN_CAR_ID)
                 {
                     ESP_LOGD (TAG, "Command received");
                     command_velocity_received = (message.data[1] << 8) | message.data[0];
@@ -119,7 +120,22 @@ can_reading_task ()
                     }
                     ESP_LOGD (TAG, "CAN Velocity command: %hi", command_velocity);
                     ESP_LOGD (TAG, "CAN Steering command: %hi", command_steering);
-                }                    
+                }
+            if (message.identifier == COMMAND_CAN_STEP_MOTOR_ID)
+                {
+                    ESP_LOGD (TAG, "Command received");
+                    command_step_motor_received = (message.data[1] << 8) | message.data[0];
+                    if (xSemaphoreTake (commandStepMotorMutex, 1000 / portTICK_PERIOD_MS)){
+                        command_step_motor = command_step_motor_received;
+                        xSemaphoreGive (commandStepMotorMutex);
+                    }
+                    else
+                    {
+                        ESP_LOGE (TAG, "Failed to take command step motor mutex");
+                        continue;
+                    }
+                    ESP_LOGD (TAG, "CAN Step Motor command: %hi", command_step_motor);
+                }                 
             else
                 {
                     ESP_LOGW (TAG, "Unknown message ID: %lu\n",
