@@ -20,7 +20,7 @@ int command_velocity = 0;
 int command_steering = 0;
 int command_step_motor = 0;
 
-void
+int
 create_mutexes ()
 {
     // odomVelocityMutex = xSemaphoreCreateMutex ();
@@ -34,8 +34,9 @@ create_mutexes ()
         commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL)
         {
             ESP_LOGE (TAG, "Failed to create mutexes");
-            return 1;
+            return 0;
         }
+    return 1;
 }
 
 void

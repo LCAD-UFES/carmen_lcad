@@ -213,6 +213,7 @@ step_motor_task ( void )
 {
     gpio_set_level(PIN_A4988_EN, 1);
 
+    int received_command_step_motor = 0;
     int current_step_motor_command = 0;
     int num_steps = 0;
     double step_motor_can_to_steps = NUM_STEPS_0_TO_100 / CAN_COMMAND_MAX;
@@ -240,6 +241,11 @@ step_motor_task ( void )
         {
             gpio_set_level(PIN_A4988_DIR, 1);
         }
+        if (num_steps == 0)
+        {
+            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            continue;
+        }
         gpio_set_level(PIN_A4988_EN, 0);
         for (int i = 0; i < num_steps; i++)
         {
@@ -247,9 +253,11 @@ step_motor_task ( void )
             vTaskDelay(pdMS_TO_TICKS(STEP_MOTOR_HALF_PERIOD));
             gpio_set_level(PIN_A4988_STEP, 1);
             vTaskDelay(pdMS_TO_TICKS(STEP_MOTOR_HALF_PERIOD));
+            ESP_LOGD(TAG, "Step %d", i);
         }
         gpio_set_level(PIN_A4988_EN, 1);
-
+        num_steps = 0;
+        current_step_motor_command = received_command_step_motor;
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }
 }

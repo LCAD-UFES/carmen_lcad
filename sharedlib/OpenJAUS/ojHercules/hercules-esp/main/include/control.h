@@ -5,5 +5,6 @@
 
 void motor_task( void );
 void servo_task( void );
+void step_motor_task ( void );
 
 #endif /* CONTROL_H */
