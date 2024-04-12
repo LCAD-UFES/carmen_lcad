@@ -6,5 +6,6 @@
 void test_task(void *parameters);
 void fake_odometry_task();
 void fake_commands_task();
+void fake_step_motor_task();
 
 #endif /* TEST_H */

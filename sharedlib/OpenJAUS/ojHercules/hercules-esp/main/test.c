@@ -1,4 +1,5 @@
 #include "test.h"
+#include "control.h"
 
 static const char* TAG = "Test module";
 
@@ -116,4 +117,46 @@ fake_commands_task ()
             ESP_LOGI (TAG, "Steering command created: %d", current_steering);
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
+}
+
+
+void
+fake_step_motor_task ( void )
+{
+    config_step_motor_pins();
+    int num_steps = 4700;
+    int current_steps = 0;
+    int step_to_move = num_steps - current_steps;
+    gpio_set_level(PIN_A4988_EN, 1);
+    while (1)
+    {
+        step_to_move = num_steps - current_steps;
+        if (step_to_move == 0)
+        {
+            gpio_set_level(PIN_A4988_EN, 1);
+            vTaskDelay(pdMS_TO_TICKS(3000));
+            continue;
+        }
+        if (step_to_move > 0)
+        {
+            gpio_set_level(PIN_A4988_DIR, 1);
+            gpio_set_level(PIN_A4988_EN, 0);
+            gpio_set_level(PIN_A4988_STEP, 0);
+            vTaskDelay(pdMS_TO_TICKS(STEP_MOTOR_HALF_PERIOD));
+            gpio_set_level(PIN_A4988_STEP, 1);
+            current_steps++;
+            ESP_LOGD (TAG, "Step %d", current_steps);
+        }
+        if (step_to_move < 0)
+        {
+            gpio_set_level(PIN_A4988_DIR, 0);
+            gpio_set_level(PIN_A4988_EN, 0);
+            gpio_set_level(PIN_A4988_STEP, 0);
+            vTaskDelay(pdMS_TO_TICKS(STEP_MOTOR_HALF_PERIOD));
+            gpio_set_level(PIN_A4988_STEP, 1);
+            current_steps--;
+            ESP_LOGD (TAG, "Step %d", current_steps);
+        }
+        vTaskDelay(pdMS_TO_TICKS(STEP_MOTOR_HALF_PERIOD));
+    }
 }

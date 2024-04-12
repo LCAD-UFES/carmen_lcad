@@ -45,13 +45,13 @@
 
 
 //Task Frequencies in Hz
-#define TASK_CAN_FREQUENCY 1 //100
-#define TASK_ENCODER_FREQUENCY 1 //100
-#define TASK_MOTOR_FREQUENCY 1 //10
-#define TASK_SERVO_FREQUENCY 1 //10
-#define TASK_STEERING_FREQUENCY 1 //50
-#define TASK_STEP_MOTOR_FREQUENCY 1 //100
-#define TASK_TEST_FREQUENCY 1 //100
+#define TASK_CAN_FREQUENCY 1 //100Hz
+#define TASK_ENCODER_FREQUENCY 1 //100Hz
+#define TASK_MOTOR_FREQUENCY 1 //100Hz
+#define TASK_SERVO_FREQUENCY 1 //100Hz
+#define TASK_STEERING_FREQUENCY 1 //100Hz
+#define TASK_STEP_MOTOR_FREQUENCY 1 //100Hz
+#define TASK_TEST_FREQUENCY 1 //100Hz
 
 
 // Global variables
@@ -101,8 +101,10 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 
 
 // Step Motor
-#define NUM_STEPS_0_TO_100 24.0
-#define STEP_MOTOR_HALF_PERIOD 1 // in ms
+#define NUM_STEPS_0_TO_100 4700.0
+#define STEP_MOTOR_HALF_PERIOD 5.0 // in ms
+#define STEP_MOTOR_RESOLUTION_HZ 1000000
+#define STEPS_PER_CYCLE 4000
 
 
 // PWM
