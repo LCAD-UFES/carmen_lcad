@@ -54,9 +54,9 @@ app_main ()
     
     // Testing tasks
     // xTaskCreate (test_task, "Test Task", 2048, NULL, 1, NULL);
-    xTaskCreate (fake_odometry_task, "Fake Odometry Task",
-                 8192, NULL, 1,
-                 NULL);
+    // xTaskCreate (fake_odometry_task, "Fake Odometry Task",
+    //              8192, NULL, 1,
+    //              NULL);
     // xTaskCreate (fake_commands_task, "Fake Commands Task",
     //             8192, NULL, 1,
     //             NULL);
@@ -76,8 +76,8 @@ app_main ()
     //         NULL, 1, NULL);
     // xTaskCreate (servo_task, "Servo Task", 8192,
     //            NULL, 1, NULL);
-    // xTaskCreate (step_motor_task, "Step Motor Task", 8192,
-    //             NULL, 1, NULL);
+    xTaskCreate (step_motor_task, "Step Motor Task", 8192,
+                NULL, 1, NULL);
 
     // Odometry
     // xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
@@ -87,5 +87,5 @@ app_main ()
     // xTaskCreate (steering_reading_task, "Steering Reading Task",
     //             8192, NULL, 1,
     //            NULL);
-    
+        
 }

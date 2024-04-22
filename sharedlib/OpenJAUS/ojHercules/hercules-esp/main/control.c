@@ -2,7 +2,8 @@
 // #include "esp_log.h "
 #include "driver/ledc.h"
 #include "driver/rmt.h"
-// #include "stepper_motor_encoder.h"
+#include "driver/rmt_tx.h"
+#include "stepper_motor_encoder.h"
 #include "math.h"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -227,41 +228,56 @@ config_step_motor_pins( void )
 }
 
 void init_rmt() {
-    rmt_channel_handle_t tx_chan = NULL;
-    rmt_tx_channel_config_t tx_chan_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT,   // select source clock
-        .gpio_num = PIN_A4988_STEP,       // GPIO number
-        .mem_block_symbols = 64,          // memory block size, 64 * 4 = 256 Bytes
-        .resolution_hz = 1 * 1000 * 1000, // 1 MHz tick resolution, i.e., 1 tick = 1 µs
-        .trans_queue_depth = 4,           // set the number of transactions that can pend in the background
-        .flags.invert_out = false,        // do not invert output signal
-        .flags.with_dma = false,          // do not need DMA backend
-    };
-    ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &tx_chan));
+    
 }
 
-#define STEP_PULSE_DURATION 10 // 10 us
-void send_step_pulse(int num_steps) {
-    rmt_item32_t items[num_steps];
-    for (int i = 0; i < num_steps; i++) {
-        items[i] = (rmt_item32_t){
-            .duration0 = STEP_PULSE_DURATION,
-            .level0 = 1,
-            .duration1 = STEP_PULSE_DURATION,
-            .level1 = 0,
-        };
-    }
-    // Send multiple RMT items
-    rmt_write_items(RMT_TX_CHANNEL, items, num_steps, true);
-}
 
 void
 step_motor_task ( void )
 {
-    init_rmt();
     config_step_motor_pins();
+ 
+    rmt_channel_handle_t motor_chan = NULL;
+    rmt_tx_channel_config_t tx_chan_config = {
+        .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
+        .gpio_num = PIN_A4988_STEP,
+        .mem_block_symbols = 64,
+        .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
+        .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
+    };
+    ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &motor_chan));
 
-    send_step_pulse(1000);
+    gpio_set_level(PIN_A4988_EN, 0);
+    gpio_set_level(PIN_A4988_DIR, 1);
+
+    stepper_motor_uniform_encoder_config_t uniform_encoder_config = {
+        .resolution = STEP_MOTOR_RESOLUTION_HZ,
+    };
+    rmt_encoder_handle_t uniform_motor_encoder = NULL;
+    ESP_ERROR_CHECK(rmt_new_stepper_motor_uniform_encoder(&uniform_encoder_config, &uniform_motor_encoder));
+
+    stepper_motor_curve_encoder_config_t accel_encoder_config = {
+        .resolution = STEP_MOTOR_RESOLUTION_HZ,
+        .sample_points = 500,
+        .start_freq_hz = 500,
+        .end_freq_hz = 1500,
+    };
+    rmt_encoder_handle_t accel_motor_encoder = NULL;
+    ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(&accel_encoder_config, &accel_motor_encoder));
+    
+    ESP_ERROR_CHECK(rmt_enable(motor_chan));
+    rmt_transmit_config_t tx_config = {};
+
+    const static uint32_t accel_samples = 500;
+    const static uint32_t uniform_speed_hz = 1500;
+    ESP_ERROR_CHECK(rmt_transmit(motor_chan, accel_motor_encoder, &accel_samples, sizeof(accel_samples), &tx_config));
+    for (int i = 0; i < 3; i++)
+    {
+        // vTaskDelay(pdMS_TO_TICKS(100));
+        ESP_ERROR_CHECK(rmt_transmit(motor_chan, uniform_motor_encoder, &uniform_speed_hz, sizeof(uniform_speed_hz), &tx_config));
+        ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 1000));
+    }
+
     // gpio_set_level(PIN_A4988_EN, 1);
 
     // int received_command_step_motor = 0;

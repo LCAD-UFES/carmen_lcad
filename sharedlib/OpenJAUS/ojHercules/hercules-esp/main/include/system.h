@@ -102,8 +102,8 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 
 // Step Motor
 #define NUM_STEPS_0_TO_100 4700.0
-#define STEP_MOTOR_HALF_PERIOD 5.0 // in ms
-#define STEP_MOTOR_RESOLUTION_HZ 1000000
+#define STEP_MOTOR_HALF_PERIOD 1000.0 // 5.0 // in ms
+#define STEP_MOTOR_RESOLUTION_HZ 100000.0
 #define STEPS_PER_CYCLE 4000
 
 
