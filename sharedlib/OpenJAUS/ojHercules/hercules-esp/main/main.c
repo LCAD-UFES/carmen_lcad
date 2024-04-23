@@ -64,9 +64,9 @@ app_main ()
     //             NULL, 1, NULL);
 
     // Communication
-    // xTaskCreate (can_reading_task, "CAN Reading Task",
-    //              8192, NULL , 1,
-    //              NULL);
+    xTaskCreate (can_reading_task, "CAN Reading Task",
+                 8192, NULL , 1,
+                 NULL);
     // xTaskCreate (can_writing_task, "CAN Writing Task",
     //              8192, NULL, 1,
     //              NULL);

@@ -27,6 +27,8 @@ typedef struct {
  */
 typedef struct {
     uint32_t resolution; // Encoder resolution, in Hz
+    uint32_t sample_points; // Sample points used for uniform phase
+    uint32_t freq_hz; // Frequency of the uniform phase, in Hz
 } stepper_motor_uniform_encoder_config_t;
 
 /**
