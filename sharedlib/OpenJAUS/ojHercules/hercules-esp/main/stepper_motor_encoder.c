@@ -45,6 +45,20 @@ static size_t rmt_encode_stepper_motor_curve(rmt_encoder_t *encoder, rmt_channel
     return encoded_symbols;
 }
 
+static size_t rmt_encode_stepper_motor_curve_uniform(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+{
+    rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
+    rmt_encoder_handle_t copy_encoder = motor_encoder->copy_encoder;
+    rmt_encode_state_t session_state = RMT_ENCODING_RESET;
+    uint32_t points_num = *(uint32_t *)primary_data;
+    size_t encoded_symbols = 0;
+    copy_encoder->encode(copy_encoder, channel, &motor_encoder->curve_table[0],
+                                               motor_encoder->sample_points * sizeof(rmt_symbol_word_t), &session_state);
+    *ret_state = session_state;
+    return encoded_symbols;
+}
+
+
 static esp_err_t rmt_del_stepper_motor_curve_encoder(rmt_encoder_t *encoder)
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
@@ -140,9 +154,9 @@ esp_err_t rmt_new_stepper_motor_uniform_encoder(const stepper_motor_uniform_enco
     }
 
     step_encoder->sample_points = config->sample_points;
-    step_encoder->flags.is_accel_curve = 0;
+    step_encoder->flags.is_accel_curve = 1;
     step_encoder->base.del = rmt_del_stepper_motor_curve_encoder;
-    step_encoder->base.encode = rmt_encode_stepper_motor_curve;
+    step_encoder->base.encode = rmt_encode_stepper_motor_curve_uniform;
     step_encoder->base.reset = rmt_reset_stepper_motor_curve_encoder;
     *ret_encoder = &(step_encoder->base);
     return ESP_OK;
