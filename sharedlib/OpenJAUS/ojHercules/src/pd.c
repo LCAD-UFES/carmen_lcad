@@ -56,7 +56,7 @@
 #define CONTROLLER_STATUS_UPDATE_RATE_HZ		5.0
 #define CONTROLLER_STATUS_QUEUE_SIZE			1
 #define CONTROLLER_STATUS_PRESENCE_VECTOR	0
-#define CAN_CONVERSION_CONSTANT		128
+#define CAN_CONVERSION_CONSTANT		256
 
 
 typedef struct
@@ -94,6 +94,7 @@ double wheel_speed_moving_average(double *wheel_speed);
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
+	printf("%lf %lf %lf\n", throttle_effort, breaks_effort, steering_effort);
 	struct can_frame frame;
 
 	if (out_can_sockfd == -1)

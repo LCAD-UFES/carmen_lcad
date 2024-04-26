@@ -121,7 +121,7 @@ can_reading_task ()
                     ESP_LOGD (TAG, "CAN Velocity command: %hi", command_velocity);
                     ESP_LOGD (TAG, "CAN Steering command: %hi", command_steering);
                 }
-            if (message.identifier == COMMAND_CAN_STEP_MOTOR_ID)
+            else if (message.identifier == COMMAND_CAN_STEP_MOTOR_ID)
                 {
                     ESP_LOGD (TAG, "Command received");
                     command_step_motor_received = (message.data[1] << 8) | message.data[0];
@@ -140,7 +140,7 @@ can_reading_task ()
                 {
                     ESP_LOGW (TAG, "Unknown message ID: %lu\n",
                               message.identifier);
-               }
+                }
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
 }

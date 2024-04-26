@@ -67,15 +67,15 @@ app_main ()
     xTaskCreate (can_reading_task, "CAN Reading Task",
                  8192, NULL , 1,
                  NULL);
-    // xTaskCreate (can_writing_task, "CAN Writing Task",
-    //              8192, NULL, 1,
-    //              NULL);
+    xTaskCreate (can_writing_task, "CAN Writing Task",
+                 8192, NULL, 1,
+                 NULL);
 
     // Control
-    // xTaskCreate (motor_task, "Motor Task", 8192,
-    //         NULL, 1, NULL);
-    // xTaskCreate (servo_task, "Servo Task", 8192,
-    //            NULL, 1, NULL);
+    xTaskCreate (motor_task, "Motor Task", 8192,
+            NULL, 1, NULL);
+    xTaskCreate (servo_task, "Servo Task", 8192,
+               NULL, 1, NULL);
     xTaskCreate (step_motor_task, "Step Motor Task", 8192,
                 NULL, 1, NULL);
 
