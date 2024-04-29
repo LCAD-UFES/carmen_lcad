@@ -35,40 +35,47 @@ encoder_setup (int sensor_a, int sensor_b)
     };
     ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter (pcnt_unit, &filter_config));
 
-    ESP_LOGI (TAG, "install pcnt channels");
-    pcnt_chan_config_t chan_a_config = {
-        .edge_gpio_num = sensor_a,
-        .level_gpio_num = sensor_b,
-    };
-    pcnt_channel_handle_t pcnt_chan_a = NULL;
-    
-    ESP_ERROR_CHECK (
-        pcnt_new_channel (pcnt_unit, &chan_a_config, &pcnt_chan_a));
-    /*
-    pcnt_chan_config_t chan_b_config = {
-        .edge_gpio_num = PIN_ENCODER_B,
-        .level_gpio_num = PIN_ENCODER_A,
-    };
-    pcnt_channel_handle_t pcnt_chan_b = NULL;
-    ESP_ERROR_CHECK (
-        pcnt_new_channel (pcnt_unit, &chan_b_config, &pcnt_chan_b));
-    */
 
-    ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
-    ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
-        pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
-    ESP_ERROR_CHECK (pcnt_channel_set_level_action (
-        pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
-    /*
-    ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
-        pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-        PCNT_CHANNEL_EDGE_ACTION_DECREASE));
-    ESP_ERROR_CHECK (pcnt_channel_set_level_action (
-        pcnt_chan_b, PCNT_CHANNEL_LEVEL_ACTION_KEEP,
-        PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
-    */
+    if ( sensor_a == PIN_LEFT_ENCODER_A && sensor_b == PIN_LEFT_ENCODER_B )
+    {
+        ESP_LOGI (TAG, "install pcnt channels");
+        pcnt_chan_config_t chan_a_config = {
+            .edge_gpio_num = sensor_a,
+            .level_gpio_num = sensor_b,
+        };
+        pcnt_channel_handle_t pcnt_chan_a = NULL;
+        
+        ESP_ERROR_CHECK (
+            pcnt_new_channel (pcnt_unit, &chan_a_config, &pcnt_chan_a));
+
+        ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
+        ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
+            pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+            PCNT_CHANNEL_LEVEL_ACTION_HOLD));
+        ESP_ERROR_CHECK (pcnt_channel_set_level_action (
+            pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+            PCNT_CHANNEL_LEVEL_ACTION_HOLD));
+    }
+    else
+    {
+        ESP_LOGI (TAG, "install pcnt channels");
+        pcnt_chan_config_t chan_b_config = {
+            .edge_gpio_num = sensor_b,
+            .level_gpio_num = sensor_a,
+        };
+        pcnt_channel_handle_t pcnt_chan_b = NULL;
+        ESP_ERROR_CHECK (
+            pcnt_new_channel (pcnt_unit, &chan_b_config, &pcnt_chan_b));
+        
+        ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
+        ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
+            pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+            PCNT_CHANNEL_LEVEL_ACTION_HOLD));
+        ESP_ERROR_CHECK (pcnt_channel_set_level_action (
+            pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+            PCNT_CHANNEL_LEVEL_ACTION_HOLD));                              
+    }
+
 
     //QueueHandle_t queue = xQueueCreate (10, sizeof (int));
     ESP_LOGI (TAG, "enable pcnt unit");
@@ -82,7 +89,7 @@ encoder_setup (int sensor_a, int sensor_b)
 }
 
 void
-right_encoder_task ( void )
+left_encoder_task ( void )
 {
     
     int pulse_count = 0;
@@ -90,38 +97,10 @@ right_encoder_task ( void )
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
     xLastWakeTime = xTaskGetTickCount ();
-    pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
-    double meters_per_second_per_pulse
-        = (TASK_ENCODER_FREQUENCY * 2 * PI * WHEEL_DIAMETER)
-          / NUMBER_OF_ENCODER_LINES ;// *GEAR_RATIO);
-    while (1)
-        {
-            ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_LOGI (TAG, "Right Encoder Pulse Count: %d", pulse_count);
-            current_velocity = pulse_count * meters_per_second_per_pulse;
-            if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-                odom_right_velocity = current_velocity;
-                xSemaphoreGive (odomRightVelocityMutex);
-            }
-            ESP_LOGD (TAG, "Right Motor Current_velocity: %.2f", current_velocity);
-            ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
-        }
-    
-}
-
-void
-left_encoder_task ( void )
-{
-    int pulse_count = 0;
-    float current_velocity = 0;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     double meters_per_second_per_pulse
         = (TASK_ENCODER_FREQUENCY * 2 * PI * WHEEL_DIAMETER)
-          / NUMBER_OF_ENCODER_LINES ;//* GEAR_RATIO);
+          / NUMBER_OF_ENCODER_LINES ;// *GEAR_RATIO);
     while (1)
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
@@ -131,7 +110,35 @@ left_encoder_task ( void )
                 odom_left_velocity = current_velocity;
                 xSemaphoreGive (odomLeftVelocityMutex);
             }
-            ESP_LOGD (TAG, "Left Motor Current velocity: %.2f", current_velocity);
+            ESP_LOGD (TAG, "Left Motor Current_velocity: %.2f", current_velocity);
+            ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
+            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+        }
+    
+}
+
+void
+right_encoder_task ( void )
+{
+    int pulse_count = 0;
+    float current_velocity = 0;
+    TickType_t xLastWakeTime;
+    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
+    xLastWakeTime = xTaskGetTickCount ();
+    pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
+    double meters_per_second_per_pulse
+        = (TASK_ENCODER_FREQUENCY * 2 * PI * WHEEL_DIAMETER)
+          / NUMBER_OF_ENCODER_LINES ;//* GEAR_RATIO);
+    while (1)
+        {
+            ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
+            ESP_LOGI (TAG, "Right Encoder Pulse Count: %d", pulse_count);
+            current_velocity = pulse_count * meters_per_second_per_pulse;
+            if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+                odom_right_velocity = current_velocity;
+                xSemaphoreGive (odomRightVelocityMutex);
+            }
+            ESP_LOGD (TAG, "Right Motor Current velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
             vTaskDelayUntil (&xLastWakeTime, xFrequency);
         }
