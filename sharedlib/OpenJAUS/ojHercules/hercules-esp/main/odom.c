@@ -35,74 +35,23 @@ encoder_setup (int sensor_a, int sensor_b)
     };
     ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter (pcnt_unit, &filter_config));
 
+    ESP_LOGI (TAG, "install pcnt channels");
+    pcnt_chan_config_t chan_config = {
+        .edge_gpio_num = sensor_a,
+        .level_gpio_num = sensor_b,
+    };
+    pcnt_channel_handle_t pcnt_chan = NULL;
+    
+    ESP_ERROR_CHECK (
+        pcnt_new_channel (pcnt_unit, &chan_config, &pcnt_chan));
 
-    if ( sensor_a == PIN_LEFT_ENCODER_A && sensor_b == PIN_LEFT_ENCODER_B )
-    {
-        // ESP_LOGI (TAG, "install pcnt unit");
-        // pcnt_unit_config_t unit_config = {
-        //     .high_limit = PCNT_HIGH_LIMIT,
-        //     .low_limit = PCNT_LOW_LIMIT,
-        // };
-        // pcnt_unit_handle_t pcnt_unit = NULL;
-        // ESP_ERROR_CHECK (pcnt_new_unit (&unit_config, &pcnt_unit));
-
-        // ESP_LOGI (TAG, "set glitch filter");
-        // pcnt_glitch_filter_config_t filter_config = {
-        //     .max_glitch_ns = 1000,
-        // };
-        // ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter (pcnt_unit, &filter_config));
-
-        ESP_LOGI (TAG, "install pcnt channels");
-        pcnt_chan_config_t chan_a_config = {
-            .edge_gpio_num = sensor_a,
-            .level_gpio_num = sensor_b,
-        };
-        pcnt_channel_handle_t pcnt_chan_a = NULL;
-        
-        ESP_ERROR_CHECK (
-            pcnt_new_channel (pcnt_unit, &chan_a_config, &pcnt_chan_a));
-
-        ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
-        ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
-            pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-            PCNT_CHANNEL_LEVEL_ACTION_HOLD));
-        ESP_ERROR_CHECK (pcnt_channel_set_level_action (
-            pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-            PCNT_CHANNEL_LEVEL_ACTION_HOLD));
-    }
-    else
-    {
-        // ESP_LOGI (TAG, "install pcnt unit");
-        // pcnt_unit_config_t unit_config = {
-        //     .high_limit = PCNT_HIGH_LIMIT,
-        //     .low_limit = PCNT_LOW_LIMIT,
-        // };
-        // pcnt_unit_handle_t pcnt_unit = NULL;
-        // ESP_ERROR_CHECK (pcnt_new_unit (&unit_config, &pcnt_unit));
-
-        // ESP_LOGI (TAG, "set glitch filter");
-        // pcnt_glitch_filter_config_t filter_config = {
-        //     .max_glitch_ns = 1000,
-        // };
-        // ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter (pcnt_unit, &filter_config));
-
-        ESP_LOGI (TAG, "install pcnt channels");
-        pcnt_chan_config_t chan_b_config = {
-            .edge_gpio_num = sensor_b,
-            .level_gpio_num = sensor_a,
-        };
-        pcnt_channel_handle_t pcnt_chan_b = NULL;
-        ESP_ERROR_CHECK (
-            pcnt_new_channel (pcnt_unit, &chan_b_config, &pcnt_chan_b));
-        
-        ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
-        ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
-            pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-            PCNT_CHANNEL_LEVEL_ACTION_HOLD));
-        ESP_ERROR_CHECK (pcnt_channel_set_level_action (
-            pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-            PCNT_CHANNEL_LEVEL_ACTION_HOLD));                              
-    }
+    ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
+    ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
+        pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
+    ESP_ERROR_CHECK (pcnt_channel_set_level_action (
+        pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
+        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
 
 
     //QueueHandle_t queue = xQueueCreate (10, sizeof (int));
