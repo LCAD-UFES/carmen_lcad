@@ -38,6 +38,20 @@ encoder_setup (int sensor_a, int sensor_b)
 
     if ( sensor_a == PIN_LEFT_ENCODER_A && sensor_b == PIN_LEFT_ENCODER_B )
     {
+        // ESP_LOGI (TAG, "install pcnt unit");
+        // pcnt_unit_config_t unit_config = {
+        //     .high_limit = PCNT_HIGH_LIMIT,
+        //     .low_limit = PCNT_LOW_LIMIT,
+        // };
+        // pcnt_unit_handle_t pcnt_unit = NULL;
+        // ESP_ERROR_CHECK (pcnt_new_unit (&unit_config, &pcnt_unit));
+
+        // ESP_LOGI (TAG, "set glitch filter");
+        // pcnt_glitch_filter_config_t filter_config = {
+        //     .max_glitch_ns = 1000,
+        // };
+        // ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter (pcnt_unit, &filter_config));
+
         ESP_LOGI (TAG, "install pcnt channels");
         pcnt_chan_config_t chan_a_config = {
             .edge_gpio_num = sensor_a,
@@ -58,6 +72,20 @@ encoder_setup (int sensor_a, int sensor_b)
     }
     else
     {
+        // ESP_LOGI (TAG, "install pcnt unit");
+        // pcnt_unit_config_t unit_config = {
+        //     .high_limit = PCNT_HIGH_LIMIT,
+        //     .low_limit = PCNT_LOW_LIMIT,
+        // };
+        // pcnt_unit_handle_t pcnt_unit = NULL;
+        // ESP_ERROR_CHECK (pcnt_new_unit (&unit_config, &pcnt_unit));
+
+        // ESP_LOGI (TAG, "set glitch filter");
+        // pcnt_glitch_filter_config_t filter_config = {
+        //     .max_glitch_ns = 1000,
+        // };
+        // ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter (pcnt_unit, &filter_config));
+
         ESP_LOGI (TAG, "install pcnt channels");
         pcnt_chan_config_t chan_b_config = {
             .edge_gpio_num = sensor_b,

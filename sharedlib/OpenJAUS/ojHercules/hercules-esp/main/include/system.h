@@ -24,7 +24,7 @@
 
 
 // Pins
-// All GPIO's that don't mess with ESP32 boot : 4,13, 16-33, 34-39(Input Only)
+// All GPIO's that don't mess with ESP32 boot : 4,13, 14, 16-33, 34-39(Input Only)
 // GPIO's that arent beeing used : 16,17,20,22,23,24,28 // Input Only : 34,36-39 
 #define PIN_SERVO GPIO_NUM_18 
 #define PIN_POTENTIOMETER GPIO_NUM_34 
@@ -46,7 +46,7 @@
 
 //Task Frequencies in Hz
 #define TASK_CAN_FREQUENCY 100
-#define TASK_ENCODER_FREQUENCY 100
+#define TASK_ENCODER_FREQUENCY 50
 #define TASK_MOTOR_FREQUENCY 100
 #define TASK_SERVO_FREQUENCY 100
 #define TASK_STEERING_FREQUENCY 100
