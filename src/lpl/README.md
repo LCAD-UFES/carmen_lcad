@@ -130,6 +130,3 @@ cd carmen_lcad/bin
 </div>
 
 
-
-# Future Works
-As subsequent steps, we will further our efforts to enhance detection, collect lane width data for integration with GPS to accurately calculate the vehicle's pose through the particle model.
