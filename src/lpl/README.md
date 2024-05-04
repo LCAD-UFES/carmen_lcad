@@ -45,42 +45,25 @@ In this approach, we replace the conventional use of LiDAR with GPS, employing a
 ### 2. Install TensorRT:
 - Siga as instruções desse (<a href="https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html">link</a>)
 
-### 3. Download source code and pre-built libraries:
+### 3. [YolopV2]Download source code and pre-built libraries:
 - Download (<a href="https://drive.google.com/drive/folders/1yUQw13WZac7YGkQruhuEm902465WwSE4?usp=sharing">link</a>)
   
 #### 3.1 Extraia os arquivos dentro da pasta lpl:
  ``` shell
-# Folter
+# Folder
 cd /Downloads
 unzip play_with_tensorrt.zip
 cp -r /downloads/play_with_tensorrt $CARMEN_HOME/src/lpl/
 ```
-
-
-### 3. Install Dependencies:
-- Open a terminal and navigate to the cloned project directory.
+#### 3.2 Build
  ``` shell
-# Open the Folder
-cd carmen_lcad/src/lpl/YOLOPv2/
-```
--  Install all required dependencies
-``` shell
-# YOLOPv2
-pip install -r requirements.txt
+# Folder
+cd $CARMEN_HOME/src/lpl/play_with_tensorrt/pj_tensorrt_perception_yolopv2
+cd build
+cmake ..
+make
 ```
 
-### 4. Edit the system variables:
-- Edit the .bashrc (gedit ~/.bashrc):
-``` shell
-# Terminal
-gedit ~/.bashrc
-```
-- Add the content below after the #Darknet commands:
-``` shell
-#Darknet3
-export DARKNET3_HOME=$CARMEN_HOME/sharedlib/darknet3
-export LD_LIBRARY_PATH=$DARKNET3_HOME/lib:$LD_LIBRARY_PATH
-```
 
 ### 5. Compile the "lpl" file:
 - Open the folder lpl
@@ -108,12 +91,12 @@ unzip atego2430_vale.zip
 -  Copy the files to the following folders
 ``` shell
 # logs
-cp -r /home/alefe/Downloads/logs/log_volta_da_ufes-art-20221108-2.txt* /dados/
+cp -r /Downloads/logs/log_volta_da_ufes-art-20221108-2.txt* /dados/
 ```
 
 ``` shell
 # Atego2430_vale
-cp -r /home/alefe/Downloads/atego2430_vale/ /home/alefe/carmen_lcad/bin/
+cp -r /Downloads/atego2430_vale/ $CARMEN_HOME/bin/
 ```
 
 ## 4. Execution
