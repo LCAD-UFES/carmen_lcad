@@ -1,13 +1,6 @@
 <div align="center">
 <h1> Lane Position Localizer: Precise Localization on the Runway Using Lane Detection 🚗 </h1>
 
-<!-- <--!span><font size="5", > Efficient and Robust 2D-to-BEV Representation Learning via Geometry-guided Kernel Transformer
-</font></span> -->
-
-  Alefe Gadioli e Israel Barbosa
-<!-- <a href="https://scholar.google.com/citations?user=pCY-bikAAAAJ&hl=zh-CN">Jinwei Yuan</a> -->
-<div><a href="https://drive.google.com/file/d/112jPwJ2mCc6egTONY9GHNCOqfAn8-g5D/view?usp=drive_link">Lane Position Localizer Report</a></div> 
-
 </div>
 
 # Introduction
@@ -26,25 +19,12 @@ In this approach, we replace the conventional use of LiDAR with GPS, employing a
   <a href="https://ibb.co/1bjc38J"><img src="https://i.ibb.co/jHstdgZ/Screenshot-from-2023-12-16-21-54-57.png" alt="Screenshot-from-2023-12-16-21-54-57" border="0"></a>
 </div>
 
-## Implementation Methodology
-
-The practical implementation of our method has been executed on a physical vehicle equipped with a camera and a GPS system. Although practical trials have not yet been conducted, our approach enables real-time detection using the YOLOPv2 network, enabling a continuous and precise update of the vehicle's position based on sensor data. We have chosen to integrate our method with the CARMEN system, facilitating seamless integration with other modules of the autonomous vehicle, such as trajectory planning and motion control. This integration enables safe operation in complex environments and efficient code reuse in future projects, contributing to the ongoing advancement of autonomous driving and vehicle localization.
-
-## Results
-The results of using the detection module have shown promise with the utilization of the YOLOPv2 convolutional neural network, as can be seen in the following figures.
 
 ### Visualization
 <div align="center">
   <td><img src=https://i.ibb.co/44x03D9/Design-sem-nome.png></td>
   <p> Fig. 1 - Detection of representative lanes and navigable areas - UFES Loop </p>
 </div>
-
-<div align="center">
-  <td><img src=YOLOPv2/data/video2.gif></td>
-  <p> Fig. 2 - Detection of representative lanes and navigable areas - LUME</p>
-</div>
-
-However, it is evident that the model faces challenges in detecting areas where lane markings are not clear, as illustrated in Figure 2. Conversely, the detection improves significantly in sharper areas, as demonstrated in Figure 1.
 
 
 
@@ -53,20 +33,30 @@ However, it is evident that the model faces challenges in detecting areas where 
 
 - Carmen_lcad installed
 - Graphics card (GPU)
-- Python >=3.6
+- OpenCV 4.x
+- CUDA + cuDNN
+- TensorRT 8.x (<a href="https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html">link</a>) 
 
 ## 2. Environment Setup
 
 ### 1. Install Carmen Lcad
 - Install **CARMEN LCAD** using the <a href="https://github.com/LCAD-UFES/carmen_lcad">link</a>.
 
+### 2. Install TensorRT:
+- Siga as instruções desse (<a href="https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html">link</a>)
 
-### 2. Install Python 3.6 or higher:
-- **Linux:** Use your distribution's package manager, for example:
-``` shell
-# Python3 - Linux
-sudo apt-get install python3
+### 3. Download source code and pre-built libraries:
+- Download (<a href="https://drive.google.com/drive/folders/1yUQw13WZac7YGkQruhuEm902465WwSE4?usp=sharing">link</a>)
+  
+#### 3.1 Extraia os arquivos dentro da pasta lpl:
+ ``` shell
+# Folter
+cd /Downloads
+unzip play_with_tensorrt.zip
+cp -r /downloads/play_with_tensorrt $CARMEN_HOME/src/lpl/
 ```
+
+
 ### 3. Install Dependencies:
 - Open a terminal and navigate to the cloned project directory.
  ``` shell
