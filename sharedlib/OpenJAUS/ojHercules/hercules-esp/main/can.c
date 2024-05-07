@@ -1,28 +1,27 @@
 #include "can.h"
 #include "driver/gpio.h"
 #include "driver/twai.h"
+#include "math.h"
 
 static const char* TAG = "CAN module";
 
 int
-send_can_message (uint32_t id, int data)
+send_can_message (uint32_t id, double data)
 {
     twai_message_t message = {.data_length_code = 2};
     message.identifier = id;
-    int16_t data_send = data;
     if (id == ODOM_VELOCITY_CAN_ID)
         {
-            data = (int16_t) (data * VELOCITY_CONVERSION_CONSTANT);
+            int16_t data_send = (int16_t) round(data * VELOCITY_CONVERSION_CONSTANT);
+            message.data[0] = (uint8_t) (data_send & 0xFF);
+            message.data[1] = (uint8_t) ((data_send >> 8) & 0xFF);
         }
     else if (id == ODOM_STEERING_CAN_ID)
         {
-            data = (uint16_t) (data);
+            uint16_t data_send = (uint16_t) round(data);
+            message.data[0] = (uint8_t) (data_send & 0xFF);
+            message.data[1] = (uint8_t) ((data_send >> 8) & 0xFF);
         }
-    message.data[0] = (uint8_t) (data_send & 0xFF);
-    message.data[1] = (uint8_t) ((data_send >> 8) & 0xFF);
-    // ESP_LOGD (TAG, "ID: %lu", message.identifier);
-    // ESP_LOGD (TAG, "Data0: %u", message.data[0]);
-    // ESP_LOGD (TAG, "Data1: %u", message.data[1]);
     
     // Queue message for transmission
     if (twai_transmit (&message, pdMS_TO_TICKS (1000)) == ESP_OK)
@@ -148,7 +147,7 @@ can_reading_task ()
 void
 can_writing_task ()
 {
-    int current_velocity;
+    double current_velocity;
     int current_steering;
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_CAN_FREQUENCY);
@@ -158,7 +157,13 @@ can_writing_task ()
             // Get current velocity
             xSemaphoreTake (odomRightVelocityMutex, portMAX_DELAY);
             xSemaphoreTake (odomLeftVelocityMutex, portMAX_DELAY);
-            current_velocity = (odom_right_velocity + odom_left_velocity) / 2;
+            #if ONLY_LEFT_MOTOR
+                current_velocity = odom_left_velocity;
+            #elif ONLY_RIGHT_MOTOR
+                current_velocity = odom_right_velocity;
+            #else
+                current_velocity = (odom_right_velocity + odom_left_velocity) / 2;
+            #endif
             xSemaphoreGive (odomRightVelocityMutex);
             xSemaphoreGive (odomLeftVelocityMutex);
 

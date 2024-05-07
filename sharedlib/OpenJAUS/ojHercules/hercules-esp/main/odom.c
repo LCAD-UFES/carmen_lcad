@@ -76,12 +76,12 @@ left_encoder_task ( void )
     xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     double meters_per_second_per_pulse
-        = (TASK_ENCODER_FREQUENCY * 2 * PI * WHEEL_DIAMETER)
-          / NUMBER_OF_ENCODER_LINES ;// *GEAR_RATIO);
+        = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER)
+          / (PULSES_PER_REVOLUTION);
     while (1)
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_LOGI (TAG, "Left Encoder Pulse Count: %d", pulse_count);
+            ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
             current_velocity = pulse_count * meters_per_second_per_pulse;
             if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
                 odom_left_velocity = current_velocity;
@@ -104,12 +104,12 @@ right_encoder_task ( void )
     xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
     double meters_per_second_per_pulse
-        = (TASK_ENCODER_FREQUENCY * 2 * PI * WHEEL_DIAMETER)
-          / NUMBER_OF_ENCODER_LINES ;//* GEAR_RATIO);
+        = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER)
+          / (PULSES_PER_REVOLUTION);
     while (1)
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_LOGI (TAG, "Right Encoder Pulse Count: %d", pulse_count);
+            ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
             current_velocity = pulse_count * meters_per_second_per_pulse;
             if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
                 odom_right_velocity = current_velocity;

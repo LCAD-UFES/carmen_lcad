@@ -62,6 +62,8 @@ app_main ()
     //             NULL);
     // xTaskCreate (fake_step_motor_task, "Fake Step Motor Task", 8192,
     //             NULL, 1, NULL);
+    // xTaskCreate (measure_encoder_task, "Measure Encoder Task", 8192,
+    //             NULL, 1, NULL);
 
     // Communication
     xTaskCreate (can_reading_task, "CAN Reading Task",
@@ -84,9 +86,7 @@ app_main ()
              NULL, 1, NULL);
     xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
               NULL, 1, NULL);
-
     xTaskCreate (steering_reading_task, "Steering Reading Task",
                 8192, NULL, 1,
                NULL);
-        
 }
