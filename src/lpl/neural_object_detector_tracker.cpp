@@ -6,6 +6,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -14,13 +15,110 @@
 #include <fstream>
 #include <numeric>
 
+#include <cassert>
+
 #include <numpy/arrayobject.h>
 
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+//#include <cuda_provider_factory.h>
+#include <onnxruntime_cxx_api.h>
+#include <codecvt>
+#include <locale>
+#include <memory>
+
 //#define CALIBRATE_CAMERA_LIDAR_ALIGMENT
 //#define USE_TIMER_HANDLER
+
+#include <cstdint>
+#include <cstdlib>
+#include <cmath>
+#include <cstring>
+#include <string>
+#include <vector>
+#include <array>
+#include <algorithm>
+#include <chrono>
+#include <fstream>
+#include <memory>
+
+/* for OpenCV */
+#include <opencv2/opencv.hpp>
+
+bool first_time = true;
+
+Mat image2;
+
+/*** Include ***/
+/* for general */
+#include <cstdint>
+#include <cstdlib>
+#include <string>
+#include <algorithm>
+#include <chrono>
+
+/* for OpenCV */
+#include <opencv2/opencv.hpp>
+
+/* for My modules */
+#include "image_processor.h"
+#include "common_helper_cv.h"
+
+/*** Macro ***/
+#define WORK_DIR   "/home/alefe/play_with_tensorrt/pj_tensorrt_perception_yolopv2/build/resource"
+#define RESOURCE_DIR
+#define DEFAULT_INPUT_IMAGE           
+#define LOOP_NUM_FOR_TIME_MEASUREMENT 5
+static constexpr char kOutputVideoFilename[] = "";  /* out.mp4 */
+
+/*** Function ***/
+int detect_yolo(Mat image)
+{
+    /*** Initialize ***/
+    /* variables for processing time measurement */
+    double total_time_all = 0;
+    double total_time_cap = 0;
+    double total_time_image_process = 0;
+    double total_time_pre_process = 0;
+    double total_time_inference = 0;
+    double total_time_post_process = 0;
+
+    /*** Process for each frame ***/
+    int32_t frame_cnt = 0;
+
+    /* Call image processor library */
+    const auto& time_image_process0 = std::chrono::steady_clock::now();
+
+    ImageProcessor::Result result;
+
+	std::cerr << image.cols<< std::endl;
+
+    ImageProcessor::Process(image, result);
+
+    const auto& time_image_process1 = std::chrono::steady_clock::now();
+
+
+    if (frame_cnt > 1) {
+        frame_cnt--;    /* because the first process was not counted */
+        printf("=== Average processing time ===\n");
+        printf("Total:               %9.3lf [msec]\n", total_time_all / frame_cnt);
+        printf("  Capture:           %9.3lf [msec]\n", total_time_cap / frame_cnt);
+        printf("  Image processing:  %9.3lf [msec]\n", total_time_image_process / frame_cnt);
+        printf("    Pre processing:  %9.3lf [msec]\n", total_time_pre_process / frame_cnt);
+        printf("    Inference:       %9.3lf [msec]\n", total_time_inference / frame_cnt);
+        printf("    Post processing: %9.3lf [msec]\n", total_time_post_process / frame_cnt);
+    }
+
+	image2 = image;
+    return 1;
+}
+
 
 
 #define CAM_DELAY 0.25
@@ -318,15 +416,82 @@ clean_pedestrians(double max_time)
 }
 ///////////////////////////////////////////////////
 //////// Python
+
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <cassert>
+
+cv::Mat show_seg_result(cv::Mat& img, cv::Mat& result, bool is_demo = false) {
+    // Initialize the palette
+    std::vector<cv::Vec3b> palette(3);
+    palette[0] = cv::Vec3b(0, 0, 0);  // Black
+    palette[1] = cv::Vec3b(0, 255, 0);  // Green
+    palette[2] = cv::Vec3b(255, 0, 0);  // Red
+
+    // Prepare color_seg
+    cv::Mat color_seg;
+    if (!is_demo) {
+        // Assume result[0] is the desired matrix for segmentation results
+        color_seg = cv::Mat::zeros(result.rows, result.cols, CV_8UC3);
+        for (int y = 0; y < result.rows; ++y) {
+            for (int x = 0; x < result.cols; ++x) {
+                int label = result.at<int>(y, x);  // Access elements from first matrix in the vector
+                color_seg.at<cv::Vec3b>(y, x) = palette[label];
+            }
+        }
+    } else {
+        //assert(result.size() >= 2); // Ensure there are at least two matrices in the vector
+        color_seg = cv::Mat::zeros(result.rows, result.cols, CV_8UC3);
+        for (int y = 0; y < result.rows; ++y) {
+            for (int x = 0; x < result.cols; ++x) {
+    			if (result.at<int>(y, x) == 1) {
+					color_seg.at<cv::Vec3b>(y, x) = palette[1];  // Green
+				} else if (result.at<int>(y, x) == 2) {
+					color_seg.at<cv::Vec3b>(y, x) = palette[2];  // Red
+				}
+			}
+        }
+    }
+
+    // Overlay color_seg onto img
+	/*
+    for (int y = 0; y < img.rows; ++y) {
+        for (int x = 0; x < img.cols; ++x) {
+            if (cv::mean(color_seg.at<cv::Vec3b>(y, x))[0] != 0) {
+                img.at<cv::Vec3b>(y, x) = 0.5 * img.at<cv::Vec3b>(y, x) + 0.5 * color_seg.at<cv::Vec3b>(y, x);
+            }
+        }
+    }*/
+
+    cv::Mat color_mask;
+    cv::cvtColor(color_seg, color_mask, cv::COLOR_BGR2GRAY);
+    for (int y = 0; y < img.rows; ++y) {
+        for (int x = 0; x < img.cols; ++x) {
+            if (color_mask.at<uchar>(y, x) != 0) {
+                for (int c = 0; c < 3; ++c) {
+                    img.at<cv::Vec3b>(y, x)[c] = 
+                        static_cast<uchar>(0.5 * img.at<cv::Vec3b>(y, x)[c] + 
+                                           0.5 * color_seg.at<cv::Vec3b>(y, x)[c]);
+                }
+            }
+        }
+    }
+
+    return img;
+}
+
+
+
+
 PyObject *python_pedestrian_tracker_function;
 npy_intp image_dimensions[3];
 
 int
 init_python(int image_width, int image_height)
 {
+	
 	Py_Initialize();
 
-	
 
     PyObject *python_module_name = PyUnicode_DecodeFSDefault("demo");
 
@@ -341,10 +506,13 @@ init_python(int image_width, int image_height)
 	}
 	Py_DECREF(python_module_name);
 
+
+
 	try {
         import_array();  // Lança uma exceção em caso de falha
     } catch (...) {
         PyErr_Print();
+		PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
         Py_Finalize();
         return -1;  // Retorna um código de erro
     }
@@ -361,6 +529,8 @@ init_python(int image_width, int image_height)
 	image_dimensions[0] = image_height;           //create shape for numpy array
 	image_dimensions[1] = image_width;
 	image_dimensions[2] = 3;
+	std::cerr << image_height << std::endl;
+	std::cerr << image_width << std::endl;
 
 	printf("------- Python Tracker Ready -------\n");
 	return 0;
@@ -386,15 +556,12 @@ convert_predtions_array(vector<bbox_t> predictions)
 }
 
 cv::Mat numpy_array_to_cv_mat(PyArrayObject* array) {
-	printf("teste entrou aqui2\n");
 	int ndims = PyArray_NDIM(array);    
-
-	printf("teste entrou aqui3\n");
-
     npy_intp* shape = PyArray_DIMS(array);
 
     // Cria uma matriz OpenCV vazia
     cv::Mat mat;
+	std::cerr << "teste" << std::endl;
 	std::cerr << ndims << std::endl;
     // Converte a matriz NumPy para uma matriz OpenCV
     switch (ndims) {
@@ -416,61 +583,63 @@ cv::Mat numpy_array_to_cv_mat(PyArrayObject* array) {
 cv::Mat
 call_python_function(unsigned char* image)
 {
+	static double start_time2 = 0.0;
 
+	double fps;
 
-	printf("teste entrou aqui1\n");
+	std::cerr << "teste4" << std::endl;
+	fps = (carmen_get_time() - start_time2);
+	std::cerr << fps << std::endl;
+	start_time2 = carmen_get_time();
+
 	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);      //convert testVector to a numpy arrayay
 		
-	
-
-
 	    if (!numpy_image_array)
     {
         PyErr_Print();
          // Ou maneje o erro como achar melhor
     }
 
-	// float *array = convert_predtions_array(predictions);
-	printf("entrou aqui2\n");
-	// PyObject* numpy_predictions_array = PyArray_SimpleNewFromData(2, predictions_dimensions, NPY_FLOAT, array);
+	std::cerr << "teste5" << std::endl;
+	fps = (carmen_get_time() - start_time2);
+	std::cerr << fps << std::endl;
+	start_time2 = carmen_get_time();
+
 	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array,NULL); //add this line
-	printf("entrou aqui-yolo\n");
+	///printf("entrou aqui-yolo\n");
 	//PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
 
 	
+	std::cerr << "teste6" << std::endl;
+	fps = (carmen_get_time() - start_time2);
+	std::cerr << fps << std::endl;
+	start_time2 = carmen_get_time();
 
 		// Verificar se ocorreu um erro no Python
 	if (PyErr_Occurred()) {
     	PyErr_Print(); // Imprime o erro e limpa o indicador de erro
+		//Py_Finalize();
     // Lidar com o erro conforme necessário
 	}
 	if (identifications == NULL) {
 		std::cerr << "vetor vazio" << std::endl;
+		//Py_Finalize();
 
-	}
-
-
-	//short *predict = (short*)PyArray_DATA(identifications);
-
-	/*
-	if (predict == NULL)
-	{
-		Py_Finalize();
-		exit (printf("Error: The predctions erro.\n"));
 	} 
-	*/
+
+
 
 	//update_pedestrians(predict); 
 
 	
 
 	cv::Mat img0 = numpy_array_to_cv_mat(identifications);
-	printf("entrou aqui-yolo1\n");
+	//printf("entrou aqui-yolo1\n");
 
     // Exibe a imagem
-	
+	/*
 	if (!img0.empty()) {
-		printf("entrou aqui-yolo2\n");
+		//printf("entrou aqui-yolo2\n");
 		//cv::imshow("Resultado", img0);
 		//cv::waitKey(0);
 	} else {
@@ -479,12 +648,17 @@ call_python_function(unsigned char* image)
 
 	if (PyErr_Occurred())
 		PyErr_Print();
-
+	*/
 	//free(array);
 	Py_DECREF(numpy_image_array);
-	Py_XDECREF(python_pedestrian_tracker_function);
+	//Py_DECREF(python_pedestrian_tracker_function);
 	//Py_DECREF(numpy_predictions_array);
 	Py_DECREF(identifications);
+
+		std::cerr << "teste7" << std::endl;
+	fps = (carmen_get_time() - start_time2);
+	std::cerr << fps << std::endl;
+	start_time2 = carmen_get_time();
 
 	return img0;
 }
@@ -508,7 +682,7 @@ display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, v
 
     sprintf(frame_rate, "FPS = %.2f", fps);
 
-    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+    //putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
@@ -518,7 +692,7 @@ display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, v
         rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
         		Scalar(0, 0, 255), 1);
 
-        putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+        //putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     }
 
 	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
@@ -537,15 +711,16 @@ display_yolopv2(Mat image, double fps)
 	char object_info[25];
     char frame_rate[25];
 
+
     sprintf(frame_rate, "FPS = %.2f", fps);
 
-    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+    //putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
 	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
     //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-    //resize(image, image, Size(600, 300));
+    resize(image, image, Size(640, 480));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
@@ -797,19 +972,19 @@ compute_num_measured_objects(vector<pedestrian> objects_poses)
 void
 show_LIDAR_points(Mat &image, vector<image_cartesian> all_points)
 {
-	for (unsigned int i = 0; i < all_points.size(); i++)
-		circle(image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
+	//for (unsigned int i = 0; i < all_points.size(); i++)
+		//circle(image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
 }
 
 
 void
 show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b)
 {
-	for (unsigned int i = 0; i < points_lists.size(); i++)
+ /*	for (unsigned int i = 0; i < points_lists.size(); i++)
 	{
 		for (unsigned int j = 0; j < points_lists[i].size(); j++)
-			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(b, g, r), 1, 8, 0);
-	}
+			//circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(b, g, r), 1, 8, 0);
+	} */
 }
 
 void
@@ -822,7 +997,7 @@ show_LIDAR_deepth(Mat &image, vector<vector<image_cartesian>> points_lists, int 
 			int rp = rt + double((max_range-distance)/max_range)*double(r-rt);
 			int gp = gt + double((max_range-distance)/max_range)*double(g-gt);
 			int bp = bt + double((max_range-distance)/max_range)*double(b-bt);
-			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(bp, gp, rp), 1, 8, 0);
+		//	circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(bp, gp, rp), 1, 8, 0);
 		}
 	}
 }
@@ -836,17 +1011,18 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
 
 	int max_x = crop_x + crop_width, max_y = crop_y + crop_height;
 
-	for (unsigned int i = 0; i < all_points.size(); i++)
+	/* for (unsigned int i = 0; i < all_points.size(); i++)
 		if (all_points[i].ipx >= crop_x && all_points[i].ipx <= max_x && all_points[i].ipy >= crop_y && all_points[i].ipy <= max_y)
-			circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
+			//circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
+*/
 }
 
 
 void
 display_lidar(Mat &image, vector<image_cartesian> points, int r, int g, int b)
 {
-	for (unsigned int i = 0; i < points.size(); i++)
-		circle(image, Point(points[i].image_x, points[i].image_y), 1, cvScalar(b, g, r), 1, 8, 0);
+	/* for (unsigned int i = 0; i < points.size(); i++)
+		//circle(image, Point(points[i].image_x, points[i].image_y), 1, cvScalar(b, g, r), 1, 8, 0); */
 }
 
 
@@ -860,15 +1036,15 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
     cvtColor(image, image, COLOR_RGB2BGR);
 
 	sprintf(info, "%dx%d", image.cols, image.rows);
-    putText(image, info, Point(10, 15), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+    //putText(image, info, Point(10, 15), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 
     sprintf(info, "FPS %.2f", fps);
-    putText(image, info, Point(10, 30), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+    //putText(image, info, Point(10, 30), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 
 	if (dist_to_pedestrian_track < 200)
 	{
 		sprintf(info, "DIST %.2f", dist_to_pedestrian_track);
-		putText(image, info, Point(10, 45), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
+	//	putText(image, info, Point(10, 45), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 	}
 	
     for (unsigned int i = 0; i < predictions.size(); i++)
@@ -876,7 +1052,7 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 		sprintf(info, "prob %.2f", predictions[i].prob);
 		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
 				Scalar(255, 0, 255), 4);
-		putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+		//putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 	}
 
     for (unsigned int i = 0; i < pedestrian.size(); i++)
@@ -1164,7 +1340,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 
 	if (first_time)
 	{
-		init_python(open_cv_image.cols, open_cv_image.rows);
+		//init_python(open_cv_image.cols, open_cv_image.rows);
 
 		original_img_width = open_cv_image.cols;
 		original_img_height = open_cv_image.rows;
@@ -1200,7 +1376,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 
 		//////// Python
 		
-		open_cv_image = call_python_function(open_cv_image.data);
+		//open_cv_image = call_python_function(open_cv_image.data);
 		
 		insert_missing_pedestrians_in_the_track(predictions);
 		
@@ -1235,6 +1411,7 @@ track_pedestrians(Mat open_cv_image, double timestamp)
 	}
 
 	fps = 1.0 / (carmen_get_time() - start_time);
+	
 	start_time = carmen_get_time();
 	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, original_img_width, original_img_height, crop_x, crop_y, crop_w, crop_h, dist_to_pedestrian_track);
 }
@@ -1283,7 +1460,7 @@ yolo_timer_handler()
 
 	unsigned char* image_data = open_cv_image.data;
 
-	call_python_function(open_cv_image.data);
+	//call_python_function(open_cv_image.data);
 	
 	
 	track_pedestrians(open_cv_image, image_msg->timestamp);
@@ -1294,6 +1471,8 @@ void
 camera_image_handler(camera_message *msg)
 {
 	image_msg = msg;
+	double fps;
+	static double start_time2 = 0.0;
 	
 
 #ifndef USE_TIMER_HANDLER
@@ -1302,21 +1481,39 @@ camera_image_handler(camera_message *msg)
 
 	Mat open_cv_image = Mat(image_msg->images[image_index].height, image_msg->images[image_index].width, CV_8UC3, image_msg->images[image_index].raw_data, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	
-	
-	init_python(open_cv_image.cols, open_cv_image.rows);
+	Mat teste = open_cv_image;
 
-	printf("teste entrou aqui21\n");
+	std::cerr << "teste1" << std::endl;
+	fps = (carmen_get_time() - start_time2);
+	std::cerr << fps << std::endl;
+	start_time2 = carmen_get_time();
+
+
+	
+
+	if (first_time)
+	{
+		
+		first_time = false;
+
+		    ImageProcessor::InputParam input_param = { WORK_DIR};
+    	if (ImageProcessor::Initialize(input_param) != 0) {
+        	printf("Initialization Error\n");
+        
+    	} 
+	}
 
 	cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
 
 	unsigned char* image_data = open_cv_image.data;
+	std::cerr << "teste9" << std::endl;
 
-	Mat img0 = call_python_function(image_data);
+	int erro = detect_yolo(open_cv_image);
 
-	display_yolopv2(img0, 2);
+	Mat img0s = image2;
 
+	display_yolopv2(img0s, fps);
 
-	//track_pedestrians(open_cv_image, image_msg->timestamp);
 #endif
 }
 
@@ -1333,10 +1530,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *msg)
 
 	Mat open_cv_image = Mat(msg->height, msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
-	init_python(open_cv_image.cols, open_cv_image.rows);
+	//init_python(open_cv_image.cols, open_cv_image.rows);
 
-	printf("teste entrou aqui0\n");
-	call_python_function(open_cv_image.data);
+	//printf("teste entrou aqui0\n");
+	//call_python_function(open_cv_image.data);
 
 	//track_pedestrians(open_cv_image, msg->timestamp);
 }
@@ -1424,7 +1621,7 @@ shutdown_module(int signo)
 {
     if (signo == SIGINT) {
         carmen_ipc_disconnect();
-        cvDestroyAllWindows();
+        //cvDestroyAllWindows();
 
         printf("Neural Object Detector: Disconnected.\n");
         exit(0);
@@ -1535,6 +1732,7 @@ initializer()
 	//network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
 
 	//init_python(camera_width, camera_height);
+	//init_python(480, 640);
 }
 
 
@@ -1562,3 +1760,4 @@ main(int argc, char **argv)
 
 	return 0;
 }
+

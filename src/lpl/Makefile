@@ -6,18 +6,33 @@ MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 LINK = g++
 CXXFLAGS = -std=c++11
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include -I/usr/include/python3.8 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/opencv4 -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include -I/usr/include/python3.8 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib 
 
-#IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
+IFLAGS += -I/usr/local/include/onnxruntime/include
+LFLAGS += -L/usr/lib/x86_64-linux-gnu
+#LFLAGS += -L/usr/local/lib
 #LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet3/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
+IFLAGS += -I$(CARMEN_HOME)/src/lpl/play_with_tensorrt/pj_tensorrt_perception_yolopv2/image_processor
+IFLAGS += -I$(CARMEN_HOME)/src/lpl/play_with_tensorrt/common_helper
+
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldkemrs2 
+#LFLAGS += -L/home/alefe/packages_carmen/opencv-4.5.5/build/lib
+LFLAGS += -L/usr/lib/gcc/x86_64-linux-gnu/9
+LFLAGS += -L/usr/lib/x86_64-linux-gnu
+
+LFLAGS += -L/usr/local/cuda/lib64
+LFLAGS += -L$(CARMEN_HOME)/src/lpl/play_with_tensorrt/pj_tensorrt_perception_yolopv2/build/image_processor/common_helper
+LFLAGS += -L$(CARMEN_HOME)/src/lpl/play_with_tensorrt/pj_tensorrt_perception_yolopv2/build/image_processor/inference_helper
+LFLAGS += -L$(CARMEN_HOME)/src/lpl/play_with_tensorrt/pj_tensorrt_perception_yolopv2/build/image_processor
+
+
 
 #LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
 		  -lmoving_objects_interface -ldarknet2 `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
@@ -25,11 +40,33 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
 		  -lcamera_drivers -lpython3.8
 
-LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
-		  -lmoving_objects_interface -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
+#LFLAGS += -lglobal -lipc -lvelodyne_interface  -lpthread -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
+		  -lmoving_objects_interface -lopencv_imgproc -lopencv_imgcodecs -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
 		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
-		  -lcamera_drivers -lpython3.8
+		  -lcamera_drivers -lpython3.8 -lonnxruntime  -lopencv_core -lopencv_features2d -lopencv_highgui  \
+		 -lImageProcessor -lCommonHelper -lInferenceHelper -lopencv_imgproc -lopencv_imgcodecs -lopencv_core  -lopencv_highgui -pthread -fopenmp -lcuda -lcudart \
+		 -lopencv_calib3d -lopencv_core -lopencv_dnn -lopencv_features2d -lopencv_flann -lopencv_gapi -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching -lopencv_video -lopencv_videoio -lopencv_aruco -lopencv_barcode -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_datasets -lopencv_dnn_objdetect -lopencv_dnn_superres -lopencv_dpm -lopencv_face -lopencv_freetype -lopencv_fuzzy -lopencv_hdf -lopencv_hfs -lopencv_img_hash -lopencv_intensity_transform -lopencv_line_descriptor -lopencv_mcc -lopencv_optflow -lopencv_phase_unwrapping -lopencv_plot -lopencv_quality -lopencv_rapid -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_shape -lopencv_stereo -lopencv_structured_light -lopencv_superres -lopencv_surface_matching -lopencv_text -lopencv_tracking -lopencv_videostab -lopencv_wechat_qrcode -lopencv_xfeatures2d -lopencv_ximgproc -lopencv_xobjdetect -lopencv_xphoto \
+		 -lnvinfer -lnvinfer_plugin -lnvonnxparser
+
+LFLAGS += -lglobal -lipc -lvelodyne_interface -lpthread -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
+          -lmoving_objects_interface -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
+          -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
+          -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
+          -lcamera_drivers -lpython3.8 -lonnxruntime -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -lopencv_highgui \
+          -lImageProcessor -lCommonHelper -lInferenceHelper -pthread -fopenmp -lcuda -lcudart -lopencv_calib3d -lopencv_dnn \
+          -lopencv_features2d -lopencv_flann -lopencv_gapi -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching \
+          -lopencv_video -lopencv_videoio -lopencv_aruco -lopencv_barcode -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib \
+          -lopencv_datasets -lopencv_dnn_objdetect -lopencv_dnn_superres -lopencv_dpm -lopencv_face -lopencv_freetype -lopencv_fuzzy \
+          -lopencv_hdf -lopencv_hfs -lopencv_img_hash -lopencv_intensity_transform -lopencv_line_descriptor -lopencv_mcc \
+          -lopencv_optflow -lopencv_phase_unwrapping -lopencv_plot -lopencv_quality -lopencv_rapid -lopencv_reg -lopencv_rgbd \
+          -lopencv_saliency -lopencv_shape -lopencv_stereo -lopencv_structured_light -lopencv_superres -lopencv_surface_matching \
+          -lopencv_text -lopencv_tracking -lopencv_videostab -lopencv_wechat_qrcode -lopencv_xfeatures2d -lopencv_ximgproc \
+          -lopencv_xobjdetect -lopencv_xphoto -lnvinfer -lnvinfer_plugin -lnvonnxparser
+
+LFLAGS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
+
+
 
 SOURCES = neural_object_detector_tracker.cpp
 
