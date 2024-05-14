@@ -10,7 +10,7 @@
 
 
 // Single Motor
-#define ONLY_LEFT_MOTOR 1
+#define ONLY_LEFT_MOTOR 0
 #define ONLY_RIGHT_MOTOR 0
 
 // CAR measurements
@@ -20,9 +20,7 @@
 #define AXLE_SPACING 0.143f
 #define MAX_ANGLE 0.30f
 #define NUMBER_OF_ENCODER_LINES 500.0
-// #define EMPIRICAL_ENCODER_CORRECTION 0.5f
 #define PULSES_PER_REVOLUTION 9014.9f
-
 
 // Utils
 #define CALCULATE_FREQUENCY(f) pdMS_TO_TICKS(1000 / ((float) f))
@@ -86,7 +84,11 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 
 
 // Motors
-#define DUTY_RESOLUTION 8
+#define MOTOR_DUTY_RESOLUTION 8
+#define MOTOR_PID_KP 100.0
+#define MOTOR_PID_KI 0.0
+#define MOTOR_PID_KD 0.0
+#define MOTOR_MAX_PWM ((1 << MOTOR_DUTY_RESOLUTION) - 1)
 
 
 // Encoders
@@ -117,7 +119,7 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 #define STEP_MOTOR_MAX_TRANSIENT_STEPS (STEP_MOTOR_MAX_SPEED_HZ - STEP_MOTOR_INITIAL_SPEED_HZ) / STEP_MOTOR_ACCEL_HZ_PER_S
 
 
-// PWM
+// Servo
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_LOW_SPEED_MODE
 #define LEDC_OUTPUT_IO          PIN_SERVO // Define the output GPIO

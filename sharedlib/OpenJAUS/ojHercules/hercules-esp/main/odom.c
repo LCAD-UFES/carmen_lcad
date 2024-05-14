@@ -82,6 +82,7 @@ left_encoder_task ( void )
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
             ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
+            ESP_LOGD (TAG, "Left Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
             if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
                 odom_left_velocity = current_velocity;
@@ -110,6 +111,7 @@ right_encoder_task ( void )
         {
             ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
             ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
+            ESP_LOGD (TAG, "Right Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
             if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
                 odom_right_velocity = current_velocity;

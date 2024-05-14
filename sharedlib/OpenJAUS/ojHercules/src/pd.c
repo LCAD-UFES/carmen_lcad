@@ -94,7 +94,6 @@ double wheel_speed_moving_average(double *wheel_speed);
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
-	// printf("%lf %lf %lf\n", throttle_effort, breaks_effort, steering_effort);
 	struct can_frame frame;
 
 	if (out_can_sockfd == -1)

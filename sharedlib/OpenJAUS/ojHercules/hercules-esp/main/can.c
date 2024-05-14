@@ -117,8 +117,8 @@ can_reading_task ()
                         ESP_LOGE (TAG, "Failed to take command steering mutex");
                         continue;
                     }
-                    ESP_LOGD (TAG, "CAN Velocity command: %hi", command_velocity);
-                    ESP_LOGD (TAG, "CAN Steering command: %hi", command_steering);
+                    ESP_LOGI (TAG, "CAN Velocity command: %hi", command_velocity);
+                    ESP_LOGI (TAG, "CAN Steering command: %hi", command_steering);
                 }
             else if (message.identifier == COMMAND_CAN_STEP_MOTOR_ID)
                 {
