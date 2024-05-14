@@ -141,6 +141,7 @@ motor_task ( void )
 
     double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;    
     double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
+    double velocity_can_to_pwm = (MOTOR_MAX_PWM) / (CAN_COMMAND_MAX * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
 
     // Task frequency control
     TickType_t xLastWakeTime;
@@ -177,6 +178,7 @@ motor_task ( void )
 
         ESP_LOGI (TAG, "Command velocity left: %d, Command velocity right: %d", command_velocity_left, command_velocity_right);
 
+        #if MOTOR_USE_PID
         if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
             left_current_velocity = odom_left_velocity;
             xSemaphoreGive (commandVelocityMutex);
@@ -188,6 +190,10 @@ motor_task ( void )
             xSemaphoreGive (commandVelocityMutex);
         }
         right_pwm = motor_pid(&right_pid, command_velocity_right, right_current_velocity);
+        #else
+        left_pwm = command_velocity_left * velocity_can_to_pwm;
+        right_pwm = command_velocity_right * velocity_can_to_pwm;
+        #endif
 
         if (left_pwm < 0)
         {
@@ -204,10 +210,10 @@ motor_task ( void )
         {
             right_pwm = -right_pwm;
         }
-        // ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, left_pwm);
-        // ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
-        // ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, right_pwm);
-        // ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
+        ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, left_pwm);
+        ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+        ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, right_pwm);
+        ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
 
         ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
 
