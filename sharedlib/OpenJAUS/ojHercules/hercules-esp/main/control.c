@@ -169,14 +169,14 @@ motor_task ( void )
             ESP_LOGE (TAG, "Failed to take command steering mutex");
             continue;
         }
-        ESP_LOGI (TAG, "CAN Velocity command: %d", velocity_can);
-        ESP_LOGI (TAG, "CAN Steering command: %d", steering_can);
+        ESP_LOGD (TAG, "CAN Velocity command: %d", velocity_can);
+        ESP_LOGD (TAG, "CAN Steering command: %d", steering_can);
 
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = round(velocity_can * (1 + left_to_right_difference));
         command_velocity_left = round(velocity_can * (1 - left_to_right_difference));
 
-        ESP_LOGI (TAG, "Command velocity left: %d, Command velocity right: %d", command_velocity_left, command_velocity_right);
+        ESP_LOGD (TAG, "Command velocity left: %d, Command velocity right: %d", command_velocity_left, command_velocity_right);
 
         #if MOTOR_USE_PID
         if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
@@ -215,7 +215,7 @@ motor_task ( void )
         ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, right_pwm);
         ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
 
-        ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
+        ESP_LOGD(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequency);
     }   
@@ -280,8 +280,8 @@ servo_task ( void )
             received_command_steering = command_steering;
             xSemaphoreGive(commandSteeringMutex);
         }
-
-        target_T_HIGH = (received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH;
+        
+        target_T_HIGH = (received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
         target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
 
         duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;

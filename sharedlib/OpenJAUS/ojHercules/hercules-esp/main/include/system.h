@@ -50,9 +50,9 @@
 
 
 //Task Frequencies in Hz
-#define TASK_CAN_FREQUENCY 1
-#define TASK_ENCODER_FREQUENCY 1
-#define TASK_MOTOR_FREQUENCY 1
+#define TASK_CAN_FREQUENCY 100
+#define TASK_ENCODER_FREQUENCY 50
+#define TASK_MOTOR_FREQUENCY 50
 #define TASK_SERVO_FREQUENCY 1
 #define TASK_STEERING_FREQUENCY 1
 #define TASK_STEP_MOTOR_FREQUENCY 1
@@ -134,6 +134,6 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 #define LEDC_FREQUENCY          100 // Frequency in Hertz.
 #define LEDC_PERIOD (1000000/LEDC_FREQUENCY) // in us
 #define LEDC_INITIAL_DUTY       ((MEDIUM_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY) // Set duty to (1500us/10000us). ((2 ** 11) - 1) 
-
+#define SERVO_BIAS -35
 
 #endif /* SYSTEM_H */
