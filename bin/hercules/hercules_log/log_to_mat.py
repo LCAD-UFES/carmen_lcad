@@ -51,7 +51,7 @@ filenames = []
 for filename in os.listdir('.'):
     if filename.endswith(".log"):  # check for specific file extension if needed
         log_files.append(os.path.join('./', filename))
-        filenames.append(str(filenames[0:-4]))
+        filenames.append(str(filename[0:-4]))
 
 results = []
 for file_path in log_files:
@@ -65,5 +65,7 @@ for result, name in zip(results, filenames):
     results_to_save["t_command_" + name] = result[2]
     results_to_save["v_command_" + name] = result[3]
     results_to_save["theta_command_" + name] = result[4]
+
+print(results_to_save)
 
 scipy.io.savemat('hercules.mat', results_to_save)
