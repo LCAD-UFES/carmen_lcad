@@ -51,7 +51,7 @@ filenames = []
 for filename in os.listdir('.'):
     if filename.endswith(".log"):  # check for specific file extension if needed
         log_files.append(os.path.join('./', filename))
-        filenames.append(str(filename[0:-4]))
+        filenames.append(str(filename[0:-4]).replace('-', '_'))
 
 results = []
 for file_path in log_files:
