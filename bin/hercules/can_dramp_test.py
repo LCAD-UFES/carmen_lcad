@@ -17,7 +17,7 @@ def digital_ramp_test(bus,reverse=False):
             print("\nAccelation phase\n")
             can_msg = 0x0000
             time.sleep(0.0015)
-            while msg.data[1] != 0x30:
+            while msg.data[1] != 0x25:
                 can_msg += 0x0001 * 5
                 msg.data[0] = can_msg & 0xFF
                 msg.data[1] = (can_msg >> 8) & 0xFF
@@ -48,7 +48,7 @@ def digital_ramp_test(bus,reverse=False):
             print("\nAccelation phase\n")
             can_msg = 0xFFFF
             time.sleep(0.0015)
-            while msg.data[1] != 0xCF:
+            while msg.data[1] != 0xDA:
                 can_msg -= 0x0001 * 5
                 msg.data[0] = can_msg & 0xFF
                 msg.data[1] = (can_msg >> 8) & 0xFF
