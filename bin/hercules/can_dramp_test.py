@@ -1,6 +1,7 @@
 import can
 import time
 import logging
+import argparse
 
 def digital_ramp_test(bus,reverse=False):
         print("Starting to send a message every 1.5ms. Initial data is four consecutive 1.5ms")
@@ -22,11 +23,18 @@ def digital_ramp_test(bus,reverse=False):
                 msg.data[1] = (can_msg >> 8) & 0xFF
                 task.modify_data(msg)
                 time.sleep(0.0015)
-                
+
+            #Constant phase
+            print("\nConstant phase\n")
+            time.sleep(0.0015)
+            for i in range(0, 1500):
+                task.modify_data(msg)
+                time.sleep(0.0015)
+
             #Breaking phase
             print("\nBreaking phase\n")
             time.sleep(0.0015)
-            while can_msg !=  0x0000:
+            while can_msg != 0x0000:
                 can_msg -= 0x0001 * 5
                 msg.data[0] = can_msg & 0xFF
                 msg.data[1] = (can_msg >> 8) & 0xFF
@@ -46,7 +54,14 @@ def digital_ramp_test(bus,reverse=False):
                 msg.data[1] = (can_msg >> 8) & 0xFF
                 task.modify_data(msg)
                 time.sleep(0.0015)
-                
+
+            #Constant phase
+            print("\nConstant phase\n")
+            time.sleep(0.0015)
+            for i in range(0, 1500):
+                task.modify_data(msg)
+                time.sleep(0.0015)
+
             #Breaking phase
             print("\nBreaking phase\n")
             time.sleep(0.0015)
@@ -60,15 +75,13 @@ def digital_ramp_test(bus,reverse=False):
             print("done")
 
 def main():
-
-    #reset_msg = can.Message(arbitration_id=0x00, data=[0, 0, 0, 0, 0, 0], is_extended_id=False)
-
-    with can.interface.Bus(bustype='socketcan', channel='can0', bitrate=500000) as bus:
-        digital_ramp_test(bus,True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('Channel', metavar='channel', type=str, help='the channel to be used')
+    parser.add_argument('--reverse', action='store_true', help='reverse the direction of the ramp')
+    args = parser.parse_args()
+    with can.interface.Bus(bustype='socketcan', channel=args.Channel, bitrate=500000) as bus:
+        digital_ramp_test(bus, reverse=args.reverse)
     time.sleep(2)
-    #with can.interface.Bus(bustype='socketcan', channel='vcan0', bitrate=500000) as bus:
-    #    test_periodic_send_with_modifying_data(bus)
-    #time.sleep(2)
 
 if __name__ == "__main__":
     main()
