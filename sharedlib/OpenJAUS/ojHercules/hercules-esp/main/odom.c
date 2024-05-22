@@ -6,6 +6,8 @@
 
 
 static const char* TAG = "ODOM module";
+const TickType_t xFrequencyTaskEncoder = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
+const TickType_t xFrequencyTaskSteering = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
 
 bool
 pcnt_on_reach (pcnt_unit_handle_t unit, const pcnt_watch_event_data_t* edata,
@@ -71,9 +73,10 @@ left_encoder_task ( void )
     
     int pulse_count = 0;
     float current_velocity = 0;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     double meters_per_second_per_pulse
         = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER)
@@ -84,13 +87,14 @@ left_encoder_task ( void )
             ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
             ESP_LOGD (TAG, "Left Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
-            if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-                odom_left_velocity = current_velocity;
-                xSemaphoreGive (odomLeftVelocityMutex);
-            }
+            set_odom_left_velocity(current_velocity);
+            // if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+            //     odom_left_velocity = current_velocity;
+            //     xSemaphoreGive (odomLeftVelocityMutex);
+            // }
             ESP_LOGD (TAG, "Left Motor Current_velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskEncoder);
         }
     
 }
@@ -100,9 +104,10 @@ right_encoder_task ( void )
 {
     int pulse_count = 0;
     float current_velocity = 0;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
     double meters_per_second_per_pulse
         = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER)
@@ -113,13 +118,14 @@ right_encoder_task ( void )
             ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
             ESP_LOGD (TAG, "Right Encoder Pulse Count: %d", pulse_count);
             current_velocity = pulse_count * meters_per_second_per_pulse;
-            if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-                odom_right_velocity = current_velocity;
-                xSemaphoreGive (odomRightVelocityMutex);
-            }
+            set_odom_right_velocity(current_velocity);
+            // if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+            //     odom_right_velocity = current_velocity;
+            //     xSemaphoreGive (odomRightVelocityMutex);
+            // }
             ESP_LOGD (TAG, "Right Motor Current velocity: %.2f", current_velocity);
             ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskEncoder);
         }
 }
 
@@ -147,9 +153,10 @@ steering_reading_task ( void )
     int accumulator = 0;
     int adc_reading = 0;
     adc_oneshot_unit_handle_t adc_handle = adc_setup();
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
     while (1)
         {
             accumulator = 0;
@@ -159,11 +166,12 @@ steering_reading_task ( void )
                     accumulator += adc_reading;
                 }
             accumulator /= 64;
-            if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
-                odom_steering = accumulator;
-                xSemaphoreGive (odomSteeringMutex);
-            }
+            set_odom_steering(accumulator);
+            // if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
+            //     odom_steering = accumulator;
+            //     xSemaphoreGive (odomSteeringMutex);
+            // }
             ESP_LOGD (TAG, "Angle measument: %d",accumulator);
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskSteering);
         }
 }

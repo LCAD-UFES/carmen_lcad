@@ -4,6 +4,7 @@
 #include "math.h"
 
 static const char* TAG = "CAN module";
+const TickType_t xFrequencyTaskCan = CALCULATE_FREQUENCY(TASK_CAN_FREQUENCY);
 
 int
 send_can_message (uint32_t id, double data)
@@ -77,9 +78,10 @@ void
 can_reading_task ()
 {
     twai_message_t message;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_CAN_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_CAN_FREQUENCY);
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount();
     int16_t command_velocity_received;
     int16_t command_steering_received;
     int16_t command_step_motor_received;
@@ -99,24 +101,26 @@ can_reading_task ()
                     ESP_LOGD (TAG, "Command received");
                     command_velocity_received = (message.data[1] << 8) | message.data[0];
                     command_steering_received = (message.data[3] << 8) | message.data[2];
-                    if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-                        command_velocity = command_velocity_received;
-                        xSemaphoreGive (commandVelocityMutex);
-                    }
-                    else
-                    {
-                        ESP_LOGE (TAG, "Failed to take command velocity mutex");
-                        continue;
-                    }
-                    if (xSemaphoreTake (commandSteeringMutex, 1000 / portTICK_PERIOD_MS)){
-                        command_steering = command_steering_received;
-                        xSemaphoreGive (commandSteeringMutex);
-                    }
-                    else
-                    {
-                        ESP_LOGE (TAG, "Failed to take command steering mutex");
-                        continue;
-                    }
+                    set_command_velocity(command_velocity_received);
+                    // if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+                    //     command_velocity = command_velocity_received;
+                    //     xSemaphoreGive (commandVelocityMutex);
+                    // }
+                    // else
+                    // {
+                    //     ESP_LOGE (TAG, "Failed to take command velocity mutex");
+                    //     continue;
+                    // }
+                    set_command_steering(command_steering_received);
+                    // if (xSemaphoreTake (commandSteeringMutex, 1000 / portTICK_PERIOD_MS)){
+                    //     command_steering = command_steering_received;
+                    //     xSemaphoreGive (commandSteeringMutex);
+                    // }
+                    // else
+                    // {
+                    //     ESP_LOGE (TAG, "Failed to take command steering mutex");
+                    //     continue;
+                    // }
                     ESP_LOGD (TAG, "CAN Velocity command: %hi", command_velocity);
                     ESP_LOGD (TAG, "CAN Steering command: %hi", command_steering);
                 }
@@ -124,15 +128,16 @@ can_reading_task ()
                 {
                     ESP_LOGD (TAG, "Command received");
                     command_step_motor_received = (message.data[1] << 8) | message.data[0];
-                    if (xSemaphoreTake (commandStepMotorMutex, 1000 / portTICK_PERIOD_MS)){
-                        command_step_motor = command_step_motor_received;
-                        xSemaphoreGive (commandStepMotorMutex);
-                    }
-                    else
-                    {
-                        ESP_LOGE (TAG, "Failed to take command step motor mutex");
-                        continue;
-                    }
+                    set_command_step_motor(command_step_motor_received);
+                    // if (xSemaphoreTake (commandStepMotorMutex, 1000 / portTICK_PERIOD_MS)){
+                    //     command_step_motor = command_step_motor_received;
+                    //     xSemaphoreGive (commandStepMotorMutex);
+                    // }
+                    // else
+                    // {
+                    //     ESP_LOGE (TAG, "Failed to take command step motor mutex");
+                    //     continue;
+                    // }
                     ESP_LOGD (TAG, "CAN Step Motor command: %hi", command_step_motor);
                 }                 
             else
@@ -140,7 +145,7 @@ can_reading_task ()
                     ESP_LOGW (TAG, "Unknown message ID: %lu\n",
                               message.identifier);
                 }
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskCan);
         }
 }
 
@@ -148,29 +153,40 @@ void
 can_writing_task ()
 {
     double current_velocity;
+    #if TWO_MOTORS
+        double received_odom_left_velocity = 0;
+        double received_odom_right_velocity = 0;
+    #endif
     int current_steering;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_CAN_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_CAN_FREQUENCY);
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
     while (1)
         {
             // Get current velocity
-            xSemaphoreTake (odomRightVelocityMutex, portMAX_DELAY);
-            xSemaphoreTake (odomLeftVelocityMutex, portMAX_DELAY);
+            // xSemaphoreTake (odomRightVelocityMutex, portMAX_DELAY);
+            // xSemaphoreTake (odomLeftVelocityMutex, portMAX_DELAY);
             #if ONLY_LEFT_MOTOR
-                current_velocity = odom_left_velocity;
+                // current_velocity = odom_left_velocity;
+                get_odom_left_velocity(&current_velocity);
             #elif ONLY_RIGHT_MOTOR
-                current_velocity = odom_right_velocity;
+                // current_velocity = odom_right_velocity;
+                get_odom_right_velocity(&current_velocity);
             #else
-                current_velocity = (odom_right_velocity + odom_left_velocity) / 2;
+                get_odom_left_velocity(&received_odom_left_velocity);
+                get_odom_right_velocity(&received_odom_right_velocity);
+                current_velocity = (received_odom_left_velocity + received_odom_right_velocity)/2;
+                // current_velocity = (odom_right_velocity + odom_left_velocity) / 2;
             #endif
-            xSemaphoreGive (odomRightVelocityMutex);
-            xSemaphoreGive (odomLeftVelocityMutex);
+            // xSemaphoreGive (odomRightVelocityMutex);
+            // xSemaphoreGive (odomLeftVelocityMutex);
 
             // Get current steering angle
-            xSemaphoreTake (odomSteeringMutex, portMAX_DELAY);
-            current_steering = odom_steering;
-            xSemaphoreGive (odomSteeringMutex);
+            get_odom_steering(&current_steering);
+            // xSemaphoreTake (odomSteeringMutex, portMAX_DELAY);
+            // current_steering = odom_steering;
+            // xSemaphoreGive (odomSteeringMutex);
 
             // Send can messages
             send_can_message (ODOM_VELOCITY_CAN_ID,
@@ -178,6 +194,6 @@ can_writing_task ()
             send_can_message (ODOM_STEERING_CAN_ID,
                               current_steering);
 
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskCan);
         }
 }

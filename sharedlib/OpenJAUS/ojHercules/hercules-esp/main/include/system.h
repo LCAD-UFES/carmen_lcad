@@ -12,6 +12,7 @@
 // Single Motor
 #define ONLY_LEFT_MOTOR 0
 #define ONLY_RIGHT_MOTOR 0
+#define TWO_MOTORS (~(ONLY_LEFT_MOTOR | ONLY_RIGHT_MOTOR))
 
 // CAR measurements
 #define WHEEL_DIAMETER 0.262f   
@@ -137,3 +138,18 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 #define SERVO_BIAS -35
 
 #endif /* SYSTEM_H */
+
+// General purpose functions
+void get_odom_steering(int* value_receiver);
+void get_odom_left_velocity(double* value_receiver);
+void get_odom_right_velocity(double* value_receiver);
+void get_command_velocity(int* value_receiver);
+void get_command_steering(int* value_receiver);
+void get_command_step_motor(int* value_receiver);
+
+void set_odom_steering(int new_odom_steering);
+void set_odom_left_velocity(double new_left_velocity);
+void set_odom_right_velocity(double new_odom_right_velocity);
+void set_command_velocity(int new_command_velocity);
+void set_command_steering(int new_command_steering);
+void set_command_step_motor(int new_command_step_motor);

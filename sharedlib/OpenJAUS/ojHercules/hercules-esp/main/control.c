@@ -12,6 +12,9 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define CLAMP(min, val, max) MIN(MAX(min, val), max)
 static const char* TAG = "CONTROL module";
+const TickType_t xFrequencyTaskMotor = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY);
+const TickType_t xFrequencyTaskServo = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
+const TickType_t xFrequencyTaskStepMotor = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
 
 typedef struct PID
 {
@@ -109,8 +112,7 @@ motor_pid(PID *pid, int velocity_can, double current_velocity)
 	return CLAMP(-MOTOR_MAX_PWM, (int) round(pid->u_t), MOTOR_MAX_PWM);
 }
 
-void
-motor_task ( void )
+void motor_task (void)
 {
     motor_control_setup();
     
@@ -136,39 +138,42 @@ motor_task ( void )
     int command_velocity_right = 0;
     int left_pwm = 0;
     int right_pwm = 0;
-    double left_current_velocity = 0;
-    double right_current_velocity = 0;
+    //double left_current_velocity = 0;
+    //double right_current_velocity = 0;
 
     double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;    
     double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
     double velocity_can_to_pwm = (MOTOR_MAX_PWM) / (CAN_COMMAND_MAX * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
 
     // Task frequency control
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY);
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
 
     while(1) 
     {
         // Read the global variables of command
-        if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-            velocity_can = command_velocity;
-            xSemaphoreGive (commandVelocityMutex);
-        }
-        else
-        {
-            ESP_LOGE (TAG, "Failed to take command velocity mutex");
-            continue;
-        }
-        if (xSemaphoreTake (commandSteeringMutex, 1000 / portTICK_PERIOD_MS)){
-            steering_can = command_steering;
-            xSemaphoreGive (commandSteeringMutex);
-        }
-        else
-        {
-            ESP_LOGE (TAG, "Failed to take command steering mutex");
-            continue;
-        }
+        get_command_velocity(&velocity_can);
+        // if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+        //     velocity_can = command_velocity;
+        //     xSemaphoreGive (commandVelocityMutex);
+        // }
+        // else
+        // {
+        //     ESP_LOGE (TAG, "Failed to take command velocity mutex");
+        //     continue;
+        // }
+        get_command_steering(&steering_can);
+        // if (xSemaphoreTake (commandSteeringMutex, 1000 / portTICK_PERIOD_MS)){
+        //     steering_can = command_steering;
+        //     xSemaphoreGive (commandSteeringMutex);
+        // }
+        // else
+        // {
+        //     ESP_LOGE (TAG, "Failed to take command steering mutex");
+        //     continue;
+        // }
         ESP_LOGD (TAG, "CAN Velocity command: %d", velocity_can);
         ESP_LOGD (TAG, "CAN Steering command: %d", steering_can);
 
@@ -179,16 +184,18 @@ motor_task ( void )
         ESP_LOGD (TAG, "Command velocity left: %d, Command velocity right: %d", command_velocity_left, command_velocity_right);
 
         #if MOTOR_USE_PID
-        if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-            left_current_velocity = odom_left_velocity;
-            xSemaphoreGive (commandVelocityMutex);
-        }
+        get_odom_left_velocity(&left_current_velocity);
+        // if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+        //     left_current_velocity = odom_left_velocity;
+        //     xSemaphoreGive (commandVelocityMutex);
+        // }
         left_pwm = motor_pid(&left_pid, command_velocity_left, left_current_velocity);
 
-        if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-            right_current_velocity = odom_right_velocity;
-            xSemaphoreGive (commandVelocityMutex);
-        }
+        get_odom_right_velocity(&right_current_velocity);
+        // if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
+        //     right_current_velocity = odom_right_velocity;
+        //     xSemaphoreGive (commandVelocityMutex);
+        // }
         right_pwm = motor_pid(&right_pid, command_velocity_right, right_current_velocity);
         #else
         left_pwm = command_velocity_left * velocity_can_to_pwm;
@@ -217,7 +224,7 @@ motor_task ( void )
 
         ESP_LOGD(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
 
-        vTaskDelayUntil (&xLastWakeTime, xFrequency);
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskMotor);
     }   
 }
 
@@ -260,28 +267,32 @@ config_servo_pin( void )
 void
 servo_task ( void )
 {   
-    double received_command_steering = MEDIUM_T_HIGH; 
+    int received_command_steering = MEDIUM_T_HIGH; 
+    double converted_received_command_steering = (double)received_command_steering;
     double target_T_HIGH = 0;
     int duty_cycle = 0;
 
     double angle_can_to_T_HIGH_coefficient = ((MAX_T_HIGH - MIN_T_HIGH) / (2*CAN_COMMAND_MAX));
 
     // Task frequency control
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
 
     config_servo_pin();
     
     while (1)
     {
-        if( xSemaphoreTake( commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
-        {
-            received_command_steering = command_steering;
-            xSemaphoreGive(commandSteeringMutex);
-        }
+        get_command_steering(&received_command_steering);
+        converted_received_command_steering = (double)received_command_steering;
+        // if( xSemaphoreTake( commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
+        // {
+        //     received_command_steering = command_steering;
+        //     xSemaphoreGive(commandSteeringMutex);
+        // }
         
-        target_T_HIGH = (received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
+        target_T_HIGH = (converted_received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
         target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
 
         duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;
@@ -289,7 +300,7 @@ servo_task ( void )
         ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
         ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 
-        vTaskDelayUntil (&xLastWakeTime, xFrequency);
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskServo);
     }
 }
 
@@ -307,8 +318,7 @@ config_step_motor_pins( void )
     gpio_config(&step_motor_config);
 }
 
-void
-step_motor_task ( void )
+void step_motor_task ( void )
 {
     config_step_motor_pins();
  
@@ -362,22 +372,25 @@ step_motor_task ( void )
     uint32_t decel_samples;
 
     // Task frequency control
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    // TickType_t xLastWakeTime;
+    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
+    // xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
     
     while (1)
     {
-        if( xSemaphoreTake(commandStepMotorMutex, 1000 / portTICK_PERIOD_MS))
-        {
-            received_command_step_motor = command_step_motor * step_motor_can_to_steps;
-            xSemaphoreGive(commandStepMotorMutex);
-        }
+        get_command_step_motor(&received_command_step_motor);
+        received_command_step_motor = received_command_step_motor*step_motor_can_to_steps;
+        // if( xSemaphoreTake(commandStepMotorMutex, 1000 / portTICK_PERIOD_MS))
+        // {
+        //     received_command_step_motor = command_step_motor * step_motor_can_to_steps;
+        //     xSemaphoreGive(commandStepMotorMutex);
+        // }
         num_steps = received_command_step_motor - current_steps;
         if (num_steps == 0)
         {
             gpio_set_level(PIN_A4988_EN, 1);
-            vTaskDelayUntil(&xLastWakeTime, xFrequency);
+            vTaskDelayUntil(&xLastWakeTime, xFrequencyTaskStepMotor);
             continue;
         }
 
@@ -429,6 +442,6 @@ step_motor_task ( void )
         current_steps = received_command_step_motor;
         ESP_LOGD(TAG, "Current steps: %d", current_steps);
         
-        vTaskDelayUntil (&xLastWakeTime, xFrequency);
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskStepMotor);
     }
 }
