@@ -45,7 +45,7 @@ typedef struct ConfigStepMotor
 } ConfigStepMotor;
 
 void
-motor_control_setup (void)
+motor_control_setup ()
 {
     // Setup PWM control
     ledc_timer_config_t pwm_timer = {
@@ -161,7 +161,7 @@ set_motor_direction (int* left_pwm, int* right_pwm)
 }
 
 void
-motor_task (void)
+motor_task ()
 {
     motor_control_setup();
     
@@ -289,7 +289,7 @@ motor_task (void)
 }
 
 void
-config_servo_pin (void)
+config_servo_pin ()
 {
     // Prepare and then apply the PWM timer configuration
     ledc_timer_config_t ledc_timer = {
@@ -321,7 +321,7 @@ calculate_dutyCycle (double T_High)
 }
 
 void
-servo_task (void)
+servo_task ()
 {   
     // Variables used for controlling the servo
     int received_command_steering = MEDIUM_T_HIGH; 
@@ -360,7 +360,7 @@ servo_task (void)
 }
 
 ConfigStepMotor
-config_step_motor (void)
+config_step_motor ()
 {
     ConfigStepMotor config;
     
@@ -381,7 +381,7 @@ config_step_motor (void)
 }
 
 void
-config_step_motor_pins (void)
+config_step_motor_pins ()
 {
     // Setup step motor control
     gpio_config_t step_motor_config = {
@@ -395,7 +395,7 @@ config_step_motor_pins (void)
 }
 
 void
-step_motor_task (void)
+step_motor_task ()
 {
     config_step_motor_pins();
 

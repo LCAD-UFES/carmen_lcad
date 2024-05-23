@@ -122,7 +122,7 @@ fake_commands_task ()
 
 
 void
-fake_step_motor_task (void)
+fake_step_motor_task ()
 {
     config_step_motor_pins();
     int num_steps = 4700;

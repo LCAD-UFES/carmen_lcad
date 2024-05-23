@@ -96,9 +96,11 @@ rmt_new_stepper_motor_curve_encoder (const stepper_motor_curve_encoder_config_t 
 
     // prepare the curve table, in RMT symbol format
     uint32_t curve_step = 0;
-    if (is_accel_curve) {
+    if (is_accel_curve) 
+    {
         curve_step = (config->end_freq_hz - config->start_freq_hz) / (config->sample_points - 1);
-        for (uint32_t i = 0; i < config->sample_points; i++) {
+        for (uint32_t i = 0; i < config->sample_points; i++) 
+        {
             smooth_freq = convert_to_smooth_freq(config->start_freq_hz, config->end_freq_hz, config->start_freq_hz + curve_step * i);
             symbol_duration = config->resolution / smooth_freq / 2;
             step_encoder->curve_table[i].level0 = 0;
@@ -106,9 +108,12 @@ rmt_new_stepper_motor_curve_encoder (const stepper_motor_curve_encoder_config_t 
             step_encoder->curve_table[i].level1 = 1;
             step_encoder->curve_table[i].duration1 = symbol_duration;
         }
-    } else {
+    } 
+    else 
+    {
         curve_step = (config->start_freq_hz - config->end_freq_hz) / (config->sample_points - 1);
-        for (uint32_t i = 0; i < config->sample_points; i++) {
+        for (uint32_t i = 0; i < config->sample_points; i++) 
+        {
             smooth_freq = convert_to_smooth_freq(config->end_freq_hz, config->start_freq_hz, config->end_freq_hz + curve_step * i);
             symbol_duration = config->resolution / smooth_freq / 2;
             step_encoder->curve_table[config->sample_points - i - 1].level0 = 0;
@@ -127,8 +132,10 @@ rmt_new_stepper_motor_curve_encoder (const stepper_motor_curve_encoder_config_t 
     *ret_encoder = &(step_encoder->base);
     return ESP_OK;
 err:
-    if (step_encoder) {
-        if (step_encoder->copy_encoder) {
+    if (step_encoder) 
+    {
+        if (step_encoder->copy_encoder) 
+        {
             rmt_del_encoder(step_encoder->copy_encoder);
         }
         free(step_encoder);
@@ -151,7 +158,8 @@ rmt_new_stepper_motor_uniform_encoder (const stepper_motor_uniform_encoder_confi
     ESP_GOTO_ON_ERROR(rmt_new_copy_encoder(&copy_encoder_config, &step_encoder->copy_encoder), err, TAG, "create copy encoder failed");
 
     // prepare the curve table, in RMT symbol format
-    for (uint32_t i = 0; i < config->sample_points; i++) {
+    for (uint32_t i = 0; i < config->sample_points; i++) 
+    {
         symbol_duration = config->resolution / config->freq_hz / 2;
         step_encoder->curve_table[i].level0 = 0;
         step_encoder->curve_table[i].duration0 = symbol_duration;
