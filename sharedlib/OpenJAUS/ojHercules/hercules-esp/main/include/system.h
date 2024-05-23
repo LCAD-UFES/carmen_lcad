@@ -91,6 +91,7 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 #define MOTOR_PID_KI 0.0
 #define MOTOR_PID_KD 0.0
 #define MOTOR_MAX_PWM ((1 << MOTOR_DUTY_RESOLUTION) - 1)
+#define MOTOR_DEAD_ZONE 2560
 
 
 // Encoders

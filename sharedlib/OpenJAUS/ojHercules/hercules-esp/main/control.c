@@ -172,6 +172,14 @@ motor_task ( void )
         ESP_LOGD (TAG, "CAN Velocity command: %d", velocity_can);
         ESP_LOGD (TAG, "CAN Steering command: %d", steering_can);
 
+        if (velocity_can > 0)
+        {
+            velocity_can += MOTOR_DEAD_ZONE;
+        }
+        else if (velocity_can < 0)
+        {
+            velocity_can -= MOTOR_DEAD_ZONE;
+        }
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = round(velocity_can * (1 + left_to_right_difference));
         command_velocity_left = round(velocity_can * (1 - left_to_right_difference));
