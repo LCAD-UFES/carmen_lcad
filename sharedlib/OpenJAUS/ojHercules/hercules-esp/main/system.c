@@ -4,7 +4,8 @@ static const char *TAG = "Error";
 
 /***********           General purpose functions           ***********/
 // The following functions are used to update the value of global variables
-int get_odom_steering()
+int 
+get_odom_steering ()
 {
     int current_odom_steering = 0;
 
@@ -21,7 +22,8 @@ int get_odom_steering()
     return current_odom_steering;
 }
 
-double get_odom_left_velocity()
+double 
+get_odom_left_velocity ()
 {
     double current_odom_left_velocity = 0;
 
@@ -38,7 +40,8 @@ double get_odom_left_velocity()
     return current_odom_left_velocity;
 }
 
-double get_odom_right_velocity()
+double 
+get_odom_right_velocity ()
 {
     double current_odom_right_velocity = 0;
 
@@ -55,7 +58,8 @@ double get_odom_right_velocity()
     return current_odom_right_velocity;
 }
 
-int get_command_steering()
+int 
+get_command_steering ()
 {
     int current_command_steering = 0;
 
@@ -72,7 +76,8 @@ int get_command_steering()
     return current_command_steering;
 }
 
-int get_command_velocity()
+int 
+get_command_velocity ()
 {
     int current_command_velocity = 0;
 
@@ -89,7 +94,8 @@ int get_command_velocity()
     return current_command_velocity;
 }
 
-int get_command_step_motor()
+int 
+get_command_step_motor ()
 {
     int current_command_step_motor = 0;
 
@@ -107,7 +113,8 @@ int get_command_step_motor()
 }
 
 // The following functions are used to update the value of global variables
-void set_odom_steering(int new_odom_steering)
+void 
+set_odom_steering (int new_odom_steering)
 {
     if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS))
     {
@@ -120,7 +127,8 @@ void set_odom_steering(int new_odom_steering)
     }
 }
 
-void set_odom_left_velocity(double new_left_velocity)
+void 
+set_odom_left_velocity (double new_left_velocity)
 {
     if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS))
     {
@@ -133,7 +141,8 @@ void set_odom_left_velocity(double new_left_velocity)
     }
 }
 
-void set_odom_right_velocity(double new_odom_right_velocity)
+void 
+set_odom_right_velocity (double new_odom_right_velocity)
 {
     if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS))
     {
@@ -146,7 +155,8 @@ void set_odom_right_velocity(double new_odom_right_velocity)
     }
 }
 
-void set_command_velocity(int new_command_velocity)
+void 
+set_command_velocity (int new_command_velocity)
 {
     if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS))
     {
@@ -159,7 +169,8 @@ void set_command_velocity(int new_command_velocity)
     }
 }
 
-void set_command_steering(int new_command_steering)
+void 
+set_command_steering (int new_command_steering)
 {
     if (xSemaphoreTake (commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
     {
@@ -172,7 +183,8 @@ void set_command_steering(int new_command_steering)
     }
 }
 
-void set_command_step_motor(int new_command_step_motor)
+void 
+set_command_step_motor (int new_command_step_motor)
 {
     if (xSemaphoreTake (commandStepMotorMutex, 1000 / portTICK_PERIOD_MS))
     {
@@ -186,7 +198,8 @@ void set_command_step_motor(int new_command_step_motor)
 }
 
 // The following functions limit a variable to a certain range
-double target_limit_double(double insert,double low,double high)
+double 
+target_limit_double (double insert,double low,double high)
 {
     if (insert < low)
         return low;

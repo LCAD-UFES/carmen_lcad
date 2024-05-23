@@ -30,11 +30,13 @@ create_mutexes ()
     commandVelocityMutex = xSemaphoreCreateMutex ();
     commandSteeringMutex = xSemaphoreCreateMutex ();
     commandStepMotorMutex = xSemaphoreCreateMutex ();
+
     if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL || commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL)
     {
         ESP_LOGE(TAG, "Failed to create mutexes");
         return 0;
     }
+    
     return 1;
 }
 
@@ -43,6 +45,7 @@ app_main ()
 {
     if (!create_mutexes ())
     {
+        ESP_LOGE(TAG, "Failed to create mutexes");
         return;
     }
     

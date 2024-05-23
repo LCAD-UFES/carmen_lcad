@@ -76,22 +76,22 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 
 
 // Functions to properly interact with the global variables using the Mutexes
-int get_odom_steering();
-double get_odom_left_velocity();
-double get_odom_right_velocity();
-int get_command_steering();
-int get_command_velocity();
-int get_command_step_motor();
+int get_odom_steering ();
+double get_odom_left_velocity ();
+double get_odom_right_velocity ();
+int get_command_steering ();
+int get_command_velocity ();
+int get_command_step_motor ();
 
-void set_odom_steering(int new_odom_steering);
-void set_odom_left_velocity(double new_left_velocity);
-void set_odom_right_velocity(double new_odom_right_velocity);
-void set_command_velocity(int new_command_velocity);
-void set_command_steering(int new_command_steering);
-void set_command_step_motor(int new_command_step_motor);
+void set_odom_steering (int new_odom_steering);
+void set_odom_left_velocity (double new_left_velocity);
+void set_odom_right_velocity (double new_odom_right_velocity);
+void set_command_velocity (int new_command_velocity);
+void set_command_steering (int new_command_steering);
+void set_command_step_motor (int new_command_step_motor);
 
 // Limiting Functions
-double target_limit_double(double insert,double low,double high);
+double target_limit_double (double insert,double low,double high);
 
 // CAN params
 #define ODOM_VELOCITY_CAN_ID 0x425

@@ -33,8 +33,19 @@ typedef struct PID
     double previous_t;
 } PID;
 
+typedef struct ConfigStepMotor
+{
+    rmt_channel_handle_t motor_chan;
+    rmt_tx_channel_config_t tx_chan_config;
+    stepper_motor_uniform_encoder_config_t accel_encoder_config; 
+    stepper_motor_uniform_encoder_config_t uniform_encoder_config;
+    stepper_motor_uniform_encoder_config_t decel_encoder_config;
+    rmt_encoder_handle_t decel_motor_encoder;
+    rmt_transmit_config_t tx_config;
+} ConfigStepMotor;
+
 void
-motor_control_setup( void )
+motor_control_setup (void)
 {
     // Setup PWM control
     ledc_timer_config_t pwm_timer = {
@@ -44,8 +55,6 @@ motor_control_setup( void )
         .timer_num = LEDC_TIMER_0,
         .clk_cfg = LEDC_AUTO_CLK
     };
-    ledc_timer_config(&pwm_timer);
-
     ledc_channel_config_t pwm_left_channel = {
         .gpio_num = PIN_MOTOR_LEFT_PWM,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
@@ -62,6 +71,7 @@ motor_control_setup( void )
         .duty = 100,
         .hpoint = 0
     };
+    ledc_timer_config(&pwm_timer);
     ledc_channel_config(&pwm_left_channel);
     ledc_channel_config(&pwm_right_channel);
 
@@ -77,7 +87,7 @@ motor_control_setup( void )
 }
 
 double
-get_time_sec()
+get_time_sec ()
 {
     int64_t t = esp_timer_get_time();
 	double t_seconds = (double) t / 1000000.0;
@@ -85,7 +95,7 @@ get_time_sec()
 }
 
 int
-motor_pid(PID *pid, int velocity_can, double current_velocity)
+motor_pid (PID *pid, int velocity_can, double current_velocity)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	if (pid->previous_t == 0.0)
@@ -116,7 +126,42 @@ motor_pid(PID *pid, int velocity_can, double current_velocity)
 	return CLAMP(-MOTOR_MAX_PWM, (int) round(pid->u_t), MOTOR_MAX_PWM);
 }
 
-void motor_task (void)
+int 
+deadzone_correction (int velocity)
+{
+    if (velocity > 0)
+    {
+        return (MOTOR_DEAD_ZONE);
+    }
+    else if (velocity < 0)
+    {
+        return (-MOTOR_DEAD_ZONE);
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void
+set_motor_direction (int* left_pwm, int* right_pwm)
+{
+    if (*(left_pwm) < 0 || *(right_pwm) < 0) //Backwards
+    {
+        *(left_pwm)= -*(left_pwm);
+        *(right_pwm)= -*(right_pwm);
+        gpio_set_level(PIN_MOTOR_DRIVE, 0);
+        gpio_set_level(PIN_MOTOR_REVERSE, 1);
+    }
+    else //Forward
+    {
+        gpio_set_level(PIN_MOTOR_DRIVE, 1);
+        gpio_set_level(PIN_MOTOR_REVERSE, 0);
+    }
+}
+
+void
+motor_task (void)
 {
     motor_control_setup();
     
@@ -180,14 +225,15 @@ void motor_task (void)
         ESP_LOGD (TAG, "CAN Velocity command: %d", velocity_can);
         ESP_LOGD (TAG, "CAN Steering command: %d", steering_can);
 
-        if (velocity_can > 0)
-        {
-            velocity_can += MOTOR_DEAD_ZONE;
-        }
-        else if (velocity_can < 0)
-        {
-            velocity_can -= MOTOR_DEAD_ZONE;
-        }
+        velocity_can += deadzone_correction(velocity_can);
+        // if (velocity_can > 0)
+        // {
+        //     velocity_can += MOTOR_DEAD_ZONE;
+        // }
+        // else if (velocity_can < 0)
+        // {
+        //     velocity_can -= MOTOR_DEAD_ZONE;
+        // }
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = round(velocity_can * (1 + left_to_right_difference));
         command_velocity_left = round(velocity_can * (1 - left_to_right_difference));
@@ -213,21 +259,24 @@ void motor_task (void)
         right_pwm = command_velocity_right * velocity_can_to_pwm;
         #endif
 
-        if (left_pwm < 0)
-        {
-            left_pwm = -left_pwm;
-            gpio_set_level(PIN_MOTOR_DRIVE, 0);
-            gpio_set_level(PIN_MOTOR_REVERSE, 1);
-        }
-        else
-        {
-            gpio_set_level(PIN_MOTOR_DRIVE, 1);
-            gpio_set_level(PIN_MOTOR_REVERSE, 0);
-        }
-        if (right_pwm < 0)
-        {
-            right_pwm = -right_pwm;
-        }
+        set_motor_direction(&left_pwm,&right_pwm);
+
+        //if (left_pwm < 0)
+        //{
+        //   left_pwm = -left_pwm;
+        //    gpio_set_level(PIN_MOTOR_DRIVE, 0);
+        //    gpio_set_level(PIN_MOTOR_REVERSE, 1);
+        //}
+        //else
+        //{
+        //    gpio_set_level(PIN_MOTOR_DRIVE, 1);
+        //    gpio_set_level(PIN_MOTOR_REVERSE, 0);
+        //}
+        //if (right_pwm < 0)
+        //{
+        //    right_pwm = -right_pwm;
+        //}
+
         ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, left_pwm);
         ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
         ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, right_pwm);
@@ -240,7 +289,7 @@ void motor_task (void)
 }
 
 void
-config_servo_pin( void )
+config_servo_pin (void)
 {
     // Prepare and then apply the PWM timer configuration
     ledc_timer_config_t ledc_timer = {
@@ -265,12 +314,14 @@ config_servo_pin( void )
 
 }
 
-int calculate_dutyCycle(double T_High){
+int
+calculate_dutyCycle (double T_High)
+{
     return((T_High/LEDC_PERIOD)*LEDC_MAX_DUTY);
 }
 
 void
-servo_task ( void )
+servo_task (void)
 {   
     // Variables used for controlling the servo
     int received_command_steering = MEDIUM_T_HIGH; 
@@ -308,8 +359,29 @@ servo_task ( void )
     }
 }
 
+ConfigStepMotor
+config_step_motor (void)
+{
+    ConfigStepMotor config;
+    
+    config->motor_chan = NULL;
+    config->tx_chan_config = {
+        .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
+        .gpio_num = PIN_A4988_STEP,
+        .mem_block_symbols = 64,
+        .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
+        .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
+    };
+    ESP_ERROR_CHECK(rmt_new_tx_channel(&(config->tx_chan_config), &(config->motor_chan)));
+
+    gpio_set_level(PIN_A4988_EN, 0);
+    gpio_set_level(PIN_A4988_DIR, 1);
+
+    return config;
+}
+
 void
-config_step_motor_pins( void )
+config_step_motor_pins (void)
 {
     // Setup step motor control
     gpio_config_t step_motor_config = {
@@ -322,22 +394,25 @@ config_step_motor_pins( void )
     gpio_config(&step_motor_config);
 }
 
-void step_motor_task ( void )
+void
+step_motor_task (void)
 {
     config_step_motor_pins();
- 
-    rmt_channel_handle_t motor_chan = NULL;
-    rmt_tx_channel_config_t tx_chan_config = {
-        .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
-        .gpio_num = PIN_A4988_STEP,
-        .mem_block_symbols = 64,
-        .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
-        .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
-    };
-    ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &motor_chan));
 
-    gpio_set_level(PIN_A4988_EN, 0);
-    gpio_set_level(PIN_A4988_DIR, 1);
+    ConfigStepMotor config = config_step_motor();
+ 
+    // rmt_channel_handle_t motor_chan = NULL;
+    // rmt_tx_channel_config_t tx_chan_config = {
+    //     .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
+    //     .gpio_num = PIN_A4988_STEP,
+    //     .mem_block_symbols = 64,
+    //     .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
+    //     .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
+    // };
+    // ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &motor_chan));
+
+    //gpio_set_level(PIN_A4988_EN, 0);
+    //gpio_set_level(PIN_A4988_DIR, 1);
 
     stepper_motor_uniform_encoder_config_t uniform_encoder_config = {
         .resolution = STEP_MOTOR_RESOLUTION_HZ,

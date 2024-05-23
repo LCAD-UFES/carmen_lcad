@@ -9,7 +9,8 @@
 
 static const char *TAG = "stepper_motor_encoder";
 
-static float convert_to_smooth_freq(uint32_t freq1, uint32_t freq2, uint32_t freqx)
+static float 
+convert_to_smooth_freq (uint32_t freq1, uint32_t freq2, uint32_t freqx)
 {
     float normalize_x = ((float)(freqx - freq1)) / (freq2 - freq1);
     // third-order "smoothstep" function: https://en.wikipedia.org/wiki/Smoothstep
@@ -27,7 +28,8 @@ typedef struct {
     rmt_symbol_word_t curve_table[];
 } rmt_stepper_curve_encoder_t;
 
-static size_t rmt_encode_stepper_motor_curve(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+static size_t 
+rmt_encode_stepper_motor_curve (rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
     rmt_encoder_handle_t copy_encoder = motor_encoder->copy_encoder;
@@ -45,7 +47,8 @@ static size_t rmt_encode_stepper_motor_curve(rmt_encoder_t *encoder, rmt_channel
     return encoded_symbols;
 }
 
-static size_t rmt_encode_stepper_motor_curve_uniform(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+static size_t 
+rmt_encode_stepper_motor_curve_uniform (rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
     rmt_encoder_handle_t copy_encoder = motor_encoder->copy_encoder;
@@ -58,8 +61,8 @@ static size_t rmt_encode_stepper_motor_curve_uniform(rmt_encoder_t *encoder, rmt
     return encoded_symbols;
 }
 
-
-static esp_err_t rmt_del_stepper_motor_curve_encoder(rmt_encoder_t *encoder)
+static esp_err_t 
+rmt_del_stepper_motor_curve_encoder (rmt_encoder_t *encoder)
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
     rmt_del_encoder(motor_encoder->copy_encoder);
@@ -67,14 +70,16 @@ static esp_err_t rmt_del_stepper_motor_curve_encoder(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
-static esp_err_t rmt_reset_stepper_motor_curve_encoder(rmt_encoder_t *encoder)
+static esp_err_t 
+rmt_reset_stepper_motor_curve_encoder (rmt_encoder_t *encoder)
 {
     rmt_stepper_curve_encoder_t *motor_encoder = __containerof(encoder, rmt_stepper_curve_encoder_t, base);
     rmt_encoder_reset(motor_encoder->copy_encoder);
     return ESP_OK;
 }
 
-esp_err_t rmt_new_stepper_motor_curve_encoder(const stepper_motor_curve_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder)
+esp_err_t 
+rmt_new_stepper_motor_curve_encoder (const stepper_motor_curve_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder)
 {
     esp_err_t ret = ESP_OK;
     rmt_stepper_curve_encoder_t *step_encoder = NULL;
@@ -131,7 +136,8 @@ err:
     return ret;
 }
 
-esp_err_t rmt_new_stepper_motor_uniform_encoder(const stepper_motor_uniform_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder)
+esp_err_t 
+rmt_new_stepper_motor_uniform_encoder (const stepper_motor_uniform_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder)
 {
     esp_err_t ret = ESP_OK;
     rmt_stepper_curve_encoder_t *step_encoder = NULL;

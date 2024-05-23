@@ -3,7 +3,7 @@
 
 #include "system.h"
 
-void can_reading_task();
-void can_writing_task();
+void can_reading_task ();
+void can_writing_task ();
 
 #endif /* CAN_H */

@@ -122,7 +122,7 @@ fake_commands_task ()
 
 
 void
-fake_step_motor_task ( void )
+fake_step_motor_task (void)
 {
     config_step_motor_pins();
     int num_steps = 4700;
@@ -211,7 +211,7 @@ encoder_setup (int sensor_a, int sensor_b)
 }
 
 void
-measure_encoder_task()
+measure_encoder_task ()
 {
     pcnt_unit_handle_t pcnt_unit = encoder_setup(PIN_LEFT_ENCODER_A, PIN_LEFT_ENCODER_B);
     int pulse_count = 0;

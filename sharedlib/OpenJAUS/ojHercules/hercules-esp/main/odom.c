@@ -60,7 +60,7 @@ encoder_setup(int sensor_a, int sensor_b)
 }
 
 int
-encoder_count_pulses(pcnt_unit_handle_t pcnt_unit)
+encoder_pulse_counter(pcnt_unit_handle_t pcnt_unit)
 {
     int pulse_count;
     ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
@@ -69,16 +69,16 @@ encoder_count_pulses(pcnt_unit_handle_t pcnt_unit)
 }
 
 void
-left_encoder_task ()
+left_encoder_task()
 {
     int pulse_count = 0;
     float current_velocity = 0;
 
-    pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
-    TickType_t xLastWakeTime = xTaskGetTickCount ();
+    pcnt_unit_handle_t pcnt_unit = encoder_setup(PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1)
     {
-        pulse_count = encoder_count_pulses(pcnt_unit);
+        pulse_count = encoder_pulse_counter(pcnt_unit);
         ESP_LOGD (TAG, "Left Encoder Pulse Count: %d", pulse_count);
 
         current_velocity = pulse_count * meters_per_second_per_pulse;
@@ -91,7 +91,7 @@ left_encoder_task ()
 }
 
 void
-right_encoder_task ()
+right_encoder_task()
 {
     int pulse_count = 0;
     float current_velocity = 0;
@@ -100,7 +100,7 @@ right_encoder_task ()
     TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1)
     {
-        pulse_count = encoder_count_pulses(pcnt_unit);
+        pulse_count = encoder_pulse_counter(pcnt_unit);
         ESP_LOGD (TAG, "Right Encoder Pulse Count: %d", pulse_count);
 
         current_velocity = pulse_count * meters_per_second_per_pulse;
@@ -110,7 +110,6 @@ right_encoder_task ()
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskEncoder);
     }
 }
-
 
 adc_oneshot_unit_handle_t
 adc_setup()
@@ -125,6 +124,7 @@ adc_setup()
         .atten = ADC_ATTEN_POTENTIOMETER,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_POTENTIOMETER, &config));
+
     return adc_handle;
 }
 
@@ -135,6 +135,7 @@ steering_reading_task ()
     int adc_reading = 0;
     adc_oneshot_unit_handle_t adc_handle = adc_setup();
     TickType_t xLastWakeTime = xTaskGetTickCount ();
+
     while (1)
     {
         // Uses more than one sample to stabilize output
@@ -147,6 +148,7 @@ steering_reading_task ()
         accumulator /= 64;
         set_odom_steering(accumulator);
         ESP_LOGD (TAG, "Angle measument: %d",accumulator);
+
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskSteering);
     }
 }
