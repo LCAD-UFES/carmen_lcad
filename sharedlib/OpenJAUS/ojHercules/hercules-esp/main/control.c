@@ -15,6 +15,10 @@ static const char* TAG = "CONTROL module";
 const TickType_t xFrequencyTaskMotor = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY);
 const TickType_t xFrequencyTaskServo = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
 const TickType_t xFrequencyTaskStepMotor = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
+const double angle_can_to_T_HIGH_coefficient = ((MAX_T_HIGH - MIN_T_HIGH) / (2*CAN_COMMAND_MAX));
+const double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;    
+const double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
+const double velocity_can_to_pwm = (MOTOR_MAX_PWM) / (CAN_COMMAND_MAX * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
 
 typedef struct PID
 {
@@ -116,6 +120,7 @@ void motor_task (void)
 {
     motor_control_setup();
     
+    // setting up PID for left and right motor
     PID left_pid = {
         .kp = MOTOR_PID_KP,
         .ki = MOTOR_PID_KI,
@@ -138,12 +143,10 @@ void motor_task (void)
     int command_velocity_right = 0;
     int left_pwm = 0;
     int right_pwm = 0;
-    //double left_current_velocity = 0;
-    //double right_current_velocity = 0;
-
-    double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;    
-    double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
-    double velocity_can_to_pwm = (MOTOR_MAX_PWM) / (CAN_COMMAND_MAX * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
+    #if MOTOR_USE_PID
+        double left_current_velocity = 0;
+        double right_current_velocity = 0;
+    #endif
 
     // Task frequency control
     // TickType_t xLastWakeTime;
@@ -154,7 +157,7 @@ void motor_task (void)
     while(1) 
     {
         // Read the global variables of command
-        get_command_velocity(&velocity_can);
+        velocity_can = get_command_velocity();
         // if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS)){
         //     velocity_can = command_velocity;
         //     xSemaphoreGive (commandVelocityMutex);
@@ -164,7 +167,7 @@ void motor_task (void)
         //     ESP_LOGE (TAG, "Failed to take command velocity mutex");
         //     continue;
         // }
-        get_command_steering(&steering_can);
+        steering_can = get_command_steering();
         // if (xSemaphoreTake (commandSteeringMutex, 1000 / portTICK_PERIOD_MS)){
         //     steering_can = command_steering;
         //     xSemaphoreGive (commandSteeringMutex);
@@ -184,14 +187,14 @@ void motor_task (void)
         ESP_LOGD (TAG, "Command velocity left: %d, Command velocity right: %d", command_velocity_left, command_velocity_right);
 
         #if MOTOR_USE_PID
-        get_odom_left_velocity(&left_current_velocity);
+        left_current_velocity = get_odom_left_velocity();
         // if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
         //     left_current_velocity = odom_left_velocity;
         //     xSemaphoreGive (commandVelocityMutex);
         // }
         left_pwm = motor_pid(&left_pid, command_velocity_left, left_current_velocity);
 
-        get_odom_right_velocity(&right_current_velocity);
+        right_current_velocity = get_odom_right_velocity();
         // if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
         //     right_current_velocity = odom_right_velocity;
         //     xSemaphoreGive (commandVelocityMutex);
@@ -228,16 +231,6 @@ void motor_task (void)
     }   
 }
 
-double target_limit_double(double insert,double low,double high)
-{
-    if (insert < low)
-        return low;
-    else if (insert > high)
-        return high;
-    else
-        return insert;	
-}
-
 void
 config_servo_pin( void )
 {
@@ -264,15 +257,18 @@ config_servo_pin( void )
 
 }
 
+int calculate_dutyCycle(double T_High){
+    return((T_High/LEDC_PERIOD)*LEDC_MAX_DUTY);
+}
+
 void
 servo_task ( void )
 {   
+    // Variables used for controlling the servo
     int received_command_steering = MEDIUM_T_HIGH; 
     double converted_received_command_steering = (double)received_command_steering;
     double target_T_HIGH = 0;
     int duty_cycle = 0;
-
-    double angle_can_to_T_HIGH_coefficient = ((MAX_T_HIGH - MIN_T_HIGH) / (2*CAN_COMMAND_MAX));
 
     // Task frequency control
     // TickType_t xLastWakeTime;
@@ -284,7 +280,7 @@ servo_task ( void )
     
     while (1)
     {
-        get_command_steering(&received_command_steering);
+        received_command_steering = get_command_steering();
         converted_received_command_steering = (double)received_command_steering;
         // if( xSemaphoreTake( commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
         // {
@@ -295,7 +291,7 @@ servo_task ( void )
         target_T_HIGH = (converted_received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
         target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
 
-        duty_cycle = (target_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY;
+        duty_cycle = calculate_dutyCycle(target_T_HIGH);
 
         ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
         ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
@@ -379,7 +375,7 @@ void step_motor_task ( void )
     
     while (1)
     {
-        get_command_step_motor(&received_command_step_motor);
+        received_command_step_motor = get_command_step_motor();
         received_command_step_motor = received_command_step_motor*step_motor_can_to_steps;
         // if( xSemaphoreTake(commandStepMotorMutex, 1000 / portTICK_PERIOD_MS))
         // {
@@ -387,6 +383,7 @@ void step_motor_task ( void )
         //     xSemaphoreGive(commandStepMotorMutex);
         // }
         num_steps = received_command_step_motor - current_steps;
+
         if (num_steps == 0)
         {
             gpio_set_level(PIN_A4988_EN, 1);
@@ -394,32 +391,38 @@ void step_motor_task ( void )
             continue;
         }
 
+
         gpio_set_level(PIN_A4988_EN, 0);
         if (num_steps > 0)
         {
             gpio_set_level(PIN_A4988_DIR, 1);
         }
-        else
+        else // if num_steps < 0
         {
             num_steps = -num_steps;
             gpio_set_level(PIN_A4988_DIR, 0);
         }
         
+        // Do the necessary calculations
         transient_steps = MIN(num_steps, STEP_MOTOR_MAX_TRANSIENT_STEPS);
         accel_samples = transient_steps / 2;
         decel_samples = accel_samples;
         uniform_speed_hz = STEP_MOTOR_INITIAL_SPEED_HZ + STEP_MOTOR_ACCEL_HZ_PER_S * accel_samples;
         uniform_steps = num_steps - accel_samples - decel_samples;
 
+        // Prepare acceleration phase
         accel_encoder_config.sample_points = accel_samples;
         accel_encoder_config.end_freq_hz = uniform_speed_hz;
 
+        // Prepare desacceleration phase
         decel_encoder_config.sample_points = decel_samples;
         decel_encoder_config.start_freq_hz = uniform_speed_hz;
 
+        // Setup both phases
         ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(&accel_encoder_config, &accel_motor_encoder));
         ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(&decel_encoder_config, &decel_motor_encoder));
         
+        // Setup uniform phase, if necessary
         if (uniform_steps)
         {
             uniform_encoder_config.sample_points = uniform_steps;
@@ -427,13 +430,16 @@ void step_motor_task ( void )
             ESP_ERROR_CHECK(rmt_new_stepper_motor_uniform_encoder(&uniform_encoder_config, &uniform_motor_encoder));
         }
 
+        // Execute acceleration phase
         ESP_ERROR_CHECK(rmt_transmit(motor_chan, accel_motor_encoder, &accel_samples, sizeof(accel_samples), &tx_config));
         ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
+        // Execute uniform phase, if necessary
         if (uniform_steps)
         {
             ESP_ERROR_CHECK(rmt_transmit(motor_chan, uniform_motor_encoder, &uniform_speed_hz, sizeof(uniform_speed_hz), &tx_config));
             ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
         }
+        // Execute desacceleration phase
         ESP_ERROR_CHECK(rmt_transmit(motor_chan, decel_motor_encoder, &decel_samples, sizeof(decel_samples), &tx_config));
         ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
 
