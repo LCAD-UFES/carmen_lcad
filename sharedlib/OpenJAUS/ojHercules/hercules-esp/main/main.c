@@ -30,12 +30,11 @@ create_mutexes ()
     commandVelocityMutex = xSemaphoreCreateMutex ();
     commandSteeringMutex = xSemaphoreCreateMutex ();
     commandStepMotorMutex = xSemaphoreCreateMutex ();
-    if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL ||
-        commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL)
-        {
-            ESP_LOGE (TAG, "Failed to create mutexes");
-            return 0;
-        }
+    if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL || commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to create mutexes");
+        return 0;
+    }
     return 1;
 }
 
@@ -43,50 +42,28 @@ void
 app_main ()
 {
     if (!create_mutexes ())
-       {
-           return;
-       }
-    if (!can_setup ())
-       {
-           printf ("Failed to setup CAN\n");
-           return;
-       }
+    {
+        return;
+    }
     
     // Testing tasks
-    // xTaskCreate (test_task, "Test Task", 2048, NULL, 1, NULL);
-    // xTaskCreate (fake_odometry_task, "Fake Odometry Task",
-    //              8192, NULL, 1,
-    //              NULL);
-    // xTaskCreate (fake_commands_task, "Fake Commands Task",
-    //             8192, NULL, 1,
-    //             NULL);
-    // xTaskCreate (fake_step_motor_task, "Fake Step Motor Task", 8192,
-    //             NULL, 1, NULL);
-    // xTaskCreate (measure_encoder_task, "Measure Encoder Task", 8192,
-    //             NULL, 1, NULL);
+    // xTaskCreate(test_task, "Test Task", 2048, NULL, 1, NULL);
+    // xTaskCreate(fake_odometry_task, "Fake Odometry Task", 8192, NULL, 1, NULL);
+    // xTaskCreate(fake_commands_task, "Fake Commands Task", 8192, NULL, 1, NULL);
+    // xTaskCreate(fake_step_motor_task, "Fake Step Motor Task", 8192, NULL, 1, NULL);
+    // xTaskCreate(measure_encoder_task, "Measure Encoder Task", 8192, NULL, 1, NULL);
 
     // Communication
-    xTaskCreate (can_reading_task, "CAN Reading Task",
-                8192, NULL , 1,
-                NULL);
-    xTaskCreate (can_writing_task, "CAN Writing Task",
-                8192, NULL, 1,
-                NULL);
+    xTaskCreate(can_reading_task, "CAN Reading Task", 8192, NULL, 1, NULL);
+    xTaskCreate(can_writing_task, "CAN Writing Task", 8192, NULL, 1, NULL);
 
     // Control
-    xTaskCreate (motor_task, "Motor Task", 8192,
-           NULL, 1, NULL);
-    xTaskCreate (servo_task, "Servo Task", 8192,
-              NULL, 1, NULL);
-    xTaskCreate (step_motor_task, "Step Motor Task", 8192,
-               NULL, 1, NULL);
+    xTaskCreate(motor_task, "Motor Task", 8192, NULL, 1, NULL);
+    xTaskCreate(servo_task, "Servo Task", 8192, NULL, 1, NULL);
+    xTaskCreate (step_motor_task, "Step Motor Task", 8192, NULL, 1, NULL);
 
     // Odometry
-    xTaskCreate (left_encoder_task, "L Encoder Task", 1024 * 8,
-             NULL, 1, NULL);
-    xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
-              NULL, 1, NULL);
-    xTaskCreate (steering_reading_task, "Steering Reading Task",
-                8192, NULL, 1,
-               NULL);
+    xTaskCreate(left_encoder_task, "L Encoder Task", 8192, NULL, 1, NULL);
+    xTaskCreate(right_encoder_task, "R Encoder Task", 8192, NULL, 1, NULL);
+    xTaskCreate(steering_reading_task, "Steering Reading Task", 8192, NULL, 1, NULL);
 }

@@ -75,6 +75,22 @@ extern SemaphoreHandle_t commandSteeringMutex;
 extern SemaphoreHandle_t commandStepMotorMutex;
 
 
+// Functions to properly interact with the global variables using the Mutexes
+int get_odom_steering();
+double get_odom_left_velocity();
+double get_odom_right_velocity();
+int get_command_velocity();
+int get_command_steering();
+int get_command_step_motor();
+
+void set_odom_steering(int new_odom_steering);
+void set_odom_left_velocity(double new_left_velocity);
+void set_odom_right_velocity(double new_odom_right_velocity);
+void set_command_velocity(int new_command_velocity);
+void set_command_steering(int new_command_steering);
+void set_command_step_motor(int new_command_step_motor);
+
+
 // CAN params
 #define ODOM_VELOCITY_CAN_ID 0x425
 #define ODOM_STEERING_CAN_ID 0x80
@@ -138,18 +154,3 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 #define SERVO_BIAS -35
 
 #endif /* SYSTEM_H */
-
-// General purpose functions
-void get_odom_steering(int* value_receiver);
-void get_odom_left_velocity(double* value_receiver);
-void get_odom_right_velocity(double* value_receiver);
-void get_command_velocity(int* value_receiver);
-void get_command_steering(int* value_receiver);
-void get_command_step_motor(int* value_receiver);
-
-void set_odom_steering(int new_odom_steering);
-void set_odom_left_velocity(double new_left_velocity);
-void set_odom_right_velocity(double new_odom_right_velocity);
-void set_command_velocity(int new_command_velocity);
-void set_command_steering(int new_command_steering);
-void set_command_step_motor(int new_command_step_motor);
