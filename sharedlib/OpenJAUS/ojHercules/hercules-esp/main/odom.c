@@ -6,6 +6,7 @@
 static const char* TAG = "ODOM module";
 const TickType_t xFrequencyTaskEncoder = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
 const TickType_t xFrequencyTaskSteering = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
+const double meters_per_second_per_pulse = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER) / (PULSES_PER_REVOLUTION);
 
 bool
 pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t* edata, void* user_ctx)
@@ -72,7 +73,6 @@ left_encoder_task ()
 {
     int pulse_count = 0;
     float current_velocity = 0;
-    double meters_per_second_per_pulse = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER) / (PULSES_PER_REVOLUTION);
 
     pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     TickType_t xLastWakeTime = xTaskGetTickCount ();
@@ -95,7 +95,6 @@ right_encoder_task ()
 {
     int pulse_count = 0;
     float current_velocity = 0;
-    double meters_per_second_per_pulse = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER) / (PULSES_PER_REVOLUTION);
 
     pcnt_unit_handle_t pcnt_unit = encoder_setup(PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -129,7 +128,6 @@ adc_setup()
     return adc_handle;
 }
 
-
 void
 steering_reading_task ()
 {
@@ -139,6 +137,7 @@ steering_reading_task ()
     TickType_t xLastWakeTime = xTaskGetTickCount ();
     while (1)
     {
+        // Uses more than one sample to stabilize output
         accumulator = 0;
         for (int i = 0; i < 64; i++)
         {

@@ -75,6 +75,7 @@ can_setup ()
 void
 can_reading_task ()
 {
+    // variables for saving the values temporaly
     twai_message_t message;
     int16_t command_velocity_received;
     int16_t command_steering_received;
@@ -82,9 +83,13 @@ can_reading_task ()
     
     if (!can_setup ())
     {
+        ESP_LOGE (TAG, "Coudn't setup can\n");
         return;
     }
+
+    // Task frequency control
     TickType_t xLastWakeTime = xTaskGetTickCount();
+
     while (1)
     {
         // Receive message
@@ -101,7 +106,7 @@ can_reading_task ()
         // Update global command variables
         if (message.identifier == COMMAND_CAN_CAR_ID)
         {
-            ESP_LOGD (TAG, "Command received");
+            ESP_LOGD (TAG, "Command received for steering and velocity");
             command_velocity_received = (message.data[1] << 8) | message.data[0];
             command_steering_received = (message.data[3] << 8) | message.data[2];
             set_command_velocity(command_velocity_received);
@@ -111,7 +116,7 @@ can_reading_task ()
         }
         else if (message.identifier == COMMAND_CAN_STEP_MOTOR_ID)
         {
-            ESP_LOGD (TAG, "Command received");
+            ESP_LOGD (TAG, "Command received for step motor");
             command_step_motor_received = (message.data[1] << 8) | message.data[0];
             set_command_step_motor(command_step_motor_received);
             ESP_LOGD (TAG, "CAN Step Motor command: %hi", command_step_motor);
@@ -127,12 +132,13 @@ can_reading_task ()
 void
 can_writing_task ()
 {
+    // variables for saving the values temporaly
     double current_velocity;
+    int current_steering;
     #if TWO_MOTORS
         double current_left_velocity;
         double current_right_velocity;
     #endif
-    int current_steering;
 
     TickType_t xLastWakeTime = xTaskGetTickCount ();
     while (1)

@@ -15,7 +15,7 @@ int get_odom_steering()
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to odom steering mutex");
+        ESP_LOGE (TAG, "Failed to take odom steering mutex");
     }
     
     return current_odom_steering;
@@ -32,7 +32,7 @@ double get_odom_left_velocity()
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to odom left velocity mutex");
+        ESP_LOGE (TAG, "Failed to take odom left velocity mutex");
     }
 
     return current_odom_left_velocity;
@@ -49,7 +49,7 @@ double get_odom_right_velocity()
     }
     else
     {
-        ESP_LOGE (TAG, "Failed to odom right velocity mutex");
+        ESP_LOGE (TAG, "Failed to take odom right velocity mutex");
     }
     
     return current_odom_right_velocity;
@@ -66,7 +66,7 @@ int get_command_steering()
     }
     else
     {
-        ESP_LOGE (TAG, "Failed to command steering mutex");
+        ESP_LOGE (TAG, "Failed to take command steering mutex");
     }
 
     return current_command_steering;
@@ -83,7 +83,7 @@ int get_command_velocity()
     }
     else
     {
-        ESP_LOGE (TAG, "Failed to command velocity mutex");
+        ESP_LOGE (TAG, "Failed to take command velocity mutex");
     }
 
     return current_command_velocity;
@@ -100,7 +100,7 @@ int get_command_step_motor()
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to command step motor mutex");
+        ESP_LOGE (TAG, "Failed to take command step motor mutex");
     }
 
     return current_command_step_motor;
@@ -129,7 +129,7 @@ void set_odom_left_velocity(double new_left_velocity)
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to odom left velocity mutex");
+        ESP_LOGE (TAG, "Failed to take odom left velocity mutex");
     }
 }
 
@@ -142,7 +142,7 @@ void set_odom_right_velocity(double new_odom_right_velocity)
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to odom right velocity mutex");
+        ESP_LOGE (TAG, "Failed to take odom right velocity mutex");
     }
 }
 
@@ -155,7 +155,7 @@ void set_command_velocity(int new_command_velocity)
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to command velocity mutex");
+        ESP_LOGE (TAG, "Failed to take command velocity mutex");
     }
 }
 
@@ -168,7 +168,7 @@ void set_command_steering(int new_command_steering)
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to command steering mutex");
+        ESP_LOGE (TAG, "Failed to take command steering mutex");
     }
 }
 
@@ -181,6 +181,17 @@ void set_command_step_motor(int new_command_step_motor)
     } 
     else
     {
-        ESP_LOGE (TAG, "Failed to command step motor mutex");
+        ESP_LOGE (TAG, "Failed to take command step motor mutex");
     }
+}
+
+// The following functions limit a variable to a certain range
+double target_limit_double(double insert,double low,double high)
+{
+    if (insert < low)
+        return low;
+    else if (insert > high)
+        return high;
+    else
+        return insert;	
 }
