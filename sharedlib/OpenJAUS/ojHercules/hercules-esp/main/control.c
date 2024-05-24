@@ -44,6 +44,7 @@ typedef struct ConfigStepMotor
     rmt_transmit_config_t tx_config;
 } ConfigStepMotor;
 
+
 void
 motor_control_setup ()
 {
@@ -336,7 +337,6 @@ servo_task ()
     TickType_t xLastWakeTime = xTaskGetTickCount ();
 
     config_servo_pin();
-    
     while (1)
     {
         received_command_steering = get_command_steering();
@@ -359,26 +359,26 @@ servo_task ()
     }
 }
 
-ConfigStepMotor
-config_step_motor ()
-{
-    ConfigStepMotor config;
+// ConfigStepMotor
+// config_step_motor ()
+// {
+//     ConfigStepMotor config;
     
-    config->motor_chan = NULL;
-    config->tx_chan_config = {
-        .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
-        .gpio_num = PIN_A4988_STEP,
-        .mem_block_symbols = 64,
-        .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
-        .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
-    };
-    ESP_ERROR_CHECK(rmt_new_tx_channel(&(config->tx_chan_config), &(config->motor_chan)));
+//     config->motor_chan = NULL;
+//     config->tx_chan_config = {
+//         .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
+//         .gpio_num = PIN_A4988_STEP,
+//         .mem_block_symbols = 64,
+//         .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
+//         .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
+//     };
+//     ESP_ERROR_CHECK(rmt_new_tx_channel(&(config->tx_chan_config), &(config->motor_chan)));
 
-    gpio_set_level(PIN_A4988_EN, 0);
-    gpio_set_level(PIN_A4988_DIR, 1);
+//     gpio_set_level(PIN_A4988_EN, 0);
+//     gpio_set_level(PIN_A4988_DIR, 1);
 
-    return config;
-}
+//     return config;
+// }
 
 void
 config_step_motor_pins ()
@@ -394,25 +394,94 @@ config_step_motor_pins ()
     gpio_config(&step_motor_config);
 }
 
+void configure_acceleration_phase(stepper_motor_curve_encoder_config_t *accel_encoder_config, uint32_t accel_samples, uint32_t uniform_speed_hz) 
+{
+    accel_encoder_config->sample_points = accel_samples;
+    accel_encoder_config->end_freq_hz = uniform_speed_hz;
+}
+
+void configure_deceleration_phase(stepper_motor_curve_encoder_config_t *decel_encoder_config, uint32_t decel_samples, uint32_t uniform_speed_hz) 
+{
+    decel_encoder_config->sample_points = decel_samples;
+    decel_encoder_config->start_freq_hz = uniform_speed_hz;
+}
+
+void configure_encoders(stepper_motor_curve_encoder_config_t *accel_encoder_config, stepper_motor_curve_encoder_config_t *decel_encoder_config, uint32_t accel_samples, uint32_t uniform_speed_hz, 
+                        uint32_t decel_samples, rmt_encoder_handle_t *accel_motor_encoder, rmt_encoder_handle_t *decel_motor_encoder) 
+{
+    // Configurar fase de aceleração
+    configure_acceleration_phase(accel_encoder_config, accel_samples, uniform_speed_hz);
+    ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(accel_encoder_config, accel_motor_encoder));
+
+    // Configurar fase de desaceleração
+    configure_deceleration_phase(decel_encoder_config, decel_samples, uniform_speed_hz);
+    ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(decel_encoder_config, decel_motor_encoder));
+}
+
+void set_step_motor_direction(int *num_steps) 
+{
+    gpio_set_level(PIN_A4988_EN, 0);
+    if (*num_steps > 0) 
+    {
+        gpio_set_level(PIN_A4988_DIR, 1);
+    } 
+    else 
+    {
+        *num_steps = -(*num_steps);
+        gpio_set_level(PIN_A4988_DIR, 0);
+    }
+}
+
+void execute_phase(rmt_channel_handle_t motor_chan, rmt_encoder_handle_t encoder, void *samples, size_t sample_size, rmt_transmit_config_t *tx_config) 
+{
+    ESP_ERROR_CHECK(rmt_transmit(motor_chan, encoder, samples, sample_size, tx_config));
+    ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
+}
+
+void execute_motor_phases(rmt_channel_handle_t motor_chan, rmt_encoder_handle_t accel_motor_encoder, rmt_encoder_handle_t uniform_motor_encoder, rmt_encoder_handle_t decel_motor_encoder, uint32_t accel_samples, 
+                          uint32_t uniform_speed_hz, uint32_t decel_samples, int uniform_steps, rmt_transmit_config_t *tx_config) 
+{
+    // Executar fase de aceleração
+    execute_phase(motor_chan, accel_motor_encoder, &accel_samples, sizeof(accel_samples), tx_config);
+
+    // Executar fase uniforme, se necessário
+    if (uniform_steps > 0) {
+        execute_phase(motor_chan, uniform_motor_encoder, &uniform_speed_hz, sizeof(uniform_speed_hz), tx_config);
+    }
+
+    // Executar fase de desaceleração
+    execute_phase(motor_chan, decel_motor_encoder, &decel_samples, sizeof(decel_samples), tx_config);
+}
+
+void calculate_steps(int num_steps, int *transient_steps, uint32_t *accel_samples, uint32_t *uniform_speed_hz, int *uniform_steps, uint32_t *decel_samples) 
+{
+    *transient_steps = MIN(num_steps, STEP_MOTOR_MAX_TRANSIENT_STEPS);
+    *accel_samples = *transient_steps / 2;
+    *decel_samples = *accel_samples;
+    *uniform_speed_hz = STEP_MOTOR_INITIAL_SPEED_HZ + STEP_MOTOR_ACCEL_HZ_PER_S * (*accel_samples);
+    *uniform_steps = num_steps - *accel_samples - *decel_samples;
+}
+
+
 void
 step_motor_task ()
 {
     config_step_motor_pins();
 
-    ConfigStepMotor config = config_step_motor();
+    // ConfigStepMotor config = config_step_motor();
  
-    // rmt_channel_handle_t motor_chan = NULL;
-    // rmt_tx_channel_config_t tx_chan_config = {
-    //     .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
-    //     .gpio_num = PIN_A4988_STEP,
-    //     .mem_block_symbols = 64,
-    //     .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
-    //     .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
-    // };
-    // ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &motor_chan));
+    rmt_channel_handle_t motor_chan = NULL;
+    rmt_tx_channel_config_t tx_chan_config = {
+        .clk_src = RMT_CLK_SRC_REF_TICK, // select clock source
+        .gpio_num = PIN_A4988_STEP,
+        .mem_block_symbols = 64,
+        .resolution_hz = STEP_MOTOR_RESOLUTION_HZ,
+        .trans_queue_depth = 10, // set the number of transactions that can be pending in the background
+    };
+    ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &motor_chan));
 
-    //gpio_set_level(PIN_A4988_EN, 0);
-    //gpio_set_level(PIN_A4988_DIR, 1);
+    gpio_set_level(PIN_A4988_EN, 0);
+    gpio_set_level(PIN_A4988_DIR, 1);
 
     stepper_motor_uniform_encoder_config_t uniform_encoder_config = {
         .resolution = STEP_MOTOR_RESOLUTION_HZ,
@@ -474,32 +543,42 @@ step_motor_task ()
             continue;
         }
 
+        // Configurar direção do motor
+        set_step_motor_direction(&num_steps);
 
-        gpio_set_level(PIN_A4988_EN, 0);
-        if (num_steps > 0)
-        {
-            gpio_set_level(PIN_A4988_DIR, 1);
-        }
-        else // if num_steps < 0
-        {
+        if (num_steps < 0) {
             num_steps = -num_steps;
-            gpio_set_level(PIN_A4988_DIR, 0);
         }
+        // gpio_set_level(PIN_A4988_EN, 0);
+        // if (num_steps > 0)
+        // {
+        //     gpio_set_level(PIN_A4988_DIR, 1);
+        // }
+        // else // if num_steps < 0
+        // {
+        //     num_steps = -num_steps;
+        //     gpio_set_level(PIN_A4988_DIR, 0);
+        // }
         
         // Do the necessary calculations
-        transient_steps = MIN(num_steps, STEP_MOTOR_MAX_TRANSIENT_STEPS);
-        accel_samples = transient_steps / 2;
-        decel_samples = accel_samples;
-        uniform_speed_hz = STEP_MOTOR_INITIAL_SPEED_HZ + STEP_MOTOR_ACCEL_HZ_PER_S * accel_samples;
-        uniform_steps = num_steps - accel_samples - decel_samples;
+        calculate_steps(num_steps, &transient_steps, &accel_samples, &uniform_speed_hz, &uniform_steps, &decel_samples);
+        // transient_steps = MIN(num_steps, STEP_MOTOR_MAX_TRANSIENT_STEPS);
+        // accel_samples = transient_steps / 2;
+        // decel_samples = accel_samples;
+        // uniform_speed_hz = STEP_MOTOR_INITIAL_SPEED_HZ + STEP_MOTOR_ACCEL_HZ_PER_S * accel_samples;
+        // uniform_steps = num_steps - accel_samples - decel_samples;
+
+
+        //Prepare accelation & desaccelation phase
+        configure_encoders(&accel_encoder_config, &decel_encoder_config, accel_samples, uniform_speed_hz, decel_samples, &accel_motor_encoder, &decel_motor_encoder);
 
         // Prepare acceleration phase
-        accel_encoder_config.sample_points = accel_samples;
-        accel_encoder_config.end_freq_hz = uniform_speed_hz;
+        // accel_encoder_config.sample_points = accel_samples;
+        // accel_encoder_config.end_freq_hz = uniform_speed_hz;
 
         // Prepare desacceleration phase
-        decel_encoder_config.sample_points = decel_samples;
-        decel_encoder_config.start_freq_hz = uniform_speed_hz;
+        // decel_encoder_config.sample_points = decel_samples;
+        // decel_encoder_config.start_freq_hz = uniform_speed_hz;
 
         // Setup both phases
         ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(&accel_encoder_config, &accel_motor_encoder));
@@ -513,24 +592,34 @@ step_motor_task ()
             ESP_ERROR_CHECK(rmt_new_stepper_motor_uniform_encoder(&uniform_encoder_config, &uniform_motor_encoder));
         }
 
+        // Executar fases do motor
+        execute_motor_phases(motor_chan, accel_motor_encoder, uniform_motor_encoder, decel_motor_encoder, accel_samples, uniform_speed_hz, decel_samples, uniform_steps, &tx_config);
+
         // Execute acceleration phase
-        ESP_ERROR_CHECK(rmt_transmit(motor_chan, accel_motor_encoder, &accel_samples, sizeof(accel_samples), &tx_config));
-        ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
-        // Execute uniform phase, if necessary
-        if (uniform_steps)
-        {
-            ESP_ERROR_CHECK(rmt_transmit(motor_chan, uniform_motor_encoder, &uniform_speed_hz, sizeof(uniform_speed_hz), &tx_config));
-            ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
-        }
+        // ESP_ERROR_CHECK(rmt_transmit(motor_chan, accel_motor_encoder, &accel_samples, sizeof(accel_samples), &tx_config));
+        // ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
+        // // Execute uniform phase, if necessary
+        // if (uniform_steps)
+        // {
+        //     ESP_ERROR_CHECK(rmt_transmit(motor_chan, uniform_motor_encoder, &uniform_speed_hz, sizeof(uniform_speed_hz), &tx_config));
+        //     ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
+        // }
         // Execute desacceleration phase
-        ESP_ERROR_CHECK(rmt_transmit(motor_chan, decel_motor_encoder, &decel_samples, sizeof(decel_samples), &tx_config));
-        ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
+        // ESP_ERROR_CHECK(rmt_transmit(motor_chan, decel_motor_encoder, &decel_samples, sizeof(decel_samples), &tx_config));
+        // ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
 
+        // Logar passos atuais
         printf("accel_steps: %"PRIu32", uniform_steps: %d, decel_steps: %"PRIu32"", accel_samples, uniform_steps, decel_samples);
-
         current_steps = received_command_step_motor;
         ESP_LOGD(TAG, "Current steps: %d", current_steps);
-        
+
+        // Aguardar até o próximo ciclo
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskStepMotor);
     }
 }
+
+
+
+
+
+
