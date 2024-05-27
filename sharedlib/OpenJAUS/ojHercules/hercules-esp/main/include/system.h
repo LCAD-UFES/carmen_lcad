@@ -52,7 +52,7 @@
 
 //Task Frequencies in Hz
 #define TASK_CAN_FREQUENCY 100
-#define TASK_ENCODER_FREQUENCY 50
+#define TASK_ENCODER_FREQUENCY 5
 #define TASK_MOTOR_FREQUENCY 50
 #define TASK_SERVO_FREQUENCY 1
 #define TASK_STEERING_FREQUENCY 1
@@ -99,15 +99,15 @@ double target_limit_double (double insert,double low,double high);
 #define COMMAND_CAN_CAR_ID 0x100
 #define COMMAND_CAN_STEP_MOTOR_ID 0x90
 #define CAN_COMMAND_MAX (100 * 256)
-#define VELOCITY_CONVERSION_CONSTANT 5000.0 // Must match carmen value in oj main.c
+#define VELOCITY_CONVERSION_CONSTANT (CAN_COMMAND_MAX / MAX_VELOCITY) // Must match carmen value in oj main.c
 #define CAM_LIMIT_MAX 65536
 
 
 // Motors
 #define MOTOR_DUTY_RESOLUTION 8
 #define MOTOR_USE_PID 1
-#define MOTOR_PID_KP 80.0
-#define MOTOR_PID_KI 0.0
+#define MOTOR_PID_KP 100.0
+#define MOTOR_PID_KI 10.0
 #define MOTOR_PID_KD 0.0
 #define MOTOR_MAX_PWM ((1 << MOTOR_DUTY_RESOLUTION) - 1)
 #define MOTOR_DEAD_ZONE 2560

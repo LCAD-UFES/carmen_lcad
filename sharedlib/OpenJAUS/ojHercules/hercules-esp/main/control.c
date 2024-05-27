@@ -97,7 +97,7 @@ get_time_sec ()
 }
 
 int
-motor_pid (PID *pid, int velocity_can, double current_velocity)
+motor_pid (PID *pid, double target_velocity, double current_velocity)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	if (pid->previous_t == 0.0)
@@ -108,7 +108,7 @@ motor_pid (PID *pid, int velocity_can, double current_velocity)
 	double t = get_time_sec();
 	double delta_t = t - pid->previous_t;
 
-	double error_t = velocity_can - current_velocity * pid->h;
+	double error_t = target_velocity - current_velocity * pid->h;
     pid->integral_t = pid->integral_t + error_t * delta_t;
 	double derivative_t = (error_t - pid->error_t_1) / delta_t;
 
@@ -146,12 +146,12 @@ deadzone_correction (int velocity)
 }
 
 void
-set_motor_direction (int* left_pwm, int* right_pwm)
+set_motor_direction (int left_pwm, int right_pwm)
 {
-    if (*(left_pwm) < 0 || *(right_pwm) < 0) //Backwards
+    if ((left_pwm) < 0 || (right_pwm) < 0) //Backwards
     {
-        *(left_pwm)= -*(left_pwm);
-        *(right_pwm)= -*(right_pwm);
+        left_pwm = -left_pwm;
+        right_pwm = -right_pwm;
         gpio_set_level(PIN_MOTOR_DRIVE, 0);
         gpio_set_level(PIN_MOTOR_REVERSE, 1);
     }
@@ -160,6 +160,15 @@ set_motor_direction (int* left_pwm, int* right_pwm)
         gpio_set_level(PIN_MOTOR_DRIVE, 1);
         gpio_set_level(PIN_MOTOR_REVERSE, 0);
     }
+}
+
+void
+apply_motor_pwm(int left_pwm, int right_pwm)
+{
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, left_pwm);
+    ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, right_pwm);
+    ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
 }
 
 void
@@ -172,7 +181,7 @@ motor_task ()
         .kp = MOTOR_PID_KP,
         .ki = MOTOR_PID_KI,
         .kd = MOTOR_PID_KD,
-        .h = CAN_COMMAND_MAX / MAX_VELOCITY,
+        .h = 1,
         .error_t_1 = 0.0,
         .integral_t = 0.0,
         .integral_t_1 = 0.0,
@@ -186,8 +195,8 @@ motor_task ()
     int velocity_can = 0;
     int steering_can = 0;
     double left_to_right_difference = 0;
-    int command_velocity_left = 0;
-    int command_velocity_right = 0;
+    double command_velocity_left = 0;
+    double command_velocity_right = 0;
     int left_pwm = 0;
     int right_pwm = 0;
     #if MOTOR_USE_PID
@@ -205,12 +214,12 @@ motor_task ()
         ESP_LOGD (TAG, "CAN Velocity command: %d", velocity_can);
         ESP_LOGD (TAG, "CAN Steering command: %d", steering_can);
 
-        velocity_can += deadzone_correction(velocity_can);
+        // velocity_can += deadzone_correction(velocity_can);
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = velocity_can * (1 + left_to_right_difference) * velocity_can_to_m_s;
         command_velocity_left = velocity_can * (1 - left_to_right_difference) * velocity_can_to_m_s;
         
-        ESP_LOGD (TAG, "Command velocity left: %d, Command velocity right: %d", command_velocity_left, command_velocity_right);
+        ESP_LOGD (TAG, "Command velocity left: %lf, Command velocity right: %lf", command_velocity_left, command_velocity_right);
 
         #if MOTOR_USE_PID
         left_current_velocity = get_odom_left_velocity();
@@ -222,14 +231,10 @@ motor_task ()
         right_pwm = command_velocity_right * velocity_can_to_pwm;
         #endif
 
-        set_motor_direction(&left_pwm,&right_pwm);
+        set_motor_direction(left_pwm, right_pwm);
+        apply_motor_pwm(left_pwm, right_pwm);        
 
-        ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, left_pwm);
-        ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
-        ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, right_pwm);
-        ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
-
-        ESP_LOGD(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
+        ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskMotor);
     }   

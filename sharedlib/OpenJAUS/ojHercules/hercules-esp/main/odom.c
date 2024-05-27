@@ -60,12 +60,25 @@ encoder_setup(int sensor_a, int sensor_b)
 }
 
 int
-encoder_pulse_counter(pcnt_unit_handle_t pcnt_unit)
+encoder_pulse_counter(pcnt_unit_handle_t *pcnt_unit)
 {
     int pulse_count;
-    ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-    ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
+    ESP_ERROR_CHECK (pcnt_unit_get_count (*pcnt_unit, &pulse_count));
+    ESP_ERROR_CHECK(pcnt_unit_clear_count(*pcnt_unit));
     return pulse_count;
+}
+
+double
+read_encoder(pcnt_unit_handle_t *pcnt_unit)
+{
+    int pulse_count = 0;
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     pulse_count += encoder_pulse_counter(pcnt_unit);
+    // }
+    pulse_count = encoder_pulse_counter(pcnt_unit);
+    ESP_LOGD (TAG, "Encoder Pulse Count: %d", pulse_count);
+    return (pulse_count * meters_per_second_per_pulse);
 }
 
 void
@@ -78,16 +91,10 @@ left_encoder_task()
     TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1)
     {
-        pulse_count = encoder_pulse_counter(pcnt_unit);
-        ESP_LOGD (TAG, "Left Encoder Pulse Count: %d", pulse_count);
-
-        current_velocity = pulse_count * meters_per_second_per_pulse;
+        current_velocity = read_encoder(&pcnt_unit);
         set_odom_left_velocity(current_velocity);
-        ESP_LOGD (TAG, "Left Motor Current_velocity: %.2f", current_velocity);
-        
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskEncoder);
     }
-    
 }
 
 void
@@ -100,13 +107,8 @@ right_encoder_task()
     TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1)
     {
-        pulse_count = encoder_pulse_counter(pcnt_unit);
-        ESP_LOGD (TAG, "Right Encoder Pulse Count: %d", pulse_count);
-
-        current_velocity = pulse_count * meters_per_second_per_pulse;
+        current_velocity = read_encoder(&pcnt_unit);
         set_odom_right_velocity(current_velocity);
-        ESP_LOGD (TAG, "Right Motor Current velocity: %.2f", current_velocity);
-
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskEncoder);
     }
 }
