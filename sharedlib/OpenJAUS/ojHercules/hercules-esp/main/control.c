@@ -16,7 +16,8 @@ const TickType_t xFrequencyTaskMotor = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY)
 const TickType_t xFrequencyTaskServo = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
 const TickType_t xFrequencyTaskStepMotor = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
 const double angle_can_to_T_HIGH_coefficient = ((MAX_T_HIGH - MIN_T_HIGH) / (2*CAN_COMMAND_MAX));
-const double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;    
+const double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;
+const double velocity_can_to_m_s = MAX_VELOCITY / CAN_COMMAND_MAX;
 const double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
 const double velocity_can_to_pwm = (MOTOR_MAX_PWM) / (CAN_COMMAND_MAX * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
 
@@ -194,66 +195,27 @@ motor_task ()
         double right_current_velocity = 0;
     #endif
 
-    // Task frequency control
-    // TickType_t xLastWakeTime;
-    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY);
-    // xLastWakeTime = xTaskGetTickCount ();
     TickType_t xLastWakeTime = xTaskGetTickCount ();
 
     while(1) 
     {
         // Read the global variables of command
         velocity_can = get_command_velocity();
-        // if (xSemaphoreTake (commandVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-        //     velocity_can = command_velocity;
-        //     xSemaphoreGive (commandVelocityMutex);
-        // }
-        // else
-        // {
-        //     ESP_LOGE (TAG, "Failed to take command velocity mutex");
-        //     continue;
-        // }
         steering_can = get_command_steering();
-        // if (xSemaphoreTake (commandSteeringMutex, 1000 / portTICK_PERIOD_MS)){
-        //     steering_can = command_steering;
-        //     xSemaphoreGive (commandSteeringMutex);
-        // }
-        // else
-        // {
-        //     ESP_LOGE (TAG, "Failed to take command steering mutex");
-        //     continue;
-        // }
         ESP_LOGD (TAG, "CAN Velocity command: %d", velocity_can);
         ESP_LOGD (TAG, "CAN Steering command: %d", steering_can);
 
         velocity_can += deadzone_correction(velocity_can);
-        // if (velocity_can > 0)
-        // {
-        //     velocity_can += MOTOR_DEAD_ZONE;
-        // }
-        // else if (velocity_can < 0)
-        // {
-        //     velocity_can -= MOTOR_DEAD_ZONE;
-        // }
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
-        command_velocity_right = round(velocity_can * (1 + left_to_right_difference));
-        command_velocity_left = round(velocity_can * (1 - left_to_right_difference));
-
+        command_velocity_right = velocity_can * (1 + left_to_right_difference) * velocity_can_to_m_s;
+        command_velocity_left = velocity_can * (1 - left_to_right_difference) * velocity_can_to_m_s;
+        
         ESP_LOGD (TAG, "Command velocity left: %d, Command velocity right: %d", command_velocity_left, command_velocity_right);
 
         #if MOTOR_USE_PID
         left_current_velocity = get_odom_left_velocity();
-        // if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-        //     left_current_velocity = odom_left_velocity;
-        //     xSemaphoreGive (commandVelocityMutex);
-        // }
         left_pwm = motor_pid(&left_pid, command_velocity_left, left_current_velocity);
-
         right_current_velocity = get_odom_right_velocity();
-        // if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-        //     right_current_velocity = odom_right_velocity;
-        //     xSemaphoreGive (commandVelocityMutex);
-        // }
         right_pwm = motor_pid(&right_pid, command_velocity_right, right_current_velocity);
         #else
         left_pwm = command_velocity_left * velocity_can_to_pwm;
@@ -261,22 +223,6 @@ motor_task ()
         #endif
 
         set_motor_direction(&left_pwm,&right_pwm);
-
-        //if (left_pwm < 0)
-        //{
-        //   left_pwm = -left_pwm;
-        //    gpio_set_level(PIN_MOTOR_DRIVE, 0);
-        //    gpio_set_level(PIN_MOTOR_REVERSE, 1);
-        //}
-        //else
-        //{
-        //    gpio_set_level(PIN_MOTOR_DRIVE, 1);
-        //    gpio_set_level(PIN_MOTOR_REVERSE, 0);
-        //}
-        //if (right_pwm < 0)
-        //{
-        //    right_pwm = -right_pwm;
-        //}
 
         ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, left_pwm);
         ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);

@@ -72,7 +72,7 @@ void
 left_encoder_task()
 {
     int pulse_count = 0;
-    float current_velocity = 0;
+    double current_velocity = 0;
 
     pcnt_unit_handle_t pcnt_unit = encoder_setup(PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -94,7 +94,7 @@ void
 right_encoder_task()
 {
     int pulse_count = 0;
-    float current_velocity = 0;
+    double current_velocity = 0;
 
     pcnt_unit_handle_t pcnt_unit = encoder_setup(PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
     TickType_t xLastWakeTime = xTaskGetTickCount();
