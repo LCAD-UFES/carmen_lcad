@@ -133,12 +133,12 @@ deadzone_correction (int velocity)
 }
 
 void
-set_motor_direction (int left_pwm, int right_pwm)
+set_motor_direction (int *left_pwm, int *right_pwm)
 {
-    if ((left_pwm) < 0 || (right_pwm) < 0) //Backwards
+    if ((*left_pwm) < 0 || (*right_pwm) < 0) //Backwards
     {
-        left_pwm = -left_pwm;
-        right_pwm = -right_pwm;
+        *left_pwm = -(*left_pwm);
+        *right_pwm = -(*right_pwm);
         gpio_set_level(PIN_MOTOR_DRIVE, 0);
         gpio_set_level(PIN_MOTOR_REVERSE, 1);
     }
@@ -218,7 +218,7 @@ motor_task ()
         right_pwm = command_velocity_right * velocity_can_to_pwm;
         #endif
 
-        set_motor_direction(left_pwm, right_pwm);
+        set_motor_direction(&left_pwm, &right_pwm);
         apply_motor_pwm(left_pwm, right_pwm);        
 
         ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);

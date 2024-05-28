@@ -52,7 +52,7 @@
 
 //Task Frequencies in Hz
 #define TASK_CAN_FREQUENCY 100
-#define TASK_ENCODER_FREQUENCY 5
+#define TASK_ENCODER_FREQUENCY 50
 #define TASK_MOTOR_FREQUENCY 50
 #define TASK_SERVO_FREQUENCY 1
 #define TASK_STEERING_FREQUENCY 1
@@ -106,8 +106,8 @@ double target_limit_double (double insert,double low,double high);
 // Motors
 #define MOTOR_DUTY_RESOLUTION 8
 #define MOTOR_USE_PID 1
-#define MOTOR_PID_KP 100.0
-#define MOTOR_PID_KI 10.0
+#define MOTOR_PID_KP 80.0
+#define MOTOR_PID_KI 130.0
 #define MOTOR_PID_KD 0.0
 #define MOTOR_MAX_PWM ((1 << MOTOR_DUTY_RESOLUTION) - 1)
 #define MOTOR_DEAD_ZONE 2560
