@@ -282,9 +282,6 @@ servo_task ()
     int duty_cycle = 0;
 
     // Task frequency control
-    // TickType_t xLastWakeTime;
-    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
-    // xLastWakeTime = xTaskGetTickCount ();
     TickType_t xLastWakeTime = xTaskGetTickCount ();
 
     config_servo_pin();
@@ -292,11 +289,6 @@ servo_task ()
     {
         received_command_steering = get_command_steering();
         converted_received_command_steering = (double)received_command_steering;
-        // if( xSemaphoreTake( commandSteeringMutex, 1000 / portTICK_PERIOD_MS))
-        // {
-        //     received_command_steering = command_steering;
-        //     xSemaphoreGive(commandSteeringMutex);
-        // }
         
         target_T_HIGH = (converted_received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
         target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
@@ -471,20 +463,12 @@ step_motor_task ()
     uint32_t decel_samples;
 
     // Task frequency control
-    // TickType_t xLastWakeTime;
-    // const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
-    // xLastWakeTime = xTaskGetTickCount ();
     TickType_t xLastWakeTime = xTaskGetTickCount ();
     
     while (1)
     {
         received_command_step_motor = get_command_step_motor();
         received_command_step_motor = received_command_step_motor*step_motor_can_to_steps;
-        // if( xSemaphoreTake(commandStepMotorMutex, 1000 / portTICK_PERIOD_MS))
-        // {
-        //     received_command_step_motor = command_step_motor * step_motor_can_to_steps;
-        //     xSemaphoreGive(commandStepMotorMutex);
-        // }
         num_steps = received_command_step_motor - current_steps;
 
         if (num_steps == 0)
@@ -497,39 +481,11 @@ step_motor_task ()
         // Configurar direção do motor
         set_step_motor_direction(&num_steps);
 
-        if (num_steps < 0) {
-            num_steps = -num_steps;
-        }
-        // gpio_set_level(PIN_A4988_EN, 0);
-        // if (num_steps > 0)
-        // {
-        //     gpio_set_level(PIN_A4988_DIR, 1);
-        // }
-        // else // if num_steps < 0
-        // {
-        //     num_steps = -num_steps;
-        //     gpio_set_level(PIN_A4988_DIR, 0);
-        // }
-        
         // Do the necessary calculations
         calculate_steps(num_steps, &transient_steps, &accel_samples, &uniform_speed_hz, &uniform_steps, &decel_samples);
-        // transient_steps = MIN(num_steps, STEP_MOTOR_MAX_TRANSIENT_STEPS);
-        // accel_samples = transient_steps / 2;
-        // decel_samples = accel_samples;
-        // uniform_speed_hz = STEP_MOTOR_INITIAL_SPEED_HZ + STEP_MOTOR_ACCEL_HZ_PER_S * accel_samples;
-        // uniform_steps = num_steps - accel_samples - decel_samples;
-
 
         //Prepare accelation & desaccelation phase
         configure_encoders(&accel_encoder_config, &decel_encoder_config, accel_samples, uniform_speed_hz, decel_samples, &accel_motor_encoder, &decel_motor_encoder);
-
-        // Prepare acceleration phase
-        // accel_encoder_config.sample_points = accel_samples;
-        // accel_encoder_config.end_freq_hz = uniform_speed_hz;
-
-        // Prepare desacceleration phase
-        // decel_encoder_config.sample_points = decel_samples;
-        // decel_encoder_config.start_freq_hz = uniform_speed_hz;
 
         // Setup both phases
         ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(&accel_encoder_config, &accel_motor_encoder));
@@ -545,19 +501,6 @@ step_motor_task ()
 
         // Executar fases do motor
         execute_motor_phases(motor_chan, accel_motor_encoder, uniform_motor_encoder, decel_motor_encoder, accel_samples, uniform_speed_hz, decel_samples, uniform_steps, &tx_config);
-
-        // Execute acceleration phase
-        // ESP_ERROR_CHECK(rmt_transmit(motor_chan, accel_motor_encoder, &accel_samples, sizeof(accel_samples), &tx_config));
-        // ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
-        // // Execute uniform phase, if necessary
-        // if (uniform_steps)
-        // {
-        //     ESP_ERROR_CHECK(rmt_transmit(motor_chan, uniform_motor_encoder, &uniform_speed_hz, sizeof(uniform_speed_hz), &tx_config));
-        //     ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
-        // }
-        // Execute desacceleration phase
-        // ESP_ERROR_CHECK(rmt_transmit(motor_chan, decel_motor_encoder, &decel_samples, sizeof(decel_samples), &tx_config));
-        // ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
 
         // Logar passos atuais
         printf("accel_steps: %"PRIu32", uniform_steps: %d, decel_steps: %"PRIu32"", accel_samples, uniform_steps, decel_samples);

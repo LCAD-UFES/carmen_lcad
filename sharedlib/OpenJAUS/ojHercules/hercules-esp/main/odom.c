@@ -72,10 +72,6 @@ double
 read_encoder(pcnt_unit_handle_t *pcnt_unit)
 {
     int pulse_count = 0;
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     pulse_count += encoder_pulse_counter(pcnt_unit);
-    // }
     pulse_count = encoder_pulse_counter(pcnt_unit);
     ESP_LOGD (TAG, "Encoder Pulse Count: %d", pulse_count);
     return (pulse_count * meters_per_second_per_pulse);
