@@ -413,7 +413,7 @@ void update_wheels_speed(struct can_frame frame)
 
 void update_car_speed(struct can_frame frame)
 {
-	short int int_vel = frame.data[0] << 8 | frame.data[1];
+	short int int_vel = frame.data[1] << 8 | frame.data[0];
 	car_speed = (double) int_vel * VELOCITY_CONVERSION_CONSTANT;
 }
 
