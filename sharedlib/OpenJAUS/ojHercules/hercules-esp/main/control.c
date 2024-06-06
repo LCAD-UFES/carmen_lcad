@@ -163,7 +163,10 @@ void
 reset_pid_error(PID* left_pid,PID* right_pid)
 {
     left_pid -> integral_t = 0;
+    left_pid -> integral_t_1 = 0;
+    
     right_pid -> integral_t = 0;
+    right_pid -> integral_t_1 = 0;
     // left_pid -> error_t_1 = 0;
     // right_pid -> error_t_1 = 0;
 }
