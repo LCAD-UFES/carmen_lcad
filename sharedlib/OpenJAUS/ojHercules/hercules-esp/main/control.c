@@ -162,8 +162,10 @@ apply_motor_pwm(int left_pwm, int right_pwm)
 void
 reset_pid_error(PID* left_pid,PID* right_pid)
 {
-    left_pid -> error_t_1 = 0;
-    right_pid -> error_t_1 = 0;
+    left_pid -> integral_t = 0;
+    right_pid -> integral_t = 0;
+    // left_pid -> error_t_1 = 0;
+    // right_pid -> error_t_1 = 0;
 }
 
 void
@@ -222,10 +224,11 @@ motor_task ()
         left_pwm = motor_pid(&left_pid, command_velocity_left, left_current_velocity);
         right_current_velocity = get_odom_right_velocity();
         right_pwm = motor_pid(&right_pid, command_velocity_right, right_current_velocity);
-        
-        if(get_reset_error_and_angle_counter() = RESET_TIMER)
+
+        if(get_reset_error_and_angle_counter() >= RESET_TIMER)
         {
             set_command_steering(0);
+            set_command_velocity(0);
             reset_pid_error(&left_pid,&right_pid);
             set_reset_error_and_angle_counter(0);
         }
@@ -233,9 +236,10 @@ motor_task ()
         #else
         left_pwm = command_velocity_left * velocity_can_to_pwm;
         right_pwm = command_velocity_right * velocity_can_to_pwm;
-        if(get_reset_error_and_angle_counter() = RESET_TIMER)
+        if(get_reset_error_and_angle_counter() >= RESET_TIMER)
         {
             set_command_steering(0);
+            set_command_velocity(0);
             set_reset_error_and_angle_counter(0);
         }
         #endif
@@ -243,7 +247,7 @@ motor_task ()
         set_motor_direction(&left_pwm, &right_pwm);
         apply_motor_pwm(left_pwm, right_pwm);        
 
-        ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
+        ESP_LOGD(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskMotor);
     }   
@@ -517,7 +521,7 @@ step_motor_task ()
 void
 reset_error_and_angle_task()
 {
-    // Variables used for controlling the servo
+    // Contador para ver se é necessário resetar o erro e o ângulo
     int received_reset_error_and_angle_counter = 0; 
 
     // Task frequency control
@@ -525,10 +529,10 @@ reset_error_and_angle_task()
 
     while (1)
     {
+
         received_reset_error_and_angle_counter = get_reset_error_and_angle_counter();
         received_reset_error_and_angle_counter++;
         set_reset_error_and_angle_counter(received_reset_error_and_angle_counter);
-
         vTaskDelayUntil (&xLastWakeTime, xFrequencyResetErrorAndAngle);
     } 
 }
