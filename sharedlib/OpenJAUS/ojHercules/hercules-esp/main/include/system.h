@@ -54,10 +54,11 @@
 #define TASK_CAN_FREQUENCY 100
 #define TASK_ENCODER_FREQUENCY 50
 #define TASK_MOTOR_FREQUENCY 50
-#define TASK_SERVO_FREQUENCY 1
-#define TASK_STEERING_FREQUENCY 1
+#define TASK_SERVO_FREQUENCY 50
+#define TASK_STEERING_FREQUENCY 50
 #define TASK_STEP_MOTOR_FREQUENCY 1
 #define TASK_TEST_FREQUENCY 1
+#define TASK_RESET_ERROR_AND_ANGLE_FREQUENCY 1
 
 
 // Global variables
@@ -67,6 +68,8 @@ extern int odom_steering;
 extern int command_velocity;
 extern int command_steering;
 extern int command_step_motor;
+extern char reset_error_and_angle_counter;
+extern SemaphoreHandle_t resetErrorAndAngleCounterMutex;
 extern SemaphoreHandle_t odomLeftVelocityMutex;
 extern SemaphoreHandle_t odomRightVelocityMutex;
 extern SemaphoreHandle_t odomSteeringMutex;
@@ -89,6 +92,8 @@ void set_odom_right_velocity (double new_odom_right_velocity);
 void set_command_velocity (int new_command_velocity);
 void set_command_steering (int new_command_steering);
 void set_command_step_motor (int new_command_step_motor);
+char get_reset_error_and_angle_counter ();
+void set_reset_error_and_angle_counter (char new_reset_error_and_angle_counter);
 
 // Limiting Functions
 double target_limit_double (double insert,double low,double high);
@@ -155,5 +160,9 @@ double target_limit_double (double insert,double low,double high);
 #define LEDC_PERIOD (1000000/LEDC_FREQUENCY) // in us
 #define LEDC_INITIAL_DUTY       ((MEDIUM_T_HIGH/LEDC_PERIOD)*LEDC_MAX_DUTY) // Set duty to (1500us/10000us). ((2 ** 11) - 1) 
 #define SERVO_BIAS -35
+
+// Reset Error and Angle
+#define RESET_TIMER 3
+
 
 #endif /* SYSTEM_H */

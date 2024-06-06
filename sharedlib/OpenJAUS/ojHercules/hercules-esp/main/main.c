@@ -13,12 +13,14 @@ SemaphoreHandle_t odomSteeringMutex = NULL;
 SemaphoreHandle_t commandVelocityMutex = NULL;
 SemaphoreHandle_t commandSteeringMutex = NULL;
 SemaphoreHandle_t commandStepMotorMutex = NULL;
+SemaphoreHandle_t resetErrorAndAngleCounterMutex = NULL;
 double odom_left_velocity = 0;
 double odom_right_velocity = 0;
 int odom_steering = 0;
 int command_velocity = 0;
 int command_steering = 0;
 int command_step_motor = 0;
+char reset_error_and_angle_counter = 0;
 
 int
 create_mutexes ()
@@ -30,8 +32,9 @@ create_mutexes ()
     commandVelocityMutex = xSemaphoreCreateMutex ();
     commandSteeringMutex = xSemaphoreCreateMutex ();
     commandStepMotorMutex = xSemaphoreCreateMutex ();
+    resetErrorAndAngleCounterMutex = xSemaphoreCreateMutex ();
 
-    if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL || commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL)
+    if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL || commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL || resetErrorAndAngleCounterMutex = NULL)
     {
         ESP_LOGE(TAG, "Failed to create mutexes");
         return 0;
@@ -63,7 +66,8 @@ app_main ()
     // Control
     xTaskCreate(motor_task, "Motor Task", 8192, NULL, 1, NULL);
     xTaskCreate(servo_task, "Servo Task", 8192, NULL, 1, NULL);
-    xTaskCreate (step_motor_task, "Step Motor Task", 8192, NULL, 1, NULL);
+    xTaskCreate(step_motor_task, "Step Motor Task", 8192, NULL, 1, NULL);
+    xTaskCreate(reset_error_and_angle_task, "Reset E/A Task", 8192, NULL, 1, NULL);
 
     // Odometry
     xTaskCreate(left_encoder_task, "L Encoder Task", 8192, NULL, 1, NULL);

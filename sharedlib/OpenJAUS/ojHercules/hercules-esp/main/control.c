@@ -13,6 +13,7 @@ static const char* TAG = "CONTROL module";
 const TickType_t xFrequencyTaskMotor = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY);
 const TickType_t xFrequencyTaskServo = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
 const TickType_t xFrequencyTaskStepMotor = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
+const TickType_t xFrequencyResetErrorAndAngle = CALCULATE_FREQUENCY(TASK_RESET_ERROR_AND_ANGLE_FREQUENCY);
 const double angle_can_to_T_HIGH_coefficient = ((MAX_T_HIGH - MIN_T_HIGH) / (2*CAN_COMMAND_MAX));
 const double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;
 const double velocity_can_to_m_s = MAX_VELOCITY / CAN_COMMAND_MAX;
@@ -159,6 +160,13 @@ apply_motor_pwm(int left_pwm, int right_pwm)
 }
 
 void
+reset_pid_error(PID* left_pid,PID* right_pid)
+{
+    left_pid -> error_t_1 = 0;
+    right_pid -> error_t_1 = 0;
+}
+
+void
 motor_task ()
 {
     motor_control_setup();
@@ -209,13 +217,27 @@ motor_task ()
         ESP_LOGD (TAG, "Command velocity left: %lf, Command velocity right: %lf", command_velocity_left, command_velocity_right);
 
         #if MOTOR_USE_PID
+
         left_current_velocity = get_odom_left_velocity();
         left_pwm = motor_pid(&left_pid, command_velocity_left, left_current_velocity);
         right_current_velocity = get_odom_right_velocity();
         right_pwm = motor_pid(&right_pid, command_velocity_right, right_current_velocity);
+        
+        if(get_reset_error_and_angle_counter() = RESET_TIMER)
+        {
+            set_command_steering(0);
+            reset_pid_error(&left_pid,&right_pid);
+            set_reset_error_and_angle_counter(0);
+        }
+
         #else
         left_pwm = command_velocity_left * velocity_can_to_pwm;
         right_pwm = command_velocity_right * velocity_can_to_pwm;
+        if(get_reset_error_and_angle_counter() = RESET_TIMER)
+        {
+            set_command_steering(0);
+            set_reset_error_and_angle_counter(0);
+        }
         #endif
 
         set_motor_direction(&left_pwm, &right_pwm);
@@ -357,19 +379,22 @@ config_step_motor_pins ()
     gpio_config(&step_motor_config);
 }
 
-void configure_curve_phase(stepper_motor_curve_encoder_config_t *encoder_config, uint32_t samples, uint32_t uniform_speed_hz)
+void 
+configure_curve_phase(stepper_motor_curve_encoder_config_t *encoder_config, uint32_t samples, uint32_t uniform_speed_hz)
 {
     encoder_config->sample_points = samples;
     encoder_config->end_freq_hz = uniform_speed_hz;
 }
 
-void configure_uniform_phase(stepper_motor_uniform_encoder_config_t *encoder_config, uint32_t samples, uint32_t uniform_speed_hz)
+void 
+configure_uniform_phase(stepper_motor_uniform_encoder_config_t *encoder_config, uint32_t samples, uint32_t uniform_speed_hz)
 {
     encoder_config->sample_points = samples;
     encoder_config->freq_hz = uniform_speed_hz;
 }
 
-void configure_encoders(ConfigStepMotor *config, uint32_t accel_samples, uint32_t uniform_speed_hz, uint32_t decel_samples, int uniform_steps) 
+void 
+configure_encoders(ConfigStepMotor *config, uint32_t accel_samples, uint32_t uniform_speed_hz, uint32_t decel_samples, int uniform_steps) 
 {
     // Configurar fase de aceleração
     configure_curve_phase(&(config->accel_encoder_config), accel_samples, uniform_speed_hz);
@@ -387,7 +412,8 @@ void configure_encoders(ConfigStepMotor *config, uint32_t accel_samples, uint32_
     ESP_ERROR_CHECK(rmt_new_stepper_motor_curve_encoder(&(config->decel_encoder_config), &(config->decel_motor_encoder)));
 }
 
-void set_step_motor_direction(int *num_steps) 
+void 
+set_step_motor_direction(int *num_steps) 
 {
     gpio_set_level(PIN_A4988_EN, 0);
     if (*num_steps > 0) 
@@ -401,13 +427,15 @@ void set_step_motor_direction(int *num_steps)
     }
 }
 
-void execute_phase(rmt_channel_handle_t motor_chan, rmt_encoder_handle_t encoder, void *samples, size_t sample_size, rmt_transmit_config_t *tx_config) 
+void 
+execute_phase(rmt_channel_handle_t motor_chan, rmt_encoder_handle_t encoder, void *samples, size_t sample_size, rmt_transmit_config_t *tx_config) 
 {
     ESP_ERROR_CHECK(rmt_transmit(motor_chan, encoder, samples, sample_size, tx_config));
     ESP_ERROR_CHECK(rmt_tx_wait_all_done(motor_chan, 10000));
 }
 
-void execute_motor_phases(ConfigStepMotor *config, int32_t accel_samples, uint32_t uniform_speed_hz, uint32_t decel_samples, int uniform_steps) 
+void 
+execute_motor_phases(ConfigStepMotor *config, int32_t accel_samples, uint32_t uniform_speed_hz, uint32_t decel_samples, int uniform_steps) 
 {
     // Executar fase de aceleração
     execute_phase(config->motor_chan, config->accel_motor_encoder, &accel_samples, sizeof(accel_samples), &(config->tx_config));
@@ -421,7 +449,8 @@ void execute_motor_phases(ConfigStepMotor *config, int32_t accel_samples, uint32
     execute_phase(config->motor_chan, config->decel_motor_encoder, &decel_samples, sizeof(decel_samples), &(config->tx_config));
 }
 
-void calculate_steps(int num_steps, int *transient_steps, uint32_t *accel_samples, uint32_t *uniform_speed_hz, int *uniform_steps, uint32_t *decel_samples) 
+void 
+calculate_steps(int num_steps, int *transient_steps, uint32_t *accel_samples, uint32_t *uniform_speed_hz, int *uniform_steps, uint32_t *decel_samples) 
 {
     *transient_steps = MIN(num_steps, STEP_MOTOR_MAX_TRANSIENT_STEPS);
     *accel_samples = *transient_steps / 2;
@@ -485,7 +514,24 @@ step_motor_task ()
     }
 }
 
+void
+reset_error_and_angle_task()
+{
+    // Variables used for controlling the servo
+    int received_reset_error_and_angle_counter = 0; 
 
+    // Task frequency control
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
+
+    while (1)
+    {
+        received_reset_error_and_angle_counter = get_reset_error_and_angle_counter();
+        received_reset_error_and_angle_counter++;
+        set_reset_error_and_angle_counter(received_reset_error_and_angle_counter);
+
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyResetErrorAndAngle);
+    } 
+}
 
 
 

@@ -112,6 +112,24 @@ get_command_step_motor ()
     return current_command_step_motor;
 }
 
+char
+get_reset_error_and_angle_counter ()
+{
+    char current_reset_error_and_angle_counter = 0;
+
+    if (xSemaphoreTake (resetErrorAndAngleCounterMutex, 1000 / portTICK_PERIOD_MS))
+    {
+        current_reset_error_and_angle_counter = reset_error_and_angle_counter;
+        xSemaphoreGive (resetErrorAndAngleCounterMutex);
+    } 
+    else
+    {
+        ESP_LOGE (TAG, "Failed to take command reset error and angle mutex");
+    }
+
+    return current_reset_error_and_angle_counter;
+}
+
 // The following functions are used to update the value of global variables
 void 
 set_odom_steering (int new_odom_steering)
@@ -195,6 +213,20 @@ set_command_step_motor (int new_command_step_motor)
     {
         ESP_LOGE (TAG, "Failed to take command step motor mutex");
     }
+}
+
+void
+set_reset_error_and_angle_counter (char new_reset_error_and_angle_counter)
+{
+    if (xSemaphoreTake (resetErrorAndAngleCounterMutex, 1000 / portTICK_PERIOD_MS))
+    {
+        reset_error_and_angle_counter = new_reset_error_and_angle_counter;
+        xSemaphoreGive (resetErrorAndAngleCounterMutex);
+    } 
+    else
+    {
+        ESP_LOGE (TAG, "Failed to take command reset error and angle mutex");
+    }  
 }
 
 // The following functions limit a variable to a certain range

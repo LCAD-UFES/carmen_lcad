@@ -113,6 +113,7 @@ can_reading_task ()
             set_command_steering(command_steering_received);
             ESP_LOGD (TAG, "CAN Velocity command: %hi", command_velocity);
             ESP_LOGD (TAG, "CAN Steering command: %hi", command_steering);
+            set_reset_error_and_angle_counter(0);
         }
         else if (message.identifier == COMMAND_CAN_STEP_MOTOR_ID)
         {
