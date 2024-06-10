@@ -245,12 +245,12 @@ motor_task ()
             set_command_velocity(0);
             set_reset_error_and_angle_counter(0);
         }
-        #endif
+        #endif    
 
         set_motor_direction(&left_pwm, &right_pwm);
-        apply_motor_pwm(left_pwm, right_pwm);        
+        apply_motor_pwm(left_pwm, right_pwm); 
 
-        ESP_LOGD(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
+        ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskMotor);
     }   
