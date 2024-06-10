@@ -283,18 +283,31 @@ config_servo_pin ()
 }
 
 int
-calculate_dutyCycle (double T_High)
+calculate_duty_cycle (int command_steering, int current_steering_angle)
 {
-    return((T_High/LEDC_PERIOD)*LEDC_MAX_DUTY);
+    current_steering_angle += (double) command_steering / 2560.0;
+    if (current_steering_angle > CAN_COMMAND_MAX)
+        current_steering_angle = CAN_COMMAND_MAX;
+    else if (current_steering_angle < CAN_COMMAND_MAX)
+        current_steering_angle = CAN_COMMAND_MAX;
+
+    double target_T_HIGH = (current_steering_angle * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
+    target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
+    return (T_High / LEDC_PERIOD) * LEDC_MAX_DUTY;
+}
+
+void
+servo_apply_voltage(int duty_cycle)
+{
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 }
 
 void
 servo_task ()
 {   
-    // Variables used for controlling the servo
     int received_command_steering = MEDIUM_T_HIGH; 
-    double converted_received_command_steering = (double)received_command_steering;
-    double target_T_HIGH = 0;
+    int current_steering_angle = 0;
     int duty_cycle = 0;
 
     // Task frequency control
@@ -304,15 +317,9 @@ servo_task ()
     while (1)
     {
         received_command_steering = get_command_steering();
-        converted_received_command_steering = (double)received_command_steering;
-        
-        target_T_HIGH = (converted_received_command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
-        target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
-
-        duty_cycle = calculate_dutyCycle(target_T_HIGH);
-
-        ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
-        ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+        current_steering_angle = get_odom_steering();
+        duty_cycle = calculate_duty_cycle(received_command_steering, current_steering_angle);
+        servo_apply_voltage(duty_cycle);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskServo);
     }

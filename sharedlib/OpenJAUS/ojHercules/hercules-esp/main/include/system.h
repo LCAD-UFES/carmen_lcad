@@ -79,12 +79,12 @@ extern SemaphoreHandle_t commandStepMotorMutex;
 
 
 // Functions to properly interact with the global variables using the Mutexes
-int get_odom_steering ();
-double get_odom_left_velocity ();
-double get_odom_right_velocity ();
-int get_command_steering ();
-int get_command_velocity ();
-int get_command_step_motor ();
+int get_odom_steering (); // CAN unit
+double get_odom_left_velocity (); // m/s unit
+double get_odom_right_velocity (); // m/s unit
+int get_command_steering (); // CAN unit
+int get_command_velocity (); // CAN unit
+int get_command_step_motor (); // CAN unit
 
 void set_odom_steering (int new_odom_steering);
 void set_odom_left_velocity (double new_left_velocity);
