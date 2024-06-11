@@ -143,7 +143,8 @@ steering_reading_task ()
             adc_oneshot_read(adc_handle, ADC_CHANNEL_POTENTIOMETER, &adc_reading);
             accumulator += adc_reading;
         }
-        accumulator /= 64;
+        accumulator /= (64);
+        accumulator -= POTENTIOMETER_BIAS;
         set_odom_steering(accumulator);
         ESP_LOGD (TAG, "Angle measument: %d",accumulator);
 

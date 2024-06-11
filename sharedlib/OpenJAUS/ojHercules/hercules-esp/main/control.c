@@ -231,6 +231,7 @@ motor_task ()
         if(get_reset_error_and_angle_counter() >= RESET_TIMER)
         {
             set_command_steering(0);
+            set_command_steering_effort(0);
             set_command_velocity(0);
             reset_pid_error(&left_pid,&right_pid);
             set_reset_error_and_angle_counter(0);
@@ -250,7 +251,7 @@ motor_task ()
         set_motor_direction(&left_pwm, &right_pwm);
         apply_motor_pwm(left_pwm, right_pwm); 
 
-        ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
+        //ESP_LOGI(TAG, "Left PWM: %d, Right PWM: %d", left_pwm, right_pwm);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskMotor);
     }   
@@ -282,18 +283,31 @@ config_servo_pin ()
 
 }
 
-int
-calculate_duty_cycle (int command_steering, int current_steering_angle)
-{
-    current_steering_angle += (double) command_steering / 2560.0;
-    if (current_steering_angle > CAN_COMMAND_MAX)
-        current_steering_angle = CAN_COMMAND_MAX;
-    else if (current_steering_angle < CAN_COMMAND_MAX)
-        current_steering_angle = CAN_COMMAND_MAX;
+// Function to convert from can(25600~0 and 65535~(65535-25600)) to 25600~-25600
+int convert_can_to_effort(int command_steering_effort) {
+    if (command_steering_effort > ((CAM_LIMIT_MAX-1)/2)) {
+        command_steering_effort -= (CAM_LIMIT_MAX);
+    }
+    return command_steering_effort;
+}
 
-    double target_T_HIGH = (current_steering_angle * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
+// Function to convert a value from 0-4095 to the range -25600 to 25600
+int convert_steering_to_effort_unit(int current_steering_angle) {      
+    current_steering_angle = (current_steering_angle - (MAX_MEASURE_POTENTIOMETER/2)) * (2*CAN_COMMAND_MAX) / (MAX_MEASURE_POTENTIOMETER);
+    return current_steering_angle;
+}
+
+int calculate_duty_cycle(int command_angle) {
+
+    if (command_angle > CAN_COMMAND_MAX)
+        command_angle = CAN_COMMAND_MAX;
+    else if (command_angle < -(CAN_COMMAND_MAX))
+        command_angle = -(CAN_COMMAND_MAX);
+
+    double target_T_HIGH = (command_steering * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
     target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
-    return (T_High / LEDC_PERIOD) * LEDC_MAX_DUTY;
+    ESP_LOGD(TAG, "T_HIGH: %lf\n", target_T_HIGH);
+    return (target_T_HIGH / LEDC_PERIOD) * LEDC_MAX_DUTY;
 }
 
 void
@@ -306,7 +320,8 @@ servo_apply_voltage(int duty_cycle)
 void
 servo_task ()
 {   
-    int received_command_steering = MEDIUM_T_HIGH; 
+    int target_command_steering = 0;
+    int received_command_steering_effort = 0; 
     int current_steering_angle = 0;
     int duty_cycle = 0;
 
@@ -316,9 +331,18 @@ servo_task ()
     config_servo_pin();
     while (1)
     {
-        received_command_steering = get_command_steering();
+        received_command_steering_effort = get_command_steering_effort(); 
         current_steering_angle = get_odom_steering();
-        duty_cycle = calculate_duty_cycle(received_command_steering, current_steering_angle);
+
+        received_command_steering_effort = convert_can_to_effort(received_command_steering_effort);
+        current_steering_angle = convert_steering_to_effort_unit(current_steering_angle);
+
+        target_command_steering = get_command_steering();
+        target_command_steering += (received_command_steering_effort/2560);
+        set_command_steering(target_command_steering);
+
+        ESP_LOGI(TAG, "Current steering angle: %d Command Steering: %d\n", current_steering_angle, target_command_steering);
+        duty_cycle = calculate_duty_cycle(target_command_steering);
         servo_apply_voltage(duty_cycle);
 
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskServo);

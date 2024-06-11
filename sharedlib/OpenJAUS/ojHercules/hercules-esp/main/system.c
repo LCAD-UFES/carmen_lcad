@@ -77,6 +77,24 @@ get_command_steering ()
 }
 
 int 
+get_command_steering_effort ()
+{
+    int current_command_steering_effort = 0;
+
+    if (xSemaphoreTake (commandSteeringEffortMutex, 1000 / portTICK_PERIOD_MS))
+    {
+        current_command_steering_effort = command_steering_effort;
+        xSemaphoreGive (commandSteeringEffortMutex);
+    }
+    else
+    {
+        ESP_LOGE (TAG, "Failed to take command steering mutex");
+    }
+
+    return current_command_steering_effort;
+}
+
+int 
 get_command_velocity ()
 {
     int current_command_velocity = 0;
@@ -194,6 +212,20 @@ set_command_steering (int new_command_steering)
     {
         command_steering = new_command_steering;
         xSemaphoreGive (commandSteeringMutex);
+    } 
+    else
+    {
+        ESP_LOGE (TAG, "Failed to take command steering mutex");
+    }
+}
+
+void 
+set_command_steering_effort (int new_command_steering_effort)
+{
+    if (xSemaphoreTake (commandSteeringEffortMutex, 1000 / portTICK_PERIOD_MS))
+    {
+        command_steering_effort = new_command_steering_effort;
+        xSemaphoreGive (commandSteeringEffortMutex);
     } 
     else
     {

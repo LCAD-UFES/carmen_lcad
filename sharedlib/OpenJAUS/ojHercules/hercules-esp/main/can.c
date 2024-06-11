@@ -78,7 +78,7 @@ can_reading_task ()
     // variables for saving the values temporaly
     twai_message_t message;
     int16_t command_velocity_received;
-    int16_t command_steering_received;
+    int16_t command_steering_effort_received;
     int16_t command_step_motor_received;
     
     if (!can_setup ())
@@ -108,9 +108,9 @@ can_reading_task ()
         {
             ESP_LOGD (TAG, "Command received for steering and velocity");
             command_velocity_received = (message.data[1] << 8) | message.data[0];
-            command_steering_received = (message.data[3] << 8) | message.data[2];
+            command_steering_effort_received = (message.data[3] << 8) | message.data[2];
             set_command_velocity(command_velocity_received);
-            set_command_steering(command_steering_received);
+            set_command_steering_effort(command_steering_effort_received);
             ESP_LOGD (TAG, "CAN Velocity command: %hi", command_velocity);
             ESP_LOGD (TAG, "CAN Steering command: %hi", command_steering);
             set_reset_error_and_angle_counter(0);

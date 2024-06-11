@@ -67,6 +67,7 @@ extern double odom_right_velocity;
 extern int odom_steering;
 extern int command_velocity;
 extern int command_steering;
+extern int command_steering_effort;
 extern int command_step_motor;
 extern char reset_error_and_angle_counter;
 extern SemaphoreHandle_t resetErrorAndAngleCounterMutex;
@@ -75,24 +76,27 @@ extern SemaphoreHandle_t odomRightVelocityMutex;
 extern SemaphoreHandle_t odomSteeringMutex;
 extern SemaphoreHandle_t commandVelocityMutex;
 extern SemaphoreHandle_t commandSteeringMutex;
+extern SemaphoreHandle_t commandSteeringEffortMutex;
 extern SemaphoreHandle_t commandStepMotorMutex;
 
 
 // Functions to properly interact with the global variables using the Mutexes
-int get_odom_steering (); // CAN unit
+int get_odom_steering (); // 0 - 4095 unit
 double get_odom_left_velocity (); // m/s unit
 double get_odom_right_velocity (); // m/s unit
 int get_command_steering (); // CAN unit
+int get_command_steering_effort (); // CAN unit
 int get_command_velocity (); // CAN unit
 int get_command_step_motor (); // CAN unit
+char get_reset_error_and_angle_counter ();
 
 void set_odom_steering (int new_odom_steering);
 void set_odom_left_velocity (double new_left_velocity);
 void set_odom_right_velocity (double new_odom_right_velocity);
 void set_command_velocity (int new_command_velocity);
 void set_command_steering (int new_command_steering);
+void set_command_steering_effort (int new_command_steering_effort); 
 void set_command_step_motor (int new_command_step_motor);
-char get_reset_error_and_angle_counter ();
 void set_reset_error_and_angle_counter (char new_reset_error_and_angle_counter);
 
 // Limiting Functions
@@ -127,6 +131,9 @@ double target_limit_double (double insert,double low,double high);
 #define ADC_ATTEN_POTENTIOMETER         ADC_ATTEN_DB_11
 #define ADC_BITWIDTH_POTENTIOMETER     ADC_WIDTH_BIT_12
 #define ADC_UNIT_POTENTIOMETER         ADC_UNIT_1
+#define MAX_MEASURE_POTENTIOMETER 4095.0
+#define POTENTIOMETER_BIAS (0)
+
 
 
 // Sterring Parameters

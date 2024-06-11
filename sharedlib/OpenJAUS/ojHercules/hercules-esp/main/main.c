@@ -14,11 +14,13 @@ SemaphoreHandle_t commandVelocityMutex = NULL;
 SemaphoreHandle_t commandSteeringMutex = NULL;
 SemaphoreHandle_t commandStepMotorMutex = NULL;
 SemaphoreHandle_t resetErrorAndAngleCounterMutex = NULL;
+SemaphoreHandle_t commandSteeringEffortMutex = NULL;
 double odom_left_velocity = 0;
 double odom_right_velocity = 0;
 int odom_steering = 0;
 int command_velocity = 0;
 int command_steering = 0;
+int command_steering_effort = 0;
 int command_step_motor = 0;
 char reset_error_and_angle_counter = 0;
 
@@ -33,8 +35,11 @@ create_mutexes ()
     commandSteeringMutex = xSemaphoreCreateMutex ();
     commandStepMotorMutex = xSemaphoreCreateMutex ();
     resetErrorAndAngleCounterMutex = xSemaphoreCreateMutex ();
+    commandSteeringEffortMutex = xSemaphoreCreateMutex ();
 
-    if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL || commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL || resetErrorAndAngleCounterMutex == NULL)
+    if (odomLeftVelocityMutex == NULL || odomRightVelocityMutex == NULL || odomSteeringMutex == NULL
+        || commandVelocityMutex == NULL || commandSteeringMutex == NULL || commandStepMotorMutex == NULL 
+        || resetErrorAndAngleCounterMutex == NULL || commandSteeringEffortMutex == NULL)
     {
         ESP_LOGE(TAG, "Failed to create mutexes");
         return 0;
