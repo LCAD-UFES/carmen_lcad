@@ -132,7 +132,7 @@ double target_limit_double (double insert,double low,double high);
 #define ADC_BITWIDTH_POTENTIOMETER     ADC_WIDTH_BIT_12
 #define ADC_UNIT_POTENTIOMETER         ADC_UNIT_1
 #define MAX_MEASURE_POTENTIOMETER 4095.0
-#define POTENTIOMETER_BIAS (0)
+#define POTENTIOMETER_BIAS (0.0)
 
 
 
