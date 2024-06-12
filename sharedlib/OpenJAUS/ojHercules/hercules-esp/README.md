@@ -12,7 +12,7 @@ O computador, por sua vez, envia para o ESP os comandos de velocidade e ângulo 
 
 A ID é definida em system.h e deve corresponder ao que está em $CARMEN_HOME/sharedlib/OpenJAUS/ojHercules/src/pd.c -> send_efforts(). O campo de dados da mensagem é formada por 4 bytes, sendo os dois primeiros para a velocidade e os dois últimos para ângulo de volante.
 
-Para a comunicação utilizam-se as variáveis globais odom_left_velocity, odom_right_velocity, odom_steering. command_velocity e command_steering.
+Para a comunicação utilizam-se as variáveis globais odom_left_velocity, odom_right_velocity, odom_steering. command_velocity e command_steering_effort.
 
 A task can_reading_task recebe as mensagens enviadas pelo computador e extrai delas dois inteiros que representam o comando de velocidade e de ângulo de volante que são salvas nas variáveis command_velocity e command_steering. Um pouco sobre como isso funciona ...
 
@@ -80,6 +80,21 @@ $v_r = v \cdot (1 + left\_to\_right\_difference)$
 $v_l = v \cdot (1 - left\_to\_right\_difference)$
 
 # Controle do servo (control.c)
+O sistema do carmen envia o steering_effort, que significa o quanto o volante (ângulo) do carro deve virar. Esse valor varia de -25600 a 25600, que representa os valores mínimos e máximos de variação do ângulo. Para ser mais exato, uma valor positivo significa que o carro deve virar à esquerda, enquanto um valor negativo deve ser virar para a direita. Note que a servo_task tem dois principais valores: command_steering e command_steering_effort, enquanto a primeira é o ângulo que o esp32 (e por extensão o servo) busca impor no carro, o segundo é o pedido do carmen, que indica o quanto esse ângulo deve mudar, sendo somado uma vez a cada execução do loop da task.
+
+A task inicia convertendo os esforço da medida can (25600~0 e 65536~65536-25600) para a unidade de ângulo (25600~-25600). Em seguida, uma fração do valor do esforço é adicionado ao valor atual de ângulo alvo, e obtemos então o próximo valor de ângulo desejado:
+
+$command_steering = command_steering + \frac{command_steering_effort}{128}$
+
+Obs: como em outras partes do código, os valores de command_steering e command_steering_effort são salvos em variáveis locais para liberar o uso para outras tasks.
+
+O servo é o agente que controla o ângulo das rodas com base no tempo em nivel alto do PWM enviado pelo esp32. Quando queremos que o carro vire o máximo para a esquerda, colocamos o tempo em nivel alto, referido no código como target_T_HIGH, no valor mínimo MIN_T_HIGH, e quando queremos que vire o máximo para a direita, colocamos no valor máximo MAX_T_HIGH, assumindo uma aproximação linear, segundo a fórmula abaixo:
+
+(WIP)
+
+em que:
+
+(WIP) $angle_can_to_T_HIGH_coefficient = \frac{MIN_T_HIGH - MAX_T_HIGH}{2*CAN_COMMAND_MAX}$
 
 # Medição de velocidade pelo encoder (odom.c)
 
