@@ -488,27 +488,26 @@ draw_single_map_optimized(carmen_map_t map, double car_x, double car_y, double z
 				double map_value = map.complete_map[i * map.config.x_size + j];
 				if(map_value > 0.5)
 				{
-					positions[num_elements * 12] = x - 0.1;
-					positions[num_elements * 12 + 1] = y + 0.1;
+					double size = resolution;
+					positions[num_elements * 12] = x - size;
+					positions[num_elements * 12 + 1] = y + size;
 					positions[num_elements * 12 + 2] = -z;
 
-					positions[num_elements * 12 + 3] = x - 0.1;
-					positions[num_elements * 12 + 4] = y - 0.1;
+					positions[num_elements * 12 + 3] = x - size;
+					positions[num_elements * 12 + 4] = y - size;
 					positions[num_elements * 12 + 5] = -z;
 
-					positions[num_elements * 12 + 6] = x + 0.1;
-					positions[num_elements * 12 + 7] = y - 0.1;
+					positions[num_elements * 12 + 6] = x + size;
+					positions[num_elements * 12 + 7] = y - size;
 					positions[num_elements * 12 + 8] = -z;
 
-					positions[num_elements * 12 + 9] = x + 0.1;
-					positions[num_elements * 12 + 10] = y + 0.1;
+					positions[num_elements * 12 + 9] = x + size;
+					positions[num_elements * 12 + 10] = y + size;
 					positions[num_elements * 12 + 11] = -z;
 
 					num_elements++;
 				}
-
 			}
-
 		}
 	}
 
