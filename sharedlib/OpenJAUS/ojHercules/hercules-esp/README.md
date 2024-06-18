@@ -90,11 +90,21 @@ Obs: como em outras partes do código, os valores de command_steering e command_
 
 O servo é o agente que controla o ângulo das rodas com base no tempo em nivel alto do PWM enviado pelo esp32. Quando queremos que o carro vire o máximo para a esquerda, colocamos o tempo em nivel alto, referido no código como target_T_HIGH, no valor mínimo MIN_T_HIGH, e quando queremos que vire o máximo para a direita, colocamos no valor máximo MAX_T_HIGH, assumindo uma aproximação linear, segundo a fórmula abaixo:
 
-(WIP)
+$target_THIGH = (command_angle * angle_can_to_THIGH_coefficient) + MEDIUM_THIGH + SERVO_BIAS$
 
 em que:
 
-(WIP) $angle_can_to_T_HIGH_coefficient = \frac{MIN_T_HIGH - MAX_T_HIGH}{2*CAN_COMMAND_MAX}$
+$angle_can_to_THIGH_coefficient = \frac{MIN_THIGH - MAX_THIGH}{2*CAN_COMMAND_MAX}$
+
+Em seguida, temos que colocar um PWM com esse T_HIGH. Para isso, consideramos um dado periodo LEDC_PERIOD, e calculamos o duty cycle fazendo:
+
+$duty_cycle \frac{target_THIGH}{LEDC_PERIOD}$
+
+Esse é o duty cycle com valor como float, contudo o duty cycle usado pelo esp é um valor inteiro que varia de 0 até LEDC_MAX_DUTY, então calculamos o valor inteiro do duty cycle:
+
+$duty_cycle = \frac{target_THIGH}{LEDC_PERIOD} * LEDC_MAX_DUTY$
+
+Esse valor então é colocado no pino de saida com a função servo_apply_voltage.
 
 # Medição de velocidade pelo encoder (odom.c)
 
