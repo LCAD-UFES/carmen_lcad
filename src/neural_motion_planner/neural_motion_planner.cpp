@@ -265,13 +265,13 @@ get_path_from_optimized_tcp(vector<carmen_robot_and_trailers_path_point_t> &path
 		carmen_robot_and_trailers_pose_t *localizer_pose)
 {
 	if (GlobalState::use_mpc)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, 0.025);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.025);
 	else if (use_unity_simulator)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.02);
 	else if (GlobalState::eliminate_path_follower)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.02);
 	else
-		path = simulate_car_from_parameters(td, otcp, td.v_i);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i);
 
 	path_local = path;
 
@@ -347,6 +347,13 @@ get_trajectory_dimensions_from_robot_state(carmen_robot_and_trailers_pose_t *loc
 	td.goal_pose.x = goal_in_car_reference[0];
 	td.goal_pose.y = goal_in_car_reference[1];
 	td.goal_pose.theta = goal_in_car_reference[2];
+
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+	{
+		double goal_beta = convert_theta1_to_beta(goal_pose->theta, goal_pose->trailer_theta[z]); // Esse beta do goal_pose é trailer_theta. Aqui é feito a conversão para o beta para conseguir trocar o trailer_theta de referência
+		td.goal_pose.trailer_theta[z] = convert_beta_to_theta1(goal_in_car_reference[2], goal_beta);
+	}
+
 	return (td);
 }
 
@@ -389,7 +396,7 @@ compute_path_to_goal(carmen_robot_and_trailers_pose_t *localizer_pose, Pose *goa
 
 	bool use_lane = true;
 	TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, last_odometry, goal_pose);
-	TrajectoryControlParameters otcp = get_complete_optimized_trajectory_control_parameters(previous_good_tcp, td, target_v, detailed_lane, use_lane);
+	TrajectoryControlParameters otcp = get_complete_optimized_trajectory_control_parameters(td, target_v, detailed_lane, use_lane);
 
 	if (otcp.valid)
 	{
