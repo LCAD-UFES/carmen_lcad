@@ -12,7 +12,7 @@ O computador, por sua vez, envia para o ESP os comandos de velocidade e ângulo 
 
 A ID é definida em system.h e deve corresponder ao que está em $CARMEN_HOME/sharedlib/OpenJAUS/ojHercules/src/pd.c -> send_efforts(). O campo de dados da mensagem é formada por 4 bytes, sendo os dois primeiros para a velocidade e os dois últimos para ângulo de volante.
 
-Para a comunicação utilizam-se as variáveis globais odom_left_velocity, odom_right_velocity, odom_steering. command_velocity e command_steering.
+Para a comunicação utilizam-se as variáveis globais odom_left_velocity, odom_right_velocity, odom_steering. command_velocity e command_steering_effort.
 
 A task can_reading_task recebe as mensagens enviadas pelo computador e extrai delas dois inteiros que representam o comando de velocidade e de ângulo de volante que são salvas nas variáveis command_velocity e command_steering. Um pouco sobre como isso funciona ...
 
@@ -35,7 +35,7 @@ Em \$CARMEN_HOME/sharedlib/OpenJAUS/ojHercules/src/main.c MAX_ANGLE é definido 
 # Controle do motor (control.c)
 O sistema do Carmen calcula o esforço de aceleração do veículo como um valor double de 0 a 100, o esforço de volante como um valor double de -100 a 100 e fornece uma variável de sentido de movimento (marcha ré ou não). Por meio da variável de sentido, a aceleração do veículo é convertida em um valor double de -100 a 100 que carrega consigo o sentido que o carro deve andar. Para que o valor seja enviado para o ESP via CAN dentro dos 4 bytes de dados, acelerador e volante são convertidos em valores inteiros. Como temos 16 bits, os valores inteiros que podemos enviar são de -32768 a 32767. Portanto, multiplica-se o valor das variáveis double (que vão de -100 a 100) pela constante EFFORT_TO_INT ($CARMEN_HOME/sharedlib/OpenJAUS/ojHercules/src/pd.c) que deve ser, no máximo, 327,67. Para facilitar a implementação, foi criada uma variável em system.h chamada CAN_COMMAND_MAX que deve ser igual a 100 * EFFORT_TO_INT. No caso de EFFORT_TO_INT=327,67 teríamos CAN_COMMAND_MAX=32767 que significaria que o valor máximo que será recebido pelo CAN é igual ao valor máximo possível nos 16 bits.
 
-No ESP, o controle de velocidade do motor é feito por PWM. A biblioteca driver/ledc permite controlar o PWM com uma precisão de até 14 bits, chamada de duty_resolution. Para isso, devemos chamar a função ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, command_velocity) sendo command_velocity um número no intervalo [0, (2^duty_resolution)]. Em system.h foi definida a variável auxiliar DUTY_RESOLUTION.
+No ESP, o controle de velocidade do motor é feito por PWM. A biblioteca driver/ledc permite controlar o PWM com uma precisão de até 14 bits, chamada de duty_resolution. Para isso, devemos chamar a função ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, command_velocity) sendo command_velocity um número no intervalo [0, (2^duty_resolution)]. Em system.h foi definida a variável auxiliar MOTOR_DUTY_RESOLUTION.
 
 O Hercules possui um motor para cada roda traseira. Assim, é preciso calcular a velocidade de cada uma com base no comando de velocidade e de ângulo. Por meio das equações de movimento do Ackermann (vide $CARMEN_HOME/doc/kinematic_model_of_ackerman_steering_vehicles.pdf), segue que:
 
@@ -80,6 +80,31 @@ $v_r = v \cdot (1 + left\_to\_right\_difference)$
 $v_l = v \cdot (1 - left\_to\_right\_difference)$
 
 # Controle do servo (control.c)
+O sistema do carmen envia o steering_effort, que significa o quanto o volante (ângulo) do carro deve virar. Esse valor varia de -25600 a 25600, que representa os valores mínimos e máximos de variação do ângulo. Para ser mais exato, uma valor positivo significa que o carro deve virar à esquerda, enquanto um valor negativo deve ser virar para a direita. Note que a servo_task tem dois principais valores: command_steering e command_steering_effort, enquanto a primeira é o ângulo que o esp32 (e por extensão o servo) busca impor no carro, o segundo é o pedido do carmen, que indica o quanto esse ângulo deve mudar, sendo somado uma vez a cada execução do loop da task.
+
+A task inicia convertendo os esforço da medida can (25600~0 e 65536~65536-25600) para a unidade de ângulo (25600~-25600). Em seguida, uma fração do valor do esforço é adicionado ao valor atual de ângulo alvo, e obtemos então o próximo valor de ângulo desejado:
+
+$command_steering = command_steering + \frac{command_steering_effort}{128}$
+
+Obs: como em outras partes do código, os valores de command_steering e command_steering_effort são salvos em variáveis locais para liberar o uso para outras tasks.
+
+O servo é o agente que controla o ângulo das rodas com base no tempo em nivel alto do PWM enviado pelo esp32. Quando queremos que o carro vire o máximo para a esquerda, colocamos o tempo em nivel alto, referido no código como target_T_HIGH, no valor mínimo MIN_T_HIGH, e quando queremos que vire o máximo para a direita, colocamos no valor máximo MAX_T_HIGH, assumindo uma aproximação linear, segundo a fórmula abaixo:
+
+$target_THIGH = (command_angle * angle_can_to_THIGH_coefficient) + MEDIUM_THIGH + SERVO_BIAS$
+
+em que:
+
+$angle_can_to_THIGH_coefficient = \frac{MIN_THIGH - MAX_THIGH}{2*CAN_COMMAND_MAX}$
+
+Em seguida, temos que colocar um PWM com esse T_HIGH. Para isso, consideramos um dado periodo LEDC_PERIOD, e calculamos o duty cycle fazendo:
+
+$duty_cycle \frac{target_THIGH}{LEDC_PERIOD}$
+
+Esse é o duty cycle com valor como float, contudo o duty cycle usado pelo esp é um valor inteiro que varia de 0 até LEDC_MAX_DUTY, então calculamos o valor inteiro do duty cycle:
+
+$duty_cycle = \frac{target_THIGH}{LEDC_PERIOD} * LEDC_MAX_DUTY$
+
+Esse valor então é colocado no pino de saida com a função servo_apply_voltage.
 
 # Medição de velocidade pelo encoder (odom.c)
 

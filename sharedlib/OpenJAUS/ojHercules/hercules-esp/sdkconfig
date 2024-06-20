@@ -1,6 +1,6 @@
 #
 # Automatically generated file. DO NOT EDIT.
-# Espressif IoT Development Framework (ESP-IDF) 5.2.0 Project Configuration
+# Espressif IoT Development Framework (ESP-IDF) 5.2.1 Project Configuration
 #
 CONFIG_SOC_BROWNOUT_RESET_SUPPORTED="Not determined"
 CONFIG_SOC_TWAI_BRP_DIV_SUPPORTED="Not determined"
@@ -321,6 +321,7 @@ CONFIG_ESP_ROM_HAS_UART_BUF_SWITCH=y
 CONFIG_ESP_ROM_NEEDS_SWSETUP_WORKAROUND=y
 CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT=y
 CONFIG_ESP_ROM_HAS_SW_FLOAT=y
+CONFIG_ESP_ROM_USB_SERIAL_DEVICE_NUM=-1
 
 #
 # Serial flasher config
@@ -979,6 +980,7 @@ CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT=y
 # CONFIG_ESP_WIFI_DEBUG_PRINT is not set
 # CONFIG_ESP_WIFI_TESTING_OPTIONS is not set
 CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT=y
+# CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER is not set
 # end of Wi-Fi
 
 #
@@ -1267,6 +1269,13 @@ CONFIG_LWIP_SNTP_MAX_SERVERS=1
 CONFIG_LWIP_SNTP_UPDATE_DELAY=3600000
 # end of SNTP
 
+#
+# DNS
+#
+CONFIG_LWIP_DNS_MAX_SERVERS=3
+# CONFIG_LWIP_FALLBACK_DNS_SERVER_SUPPORT is not set
+# end of DNS
+
 CONFIG_LWIP_BRIDGEIF_MAX_PORTS=7
 CONFIG_LWIP_ESP_LWIP_ASSERT=y
 
@@ -1478,6 +1487,13 @@ CONFIG_OPENTHREAD_NETWORK_PSKC="104810e2315100afd6bc9215a6bfac53"
 # end of Thread Operational Dataset
 
 CONFIG_OPENTHREAD_XTAL_ACCURACY=130
+# CONFIG_OPENTHREAD_SPINEL_ONLY is not set
+CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE=y
+
+#
+# Thread Address Query Config
+#
+# end of Thread Address Query Config
 # end of OpenThread
 
 #
@@ -1634,11 +1650,6 @@ CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER=y
 # CONFIG_UNITY_ENABLE_FIXTURE is not set
 # CONFIG_UNITY_ENABLE_BACKTRACE_ON_FAIL is not set
 # end of Unity unit testing library
-
-#
-# Root Hub configuration
-#
-# end of Root Hub configuration
 
 #
 # Virtual file system

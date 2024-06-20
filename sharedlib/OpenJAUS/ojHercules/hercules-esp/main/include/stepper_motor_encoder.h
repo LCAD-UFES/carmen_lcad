@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 #include "driver/rmt_encoder.h"
+#include "driver/rmt.h"
+#include "driver/rmt_tx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +56,19 @@ esp_err_t rmt_new_stepper_motor_curve_encoder(const stepper_motor_curve_encoder_
  *      - ESP_OK if creating encoder successfully
  */
 esp_err_t rmt_new_stepper_motor_uniform_encoder(const stepper_motor_uniform_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
+
+typedef struct ConfigStepMotor
+{
+    rmt_channel_handle_t motor_chan;
+    rmt_tx_channel_config_t tx_chan_config;
+    stepper_motor_curve_encoder_config_t accel_encoder_config; 
+    stepper_motor_uniform_encoder_config_t uniform_encoder_config;
+    stepper_motor_curve_encoder_config_t decel_encoder_config;
+    rmt_encoder_handle_t accel_motor_encoder;
+    rmt_encoder_handle_t uniform_motor_encoder;
+    rmt_encoder_handle_t decel_motor_encoder;
+    rmt_transmit_config_t tx_config;
+} ConfigStepMotor;
 
 #ifdef __cplusplus
 }

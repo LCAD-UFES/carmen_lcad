@@ -3,9 +3,8 @@
 
 #include "system.h"
 
-void right_encoder_task( void );
-void left_encoder_task( void );
-void steering_reading_task( void );
-bool adc_calibration_init(void);
+void right_encoder_task();
+void left_encoder_task();
+void steering_reading_task();
 
 #endif /* ODOM_H */

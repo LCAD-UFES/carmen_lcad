@@ -3,9 +3,10 @@
 
 #include "system.h"
 
-void motor_task( void );
-void servo_task( void );
-void step_motor_task ( void );
-void config_step_motor_pins( void );
+void motor_task();
+void servo_task();
+void step_motor_task ();
+void reset_error_and_angle_task();
+void config_step_motor_pins();
 
 #endif /* CONTROL_H */

@@ -1,15 +1,15 @@
 #include "odom.h"
 #include "driver/pulse_cnt.h"
 #include "esp_adc/adc_oneshot.h"
-// #include "driver/adc.h"
-// #include "driver/adc_common.h"
 
 
 static const char* TAG = "ODOM module";
+const TickType_t xFrequencyTaskEncoder = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
+const TickType_t xFrequencyTaskSteering = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
+const double meters_per_second_per_pulse = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER) / (PULSES_PER_REVOLUTION);
 
 bool
-pcnt_on_reach (pcnt_unit_handle_t unit, const pcnt_watch_event_data_t* edata,
-               void* user_ctx)
+pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t* edata, void* user_ctx)
 {
     BaseType_t high_task_wakeup;
     QueueHandle_t queue = (QueueHandle_t)user_ctx;
@@ -19,7 +19,7 @@ pcnt_on_reach (pcnt_unit_handle_t unit, const pcnt_watch_event_data_t* edata,
 }
 
 pcnt_unit_handle_t
-encoder_setup (int sensor_a, int sensor_b)
+encoder_setup(int sensor_a, int sensor_b)
 {
     ESP_LOGI (TAG, "install pcnt unit");
     pcnt_unit_config_t unit_config = {
@@ -27,13 +27,13 @@ encoder_setup (int sensor_a, int sensor_b)
         .low_limit = PCNT_LOW_LIMIT,
     };
     pcnt_unit_handle_t pcnt_unit = NULL;
-    ESP_ERROR_CHECK (pcnt_new_unit (&unit_config, &pcnt_unit));
+    ESP_ERROR_CHECK (pcnt_new_unit(&unit_config, &pcnt_unit));
 
     ESP_LOGI (TAG, "set glitch filter");
     pcnt_glitch_filter_config_t filter_config = {
         .max_glitch_ns = 1000,
     };
-    ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter (pcnt_unit, &filter_config));
+    ESP_ERROR_CHECK (pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
 
     ESP_LOGI (TAG, "install pcnt channels");
     pcnt_chan_config_t chan_config = {
@@ -42,17 +42,11 @@ encoder_setup (int sensor_a, int sensor_b)
     };
     pcnt_channel_handle_t pcnt_chan = NULL;
     
-    ESP_ERROR_CHECK (
-        pcnt_new_channel (pcnt_unit, &chan_config, &pcnt_chan));
+    ESP_ERROR_CHECK (pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
 
     ESP_LOGI (TAG, "set edge and level actions for pcnt channels");
-    ESP_ERROR_CHECK (pcnt_channel_set_edge_action (
-        pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
-    ESP_ERROR_CHECK (pcnt_channel_set_level_action (
-        pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE,
-        PCNT_CHANNEL_LEVEL_ACTION_HOLD));
-
+    ESP_ERROR_CHECK (pcnt_channel_set_edge_action (pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_LEVEL_ACTION_HOLD));
+    ESP_ERROR_CHECK (pcnt_channel_set_level_action (pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_LEVEL_ACTION_HOLD));
 
     //QueueHandle_t queue = xQueueCreate (10, sizeof (int));
     ESP_LOGI (TAG, "enable pcnt unit");
@@ -65,65 +59,58 @@ encoder_setup (int sensor_a, int sensor_b)
     return pcnt_unit;
 }
 
-void
-left_encoder_task ( void )
+int
+encoder_pulse_counter(pcnt_unit_handle_t *pcnt_unit)
 {
-    
+    int pulse_count;
+    ESP_ERROR_CHECK (pcnt_unit_get_count (*pcnt_unit, &pulse_count));
+    ESP_ERROR_CHECK(pcnt_unit_clear_count(*pcnt_unit));
+    return pulse_count;
+}
+
+double
+read_encoder(pcnt_unit_handle_t *pcnt_unit)
+{
     int pulse_count = 0;
-    float current_velocity = 0;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY); //Task frequency in FreeRTOS ticks (OBS : task_frequency * xFrequency = FreeRTOS_TickRate)
-    xLastWakeTime = xTaskGetTickCount ();
-    pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
-    double meters_per_second_per_pulse
-        = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER)
-          / (PULSES_PER_REVOLUTION);
-    while (1)
-        {
-            ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
-            current_velocity = pulse_count * meters_per_second_per_pulse;
-            if (xSemaphoreTake (odomLeftVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-                odom_left_velocity = current_velocity;
-                xSemaphoreGive (odomLeftVelocityMutex);
-            }
-            ESP_LOGD (TAG, "Left Motor Current_velocity: %.2f", current_velocity);
-            ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
-        }
-    
+    pulse_count = encoder_pulse_counter(pcnt_unit);
+    ESP_LOGD (TAG, "Encoder Pulse Count: %d", pulse_count);
+    return (pulse_count * meters_per_second_per_pulse);
 }
 
 void
-right_encoder_task ( void )
+left_encoder_task()
 {
     int pulse_count = 0;
-    float current_velocity = 0;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_ENCODER_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
-    pcnt_unit_handle_t pcnt_unit = encoder_setup (PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
-    double meters_per_second_per_pulse
-        = (TASK_ENCODER_FREQUENCY * PI * WHEEL_DIAMETER)
-          / (PULSES_PER_REVOLUTION);
+    double current_velocity = 0;
+
+    pcnt_unit_handle_t pcnt_unit = encoder_setup(PIN_LEFT_ENCODER_A,PIN_LEFT_ENCODER_B);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1)
-        {
-            ESP_ERROR_CHECK (pcnt_unit_get_count (pcnt_unit, &pulse_count));
-            ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
-            current_velocity = pulse_count * meters_per_second_per_pulse;
-            if (xSemaphoreTake (odomRightVelocityMutex, 1000 / portTICK_PERIOD_MS)){
-                odom_right_velocity = current_velocity;
-                xSemaphoreGive (odomRightVelocityMutex);
-            }
-            ESP_LOGD (TAG, "Right Motor Current velocity: %.2f", current_velocity);
-            ESP_ERROR_CHECK (pcnt_unit_clear_count(pcnt_unit));
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
-        }
+    {
+        current_velocity = read_encoder(&pcnt_unit);
+        set_odom_left_velocity(current_velocity);
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskEncoder);
+    }
 }
 
+void
+right_encoder_task()
+{
+    int pulse_count = 0;
+    double current_velocity = 0;
+
+    pcnt_unit_handle_t pcnt_unit = encoder_setup(PIN_RIGHT_ENCODER_A,PIN_RIGHT_ENCODER_B);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    while (1)
+    {
+        current_velocity = read_encoder(&pcnt_unit);
+        set_odom_right_velocity(current_velocity);
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskEncoder);
+    }
+}
 
 adc_oneshot_unit_handle_t
-adc_setup(void)
+adc_setup()
 {
     adc_oneshot_unit_handle_t adc_handle;
     adc_oneshot_unit_init_cfg_t init_config = {
@@ -135,33 +122,32 @@ adc_setup(void)
         .atten = ADC_ATTEN_POTENTIOMETER,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_POTENTIOMETER, &config));
+
     return adc_handle;
 }
 
-
 void
-steering_reading_task ( void )
+steering_reading_task ()
 {
     int accumulator = 0;
     int adc_reading = 0;
     adc_oneshot_unit_handle_t adc_handle = adc_setup();
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = CALCULATE_FREQUENCY(TASK_STEERING_FREQUENCY);
-    xLastWakeTime = xTaskGetTickCount ();
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
+
     while (1)
+    {
+        // Uses more than one sample to stabilize output
+        accumulator = 0;
+        for (int i = 0; i < 64; i++)
         {
-            accumulator = 0;
-            for (int i = 0; i < 64; i++)
-                {
-                    adc_oneshot_read(adc_handle, ADC_CHANNEL_POTENTIOMETER, &adc_reading);
-                    accumulator += adc_reading;
-                }
-            accumulator /= 64;
-            if (xSemaphoreTake (odomSteeringMutex, 1000 / portTICK_PERIOD_MS)){
-                odom_steering = accumulator;
-                xSemaphoreGive (odomSteeringMutex);
-            }
-            ESP_LOGD (TAG, "Angle measument: %d",accumulator);
-            vTaskDelayUntil (&xLastWakeTime, xFrequency);
+            adc_oneshot_read(adc_handle, ADC_CHANNEL_POTENTIOMETER, &adc_reading);
+            accumulator += adc_reading;
         }
+        accumulator /= (64);
+        accumulator -= POTENTIOMETER_BIAS;
+        set_odom_steering(accumulator);
+        ESP_LOGD (TAG, "Angle measument: %d",accumulator);
+
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskSteering);
+    }
 }

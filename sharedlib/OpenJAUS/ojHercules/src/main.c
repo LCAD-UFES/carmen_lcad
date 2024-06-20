@@ -53,7 +53,7 @@
 #define DEFAULT_STRING_LENGTH 128
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
-#define VELOCITY_CONVERSION_CONSTANT 	(1 / 5000.0)
+#define VELOCITY_CONVERSION_CONSTANT 	(3 / 25600.0)
 #define ANGLE_CONVERSION_CONSTANT 		(2 * MAX_ANGLE / 4095.0)
 #define MAX_ANGLE						(0.35)
 #define STEERING_ANGLE_BIAS				(-0.03950)
@@ -413,7 +413,7 @@ void update_wheels_speed(struct can_frame frame)
 
 void update_car_speed(struct can_frame frame)
 {
-	short int int_vel = frame.data[0] << 8 | frame.data[1];
+	short int int_vel = frame.data[1] << 8 | frame.data[0];
 	car_speed = (double) int_vel * VELOCITY_CONVERSION_CONSTANT;
 }
 
@@ -434,6 +434,7 @@ void update_steering_angle(struct can_frame frame)
 {
 	steering_angle_sensor = frame.data[1] << 8 | frame.data[0];
 	double phi = -MAX_ANGLE + steering_angle_sensor * ANGLE_CONVERSION_CONSTANT - STEERING_ANGLE_BIAS;
+	printf("phi = %f\n", phi);
 	double v = car_speed;
 	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5

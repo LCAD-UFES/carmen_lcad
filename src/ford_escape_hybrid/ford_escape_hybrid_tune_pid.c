@@ -31,8 +31,8 @@ signal_handler(int signo __attribute__ ((unused)) )
 static void
 send_trajectory_to_robot()
 {
-//	for (int i = 0; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
-//		printf("i = %d, v = %lf, phi = %lf, t = %lf\n", i, motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time);
+	for (int i = 0; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
+		printf("i = %d, v = %lf, phi = %lf, t = %lf\n", i, motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time);
 	printf("mandei pro ford\n");
 	carmen_base_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR, carmen_get_time());
 }
@@ -207,7 +207,7 @@ build_trajectory_stop_smooth_trajectory()
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = delta_t;
 	}
-//	printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
+	printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
 	send_trajectory_to_robot();
 }
 
