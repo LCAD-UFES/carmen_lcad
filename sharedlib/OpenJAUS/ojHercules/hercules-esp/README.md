@@ -80,13 +80,13 @@ $v_r = v \cdot (1 + left\_to\_right\_difference)$
 $v_l = v \cdot (1 - left\_to\_right\_difference)$
 
 # Controle do servo (control.c)
-O sistema do carmen envia o steering_effort, que significa o quanto o volante (ângulo) do carro deve virar. Esse valor varia de -25600 a 25600, que representa os valores mínimos e máximos de variação do ângulo. Para ser mais exato, uma valor positivo significa que o carro deve virar à esquerda, enquanto um valor negativo deve ser virar para a direita. Note que a servo_task tem dois principais valores: command_steering e command_steering_effort, enquanto a primeira é o ângulo que o esp32 (e por extensão o servo) busca impor no carro, o segundo é o pedido do carmen, que indica o quanto esse ângulo deve mudar, sendo somado uma vez a cada execução do loop da task.
+O sistema do carmen envia o steering_effort, que significa o quanto o volante (ângulo) do carro deve virar. Esse valor varia de -25600 a 25600, que representa os valores mínimos e máximos de variação do ângulo. Para ser mais exato, uma valor positivo significa que o carro deve virar à esquerda, enquanto um valor negativo deve ser virar para a direita. Note que a servo_task tem dois principais valores: command_steering e command_steering_effort, enquanto a primeira é o ângulo que o esp32 (e, por extensão, o servo) busca impor no carro, o segundo é o pedido do carmen, que indica o quanto esse ângulo deve mudar, sendo uma fração sua somada uma vez a cada execução do loop da task.
 
-A task inicia convertendo os esforço da medida can (25600~0 e 65536~65536-25600) para a unidade de ângulo (25600~-25600). Em seguida, uma fração do valor do esforço é adicionado ao valor atual de ângulo alvo, e obtemos então o próximo valor de ângulo desejado:
+A task inicia convertendo os esforço da medida can (25600\~0 e 65536\~65536-25600) para a unidade de ângulo (25600~-25600). Em seguida, uma fração do valor do esforço é adicionado ao valor atual de ângulo alvo, e obtemos então o próximo valor de ângulo desejado:
 
 $command_steering = command_steering + \frac{command_steering_effort}{128}$
 
-Obs: como em outras partes do código, os valores de command_steering e command_steering_effort são salvos em variáveis locais para liberar o uso para outras tasks.
+Obs: como em outras partes do código, os valores de command_steering e command_steering_effort são salvos em variáveis locais para liberar o uso dessas variáveis para outras tasks.
 
 O servo é o agente que controla o ângulo das rodas com base no tempo em nivel alto do PWM enviado pelo esp32. Quando queremos que o carro vire o máximo para a esquerda, colocamos o tempo em nivel alto, referido no código como target_T_HIGH, no valor mínimo MIN_T_HIGH, e quando queremos que vire o máximo para a direita, colocamos no valor máximo MAX_T_HIGH, assumindo uma aproximação linear, segundo a fórmula abaixo:
 
@@ -98,9 +98,11 @@ $angle_can_to_THIGH_coefficient = \frac{MIN_THIGH - MAX_THIGH}{2*CAN_COMMAND_MAX
 
 Em seguida, temos que colocar um PWM com esse T_HIGH. Para isso, consideramos um dado periodo LEDC_PERIOD, e calculamos o duty cycle fazendo:
 
-$duty_cycle \frac{target_THIGH}{LEDC_PERIOD}$
+$duty_cycle = \frac{target_THIGH}{LEDC_PERIOD}$
 
-Esse é o duty cycle com valor como float, contudo o duty cycle usado pelo esp é um valor inteiro que varia de 0 até LEDC_MAX_DUTY, então calculamos o valor inteiro do duty cycle:
+Obs: O valor de LEDC_PERIOD não impacta diretamente o comportamente do servo, desde que esteja dentro dos limites aceitáveis.
+
+Esse é o duty cycle com valor como uma porcentagem salva em um float, contudo o duty cycle usado pelo esp é um valor inteiro que varia de 0 até LEDC_MAX_DUTY, então calculamos o valor inteiro do duty cycle:
 
 $duty_cycle = \frac{target_THIGH}{LEDC_PERIOD} * LEDC_MAX_DUTY$
 
