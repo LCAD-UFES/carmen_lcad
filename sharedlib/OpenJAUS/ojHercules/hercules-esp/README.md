@@ -110,4 +110,12 @@ Esse valor então é colocado no pino de saida com a função servo_apply_voltag
 
 # Medição de velocidade pelo encoder (odom.c)
 
+É muito comum a utilização de encoders para a medição de velocidade dos motores, e o Hercules não é diferente. O hercules tem dois enconders, cada um encaixado no eixo de um dos motores, e cada um tem 4 pinos que são conectados com a placa: dois pinos de alimentação, 5V e GND, e dois pinos de fase A e B. O encoder ótico tem uma placa perfurada com um emissor anexado ao eixo, fazendo com que a cada giro do motor o encoder envia um dado número de pulsos (no caso do hercules, NUMBER_OF_ENCODER_LINES , que vale 500). 
+
+Esse comportamento gera uma onda quadrada em que a frequência está linearmente relacionada com velocidade ângular do motor e, por extensão, com a velocidade linear do carro. Vale notar que caso o carro derrape, o motor pode girar mas o carro não terá um deslocamento proporcional, o que prejudica a odometria de velocidade e deve ser evitado. Um detalhe importante é a existência de duas fases. De fato, ambas as fazes mostram a mesma onda quadrada, mas defasada, e com base no defasamento é possível determinar a direção do movimento do carro.
+
+Uma informação importante sobre o esp: todo o nosso código funciona em cima do FreeRTOS - o sistema operacional que está embutido no esp, e que não funciona adequadamente para frequências maiores que 100 Hz, e como pode se imaginar os encoders vão gerar uma frequência na faixa de kHz, o que torna inviável utilizar nossos códigos comuns para contar os pulsos um a um. Felizmente, o esp tem hardware próprio para fazer a contagem de pulsos, que é o módulo pulse counter unit (pcnt), que foi configurado para estar a todo momento contado, mesmo quando a task não está sendo executada. 
+
+A cada vez que cada uma das tasks dos enconders é executado, ela acessa a quantidade de pulsos contada, guarda em uma variável e reseta a contagem. Em seguida, utilizando essa contagem ele calcula e salva a velocidade medida desse motor na sua variável (para a *left_encoder_task* é a *odom_left_velocity*, e para a *right_encoder_task* é a *odom_right_velocity*). A velocidade linear do carro enviada para o carmen é a média da velocidade dos dois motores.
+
 # Medição de ângulo pelo potenciômetro (odom.c)
