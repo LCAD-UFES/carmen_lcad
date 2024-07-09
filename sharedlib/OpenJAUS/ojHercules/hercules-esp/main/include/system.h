@@ -119,7 +119,7 @@ double target_limit_double (double insert,double low,double high);
 #define MOTOR_PID_KI 130.0
 #define MOTOR_PID_KD 0.0
 #define MOTOR_MAX_PWM ((1 << MOTOR_DUTY_RESOLUTION) - 1)
-#define MOTOR_DEAD_ZONE 2560
+#define MOTOR_DEAD_ZONE 20   //2560
 
 
 // Encoders
@@ -154,6 +154,7 @@ double target_limit_double (double insert,double low,double high);
 
 
 // Servo
+#define DIRECT_STEERING_CONTROL 0
 #define LEDC_TIMER              LEDC_TIMER_0
 #define LEDC_MODE               LEDC_LOW_SPEED_MODE
 #define LEDC_OUTPUT_IO          PIN_SERVO // Define the output GPIO

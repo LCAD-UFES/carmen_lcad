@@ -18,7 +18,7 @@ const double angle_can_to_T_HIGH_coefficient = ((MIN_T_HIGH - MAX_T_HIGH) / (2*C
 const double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;
 const double velocity_can_to_m_s = MAX_VELOCITY / CAN_COMMAND_MAX;
 const double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
-const double velocity_can_to_pwm = (MOTOR_MAX_PWM) / (CAN_COMMAND_MAX * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
+const double velocity_to_pwm = (MOTOR_MAX_PWM) / (MAX_VELOCITY * (1 + WHEEL_SPACING * tan(MAX_ANGLE) / (2 * AXLE_SPACING)));
 const double step_motor_can_to_steps = NUM_STEPS_0_TO_100 / CAN_COMMAND_MAX;
 
 typedef struct PID
@@ -121,11 +121,11 @@ deadzone_correction (int velocity)
 {
     if (velocity > 0)
     {
-        return (MOTOR_DEAD_ZONE);
+        return (velocity + MOTOR_DEAD_ZONE);
     }
     else if (velocity < 0)
     {
-        return (-MOTOR_DEAD_ZONE);
+        return (velocity - MOTOR_DEAD_ZONE);
     }
     else
     {
@@ -214,7 +214,6 @@ motor_task ()
         ESP_LOGD (TAG, "CAN Velocity command: %d", velocity_can);
         ESP_LOGD (TAG, "CAN Steering command: %d", steering_can);
 
-        // velocity_can += deadzone_correction(velocity_can);
         left_to_right_difference = steering_can * left_to_right_difference_constant * angle_can_to_rad;
         command_velocity_right = velocity_can * (1 + left_to_right_difference) * velocity_can_to_m_s;
         command_velocity_left = velocity_can * (1 - left_to_right_difference) * velocity_can_to_m_s;
@@ -238,8 +237,8 @@ motor_task ()
         }
 
         #else
-        left_pwm = command_velocity_left * velocity_can_to_pwm;
-        right_pwm = command_velocity_right * velocity_can_to_pwm;
+        left_pwm = command_velocity_left * velocity_to_pwm;
+        right_pwm = command_velocity_right * velocity_to_pwm;
         if(get_reset_error_and_angle_counter() >= RESET_TIMER)
         {
             set_command_steering(0);
@@ -248,6 +247,9 @@ motor_task ()
         }
         #endif    
 
+        //left_pwm = deadzone_correction(left_pwm);
+        //right_pwm = deadzone_correction(right_pwm);
+        ESP_LOGD (TAG, "left pwm: %d, right pwm: %d", left_pwm, right_pwm);
         set_motor_direction(&left_pwm, &right_pwm);
         apply_motor_pwm(left_pwm, right_pwm); 
 
@@ -332,15 +334,19 @@ servo_task ()
     while (1)
     {
         received_command_steering_effort = (double)(get_command_steering_effort()); 
-        current_steering_angle = get_odom_steering();
-
         received_command_steering_effort = convert_can_to_effort(received_command_steering_effort);
-        current_steering_angle = convert_steering_to_effort_unit(current_steering_angle);
-
         target_command_steering = get_command_steering();
-        target_command_steering += (received_command_steering_effort/128);
+
+        #if DIRECT_STEERING_CONTROL
+            target_command_steering = received_command_steering_effort;
+        #else 
+            target_command_steering += (received_command_steering_effort/128);
+        #endif
+
         set_command_steering(target_command_steering);
 
+        current_steering_angle = get_odom_steering();
+        current_steering_angle = convert_steering_to_effort_unit(current_steering_angle);
         ESP_LOGD(TAG, "Current steering angle: %d Command Steering: %lf Effort: %lf\n", current_steering_angle, target_command_steering, received_command_steering_effort);
         duty_cycle = (int)(calculate_duty_cycle(target_command_steering));
         servo_apply_voltage(duty_cycle);
