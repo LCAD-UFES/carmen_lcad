@@ -7,29 +7,28 @@ parser.add_argument('file_path', help='Path to the log file')
 args = parser.parse_args()
 file_path = args.file_path
 
-t_odom = []
 theta_odom = []
-t_command = []
 theta_command = []
 with open(file_path) as file:
     first = True
     for line in file:
-        if first:
-            first = False
-            t0 = float(line.split()[0][1:-1])
         parts = line.split()
         can_id, value = parts[2].split('#')
         if can_id == '080':
-            t_odom.append(float(parts[0][1:-1]))
-            least_significant = value[0:2]
-            most_significant = value[2:4]
-            theta = int(most_significant + least_significant, 16)
-            theta_odom.append(theta)
+            least_significant_theta = value[0:2]
+            most_significant_theta = value[2:4]
+            current_theta_odom = int(most_significant_theta + least_significant_theta, 16)
+
         if can_id == '100':
-            t_command.append(float(parts[0][1:-1]))
             least_significant_theta = value[4:6]
             most_significant_theta = value[6:8]
-            theta_command.append(int(most_significant_theta + least_significant_theta, 16))
+            current_theta_command = int(most_significant_theta + least_significant_theta, 16)
+            if current_theta_odom > 32767:
+                current_theta_odom -= 65536
+            if current_theta_command > 32767:
+                current_theta_command -= 65536
+            theta_odom.append(current_theta_odom)
+            theta_command.append(current_theta_command)
 
 # Create scatter plot
 plt.scatter(theta_command, theta_odom, c='blue', label='Theta Odom vs. Theta Command')
