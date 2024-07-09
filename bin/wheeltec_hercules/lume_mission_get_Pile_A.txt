@@ -1,0 +1,448 @@
+set colision geometry to engage
+
+start_mission:
+#park at 999.58, 1000.68, 0.031 # 1002.97, 1000.07, -0.018
+#go after park at 999.58, 1000.68, 0.031 # 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#    wait for 8 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+get bale from pile
+wait for 2 seconds
+put bale on the truck
+wait for 2 seconds
+#if previous task failed, execute task at label go_to_intermediary_pose_1
+
+#go_to_pose:
+#park at 1002.99, 1000.80, 0.009 # 1002.97, 1000.07, -0.018
+#go after park at 1002.99, 1000.80, 0.009 # 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#reinitialize robot pose
+
+
+
+####### Go to Intermediary Pose
+#go_to_intermediary_pose_1:
+
+#announce "Out of reach, trying again."
+#park at 1000.06, 1000.69, 0.010
+#go after park at 1000.06, 1000.69, 0.010  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#reinitialize robot pose
+
+#execute task at label start_mission
+
+#######
+
+
+#map obstaculos
+#get bale from pile
+##get bale from pile
+##pose inicial
+#park at 1003.49, 1000.08, -0.023 # 1002.97, 1000.07, -0.018
+#go after park at 1003.49, 1000.08, -0.023 # 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+##pose final
+#park at 1001.74, 999.25, 0.305 #1000.33, 999.44, -0.068 # 1002.97, 1000.07, -0.018
+#go after park at 1001.74, 999.25, 0.305 #1000.33, 999.44, -0.068 # 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#put bale on the truck
+
+#get bale from pile
+#pose inicial
+#park at 1002.99, 1000.80, 0.009 # 1002.97, 1000.07, -0.018
+#go after park at 1002.99, 1000.80, 0.009 # 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#pose final
+#park at 999.58, 1000.67, -0.009 #1000.33, 999.44, -0.068 # 1002.97, 1000.07, -0.018
+#go after park at 999.58, 1000.67, -0.009 #1000.33, 999.44, -0.068 # 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#put bale on the truck
+
+
+
+#get farme
+#park at   999.82, 1000.38, -0.002 #1005.02, 997.65, 1.543
+#go after park at   999.82, 1000.38, -0.002  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+
+#park at   1000.17, 1000.25, -0.068 # 1000.15, 1000.02, -0.074#999.64, 1000.64, 0.016 #1005.02, 997.65, 1.543
+#go after park at   1000.17, 1000.25, -0.068 # 1000.15, 1000.02, -0.074#999.64, 1000.64, 0.016  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+
+#get bale from pile
+#put bale on the truck
+#get bale from pile
+
+#pose incial
+#park at 1002.97, 1000.07, -0.018
+#go after park at 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#
+##put farme
+#park at     999.98, 999.58, 0.111 #1005.02, 997.65, 1.543
+#go after park at     999.98, 999.58, 0.111  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#
+##put bale on the truck
+#
+##pose incial
+#park at 1002.97, 1000.07, -0.018
+#go after park at 1002.97, 1000.07, -0.018  # fica nesta task ateh o fim do curso 
+#stop # tira de modo autonomo
+#
+announce "Mission completed!"
