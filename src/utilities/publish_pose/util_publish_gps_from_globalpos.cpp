@@ -6,6 +6,7 @@
 
 double UtmZone = 24;
 int UtmHemiN = 1;
+carmen_vector_3D_t gps_position;
 
 
 carmen_xsens_mtig_message
@@ -107,16 +108,17 @@ read_parameters(int argc, char **argv)
 		UtmHemiN = atoi(argv[2]);
 	}
 
-	// int num_items;
+	int num_items;
 
-	// carmen_param_t param_list[] =
-	// {
-    //     {(char *)"robot",				(char *)"max_velocity", CARMEN_PARAM_DOUBLE, &robot_config.max_v, 1, NULL},
-    //     {(char *)"navigator",			(char *)"goal_size", CARMEN_PARAM_DOUBLE, &nav_config.goal_size, 1, NULL},
-	// };
+	carmen_param_t param_list[] =
+	{
+        {(char *)"gps",	(char *)"nmea_1_x", CARMEN_PARAM_DOUBLE, &gps_position.x, 1, NULL},
+		{(char *)"gps",	(char *)"nmea_1_y", CARMEN_PARAM_DOUBLE, &gps_position.y, 1, NULL},
+		{(char *)"gps",	(char *)"nmea_1_z", CARMEN_PARAM_DOUBLE, &gps_position.z, 1, NULL},
+	};
 
-	// num_items = sizeof(param_list)/sizeof(param_list[0]);
-	// carmen_param_install_params(argc, argv, param_list, num_items);
+	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
