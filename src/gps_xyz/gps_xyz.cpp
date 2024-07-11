@@ -414,6 +414,7 @@ plot(double x, double x_crr, double y, double y_crr, double timestamp)
 void
 carmen_gps_gpgga_message_handler(carmen_gps_gpgga_message *gps_gpgga)
 {
+	printf("Ola\n");
 	double latitude = 0;
 	double longitude = 0;
 	carmen_gps_xyz_message gps_xyz_message;
