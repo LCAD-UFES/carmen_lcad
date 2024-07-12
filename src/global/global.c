@@ -1569,6 +1569,12 @@ double carmen_global_convert_degmin_to_double(double dm_format) {
   return degree + minutes;
 }
 
+double carmen_global_convert_double_to_degmin(double double_format) {
+  double degree   = floor(double_format);
+  double minutes  = (double_format - degree) * 60.0;
+  return degree * 100.0 + minutes;
+}
+
 int carmen_parse_bumper_offsets(char *offset_string, carmen_position_p offsets, int num_bumpers)
 {
   int bumper_num=0;

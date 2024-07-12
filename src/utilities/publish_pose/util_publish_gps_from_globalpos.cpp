@@ -76,10 +76,11 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	// char *host;
 
 	// 7757691.01 -363593.38 0.588 - Coordenada UTM portão LCAD-4
-	
+
 	carmen_gps_gpgga_message nmea_message = {};
 
 	nmea_message.timestamp = message->timestamp;
+	nmea_message.host = carmen_get_host();
 
 	// Gdc_Coord_3d gdc = carmen_Utm_Gdc2(363593.38, 7757691.01, 0, UtmZone, UtmHemiN);
 	Gdc_Coord_3d gdc = carmen_Utm_Gdc2(-message->globalpos.y, message->globalpos.x, 0, UtmZone, UtmHemiN);
@@ -87,7 +88,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	nmea_message.nr = 1;
 	nmea_message.utc = 0.0;
 	nmea_message.latitude = -gdc.latitude;
+	nmea_message.latitude_dm = carmen_global_convert_double_to_degmin(nmea_message.latitude);
 	nmea_message.longitude = -gdc.longitude;
+	nmea_message.longitude_dm = carmen_global_convert_double_to_degmin(nmea_message.longitude);
 	nmea_message.altitude = gdc.elevation;
 	nmea_message.lat_orient = 'S';
 	nmea_message.long_orient = 'W';
