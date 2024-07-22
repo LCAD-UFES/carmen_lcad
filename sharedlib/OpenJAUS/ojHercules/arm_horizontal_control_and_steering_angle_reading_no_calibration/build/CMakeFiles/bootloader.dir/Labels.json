@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/CMakeFiles/bootloader"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/CMakeFiles/bootloader.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/CMakeFiles/bootloader-complete.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
+		},
+		{
+			"file" : "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/arm_horizontal_control_and_steering_angle_reading_no_calibration/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"bootloader"
+		],
+		"name" : "bootloader"
+	}
+}
