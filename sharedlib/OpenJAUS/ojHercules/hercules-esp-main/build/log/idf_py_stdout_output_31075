@@ -1,0 +1,146 @@
+Pulse Count: 0[0m
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x17 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:7172
+load:0x40078000,len:15540
+load:0x40080400,len:4
+ho 8 tail 4 room 4
+load:0x40080404,len:3904
+entry 0x40080640
+[0;32mI (31) boot: ESP-IDF v5.2.1 2nd stage bootloader[0m
+[0;32mI (31) boot: compile time May  2 2024 11:58:03[0m
+[0;32mI (31) boot: Multicore bootloader[0m
+[0;32mI (35) boot: chip revision: v3.1[0m
+[0;32mI (39) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (44) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (48) boot.esp32: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (58) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (69) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (84) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0b1c4h ( 45508) map[0m
+[0;32mI (120) esp_image: segment 1: paddr=0001b1ec vaddr=3ff80000 size=00004h (     4) load[0m
+[0;32mI (120) esp_image: segment 2: paddr=0001b1f8 vaddr=3ffb0000 size=0213ch (  8508) load[0m
+[0;32mI (129) esp_image: segment 3: paddr=0001d33c vaddr=40080000 size=02cdch ( 11484) load[0m
+[0;32mI (139) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=170e0h ( 94432) map[0m
+[0;32mI (175) esp_image: segment 5: paddr=00037108 vaddr=40082cdc size=092f4h ( 37620) load[0m
+[0;32mI (196) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (196) boot: Disabling RNG early entropy source...[0m
+[0;32mI (208) cpu_start: Multicore app[0m
+[0;32mI (216) cpu_start: Pro cpu start user code[0m
+[0;32mI (216) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (216) cpu_start: Application information:[0m
+[0;32mI (219) cpu_start: Project name:     hercules-esp[0m
+[0;32mI (225) cpu_start: App version:      stable-1.0-284-ge37d1ecb1-dirty[0m
+[0;32mI (232) cpu_start: Compile time:     May  3 2024 14:32:04[0m
+[0;32mI (238) cpu_start: ELF file SHA256:  89ed01ff7...[0m
+[0;32mI (243) cpu_start: ESP-IDF:          v5.2.1[0m
+[0;32mI (248) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (253) cpu_start: Max chip rev:     v3.99 [0m
+[0;32mI (258) cpu_start: Chip rev:         v3.1[0m
+[0;32mI (263) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (270) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (276) heap_init: At 3FFB2A68 len 0002D598 (181 KiB): DRAM[0m
+[0;32mI (282) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM[0m
+[0;32mI (288) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (295) heap_init: At 4008BFD0 len 00014030 (80 KiB): IRAM[0m
+[0;32mI (302) spi_flash: detected chip: generic[0m
+[0;32mI (305) spi_flash: flash io: dio[0m
+[0;33mW (309) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.[0m
+[0;32mI (323) main_task: Started on CPU0[0m
+[0;32mI (333) main_task: Calling app_main()[0m
+[0;32mI (333) CAN module: Setting up CAN[0m
+[0;32mI (333) CAN module: Configurations set[0m
+[0;32mI (333) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (343) gpio: GPIO[16]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (353) CAN module: Driver installed[0m
+[0;32mI (353) CAN module: Driver started[0m
+[0;32mI (363) ODOM module: install pcnt unit[0m
+[0;32mI (363) ODOM module: set glitch filter[0m
+[0;32mI (373) ODOM module: install pcnt channels[0m
+[0;32mI (373) ODOM module: install pcnt unit[0m
+[0;32mI (383) ODOM module: set glitch filter[0m
+[0;32mI (373) main_task: Returned from app_main()[0m
+[0;32mI (373) gpio: GPIO[5]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (383) ODOM module: install pcnt channels[0m
+[0;32mI (403) gpio: GPIO[17]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (403) gpio: GPIO[14]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Plldown: 0| Intr:0 [0m
+[0;32mI (413) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (423) gpio: GPIO[26]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (423) ODOM module: enable pcnt unit[0m
+[0;32mI (433) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (453) ODOM module: enable pcnt unit[0m
+[0;32mI (443) ODOM module: clear pcnt unit[0m
+[0;32mI (453) ODOM module: clear pcnt unit[0m
+[0;32mI (453) ODOM module: start pcnt unit[0m
+[0;32mI (463) ODOM module: start pcnt unit[0m
+[0;32mI (473) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (463) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (483) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (473) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (563) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (573) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (663) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (673) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (763) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (773) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (863) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (873) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (963) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (973) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1063) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1073) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1163) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1173) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1263) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1273) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1363) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1373) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1463) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1473) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1563) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1573) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1663) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1673) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1763) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1773) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1863) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1873) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (1963) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1973) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2063) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2073) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2163) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2173) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2263) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2273) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2363) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2373) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2463) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2473) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2563) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2573) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2663) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2673) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2763) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2773) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2863) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2873) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (2963) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2973) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (3063) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (3073) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (3163) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (3173) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (3263) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (3273) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (3363) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (3373) ODOM module: Right Encoder Pulse Count: 0[0m
+[0;32mI (3463) ODOM module: Left Encoder Pulse Count: 0[0m

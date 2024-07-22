@@ -1,0 +1,65 @@
+[0;33m--- esp-idf-monitor 1.4.0 on /dev/ttyACM0 115200 ---[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H ---[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d59c3: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:138
+[0m
+[0;33m0x400029ac: __divdf3 in ROM
+0x400029cb: __divdf3 in ROM
+[0m
+[0;33m0x400d59c0: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:137
+0x400d5ae3: motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:221
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d59c3: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:138
+[0m
+[0;33m0x400029ac: __divdf3 in ROM
+0x400029cb: __divdf3 in ROM
+[0m
+[0;33m0x400d59c0: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:137
+0x400d5ae3: motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:221
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d59c3: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:138
+[0m
+[0;33m0x400029ac: __divdf3 in ROM
+0x400029cb: __divdf3 in ROM
+[0m
+[0;33m0x400d59c0: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:137
+0x400d5ae3: motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:221
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d59c3: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:138
+[0m
+[0;33m0x400029ac: __divdf3 in ROM
+0x400029cb: __divdf3 in ROM
+[0m
+[0;33m0x400d59c0: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:137
+0x400d5ae3: motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:221
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d59c3: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:138
+[0m
+[0;33m0x400029ac: __divdf3 in ROM
+0x400029cb: __divdf3 in ROM
+[0m
+[0;33m0x400d59c0: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:137
+0x400d5ae3: motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:221
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d59c3: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:138
+[0m
+[0;33m0x400029ac: __divdf3 in ROM
+0x400029cb: __divdf3 in ROM
+[0m
+[0;33m0x400d59c0: set_motor_direction at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:137
+0x400d5ae3: motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/control.c:221
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0m

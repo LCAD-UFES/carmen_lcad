@@ -1,0 +1,74 @@
+[1/9] Performing build step for 'bootloader'
+[1/1] cd /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/esptool_py && /home/hercules/.espressif/python_env/idf5.2_py3.8_env/bin/python /home/hercules/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/bootloader.bin
+Bootloader binary size 0x6860 bytes. 0x7a0 bytes (7%) free.
+[2/9] No install step for 'bootloader'
+[3/9] Completed 'bootloader'
+[4/9] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
+In file included from /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/include/system.h:7,
+                 from /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c:1:
+/home/hercules/esp/esp-idf/components/driver/deprecated/driver/adc.h:19:2: warning: #warning "legacy adc driver is deprecated, please migrate to use esp_adc/adc_oneshot.h and esp_adc/adc_continuous.h for oneshot mode and continuous mode drivers respectively" [-Wcpp]
+   19 | #warning "legacy adc driver is deprecated, please migrate to use esp_adc/adc_oneshot.h and esp_adc/adc_continuous.h for oneshot mode and continuous mode drivers respectively"
+      |  ^~~~~~~
+/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c: In function 'app_main':
+/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c:67:18: warning: passing argument 1 of 'xTaskCreate' from incompatible pointer type [-Wincompatible-pointer-types]
+   67 |     xTaskCreate (can_reading_task, "CAN Reading Task",
+      |                  ^~~~~~~~~~~~~~~~
+      |                  |
+      |                  void (*)(void)
+In file included from /home/hercules/esp/esp-idf/components/freertos/esp_additions/include/freertos/idf_additions.h:20,
+                 from /home/hercules/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/FreeRTOS.h:1533,
+                 from /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/include/system.h:5:
+/home/hercules/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/task.h:371:44: note: expected 'TaskFunction_t' {aka 'void (*)(void *)'} but argument is of type 'void (*)(void)'
+  371 |     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~
+/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c:70:18: warning: passing argument 1 of 'xTaskCreate' from incompatible pointer type [-Wincompatible-pointer-types]
+   70 |     xTaskCreate (can_writing_task, "CAN Writing Task",
+      |                  ^~~~~~~~~~~~~~~~
+      |                  |
+      |                  void (*)(void)
+/home/hercules/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/task.h:371:44: note: expected 'TaskFunction_t' {aka 'void (*)(void *)'} but argument is of type 'void (*)(void)'
+  371 |     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~
+/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c:77:18: warning: passing argument 1 of 'xTaskCreate' from incompatible pointer type [-Wincompatible-pointer-types]
+   77 |     xTaskCreate (servo_task, "Servo Task", 8192,
+      |                  ^~~~~~~~~~
+      |                  |
+      |                  void (*)(void)
+/home/hercules/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/task.h:371:44: note: expected 'TaskFunction_t' {aka 'void (*)(void *)'} but argument is of type 'void (*)(void)'
+  371 |     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~
+/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c:83:18: warning: passing argument 1 of 'xTaskCreate' from incompatible pointer type [-Wincompatible-pointer-types]
+   83 |     xTaskCreate (left_encoder_task, "L Encoder Task", 1024 * 8,
+      |                  ^~~~~~~~~~~~~~~~~
+      |                  |
+      |                  void (*)(void)
+/home/hercules/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/task.h:371:44: note: expected 'TaskFunction_t' {aka 'void (*)(void *)'} but argument is of type 'void (*)(void)'
+  371 |     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~
+/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c:85:18: warning: passing argument 1 of 'xTaskCreate' from incompatible pointer type [-Wincompatible-pointer-types]
+   85 |     xTaskCreate (right_encoder_task, "R Encoder Task", 1024 * 8,
+      |                  ^~~~~~~~~~~~~~~~~~
+      |                  |
+      |                  void (*)(void)
+/home/hercules/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/task.h:371:44: note: expected 'TaskFunction_t' {aka 'void (*)(void *)'} but argument is of type 'void (*)(void)'
+  371 |     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~
+/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/main.c:87:18: warning: passing argument 1 of 'xTaskCreate' from incompatible pointer type [-Wincompatible-pointer-types]
+   87 |     xTaskCreate (steering_reading_task, "Steering Reading Task",
+      |                  ^~~~~~~~~~~~~~~~~~~~~
+      |                  |
+      |                  void (*)(void)
+/home/hercules/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/task.h:371:44: note: expected 'TaskFunction_t' {aka 'void (*)(void *)'} but argument is of type 'void (*)(void)'
+  371 |     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~
+[5/9] Linking C static library esp-idf/main/libmain.a
+[6/9] Generating ld/sections.ld
+[7/9] Linking CXX executable hercules-esp.elf
+[8/9] Generating binary image from built executable
+esptool.py v4.7.0
+Creating esp32 image...
+Merged 2 ELF sections
+Successfully created esp32 image.
+Generated /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/hercules-esp.bin
+[9/9] cd /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/esp-idf/esptool_py && /home/hercules/.espressif/python_env/idf5.2_py3.8_env/bin/python /home/hercules/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/partition_table/partition-table.bin /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/hercules-esp.bin
+hercules-esp.bin binary size 0x31ed0 bytes. Smallest app partition is 0x100000 bytes. 0xce130 bytes (80%) free.

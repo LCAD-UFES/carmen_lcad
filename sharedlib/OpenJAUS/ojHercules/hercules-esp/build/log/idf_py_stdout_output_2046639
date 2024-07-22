@@ -1,0 +1,2201 @@
+e�ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x16 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:7172
+load:0x40078000,len:15540
+load:0x40080400,len:4
+ho 8 tail 4 room 4
+load:0x40080404,len:3904
+entry 0x40080640
+[0;32mI (31) boot: ESP-IDF v5.2.1 2nd stage bootloader[0m
+[0;32mI (31) boot: compile time May  2 2024 11:58:03[0m
+[0;32mI (31) boot: Multicore bootloader[0m
+[0;32mI (35) boot: chip revision: v3.1[0m
+[0;32mI (39) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (44) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (48) boot.esp32: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (58) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (69) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (84) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0ca3ch ( 51772) map[0m
+[0;32mI (122) esp_image: segment 1: paddr=0001ca64 vaddr=3ff80000 size=00004h (     4) load[0m
+[0;32mI (122) esp_image: segment 2: paddr=0001ca70 vaddr=3ffb0000 size=021e4h (  8676) load[0m
+[0;32mI (131) esp_image: segment 3: paddr=0001ec5c vaddr=40080000 size=013bch (  5052) load[0m
+[0;32mI (138) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=1a488h (107656) map[0m
+[0;32mI (182) esp_image: segment 5: paddr=0003a4b0 vaddr=400813bc size=0b950h ( 47440) load[0m
+[0;32mI (207) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (207) boot: Disabling RNG early entropy source...[0m
+[0;32mI (218) cpu_start: Multicore app[0m
+[0;32mI (227) cpu_start: Pro cpu start user code[0m
+[0;32mI (227) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (227) cpu_start: Application information:[0m
+[0;32mI (230) cpu_start: Project name:     hercules-esp[0m
+[0;32mI (236) cpu_start: App version:      stable-1.0-346-g70d6bd67a-dirty[0m
+[0;32mI (243) cpu_start: Compile time:     Jun 12 2024 08:06:16[0m
+[0;32mI (249) cpu_start: ELF file SHA256:  cb361701e...[0m
+[0;32mI (254) cpu_start: ESP-IDF:          v5.2.1[0m
+[0;32mI (259) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (264) cpu_start: Max chip rev:     v3.99 [0m
+[0;32mI (268) cpu_start: Chip rev:         v3.1[0m
+[0;32mI (273) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (280) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (286) heap_init: At 3FFB2B88 len 0002D478 (181 KiB): DRAM[0m
+[0;32mI (293) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM[0m
+[0;32mI (299) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (305) heap_init: At 4008CD0C len 000132F4 (76 KiB): IRAM[0m
+[0;32mI (313) spi_flash: detected chip: generic[0m
+[0;32mI (316) spi_flash: flash io: dio[0m
+[0;33mW (320) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.[0m
+[0;32mI (334) main_task: Started on CPU0[0m
+[0;32mI (344) main_task: Calling app_main()[0m
+[0;32mI (344) CAN module: Setting up CAN[0m
+[0;32mI (344) CAN module: Configurations set[0m
+[0;32mI (344) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;33mW (354) CAN module: Failed to queue message for transmission[0m
+[0;32mI (354) gpio: GPIO[16]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (374) CAN module: Driver installed[0m
+[0;32mI (354) gpio: GPIO[19]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (354) ODOM module: install pcnt unit[0m
+[0;32mI (354) ODOM module: install pcnt unit[0m
+[0;32mI (354) main_task: Returned from app_main()[0m
+[0;33mW (364) CAN module: Failed to queue message for transmission[0m
+[0;32mI (354) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (374) CAN module: Driver started[0m
+[0;32mI (384) gpio: GPIO[22]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (384) ODOM module: set glitch filter[0m
+[0;32mI (434) ODOM module: install pcnt channels[0m
+[0;32mI (414) gpio: GPIO[32]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (424) gpio: GPIO[23]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (394) ODOM module: set glitch filter[0m
+[0;32mI (434) gpio: GPIO[26]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (454) ODOM module: install pcnt channels[0m
+[0;32mI (464) gpio: GPIO[14]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (474) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (474) gpio: GPIO[17]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (484) ODOM module: set edge and level action for pcnt channels[0m
+[0;32mI (494) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (504) gpio: GPIO[5]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (514) ODOM module: enable pcnt unit[0m
+[0;32mI (534) ODOM module: clear pcnt unit[0m
+[0;32mI (524) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (514) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (554) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (544) ODOM module: enable pcnt unit[0m
+[0;32mI (534) ODOM module: start pcnt unit[0m
+[0;32mI (554) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (564) ODOM module: clear pcnt unit[0m
+[0;32mI (574) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (574) ODOM module: start pcnt unit[0m
+[0;32mI (584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (594) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (614) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (614) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (634) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (634) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (654) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (654) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (674) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (694) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (714) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (724) CONTROL moule: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (734) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (754) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (754) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (774) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (1984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (1984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (2984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (2984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (3984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (3984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (4984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (4984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (5984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (5984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (6984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (6984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (7984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (7984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (8984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (8984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (9984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (9984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;33mW (10414) CAN module: Failed to receive message
+[0m
+[0;32mI (10424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (10984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (10984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (11984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (11984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (12984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (12984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (13984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (13984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (14984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (14984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (15984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (15984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (16984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (16984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (17984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (17984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (18984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (18984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (19984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (19984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;33mW (20414) CAN module: Failed to receive message
+[0m
+[0;32mI (20424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20524) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20524) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20544) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20544) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20564) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20564) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20584) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20584) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20604) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20604) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20624) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20624) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20644) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20644) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20664) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20664) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20684) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20684) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20704) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20704) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20724) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20724) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20744) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20744) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20764) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20764) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20784) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20784) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20804) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20804) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20824) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20824) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20844) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20844) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20864) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20864) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20884) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20884) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20904) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20904) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20924) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20924) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20944) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20944) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20964) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20964) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (20984) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (20984) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21004) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21004) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21024) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21024) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21044) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21044) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21064) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21064) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21084) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21084) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21104) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21104) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21124) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21124) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21144) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21144) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21164) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21164) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21184) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21184) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21204) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21204) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21224) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21224) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21244) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21244) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21264) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21264) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21284) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21284) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21304) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21304) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21324) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21324) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21344) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21344) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21364) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21364) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21384) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21384) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21404) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21404) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21424) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21424) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21444) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21444) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21464) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21464) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21484) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21484) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m
+[0;32mI (21504) CONTROL module: CAN Velocity command: 0[0m
+[0;32mI (21504) CONTROL module: Command velocity left: 0.000000, Command velocity right: 0.000000[0m

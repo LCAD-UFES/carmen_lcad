@@ -1,0 +1,356 @@
+
+[0;32mI (215353) CAN module: odom_left_velocity: 0.059219[0m) CAN module: odom_left_velocity: 0.061942[�ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x17 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:7172
+load:0x40078000,len:15540
+load:0x40080400,len:4
+ho 8 tail 4 room 4
+load:0x40080404,len:3904
+entry 0x40080640
+[0;32mI (31) boot: ESP-IDF v5.2.1 2nd stage bootloader[0m
+[0;32mI (31) boot: compile time May  2 2024 11:58:03[0m
+[0;32mI (31) boot: Multicore bootloader[0m
+[0;32mI (35) boot: chip revision: v3.1[0m
+[0;32mI (39) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (44) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (48) boot.esp32: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (58) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (69) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (84) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0c934h ( 51508) map[0m
+[0;32mI (122) esp_image: segment 1: paddr=0001c95c vaddr=3ff80000 size=00004h (     4) load[0m
+[0;32mI (122) esp_image: segment 2: paddr=0001c968 vaddr=3ffb0000 size=021e4h (  8676) load[0m
+[0;32mI (131) esp_image: segment 3: paddr=0001eb54 vaddr=40080000 size=014c4h (  5316) load[0m
+[0;32mI (138) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=19f98h (106392) map[0m
+[0;32mI (181) esp_image: segment 5: paddr=00039fc0 vaddr=400814c4 size=0b848h ( 47176) load[0m
+[0;32mI (206) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (206) boot: Disabling RNG early entropy source...[0m
+[0;32mI (218) cpu_start: Multicore app[0m
+[0;32mI (226) cpu_start: Pro cpu start user code[0m
+[0;32mI (226) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (227) cpu_start: Application information:[0m
+[0;32mI (229) cpu_start: Project name:     hercules-esp[0m
+[0;32mI (235) cpu_start: App version:      stable-1.0-284-ge37d1ecb1-dirty[0m
+[0;32mI (242) cpu_start: Compile time:     May  3 2024 14:32:04[0m
+[0;32mI (248) cpu_start: ELF file SHA256:  cb5e0c992...[0m
+[0;32mI (253) cpu_start: ESP-IDF:          v5.2.1[0m
+[0;32mI (258) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (263) cpu_start: Max chip rev:     v3.99 [0m
+[0;32mI (268) cpu_start: Chip rev:         v3.1[0m
+[0;32mI (273) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (280) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (286) heap_init: At 3FFB2B78 len 0002D488 (181 KiB): DRAM[0m
+[0;32mI (292) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM[0m
+[0;32mI (298) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (305) heap_init: At 4008CD0C len 000132F4 (76 KiB): IRAM[0m
+[0;32mI (312) spi_flash: detected chip: generic[0m
+[0;32mI (316) spi_flash: flash io: dio[0m
+[0;33mW (320) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.[0m
+[0;32mI (333) main_task: Started on CPU0[0m
+[0;32mI (343) main_task: Calling app_main()[0m
+[0;32mI (343) CAN module: Setting up CAN[0m
+[0;32mI (343) CAN module: Configurations set[0m
+[0;32mI (343) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (353) gpio: GPIO[16]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (363) CAN module: Driver installed[0m
+[0;32mI (363) CAN module: Driver started[0m
+[0;32mI (373) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (373) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (383) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (393) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (383) gpio: GPIO[32]|InputEn: 0| OuputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (383) ODOM module: install pcnt unit[0m
+[0;32mI (413) ODOM module: set glitch filter[0m
+[0;32mI (383) main_task: Returned from app_main()[0m
+[0;32mI (383) gpio: GPIO[19]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (433) gpio: GPIO[22]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (383) ODOM module: install pcnt unit[0m
+[0;32mI (413) ODOM module: install pcnt channels[0m
+[0;32mI (403) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (443) gpio: GPIO[23]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (443) ODOM module: set glitch filter[0m
+[0;32mI (443) gpio: GPIO[26]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (453) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (483) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (473) gpio: GPIO[14]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (463) ODOM module: install pcnt cannels[0m
+[0;32mI (503) gpio: GPIO[5]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI 513) gpio: GPIO[17]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32m (523) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (493) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (483) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (523) ODOM module: enable pcnt unit[0m
+[0;32mI (533) ODOM module: enable pcnt unit[0m
+[0;32mI (533) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (543) ODOM module: clear pcnt unit[0m
+[0;32mI (543) ODOM module: clear pntunit[0m
+[0;32mI (563) ODOM module: start pcnt unit[0m
+[0;32mI (553) ODOM module: start pcnt unit[0m
+[0;32mI (553) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (563) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (573) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (583) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (593) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (593) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (603) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (603) CAN module: odom_left_velocity: 0.0000000m
+[0;3mI (13) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (613) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (623) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (623) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (633) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (633) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (633) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (643) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (653) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (653) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (653) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (673) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (673) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (683) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (673) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (683) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (693) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (703) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (693) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (703) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (713) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (713) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (723) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (733) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (733) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (733) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (743) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (743) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (753) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (763) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (763) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (773) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (783) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (783) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (793) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (783) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (793) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (803) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (803) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (813) CAN module: oom_left_velocity: 0.000000[0m
+[0;32mI (823) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (823) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (833) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (83) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (843) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (853) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (853) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (863) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (863) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (873) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (873) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (883) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (883) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (893) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (893) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (903) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (903) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (913) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (913) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (923) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (923) ODOM module: Let ncderPulse Count: 0[0m
+[0;32mI (933) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (933) ODOM module Left Encoder Pulse Count: 0[0m
+[0;32mI (943) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (953) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (953) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;3mI(96) CAN mdule: odom_left_velocity: 0.000000[0m
+[0;32mI (963) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (973) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (973) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (983) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (983) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (993) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (993) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1003) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1003) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1013) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1013) ODOM mdule: Left Encoder Pulse Count: 0[0m
+[0;32mI (1023) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1023) OOMmodule Left Ecode Plse Count: 0[0m
+[0;32mI (1033) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1033) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1043) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1053) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1053) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1063) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1063) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1073) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1073) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1083) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1083) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1093) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1093) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1103) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1103) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1113) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1123) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1123) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1133) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1143) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1143) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1153) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1163) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1163) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1173) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1183) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1183) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1193) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1203) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1203) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1213) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1223) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1223) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1233) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1243) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1243) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1253) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1263) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1263) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1273) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1283) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1283) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1293) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1303) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1303) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1313) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1323) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1323) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1333) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1343) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1343) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1353) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1363) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1363) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1373) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1383) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1383) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1393) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1403) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1403) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1413) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1423) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1423) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1433) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1443) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1443) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1453) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1463) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1463) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1473) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1483) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1483) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1493) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1503) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1503) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1513) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1523) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1523) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1533) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1543) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1543) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1553) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1563) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1563) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1573) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1583) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1583) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1593) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1603) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1603) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1613) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1623) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1623) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1633) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1643) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1643) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1653) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1663) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1663) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1673) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1683) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1683) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1693) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1703) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1703) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1713) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1723) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1723) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1733) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1743) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1743) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1753) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1763) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1763) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1773) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1783) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1783) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1793) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1803) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1803) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1813) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1823) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1823) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1833) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1843) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1843) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1853) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1863) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1863) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1873) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1883) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1883) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1893) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1903) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1903) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1913) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1923) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1923) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1933) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1943) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1943) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1953) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1963) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1963) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1973) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1983) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (1983) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (1993) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2003) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2003) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2013) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2023) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2023) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2033) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2043) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2043) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2053) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2063) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2063) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2073) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2083) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2083) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2093) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2103) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2103) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2113) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2123) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2123) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2133) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2143) ODOM module: Left Encoder Pulse Count: 0[0m
+[0;32mI (2143) CAN module: odom_left_velocity: 0.000000[0m
+[0;32mI (2153) CAN module: odom_left_velocity: 0.000000[0m

@@ -1,0 +1,128 @@
+X�́�ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x17 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:7172
+load:0x40078000,len:15540
+load:0x40080400,len:4
+ho 8 tail 4 room 4
+load:0x40080404,len:3904
+entry 0x40080640
+[0;32mI (31) boot: ESP-IDF v5.2.1 2nd stage bootloader[0m
+[0;32mI (31) boot: compile time May  2 2024 11:58:03[0m
+[0;32mI (31) boot: Multicore bootloader[0m
+[0;32mI (35) boot: chip revision: v3.1[0m
+[0;32mI (39) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (44) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (48) boot.esp32: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (58) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (69) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (84) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0c99ch ( 51612) map[0m
+[0;32mI (122) esp_image: segment 1: paddr=0001c9c4 vaddr=3ff80000 size=00004h (     4) load[0m
+[0;32mI (122) esp_image: segment 2: paddr=0001c9d0 vaddr=3ffb0000 size=021e4h (  8676) load[0m
+[0;32mI (131) esp_image: segment 3: paddr=0001ebbc vaddr=40080000 size=0145ch (  5212) load[0m
+[0;32mI (138) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=1a204h (107012) map[0m
+[0;32mI (181) esp_image: segment 5: paddr=0003a22c vaddr=4008145c size=0b8b0h ( 47280) load[0m
+[0;32mI (207) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (207) boot: Disabling RNG early entropy source...[0m
+[0;32mI (218) cpu_start: Multicore app[0m
+[0;32mI (227) cpu_start: Pro cpu start user code[0m
+[0;32mI (227) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (227) cpu_start: Application information:[0m
+[0;32mI (230) cpu_start: Project name:     hercules-esp[0m
+[0;32mI (235) cpu_start: App version:      stable-1.0-371-gcab933b80-dirty[0m
+[0;32mI (242) cpu_start: Compile time:     Jul 22 2024 14:46:12[0m
+[0;32mI (248) cpu_start: ELF file SHA256:  780357457...[0m
+[0;32mI (254) cpu_start: ESP-IDF:          v5.2.1[0m
+[0;32mI (259) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (263) cpu_start: Max chip rev:     v3.99 [0m
+[0;32mI (268) cpu_start: Chip rev:         v3.1[0m
+[0;32mI (273) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (280) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (286) heap_init: At 3FFB2B80 len 0002D480 (181 KiB): DRAM[0m
+[0;32mI (292) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM[0m
+[0;32mI (299) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (305) heap_init: At 4008CD0C len 000132F4 (76 KiB): IRAM[0m
+[0;32mI (313) spi_flash: detected chip: generic[0m
+[0;32mI (316) spi_flash: flash io: dio[0m
+[0;33mW (320) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.[0m
+[0;32mI (334) main_task: Started on CPU0[0m
+[0;32mI (344) main_task: Calling app_main()[0m
+[0;32mI (344) CAN module: Setting up CAN[0m
+[0;32mI (344) CAN module: Configurations set[0m
+[0;32mI (344) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (354) gpio: GPIO[16]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;33mW (364) CAN module: Failed to queue message for transmission[0m
+[0;32mI (364) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (364) CAN module: Driver installed[0m
+[0;32mI (364) gpio: GPIO[19]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (364) ODOM module: install pcnt unit[0m
+[0;32mI (364) main_task: Returned from app_main()[0m
+[0;32mI (364) ODOM module: install pcnt unit[0m
+[0;33mW (374) CAN module: Failed to queue message for transmission[0m
+[0;32mI (84) gpio: GPIO[32]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (384) CAN module: Driver started[0m
+[0;32mI (394) gpio: GPIO[22]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (434) gpio: GPIO[23]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup:1| ulldown: 0| Intr:0 [0m
+[0;32mI (404) ODOM module: set glitch filter[0m
+[0;32mI (454) ODOM module: install pcnt channels[0m
+[0;32mI (454) gpio: GPIO[17]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (464) gpio: GPIO[5]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Int:0 0m[0;32mI (474) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (474) ODOM module: enable pcnt unit[0m
+[0;32mI (484) ODOM module: clear pcnt unit[0m
+[0;32mI (484) ODOM module: start pcnt unit[0m
+[0;32mI (394) ODOM module: set glitch filter[0m
+[0;32mI (494) ODOM module: install pcnt channels[0m
+[0;32mI (504) gpio: GPIO[26]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (514) gpio: GPIO[14]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (524) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (524) ODOM module: enable pcnt unit[0m
+[0;32mI (534) ODOM module: clear pcnt unit[0m
+[0;32mI (534) ODOM module: start pcnt unit[0m
+[0;33mW (10424) CAN module: Failed to receive message
+[0m
+[0;33mW (20424) CAN module: Failed to receive message
+[0m
+[0;33mW (21714) CAN module: Unknown message ID: 1024
+[0m
+[0;33mW (21714) CAN module: Unknown message ID: 1024
+[0m
+[0;33mW (34644) CAN module: Failed to receive message
+[0m
+[0;33mW (44644) CAN module: Failed to receive message
+[0m
+[0;33mW (54644) CAN module: Failed to receive message
+[0m
+[0;33mW (64644) CAN module: Failed to receive message
+[0m
+[0;33mW (74644) CAN module: Failed to receive message
+[0m
+[0;33mW (84644) CAN module: Failed to receive message
+[0m
+[0;33mW (94644) CAN module: Failed to receive message
+[0m
+[0;33mW (104644) CAN module: Failed to receive message
+[0m
+[0;33mW (114644) CAN module: Failed to receive message
+[0m
+[0;33mW (124644) CAN module: Failed to receive message
+[0m
+[0;33mW (134644) CAN module: Failed to receive message
+[0m
+[0;33mW (144644) CAN module: Failed to receive message
+[0m
+[0;33mW (154644) CAN module: Failed to receive message
+[0m
+[0;33mW (164644) CAN module: Failed to receive message
+[0m
+[0;33mW (174644) CAN module: Failed to receive message
+[0m
+[0;33mW (184644) CAN module: Failed to receive message
+[0m
