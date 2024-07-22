@@ -1,4 +1,0 @@
-source "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/esp-idf-arduino/esp-idf/components/bootloader/Kconfig.projbuild"
-source "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/esp-idf-arduino/esp-idf/components/esp_rom/Kconfig.projbuild"
-source "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/esp-idf-arduino/esp-idf/components/esptool_py/Kconfig.projbuild"
-source "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/esp-idf-arduino/esp-idf/components/partition_table/Kconfig.projbuild"

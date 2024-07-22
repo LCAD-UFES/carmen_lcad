@@ -1,4 +1,0 @@
---flash_mode dio --flash_freq 40m --flash_size 2MB
-0x1000 bootloader/bootloader.bin
-0x10000 arm_horizontal_control_and_steering_angle_reading_no_calibration.bin
-0x8000 partition_table/partition-table.bin
