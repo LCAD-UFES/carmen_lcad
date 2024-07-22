@@ -7,17 +7,30 @@
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
+#include "soc/gpio_reg.h"
 #include "driver/adc_common.h"
 #include "esp_adc_cal.h"
 
 #include "Arduino.h"
 #include "driver/mcpwm.h"
 
+#include "freertos/semphr.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "driver/can.h"
 
 void step_motor_setup();
 void step_motor_task(void *arg);
 void motor_task(void *arg);
 void serial_task(void *arg);
+
+// CAN bus
+#define NO_OF_ITERS                     3
+#define RX_TASK_PRIO                    9
+#define TX_GPIO_NUM                     16
+#define RX_GPIO_NUM                     4
+#define EXAMPLE_TAG                     "CAN Listen Only"
+
 
 
 //ADC Channels
@@ -50,6 +63,23 @@ static const char *TAG = "Stepper Motor, angle measurement and steering servo co
 
 double current_steering_angle = (double) (SERVO_MIN_DEGREE + (SERVO_MAX_DEGREE + SERVO_MIN_DEGREE) / 2.0);
 
+// begin CAN bus setup
+
+static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
+static const can_timing_config_t t_config = CAN_TIMING_CONFIG_500KBITS();
+//Set TX queue length to 0 due to listen only mode
+static const can_general_config_t g_config = {.mode = CAN_MODE_NORMAL,
+                                              .tx_io = (gpio_num_t) TX_GPIO_NUM, .rx_io = (gpio_num_t) RX_GPIO_NUM,
+                                              .clkout_io = CAN_IO_UNUSED, .bus_off_io = CAN_IO_UNUSED,
+                                              .tx_queue_len = 5, .rx_queue_len = 5,
+                                              .alerts_enabled = CAN_ALERT_NONE, .clkout_divider = 0};
+static SemaphoreHandle_t rx_sem;
+
+can_message_t can_steering_and_velocity_efforts;
+can_message_t can_odometry_velocity;
+can_message_t can_odometry_steering;
+
+// end CAN bus setup
 
 static bool adc_calibration_init(void)
 {
@@ -159,9 +189,66 @@ set_velocity_command(int velocity_command)
     ESP_LOGI(TAG, "Velocity command: %d", velocity_command);
 }
 
+
+static void
+can_receive_task(void *arg)
+{
+	xSemaphoreTake(rx_sem, portMAX_DELAY);
+
+	// float *break_effort = (float *) arg;
+	while (1)
+	{
+		can_message_t rx_msg;
+		can_receive(&rx_msg, portMAX_DELAY);
+
+		// if (rx_msg.identifier == CAN_ID_SAFE_STOP_AND_MANUAL_OVERRIDE)
+		// {
+		// 	g_manual_override_and_safe_stop = rx_msg.data[0];
+		// 	// Manual Override eh o bit 1 de g_manual_override_and_safe_stop
+		// 	if (g_manual_override_and_safe_stop & 0x2)
+		// 		*break_effort = 0.0;
+
+		// 	// Safe Stop eh o bit 0 de g_manual_override_and_safe_stop
+		// 	if (g_manual_override_and_safe_stop & 0x1)
+		// 		*break_effort = 100.0;
+		// }
+
+		// if ((g_manual_override_and_safe_stop == 0) && (rx_msg.identifier == CAN_ID_SET_BREAK_EFFORT))
+		// {
+		// 	float byte_effort = (float) rx_msg.data[1] / 2.0; // transforma para um valor de 0.0 a 100.0. Ver pd.c em ojIARASim
+		// 	*break_effort = (float) byte_effort;
+
+		// 	static float previous_break_effort = 0.0;
+		// 	if (*break_effort != previous_break_effort)
+		// 		previous_break_effort = *break_effort;
+		// }
+	}
+
+	xSemaphoreGive(rx_sem);
+	vTaskDelete(NULL);
+}
+
+void
+configure_CAN_messages()                        // flag types
+{                                                           // CAN_MSG_FLAG_EXTD			Message is in Extended Frame Format (29bit ID)
+															// CAN_MSG_FLAG_DLC_NON_COMP	Message’s Data length code is larger than 8. This will break compliance with CAN2.0B
+	can_steering_and_velocity_efforts.identifier = 0x100;       // CAN_MSG_FLAG_RTR				Message is a Remote Transmit Request
+	can_steering_and_velocity_efforts.flags = CAN_MSG_FLAG_SS;  // CAN_MSG_FLAG_SS				Transmit message using Single Shot Transmission (Message will not be retransmitted upon error or loss of arbitration)
+	can_steering_and_velocity_efforts.data_length_code = 4;     // CAN_MSG_FLAG_SELF			Transmit message using Self Reception Request (Transmitted message will also received by the same node)
+
+	can_odometry_velocity.identifier = 0x425;					// CAN_MSG_FLAG_RTR				Message is a Remote Transmit Request
+	can_odometry_velocity.flags = CAN_MSG_FLAG_SS;   			// CAN_MSG_FLAG_SS				Transmit message using Single Shot Transmission (Message will not be retransmitted upon error or loss of arbitration)
+	can_odometry_velocity.data_length_code = 2;      			// CAN_MSG_FLAG_SELF
+    
+    can_odometry_steering.identifier = 0x80;					// CAN_MSG_FLAG_RTR				Message is a Remote Transmit Request
+	can_odometry_steering.flags = CAN_MSG_FLAG_SS;   			// CAN_MSG_FLAG_SS				Transmit message using Single Shot Transmission (Message will not be retransmitted upon error or loss of arbitration)
+	can_odometry_steering.data_length_code = 2;      			// CAN_MSG_FLAG_SELF			Transmit message using Self Reception Request (Transmitted message will also received by the same node)
+}
+
 extern "C" void 
 app_main(void)
 {
+    configure_CAN_messages();
 	initArduino();
 
     adc_calibration_init();
@@ -175,10 +262,13 @@ app_main(void)
     ESP_ERROR_CHECK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
     ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_ANGLE_POTENTIOMETER, ADC_EXAMPLE_ATTEN));
 
+
     xTaskCreatePinnedToCore(adc1_task, "adc1_task", 1024 * 2, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(step_motor_task, "step_motor_task", 1024 * 2, NULL, 2, NULL, 1);
-    xTaskCreatePinnedToCore(serial_task, "serial_task", 1024 * 2, NULL, 2, NULL, 1);
-    xTaskCreatePinnedToCore(motor_task, "motor_task", 1024 * 2, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(can_receive_task, "CAN_rx", 4096, NULL, RX_TASK_PRIO, NULL, 0);
+    xTaskCreatePinnedToCore(motor_task, "motor_task", 1024 * 2, NULL, 2, NULL, 0);
+    // xTaskCreatePinnedToCore(can_send_odometry_task, "CAN_rx", 4096, NULL, RX_TASK_PRIO, NULL, 0);
+
 
     while (1) 
     {
