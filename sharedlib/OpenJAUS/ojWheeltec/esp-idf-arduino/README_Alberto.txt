@@ -18,7 +18,7 @@ apropriadas (compatíveis entre si) do esp-idf e do componente Arduino do esp-id
  git submodule update --init --recursive
  cd ../..
  git submodule update --init --recursive
- ./install.sh
+./install.sh
  patch components/arduino/cores/esp32/esp32-hal-uart.c < ../esp32_idf.patch
  . ./export.sh
 

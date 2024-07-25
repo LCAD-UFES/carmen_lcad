@@ -222,11 +222,12 @@ read_steering(adc_oneshot_unit_handle_t adc_handle)
     }
     steering /= (200);
     steering -= POTENTIOMETER_BIAS;
-    return steering;
+
+    return (steering);
 }
 
 void
-can_writing_task ()
+can_writing_task()
 {
     // variables for saving the values temporaly
     double current_velocity;
