@@ -87,6 +87,9 @@ convert_to_carmen_robot_and_trailer_path_point_t(const carmen_robot_and_trailers
 	path_point.x = robot_state.x;
 	path_point.y = robot_state.y;
 	path_point.theta = robot_state.theta;
+	path_point.num_trailers = robot_state.num_trailers;
+	for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+		path_point.trailer_theta[z] = robot_state.trailer_theta[z];
 	path_point.v = robot_state.v;
 	path_point.phi = robot_state.phi;
 	path_point.time = time;
@@ -99,12 +102,14 @@ double
 compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state, Command &command,
 		vector<carmen_robot_and_trailers_path_point_t> &path,
 		TrajectoryControlParameters tcp,
-		double v0, double delta_t)
+		double v0, double *i_trailer_theta, double delta_t)
 {
 
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;
 	robot_state.theta = 0.0;
+	for (size_t j = 0; j < MAX_NUM_TRAILERS; j++)
+		robot_state.trailer_theta[j] = i_trailer_theta[j];
 	robot_state.v = v0;
 	robot_state.phi = 0.0;
 
@@ -127,7 +132,7 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 		else if (command.v < GlobalState::param_max_vel_reverse)
 			command.v = GlobalState::param_max_vel_reverse;
 		
-		for (auto& steering : steering_list) {
+		for (double& steering : steering_list) {
 			steering += steering_previous;
 		}
 
@@ -182,7 +187,7 @@ get_max_distance_in_path(vector<carmen_robot_and_trailers_path_point_t> path, ca
 
 vector<carmen_robot_and_trailers_path_point_t>
 simulate_car_from_parameters(TrajectoryDimensions &td,
-		TrajectoryControlParameters &tcp, double v0, double delta_t)
+		TrajectoryControlParameters &tcp, double v0, double *i_trailer_theta, double delta_t)
 {
 	vector<carmen_robot_and_trailers_path_point_t> path = {};
 	if (!tcp.valid)
@@ -190,7 +195,8 @@ simulate_car_from_parameters(TrajectoryDimensions &td,
 
 	Command command;
 	carmen_robot_and_trailers_traj_point_t robot_state;
-	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, v0, delta_t);
+	robot_state.num_trailers = 0;
+	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, v0, i_trailer_theta, delta_t);
 
 	carmen_robot_and_trailers_path_point_t furthest_point;
 	td.dist = get_max_distance_in_path(path, furthest_point);
@@ -324,7 +330,13 @@ move_path_to_current_robot_pose(vector<carmen_robot_and_trailers_path_point_t> &
 		double y = localizer_pose->y + it->x * sin(localizer_pose->theta) + it->y * cos(localizer_pose->theta);
 		it->x = x;
 		it->y = y;
+		double old_theta = it->theta;
 		it->theta = carmen_normalize_theta(it->theta + localizer_pose->theta);
+		for (size_t j = 0; j < MAX_NUM_TRAILERS; j++)
+		{
+			double beta = convert_theta1_to_beta(old_theta, it->trailer_theta[j]);
+			it->trailer_theta[j] = convert_beta_to_theta1(it->theta, beta);
+		}
 	}
 }
 
@@ -380,8 +392,7 @@ move_detailed_lane_to_front_axle(vector<carmen_robot_and_trailers_path_point_t> 
 
 
 TrajectoryControlParameters
-get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters previous_tcp,
-		TrajectoryDimensions target_td, double target_v,
+get_complete_optimized_trajectory_control_parameters(TrajectoryDimensions target_td, double target_v,
 		vector<carmen_robot_and_trailers_path_point_t> detailed_lane, bool use_lane)
 {
 	GlobalState::eliminate_path_follower = 0;

@@ -1,0 +1,595 @@
+4) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (13154) CONTROL mod steering angle: 7220 Command Steering: 0.000000 E�et�ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x17 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:7172
+load:0x40078000,len:15540
+load:0x40080400,len:4
+ho 8 tail 4 room 4
+load:0x40080404,len:3904
+entry 0x40080640
+[0;32mI (31) boot: ESP-IDF v5.2.1 2nd stage bootloader[0m
+[0;32mI (31) boot: compile time May  2 2024 11:58:03[0m
+[0;32mI (31) boot: Multicore bootloader[0m
+[0;32mI (35) boot: chip revision: v3.1[0m
+[0;32mI (39) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (44) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (48) boot.esp32: SPI Flash Size : 2MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (58) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (69) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (84) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0ca0ch ( 51724) map[0m
+[0;32mI (122) esp_image: segment 1: paddr=0001ca34 vaddr=3ff80000 size=00004h (     4) load[0m
+[0;32mI (122) esp_image: segment 2: paddr=0001ca40 vaddr=3ffb0000 size=021e4h (  8676) load[0m
+[0;32mI (131) esp_image: segment 3: paddr=0001ec2c vaddr=40080000 size=013ech (  5100) load[0m
+[0;32mI (138) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=1a490h (107664) map[0m
+[0;32mI (182) esp_image: segment 5: paddr=0003a4b8 vaddr=400813ec size=0b920h ( 47392) load[0m
+[0;32mI (207) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (207) boot: Disabling RNG early entropy source...[0m
+[0;32mI (218) cpu_start: Multicore app[0m
+[0;32mI (227) cpu_start: Pro cpu start user code[0m
+[0;32mI (227) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (227) cpu_start: Application information:[0m
+[0;32mI (230) cpu_start: Project name:     hercules-esp[0m
+[0;32mI (236) cpu_start: App version:      stable-1.0-346-g70d6bd67a-dirty[0m
+[0;32mI (243) cpu_start: Compile time:     Jun 12 2024 08:06:16[0m
+[0;32mI (249) cpu_start: ELF file SHA256:  7b94554a1...[0m
+[0;32mI (254) cpu_start: ESP-IDF:          v5.2.1[0m
+[0;32mI (259) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (264) cpu_start: Max chip rev:     v3.99 [0m
+[0;32mI (268) cpu_start: Chip rev:         v3.1[0m
+[0;32mI (273) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (280) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (286) heap_init: At 3FFB2B88 len 0002D478 (181 KiB): DRAM[0m
+[0;32mI (293) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM[0m
+[0;32mI (299) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (305) heap_init: At 4008CD0C len 000132F4 (76 KiB): IRAM[0m
+[0;32mI (313) spi_flash: detected chip: generic[0m
+[0;32mI (316) spi_flash: flash io: dio[0m
+[0;33mW (320) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.[0m
+[0;32mI (334) main_task: Started on CPU0[0m
+[0;32mI (344) main_task: Calling app_main()[0m
+[0;32mI (344) CAN module: Setting up CAN[0m
+[0;32mI (344) CAN module: Configurations set[0m
+[0;32mI (344) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;33mW (354) CAN module: Failed to queue message for transmission[0m
+[0;32mI (354) gpio: GPIO[16]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (374) CAN module: Driver installed[0m
+[0;32mI (354) CONTROL module: Current steering angle: -25600 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (354) gpio: GPIO[19]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (354) ODOM module: install pcnt unit[0m
+[0;32mI (354) ODOM module: install pcnt unit[0m
+[0;32mI (354) main_task: Returned from app_main()[0m
+[0;33mW (364) CAN module: Failed to queue message for transmission[0m
+[0;32mI (354) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (374) CAN module: Driver started[0m
+[0;32mI (384) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (394) gpio: GPIO[22]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (394) ODOM module: set glitch filter[0m
+[0;32mI (454) ODOM module: install pcnt channels[0m
+[0;32mI (424) gpio: GPIO[32]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (434) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (444) gpio: GPIO[23]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (404) ODOM module: set glitch filter[0m
+[0;32mI (454) gpio: GPIO[26]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (474) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (484) ODOM module: install pcnt channels[0m
+[0;32mI (514) gpio: GPIO[17]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (504) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (534) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (524) gpio: GPIO[5]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (554) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (544) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (494) gpio: GPIO[14]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (554) ODOM module: enable pcnt unit[0m
+[0;32mI (564) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (574) ODOM module: set edge and level actions for pcnt channels[0m
+[0;32mI (584) ODOM module: clear pcnt unit[0m
+[0;32mI (594) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (614) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (604) ODOM module: start pcnt unit[0m
+[0;32mI (594) ODOM module: enable pcnt unit[0m
+[0;32mI (624) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (624) ODOM module: clear pcnt unit[0m
+[0;32mI (634) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -.000000
+[0m
+[0;32mI (644) ODOM module: start pcnt unit[0m
+[0;32mI (654) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (664) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (674) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (684) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (694) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (704) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (714) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (734) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (754) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (774) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (794) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (814) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (834) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (854) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (874) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (894) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (914) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (934) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (954) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (974) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (994) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1014) CONTROL module: Current steering angle: 7195 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1034) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1054) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1074) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1094) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1114) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1134) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1154) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1174) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1194) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1214) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1234) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1254) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1274) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1294) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1314) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1334) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1354) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1374) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1394) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1414) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1434) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1454) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1474) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1494) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1514) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1534) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1554) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1574) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1594) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1614) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1634) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1654) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1674) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1694) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1714) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1734) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1754) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1774) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1794) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1814) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1834) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1854) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1874) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1894) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1914) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1934) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1954) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1974) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (1994) CONTROL module: Current steering angle: 7270 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2014) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2034) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2054) CONTROL module: Current steering angle: 7183 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2074) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2094) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2114) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2134) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2154) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2174) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2194) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2214) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2234) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2254) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2274) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2294) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2314) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2334) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2354) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2374) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2394) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2414) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2434) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2454) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2474) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2494) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2514) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2534) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2554) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2574) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2594) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2614) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2634) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2654) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2674) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2694) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2714) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2734) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2754) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2774) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2794) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2814) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2834) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2854) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2874) CONTROL module: Current steering angle: 7195 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2894) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2914) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2934) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2954) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2974) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (2994) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3014) CONTROL module: Current steering angle: 7208 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3034) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3054) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3074) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3094) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3114) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3134) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3154) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3174) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3194) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3214) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3234) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3254) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3274) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3294) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3314) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3334) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3354) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3374) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3394) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3414) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3434) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3454) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3474) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3494) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3514) CONTROL module: Current steering angle: 7270 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3534) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3554) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3574) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3594) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3614) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3634) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3654) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3674) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3694) CONTROL module: Current steering angle: 7270 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3714) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3734) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3754) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3774) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3794) CONTROL module: Current steering angle: 7220 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3814) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3834) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3854) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3874) CONTROL module: Current steering angle: 7270 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3894) CONTROL module: Current steering angle: 7270 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3914) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3934) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3954) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3974) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (3994) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4014) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4034) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4054) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4074) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4094) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4114) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4134) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4154) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4174) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4194) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4214) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4234) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4254) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4274) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4294) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4314) CONTROL module: Current steering angle: 7270 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4334) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4354) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4374) CONTROL module: Current steering angle: 7270 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4394) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4414) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4434) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4454) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4474) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4494) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4514) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4534) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4554) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4574) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4594) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4614) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4634) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4654) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4674) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4694) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4714) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4734) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4754) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4774) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4794) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4814) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4834) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4854) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4874) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4894) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4914) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4934) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4954) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4974) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (4994) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5014) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5034) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5054) CONTROL module: Current steering angle: 7233 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5074) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5094) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5114) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5134) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5154) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5174) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5194) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5214) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5234) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5254) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5274) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5294) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5314) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5334) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5354) CONTROL module: Current steering angle: 7245 Command Steering: 0.000000 Effort: -0.000000
+[0m
+[0;32mI (5374) CONTROL module: Current steering angle: 7258 Command Steering: 0.000000 Effort: -0.000000
+[0m

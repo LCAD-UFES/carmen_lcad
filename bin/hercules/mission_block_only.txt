@@ -1,0 +1,14 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+#
+# * Pilha A, primeiro fardo
+announce "Bale A, pile 1"
+set colision geometry to engage
+
+get bale from pile
+	put bale on the truck
+
+mission_completed:
+
+announce "Mission completed!"
+#mission completed
+

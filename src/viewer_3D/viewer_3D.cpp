@@ -407,6 +407,13 @@ double time_to_stop_cloud_point_draw = 1000000000.15;
 static carmen_vector_3D_t
 get_position_offset(void)
 {
+    carmen_vector_3D_t zero;
+    zero.x = 7757691.01;
+    zero.y = -363593.38;
+    zero.z = 0;
+
+    return zero;
+
     if (odometry_initialized)
     {
         return gps_position_at_turn_on;
@@ -423,13 +430,6 @@ get_position_offset(void)
     {
         return first_map_origin;
     }
-
-    carmen_vector_3D_t zero;
-    zero.x = 0;
-    zero.y = 0;
-    zero.z = 0;
-
-    return zero;
 }
 
 

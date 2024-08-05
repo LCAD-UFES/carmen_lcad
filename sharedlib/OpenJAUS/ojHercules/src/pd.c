@@ -52,11 +52,12 @@
 #include "pd.h"
 #include "can_utils.h"
 
-#define CONTROLLER_STATUS_TIMEOUT_SEC 	1.5
-#define CONTROLLER_STATUS_UPDATE_RATE_HZ		5.0
-#define CONTROLLER_STATUS_QUEUE_SIZE			1
+#define CONTROLLER_STATUS_TIMEOUT_SEC 		1.5
+#define CONTROLLER_STATUS_UPDATE_RATE_HZ	5.0
+#define CONTROLLER_STATUS_QUEUE_SIZE		1
 #define CONTROLLER_STATUS_PRESENCE_VECTOR	0
-#define CAN_CONVERSION_CONSTANT		256
+#define CAN_VELOCITY_CONVERSION_CONSTANT	256
+#define CAN_STEERING_CONVERSION_CONSTANT	256
 
 
 typedef struct
@@ -103,7 +104,7 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	frame.can_dlc = 4;
 
 	// Velocity effort
-	int int_velocity = round(throttle_effort * CAN_CONVERSION_CONSTANT);
+	int int_velocity = round(throttle_effort * CAN_VELOCITY_CONVERSION_CONSTANT);
 	if (gear_can_command == 0x1)
 		int_velocity = -int_velocity;
 	
@@ -116,7 +117,7 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	else if (steering_effort < -100.0)
 		steering_effort = -100.0;
 
-	int int_steering_effort = round(steering_effort * CAN_CONVERSION_CONSTANT);
+	int int_steering_effort = round(steering_effort * CAN_STEERING_CONVERSION_CONSTANT);
 	frame.data[3] = (__u8) ((int_steering_effort >> 8) & 0xff);
 	frame.data[2] = (__u8) int_steering_effort & 0xff;
 

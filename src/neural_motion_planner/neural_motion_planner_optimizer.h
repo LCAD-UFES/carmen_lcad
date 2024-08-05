@@ -145,7 +145,7 @@ bool has_valid_discretization(TrajectoryDiscreteDimensions tdd);
 TrajectoryControlParameters search_lookup_table(TrajectoryDiscreteDimensions tdd);
 
 vector<carmen_robot_and_trailers_path_point_t> simulate_car_from_parameters(TrajectoryDimensions &td,
-		TrajectoryControlParameters &tcp, double v0, double delta_t = 0.15);
+		TrajectoryControlParameters &tcp, double v0, double *i_trailer_theta, double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 //		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 //		bool display_phi_profile, double delta_t = 0.1);
@@ -167,8 +167,7 @@ void plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_acker
 
 void print_lane(vector<carmen_robot_and_trailers_path_point_t> path, char *file_name);
 
-TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryControlParameters previous_good_tcp,
-		TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailers_path_point_t> detailed_lane,
+TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryDimensions target_td, double target_v, vector<carmen_robot_and_trailers_path_point_t> detailed_lane,
 		bool use_lane);
 
 TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryControlParameters tcp_seed, ObjectiveFunctionParams &params);

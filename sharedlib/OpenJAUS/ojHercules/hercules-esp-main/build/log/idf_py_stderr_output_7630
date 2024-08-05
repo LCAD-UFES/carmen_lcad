@@ -1,0 +1,27 @@
+[0;33m--- esp-idf-monitor 1.4.0 on /dev/ttyACM0 115200 ---[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H ---[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400dc4bf: task_wdt_timeout_handling at /home/hercules/esp/esp-idf/components/esp_system/task_wdt/task_wdt.c:441
+ (inlined by) task_wdt_isr at /home/hercules/esp/esp-idf/components/esp_system/task_wdt/task_wdt.c:515
+0x40082f81: _xt_lowint1 at /home/hercules/esp/esp-idf/components/xtensa/xtensa_vectors.S:1240
+0x400d471d: uart_tx_char at /home/hercules/esp/esp-idf/components/vfs/vfs_uart.c:162
+0x400d52d6: uart_write at /home/hercules/esp/esp-idf/components/vfs/vfs_uart.c:218
+ (inlined by) uart_write at /home/hercules/esp/esp-idf/components/vfs/vfs_uart.c:201
+0x400d4543: console_write at /home/hercules/esp/esp-idf/components/vfs/vfs_console.c:73 (discriminator 1)
+0x400d411e: esp_vfs_write at /home/hercules/esp/esp-idf/components/vfs/vfs.c:482 (discriminator 4)
+0x4000bd83: _write_r in ROM
+0x4000117d: __swrite in ROM
+0x400592fe: __sflush_r in ROM
+0x4005937a: _fflush_r in ROM
+0x400de975: __sfvwrite_r at /builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/fvwrite.c:251
+0x400e28af: __sprint_r at /builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/vfiprintf.c:429
+ (inlined by) __sprint_r at /builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/vfprintf.c:399
+0x400e2272: _vfprintf_r at /builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/vfprintf.c:1774 (discriminator 1)
+0x400dea1d: vprintf at /builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/vprintf.c:34
+0x4008b681: esp_log_writev at /home/hercules/esp/esp-idf/components/log/log.c:215
+ (inlined by) esp_log_write at /home/hercules/esp/esp-idf/components/log/log.c:225
+0x400d55d1: send_can_message at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/can.c:30 (discriminator 1)
+0x400d57bc: can_writing_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/main/can.c:158
+[0m
+[0m
