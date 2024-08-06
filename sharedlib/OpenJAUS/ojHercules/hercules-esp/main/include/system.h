@@ -115,8 +115,8 @@ double target_limit_double (double insert,double low,double high);
 // Motors
 #define MOTOR_DUTY_RESOLUTION 8
 #define MOTOR_USE_PID 1
-#define MOTOR_PID_KP 80.0
-#define MOTOR_PID_KI 130.0
+#define MOTOR_PID_KP 110.0
+#define MOTOR_PID_KI 0.0
 #define MOTOR_PID_KD 0.0
 #define MOTOR_MAX_PWM ((1 << MOTOR_DUTY_RESOLUTION) - 1)
 #define MOTOR_DEAD_ZONE 20   //2560
