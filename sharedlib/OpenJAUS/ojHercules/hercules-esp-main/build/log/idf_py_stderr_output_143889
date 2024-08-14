@@ -1,0 +1,47 @@
+[0;33m--- esp-idf-monitor 1.4.0 on /dev/ttyACM0 115200 ---[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H ---[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d6895: execute_phase at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:478 (discriminator 1)
+[0m
+[0;33m0x40085cb7: _esp_error_check_failed at /home/hercules/esp/esp-idf/components/esp_system/esp_err.c:49
+[0m
+[0;33m0x4008190e: panic_abort at /home/hercules/esp/esp-idf/components/esp_system/panic.c:463
+0x40085cc1: esp_system_abort at /home/hercules/esp/esp-idf/components/esp_system/port/esp_system_chip.c:92
+0x4008b632: abort at /home/hercules/esp/esp-idf/components/newlib/abort.c:38
+0x40085cb7: _esp_error_check_failed at /home/hercules/esp/esp-idf/components/esp_system/esp_err.c:49
+0x400d6895: execute_phase at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:478 (discriminator 1)
+0x400d68b5: execute_motor_phases at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:485
+0x400d696c: step_motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:549
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d6895: execute_phase at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:478 (discriminator 1)
+[0m
+[0;33m0x40085cb7: _esp_error_check_failed at /home/hercules/esp/esp-idf/components/esp_system/esp_err.c:49
+[0m
+[0;33m0x4008190e: panic_abort at /home/hercules/esp/esp-idf/components/esp_system/panic.c:463
+0x40085cc1: esp_system_abort at /home/hercules/esp/esp-idf/components/esp_system/port/esp_system_chip.c:92
+0x4008b632: abort at /home/hercules/esp/esp-idf/components/newlib/abort.c:38
+0x40085cb7: _esp_error_check_failed at /home/hercules/esp/esp-idf/components/esp_system/esp_err.c:49
+0x400d6895: execute_phase at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:478 (discriminator 1)
+0x400d68b5: execute_motor_phases at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:485
+0x400d696c: step_motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:549
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0;33m0x400d6895: execute_phase at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:478 (discriminator 1)
+[0m
+[0;33m0x40085cb7: _esp_error_check_failed at /home/hercules/esp/esp-idf/components/esp_system/esp_err.c:49
+[0m
+[0;33m0x4008190e: panic_abort at /home/hercules/esp/esp-idf/components/esp_system/panic.c:463
+0x40085cc1: esp_system_abort at /home/hercules/esp/esp-idf/components/esp_system/port/esp_system_chip.c:92
+0x4008b632: abort at /home/hercules/esp/esp-idf/components/newlib/abort.c:38
+0x40085cb7: _esp_error_check_failed at /home/hercules/esp/esp-idf/components/esp_system/esp_err.c:49
+0x400d6895: execute_phase at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:478 (discriminator 1)
+0x400d68b5: execute_motor_phases at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:485
+0x400d696c: step_motor_task at /home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/main/control.c:549
+[0m
+[0;33m0x40080400: _init at ??:?
+[0m
+[0m

@@ -1,17 +1,17 @@
 {
     "version":            "1.1",
     "project_name":       "bootloader",
-    "project_version":    "v5.2.1",
+    "project_version":    "v5.3",
     "project_path":       "/home/hercules/esp/esp-idf/components/bootloader/subproject",
     "idf_path":           "/home/hercules/esp/esp-idf",
-    "build_dir":          "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader",
-    "config_file":        "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/sdkconfig",
+    "build_dir":          "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader",
+    "config_file":        "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/sdkconfig",
     "config_defaults":    "",
     "bootloader_elf":     "",
     "app_elf":            "bootloader.elf",
     "app_bin":            "bootloader.bin",
     "build_type":         "flash_app",
-    "git_revision":       "v5.2.1",
+    "git_revision":       "v5.3",
     "target":             "esp32",
     "rev":                "0",
     "min_rev":            "0",
@@ -19,7 +19,7 @@
     "phy_data_partition": "",
     "monitor_baud" :      "115200",
     "monitor_toolprefix": "xtensa-esp32-elf-",
-    "c_compiler":         "/home/hercules/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
+    "c_compiler":         "/home/hercules/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
     "config_environment" : {
         "COMPONENT_KCONFIGS" : "/home/hercules/esp/esp-idf/components/efuse/Kconfig;/home/hercules/esp/esp-idf/components/esp_common/Kconfig;/home/hercules/esp/esp-idf/components/esp_hw_support/Kconfig;/home/hercules/esp/esp-idf/components/esp_system/Kconfig;/home/hercules/esp/esp-idf/components/freertos/Kconfig;/home/hercules/esp/esp-idf/components/hal/Kconfig;/home/hercules/esp/esp-idf/components/log/Kconfig;/home/hercules/esp/esp-idf/components/newlib/Kconfig;/home/hercules/esp/esp-idf/components/soc/Kconfig;/home/hercules/esp/esp-idf/components/spi_flash/Kconfig",
         "COMPONENT_KCONFIGS_PROJBUILD" : "/home/hercules/esp/esp-idf/components/bootloader/Kconfig.projbuild;/home/hercules/esp/esp-idf/components/esp_app_format/Kconfig.projbuild;/home/hercules/esp/esp-idf/components/esp_rom/Kconfig.projbuild;/home/hercules/esp/esp-idf/components/esptool_py/Kconfig.projbuild;/home/hercules/esp/esp-idf/components/partition_table/Kconfig.projbuild"
@@ -54,7 +54,7 @@
             "priv_reqs": [ "micro-ecc", "spi_flash", "efuse", "esp_bootloader_format", "esp_app_format", "hal" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/bootloader_support/libbootloader_support.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/bootloader_support/libbootloader_support.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_common.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_common_loader.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_clock_init.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_mem.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_random.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_efuse.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/flash_encrypt.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/secure_boot.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_random_esp32.c", "/home/hercules/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c", "/home/hercules/esp/esp-idf/components/bootloader_support/bootloader_flash/src/flash_qio_mode.c", "/home/hercules/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash_config_esp32.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_utility.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/flash_partitions.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/esp_image_format.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_init.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_clock_loader.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_console.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_console_loader.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/esp32/bootloader_sha.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/esp32/bootloader_soc.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/esp32/bootloader_esp32.c", "/home/hercules/esp/esp-idf/components/bootloader_support/src/bootloader_panic.c" ],
             "include_dirs": [ "include", "bootloader_flash/include", "private_include" ]
         },
@@ -69,7 +69,7 @@
             "priv_reqs": [ "bootloader_support", "soc", "spi_flash" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/efuse/libefuse.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/efuse/libefuse.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/efuse/esp32/esp_efuse_table.c", "/home/hercules/esp/esp-idf/components/efuse/esp32/esp_efuse_fields.c", "/home/hercules/esp/esp-idf/components/efuse/esp32/esp_efuse_utility.c", "/home/hercules/esp/esp-idf/components/efuse/src/esp_efuse_api.c", "/home/hercules/esp/esp-idf/components/efuse/src/esp_efuse_fields.c", "/home/hercules/esp/esp-idf/components/efuse/src/esp_efuse_utility.c", "/home/hercules/esp/esp-idf/components/efuse/src/efuse_controller/keys/without_key_purposes/three_key_blocks/esp_efuse_api_key.c" ],
             "include_dirs": [ "include", "esp32/include" ]
         },
@@ -99,7 +99,7 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/esp_bootloader_format/libesp_bootloader_format.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/esp_bootloader_format/libesp_bootloader_format.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c" ],
             "include_dirs": [ "include" ]
         },
@@ -114,7 +114,7 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/esp_common/libesp_common.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/esp_common/libesp_common.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/esp_common/src/esp_err_to_name.c" ],
             "include_dirs": [ "include" ]
         },
@@ -129,9 +129,9 @@
             "priv_reqs": [ "efuse", "spi_flash", "bootloader_support", "esp_system" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/esp_hw_support/libesp_hw_support.a",
-            "sources": [ "/home/hercules/esp/esp-idf/components/esp_hw_support/cpu.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/esp_memory_utils.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/cpu_region_protect.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_clk.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_clk_init.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_init.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_sleep.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_time.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/chip_info.c" ],
-            "include_dirs": [ "include", "include/soc", "include/soc/esp32" ]
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/esp_hw_support/libesp_hw_support.a",
+            "sources": [ "/home/hercules/esp/esp-idf/components/esp_hw_support/cpu.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/esp_cpu_intr.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/esp_memory_utils.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/cpu_region_protect.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_clk.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_clk_init.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_init.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_sleep.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/rtc_time.c", "/home/hercules/esp/esp-idf/components/esp_hw_support/port/esp32/chip_info.c" ],
+            "include_dirs": [ "include", "include/soc", "include/soc/esp32", "dma/include", "ldo/include" ]
         },
         "esp_rom": {
             "alias": "idf::esp_rom",
@@ -144,7 +144,7 @@
             "priv_reqs": [ "soc", "hal" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/esp_rom/libesp_rom.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/esp_rom/libesp_rom.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/esp_rom/patches/esp_rom_crc.c", "/home/hercules/esp/esp-idf/components/esp_rom/patches/esp_rom_sys.c", "/home/hercules/esp/esp-idf/components/esp_rom/patches/esp_rom_uart.c", "/home/hercules/esp/esp-idf/components/esp_rom/patches/esp_rom_spiflash.c", "/home/hercules/esp/esp-idf/components/esp_rom/patches/esp_rom_efuse.c", "/home/hercules/esp/esp-idf/components/esp_rom/patches/esp_rom_longjmp.S" ],
             "include_dirs": [ "include", "include/esp32", "esp32" ]
         },
@@ -159,7 +159,7 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/esp_system/libesp_system.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/esp_system/libesp_system.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/esp_system/esp_err.c" ],
             "include_dirs": []
         },
@@ -204,7 +204,7 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/hal/libhal.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/hal/libhal.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/hal/hal_utils.c", "/home/hercules/esp/esp-idf/components/hal/mpu_hal.c", "/home/hercules/esp/esp-idf/components/hal/efuse_hal.c", "/home/hercules/esp/esp-idf/components/hal/esp32/efuse_hal.c", "/home/hercules/esp/esp-idf/components/hal/wdt_hal_iram.c", "/home/hercules/esp/esp-idf/components/hal/mmu_hal.c", "/home/hercules/esp/esp-idf/components/hal/esp32/cache_hal_esp32.c" ],
             "include_dirs": [ "platform_port/include", "esp32/include", "include" ]
         },
@@ -219,7 +219,7 @@
             "priv_reqs": [ "soc", "hal", "esp_hw_support" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/log/liblog.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/log/liblog.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/log/log.c", "/home/hercules/esp/esp-idf/components/log/log_buffers.c", "/home/hercules/esp/esp-idf/components/log/log_noos.c" ],
             "include_dirs": [ "include" ]
         },
@@ -234,7 +234,7 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/main/libmain.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/main/libmain.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/bootloader/subproject/main/bootloader_start.c" ],
             "include_dirs": []
         },
@@ -249,7 +249,7 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/micro-ecc/libmicro-ecc.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/micro-ecc/libmicro-ecc.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/bootloader/subproject/components/micro-ecc/uECC_verify_antifault.c" ],
             "include_dirs": [ ".", "micro-ecc" ]
         },
@@ -294,8 +294,8 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/soc/libsoc.a",
-            "sources": [ "/home/hercules/esp/esp-idf/components/soc/lldesc.c", "/home/hercules/esp/esp-idf/components/soc/dport_access_common.c", "/home/hercules/esp/esp-idf/components/soc/esp32/interrupts.c", "/home/hercules/esp/esp-idf/components/soc/esp32/gpio_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/uart_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/dport_access.c", "/home/hercules/esp/esp-idf/components/soc/esp32/adc_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/spi_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/ledc_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/pcnt_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/rmt_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/sdm_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/i2s_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/i2c_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/timer_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/lcd_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/mcpwm_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/mpi_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/sdmmc_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/touch_sensor_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/twai_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/dac_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/rtc_io_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/sdio_slave_periph.c" ],
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/soc/libsoc.a",
+            "sources": [ "/home/hercules/esp/esp-idf/components/soc/lldesc.c", "/home/hercules/esp/esp-idf/components/soc/dport_access_common.c", "/home/hercules/esp/esp-idf/components/soc/esp32/interrupts.c", "/home/hercules/esp/esp-idf/components/soc/esp32/gpio_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/uart_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/dport_access.c", "/home/hercules/esp/esp-idf/components/soc/esp32/adc_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/emac_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/spi_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/ledc_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/pcnt_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/rmt_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/sdm_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/i2s_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/i2c_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/timer_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/lcd_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/mcpwm_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/mpi_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/sdmmc_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/touch_sensor_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/twai_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/dac_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/rtc_io_periph.c", "/home/hercules/esp/esp-idf/components/soc/esp32/sdio_slave_periph.c" ],
             "include_dirs": [ "include", "esp32", "esp32/include" ]
         },
         "spi_flash": {
@@ -309,7 +309,7 @@
             "priv_reqs": [ "bootloader_support", "soc" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/spi_flash/libspi_flash.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/spi_flash/libspi_flash.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/spi_flash/spi_flash_wrap.c" ],
             "include_dirs": [ "include" ]
         },
@@ -324,7 +324,7 @@
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader/esp-idf/xtensa/libxtensa.a",
+            "file": "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader/esp-idf/xtensa/libxtensa.a",
             "sources": [ "/home/hercules/esp/esp-idf/components/xtensa/eri.c", "/home/hercules/esp/esp-idf/components/xtensa/xt_trax.c" ],
             "include_dirs": [ "esp32/include", "include", "deprecated_include" ]
         }
@@ -337,7 +337,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/app_trace",
             "lib": "__idf_app_trace",
             "reqs": [ "esp_timer" ],
-            "priv_reqs": [ "soc", "driver" ],
+            "priv_reqs": [ "esp_driver_gptimer", "esp_driver_gpio", "esp_driver_uart" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]
@@ -385,7 +385,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/bt",
             "lib": "__idf_bt",
             "reqs": [ "esp_timer", "esp_wifi" ],
-            "priv_reqs": [ "nvs_flash", "soc", "esp_pm", "esp_phy", "esp_coex", "mbedtls", "driver", "vfs" ],
+            "priv_reqs": [ "nvs_flash", "soc", "esp_pm", "esp_phy", "esp_coex", "mbedtls", "esp_driver_uart", "vfs", "esp_ringbuf" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": []
@@ -408,11 +408,11 @@
             "prefix": "idf",
             "dir": "/home/hercules/esp/esp-idf/components/console",
             "lib": "__idf_console",
-            "reqs": [ "vfs" ],
-            "priv_reqs": [ "driver" ],
+            "reqs": [ "vfs", "esp_vfs_console" ],
+            "priv_reqs": [ "esp_driver_uart", "esp_driver_usb_serial_jtag" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "include_dirs": [ "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader" ]
+            "include_dirs": [ "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader" ]
         },
         "cxx": {
             "alias": "idf::cxx",
@@ -421,7 +421,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/cxx",
             "lib": "__idf_cxx",
             "reqs": [],
-            "priv_reqs": [ "pthread" ],
+            "priv_reqs": [ "pthread", "esp_system" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": []
@@ -457,10 +457,10 @@
             "dir": "/home/hercules/esp/esp-idf/components/esp-tls",
             "lib": "__idf_esp-tls",
             "reqs": [ "mbedtls" ],
-            "priv_reqs": [ "http_parser", "lwip" ],
+            "priv_reqs": [ "http_parser", "esp_timer", "lwip" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "include_dirs": [ "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp/build/bootloader", "esp-tls-crypto" ]
+            "include_dirs": [ "/home/hercules/carmen_lcad/sharedlib/OpenJAUS/ojHercules/hercules-esp-main/build/bootloader", "esp-tls-crypto" ]
         },
         "esp_adc": {
             "alias": "idf::esp_adc",
@@ -469,7 +469,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/esp_adc",
             "lib": "__idf_esp_adc",
             "reqs": [],
-            "priv_reqs": [ "driver", "efuse" ],
+            "priv_reqs": [ "driver", "esp_driver_gpio", "efuse", "esp_pm", "esp_ringbuf", "esp_mm" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include", "interface", "esp32/include", "deprecated/include" ]
@@ -522,6 +522,282 @@
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]
         },
+        "esp_driver_ana_cmpr": {
+            "alias": "idf::esp_driver_ana_cmpr",
+            "target": "___idf_esp_driver_ana_cmpr",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_ana_cmpr",
+            "lib": "__idf_esp_driver_ana_cmpr",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_cam": {
+            "alias": "idf::esp_driver_cam",
+            "target": "___idf_esp_driver_cam",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_cam",
+            "lib": "__idf_esp_driver_cam",
+            "reqs": [ "esp_driver_isp", "esp_mm" ],
+            "priv_reqs": [ "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include", "interface" ]
+        },
+        "esp_driver_dac": {
+            "alias": "idf::esp_driver_dac",
+            "target": "___idf_esp_driver_dac",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_dac",
+            "lib": "__idf_esp_driver_dac",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio", "esp_driver_i2s" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "./include" ]
+        },
+        "esp_driver_gpio": {
+            "alias": "idf::esp_driver_gpio",
+            "target": "___idf_esp_driver_gpio",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_gpio",
+            "lib": "__idf_esp_driver_gpio",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_gptimer": {
+            "alias": "idf::esp_driver_gptimer",
+            "target": "___idf_esp_driver_gptimer",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_gptimer",
+            "lib": "__idf_esp_driver_gptimer",
+            "reqs": [ "esp_pm" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_i2c": {
+            "alias": "idf::esp_driver_i2c",
+            "target": "___idf_esp_driver_i2c",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_i2c",
+            "lib": "__idf_esp_driver_i2c",
+            "reqs": [],
+            "priv_reqs": [ "esp_driver_gpio", "esp_pm", "esp_ringbuf" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_i2s": {
+            "alias": "idf::esp_driver_i2s",
+            "target": "___idf_esp_driver_i2s",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_i2s",
+            "lib": "__idf_esp_driver_i2s",
+            "reqs": [],
+            "priv_reqs": [ "esp_driver_gpio", "esp_pm", "esp_mm" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_isp": {
+            "alias": "idf::esp_driver_isp",
+            "target": "___idf_esp_driver_isp",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_isp",
+            "lib": "__idf_esp_driver_isp",
+            "reqs": [ "esp_mm" ],
+            "priv_reqs": [ "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_jpeg": {
+            "alias": "idf::esp_driver_jpeg",
+            "target": "___idf_esp_driver_jpeg",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_jpeg",
+            "lib": "__idf_esp_driver_jpeg",
+            "reqs": [],
+            "priv_reqs": [ "esp_mm", "esp_pm" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_ledc": {
+            "alias": "idf::esp_driver_ledc",
+            "target": "___idf_esp_driver_ledc",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_ledc",
+            "lib": "__idf_esp_driver_ledc",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_mcpwm": {
+            "alias": "idf::esp_driver_mcpwm",
+            "target": "___idf_esp_driver_mcpwm",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_mcpwm",
+            "lib": "__idf_esp_driver_mcpwm",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_parlio": {
+            "alias": "idf::esp_driver_parlio",
+            "target": "___idf_esp_driver_parlio",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_parlio",
+            "lib": "__idf_esp_driver_parlio",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio", "esp_mm" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_pcnt": {
+            "alias": "idf::esp_driver_pcnt",
+            "target": "___idf_esp_driver_pcnt",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_pcnt",
+            "lib": "__idf_esp_driver_pcnt",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_ppa": {
+            "alias": "idf::esp_driver_ppa",
+            "target": "___idf_esp_driver_ppa",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_ppa",
+            "lib": "__idf_esp_driver_ppa",
+            "reqs": [],
+            "priv_reqs": [ "esp_mm", "esp_pm" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_rmt": {
+            "alias": "idf::esp_driver_rmt",
+            "target": "___idf_esp_driver_rmt",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_rmt",
+            "lib": "__idf_esp_driver_rmt",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio", "esp_mm" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_sdio": {
+            "alias": "idf::esp_driver_sdio",
+            "target": "___idf_esp_driver_sdio",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_sdio",
+            "lib": "__idf_esp_driver_sdio",
+            "reqs": [],
+            "priv_reqs": [ "esp_driver_gpio", "esp_ringbuf" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_sdm": {
+            "alias": "idf::esp_driver_sdm",
+            "target": "___idf_esp_driver_sdm",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_sdm",
+            "lib": "__idf_esp_driver_sdm",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_sdmmc": {
+            "alias": "idf::esp_driver_sdmmc",
+            "target": "___idf_esp_driver_sdmmc",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_sdmmc",
+            "lib": "__idf_esp_driver_sdmmc",
+            "reqs": [ "sdmmc", "esp_driver_gpio" ],
+            "priv_reqs": [ "esp_timer", "esp_pm", "esp_mm" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_sdspi": {
+            "alias": "idf::esp_driver_sdspi",
+            "target": "___idf_esp_driver_sdspi",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_sdspi",
+            "lib": "__idf_esp_driver_sdspi",
+            "reqs": [ "sdmmc", "esp_driver_spi", "esp_driver_gpio" ],
+            "priv_reqs": [ "esp_timer" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_spi": {
+            "alias": "idf::esp_driver_spi",
+            "target": "___idf_esp_driver_spi",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_spi",
+            "lib": "__idf_esp_driver_spi",
+            "reqs": [ "esp_pm" ],
+            "priv_reqs": [ "esp_timer", "esp_mm", "esp_driver_gpio", "esp_ringbuf" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_tsens": {
+            "alias": "idf::esp_driver_tsens",
+            "target": "___idf_esp_driver_tsens",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_tsens",
+            "lib": "__idf_esp_driver_tsens",
+            "reqs": [],
+            "priv_reqs": [ "efuse" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_uart": {
+            "alias": "idf::esp_driver_uart",
+            "target": "___idf_esp_driver_uart",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_uart",
+            "lib": "__idf_esp_driver_uart",
+            "reqs": [],
+            "priv_reqs": [ "esp_pm", "esp_driver_gpio", "esp_ringbuf" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_driver_usb_serial_jtag": {
+            "alias": "idf::esp_driver_usb_serial_jtag",
+            "target": "___idf_esp_driver_usb_serial_jtag",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_driver_usb_serial_jtag",
+            "lib": "__idf_esp_driver_usb_serial_jtag",
+            "reqs": [],
+            "priv_reqs": [ "esp_driver_gpio", "esp_ringbuf", "esp_pm", "esp_timer" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
         "esp_eth": {
             "alias": "idf::esp_eth",
             "target": "___idf_esp_eth",
@@ -529,7 +805,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/esp_eth",
             "lib": "__idf_esp_eth",
             "reqs": [ "esp_event" ],
-            "priv_reqs": [ "driver", "log", "esp_timer" ],
+            "priv_reqs": [ "log", "esp_timer", "esp_driver_spi", "esp_driver_gpio" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": []
@@ -612,11 +888,11 @@
             "prefix": "idf",
             "dir": "/home/hercules/esp/esp-idf/components/esp_https_server",
             "lib": "__idf_esp_https_server",
-            "reqs": [ "esp_http_server", "esp-tls" ],
+            "reqs": [ "esp_http_server", "esp-tls", "esp_event" ],
             "priv_reqs": [ "lwip" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "include_dirs": []
+            "include_dirs": [ "include" ]
         },
         "esp_hw_support": {
             "alias": "idf::esp_hw_support",
@@ -628,7 +904,7 @@
             "priv_reqs": [ "efuse", "spi_flash", "bootloader_support", "esp_system" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "include_dirs": [ "include", "include/soc", "include/soc/esp32" ]
+            "include_dirs": [ "include", "include/soc", "include/soc/esp32", "dma/include", "ldo/include" ]
         },
         "esp_lcd": {
             "alias": "idf::esp_lcd",
@@ -636,8 +912,8 @@
             "prefix": "idf",
             "dir": "/home/hercules/esp/esp-idf/components/esp_lcd",
             "lib": "__idf_esp_lcd",
-            "reqs": [ "driver" ],
-            "priv_reqs": [ "esp_mm", "esp_psram" ],
+            "reqs": [ "driver", "esp_driver_gpio", "esp_driver_i2c", "esp_driver_spi" ],
+            "priv_reqs": [ "esp_mm", "esp_psram", "esp_pm", "esp_driver_i2s" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include", "interface" ]
@@ -721,7 +997,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/esp_pm",
             "lib": "__idf_esp_pm",
             "reqs": [],
-            "priv_reqs": [ "esp_system", "driver", "esp_timer" ],
+            "priv_reqs": [ "esp_system", "esp_driver_gpio", "esp_timer" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]
@@ -780,8 +1056,20 @@
             "prefix": "idf",
             "dir": "/home/hercules/esp/esp-idf/components/esp_timer",
             "lib": "__idf_esp_timer",
-            "reqs": [ "esp_common" ],
-            "priv_reqs": [ "soc", "driver" ],
+            "reqs": [],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "esp_vfs_console": {
+            "alias": "idf::esp_vfs_console",
+            "target": "___idf_esp_vfs_console",
+            "prefix": "idf",
+            "dir": "/home/hercules/esp/esp-idf/components/esp_vfs_console",
+            "lib": "__idf_esp_vfs_console",
+            "reqs": [],
+            "priv_reqs": [ "vfs", "esp_driver_uart", "esp_driver_usb_serial_jtag" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]
@@ -796,7 +1084,7 @@
             "priv_reqs": [ "driver", "esptool_py", "esp_pm", "esp_timer", "nvs_flash", "wpa_supplicant", "hal", "lwip", "esp_coex" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "include_dirs": [ "include", "wifi_apps/include" ]
+            "include_dirs": [ "include", "wifi_apps/include", "wifi_apps/nan_app/include" ]
         },
         "espcoredump": {
             "alias": "idf::espcoredump",
@@ -805,7 +1093,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/espcoredump",
             "lib": "__idf_espcoredump",
             "reqs": [],
-            "priv_reqs": [ "esp_partition", "spi_flash", "bootloader_support", "mbedtls", "esp_rom", "soc", "esp_system", "driver" ],
+            "priv_reqs": [ "esp_partition", "spi_flash", "bootloader_support", "mbedtls", "esp_rom", "soc", "esp_system", "esp_driver_gpio", "driver" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]
@@ -828,8 +1116,8 @@
             "prefix": "idf",
             "dir": "/home/hercules/esp/esp-idf/components/fatfs",
             "lib": "__idf_fatfs",
-            "reqs": [ "wear_levelling", "sdmmc" ],
-            "priv_reqs": [ "vfs" ],
+            "reqs": [ "wear_levelling", "sdmmc", "esp_driver_sdmmc", "esp_driver_sdspi" ],
+            "priv_reqs": [ "vfs", "esp_driver_gpio" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "diskio", "src", "vfs" ]
@@ -997,7 +1285,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/nvs_flash",
             "lib": "__idf_nvs_flash",
             "reqs": [ "esp_partition" ],
-            "priv_reqs": [ "spi_flash" ],
+            "priv_reqs": [ "spi_flash", "newlib" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include", "../spi_flash/include" ]
@@ -1020,7 +1308,7 @@
             "prefix": "idf",
             "dir": "/home/hercules/esp/esp-idf/components/openthread",
             "lib": "__idf_openthread",
-            "reqs": [ "esp_netif", "lwip", "driver" ],
+            "reqs": [ "esp_netif", "lwip", "esp_driver_uart", "driver" ],
             "priv_reqs": [ "console", "esp_event", "esp_partition", "esp_timer", "ieee802154", "mbedtls", "nvs_flash" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
@@ -1072,7 +1360,7 @@
             "priv_reqs": [ "protobuf-c", "mbedtls", "console", "esp_http_server", "driver" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "include_dirs": [ "include/common", "include/security", "include/transports", "include/crypto/srp6a" ]
+            "include_dirs": [ "include/common", "include/security", "include/transports", "include/crypto/srp6a", "proto-c" ]
         },
         "pthread": {
             "alias": "idf::pthread",
@@ -1104,8 +1392,8 @@
             "prefix": "idf",
             "dir": "/home/hercules/esp/esp-idf/components/sdmmc",
             "lib": "__idf_sdmmc",
-            "reqs": [ "driver" ],
-            "priv_reqs": [ "soc", "esp_timer" ],
+            "reqs": [],
+            "priv_reqs": [ "soc", "esp_timer", "esp_mm" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]
@@ -1201,7 +1489,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/usb",
             "lib": "__idf_usb",
             "reqs": [],
-            "priv_reqs": [ "driver" ],
+            "priv_reqs": [ "esp_driver_gpio", "esp_mm" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": []
@@ -1213,7 +1501,7 @@
             "dir": "/home/hercules/esp/esp-idf/components/vfs",
             "lib": "__idf_vfs",
             "reqs": [],
-            "priv_reqs": [ "driver", "esp_timer" ],
+            "priv_reqs": [ "esp_timer", "esp_driver_uart", "esp_driver_usb_serial_jtag", "esp_vfs_console" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]

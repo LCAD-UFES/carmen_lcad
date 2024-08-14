@@ -21,22 +21,24 @@
 */
 /*
  * Automatically generated file. DO NOT EDIT.
- * Espressif IoT Development Framework (ESP-IDF) 5.2.1 Configuration Header
+ * Espressif IoT Development Framework (ESP-IDF) 5.3.0 Configuration Header
  */
        
 /* List of deprecated options */
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /* CPU instruction prefetch padding size for flash mmap scenario */
-_esp_flash_mmap_prefetch_pad_size = 16;
+/*
+ * PMP region granularity size
+ * Software may determine the PMP granularity by writing zero to pmp0cfg, then writing all ones
+ * to pmpaddr0, then reading back pmpaddr0. If G is the index of the least-significant bit set,
+ * the PMP granularity is 2^G+2 bytes.
+ */
 /* CPU instruction prefetch padding size for memory protection scenario */
-_esp_memprot_prefetch_pad_size = 0;
 /* Memory alignment size for PMS */
-_esp_memprot_align_size = 0;
-_esp_mmu_block_size = (0x10000);
     /* rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files). For rtc_timer_data_in_rtc_mem section. */
 /* If BT is not built at all */
 MEMORY

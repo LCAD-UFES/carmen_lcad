@@ -34,7 +34,7 @@ endif()
 
 # Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "/home/hercules/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-objdump")
+  set(CMAKE_OBJDUMP "/home/hercules/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32-elf-objdump")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -45,6 +45,7 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
     "/home/hercules/esp/esp-idf/components/mbedtls/mbedtls/include/mbedtls/asn1write.h"
     "/home/hercules/esp/esp-idf/components/mbedtls/mbedtls/include/mbedtls/base64.h"
     "/home/hercules/esp/esp-idf/components/mbedtls/mbedtls/include/mbedtls/bignum.h"
+    "/home/hercules/esp/esp-idf/components/mbedtls/mbedtls/include/mbedtls/block_cipher.h"
     "/home/hercules/esp/esp-idf/components/mbedtls/mbedtls/include/mbedtls/build_info.h"
     "/home/hercules/esp/esp-idf/components/mbedtls/mbedtls/include/mbedtls/camellia.h"
     "/home/hercules/esp/esp-idf/components/mbedtls/mbedtls/include/mbedtls/ccm.h"
