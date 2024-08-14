@@ -14,7 +14,7 @@ const TickType_t xFrequencyTaskMotor = CALCULATE_FREQUENCY(TASK_MOTOR_FREQUENCY)
 const TickType_t xFrequencyTaskServo = CALCULATE_FREQUENCY(TASK_SERVO_FREQUENCY);
 const TickType_t xFrequencyTaskStepMotor = CALCULATE_FREQUENCY(TASK_STEP_MOTOR_FREQUENCY);
 const TickType_t xFrequencyResetErrorAndAngle = CALCULATE_FREQUENCY(TASK_RESET_ERROR_AND_ANGLE_FREQUENCY);
-//const double angle_can_to_T_HIGH_coefficient = ((MIN_T_HIGH - MAX_T_HIGH) / (2*CAN_COMMAND_MAX));
+const double angle_can_to_T_HIGH_coefficient = ((MIN_T_HIGH - MAX_T_HIGH) / (2*CAN_COMMAND_MAX));
 const double angle_can_to_rad = MAX_ANGLE / CAN_COMMAND_MAX;
 const double velocity_can_to_m_s = MAX_VELOCITY / CAN_COMMAND_MAX;
 const double left_to_right_difference_constant = WHEEL_SPACING / (2 * AXLE_SPACING);
@@ -229,9 +229,11 @@ motor_task ()
 
         if(get_reset_error_and_angle_counter() >= RESET_TIMER)
         {
+            set_command_steering(0);
+            set_command_steering_effort(0);
             set_command_velocity(0);
             reset_pid_error(&left_pid,&right_pid);
-            //set_reset_error_and_angle_counter(0);
+            set_reset_error_and_angle_counter(0);
         }
 
         #else
@@ -257,101 +259,101 @@ motor_task ()
     }   
 }
 
-// void
-// config_servo_pin ()
-// {
-//     // Prepare and then apply the PWM timer configuration
-//     ledc_timer_config_t ledc_timer = {
-//         .speed_mode       = LEDC_MODE,
-//         .timer_num        = LEDC_TIMER,
-//         .duty_resolution  = LEDC_DUTY_RES,
-//         .freq_hz          = LEDC_FREQUENCY,  
-//         .clk_cfg          = LEDC_AUTO_CLK
-//     };
-//     ledc_timer_config(&ledc_timer);
+void
+config_servo_pin ()
+{
+    // Prepare and then apply the PWM timer configuration
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_MODE,
+        .timer_num        = LEDC_TIMER,
+        .duty_resolution  = LEDC_DUTY_RES,
+        .freq_hz          = LEDC_FREQUENCY,  
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ledc_timer_config(&ledc_timer);
 
-//      // Prepare and then apply the PWM channel configuration
-//     ledc_channel_config_t ledc_channel = {
-//         .speed_mode     = LEDC_MODE,
-//         .channel        = LEDC_CHANNEL,
-//         .timer_sel      = LEDC_TIMER,
-//         .intr_type      = LEDC_INTR_DISABLE,
-//         .gpio_num       = LEDC_OUTPUT_IO,
-//         .duty           = LEDC_INITIAL_DUTY, // Set duty to medium angle
-//     };
-//     ledc_channel_config(&ledc_channel);
+     // Prepare and then apply the PWM channel configuration
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_MODE,
+        .channel        = LEDC_CHANNEL,
+        .timer_sel      = LEDC_TIMER,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = LEDC_OUTPUT_IO,
+        .duty           = LEDC_INITIAL_DUTY, // Set duty to medium angle
+    };
+    ledc_channel_config(&ledc_channel);
 
-// }
+}
 
 // Function to convert from can(25600~0 and 65535~(65535-25600)) to 25600~-25600
-// double convert_can_to_effort(double received_command_steering_effort) {
-//     if (received_command_steering_effort > ((CAM_LIMIT_MAX-1)/2)) {
-//         received_command_steering_effort -= (CAM_LIMIT_MAX);
-//     }
-//     return (-received_command_steering_effort);
-// }
+double convert_can_to_effort(double received_command_steering_effort) {
+    if (received_command_steering_effort > ((CAM_LIMIT_MAX-1)/2)) {
+        received_command_steering_effort -= (CAM_LIMIT_MAX);
+    }
+    return (-received_command_steering_effort);
+}
 
 // Function to convert a value from 0-4095 to the range -25600 to 25600
-// int convert_steering_to_effort_unit(int current_steering_angle) {      
-//     current_steering_angle = (current_steering_angle - (MAX_MEASURE_POTENTIOMETER/2)) * (2*CAN_COMMAND_MAX) / (MAX_MEASURE_POTENTIOMETER);
-//     return current_steering_angle;
-// }
+int convert_steering_to_effort_unit(int current_steering_angle) {      
+    current_steering_angle = (current_steering_angle - (MAX_MEASURE_POTENTIOMETER/2)) * (2*CAN_COMMAND_MAX) / (MAX_MEASURE_POTENTIOMETER);
+    return current_steering_angle;
+}
 
-// int calculate_duty_cycle(double command_angle) {
+int calculate_duty_cycle(double command_angle) {
 
-//     if (command_angle > CAN_COMMAND_MAX)
-//         command_angle = CAN_COMMAND_MAX;
-//     else if (command_angle < -(CAN_COMMAND_MAX))
-//         command_angle = -(CAN_COMMAND_MAX);
+    if (command_angle > CAN_COMMAND_MAX)
+        command_angle = CAN_COMMAND_MAX;
+    else if (command_angle < -(CAN_COMMAND_MAX))
+        command_angle = -(CAN_COMMAND_MAX);
 
-//     double target_T_HIGH = (command_angle * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
-//     target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
-//     ESP_LOGD(TAG, "T_HIGH: %lf\n", target_T_HIGH);
-//     return (target_T_HIGH / LEDC_PERIOD) * LEDC_MAX_DUTY;
-// }
+    double target_T_HIGH = (command_angle * angle_can_to_T_HIGH_coefficient) + MEDIUM_T_HIGH + SERVO_BIAS;
+    target_T_HIGH = target_limit_double(target_T_HIGH, MIN_T_HIGH, MAX_T_HIGH);
+    ESP_LOGD(TAG, "T_HIGH: %lf\n", target_T_HIGH);
+    return (target_T_HIGH / LEDC_PERIOD) * LEDC_MAX_DUTY;
+}
 
-// void
-// servo_apply_voltage(int duty_cycle)
-// {
-//     ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
-//     ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-// }
+void
+servo_apply_voltage(int duty_cycle)
+{
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty_cycle);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+}
 
-// void
-// servo_task ()
-// {   
-//     double target_command_steering = 0.0;
-//     double received_command_steering_effort = 0.0; 
-//     int current_steering_angle = 0;
-//     int duty_cycle = 0;
+void
+servo_task ()
+{   
+    double target_command_steering = 0.0;
+    double received_command_steering_effort = 0.0; 
+    int current_steering_angle = 0;
+    int duty_cycle = 0;
 
-//     // Task frequency control
-//     TickType_t xLastWakeTime = xTaskGetTickCount ();
+    // Task frequency control
+    TickType_t xLastWakeTime = xTaskGetTickCount ();
 
-//     config_servo_pin();
-//     while (1)
-//     {
-//         received_command_steering_effort = (double)(get_command_steering_effort()); 
-//         received_command_steering_effort = convert_can_to_effort(received_command_steering_effort);
-//         target_command_steering = get_command_steering();
+    config_servo_pin();
+    while (1)
+    {
+        received_command_steering_effort = (double)(get_command_steering_effort()); 
+        received_command_steering_effort = convert_can_to_effort(received_command_steering_effort);
+        target_command_steering = get_command_steering();
 
-//         #if DIRECT_STEERING_CONTROL
-//             target_command_steering = received_command_steering_effort;
-//         #else 
-//             target_command_steering += (received_command_steering_effort/128);
-//         #endif
+        #if DIRECT_STEERING_CONTROL
+            target_command_steering = received_command_steering_effort;
+        #else 
+            target_command_steering += (received_command_steering_effort/128);
+        #endif
 
-//         set_command_steering(target_command_steering);
+        set_command_steering(target_command_steering);
 
-//         current_steering_angle = get_odom_steering();
-//         current_steering_angle = convert_steering_to_effort_unit(current_steering_angle);
-//         ESP_LOGD(TAG, "Current steering angle: %d Command Steering: %lf Effort: %lf\n", current_steering_angle, target_command_steering, received_command_steering_effort);
-//         duty_cycle = (int)(calculate_duty_cycle(target_command_steering));
-//         servo_apply_voltage(duty_cycle);
+        current_steering_angle = get_odom_steering();
+        current_steering_angle = convert_steering_to_effort_unit(current_steering_angle);
+        ESP_LOGD(TAG, "Current steering angle: %d Command Steering: %lf Effort: %lf\n", current_steering_angle, target_command_steering, received_command_steering_effort);
+        duty_cycle = (int)(calculate_duty_cycle(target_command_steering));
+        servo_apply_voltage(duty_cycle);
 
-//         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskServo);
-//     }
-// }
+        vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskServo);
+    }
+}
 
 void
 config_step_motor (ConfigStepMotor *config)
@@ -540,16 +542,16 @@ step_motor_task ()
         // Do the necessary calculations
         calculate_steps(num_steps, &transient_steps, &accel_samples, &uniform_speed_hz, &uniform_steps, &decel_samples);
 
-        // Prepare accelation, desaccelation phase and uniform phase
+        // Prepare acceleration, deceleration phase and uniform phase
         configure_encoders(&config, accel_samples, uniform_speed_hz, decel_samples, uniform_steps);
 
         // Executar fases do motor
         execute_motor_phases(&config, accel_samples, uniform_speed_hz, decel_samples, uniform_steps);
 
         // Logar passos atuais
-        printf("accel_steps: %"PRIu32", uniform_steps: %d, decel_steps: %"PRIu32"", accel_samples, uniform_steps, decel_samples);
+        ESP_LOGI(TAG, "accel_steps: %"PRIu32", uniform_steps: %d, decel_steps: %"PRIu32"", accel_samples, uniform_steps, decel_samples);
         current_steps = received_command_step_motor;
-        ESP_LOGD(TAG, "Current steps: %d", current_steps);
+        ESP_LOGI(TAG, "Current steps: %d", current_steps);
 
         // Aguardar até o próximo ciclo
         vTaskDelayUntil (&xLastWakeTime, xFrequencyTaskStepMotor);
@@ -574,7 +576,6 @@ reset_error_and_angle_task()
         vTaskDelayUntil (&xLastWakeTime, xFrequencyResetErrorAndAngle);
     } 
 }
-
 
 
 

@@ -98,7 +98,14 @@ rmt_new_stepper_motor_curve_encoder (const stepper_motor_curve_encoder_config_t 
     uint32_t curve_step = 0;
     if (is_accel_curve) 
     {
-        curve_step = (config->end_freq_hz - config->start_freq_hz) / (config->sample_points - 1);
+        if(curve_step == 1)
+        {
+            curve_step = 0;
+        } else 
+        {
+            curve_step = (config->end_freq_hz - config->start_freq_hz) / (config->sample_points - 1); // Linha problemática
+        }
+
         for (uint32_t i = 0; i < config->sample_points; i++) 
         {
             smooth_freq = convert_to_smooth_freq(config->start_freq_hz, config->end_freq_hz, config->start_freq_hz + curve_step * i);
@@ -110,8 +117,14 @@ rmt_new_stepper_motor_curve_encoder (const stepper_motor_curve_encoder_config_t 
         }
     } 
     else 
-    {
-        curve_step = (config->start_freq_hz - config->end_freq_hz) / (config->sample_points - 1);
+    {   
+        if(curve_step == 1)
+        {
+            curve_step = 0;
+        } else 
+        {
+            curve_step = (config->start_freq_hz - config->end_freq_hz) / (config->sample_points - 1);
+        }
         for (uint32_t i = 0; i < config->sample_points; i++) 
         {
             smooth_freq = convert_to_smooth_freq(config->end_freq_hz, config->start_freq_hz, config->end_freq_hz + curve_step * i);

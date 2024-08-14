@@ -70,12 +70,12 @@ app_main ()
 
     // Control
     xTaskCreate(motor_task, "Motor Task", 8192, NULL, 1, NULL);
-    //xTaskCreate(servo_task, "Servo Task", 8192, NULL, 1, NULL);
+    xTaskCreate(servo_task, "Servo Task", 8192, NULL, 1, NULL);
     xTaskCreate(step_motor_task, "Step Motor Task", 8192, NULL, 1, NULL);
     xTaskCreate(reset_error_and_angle_task, "Reset E/A Task", 8192, NULL, 1, NULL);
 
     // Odometry
     xTaskCreate(left_encoder_task, "L Encoder Task", 8192, NULL, 1, NULL);
     xTaskCreate(right_encoder_task, "R Encoder Task", 8192, NULL, 1, NULL);
-    //xTaskCreate(steering_reading_task, "Steering Reading Task", 8192, NULL, 1, NULL);
+    xTaskCreate(steering_reading_task, "Steering Reading Task", 8192, NULL, 1, NULL);
 }
