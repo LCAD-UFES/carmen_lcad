@@ -5,7 +5,7 @@ announce "Bale A, pile 1"
 set colision geometry to engage
 
 get bale from pile
-	put bale on the truck
+put bale on the truck
 
 mission_completed:
 
