@@ -497,8 +497,8 @@ void
 calculate_steps(int num_steps, int *transient_steps, uint32_t *accel_samples, uint32_t *uniform_speed_hz, int *uniform_steps, uint32_t *decel_samples) 
 {
     *transient_steps = MIN(num_steps, STEP_MOTOR_MAX_TRANSIENT_STEPS);
-    *accel_samples = *transient_steps / 2;
-    *decel_samples = *accel_samples;
+    *decel_samples = *transient_steps / 2;;
+    *accel_samples = (*transient_steps - *decel_samples);
     *uniform_speed_hz = STEP_MOTOR_INITIAL_SPEED_HZ + STEP_MOTOR_ACCEL_HZ_PER_S * (*accel_samples);
     *uniform_steps = num_steps - *accel_samples - *decel_samples;
 }
