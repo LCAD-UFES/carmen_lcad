@@ -10,7 +10,7 @@ Com a rede funcionando para o ROS2, isto é, ros2 topic list funcionando em um t
 O programa can_to_wirelesscontroller.py recebe mensagens CAN (comandos de joystick) e envia via ROS2 para o Argos.
 
 Em terminais diferentes, rode (um programa em cada terminal diferente):
- ~/carmen_lcad/sharedlib/OpenJAUS/ojNodeManager/bin/ojNodeManager nodeManager_Argos.conf a
+ ~/carmen_lcad/sharedlib/OpenJAUS/ojNodeManager/bin/ojNodeManager ~/carmen_lcad/sharedlib/OpenJAUS/ojNodeManager/nodeManager_Argos.conf a
  ~/carmen_lcad/sharedlib/OpenJAUS/ojArgos/bin/ojArgos vcan0 vcan0
  ~/carmen_lcad/sharedlib/OpenJAUS/ojTorc/bin/ojTorc
  
