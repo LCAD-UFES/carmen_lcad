@@ -3,9 +3,11 @@
 # * Pilha A, primeiro fardo
 announce "Bale A, pile 1"
 set colision geometry to engage
+start on hidden pose
 
-get bale from pile
-put bale on the truck
+	test
+	get bale from pile
+	put bale on the truck
 
 mission_completed:
 

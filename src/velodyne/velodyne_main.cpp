@@ -19,6 +19,7 @@ static int velodyne_scan_port;
 static int velodyne_gps_port;
 static int velodyne_gps_enabled;
 int use_variable_scan_message = 0;
+int remove_two_first_rays = 0;
 int sensor_id = -1;
 
 
@@ -66,6 +67,15 @@ void assembly_velodyne_gps_message_from_gps(velodyne_driver::velodyne_gps_t gps)
 //	printf("Accel_Y -> 1: %6.2f, 2: %6.2f, 3: %6.2f\n", velodyne_gps.accel1_y, velodyne_gps.accel2_y, velodyne_gps.accel3_y);
 }
 
+
+void
+erase_rays(carmen_velodyne_partial_scan_message *msg, int ray)
+{
+	for (int i = 0; i < msg->number_of_32_laser_shots; i++)
+	{
+		msg->partial_scan[i].distance[ray] = 0;
+	}
+}
 /*********************************************************
 		   --- Publishers ---
 **********************************************************/
@@ -127,6 +137,7 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 
  	carmen_velodyne_publish_variable_scan_message(&variable_msg, sensor_id);
  }
+/*********************************************************/
 
 
 /*********************************************************
@@ -142,6 +153,7 @@ void shutdown_module(int signo)
 		exit(0);
 	}
 }
+/*********************************************************/
 
 int read_parameters(int argc, char **argv)
 {
@@ -159,6 +171,7 @@ int read_parameters(int argc, char **argv)
 	carmen_param_t param_optional_list[] =
 	{
 			{(char *) "commandline", (char *) "use_variable_scan", CARMEN_PARAM_ONOFF, &use_variable_scan_message, 0, NULL},
+			{(char *) "commandline", (char *) "remove_two_first_rays", CARMEN_PARAM_ONOFF, &remove_two_first_rays, 0, NULL},
 			{(char *) "commandline", (char *) "sensor_id", CARMEN_PARAM_INT, &sensor_id, 0, NULL},
 	};
 	carmen_param_allow_unfound_variables(1);
@@ -184,7 +197,7 @@ int main(int argc, char **argv)
 	{
 		if (velodyne->pollScan(velodyne_partial_scan))
 		{
-			if(use_variable_scan_message)
+			if (use_variable_scan_message)
 			{
 				if (sensor_id == -1)
 					carmen_die("when using variable_scan set -sensor_id <lidarID>");
@@ -192,7 +205,14 @@ int main(int argc, char **argv)
 				publish_velodyne_variable_scan();
 			}
 			else
+			{
+				if (remove_two_first_rays)
+				{
+					erase_rays(&velodyne_partial_scan, 0);
+					erase_rays(&velodyne_partial_scan, 2);
+				}
 				publish_velodyne_partial_scan();
+			}
 
 
 			if (velodyne_gps_enabled && velodyne->pollGps())
