@@ -7,8 +7,10 @@ start on hidden pose
 
 
 start_mission:
-park at 7757696.45, -363595.67, 1.575
-go after park at 7757696.45, -363595.67, 1.575  # fica nesta task ateh o fim do curso 
+park at 7757695.64, -363596.37, 1.528
+go after park at 7757695.64, -363596.37, 1.528  # fica nesta task ateh o fim do curso 
+#park at 7757696.45, -363595.67, 1.575
+#go after park at 7757696.45, -363595.67, 1.575  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 	wait for 8 seconds
 get bale from pile
@@ -17,12 +19,16 @@ if previous task failed, execute task at label go_to_intermediary_pose
 
 # Caminhão, primeiro fardo
 put_bale_on_truck:
-park at 7757692.72, -363593.13, -3.141 # posição intermediária
-go after park at 7757692.72, -363593.13, -3.141 # posição intermediária
+park at 7757691.97, -363593.81, 3.125
+go after park at 7757691.97, -363593.81, 3.125
+#park at 7757692.72, -363593.13, -3.141 # posição intermediária
+#go after park at 7757692.72, -363593.13, -3.141 # posição intermediária
 
 put_bale_on_truck2:   
-park at 7757697.22, -363593.13, -3.141
-go after park at 7757697.22, -363593.13, -3.141
+park at 7757696.47 -363593.81 3.125 
+go after park at 7757696.47, -363593.81, 3.125
+#park at 7757697.22, -363593.13, -3.141
+#go after park at 7757697.22, -363593.13, -3.141
 	park at 7757698.21, -363593.18, 3.138 
 	go after park at 7757698.21, -363593.18, 3.138 
 stop # tira de modo autonomo
@@ -55,8 +61,10 @@ if previous task failed, execute task at label go_to_intermediary_pose2
 
 
 # Retorna aa posicao inicial
-park at  7757691.43, -363593.35, -3.125
-go after park at 7757691.43, -363593.35, -3.125  # fica nesta task ateh o fim do curso 
+park at  7757690.61, -363593.87, 3.136
+go after park at  7757690.61, -363593.87, 3.136  # fica nesta task ateh o fim do curso 
+#park at  7757691.43, -363593.35, -3.125
+#go after park at 7757691.43, -363593.35, -3.125  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 ####### Go to Mission completed
@@ -67,8 +75,10 @@ execute task at label mission_completed
 go_to_intermediary_pose:
 
 announce "Out of reach, trying again."
-park at 7757696.41, -363594.71, 1.581
-go after park at 7757696.41, -363594.71, 1.581  # fica nesta task ateh o fim do curso 
+park at 7757695.64, -363598.17, 1.528
+go after park at 7757695.64, -363598.17, 1.528
+#park at 7757696.41, -363594.71, 1.581
+#go after park at 7757696.41, -363594.71, 1.581  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 reinitialize robot pose
 
@@ -80,8 +90,10 @@ execute task at label start_mission
 go_to_intermediary_pose2:
 
 announce "Out of reach, trying again."
-park at 7757694.72, -363593.13, -3.141
-go after park at 7757694.72, -363593.13, -3.141
+park at 7757693.97, -363593.82, 3.113
+go after park at 7757693.97, -363593.82, 3.113
+#park at 7757694.72, -363593.13, -3.141
+#go after park at 7757694.72, -363593.13, -3.141
 	park at 7757696.93, -363593.18, 3.108
 	go after park at 7757696.93, -363593.18, 3.108  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
