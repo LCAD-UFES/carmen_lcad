@@ -93,8 +93,8 @@ execute task at label mission_completed
 go_to_intermediary_pose:
 
 announce "Out of reach, trying again."
-park at 7757694.75, -363592.00, -3.138
-go after park at 7757694.75, -363592.00, -3.138
+park at 7757695.56, -363595.67, 1.585
+go after park at 7757695.56, -363595.67, 1.585
 #park at 7757696.31, -363594.13, 1.556
 #go after park at 7757696.31, -363594.13, 1.556
 #park at  7757695.67, -363595.06, 1.547
