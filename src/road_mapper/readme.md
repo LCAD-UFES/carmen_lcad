@@ -559,9 +559,22 @@ This dataset pertains to the _Rodovia do Sol_ (Vila Velha - Guarapari, Brazil). 
  Each directory contains 3 files in the format: <type><latitude>_<longitude>_<translation>_<rotation>.png 
  <type>: i = crop of remission grid map; r = crop of road grid map; t = color coded road grid map 
  <latitude>_<longitude>: UTM Zone 24K coordinates in meters 
- <translation>: in meters (-1.50, -1.00, -0.50, 0.00, 0.50, 1.00, 1.50) 
- <rotation>: in degrees (0.00, 15.00, 30.00, ..., 315.00, 330.00, 345.00) 
+ <translation>: in meters (0.00 meaning no translations) 
+ <rotation>: in degrees (0.00 meaning no rotations)  
  Example: i7718416_-343188_0.00_0.00.png 
+```
+### Industrial Plant Dataset 
+
+[Click here to download](https://drive.google.com/file/d/1ln18sDLkPdbkbGxmq8qGg9SoRXJ3b-F-/view?usp=sharing) 
+
+This dataset pertains to internal roads of an industrial plant in the State of São Paulo, Brazil. It has total extension of 0.65 km and contains 145 directories identified by their UTM (Universal Transverse Mercator) Zone 24K coordinates {latitude}_{longitude} in meters. 
+```
+ Each directory contains 3 files in the format: <type><latitude>_<longitude>_<translation>_<rotation>.png 
+ <type>: i = crop of remission grid map; r = crop of road grid map; t = color coded road grid map 
+ <latitude>_<longitude>: UTM Zone 24K coordinates in meters 
+ <translation>: in meters (0.00 meaning no translations) 
+ <rotation>: in degrees (0.00, 15.00, 30.00, ..., 315.00, 330.00, 345.00) 
+ Example: t7486399_-315935_0.00_240.00.png 
 ```
 ## Videos 
 
