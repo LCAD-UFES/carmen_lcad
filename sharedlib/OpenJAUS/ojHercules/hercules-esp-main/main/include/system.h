@@ -115,8 +115,8 @@ double target_limit_double (double insert,double low,double high);
 // Motors
 #define MOTOR_DUTY_RESOLUTION 8
 #define MOTOR_USE_PID 1
-#define MOTOR_PID_KP 80.0
-#define MOTOR_PID_KI 130.0
+#define MOTOR_PID_KP 110.0
+#define MOTOR_PID_KI 0.0
 #define MOTOR_PID_KD 0.0
 #define MOTOR_MAX_PWM ((1 << MOTOR_DUTY_RESOLUTION) - 1)
 #define MOTOR_DEAD_ZONE 20   //2560
@@ -147,8 +147,8 @@ double target_limit_double (double insert,double low,double high);
 #define STEP_MOTOR_HALF_PERIOD 1000.0 // 5.0 // in ms
 #define STEP_MOTOR_RESOLUTION_HZ 100000.0
 #define STEPS_PER_CYCLE 4000
-#define STEP_MOTOR_INITIAL_SPEED_HZ 75
-#define STEP_MOTOR_ACCEL_HZ_PER_S 50
+#define STEP_MOTOR_INITIAL_SPEED_HZ 5
+#define STEP_MOTOR_ACCEL_HZ_PER_S 1
 #define STEP_MOTOR_MAX_SPEED_HZ 1500
 #define STEP_MOTOR_MAX_TRANSIENT_STEPS (STEP_MOTOR_MAX_SPEED_HZ - STEP_MOTOR_INITIAL_SPEED_HZ) / STEP_MOTOR_ACCEL_HZ_PER_S
 

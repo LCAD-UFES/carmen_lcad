@@ -242,6 +242,7 @@ motor_task ()
         if(get_reset_error_and_angle_counter() >= RESET_TIMER)
         {
             set_command_steering(0);
+            set_command_steering_effort(0);
             set_command_velocity(0);
             set_reset_error_and_angle_counter(0);
         }
