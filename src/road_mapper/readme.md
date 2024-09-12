@@ -560,7 +560,7 @@ This dataset pertains to the _Rodovia do Sol_ (Vila Velha - Guarapari, Brazil). 
  <type>: i = crop of remission grid map; r = crop of road grid map; t = color coded road grid map 
  <latitude>_<longitude>: UTM Zone 24K coordinates in meters 
  <translation>: in meters (0.00 meaning no translations) 
- <rotation>: in degrees (0.00, 15.00, 30.00, ..., 315.00, 330.00, 345.00) 
+ <rotation>: in degrees (0.00 meaning no rotations)  
  Example: i7718416_-343188_0.00_0.00.png 
 ```
 ### Industrial Plant Dataset 
