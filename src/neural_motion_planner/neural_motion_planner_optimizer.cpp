@@ -144,12 +144,9 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 			steering += steering_previous;
 		}
 
-		double minimum_d = std::numeric_limits<double>::infinity();
 		double minimum_d_local = std::numeric_limits<double>::infinity();
-
 		SE2 detailed_lane_in_world_reference = SE2(GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta) * SE2(detailed_lane[0].x, detailed_lane[0].y, detailed_lane[0].theta);
 		SE2 detailed_k_lane_in_world_reference = SE2(GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta) * SE2(detailed_lane[0].x, detailed_lane[0].y, detailed_lane[0].theta);
-		double distance_to_goal = get_distance(GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::goal_pose->x, GlobalState::goal_pose->y);
 		double closest_distance = std::numeric_limits<double>::infinity();
 		carmen_robot_and_trailers_path_point_t closest_point;
 		carmen_robot_and_trailers_path_point_t closest_detailed_lane_point;
@@ -167,7 +164,6 @@ compute_path_via_simulation(carmen_robot_and_trailers_traj_point_t &robot_state,
 
 		for (unsigned int i = 0; i < steering_list.size(); i++) {
     		std::vector<double> predicted_vehicle_location = get_predicted_vehicle_location(GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, steering_list[i], GlobalState::localizer_pose->theta, command.v, t/4);
-			double d_to_s1 = get_distance(predicted_vehicle_location[0], predicted_vehicle_location[1], GlobalState::goal_pose->x, GlobalState::goal_pose->y);
 			detailed_lane_in_world_reference = SE2(GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta) * SE2(detailed_lane[98].x, detailed_lane[98].y, detailed_lane[98].theta);
 			double d_to_s1_local = get_distance(predicted_vehicle_location[0], predicted_vehicle_location[1], closest_detailed_lane_point.x, closest_detailed_lane_point.y);
 
