@@ -145,7 +145,7 @@ bool has_valid_discretization(TrajectoryDiscreteDimensions tdd);
 TrajectoryControlParameters search_lookup_table(TrajectoryDiscreteDimensions tdd);
 
 vector<carmen_robot_and_trailers_path_point_t> simulate_car_from_parameters(TrajectoryDimensions &td,
-		TrajectoryControlParameters &tcp, double v0, double *i_trailer_theta, double delta_t = 0.15);
+		TrajectoryControlParameters &tcp, double v0, double *i_trailer_theta, vector<carmen_robot_and_trailers_path_point_t> detailed_lane, double delta_t = 0.15);
 //vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 //		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 //		bool display_phi_profile, double delta_t = 0.1);

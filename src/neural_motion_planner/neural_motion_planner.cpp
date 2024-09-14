@@ -262,16 +262,16 @@ get_path_from_optimized_tcp(vector<carmen_robot_and_trailers_path_point_t> &path
 		vector<carmen_robot_and_trailers_path_point_t> &path_local,
 		TrajectoryControlParameters otcp,
 		TrajectoryDimensions td,
-		carmen_robot_and_trailers_pose_t *localizer_pose)
+		carmen_robot_and_trailers_pose_t *localizer_pose, vector<carmen_robot_and_trailers_path_point_t> detailed_lane)
 {
 	if (GlobalState::use_mpc)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.025);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, detailed_lane, 0.025);
 	else if (use_unity_simulator)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, detailed_lane, 0.02);
 	else if (GlobalState::eliminate_path_follower)
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, 0.02);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, detailed_lane, 0.02);
 	else
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.trailer_theta_i, detailed_lane);
 
 	path_local = path;
 
@@ -403,7 +403,7 @@ compute_path_to_goal(carmen_robot_and_trailers_pose_t *localizer_pose, Pose *goa
 		vector<carmen_robot_and_trailers_path_point_t> path;
 		vector<carmen_robot_and_trailers_path_point_t> path_local;
 
-		if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
+		if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose, detailed_lane))
 		{
 			paths.clear();
 			return (paths);

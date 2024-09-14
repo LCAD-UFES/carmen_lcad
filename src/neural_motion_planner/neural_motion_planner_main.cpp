@@ -94,7 +94,7 @@ publish_neural_motion_planner_motion_commands(vector<carmen_robot_and_trailers_p
 	{
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;
-		commands[i].time = 0.036;
+		commands[i].time = 0.47;
 		commands[i].x = it->x;
 		commands[i].y = it->y;
 		commands[i].theta = it->theta;
@@ -104,7 +104,6 @@ publish_neural_motion_planner_motion_commands(vector<carmen_robot_and_trailers_p
 
 		i++;
 	}
-	
 	num_commands = path.size();
 	
 	if (GlobalState::use_obstacle_avoider)
