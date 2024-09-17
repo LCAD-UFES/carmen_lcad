@@ -48,6 +48,9 @@ int first_localize_map_message_received = 1;
 static double last_navigator_status = 0.0;
 static int	  is_graphics_up = 0;
 int height_max_level = 0;
+double map_resolution = 0.2;
+double map_width = 210.0;
+double map_height = 210.0;
 
 static double last_v = 0, last_phi = 0;
 static carmen_robot_and_trailers_traj_point_t last_goal;
@@ -1526,6 +1529,9 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "window_x",				CARMEN_PARAM_INT, &window_x,	0, NULL},
 		{(char *) "navigator_panel", (char *) "window_y",				CARMEN_PARAM_INT, &window_y,	0, NULL},
 		{(char *) "mapper",			 (char *) "height_max_level",		CARMEN_PARAM_INT, &height_max_level,								0, NULL},
+		{(char *) "mapper",  		 (char *) "map_grid_res", 			CARMEN_PARAM_DOUBLE, &map_resolution, 0, NULL},
+		{(char *) "mapper",  		 (char *) "map_width", 				CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
+		{(char *) "mapper", 	 	 (char *) "map_height", 			CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
 		{(char *) "route_planner",	 (char *) "in_graph_mode", 			CARMEN_PARAM_ONOFF,  &use_route_planner_in_graph_mode, 0, NULL},
 	};
 
@@ -1723,7 +1729,7 @@ main(int argc, char *argv[])
 
 	read_parameters(argc, argv, &robot_config, &semi_trailer_config, &robot_poly_config, &nav_config, &nav_panel_config);
 
-	carmen_grid_mapping_init_parameters(0.2, 210);
+	carmen_grid_mapping_init_parameters(map_resolution, map_width);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
 	static View::GtkGui _gui(argc, argv);
