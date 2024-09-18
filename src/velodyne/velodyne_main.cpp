@@ -210,6 +210,7 @@ int main(int argc, char **argv)
 				{
 					erase_rays(&velodyne_partial_scan, 0);
 					erase_rays(&velodyne_partial_scan, 2);
+					erase_rays(&velodyne_partial_scan, 22);
 				}
 				publish_velodyne_partial_scan();
 			}

@@ -1,81 +1,84 @@
 # Linhas vazias, que comecam com espaco ou com # sao ignoradas
 #
-
-set course to 7757717.12, -363596.12, 1.002
-go after set course to 7757717.12, -363596.12, 1.002   # fica nesta task ateh o fim do curso 
-
-park at 7757720.18, -363595.80, 3.124
-go after park at 7757720.18, -363595.80, 3.124
-	
-	# * Pilha B, primeiro fardo
 	announce "Bale B, pile 1"
 	set colision geometry to engage
 	start on hidden pose
 
-	start_mission: 
-	park at 7757697.23, -363593.22, -3.115
-	go after park at 7757697.23, -363593.22, -3.115
-	stop # tira de modo autonomo
-		wait for 8 seconds
-	get bale from pile
-	if previous task failed, execute task at label go_to_intermediary_pose
+	set course to 7757717.12, -363596.12, 1.002
+	go after set course to 7757717.12, -363596.12, 1.002   # fica nesta task ateh o fim do curso 
 
-	# Caminhão, primeiro fardo
-	put_bale_on_truck:
-	park at 7757693.73, -363593.22, -3.115
-	go after park at 7757693.73, -363593.22, -3.115
-	reinitialize robot pose
+	park at 7757720.18, -363595.80, 3.124
+	go after park at 7757720.18, -363595.80, 3.124
+	
+#  Pilha B, primeiro fardo
+announce "Bale B, pile 1"
+set colision geometry to engage
+start on hidden pose
 
-	put_bale_on_truck2:   
-	park at 7757719.90, -363596.07, -3.123
-	go after park at 7757719.90, -363596.07, -3.123
-	reinitialize robot pose
-	stop # tira de modo autonomo
-		wait for 8 seconds
-	put bale on the truck
-	if previous task failed, execute task at label go_to_intermediary_pose2
+start_mission: 
+#park at 7757697.46, -363592.96, -3.114
+park at 7757697.95, -363592.76, -3.116
+go after 7757697.95 -363592.76 -3.116
+stop # tira de modo autonomo
+	wait for 8 seconds
+get bale from pile
+if previous task failed, execute task at label go_to_intermediary_pose
 
-	# Retorna aa posicao inicial
-	park at 7757692.23, -363593.22, -3.115
-	go after park at 7757692.23, -363593.22, -3.115
-	stop # tira de modo autonomo
+# Caminhão, primeiro fardo
+set course to 7757718.50, -363592.46, 1.593
+go after set course to 7757718.50, -363592.46, 1.593
 
-	####### Go to Mission completed
-	execute task at label mission_completed
+put_bale_on_truck:   
+park at 7757720.18, -363595.22, -3.080
+go after park at 7757720.18, -363595.22, -3.080
+reinitialize robot pose
+stop # tira de modo autonomo
+	wait for 8 seconds
+put bale on the truck
+if previous task failed, execute task at label go_to_intermediary_pose2
+
+# Retorna aa posicao inicial
+set route planner graph to data/graphs/graph-ct13-hercules-corredor_volta-20240918-1.gr
+set course to 7757692.06, -363593.34, 3.124
+go after set course to 7757692.06, -363593.34, 3.124
+
+####### Go to Mission completed
+execute task at label mission_completed
+
+### Poses Intermediárias
+
+####### Go to Intermediary Pose
+go_to_intermediary_pose:
+
+announce "Out of reach, trying again."
+park at 7757695.95 -363592.76 -3.116
+go after park at 7757695.95 -363592.76 -3.116
+stop # tira de modo autonomo
+reinitialize robot pose
+
+execute task at label start_mission
+
+####### Go to Intermediary Pose 2
+go_to_intermediary_pose2:
+
+announce "Out of reach, trying again."
+park at 7757718.18, -363595.22, -3.080
+go after park at 7757718.18, -363595.22, -3.080
+stop # tira de modo autonomo
+reinitialize robot pose
+
+execute task at label put_bale_on_truck
 
 
+#######
+mission_completed:
 
-	### Poses Intermediárias
+announce "Mission completed!"
+#mission completed
 
-	####### Go to Intermediary Pose
-	go_to_intermediary_pose:
-
-	announce "Out of reach, trying again."
-	park at 7757695.73, -363593.22, -3.115
-	go after park at 7757695.73, -363593.22, -3.115
-	stop # tira de modo autonomo
-	reinitialize robot pose
-
-	execute task at label start_mission
-
-	####### Go to Intermediary Pose 2
-	go_to_intermediary_pose2:
-
-	announce "Out of reach, trying again."
-	park at 7757717.90, -363596.07, -3.123
-	go after park at 7757717.90, -363596.07, -3.123
-	stop # tira de modo autonomo
-	reinitialize robot pose
-
-	execute task at label put_bale_on_truck2
-
-
-	#######
-	mission_completed:
-
-	announce "Mission completed!"
-	#mission completed
-
-	# Primeira coordenada : 7757697.23 -363593.22 -3.115 (do lado da mesa do cafe)
-	# Segunda coordenada : 7757692.73 -363598.26 0.023 (perto da porta de emergencia)
-	# Terceira coordenada : 7757719.90 -363596.07 -3.123 (Perto do bebedouro)
+# Primeira coordenada : 7757697.23 -363593.22 -3.115 (do lado da mesa do cafe) #old
+# Segunda coordenada : 7757692.73 -363598.26 0.023 (perto da porta de emergencia) #old 
+# Terceira coordenada : 7757719.90 -363596.07 -3.123 (Perto do bebedouro) #old
+# Pilha perto do bebedouro : 7757720.18 -363595.22 -3.080 (caminhão perto do bebedouro)
+# Fardo : 7757697.46 -363592.96 -3.114 (Pega os blocos perto do cafe)
+# Pose final do grafo : 7757718.50 -363592.46 1.593
