@@ -9,12 +9,6 @@ start on hidden pose
 start_mission: 
 park at 7757696.86, -363595.67, 1.585
 go after park at 7757696.86, -363595.67, 1.585
-#park at 7757696.31, -363595.63, 1.556
-#go after park at  7757696.31, -363595.63, 1.556
-#park at  7757695.67, -363596.36, 1.547
-#go after park at  7757695.67, -363596.36, 1.547
-#park at 7757696.45, -363595.67, 1.575
-#go after park at 7757696.45, -363595.67, 1.575  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 	wait for 8 seconds
 get bale from pile
@@ -26,29 +20,11 @@ put_bale_on_truck:
 park at 7757694.75, -363593.30, -3.138
 go after park at 7757694.75, -363593.30, -3.138
 reinitialize robot pose
-#park at 7757695.21, -363593.24, -3.139
-#go after park at  7757695.21, -363593.24, -3.139
-#park at  7757692.27, -363594.11, 3.109
-#go after park at  7757692.27, -363594.11, 3.109
-#park at 7757693.47, -363593.81, 3.125
-#go after park at 7757691.97, -363593.81, 3.125
-#park at 7757692.72, -363593.13, -3.141 # posição intermediária
-#go after park at 7757692.72, -363593.13, -3.141 # posição intermediária
 
 put_bale_on_truck2:   
 park at 7757697.75, -363593.30, -3.138
 go after park at 7757697.75, -363593.30, -3.138
 reinitialize robot pose
-#park at 7757697.21, -363593.24, -3.139
-#go after park at  7757697.21, -363593.24, -3.139
-#park at 7757696.27, -363594.11, 3.109
-#go after park at  7757696.27, -363594.11, 3.109
-#park at 7757696.47 -363593.81 3.125 
-#go after park at 7757696.47, -363593.81, 3.125
-#park at 7757697.22, -363593.13, -3.141
-#go after park at 7757697.22, -363593.13, -3.141
-	park at 7757698.21, -363593.18, 3.138 
-	go after park at 7757698.21, -363593.18, 3.138 
 stop # tira de modo autonomo
 	wait for 8 seconds
 put bale on the truck
@@ -81,8 +57,6 @@ if previous task failed, execute task at label go_to_intermediary_pose2
 # Retorna aa posicao inicial
 park at 7757691.46, -363593.36, -3.086
 go after park at 7757691.46, -363593.36, -3.086  # fica nesta task ateh o fim do curso 
-#park at  7757691.43, -363593.35, -3.125
-#go after park at 7757691.43, -363593.35, -3.125  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 
 ####### Go to Mission completed
@@ -95,12 +69,6 @@ go_to_intermediary_pose:
 announce "Out of reach, trying again."
 park at 7757695.56, -363595.67, 1.585
 go after park at 7757695.56, -363595.67, 1.585
-#park at 7757696.31, -363594.13, 1.556
-#go after park at 7757696.31, -363594.13, 1.556
-#park at  7757695.67, -363595.06, 1.547
-#go after park at  7757695.67, -363595.06, 1.547
-#park at 7757696.41, -363594.71, 1.581
-#go after park at 7757696.41, -363594.71, 1.581  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 reinitialize robot pose
 
@@ -114,16 +82,6 @@ go_to_intermediary_pose2:
 announce "Out of reach, trying again."
 park at 7757695.75, -363593.30, -3.138
 go after park at 7757695.75, -363593.30, -3.138
-#park at 7757694.71, -363593.24, -3.139
-#go after park at 7757694.71 -363593.24 -3.139
-#park at  7757693.77, -363594.11, 3.109
-#go after park at  7757693.77, -363594.11, 3.109
-#park at 7757693.97, -363593.82, 3.113
-#go after park at 7757693.97, -363593.82, 3.113
-#park at 7757694.72, -363593.13, -3.141
-#go after park at 7757694.72, -363593.13, -3.141
-	park at 7757696.93, -363593.18, 3.108
-	go after park at 7757696.93, -363593.18, 3.108  # fica nesta task ateh o fim do curso 
 stop # tira de modo autonomo
 reinitialize robot pose
 
