@@ -78,7 +78,7 @@ class LidarSubscriber : public rclcpp::Node
 			memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
 			points.emplace_back(std::make_tuple(x, y, z));
 			// shot.distance = sqrt(x*x + y*y + z*z);
-			// printf("x: %f, y: %f, z: %f intensity: %f\n", x, y, z, intensity);
+			printf("x: %f, y: %f, z: %f intensity: %f\n", x, y, z, intensity);
 		}
 		plot_point_cloud(points);
     }

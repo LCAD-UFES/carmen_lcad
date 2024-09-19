@@ -540,8 +540,10 @@ LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_
 
 CXXFLAGS += -std=c++14  
 
-SOURCES = argos_lidar.cpp
-TARGETS = argos_lidar  
+SOURCES = argos_lidar.cpp argos_lidar_polar.cpp argos_lidar_breno.cpp
+TARGETS = argos_lidar argos_lidar_polar argos_lidar_breno
 
 argos_lidar: argos_lidar.o  
+argos_lidar_polar: argos_lidar_polar.o
+argos_lidar_breno: argos_lidar_breno.o
 include ../Makefile.rules
