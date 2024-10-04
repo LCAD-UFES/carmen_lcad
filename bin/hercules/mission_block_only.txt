@@ -7,7 +7,7 @@ start on hidden pose
 
 	test
 get bale from pile
-	put bale on the truck
+put bale on the truck
 
 mission_completed:
 
