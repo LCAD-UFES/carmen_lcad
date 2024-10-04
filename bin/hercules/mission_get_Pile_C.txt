@@ -1,0 +1,5 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+	
+#  Pilha B, primeiro fardo
+announce "Até Mais, Gazeta. "
+#announce "Ate mai gasêra. "
