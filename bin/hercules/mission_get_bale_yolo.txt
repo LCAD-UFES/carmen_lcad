@@ -1,8 +1,0 @@
-# Linhas vazias, que comecam com espaco ou com # sao ignoradas
-#
-# * Pilha A, primeiro fardo
-announce "Bale B, pile 1"
-set colision geometry to engage
-start on hidden pose
-
-yolo get bale from pile
