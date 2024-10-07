@@ -14,7 +14,7 @@ LFLAGS += -L/opt/ros/foxy/lib
 LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface -lroute_planner_interface \
 		  -lnavigator_ackerman_interface -lbehavior_selector_interface -lford_escape_hybrid_interface -lcargo_interface \
 		  -lvoice_interface_interface -luser_app_server_interface -lbl_ipc_interface_interface \
-		  -lrclcpp -lrcutils -pthread -lrmw -lrcl -lrosidl_typesupport_cpp -llibstatistics_collector \
+		  -lrclcpp -lrcutils -pthread -lrmw -lrcl -lrosidl_typesupport_cpp -llibstatistics_collector -lvelodyne_interface \
 		  -lstatistics_msgs__rosidl_typesupport_cpp -ltracetools \
 		  -lactionlib_msgs__python \
 		  -lactionlib_msgs__rosidl_generator_c \
