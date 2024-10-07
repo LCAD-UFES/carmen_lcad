@@ -2,6 +2,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/velodyne_messages.h>
+#include <carmen/velodyne_interface.h>
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -152,7 +153,14 @@ process_points(std::vector<SphericalLidarPoint> points)
                 intensity[j] = interpolate((it-1)->vertical_angle, (it-1)->intensity, it->vertical_angle, it->intensity, lidar_angles[j]);
             }
         }
-        double angle = std::accumulate(slice_begin, slice_end, 0) / number_of_points;
+        double angle = std::accumulate(
+            slice_begin,
+            slice_end,
+            0,
+            [](double sum, const SphericalLidarPoint& point) {
+                return sum + point.horizontal_angle; // Accumulate horizontal_angle
+            }
+        ) / number_of_points;
 
         carmen_velodyne_shot shot;
         shot.angle = angle;
@@ -166,8 +174,12 @@ process_points(std::vector<SphericalLidarPoint> points)
     }
     carmen_msg.timestamp = carmen_get_time();
     carmen_msg.partial_scan = &shots.front();
+    if (carmen_velodyne_publish_variable_scan_message(&carmen_msg, 0) == IPC_Error)
+    {
+        fprintf(stderr, "Failed to publish variable scan message\n");
+    }
+    printf("loop\n");
 }
-
 
 class LidarSubscriber : public rclcpp::Node
 {
