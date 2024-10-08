@@ -3,8 +3,8 @@
 announce "Initiating test"
 start on hidden pose
 
+	yolo get bale from pile
+put bale on the truck
 #yolo get bale from pile
-#put bale on the truck
-#yolo get bale from pile
-put bale on top
+#put bale on top
 

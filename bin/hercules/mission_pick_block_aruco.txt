@@ -6,7 +6,7 @@ set colision geometry to engage
 start on hidden pose
 
 	test
-get bale from pile
+	get bale from pile
 put bale on the truck
 
 mission_completed:
