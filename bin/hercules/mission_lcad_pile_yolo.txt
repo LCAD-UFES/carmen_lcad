@@ -22,8 +22,8 @@ park at 7757695.97, -363593.13, 3.128
 go after park at 7757695.97, -363593.13, 3.128
 reinitialize robot pose
 put_first_bale_on_truck_reach_pose:   
-park at 7757697.97, -363593.13, 3.128
-go after park at 7757697.97, -363593.13, 3.128
+park at 7757698.06, -363593.13, 3.128
+go after park at 7757698.06, -363593.13, 3.128
 reinitialize robot pose
 stop
 put bale on the truck
@@ -32,8 +32,8 @@ if previous task failed, execute task at label go_to_retry_pose_put_first_bale
 
 # Pegar segundo fardo
 get_second_bale: 
-park at 7757696.37, -363595.57, 1.557
-go after park at 7757696.37, -363595.57, 1.557
+park at 7757696.37, -363595.65, 1.557
+go after park at 7757696.37, -363595.65, 1.557
 reinitialize robot pose
 stop
 yolo get bale from pile
@@ -46,8 +46,8 @@ park at 7757695.97, -363593.13, 3.128
 go after park at 7757695.97, -363593.13, 3.128
 reinitialize robot pose
 put_second_bale_on_truck_reach_pose:   
-park at 7757697.97, -363593.13, 3.128
-go after park at 7757697.97, -363593.13, 3.12
+park at 7757698.06, -363593.13, 3.128
+go after park at 7757698.06, -363593.13, 3.12
 reinitialize robot pose
 stop
 put bale on top
