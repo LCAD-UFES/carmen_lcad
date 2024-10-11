@@ -116,7 +116,7 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	else if (steering_effort < -100.0)
 		steering_effort = -100.0;
 
-	int int_steering_effort = round(steering_effort * CAN_CONVERSION_CONSTANT);
+	int int_steering_effort = 0; // round(steering_effort * CAN_CONVERSION_CONSTANT);
 	frame.data[3] = (__u8) ((int_steering_effort >> 8) & 0xff);
 	frame.data[2] = (__u8) int_steering_effort & 0xff;
 
