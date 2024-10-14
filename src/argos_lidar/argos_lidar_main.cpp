@@ -41,7 +41,7 @@ double lidar_angles[51] = {
 
 
 void
-plot_point_cloud(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> points)
+plot_point_cloud(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> points_gnuplot)
 {
 	static bool first_time = true;
 	static FILE *gnuplot_pipe;
@@ -62,23 +62,23 @@ plot_point_cloud(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> po
 	FILE *points_file = fopen("mpp.txt", "w");
 
 	int index = 0;
-	for (auto point : points)
+	for (auto point : points_gnuplot)
 	{
 		_Float32 x, y, z, intensity;
 		std::tie(x, y, z, intensity) = point;
 		fprintf(points_file, "%f %f %f\n", x, y, z);
 
-//		_Float32 distance_float = sqrt(x * x + y * y + z * z);
-//		unsigned int distance = distance_float * lidar_range_division_factor;
-//
-//		_Float32 angle_horizontal = atan2(y, x);
-//		angle_horizontal = angle_horizontal * 180.0 / M_PI;
-//
-//		_Float32 angle_vertical = atan2(z, sqrt(x * x + y * y));
-//		angle_vertical = angle_vertical * 180.0 / M_PI;
-//
-//		printf("N: %d, x: %f, y: %f, z: %f, Distance: %d, Horizontal Angle: %f, Vertical Angle: %f\n",
-//				index, x, y, z, distance, angle_horizontal, angle_vertical);
+		_Float32 distance_float = sqrt(x * x + y * y + z * z);
+		unsigned int distance = distance_float * lidar_range_division_factor;
+
+		_Float32 angle_horizontal = atan2(y, x);
+		angle_horizontal = angle_horizontal * 180.0 / M_PI;
+
+		_Float32 angle_vertical = acos(z / distance_float);
+		angle_vertical = angle_vertical * 180.0 / M_PI;
+
+		printf("N: %d, x: %f, y: %f, z: %f, Distance: %d, Horizontal Angle: %f, Vertical Angle: %f\n",
+				index, x, y, z, distance, angle_horizontal, angle_vertical);
 		index++;
 	}
 
@@ -100,14 +100,14 @@ interpolate(double x0, double y0, double x1, double y1, double x)
 
 
 void
-process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> points_xyz_vector)
+process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> points_xyz)
 {
-	std::vector<SphericalLidarPoint> points;
-	points.reserve(points_xyz_vector.size());
-	//plot_point_cloud(points_xyz_vector);
+	std::vector<SphericalLidarPoint> points_spherical;
+	points_spherical.reserve(points_xyz.size());
+	//plot_point_cloud(points_xyz);
 
     // Funcao para converter pontos cartesianos para esfericos
-	for (auto point : points_xyz_vector)
+	for (auto point : points_xyz)
 	{
 		_Float32 x, y, z, intensity;
 		std::tie(x, y, z, intensity) = point;
@@ -118,34 +118,34 @@ process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> poin
 		_Float32 angle_horizontal = atan2(y, x);
 		angle_horizontal = angle_horizontal * 180.0 / M_PI;
 
-		_Float32 angle_vertical = atan2(z, sqrt(x * x + y * y));
+		_Float32 angle_vertical = acos(z / distance_float);
 		angle_vertical = angle_vertical * 180.0 / M_PI;
 
-		points.emplace_back(distance, angle_horizontal, angle_vertical, intensity);
+		points_spherical.emplace_back(distance, angle_horizontal, angle_vertical, intensity);
 		//printf("Distance: %d, Horizontal Angle: %f, Vertical Angle: %f, Intensity: %f\n",
 		//		 distance, angle_horizontal, angle_vertical, intensity);
 	}
 
-    // std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> xyz_points;
-    // xyz_points.reserve(points_xyz_vector.size());
-
-    // for (auto point : points)
+    // Testando se a conversão está correta
+    // std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points_test;
+    // points_test.reserve(points_xyz.size());
+    // for (auto point : points_spherical)
 	// {
-    //     _Float32 x, y, z;
-    //     _Float32 distance, angle_horizontal, angle_vertical, intensity;
-    //     distance = (point.distance/1000.0);
-    //     angle_horizontal = point.horizontal_angle;
-    //     angle_vertical = point.vertical_angle;
+	// 	_Float32 r, theta, phi, intensity;
+    //     r = point.distance / (float) lidar_range_division_factor;
+    //     theta = point.horizontal_angle * M_PI / 180.0;
+    //     phi = point.vertical_angle * M_PI / 180.0;
     //     intensity = point.intensity;
 
-    //     x = (distance)*cos(angle_horizontal)*sin(angle_vertical);
-    //     y = (distance)*sin(angle_horizontal)*sin(angle_vertical);
-    //     z = (distance)*cos(angle_vertical);
+	// 	_Float32 x = r*sin(phi)*cos(theta);
+    //     _Float32 y = r*sin(phi)*sin(theta);
+    //     _Float32 z = r*cos(phi);
 
-    //     xyz_points.emplace_back(std::make_tuple(x, y, z, intensity));
-	// 		//printf("shot: %d, point: %d, x: %f, y: %f, z: %f, dist: %d,intensity %f \n", l, m, x, y, z, shot.distance[m], intensity);
-    // }
-	// plot_point_cloud(xyz_points);
+	// 	points_test.emplace_back(x, y, z, intensity);
+	// 	//printf("Distance: %d, Horizontal Angle: %f, Vertical Angle: %f, Intensity: %f\n",
+	// 	//		 distance, angle_horizontal, angle_vertical, intensity);
+	// }
+    // plot_point_cloud(points_test);
 
 
     carmen_velodyne_variable_scan_message carmen_msg;
@@ -158,21 +158,21 @@ process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> poin
 
     // Find the local maxima and minima
     turning_point_indexes.push_back(0);
-    for (uint32_t i = 0; i < points.size(); i++)
+    for (uint32_t i = 0; i < points_spherical.size(); i++)
     {
-        if (points[i].vertical_angle > previous_vertical_angle && !vertical_angle_rising)
+        if (points_spherical[i].vertical_angle > previous_vertical_angle && !vertical_angle_rising)
         {
             vertical_angle_rising = true;
             turning_point_indexes.push_back(i);
         }
-        else if (points[i].vertical_angle < previous_vertical_angle && vertical_angle_rising)
+        else if (points_spherical[i].vertical_angle < previous_vertical_angle && vertical_angle_rising)
         {
             vertical_angle_rising = false;
             turning_point_indexes.push_back(i);
         }
-        previous_vertical_angle = points[i].vertical_angle;
+        previous_vertical_angle = points_spherical[i].vertical_angle;
     }
-    turning_point_indexes.push_back(points.size() - 1);
+    turning_point_indexes.push_back(points_spherical.size() - 1);
 
     std::vector<carmen_velodyne_shot> shots;
 
@@ -187,8 +187,8 @@ process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> poin
             continue;
         }
 
-        std::vector<SphericalLidarPoint>::iterator slice_begin = points.begin() + turning_point_indexes[i-1];
-        std::vector<SphericalLidarPoint>::iterator slice_end = points.begin() + turning_point_indexes[i];
+        std::vector<SphericalLidarPoint>::iterator slice_begin = points_spherical.begin() + turning_point_indexes[i-1];
+        std::vector<SphericalLidarPoint>::iterator slice_end = points_spherical.begin() + turning_point_indexes[i];
 
         std::array<unsigned int, shot_size> distances;
         std::array<unsigned short, shot_size> intensity;
@@ -240,129 +240,6 @@ process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> poin
         fprintf(stderr, "Failed to publish variable scan message\n");
     }
 
-    // Plotando a msg do carmen no gnuplot
-
-    // Calculando numero de pontos
-    std::vector<std::tuple<_Float32, _Float32, _Float32>> xyz_points;
-
-	// Reconstrução dos pontos a partir dos dados do "carmen"
-	for (int i = 0; i < carmen_msg.number_of_shots; ++i)
-	{
-		const carmen_velodyne_shot &shot = carmen_msg.partial_scan[i];
-		double horizontal_angle_deg = shot.angle;
-		double horizontal_angle_rad = horizontal_angle_deg * M_PI / 180.0;
-
-		for (int j = 0; j < shot.shot_size; ++j)
-		{
-			double vertical_angle_deg = lidar_angles[j];
-			double vertical_angle_rad = vertical_angle_deg * M_PI / 180.0;
-
-			double distance = static_cast<double>(shot.distance[j]) / lidar_range_division_factor;
-
-			double x = distance * cos(vertical_angle_rad) * cos(horizontal_angle_rad);
-			double y = distance * cos(vertical_angle_rad) * sin(horizontal_angle_rad);
-			double z = distance * sin(vertical_angle_rad);
-
-			xyz_points.emplace_back(static_cast<_Float32>(x), static_cast<_Float32>(y), static_cast<_Float32>(z));
-		}
-	}
-
-	// Plotagem dos pontos usando gnuplot (função integrada)
-	static bool first_time = true;
-	static FILE *gnuplot_pipe;
-
-	if (first_time)
-	{
-		first_time = false;
-
-		gnuplot_pipe = popen("gnuplot -persist", "w"); // '-persist' mantém a janela aberta após o término do programa
-		if (gnuplot_pipe == nullptr)
-		{
-			fprintf(stderr, "Erro ao abrir o pipe para o gnuplot.\n");
-			return;
-		}
-		fprintf(gnuplot_pipe, "set xrange [-5:5]\n");
-		fprintf(gnuplot_pipe, "set yrange [-5:5]\n");
-		fprintf(gnuplot_pipe, "set zrange [0:5]\n");
-		fprintf(gnuplot_pipe, "set xlabel 'x'\n");
-		fprintf(gnuplot_pipe, "set ylabel 'y'\n");
-		fprintf(gnuplot_pipe, "set zlabel 'z'\n");
-	}
-
-	// Escreve os pontos em um arquivo temporário
-	FILE *points_file = fopen("mpp.txt", "w");
-	if (points_file == nullptr)
-	{
-		fprintf(stderr, "Erro ao abrir o arquivo 'mpp.txt' para escrita.\n");
-		return;
-	}
-
-	int index = 0;
-	for (const auto& point : xyz_points)
-	{
-		_Float32 x, y, z;
-		std::tie(x, y, z) = point;
-		fprintf(points_file, "%f %f %f\n", x, y, z);
-
-		_Float32 distance_float = sqrt(x * x + y * y + z * z);
-		unsigned int distance = distance_float * lidar_range_division_factor;
-
-		_Float32 angle_horizontal = atan2(y, x);
-		angle_horizontal = angle_horizontal * 180.0 / M_PI;
-
-		_Float32 angle_vertical = atan2(z, sqrt(x * x + y * y));
-		angle_vertical = angle_vertical * 180.0 / M_PI;
-
-		printf("N: %d, x: %f, y: %f, z: %f, Distance: %d, Horizontal Angle: %f, Vertical Angle: %f\n",
-				index, x, y, z, distance, angle_horizontal, angle_vertical);
-		index++;
-	}
-
-	fclose(points_file);
-
-	// Envia o comando para plotar os pontos no gnuplot
-	fprintf(gnuplot_pipe, "splot './mpp.txt' using 1:2:3 with points pointtype 7 pointsize 1 title \"Pontos x, y, z\"\n");
-	fflush(gnuplot_pipe);
-
-//    int num_pontos = 0;
-//    for (int k = 0; k < carmen_msg.number_of_shots; k++)
-//	{
-//    	num_pontos += carmen_msg.partial_scan[k].shot_size;
-//	}
-//
-//    std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> xyz_points;
-//    xyz_points.reserve(num_pontos);
-//    float vertical_angle = 0.0;
-//    float theta = 0.0;
-//    float phi = 0.0;
-//    float dist = 0.0;
-//
-//    for (int l = 0; l < carmen_msg.number_of_shots; l++)
-//	{
-//    	const carmen_velodyne_shot &shot = carmen_msg.partial_scan[l];
-//    	vertical_angle = 0.0;
-//    	for(int m = 0; m < shot.shot_size; m++)
-//    	{
-//			_Float32 x, y, z, intensity;
-//			intensity = shot.intensity[m];
-//			dist = (shot.distance[m]) / 1000.0; // lidar_range_division_factor
-//			theta = shot.angle;
-//			phi = lidar_angles[m];
-//			vertical_angle += 1.0;
-//
-//			double theta_rad = theta * 180.0 / M_PI;
-//			double phi_rad = phi * 180.0 / M_PI;
-//
-//			x = (dist)*cos(theta_rad)*sin(phi_rad);
-//			y = (dist)*sin(theta_rad)*sin(phi_rad);
-//			z = (dist)*cos(phi_rad);
-//
-//			xyz_points.emplace_back(std::make_tuple(x, y, z, intensity));
-//			printf("shot: %d, point: %d, x: %f, y: %f, z: %f, dist: %d,intensity %f \n", l, m, x, y, z, shot.distance[m], intensity);
-//    	}
-//    }
-//	plot_point_cloud(xyz_points);
-
 }
 
 class LidarSubscriber : public rclcpp::Node
@@ -378,9 +255,9 @@ class LidarSubscriber : public rclcpp::Node
   private:
     void topic_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) const
     {
-//        std::vector<SphericalLidarPoint> points;
-		std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points;
-        points.reserve(msg->width);
+        //std::vector<SphericalLidarPoint> points;
+		std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points_callback;
+        points_callback.reserve(msg->width);
 
         for (uint32_t i = 0; i < msg->width; i++)
         {
@@ -389,9 +266,9 @@ class LidarSubscriber : public rclcpp::Node
 			memcpy(&y, &msg->data[4 + msg->point_step * i], 4);
 			memcpy(&z, &msg->data[8 + msg->point_step * i], 4);
 			memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
-			points.emplace_back(std::make_tuple(x, y, z, intensity));
+			points_callback.emplace_back(std::make_tuple(x, y, z, intensity));
         }
-        process_points(points);
+        process_points(points_callback);
     }
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription_;
 };

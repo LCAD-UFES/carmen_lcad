@@ -76,7 +76,6 @@ class LidarSubscriber : public rclcpp::Node
   private:
     void topic_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) const
     {
-//    	static int feito = 0;
 		std::vector<std::tuple<_Float32,_Float32,_Float32>> points;
 		points.reserve(msg->width);
 		for (uint32_t i = 0; i < msg->width; i++)
@@ -90,11 +89,8 @@ class LidarSubscriber : public rclcpp::Node
 			// shot.distance = sqrt(x*x + y*y + z*z);
 			printf("x: %f, y: %f, z: %f intensity: %f\n", x, y, z, intensity);
 		}
-//		if (feito == 0)
-//		{
 		plot_point_cloud(points);
-//			feito = 1;
-//		}
+
     }
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription_;
 };
