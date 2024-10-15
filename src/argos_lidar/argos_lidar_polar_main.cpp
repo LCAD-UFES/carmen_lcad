@@ -96,7 +96,7 @@ class LidarSubscriber : public rclcpp::Node
 			angle_horizontal = angle_horizontal * 180 / M_PI;
 
 			// Compute vertical angle (elevation) in radians
-			_Float32 angle_vertical = atan2(z, sqrt(x * x + y * y));
+			_Float32 angle_vertical = acos(z / distance_float);
 
 			// Converte p/ graus
 			angle_vertical = angle_vertical * 180 / M_PI;
