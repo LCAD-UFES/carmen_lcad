@@ -11,6 +11,7 @@
 
 #define lidar_range_division_factor 1000
 #define max_points 50
+#define msg_accumulated_to_carmen 15
 
 using std::placeholders::_1;
 
@@ -419,6 +420,7 @@ class LidarSubscriber : public rclcpp::Node
 		// opcao 2 = plota em tempo real, 
 		// opcao 3 = plota mensagens acumuladas, 
 		// opcao 4 = plota uma msg por vez e pode mandar msg no terminal para plotar a próxima
+        // opcao 5 = como opcao 0, mas acumula antes de mandar para o carmen
 		if (debug_option == 0)
 		{
 			std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points_callback;
@@ -548,6 +550,38 @@ class LidarSubscriber : public rclcpp::Node
 				}
 			}
 		}
+        else if (debug_option == 5)
+        {
+			static std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> vector_accumulator;
+			static int counted_msg = 0;
+            static int reserved_points = 0;
+            printf("opcao 5: %d\n", counted_msg);
+            reserved_points += msg->width;
+			vector_accumulator.reserve(reserved_points);
+            for (uint32_t i = 0; i < msg->width; i++)
+            {
+                _Float32 x, y, z, intensity;
+                memcpy(&x, &msg->data[0 + msg->point_step * i], 4);
+                memcpy(&y, &msg->data[4 + msg->point_step * i], 4);
+                y = -y;
+                memcpy(&z, &msg->data[8 + msg->point_step * i], 4);
+                memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
+                vector_accumulator.emplace_back(std::make_tuple(x, y, z, intensity));
+            }
+			if (counted_msg < (msg_accumulated_to_carmen - 1))
+			{
+				counted_msg += 1;
+			}
+			else if (counted_msg == (msg_accumulated_to_carmen - 1))
+			{
+				printf("acumulado\n");
+				
+				process_points(vector_accumulator);
+                vector_accumulator.clear();
+                reserved_points = 0;
+				counted_msg = 0;
+			}
+        }
     }
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription_;
 };
