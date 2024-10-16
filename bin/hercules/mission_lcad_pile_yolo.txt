@@ -1,0 +1,110 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+
+
+announce "Pile 1"
+set colision geometry to engage
+start on hidden pose
+
+
+# Pegar primeiro fardo
+get_first_bale:
+park at 7757696.37, -363595.65, 1.557
+go after park at 7757696.37, -363595.65, 1.557
+reinitialize robot pose
+stop
+yolo get bale from pile
+if previous task failed, execute task at label go_to_retry_pose_get_first_bale
+
+
+# Colocar primeiro fardo no caminhão
+put_first_bale_on_truck:
+park at 7757695.97, -363593.13, 3.128
+go after park at 7757695.97, -363593.13, 3.128
+reinitialize robot pose
+put_first_bale_on_truck_reach_pose:   
+park at 7757698.06, -363593.13, 3.128
+go after park at 7757698.06, -363593.13, 3.128
+reinitialize robot pose
+stop
+put bale on the truck
+if previous task failed, execute task at label go_to_retry_pose_put_first_bale
+
+
+# Pegar segundo fardo
+get_second_bale: 
+park at 7757696.37, -363595.65, 1.557
+go after park at 7757696.37, -363595.65, 1.557
+reinitialize robot pose
+stop
+yolo get bale from pile
+if previous task failed, execute task at label go_to_retry_pose_get_second_bale
+
+
+# Colocar segundo fardo no caminhão
+put_second_bale_on_truck:
+park at 7757695.97, -363593.13, 3.128
+go after park at 7757695.97, -363593.13, 3.128
+reinitialize robot pose
+put_second_bale_on_truck_reach_pose:   
+park at 7757698.06, -363593.13, 3.128
+go after park at 7757698.06, -363593.13, 3.12
+reinitialize robot pose
+stop
+put bale on top
+if previous task failed, execute task at label go_to_retry_pose_put_second_bale
+
+
+# Retorna a posicao inicial
+park at 7757691.46, -363593.36, -3.086
+go after park at 7757691.46, -363593.36, -3.086  # fica nesta task ateh o fim do curso 
+stop
+
+
+# End Mission
+execute task at label mission_completed
+
+
+# Retry Pose to Get First Bale
+go_to_retry_pose_get_first_bale:
+announce "Out of reach, trying again."
+park at 7757696.42, -363594.23, 1.544
+go after park at 7757696.42, -363594.23, 1.544
+stop # tira de modo autonomo
+reinitialize robot pose
+execute task at label get_first_bale
+
+
+# Retry Pose to Put First Bale
+go_to_retry_pose_put_first_bale:
+announce "Out of reach, trying again."
+park at 7757695.97, -363593.13, 3.128
+go after park at 7757695.97, -363593.13, 3.128
+stop # tira de modo autonomo
+reinitialize robot pose
+execute task at label put_first_bale_on_truck_reach_pose
+
+
+# Retry Pose to Get First Bale
+go_to_retry_pose_get_second_bale:
+announce "Out of reach, trying again."
+park at 7757696.42, -363594.23, 1.544
+go after park at 7757696.42, -363594.23, 1.544
+stop # tira de modo autonomo
+reinitialize robot pose
+execute task at label get_second_bale
+
+
+# Retry Pose to Put First Bale
+go_to_retry_pose_put_second_bale:
+announce "Out of reach, trying again."
+park at 7757695.97, -363593.13, 3.128
+go after park at 7757695.97, -363593.13, 3.128
+stop # tira de modo autonomo
+reinitialize robot pose
+execute task at label put_second_bale_on_truck_reach_pose
+
+
+# Mission Completed
+mission_completed:
+announce "Mission completed!"
+

@@ -11,14 +11,15 @@
 	go after park at 7757720.18, -363595.80, 3.124
 	
 #  Pilha B, primeiro fardo
+announce "Ola, Vivia Lima, e bom diia, TV Gazeta. "
 announce "Bale B, pile 1"
 set colision geometry to engage
 start on hidden pose
 
 start_mission: 
-#park at 7757697.46, -363592.96, -3.114
 park at 7757697.95, -363592.76, -3.116
-go after 7757697.95 -363592.76 -3.116
+go after park at 7757697.95 -363592.76 -3.116
+reinitialize robot pose
 stop # tira de modo autonomo
 	wait for 8 seconds
 get bale from pile
@@ -27,6 +28,7 @@ if previous task failed, execute task at label go_to_intermediary_pose
 # Caminhão, primeiro fardo
 set course to 7757718.50, -363592.46, 1.593
 go after set course to 7757718.50, -363592.46, 1.593
+reinitialize robot pose
 
 put_bale_on_truck:   
 park at 7757720.18, -363595.22, -3.080
@@ -39,8 +41,11 @@ if previous task failed, execute task at label go_to_intermediary_pose2
 
 # Retorna aa posicao inicial
 set route planner graph to data/graphs/graph-ct13-hercules-corredor_volta-20240918-1.gr
-set course to 7757692.06, -363593.34, 3.124
-go after set course to 7757692.06, -363593.34, 3.124
+set course to 7757698.04, -363597.75, 2.845
+go after set course to 7757698.04, -363597.75, 2.845
+reinitialize robot pose
+park at 7757692.06, -363593.34, 3.124
+go after park at 7757692.06, -363593.34, 3.124
 
 ####### Go to Mission completed
 execute task at label mission_completed
@@ -69,9 +74,8 @@ reinitialize robot pose
 
 execute task at label put_bale_on_truck
 
-
 #######
-mission_completed:
+Mission_completed:
 
 announce "Mission completed!"
 #mission completed
