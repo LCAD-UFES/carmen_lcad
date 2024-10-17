@@ -431,6 +431,7 @@ class LidarSubscriber : public rclcpp::Node
                 _Float32 x, y, z, intensity;
                 memcpy(&x, &msg->data[0 + msg->point_step * i], 4);
                 memcpy(&y, &msg->data[4 + msg->point_step * i], 4);
+                y = -y;
                 memcpy(&z, &msg->data[8 + msg->point_step * i], 4);
                 memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
                 points_callback.emplace_back(std::make_tuple(x, y, z, intensity));
