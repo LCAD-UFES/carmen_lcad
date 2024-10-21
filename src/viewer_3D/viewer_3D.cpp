@@ -655,16 +655,16 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 
     num_points = message->number_of_shots * lidar_config.shot_size;
 
-	if (num_points > lidar_point_cloud_vector_max_size)
+	if (true) // num_points > lidar_point_cloud_vector_max_size)
 	{
-		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points, num_points * sizeof (carmen_vector_3D_t));
-		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color, num_points * sizeof (carmen_vector_3D_t));
+		(*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].points = (carmen_vector_3D_t *) realloc((*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].points, num_points * sizeof (carmen_vector_3D_t));
+		(*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].point_color = (carmen_vector_3D_t *) realloc((*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].point_color, num_points * sizeof (carmen_vector_3D_t));
         lidar_point_cloud_vector_max_size = num_points;
     }
 
-	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->num_points = num_points;
-	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->car_position = car_fused_pose.position;
-	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->timestamp = message->timestamp;
+	(*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].num_points = num_points;
+	(*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].car_position = car_fused_pose.position;
+	(*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].timestamp = message->timestamp;
 
 	rotation_matrix *lidar_to_board_matrix = create_rotation_matrix(lidar_config.pose.orientation);
 #ifdef USE_REAR_BULLBAR
@@ -674,7 +674,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 	}
 	rotation_matrix *board_to_car_matrix = create_rotation_matrix(choosed_sensor_referenced[lidar_config.sensor_reference].orientation);
 
-	discarded_points = convert_variable_scan_message_to_point_cloud(lidar_point_cloud_vector[lidar_point_cloud_vector_index], message, lidar_config,
+	discarded_points = convert_variable_scan_message_to_point_cloud(&(*lidar_point_cloud_vector)[lidar_point_cloud_vector_index], message, lidar_config,
 			lidar_to_board_matrix, board_to_car_matrix, lidar_config.pose.position, choosed_sensor_referenced[lidar_config.sensor_reference].position);
 #else
 	rotation_matrix *board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
@@ -683,12 +683,12 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 			lidar_to_board_matrix, board_to_car_matrix, lidar_config.pose.position, sensor_board_1_pose.position);
 #endif
 
-	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->num_points -= discarded_points;
+	(*lidar_point_cloud_vector)[lidar_point_cloud_vector_index].num_points -= discarded_points;
 
 	destroy_rotation_matrix(lidar_to_board_matrix);
 	destroy_rotation_matrix(board_to_car_matrix);
 
-	add_point_cloud(drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
+	add_point_cloud(drawer, (*lidar_point_cloud_vector)[lidar_point_cloud_vector_index]);
     
     lidar_point_cloud_vector_index += 1;
 

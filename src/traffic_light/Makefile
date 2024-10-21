@@ -81,7 +81,7 @@ TARGETS += traffic_light_view
 endif
 
 #tlight_evaluate_train: tlight_evaluate_train.o tlight_vgram.o
-#tlight_train: tlight_train.o tlight_vgram.o
+tlight_train: tlight_train.o tlight_vgram.o
 
 libtraffic_light_interface.a:		traffic_light_interface.o traffic_light.o
 
