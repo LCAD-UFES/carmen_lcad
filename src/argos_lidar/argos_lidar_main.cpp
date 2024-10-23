@@ -10,7 +10,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 #define lidar_range_division_factor 1000
-#define max_points 50
+#define max_points 10
 #define msg_accumulated_to_carmen 15
 
 using std::placeholders::_1;
@@ -35,13 +35,16 @@ struct SphericalLidarPoint
 
 
 const uint32_t shot_size = 51;
-double lidar_angles[51] = {
+double lidar_angles[shot_size] = {
     1.50 , 2.56 , 3.81 , 4.05 , 6.32 , 7.59 , 8.87 , 10.15, 11.44, 12.72, 
     13.99, 15.29, 16.58, 17.87, 19.16, 19.95, 21.74, 23.04, 24.34, 25.63, 
     27.06, 28.06, 29.68, 31.45, 33.27, 35.10, 36.71, 38.05, 39.39, 40.88,
     42.24, 44.26, 45.26, 47.28, 48.28, 49.66, 51.31, 52.13, 54.04, 56.00, 
     57.51, 58.74, 60.45, 62.16, 63.62, 65.16, 67.27, 69.36, 70.36, 71.62, 73.01  
 };
+double minimum_vertical_angle = 50.0;
+double maximum_vertical_angle = 90.0;
+double minimum_distance = 0.20 * lidar_range_division_factor;
 
 int debug_option = 0;
 
@@ -288,28 +291,64 @@ process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> poin
                 it = std::lower_bound(slice_begin, slice_end, (90 - lidar_angles[j]), [](const SphericalLidarPoint &p, double angle) {
                     return p.vertical_angle > angle;
                 });
-            }
-            else
-            {
-                it = std::lower_bound(slice_begin, slice_end, (90 - lidar_angles[j]), [](const SphericalLidarPoint &p, double angle) {
-                    return p.vertical_angle < angle;
-                });
-            }
+                if ((it->vertical_angle > minimum_vertical_angle) && (it->vertical_angle < maximum_vertical_angle) && (it->distance > minimum_distance))
+                {
+                    if (it == slice_begin)
+                    {
+                        distances[j] = slice_begin->distance;
+                        intensity[j] = slice_begin->intensity;
+                    }
+                    else if (it == slice_end)
+                    {
+                        distances[j] = slice_end->distance;
+                        intensity[j] = slice_end->intensity;
+                    }
+                    else
+                    {
 
-            if (it == slice_begin)
-            {
-                distances[j] = slice_begin->distance;
-                intensity[j] = slice_begin->intensity;
-            }
-            else if (it == slice_end)
-            {
-                distances[j] = slice_end->distance;
-                intensity[j] = slice_end->intensity;
+                        distances[j] = it->distance;
+                        intensity[j] = it->intensity;
+                    }
+                }
+                else
+                {
+                    distances[j] = 0;
+                    intensity[j] = 0;   
+                }
             }
             else
             {
-                distances[j] = interpolate((it-1)->vertical_angle, (it-1)->distance, it->vertical_angle, it->distance, (90 - lidar_angles[j]));
-                intensity[j] = interpolate((it-1)->vertical_angle, (it-1)->intensity, it->vertical_angle, it->intensity, (90 - lidar_angles[j]));
+                distances[j] = 0;
+                intensity[j] = 0;
+
+                // it = std::lower_bound(slice_begin, slice_end, (90 - lidar_angles[j]), [](const SphericalLidarPoint &p, double angle) {
+                //     return p.vertical_angle < angle;
+                // });
+
+                // if ((it->vertical_angle < maximum_vertical_angle) && (it->distance > minimum_distance))
+                // {
+                //     if (it == slice_begin)
+                //     {
+                //         distances[j] = slice_begin->distance;
+                //         intensity[j] = slice_begin->intensity;
+                //     }
+                //     else if (it == slice_end)
+                //     {
+                //         distances[j] = slice_end->distance;
+                //         intensity[j] = slice_end->intensity;
+                //     }
+                //     else
+                //     {
+
+                //         distances[j] = it->distance;
+                //         intensity[j] = it->intensity;
+                //     }
+                // }
+                // else
+                // {
+                //     distances[j] = 0;
+                //     intensity[j] = 0;   
+                // }
             }
         }
         double angle = 0.0;
@@ -317,7 +356,7 @@ process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> poin
         {
             angle += points_spherical[j].horizontal_angle;
         }
-        angle = angle / shot_size;
+        angle = - (angle / shot_size);
 
         // double angle = std::accumulate(
         //     slice_begin,
@@ -365,37 +404,36 @@ process_points(std::vector<std::tuple<_Float32,_Float32,_Float32,_Float32>> poin
             for (int j = 0; j < carmen_msg.partial_scan[i].shot_size; j++)
             {
                 printf("Point: %d, Distance: %d, Intensity: %d\n", j, carmen_msg.partial_scan[i].distance[j], carmen_msg.partial_scan[i].intensity[j]);
-                /* code */
             }
             
         }
 
     }
 
-    if(debug_on)
-    {
-        // Testando se a conversão está correta
-        std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points_test;
-        points_test.reserve(shot_size*carmen_msg.number_of_shots);
-        for (int i = 0; i < carmen_msg.number_of_shots; i++)
-        {   
-            for(uint32_t j = 0; j < shot_size; j++)
-            {
-                _Float32 r, theta, phi, intensity;
-                r = carmen_msg.partial_scan[i].distance[j] / (float) lidar_range_division_factor;
-                theta = carmen_msg.partial_scan[i].angle * M_PI / 180.0;
-                phi = (90 - lidar_angles[j])* M_PI / 180.0;
-                intensity = 0.0;
+    // if(debug_on)
+    // {
+    //     // Testando se a conversão está correta
+    //     std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points_test;
+    //     points_test.reserve(shot_size*carmen_msg.number_of_shots);
+    //     for (int i = 0; i < carmen_msg.number_of_shots; i++)
+    //     {   
+    //         for(uint32_t j = 0; j < shot_size; j++)
+    //         {
+    //             _Float32 r, theta, phi, intensity;
+    //             r = carmen_msg.partial_scan[i].distance[j] / (float) lidar_range_division_factor;
+    //             theta = carmen_msg.partial_scan[i].angle * M_PI / 180.0;
+    //             phi = (90 - lidar_angles[j])* M_PI / 180.0;
+    //             intensity = 0.0;
 
-                _Float32 x = r*sin(phi)*cos(theta);
-                _Float32 y = r*sin(phi)*sin(theta);
-                _Float32 z = r*cos(phi);
+    //             _Float32 x = r*sin(phi)*cos(theta);
+    //             _Float32 y = r*sin(phi)*sin(theta);
+    //             _Float32 z = r*cos(phi);
 
-                points_test.emplace_back(x, y, z, intensity);
-            }
-        }
-        plot_point_cloud(points_test);
-    }
+    //             points_test.emplace_back(x, y, z, intensity);
+    //         }
+    //     }
+    //     plot_point_cloud(points_test);
+    // }
 
 
 }
@@ -412,7 +450,7 @@ class LidarSubscriber : public rclcpp::Node
     }
 
   private:
-    void topic_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) const
+    void topic_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
     {
         // Opcao passada como argumento para debugar
 		// opcao 0 = recebe, ajeita e manda pro carmen (padrão),
@@ -431,33 +469,29 @@ class LidarSubscriber : public rclcpp::Node
                 _Float32 x, y, z, intensity;
                 memcpy(&x, &msg->data[0 + msg->point_step * i], 4);
                 memcpy(&y, &msg->data[4 + msg->point_step * i], 4);
-                y = -y;
                 memcpy(&z, &msg->data[8 + msg->point_step * i], 4);
                 memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
                 points_callback.emplace_back(std::make_tuple(x, y, z, intensity));
+                // printf("x: %f, y: %f, z: %f intensity: %f\n", x, y, z, intensity);
             }
             process_points(points_callback);
 		}
         else if (debug_option == 1)
         {
-            static bool first_time = true;
-            if(first_time)
-            {
-                std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points_callback;
-                points_callback.reserve(msg->width);
+            std::vector<std::tuple<_Float32,_Float32,_Float32, _Float32>> points_callback;
+            points_callback.reserve(msg->width);
 
-                for (uint32_t i = 0; i < msg->width; i++)
-                {
-                    _Float32 x, y, z, intensity;
-                    memcpy(&x, &msg->data[0 + msg->point_step * i], 4);
-                    memcpy(&y, &msg->data[4 + msg->point_step * i], 4);
-                    memcpy(&z, &msg->data[8 + msg->point_step * i], 4);
-                    memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
-                    points_callback.emplace_back(std::make_tuple(x, y, z, intensity));
-                }
-                process_points(points_callback, debug_option=true);
-                first_time = false;
+            for (uint32_t i = 0; i < msg->width; i++)
+            {
+                _Float32 x, y, z, intensity;
+                memcpy(&x, &msg->data[0 + msg->point_step * i], 4);
+                memcpy(&y, &msg->data[4 + msg->point_step * i], 4);
+                memcpy(&z, &msg->data[8 + msg->point_step * i], 4);
+                memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
+                points_callback.emplace_back(std::make_tuple(x, y, z, intensity));
             }
+            process_points(points_callback, debug_option=true);
+            
         }
 		else if (debug_option == 2)
 		{
@@ -469,6 +503,7 @@ class LidarSubscriber : public rclcpp::Node
 				memcpy(&x, &msg->data[0 + msg->point_step * i], 4);
 				memcpy(&y, &msg->data[4 + msg->point_step * i], 4);
 				memcpy(&z, &msg->data[8 + msg->point_step * i], 4);
+                y = -y;
 				memcpy(&intensity, &msg->data[16 + msg->point_step * i], 4);
 				points.emplace_back(std::make_tuple(x, y, z, intensity));
 				// shot.distance = sqrt(x*x + y*y + z*z);
