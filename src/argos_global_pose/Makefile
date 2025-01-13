@@ -7,14 +7,13 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol -Wno-switch
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
 
 
-# ROS
 IFLAGS += -I/opt/ros/foxy/include
 LFLAGS += -L/opt/ros/foxy/lib
 
-LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface -lroute_planner_interface \
-		  -lnavigator_ackerman_interface -lbehavior_selector_interface -lford_escape_hybrid_interface -lcargo_interface \
-		  -lvoice_interface_interface -luser_app_server_interface \
-		  -lrclcpp -lrcutils -pthread -lrmw -lrcl -lrosidl_typesupport_cpp -llibstatistics_collector -lvelodyne_interface \
+LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface \
+		  -lrclcpp -lrcutils -pthread -lrmw -lrcl \
+		  -lrosidl_typesupport_cpp \
+		  -llibstatistics_collector  \
 		  -lstatistics_msgs__python \
 		  -lstatistics_msgs__rosidl_generator_c \
 		  -lstatistics_msgs__rosidl_typesupport_connext_cpp \
@@ -25,19 +24,15 @@ LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_
 		  -lstatistics_msgs__rosidl_typesupport_fastrtps_c \
 		  -lstatistics_msgs__rosidl_typesupport_introspection_cpp \
 		  -lstatistics_msgs__rosidl_typesupport_introspection_c \
-		  -lrosidl_typesupport_cpp \
-		  -lrosidl_typesupport_c \
-          -lrosidl_runtime_c \
-		  -lstdc++ \
           -lgeometry_msgs__rosidl_typesupport_fastrtps_cpp \
           -lgeometry_msgs__rosidl_typesupport_introspection_cpp\
 		  -lgeometry_msgs__rosidl_typesupport_fastrtps_c \
           -lgeometry_msgs__rosidl_typesupport_introspection_c\
 		  -lgeometry_msgs__rosidl_typesupport_cpp \
-		  -lrosidl_typesupport_cpp \
+	      -lrosidl_typesupport_cpp \
+		  -lrosidl_typesupport_c \
           -lrosidl_runtime_c \
 		  -ltracetools\
-		  -ltf2\
 
 CXXFLAGS += -std=c++14  
 
