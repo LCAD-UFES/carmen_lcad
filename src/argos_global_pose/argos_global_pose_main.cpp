@@ -12,61 +12,61 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h> 
 #include <cmath>  
 
-double start_x,start_y,start_theta,timestamp;
+static double start_x, start_y, start_theta, timestamp;
 int num_messages_per_second;
 
-void
-publish_fused(double x, double y, double theta, double timestamp)
-{
-	static int first = 1;
-	static carmen_fused_odometry_particle_message odometry_message;
+// void
+// publish_fused(double x, double y, double theta, double timestamp)
+// {
+// 	static int first = 1;
+// 	static carmen_fused_odometry_particle_message odometry_message;
 
-	IPC_RETURN_TYPE err;
+// 	IPC_RETURN_TYPE err;
 
-	if (first)
-	{
-		odometry_message.particle_pos = (carmen_vector_3D_t *) malloc (1 * sizeof(carmen_vector_3D_t));
-		odometry_message.weights = (double *) malloc (1 * sizeof(double));
+// 	if (first)
+// 	{
+// 		odometry_message.particle_pos = (carmen_vector_3D_t *) malloc (1 * sizeof(carmen_vector_3D_t));
+// 		odometry_message.weights = (double *) malloc (1 * sizeof(double));
 
-		first = 0;
-	}
+// 		first = 0;
+// 	}
 
-	odometry_message.angular_velocity.pitch = 0.0;
-	odometry_message.angular_velocity.roll = 0.0;
-	odometry_message.angular_velocity.yaw = 0.0;
+// 	odometry_message.angular_velocity.pitch = 0.0;
+// 	odometry_message.angular_velocity.roll = 0.0;
+// 	odometry_message.angular_velocity.yaw = 0.0;
 
-	odometry_message.gps_position_at_turn_on.x = x;
-	odometry_message.gps_position_at_turn_on.y = y;
-	odometry_message.gps_position_at_turn_on.z = 0.0;
+// 	odometry_message.gps_position_at_turn_on.x = x;
+// 	odometry_message.gps_position_at_turn_on.y = y;
+// 	odometry_message.gps_position_at_turn_on.z = 0.0;
 
-	odometry_message.host = carmen_get_host();
-	odometry_message.num_particles = 1;
+// 	odometry_message.host = carmen_get_host();
+// 	odometry_message.num_particles = 1;
 
-	odometry_message.particle_pos[0].x = x;
-	odometry_message.particle_pos[0].y = y;
-	odometry_message.particle_pos[0].z = 0.0;
+// 	odometry_message.particle_pos[0].x = x;
+// 	odometry_message.particle_pos[0].y = y;
+// 	odometry_message.particle_pos[0].z = 0.0;
 
-	odometry_message.phi = 0.0;
-	odometry_message.pose.position.x = x;
-	odometry_message.pose.position.y = y;
-	odometry_message.pose.position.z = 0.0;
-	odometry_message.pose.orientation.yaw = theta;
-	odometry_message.pose.orientation.roll = 0.0;
-	odometry_message.pose.orientation.pitch = 0.0;
+// 	odometry_message.phi = 0.0;
+// 	odometry_message.pose.position.x = x;
+// 	odometry_message.pose.position.y = y;
+// 	odometry_message.pose.position.z = 0.0;
+// 	odometry_message.pose.orientation.yaw = theta;
+// 	odometry_message.pose.orientation.roll = 0.0;
+// 	odometry_message.pose.orientation.pitch = 0.0;
 
-	odometry_message.timestamp = timestamp;
+// 	odometry_message.timestamp = timestamp;
 
-	odometry_message.velocity.x = 0.0;
-	odometry_message.velocity.y = 0.0;
-	odometry_message.velocity.z = 0.0;
+// 	odometry_message.velocity.x = 0.0;
+// 	odometry_message.velocity.y = 0.0;
+// 	odometry_message.velocity.z = 0.0;
 
-	odometry_message.weight_type = 0;
-	odometry_message.weights[0] = 1.0;
-	odometry_message.xsens_yaw_bias = 0.0;
+// 	odometry_message.weight_type = 0;
+// 	odometry_message.weights[0] = 1.0;
+// 	odometry_message.xsens_yaw_bias = 0.0;
 
-	err = IPC_publishData(CARMEN_FUSED_ODOMETRY_PARTICLE_NAME, &odometry_message);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
-}
+// 	err = IPC_publishData(CARMEN_FUSED_ODOMETRY_PARTICLE_NAME, &odometry_message);
+// 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
+// }
 
 
 void
@@ -119,47 +119,30 @@ public:
     GlobalPoseConverter()
     : Node("global_pose_converter")
     {
-        subscription_ = this->create_subscription<geometry_msgs::msg::TransformStamped>(
-            "/baselink_to_map_tf", 10, 
+        subscription_ = this->create_subscription<geometry_msgs::msg::Vector3>(
+            "/global_pos", 10, 
             std::bind(&GlobalPoseConverter::topic_callback, this, std::placeholders::_1));
     }
 
 private:
-    void topic_callback(const geometry_msgs::msg::TransformStamped::SharedPtr msg)
+    rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr subscription_;
+    
+	void topic_callback(const geometry_msgs::msg::Vector3::SharedPtr msg)
     {
-        double roll = 0;
-        double pitch = 0;
-        double yaw = 0;
-
-        tf2::Quaternion quat(msg->transform.rotation.x, 
-                             msg->transform.rotation.y,
-                             msg->transform.rotation.z,
-                             msg->transform.rotation.w);
-
-        tf2::Matrix3x3 mat(quat);
-        mat.getRPY(roll, pitch, yaw); 
-
-        printf("Posicao Recebida -> X: %f, Y: %f, theta: %f\n", msg->transform.translation.x, msg->transform.translation.y, yaw);
+		// O tópico /global_pos contém a posição no sistema ROS2, que deslocamos em start_x, start_y e start_theta para seguir o padrão do carmen
 
 		timestamp = carmen_get_time();
 
-		publish_fused(msg->transform.translation.x + start_x,
-                      msg->transform.translation.y + start_y,
-                      yaw + start_theta,
-                      timestamp);
-		publish_globalpos(msg->transform.translation.x + start_x,
-                          msg->transform.translation.y + start_y,
-                          yaw + start_theta,
+		publish_globalpos(msg->x + start_x,
+                      	  msg->y + start_y,
+                          msg->z + start_theta,
                           timestamp);
-		printf("Published globalpos(%lf, %lf, %lf) at timestamp %lf\n\n\n",msg->transform.translation.x + start_x,
-                                                                       msg->transform.translation.y + start_y,
-                                                                       yaw + start_theta,
-                                                                       timestamp);
-
-
+		//printf("Published globalpos(%lf, %lf, %lf) at timestamp %lf\n\n\n",msg->x + start_x,
+        //                                                                   msg->y + start_y,
+        //                                                                   msg->z + start_theta,
+        //                                                                   timestamp);
     }
 
-    rclcpp::Subscription<geometry_msgs::msg::TransformStamped>::SharedPtr subscription_;
 };
 
 

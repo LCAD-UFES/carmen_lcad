@@ -1,31 +1,29 @@
 include ../Makefile.conf
 
-CFLAGS += -std=c11 -fopenmp # -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
-CXXFLAGS += -std=c++11 -fopenmp # -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
-LINK = g++ # -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
-CXXFLAGS += -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough
+# Module name and description
+MODULE_NAME = MAPPER_PACKAGE
+MODULE_COMMENT = Mapper Maps using Velodyne!
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/gmapping -I$(CARMEN_HOME)/sharedlib/gmapping/sensor
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/gmapping/lib
+#CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
+#CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
+#CXXFLAGS += -Wall -O4 -mfpmath=sse -msse2 -msse4.2
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11 -Wno-deprecated-declarations -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+#CFLAGS += -g -pg
+#LINK = gcc
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+# Application specific include directories.
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
-LFLAGS += -lglobal -lparam_interface -lipc \
-	-llocalize_ackerman_interface -lmapper_interface -lmapper -lprob_models \
-	-lmap_interface -lmap_util -lrobot_ackerman_interface \
-	-lobstacle_avoider_interface -lsimulator_ackerman_interface \
-	-ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
-	-lrotation_geometry -lvelodyne_interface -lfused_odometry_interface -llocalize_ackerman_core -lmap_io -llocalize_ackerman_motion \
-	-lbehavior_selector_interface -lcarmodel -lgrid_mapping -lmap_io -ltask_manager_interface -lstereo_velodyne -lbase_ackerman_interface \
-	-lxsens_interface -lstereo_velodyne_interface -lstereo_interface -lplayback_interface -lmap_server_interface -lgps_xyz_interface \
-	-lmoving_objects_interface -ldbscan -lgsl -lgslcblas `pkg-config --libs opencv` -llocalize_ackerman_trailers_theta
+IFLAGS += -I$(CARMEN_HOME)/include/carmen
+IFLAGS += `pkg-config --cflags opencv`
 
 #Lib_Neural_Mapper_py
-IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
@@ -33,36 +31,58 @@ ifeq ($(UBUNTU_VERSION),"16.04")
 else ifeq ($(UBUNTU_VERSION),"18.04")
 	LFLAGS += `python3.6-config --libs`
 else
-	LFLAGS += `python3.8-config --embed --libs`
-	IFLAGS += -I/usr/include/python3.8
+	LFLAGS += `python3.8-config --embed --libs` -pthread
 endif
 
-SOURCES = carmen_map_converter_main.cpp 
+# Application specific include directories.
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
+# Required default libraries to comunicate with Carmen Core.
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
-PUBLIC_BINARIES = carmen_map_converter_main
+# Required default libraries to comunicate with Carmen Core.
+LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
+	-lparam_interface -llaser_interface -lipc -lmapper_interface -lobstacle_avoider_interface		\
+	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
+	-lultrasonic_filter_interface -lrotation_geometry -lvelodyne_interface	\
+	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
+	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
+	-lparking_assistant_interface -llocalize_ackerman_core -lcarmodel -lgsl -lgslcblas -llocalize_ackerman_motion -ltask_manager_interface \
+	-llaser_ldmrs_interface -llaser_ldmrs_utils -ldbscan \
+	-lmoving_objects_interface 
 
-TARGETS = carmen_map_converter_main libprob_models.a
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
+# Application specific include directories.
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
-ifndef NO_PYTHON
-TARGETS += 
-endif
-
-ifdef CARMEN_DEBUG
-CFLAGS += -DDEBUG
-endif
- 
-carmen_map_converter_main: carmen_map_converter_main.o
-
-# rules
-
-libprob_models.a: 
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
-
-clean: clean_prob_models
-
-clean_prob_models:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
+LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -lcarmen_util
 	
-include ../Makefile.rules
+# Source code files (.c, .cpp) 
+SOURCES = mapper_main.cpp message_interpolation.cpp  test_diff_map.cpp carmen_map_converter.cpp
 
+# Public binaries, your application specific module laucher, copied to 'carmen/bin'.
+TARGETS = mapper test_diff_map carmen_map_converter
+
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+LFLAGS += -lglobal_graphics
+IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
+IFLAGS += `pkg-config --cflags gtkglext-1.0`
+LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
+LFLAGS += `pkg-config --libs gtkglext-1.0`
+endif
+
+mapper: mapper_main.o $(CARMEN_HOME)/lib/libmapper.a $(CARMEN_HOME)/lib/libmapper_interface.a $(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a
+
+carmen_map_converter: carmen_map_converter.o $(CARMEN_HOME)/lib/libmapper.a $(CARMEN_HOME)/lib/libmapper_interface.a \
+$(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a $(CARMEN_HOME)/sharedlib/prob_models/libgrid_mapping.a
+
+
+test_diff_map: test_diff_map.o $(CARMEN_HOME)/lib/libmapper_interface.a
+
+
+include ../Makefile.rules

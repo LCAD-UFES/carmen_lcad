@@ -38,7 +38,7 @@
 #endif
 
 #define DESOUZA_GUIDOLINI_CONSTANT 					0.0022
-#define robot_distance_between_front_and_rear_axles	(0.39 / 2.0)
+#define robot_distance_between_front_and_rear_axles	(0.400 / 2.0)  //(0.39 / 2.0)
 #define robot_understeer_coeficient					0.0015
 
 #define FRONT_RIGHT	0
@@ -439,17 +439,12 @@ void update_steering_angle(struct can_frame frame)
 //	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
 
 	static int i;
-	short int steering_angle_sensor = frame.data[1] << 8 | frame.data[0];
-	double omega = ((double) steering_angle_sensor) / 100000.0;
 	double v = car_speed;
-	double phi;
-	if (fabs(v) > 0.005)
-		phi = atan((omega * robot_distance_between_front_and_rear_axles) / v);
-	else
-		phi = 0.0;
+	short int steering_angle_sensor = frame.data[1] << 8 | frame.data[0];
+	double phi = ((double) steering_angle_sensor) / 100000.0;
 	if(i > 100)
 	{
-		printf("received_angle %d, omega %lf, phi %lf, v %lf\n", steering_angle_sensor, omega, phi, v);
+		printf("received_angle %d, phi %lf\n", steering_angle_sensor, phi);
 		i = 0;
 	}
 	else
