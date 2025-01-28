@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-MODULE_NAME = ARGOS GLOBAL POSE
+MODULE_NAME = ARGOS_GLOBAL_POSE
 MODULE_COMMENT = "Argos Global Pose"
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol -Wno-switch

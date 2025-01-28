@@ -1022,7 +1022,9 @@ main(int argc, char **argv)
 	}
 
 	if (log_localize)
-		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_ALL);
+		{
+			carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_ALL);
+		}
 
 	if (log_simulator)
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) carmen_simulator_ackerman_truepos_handler, CARMEN_SUBSCRIBE_ALL);

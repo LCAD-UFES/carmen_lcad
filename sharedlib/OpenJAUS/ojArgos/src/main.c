@@ -438,21 +438,11 @@ void update_steering_angle(struct can_frame frame)
 //	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 //	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
 
-	static int i;
-	double v = car_speed;
-	short int steering_angle_sensor = frame.data[1] << 8 | frame.data[0];
-	double phi = ((double) steering_angle_sensor) / 100000.0;
-	if(i > 100)
-	{
-		printf("received_angle %d, phi %lf\n", steering_angle_sensor, phi);
-		i = 0;
-	}
-	else
-	{
-		i++;
-	}
+	//double v = car_speed;
+	short int curvature_can = frame.data[1] << 8 | frame.data[0];
+	double curvature = ((double) curvature_can) / 1000.0;
 	fflush(stdout);
-	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
+	//double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
 }
 

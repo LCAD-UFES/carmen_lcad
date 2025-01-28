@@ -1,8 +1,8 @@
 include ../Makefile.conf
 
 # Module name and description
-MODULE_NAME = MAPPER_PACKAGE
-MODULE_COMMENT = Mapper Maps using Velodyne!
+MODULE_NAME = CARMEN_MAP_CONVERTER
+MODULE_COMMENT = Transfomar um mapa ROS para carmen
 
 #CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
@@ -61,10 +61,10 @@ LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -l
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -lcarmen_util
 	
 # Source code files (.c, .cpp) 
-SOURCES = mapper_main.cpp message_interpolation.cpp  test_diff_map.cpp carmen_map_converter.cpp
+SOURCES = carmen_map_converter.cpp
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-TARGETS = mapper test_diff_map carmen_map_converter
+TARGETS = carmen_map_converter
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -76,13 +76,9 @@ LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
 LFLAGS += `pkg-config --libs gtkglext-1.0`
 endif
 
-mapper: mapper_main.o $(CARMEN_HOME)/lib/libmapper.a $(CARMEN_HOME)/lib/libmapper_interface.a $(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a
 
 carmen_map_converter: carmen_map_converter.o $(CARMEN_HOME)/lib/libmapper.a $(CARMEN_HOME)/lib/libmapper_interface.a \
 $(CARMEN_HOME)/sharedlib/prob_models/libprob_models.a $(CARMEN_HOME)/sharedlib/prob_models/libgrid_mapping.a
-
-
-test_diff_map: test_diff_map.o $(CARMEN_HOME)/lib/libmapper_interface.a
 
 
 include ../Makefile.rules

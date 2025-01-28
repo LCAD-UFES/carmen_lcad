@@ -470,6 +470,7 @@ src/sensors/web_cam/web_cam_test
 src/velodyne_camera_calibration/save_velodyne_txt
 src/voice_interface/libvoice/voice_test
 .vscode/
+!src/.vscode/
 .cproject
 .project
 bin/gnuplot_path

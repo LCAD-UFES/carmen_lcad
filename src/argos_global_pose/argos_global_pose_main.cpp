@@ -137,10 +137,11 @@ private:
                       	  msg->y + start_y,
                           msg->z + start_theta,
                           timestamp);
-		//printf("Published globalpos(%lf, %lf, %lf) at timestamp %lf\n\n\n",msg->x + start_x,
-        //                                                                   msg->y + start_y,
-        //                                                                   msg->z + start_theta,
-        //                                                                   timestamp);
+
+		printf("Published globalpos(%lf, %lf, %lf) at timestamp %lf\n\n\n",msg->x + start_x,
+                                                                          msg->y + start_y,
+                                                                          msg->z + start_theta,
+                                                                          timestamp);
     }
 
 };
@@ -179,6 +180,20 @@ define_messages()
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
 }
 
+// static void 
+// initialize_ipc(void)
+// {
+// 	IPC_RETURN_TYPE err;
+
+// 	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME,
+// 			IPC_VARIABLE_LENGTH,
+// 			CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
+// 	carmen_test_ipc_exit(err, "Could not define message",
+// 			CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
+
+// 	return;
+// }
+
 int 
 main(int argc, char **argv)
 {
@@ -199,6 +214,7 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
     define_messages();
 
+	//initialize_ipc();
 
 	// Init ROS node
     rclcpp::init(argc, argv);
