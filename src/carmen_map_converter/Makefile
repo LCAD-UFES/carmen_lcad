@@ -3,6 +3,7 @@ include ../Makefile.conf
 # Module name and description
 MODULE_NAME = CARMEN_MAP_CONVERTER
 MODULE_COMMENT = Transfomar um mapa ROS para carmen
+PUBLIC_BINARIES = carmen_map_converter
 
 #CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
