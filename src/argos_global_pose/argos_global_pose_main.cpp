@@ -11,62 +11,64 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h> 
 #include <cmath>  
+#include <nav_msgs/msg/odometry.hpp>
 
 static double start_x, start_y, start_theta, timestamp;
 int num_messages_per_second;
+double vel_lin = 0.0, vel_ang = 0.0,curvature = 0.0,phi = 0.0;
 
-// void
-// publish_fused(double x, double y, double theta, double timestamp)
-// {
-// 	static int first = 1;
-// 	static carmen_fused_odometry_particle_message odometry_message;
+void
+publish_fused(double x, double y, double theta, double timestamp)
+{
+	static int first = 1;
+	static carmen_fused_odometry_particle_message odometry_message;
 
-// 	IPC_RETURN_TYPE err;
+	IPC_RETURN_TYPE err;
 
-// 	if (first)
-// 	{
-// 		odometry_message.particle_pos = (carmen_vector_3D_t *) malloc (1 * sizeof(carmen_vector_3D_t));
-// 		odometry_message.weights = (double *) malloc (1 * sizeof(double));
+	if (first)
+	{
+		odometry_message.particle_pos = (carmen_vector_3D_t *) malloc (1 * sizeof(carmen_vector_3D_t));
+		odometry_message.weights = (double *) malloc (1 * sizeof(double));
 
-// 		first = 0;
-// 	}
+		first = 0;
+	}
 
-// 	odometry_message.angular_velocity.pitch = 0.0;
-// 	odometry_message.angular_velocity.roll = 0.0;
-// 	odometry_message.angular_velocity.yaw = 0.0;
+	odometry_message.angular_velocity.pitch = 0.0;
+	odometry_message.angular_velocity.roll = 0.0;
+	odometry_message.angular_velocity.yaw = 0.0;
 
-// 	odometry_message.gps_position_at_turn_on.x = x;
-// 	odometry_message.gps_position_at_turn_on.y = y;
-// 	odometry_message.gps_position_at_turn_on.z = 0.0;
+	odometry_message.gps_position_at_turn_on.x = x;
+	odometry_message.gps_position_at_turn_on.y = y;
+	odometry_message.gps_position_at_turn_on.z = 0.0;
 
-// 	odometry_message.host = carmen_get_host();
-// 	odometry_message.num_particles = 1;
+	odometry_message.host = carmen_get_host();
+	odometry_message.num_particles = 1;
 
-// 	odometry_message.particle_pos[0].x = x;
-// 	odometry_message.particle_pos[0].y = y;
-// 	odometry_message.particle_pos[0].z = 0.0;
+	odometry_message.particle_pos[0].x = x;
+	odometry_message.particle_pos[0].y = y;
+	odometry_message.particle_pos[0].z = 0.0;
 
-// 	odometry_message.phi = 0.0;
-// 	odometry_message.pose.position.x = x;
-// 	odometry_message.pose.position.y = y;
-// 	odometry_message.pose.position.z = 0.0;
-// 	odometry_message.pose.orientation.yaw = theta;
-// 	odometry_message.pose.orientation.roll = 0.0;
-// 	odometry_message.pose.orientation.pitch = 0.0;
+	odometry_message.phi = 0.0;
+	odometry_message.pose.position.x = x;
+	odometry_message.pose.position.y = y;
+	odometry_message.pose.position.z = 0.0;
+	odometry_message.pose.orientation.yaw = theta;
+	odometry_message.pose.orientation.roll = 0.0;
+	odometry_message.pose.orientation.pitch = 0.0;
 
-// 	odometry_message.timestamp = timestamp;
+	odometry_message.timestamp = timestamp;
 
-// 	odometry_message.velocity.x = 0.0;
-// 	odometry_message.velocity.y = 0.0;
-// 	odometry_message.velocity.z = 0.0;
+	odometry_message.velocity.x = 1.0;
+	odometry_message.velocity.y = 2.0;
+	odometry_message.velocity.z = 3.0;
 
-// 	odometry_message.weight_type = 0;
-// 	odometry_message.weights[0] = 1.0;
-// 	odometry_message.xsens_yaw_bias = 0.0;
+	odometry_message.weight_type = 0;
+	odometry_message.weights[0] = 1.0;
+	odometry_message.xsens_yaw_bias = 0.0;
 
-// 	err = IPC_publishData(CARMEN_FUSED_ODOMETRY_PARTICLE_NAME, &odometry_message);
-// 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
-// }
+	err = IPC_publishData(CARMEN_FUSED_ODOMETRY_PARTICLE_NAME, &odometry_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
+}
 
 
 void
@@ -85,8 +87,8 @@ publish_globalpos(double x, double y, double theta, double timestamp)
 	globalpos.pose.orientation.yaw = globalpos.globalpos.theta;
 	globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = 0.0;
 
-	globalpos.v = 0.0;
-	globalpos.phi = 0.0;
+	globalpos.v = vel_lin;
+	globalpos.phi = phi;
 
 	globalpos.velocity.x = globalpos.velocity.y = globalpos.velocity.z = 0.0;
 
@@ -122,16 +124,37 @@ public:
         subscription_ = this->create_subscription<geometry_msgs::msg::Vector3>(
             "/global_pos", 10, 
             std::bind(&GlobalPoseConverter::topic_callback, this, std::placeholders::_1));
+
+		odom_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            "/odom", 10, 
+            std::bind(&GlobalPoseConverter::odom_topic_callback, this, std::placeholders::_1));
     }
 
 private:
     rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr subscription_;
+	rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscription_;
+
+	void odom_topic_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+	{
+		vel_lin = msg->twist.twist.linear.x;
+		vel_ang = msg->twist.twist.angular.z;
+		if (vel_lin <= 0.1)	curvature = 0.0;
+		else curvature = vel_ang/vel_lin; 
+
+		phi = -atan(curvature);
+		//printf("Received odometry message with linear velocity %lf and angular velocity %lf\n", vel_lin, vel_ang);
+	}
     
 	void topic_callback(const geometry_msgs::msg::Vector3::SharedPtr msg)
     {
 		// O tópico /global_pos contém a posição no sistema ROS2, que deslocamos em start_x, start_y e start_theta para seguir o padrão do carmen
 
 		timestamp = carmen_get_time();
+
+		publish_fused(msg->x + start_x,
+					  msg->y + start_y,
+					  msg->z + start_theta,
+					  timestamp);
 
 		publish_globalpos(msg->x + start_x,
                       	  msg->y + start_y,
