@@ -294,30 +294,36 @@ carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 
   i = 0;
   context = IPC_getContext();
-  while(i < mark->num_callbacks) {
-    if(mark->callback[i].context == context) {
-      if(mark->callback[i].data) {
-	formatter = IPC_msgInstanceFormatter(msgRef);
-	if(!mark->callback[i].first)
-	  IPC_freeDataElements(formatter, mark->callback[i].data);
-	err = IPC_unmarshallData(IPC_msgInstanceFormatter(msgRef), callData,
-				 mark->callback[i].data,
-				 mark->callback[i].message_size);
+  while(i < mark->num_callbacks) 
+  {
+    if(mark->callback[i].context == context) 
+    {
+      if(mark->callback[i].data) 
+      {
+        // Mudar para no espaço de memória antes da msg, salvar o nome e o size:   NOME(char*) | TAMANHO(uint) | MSG________________________
+        formatter = IPC_msgInstanceFormatter(msgRef);
+        if(!mark->callback[i].first)
+        {
+          IPC_freeDataElements(formatter, mark->callback[i].data);
+        }
+        err = IPC_unmarshallData(IPC_msgInstanceFormatter(msgRef), callData,
+                                mark->callback[i].data,
+                                mark->callback[i].message_size);
 
-	mark->callback[i].first = 0;
+        mark->callback[i].first = 0;
       }
       n = mark->num_callbacks;
       if(mark->callback[i].handler && carmen_use_handlers)
-	mark->callback[i].handler(mark->callback[i].data);
+        mark->callback[i].handler(mark->callback[i].data, mark->callback[i].message_size, mark->message_name);
       if(mark->num_callbacks >= n)
-	i++;
+        i++;
     }
     else
       i++;
   }
   IPC_freeByteArray(callData);
   carmen_test_ipc_return(err, "Could not unmarshall",
-		      IPC_msgInstanceName(msgRef));
+	IPC_msgInstanceName(msgRef));
 }
 
 /* NEW LOGGER BEGIN */
@@ -379,6 +385,19 @@ carmen_subscribe_message(char *message_name, char *message_fmt,
 			 carmen_handler_t handler,
 			 carmen_subscribe_t subscribe_how)
 {
+  /***  INICIO CÓDIGO EXTRA PARA O IPC_WATCHER ***/
+  if(IPC_isMsgDefined(CARMEN_IPC_WATCHER_SUBSCRIBE_MESSAGE_NAME) && (strcmp(message_name, CARMEN_IPC_WATCHER_SUBSCRIBE_MESSAGE_NAME) != 0))
+  {
+    // printf("Message defined\n");
+    carmen_ipc_watcher_subscribe_message msg;
+    msg.msg_name = message_name;
+    msg.msg_size = message_size;
+    msg.timestamp = 0.0;
+    msg.host = carmen_get_host();
+    IPC_RETURN_TYPE err = IPC_publishData(CARMEN_IPC_WATCHER_SUBSCRIBE_MESSAGE_NAME, &msg);
+  }
+  /***  FIM DO CÓDIGO EXTRA PARA O IPC_WATCHER ***/
+
   IPC_RETURN_TYPE err = IPC_OK;
   IPC_CONTEXT_PTR context;
   carmen_message_list_p mark;
@@ -429,6 +448,8 @@ carmen_subscribe_message(char *message_name, char *message_fmt,
       memset(message_mem, 0, message_size);
     }
     else {
+      // Alocando espaço extra antes da mensagem para salvar o nome e o tamanho
+      // void* msg_name_size_data = calloc(1, sizeof(char*) + sizeof(unsigned int) + message_size);
       mark->callback[mark->num_callbacks - 1].data = calloc(1, message_size);
       carmen_test_alloc(mark->callback[mark->num_callbacks - 1].data);
     }

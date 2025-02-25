@@ -50,7 +50,7 @@ typedef enum {CARMEN_UNSUBSCRIBE,
 	      CARMEN_SUBSCRIBE_LATEST,
 	      CARMEN_SUBSCRIBE_ALL} carmen_subscribe_t;
 
-typedef void (*carmen_handler_t)(void *);
+typedef void (*carmen_handler_t)(void *, ...);
 
 extern MSG_INSTANCE current_msgRef;
 
@@ -128,6 +128,21 @@ carmen_subscribe_heartbeat_message(carmen_heartbeat_message *heartbeat,
 				   carmen_subscribe_t subscribe_how);
 
 void carmen_ipc_registerExitProc(void (*proc)(void));
+
+/*****************************************************************
+ *                     DEBUG CODE
+ *****************************************************************/
+
+#define		CARMEN_IPC_WATCHER_SUBSCRIBE_MESSAGE_NAME		"carmen_ipc_watcher_subscribe_message"
+#define		CARMEN_IPC_WATCHER_SUBSCRIBE_MESSAGE_FMT		"{string, int, double, string}"
+
+typedef struct
+{
+	char	*msg_name;
+	int 	msg_size;
+	double 	timestamp;
+	char 	*host;
+} carmen_ipc_watcher_subscribe_message;
 
 #ifdef __cplusplus
 }

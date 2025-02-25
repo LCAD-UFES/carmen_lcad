@@ -190,6 +190,7 @@
 #include "globalM.h"
 #include "ipcPriv.h"
 #include "parseFmttrs.h"
+#include "string.h"
 
 IPC_ERROR_TYPE IPC_errno = IPC_No_Error;
 
@@ -329,6 +330,19 @@ fd_set IPC_getConnections (void)
 IPC_RETURN_TYPE IPC_defineMsg (const char *msgName, unsigned int length,
 			       const char *formatString)
 {
+  /***  INICIO DO CÓDIGO EXTRA PARA O IPC_WATCHER ***/
+  if((IPC_isMsgDefined(CARMEN_IPC_WATCHER_NEW_MESSAGE_NAME) && (strcmp(msgName, CARMEN_IPC_WATCHER_NEW_MESSAGE_NAME) != 0)))
+  {
+    carmen_ipc_watcher_new_message msg;
+    msg.msg_name = msgName;
+    msg.formatString = formatString;
+    msg.length = length;
+    msg.timestamp = 0.0;
+    msg.host = "ipc";
+    IPC_RETURN_TYPE err = IPC_publishData(CARMEN_IPC_WATCHER_NEW_MESSAGE_NAME, &msg);
+  }
+  /***  FIM DO CÓDIGO EXTRA PARA O IPC_WATCHER ***/
+  
   char msgFormat[20];
 
   if (!msgName || strlen(msgName) == 0) {

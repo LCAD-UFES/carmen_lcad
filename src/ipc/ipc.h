@@ -182,6 +182,7 @@ typedef void (*CONNECT_HANDLE_TYPE)(const char *moduleName, void *clientData);
 
 typedef void (*CHANGE_HANDLE_TYPE)(const char *msgName, int numHandlers, 
 				   void *clientData);
+
 
 /*****************************************************************
  *                EXTERNAL GLOBAL VARIABLES
@@ -517,6 +518,22 @@ IPC_RETURN_TYPE IPC_addPeriodicTimer(long tdelay, TIMER_HANDLER_TYPE handler,
 IPC_RETURN_TYPE IPC_removeTimer(TIMER_HANDLER_TYPE handler);
 
 IPC_RETURN_TYPE IPC_removeTimerByRef(TIMER_REF timerRef);
+
+/*****************************************************************
+ *                     DEBUG CODE
+ *****************************************************************/
+
+#define		CARMEN_IPC_WATCHER_NEW_MESSAGE_NAME		"carmen_ipc_watcher_new_message"
+#define		CARMEN_IPC_WATCHER_NEW_MESSAGE_FMT		"{string, string, int, double, string}"
+
+typedef struct
+{
+	char *msg_name;
+	char *formatString;
+	unsigned int length;
+	double timestamp;
+	char *host;
+} carmen_ipc_watcher_new_message;
 
 #if defined(__cplusplus) /* C++ */
 }
