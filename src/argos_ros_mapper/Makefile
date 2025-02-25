@@ -8,9 +8,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
 
 
 IFLAGS += -I/opt/ros/foxy/include
-LFLAGS += -L/opt/ros/foxy/lib
+LFLAGS += -L/opt/ros/foxy/lib 
 
-LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface \
+LFLAGS += -lglobal -lipc -lparam_interface -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lmapper_interface \
 		  -lrclcpp -lrcutils -pthread -lrmw -lrcl \
 		  -lrosidl_typesupport_cpp \
 		  -llibstatistics_collector  \
@@ -33,7 +33,7 @@ LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_
 		  -lrosidl_typesupport_c \
           -lrosidl_runtime_c \
 		  -lnav_msgs__rosidl_typesupport_cpp\
-		  -ltracetools\
+		  -ltracetools
 
 CXXFLAGS += -std=c++14  
 
@@ -42,7 +42,7 @@ TARGETS = argos_ros_mapper
 PUBLIC_BINARIES = argos_ros_mapper
 
 argos_ros_mapper: argos_ros_mapper_main.o  
-
+	bash -c "source /opt/ros/foxy/setup.bash && $(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)"
 
 
 include ../Makefile.rules
