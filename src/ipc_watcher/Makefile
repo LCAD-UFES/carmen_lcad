@@ -1,0 +1,46 @@
+include ../Makefile.conf
+
+MODULE_NAME = ipc_watcher
+MODULE_COMMENT = "Ipc Watcher"
+
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol -Wno-switch
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
+
+
+IFLAGS += -I/opt/ros/foxy/include
+LFLAGS += -L/opt/ros/foxy/lib
+
+LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface \
+		  -lrclcpp -lrcutils -pthread -lrmw -lrcl \
+		  -lrosidl_typesupport_cpp \
+		  -llibstatistics_collector  \
+		  -lstatistics_msgs__python \
+		  -lstatistics_msgs__rosidl_generator_c \
+		  -lstatistics_msgs__rosidl_typesupport_connext_cpp \
+		  -lstatistics_msgs__rosidl_typesupport_connext_c \
+		  -lstatistics_msgs__rosidl_typesupport_cpp \
+		  -lstatistics_msgs__rosidl_typesupport_c \
+		  -lstatistics_msgs__rosidl_typesupport_fastrtps_cpp \
+		  -lstatistics_msgs__rosidl_typesupport_fastrtps_c \
+		  -lstatistics_msgs__rosidl_typesupport_introspection_cpp \
+		  -lstatistics_msgs__rosidl_typesupport_introspection_c \
+          -lgeometry_msgs__rosidl_typesupport_fastrtps_cpp \
+          -lgeometry_msgs__rosidl_typesupport_introspection_cpp\
+		  -lgeometry_msgs__rosidl_typesupport_fastrtps_c \
+          -lgeometry_msgs__rosidl_typesupport_introspection_c\
+		  -lgeometry_msgs__rosidl_typesupport_cpp \
+	      -lrosidl_typesupport_cpp \
+		  -lrosidl_typesupport_c \
+          -lrosidl_runtime_c \
+		  -lnav_msgs__rosidl_typesupport_cpp\
+		  -ltracetools\
+
+CXXFLAGS += -std=c++17  
+
+SOURCES = ipc_watcher.cpp 
+TARGETS = ipc_watcher 
+PUBLIC_BINARIES = ipc_watcher
+
+ipc_watcher: ipc_watcher.o   
+
+include ../Makefile.rules

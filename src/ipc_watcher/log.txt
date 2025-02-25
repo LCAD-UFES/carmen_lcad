@@ -1,0 +1,288 @@
+------------------------------------------------
+                   SUBSCRIÇÕES                  
+S_navigator_gui2@argos --> M_carmen_offroad_planner_plan_message
+S_navigator_gui2@argos --> M_carmen_rddf_traffic_sign_message
+S_navigator_gui2@argos --> M_carmen_rddf_waypoints_around_end_point_message
+S_viewer_3D@argos --> M_rrt_path_message_name
+S_viewer_3D@argos --> M_carmen_laser_ldmrs_new
+S_viewer_3D@argos --> M_carmen_laser_ldmrs
+S_behavior_selector@argos --> M_carmen_localize_ackerman_initialize
+S_localize_ackerman@argos --> M_carmen_localize_ackerman_initialize
+S_viewer_3D@argos --> M_carmen_localize_ackerman_initialize
+S_map_server@argos --> M_carmen_localize_ackerman_initialize
+S_mapper@argos --> M_carmen_mapper_virtual_laser_message
+S_navigator_gui2@argos --> M_carmen_mapper_virtual_laser_message
+S_behavior_selector@argos --> M_carmen_simulator_ackerman_objects
+S_navigator_gui2@argos --> M_carmen_simulator_ackerman_objects
+S_viewer_3D@argos --> M_carmen_rddf_end_point_message
+S_navigator_gui2@argos --> M_carmen_rddf_end_point_message
+S_navigator_gui2@argos --> M_carmen_ford_escape_status
+S_model_predictive_planner@argos --> M_carmen_behavior_selector_current_state_name
+S_simulator_ackerman@argos --> M_carmen_behavior_selector_current_state_name
+S_viewer_3D@argos --> M_carmen_behavior_selector_current_state_name
+S_navigator_gui2@argos --> M_carmen_behavior_selector_current_state_name
+S_behavior_selector@argos --> M_carmen_obstacle_distance_mapper_compact_lane_contents_message
+S_mapper@argos --> M_carmen_simulator_ackerman_truepos
+S_navigator_gui2@argos --> M_carmen_simulator_ackerman_truepos
+S_obstacle_avoider@argos --> M_carmen_robot_ackerman_motion_command
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message1
+S_simulator_ackerman@argos --> M_carmen_map_server_offline_map_message
+S_behavior_selector@argos --> M_carmen_map_server_offline_map_message
+S_mapper@argos --> M_carmen_map_server_offline_map_message
+S_viewer_3D@argos --> M_carmen_map_server_offline_map_message
+S_navigator_gui2@argos --> M_carmen_map_server_offline_map_message
+S_simulator_ackerman@argos --> M_carmen_route_planner_road_network_message
+S_behavior_selector@argos --> M_carmen_route_planner_road_network_message
+S_navigator_gui2@argos --> M_carmen_route_planner_road_network_message
+S_obstacle_avoider@argos --> M_carmen_behaviour_selector_compact_lane_contents_message
+S_model_predictive_planner@argos --> M_carmen_behaviour_selector_compact_lane_contents_message
+S_model_predictive_planner@argos --> M_carmen_obstacle_distance_mapper_compact_map_message
+S_behavior_selector@argos --> M_carmen_obstacle_distance_mapper_compact_map_message
+S_proccontrol@argos --> M_carmen_proccontrol_groupset
+S_behavior_selector@argos --> M_carmen_moving_objects_point_clouds_message_0_name
+S_navigator_gui2@argos --> M_carmen_moving_objects_point_clouds_message_0_name
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message4
+S_behavior_selector@argos --> M_carmen_moving_objects_point_clouds_message_name
+S_viewer_3D@argos --> M_carmen_moving_objects_point_clouds_message_name
+S_navigator_gui2@argos --> M_carmen_moving_objects_point_clouds_message_name
+S_model_predictive_planner@argos --> M_carmen_base_ackerman_odometry
+S_navigator_gui2@argos --> M_carmen_base_ackerman_odometry
+S_localize_ackerman@argos --> M_carmen_base_ackerman_odometry
+S_model_predictive_planner@argos --> M_carmen_behavior_selector_path_goals_and_annotations_message
+S_localize_ackerman@argos --> M_carmen_behavior_selector_path_goals_and_annotations_message
+S_viewer_3D@argos --> M_carmen_behavior_selector_path_goals_and_annotations_message
+S_navigator_gui2@argos --> M_carmen_behavior_selector_path_goals_and_annotations_message
+S_map_server@argos --> M_carmen_behavior_selector_path_goals_and_annotations_message
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message3
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message7
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message12
+S_proccontrol_gui@argos --> M_carmen_proccontrol_pidtable
+S_localize_ackerman@argos --> M_carmen_laser_laser1
+S_viewer_3D@argos --> M_carmen_laser_laser1
+S_obstacle_distance_mapper@argos --> M_carmen_localize_ackerman_globalpos
+S_obstacle_avoider@argos --> M_carmen_localize_ackerman_globalpos
+S_model_predictive_planner@argos --> M_carmen_localize_ackerman_globalpos
+S_simulator_ackerman@argos --> M_carmen_localize_ackerman_globalpos
+S_behavior_selector@argos --> M_carmen_localize_ackerman_globalpos
+S_mapper@argos --> M_carmen_localize_ackerman_globalpos
+S_viewer_3D@argos --> M_carmen_localize_ackerman_globalpos
+S_navigator_gui2@argos --> M_carmen_localize_ackerman_globalpos
+S_map_server@argos --> M_carmen_localize_ackerman_globalpos
+S_navigator_gui2@argos --> M_carmen_navigator_ackerman_stop
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message11
+S_behavior_selector@argos --> M_carmen_navigator_ackerman_status
+S_navigator_gui2@argos --> M_carmen_navigator_ackerman_status
+S_navigator_gui2@argos --> M_carmen_frenet_path_planner_set_of_paths
+S_viewer_3D@argos --> M_carmen_frenet_path_planner_set_of_paths
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message14
+S_mapper@argos --> M_carmen_rddf_annotation_message
+S_navigator_gui2@argos --> M_carmen_rddf_annotation_message
+S_viewer_3D@argos --> M_carmen_rddf_annotation_message
+S_navigator_gui2@argos --> M_carmen_navigator_ackerman_go
+S_navigator_gui2@argos --> M_carmen_voice_interface_command_message
+S_map_server@argos --> M_carmen_voice_interface_command_message
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message15
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message8
+S_viewer_3D@argos --> M_carmen_gps_xyz
+S_navigator_gui2@argos --> M_carmen_localize_ackerman_particle_correction
+S_localize_ackerman@argos --> M_carmen_velodyne_partial_scan_message
+S_mapper@argos --> M_carmen_velodyne_partial_scan_message
+S_viewer_3D@argos --> M_carmen_velodyne_partial_scan_message
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message0
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message2
+S_navigator_gui2@argos --> M_carmen_navigator_ackerman_plan_tree
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message5
+S_navigator_gui2@argos --> M_carmen_map_server_compact_lane_map_message
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message6
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message10
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message13
+S_viewer_3D@argos --> M_carmen_fused_odometry_message
+S_navigator_gui2@argos --> M_carmen_fused_odometry_message
+S_navigator_gui2@argos --> M_carmen_map_server_localize_map_name
+S_viewer_3D@argos --> M_carmen_velodyne_variable_scan_message9
+S_viewer_3D@argos --> M_carmen_map_server_compact_cost_map_message
+S_navigator_gui2@argos --> M_carmen_map_server_compact_cost_map_message
+S_viewer_3D@argos --> M_carmen_mapper_map_message
+S_proccontrol@argos --> M_carmen_proccontrol_moduleset
+S_simulator_ackerman@argos --> M_carmen_base_ackerman_motion_command
+S_viewer_3D@argos --> M_carmen_base_ackerman_motion_command
+S_navigator_gui2@argos --> M_carmen_localize_ackerman_particle_prediction
+------------------------------------------------
+
+------------------------------------------------
+                   Publicações                  
+------------------------------------------------
+
+------------------------------------------------
+                MENSAGENS DEFINIDAS              
+M: carmen_navigator_spline_path
+M: carmen_map_server_current_offline_map_name
+M: carmen_audit_status_message
+M: carmen_moving_objects_point_clouds_message_4_name
+M: carmen_moving_objects_point_clouds_message_1_name
+M: carmen_moving_objects_map_message_name
+M: carmen_map_server_road_map_message
+M: carmen_navigator_ackerman_display_config
+M: carmen_navigator_gui_path
+M: carmen_offroad_planner_plan_message
+M: carmen_mapper_map_level1_message
+M: carmen_stereo_point_cloud_message
+M: carmen_xsens_global_quat
+M: carmen_laser_ldmrs_objects_data
+M: carmen_laser_laser3
+M: carmen_laser_laser2
+M: carmen_rddf_traffic_sign_message
+M: carmen_rddf_waypoints_around_end_point_message
+M: rrt_path_message_name
+M: carmen_obstacle_avoider_motion_planner_path
+M: carmen_laser_ldmrs_new
+M: carmen_rddf_update_annotation_message
+M: carmen_laser_ldmrs
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message16
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message15
+M: carmen_localize_ackerman_initialize
+M: carmen_simulator_ackerman_next_tick
+M: carmen_behavior_selector_set_algorithm
+M: carmen_obstacle_avoider_path
+M: carmen_mapper_virtual_laser_message
+M: carmen_simulator_ackerman_clear_objects
+M: carmen_param_query_string
+M: carmen_simulator_ackerman_objects
+M: carmen_rddf_end_point_message
+M: carmen_ford_escape_status
+M: carmen_behavior_selector_current_state_name
+M: carmen_simulator_ackerman_truepos_query
+M: carmen_obstacle_distance_mapper_compact_lane_contents_message
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message3
+M: carmen_moving_objects_point_clouds_message_2_name
+M: carmen_simulator_ackerman_truepos
+M: carmen_robot_ackerman_motion_command
+M: carmen_param_query_version
+M: carmen_velodyne_variable_scan_message1
+M: carmen_map_server_offline_map_message
+M: carmen_route_planner_road_network_message
+M: carmen_param_reread_command
+M: carmen_proccontrol_output
+M: carmen_ipc_watcher_subscribe_message
+M: carmen_param_variable_change
+M: carmen_rddf_add_annotation_message
+M: carmen_param_query_modules
+M: carmen_fused_odometry_particle_message
+M: carmen_behaviour_selector_compact_lane_contents_message
+M: carmen_laser_laser9
+M: carmen_download_map_message
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message13
+M: carmen_mapper_compact_map_message
+M: carmen_mapper_diff_map_message
+M: carmen_param_respond_all
+M: carmen_parking_assistant_goal
+M: carmen_navigator_ackerman_plan
+M: carmen_heartbeat
+M: carmen_navigator_ackerman_plan_to_draw_message
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message2
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message9
+M: carmen_param_query_double
+M: carmen_lane_detector_lane_message
+M: carmen_obstacle_distance_mapper_compact_map_message
+M: carmen_proccontrol_groupset
+M: carmen_moving_objects_point_clouds_message_0_name
+M: carmen_param_respond_param_filename
+M: carmen_velodyne_variable_scan_message4
+M: carmen_param_respond_modules
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message8
+M: carmen_xsens_xyz
+M: carmen_moving_objects_point_clouds_message_name
+M: carmen_param_respond_robot
+M: carmen_param_query_all
+M: carmen_base_ackerman_odometry
+M: carmen_xsens_global_matrix
+M: carmen_simulator_ackerman_set_object
+M: carmen_mapper_map_moving_objects_raw_map_message_name
+M: carmen_simulator_ackerman_external_truepose
+M: carmen_cargo_cargos
+M: carmen_localize_ackerman_sensor
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message0
+M: carmen_laser_laser6
+M: carmen_localize_ackerman_map_query
+M: carmen_base_ackerman_velocity
+M: carmen_behavior_selector_path_goals_and_annotations_message
+M: carmen_param_respond_int
+M: carmen_param_started
+M: carmen_param_query_param_filename
+M: carmen_localize_ackerman_particle
+M: carmen_velodyne_variable_scan_message3
+M: carmen_param_respond_string
+M: carmen_param_version
+M: tune_pid_gain_velocity_parameters
+M: carmen_velodyne_variable_scan_message7
+M: carmen_velodyne_variable_scan_message12
+M: carmen_param_query_onoff
+M: carmen_proccontrol_pidtable
+M: carmen_laser_laser1
+M: carmen_localize_ackerman_globalpos
+M: carmen_param_query_robot
+M: carmen_param_respond_onoff
+M: carmen_navigator_ackerman_stop
+M: carmen_localize_ackerman_map
+M: carmen_velodyne_variable_scan_message11
+M: carmen_param_respond_double
+M: carmen_navigator_ackerman_status
+M: tune_pid_gain_steering_parameters
+M: carmen_rddf_road_profile_message
+M: carmen_frenet_path_planner_set_of_paths
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message12
+M: carmen_rddf_dynamic_annotation_message
+M: carmen_frenet_path_planner_selected_path
+M: carmen_viewer_3D_map_view
+M: carmen_velodyne_variable_scan_message14
+M: carmen_rddf_annotation_message
+M: carmen_behavior_selector_set_task
+M: carmen_navigator_ackerman_go
+M: carmen_behavior_selector_clear_goal_list
+M: carmen_behavior_selector_remove_goal
+M: carmen_voice_interface_command_message
+M: carmen_velodyne_variable_scan_message15
+M: carmen_param_query_int
+M: carmen_task_manager_desired_engage_state
+M: carmen_task_manager_set_collision_geometry
+M: carmen_velodyne_variable_scan_message8
+M: carmen_gps_xyz
+M: carmen_extra_keys_message_t
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message7
+M: carmen_localize_ackerman_particle_correction
+M: carmen_localize_ackerman_globalpos_query
+M: carmen_moving_objects_point_clouds_message_3_name
+M: carmen_velodyne_variable_scan_message
+M: carmen_velodyne_partial_scan_message
+M: carmen_stereo_velodyne_scan_message1
+M: carmen_velodyne_gps_message
+M: carmen_velodyne_variable_scan_message0
+M: carmen_velodyne_variable_scan_message2
+M: carmen_navigator_ackerman_plan_tree
+M: carmen_velodyne_variable_scan_message5
+M: carmen_map_server_compact_lane_map_message
+M: carmen_velodyne_variable_scan_message6
+M: carmen_velodyne_variable_scan_message10
+M: carmen_behavior_selector_add_goal_name
+M: carmen_task_manager_set_semi_trailer_type_and_beta
+M: carmen_velodyne_variable_scan_message13
+M: carmen_param_set
+M: carmen_fused_odometry_message
+M: carmen_map_server_localize_map_name
+M: carmen_gps_nmea_gphdt
+M: carmen_velodyne_variable_scan_message9
+M: carmen_map_server_compact_cost_map_message
+M: carmen_mapper_map_message
+M: carmen_mapper_virtual_scan_message
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message1
+M: carmen_proccontrol_moduleset
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message4
+M: carmen_obstacle_avoider_robot_hit_obstacle
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message5
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message6
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message10
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message11
+M: carmen_base_ackerman_motion_command
+M: carmen_localize_ackerman_particle_prediction
+M: carmen_mapper_probability_of_each_ray_of_lidar_hit_obstacle_message14
+------------------------------------------------
