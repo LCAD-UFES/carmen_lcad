@@ -42,6 +42,7 @@ TARGETS = argos_globalpos
 PUBLIC_BINARIES = argos_globalpos
 
 argos_globalpos: argos_globalpos_main.o  
+	bash -c "source /opt/ros/foxy/setup.bash && $(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)"
 
 
 include ../Makefile.rules

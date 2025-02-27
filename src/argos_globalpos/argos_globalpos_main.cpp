@@ -17,6 +17,15 @@ static double start_x, start_y, start_theta, timestamp;
 int num_messages_per_second;
 double vel_lin = 0.0, vel_ang = 0.0,curvature = 0.0,phi = 0.0;
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Publishers																					//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 void
 publish_fused(double x, double y, double theta, double timestamp)
 {
@@ -70,7 +79,6 @@ publish_fused(double x, double y, double theta, double timestamp)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
 }
 
-
 void
 publish_globalpos(double x, double y, double theta, double timestamp)
 {
@@ -113,6 +121,29 @@ publish_globalpos(double x, double y, double theta, double timestamp)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Handlers																						//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Inicializations																				//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 
 class GlobalPoseConverter : public rclcpp::Node
@@ -122,7 +153,7 @@ public:
     : Node("global_pose_converter")
     {
         subscription_ = this->create_subscription<geometry_msgs::msg::Vector3>(
-            "/global_pos", 10, 
+            "/global_pos", 10,
             std::bind(&GlobalPoseConverter::topic_callback, this, std::placeholders::_1));
 
 		odom_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
@@ -139,12 +170,12 @@ private:
 		vel_lin = msg->twist.twist.linear.x;
 		vel_ang = msg->twist.twist.angular.z;
 		if (vel_lin <= 0.1)	curvature = 0.0;
-		else curvature = vel_ang/vel_lin; 
+		else curvature = vel_ang/vel_lin;
 
 		phi = -atan(curvature);
 		//printf("Received odometry message with linear velocity %lf and angular velocity %lf\n", vel_lin, vel_ang);
 	}
-    
+
 	void topic_callback(const geometry_msgs::msg::Vector3::SharedPtr msg)
     {
 		// O tópico /global_pos contém a posição no sistema ROS2, que deslocamos em start_x, start_y e start_theta para seguir o padrão do carmen
