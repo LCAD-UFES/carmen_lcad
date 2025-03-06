@@ -13,7 +13,7 @@ phase4:	| phase3
 
 include Makefile.conf
 
-PACKAGES = ipc global param_daemon proccontrol ipc_watcher carmen_map_converter \
+PACKAGES = ipc global param_daemon proccontrol \
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu \
@@ -33,7 +33,8 @@ PACKAGES = ipc global param_daemon proccontrol ipc_watcher carmen_map_converter 
 	   moving_objects_simulator pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer \
 	   tracker_opentld  joystick_vehicle \
-	   velodyne_camera_calibration graphslam # zed_driver deep_vgl traffic_light robot_ackerman_gui
+	   argos_globalpos argos_ros_mapper ipc_watcher carmen_map_converter \
+	   velodyne_camera_calibration graphslam # zed_driver deep_vgl traffic_light robot_ackerman_gui 
 	   
 	   # hypergraphsclam neural_object_detector3
 

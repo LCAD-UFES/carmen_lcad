@@ -300,7 +300,6 @@ carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
     {
       if(mark->callback[i].data) 
       {
-        // Mudar para no espaço de memória antes da msg, salvar o nome e o size:   NOME(char*) | TAMANHO(uint) | MSG________________________
         formatter = IPC_msgInstanceFormatter(msgRef);
         if(!mark->callback[i].first)
         {
@@ -314,7 +313,7 @@ carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
       }
       n = mark->num_callbacks;
       if(mark->callback[i].handler && carmen_use_handlers)
-        mark->callback[i].handler(mark->callback[i].data, mark->callback[i].message_size, mark->message_name);
+        mark->callback[i].handler(mark->callback[i].data);
       if(mark->num_callbacks >= n)
         i++;
     }
@@ -448,8 +447,6 @@ carmen_subscribe_message(char *message_name, char *message_fmt,
       memset(message_mem, 0, message_size);
     }
     else {
-      // Alocando espaço extra antes da mensagem para salvar o nome e o tamanho
-      // void* msg_name_size_data = calloc(1, sizeof(char*) + sizeof(unsigned int) + message_size);
       mark->callback[mark->num_callbacks - 1].data = calloc(1, message_size);
       carmen_test_alloc(mark->callback[mark->num_callbacks - 1].data);
     }

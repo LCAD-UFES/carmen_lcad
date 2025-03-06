@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/argos/carmen_lcad/src/argos_global_pose",
-      "program": "/home/argos/carmen_lcad/src/argos_global_pose/build/Debug/outDebug",
+      "cwd": "/home/argos/carmen_lcad/src/argos_ros_mapper",
+      "program": "/home/argos/carmen_lcad/src/argos_ros_mapper/argos_ros_mapper",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

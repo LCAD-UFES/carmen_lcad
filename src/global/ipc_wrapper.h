@@ -50,7 +50,7 @@ typedef enum {CARMEN_UNSUBSCRIBE,
 	      CARMEN_SUBSCRIBE_LATEST,
 	      CARMEN_SUBSCRIBE_ALL} carmen_subscribe_t;
 
-typedef void (*carmen_handler_t)(void *, ...);
+typedef void (*carmen_handler_t)(void *);
 
 extern MSG_INSTANCE current_msgRef;
 

@@ -77,7 +77,10 @@
     "variant": "cpp",
     "localize_ackerman_messages.h": "c",
     "nonlinearoptimization": "cpp",
-    "slist": "cpp"
+    "slist": "cpp",
+    "any": "cpp",
+    "*.h++": "cpp",
+    "stack": "cpp"
   },
   "C_Cpp_Runner.cCompilerPath": "gcc",
   "C_Cpp_Runner.cppCompilerPath": "g++",
