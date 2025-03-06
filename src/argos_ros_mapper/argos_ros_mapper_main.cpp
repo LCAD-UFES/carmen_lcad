@@ -21,21 +21,6 @@ void argos_map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 void
 convert_ros_map_to_carmen_map(const nav_msgs::msg::OccupancyGrid::SharedPtr msg, carmen_map_t *map)
 {
-	// // O mapa ROS cresce à medida que o robô explora novas áreas.
-	// map->config.x_size = msg->info.width;
-	// map->config.y_size = msg->info.height;
-	// map->config.resolution = msg->info.resolution;
-	// map->config.x_origin = 980;
-	// map->config.y_origin = 980;
-	// map->config.map_name = (char *) "argos_ros_map";
-	// strcpy(map->config.origin, "argos");
-
-	// map->map = (unsigned char *) malloc(map->config.x_size * map->config.y_size * sizeof(unsigned char));
-	// for (int i = 0; i < map->config.x_size * map->config.y_size; i++)
-	// {
-	// 	map->map[i] = msg->data[i];
-	// }
-
 	// Notar que o mapa do ROS pode ser um tamanho diferente do mapa do CARMEN, e o do carmen se mantém no seu tamanho
 
 	if((map->config.resolution - msg->info.resolution) < 0.0001)
@@ -59,20 +44,21 @@ convert_ros_map_to_carmen_map(const nav_msgs::msg::OccupancyGrid::SharedPtr msg,
 		printf("CARMEN map resolution: %f\n", map->config.resolution);
 		exit(1);
 		// i e j são as coordenadas da célula do mapa do carmen
+		// o código abaixo não está pronto para funcionar
 		// i * map->config.resolution / msg->info.resolution é a coordenada da célula do mapa do ROS
-		for(unsigned int i = 0; ((i < msg->info.width) && ((i * map->config.resolution / msg->info.resolution) < (map->config.x_size))); i++)
-		{
-			for(unsigned int j = 0; ((j < msg->info.height) && ((j * map->config.resolution / msg->info.resolution) < map->config.y_size)); j++)
-			{
-				int ros_i = i * map->config.resolution / msg->info.resolution;
-				int ros_j = j * map->config.resolution / msg->info.resolution;
-				if(msg->data[ros_j + ros_i * msg->info.width] != -1)
-				{
-					map->map[i][j] = (((double)msg->data[ros_j + ros_i * msg->info.width]) / 100.0);
-				}
-			}
-		}
-}
+		// for(unsigned int i = 0; ((i < msg->info.width) && ((i * map->config.resolution / msg->info.resolution) < (map->config.x_size))); i++)
+		// {
+		// 	for(unsigned int j = 0; ((j < msg->info.height) && ((j * map->config.resolution / msg->info.resolution) < map->config.y_size)); j++)
+		// 	{
+		// 		int ros_i = i * map->config.resolution / msg->info.resolution;
+		// 		int ros_j = j * map->config.resolution / msg->info.resolution;
+		// 		if(msg->data[ros_j + ros_i * msg->info.width] != -1)
+		// 		{
+		// 			map->map[i][j] = (((double)msg->data[ros_j + ros_i * msg->info.width]) / 100.0);
+		// 		}
+		// 	}
+		// }
+	}
 }
 
 class ArgosROSMapper : public rclcpp::Node

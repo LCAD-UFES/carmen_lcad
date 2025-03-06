@@ -33,6 +33,8 @@ LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_
 		  -lrosidl_typesupport_c \
           -lrosidl_runtime_c \
 		  -lnav_msgs__rosidl_typesupport_cpp\
+		  -ltf2 \
+		  -ltf2_ros \
 		  -ltracetools\
 
 CXXFLAGS += -std=c++14  

@@ -1,21 +1,69 @@
 #include <memory>
 #include <iostream>
 #include <unistd.h>
+#include <cmath>  
 
 #include <carmen/carmen.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/fused_odometry_interface.h>
 
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h> 
-#include <cmath>  
 #include <nav_msgs/msg/odometry.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h> 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+
 
 static double start_x, start_y, start_theta, timestamp;
 int num_messages_per_second;
 double vel_lin = 0.0, vel_ang = 0.0,curvature = 0.0,phi = 0.0;
+
+class GlobalPoseConverter;
+void odom_and_global_pos_handler(GlobalPoseConverter* global_pose_converter, const nav_msgs::msg::Odometry::SharedPtr msg);
+
+class GlobalPoseConverter : public rclcpp::Node
+{
+public:
+    GlobalPoseConverter()
+    : Node("global_pose_converter"), 
+	tf_buffer_(this->get_clock()), 
+	tf_listener_(tf_buffer_)
+    {
+		odom_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>("/odom", 10, 
+																				[this](const nav_msgs::msg::Odometry::SharedPtr msg) 
+																				{ odom_and_global_pos_handler(this, msg); } );
+    }
+
+	tf2_ros::Buffer tf_buffer_;
+private:
+	tf2_ros::TransformListener tf_listener_;
+	rclcpp::TimerBase::SharedPtr timer_;
+	rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscription_;
+
+};
+
+geometry_msgs::msg::TransformStamped compose_transforms(const geometry_msgs::msg::TransformStamped &transform1,
+														const geometry_msgs::msg::TransformStamped &transform2) 
+{	
+	tf2::Transform tf1, tf2_result;
+	tf2::fromMsg(transform1.transform, tf1);
+	tf2::Transform tf2;
+	tf2::fromMsg(transform2.transform, tf2);
+
+	tf2_result = tf1 * tf2;
+	
+	geometry_msgs::msg::TransformStamped transform_result;
+	transform_result.header.stamp = transform1.header.stamp;
+	transform_result.header.frame_id = transform1.header.frame_id;
+	transform_result.child_frame_id = transform2.child_frame_id;
+	transform_result.transform = tf2::toMsg(tf2_result);
+
+	return transform_result;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -130,8 +178,57 @@ publish_globalpos(double x, double y, double theta, double timestamp)
 //																								//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Função para lidar com a mensagem de odometria, e usando a transformada entre mapa e base_link, publicar global_pos e fused_odom
+ */
+void 
+odom_and_global_pos_handler(GlobalPoseConverter* global_pose_converter, const nav_msgs::msg::Odometry::SharedPtr msg)
+{
+	timestamp = carmen_get_time();
 
+	// Essa parte calcula o phi e a curvatura do carro
+	vel_lin = msg->twist.twist.linear.x;
+	vel_ang = msg->twist.twist.angular.z;
+	if (vel_lin <= 0.1)	curvature = 0.0;
+	else curvature = vel_ang/vel_lin;
+	phi = -atan(curvature);
 
+	// Essa parte lê a transformada entre mapa e base_link
+	if (!global_pose_converter->tf_buffer_.canTransform("map", "odom", tf2::TimePointZero)) 
+	{
+		printf("map to odom Transform not available yet");
+    	return;
+	}
+	if (!global_pose_converter->tf_buffer_.canTransform("odom", "base_link", tf2::TimePointZero)) 
+	{
+		printf("odom to base_link Transform not available yet");
+    	return;
+	}
+	auto transform_map_to_odom = global_pose_converter->tf_buffer_.lookupTransform("map", "odom", tf2::TimePointZero);
+	auto transform_odom_to_base_link = global_pose_converter->tf_buffer_.lookupTransform("odom", "base_link", tf2::TimePointZero);
+	auto transform_map_to_base_link = compose_transforms(transform_map_to_odom, transform_odom_to_base_link);
+
+	// Calcula yaw
+	tf2::Quaternion q(
+		transform_map_to_base_link.transform.rotation.x,
+		transform_map_to_base_link.transform.rotation.y,
+		transform_map_to_base_link.transform.rotation.z,
+		transform_map_to_base_link.transform.rotation.w
+	);
+	double roll, pitch, yaw;
+	tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+	// Publica a global_pos e a fused_odom
+	publish_fused(transform_map_to_base_link.transform.translation.x + start_x,
+					transform_map_to_base_link.transform.translation.y + start_y,
+					yaw + start_theta,
+					timestamp);
+
+	publish_globalpos(transform_map_to_base_link.transform.translation.x + start_x,
+						transform_map_to_base_link.transform.translation.y + start_y,
+						yaw + start_theta,
+						timestamp);
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -141,65 +238,6 @@ publish_globalpos(double x, double y, double theta, double timestamp)
 // Inicializations																				//
 //																								//
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-class GlobalPoseConverter : public rclcpp::Node
-{
-public:
-    GlobalPoseConverter()
-    : Node("global_pose_converter")
-    {
-        subscription_ = this->create_subscription<geometry_msgs::msg::Vector3>(
-            "/global_pos", 10,
-            std::bind(&GlobalPoseConverter::topic_callback, this, std::placeholders::_1));
-
-		odom_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/odom", 10, 
-            std::bind(&GlobalPoseConverter::odom_topic_callback, this, std::placeholders::_1));
-    }
-
-private:
-    rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr subscription_;
-	rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscription_;
-
-	void odom_topic_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
-	{
-		vel_lin = msg->twist.twist.linear.x;
-		vel_ang = msg->twist.twist.angular.z;
-		if (vel_lin <= 0.1)	curvature = 0.0;
-		else curvature = vel_ang/vel_lin;
-
-		phi = -atan(curvature);
-		//printf("Received odometry message with linear velocity %lf and angular velocity %lf\n", vel_lin, vel_ang);
-	}
-
-	void topic_callback(const geometry_msgs::msg::Vector3::SharedPtr msg)
-    {
-		// O tópico /global_pos contém a posição no sistema ROS2, que deslocamos em start_x, start_y e start_theta para seguir o padrão do carmen
-
-		timestamp = carmen_get_time();
-
-		publish_fused(msg->x + start_x,
-					  msg->y + start_y,
-					  msg->z + start_theta,
-					  timestamp);
-
-		publish_globalpos(msg->x + start_x,
-                      	  msg->y + start_y,
-                          msg->z + start_theta,
-                          timestamp);
-
-		printf("Published globalpos(%lf, %lf, %lf) at timestamp %lf\n\n\n",msg->x + start_x,
-                                                                          msg->y + start_y,
-                                                                          msg->z + start_theta,
-                                                                          timestamp);
-    }
-
-};
-
 
 static void 
 shutdown_module(int sig)
@@ -223,33 +261,21 @@ shutdown_module(int sig)
 }
 
 
-void
+static void
 define_messages()
 {
 	IPC_RETURN_TYPE err;
 
-	carmen_localize_ackerman_define_globalpos_messages();
+	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
 
 	err = IPC_defineMsg(CARMEN_FUSED_ODOMETRY_PARTICLE_NAME, IPC_VARIABLE_LENGTH, CARMEN_FUSED_ODOMETRY_PARTICLE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
 }
 
-// static void 
-// initialize_ipc(void)
-// {
-// 	IPC_RETURN_TYPE err;
 
-// 	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME,
-// 			IPC_VARIABLE_LENGTH,
-// 			CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
-// 	carmen_test_ipc_exit(err, "Could not define message",
-// 			CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
-
-// 	return;
-// }
-
-int 
-main(int argc, char **argv)
+static void 
+read_parameters(int argc, char *argv[])
 {
 	if (argc < 5)
 	{
@@ -261,14 +287,18 @@ main(int argc, char **argv)
 	start_x = atof(argv[2]);
 	start_y = atof(argv[3]);
 	start_theta = atof(argv[4]);
+}
+
+int 
+main(int argc, char **argv)
+{
     
 	signal(SIGINT, shutdown_module);
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
+	read_parameters(argc, argv);
     define_messages();
-
-	//initialize_ipc();
 
 	// Init ROS node
     rclcpp::init(argc, argv);
