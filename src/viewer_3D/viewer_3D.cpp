@@ -408,8 +408,8 @@ static carmen_vector_3D_t
 get_position_offset(void)
 {
     carmen_vector_3D_t zero;
-    zero.x = 7757691.01;
-    zero.y = -363593.38;
+    zero.x = 1000.0;
+    zero.y = 1000.0;
     zero.z = 0;
 
     return zero;

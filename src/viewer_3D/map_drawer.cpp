@@ -334,133 +334,134 @@ add_localize_map_message(map_drawer* m_drawer, carmen_map_server_localize_map_me
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
-//static void
-//drawPlane(double length_x, double length_y, double length_z)
-//{
-//
-//	glPushMatrix();
-//
-//	glBegin(GL_QUADS);
-//
-//	glNormal3f( 0.0f, 0.0f,1.0f);
-//	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-//	glNormal3f( 0.0f, 0.0f,1.0f);
-//	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-//	glNormal3f( 0.0f, 0.0f,1.0f);
-//	glVertex3f(length_x/2, length_y/2, -length_z/2);
-//	glNormal3f( 0.0f, 0.0f,1.0f);
-//	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-//	glNormal3f( 0.0f, -1.0f, 0.0f);
-//
-//	glEnd();
-//
-//	glPopMatrix();
-//}
+void
+drawPlane(double length_x, double length_y, double length_z)
+{
+
+	glPushMatrix();
+
+	glBegin(GL_QUADS);
+
+	glNormal3f( 0.0f, 0.0f,1.0f);
+	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+	glNormal3f( 0.0f, 0.0f,1.0f);
+	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+	glNormal3f( 0.0f, 0.0f,1.0f);
+	glVertex3f(length_x/2, length_y/2, -length_z/2);
+	glNormal3f( 0.0f, 0.0f,1.0f);
+	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+	glNormal3f( 0.0f, -1.0f, 0.0f);
+
+	glEnd();
+
+	glPopMatrix();
+}
 
 
 // Função que desenha o cubo completo, menos eficiente (original) @@@Braian
-//static void
-//drawBox(double length_x, double length_y, double length_z)
-//{
-//
-//	glPushMatrix();
-//
-//		glBegin(GL_QUADS);
-//
-//
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-//
-//
-//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
-//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-//			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-//
-//
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-//
-//
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-//			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-//
-//
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
-//			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-//
-//
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
-//			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
-//
-//
-//		glEnd();
-//
-//	glPopMatrix();
-//}
+static void
+drawBox(double length_x, double length_y, double length_z)
+{
+
+	glPushMatrix();
+
+		glBegin(GL_QUADS);
 
 
-//static void
-//draw_map_element(double x, double y, double z, double map_value, double resolution)
-//{
-//	if(map_value > 0.5)
-//	{
-//		glPushMatrix();
-//
-//			glTranslated(x, y, z);
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 0.0f,-1.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+
+
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
+			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
+
+
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
+			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
+
+
+		glEnd();
+
+	glPopMatrix();
+}
+
+
+static void
+draw_map_element(double x, double y, double z, double map_value, double resolution)
+{
+	if(map_value > 0.5)
+	{
+		glPushMatrix();
+
+			glTranslated(x, y, z);
 //			glColor3d(1.0, 0, 0); 										// red
 //			glColor3d(map_value, map_value, map_value); 				// gray scale (remission)
-//			glColor3d(1 - map_value, 1 - map_value, 1 - map_value); 	// gray scale inverted (costs)
-//			drawBox(resolution, resolution, 0.5);
+			glColor3d(1 - map_value, 1 - map_value, 1 - map_value); 	// gray scale inverted (costs)
+			drawBox(resolution, resolution, 0.5);
 //			drawBoxNew(resolution, resolution, 0.5);
 //			drawPlane(resolution, resolution, 0.5);
 //			drawPlane(x, y, 0.5);
-//
-//		glPopMatrix();
-//	}
-//}
 
+		glPopMatrix();
+	}
+}
 
-//static void
-//draw_single_map(carmen_map_t map, double car_x, double car_y, double zoom)
-//{
-//	glPushMatrix();
-//
-////		printf("Origin x:% lf, y:% lf\n", map.config.x_origin, map.config.y_origin);
-//
-//		double resolution = map.config.resolution;
-//
-//		for(int i = 0; i < map.config.x_size; i++)
-//		{
-//			for(int j = 0; j < map.config.y_size; j++)
-//			{
-//				double x = i * resolution;
-//				double y = j * resolution;
-//				double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
-//				if (distance < ((double) map.config.x_size * resolution * zoom * 3.0))
-//				{
-//					double z = 0.0;
-//					double map_value = map.complete_map[i * map.config.x_size + j];
-//					draw_map_element(x, y, z, map_value, resolution);
-//				}
-//				//printf("x:% lf, y:% lf, z:% lf\n", x, y, z);
-//			}
-//		}
-//
-//	glPopMatrix();
-//}
 
 static void
+draw_single_map(carmen_map_t map, double car_x, double car_y, double zoom)
+{
+	glPushMatrix();
+
+//		printf("Origin x:% lf, y:% lf\n", map.config.x_origin, map.config.y_origin);
+
+		double resolution = map.config.resolution;
+
+		for(int i = 0; i < map.config.x_size; i++)
+		{
+			for(int j = 0; j < map.config.y_size; j++)
+			{
+				double x = i * resolution;
+				double y = j * resolution;
+				double distance = sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y));
+				if (distance < ((double) map.config.x_size * resolution * zoom * 3.0))
+				{
+					double z = 0.0;
+					double map_value = map.complete_map[i * map.config.x_size + j];
+					draw_map_element(x, y, z, map_value, resolution);
+				}
+				//printf("x:% lf, y:% lf, z:% lf\n", x, y, z);
+			}
+		}
+
+	glPopMatrix();
+}
+
+
+void
 draw_single_map_optimized(carmen_map_t map, double car_x, double car_y, double zoom)
 {
 	double *positions;
@@ -693,8 +694,8 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, carmen_pose_3D
 
 			double car_x = car_fused_pose.position.x - offset_x;
 			double car_y = car_fused_pose.position.y - offset_y;
-//			draw_single_map(m_drawer->maps[i], car_x, car_y, map_zoom);
-			draw_single_map_optimized(m_drawer->maps[i], car_x, car_y, map_zoom);
+			draw_single_map(m_drawer->maps[i], car_x, car_y, map_zoom);
+//			draw_single_map_optimized(m_drawer->maps[i], car_x, car_y, map_zoom);
 //			draw_single_remission_map(m_drawer->maps[i], car_x, car_y, map_zoom); @@@Braian: Desenha o mapa de remission pela mensagem
 
 			offset_x = m_drawer->maps[i].config.x_origin - offset.x;
