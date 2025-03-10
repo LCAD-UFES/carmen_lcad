@@ -3405,6 +3405,18 @@ namespace View
 		if (!nav_panel_config->show_true_pos || (simulator_trueposition.map == NULL))
 			return;
 
+		static FILE *poses = NULL;
+
+//		if (nav_panel_config->show_lasers)
+//		{
+//			if (!poses)
+//				poses = fopen("poses.txt", "w");
+//
+//			fprintf(poses, "robot.pose.x %lf, robot.pose.y, %lf, simulator_trueposition.pose.x, %lf, simulator_trueposition.pose.y, %lf\n",
+//					robot.pose.x, robot.pose.y, simulator_trueposition.pose.x, simulator_trueposition.pose.y);
+//			fflush(poses);
+//		}
+
 		draw_robot_shape(the_map_view, &simulator_trueposition, TRUE, &carmen_blue);
 		draw_robot_shape(the_map_view, &simulator_trueposition, FALSE, &carmen_black);
 
