@@ -404,12 +404,16 @@ double lidars_last_message_timestamp[16];
 double velodyne_last_message_timestamp = 0.0;
 double time_to_stop_cloud_point_draw = 1000000000.15;
 
+static double initial_x_origin = 1000.0;
+static double initial_y_origin = 1000.0;
+
+
 static carmen_vector_3D_t
 get_position_offset(void)
 {
     carmen_vector_3D_t zero;
-    zero.x = 1000.0;
-    zero.y = 1000.0;
+    zero.x = initial_x_origin;
+    zero.y = initial_y_origin;
     zero.z = 0;
 
     return zero;
@@ -4158,6 +4162,8 @@ read_parameters_and_init_stuff(int argc, char** argv)
 		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
 		{(char *) "commandline", 	(char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
 		{(char *) "commandline", 	(char *) "verbose", CARMEN_PARAM_ONOFF, &verbose, 0, NULL},
+		{(char *) "commandline", 	(char *) "initial_x_origin", CARMEN_PARAM_DOUBLE, &initial_x_origin, 0, NULL},
+		{(char *) "commandline", 	(char *) "initial_y_origin", CARMEN_PARAM_DOUBLE, &initial_y_origin, 0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
