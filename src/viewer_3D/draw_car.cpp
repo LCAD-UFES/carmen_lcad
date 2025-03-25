@@ -231,7 +231,7 @@ createCarDrawer(int argc, char** argv)
 void
 calculate_trailer_positions(CarDrawer *carDrawer, double beta[MAX_NUM_TRAILERS], int num_semi_trailers, double positions[MAX_NUM_TRAILERS][3], int drawing_model = 1)
 {
-	static double cc = 0.0;
+//	static double cc = 0.0;
     // Car position
     double car_x = carDrawer->semi_trailer_pose[0].position.x;
     double car_y = carDrawer->semi_trailer_pose[0].position.y;
