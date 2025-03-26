@@ -13,7 +13,7 @@ phase4:	| phase3
 
 include Makefile.conf
 
-PACKAGES = ipc global param_daemon proccontrol \
+PACKAGES = ipc global param_daemon proccontrol argos_lidar_driver\
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu \
