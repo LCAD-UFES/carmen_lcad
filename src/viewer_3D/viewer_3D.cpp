@@ -5,7 +5,7 @@
 #include <carmen/stereo_point_cloud_interface.h>
 #include <carmen/rotation_geometry.h>
 #include <carmen/velodyne_interface.h>
-#include <carmen/argos_lidar_driver_interface.h>
+#include <carmen/xyz_pointcloud_lidar_interface.h>
 #include <carmen/download_map_interface.h>
 #include <carmen/stereo_velodyne_interface.h>
 #include <prob_map.h>
@@ -113,10 +113,6 @@ carmen_laser_ldmrs_object *ldmrs_objects_tracking;
  * **********************************************************************/
 static int camera = 7;
 
-static point_cloud *xyz_pointcloud_points; 
-static int last_xyz_pointcloud_position;
-static int xyz_pointcloud_initialized;
-
 static point_cloud *velodyne_points;
 static int last_velodyne_position;
 static int velodyne_initialized;
@@ -163,7 +159,6 @@ static carmen_pose_3D_t xsens_pose;
 static carmen_pose_3D_t laser_pose;
 static carmen_pose_3D_t car_pose;
 static carmen_pose_3D_t camera_pose;
-static carmen_pose_3D_t xyz_pointcloud_pose;
 static carmen_pose_3D_t velodyne_pose;
 static carmen_pose_3D_t laser_ldmrs_pose;
 static carmen_pose_3D_t sensor_board_1_pose;
@@ -258,6 +253,10 @@ static int draw_lidar12_flag = 0;
 static int draw_lidar13_flag = 0;
 static int draw_lidar14_flag = 0;
 static int draw_lidar15_flag = 0;
+static int draw_xyz_lidar0_flag = 0;
+static int draw_xyz_lidar1_flag = 0;
+static int draw_xyz_lidar2_flag = 0;
+static int draw_xyz_lidar3_flag = 0;
 static int draw_stereo_cloud_flag;
 static int draw_car_flag;
 static int draw_rays_flag;
@@ -291,7 +290,6 @@ static int zero_z_flag;
 static CarDrawer *car_drawer;
 static point_cloud_drawer *ldmrs_drawer;
 static point_cloud_drawer *laser_drawer;
-static point_cloud_drawer *xyz_pointcloud_drawer;
 static point_cloud_drawer *velodyne_drawer;
 static point_cloud_drawer *lidar0_drawer;
 static point_cloud_drawer *lidar1_drawer;
@@ -309,6 +307,10 @@ static point_cloud_drawer *lidar12_drawer;
 static point_cloud_drawer *lidar13_drawer;
 static point_cloud_drawer *lidar14_drawer;
 static point_cloud_drawer *lidar15_drawer;
+static point_cloud_drawer *xyz_lidar0_drawer;
+static point_cloud_drawer *xyz_lidar1_drawer;
+static point_cloud_drawer *xyz_lidar2_drawer;
+static point_cloud_drawer *xyz_lidar3_drawer;
 static velodyne_360_drawer *v_360_drawer;
 static variable_velodyne_drawer *var_v_drawer;
 static interface_drawer *i_drawer;
@@ -410,7 +412,7 @@ int first_remission_directory_check = 1;
 int map_mode = 0;
 
 double lidars_last_message_timestamp[16];
-double xyz_pointcloud_last_message_timestamp = 0.0;
+double xyz_lidars_last_message_timestamp[16];
 double velodyne_last_message_timestamp = 0.0;
 double time_to_stop_cloud_point_draw = 1000000000.15;
 
@@ -589,6 +591,48 @@ alloc_lidar_point_cloud_vector()
 
 
 int
+convert_xyz_pointcloud_message_to_point_cloud(point_cloud *xyz_pointcloud_points, carmen_xyz_pointcloud_lidar_message *xyz_pointcloud_message, carmen_xyz_lidar_config xyz_lidar_config,
+		rotation_matrix *xyz_lidar_to_board_matrix, rotation_matrix *board_to_car_matrix, 
+		carmen_vector_3D_t xyz_lidar_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+{
+    carmen_pose_3D_t car_interpolated_position;
+    rotation_matrix r_matrix_car_to_global;
+	double dt;
+	int discarded_points = 0;
+
+    dt = xyz_pointcloud_message->timestamp - car_fused_time - xyz_pointcloud_message->num_of_points * xyz_lidar_config.time_between_points;
+	
+    for (int i = 0; i < xyz_pointcloud_message->num_of_points; i++, dt += xyz_lidar_config.time_between_points)
+	{
+		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi, distance_between_front_and_rear_axles);
+        
+		compute_rotation_matrix(&r_matrix_car_to_global, car_interpolated_position.orientation);
+    
+        double distance = sqrt(pow(xyz_pointcloud_message->points[i].x, 2) + pow(xyz_pointcloud_message->points[i].y, 2) + pow(xyz_pointcloud_message->points[i].z, 2));
+        if (distance < 0.000001)
+        {
+            discarded_points++;
+            continue;
+        }
+
+
+        carmen_vector_3D_t point_position = get_xyz_pointcloud_point_car_reference(&(xyz_pointcloud_message->points[i]),xyz_lidar_to_board_matrix, 
+                                                                                    board_to_car_matrix, xyz_lidar_pose_position, sensor_board_1_pose_position);
+        // Parei aqui get_xyz_pointcloud_point_car_reference
+
+        
+        carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position, &r_matrix_car_to_global);
+
+        xyz_pointcloud_points->points[i - discarded_points] = point_global_position;
+
+        xyz_pointcloud_points->point_color[i - discarded_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
+	}
+
+	return (discarded_points);
+}
+
+
+int
 convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_velodyne_variable_scan_message *lidar_message, carmen_lidar_config lidar_config,
 		rotation_matrix *lidar_to_board_matrix, rotation_matrix *board_to_car_matrix, 
 		carmen_vector_3D_t lidar_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
@@ -647,6 +691,86 @@ clear_lidar_point_cloud_vector_drawer(point_cloud_drawer *drawer, point_cloud **
     }
 }
 
+void
+draw_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message, point_cloud_drawer *drawer, bool &first_time,
+		point_cloud **xyz_lidar_point_cloud_vector, int &xyz_lidar_point_cloud_vector_max_size, int &xyz_lidar_point_cloud_vector_index,
+		carmen_xyz_lidar_config &xyz_lidar_config, int draw_xyz_lidar_flag, double &last_timestamp)
+{
+#ifdef USE_REAR_BULLBAR
+	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
+	carmen_pose_3D_t choosed_sensor_referenced[] = {sensor_board_1_pose, front_bullbar_pose, rear_bullbar_pose};
+#endif
+
+	int discarded_points = 0;
+    int num_points = 0;
+
+    if (!force_velodyne_flag)
+    {
+		if (!odometry_initialized || !draw_xyz_lidar_flag)
+		{
+			clear_lidar_point_cloud_vector_drawer(drawer, xyz_lidar_point_cloud_vector);
+			return;
+		}
+    }
+
+    if (first_time)
+    {
+        carmen_xyz_lidar_config *p = &xyz_lidar_config;
+        load_xyz_lidar_config(0, NULL, xyz_lidar_config.id, &p);
+        *xyz_lidar_point_cloud_vector = alloc_lidar_point_cloud_vector();
+        first_time = false;
+    }
+
+    if (last_timestamp == 0.0)
+    {
+        last_timestamp = message->timestamp;
+        return;
+    }
+
+    if (xyz_lidar_point_cloud_vector_index >= xyz_pointcloud_size)    // viewer_3D_xyz_pointcloud_size is read from carmen*.in, is the number of point clouds vewer_3d will accumulate to display 
+		xyz_lidar_point_cloud_vector_index = 0;
+
+    num_points = message->num_of_points;
+
+	if (true) // num_points > lidar_point_cloud_vector_max_size)
+	{
+		(*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].points = (carmen_vector_3D_t *) realloc((*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].points, num_points * sizeof (carmen_vector_3D_t));
+		(*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].point_color = (carmen_vector_3D_t *) realloc((*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].point_color, num_points * sizeof (carmen_vector_3D_t));
+        xyz_lidar_point_cloud_vector_max_size = num_points;
+    }
+
+	(*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].num_points = num_points;
+	(*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].car_position = car_fused_pose.position;
+	(*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].timestamp = message->timestamp;
+
+	rotation_matrix *xyz_lidar_to_board_matrix = create_rotation_matrix(xyz_lidar_config.pose.orientation);
+#ifdef USE_REAR_BULLBAR
+	if (semi_trailer_config.num_semi_trailers != 0 && xyz_lidar_config.sensor_reference == 2)
+	{
+		choosed_sensor_referenced[xyz_lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
+	}
+	rotation_matrix *board_to_car_matrix = create_rotation_matrix(choosed_sensor_referenced[xyz_lidar_config.sensor_reference].orientation);
+
+	discarded_points = convert_xyz_pointcloud_message_to_point_cloud(&(*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index], message, xyz_lidar_config,
+			xyz_lidar_to_board_matrix, board_to_car_matrix, xyz_lidar_config.pose.position, choosed_sensor_referenced[xyz_lidar_config.sensor_reference].position);
+#else
+	rotation_matrix *board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
+
+	discarded_points = convert_variable_scan_message_to_point_cloud(lidar_point_cloud_vector[lidar_point_cloud_vector_index], message, lidar_config,
+			lidar_to_board_matrix, board_to_car_matrix, lidar_config.pose.position, sensor_board_1_pose.position);
+#endif
+
+	(*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index].num_points -= discarded_points;
+
+	destroy_rotation_matrix(xyz_lidar_to_board_matrix);
+	destroy_rotation_matrix(board_to_car_matrix);
+
+	add_point_cloud(drawer, (*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index]);
+    
+    xyz_lidar_point_cloud_vector_index += 1;
+
+    last_timestamp = message->timestamp;
+}
 
 void
 draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point_cloud_drawer *drawer, bool &first_time,
@@ -1165,6 +1289,16 @@ draw_everything()
     if (draw_lidar15_flag && ((carmen_get_time() - lidars_last_message_timestamp[15]) < time_to_stop_cloud_point_draw))
     	draw_point_cloud(lidar15_drawer);
 
+    if (draw_xyz_lidar0_flag && ((carmen_get_time() - xyz_lidars_last_message_timestamp[0]) < time_to_stop_cloud_point_draw))
+    	draw_point_cloud(xyz_lidar0_drawer);
+    if (draw_xyz_lidar1_flag && ((carmen_get_time() - xyz_lidars_last_message_timestamp[1]) < time_to_stop_cloud_point_draw))
+    	draw_point_cloud(xyz_lidar1_drawer);
+    if (draw_xyz_lidar2_flag && ((carmen_get_time() - xyz_lidars_last_message_timestamp[2]) < time_to_stop_cloud_point_draw))
+    	draw_point_cloud(xyz_lidar2_drawer);
+    if (draw_xyz_lidar3_flag && ((carmen_get_time() - xyz_lidars_last_message_timestamp[3]) < time_to_stop_cloud_point_draw))
+    	draw_point_cloud(xyz_lidar3_drawer);
+
+
     if (draw_rays_flag)
     {
 //            carmen_vector_3D_t offset = get_position_offset();
@@ -1658,42 +1792,6 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
     destroy_rotation_matrix(xsens_matrix);
 }
 
-int 
-compute_xyz_pointcloud_points(point_cloud *xyz_pointcloud_points, carmen_xyz_lidar_pointcloud_message *xyz_pointcloud_message,
-		rotation_matrix *xyz_pointcloud_to_board_matrix, rotation_matrix *board_to_car_matrix,
-		carmen_vector_3D_t xyz_pointcloud_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
-{
-	carmen_pose_3D_t car_interpolated_position; // CHECAR SENSOR_BOARD_1 SE ESTA CORRETO
-    rotation_matrix r_matrix_car_to_global;
-
-	double dt = xyz_pointcloud_message->timestamp - car_fused_time - xyz_pointcloud_message->num_of_points * xyz_pointcloud_message->time_spent_by_each_point;
-	int i;
-	int range_max_points = 0;
-	for (i = 0; i < xyz_pointcloud_message->num_of_points; i++, dt += xyz_pointcloud_message->time_spent_by_each_point)
-	{
-        if((i % 20) == 0) { // Não sei se é necessário
-            car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi,
-                    distance_between_front_and_rear_axles);
-            compute_rotation_matrix(&r_matrix_car_to_global, car_interpolated_position.orientation);
-        }
-
-        double distance = sqrt(pow(xyz_pointcloud_message->points[i].x, 2) + pow(xyz_pointcloud_message->points[i].y, 2) + pow(xyz_pointcloud_message->points[i].z, 2));
-        if (distance < 0.00001)
-        {
-            range_max_points++;
-            continue;
-        }
-        carmen_vector_3D_t point_position = get_xyz_pointcloud_point_car_reference(&(xyz_pointcloud_message->points[i]),
-                xyz_pointcloud_to_board_matrix, board_to_car_matrix, xyz_pointcloud_pose_position, sensor_board_1_pose_position);
-        carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
-                &r_matrix_car_to_global);
-        xyz_pointcloud_points->points[i - range_max_points] = point_global_position;
-        xyz_pointcloud_points->point_color[i - range_max_points] = create_point_colors_height(point_global_position, car_interpolated_position.position);
-        // Remission flag?
-	}
-	return (range_max_points);
-}
-
 int
 compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_scan_message *velodyne_message,
 		double *vertical_correction, int vertical_size,
@@ -1757,50 +1855,6 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 		}
 	}
 	return (range_max_points);
-}
-
-void
-xyz_pointcloud_message_handler(carmen_xyz_lidar_pointcloud_message *xyz_pointcloud_message)
-{
-    static double last_timestamp = 0.0;
-
-    if (last_timestamp == 0.0)
-    {
-    	last_timestamp = xyz_pointcloud_message->timestamp;
-    	return;
-    }
-
-    xyz_pointcloud_initialized = 1;
-	
-    last_xyz_pointcloud_position++;
-    if (last_xyz_pointcloud_position >= xyz_pointcloud_size)
-        last_xyz_pointcloud_position = 0;
-
-    int num_points = xyz_pointcloud_message->num_of_points;
-    if (num_points > xyz_pointcloud_points[last_xyz_pointcloud_position].num_points)
-    {
-        xyz_pointcloud_points[last_xyz_pointcloud_position].points = (carmen_vector_3D_t *) realloc(xyz_pointcloud_points[last_xyz_pointcloud_position].points, num_points * sizeof (carmen_vector_3D_t));
-        xyz_pointcloud_points[last_xyz_pointcloud_position].point_color = (carmen_vector_3D_t *) realloc(xyz_pointcloud_points[last_xyz_pointcloud_position].point_color, num_points * sizeof (carmen_vector_3D_t));
-    }
-    xyz_pointcloud_points[last_xyz_pointcloud_position].num_points = num_points;
-    xyz_pointcloud_points[last_xyz_pointcloud_position].car_position = car_fused_pose.position;
-    xyz_pointcloud_points[last_xyz_pointcloud_position].timestamp = xyz_pointcloud_message->timestamp;
-
-    rotation_matrix* xyz_pointcloud_to_board_matrix = create_rotation_matrix(xyz_pointcloud_pose.orientation); // PREENCHER xyz_pointcloud_pose
-    rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation); // CHECAR SENSOR_BOARD_1 SE ESTA CORRETO
-
-	int range_max_points = compute_xyz_pointcloud_points(&xyz_pointcloud_points[last_xyz_pointcloud_position], xyz_pointcloud_message,
-			xyz_pointcloud_to_board_matrix, board_to_car_matrix, xyz_pointcloud_pose.position, sensor_board_1_pose.position);
-	xyz_pointcloud_points[last_xyz_pointcloud_position].num_points -= range_max_points;
-
-	destroy_rotation_matrix(xyz_pointcloud_to_board_matrix);
-    destroy_rotation_matrix(board_to_car_matrix);
-
-   add_point_cloud(xyz_pointcloud_drawer, xyz_pointcloud_points[last_xyz_pointcloud_position]);
-
-    last_timestamp = xyz_pointcloud_message->timestamp;
-
-    xyz_pointcloud_last_message_timestamp = carmen_get_time();
 }
 
 static void
@@ -2042,6 +2096,73 @@ velodyne_variable_scan_message_handler0_old(carmen_velodyne_variable_scan_messag
 	last_timestamp = velodyne_message->timestamp;
 }
 
+void
+xyz_pointcloud_message_handler0(carmen_xyz_pointcloud_lidar_message *message)
+{
+	static bool first_time = true;
+	static double last_timestamp = 0.0;
+	static point_cloud *xyz_lidar0_point_cloud_vector = NULL;
+	static int xyz_lidar0_point_cloud_vector_max_size = 0;
+	static int xyz_lidar0_point_cloud_vector_index = 0;
+	static carmen_xyz_lidar_config xyz_lidar0_config;
+	xyz_lidar0_config.id = 0;
+
+	draw_xyz_pointcloud_message(message, xyz_lidar0_drawer, first_time, &xyz_lidar0_point_cloud_vector, xyz_lidar0_point_cloud_vector_max_size,
+			xyz_lidar0_point_cloud_vector_index, xyz_lidar0_config, draw_xyz_lidar0_flag, last_timestamp);
+
+	xyz_lidars_last_message_timestamp[0] = carmen_get_time();
+}
+
+void
+xyz_pointcloud_message_handler1(carmen_xyz_pointcloud_lidar_message *message)
+{
+	static bool first_time = true;
+	static double last_timestamp = 0.0;
+	static point_cloud *xyz_lidar1_point_cloud_vector = NULL;
+	static int xyz_lidar1_point_cloud_vector_max_size = 0;
+	static int xyz_lidar1_point_cloud_vector_index = 0;
+	static carmen_xyz_lidar_config xyz_lidar1_config;
+	xyz_lidar1_config.id = 1;
+
+	draw_xyz_pointcloud_message(message, xyz_lidar1_drawer, first_time, &xyz_lidar1_point_cloud_vector, xyz_lidar1_point_cloud_vector_max_size,
+			xyz_lidar1_point_cloud_vector_index, xyz_lidar1_config, draw_xyz_lidar1_flag, last_timestamp);
+
+	xyz_lidars_last_message_timestamp[1] = carmen_get_time();
+}
+
+void
+xyz_pointcloud_message_handler2(carmen_xyz_pointcloud_lidar_message *message)
+{
+	static bool first_time = true;
+	static double last_timestamp = 0.0;
+	static point_cloud *xyz_lidar2_point_cloud_vector = NULL;
+	static int xyz_lidar2_point_cloud_vector_max_size = 0;
+	static int xyz_lidar2_point_cloud_vector_index = 0;
+	static carmen_xyz_lidar_config xyz_lidar2_config;
+	xyz_lidar2_config.id = 2;
+
+	draw_xyz_pointcloud_message(message, xyz_lidar2_drawer, first_time, &xyz_lidar2_point_cloud_vector, xyz_lidar2_point_cloud_vector_max_size,
+			xyz_lidar2_point_cloud_vector_index, xyz_lidar2_config, draw_xyz_lidar0_flag, last_timestamp);
+
+	xyz_lidars_last_message_timestamp[2] = carmen_get_time();
+}
+
+void
+xyz_pointcloud_message_handler3(carmen_xyz_pointcloud_lidar_message *message)
+{
+	static bool first_time = true;
+	static double last_timestamp = 0.0;
+	static point_cloud *xyz_lidar3_point_cloud_vector = NULL;
+	static int xyz_lidar3_point_cloud_vector_max_size = 0;
+	static int xyz_lidar3_point_cloud_vector_index = 0;
+	static carmen_xyz_lidar_config xyz_lidar3_config;
+	xyz_lidar3_config.id = 3;
+
+	draw_xyz_pointcloud_message(message, xyz_lidar3_drawer, first_time, &xyz_lidar3_point_cloud_vector, xyz_lidar3_point_cloud_vector_max_size,
+			xyz_lidar3_point_cloud_vector_index, xyz_lidar3_config, draw_xyz_lidar3_flag, last_timestamp);
+
+	xyz_lidars_last_message_timestamp[3] = carmen_get_time();
+}
 
 void
 variable_scan_message_handler0(carmen_velodyne_variable_scan_message *message)
@@ -3390,25 +3511,6 @@ draw_timer_handler()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void
-init_xyz_pointcloud(void)
-{
-    xyz_pointcloud_initialized = 0; // Only considered initialized when first message is received
-
-    xyz_pointcloud_points = (point_cloud*) malloc(xyz_pointcloud_size * sizeof (point_cloud));
-
-    int i;
-    for (i = 0; i < xyz_pointcloud_size; i++)
-    {
-        xyz_pointcloud_points[i].points = NULL;
-        xyz_pointcloud_points[i].point_color = NULL;
-        xyz_pointcloud_points[i].num_points = 0;
-        xyz_pointcloud_points[i].timestamp = carmen_get_time();
-    }
-
-    last_xyz_pointcloud_position = 0;
-}
-
-static void
 init_velodyne(void)
 {
     velodyne_initialized = 0; // Only considered initialized when first message is received
@@ -3658,6 +3760,10 @@ init_flags(void)
     draw_lidar13_flag = 1;
     draw_lidar14_flag = 1;
     draw_lidar15_flag = 1;
+    draw_xyz_lidar0_flag  = 1;
+    draw_xyz_lidar1_flag  = 1;
+    draw_xyz_lidar2_flag  = 1;
+    draw_xyz_lidar3_flag  = 1;
     draw_stereo_cloud_flag = 0;
     draw_car_flag = 0;
     draw_rays_flag = 0;
@@ -3732,7 +3838,6 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     car_drawer = createCarDrawer(argc, argv);
     laser_drawer = create_point_cloud_drawer(laser_size);
     ldmrs_drawer = create_point_cloud_drawer(ldmrs_size);
-    xyz_pointcloud_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
     velodyne_drawer = create_point_cloud_drawer(velodyne_size);
     lidar0_drawer = create_point_cloud_drawer(velodyne_size);
     lidar1_drawer = create_point_cloud_drawer(velodyne_size);
@@ -3750,6 +3855,10 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     lidar13_drawer = create_point_cloud_drawer(velodyne_size);
     lidar14_drawer = create_point_cloud_drawer(velodyne_size);
     lidar15_drawer = create_point_cloud_drawer(velodyne_size);
+    xyz_lidar0_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
+    xyz_lidar1_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
+    xyz_lidar2_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
+    xyz_lidar3_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
     v_360_drawer = create_velodyne_360_drawer(velodyne_pose, sensor_board_1_pose);
 
     // *********************************************************************
@@ -3991,13 +4100,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char *) "car", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.pitch), 0, NULL},
             {(char *) "car", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.yaw), 0, NULL},
 
-            {(char *) "xyz_pointcloud", (char *) "x", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.position.x), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "y", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.position.y), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "z", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.position.z), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "roll", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.orientation.roll), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.orientation.pitch), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.orientation.yaw), 1, update_sensos_pose},
-
             {(char *) "velodyne", (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 1, update_sensos_pose},
             {(char *) "velodyne", (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 1, update_sensos_pose},
             {(char *) "velodyne", (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 1, update_sensos_pose},
@@ -4109,13 +4211,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char *) "car", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.pitch), 0, NULL},
             {(char *) "car", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(car_pose.orientation.yaw), 0, NULL},
 
-            {(char *) "xyz_pointcloud", (char *) "x", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.position.x), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "y", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.position.y), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "z", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.position.z), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "roll", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.orientation.roll), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.orientation.pitch), 1, update_sensos_pose},
-            {(char *) "xyz_pointcloud", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(xyz_pointcloud_pose.orientation.yaw), 1, update_sensos_pose},
-
             {(char *) "velodyne", (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 1, update_sensos_pose},
             {(char *) "velodyne", (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 1, update_sensos_pose},
             {(char *) "velodyne", (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 1, update_sensos_pose},
@@ -4167,7 +4262,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
     init_laser();
     init_ldmrs();
     init_velodyne();
-    init_xyz_pointcloud();
     init_gps();
     init_xsens_xyz();
     init_xsens();
@@ -4279,12 +4373,6 @@ destroy_stuff()
         free(velodyne_points[i].point_color);
     }
     free(velodyne_points);
-
-    for (i = 0; i < xyz_pointcloud_size; i++)
-    {
-        free(xyz_pointcloud_points[i].points);
-    }
-    free(xyz_pointcloud_points);
 
     free(odometry_trail);
     free(localize_ackerman_trail);
@@ -4576,6 +4664,10 @@ subscribe_ipc_messages(void)
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler14, CARMEN_SUBSCRIBE_LATEST, 14);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
     
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler1, CARMEN_SUBSCRIBE_LATEST, 0);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler2, CARMEN_SUBSCRIBE_LATEST, 0);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler3, CARMEN_SUBSCRIBE_LATEST, 0);
  
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,
@@ -5026,6 +5118,16 @@ set_flag_viewer_3D(int flag_num, int value)
     	if(value == 15)
     		draw_lidar15_flag = !draw_lidar15_flag;
     	break;
+    // case DRAW_XYZ_LIDAR_FLAG_CODE:
+    // 	if(value == 0)
+    // 		draw_xyz_lidar0_flag = !draw_xyz_lidar0_flag;
+    // 	if(value == 1)
+    // 		draw_xyz_lidar1_flag = !draw_xyz_lidar1_flag;
+    // 	if(value == 2)
+    // 		draw_xyz_lidar2_flag = !draw_xyz_lidar2_flag;
+    // 	if(value == 3)
+    // 		draw_xyz_lidar3_flag = !draw_xyz_lidar3_flag;
+    // 	break;
     case SHOW_PATH_PLANS_FLAG_CODE:
     	show_path_plans_flag = value;
     	break;
