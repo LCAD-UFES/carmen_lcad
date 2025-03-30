@@ -8,6 +8,12 @@ CFLAGS = -fPIC -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -
 #LFLAGS = -lnsl -lwrap
 #endif
 
+ARCH := $(shell uname -m)
+
+ifeq ($(ARCH),aarch64)
+    CFLAGS += -D__arm__
+endif
+
 LFLAGS = -pthread -fPIC
 
 MODULE_NAME = IPC

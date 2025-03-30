@@ -470,7 +470,7 @@ dep depend:
 	$(ECHO) "    ---- Assigning dependencies in "$(MODULE_NAME)
 	$(SILENT) $(TOUCH) Makefile.depend
 	$(SILENT) if test ! "$(SOURCES)x" = x ; then \
-		$(CC) -msse3 -M $(SOURCES) $(IFLAGS) $(filter -D%, $(CFLAGS)) > Makefile.depend ; \
+		$(CC) -M $(SOURCES) $(IFLAGS) $(filter -D%, $(CFLAGS)) > Makefile.depend ; \
 	fi
 	$(SILENT) $(RM) Makefile.depend.bak
 
