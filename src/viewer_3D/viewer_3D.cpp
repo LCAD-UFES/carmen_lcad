@@ -2142,7 +2142,7 @@ xyz_pointcloud_message_handler2(carmen_xyz_pointcloud_lidar_message *message)
 	xyz_lidar2_config.id = 2;
 
 	draw_xyz_pointcloud_message(message, xyz_lidar2_drawer, first_time, &xyz_lidar2_point_cloud_vector, xyz_lidar2_point_cloud_vector_max_size,
-			xyz_lidar2_point_cloud_vector_index, xyz_lidar2_config, draw_xyz_lidar0_flag, last_timestamp);
+			xyz_lidar2_point_cloud_vector_index, xyz_lidar2_config, draw_xyz_lidar2_flag, last_timestamp);
 
 	xyz_lidars_last_message_timestamp[2] = carmen_get_time();
 }
@@ -4665,9 +4665,9 @@ subscribe_ipc_messages(void)
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
     
     carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
-    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler1, CARMEN_SUBSCRIBE_LATEST, 0);
-    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler2, CARMEN_SUBSCRIBE_LATEST, 0);
-    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler3, CARMEN_SUBSCRIBE_LATEST, 0);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler1, CARMEN_SUBSCRIBE_LATEST, 1);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler3, CARMEN_SUBSCRIBE_LATEST, 3);
  
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,
