@@ -9,8 +9,8 @@ extern "C"
 #endif
 
 typedef struct carmen_xyz_pointcloud_lidar_message {
-    carmen_vector_3D_t *points;
     int num_of_points;
+    carmen_vector_3D_t *points;
     double time_spent_by_each_point;
     double timestamp;
     char* host;
@@ -29,7 +29,12 @@ typedef struct
 }carmen_xyz_lidar_config;
 
 #define		CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE_NAME		"carmen_xyz_pointcloud_lidar"
-#define		CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE_FMT			"{<{double, double, double}:1>,int,double,double,string}"
+#define		CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE_FMT			"{int,<{double,double,double}:1>,double,double,string}"
+
+#define      CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE0_NAME       "carmen_xyz_pointcloud_lidar0"
+#define      CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE1_NAME       "carmen_xyz_pointcloud_lidar1"
+#define      CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE2_NAME       "carmen_xyz_pointcloud_lidar2"
+#define      CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE3_NAME       "carmen_xyz_pointcloud_lidar3"
 
 #ifdef __cplusplus
 }

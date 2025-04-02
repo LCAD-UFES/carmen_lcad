@@ -5,7 +5,7 @@
 #include <carmen/stereo_point_cloud_interface.h>
 #include <carmen/rotation_geometry.h>
 #include <carmen/velodyne_interface.h>
-//#include <carmen/xyz_pointcloud_lidar_interface.h>
+#include <carmen/xyz_pointcloud_lidar_interface.h>
 #include <carmen/download_map_interface.h>
 #include <carmen/stereo_velodyne_interface.h>
 #include <prob_map.h>
@@ -589,7 +589,7 @@ alloc_lidar_point_cloud_vector()
     return (lidar_point_cloud);
 }
 
-/*
+
 int
 convert_xyz_pointcloud_message_to_point_cloud(point_cloud *xyz_pointcloud_points, carmen_xyz_pointcloud_lidar_message *xyz_pointcloud_message, carmen_xyz_lidar_config xyz_lidar_config,
 		rotation_matrix *xyz_lidar_to_board_matrix, rotation_matrix *board_to_car_matrix, 
@@ -630,7 +630,7 @@ convert_xyz_pointcloud_message_to_point_cloud(point_cloud *xyz_pointcloud_points
 
 	return (discarded_points);
 }
-*/
+
 
 int
 convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_velodyne_variable_scan_message *lidar_message, carmen_lidar_config lidar_config,
@@ -691,7 +691,7 @@ clear_lidar_point_cloud_vector_drawer(point_cloud_drawer *drawer, point_cloud **
     }
 }
 
-/*
+
 void
 draw_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message, point_cloud_drawer *drawer, bool &first_time,
 		point_cloud **xyz_lidar_point_cloud_vector, int &xyz_lidar_point_cloud_vector_max_size, int &xyz_lidar_point_cloud_vector_index,
@@ -772,7 +772,7 @@ draw_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message, point_
 
     last_timestamp = message->timestamp;
 }
-*/
+
 
 void
 draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point_cloud_drawer *drawer, bool &first_time,
@@ -2098,7 +2098,7 @@ velodyne_variable_scan_message_handler0_old(carmen_velodyne_variable_scan_messag
 	last_timestamp = velodyne_message->timestamp;
 }
 
-/*
+
 void
 xyz_pointcloud_message_handler0(carmen_xyz_pointcloud_lidar_message *message)
 {
@@ -2145,7 +2145,7 @@ xyz_pointcloud_message_handler2(carmen_xyz_pointcloud_lidar_message *message)
 	xyz_lidar2_config.id = 2;
 
 	draw_xyz_pointcloud_message(message, xyz_lidar2_drawer, first_time, &xyz_lidar2_point_cloud_vector, xyz_lidar2_point_cloud_vector_max_size,
-			xyz_lidar2_point_cloud_vector_index, xyz_lidar2_config, draw_xyz_lidar0_flag, last_timestamp);
+			xyz_lidar2_point_cloud_vector_index, xyz_lidar2_config, draw_xyz_lidar2_flag, last_timestamp);
 
 	xyz_lidars_last_message_timestamp[2] = carmen_get_time();
 }
@@ -2166,7 +2166,7 @@ xyz_pointcloud_message_handler3(carmen_xyz_pointcloud_lidar_message *message)
 
 	xyz_lidars_last_message_timestamp[3] = carmen_get_time();
 }
-*/
+
 
 
 void
@@ -3860,12 +3860,12 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     lidar13_drawer = create_point_cloud_drawer(velodyne_size);
     lidar14_drawer = create_point_cloud_drawer(velodyne_size);
     lidar15_drawer = create_point_cloud_drawer(velodyne_size);
-/*    xyz_lidar0_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
+    xyz_lidar0_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
     xyz_lidar1_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
     xyz_lidar2_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
     xyz_lidar3_drawer = create_point_cloud_drawer(xyz_pointcloud_size);
     v_360_drawer = create_velodyne_360_drawer(velodyne_pose, sensor_board_1_pose);
-*/
+
     // *********************************************************************
     // TODO: pegar a pose do variable_velodyne do param_daemon e usar na funcao abaixo. Do jeito que esta sempre que o stereo_velodyne eh chamado da seg fault
     // *********************************************************************
@@ -4669,12 +4669,10 @@ subscribe_ipc_messages(void)
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler14, CARMEN_SUBSCRIBE_LATEST, 14);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
     
-/*
-    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
-    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler1, CARMEN_SUBSCRIBE_LATEST, 0);
-    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler2, CARMEN_SUBSCRIBE_LATEST, 0);
-    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler3, CARMEN_SUBSCRIBE_LATEST, 0);
-*/ 
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler1, CARMEN_SUBSCRIBE_LATEST, 1);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
+    carmen_subscribe_xyz_pointcloud_message(NULL, (carmen_handler_t) xyz_pointcloud_message_handler3, CARMEN_SUBSCRIBE_LATEST, 3);
+ 
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,
                                           CARMEN_SUBSCRIBE_LATEST);

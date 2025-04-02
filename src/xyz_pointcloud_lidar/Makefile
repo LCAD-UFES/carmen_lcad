@@ -23,6 +23,6 @@ PUBLIC_LIBRARIES = libxyz_pointcloud_lidar_interface.a
 
 libxyz_pointcloud_lidar_interface.a: xyz_pointcloud_lidar_interface.o
 
-xyz_pointcloud_lidar: xyz_pointcloud_lidar.o  xyz_pointcloud_lidar_interface.o
+xyz_pointcloud_lidar: xyz_pointcloud_lidar.o xyz_pointcloud_lidar_interface.o
 
 include ../Makefile.rules

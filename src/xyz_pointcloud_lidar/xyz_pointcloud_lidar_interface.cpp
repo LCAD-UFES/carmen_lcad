@@ -11,6 +11,19 @@ carmen_xyz_pointcloud_lidar_create_variable_xyz_pointcloud_message_name(int sens
 		sprintf(message_name, "%s%d", CARMEN_XYZ_POINTCLOUD_LIDAR_MESSAGE_NAME, sensor_id);
 }
 
+IPC_RETURN_TYPE
+carmen_xyz_pointcloud_lidar_publish_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message, int sensor_id)
+{
+	IPC_RETURN_TYPE err;
+
+	static char message_name[64];
+	carmen_xyz_pointcloud_lidar_create_variable_xyz_pointcloud_message_name(sensor_id, message_name);
+	err = IPC_publishData(message_name, message);
+	carmen_test_ipc_exit(err, "Could not publish", message_name);
+
+	return err;
+}
+
 void
 carmen_subscribe_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message,
 										 carmen_handler_t handler,
