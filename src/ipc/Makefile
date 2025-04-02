@@ -1,20 +1,17 @@
 include ../Makefile.conf
 
+ARCH := $(shell uname -m)
+ifneq ($(ARCH),aarch64)
+
 #CFLAGS = -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 -g
-CFLAGS = -fPIC -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 
+CFLAGS = -g -fPIC -Wall -Wstrict-prototypes -Wnested-externs -Wmissing-prototypes -Wmissing-declarations -DREDHAT_52 -DREDHAT_6 -DREDHAT_71 
 
 #ifndef NO_TCPD
 #CFLAGS += -DACCESS_CONTROL
 #LFLAGS = -lnsl -lwrap
 #endif
 
-ARCH := $(shell uname -m)
-
-ifeq ($(ARCH),aarch64)
-    CFLAGS += -D__arm__
-endif
-
-LFLAGS = -pthread -fPIC
+LFLAGS = -g -pthread -fPIC
 
 MODULE_NAME = IPC
 MODULE_COMMENT = Flexible communications package written by Reid Simmons
@@ -58,6 +55,8 @@ test_receive: test_receive.o libipc.a
 ipc-endian-test: ipc-endian-test.o libipc.a
 
 ipc-die-test: ipc-die-test.o libipc.a
+
+endif
 
 include ../Makefile.rules
 

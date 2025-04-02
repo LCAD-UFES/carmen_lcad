@@ -611,6 +611,9 @@ typedef enum
 #define ALIGN ALIGN_LONGEST
 #elif defined(__arm__)   /* added by Cyrill Stachniss for Stayton Boards (Intel XScale)  */
 #define ALIGN ALIGN_INT
+#elif defined(__aarch64__) || defined(__ARM64EB__) || defined(__ARM64EL__)
+#define ALIGN ALIGN_LONGEST
+//#define EASY_STRUCTURE_COPY 1
 /* Note, the next line is only valid for gcc, but will only be evaluated 
  * if the machine type is unknown.
  */
@@ -710,7 +713,6 @@ typedef enum {
 
 #define WORD_SIZE 4
 #define WORD_SIZEP(x) (((int32)(x) & (WORD_SIZE-1)) == 0)
-
 
 #define shortToBytes(s,shortBytes) \
 {\
@@ -1285,7 +1287,7 @@ else \
 #define INT_TO_NET_INT(i) { i = htonl(i);}
 #define NET_INT_TO_INT(i) { i = ntohl(i);}
 #endif
-
+
 /****************************************************************
  *                Stuff Needed For "Enum"
  ****************************************************************/
@@ -1308,7 +1310,7 @@ typedef enum { IntEnum0=0, IntEnumLast=MAX_INT} IntEnum;
 
 extern int32 x_ipc_enumToInt (CONST_FORMAT_PTR format,
 			CONST_GENERIC_DATA_PTR dataStruct, int32 *DStart);
-
+
 typedef int32 (* TRANSLATE_FN_ENCODE)(CONST_GENERIC_DATA_PTR, int32,
 				    char *, int32);
 typedef int32 (* TRANSLATE_FN_DECODE)(GENERIC_DATA_PTR, int32, char *, int32,

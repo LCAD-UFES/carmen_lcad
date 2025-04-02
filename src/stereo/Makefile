@@ -34,11 +34,11 @@ CFLAGS += -O3 -fopenmp
 CXXFLAGS += -O3 -fopenmp
 
 SOURCES = stereo_main.cpp  stereo_interface.c \
-stereo_util.c test_bias_reduction.cpp test_bias_reduction_with_check_board.cpp stereo_test.cpp
+stereo_util.c test_bias_reduction.cpp test_bias_reduction_with_check_board.cpp # stereo_test.cpp
 PUBLIC_INCLUDES = stereo_interface.h stereo_messages.h stereo_util.h
 PUBLIC_LIBRARIES = libstereo_interface.a 
 PUBLIC_BINARIES = simple_stereo
-TARGETS = libelas.a libstereovgram.a libstereo.a libstereo_interface.a simple_stereo stereo_test 
+TARGETS = libelas.a libstereovgram.a libstereo.a libstereo_interface.a simple_stereo # stereo_test 
 PUBLIC_LIBRARIES_SO = libbstereo_interface.so
 ifndef NO_PYTHON
 TARGETS += libstereo_interface.so.1
@@ -53,8 +53,8 @@ PUBLIC_BINARIES += stereo_view test_bias_reduction
 TARGETS += stereo_view test_bias_reduction test_bias_reduction_with_check_board 
 endif
 
-libelas.a:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libelas
+#libelas.a:
+#	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libelas
 
 libstereo.a:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libstereo
@@ -68,7 +68,7 @@ libstereo_interface.so.1:	stereo_interface.o
 
 simple_stereo:			stereo_main.o libstereo_interface.a
 
-stereo_test: 			stereo_test.o
+# stereo_test: 			stereo_test.o
 
 stereo_view:			stereo_view.o libstereo_interface.a
 

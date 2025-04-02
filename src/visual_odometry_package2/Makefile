@@ -3,6 +3,9 @@ include ../Makefile.conf
 MODULE_NAME = VISUAL_ODOMETRY_2
 MODULE_COMMENT = Visual Odometry Package
 
+ARCH := $(shell uname -m)
+ifneq ($(ARCH),aarch64)
+
 LINK = g++
 CXXFLAGS += -Wall -msse3 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
@@ -21,7 +24,9 @@ PUBLIC_LIBRARIES = libvisual_odometry_interface.a
 PUBLIC_BINARIES = visual_odometry2
 PUBLIC_LIBRARIES_SO = libvisual_odometry_interface.so
 
+ifneq ($(PROCESSOR),aarch64)
 TARGETS = libviso visual_odometry2 libvisual_odometry_interface.a
+endif
 
 ifndef NO_PYTHON
 TARGETS += libvisual_odometry_interface.so.1
@@ -43,12 +48,17 @@ libvisual_odometry_interface.a:	visual_odometry_interface.o
 
 libvisual_odometry_interface.so.1:	visual_odometry_interface.o
 
+ifneq ($(PROCESSOR),aarch64)
 libviso:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libviso2.3/src
+endif
 
 clean: clean_libviso
 
 clean_libviso:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libviso2.3/src
 # rules
+endif
+
 include ../Makefile.rules
+

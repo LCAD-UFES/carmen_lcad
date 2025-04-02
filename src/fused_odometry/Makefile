@@ -4,7 +4,7 @@ MODULE_NAME = FUSED ODOMETRY
 MODULE_COMMENT = This module implements a particle filter that uses IMU, GPS, and odometry data to produce a fused pose.
 
 LINK = g++
-CXXFLAGS += -Wall -msse3 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+CXXFLAGS += -Wall -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11

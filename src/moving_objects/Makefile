@@ -28,7 +28,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/u
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
 CFLAGS += -Wall -fopenmp
-CFLAGS += -w -msse3
+CFLAGS += -w # -msse3
 
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11

@@ -22,7 +22,11 @@ LFLAGS        =
 
 IFLAGS =
 
+ifneq ($(PROCESSOR),aarch64)
 QMAKE         = /usr/lib/x86_64-linux-gnu/qt5/bin/qmake
+else
+QMAKE         = /usr/local/qt4.8.7/bin/qmake
+endif
 
 SOURCES       =
 
@@ -32,7 +36,9 @@ PUBLIC_LIBRARIES =
 
 PUBLIC_BINARIES = imu_viewer 
 
+ifneq ($(PROCESSOR),aarch64)
 TARGETS = imu_viewer
+endif
 
 # Este modulo eh compilado pelo qmake. Veja o arquivo mpu9250-opengl.pro
 imu_viewer: *.cpp

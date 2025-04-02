@@ -18,7 +18,7 @@
 
 #include <vg_ram.h>
 
-#include "elas.h"
+//#include "elas.h"
 
 static int max_disparity_rescale;
 static double lambda = 1024;
@@ -318,7 +318,7 @@ compute_depth_map(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 	 cvSmooth(image_left_copy, image_left_copy, CV_GAUSSIAN, 11, 0, 0, 0);
 
 	 copy_opencv_image_to_raw_image(image_left_copy, stereo_image->raw_left, 3);
-	 copy_raw_image_to_opencv_image(stereo_image->raw_right, image_right_copy, 3);
+	 copy_raw_image_to_opencv_image(stereo_imastereo_main.cppge->raw_right, image_right_copy, 3);
 
 	 cvSmooth(image_right_copy, image_right_copy, CV_GAUSSIAN, 11, 0, 0, 0);
 
@@ -338,7 +338,7 @@ compute_depth_map(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 			disparityCSBP(left_roi_image, right_roi_image, ROI_height, ROI_width, max_disparity, raw_disparity_rescale);
 			convert_disparity_from_raw_image_to_float(raw_disparity_rescale, disparity_message.disparity);
 			break;
-		case 'E':
+/*		case 'E':
 			rgb_to_gray(left_roi_image, gray_left_roi, ROI_width, ROI_height);
 			rgb_to_gray(right_roi_image, gray_right_roi, ROI_width, ROI_height);
 
@@ -368,7 +368,7 @@ compute_depth_map(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 				}
 			}
 			break;
-	}
+*/	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

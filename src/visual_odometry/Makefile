@@ -4,7 +4,7 @@ MODULE_NAME = VISUAL_ODOMETRY
 MODULE_COMMENT = Visual Odometry Package
 
 LINK = g++
-CXXFLAGS += -Wall -msse3
+CXXFLAGS += -Wall # -msse3
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -L$(CARMEN_HOME)/sharedlib/libtf/src
@@ -43,8 +43,8 @@ libvisual_odometry_interface.a:	visual_odometry_interface.o
 
 libvisual_odometry_interface.so.1:	visual_odometry_interface.o
 
-libviso:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libviso2.3/src
+#libviso:
+#	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libviso2.3/src
 
 clean: clean_libviso
 
