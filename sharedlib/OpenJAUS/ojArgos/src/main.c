@@ -413,8 +413,12 @@ void update_wheels_speed(struct can_frame frame)
 
 void update_car_speed(struct can_frame frame)
 {
-	short int int_vel = frame.data[1] << 8 | frame.data[0];
-	car_speed = (double) int_vel * VELOCITY_CONVERSION_CONSTANT;
+//	short int int_vel = frame.data[1] << 8 | frame.data[0];
+//	car_speed = (double) int_vel * VELOCITY_CONVERSION_CONSTANT;
+
+	float ft_car_speed = 0.0;
+	memcpy(&ft_car_speed, &frame.data[0], sizeof(float));
+	car_speed = (double) ft_car_speed;
 }
 
 
@@ -439,11 +443,14 @@ void update_steering_angle(struct can_frame frame)
 //	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
 
 	//double v = car_speed;
-	short int curvature_can = frame.data[1] << 8 | frame.data[0];
-	double curvature = ((double) curvature_can) / 1000.0;
-	fflush(stdout);
-	//double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
-	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
+//	short int curvature_can = frame.data[1] << 8 | frame.data[0];
+//	double curvature = ((double) curvature_can) / 1000.0;
+//	fflush(stdout);
+//	//double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
+//	steering_angle = atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
+	float ft_steering_angle = 0.0;
+	memcpy(&ft_steering_angle, &frame.data[0], sizeof(float));
+	steering_angle = (double) ft_steering_angle;
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)
