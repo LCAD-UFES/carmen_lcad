@@ -38,7 +38,7 @@
 #endif
 
 #define DESOUZA_GUIDOLINI_CONSTANT 					0.0022
-#define robot_distance_between_front_and_rear_axles	(0.400 / 2.0)  //(0.39 / 2.0)
+#define robot_distance_between_front_and_rear_axles	0.35
 #define robot_understeer_coeficient					0.0015
 
 #define FRONT_RIGHT	0
@@ -436,21 +436,12 @@ double wheel_speed_moving_average(double *wheel_speed)
 
 void update_steering_angle(struct can_frame frame)
 {
-//	steering_angle_sensor = frame.data[1] << 8 | frame.data[0];
-//	double phi = -MAX_ANGLE + steering_angle_sensor * ANGLE_CONVERSION_CONSTANT - STEERING_ANGLE_BIAS;
-//	double v = car_speed;
-//	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
-//	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
+	float phi;
 
-	//double v = car_speed;
-//	short int curvature_can = frame.data[1] << 8 | frame.data[0];
-//	double curvature = ((double) curvature_can) / 1000.0;
-//	fflush(stdout);
-//	//double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
-//	steering_angle = atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
-	float ft_atan_of_curvature = 0.0;
-	memcpy(&ft_atan_of_curvature, &frame.data[0], sizeof(float));
-	steering_angle = (double) (ft_atan_of_curvature);
+	memcpy(&phi, &frame.data[0], sizeof(float));
+	double v = car_speed;
+	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
+	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)
