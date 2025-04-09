@@ -17,11 +17,7 @@ set ylabel "Valores"
 set grid
 set key left top
 
-plot \
-    "results_odometry.txt" using ($7 - k):3 with lines title "Ford v", \
-    "results_ros_odometry.txt" using ($7 - k):3 with lines title "ROS v", \
-    "results_odometry.txt" using ($7 - k):5 with lines title "Ford phi", \
-    "results_ros_odometry.txt" using ($7 - k):5 with lines title "ROS phi"
+plot "results_odometry.txt" using ($7 - k):5 with lines title "Ford phi", "results_ros_odometry.txt" using ($9 - k):5 with lines title "ROS phi", "results_ros_odometry.txt" using ($9 - k):7 with lines title "ROS global_phi", "results_odometry.txt" using ($7 - k):3 with lines title "Ford v", "results_ros_odometry.txt" using ($9 - k):3 with lines title "ROS v"
 
 
 

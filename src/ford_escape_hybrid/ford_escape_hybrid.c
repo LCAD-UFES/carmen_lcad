@@ -992,7 +992,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		double seconds = (tv.tv_sec) + (tv.tv_usec / 1000000.0);
-		printf("ODOMETRY v %lf, atan_curvature %lf, timestamp %lf\n", ford_escape_hybrid_config->filtered_v, g_XGV_atan_curvature, seconds);
+		printf("ODOMETRY v %lf, atan_curvature %lf, timestamp %lf\n", ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, seconds);
 
 		//////////////////////////////////////////  PRINTS VALUES TO FILE TO VERIFICATIONS  //////////////////////////////////////////
 		//	fprintf(stdout, "(cc dc s v t) %lf %lf %lf %lf %lf\n", -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)), g_atan_desired_curvature, g_steering_command, ford_escape_hybrid_config->filtered_v, carmen_get_time());
