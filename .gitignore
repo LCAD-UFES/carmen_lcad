@@ -1,5 +1,3 @@
-bin/camera_drivers
-bin/camera_viewer
 bin/frenet_path_planner
 bin/offroad_planner
 bin/route_planner
