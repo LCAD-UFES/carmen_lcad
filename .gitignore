@@ -207,8 +207,6 @@ bin/realsense_camera_main
 bin/minorucalib
 #bin/ouster
 bin/ouster_viewer
-bin/camera_drivers
-bin/camera_viewer
 bin/frenet_path_planner
 bin/offroad_planner
 bin/route_planner
