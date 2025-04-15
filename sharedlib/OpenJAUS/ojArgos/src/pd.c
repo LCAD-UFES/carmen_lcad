@@ -94,7 +94,7 @@ double wheel_speed_moving_average(double *wheel_speed);
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
-	return;
+	// return;
 
 	struct can_frame frame;
 
