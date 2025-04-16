@@ -31,6 +31,7 @@ using namespace cv;
 
 typedef enum
 {
+    udp_rtp_h264,
     ip_opencv,
     ip_ffmpeg,
     usb_opencv
@@ -60,6 +61,9 @@ typedef struct tAv_ffmpeg
 } av_ffmpeg;
 
 void setup_image_struct(int width, int height, int number_of_channels, int data_type, camera_image *image);
+
+unsigned char*
+get_image_udp_rtp(cv::VideoCapture& cap, char* ip_address, char* port, char* network_interface, int &width, int &height);
 
 unsigned char*
 get_image_ip_camera_with_opencv(char* ip_address, int undistort, char* camera_name, int &width, int &height);

@@ -5,6 +5,8 @@
 // FFmpeg library
 av_ffmpeg *av_ffmpeg_params;
 
+cv::VideoCapture cap;
+
 void
 check_parameters(int argc, char **argv)
 {
@@ -150,6 +152,8 @@ shutdown_module(int signo)
 int
 find_camera_model(char *smodel)
 {
+	if (strcmp(smodel, "udp_rtp_h264") == 0)
+		return (udp_rtp_h264);
 	if (strncmp(smodel, "vip", 3) == 0)
 		return (ip_opencv);
 	if (strcmp(smodel, "ip_ffmpeg") == 0)
@@ -162,9 +166,9 @@ find_camera_model(char *smodel)
 
 void
 read_parameters(int argc, char **argv, int &camera_id, char **camera_name, char **camera_model, 
-	int &number_of_images, double &frame_rate, int &undistort, char **ip_address, double &resize_factor)
+	int &number_of_images, double &frame_rate, int &undistort, char **ip_address, char **port, char **network_interface, double &resize_factor)
 {
-	char *camera_name_, *camera_model_, *ip_address_;
+	char *camera_name_, *camera_model_, *ip_address_, *port_, *network_interface_;
 	camera_name_ = argv[1];
 	camera_id = atoi(argv[2]);
 
@@ -190,6 +194,25 @@ read_parameters(int argc, char **argv, int &camera_id, char **camera_name, char 
 
 		*ip_address = (char*) malloc((strlen(ip_address_)+1)*sizeof(char));
 		strcpy(*ip_address, ip_address_);
+	}
+	else if (strcmp(camera_model_, "udp_rtp_h264") == 0) 
+	{
+		carmen_param_t param_list_[] = 
+		{
+			{camera_name_, (char*)"ip_adress", 	 	   CARMEN_PARAM_STRING, &ip_address_,        0, NULL},
+			{camera_name_, (char*)"port", 	           CARMEN_PARAM_STRING, &port_,              0, NULL},
+			{camera_name_, (char*)"network_interface", CARMEN_PARAM_STRING, &network_interface_, 0, NULL},
+		};
+		carmen_param_install_params(argc, argv, param_list_, sizeof(param_list_)/sizeof(param_list_[0]));
+
+		*ip_address = (char*) malloc((strlen(ip_address_)+1)*sizeof(char));
+		strcpy(*ip_address, ip_address_);
+
+		*port = (char*) malloc((strlen(port_)+1)*sizeof(char));
+		strcpy(*port, port_);
+
+		*network_interface = (char*) malloc((strlen(network_interface_)+1)*sizeof(char));
+		strcpy(*network_interface, network_interface_);
 	}
 
 	*camera_name = (char*) malloc((strlen(camera_name_)+1)*sizeof(char));
@@ -217,7 +240,7 @@ int
 main(int argc, char **argv)
 {
 	unsigned char *raw = NULL;
-	char *camera_model, *ip_address, *camera_name = NULL;
+	char *camera_model, *ip_address, *port, *network_interface, *camera_name = NULL;
 	camera_message message;
 	int camera_id, number_of_images, model, width, height, image_index = 0, undistort = 1;
 	static int first_time = 1;
@@ -232,7 +255,7 @@ main(int argc, char **argv)
 	signal(SIGINT, shutdown_module);
 
 	read_parameters(argc, argv, camera_id, &camera_name, &camera_model, 
-		number_of_images, frame_rate, undistort, &ip_address, resize_factor);
+		number_of_images, frame_rate, undistort, &ip_address, &port, &network_interface, resize_factor);
 	setup_message(&message, number_of_images);
 
 	time_slot = (1 / frame_rate) * 0.9;
@@ -243,6 +266,10 @@ main(int argc, char **argv)
 	{
 		switch (model)
 		{
+		case udp_rtp_h264:
+			raw = get_image_udp_rtp(cap, ip_address, port, network_interface, width, height);
+			break;
+
 		case ip_opencv:
 			raw = get_image_ip_camera_with_opencv(ip_address, undistort, camera_name, width, height);
 			break;
@@ -279,6 +306,7 @@ main(int argc, char **argv)
 
 			message.images[image_index].width = image.cols;
 			message.images[image_index].height = image.rows;
+			raw = image.data;		
 		}
 
 		message.images[image_index].raw_data = raw;

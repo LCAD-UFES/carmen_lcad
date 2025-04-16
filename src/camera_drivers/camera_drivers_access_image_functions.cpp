@@ -246,6 +246,60 @@ open_video_stream(char *infile)
 	return (vcap);
 }
 
+void initialize_udp_h264(cv::VideoCapture& cap, std::string& pipeline, char* ip_address, char* port, char* network_interface)
+{
+    std::ostringstream pipeline_stream;
+    pipeline_stream
+        << "udpsrc address=" << ip_address
+        << " port=" << port
+        << " multicast-iface=" << network_interface << " "
+        << "! application/x-rtp, media=video, encoding-name=H264 "
+        << "! rtph264depay "
+        << "! h264parse "
+        << "! avdec_h264 "
+        << "! videoconvert "
+        << "! appsink";
+
+    pipeline = pipeline_stream.str();
+
+    cap = cv::VideoCapture(pipeline, cv::CAP_GSTREAMER);
+}
+
+bool reconnect(cv::VideoCapture& cap, const std::string& pipeline, int max_retries = 10) {
+    for (int i = 0; i < max_retries; ++i) {
+        std::cout << "Tentando reconectar... tentativa " << (i + 1) << std::endl;
+        cap.open(pipeline, cv::CAP_GSTREAMER);
+        if (cap.isOpened()) {
+            std::cout << "Reconexão bem-sucedida!" << std::endl;
+            return true;
+        }
+    }
+    std::cerr << "Falha ao reconectar após " << max_retries << " tentativas." << std::endl;
+    return false;
+}
+
+unsigned char*
+get_image_udp_rtp(cv::VideoCapture& cap, char* ip_address, char* port, char* network_interface, int &width, int &height)
+{
+	unsigned char* raw;
+    cv::Mat frame;
+    std::string pipeline;
+
+    if (!cap.isOpened()) 
+    {
+        initialize_udp_h264(cap, pipeline, ip_address, port, network_interface);
+    }
+    if (!cap.read(frame) || frame.empty()) {
+        std::cerr << "Perda de conexão." << std::endl;
+        cap.release();
+        reconnect(cap, pipeline);
+    }
+    width = frame.cols;
+    height = frame.rows;
+    raw = frame.data;
+
+	return raw;
+}
 
 unsigned char*
 get_image_usb_camera_with_opencv(char* camera_model, int undistort, char* camera_name, int &width, int &height)
