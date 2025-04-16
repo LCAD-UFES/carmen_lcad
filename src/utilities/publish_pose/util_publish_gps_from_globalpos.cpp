@@ -5,6 +5,8 @@
 
 
 double UtmZone = 24;
+
+// Se UtmHemiN = 1, hemisfério é norte, caso contrário é sul
 int UtmHemiN = 0;
 carmen_vector_3D_t gps_position;
 
@@ -152,6 +154,7 @@ read_parameters(int argc, char **argv)
 
 	int num_items;
 
+	// TODO: usar esses valores para levar globalpos para posição do gps no veículo
 	carmen_param_t param_list[] =
 	{
         {(char *)"gps",	(char *)"nmea_1_x", CARMEN_PARAM_DOUBLE, &gps_position.x, 1, NULL},
