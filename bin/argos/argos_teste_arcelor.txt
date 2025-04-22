@@ -6,8 +6,19 @@ x,y,theta MEDIDOS
 1006.97 997.07 -1.531 -> porta
 1009.66 995.09 0.018 -> corredor perto da porta do LCAD4
 1019.94 995.04 0.069 -> início da porta hcs
-1022.48 995.00 -0.029  -> final portal hcs
+1022.48 995.00 -0.029 -> final portal hcs
 1026.75 994.83 -0.013 -> interface corredor saguão
+
+x,y REAIS*
+999.99 1000.42 -> pose inicial (997.12 1003.68 + 2.87 -3.26)
+1007.76 1000.13 -> argos foi tomar café (1007.76 997.28 + 0.0 2.85)
+1006.81 997.12 -> porta (1007.64 997.12 + -0.83 0.00)
+1009.68 995.30 -> corredor perto da porta do LCAD4 (1009.68 994.12 + 0.00 1.18)
+1019.96 995.13 -> início da porta hcs (1019.96 993.96 + 0.00 1.17)
+1022.44 995.12 -> final portal hcs (1022.44 993.96 + 0.00 1.16)
+1026.76 994.97 -> interface corredor saguão (1026.76 993.80 + 0.0 1.17)
+
+RESULTADO : RMSE = 0.1421
 
 ## OLD TESTE
 # Valores de posição global dos pontos para o teste da arcelor:
