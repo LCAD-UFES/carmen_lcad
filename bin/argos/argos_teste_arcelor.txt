@@ -1,3 +1,15 @@
+## NOVO TESTE
+
+x,y,theta MEDIDOS
+999.86 1000.45 -0.030 -> pose inicial
+1007.68 1000.11 0.096 -> argos foi tomar café
+1006.97 997.07 -1.531 -> porta
+1009.66 995.09 0.018 -> corredor perto da porta do LCAD4
+1019.94 995.04 0.069 -> início da porta hcs
+1022.48 995.00 -0.029  -> final portal hcs
+1026.75 994.83 -0.013 -> interface corredor saguão
+
+## OLD TESTE
 # Valores de posição global dos pontos para o teste da arcelor:
 x,y,theta
 1000.82, 1000.26, -0.027
