@@ -3911,6 +3911,10 @@ destroy_drawers()
     destroy_point_cloud_drawer(lidar13_drawer);
     destroy_point_cloud_drawer(lidar14_drawer);
     destroy_point_cloud_drawer(lidar15_drawer);
+    destroy_point_cloud_drawer(xyz_lidar0_drawer);
+    destroy_point_cloud_drawer(xyz_lidar1_drawer);
+    destroy_point_cloud_drawer(xyz_lidar2_drawer);
+    destroy_point_cloud_drawer(xyz_lidar3_drawer);
     destroy_velodyne_360_drawer(v_360_drawer);
     //destroy_variable_velodyne_drawer(var_v_drawer);
     destroy_interface_drawer(i_drawer);
