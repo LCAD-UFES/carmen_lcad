@@ -3987,7 +3987,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
             {(char *) "viewer_3D", (char *) "laser_size", CARMEN_PARAM_INT, &laser_size, 0, NULL},
             {(char *) "viewer_3D", (char *) "ldmrs_size", CARMEN_PARAM_INT, &ldmrs_size, 0, NULL},
 			{(char *) "viewer_3D", (char *) "ldmrs_min_velocity", CARMEN_PARAM_DOUBLE, &ldmrs_min_velocity, 0, NULL},
-            {(char *) "viewer_3D", (char *) "xyz_pointcloud_size", CARMEN_PARAM_INT, &xyz_pointcloud_size, 0, NULL}, 
             {(char *) "viewer_3D", (char *) "velodyne_size", CARMEN_PARAM_INT, &velodyne_size, 0, NULL},
             {(char *) "viewer_3D", (char *) "odometry_size", CARMEN_PARAM_INT, &odometry_size, 0, NULL},
             {(char *) "viewer_3D", (char *) "gps_size", CARMEN_PARAM_INT, &gps_size, 0, NULL},
@@ -4158,7 +4157,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
     {
         carmen_param_t param_list[] = {
             {(char *) "viewer_3D", (char *) "laser_size", CARMEN_PARAM_INT, &laser_size, 0, NULL},
-            {(char *) "viewer_3D", (char *) "xyz_pointcloud_size", CARMEN_PARAM_INT, &xyz_pointcloud_size, 0, NULL}, 
             {(char *) "viewer_3D", (char *) "velodyne_size", CARMEN_PARAM_INT, &velodyne_size, 0, NULL}, 
             {(char *) "viewer_3D", (char *) "odometry_size", CARMEN_PARAM_INT, &odometry_size, 0, NULL},
             {(char *) "viewer_3D", (char *) "gps_size", CARMEN_PARAM_INT, &gps_size, 0, NULL},
@@ -4330,6 +4328,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	carmen_param_t optional_param_list[] =
 	{
 			{(char *) "viewer_3D", (char *) "map_mode", CARMEN_PARAM_INT, &map_mode, 0, NULL},
+            {(char *) "viewer_3D", (char *) "xyz_pointcloud_size", CARMEN_PARAM_INT, &xyz_pointcloud_size, 0, NULL}, 
 	};
 
 	num_items = sizeof(optional_param_list) / sizeof(optional_param_list[0]);
