@@ -85,9 +85,9 @@ direct_v_and_phi_joystick_mode(double *command_v, double *command_phi)
 	//else	// para tras (v < 0.0)
 	//	*command_v = *command_v + 0.3 * ((non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse) - *command_v);
 	if (joystick.axes[4] <= 0)	// para frente (v >= 0.0)
-		*command_v = *command_v + 0.1 * ((non_linear_range(-((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_config.max_v) - *command_v);
+		*command_v = *command_v + 0.2 * ((non_linear_range(-((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_config.max_v) - *command_v);
 	else	// para tras (v < 0.0)
-		*command_v = *command_v + 0.1 * ((non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse) - *command_v);
+		*command_v = *command_v + 0.2 * ((non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse) - *command_v);
 	*command_v = carmen_clamp(robot_max_velocity_reverse, *command_v, robot_config.max_v);
 
 	if (*command_v >= -0.001)
@@ -108,7 +108,7 @@ direct_v_and_phi_joystick_mode(double *command_v, double *command_phi)
 	if (joystick.axes[0] <= 0)	// para frente (v >= 0.0)
 		*command_phi = -(((double) joystick.axes[0]) / MAX_AXIS) * robot_config.max_phi;
 	else	// para tras (v < 0.0)
-		*command_phi = -(((double) joystick.axes[0] *0.5 ) / MAX_AXIS) * robot_config.max_phi;
+		*command_phi = -(((double) joystick.axes[0]) / MAX_AXIS) * robot_config.max_phi;
 	// if (joystick.axes[0] <= 0)	// para frente (v >= 0.0)
 	// 	*command_phi = *command_phi + 0.06 * ((non_linear_range(-((double) joystick.axes[0] / MAX_AXIS), PHI_NON_LINEARITY) * robot_config.max_phi) - *command_phi);
 	// else	// para tras (v < 0.0)
@@ -217,7 +217,7 @@ default_joystick_mode(double *command_v, double *command_phi)
 			*command_phi = 0.0;
 			publish_base_velocity_command(0.0, 0.0);
 		}
-		carmen_ipc_sleep(0.3);
+		carmen_ipc_sleep(0.1);
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -293,6 +293,8 @@ read_parameters(int argc, char **argv)
 			{(char *) "commandline", (char *) "show_state", CARMEN_PARAM_ONOFF, &show_state, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+
+	robot_config.max_phi *= 2.0;
 }
 
 
@@ -318,7 +320,7 @@ main(int argc, char **argv)
 
 	while (1)
 	{
-		carmen_ipc_sleep(0.1);
+		carmen_ipc_sleep(0.05);
 
 		carmen_get_joystick_state(&joystick);
 		if (show_state)
