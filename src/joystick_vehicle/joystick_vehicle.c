@@ -17,7 +17,11 @@ carmen_behavior_selector_state_message behavior_selector_state_message;
 
 static int direct_v_and_phi_mode = 0;
 static int show_state = 0;
+static double overwrite_phi = -1.0;
+static double overwrite_v = -1.0;
+static double overwrite_v_rev = 1.0;
 
+static const double delta_command_v_factor = 0.3; // Controla a demora para a velocidade chegar no comando (valor maior = mais rápido a convergir)
 
 double
 non_linear_range(double x, double non_linear_factor)
@@ -85,9 +89,9 @@ direct_v_and_phi_joystick_mode(double *command_v, double *command_phi)
 	//else	// para tras (v < 0.0)
 	//	*command_v = *command_v + 0.3 * ((non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse) - *command_v);
 	if (joystick.axes[4] <= 0)	// para frente (v >= 0.0)
-		*command_v = *command_v + 0.2 * ((non_linear_range(-((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_config.max_v) - *command_v);
+		*command_v = *command_v + delta_command_v_factor * ((non_linear_range(-((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_config.max_v) - *command_v);
 	else	// para tras (v < 0.0)
-		*command_v = *command_v + 0.2 * ((non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse) - *command_v);
+		*command_v = *command_v + delta_command_v_factor * ((non_linear_range(((double) joystick.axes[4] / MAX_AXIS), V_NON_LINEARITY) * robot_max_velocity_reverse) - *command_v);
 	*command_v = carmen_clamp(robot_max_velocity_reverse, *command_v, robot_config.max_v);
 
 	if (*command_v >= -0.001)
@@ -291,10 +295,18 @@ read_parameters(int argc, char **argv)
 	{
 			{(char *) "commandline", (char *) "direct_v_and_phi_mode", CARMEN_PARAM_ONOFF, &direct_v_and_phi_mode, 0, NULL},
 			{(char *) "commandline", (char *) "show_state", CARMEN_PARAM_ONOFF, &show_state, 0, NULL},
+			{(char *) "commandline", (char *) "overwrite_phi", CARMEN_PARAM_DOUBLE, &overwrite_phi, 0, NULL},
+			{(char *) "commandline", (char *) "overwrite_v", CARMEN_PARAM_DOUBLE, &overwrite_v, 0, NULL},
+			{(char *) "commandline", (char *) "overwrite_v_rev", CARMEN_PARAM_DOUBLE, &overwrite_v_rev, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
-	robot_config.max_phi *= 2.0;
+	if(overwrite_phi > 0)
+		robot_config.max_phi = overwrite_phi;
+	if(overwrite_v > 0)
+		robot_config.max_v = overwrite_v;
+	if(overwrite_v_rev < 0)
+		robot_max_velocity_reverse = overwrite_v_rev;
 }
 
 
