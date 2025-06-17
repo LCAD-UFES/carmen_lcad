@@ -502,6 +502,18 @@ calculate_steps(int num_steps, int *transient_steps, uint32_t *accel_samples, ui
     *accel_samples = (*transient_steps - *decel_samples);
     *uniform_speed_hz = STEP_MOTOR_INITIAL_SPEED_HZ + STEP_MOTOR_ACCEL_HZ_PER_S * (*accel_samples);
     *uniform_steps = num_steps - *accel_samples - *decel_samples;
+
+    if (*decel_samples == 0)
+    {
+        *decel_samples = 1;
+    }
+
+    if (*accel_samples == 0)
+    {
+        *accel_samples = 1;
+    }
+
+    
 }
 
 void
