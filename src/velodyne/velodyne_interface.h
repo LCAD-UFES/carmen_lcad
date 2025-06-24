@@ -21,6 +21,9 @@ double* carmen_velodyne_get_delta_difference_mean();
 double* carmen_velodyne_get_delta_difference_stddev();
 
 void
+carmen_velodyne_create_variable_velodyne_message_name(int sensor_id, char message_name[]); // Essa função só retorna o nome, normalmente não precisa ser usada
+
+void
 carmen_velodyne_subscribe_partial_scan_message(carmen_velodyne_partial_scan_message *message,
 										 carmen_handler_t handler,
 										 carmen_subscribe_t subscribe_how);

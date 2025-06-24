@@ -315,6 +315,8 @@ main(int argc, char* argv[])
             // wait until sensor data is available
             sensor::client_state st = sensor::poll_client(*handle);
 
+			// std::cerr << "Teste...\n";
+
             // check for error status
             if (st & sensor::CLIENT_ERROR)
                 FATAL("Sensor client returned error state!");
@@ -326,7 +328,7 @@ main(int argc, char* argv[])
                     FATAL("Failed to read a packet of the expected size!");
 
                 // batcher will return "true" when the current scan is complete
-                if (batch_to_scan(packet_buf.get(), scans))
+                if (batch_to_scan(packet_buf.get(), scans)) // <---- Erro aqui?
                 {
                     // LidarScan provides access to azimuth block data and headers
                     auto n_invalid = std::count_if(
@@ -445,23 +447,36 @@ main(int argc, char* argv[])
 				double timestamp_scan = carmen_get_time();
 				for (int i = 0; i < number_of_messages_to_publish; i++)
 				{
-					vector_msgs[i].host = carmen_get_host();
-					vector_msgs[i].timestamp = timestamp_scan;
-					vector_msgs[i].number_of_shots = number_of_shots;
-					carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (ouster_sensor_id + i));
+					char msg_name[100];
+					carmen_velodyne_create_variable_velodyne_message_name((ouster_sensor_id + i), msg_name); 
+					int num_sub = IPC_numHandlers(msg_name);
 
-					if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
-						//break para preencher apenas uma menssagem para Lidars com raios alinhados
-						break;
+					if (num_sub > 0)
+					{
+						vector_msgs[i].host = carmen_get_host();
+						vector_msgs[i].timestamp = timestamp_scan;
+						vector_msgs[i].number_of_shots = number_of_shots;
+						carmen_velodyne_publish_variable_scan_message(&vector_msgs[i], (ouster_sensor_id + i));
+
+						if (fabs(info.beam_azimuth_angles.at(0) - info.beam_azimuth_angles.at(1)) < 0.5)
+							//break para preencher apenas uma menssagem para Lidars com raios alinhados
+							break;
+					}
 				}
 			}
 			else
 			{
+				char msg_name[100];
+				carmen_velodyne_create_variable_velodyne_message_name(ouster_sensor_id, msg_name); 
+				int num_sub = IPC_numHandlers(msg_name);
+
+				if (num_sub > 0)
+				{
 				vector_msgs[0].host = carmen_get_host();
 				vector_msgs[0].timestamp = carmen_get_time();
 				vector_msgs[0].number_of_shots = number_of_shots;
 				carmen_velodyne_publish_variable_scan_message(&vector_msgs[0], ouster_sensor_id);
-
+				}
 			}
         // std::cerr << "Publiquei   " << std::endl;
     }
