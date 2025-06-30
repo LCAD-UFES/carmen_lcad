@@ -38,7 +38,7 @@
 #endif
 
 #define DESOUZA_GUIDOLINI_CONSTANT 					0.0022
-#define robot_distance_between_front_and_rear_axles	0.35
+#define robot_distance_between_front_and_rear_axles	0.20
 #define robot_understeer_coeficient					0.0015
 
 #define FRONT_RIGHT	0
@@ -53,8 +53,6 @@
 #define DEFAULT_STRING_LENGTH 128
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
-#define VELOCITY_CONVERSION_CONSTANT 	(1 / 1000.0)
-#define ANGLE_CONVERSION_CONSTANT 		(2 * MAX_ANGLE / 4095.0)
 #define MAX_ANGLE						(0.35)
 #define STEERING_ANGLE_BIAS				(-0.03950)
 
@@ -413,9 +411,6 @@ void update_wheels_speed(struct can_frame frame)
 
 void update_car_speed(struct can_frame frame)
 {
-//	short int int_vel = frame.data[1] << 8 | frame.data[0];
-//	car_speed = (double) int_vel * VELOCITY_CONVERSION_CONSTANT;
-
 	float ft_car_speed = 0.0;
 	memcpy(&ft_car_speed, &frame.data[0], sizeof(float));
 	car_speed = (double) ft_car_speed;
