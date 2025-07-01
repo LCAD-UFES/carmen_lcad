@@ -11,28 +11,172 @@
 #include <cctype>
 #include <stack>
 #include <cmath>  
+#include <chrono>
+#include <string.h>
+#include <gtkmm.h>
+#include <string>
+#include <thread>
+#include <mutex>
+#include <stack>
 
 #include <carmen/carmen.h>
 #include <carmen/ipc.h>
-#include <carmen/localize_ackerman_interface.h>
-#include <carmen/fused_odometry_interface.h>
-
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h> 
-#include <nav_msgs/msg/odometry.hpp>
+#include "ipc_watcher.h"
+#include "ipc_watcher_usertime_logger.h"
 
 // Mapeia as mensagens para os seus publisher/subscribers
-
 struct msg_register
 {
-    std::vector<std::string> publishers;
+	std::vector<std::string> publishers;
     std::vector<std::string> subscribers;
     msg_register() {}
 };
 
+struct unlisted_pair
+{
+	std::string msg;
+	std::string module;
+	unlisted_pair() {}
+};
+
+// Janela
+class MyWindow : public Gtk::Window {
+public:
+    MyWindow();
+
+    // Atualiza o conteúdo da janela com base nas variáveis globais
+    void update_window();
+
+private:
+    Gtk::Notebook m_notebook;
+    Gtk::ScrolledWindow m_scroll;
+    Gtk::Box m_box;
+};
+
+// mapeia mensagens definidas para seus publisher/subscribers
 std::unordered_map<std::string, msg_register> messages_defined; 
+std::stack<std::string> unlisted_messages;// Mensagens que ainda n foram mostradas na tela
+// std::stack<unlisted_pair> unlisted_message_publisher;// Mensagens que ainda n foram mostradas na tela
+// std::stack<unlisted_pair> unlisted_message_subscriber;// Mensagens que ainda n foram mostradas na tela
+
+// mapeia um timer pai (mapper, por exemplo) para os nodos filhos (funções de callback, por exemplo)
+std::unordered_map<std::string, std::unordered_map<std::string, double>> log_usetime_register; 
+
+MyWindow* g_window_ptr = nullptr;
+
+// Thread que fica responsável pela janela
+void gtk_thread_main(int argc, char* argv[]) {
+    auto app = Gtk::Application::create(argc, argv, "org.exemplo.variaveis.globais");
+    MyWindow janela;
+    g_window_ptr = &janela;
+    app->run(janela);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Handlers																						//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static 
+void new_message_handler(carmen_ipc_watcher_new_message *msg)
+{
+	if(messages_defined.find(msg->msg_name) == messages_defined.end())
+	{
+		messages_defined[msg->msg_name] = msg_register();
+		unlisted_messages.push(msg->msg_name);
+
+	}
+}
+
+static 
+void new_subscribe_handler(carmen_ipc_watcher_subscribe_message *msg)
+{
+	// printf("New subscribe: %s to %s\n", msg->host, msg->msg_name);
+    if(messages_defined.find(msg->msg_name) != messages_defined.end())
+	{
+        auto it = std::find(messages_defined[msg->msg_name].subscribers.begin(), messages_defined[msg->msg_name].subscribers.end(), std::string(msg->host));
+        if(it == messages_defined[msg->msg_name].subscribers.end())
+		{
+            messages_defined[msg->msg_name].subscribers.emplace_back(msg->host);
+			// unlisted_message_subscriber.push(msg->msg_name,msg->host)
+        }
+	}
+}
+
+static 
+void log_usetime_handler(carmen_ipc_watcher_log_usetime* msg)
+{
+	if(log_usetime_register.find(msg->parent_name) == log_usetime_register.end())
+	{
+		log_usetime_register[msg->parent_name] = std::unordered_map<std::string, double>();
+	}	
+	if(log_usetime_register[msg->parent_name].find(msg->record_name) == log_usetime_register[msg->parent_name].end())
+	{
+		log_usetime_register[msg->parent_name][msg->record_name] = 0.0;
+	}
+	log_usetime_register[msg->parent_name][msg->record_name] += msg->time_spent;	
+}
+
+static
+void update_window_handler()
+{
+	Glib::signal_idle().connect_once([] {
+		if (g_window_ptr) {
+			g_window_ptr->update_window();
+		}
+	});
+}
+
+void 
+MyWindow::update_window() {
+	// Adicionar mensagens
+	while (!unlisted_messages.empty()) {
+		std::string& msg_name = unlisted_messages.top();
+
+		auto* row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 10);
+    	auto* label1 = Gtk::make_managed<Gtk::Label>(msg_name);
+    	auto* label2 = Gtk::make_managed<Gtk::Label>("");
+		label1->set_xalign(0);
+		label2->set_xalign(0);
+		row->pack_start(*label1, Gtk::PACK_SHRINK);
+		row->pack_start(*label2, Gtk::PACK_EXPAND_WIDGET);
+		m_box.pack_start(*row, Gtk::PACK_SHRINK);
+
+		unlisted_messages.pop();
+	}
+
+	m_box.show_all_children();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Inicializations																				//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+MyWindow::MyWindow() {
+    set_title("IPC Watcher");
+    set_default_size(400, 300);
+    m_notebook.set_border_width(10);
+    add(m_notebook);
+
+    m_scroll.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+    m_scroll.add(m_box);
+    m_box.set_orientation(Gtk::ORIENTATION_VERTICAL);
+    m_box.set_spacing(5);
+    m_box.set_border_width(10);
+    m_notebook.append_page(m_scroll, "Mensagens");
+
+    show_all_children();
+}
 
 static
 void record_log()
@@ -65,29 +209,18 @@ void record_log()
     }
 }
 
-static 
-void new_message_handler(carmen_ipc_watcher_new_message *msg)
+static
+void print_usetime_register()
 {
-	if(messages_defined.find(msg->msg_name) == messages_defined.end())
+	std::cout << "\nRegistro: \n";
+	for (const auto& parent : log_usetime_register)
 	{
-		messages_defined[msg->msg_name] = msg_register();
-		printf("Mensagem definida! \n");
-		
-	}
-}
-
-static 
-void new_subscribe_handler(carmen_ipc_watcher_subscribe_message *msg)
-{
-	// printf("New subscribe: %s to %s\n", msg->host, msg->msg_name);
-    if(messages_defined.find(msg->msg_name) != messages_defined.end())
-	{
-        auto it = std::find(messages_defined[msg->msg_name].subscribers.begin(), messages_defined[msg->msg_name].subscribers.end(), std::string(msg->host));
-        if(it == messages_defined[msg->msg_name].subscribers.end())
+		std::cout << "---- Parent: " << parent.first << std::endl;
+		for (const auto& child : parent.second)
 		{
-            messages_defined[msg->msg_name].subscribers.emplace_back(msg->host);
-        }
-	}
+			std::cout << "-- Nome: " << child.first << ", Tempo: " << child.second << std::endl; 
+		}
+	} 
 }
 
 void
@@ -100,6 +233,9 @@ define_messages()
 
 	err = IPC_defineMsg(CARMEN_IPC_WATCHER_SUBSCRIBE_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_IPC_WATCHER_SUBSCRIBE_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_IPC_WATCHER_NEW_MESSAGE_NAME);
+
+	err = IPC_defineMsg(CARMEN_IPC_WATCHER_LOG_USETIME_NAME, IPC_VARIABLE_LENGTH, CARMEN_IPC_WATCHER_LOG_USETIME_FMT);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_IPC_WATCHER_LOG_USETIME_NAME);
 }
 
 static 
@@ -116,7 +252,10 @@ void subscribe_to_messages()
 			NULL, sizeof(carmen_ipc_watcher_subscribe_message),
 			(carmen_handler_t) new_subscribe_handler, CARMEN_SUBSCRIBE_ALL);
 
-	
+	carmen_subscribe_message((char*) CARMEN_IPC_WATCHER_LOG_USETIME_NAME,
+			(char*) CARMEN_IPC_WATCHER_LOG_USETIME_FMT,
+			NULL, sizeof(carmen_ipc_watcher_log_usetime),
+			(carmen_handler_t) log_usetime_handler, CARMEN_SUBSCRIBE_ALL);
 }
 
 static 
@@ -130,6 +269,7 @@ void shutdown_module(int sig)
 	{
 		carmen_ipc_disconnect();
         record_log();
+		print_usetime_register();
 		printf("ipc_watcher disconnected from IPC.\n");
 		fflush(stdout);
 	}
@@ -140,14 +280,18 @@ void shutdown_module(int sig)
 int 
 main(int argc, char **argv)
 {
-    
 	signal(SIGINT, shutdown_module);
-
 	carmen_ipc_initialize(argc, argv);
 	
     define_messages();
 	subscribe_to_messages();
 
+    std::thread gui_thread(gtk_thread_main, argc, argv);
+	while (!g_window_ptr) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+	carmen_ipc_addPeriodicTimer(1.0 / 20.0, (TIMER_HANDLER_TYPE) update_window_handler, NULL);
 	carmen_ipc_dispatch();
     return 0;
 }

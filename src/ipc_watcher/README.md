@@ -9,3 +9,7 @@ cd ~/carmen_lcad/src/ipc_watcher
 
 e execute o process desejado (pode testar com o navigate). O módulo registra as mensagens e os subscribers no arquivo log.txt, localizado dentro do módulo.
 
+## INSTALAÇÂO
+
+sudo apt install libgtkmm-3.0-dev
+sudo apt install g++ cmake libsdl2-dev libglew-dev libgl1-mesa-dev libx11-dev
