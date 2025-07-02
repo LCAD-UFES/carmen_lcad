@@ -51,6 +51,8 @@ private:
     Gtk::Notebook m_notebook;
     Gtk::ScrolledWindow m_scroll;
     Gtk::Box m_box;
+	std::vector<Gtk::ScrolledWindow> m_scroll_timers;
+	std::unordered_map<std::string, Gtk::Box*> m_box_timers;
 };
 
 // mapeia mensagens definidas para seus publisher/subscribers
@@ -61,6 +63,7 @@ std::stack<std::string> unlisted_messages;// Mensagens que ainda n foram mostrad
 
 // mapeia um timer pai (mapper, por exemplo) para os nodos filhos (funções de callback, por exemplo)
 std::unordered_map<std::string, std::unordered_map<std::string, double>> log_usetime_register; 
+std::stack<std::string> unlisted_parents;
 
 MyWindow* g_window_ptr = nullptr;
 
@@ -80,7 +83,6 @@ void gtk_thread_main(int argc, char* argv[]) {
 // Handlers																						//
 //																								//
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 static 
 void new_message_handler(carmen_ipc_watcher_new_message *msg)
@@ -114,6 +116,7 @@ void log_usetime_handler(carmen_ipc_watcher_log_usetime* msg)
 	if(log_usetime_register.find(msg->parent_name) == log_usetime_register.end())
 	{
 		log_usetime_register[msg->parent_name] = std::unordered_map<std::string, double>();
+		unlisted_parents.push(std::string(msg->parent_name));
 	}	
 	if(log_usetime_register[msg->parent_name].find(msg->record_name) == log_usetime_register[msg->parent_name].end())
 	{
@@ -134,6 +137,62 @@ void update_window_handler()
 
 void 
 MyWindow::update_window() {
+	// Adicionar abas de timers
+	while (!unlisted_parents.empty()) {
+        std::string parent_name = unlisted_parents.top();
+        unlisted_parents.pop();
+
+		m_scroll_timers.emplace_back();
+		auto* box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, 5);
+		m_box_timers[parent_name] = box;
+
+		Gtk::ScrolledWindow& scroll = m_scroll_timers.back();
+
+        scroll.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+		scroll.add(*box);
+		box->set_orientation(Gtk::ORIENTATION_VERTICAL);
+		box->set_spacing(5);
+		box->set_border_width(10);
+		m_notebook.append_page(scroll, parent_name);
+    }
+	show_all_children();
+
+	// Update nas abas de timer
+	for (auto& [parent_name, timers] : log_usetime_register) {
+		// Limpa a aba
+		Gtk::Box* box = m_box_timers[parent_name];
+    	auto linhas = box->get_children();
+    	for (auto* linha : linhas) {
+        	box->remove(*linha);
+   		}
+
+		// Re-adiciona os valores
+		for(auto& [record_name, time_spent] : timers) {
+			// Cria uma linha horizontal
+			auto* row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 10);
+
+			// Label com a string
+			auto* label_texto = Gtk::make_managed<Gtk::Label>(record_name);
+			label_texto->set_xalign(0);
+
+			// // Label com o valor formatado (exemplo com 2 casas decimais)
+			// auto valor_str = std::to_string(valor);
+			// Opcional: formatar para 2 casas decimais (mais elegante)
+			char buf[50];
+			snprintf(buf, sizeof(buf), "%.2f", time_spent);
+			auto* label_valor = Gtk::make_managed<Gtk::Label>(buf);
+			label_valor->set_xalign(0);
+
+			// Adiciona os labels na linha
+			row->pack_start(*label_texto, Gtk::PACK_SHRINK);
+			row->pack_start(*label_valor, Gtk::PACK_EXPAND_WIDGET);
+
+			// Adiciona a linha na box principal
+			box->pack_start(*row, Gtk::PACK_SHRINK);
+		}
+		box->show_all_children();
+	}
+	
 	// Adicionar mensagens
 	while (!unlisted_messages.empty()) {
 		std::string& msg_name = unlisted_messages.top();
@@ -291,7 +350,7 @@ main(int argc, char **argv)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-	carmen_ipc_addPeriodicTimer(1.0 / 20.0, (TIMER_HANDLER_TYPE) update_window_handler, NULL);
+	carmen_ipc_addPeriodicTimer(1.0 / 40.0, (TIMER_HANDLER_TYPE) update_window_handler, NULL);
 	carmen_ipc_dispatch();
     return 0;
 }
