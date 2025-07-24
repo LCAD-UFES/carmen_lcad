@@ -11,8 +11,10 @@ start on hidden pose
 
 # Pegar primeiro fardo
 get_first_bale:
-park at 7757685.89, -363591.36, -1.514 
-go after park at 7757685.89, -363591.36, -1.514 
+#park at 7757685.89, -363591.36, -1.514 
+park at 7757696.37, -363595.44, 1.564
+#go after park at 7757685.89, -363591.36, -1.514 
+go after park at 7757694.86, -363593.41, -3.123
 reinitialize robot pose
 stop
 yolo get bale from pile
@@ -21,12 +23,16 @@ if previous task failed, execute task at label go_to_retry_pose_get_first_bale
 
 # Colocar primeiro fardo no caminhão
 put_first_bale_on_truck:
-park at 7757688.05, -363593.50, 0.059
-go after park at 7757688.05, -363593.50, 0.059
+# park at 7757688.05, -363593.50, 0.059
+park at 7757697.27, -363593.36, 3.137
+#go after park at 7757688.05, -363593.50, 0.059
+go after park at 7757694.86, -363593.41, -3.123
 reinitialize robot pose
 put_first_bale_on_truck_reach_pose:   
-park at 7757685.05, -363593.50, 0.059
-go after park at 7757685.05, -363593.50, 0.059
+#park at 7757685.05, -363593.50, 0.059
+park at 7757694.27, -363593.36, 3.137
+#go after park at 7757685.05, -363593.50, 0.059
+go after park at 7757691.86, -363593.41, -3.123
 reinitialize robot pose
 stop
 put bale on the truck
@@ -35,8 +41,10 @@ if previous task failed, execute task at label go_to_retry_pose_put_first_bale
 
 # Pegar segundo fardo
 get_second_bale: 
-park at 7757685.89, -363591.36, -1.514 
-go after park at 7757685.89, -363591.36, -1.514 
+#park at 7757685.89, -363591.36, -1.514 
+park at 7757696.37, -363595.44, 1.564
+#go after park at 7757685.89, -363591.36, -1.514 
+got after park at 7757696.37, -363595.44, 1.564
 reinitialize robot pose
 stop
 yolo get bale from pile
@@ -45,12 +53,16 @@ if previous task failed, execute task at label go_to_retry_pose_get_second_bale
 
 # Colocar segundo fardo no caminhão
 put_second_bale_on_truck:
-park at 7757688.05, -363593.50, 0.059
-go after park at 7757688.05, -363593.50, 0.059
+#park at 7757688.05, -363593.50, 0.059
+park at 7757697.27, -363593.36, 3.137
+#go after park at 7757688.05, -363593.50, 0.059
+go after park at 7757697.27, -363593.36, 3.137
 reinitialize robot pose
 put_second_bale_on_truck_reach_pose:   
-park at 7757685.05, -363593.50, 0.059
-go after park at 7757685.05, -363593.50, 0.059
+#park at 7757685.05, -363593.50, 0.059
+park at 7757694.27, -363593.36, 3.137
+#go after park at 7757685.05, -363593.50, 0.059
+go after park at 7757694.27, -363593.36, 3.137
 reinitialize robot pose
 stop
 put bale on top
@@ -58,8 +70,10 @@ if previous task failed, execute task at label go_to_retry_pose_put_second_bale
 
 
 # Retorna a posicao inicial
-park at 7757691.83, -363593.21, 0.038
-go after park at 7757691.83, -363593.21, 0.038  # fica nesta task ateh o fim do curso 
+#park at 7757691.83, -363593.21, 0.038
+park at 7757690.52, -363593.44, -3.124
+#go after park at 7757691.83, -363593.21, 0.038  # fica nesta task ateh o fim do curso 
+go after park at 7757690.52, -363593.44, -3.124
 stop
 
 
@@ -80,8 +94,8 @@ execute task at label get_first_bale
 # Retry Pose to Put First Bale 7757686.55 -363593.50 0.059
 go_to_retry_pose_put_first_bale:
 announce "Out of reach, trying again."
-park at 7757686.55 -363593.50 0.059
-go after park at 7757686.55 -363593.50 0.059
+park at 7757686.55, -363593.50, 0.059
+go after park at 7757686.55, -363593.50, 0.059
 stop # tira de modo autonomo
 reinitialize robot pose
 execute task at label put_first_bale_on_truck_reach_pose
@@ -100,8 +114,8 @@ execute task at label get_second_bale
 # Retry Pose to Put First Bale
 go_to_retry_pose_put_second_bale:
 announce "Out of reach, trying again."
-park at 7757686.55 -363593.50 0.059
-go after park at 7757686.55 -363593.50 0.059
+park at 7757686.55, -363593.50, 0.059
+go after park at 7757686.55, -363593.50, 0.059
 stop # tira de modo autonomo
 reinitialize robot pose
 execute task at label put_second_bale_on_truck_reach_pose
