@@ -378,6 +378,12 @@ static int show_symotha_flag = 0;
 static int show_path_plans_flag = 0;
 static int show_plan_tree_flag = 0;
 
+FILE                *ply_file_ptr      = NULL;
+static char         *ply_file_name     = NULL;
+FILE                *ply_file_tmp_ptr  = NULL;
+static char         *ply_file_tmp_name = NULL;
+static unsigned int  ply_num_points    = 0; // Usada apenas para exportar arquivo .ply
+
 // in degrees
 static double ouster64_azimuth_offsets[64];
 static double vc_64[64];
@@ -681,6 +687,22 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 }
 
 
+void add_point_cloud_to_PCL_pointcloud(point_cloud pcloud)
+{
+    if (ply_file_tmp_ptr == NULL) {
+        printf("arquivo .ply nao esta aberto\n");
+        return;
+    }
+    for (int i = 0; i < pcloud.num_points; i++) {
+        u_int8_t r = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].x*255, 255.0));
+        u_int8_t g = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].y*255, 255.0));
+        u_int8_t b = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].z*255, 255.0));
+        fprintf(ply_file_tmp_ptr, "%lf %lf %lf %u %u %u\n", pcloud.points[i].x, pcloud.points[i].y, pcloud.points[i].z, r, g ,b);
+    }    
+    ply_num_points += pcloud.num_points;
+}
+
+
 void
 clear_lidar_point_cloud_vector_drawer(point_cloud_drawer *drawer, point_cloud **lidar_point_cloud_vector)
 {
@@ -767,6 +789,8 @@ draw_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message, point_
 	destroy_rotation_matrix(board_to_car_matrix);
 
 	add_point_cloud(drawer, (*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index]);
+    if(ply_file_name != NULL) 
+        add_point_cloud_to_PCL_pointcloud((*xyz_lidar_point_cloud_vector)[xyz_lidar_point_cloud_vector_index]);
     
     xyz_lidar_point_cloud_vector_index += 1;
 
@@ -849,7 +873,9 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 	destroy_rotation_matrix(board_to_car_matrix);
 
 	add_point_cloud(drawer, (*lidar_point_cloud_vector)[lidar_point_cloud_vector_index]);
-    
+    if(ply_file_name != NULL) 
+        add_point_cloud_to_PCL_pointcloud((*lidar_point_cloud_vector)[lidar_point_cloud_vector_index]);
+
     lidar_point_cloud_vector_index += 1;
 
     last_timestamp = message->timestamp;
@@ -1912,7 +1938,11 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
     destroy_rotation_matrix(board_to_car_matrix);
 
     if (draw_velodyne_flag == 2)
+    {
         add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
+        if(ply_file_name != NULL) 
+            add_point_cloud_to_PCL_pointcloud(velodyne_points[last_velodyne_position]);
+    }
 
     if (draw_velodyne_flag == 3)
         add_velodyne_message(v_360_drawer, velodyne_message);
@@ -2087,7 +2117,11 @@ velodyne_variable_scan_message_handler0_old(carmen_velodyne_variable_scan_messag
 	destroy_rotation_matrix(board_to_car_matrix);
 
 	if (draw_velodyne_flag == 2)
+    {
 		add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
+        if(ply_file_name != NULL) 
+            add_point_cloud_to_PCL_pointcloud(velodyne_points[last_velodyne_position]);
+    }
 
 	//verificar se essas flags sao necessarias
 	if (draw_velodyne_flag == 3)
@@ -2463,6 +2497,8 @@ stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_mess
 	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
     
 	add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
+    if(ply_file_name != NULL) 
+        add_point_cloud_to_PCL_pointcloud(velodyne_points[last_velodyne_position]);
 }
 
 
@@ -2519,6 +2555,8 @@ carmen_ldmrs_new_draw_dispatcher(carmen_laser_ldmrs_new_message *laser_message,
     destroy_rotation_matrix(front_bulbar_to_car_rotation_matrix);
 
     add_point_cloud(ldmrs_drawer, point_cloud[last_ldmrs_position]);
+    if(ply_file_name != NULL) 
+        add_point_cloud_to_PCL_pointcloud(point_cloud[last_ldmrs_position]);
 }
 
 
@@ -2675,6 +2713,8 @@ carmen_ldmrs_draw_dispatcher(carmen_laser_ldmrs_message* laser_message, int pare
         carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
     }
     add_point_cloud(ldmrs_drawer, point_cloud[last_ldmrs_position]);
+    if(ply_file_name != NULL) 
+        add_point_cloud_to_PCL_pointcloud(point_cloud[last_ldmrs_position]);
 }
 
 
@@ -2833,6 +2873,8 @@ carmen_laser_draw_dispatcher(carmen_laser_laser_message* laser_message, int pare
     }
     //destroy_rotation_matrix(r_matrix_car_to_global);
     add_point_cloud(laser_drawer, point_cloud[last_laser_position]);
+    if(ply_file_name != NULL) 
+        add_point_cloud_to_PCL_pointcloud(point_cloud[last_laser_position]);
 }
 
 
@@ -3889,6 +3931,17 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
 }
 
 void
+init_PLY_file()
+{
+    // Cria um arquivo temporário que salva todos os dados, e ao final coloca no arquivo final o header com todos os dados do arquivo temporário
+    ply_file_tmp_name = (char*)malloc(strlen(ply_file_name) + 4*sizeof(char));
+    strcpy(ply_file_tmp_name, ply_file_name);
+    strcat(ply_file_tmp_name, "_tmp");    
+    ply_file_tmp_ptr = fopen(ply_file_tmp_name, "w+");
+    ply_file_ptr = fopen(ply_file_name, "w");
+}
+
+void
 destroy_drawers()
 {
     destroyCarDrawer(car_drawer);
@@ -4292,6 +4345,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 		{(char *) "commandline",	(char *) "velodyne_active",		CARMEN_PARAM_INT,	&(velodyne_active),		0, NULL},
 		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
 		{(char *) "commandline", 	(char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
+        {(char *) "commandline", 	(char *) "ply_file", CARMEN_PARAM_STRING, &ply_file_name, 0, NULL},
 		{(char *) "commandline", 	(char *) "verbose", CARMEN_PARAM_ONOFF, &verbose, 0, NULL},
 		{(char *) "commandline", 	(char *) "initial_x_origin", CARMEN_PARAM_DOUBLE, &initial_x_origin, 0, NULL},
 		{(char *) "commandline", 	(char *) "initial_y_origin", CARMEN_PARAM_DOUBLE, &initial_y_origin, 0, NULL},
@@ -4299,6 +4353,10 @@ read_parameters_and_init_stuff(int argc, char** argv)
 
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+    if(ply_file_name != NULL) {
+        init_PLY_file();
+    }
 	
 	carmen_param_t param_list2[] =
 	{
@@ -4340,6 +4398,35 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	carmen_param_install_params(argc, argv, optional_param_list, num_items);
 
 	update_map_mode_from_parameters();
+}
+
+void
+close_ply_file()
+{
+    fprintf(ply_file_ptr,
+        "ply\n"
+        "format ascii 1.0\n"
+        "element vertex %u\n"
+        "property float x\n"
+        "property float y\n"
+        "property float z\n"
+        "property uchar red\n"
+        "property uchar green\n"
+        "property uchar blue\n"
+        "end_header\n",
+        ply_num_points);
+
+    fflush(ply_file_tmp_ptr);
+    fseek(ply_file_tmp_ptr, 0, SEEK_SET);
+    char buffer[1024];
+    size_t bytesLidos;
+    while ((bytesLidos = fread(buffer, 1, sizeof(buffer), ply_file_tmp_ptr)) > 0) {
+        fwrite(buffer, 1, bytesLidos, ply_file_ptr);
+    }
+    remove(ply_file_tmp_name);
+    fclose(ply_file_tmp_ptr);
+    fclose(ply_file_ptr);
+    free(ply_file_tmp_name);
 }
 
 void
@@ -4396,6 +4483,11 @@ destroy_stuff()
     free(localizer_correction_particles_weight);
 
     free(ldmrs_objects_tracking);
+
+    if(ply_file_name != NULL) 
+    {
+        close_ply_file();
+    }
 
     destroy_drawers();
 }
