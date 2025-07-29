@@ -383,6 +383,7 @@ static char         *ply_file_name     = NULL;
 FILE                *ply_file_tmp_ptr  = NULL;
 static char         *ply_file_tmp_name = NULL;
 static unsigned int  ply_num_points    = 0; // Usada apenas para exportar arquivo .ply
+static double        dist_between_pointcld = 0.3; // em metros
 
 // in degrees
 static double ouster64_azimuth_offsets[64];
@@ -689,17 +690,33 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 
 void add_point_cloud_to_PCL_pointcloud(point_cloud pcloud)
 {
-    if (ply_file_tmp_ptr == NULL) {
-        printf("arquivo .ply nao esta aberto\n");
-        return;
+    static carmen_point_t last_global_pos = {0.0, 0.0, 0.0};
+    static double dist_to_last_pointcld = 0.0;
+    
+    dist_to_last_pointcld += sqrt(pow(global_pos.x - last_global_pos.x, 2) + 
+                                  pow(global_pos.y - last_global_pos.y, 2));
+    last_global_pos.x = global_pos.x;
+    last_global_pos.y = global_pos.y;
+    if(dist_to_last_pointcld > dist_between_pointcld)
+    {
+        if (ply_file_tmp_ptr == NULL) {
+            printf("arquivo .ply nao esta aberto\n");
+            return;
+        }
+        for (int i = 0; i < pcloud.num_points; i++) {
+            double dist = sqrt(pow(pcloud.point_color[i].x, 2) + 
+                               pow(pcloud.point_color[i].y, 2));
+            if(dist < 5) 
+            {
+                u_int8_t r = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].x*255, 255.0));
+                u_int8_t g = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].y*255, 255.0));
+                u_int8_t b = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].z*255, 255.0));
+                fprintf(ply_file_tmp_ptr, "%lf %lf %lf %u %u %u\n", pcloud.points[i].x, pcloud.points[i].y, pcloud.points[i].z, r, g ,b);
+            }
+        }    
+        ply_num_points += pcloud.num_points;
+        dist_to_last_pointcld = 0.0;
     }
-    for (int i = 0; i < pcloud.num_points; i++) {
-        u_int8_t r = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].x*255, 255.0));
-        u_int8_t g = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].y*255, 255.0));
-        u_int8_t b = (u_int8_t)(carmen_clamp(0.0, pcloud.point_color[i].z*255, 255.0));
-        fprintf(ply_file_tmp_ptr, "%lf %lf %lf %u %u %u\n", pcloud.points[i].x, pcloud.points[i].y, pcloud.points[i].z, r, g ,b);
-    }    
-    ply_num_points += pcloud.num_points;
 }
 
 
@@ -4346,6 +4363,7 @@ read_parameters_and_init_stuff(int argc, char** argv)
 		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
 		{(char *) "commandline", 	(char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
         {(char *) "commandline", 	(char *) "ply_file", CARMEN_PARAM_STRING, &ply_file_name, 0, NULL},
+        {(char *) "commandline", 	(char *) "ply_save_dist", CARMEN_PARAM_DOUBLE, &dist_between_pointcld, 0, NULL},
 		{(char *) "commandline", 	(char *) "verbose", CARMEN_PARAM_ONOFF, &verbose, 0, NULL},
 		{(char *) "commandline", 	(char *) "initial_x_origin", CARMEN_PARAM_DOUBLE, &initial_x_origin, 0, NULL},
 		{(char *) "commandline", 	(char *) "initial_y_origin", CARMEN_PARAM_DOUBLE, &initial_y_origin, 0, NULL},
