@@ -652,6 +652,15 @@ void carmen_logwrite_write_carmen_can_dump_can_line_message(
 			msg->can_line, msg->timestamp, msg->host, timestamp);
 }
 
+void carmen_logwrite_write_carmen_compact_map_message(
+		carmen_mapper_compact_map_message *msg, carmen_FILE *outfile,
+		double timestamp)
+{
+	carmen_fprintf(outfile,
+			"COMPACT_MAP_PUBLISHED %lf %s %lf\n",
+			 msg->timestamp, msg->host, timestamp);
+}
+
 void carmen_logwrite_write_robot_ackerman_velocity(
 		carmen_robot_ackerman_velocity_message *msg, carmen_FILE *outfile,
 		double timestamp)

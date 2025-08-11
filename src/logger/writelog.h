@@ -50,6 +50,8 @@
 #include <carmen/pi_imu_interface.h>
 #include <carmen/camera_drivers_interface.h>
 #include <carmen/camera_drivers_messages.h>
+#include <carmen/mapper_interface.h>
+// #include <carmen/mapper_messages.h>
 
 
 #ifdef __cplusplus
@@ -261,6 +263,10 @@ void carmen_logwrite_write_ford_escape_status_message(carmen_ford_escape_status_
 
 void carmen_logwrite_write_carmen_can_dump_can_line_message(
 		carmen_can_dump_can_line_message *msg, carmen_FILE *outfile,
+		double timestamp);
+
+void carmen_logwrite_write_carmen_compact_map_message(
+		carmen_mapper_compact_map_message *msg, carmen_FILE *outfile,
 		double timestamp);
 
 #ifdef __cplusplus

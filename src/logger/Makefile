@@ -14,14 +14,14 @@ else
 INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface -lobstacle_avoider_interface -lsimulator_ackerman_interface -llocalize_ackerman_interface \
 		 -lgps_nmea_interface -lbase_ackerman_interface -lpantilt_interface -limu_interface -lkinect_interface -lbumblebee_basic_interface \
 		 -lxsens_interface -lvelodyne_interface -lxsens_mtig_interface -lweb_cam_interface -lrobot_ackerman_interface -lvisual_odometry_interface \
-		 -lultrasonic_filter_interface -lford_escape_hybrid_interface -lcan_dump_interface -lpi_imu_interface -lcamera_drivers -lcarmen_util
+		 -lultrasonic_filter_interface -lford_escape_hybrid_interface -lcan_dump_interface -lpi_imu_interface -lcamera_drivers -lcarmen_util -lmapper_interface
 
 endif
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface -lglobal -lipc -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-			-lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv` -luser_preferences
+			-lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv` -luser_preferences 
 
 SOURCES = logger.c playback_interface.c playback.cpp writelog.cpp readlog.cpp log_timestamp_repair.c logger_interface.c print_binary_log.cpp log_fix_messages.cpp
 

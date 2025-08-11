@@ -62,6 +62,7 @@ static int log_bumblebee_save_to_file = 0;
 static int log_velodyne_save_to_file = 0;
 static int log_ford_escape_status = 0;
 static int log_can_dump = 0;
+static int log_compact_map = 0;
 char* log_path = 0;
 char* suffix = NULL;
 char* prefix = NULL;
@@ -107,6 +108,12 @@ get_logger_params(int argc, char** argv)
 	{(char *) "commandline", (char *) "suffix", CARMEN_PARAM_STRING, &suffix, 0, NULL},
   };
   carmen_param_install_params(argc, argv, optional_commandline_param_list, sizeof(optional_commandline_param_list) / sizeof(optional_commandline_param_list[0]));
+
+  carmen_param_t optional_param_list[] = {
+		{(char *) "logger",      (char *) "compact_map", 	    CARMEN_PARAM_ONOFF, &log_compact_map, 0, NULL},
+  };
+  carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list)/sizeof(optional_param_list[0])); 
+ 
   carmen_param_allow_unfound_variables(0);
 }
 
@@ -825,6 +832,12 @@ can_dump_message_handler(carmen_can_dump_can_line_message *message)
 }
 
 void
+compact_map_message_handler(carmen_mapper_compact_map_message *message)
+{
+	carmen_logwrite_write_carmen_compact_map_message(message, outfile, carmen_get_time() - logger_starttime);
+}
+
+void
 register_ipc_messages(void)
 {
   carmen_subscribe_message(CARMEN_LOGGER_SYNC_NAME, CARMEN_LOGGER_SYNC_FMT,
@@ -1137,6 +1150,10 @@ main(int argc, char **argv)
 
 	if (log_can_dump)
 		carmen_can_dump_subscribe_can_line_message(NULL, (carmen_handler_t) can_dump_message_handler, CARMEN_SUBSCRIBE_ALL);
+
+	if (log_compact_map)
+		carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) compact_map_message_handler, CARMEN_SUBSCRIBE_ALL);
+
 
 	signal(SIGINT, shutdown_module);
 	logger_starttime = carmen_get_time();
