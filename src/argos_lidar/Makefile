@@ -1,51 +1,48 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = ARGOS LIDAR
-MODULE_COMMENT = "Argos Lidar"
+MODULE_NAME = ARGOS_LIDAR
+MODULE_COMMENT = Driver, and Visualizer for Ousters Sensors
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol -Wno-switch
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
+LINK = g++
 
+CXXFLAGS += -std=c++17 -Wno-deprecated -Wno-deprecated-declarations 
+# Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
+IFLAGS += -std=c++17
 
-# ROS
-IFLAGS += -I/opt/ros/foxy/include
-LFLAGS += -L/opt/ros/foxy/lib
+# libraries required by the driver 
+IFLAGS += -I /usr/include/jsoncpp/ -I /usr/local/lib/
+LFLAGS += -ljsoncpp 
 
-LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface -lroute_planner_interface \
-		  -lnavigator_ackerman_interface -lbehavior_selector_interface -lford_escape_hybrid_interface -lcargo_interface \
-		  -lvoice_interface_interface -luser_app_server_interface \
-		  -lrclcpp -lrcutils -pthread -lrmw -lrcl -lrosidl_typesupport_cpp -llibstatistics_collector -lvelodyne_interface \
-		  -lsensor_msgs__python \
-		  -lsensor_msgs__rosidl_generator_c \
-		  -lsensor_msgs__rosidl_typesupport_connext_cpp \
-		  -lsensor_msgs__rosidl_typesupport_connext_c \
-		  -lsensor_msgs__rosidl_typesupport_cpp \
-		  -lsensor_msgs__rosidl_typesupport_c \
-		  -lsensor_msgs__rosidl_typesupport_fastrtps_cpp \
-		  -lsensor_msgs__rosidl_typesupport_fastrtps_c \
-		  -lsensor_msgs__rosidl_typesupport_introspection_cpp \
-		  -lsensor_msgs__rosidl_typesupport_introspection_c \
-		  -lstatistics_msgs__python \
-		  -lstatistics_msgs__rosidl_generator_c \
-		  -lstatistics_msgs__rosidl_typesupport_connext_cpp \
-		  -lstatistics_msgs__rosidl_typesupport_connext_c \
-		  -lstatistics_msgs__rosidl_typesupport_cpp \
-		  -lstatistics_msgs__rosidl_typesupport_c \
-		  -lstatistics_msgs__rosidl_typesupport_fastrtps_cpp \
-		  -lstatistics_msgs__rosidl_typesupport_fastrtps_c \
-		  -lstatistics_msgs__rosidl_typesupport_introspection_cpp \
-		  -lstatistics_msgs__rosidl_typesupport_introspection_c \
-		  -ltracetools
+# viewer libraries
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv` 
+IFLAGS += -I /usr/local/include/ouster -I /usr/local/include/optional-lite -I /usr/local/include/ouster/imp
 
-CXXFLAGS += -std=c++14  
+LFLAGS += -lparam_interface -lglobal -lipc -pthread -lvelodyne_interface -louster_client -louster_viz -louster_pcap -ltins -lpcap
+LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 
-SOURCES = argos_lidar_main.cpp argos_lidar_luiz.cpp argos_lidar_polar_main.cpp argos_lidar_viewer_main.cpp
-TARGETS = argos_lidar argos_lidar_luiz argos_lidar_polar argos_lidar_viewer
-PUBLIC_BINARIES = argos_lidar argos_lidar_luiz argos_lidar_polar argos_lidar_viewer
+# ROS Geral
+ROS2_PREFIX = /opt/ros/foxy
 
-argos_lidar: argos_lidar_main.o  
-argos_lidar_luiz: argos_lidar_luiz.o
-argos_lidar_polar: argos_lidar_polar_main.o
-argos_lidar_viewer: argos_lidar_viewer_main.o
+IFLAGS += -I$(ROS2_PREFIX)/include -I. -I./unitree_go -I./unitree_go/msg -I./unitree_go/msg/detail
+IFLAGS += -I$(ROS2_PREFIX)/include/rclcpp
 
-include ../Makefile.rules
+LFLAGS += -L$(ROS2_PREFIX)/lib -L/home/unitree/I2CA/argos/install/unitree_go/lib/
+LFLAGS += -lunitree_go__rosidl_typesupport_cpp -llibstatistics_collector -lrcl -ltracetools -lstatistics_msgs__rosidl_typesupport_cpp \
+			-lrclcpp -lrcutils -lrosidl_runtime_c -lrosidl_typesupport_cpp -lrosidl_typesupport_c -lstd_msgs__rosidl_typesupport_cpp 
+
+#
+
+# carmen related libraries
+
+SOURCES = ouster_main.cpp types.cpp 
+
+PUBLIC_INCLUDES =
+PUBLIC_LIBRARIES = 
+PUBLIC_BINARIES = argos_lidar # ouster_viewer
+TARGETS = argos_lidar 
+
+# The libsegmap.a is added as a dependency to make the program be compiled when a .cpp file in the lib is changed.
+# Without adding the lib as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
+argos_lidar: ouster_main.o types.o
+
+include $(CARMEN_HOME)/src/Makefile.rules

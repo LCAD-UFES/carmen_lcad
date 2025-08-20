@@ -1,0 +1,1 @@
+/home/unitree/I2CA/argos/build/unitree_go/rosidl_typesupport_fastrtps_cpp/unitree_go/msg/detail/sport_mode_cmd__rosidl_typesupport_fastrtps_cpp.hpp

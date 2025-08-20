@@ -1,0 +1,1 @@
+/home/unitree/I2CA/argos/build/unitree_go/rosidl_typesupport_introspection_c/unitree_go/msg/detail/res__rosidl_typesupport_introspection_c.h

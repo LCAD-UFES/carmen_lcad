@@ -1,0 +1,1 @@
+/home/unitree/I2CA/argos/build/unitree_go/rosidl_generator_cpp/unitree_go/msg/detail/go2_front_video_data__traits.hpp
