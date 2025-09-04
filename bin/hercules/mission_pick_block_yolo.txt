@@ -5,8 +5,8 @@ set colision geometry to engage
 start on hidden pose
 
 yolo get bale from pile
-wait for 3 seconds
-put bale on the truck
+#wait for 3 seconds
+#put bale on the truck
 #yolo get bale from pile
-#put bale on top
+put bale on top
 

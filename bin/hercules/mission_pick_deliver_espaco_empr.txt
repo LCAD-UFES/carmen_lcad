@@ -1,0 +1,23 @@
+# Linhas vazias, que comecam com espaco ou com # sao ignoradas
+
+# Pilha 1:	  7757691.59 -363594.07 -1.565	
+# Posição inter:  7757691.78 -363597.24 -1.606
+# Pilha 2:	  7757688.69 -363595.88 -0.018
+
+announce "Pile 1"
+set colision geometry to engage
+start on hidden pose
+
+# Pega o bloco
+yolo get bale from pile
+
+# Vai para posição intermediárioa
+park at 7757691.78, -363597.24, -1.606
+go after park at 7757691.78, -363597.24, -1.606
+reinitialize robot pose
+
+# Vai para outra Pilha
+park at 7757688.69, -363595.88, -0.018
+go after park at 7757688.69, -363595.88, -0.018
+put bale on top
+
