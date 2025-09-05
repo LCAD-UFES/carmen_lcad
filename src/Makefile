@@ -13,14 +13,14 @@ phase4:	| phase3
 
 include Makefile.conf
 
-PACKAGES = ipc global param_daemon proccontrol argos_lidar_driver camera_drivers\
+PACKAGES = ipc global param_daemon proccontrol argos_lidar_driver camera_drivers \
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu \
 	   fused_odometry bumblebee_basic laser_ldmrs viewer_3D \
 	   stereo road_finding v_disparity grid_mapping \
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G \
-	   rrt_planner subdir_module_example xyz_pointcloud_lidar velodyne log_filter rddf \
+	   rrt_planner subdir_module_example velodyne log_filter rddf \
 	   download_map parking_assistant navigator_astar \
 	   tracker navigator_spline navigator_gui \
 	   camera_boxes_to_world navigator_gui2 stereo_mapping \
