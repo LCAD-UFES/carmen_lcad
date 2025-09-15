@@ -1,40 +1,29 @@
 -> Para comparar o que o ROS manda com o que o ford_escape recebe salve os prints do ros em um arquivo "ros_odometry.txt", e os do ford_escape em um chamado "results_pid.txt", e faça:
 
-grep ODOMETRY ../../bin/results_pid.txt > results_odometry.txt
-grep ROS_ODOMETRY ../../bin/ros_odometry.txt > results_ros_odometry.txt
+Para velocidade:
 
--> Depois:
-
+```
+grep VEL ../../bin/results_pid.txt > results_pid-velocity.txt
+grep ROS_ODOMETRY ../../bin/ros_odometry.txt > results_odom_ros.txt
 gnuplot
+```
 
--> E dentro do gnuplot:
-
-k = "`head -1 results_ros_odometry.txt | awk '{print $7}'`"
-
-set title "Comparacao de Velocidade e Angulo entre FORDEscape e ROS"
-set xlabel "Tempo (s)"
-set ylabel "Valores"
-set grid
-set key left top
-
-plot "results_odometry.txt" using ($7 - k):5 with lines title "Ford phi", "results_ros_odometry.txt" using ($9 - k):5 with lines title "ROS phi", "results_ros_odometry.txt" using ($9 - k):7 with lines title "ROS global_phi", "results_odometry.txt" using ($7 - k):3 with lines title "Ford v", "results_ros_odometry.txt" using ($9 - k):3 with lines title "ROS v"
-
-
-
--> Para plotar o ângulo durante a direção registrado em um log
-
-grep ROBOTVELOCITY_ACK LOG_PATH > results_log.txt
-
--> Depois:
-
+```
+grep STE ../../bin/results_pid.txt > results_pid-steering.txt
+grep ROS_ODOMETRY ../../bin/ros_odometry.txt > results_odom_ros.txt
 gnuplot
+```
 
--> E dentro do gnuplot:
+-> Agora no gnuplot:
 
-set title "Plot do ângulo"
-set xlabel "Linha"
-set ylabel "ãngulo"
-set grid
+Para velocidade X velocidade bruta X velocidade filtrada:
+```
+k = "`head -1 ./results_odom_ros.txt | awk '{print $32}'`"
+plot "./results_pid-velocity.txt" using ($20-k):13 with lines title "cvFord", "./results_odom_ros.txt" using ($32-k):24 with lines title "cvRos", "./results_odom_ros.txt" using ($32-k):28 with lines title "filtered-cvRos"
+```
 
-plot 'results_log.txt' using 0:3 with lines title 'Valor' lw 2
-
+Para curvatura X curvatura bruta X curvatura filtrada:
+```
+k = "`head -1 ./results_odom_ros.txt | awk '{print $32}'`"
+plot "./results_pid-steering.txt" using ($14-k):8 with lines title "ccFord", "./results_odom_ros.txt" using ($32-k):(-$30/$24) with lines title "filtered-ccRos", "./results_odom_ros.txt" using ($32-k):(-$20/$24) with lines title "ccRos"
+```
