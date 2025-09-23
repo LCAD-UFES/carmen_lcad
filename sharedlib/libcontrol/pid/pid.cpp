@@ -324,6 +324,55 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	return u_t;
 }
 
+double
+carmen_libpid_steering_PID_controler_simple(double desired_phi, double current_phi, int manual_override)
+{
+	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
+	static double	previous_t = 0.0;
+	if (previous_t == 0.0)
+	{
+		previous_t = carmen_get_time();
+		return (0.0);
+	}
+	double t = carmen_get_time();
+	double delta_t = t - previous_t;
+
+	double error_t = (desired_phi - current_phi);
+
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = integral_t_1 = 0.0;
+
+	double derivative_t = (error_t - error_t_1) / delta_t;
+
+	u_t = g_steering_Kp * error_t +
+		  g_steering_Ki * integral_t +
+		  g_steering_Kd * derivative_t;
+
+	// Anti windup
+	if ((u_t < -100.0) || (u_t > 100.0))
+		integral_t = integral_t_1;
+	integral_t_1 = integral_t;
+
+	error_t_1 = error_t;
+	previous_t = t;
+
+	u_t = carmen_clamp(-100.0, u_t, 100.0);
+
+#ifdef PRINT
+	fprintf(stdout, "STEERING (cphi, dphi, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+		current_phi, desired_phi, error_t, integral_t, derivative_t, u_t, t);
+	fflush(stdout);
+#endif
+
+	return u_t;
+}
+
 void
 make_plot_pid_automatic(double steer_kp, double steer_kd, double steer_ki, double error_sum)
 {

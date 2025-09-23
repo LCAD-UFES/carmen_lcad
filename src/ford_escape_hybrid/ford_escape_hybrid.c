@@ -53,6 +53,7 @@
 #define ROBOT_NAME_ECOTECH4 	1
 #define ROBOT_NAME_MPW700 		2
 #define ROBOT_NAME_ASTRU 		3
+#define ROBOT_NAME_ARGOS 		4
 
 #define STEERING_INITIALIZATION_ERROR_CODE 9101 // manual Torc p. 89
 
@@ -976,6 +977,13 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config)),
 							plan_size, tune_pid_mode, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 //					printf("Entrei aqui pra ver o PID e tudo, g_steering_command: %lf\n", g_steering_command);
+				}
+				else if (robot_model_name == ROBOT_NAME_ARGOS)
+				{
+					double desired_curvature = tan(g_atan_desired_curvature);
+					double desired_phi = get_phi_from_curvature(desired_curvature, ford_escape_hybrid_config); 
+					g_steering_command = carmen_libpid_steering_PID_controler_simple(desired_phi, 
+					-ford_escape_hybrid_config->filtered_phi, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 				}
 				else
 					printf("ROBOT_MODEL_NAME %d wasnt recognized, check the code number\n "
