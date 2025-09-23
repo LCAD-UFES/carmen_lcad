@@ -25,7 +25,7 @@ TARGETS = prometheus_can2move prometheus_odom2can
 prometheus_can2move:prometheus_can2move.o  
 	$(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)
 
-prometheus_odom2can:prometheus_can2move.o  
+prometheus_odom2can:prometheus_odom2can.o  
 	$(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)
 
 include $(CARMEN_HOME)/src/Makefile.rules
