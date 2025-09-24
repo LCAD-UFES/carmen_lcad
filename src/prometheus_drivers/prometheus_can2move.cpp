@@ -19,7 +19,7 @@
 
 
 // ----CARMEN PARAM----
-#define DEFAULT_FREQUENCY 20.0
+#define DEFAULT_FREQUENCY 100.0 //ojTorc CAN messages measured frequency * 2 
 #define MAX_EFFORT 25600.0
 #define WHEEL_AXIS_DISTANCE 0.20
 
@@ -206,10 +206,11 @@ int main(int argc, char const *argv[])
                 //return -1;
             }
         }
-        else
-        {
-            std::cout << "No can messages to read" << std::endl; 
-        }
+        // Disabled for better log visibility
+        // else
+        // {
+        //     //std::cout << "No can messages to read" << std::endl;
+        // }
         sleep_for_microseconds( (1.0/DEFAULT_FREQUENCY)*1e6 );
     }
 
