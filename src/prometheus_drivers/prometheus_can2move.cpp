@@ -1,5 +1,5 @@
-#include <chrono>
 #include <iostream>
+#include <chrono>
 #include <thread>
 #include <cstring>
 #include <unistd.h>
@@ -32,7 +32,6 @@
 
 int _can_socket = 0;
 int _global_phi_effort = 0;
-std::atomic<bool> stop(false);
 
 std::vector<float> stringToFloatVector(const std::string &str) {
   std::vector<float> result;
@@ -45,6 +44,16 @@ std::vector<float> stringToFloatVector(const std::string &str) {
   }
   return result;
 }
+
+long int get_timestamp()
+{
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+        now.time_since_epoch()
+    ).count();
+    return timestamp;
+}
+
 
 void sleep_for_microseconds(double microseconds) {
     std::chrono::duration<double, std::micro> duration(microseconds);
@@ -194,9 +203,13 @@ int main(int argc, char const *argv[])
 
             float vx = vel;
             float vy = 0;
-            float yaw  = ang_vel;
+            float yaw  = ang_vel * -1; // Carmen yaw orientation is inverted
 
-            std::cout << "Published vx = " << vx << " Published vy = " << vy << " Published yaw = " << yaw << "\n\n"<< std::endl;
+            std::cout << "Published vx = " << vx
+                      << " Published vy = " << vy
+                      << " Published yaw = " << yaw
+                      << " Timestamp =" << get_timestamp() 
+                      <<"\n\n"<< std::endl;
 
 
             if (client.Move(vx, vy, yaw) != 0)

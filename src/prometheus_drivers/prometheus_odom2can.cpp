@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include <stdio.h>
 #include <cmath>
 #include <unistd.h>
@@ -33,6 +34,17 @@ using namespace unitree::robot;
 #define VEL_FILTER_CONSTANT 0.01
 #define WHEEL_AXIS_DISTANCE 0.20
 #define VEL_THREASHOLD 0.05
+
+
+long int get_timestamp()
+{
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+        now.time_since_epoch()
+    ).count();
+    return timestamp;
+}
+
 
 
 class PrometheusOdomSubscriber
@@ -194,6 +206,7 @@ void PrometheusOdomSubscriber::LowFreqOdomMessageHandler(const void* message)
         throw std::runtime_error("Error when writing Phi Bytes to CAN");
     }
     printf("Sent %+4.2f via CAN ID 0x80\n", _global_phi);
+    std::cout << "Timestamp =" << get_timestamp() << "\n\n" << std::endl;
     // std::cout << "position info: " << std::endl;
     // std::cout << "x: " << lf_estimator_state.position()[0] << std::endl;
     // std::cout << "y: " << lf_estimator_state.position()[1] << std::endl;
