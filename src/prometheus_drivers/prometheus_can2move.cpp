@@ -17,6 +17,7 @@
 #include <unitree/robot/g1/loco/g1_loco_api.hpp>
 #include <unitree/robot/g1/loco/g1_loco_client.hpp>
 
+#include <carmen/carmen.h>
 
 // ----CARMEN PARAM----
 #define DEFAULT_FREQUENCY 100.0 //ojTorc CAN messages measured frequency * 2 
@@ -25,7 +26,7 @@
 
 // ----G1 PARAM----
 #define NETWORK_INTERFACE "eth0"
-#define MAX_VELOCITY 0.33 // m/s
+#define MAX_VELOCITY 0.7 // m/s
 #define MAX_ANGLE 0.60 // rad
 #define MAX_ANG_VEL 1.00 // rad/s
 #define WHEEL_AXIS_DISTANCE 0.20
@@ -43,15 +44,6 @@ std::vector<float> stringToFloatVector(const std::string &str) {
     ss.ignore();
   }
   return result;
-}
-
-long int get_timestamp()
-{
-    auto now = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(
-        now.time_since_epoch()
-    ).count();
-    return timestamp;
 }
 
 
@@ -208,7 +200,7 @@ int main(int argc, char const *argv[])
             std::cout << "Published vx = " << vx
                       << " Published vy = " << vy
                       << " Published yaw = " << yaw
-                      << " Timestamp =" << get_timestamp() 
+                      << " Timestamp =" << (long long) carmen_get_time()
                       <<"\n\n"<< std::endl;
 
 

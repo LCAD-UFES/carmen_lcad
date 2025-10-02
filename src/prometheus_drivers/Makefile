@@ -11,7 +11,10 @@ IFLAGS += -std=c++17
 
 # libraries required by the driver 
 LFLAGS += -pthread -lunitree_sdk2 -lddsc -lddscxx
-IFLAGS += -I/usr/local/include -I/usr/local/include/ddscxx # Unitree headers 
+IFLAGS += -I/usr/local/include -I/usr/local/include/ddscxx # Unitree headers
+
+# libraries required by carmen_get_time()
+LFLAGS += -lglobal -lipc
 
 
 
@@ -23,9 +26,9 @@ PUBLIC_BINARIES = prometheus_can2move prometheus_odom2can
 TARGETS = prometheus_can2move prometheus_odom2can
 
 prometheus_can2move:prometheus_can2move.o  
-	$(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)
+#	$(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)
 
 prometheus_odom2can:prometheus_odom2can.o  
-	$(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)
+#	$(CXX) $(CXXFLAGS) $(IFLAGS) $^ -o $@ $(LFLAGS)
 
-include $(CARMEN_HOME)/src/Makefile.rules
+include ../Makefile.rules

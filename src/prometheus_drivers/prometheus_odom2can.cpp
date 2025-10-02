@@ -19,6 +19,8 @@
 #include <unitree/common/thread/thread.hpp>
 #include <unitree/idl/go2/SportModeState_.hpp>
 
+#include <carmen/carmen.h>
+
 using namespace unitree::common;
 using namespace unitree::robot;
 
@@ -34,17 +36,6 @@ using namespace unitree::robot;
 #define VEL_FILTER_CONSTANT 0.01
 #define WHEEL_AXIS_DISTANCE 0.20
 #define VEL_THREASHOLD 0.05
-
-
-long int get_timestamp()
-{
-    auto now = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(
-        now.time_since_epoch()
-    ).count();
-    return timestamp;
-}
-
 
 
 class PrometheusOdomSubscriber
@@ -206,30 +197,7 @@ void PrometheusOdomSubscriber::LowFreqOdomMessageHandler(const void* message)
         throw std::runtime_error("Error when writing Phi Bytes to CAN");
     }
     printf("Sent %+4.2f via CAN ID 0x80\n", _global_phi);
-    std::cout << "Timestamp =" << get_timestamp() << "\n\n" << std::endl;
-    // std::cout << "position info: " << std::endl;
-    // std::cout << "x: " << lf_estimator_state.position()[0] << std::endl;
-    // std::cout << "y: " << lf_estimator_state.position()[1] << std::endl;
-    // std::cout << "z: " << lf_estimator_state.position()[2] << std::endl;
-
-    // std::cout << "velocity info: " << std::endl;
-    // std::cout << "x: " << lf_estimator_state.velocity()[0] << std::endl;
-    // std::cout << "y: " << lf_estimator_state.velocity()[1] << std::endl;
-    // std::cout << "z: " << lf_estimator_state.velocity()[2] << std::endl;
-
-    // std::cout << "eular angle info: " << std::endl;
-    // std::cout << "x: " << lf_estimator_state.imu_state().rpy()[0] << std::endl;
-    // std::cout << "y: " << lf_estimator_state.imu_state().rpy()[1] << std::endl;
-    // std::cout << "z: " << lf_estimator_state.imu_state().rpy()[2] << std::endl;
-
-    // std::cout << "yaw speed info: " << std::endl;
-    // std::cout << lf_estimator_state.yaw_speed() << std::endl;
-
-    // std::cout << "Quaternion info: " << std::endl;
-    // std::cout << "w: " << lf_estimator_state.imu_state().quaternion()[0] << std::endl;
-    // std::cout << "x: " << lf_estimator_state.imu_state().quaternion()[1] << std::endl;
-    // std::cout << "y: " << lf_estimator_state.imu_state().quaternion()[2] << std::endl;
-    // std::cout << "z: " << lf_estimator_state.imu_state().quaternion()[3] << std::endl;
+    std::cout << "Timestamp =" << (long long) carmen_get_time() << "\n\n" << std::endl;
 }
 
 int main(int argc, const char** argv)
