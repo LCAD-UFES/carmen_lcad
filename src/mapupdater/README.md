@@ -1,122 +1,222 @@
-# FastSLAM
+# MapUpdater - Life Long SLAM
 
-O FastSLAM (implementação atual é, na verdade, o FastSLAM 2.0 para mapas de grid) é um algoritmo de SLAM online para geração de mapas, que considera que o último
-estado do robôs contém toda a informação sobre a pose do robô e o mapa (assunção de Markov), ao contrário do GraphSLAM, que é um algoritmo de full SLAM offline, 
-que considera todos os estados do log (mas não os do Velodyne, mas apenas seu timestamp...) simultanemente para fazer o mapa e saber onde o robô estava no mapa.
+O **MapUpdater** é um módulo do sistema de autonomia CARMEN-LCAD que implementa **Life Long SLAM** (Simultaneous Localization and Mapping contínuo). Este módulo mantém e atualiza mapas de forma contínua durante a operação de veículos autônomos, permitindo que o sistema se adapte a mudanças no ambiente sem intervenção humana.
 
-Assim, o estado inicial é muito importante para um bom mapa e o robô deve estar parado por pelo alguns segundos (6 é um bom mínimo) e com bom GPS para que o
-mapa fique bom e bem ancorado no mundo. A orientação do GPS é fundamental. Para GPSs sem orientação, invocar o FasSLAM com a flag que indica o ângulo inicial 
-(initial_angle, ver abaixo).
+## Visão Geral
 
-Além de um bom estado inicial, a odometria deve estar calibrada, assim como a posição dos sensores (no carmen ini), especialmente a posição da sensor_board,
-do Velodyne (melhor colocar o ângulo de pitch e yaw no Velodyne, e não na sensor_board) e do GPS.
+O MapUpdater trabalha em conjunto com os módulos `localizer_ackerman` e `map_server` para realizar:
 
+- **Localização**: Estimação contínua da pose do veículo
+- **Mapeamento**: Atualização contínua do mapa do ambiente
+- **Fusão de Mapas**: Integração de observações atuais com mapas offline existentes
 
-## Como compilar
+O módulo compara o mapa atual (gerado em tempo real) com o mapa offline (armazenado) e atualiza o mapa offline quando detecta mudanças significativas no ambiente.
 
-Basta ir na pasta src/fastslam de executar make
- cd src/fastslam
- make
+## Como Compilar
 
+### Compilação Normal
 
-## Como usar
-
-O FastSLAM é uma mistura do localize_ackerman e do mapper e tem interface similar ao mapper. Para usá-lo, execute o process process-fastslam.ini 
-com o seu log de interesse e, no diretório bin, execute o comando:
- ./fastslam -map_path ../data/mapper_teste2 -calibration_file calibration_table.txt
-
-No playback control (interface do logger), clique no botão Play para iniciar o mapeamento. Pode ser necessário clicar mais 
-de uma vez no início da execução/construção do mapa, já que o FastSLAM emprega as mesmas mensagens do playback control para ajustar o fluxo de mensagens 
-de modo a otimizar o tempo de execução sem perda de mensagens. Se você quiser pausar a contrução do mapa (importante no fechamento de loops), 
-clique várias vezes no botão de Stop até parar a execucão do log (o FastSLAM usa as mensagens do playback control; portanto, há
-uma competição entre o usuário e o FastSLAM sobre o fluxo do log).
-
-Com o comando acima (./fastslam ...), o FastSLAM vai criar, depois do ctrl+c final, o mapa no diretório ../data/mapper_teste2
-Note que o FastSLAM não cria o mapa de remission e outros mapas associados, mas apenas o mapa de occupancy.
-
-Se o log estiver parado, é necessário teclar ctrl+c duas vezes para interromper o programa e salvar o mapa final.
-
-O FastSLAM publica a globalpos. Assim, você pode gerar o RDDF do log ao mesmo tempo em que faz o mapa. Basta rodar o rddf_build ao mesmo tempo em que o
-FastSLAM está fazendo o mapa.
-
-
-## Parâmetros
-
-O FastSLAM possui parâmetros específicos no carmen ini:
-* fastslam_num_particles				1
-* fastslam_num_particles_improved		300
-* fastslam_log_playback_speed			1.0
-* fastslam_log_time_between_likelihood_maps_update 0.5
-
-* fastslam_localize_lmap_std									2.40
-* fastslam_localize_yaw_uncertainty_due_to_grid_resolution	0.107 # em graus
-* fastslam_localize_xy_uncertainty_due_to_grid_resolution	0.15  # em metros
-* fastslam_localize_particles_normalize_factor			0.05
-* fastslam_gps_correction_factor					1.0   # 0.0 -> sem gps correction, 1.0 -> gps correction forte, >1 -> gps correction maior que a importancia do mapa
-
-O primeiro determina quantas partículas de mapa serão usadas. O ideal seriam 25, mas, na versão atual do FastSLAM rodando com computadores típicos do 
-LCAD de 2022, manter 25 mapas gasta muita memória e requer muito poder de processamento. 
-
-O segundo parâmetro determina quantas partículas de localização teremos por mapa. O ideal seriam 300, mas isso torna o FastSLAM muito lento
-com computadores atuais também se fastslam_num_particles é grande (o número de processos de localização é igual a 
-fastslam_num_particles x fastslam_num_particles_improved).
-
-Note que todos os parâmetros do localize_ackerman e do mapper influenciam o FastSLAM, exceto os que o FastSLAM sobrescreve:
-
-* fastslam_localize_lmap_std									2.40
-* fastslam_localize_yaw_uncertainty_due_to_grid_resolution	0.107 # em graus
-* fastslam_localize_xy_uncertainty_due_to_grid_resolution	0.15  # em metros
-* fastslam_localize_particles_normalize_factor			0.02
-
-O último parâmetro, fastslam_gps_correction_factor, indica o quanto o GPS é considerado no processo de fazer o mapa com o FastSLAM.
-Se o GPS estiver bom, use um valor próximo de 0.5. Se estiver ruim, use 0. Para mapear com GPS apenas
-use um valor grande (10.0, por exemplo).
-
-O FastSLAM precisa saber a orientação inicial com precisão. Caso ela não esteja boa (oriunda de IMU apenas, por exemplo)
-ou não esteja disponível, use o parâmetro de linha `initial_theta` para informar o ângulo inicial do robô
-manualmente:
-` ./fastslam -map_path ../data/mapper_teste2 -calibration_file calibration_table.txt -initial_theta 0.66`
-
-O ângulo deve ser informado em radianos.
-
-
-## Merge de mapas
-
-Para fazer merge de mapas, basta rodar um log e fazer um mapa base e, depois, rodar o outro log e fazer o novo mapa em cima 
-do anterior. É importante que os dois logs possuam um bom sinal de GPS no ponto onde o merge se inicia. O parâmetro fastslam_gps_correction_factor
-deve ser igual a zero quando da execução do segundo log (o GPS vai ser usado apenas para a localização inicial).
-
-
-## Mapas com sinal de GPS ruim
-
-O FastSLAM pode fazer mapas sem nenhum GPS, usando apenas a odometria e os dados de Velodyne. Pode fazer mapas, também, em regiões
-que alternam sinal de GPS bom e sinal de GPS ruim (entrada e saídas de galpões). Para o mapa ficar bem ancorado no mundo, o início do
-mapeamento deve ser feito num ponto de bom sinal de GPS.
-
-
-## Parâmetros de linha de comando
-
-* `-use_gps on/off`: considera ou não o sinal do GPS.
-
-* `-initial_x`, `-initial_y`, `-initial_theta`: poses iniciais que bypassam as poses iniciais obtidas pela fused odometry (se `-use_gps off`) ou do GPS (se `-use_gps on`)
-
-* `-save_globalpos_file <filename>`: salva as poses globais no devido arquivo, com as colunas
-
-| globalpos_x | globalpos_y | globalpos_z | globalpos_yaw | gps_x | gps_y | latitude | longitude | gps_quality | v | phi | timestamp |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-
-
-DICA: Se a odometria estiver ruim e o GPS aceitável, faça:
-```
-fastslam_gps_correction_factor = 100000.0
-
-// E espalhe bem as partículas para que ele siga o GPS
-localize_ackerman_phi_noise_phi = 100000.0 ou localize_ackerman_phi_noise_velocity = 10000.0
-
-// phi_noise_phi é um ruído adicionado ao phi a partir do valor de phi, e phi_noise_velocity um ruído adicionado ao phi a partir da velocity. Se phi é zero, phi_noise_phi não tem efeito.
+```bash
+cd /home/claudine/carmen_lcad/src/mapupdater
+make
 ```
 
-E smooth o GPS, para que ele não fique quicando
+### Compilação em Modo Debug
 
-* `./gps_xyz -kalman on`
-* `./fastslam -use_gps on`
+```bash
+cd /home/claudine/carmen_lcad/src/mapupdater
+make debug
+```
+
+O executável será gerado em `$(CARMEN_HOME)/bin/mapupdater`.
+
+## Como Usar
+
+### Execução Básica
+
+O MapUpdater deve ser executado a partir do diretório `bin`:
+
+```bash
+cd $(CARMEN_HOME)/bin
+./mapupdater -map_path ../data/mapper_teste2 -map_x 7757721.8 -map_y -363569.5 -block_map on
+```
+
+### Parâmetros de Linha de Comando
+
+| Parâmetro | Tipo | Descrição | Exemplo |
+|-----------|------|-----------|---------|
+| `-map_path` | string | Caminho para o diretório onde os mapas são armazenados | `../data/mapper_teste2` |
+| `-map_x` | double | Coordenada X inicial do mapa (UTM) | `7757721.8` |
+| `-map_y` | double | Coordenada Y inicial do mapa (UTM) | `-363569.5` |
+| `-block_map` | on/off | Habilita o uso de mapas em blocos (block maps) | `on` |
+| `-map` | string | Caminho para um arquivo de mapa específico (opcional) | `../data/map.ini` |
+| `-publish_grid_mapping_map_at_startup` | on/off | Publica o mapa no início (opcional) | `off` |
+
+### Exemplo Completo
+
+```bash
+cd $(CARMEN_HOME)/bin
+./mapupdater \
+    -map_path ../data/mapper_teste2 \
+    -map_x 7757721.8 \
+    -map_y -363569.5 \
+    -block_map on
+```
+
+## Parâmetros de Configuração (carmen.ini)
+
+O MapUpdater utiliza vários parâmetros configuráveis no arquivo `carmen.ini`:
+
+### Parâmetros do MapUpdater
+
+| Parâmetro | Tipo | Descrição | Padrão |
+|-----------|------|-----------|--------|
+| `mapupdater_percentage_change_for_update` | double | Percentual de células que devem mudar para forçar atualização | - |
+| `mapupdater_max_log_odds` | double | Valor máximo de log-odds para considerar célula ocupada | - |
+| `mapupdater_min_log_odds` | double | Valor mínimo de log-odds para considerar célula livre | - |
+| `mapupdater_max_count` | double | Número mínimo de observações para considerar mudança válida | - |
+| `mapupdater_strenght_dacay` | double | Limite de reversões (occupied ↔ free) para forçar atualização | - |
+
+### Parâmetros do Map Server
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `map_server_map_grid_res` | double | Resolução do grid do mapa (metros) |
+| `map_server_map_width` | double | Largura do mapa (metros) |
+| `map_server_map_height` | double | Altura do mapa (metros) |
+| `map_server_initial_waiting_time` | double | Tempo de espera inicial (segundos) |
+
+### Parâmetros do Robot
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `robot_collision_file` | string | Caminho para arquivo de modelo de colisão do robô (opcional) |
+
+**Nota**: Se o arquivo de colisão não for necessário, você pode comentar a linha no `carmen.ini` ou tornar o parâmetro opcional no código.
+
+## Como Funciona
+
+### Arquitetura
+
+1. **Inicialização**: O MapUpdater carrega o mapa offline inicial e configura os sensores (principalmente Velodyne).
+
+2. **Processamento Contínuo**:
+   - Recebe mensagens de `globalpos` do localizador
+   - Recebe dados do Velodyne
+   - Atualiza o mapa atual com novas observações
+   - Compara o mapa atual com o mapa offline
+
+3. **Atualização do Mapa**:
+   - Detecta mudanças significativas (reversões de ocupação ou confirmações)
+   - Atualiza o mapa offline quando o número de mudanças excede o threshold
+   - Publica o mapa atualizado para outros módulos
+
+4. **Gerenciamento de Blocos**:
+   - Quando o robô se move para uma nova região, carrega o bloco de mapa correspondente
+   - Salva automaticamente os blocos modificados
+
+### Algoritmo de Atualização
+
+O MapUpdater detecta dois tipos de mudanças:
+
+1. **Reversões**: Quando uma célula muda de ocupada para livre (ou vice-versa)
+   - Requer: `current_count > max_count` e log-odds acima/abaixo dos thresholds
+
+2. **Confirmações**: Quando uma célula mantém o mesmo estado mas com mais evidências
+   - Requer: `current_count > max_count` e mais observações que o mapa offline
+
+A atualização é forçada quando o número de reversões excede `mapupdater_strenght_dacay`.
+
+## Debug
+
+### Usando GDB
+
+```bash
+cd $(CARMEN_HOME)/bin
+gdb ./mapupdater
+(gdb) set args -map_path ../data/mapper_teste2 -map_x 7757721.8 -map_y -363569.5 -block_map on
+(gdb) run
+```
+
+### Usando VS Code / Cursor
+
+O projeto inclui configurações de debug no diretório `.vscode/`:
+
+1. Abra o diretório `src/mapupdater` no VS Code/Cursor
+2. Instale a extensão **C/C++** (Microsoft)
+3. Defina breakpoints no código
+4. Pressione `F5` ou vá em Run > Start Debugging
+5. Selecione "Debug MapUpdater"
+
+A configuração compila automaticamente com `make debug` antes de iniciar o debugger.
+
+## Troubleshooting
+
+### Erro: "Can not load Col File"
+
+Este erro ocorre quando o arquivo de modelo de colisão do robô não é encontrado.
+
+**Soluções:**
+
+1. **Configurar o arquivo de colisão** no `carmen.ini`:
+   ```ini
+   robot_collision_file argos/argos_col.txt
+   ```
+
+2. **Criar um arquivo de colisão simples** (se não tiver um):
+   ```
+   1
+   0
+   0.0 0.0 0.5 0
+   ```
+   Salve em `$(CARMEN_HOME)/bin/meu_robo/meu_robo_col.txt` e configure no `.ini`.
+
+3. **Tornar o parâmetro opcional** (modificando o código em `prob_map.cpp`):
+   - Mude `carmen_param_allow_unfound_variables(0)` para `(1)`
+   - Mude o último parâmetro de `1` para `0` na definição do parâmetro
+   - Adicione verificação `if (poly_file == NULL) return 0;`
+
+### Erro: "mapupdater: could not get an offline map at startup!"
+
+- Verifique se o caminho `-map_path` está correto
+- Verifique se existem mapas no diretório especificado
+- Verifique se as coordenadas `-map_x` e `-map_y` estão corretas
+- Certifique-se de que `-block_map on` está habilitado se usar mapas em blocos
+
+### O mapa não está sendo atualizado
+
+- Verifique os parâmetros `mapupdater_*` no `carmen.ini`
+- Ajuste `mapupdater_strenght_dacay` para um valor menor se necessário
+- Verifique se o veículo está se movendo (velocidade > 0.05 m/s)
+
+## Dependências
+
+O MapUpdater depende de:
+
+- `localizer_ackerman`: Para fornecer a pose global do veículo
+- `map_server`: Para gerenciar e publicar mapas
+- `mapper`: Para processar dados do Velodyne
+- `velodyne_interface`: Para receber dados do sensor LiDAR
+
+## Estrutura de Arquivos
+
+```
+mapupdater/
+├── mapupdater_main.cpp    # Código principal
+├── fastslam.h             # Definições do FastSLAM
+├── Makefile                 # Sistema de build
+├── README.md               # Este arquivo
+└── .vscode/                # Configurações de debug
+    ├── launch.json
+    └── tasks.json
+```
+
+## Referências
+
+- CARMEN-LCAD: https://github.com/LCAD-UFES/carmen_lcad
+- Sistema de autonomia desenvolvido no Laboratório de Computação de Alto Desempenho (LCAD) da UFES
+
+## Autores
+
+Desenvolvido como parte do sistema de autonomia CARMEN-LCAD para veículos autônomos.
+
