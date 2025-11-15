@@ -435,8 +435,6 @@ get_position_offset(void)
     zero.y = initial_y_origin;
     zero.z = 0;
 
-    return zero;
-
     if (odometry_initialized)
     {
         return gps_position_at_turn_on;
@@ -453,6 +451,8 @@ get_position_offset(void)
     {
         return first_map_origin;
     }
+    
+    return zero;
 }
 
 
