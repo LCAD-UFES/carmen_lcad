@@ -29,7 +29,6 @@
 #define MAX_VELOCITY 0.7 // m/s
 #define MAX_ANGLE 0.60 // rad
 #define MAX_ANG_VEL 1.00 // rad/s
-#define WHEEL_AXIS_DISTANCE 0.20
 
 int _can_socket = 0;
 int _global_phi_effort = 0;
