@@ -20,9 +20,9 @@
 #include <carmen/carmen.h>
 
 // ----CARMEN PARAM----
-#define DEFAULT_FREQUENCY 100.0 //ojTorc CAN messages measured frequency * 2 
+#define DEFAULT_FREQUENCY 200.0 //ojTorc CAN messages measured frequency * 4
 #define MAX_EFFORT 25600.0
-#define WHEEL_AXIS_DISTANCE 0.20
+#define WHEEL_AXIS_DISTANCE 0.450
 
 // ----G1 PARAM----
 #define NETWORK_INTERFACE "eth0"

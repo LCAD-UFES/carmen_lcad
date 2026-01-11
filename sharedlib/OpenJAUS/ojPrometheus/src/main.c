@@ -38,7 +38,7 @@
 #endif
 
 #define DESOUZA_GUIDOLINI_CONSTANT 					0.0022
-#define robot_distance_between_front_and_rear_axles	0.20
+#define robot_distance_between_front_and_rear_axles	0.450
 #define robot_understeer_coeficient					0.0015
 
 #define FRONT_RIGHT	0
