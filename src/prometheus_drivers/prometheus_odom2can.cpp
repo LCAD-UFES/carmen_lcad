@@ -32,8 +32,8 @@ using namespace unitree::robot;
 //------------------------------------
 //          CARMEN PARAMS
 //------------------------------------
-#define PHI_FILTER_CONSTANT 0.03
-#define VEL_FILTER_CONSTANT 0.05
+#define PHI_FILTER_CONSTANT 0.09 //0.03
+#define VEL_FILTER_CONSTANT 0.08 //0.05 //0.01
 #define WHEEL_AXIS_DISTANCE 0.450
 #define VEL_THREASHOLD 0.05
 
