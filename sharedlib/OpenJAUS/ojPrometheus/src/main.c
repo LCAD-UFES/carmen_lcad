@@ -414,6 +414,8 @@ void update_car_speed(struct can_frame frame)
 	float ft_car_speed = 0.0;
 	memcpy(&ft_car_speed, &frame.data[0], sizeof(float));
 	car_speed = (double) ft_car_speed;
+	printf("car_speed = %f\n", car_speed);
+	//car_speed = 0.0;
 }
 
 
@@ -437,6 +439,7 @@ void update_steering_angle(struct can_frame frame)
 	double v = car_speed;
 	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
+	//steering_angle = 0.0;
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)
@@ -698,6 +701,8 @@ int main(int argCount, char **argString)
 		in_can_sockfd = init_can(argString[1]);
 		out_can_sockfd = init_can(argString[2]);
 	}
+
+	sleep(2);
 
 	init_modules();
 

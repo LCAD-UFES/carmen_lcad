@@ -155,52 +155,54 @@ int main(int argc, char const *argv[])
     int can_read = 0;
     while(1)
     {
-	    std::cout << "Waiting CAN Message" << std::endl;    
+	    //std::cout << "Waiting CAN Message" << std::endl;    
         can_read = read(_can_socket, &frame, sizeof(struct can_frame));
-	    std::cout << "CAN Read!" << std::endl;
+	    //std::cout << "CAN Read!" << std::endl;
         if (can_read > 0)
         {
             // Communication with Carmen through CAN is little-endian
-            int16_t vel_effort = (frame.data[1] << 8) | frame.data[0];
-            std::cout << "Receveid 'vel_effort' =  " << vel_effort << std::endl;
-            int16_t steering_effort = (frame.data[3] << 8) | frame.data[2];
-            std::cout << "Receveid 'steering_effort' =  " << steering_effort << std::endl;
+            int vel_effort = (frame.data[1] << 8) | frame.data[0];
+            int steering_effort = (frame.data[3] << 8) | frame.data[2];
 
-            float vel_percentage = (float)vel_effort/MAX_EFFORT;
-            if (vel_percentage > 1.0) vel_percentage = 1.0;
-            else if (vel_percentage < -1.0) vel_percentage= -1.0;
-            std::cout << "Receveid 'vel_percentage' =  " << std::fixed << std::setprecision(2) << vel_percentage << std::endl;
+            float vel_percentage = (float) vel_effort / MAX_EFFORT;
+            if (vel_percentage > 1.0) 
+                vel_percentage = 1.0;
+            else if (vel_percentage < -1.0)
+                vel_percentage= -1.0;
 
-            float vel = vel_percentage*MAX_VELOCITY;
-            if (vel > MAX_VELOCITY) vel = MAX_VELOCITY;
-            else if (vel < -MAX_VELOCITY) vel = -MAX_VELOCITY;
-            std::cout << "Receveid 'vel' =  " << std::fixed << std::setprecision(2) << vel << std::endl;
+            float vel = vel_percentage * MAX_VELOCITY;
+            if (vel > MAX_VELOCITY)
+                vel = MAX_VELOCITY;
+            else if (vel < -MAX_VELOCITY)
+                vel = -MAX_VELOCITY;
+
+            printf("vel_effort = %d, vel_percentage = %f, vel = %f\n", vel_effort, vel_percentage, vel);
 
             _global_phi_effort += steering_effort;
             if (_global_phi_effort > MAX_EFFORT) _global_phi_effort = MAX_EFFORT;
             else if (_global_phi_effort < -MAX_EFFORT) _global_phi_effort = -MAX_EFFORT;
-            std::cout << "Receveid '_global_phi_effort' =  " << _global_phi_effort << std::endl;
+            //std::cout << "Receveid '_global_phi_effort' =  " << _global_phi_effort << std::endl;
 
             float phi = ( (float)_global_phi_effort/MAX_EFFORT)*MAX_ANGLE;
             if ( phi > MAX_ANGLE ) phi = MAX_ANGLE;
             else if ( phi < -MAX_ANGLE ) phi = -MAX_ANGLE;
-            std::cout << "Receveid 'phi' =  " << std::fixed << std::setprecision(2) << phi << std::endl;
+            //std::cout << "Receveid 'phi' =  " << std::fixed << std::setprecision(2) << phi << std::endl;
 
             float ang_vel = atanf(phi) * vel / WHEEL_AXIS_DISTANCE;
             if (ang_vel > MAX_ANG_VEL) ang_vel = MAX_ANG_VEL;
             else if (ang_vel < -MAX_ANG_VEL) ang_vel = -MAX_ANG_VEL;
-            std::cout << "Receveid 'ang_vel' =  " << std::fixed << std::setprecision(2) << ang_vel << std::endl;
+            //std::cout << "Receveid 'ang_vel' =  " << std::fixed << std::setprecision(2) << ang_vel << std::endl;
 
 
             float vx = vel;
             float vy = 0;
             float yaw  = ang_vel * -1; // Carmen yaw orientation is inverted
 
-            std::cout << "Published vx = " << vx
-                      << " Published vy = " << vy
-                      << " Published yaw = " << yaw
-                      << " Timestamp =" << (long long) carmen_get_time()
-                      <<"\n\n"<< std::endl;
+            //std::cout << "Published vx = " << vx
+            //          << " Published vy = " << vy
+            //          << " Published yaw = " << yaw
+            //          << " Timestamp =" << (long long) carmen_get_time()
+            //          <<"\n\n"<< std::endl;
 
 
             if (client.Move(vx, vy, yaw) != 0)

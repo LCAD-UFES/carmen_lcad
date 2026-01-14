@@ -33,8 +33,8 @@ using namespace unitree::robot;
 //          CARMEN PARAMS
 //------------------------------------
 #define PHI_FILTER_CONSTANT 0.03
-#define VEL_FILTER_CONSTANT 0.01
-#define WHEEL_AXIS_DISTANCE 0.20
+#define VEL_FILTER_CONSTANT 0.05
+#define WHEEL_AXIS_DISTANCE 0.450
 #define VEL_THREASHOLD 0.05
 
 
@@ -166,41 +166,36 @@ void PrometheusOdomSubscriber::LowFreqOdomMessageHandler(const void* message)
     _global_phi += PHI_FILTER_CONSTANT * (phi - _global_phi);
     _global_vel += VEL_FILTER_CONSTANT * (x_axis_vel - _global_vel);
 
+    //printf("x_axis_vel = %f, _global_vel = %f \n", x_axis_vel, _global_vel);
+    //fflush(stdout);
+
     struct can_frame frame;
-    uint8_t* data_ptr = reinterpret_cast<uint8_t*>(&_global_vel);
 
     frame.can_id = 0x425; // Velocity ID
     frame.can_dlc = 4;  // 4 data bytes
     memset(frame.data, 0, 4);
 
-    frame.data[0] = data_ptr[3];
-    frame.data[1] = data_ptr[2];
-    frame.data[2] = data_ptr[1];
-    frame.data[3] = data_ptr[0];
+    memcpy(&frame.data[0], &_global_vel, sizeof(float));
 
     if (write(_can_socket, &frame, sizeof(frame)) != sizeof(frame)) {
         throw std::runtime_error("Error when writing Velocity Bytes to CAN");
     }
-    printf("Sent %+4.2f via CAN ID 0x425\n", _global_vel);
+    //printf("Sent %+4.2f via CAN ID 0x425\n", _global_vel);
 
     frame.can_id = 0x80; // Angle ID
     frame.can_dlc = 4;  // 4 data bytes
-    memset(frame.data, 0, 4);  
+    memset(frame.data, 0, 4);
 
-    data_ptr = reinterpret_cast<uint8_t*>(&_global_phi);
-    frame.data[0] = data_ptr[3];
-    frame.data[1] = data_ptr[2];
-    frame.data[2] = data_ptr[1];
-    frame.data[3] = data_ptr[0];
+    memcpy(&frame.data[0], &_global_phi, sizeof(float));
 
     if (write(_can_socket, &frame, sizeof(frame)) != sizeof(frame)) {
         throw std::runtime_error("Error when writing Phi Bytes to CAN");
     }
-    printf("Sent %+4.2f via CAN ID 0x80\n", _global_phi);
-    std::cout << "Timestamp =" << (long long) carmen_get_time() << "\n\n" << std::endl;
+    //printf("Sent %+4.2f via CAN ID 0x80\n", _global_phi);
+    //std::cout << "Timestamp =" << (long long) carmen_get_time() << "\n\n" << std::endl;
 }
 
-int main(int argc, const char** argv)
+int main(int argc __attribute__ ((unused)), const char** argv __attribute__ ((unused)))
 {
     #ifndef NETWORK_INTERFACE
     if (argc < 2)
