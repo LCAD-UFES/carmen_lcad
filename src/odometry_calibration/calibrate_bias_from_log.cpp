@@ -957,7 +957,7 @@ find_nearest_time_to_gps(PsoData *pso_data, int id_gps, double latency)
 
 	if (pso_data->velodyne_data.size() == 0)
 	{
-		printf("\nNo Velodyne|LiDAR data found in the log .txt file!  \nThe Velodyne|LiDAR data is needed to produce poses_opt.txt file\n\n");
+		printf("\nNo Velodyne|LiDAR data found in the log .txt file!  \nThe Velodyne|LiDAR data is needed to produce poses_opt.txt file\nDid you forgot the '-use_lidar {lidar_num}' flag? See the README on $CARMEN_HOME/src/odometry_calibration/README.txt for help. \n\n");
 		exit(1);
 	}
 
