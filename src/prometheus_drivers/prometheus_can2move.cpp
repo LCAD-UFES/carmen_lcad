@@ -161,8 +161,8 @@ int main(int argc, char const *argv[])
         if (can_read > 0)
         {
             // Communication with Carmen through CAN is little-endian
-            int vel_effort = (frame.data[1] << 8) | frame.data[0];
-            int steering_effort = (frame.data[3] << 8) | frame.data[2];
+            int16_t vel_effort = (frame.data[1] << 8) | frame.data[0];
+            int16_t steering_effort = (frame.data[3] << 8) | frame.data[2];
 
             float vel_percentage = (float) vel_effort / MAX_EFFORT;
             if (vel_percentage > 1.0) 
@@ -176,7 +176,7 @@ int main(int argc, char const *argv[])
             else if (vel < -MAX_VELOCITY)
                 vel = -MAX_VELOCITY;
 
-            printf("vel_effort = %d, vel_percentage = %f, vel = %f\n", vel_effort, vel_percentage, vel);
+            //printf("vel_effort = %d, vel_percentage = %f, vel = %f\n", vel_effort, vel_percentage, vel);
 
             _global_phi_effort += steering_effort;
             if (_global_phi_effort > MAX_EFFORT) _global_phi_effort = MAX_EFFORT;
@@ -192,6 +192,7 @@ int main(int argc, char const *argv[])
             if (ang_vel > MAX_ANG_VEL) ang_vel = MAX_ANG_VEL;
             else if (ang_vel < -MAX_ANG_VEL) ang_vel = -MAX_ANG_VEL;
             //std::cout << "Receveid 'ang_vel' =  " << std::fixed << std::setprecision(2) << ang_vel << std::endl;
+            //printf("_global_phi_effort = %d, phi = %f, ang_vel = %f\n", steering_effort, phi, ang_vel);
 
 
             float vx = vel;
