@@ -66,8 +66,8 @@ public:
         std::cout << "Shutting Odom2Can Driver Down" << std::endl;
     }
 
-    void Init(char** parameter_vec, int parameter_len);
-    void ArgumentParser(char** parameter_vec, int parameter_len);
+    void Init(const char** parameter_vec, int parameter_len);
+    void ArgumentParser(const char** parameter_vec, int parameter_len);
 
 private:
 
@@ -87,12 +87,12 @@ private:
     float _global_phi = 0.0;
     float _global_vel = 0.0;
     bool log_sensor_data = false;
-    long long start_carmen_time = 0;
+    double start_carmen_time = 0;
     std::ofstream file;
 };
 
 
-void PrometheusOdomSubscriber::ArgumentParser(char** parameter_vec, int parameter_len)
+void PrometheusOdomSubscriber::ArgumentParser(const char** parameter_vec, int parameter_len)
 {
     std::vector<std::string> args(parameter_vec, parameter_vec + parameter_len);
     for (const std::string & s : args)
@@ -106,13 +106,13 @@ void PrometheusOdomSubscriber::ArgumentParser(char** parameter_vec, int paramete
                 throw std::runtime_error("Error Opening Sensor Data Log file!");
                 exit(ERROR_OPENING_SENSOR_DATA_LOG_FILE);
             }
-            this->start_carmen_time = (long long) carmen_get_time();
+            this->start_carmen_time = carmen_get_time();
         }
     }
 }
 
 
-void PrometheusOdomSubscriber::Init(char** parameter_vec, int parameter_len)
+void PrometheusOdomSubscriber::Init(const char** parameter_vec, int parameter_len)
 {
     std::cout << "Starting Prometheus Odom2Can Driver" << std::endl;
 
@@ -153,7 +153,7 @@ void PrometheusOdomSubscriber::Init(char** parameter_vec, int parameter_len)
 
     if (parameter_len > 1)
     {
-        this->ArgumentParser(parameter_vec);
+        this->ArgumentParser(parameter_vec,parameter_len);
     }
 
     std::cout << "Setup Complete" << std::endl;
@@ -238,9 +238,9 @@ void PrometheusOdomSubscriber::LowFreqOdomMessageHandler(const void* message)
     {
         if ( this->file.is_open() )
         {
-            long long carmen_time = (long long) carmen_get_time();
-            file << "VELOCITY (raw,filtered,timestamp): " << x_axis_vel << ", " << _global_vel << ", " << carmen_time - this->start_carmen_time << "\n";
-            file << "STEERING (raw,filtered,timestamp): " << phi << ", " << _global_phi << ", " << carmen_time - this->start_carmen_time << "\n";
+            double carmen_time = carmen_get_time();
+            file << "VELOCITY (raw,filtered,timestamp): " << x_axis_vel << ", " << _global_vel << ", " << carmen_time - this->start_carmen_time << "\n"
+                 << "STEERING (raw,filtered,timestamp): " << phi << ", " << _global_phi << ", " << carmen_time - this->start_carmen_time << "\n";
         }
     }
     //printf("Sent %+4.2f via CAN ID 0x80\n", _global_phi);
@@ -269,7 +269,7 @@ int main(int argc __attribute__ ((unused)), const char** argv __attribute__ ((un
 
 
     PrometheusOdomSubscriber sub;
-    sub.Init();
+    sub.Init(argv,argc);
 
     while (1)
     {
