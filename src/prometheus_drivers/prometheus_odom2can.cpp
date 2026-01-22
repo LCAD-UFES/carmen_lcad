@@ -1,6 +1,9 @@
 #include <iostream>
 #include <chrono>
 #include <stdio.h>
+#include <vector>
+#include <string>
+#include <fstream>
 #include <cmath>
 #include <unistd.h>
 #include <sys/types.h>
@@ -28,6 +31,8 @@ using namespace unitree::robot;
 #define TOPIC_SPORT_LF_STATE "rt/lf/odommodestate"//low frequency
 #define NETWORK_INTERFACE "eth0"
 #define MAIN_LOOP_SLEEP_INTERVAL 10
+#define MAX_ARGS 2
+#define DEFAULT_SENSOR_LOG_DATA_FILENAME "log_prometheus_sensor_data.txt"
 
 //------------------------------------
 //          CARMEN PARAMS
@@ -36,6 +41,12 @@ using namespace unitree::robot;
 #define VEL_FILTER_CONSTANT 0.08 //0.05 //0.01
 #define WHEEL_AXIS_DISTANCE 0.450
 #define VEL_THREASHOLD 0.05
+
+enum ErrorCodes
+{
+    EXCEEDS_MAX_PARAMETER_NUM = -2,
+    ERROR_OPENING_SENSOR_DATA_LOG_FILE,
+};
 
 
 class PrometheusOdomSubscriber
@@ -55,7 +66,8 @@ public:
         std::cout << "Shutting Odom2Can Driver Down" << std::endl;
     }
 
-    void Init();
+    void Init(char** parameter_vec, int parameter_len);
+    void ArgumentParser(char** parameter_vec, int parameter_len);
 
 private:
 
@@ -74,10 +86,33 @@ private:
     int _can_socket = -1;
     float _global_phi = 0.0;
     float _global_vel = 0.0;
+    bool log_sensor_data = false;
+    long long start_carmen_time = 0;
+    std::ofstream file;
 };
 
 
-void PrometheusOdomSubscriber::Init()
+void PrometheusOdomSubscriber::ArgumentParser(char** parameter_vec, int parameter_len)
+{
+    std::vector<std::string> args(parameter_vec, parameter_vec + parameter_len);
+    for (const std::string & s : args)
+    {
+        if (s == "--log_sensor_data")
+        {
+            this->log_sensor_data = true;
+            this->file.open(DEFAULT_SENSOR_LOG_DATA_FILENAME, std::ios::out | std::ios::app);
+            if (!file.is_open())
+            {
+                throw std::runtime_error("Error Opening Sensor Data Log file!");
+                exit(ERROR_OPENING_SENSOR_DATA_LOG_FILE);
+            }
+            this->start_carmen_time = (long long) carmen_get_time();
+        }
+    }
+}
+
+
+void PrometheusOdomSubscriber::Init(char** parameter_vec, int parameter_len)
 {
     std::cout << "Starting Prometheus Odom2Can Driver" << std::endl;
 
@@ -113,6 +148,13 @@ void PrometheusOdomSubscriber::Init()
     /*create low freq subscriber*/
     lf_estimate_state_subscriber.reset(new ChannelSubscriber<unitree_go::msg::dds_::SportModeState_>(TOPIC_SPORT_LF_STATE));
     lf_estimate_state_subscriber->InitChannel(std::bind(&PrometheusOdomSubscriber::LowFreqOdomMessageHandler, this, std::placeholders::_1), 1);
+
+    std::cout << "Getting Arguments" << std::endl;
+
+    if (parameter_len > 1)
+    {
+        this->ArgumentParser(parameter_vec);
+    }
 
     std::cout << "Setup Complete" << std::endl;
 
@@ -191,6 +233,16 @@ void PrometheusOdomSubscriber::LowFreqOdomMessageHandler(const void* message)
     if (write(_can_socket, &frame, sizeof(frame)) != sizeof(frame)) {
         throw std::runtime_error("Error when writing Phi Bytes to CAN");
     }
+
+    if (this->log_sensor_data)
+    {
+        if ( this->file.is_open() )
+        {
+            long long carmen_time = (long long) carmen_get_time();
+            file << "VELOCITY (raw,filtered,timestamp): " << x_axis_vel << ", " << _global_vel << ", " << carmen_time - this->start_carmen_time << "\n";
+            file << "STEERING (raw,filtered,timestamp): " << phi << ", " << _global_phi << ", " << carmen_time - this->start_carmen_time << "\n";
+        }
+    }
     //printf("Sent %+4.2f via CAN ID 0x80\n", _global_phi);
     //std::cout << "Timestamp =" << (long long) carmen_get_time() << "\n\n" << std::endl;
 }
@@ -207,6 +259,11 @@ int main(int argc __attribute__ ((unused)), const char** argv __attribute__ ((un
     ChannelFactory::Instance()->Init(0, argv[1]);
     #else
     ChannelFactory::Instance()->Init(0, NETWORK_INTERFACE);
+    if (argc > MAX_ARGS)
+    {
+        std::cout << "Usage: " << argv[0] << " --log_sensor_data" << std::endl;
+        exit(EXCEEDS_MAX_PARAMETER_NUM); 
+    }
     #endif
 
 
