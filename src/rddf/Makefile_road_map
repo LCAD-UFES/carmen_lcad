@@ -1,0 +1,15 @@
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall -Wextra -O2
+OPENCV_CFLAGS = $(shell pkg-config --cflags opencv)
+OPENCV_LIBS = $(shell pkg-config --libs opencv)
+
+TARGET = rddf_by_road_map_image
+SRC = rddf_by_road_map_image.cpp
+
+all: $(TARGET)
+
+$(TARGET): $(SRC)
+	$(CXX) $(CXXFLAGS) $(OPENCV_CFLAGS) $(SRC) -o $(TARGET) $(OPENCV_LIBS)
+
+clean:
+	rm -f $(TARGET)
