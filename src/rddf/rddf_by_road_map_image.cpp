@@ -21,7 +21,7 @@ typedef struct
 {
 	double x;          // path waypoint coordinate in meters
 	double y;          // path waypoint coordinate in meters
-	double theta;      // path waypoint heading orientation in radians
+	double theta;      // path waypoint heading orientation in radians, x-axis: 0, y-axis: pi/2
 } waypoint_t, *waypoint_p;
 
 typedef struct
@@ -917,6 +917,103 @@ save_plot_map(const cv::Mat& plot_map, const char* png_filename)
     printf("Imagem com RDDF salva em: %s\n", output_filename);
 
     return(1);
+}
+
+
+waypoint_t*
+get_rddf_from_file(const char* txt_filename, int* num_waypoints)
+{
+	FILE *f;
+	char line[4096];
+	waypoint_t *waypoints;
+	int capacity;
+	int count;
+	double x;
+	double y;
+	double theta;
+	int n;
+
+	if(num_waypoints == NULL)
+	{
+		return(NULL);
+	}
+
+	*num_waypoints = 0;
+
+	if(txt_filename == NULL)
+	{
+		return(NULL);
+	}
+
+	f = fopen(txt_filename, "r");
+	if(f == NULL)
+	{
+		return(NULL);
+	}
+
+	capacity = 1024;
+	count = 0;
+	waypoints = (waypoint_t *) malloc(capacity * sizeof(waypoint_t));
+
+	if(waypoints == NULL)
+	{
+		fclose(f);
+		return(NULL);
+	}
+
+	while(fgets(line, sizeof(line), f) != NULL)
+	{
+		n = sscanf(line, "%lf %lf %lf", &x, &y, &theta);
+
+		if(n < 3)
+		{
+			continue;
+		}
+
+		if(count >= capacity)
+		{
+			waypoint_t *new_waypoints;
+
+			capacity *= 2;
+			new_waypoints = (waypoint_t *) realloc(waypoints, capacity * sizeof(waypoint_t));
+
+			if(new_waypoints == NULL)
+			{
+				free(waypoints);
+				fclose(f);
+				return(NULL);
+			}
+
+			waypoints = new_waypoints;
+		}
+
+		waypoints[count].x = x;
+		waypoints[count].y = y;
+		waypoints[count].theta = theta;
+		count++;
+	}
+
+	fclose(f);
+
+	if(count == 0)
+	{
+		free(waypoints);
+		return(NULL);
+	}
+
+	{
+		waypoint_t *new_waypoints;
+
+		new_waypoints = (waypoint_t *) realloc(waypoints, count * sizeof(waypoint_t));
+		if(new_waypoints != NULL)
+		{
+			waypoints = new_waypoints;
+		}
+	}
+
+	*num_waypoints = count;
+
+	return(waypoints);
 }
 
 
