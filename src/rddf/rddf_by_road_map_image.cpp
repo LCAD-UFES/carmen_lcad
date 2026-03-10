@@ -13,59 +13,127 @@
 #include <dirent.h>
 #include <errno.h>
 #include <opencv2/opencv.hpp>
+#include <list>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_multimin.h>
 
 typedef struct
 {
-	double x;
-	double y;
-	double theta;
-} carmen_point_t, *carmen_point_p;
+	double x;          // path waypoint coordinate in meters
+	double y;          // path waypoint coordinate in meters
+	double theta;      // path waypoint heading orientation in radians
+} waypoint_t, *waypoint_p;
+
+typedef struct
+{
+	cv::Mat img;       // map image in pixels x pixels
+	double x_center;   // map center coordinate in meters
+	double y_center;   // map center coordinate in meters
+	double resolution; // map cell unit size in meters x meters
+} map_t, *map_p;
 
 #define M_PI	3.14159265358979323846
+
 
 double
 carmen_normalize_theta(double theta)
 {
-  double multiplier;
+    double multiplier;
 
-  if (theta >= -M_PI && theta < M_PI)
-    return theta;
+    if (theta >= -M_PI && theta < M_PI)
+    {
+    	return(theta);
+    }
 
-  multiplier = floor(theta / (2*M_PI));
-  theta = theta - multiplier*2*M_PI;
-  if (theta >= M_PI)
-    theta -= 2*M_PI;
-  if (theta < -M_PI)
-    theta += 2*M_PI;
+    multiplier = floor(theta / (2*M_PI));
+    theta = theta - multiplier*2*M_PI;
 
-  return theta;
+    if (theta >= M_PI)
+    {
+    	theta -= 2*M_PI;
+    }
+
+    if (theta < -M_PI)
+    {
+    	theta += 2*M_PI;
+    }
+
+    return(theta);
 }
 
-carmen_point_t
-add_distance_to_pose(carmen_point_t pose, double distance)
+
+double
+average_theta(waypoint_t *poses, int curr_index, int num_poses_avg)
 {
-	carmen_point_t next_pose = pose;
+	double sum_theta_x = 0.0;
+	double sum_theta_y = 0.0;
+	int num_poses = fmin((curr_index + 1), num_poses_avg);
+
+	for (int i = 0, index = curr_index; i < num_poses; i++, index--)
+	{
+		sum_theta_x += cos(poses[index].theta);
+		sum_theta_y += sin(poses[index].theta);
+	}
+
+	if (sum_theta_x == 0.0 && sum_theta_y == 0.0)
+	{
+		return (0.0);
+	}
+
+	double avg_theta = atan2(sum_theta_y, sum_theta_x);
+
+	return(avg_theta);
+}
+
+
+void
+compute_theta(waypoint_t *path, int num_poses)
+{
+	for (int i = 0; i < (num_poses - 1); i++)
+	{
+		path[i].theta = atan2((path[i + 1].y - path[i].y), (path[i + 1].x - path[i].x));
+	}
+
+	if (num_poses > 1)
+	{
+		path[num_poses - 1].theta = path[num_poses - 2].theta;
+	}
+}
+
+
+waypoint_t
+add_distance_to_pose(waypoint_t pose, double distance)
+{
+	waypoint_t next_pose = pose;
+
 	next_pose.x += distance * cos(pose.theta);
 	next_pose.y += distance * sin(pose.theta);
 
-	return (next_pose);
+	return(next_pose);
 }
 
 
-carmen_point_t
-add_orthogonal_distance_to_pose(carmen_point_t pose, double distance)
+waypoint_t
+add_orthogonal_distance_to_pose(waypoint_t pose, double distance)
 {
-	carmen_point_t next_pose = pose;
+	waypoint_t next_pose = pose;
 	double orthogonal_theta;
+
 	if (distance >= 0.0)
+	{
 		orthogonal_theta = carmen_normalize_theta(pose.theta + (M_PI / 2.0));
+	}
 	else
+	{
 		orthogonal_theta = carmen_normalize_theta(pose.theta - (M_PI / 2.0));
+	}
+
 	next_pose.x += fabs(distance) * cos(orthogonal_theta);
 	next_pose.y += fabs(distance) * sin(orthogonal_theta);
 
-	return (next_pose);
+	return(next_pose);
 }
+
 
 int
 get_class(const cv::Vec3b& pixel)
@@ -104,48 +172,38 @@ get_class(const cv::Vec3b& pixel)
     return(-1);
 }
 
+
 double
-get_lane_prob(const cv::Mat& road_map, double x, double y, double x_center, double y_center, double resolution, int x_size, int y_size)
+get_lane_prob(const waypoint_t coord, const map_t road_map)
 {
-    double map_min_x;
-    double map_max_x;
-    double map_min_y;
-    double map_max_y;
-    double local_x;
-    double local_y;
-    int ix;
-    int iy;
-    int lane_class;
-    cv::Vec3b pixel;
-
-    if(road_map.empty() || road_map.cols != x_size || road_map.rows != y_size || road_map.type() != CV_8UC3)
+    if(road_map.img.empty() || road_map.img.type() != CV_8UC3)
     {
         return(-1.0);
     }
 
-    map_min_x = x_center - ((double)x_size * resolution) / 2.0;
-    map_max_x = x_center + ((double)x_size * resolution) / 2.0;
-    map_min_y = y_center - ((double)y_size * resolution) / 2.0;
-    map_max_y = y_center + ((double)y_size * resolution) / 2.0;
+    double map_min_x = road_map.x_center - ((double)road_map.img.cols * road_map.resolution) / 2.0;
+    double map_max_x = road_map.x_center + ((double)road_map.img.cols * road_map.resolution) / 2.0;
+    double map_min_y = road_map.y_center - ((double)road_map.img.rows * road_map.resolution) / 2.0;
+    double map_max_y = road_map.y_center + ((double)road_map.img.rows * road_map.resolution) / 2.0;
 
-    if(x < map_min_x || x >= map_max_x || y < map_min_y || y >= map_max_y)
+    if(coord.x < map_min_x || coord.x >= map_max_x || coord.y < map_min_y || coord.y >= map_max_y)
     {
         return(-1.0);
     }
 
-    local_x = x - map_min_x;
-    local_y = map_max_y - y;
+    double local_x = coord.x - map_min_x;
+    double local_y = map_max_y - coord.y;
 
-    ix = (int)(local_x / resolution);
-    iy = (int)(local_y / resolution);
+    int ix = (int)(local_x / road_map.resolution);
+    int iy = (int)(local_y / road_map.resolution);
 
-    if(ix < 0 || ix >= x_size || iy < 0 || iy >= y_size)
+    if(ix < 0 || ix >= road_map.img.cols || iy < 0 || iy >= road_map.img.rows)
     {
         return(-1.0);
     }
 
-    pixel = road_map.at<cv::Vec3b>(iy, ix);
-    lane_class = get_class(pixel);
+    cv::Vec3b img_pixel = road_map.img.at<cv::Vec3b>(iy, ix);
+    int lane_class = get_class(img_pixel);
 
     switch(lane_class)
     {
@@ -172,6 +230,7 @@ get_lane_prob(const cv::Mat& road_map, double x, double y, double x_center, doub
     }
 }
 
+
 /* GSL - GNU Scientific Library
  * Multidimensional Minimization
  * https://www.gnu.org/software/gsl/doc/html/multimin.html
@@ -184,8 +243,8 @@ get_lane_prob(const cv::Mat& road_map, double x, double y, double x_center, doub
 double
 my_f(const gsl_vector *v, void *params)
 {
-	list<carmen_robot_and_trailers_traj_point_t> *p = (list<carmen_robot_and_trailers_traj_point_t> *) params;
-	int i, j, size = (p->size() - 2);           //we have to discount the first and last point that wont be optimized
+	std::list<waypoint_t> *p = (std::list<waypoint_t> *) params;
+	int i, j, size = (p->size() - 2);           //we have to discount the first and last point that won't be optimized
 	double a = 0.0, b = 0.0, sum = 0.0;
 
 	double x_prev = p->front().x;				//x(i-1)
@@ -230,10 +289,10 @@ my_f(const gsl_vector *v, void *params)
 //The gradient of f, df = (df/dx, df/dy)
 //derivative in each point [2x(i-2)-8x(i-1)+12x(i)-8x(i+1)+2x(i+2)]
 void
-my_df (const gsl_vector *v, void *params, gsl_vector *df)
+my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
-	list<carmen_point_t> *p = (list<carmen_point_t> *) params;
-	int i, j, size =(p->size() - 2);
+	std::list<waypoint_t> *p = (std::list<waypoint_t> *) params;
+	int i, j, size = (p->size() - 2);
 
 	double x_prev2= 0;
 	double x_prev = p->front().x;
@@ -312,7 +371,7 @@ my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
 
 
 int
-smooth_rddf_using_conjugate_gradient(carmen_point_t *poses_ahead, int num_poses_ahead)
+smooth_rddf_using_conjugate_gradient(waypoint_t *poses_ahead, int num_poses_ahead)
 {
 	int iter = 0;
 	int status, i = 0, j = 0, size;
@@ -322,17 +381,18 @@ smooth_rddf_using_conjugate_gradient(carmen_point_t *poses_ahead, int num_poses_
 	gsl_vector *v;
 	gsl_multimin_function_fdf my_func;
 
-	list<carmen_point_t>::iterator it;
-	list<carmen_point_t> path;
-
-	for (i = (num_poses_back - 1); i > 0; i--) // skip poses_back[0], because it is equal to poses_ahead[0]
-		path.push_back(poses_back[i]);
+	std::list<waypoint_t>::iterator it;
+	std::list<waypoint_t> path;
 
 	for (i = 0; i < num_poses_ahead; i++)
+	{
 		path.push_back(poses_ahead[i]);
+	}
 
 	if (path.size() < 5)
+	{
 		return (1);
+	}
 
 	size = path.size();
 
@@ -346,91 +406,66 @@ smooth_rddf_using_conjugate_gradient(carmen_point_t *poses_ahead, int num_poses_
 
 	static int count = 0;
 	count++;
-//	FILE *plot = fopen("gnuplot_smooth_lane.m", "w");
-
-//	fprintf(plot, "a%d = [\n", count);
 	it = path.begin();
-//	fprintf(plot, "%f %f\n", it->x, it->y);
-
 	it++; // skip the first pose
+
 	for (i = 0, j = (size - 2); i < (size - 2); i++, j++, it++)
 	{
-//		fprintf(plot, "%f %f\n", it->x, it->y);
-
 		gsl_vector_set (v, i, it->x);
 		gsl_vector_set (v, j, it->y);
 	}
 
-//	fprintf(plot, "%f %f]\n\n", it->x, it->y);
-
 	T = gsl_multimin_fdfminimizer_conjugate_fr;
 	s = gsl_multimin_fdfminimizer_alloc (T, (2 * size) - 4);
 
-	gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
+	gsl_multimin_fdfminimizer_set(s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
 
 	do
 	{
 		iter++;
 		status = gsl_multimin_fdfminimizer_iterate (s);
 		if (status) // error code
-			return (0);
+		{
+			return(0);
+		}
 
 		status = gsl_multimin_test_gradient (s->gradient, 0.2);   //(gsl_vector, epsabs) and  |g| < epsabs
 		// status == 0 (GSL_SUCCESS), if a minimum has been found
 	} while (status == GSL_CONTINUE && iter < 999);
 
-//	printf("status %d, iter %d\n", status, iter);
-//	fflush(stdout);
 	it = path.begin();
-
-//	fprintf(plot, "b%d = [   \n%f %f\n", count, it->x, it->y);
-
 	it++; // skip the first pose
 	for (i = 0, j = (size - 2); i < (size - 2); i++, j++, it++)
 	{
 		it->x = gsl_vector_get (s->x, i);
 		it->y = gsl_vector_get (s->x, j);
-
-//		fprintf(plot, "%f %f\n", it->x, it->y);
 	}
-
-//	fprintf(plot, "%f %f]\n\n", it->x, it->y);
-//	fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", count, count, count, count);
-//	fclose(plot);
 
 	it = path.begin();
 	it++;
-	for (i = (num_poses_back - 2); i > 0; i--, it++) // skip first and last poses
-		poses_back[i] = *it;
-
-	if (poses_back)
-		poses_back[0] = *it;
-
 	for (i = 0; i < num_poses_ahead - 1; i++, it++) // skip last pose
+	{
 		poses_ahead[i] = *it;
+	}
 
-	calculate_theta_and_phi(poses_ahead, num_poses_ahead, poses_back, num_poses_back);
+	compute_theta(poses_ahead, num_poses_ahead);
 
 	gsl_multimin_fdfminimizer_free (s);
 	gsl_vector_free (v);
 
-	return (1);
+	return(1);
 }
 
+
 int
-is_point_inside_map(double x, double y, double x_center, double y_center, double resolution, int x_size, int y_size)
+is_point_inside_map(const waypoint_t coord, const map_t map)
 {
-    double map_min_x;
-    double map_max_x;
-    double map_min_y;
-    double map_max_y;
+    double map_min_x = map.x_center - ((double)map.img.cols * map.resolution) / 2.0;
+    double map_max_x = map.x_center + ((double)map.img.cols * map.resolution) / 2.0;
+    double map_min_y = map.y_center - ((double)map.img.rows * map.resolution) / 2.0;
+    double map_max_y = map.y_center + ((double)map.img.rows * map.resolution) / 2.0;
 
-    map_min_x = x_center - ((double)x_size * resolution) / 2.0;
-    map_max_x = x_center + ((double)x_size * resolution) / 2.0;
-    map_min_y = y_center - ((double)y_size * resolution) / 2.0;
-    map_max_y = y_center + ((double)y_size * resolution) / 2.0;
-
-    if(x < map_min_x || x >= map_max_x || y < map_min_y || y >= map_max_y)
+    if(coord.x < map_min_x || coord.x >= map_max_x || coord.y < map_min_y || coord.y >= map_max_y)
     {
         return(0);
     }
@@ -438,42 +473,13 @@ is_point_inside_map(double x, double y, double x_center, double y_center, double
     return(1);
 }
 
-double
-average_theta(carmen_point_t *poses, int curr_index, int num_poses_avg)
+
+waypoint_t
+find_nearest_pose_by_road_map(const waypoint_t rddf_pose_candidate, const map_t road_map)
 {
-	double sum_theta_x = 0.0, sum_theta_y = 0.0;
-	int num_poses = ((curr_index + 1) >= num_poses_avg) ? num_poses_avg : (curr_index + 1);
-
-	for (int i = 0, index = curr_index; i < num_poses; i++, index--)
-	{
-		sum_theta_x += cos(poses[index].theta);
-		sum_theta_y += sin(poses[index].theta);
-	}
-
-	if (sum_theta_x == 0.0 && sum_theta_y == 0.0)
-		return (0.0);
-
-	double avg_theta = atan2(sum_theta_y, sum_theta_x);
-
-	return (avg_theta);
-}
-
-void
-compute_theta(carmen_point_t *path, int num_poses)
-{
-	for (int i = 0; i < (num_poses - 1); i++)
-		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
-	if (num_poses > 1)
-		path[num_poses - 1].theta = path[num_poses - 2].theta;
-}
-
-carmen_point_t
-find_nearest_pose_by_road_map(carmen_point_t rddf_pose_candidate, const cv::Mat& road_map, double x_center, double y_center, double resolution)
-{
-	carmen_point_t rddf_pose = rddf_pose_candidate; // Keep candidate's theta
-	double max_lane_prob = get_lane_prob(road_map, rddf_pose_candidate.x, rddf_pose_candidate.y, x_center, y_center, resolution, road_map.cols, road_map.rows);
-
-	double step = resolution / 4.0;
+	waypoint_t rddf_pose = rddf_pose_candidate; // Keep candidate's theta
+	double max_lane_prob = get_lane_prob(rddf_pose_candidate, road_map);
+	double step = road_map.resolution / 4.0;
 	double lane_expected_width = 3.0;
 	double left_limit = lane_expected_width / 2.0;
 	double right_limit = -lane_expected_width / 2.0;
@@ -481,44 +487,43 @@ find_nearest_pose_by_road_map(carmen_point_t rddf_pose_candidate, const cv::Mat&
 
 	for (double delta_pose = right_limit; delta_pose <= left_limit; delta_pose += step)
  	{
-		carmen_point_t lane_pose = add_orthogonal_distance_to_pose(rddf_pose_candidate, delta_pose);
- 		double lane_prob = get_lane_prob(road_map, lane_pose.x, lane_pose.y, x_center, y_center, resolution, road_map.cols, road_map.rows);
+		waypoint_t lane_pose = add_orthogonal_distance_to_pose(rddf_pose_candidate, delta_pose);
+ 		double lane_prob = get_lane_prob(lane_pose, road_map);
  		if (lane_prob > max_lane_prob ||
  			(lane_prob == max_lane_prob && fabs(delta_pose) < min_delta_pose))
  		{
  			max_lane_prob = lane_prob;
  			min_delta_pose = fabs(delta_pose);
- 			rddf_pose.x = lane_pose.x;
- 			rddf_pose.y = lane_pose.y;
+ 			rddf_pose = lane_pose;
  		}
  	}
 
- 	return (rddf_pose);
+ 	return(rddf_pose);
 }
 
+
 int
-fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, const cv::Mat& road_map, double x_center, double y_center, double resolution,
-		carmen_point_t *poses_ahead, int num_poses_desired)
+fill_in_poses_ahead_by_road_map(const waypoint_t initial_pose, const map_t road_map, waypoint_t *poses_ahead, const int num_poses_desired)
 {
-	carmen_point_t rddf_pose, previous_pose, rddf_pose_candidate;
+	waypoint_t rddf_pose, previous_pose, rddf_pose_candidate;
 	int num_poses = 0;
 	int num_poses_avg = 5;
 	double rddf_min_distance_between_waypoints = 0.5;
-	previous_pose = rddf_pose = find_nearest_pose_by_road_map(initial_pose, road_map, x_center, y_center, resolution);
+	previous_pose = rddf_pose = find_nearest_pose_by_road_map(initial_pose, road_map);
 	rddf_pose_candidate = add_distance_to_pose(previous_pose, rddf_min_distance_between_waypoints);
 
-	if(is_point_inside_map(rddf_pose.x, rddf_pose.y, x_center, y_center, resolution, road_map.cols, road_map.rows))
+	if(is_point_inside_map(rddf_pose, road_map))
 	{
 		poses_ahead[0] = rddf_pose;
 		num_poses = 1;
 		do
 		{
-			rddf_pose = find_nearest_pose_by_road_map(rddf_pose_candidate, road_map, x_center, y_center, resolution);
+			rddf_pose = find_nearest_pose_by_road_map(rddf_pose_candidate, road_map);
 			rddf_pose.theta = atan2(rddf_pose.y - previous_pose.y, rddf_pose.x - previous_pose.x);
 			previous_pose = rddf_pose;
 			previous_pose.theta = average_theta(poses_ahead, num_poses, num_poses_avg);
 			rddf_pose_candidate = add_distance_to_pose(previous_pose, rddf_min_distance_between_waypoints);
-			if(!is_point_inside_map(rddf_pose.x, rddf_pose.y, x_center, y_center, resolution, road_map.cols, road_map.rows))
+			if(!is_point_inside_map(rddf_pose, road_map))
 				break;
 
 			poses_ahead[num_poses] = rddf_pose;
@@ -534,17 +539,17 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, const cv::Mat& road
 
 
 const char*
-get_file_basename(const char* filepath1)
+get_file_basename(const char* filepath)
 {
     const char* p1;
     const char* p2;
 
-    p1 = strrchr(filepath1, '/');
-    p2 = strrchr(filepath1, '\\');
+    p1 = strrchr(filepath, '/');
+    p2 = strrchr(filepath, '\\');
 
     if(p1 == NULL && p2 == NULL)
     {
-        return(filepath1);
+        return(filepath);
     }
     if(p1 == NULL)
     {
@@ -557,6 +562,7 @@ get_file_basename(const char* filepath1)
 
     return((p1 > p2 ? p1 : p2) + 1);
 }
+
 
 int
 parse_centers_from_filename(const char* filename, double* x_center, double* y_center)
@@ -620,38 +626,30 @@ parse_centers_from_filename(const char* filename, double* x_center, double* y_ce
     return(1);
 }
 
+
 void
 count_cell_probs(const cv::Mat& road_map, double x_center, double y_center, double resolution, int x_size, int y_size)
 {
-    int row;
-    int col;
-    double x;
-    double y;
+    map_t map = {road_map, x_center, y_center, resolution};
+    waypoint_t coord;
     double prob;
-    int count_neg1;
-    int count_00;
-    int count_02;
-    int count_04;
-    int count_06;
-    int count_08;
-    int count_10;
 
-    count_neg1 = 0;
-    count_00 = 0;
-    count_02 = 0;
-    count_04 = 0;
-    count_06 = 0;
-    count_08 = 0;
-    count_10 = 0;
+    int count_neg1 = 0;
+    int count_00 = 0;
+    int count_02 = 0;
+    int count_04 = 0;
+    int count_06 = 0;
+    int count_08 = 0;
+    int count_10 = 0;
 
-    for(row = 0; row < y_size; row++)
+    for(int row = 0; row < y_size; row++)
     {
-        for(col = 0; col < x_size; col++)
+        for(int col = 0; col < x_size; col++)
         {
-            x = x_center + (((double)col + 0.5) - ((double)x_size / 2.0)) * resolution;
-            y = y_center + (((double)y_size / 2.0) - ((double)row + 0.5)) * resolution;
+            coord.x = x_center + (((double)col + 0.5) - ((double)x_size / 2.0)) * resolution;
+            coord.y = y_center + (((double)y_size / 2.0) - ((double)row + 0.5)) * resolution;
 
-            prob = get_lane_prob(road_map, x, y, x_center, y_center, resolution, x_size, y_size);
+            prob = get_lane_prob(coord, map);
 
             if(prob == -1.0)
             {
@@ -733,6 +731,7 @@ world_to_map_indices(double x, double y, double x_center, double y_center, doubl
     return(1);
 }
 
+
 int
 rectangles_intersect(double min_x1, double max_x1, double min_y1, double max_y1, double min_x2, double max_x2, double min_y2, double max_y2)
 {
@@ -748,6 +747,7 @@ rectangles_intersect(double min_x1, double max_x1, double min_y1, double max_y1,
 
     return(1);
 }
+
 
 int
 has_png_extension(const char* filename)
@@ -774,6 +774,7 @@ has_png_extension(const char* filename)
     return(0);
 }
 
+
 void
 compute_map_bounds(double x_center, double y_center, double resolution, int x_size, int y_size, double* map_min_x, double* map_max_x, double* map_min_y, double* map_max_y)
 {
@@ -782,6 +783,7 @@ compute_map_bounds(double x_center, double y_center, double resolution, int x_si
     *map_min_y = y_center - ((double)y_size * resolution) / 2.0;
     *map_max_y = y_center + ((double)y_size * resolution) / 2.0;
 }
+
 
 void
 copy_road_map_into_big_map(cv::Mat& big_road_map, const cv::Mat& road_map, double src_x_center, double src_y_center, double dst_x_center, double dst_y_center, double resolution)
@@ -827,6 +829,7 @@ copy_road_map_into_big_map(cv::Mat& big_road_map, const cv::Mat& road_map, doubl
     }
 }
 
+
 int
 save_big_road_map(const cv::Mat& big_road_map, double x_center, double y_center)
 {
@@ -847,6 +850,7 @@ save_big_road_map(const cv::Mat& big_road_map, double x_center, double y_center)
     return(1);
 }
 
+
 void
 plot_matched_point(cv::Mat& plot_map, double x, double y, double x_center, double y_center, double resolution, int x_size, int y_size)
 {
@@ -863,6 +867,7 @@ plot_matched_point(cv::Mat& plot_map, double x, double y, double x_center, doubl
     plot_map.at<cv::Vec3b>(iy, ix)[2] = 64;
 }
 
+
 void
 show_plot_map(const cv::Mat& plot_map)
 {
@@ -870,6 +875,7 @@ show_plot_map(const cv::Mat& plot_map)
     cv::imshow("matched_points", plot_map);
     cv::waitKey(0);
 }
+
 
 int
 save_plot_map(const cv::Mat& plot_map, const char* png_filename)
@@ -913,6 +919,7 @@ save_plot_map(const cv::Mat& plot_map, const char* png_filename)
     return(1);
 }
 
+
 int
 main(int argc, char** argv)
 {
@@ -920,45 +927,25 @@ main(int argc, char** argv)
     DIR* dirp;
     struct dirent* entry;
     char filepath[4096];
-    cv::Mat road_map;
-    cv::Mat big_road_map;
-    double big_x_center;
-    double big_y_center;
-    double resolution;
-    int big_x_size;
-    int big_y_size;
-    double big_map_min_x;
-    double big_map_max_x;
-    double big_map_min_y;
-    double big_map_max_y;
-    double img_x_center;
-    double img_y_center;
-    double img_map_min_x;
-    double img_map_max_x;
-    double img_map_min_y;
-    double img_map_max_y;
-    int used_images;
-    int skipped_images;
+    cv::Mat road_map_img;
+    map_t road_map;
+    waypoint_t coord;
+    double prob;
+    double sum_count_10;
     int total_png_files;
+    int read_images;
+    int skipped_images;
+    int min_count_10;
+    int max_count_10;
+    int first_valid_image;
 
-    if(argc != 4)
+    if(argc != 2)
     {
-        printf("Uso: %s <dir_img> <x> <y>\n", argv[0]);
+        printf("Uso: %s <dir_img>\n", argv[0]);
         return(1);
     }
 
     dir_img = argv[1];
-    big_x_center = strtod(argv[2], NULL);
-    big_y_center = strtod(argv[3], NULL);
-    resolution = 0.2;
-
-    big_x_size = (int)(160.0 / resolution);
-    big_y_size = (int)(160.0 / resolution);
-
-    big_road_map = cv::Mat(big_y_size, big_x_size, CV_8UC3, cv::Scalar(0, 0, 0));
-
-    compute_map_bounds(big_x_center, big_y_center, resolution, big_x_size, big_y_size, &big_map_min_x, &big_map_max_x, &big_map_min_y, &big_map_max_y);
-
     dirp = opendir(dir_img);
 
     if(dirp == NULL)
@@ -967,9 +954,13 @@ main(int argc, char** argv)
         return(1);
     }
 
-    used_images = 0;
-    skipped_images = 0;
     total_png_files = 0;
+    read_images = 0;
+    skipped_images = 0;
+    sum_count_10 = 0.0;
+    min_count_10 = 0;
+    max_count_10 = 0;
+    first_valid_image = 1;
 
     while(1)
     {
@@ -994,48 +985,87 @@ main(int argc, char** argv)
             continue;
         }
 
-        if(!parse_centers_from_filename(entry->d_name, &img_x_center, &img_y_center))
-        {
-            printf("Aviso: nome fora do padrao esperado, ignorando arquivo: %s\n", entry->d_name);
-            skipped_images++;
-            continue;
-        }
+        road_map_img = cv::imread(filepath, cv::IMREAD_COLOR);
 
-        road_map = cv::imread(filepath, cv::IMREAD_COLOR);
-
-        if(road_map.empty())
+        if(road_map_img.empty())
         {
             printf("Aviso: nao foi possivel ler a imagem: %s\n", filepath);
             skipped_images++;
             continue;
         }
 
-        compute_map_bounds(img_x_center, img_y_center, resolution, road_map.cols, road_map.rows, &img_map_min_x, &img_map_max_x, &img_map_min_y, &img_map_max_y);
-
-        if(!rectangles_intersect(big_map_min_x, big_map_max_x, big_map_min_y, big_map_max_y, img_map_min_x, img_map_max_x, img_map_min_y, img_map_max_y))
+        if(!parse_centers_from_filename(entry->d_name, &road_map.x_center, &road_map.y_center))
         {
+            printf("Aviso: nome fora do padrao esperado, ignorando arquivo: %s\n", entry->d_name);
+            skipped_images++;
             continue;
         }
 
-        copy_road_map_into_big_map(big_road_map, road_map, img_x_center, img_y_center, big_x_center, big_y_center, resolution);
-        used_images++;
+        road_map.img = road_map_img;
+        road_map.resolution = 0.2;
+
+        int count_10 = 0;
+
+        for(int row = 0; row < road_map.img.rows; row++)
+        {
+            for(int col = 0; col < road_map.img.cols; col++)
+            {
+                coord.x = road_map.x_center + (((double)col + 0.5) - ((double)road_map.img.cols / 2.0)) * road_map.resolution;
+                coord.y = road_map.y_center + (((double)road_map.img.rows / 2.0) - ((double)row + 0.5)) * road_map.resolution;
+                coord.theta = 0.0;
+
+                prob = get_lane_prob(coord, road_map);
+
+                if(prob == 1.0)
+                {
+                    count_10++;
+                }
+            }
+        }
+
+        if(first_valid_image)
+        {
+            min_count_10 = count_10;
+            max_count_10 = count_10;
+            first_valid_image = 0;
+        }
+        else
+        {
+            if(count_10 < min_count_10)
+            {
+                min_count_10 = count_10;
+            }
+
+            if(count_10 > max_count_10)
+            {
+                max_count_10 = count_10;
+            }
+        }
+
+//        if(count_10 == 0)
+//        	printf("%s nao possui celulas da classe 3\n", filepath);
+
+        sum_count_10 += (double)count_10;
+        read_images++;
     }
 
     closedir(dirp);
 
     printf("Diretorio de imagens: %s\n", dir_img);
-    printf("Centro do big_road_map: x=%.6f y=%.6f\n", big_x_center, big_y_center);
-    printf("Dimensoes do big_road_map: %d x %d celulas\n", big_x_size, big_y_size);
-    printf("Resolucao: %.6f m/celula\n", resolution);
     printf("Arquivos PNG encontrados: %d\n", total_png_files);
-    printf("Imagens usadas no mosaico: %d\n", used_images);
-    printf("Imagens ignoradas por erro: %d\n", skipped_images);
+    printf("Arquivos lidos com sucesso: %d\n", read_images);
+    printf("Arquivos ignorados por erro: %d\n", skipped_images);
 
-    if(!save_big_road_map(big_road_map, big_x_center, big_y_center))
+    if(read_images == 0)
     {
-        printf("Erro: nao foi possivel salvar a imagem final\n");
+        printf("Nenhum arquivo valido foi lido.\n");
         return(1);
     }
+
+    printf("Celulas com get_lane_prob = 1.0 por arquivo:\n");
+    printf("Media: %.6f\n", sum_count_10 / (double)read_images);
+    printf("Minimo: %d\n", min_count_10);
+    printf("Maximo: %d\n", max_count_10);
 
     return(0);
 }

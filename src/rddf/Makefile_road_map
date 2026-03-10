@@ -1,7 +1,11 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
+
 OPENCV_CFLAGS = $(shell pkg-config --cflags opencv)
 OPENCV_LIBS = $(shell pkg-config --libs opencv)
+
+GSL_CFLAGS = $(shell pkg-config --cflags gsl)
+GSL_LIBS = $(shell pkg-config --libs gsl)
 
 TARGET = rddf_by_road_map_image
 SRC = rddf_by_road_map_image.cpp
@@ -9,7 +13,7 @@ SRC = rddf_by_road_map_image.cpp
 all: $(TARGET)
 
 $(TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) $(OPENCV_CFLAGS) $(SRC) -o $(TARGET) $(OPENCV_LIBS)
+	$(CXX) $(CXXFLAGS) $(OPENCV_CFLAGS) $(GSL_CFLAGS) $(SRC) -o $(TARGET) $(OPENCV_LIBS) $(GSL_LIBS)
 
 clean:
 	rm -f $(TARGET)
