@@ -920,8 +920,49 @@ save_plot_map(const cv::Mat& plot_map, const char* png_filename)
 }
 
 
-//void
-//infer_rddf_from_img(waypoint_t *waypoints, int waypoint_index, const map_t map);
+waypoint_t*
+infer_rddf_from_img(const waypoint_t *waypoints, int waypoint_index, const map_t road_map, int num_poses_desired, int *num_poses_filled)
+{
+	waypoint_t initial_pose;
+	waypoint_t *poses_ahead;
+
+	if(waypoints == NULL)
+	{
+		printf("waypoints passed as a null pointer to infer_rddf_from_img().\n");
+		return(NULL);
+	}
+
+	if(waypoint_index < 0)
+	{
+		printf("waypoint_index passed as a negative number to infer_rddf_from_img().\n");
+		return(NULL);
+	}
+
+	if(num_poses_filled == NULL)
+	{
+		printf("num_poses_filled passed as a null pointer to infer_rddf_from_img().\n");
+		return(NULL);
+	}
+
+	poses_ahead = (waypoint_t *) malloc(num_poses_desired * sizeof(waypoint_t));
+	if(poses_ahead == NULL)
+	{
+		printf("Unable to alloc memory for poses_ahead in infer_rddf_from_img().\n");
+		return(NULL);
+	}
+
+	initial_pose = waypoints[waypoint_index];
+
+	*num_poses_filled = fill_in_poses_ahead_by_road_map(initial_pose, road_map, poses_ahead, num_poses_desired);
+
+	if(*num_poses_filled <= 0)
+	{
+		free(poses_ahead);
+		return(NULL);
+	}
+
+	return(poses_ahead);
+}
 
 
 int
@@ -942,39 +983,379 @@ find_first_waypoint_inside_map(waypoint_t *waypoints, int num_waypoints, double 
 }
 
 
-void
-read_images(const char* dir_img, waypoint_t *waypoints, int num_waypoints, double resolution)
+double
+distance_point_to_segment(double px, double py, double ax, double ay, double bx, double by)
 {
-    DIR* dirp;
+	double abx;
+	double aby;
+	double apx;
+	double apy;
+	double ab_len_sq;
+	double t;
+	double qx;
+	double qy;
+	double dx;
+	double dy;
+
+	abx = bx - ax;
+	aby = by - ay;
+	apx = px - ax;
+	apy = py - ay;
+
+	ab_len_sq = abx * abx + aby * aby;
+
+	if(ab_len_sq == 0.0)
+	{
+		dx = px - ax;
+		dy = py - ay;
+		return(sqrt(dx * dx + dy * dy));
+	}
+
+	t = (apx * abx + apy * aby) / ab_len_sq;
+
+	if(t < 0.0)
+	{
+		t = 0.0;
+	}
+	else if(t > 1.0)
+	{
+		t = 1.0;
+	}
+
+	qx = ax + t * abx;
+	qy = ay + t * aby;
+
+	dx = px - qx;
+	dy = py - qy;
+
+	return(sqrt(dx * dx + dy * dy));
+}
+
+
+double
+distance_to_rddf(const waypoint_t waypoint, const waypoint_t *rddf, int num_rddf, double *dtheta)
+{
+	int i;
+	double min_distance;
+	double best_theta_segment;
+	double ax;
+	double ay;
+	double bx;
+	double by;
+	double abx;
+	double aby;
+	double apx;
+	double apy;
+	double ab_len_sq;
+	double t;
+	double qx;
+	double qy;
+	double dx;
+	double dy;
+	double distance;
+
+	if(dtheta != NULL)
+	{
+		*dtheta = 0.0;
+	}
+
+	if(rddf == NULL)
+	{
+		return(-1.0);
+	}
+
+	if(num_rddf <= 0)
+	{
+		return(-1.0);
+	}
+
+	if(num_rddf == 1)
+	{
+		dx = waypoint.x - rddf[0].x;
+		dy = waypoint.y - rddf[0].y;
+
+		if(dtheta != NULL)
+		{
+			*dtheta = carmen_normalize_theta(waypoint.theta - rddf[0].theta);
+		}
+
+		return(sqrt(dx * dx + dy * dy));
+	}
+
+	min_distance = -1.0;
+	best_theta_segment = 0.0;
+
+	for(i = 0; i < (num_rddf - 1); i++)
+	{
+		ax = rddf[i].x;
+		ay = rddf[i].y;
+		bx = rddf[i + 1].x;
+		by = rddf[i + 1].y;
+
+		abx = bx - ax;
+		aby = by - ay;
+		apx = waypoint.x - ax;
+		apy = waypoint.y - ay;
+
+		ab_len_sq = abx * abx + aby * aby;
+
+		if(ab_len_sq == 0.0)
+		{
+			qx = ax;
+			qy = ay;
+		}
+		else
+		{
+			t = (apx * abx + apy * aby) / ab_len_sq;
+
+			if(t < 0.0)
+			{
+				t = 0.0;
+			}
+			else if(t > 1.0)
+			{
+				t = 1.0;
+			}
+
+			qx = ax + t * abx;
+			qy = ay + t * aby;
+		}
+
+		dx = waypoint.x - qx;
+		dy = waypoint.y - qy;
+		distance = sqrt(dx * dx + dy * dy);
+
+		if(min_distance < 0.0 || distance < min_distance)
+		{
+			min_distance = distance;
+
+			if(ab_len_sq == 0.0)
+			{
+				best_theta_segment = rddf[i].theta;
+			}
+			else
+			{
+				best_theta_segment = atan2(aby, abx);
+			}
+		}
+	}
+
+	if(dtheta != NULL)
+	{
+		*dtheta = carmen_normalize_theta(waypoint.theta - best_theta_segment);
+	}
+
+	return(min_distance);
+}
+
+
+int
+ends_with(const char* str, const char* suffix)
+{
+    size_t str_len;
+    size_t suffix_len;
+
+    if(str == NULL || suffix == NULL)
+    {
+        return(0);
+    }
+
+    str_len = strlen(str);
+    suffix_len = strlen(suffix);
+
+    if(str_len < suffix_len)
+    {
+        return(0);
+    }
+
+    if(strcmp(str + (str_len - suffix_len), suffix) == 0)
+    {
+        return(1);
+    }
+
+    return(0);
+}
+
+
+int
+build_pred_filename_from_gt(const char* gt_filename, char* pred_filename, size_t pred_filename_size)
+{
+    size_t gt_len;
+    size_t stem_len;
+
+    if(gt_filename == NULL || pred_filename == NULL || pred_filename_size <= 0)
+    {
+        return(0);
+    }
+
+    if(!ends_with(gt_filename, "_gt.png"))
+    {
+        return(0);
+    }
+
+    gt_len = strlen(gt_filename);
+    stem_len = gt_len - strlen("_gt.png");
+
+    if((stem_len + strlen("_pred.png") + 1) > pred_filename_size)
+    {
+        return(0);
+    }
+
+    memcpy(pred_filename, gt_filename, stem_len);
+    strcpy(pred_filename + stem_len, "_pred.png");
+
+    return(1);
+}
+
+
+void
+compare_rddfs(const waypoint_t *inferred_rddf_gt,   int num_inferred_gt,
+              const waypoint_t *inferred_rddf_pred, int num_inferred_pred,
+              const char *gt_filename, int verbose)
+{
+    int i;
+    int n;
+    double dtheta;
+    double abs_dtheta;
+    double dist;
+    double sum_dist;
+    double sum_sq_dist;
+    double max_dist;
+    double mean_dist;
+    double var_dist;
+    double std_dev_dist;
+    double sum_abs_dtheta;
+    double sum_sq_abs_dtheta;
+    double max_abs_dtheta;
+    double mean_abs_dtheta;
+    double var_abs_dtheta;
+    double std_dev_abs_dtheta;
+
+    if(inferred_rddf_gt == NULL || inferred_rddf_pred == NULL)
+    {
+        printf("Aviso: compare_rddfs recebeu ponteiro nulo para arquivo %s\n", gt_filename);
+        return;
+    }
+
+    n = num_inferred_pred;
+
+    if(n <= 0)
+    {
+        printf("Aviso: nenhum waypoint inferido comparavel para arquivo %s\n", gt_filename);
+        return;
+    }
+
+    sum_dist = 0.0;
+    sum_sq_dist = 0.0;
+    max_dist = 0.0;
+
+    sum_abs_dtheta = 0.0;
+    sum_sq_abs_dtheta = 0.0;
+    max_abs_dtheta = 0.0;
+
+    for(i = 0; i < n; i++)
+    {
+        dist = distance_to_rddf(inferred_rddf_pred[i], inferred_rddf_gt, num_inferred_gt, &dtheta);
+        abs_dtheta = fabs(dtheta);
+
+        sum_dist += dist;
+        sum_sq_dist += dist * dist;
+
+        if(dist > max_dist)
+        {
+            max_dist = dist;
+        }
+
+        sum_abs_dtheta += abs_dtheta;
+        sum_sq_abs_dtheta += abs_dtheta * abs_dtheta;
+
+        if(abs_dtheta > max_abs_dtheta)
+        {
+            max_abs_dtheta = abs_dtheta;
+        }
+
+        if(verbose)
+        {
+            printf("%s waypoint %d: dist=%.17g dtheta=%.17g abs_dtheta=%.17g\n",
+                   gt_filename, i, dist, dtheta, abs_dtheta);
+        }
+    }
+
+    mean_dist = sum_dist / (double)n;
+    var_dist = (sum_sq_dist / (double)n) - (mean_dist * mean_dist);
+    if(var_dist < 0.0)
+    {
+        var_dist = 0.0;
+    }
+    std_dev_dist = sqrt(var_dist);
+
+    mean_abs_dtheta = sum_abs_dtheta / (double)n;
+    var_abs_dtheta = (sum_sq_abs_dtheta / (double)n) - (mean_abs_dtheta * mean_abs_dtheta);
+    if(var_abs_dtheta < 0.0)
+    {
+        var_abs_dtheta = 0.0;
+    }
+    std_dev_abs_dtheta = sqrt(var_abs_dtheta);
+
+    printf("%s: num_gt=%d num_pred=%d comparados=%d media_dist=%.17g max_dist=%.17g std_dev_dist=%.17g media_abs_dtheta=%.17g max_abs_dtheta=%.17g std_dev_abs_dtheta=%.17g\n",
+           gt_filename,
+           num_inferred_gt,
+           num_inferred_pred,
+           n,
+           mean_dist,
+           max_dist,
+           std_dev_dist,
+           mean_abs_dtheta,
+           max_abs_dtheta,
+           std_dev_abs_dtheta);
+}
+
+
+void
+read_images(const char* dir_img_gt, const char* dir_img_pred, const waypoint_t* rddf, int num_rddf, int verbose)
+{
+    DIR* dirp_gt;
     struct dirent* entry;
-    char filepath[4096];
-    cv::Mat road_map_img;
-
-    map_t road_map;
-
-    double map_min_x;
-    double map_max_x;
-    double map_min_y;
-    double map_max_y;
-
+    char gt_filepath[4096];
+    char pred_filename[1024];
+    char pred_filepath[4096];
+    cv::Mat road_map_img_gt;
+    cv::Mat road_map_img_pred;
+    map_t road_map_gt;
+    map_t road_map_pred;
+    double x_center;
+    double y_center;
+    int total_gt_png_files;
+    int matched_pairs;
+    int skipped_files;
     int waypoint_index;
+    waypoint_t *inferred_rddf_gt;
+    waypoint_t *inferred_rddf_pred;
+    int num_inferred_gt;
+    int num_inferred_pred;
+    int num_poses_desired = 150;
 
-    if(dir_img == NULL || waypoints == NULL || num_waypoints <= 0)
+    if(dir_img_gt == NULL || dir_img_pred == NULL || rddf == NULL || num_rddf <= 0)
     {
+        printf("Erro: parametros invalidos em read_images().\n");
         return;
     }
 
-    dirp = opendir(dir_img);
+    dirp_gt = opendir(dir_img_gt);
 
-    if(dirp == NULL)
+    if(dirp_gt == NULL)
     {
-        printf("Erro: nao foi possivel abrir o diretorio: %s\n", dir_img);
+        printf("Erro: nao foi possivel abrir o diretorio de ground-truth: %s\n", dir_img_gt);
         return;
     }
+
+    total_gt_png_files = 0;
+    matched_pairs = 0;
+    skipped_files = 0;
 
     while(1)
     {
-        entry = readdir(dirp);
+        entry = readdir(dirp_gt);
 
         if(entry == NULL)
         {
@@ -986,56 +1367,149 @@ read_images(const char* dir_img, waypoint_t *waypoints, int num_waypoints, doubl
             continue;
         }
 
-        if(!parse_centers_from_filename(entry->d_name, &road_map.x_center, &road_map.y_center))
+        total_gt_png_files++;
+
+        if(!ends_with(entry->d_name, "_gt.png"))
         {
-            printf("Aviso: nome fora do padrao esperado, ignorando arquivo: %s\n", entry->d_name);
+            if(verbose)
+            {
+                printf("Aviso: arquivo ignorado por nao seguir padrao *_gt.png: %s\n", entry->d_name);
+            }
+            skipped_files++;
             continue;
         }
 
-        if(snprintf(filepath, sizeof(filepath), "%s/%s", dir_img, entry->d_name) >= (int)sizeof(filepath))
+        if(!parse_centers_from_filename(entry->d_name, &x_center, &y_center))
         {
-            printf("Aviso: caminho muito longo, ignorando arquivo: %s\n", entry->d_name);
+            if(verbose)
+            {
+                printf("Aviso: nao foi possivel extrair centros do nome: %s\n", entry->d_name);
+            }
+            skipped_files++;
             continue;
         }
 
-        road_map_img = cv::imread(filepath, cv::IMREAD_COLOR);
-
-        if(road_map_img.empty())
+        if(!build_pred_filename_from_gt(entry->d_name, pred_filename, sizeof(pred_filename)))
         {
-            printf("Aviso: nao foi possivel ler a imagem: %s\n", filepath);
+            if(verbose)
+            {
+                printf("Aviso: nao foi possivel montar nome predito para: %s\n", entry->d_name);
+            }
+            skipped_files++;
             continue;
         }
 
-        road_map.img = road_map_img;
-        road_map.resolution = resolution;
-
-        compute_map_bounds(road_map.x_center,
-                           road_map.y_center,
-                           road_map.resolution,
-                           road_map.img.cols,
-                           road_map.img.rows,
-                           &map_min_x,
-                           &map_max_x,
-                           &map_min_y,
-                           &map_max_y);
-
-        waypoint_index = find_first_waypoint_inside_map(waypoints,
-                                                        num_waypoints,
-                                                        map_min_x,
-                                                        map_max_x,
-                                                        map_min_y,
-                                                        map_max_y);
-
-        if(waypoint_index < 0)
+        if(snprintf(gt_filepath, sizeof(gt_filepath), "%s/%s", dir_img_gt, entry->d_name) >= (int)sizeof(gt_filepath))
         {
-            printf("Aviso: nenhum waypoint dentro dos limites da imagem: %s\n", filepath);
+            printf("Aviso: caminho muito longo, ignorando GT: %s\n", entry->d_name);
+            skipped_files++;
             continue;
         }
 
-        infer_rddf_from_img(waypoints, waypoint_index, road_map);
+        if(snprintf(pred_filepath, sizeof(pred_filepath), "%s/%s", dir_img_pred, pred_filename) >= (int)sizeof(pred_filepath))
+        {
+            printf("Aviso: caminho muito longo, ignorando PRED correspondente a: %s\n", entry->d_name);
+            skipped_files++;
+            continue;
+        }
+
+        road_map_img_gt = cv::imread(gt_filepath, cv::IMREAD_COLOR);
+        if(road_map_img_gt.empty())
+        {
+            printf("Aviso: nao foi possivel ler imagem GT: %s\n", gt_filepath);
+            skipped_files++;
+            continue;
+        }
+
+        road_map_img_pred = cv::imread(pred_filepath, cv::IMREAD_COLOR);
+        if(road_map_img_pred.empty())
+        {
+            printf("Aviso: nao foi possivel ler imagem PRED correspondente: %s\n", pred_filepath);
+            skipped_files++;
+            continue;
+        }
+
+        road_map_gt.img = road_map_img_gt;
+        road_map_gt.x_center = x_center;
+        road_map_gt.y_center = y_center;
+        road_map_gt.resolution = 0.2;
+
+        road_map_pred.img = road_map_img_pred;
+        road_map_pred.x_center = x_center;
+        road_map_pred.y_center = y_center;
+        road_map_pred.resolution = 0.2;
+
+        waypoint_index = 0;
+
+        while(waypoint_index < num_rddf)
+        {
+            if(is_point_inside_map(rddf[waypoint_index], road_map_gt))
+            {
+                break;
+            }
+
+            waypoint_index++;
+        }
+
+        if(waypoint_index >= num_rddf)
+        {
+            if(verbose)
+            {
+                printf("Aviso: nenhum waypoint da RDDF caiu dentro do mapa para %s\n", entry->d_name);
+            }
+            skipped_files++;
+            continue;
+        }
+
+        inferred_rddf_gt   = infer_rddf_from_img(rddf, waypoint_index, road_map_gt,   num_poses_desired, &num_inferred_gt);
+        inferred_rddf_pred = infer_rddf_from_img(rddf, waypoint_index, road_map_pred, num_poses_desired, &num_inferred_pred);
+
+        if(inferred_rddf_gt == NULL || inferred_rddf_pred == NULL)
+        {
+            if(verbose)
+            {
+                if(inferred_rddf_gt == NULL)
+                {
+                	printf("Aviso: falha ao inferir RDDF para %s\n", gt_filepath);
+                }
+
+                if(inferred_rddf_pred == NULL)
+                {
+                	printf("Aviso: falha ao inferir RDDF para %s\n", pred_filepath);
+                }
+            }
+
+            if(inferred_rddf_gt != NULL)
+            {
+                free(inferred_rddf_gt);
+            }
+
+            if(inferred_rddf_pred != NULL)
+            {
+                free(inferred_rddf_pred);
+            }
+
+            skipped_files++;
+            continue;
+        }
+
+        compare_rddfs(inferred_rddf_gt,   num_inferred_gt,
+                      inferred_rddf_pred, num_inferred_pred,
+                      entry->d_name, verbose);
+
+        free(inferred_rddf_gt);
+        free(inferred_rddf_pred);
+
+        matched_pairs++;
     }
 
-    closedir(dirp);
+    closedir(dirp_gt);
+
+    printf("Diretorio GT: %s\n", dir_img_gt);
+    printf("Diretorio PRED: %s\n", dir_img_pred);
+    printf("Arquivos PNG encontrados em GT: %d\n", total_gt_png_files);
+    printf("Pares processados com sucesso: %d\n", matched_pairs);
+    printf("Arquivos ignorados: %d\n", skipped_files);
 }
 
 
@@ -1076,6 +1550,7 @@ get_rddf_from_file(const char* txt_filename, int* num_waypoints)
 
 	if(waypoints == NULL)
 	{
+        printf("Erro: malloc não conseguiu alocar memoria em get_rddf_from_file()\n");
 		fclose(f);
 		return(NULL);
 	}
@@ -1098,6 +1573,7 @@ get_rddf_from_file(const char* txt_filename, int* num_waypoints)
 
 			if(new_waypoints == NULL)
 			{
+		        printf("Erro: realloc não conseguiu alocar memoria em get_rddf_from_file()\n");
 				free(waypoints);
 				fclose(f);
 				return(NULL);
@@ -1116,6 +1592,7 @@ get_rddf_from_file(const char* txt_filename, int* num_waypoints)
 
 	if(count == 0)
 	{
+        printf("Alerta: nenhum waypoint valido encontrado em get_rddf_from_file()\n");
 		free(waypoints);
 		return(NULL);
 	}
@@ -1139,149 +1616,54 @@ get_rddf_from_file(const char* txt_filename, int* num_waypoints)
 int
 main(int argc, char** argv)
 {
-    const char* dir_img;
-    DIR* dirp;
-    struct dirent* entry;
-    char filepath[4096];
-    cv::Mat road_map_img;
-    map_t road_map;
-    waypoint_t coord;
-    double prob;
-    double sum_count_10;
-    int total_png_files;
-    int read_images;
-    int skipped_images;
-    int min_count_10;
-    int max_count_10;
-    int first_valid_image;
+    const char* dir_img_gt;
+    const char* dir_img_pred;
+    const char* rddf_filename;
+    waypoint_t *rddf;
+    int num_rddf;
+    int verbose;
 
-    if(argc != 2)
+    if(argc != 4 && argc != 5)
     {
-        printf("Uso: %s <dir_img>\n", argv[0]);
+        printf("Uso: %s <dir_img_gt> <dir_img_pred> <arquivo_rddf.txt> [-verbose]\n", argv[0]);
         return(1);
     }
 
-    dir_img = argv[1];
-    dirp = opendir(dir_img);
+    dir_img_gt = argv[1];
+    dir_img_pred = argv[2];
+    rddf_filename = argv[3];
+    verbose = 0;
 
-    if(dirp == NULL)
+    if(argc == 5)
     {
-        printf("Erro: nao foi possivel abrir o diretorio: %s\n", dir_img);
-        return(1);
-    }
-
-    total_png_files = 0;
-    read_images = 0;
-    skipped_images = 0;
-    sum_count_10 = 0.0;
-    min_count_10 = 0;
-    max_count_10 = 0;
-    first_valid_image = 1;
-
-    while(1)
-    {
-        entry = readdir(dirp);
-
-        if(entry == NULL)
+        if(strcmp(argv[4], "-verbose") == 0)
         {
-            break;
-        }
-
-        if(!has_png_extension(entry->d_name))
-        {
-            continue;
-        }
-
-        total_png_files++;
-
-        if(snprintf(filepath, sizeof(filepath), "%s/%s", dir_img, entry->d_name) >= (int)sizeof(filepath))
-        {
-            printf("Aviso: caminho muito longo, ignorando arquivo: %s\n", entry->d_name);
-            skipped_images++;
-            continue;
-        }
-
-        road_map_img = cv::imread(filepath, cv::IMREAD_COLOR);
-
-        if(road_map_img.empty())
-        {
-            printf("Aviso: nao foi possivel ler a imagem: %s\n", filepath);
-            skipped_images++;
-            continue;
-        }
-
-        if(!parse_centers_from_filename(entry->d_name, &road_map.x_center, &road_map.y_center))
-        {
-            printf("Aviso: nome fora do padrao esperado, ignorando arquivo: %s\n", entry->d_name);
-            skipped_images++;
-            continue;
-        }
-
-        road_map.img = road_map_img;
-        road_map.resolution = 0.2;
-
-        int count_10 = 0;
-
-        for(int row = 0; row < road_map.img.rows; row++)
-        {
-            for(int col = 0; col < road_map.img.cols; col++)
-            {
-                coord.x = road_map.x_center + (((double)col + 0.5) - ((double)road_map.img.cols / 2.0)) * road_map.resolution;
-                coord.y = road_map.y_center + (((double)road_map.img.rows / 2.0) - ((double)row + 0.5)) * road_map.resolution;
-                coord.theta = 0.0;
-
-                prob = get_lane_prob(coord, road_map);
-
-                if(prob == 1.0)
-                {
-                    count_10++;
-                }
-            }
-        }
-
-        if(first_valid_image)
-        {
-            min_count_10 = count_10;
-            max_count_10 = count_10;
-            first_valid_image = 0;
+            verbose = 1;
         }
         else
         {
-            if(count_10 < min_count_10)
-            {
-                min_count_10 = count_10;
-            }
-
-            if(count_10 > max_count_10)
-            {
-                max_count_10 = count_10;
-            }
+            printf("Erro: parametro opcional invalido: %s\n", argv[4]);
+            printf("Uso: %s <dir_img_gt> <dir_img_pred> <arquivo_rddf.txt> [-verbose]\n", argv[0]);
+            return(1);
         }
-
-//        if(count_10 == 0)
-//        	printf("%s nao possui celulas da classe 3\n", filepath);
-
-        sum_count_10 += (double)count_10;
-        read_images++;
     }
 
-    closedir(dirp);
-
-    printf("Diretorio de imagens: %s\n", dir_img);
-    printf("Arquivos PNG encontrados: %d\n", total_png_files);
-    printf("Arquivos lidos com sucesso: %d\n", read_images);
-    printf("Arquivos ignorados por erro: %d\n", skipped_images);
-
-    if(read_images == 0)
+    rddf = get_rddf_from_file(rddf_filename, &num_rddf);
+    if(rddf == NULL)
     {
-        printf("Nenhum arquivo valido foi lido.\n");
+        printf("Erro: nao foi possivel ler o arquivo RDDF: %s\n", rddf_filename);
         return(1);
     }
 
-    printf("Celulas com get_lane_prob = 1.0 por arquivo:\n");
-    printf("Media: %.6f\n", sum_count_10 / (double)read_images);
-    printf("Minimo: %d\n", min_count_10);
-    printf("Maximo: %d\n", max_count_10);
+    if(verbose)
+    {
+        printf("Arquivo RDDF: %s\n", rddf_filename);
+        printf("Waypoints lidos: %d\n", num_rddf);
+    }
+
+    read_images(dir_img_gt, dir_img_pred, rddf, num_rddf, verbose);
+
+    free(rddf);
 
     return(0);
 }
