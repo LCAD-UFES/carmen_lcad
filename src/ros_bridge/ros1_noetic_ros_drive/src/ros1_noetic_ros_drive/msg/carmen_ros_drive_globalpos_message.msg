@@ -1,0 +1,15 @@
+ros1_noetic_ros_drive/ros_point_t globalpos
+ros1_noetic_ros_drive/ros_point_t globalpos_std
+ros1_noetic_ros_drive/ros_point_t odometrypos
+ros1_noetic_ros_drive/ros_pose_3D_t pose
+ros1_noetic_ros_drive/ros_vector_3D_t velocity
+float64 v
+float64 phi
+float64 globalpos_xy_cov
+int32 converged
+int32 semi_trailer_engaged
+int32 semi_trailer_type
+int32 num_trailers
+float64[5] trailer_theta
+float64 timestamp
+string host
