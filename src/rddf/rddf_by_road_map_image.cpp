@@ -920,8 +920,8 @@ save_plot_map(const cv::Mat& plot_map, const char* png_filename)
 }
 
 
-void
-infer_rddf_from_img(waypoint_t *waypoints, int waypoint_index, const cv::Mat& img);
+//void
+//infer_rddf_from_img(waypoint_t *waypoints, int waypoint_index, const map_t map);
 
 
 int
@@ -949,12 +949,14 @@ read_images(const char* dir_img, waypoint_t *waypoints, int num_waypoints, doubl
     struct dirent* entry;
     char filepath[4096];
     cv::Mat road_map_img;
-    double x_center;
-    double y_center;
+
+    map_t road_map;
+
     double map_min_x;
     double map_max_x;
     double map_min_y;
     double map_max_y;
+
     int waypoint_index;
 
     if(dir_img == NULL || waypoints == NULL || num_waypoints <= 0)
@@ -984,7 +986,7 @@ read_images(const char* dir_img, waypoint_t *waypoints, int num_waypoints, doubl
             continue;
         }
 
-        if(!parse_centers_from_filename(entry->d_name, &x_center, &y_center))
+        if(!parse_centers_from_filename(entry->d_name, &road_map.x_center, &road_map.y_center))
         {
             printf("Aviso: nome fora do padrao esperado, ignorando arquivo: %s\n", entry->d_name);
             continue;
@@ -1004,11 +1006,25 @@ read_images(const char* dir_img, waypoint_t *waypoints, int num_waypoints, doubl
             continue;
         }
 
-        compute_map_bounds(x_center, y_center, resolution, road_map_img.cols, road_map_img.rows,
-                           &map_min_x, &map_max_x, &map_min_y, &map_max_y);
+        road_map.img = road_map_img;
+        road_map.resolution = resolution;
 
-        waypoint_index = find_first_waypoint_inside_map(waypoints, num_waypoints,
-                                                       map_min_x, map_max_x, map_min_y, map_max_y);
+        compute_map_bounds(road_map.x_center,
+                           road_map.y_center,
+                           road_map.resolution,
+                           road_map.img.cols,
+                           road_map.img.rows,
+                           &map_min_x,
+                           &map_max_x,
+                           &map_min_y,
+                           &map_max_y);
+
+        waypoint_index = find_first_waypoint_inside_map(waypoints,
+                                                        num_waypoints,
+                                                        map_min_x,
+                                                        map_max_x,
+                                                        map_min_y,
+                                                        map_max_y);
 
         if(waypoint_index < 0)
         {
@@ -1016,7 +1032,7 @@ read_images(const char* dir_img, waypoint_t *waypoints, int num_waypoints, doubl
             continue;
         }
 
-        infer_rddf_from_img(waypoints, waypoint_index, road_map_img);
+        infer_rddf_from_img(waypoints, waypoint_index, road_map);
     }
 
     closedir(dirp);
