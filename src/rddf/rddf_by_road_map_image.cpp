@@ -920,6 +920,109 @@ save_plot_map(const cv::Mat& plot_map, const char* png_filename)
 }
 
 
+void
+infer_rddf_from_img(waypoint_t *waypoints, int waypoint_index, const cv::Mat& img);
+
+
+int
+find_first_waypoint_inside_map(waypoint_t *waypoints, int num_waypoints, double map_min_x, double map_max_x, double map_min_y, double map_max_y)
+{
+    int i;
+
+    for(i = 0; i < num_waypoints; i++)
+    {
+        if(waypoints[i].x >= map_min_x && waypoints[i].x < map_max_x &&
+           waypoints[i].y >= map_min_y && waypoints[i].y < map_max_y)
+        {
+            return(i);
+        }
+    }
+
+    return(-1);
+}
+
+
+void
+read_images(const char* dir_img, waypoint_t *waypoints, int num_waypoints, double resolution)
+{
+    DIR* dirp;
+    struct dirent* entry;
+    char filepath[4096];
+    cv::Mat road_map_img;
+    double x_center;
+    double y_center;
+    double map_min_x;
+    double map_max_x;
+    double map_min_y;
+    double map_max_y;
+    int waypoint_index;
+
+    if(dir_img == NULL || waypoints == NULL || num_waypoints <= 0)
+    {
+        return;
+    }
+
+    dirp = opendir(dir_img);
+
+    if(dirp == NULL)
+    {
+        printf("Erro: nao foi possivel abrir o diretorio: %s\n", dir_img);
+        return;
+    }
+
+    while(1)
+    {
+        entry = readdir(dirp);
+
+        if(entry == NULL)
+        {
+            break;
+        }
+
+        if(!has_png_extension(entry->d_name))
+        {
+            continue;
+        }
+
+        if(!parse_centers_from_filename(entry->d_name, &x_center, &y_center))
+        {
+            printf("Aviso: nome fora do padrao esperado, ignorando arquivo: %s\n", entry->d_name);
+            continue;
+        }
+
+        if(snprintf(filepath, sizeof(filepath), "%s/%s", dir_img, entry->d_name) >= (int)sizeof(filepath))
+        {
+            printf("Aviso: caminho muito longo, ignorando arquivo: %s\n", entry->d_name);
+            continue;
+        }
+
+        road_map_img = cv::imread(filepath, cv::IMREAD_COLOR);
+
+        if(road_map_img.empty())
+        {
+            printf("Aviso: nao foi possivel ler a imagem: %s\n", filepath);
+            continue;
+        }
+
+        compute_map_bounds(x_center, y_center, resolution, road_map_img.cols, road_map_img.rows,
+                           &map_min_x, &map_max_x, &map_min_y, &map_max_y);
+
+        waypoint_index = find_first_waypoint_inside_map(waypoints, num_waypoints,
+                                                       map_min_x, map_max_x, map_min_y, map_max_y);
+
+        if(waypoint_index < 0)
+        {
+            printf("Aviso: nenhum waypoint dentro dos limites da imagem: %s\n", filepath);
+            continue;
+        }
+
+        infer_rddf_from_img(waypoints, waypoint_index, road_map_img);
+    }
+
+    closedir(dirp);
+}
+
+
 waypoint_t*
 get_rddf_from_file(const char* txt_filename, int* num_waypoints)
 {
