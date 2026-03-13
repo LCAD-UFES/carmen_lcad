@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 #include <algorithm>
 #include <dirent.h>
 #include <errno.h>
@@ -1036,23 +1037,9 @@ double
 distance_to_rddf(const waypoint_t waypoint, const waypoint_t *rddf, int num_rddf, double *dtheta)
 {
 	int i;
+	int found_valid_segment;
 	double min_distance;
 	double best_theta_segment;
-	double ax;
-	double ay;
-	double bx;
-	double by;
-	double abx;
-	double aby;
-	double apx;
-	double apy;
-	double ab_len_sq;
-	double t;
-	double qx;
-	double qy;
-	double dx;
-	double dy;
-	double distance;
 
 	if(dtheta != NULL)
 	{
@@ -1069,44 +1056,113 @@ distance_to_rddf(const waypoint_t waypoint, const waypoint_t *rddf, int num_rddf
 		return(-1.0);
 	}
 
+	if(!isfinite(waypoint.x) || !isfinite(waypoint.y))
+	{
+		return(-1.0);
+	}
+
 	if(num_rddf == 1)
 	{
+		double dx;
+		double dy;
+		double dist;
+
+		if(!isfinite(rddf[0].x) || !isfinite(rddf[0].y))
+		{
+			return(-1.0);
+		}
+
 		dx = waypoint.x - rddf[0].x;
 		dy = waypoint.y - rddf[0].y;
+		dist = hypot(dx, dy);
+
+		if(!isfinite(dist))
+		{
+			return(-1.0);
+		}
 
 		if(dtheta != NULL)
 		{
-			*dtheta = carmen_normalize_theta(waypoint.theta - rddf[0].theta);
+			if(isfinite(waypoint.theta) && isfinite(rddf[0].theta))
+			{
+				*dtheta = carmen_normalize_theta(waypoint.theta - rddf[0].theta);
+			}
+			else
+			{
+				*dtheta = 0.0;
+			}
 		}
 
-		return(sqrt(dx * dx + dy * dy));
+		return(dist);
 	}
 
-	min_distance = -1.0;
+	found_valid_segment = 0;
+	min_distance = DBL_MAX;
 	best_theta_segment = 0.0;
 
 	for(i = 0; i < (num_rddf - 1); i++)
 	{
+		double ax;
+		double ay;
+		double bx;
+		double by;
+		double abx;
+		double aby;
+		double apx;
+		double apy;
+		double ab_len_sq;
+		double t;
+		double qx;
+		double qy;
+		double dx;
+		double dy;
+		double distance;
+		double theta_segment;
+
 		ax = rddf[i].x;
 		ay = rddf[i].y;
 		bx = rddf[i + 1].x;
 		by = rddf[i + 1].y;
+
+		if(!isfinite(ax) || !isfinite(ay) || !isfinite(bx) || !isfinite(by))
+		{
+			continue;
+		}
 
 		abx = bx - ax;
 		aby = by - ay;
 		apx = waypoint.x - ax;
 		apy = waypoint.y - ay;
 
+		if(!isfinite(abx) || !isfinite(aby) || !isfinite(apx) || !isfinite(apy))
+		{
+			continue;
+		}
+
 		ab_len_sq = abx * abx + aby * aby;
 
-		if(ab_len_sq == 0.0)
+		if(!isfinite(ab_len_sq) || ab_len_sq <= 0.0)
 		{
 			qx = ax;
 			qy = ay;
+
+			if(isfinite(rddf[i].theta))
+			{
+				theta_segment = rddf[i].theta;
+			}
+			else
+			{
+				theta_segment = 0.0;
+			}
 		}
 		else
 		{
 			t = (apx * abx + apy * aby) / ab_len_sq;
+
+			if(!isfinite(t))
+			{
+				continue;
+			}
 
 			if(t < 0.0)
 			{
@@ -1119,30 +1175,58 @@ distance_to_rddf(const waypoint_t waypoint, const waypoint_t *rddf, int num_rddf
 
 			qx = ax + t * abx;
 			qy = ay + t * aby;
+
+			if(!isfinite(qx) || !isfinite(qy))
+			{
+				continue;
+			}
+
+			theta_segment = atan2(aby, abx);
+
+			if(!isfinite(theta_segment))
+			{
+				continue;
+			}
 		}
 
 		dx = waypoint.x - qx;
 		dy = waypoint.y - qy;
-		distance = sqrt(dx * dx + dy * dy);
 
-		if(min_distance < 0.0 || distance < min_distance)
+		if(!isfinite(dx) || !isfinite(dy))
 		{
-			min_distance = distance;
-
-			if(ab_len_sq == 0.0)
-			{
-				best_theta_segment = rddf[i].theta;
-			}
-			else
-			{
-				best_theta_segment = atan2(aby, abx);
-			}
+			continue;
 		}
+
+		distance = hypot(dx, dy);
+
+		if(!isfinite(distance))
+		{
+			continue;
+		}
+
+		if(!found_valid_segment || distance < min_distance)
+		{
+			found_valid_segment = 1;
+			min_distance = distance;
+			best_theta_segment = theta_segment;
+		}
+	}
+
+	if(!found_valid_segment)
+	{
+		return(-1.0);
 	}
 
 	if(dtheta != NULL)
 	{
-		*dtheta = carmen_normalize_theta(waypoint.theta - best_theta_segment);
+		if(isfinite(waypoint.theta) && isfinite(best_theta_segment))
+		{
+			*dtheta = carmen_normalize_theta(waypoint.theta - best_theta_segment);
+		}
+		else
+		{
+			*dtheta = 0.0;
+		}
 	}
 
 	return(min_distance);
@@ -1276,8 +1360,8 @@ compare_rddfs(const waypoint_t *inferred_rddf_gt,   int num_inferred_gt,
 
         if(verbose)
         {
-            printf("%s waypoint %d: dist=%.17g dtheta=%.17g abs_dtheta=%.17g\n",
-                   gt_filename, i, dist, dtheta, abs_dtheta);
+            printf("%s waypoint %d: dist=%.17g dtheta=%.17g\n",
+                   gt_filename, i, dist, dtheta);
         }
     }
 
@@ -1297,7 +1381,7 @@ compare_rddfs(const waypoint_t *inferred_rddf_gt,   int num_inferred_gt,
     }
     std_dev_abs_dtheta = sqrt(var_abs_dtheta);
 
-    printf("%s: num_gt=%d num_pred=%d comparados=%d media_dist=%.17g max_dist=%.17g std_dev_dist=%.17g media_abs_dtheta=%.17g max_abs_dtheta=%.17g std_dev_abs_dtheta=%.17g\n",
+    printf("%s: num_gt=%d num_pred=%d comparados=%d\n   media_dist=%.17g max_dist=%.17g std_dev_dist=%.17g\n   media_abs_dtheta=%.17g max_abs_dtheta=%.17g std_dev_abs_dtheta=%.17g\n",
            gt_filename,
            num_inferred_gt,
            num_inferred_pred,
