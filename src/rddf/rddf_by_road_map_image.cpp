@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <dirent.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <opencv2/opencv.hpp>
 #include <list>
 #include <gsl/gsl_vector.h>
@@ -1396,6 +1398,184 @@ compare_rddfs(const waypoint_t *inferred_rddf_gt,   int num_inferred_gt,
 
 
 void
+plot_waypoint_on_map(cv::Mat& plot_map, waypoint_t waypoint, double x_center, double y_center, double resolution, int x_size, int y_size, const cv::Vec3b& color)
+{
+	int ix;
+	int iy;
+
+	if(!world_to_map_indices(waypoint.x, waypoint.y, x_center, y_center, resolution, x_size, y_size, &ix, &iy))
+	{
+		return;
+	}
+
+	plot_map.at<cv::Vec3b>(iy, ix) = color;
+}
+
+
+void
+plot_rddf_on_map(cv::Mat& plot_map, const waypoint_t* rddf, int num_rddf, double x_center, double y_center, double resolution, const cv::Vec3b& color)
+{
+	int i;
+	int x_size;
+	int y_size;
+
+	if(rddf == NULL || num_rddf <= 0)
+	{
+		return;
+	}
+
+	x_size = plot_map.cols;
+	y_size = plot_map.rows;
+
+	for(i = 0; i < num_rddf; i++)
+	{
+		plot_waypoint_on_map(plot_map, rddf[i], x_center, y_center, resolution, x_size, y_size, color);
+	}
+
+	for(i = 0; i < (num_rddf - 1); i++)
+	{
+		int ix0;
+		int iy0;
+		int ix1;
+		int iy1;
+
+		if(!world_to_map_indices(rddf[i].x, rddf[i].y, x_center, y_center, resolution, x_size, y_size, &ix0, &iy0))
+		{
+			continue;
+		}
+
+		if(!world_to_map_indices(rddf[i + 1].x, rddf[i + 1].y, x_center, y_center, resolution, x_size, y_size, &ix1, &iy1))
+		{
+			continue;
+		}
+
+		cv::line(plot_map, cv::Point(ix0, iy0), cv::Point(ix1, iy1),
+		         cv::Scalar(color[0], color[1], color[2]), 1, cv::LINE_AA);
+	}
+}
+
+
+int
+ensure_directory_exists(const char* dirpath)
+{
+	struct stat st;
+
+	if(dirpath == NULL)
+	{
+		return(0);
+	}
+
+	if(stat(dirpath, &st) == 0)
+	{
+		if(S_ISDIR(st.st_mode))
+		{
+			return(1);
+		}
+		else
+		{
+			return(0);
+		}
+	}
+
+	if(mkdir(dirpath, 0777) != 0)
+	{
+		return(0);
+	}
+
+	return(1);
+}
+
+
+int
+save_rddf_road_map(const char* dir_img_pred, const waypoint_t* rddf, int num_rddf,
+                   map_t road_map_gt, map_t road_map_pred,
+                   waypoint_t *inferred_rddf_gt, waypoint_t *inferred_rddf_pred,
+                   int num_inferred_gt, int num_inferred_pred)
+{
+	cv::Mat plot_map_gt;
+	cv::Mat plot_map_pred;
+	cv::Mat final_map;
+	cv::Vec3b color_rddf;
+	cv::Vec3b color_inferred_gt;
+	cv::Vec3b color_inferred_pred;
+	char output_dir[4096];
+	char output_filename[4096];
+
+	if(dir_img_pred == NULL)
+	{
+		return(0);
+	}
+
+	if(road_map_gt.img.empty() || road_map_pred.img.empty())
+	{
+		return(0);
+	}
+
+	if(road_map_gt.img.type() != CV_8UC3 || road_map_pred.img.type() != CV_8UC3)
+	{
+		return(0);
+	}
+
+	if(road_map_gt.img.rows != road_map_pred.img.rows)
+	{
+		return(0);
+	}
+
+	plot_map_gt = road_map_gt.img.clone();
+	plot_map_pred = road_map_pred.img.clone();
+
+	color_rddf[0] = 255;
+	color_rddf[1] = 255;
+	color_rddf[2] = 255;
+
+	color_inferred_gt[0] = 31;
+	color_inferred_gt[1] = 31;
+	color_inferred_gt[2] = 0;
+
+	color_inferred_pred[0] = 255;
+	color_inferred_pred[1] = 0;
+	color_inferred_pred[2] = 255;
+
+	plot_rddf_on_map(plot_map_gt, rddf, num_rddf, road_map_gt.x_center, road_map_gt.y_center, 0.2, color_rddf);
+	plot_rddf_on_map(plot_map_gt, inferred_rddf_gt, num_inferred_gt, road_map_gt.x_center, road_map_gt.y_center, 0.2, color_inferred_gt);
+	plot_rddf_on_map(plot_map_gt, inferred_rddf_pred, num_inferred_pred, road_map_gt.x_center, road_map_gt.y_center, 0.2, color_inferred_pred);
+
+	plot_rddf_on_map(plot_map_pred, rddf, num_rddf, road_map_pred.x_center, road_map_pred.y_center, 0.2, color_rddf);
+	plot_rddf_on_map(plot_map_pred, inferred_rddf_gt, num_inferred_gt, road_map_pred.x_center, road_map_pred.y_center, 0.2, color_inferred_gt);
+	plot_rddf_on_map(plot_map_pred, inferred_rddf_pred, num_inferred_pred, road_map_pred.x_center, road_map_pred.y_center, 0.2, color_inferred_pred);
+
+	cv::hconcat(plot_map_gt, plot_map_pred, final_map);
+
+	if(snprintf(output_dir, sizeof(output_dir), "%s/rddf", dir_img_pred) >= (int) sizeof(output_dir))
+	{
+		return(0);
+	}
+
+	if(!ensure_directory_exists(output_dir))
+	{
+		printf("Erro: nao foi possivel criar/acessar o diretorio: %s\n", output_dir);
+		return(0);
+	}
+
+	if(snprintf(output_filename, sizeof(output_filename), "%s/rddf_%.17g_%.17g.png",
+	            output_dir, road_map_gt.x_center, road_map_gt.y_center) >= (int) sizeof(output_filename))
+	{
+		return(0);
+	}
+
+	if(!cv::imwrite(output_filename, final_map))
+	{
+		printf("Erro: nao foi possivel salvar a imagem: %s\n", output_filename);
+		return(0);
+	}
+
+	printf("Imagem RDDF salva em: %s\n", output_filename);
+
+	return(1);
+}
+
+
+void
 read_images(const char* dir_img_gt, const char* dir_img_pred, const waypoint_t* rddf, int num_rddf, int verbose)
 {
     DIR* dirp_gt;
@@ -1580,6 +1760,12 @@ read_images(const char* dir_img_gt, const char* dir_img_pred, const waypoint_t* 
         compare_rddfs(inferred_rddf_gt,   num_inferred_gt,
                       inferred_rddf_pred, num_inferred_pred,
                       entry->d_name, verbose);
+
+        save_rddf_road_map(dir_img_pred,
+                           rddf, num_rddf,
+                           road_map_gt, road_map_pred,
+                           inferred_rddf_gt, inferred_rddf_pred,
+                           num_inferred_gt, num_inferred_pred);
 
         free(inferred_rddf_gt);
         free(inferred_rddf_pred);
