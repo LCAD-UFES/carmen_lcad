@@ -1406,9 +1406,9 @@ draw_everything()
         double map_zoom = camera_pose.position.z / 120.0;
 
         if (get_camera_mode() == 3)
-        	draw_map(m_drawer, get_position_offset(), car_fused_pose, 0.6); // @@@Braian: Desativa a renderização do mapa baseada no zoom quando tiver no modo de camera back view
+        	draw_map(m_drawer, get_position_offset(), car_fused_pose, 0.6, robot_wheel_radius); // @@@Braian: Desativa a renderização do mapa baseada no zoom quando tiver no modo de camera back view
         else
-        	draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
+        	draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom, robot_wheel_radius);
 //            carmen_pose_3D_t camera_pose = get_camera_pose();
 //            printf("x %lf, y %lf, z %lf\n", camera_pose.position.x, camera_pose.position.y, camera_pose.position.z);
 //            camera_pose = get_camera_offset();
@@ -1456,7 +1456,7 @@ draw_everything()
 
     }
 
-    if (draw_map_image_flag)
+    if (0)//draw_map_image_flag)
     {
     	if (first_download_map_have_been_aquired)
     	{
@@ -4669,10 +4669,10 @@ draw_while_picking()
 	{
 		carmen_pose_3D_t camera_pose = get_camera_pose();
 		double map_zoom = camera_pose.position.z / 120.0;
-		draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom);
+		draw_map(m_drawer, get_position_offset(), car_fused_pose, map_zoom, robot_wheel_radius);
 	}
 
-	if (draw_map_image_flag)
+	if (0)//draw_map_image_flag)
 	{
 		if (first_download_map_have_been_aquired)
 		{

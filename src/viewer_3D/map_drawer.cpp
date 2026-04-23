@@ -413,15 +413,17 @@ drawBox(double length_x, double length_y, double length_z)
 static void
 draw_map_element(double x, double y, double z, double map_value, double resolution)
 {
+	double map_cell_height = 0.001;
+	
 	if(map_value > 0.5)
 	{
 		glPushMatrix();
 
-			glTranslated(x, y, z);
+			glTranslated(x, y, z + map_cell_height);
 //			glColor3d(1.0, 0, 0); 										// red
 //			glColor3d(map_value, map_value, map_value); 				// gray scale (remission)
 			glColor3d(1 - map_value, 1 - map_value, 1 - map_value); 	// gray scale inverted (costs)
-			drawBox(resolution, resolution, 0.5);
+			drawBox(resolution, resolution, map_cell_height); // Altura das celulas do mapa
 //			drawBoxNew(resolution, resolution, 0.5);
 //			drawPlane(resolution, resolution, 0.5);
 //			drawPlane(x, y, 0.5);
@@ -623,7 +625,7 @@ draw_single_map_optimized(carmen_map_t map, double car_x, double car_y, double z
 
 
 static void
-draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
+draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset, double robot_wheel_radius)
 {
 //	printf("Offset2 x:% lf, y:% lf, z:% lf\n", offset.x, offset.y, offset.z);
 
@@ -639,7 +641,7 @@ draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 
 				double offset_x = m_drawer->maps[i].config.x_origin - offset.x;
 				double offset_y = m_drawer->maps[i].config.y_origin - offset.y;
-				double offset_z = 0.0;//-offset.z;
+				double offset_z = -robot_wheel_radius;
 
 				glColor3d(1.0, 0.0, 0.0);
 				glTranslated(offset_x, offset_y, offset_z);
@@ -654,7 +656,7 @@ draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 
 				offset_x = m_drawer->maps[i].config.x_origin - offset.x;
 				offset_y = m_drawer->maps[i].config.y_origin - offset.y;
-				offset_z = 1.0;//-offset.z;
+				offset_z = -robot_wheel_radius;
 
 				glColor3d(0.0, 1.0, 0.0);
 				glTranslated(offset_x, offset_y, offset_z);
@@ -678,7 +680,7 @@ draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 
 
 static void
-draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom)
+draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, double robot_wheel_radius, carmen_pose_3D_t car_fused_pose, double map_zoom)
 {	
 	int i;
 
@@ -688,7 +690,7 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, carmen_pose_3D
 
 			double offset_x = m_drawer->maps[i].config.x_origin - offset.x;
 			double offset_y = m_drawer->maps[i].config.y_origin - offset.y;
-			double offset_z = 0.0;//-offset.z;
+			double offset_z = -robot_wheel_radius;
 
 			glTranslated(offset_x, offset_y, offset_z);
 
@@ -700,7 +702,7 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, carmen_pose_3D
 
 			offset_x = m_drawer->maps[i].config.x_origin - offset.x;
 			offset_y = m_drawer->maps[i].config.y_origin - offset.y;
-			offset_z = 10.0;//-offset.z;
+			offset_z = -robot_wheel_radius;
 
 			glTranslated(offset_x, offset_y, offset_z);
 
@@ -712,14 +714,14 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset, carmen_pose_3D
 
 
 void
-draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom)
+draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom, double robot_wheel_radius)
 {
 	glPushMatrix();
 
 		if (drawVBO)
-			draw_map_VBO(m_drawer, offset);
+			draw_map_VBO(m_drawer, offset, robot_wheel_radius);
 		else
-			draw_map_not_VBO(m_drawer, offset, car_fused_pose, map_zoom);
+			draw_map_not_VBO(m_drawer, offset, robot_wheel_radius, car_fused_pose, map_zoom);
 
 	glPopMatrix();
 }
