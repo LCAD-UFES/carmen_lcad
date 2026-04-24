@@ -31,6 +31,6 @@ void add_compact_cost_map_message(map_drawer* m_drawer, carmen_map_t map,
 		carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom);
 void add_localize_map_message(map_drawer* m_drawer, carmen_map_server_localize_map_message *message,
 		carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom);
-void draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom);
+void draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose, double map_zoom, double robot_wheel_radius);
 
 #endif
