@@ -150,9 +150,7 @@ change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 		return;
 	}
 
-	// if ((angle < M_PI / 4.0) && (angle > -M_PI / 4.0))
-	// if ((angle > M_PI / 2.0) || (angle < -M_PI / 2.0))
-	if ((angle < M_PI / 2.0) && (angle > -M_PI / 2.0))
+	if ((angle < M_PI / 4.0) && (angle > -M_PI / 4.0))
 			sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
 	else
 		sensor_params->current_range_max = sensor_params->range_max;
