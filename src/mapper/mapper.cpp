@@ -81,6 +81,9 @@ int publish_diff_map = 0;
 double publish_diff_map_interval = 0.5;
 double mapper_velodyne_range_max;
 double mapper_range_max_factor = 1.0;
+int mapper_range_max_factor_num_intervals = -1;
+char* mapper_range_max_factor_intervals_str;
+double *mapper_range_max_factor_intervals;
 bool use_merge_between_maps = false;
 tf::Transformer tf_transformer(false);
 static carmen_pose_3D_t car_pose_g;
@@ -150,10 +153,18 @@ change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 		return;
 	}
 
-	if ((angle < M_PI / 4.0) && (angle > -M_PI / 4.0))
+	// if ((angle < M_PI / 4.0) && (angle > -M_PI / 4.0))
+	// 		sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
+	// else
+	// 	sensor_params->current_range_max = sensor_params->range_max;
+	
+	sensor_params->current_range_max = sensor_params->range_max;
+	for(int i = 0; i < mapper_range_max_factor_num_intervals; i++)
+	{
+		if((angle > (mapper_range_max_factor_intervals[2*i])) && (angle < (mapper_range_max_factor_intervals[2*i+1])))
 			sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
-	else
-		sensor_params->current_range_max = sensor_params->range_max;
+
+	}
 }
 
 
@@ -2057,6 +2068,21 @@ carmen_mapper_get_highest_sensor()
 			highest_sensor = sensors_params[i].height;
 }
 
+void
+carmen_get_range_max_factor_intervals()
+{
+	if(mapper_range_max_factor_num_intervals < 0) // Valor default 
+	{
+		mapper_range_max_factor_num_intervals = 2;
+		mapper_range_max_factor_intervals_str = (char*) "-3.14159265359 -1.57079632679 1.57079632679 3.14159265359";
+	}
+
+
+	mapper_range_max_factor_intervals = (double*) malloc(2 * mapper_range_max_factor_num_intervals * sizeof(double));
+	for (int i = 0; i < (2 * mapper_range_max_factor_num_intervals); i++)
+		mapper_range_max_factor_intervals[i] = CLF_READ_DOUBLE(&mapper_range_max_factor_intervals_str); 
+}
+
 
 void
 carmen_mapper_override_mapping_mode_params(int argc, char **argv)
@@ -2084,10 +2110,14 @@ carmen_mapper_override_mapping_mode_params(int argc, char **argv)
 		{
 			{(char *) "mapper",  (char *) "mapping_mode_off_min_force_obstacle_height", CARMEN_PARAM_DOUBLE, &min_force_obstacle_height, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_max_force_obstacle_height", CARMEN_PARAM_DOUBLE, &max_force_obstacle_height, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_off_velodyne_range_max_factor_num_intervals", CARMEN_PARAM_INT, &mapper_range_max_factor_num_intervals, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_off_velodyne_range_max_factor_intervals", CARMEN_PARAM_STRING, &mapper_range_max_factor_intervals_str, 0, NULL},
 		};
-
+		
 		carmen_param_allow_unfound_variables(1);
 		carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+
+		carmen_get_range_max_factor_intervals();
 	}
 	else if (mapping_mode == 1)
 	{
@@ -2113,10 +2143,14 @@ carmen_mapper_override_mapping_mode_params(int argc, char **argv)
 		{
 			{(char *) "mapper",  (char *) "mapping_mode_on_min_force_obstacle_height", CARMEN_PARAM_DOUBLE, &min_force_obstacle_height, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_max_force_obstacle_height", CARMEN_PARAM_DOUBLE, &max_force_obstacle_height, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_on_velodyne_range_max_factor_num_intervals", CARMEN_PARAM_INT, &mapper_range_max_factor_num_intervals, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_on_velodyne_range_max_factor_intervals", CARMEN_PARAM_STRING, &mapper_range_max_factor_intervals_str, 0, NULL},
 		};
 
 		carmen_param_allow_unfound_variables(1);
 		carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+
+		carmen_get_range_max_factor_intervals();
 	}
 
 	if (level_msg == 1)
