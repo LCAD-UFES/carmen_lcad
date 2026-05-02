@@ -77,7 +77,3 @@ O módulo lê as seguintes configurações do arquivo `carmen.ini`:
 * **Sinais**: Implementa o tratamento de `SIGINT` (Ctrl+C) para desconectar o IPC do CARMEN de forma segura.
 
 ---
-
-Essa documentação cobre o que você construiu no código e no Makefile. Parece que o sistema de teleoperação do G1 está ficando bem robusto com essa integração!
-
-Alguma parte específica da lógica de conversão da IMU que você queira detalhar mais no Markdown?
