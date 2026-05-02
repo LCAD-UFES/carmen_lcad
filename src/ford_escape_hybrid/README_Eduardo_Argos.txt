@@ -46,3 +46,13 @@ plot "./results_pid-steering.txt" using ($14-k):8 with lines title "cphi", "./re
 
 
 
+
+-> Para visualizar odometria de log
+grep ROBOTVELOCITY_ACK /dados/log_argos_arcelor_04222026-2.txt > log_odometry.txt
+gnuplot
+
+plot "./log_odometry.txt" using 6:3 with lines title "phi", "./log_odometry.txt" using 6:2 with lines title "v"
+
+
+
+
