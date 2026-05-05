@@ -18,8 +18,8 @@ using namespace unitree::robot;
 
 // Variáveis Globais (Padrão Skeleton)
 static carmen_xsens_global_quat_message xsens_quat_msg;
-static double display_hz = 10.0;
 static int xsens_type = 1; // 1 = Simular MTi-G (IMU + GPS/Vel)
+static int print_xsens = 1;
 
 // --- MÉTODOS DE FORMATAÇÃO E PUBLICAÇÃO (IGUAL AO XSENS_MTIG) ---
 
@@ -73,14 +73,17 @@ void LowStateCallback(const void* message)
 {
     const auto* low_state = static_cast<const unitree_go::msg::dds_::LowState_*>(message);
 
+    printf("Oi! \n");
+
     // Método: Cria a mensagem e publica[cite: 1]
     xsens_quat_msg = make_xsens_mti_quat_message(low_state);
     publish_mti_quat_message(xsens_quat_msg);
 
     // Print no padrão de log XSENS_QUAT solicitado[cite: 1]
     static double last_print_time = 0;
-    if (carmen_get_time() - last_print_time >= (1.0 / display_hz)) 
+    if (print_xsens)
     {
+        double new_print_time = carmen_get_time();
         printf("XSENS_QUAT %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %lf %s\n",
                xsens_quat_msg.m_acc.x, xsens_quat_msg.m_acc.y, xsens_quat_msg.m_acc.z,
                xsens_quat_msg.m_gyr.x, xsens_quat_msg.m_gyr.y, xsens_quat_msg.m_gyr.z,
@@ -89,8 +92,11 @@ void LowStateCallback(const void* message)
                xsens_quat_msg.quat_data.m_data[2], xsens_quat_msg.quat_data.m_data[3],
                xsens_quat_msg.m_temp, (int)xsens_quat_msg.m_count, 
                xsens_quat_msg.timestamp, xsens_quat_msg.host);
-        last_print_time = carmen_get_time();
+        double freq = 1.0/(new_print_time - last_print_time);
+        printf("freq: %lf\n", freq);
+        last_print_time = new_print_time;
     }
+
 }
 
 static int 
@@ -99,7 +105,15 @@ read_parameters(int argc, char **argv)
     carmen_param_t param_list[] = {
         {(char *) "xsens", (char *) "type", CARMEN_PARAM_INT, &xsens_type, 0, NULL}
     };
+    carmen_param_allow_unfound_variables(0);
     carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
+
+    carmen_param_t optional_param_list[] = {
+        {(char *) "commandline", (char *) "print_xsens", CARMEN_PARAM_ONOFF, &print_xsens, 0, NULL},
+    };
+    carmen_param_allow_unfound_variables(1);
+    carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list)/sizeof(optional_param_list[0]));
+
     return 0;
 }
 
@@ -133,14 +147,13 @@ int main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     // Argumentos de linha de comando
-    std::string interface = "eth0";
+    std::string interface = "wlan0";
     int domain_id = 0;
-    if (argc > 1) interface = argv[1];
-    if (argc > 2) domain_id = std::stoi(argv[2]);
-    if (argc > 3) display_hz = std::stod(argv[3]);
+    // if (argc > 1) interface = argv[1];
+    // if (argc > 2) domain_id = std::stoi(argv[2]);
 
-    printf("[xsens_argos] Iniciando: Interface=%s, Domain=%d, Hz=%g\n", 
-           interface.c_str(), domain_id, display_hz);
+    printf("[xsens_argos] Iniciando: Interface=%s, Domain=%d\n", 
+           interface.c_str(), domain_id);
 
     // Inicialização Unitree
     ChannelFactory::Instance()->Init(domain_id, interface.c_str());

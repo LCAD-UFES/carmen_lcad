@@ -1005,13 +1005,11 @@ static void FAKE_Print_Formatted_Data(FILE *stream, CONST_FORMAT_PTR format,
 {
   Print_Data_Type printer;
 
-  LOCK_CM_MUTEX;
   FAKE_startPrint(stream, &printer);
   FAKE_Print_Structured_Data(stream, &printer, format,
 			(CONST_GENERIC_DATA_PTR)dataPtr, 0,
 			(FORMAT_PTR)NULL, 0);
   FAKE_endPrint(stream, &printer);
-  UNLOCK_CM_MUTEX;
 }
 
 

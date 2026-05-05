@@ -1,40 +1,29 @@
+include ../Makefile.conf
+
+MODULE_NAME = xsens_argos 
+MODULE_COMMENT = Driver de IMU do Argos
+
 # --- Caminhos Base ---
-CARMEN_HOME = ../..
-UNITREE_SDK_DIR = /usr/local
+UNITREE_SDK_DIR = /opt/unitree_robotics
 
 # --- Compilador e Flags ---
 CXX = g++
-CFLAGS = -Wall -O3 -std=c++17 -Wno-address-of-packed-member -fPIC
+CFLAGS = -Wall -O3 -std=c++11 -Wno-address-of-packed-member -fPIC
 
 # --- Includes (Onde os arquivos .h estão) ---
-IFLAGS = -I$(CARMEN_HOME)/include \
-         -I$(UNITREE_SDK_DIR)/include \
-         -I$(UNITREE_SDK_DIR)/include/ddscxx
+IFLAGS += -I$(CARMEN_HOME)/include -I$(UNITREE_SDK_DIR)/include -I$(UNITREE_SDK_DIR)/include/ddscxx
 
+LFLAGS += -L$(UNITREE_SDK_DIR)/lib
 # --- Bibliotecas (Onde os arquivos .so e .a estão) ---
-LFLAGS = -L$(CARMEN_HOME)/lib \
-         -L$(UNITREE_SDK_DIR)/lib \
-         -L/usr/local/ipc-3.9.1/src/lib/Linux-4.14/ \
-         -L$(CARMEN_HOME)/sharedlib/libcmt/
+LFLAGS += -lunitree_sdk2 -lddscxx -lddsc -lxsens_mtig_interface -lxsens_interface -lparam_interface -lglobal -lipc -lrt -lpthread
 
-# --- Bibliotecas para Linkar (ORDEM CORRIGIDA) ---
-# A ordem correta: Depende de IPC -> Global -> IPC
-LIBS = -lunitree_sdk2 -lddscxx -lddsc -lxsens_mtig_interface -lxsens_interface -lparam_interface -lglobal -lipc -lrt -lpthread
+        # -L$(CARMEN_HOME)/sharedlib/libcmt/
 
-# --- Arquivos Fontes e Alvos ---
-TARGET = xsens_argos
-OBJS = xsens_argos_main.o
+SOURCES = xsens_argos_main.cpp 
 
-# --- Regras Principais ---
-all: $(TARGET)
+TARGETS = xsens_argos
+PUBLIC_BINARIES = xsens_argos 
 
-$(TARGET): $(OBJS)
-	$(CXX) $(CFLAGS) $(OBJS) -o $(TARGET) $(LFLAGS) $(LIBS)
-	@echo "Copiando executável para bin/"
-	cp $(TARGET) $(CARMEN_HOME)/bin/
+xsens_argos: xsens_argos_main.o
 
-%.o: %.cpp
-	$(CXX) $(CFLAGS) $(IFLAGS) -c $< -o $@
-
-clean:
-	rm -f *.o $(TARGET) $(CARMEN_HOME)/bin/$(TARGET)
+include ../Makefile.rules
