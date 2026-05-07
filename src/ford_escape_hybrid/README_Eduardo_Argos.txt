@@ -53,6 +53,10 @@ gnuplot
 
 plot "./log_odometry.txt" using 6:3 with lines title "phi", "./log_odometry.txt" using 6:2 with lines title "v"
 
+-> Para visualizar xsens de log
+grep XSENS_QUAT /dados/log_lcad4_argos-20260506-2.txt > log_xsens.txt
+gnuplot
 
+plot "./log_xsens.txt" using 19:2 with lines title "acc_vx", "./log_xsens.txt" using 19:3 with lines title "acc_vy", "./log_xsens.txt" using 19:4 with lines title "acc_vz", "./log_xsens.txt" using 19:5 with lines title "acc_wx", "./log_xsens.txt" using 19:6 with lines title "acc_wy", "./log_xsens.txt" using 19:7 with lines title "acc_wz"
 
 
