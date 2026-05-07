@@ -19,7 +19,7 @@ using namespace unitree::robot;
 // Variáveis Globais (Padrão Skeleton)
 static carmen_xsens_global_quat_message xsens_quat_msg;
 static int xsens_type = 1; // 1 = Simular MTi-G (IMU + GPS/Vel)
-static int print_xsens = 1;
+static int print_xsens = 0;
 
 // --- MÉTODOS DE FORMATAÇÃO E PUBLICAÇÃO (IGUAL AO XSENS_MTIG) ---
 
@@ -67,36 +67,39 @@ make_xsens_mti_quat_message(const unitree_go::msg::dds_::LowState_* low_state)
     return msg;
 }
 
-// --- CALLBACK E PARÂMETROS ---
-
 void LowStateCallback(const void* message) 
 {
     const auto* low_state = static_cast<const unitree_go::msg::dds_::LowState_*>(message);
 
-    printf("Oi! \n");
+    static double last_publish_time = 0.0;
+    double current_time = carmen_get_time();
 
-    // Método: Cria a mensagem e publica[cite: 1]
-    xsens_quat_msg = make_xsens_mti_quat_message(low_state);
-    publish_mti_quat_message(xsens_quat_msg);
-
-    // Print no padrão de log XSENS_QUAT solicitado[cite: 1]
-    static double last_print_time = 0;
-    if (print_xsens)
+    // Trava de tempo: Só entra no if a cada 0.01 segundos (100Hz)
+    // Isso evita o erro "PENDING LIMIT" na Central do CARMEN
+    if (current_time - last_publish_time >= 0.01) 
     {
-        double new_print_time = carmen_get_time();
-        printf("XSENS_QUAT %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %lf %s\n",
-               xsens_quat_msg.m_acc.x, xsens_quat_msg.m_acc.y, xsens_quat_msg.m_acc.z,
-               xsens_quat_msg.m_gyr.x, xsens_quat_msg.m_gyr.y, xsens_quat_msg.m_gyr.z,
-               xsens_quat_msg.m_mag.x, xsens_quat_msg.m_mag.y, xsens_quat_msg.m_mag.z,
-               xsens_quat_msg.quat_data.m_data[0], xsens_quat_msg.quat_data.m_data[1], 
-               xsens_quat_msg.quat_data.m_data[2], xsens_quat_msg.quat_data.m_data[3],
-               xsens_quat_msg.m_temp, (int)xsens_quat_msg.m_count, 
-               xsens_quat_msg.timestamp, xsens_quat_msg.host);
-        double freq = 1.0/(new_print_time - last_print_time);
-        printf("freq: %lf\n", freq);
-        last_print_time = new_print_time;
-    }
+        // Método: Cria a mensagem e publica
+        xsens_quat_msg = make_xsens_mti_quat_message(low_state);
+        publish_mti_quat_message(xsens_quat_msg);
 
+        // Print no padrão de log XSENS_QUAT solicitado
+        if (print_xsens)
+        {
+            printf("XSENS_QUAT %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %lf %s\n",
+                   xsens_quat_msg.m_acc.x, xsens_quat_msg.m_acc.y, xsens_quat_msg.m_acc.z,
+                   xsens_quat_msg.m_gyr.x, xsens_quat_msg.m_gyr.y, xsens_quat_msg.m_gyr.z,
+                   xsens_quat_msg.m_mag.x, xsens_quat_msg.m_mag.y, xsens_quat_msg.m_mag.z,
+                   xsens_quat_msg.quat_data.m_data[0], xsens_quat_msg.quat_data.m_data[1], 
+                   xsens_quat_msg.quat_data.m_data[2], xsens_quat_msg.quat_data.m_data[3],
+                   xsens_quat_msg.m_temp, (int)xsens_quat_msg.m_count, 
+                   xsens_quat_msg.timestamp, xsens_quat_msg.host);
+            
+            double freq = 1.0 / (current_time - last_publish_time);
+            printf("freq: %lf\n", freq);
+        }
+
+        last_publish_time = current_time;
+    }
 }
 
 static int 
@@ -147,7 +150,7 @@ int main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     // Argumentos de linha de comando
-    std::string interface = "wlan0";
+    std::string interface = "";
     int domain_id = 0;
     // if (argc > 1) interface = argv[1];
     // if (argc > 2) domain_id = std::stoi(argv[2]);
