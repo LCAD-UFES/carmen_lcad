@@ -147,7 +147,7 @@ int main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     // Argumentos de linha de comando
-    std::string interface = "wlan0";
+    std::string interface = "";
     int domain_id = 0;
     // if (argc > 1) interface = argv[1];
     // if (argc > 2) domain_id = std::stoi(argv[2]);
