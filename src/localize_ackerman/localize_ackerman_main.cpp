@@ -1561,12 +1561,27 @@ subscribe_to_ipc_message()
 		if (use_raw_laser)
 		{
 			carmen_laser_subscribe_laser1_message(NULL, (carmen_handler_t) raw_laser_handler, CARMEN_SUBSCRIBE_LATEST);
-			carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+			//carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 		}
 		else
 		{
 			carmen_robot_ackerman_subscribe_frontlaser_message(&front_laser, (carmen_handler_t) robot_ackerman_frontlaser_handler, CARMEN_SUBSCRIBE_LATEST);
 		}
+
+		if (filter->param->prediction_type != 2)
+        {
+            carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+        }
+
+        carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
+
+        // ... (MANTENHA OS CÓDIGOS DE SUBSCRIBE DO MAPA E DOS VELODYNES AQUI INTACTOS) ...
+
+        // =========================================================================
+        // CORREÇÃO: IMU
+        // =========================================================================
+        if (filter->param->prediction_type == 2 || filter->param->prediction_type == 3) // use IMU based prediction or Hybrid
+            carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 		carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1612,8 +1627,8 @@ subscribe_to_ipc_message()
 			carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 
 		// IMU
-		if (filter->param->prediction_type == 2) // use IMU based prediction
-			carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
+		//if (filter->param->prediction_type == 2) // use IMU based prediction
+		//	carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	}
 	else
 	{

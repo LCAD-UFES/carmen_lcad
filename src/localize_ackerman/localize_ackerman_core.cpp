@@ -232,6 +232,113 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 }
 
 
+
+void
+carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_particle_filter_p filter,
+        double odom_v, // <--- NOVA VARIÁVEL RECEBENDO A VELOCIDADE DAS PATAS
+        carmen_xsens_global_quat_message *xsens_global_quat_message,
+        double distance_between_front_and_rear_axles, double dt)
+{
+    double v_step, phi_step;
+    carmen_robot_and_trailers_traj_point_t robot_pose;
+
+    if (fabs(dt) > 3.0) return;
+    if (!xsens_global_quat_message) return;
+
+    filter->distance_travelled += fabs(odom_v * dt);
+
+    robot_pose.x = filter->particles[0].x;
+    robot_pose.y = filter->particles[0].y;
+    robot_pose.theta = filter->particles[0].theta;
+    
+    double distance_to_goal_factor = 1.0;
+    if (behavior_selector_path_goals_and_annotations_message &&
+        (behavior_selector_path_goals_and_annotations_message->goal_list_size > 0))
+    {
+        double distance_to_goal = DIST2D(robot_pose, behavior_selector_path_goals_and_annotations_message->goal_list[0]);
+        if (distance_to_goal < 2.0)
+            distance_to_goal_factor = 0.0;
+    }
+
+    // =====================================================================
+    // FILTRO PASSA-BAIXA APENAS PARA O GIROSCÓPIO (Z)
+    // =====================================================================
+    static double filtered_gyr_z = 0.0;
+    double alpha = 0.3; // Resposta rápida para curvas
+    filtered_gyr_z = alpha * xsens_global_quat_message->m_gyr.z + (1.0 - alpha) * filtered_gyr_z;
+    
+    double gyr_z_control = filtered_gyr_z;
+    if (fabs(gyr_z_control) < 0.05) gyr_z_control = 0.0;
+
+    for (int i = 0; i < filter->param->num_particles; i++)
+    {
+        // =====================================================================
+        // FUSÃO: VELOCIDADE VEM DA ODOMETRIA + ROTAÇÃO VEM DA IMU
+        // =====================================================================
+        // 1. A velocidade v é exatamente o que o Go2 reporta (com um ruído para as partículas)
+        double v = odom_v + carmen_gaussian_random(0.0, fabs(filter->param->velocity_noise_velocity * odom_v) + filter->param->v_uncertainty_at_zero_v);
+        filter->particles[i].v = v;
+
+        // 2. O ângulo Phi usa o giroscópio da IMU combinado com a velocidade real
+        if (fabs(v) > 0.05)
+            filter->particles[i].phi = atan2((gyr_z_control + carmen_gaussian_random(0.0, 0.01)) * distance_between_front_and_rear_axles, v);
+        else
+            filter->particles[i].phi = 0.0;
+
+        double phi = filter->particles[i].phi;
+
+        // =====================================================================
+        // CINEMÁTICA PADRÃO DO CARMEN
+        // =====================================================================
+        if (i != 0)
+        {
+            robot_pose.x = filter->particles[i].x;
+            robot_pose.y = filter->particles[i].y;
+            robot_pose.theta = filter->particles[i].theta;
+
+            v_step = v;
+
+            if (fabs(v) > 0.05) {
+                filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
+                filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
+            } else {
+                filter->particles[i].phi_bias = 0.0;
+            }
+
+            phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0, fabs(filter->param->phi_noise_phi * phi));
+            phi_step = carmen_clamp(-M_PI/4.0, phi_step, M_PI/4.0);
+
+            double distance_traveled;
+            robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
+                            &distance_traveled, dt, car_config, semi_trailer_config);
+
+            filter->particles[i].x = robot_pose.x + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+            filter->particles[i].y = robot_pose.y + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+            filter->particles[i].theta = carmen_normalize_theta(robot_pose.theta + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+        }
+        else
+        {
+            robot_pose.x = filter->particles[i].x;
+            robot_pose.y = filter->particles[i].y;
+            robot_pose.theta = filter->particles[i].theta;
+
+            v_step = v;
+            phi_step = phi + filter->particles[i].phi_bias;
+
+            double distance_traveled;
+            robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
+                            &distance_traveled, dt, car_config, semi_trailer_config);
+
+            filter->particles[i].x = robot_pose.x;
+            filter->particles[i].y = robot_pose.y;
+            filter->particles[i].theta = robot_pose.theta;
+            filter->particles[i].phi = phi_step;
+            filter->particles[i].v = v_step;
+        }
+    }
+}
+
+
 void
 carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_particle_filter_p filter,
 		double v, double phi, double distance_between_front_and_rear_axles __attribute__((unused)), double dt)
@@ -2564,6 +2671,8 @@ hade(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman
 }
 
 
+
+
 void
 carmen_localize_ackerman_velodyne_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_base_ackerman_odometry_message *odometry,
 		carmen_xsens_global_quat_message *xsens_global_quat_message,
@@ -2571,8 +2680,11 @@ carmen_localize_ackerman_velodyne_prediction(carmen_localize_ackerman_particle_f
 {
 	if (!filter->initialized)
 		return;
-
-	if (filter->param->prediction_type == 2)
+	
+	if (filter->param->prediction_type == 3)
+    carmen_localize_ackerman_incorporate_IMU_odometry(filter, odometry->v, xsens_global_quat_message, 
+        distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);
+	else if (filter->param->prediction_type == 2)
 		carmen_localize_ackerman_incorporate_IMU(filter, xsens_global_quat_message, distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);
 	else if (filter->param->prediction_type == 1)
 		carmen_localize_ackerman_incorporate_velocity_odometry(filter, odometry->v, odometry->phi, distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);

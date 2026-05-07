@@ -234,6 +234,10 @@ void
 carmen_localize_ackerman_incorporate_odometry(carmen_localize_ackerman_particle_filter_p filter,
 		double v, double phi, double L, double dt);
 
+void carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_particle_filter_p filter,
+        double odom_v, carmen_xsens_global_quat_message *xsens_global_quat_message,
+        double distance_between_front_and_rear_axles, double dt);
+
 /** Compute the particle weights according to the observation likelihood p(z|m,x)
  *
  *  @param filter Particle filter structure the function is applied to.
