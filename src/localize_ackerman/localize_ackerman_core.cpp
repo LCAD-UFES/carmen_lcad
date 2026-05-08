@@ -235,11 +235,10 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 
 void
 carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_particle_filter_p filter,
-        double odom_v, // <--- NOVA VARIÁVEL RECEBENDO A VELOCIDADE DAS PATAS
-        carmen_xsens_global_quat_message *xsens_global_quat_message,
-        double distance_between_front_and_rear_axles, double dt)
+        double odom_v, carmen_xsens_global_quat_message *xsens_global_quat_message,
+        double distance_between_front_and_rear_axles __attribute__((unused)), double dt)
 {
-    double v_step, phi_step;
+    double v_step, omega_step;
     carmen_robot_and_trailers_traj_point_t robot_pose;
 
     if (fabs(dt) > 3.0) return;
@@ -261,34 +260,63 @@ carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_parti
     }
 
     // =====================================================================
-    // FILTRO PASSA-BAIXA APENAS PARA O GIROSCÓPIO (Z)
+    // CALIBRAÇÃO DO GIROSCÓPIO (Bias, Deadzone, Filtro e Ganho)
     // =====================================================================
+    // 1. Pega o valor bruto da IMU da Unitree
+    double raw_gyro_z = xsens_global_quat_message->m_gyr.z;
+
+    // 2. Remove o BIAS (Subtrai o desvio que faz o robô girar parado)
+    double calibrated_gyro = raw_gyro_z - filter->param->gyro_bias;
+
+    // 3. Aplica a DEADZONE (Ignora ruídos de vibração menores que o limiar)
+    if (fabs(calibrated_gyro) < filter->param->gyro_deadzone) {
+        calibrated_gyro = 0.0;
+    }
+
+    // 4. Filtro Passa-Baixa (Suaviza o sinal)
     static double filtered_gyr_z = 0.0;
-    double alpha = 0.3; // Resposta rápida para curvas
-    filtered_gyr_z = alpha * xsens_global_quat_message->m_gyr.z + (1.0 - alpha) * filtered_gyr_z;
+    static double last_gyr_z = 0.0; // Usado para calcular a variação brusca
+    double alpha = filter->param->gyro_alpha;
+    filtered_gyr_z = alpha * calibrated_gyro + (1.0 - alpha) * filtered_gyr_z;
     
-    double gyr_z_control = filtered_gyr_z;
-    if (fabs(gyr_z_control) < 0.05) gyr_z_control = 0.0;
+    // Calcula a variação (Derivada) para detectar trepidação ou curva brusca
+    double delta_gyr = fabs(filtered_gyr_z - last_gyr_z);
+    last_gyr_z = filtered_gyr_z;
+
+    // 5. Ganho (Escala fina ajustável pelo arquivo .ini)
+    double gyr_z_control = filtered_gyr_z * filter->param->gyro_gain;
+
+    // =====================================================================
+    // CONTROLE DINÂMICO DE INCERTEZA E PAUSA NO MAPA
+    // =====================================================================
+    extern int stop_map_update; // Puxa a variável global do FastSLAM
+    double dynamic_noise = 1.0;
+
+    // Limiar empírico: se variar mais que 0.03 rad/s entre as leituras, é trepidação!
+    // Limiar puxado do arquivo .ini
+    if (delta_gyr > filter->param->gyro_noise_threshold) { 
+        dynamic_noise = filter->param->gyro_dynamic_noise; 
+        stop_map_update = 1; 
+        printf("[ALERTA IMU] Ruido/Curva (Delta: %.4f). Mapa PAUSADO.\n", delta_gyr);
+    } else {
+        dynamic_noise = 1.0; 
+        stop_map_update = 0; 
+    }
 
     for (int i = 0; i < filter->param->num_particles; i++)
     {
         // =====================================================================
-        // FUSÃO: VELOCIDADE VEM DA ODOMETRIA + ROTAÇÃO VEM DA IMU
+        // FUSÃO: VELOCIDADE VEM DA ODOMETRIA + ROTAÇÃO VEM DA IMU CALIBRADA
         // =====================================================================
-        // 1. A velocidade v é exatamente o que o Go2 reporta (com um ruído para as partículas)
         double v = odom_v + carmen_gaussian_random(0.0, fabs(filter->param->velocity_noise_velocity * odom_v) + filter->param->v_uncertainty_at_zero_v);
         filter->particles[i].v = v;
 
-        // 2. O ângulo Phi usa o giroscópio da IMU combinado com a velocidade real
-        if (fabs(v) > 0.05)
-            filter->particles[i].phi = atan2((gyr_z_control + carmen_gaussian_random(0.0, 0.01)) * distance_between_front_and_rear_axles, v);
-        else
-            filter->particles[i].phi = 0.0;
-
-        double phi = filter->particles[i].phi;
+        // O giro agora usa o sinal limpo + multiplicador de ruído dinâmico
+        filter->particles[i].phi = gyr_z_control + carmen_gaussian_random(0.0, 0.01 * dynamic_noise);
+        double omega = filter->particles[i].phi;
 
         // =====================================================================
-        // CINEMÁTICA PADRÃO DO CARMEN
+        // CINEMÁTICA DIFERENCIAL (Movimento do Cão Robô)
         // =====================================================================
         if (i != 0)
         {
@@ -298,19 +326,20 @@ carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_parti
 
             v_step = v;
 
-            if (fabs(v) > 0.05) {
+            if (fabs(omega) > 0.05) {
                 filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
                 filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
             } else {
                 filter->particles[i].phi_bias = 0.0;
             }
 
-            phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0, fabs(filter->param->phi_noise_phi * phi));
-            phi_step = carmen_clamp(-M_PI/4.0, phi_step, M_PI/4.0);
+            // O passo do erro angular é afetado pelo dynamic_noise
+            omega_step = omega + filter->particles[i].phi_bias + carmen_gaussian_random(0.0, fabs(filter->param->phi_noise_phi * omega) * dynamic_noise);
 
-            double distance_traveled;
-            robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
-                            &distance_traveled, dt, car_config, semi_trailer_config);
+            // Matemática Real do Deslocamento Diferencial:
+            robot_pose.x += v_step * cos(robot_pose.theta) * dt;
+            robot_pose.y += v_step * sin(robot_pose.theta) * dt;
+            robot_pose.theta = carmen_normalize_theta(robot_pose.theta + omega_step * dt);
 
             filter->particles[i].x = robot_pose.x + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
             filter->particles[i].y = robot_pose.y + distance_to_goal_factor * carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
@@ -318,21 +347,23 @@ carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_parti
         }
         else
         {
+            // Partícula 0 (Elitismo)
             robot_pose.x = filter->particles[i].x;
             robot_pose.y = filter->particles[i].y;
             robot_pose.theta = filter->particles[i].theta;
 
             v_step = v;
-            phi_step = phi + filter->particles[i].phi_bias;
+            omega_step = omega + filter->particles[i].phi_bias;
 
-            double distance_traveled;
-            robot_pose = carmen_libcarmodel_recalc_pos_ackerman(robot_pose, v_step, phi_step, dt,
-                            &distance_traveled, dt, car_config, semi_trailer_config);
+            // Matemática Real do Deslocamento Diferencial:
+            robot_pose.x += v_step * cos(robot_pose.theta) * dt;
+            robot_pose.y += v_step * sin(robot_pose.theta) * dt;
+            robot_pose.theta = carmen_normalize_theta(robot_pose.theta + omega_step * dt);
 
             filter->particles[i].x = robot_pose.x;
             filter->particles[i].y = robot_pose.y;
             filter->particles[i].theta = robot_pose.theta;
-            filter->particles[i].phi = phi_step;
+            filter->particles[i].phi = omega_step;
             filter->particles[i].v = v_step;
         }
     }
@@ -3488,6 +3519,13 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "localize_ackerman", 	(char *) "phi_noise_phi", CARMEN_PARAM_DOUBLE, &param->phi_noise_phi, 0, NULL},
 		{(char *) "localize_ackerman", 	(char *) "phi_noise_velocity", CARMEN_PARAM_DOUBLE, &param->phi_noise_velocity, 0, NULL},
 		{(char *) "localize_ackerman", 	(char *) "prediction_type", CARMEN_PARAM_INT, &param->prediction_type, 0, NULL},
+
+		{(char *) "localize_ackerman", (char *) "gyro_alpha", CARMEN_PARAM_DOUBLE, &(param->gyro_alpha), 0, NULL},
+        {(char *) "localize_ackerman", (char *) "gyro_gain", CARMEN_PARAM_DOUBLE, &(param->gyro_gain), 0, NULL},
+		{(char *) "localize_ackerman", (char *) "gyro_bias",     CARMEN_PARAM_DOUBLE, &(param->gyro_bias), 0, NULL},
+    	{(char *) "localize_ackerman", (char *) "gyro_deadzone", CARMEN_PARAM_DOUBLE, &(param->gyro_deadzone), 0, NULL},
+		{(char *) "localize_ackerman", (char *) "gyro_noise_threshold", CARMEN_PARAM_DOUBLE, &(param->gyro_noise_threshold), 0, NULL},
+		{(char *) "localize_ackerman", (char *) "gyro_dynamic_noise",   CARMEN_PARAM_DOUBLE, &(param->gyro_dynamic_noise), 0, NULL},
 
 		{(char *) "robot", (char *) "frontlaser_offset", CARMEN_PARAM_DOUBLE, &param->front_laser_offset, 0, NULL},
 		{(char *) "robot", (char *) "rearlaser_offset", CARMEN_PARAM_DOUBLE, &param->rear_laser_offset, 0, NULL},

@@ -95,6 +95,7 @@ double highest_sensor;
 char *calibration_file = NULL;
 int number_of_threads = 1;
 int mapping_mode = 0;
+int stop_map_update = 0;
 carmen_pose_3D_t velodyne_pose;
 double safe_range_above_sensors;
 

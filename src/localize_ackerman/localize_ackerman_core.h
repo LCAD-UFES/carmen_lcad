@@ -100,6 +100,14 @@ typedef struct {
   double phi_noise_velocity;
   int prediction_type;
 
+  double gyro_alpha;
+  double gyro_gain;
+
+  double gyro_bias;     // Para remover o desvio constante
+  double gyro_deadzone; // Para ignorar vibrações pequenas
+  double gyro_noise_threshold;
+  double gyro_dynamic_noise;
+
   int use_log_odds;
   double phi_bias_std;
   double lmap_std;
