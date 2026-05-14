@@ -71,6 +71,7 @@ int velodyne_viewer = 0;
 char *save_globalpos_file = NULL;
 double save_globalpos_timestamp = 0.0;
 carmen_pose_3D_t gps_pose_in_the_car;
+int stop_map_update __attribute__((weak)) = 0;
 extern carmen_localize_ackerman_globalpos_message globalpos;
 
 extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message;
@@ -230,7 +231,6 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 		}
 	}
 }
-
 
 
 void
