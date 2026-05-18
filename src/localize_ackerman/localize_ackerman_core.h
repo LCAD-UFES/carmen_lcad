@@ -108,6 +108,13 @@ typedef struct {
   double gyro_noise_threshold;
   double gyro_dynamic_noise;
 
+  double hybrid_velocity_noise;
+  double hybrid_omega_noise;
+  double hybrid_gyro_drift_std;
+  double hybrid_base_gyro_noise;
+  double hybrid_curve_threshold;
+  double hybrid_max_drift_angle;
+
   int use_log_odds;
   double phi_bias_std;
   double lmap_std;

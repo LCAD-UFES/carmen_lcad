@@ -308,11 +308,12 @@ carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_parti
         // =====================================================================
         // FUSÃO: VELOCIDADE VEM DA ODOMETRIA + ROTAÇÃO VEM DA IMU CALIBRADA
         // =====================================================================
-        double v = odom_v + carmen_gaussian_random(0.0, fabs(filter->param->velocity_noise_velocity * odom_v) + filter->param->v_uncertainty_at_zero_v);
+        // MODIFICADO AQUI: Usando hybrid_velocity_noise
+        double v = odom_v + carmen_gaussian_random(0.0, fabs(filter->param->hybrid_velocity_noise * odom_v) + filter->param->v_uncertainty_at_zero_v);
         filter->particles[i].v = v;
 
         // O giro agora usa o sinal limpo + multiplicador de ruído dinâmico
-        filter->particles[i].phi = gyr_z_control + carmen_gaussian_random(0.0, 0.01 * dynamic_noise);
+        filter->particles[i].phi = gyr_z_control + carmen_gaussian_random(0.0, filter->param->hybrid_base_gyro_noise * dynamic_noise);
         double omega = filter->particles[i].phi;
 
         // =====================================================================
@@ -326,15 +327,17 @@ carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_parti
 
             v_step = v;
 
+            // MODIFICADO AQUI: Usando hybrid_gyro_drift_std
             if (fabs(omega) > 0.05) {
-                filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
+                filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->hybrid_gyro_drift_std);
                 filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
             } else {
                 filter->particles[i].phi_bias = 0.0;
             }
 
+            // MODIFICADO AQUI: Usando hybrid_omega_noise
             // O passo do erro angular é afetado pelo dynamic_noise
-            omega_step = omega + filter->particles[i].phi_bias + carmen_gaussian_random(0.0, fabs(filter->param->phi_noise_phi * omega) * dynamic_noise);
+            omega_step = omega + filter->particles[i].phi_bias + carmen_gaussian_random(0.0, fabs(filter->param->hybrid_omega_noise * omega) * dynamic_noise);
 
             // Matemática Real do Deslocamento Diferencial:
             robot_pose.x += v_step * cos(robot_pose.theta) * dt;
@@ -3520,13 +3523,6 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 		{(char *) "localize_ackerman", 	(char *) "phi_noise_velocity", CARMEN_PARAM_DOUBLE, &param->phi_noise_velocity, 0, NULL},
 		{(char *) "localize_ackerman", 	(char *) "prediction_type", CARMEN_PARAM_INT, &param->prediction_type, 0, NULL},
 
-		{(char *) "localize_ackerman", (char *) "gyro_alpha", CARMEN_PARAM_DOUBLE, &(param->gyro_alpha), 0, NULL},
-        {(char *) "localize_ackerman", (char *) "gyro_gain", CARMEN_PARAM_DOUBLE, &(param->gyro_gain), 0, NULL},
-		{(char *) "localize_ackerman", (char *) "gyro_bias",     CARMEN_PARAM_DOUBLE, &(param->gyro_bias), 0, NULL},
-    	{(char *) "localize_ackerman", (char *) "gyro_deadzone", CARMEN_PARAM_DOUBLE, &(param->gyro_deadzone), 0, NULL},
-		{(char *) "localize_ackerman", (char *) "gyro_noise_threshold", CARMEN_PARAM_DOUBLE, &(param->gyro_noise_threshold), 0, NULL},
-		{(char *) "localize_ackerman", (char *) "gyro_dynamic_noise",   CARMEN_PARAM_DOUBLE, &(param->gyro_dynamic_noise), 0, NULL},
-
 		{(char *) "robot", (char *) "frontlaser_offset", CARMEN_PARAM_DOUBLE, &param->front_laser_offset, 0, NULL},
 		{(char *) "robot", (char *) "rearlaser_offset", CARMEN_PARAM_DOUBLE, &param->rear_laser_offset, 0, NULL},
 		{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &car_config.length, 0, NULL},
@@ -3644,6 +3640,48 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	if (param->prediction_type == 3)
+    {
+        carmen_param_t gyro_param_list[] =
+        {
+            // O '0' na penúltima posição indica que o parâmetro é OBRIGATÓRIO
+            {(char *) "localize_ackerman", (char *) "gyro_alpha", CARMEN_PARAM_DOUBLE, &(param->gyro_alpha), 0, NULL},
+            {(char *) "localize_ackerman", (char *) "gyro_gain", CARMEN_PARAM_DOUBLE, &(param->gyro_gain), 0, NULL},
+            {(char *) "localize_ackerman", (char *) "gyro_bias",     CARMEN_PARAM_DOUBLE, &(param->gyro_bias), 0, NULL},
+            {(char *) "localize_ackerman", (char *) "gyro_deadzone", CARMEN_PARAM_DOUBLE, &(param->gyro_deadzone), 0, NULL},
+            {(char *) "localize_ackerman", (char *) "gyro_noise_threshold", CARMEN_PARAM_DOUBLE, &(param->gyro_noise_threshold), 0, NULL},
+            {(char *) "localize_ackerman", (char *) "gyro_dynamic_noise",   CARMEN_PARAM_DOUBLE, &(param->gyro_dynamic_noise), 0, NULL},
+
+			// =====================================================================
+        // PARÂMETROS DE RUIDO PARA PREDIÇÃO HÍBRIDA (ODOMETRIA + IMU)
+        // =====================================================================
+
+        // Ruído na velocidade linear (v). Como a IMU não mede velocidade linear constante, 
+        // esse erro vem da odometria das rodas, mas adaptado para o modelo híbrido.
+        {(char *) "localize_ackerman", (char *) "hybrid_velocity_noise", CARMEN_PARAM_DOUBLE, &(param->velocity_noise_velocity), 0, NULL},
+
+        // Ruído na velocidade angular (omega). Substitui a incerteza do volante pela 
+        // incerteza da taxa de giro medida ativamente pelo giroscópio (IMU).
+        {(char *) "localize_ackerman", (char *) "hybrid_omega_noise",    CARMEN_PARAM_DOUBLE, &(param->phi_noise_phi), 0, NULL},
+
+        // Desvio padrão do erro acumulado (drift/bias) gerado pelo giroscópio 
+        // durante as curvas. Define o quanto a partícula "escorrega" em rotação.
+        {(char *) "localize_ackerman", (char *) "hybrid_gyro_drift_std", CARMEN_PARAM_DOUBLE, &(param->phi_bias_std), 0, NULL},
+
+		// Ruído base natural do giroscópio (injetado na leitura mesmo quando não há trepidação)
+        {(char *) "localize_ackerman", (char *) "hybrid_base_gyro_noise", CARMEN_PARAM_DOUBLE, &(param->hybrid_base_gyro_noise), 0, NULL},
+
+        // Limiar de curva em rad/s. Apenas velocidades angulares acima disso acumulam erro (drift).
+        {(char *) "localize_ackerman", (char *) "hybrid_curve_threshold", CARMEN_PARAM_DOUBLE, &(param->hybrid_curve_threshold), 0, NULL},
+
+        // Limite máximo permitido (clamp) para o acúmulo de drift em radianos (ex: 0.0175 é ~1 grau).
+        {(char *) "localize_ackerman", (char *) "hybrid_max_drift_angle", CARMEN_PARAM_DOUBLE, &(param->hybrid_max_drift_angle), 0, NULL},
+			
+        };
+
+        carmen_param_install_params(argc, argv, gyro_param_list, sizeof(gyro_param_list) / sizeof(gyro_param_list[0]));
+    }
 
 	if (semi_trailer_config.num_semi_trailers > 0)
 	{
