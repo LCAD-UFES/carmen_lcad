@@ -33,7 +33,7 @@ PACKAGES = ipc global param_daemon proccontrol argos_lidar_driver camera_drivers
 	   moving_objects_simulator pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer \
 	   tracker_opentld  joystick_vehicle \
-	   velodyne_camera_calibration graphslam # ipc_watcher carmen_map_converter argos_globalpos argos_ros_mapper zed_driver deep_vgl traffic_light robot_ackerman_gui 
+	   velodyne_camera_calibration graphslam mapeditor2 # ipc_watcher carmen_map_converter argos_globalpos argos_ros_mapper zed_driver deep_vgl traffic_light robot_ackerman_gui 
 	   
 	   # hypergraphsclam neural_object_detector3
 
