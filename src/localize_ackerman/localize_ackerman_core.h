@@ -100,6 +100,21 @@ typedef struct {
   double phi_noise_velocity;
   int prediction_type;
 
+  double gyro_alpha;
+  double gyro_gain;
+
+  double gyro_bias;     // Para remover o desvio constante
+  double gyro_deadzone; // Para ignorar vibrações pequenas
+  double gyro_noise_threshold;
+  double gyro_dynamic_noise;
+
+  double hybrid_velocity_noise;
+  double hybrid_omega_noise;
+  double hybrid_gyro_drift_std;
+  double hybrid_base_gyro_noise;
+  double hybrid_curve_threshold;
+  double hybrid_max_drift_angle;
+
   int use_log_odds;
   double phi_bias_std;
   double lmap_std;
@@ -233,6 +248,10 @@ carmen_localize_ackerman_initialize_particles_placename(carmen_localize_ackerman
 void 
 carmen_localize_ackerman_incorporate_odometry(carmen_localize_ackerman_particle_filter_p filter,
 		double v, double phi, double L, double dt);
+
+void carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_particle_filter_p filter,
+        double odom_v, carmen_xsens_global_quat_message *xsens_global_quat_message,
+        double distance_between_front_and_rear_axles, double dt);
 
 /** Compute the particle weights according to the observation likelihood p(z|m,x)
  *
