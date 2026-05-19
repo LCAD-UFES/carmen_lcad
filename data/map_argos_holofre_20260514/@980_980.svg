@@ -1,0 +1,845 @@
+<?xml version="1.0" ?>
+<svg id="svg_2026_05_19_14_05_29_793979" sodipodi:docname="@980_980.svg" width="1050.0mm" height="140.0mm" viewBox="0 0 1050.0 140.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:version="0.92.2 (unknown)">
+	<metadata id="metadata_2026_05_19_14_05_29_794066">
+		<rdf:RDF>
+			<cc:Work rdf:about="">
+				<dc:format>image/svg+xml</dc:format>
+				<dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+				<dc:title/>
+			</cc:Work>
+		</rdf:RDF>
+	</metadata>
+	<defs id="defs_2026_05_19_14_05_29_794095">
+		<marker id="marker_trapezium" viewBox="0 0 5 5" refX="0" refY="0" markerUnits="strokeWidth" markerWidth="5" markerHeight="5" orient="auto">
+			<path d="M 0.0,-0.5 L 0.0,0.5 L -5.0,2.5 L -5.0,-2.5 z" fill="context-stroke"/>
+		</marker>
+	</defs>
+	<sodipodi:namedview id="namedview_2026_05_19_14_05_29_794131" inkscape:document-units="mm" inkscape:current-layer="svg_2026_05_19_14_05_29_793979" inkscape:window-x="0" inkscape:window-y="0" inkscape:window-width="1050.0" inkscape:window-height="140.0" inkscape:zoom="0.35" inkscape:cx="2410.8764994144644" inkscape:cy="264.5669291338583" inkscape:window-maximized="1" inkscape:pageopacity="0" inkscape:pageshadow="2" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1" objecttolerance="10" gridtolerance="10" guidetolerance="10" showgrid="false"/>
+	<g id="layer_2026_05_19_14_05_29_794205" inkscape:label="images_m" inkscape:groupmode="layer" style="display:inline" sodipodi:insensitive="true">
+		<image id="image_2026_05_19_14_05_29_794205" inkscape:label="image_m994_994.png" x="14.0" y="119.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_994.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_994.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794260" inkscape:label="image_m994_987.png" x="14.0" y="126.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_987.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_987.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794298" inkscape:label="image_m994_980.png" x="14.0" y="133.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_980.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_980.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794338" inkscape:label="image_m994_1001.png" x="14.0" y="112.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_1001.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m994_1001.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794373" inkscape:label="image_m987_994.png" x="7.0" y="119.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m987_994.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m987_994.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794407" inkscape:label="image_m987_987.png" x="7.0" y="126.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m987_987.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m987_987.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794443" inkscape:label="image_m987_1001.png" x="7.0" y="112.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m987_1001.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m987_1001.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794481" inkscape:label="image_m1022_994.png" x="42.0" y="119.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1022_994.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1022_994.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794515" inkscape:label="image_m1022_987.png" x="42.0" y="126.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1022_987.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1022_987.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794560" inkscape:label="image_m1022_980.png" x="42.0" y="133.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1022_980.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1022_980.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794593" inkscape:label="image_m1015_994.png" x="35.0" y="119.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1015_994.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1015_994.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794640" inkscape:label="image_m1015_987.png" x="35.0" y="126.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1015_987.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1015_987.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794673" inkscape:label="image_m1015_980.png" x="35.0" y="133.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1015_980.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1015_980.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794745" inkscape:label="image_m1008_994.png" x="28.0" y="119.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_994.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_994.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794784" inkscape:label="image_m1008_987.png" x="28.0" y="126.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_987.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_987.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794822" inkscape:label="image_m1008_980.png" x="28.0" y="133.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_980.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_980.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794857" inkscape:label="image_m1008_1001.png" x="28.0" y="112.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_1001.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1008_1001.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794891" inkscape:label="image_m1001_994.png" x="21.0" y="119.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_994.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_994.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794925" inkscape:label="image_m1001_987.png" x="21.0" y="126.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_987.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_987.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794959" inkscape:label="image_m1001_980.png" x="21.0" y="133.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_980.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_980.png" preserveAspectRatio="none"/>
+		<image id="image_2026_05_19_14_05_29_794994" inkscape:label="image_m1001_1001.png" x="21.0" y="112.0" width="7.0" height="7.0" xlink:href="file:///home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_1001.png" sodipodi:absref="/home/miguel/carmen_lcad/data/map_argos_holofre_20260514/m1001_1001.png" preserveAspectRatio="none"/>
+	</g>
+	<g id="layer_2026_05_19_14_05_29_795085" inkscape:label="bad_phis" inkscape:groupmode="layer" style="display:inline">
+		<rect id="rect_2026_05_19_14_05_29_795085" inkscape:label="bad_phi_-202.25_-31.33_p1_n695" x="-207.24754099999996" y="166.33367999999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795129" inkscape:label="bad_phi_-201.77_-31.36_p1_n694" x="-206.767196" y="166.35814000000005" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795157" inkscape:label="bad_phi_-201.26_-31.32_p1_n693" x="-206.26137700000004" y="166.319296" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795186" inkscape:label="bad_phi_-198.16_-29.81_p1_n686" x="-203.163228" y="164.812319" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795211" inkscape:label="bad_phi_-196.76_-29.33_p1_n683" x="-201.76048000000003" y="164.326956" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795234" inkscape:label="bad_phi_-191.36_-29.77_p1_n672" x="-196.35980600000005" y="164.767656" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795261" inkscape:label="bad_phi_-185.47_-30.91_p1_n660" x="-190.47115199999996" y="165.90554499999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795288" inkscape:label="bad_phi_-176.30_-32.28_p1_n641" x="-181.29639399999996" y="167.27920200000005" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795315" inkscape:label="bad_phi_-149.96_-37.12_p1_n586" x="-154.96410400000002" y="172.11763499999995" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795366" inkscape:label="bad_phi_-149.49_-37.30_p1_n585" x="-154.48787600000003" y="172.298049" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795390" inkscape:label="bad_phi_-137.92_-39.56_p1_n561" x="-142.92347299999994" y="174.559846" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795414" inkscape:label="bad_phi_-125.97_-41.51_p1_n536" x="-130.96990900000003" y="176.50887699999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795442" inkscape:label="bad_phi_-125.53_-41.72_p1_n535" x="-130.53182600000002" y="176.71835399999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795466" inkscape:label="bad_phi_-124.55_-41.94_p1_n533" x="-129.55343800000003" y="176.94392400000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795491" inkscape:label="bad_phi_-123.61_-41.90_p1_n531" x="-128.60825799999998" y="176.90457100000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795517" inkscape:label="bad_phi_-123.12_-41.91_p1_n530" x="-128.12096899999995" y="176.90743499999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795540" inkscape:label="bad_phi_-110.25_-44.58_p1_n503" x="-115.24808199999995" y="179.57918900000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795564" inkscape:label="bad_phi_-090.68_-49.60_p1_n461" x="-95.67517199999998" y="184.60487899999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795589" inkscape:label="bad_phi_-089.81_-50.04_p1_n459" x="-94.81186100000002" y="185.044489" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795612" inkscape:label="bad_phi_-088.95_-50.45_p1_n457" x="-93.94811700000002" y="185.45250099999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795637" inkscape:label="bad_phi_-087.02_-50.56_p1_n453" x="-92.02282600000001" y="185.56292399999995" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795663" inkscape:label="bad_phi_-078.94_-52.72_p1_n436" x="-83.939706" y="187.72051799999997" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795686" inkscape:label="bad_phi_-078.11_-53.25_p1_n434" x="-83.11376499999994" y="188.248153" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795715" inkscape:label="bad_phi_-066.54_-68.01_p1_n396" x="-71.54343100000006" y="203.00606700000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795739" inkscape:label="bad_phi_-066.19_-68.39_p1_n395" x="-71.18802500000004" y="203.390982" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795764" inkscape:label="bad_phi_-064.45_-69.30_p1_n391" x="-69.45055100000002" y="204.302193" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795789" inkscape:label="bad_phi_-060.26_-70.35_p1_n382" x="-65.25550399999997" y="205.34785599999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795815" inkscape:label="bad_phi_-042.55_-75.89_p1_n344" x="-47.545905999999945" y="210.89160300000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795841" inkscape:label="bad_phi_-041.12_-76.21_p1_n341" x="-46.121703000000025" y="211.21312999999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795864" inkscape:label="bad_phi_-036.89_-77.55_p1_n332" x="-41.894713000000024" y="212.54580899999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795887" inkscape:label="bad_phi_-035.56_-78.11_p1_n329" x="-40.56084099999998" y="213.10651499999994" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795935" inkscape:label="bad_phi_-033.27_-78.89_p1_n324" x="-38.268080000000054" y="213.886705" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795958" inkscape:label="bad_phi_-023.17_-82.10_p1_n302" x="-28.168686999999977" y="217.10462199999995" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_795985" inkscape:label="bad_phi_-022.67_-82.20_p1_n301" x="-27.666027999999983" y="217.19723799999997" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796011" inkscape:label="bad_phi_-022.18_-82.22_p1_n300" x="-27.175411000000054" y="217.221538" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796034" inkscape:label="bad_phi_-021.76_-82.02_p1_n299" x="-26.76160600000003" y="217.01971300000002" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796057" inkscape:label="bad_phi_-017.96_-70.85_p1_n275" x="-22.95661199999995" y="205.84869700000002" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796080" inkscape:label="bad_phi_-017.75_-70.41_p1_n274" x="-22.751070000000027" y="205.41247599999997" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796105" inkscape:label="bad_phi_-017.35_-70.13_p1_n273" x="-22.34916899999996" y="205.13264200000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796133" inkscape:label="bad_phi_-016.92_-70.15_p1_n272" x="-21.916962000000012" y="205.14642000000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796158" inkscape:label="bad_phi_-010.04_-72.78_p1_n257" x="-15.041803999999956" y="207.77973999999995" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796181" inkscape:label="bad_phi_-009.53_-72.89_p1_n256" x="-14.52958000000001" y="207.88850300000001" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796204" inkscape:label="bad_phi_-009.04_-72.79_p1_n255" x="-14.039132999999993" y="207.78549199999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796230" inkscape:label="bad_phi_-008.65_-72.47_p1_n254" x="-13.646787000000018" y="207.46850099999995" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796253" inkscape:label="bad_phi_-004.86_-63.51_p1_n234" x="-9.858239000000026" y="198.51288699999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796277" inkscape:label="bad_phi_-000.51_-51.44_p1_n208" x="-5.51218700000004" y="186.43890299999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796299" inkscape:label="bad_phi_-000.35_-50.98_p1_n207" x="-5.3469239999999445" y="185.98211100000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796323" inkscape:label="bad_phi_0000.72_-48.73_p1_n202" x="-4.281811999999945" y="183.729876" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796355" inkscape:label="bad_phi_0012.60_-18.97_p1_n137" x="7.598173999999972" y="153.97332700000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796378" inkscape:label="bad_phi_0013.26_-18.26_p1_n135" x="8.263855000000035" y="153.26432799999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796400" inkscape:label="bad_phi_0013.66_-17.99_p1_n134" x="8.66058099999998" y="152.99390200000005" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796428" inkscape:label="bad_phi_0014.12_-17.86_p1_n133" x="9.124442000000045" y="152.85661000000005" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796477" inkscape:label="bad_phi_0017.44_-18.56_p1_n126" x="12.441525999999953" y="153.56127100000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796513" inkscape:label="bad_phi_0017.98_-18.67_p1_n125" x="12.980665000000045" y="153.672455" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796547" inkscape:label="bad_phi_0018.47_-18.73_p1_n124" x="13.466906999999992" y="153.72858900000006" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796571" inkscape:label="bad_phi_0018.93_-18.62_p1_n123" x="13.927077000000054" y="153.61571600000002" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796594" inkscape:label="bad_phi_0019.34_-18.41_p1_n122" x="14.335987000000046" y="153.411339" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796619" inkscape:label="bad_phi_0019.72_-18.11_p1_n121" x="14.716282999999976" y="153.11489800000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796643" inkscape:label="bad_phi_0025.60_-05.01_p1_n092" x="20.595696999999973" y="140.00953100000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796668" inkscape:label="bad_phi_0025.79_-04.55_p1_n091" x="20.787236000000007" y="139.54672300000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796693" inkscape:label="bad_phi_0026.12_-03.13_p1_n088" x="21.11668099999997" y="138.13204199999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796720" inkscape:label="bad_phi_0026.50_-02.22_p1_n086" x="21.502797999999984" y="137.217179" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796745" inkscape:label="bad_phi_0026.72_-01.81_p1_n085" x="21.723649000000023" y="136.80980399999999" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796770" inkscape:label="bad_phi_0028.40_-00.98_p1_n081" x="23.39939400000003" y="135.97888" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796794" inkscape:label="bad_phi_0028.85_-00.80_p1_n080" x="23.84504400000003" y="135.79829400000006" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796822" inkscape:label="bad_phi_0029.38_-00.79_p1_n079" x="24.37653499999999" y="135.79451100000006" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796848" inkscape:label="bad_phi_0031.97_-02.04_p1_n073" x="26.967854999999986" y="137.04040599999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796870" inkscape:label="bad_phi_0032.87_-02.51_p1_n071" x="27.871015000000057" y="137.50512400000002" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796895" inkscape:label="bad_phi_0033.33_-02.56_p1_n070" x="28.329555000000028" y="137.555566" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796921" inkscape:label="bad_phi_0033.72_-02.32_p1_n069" x="28.724860000000035" y="137.32408299999997" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796944" inkscape:label="bad_phi_0036.52_003.37_p1_n056" x="31.522230000000036" y="131.62542299999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796966" inkscape:label="bad_phi_0037.23_005.22_p1_n052" x="32.231678999999986" y="129.78346499999998" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_796990" inkscape:label="bad_phi_0037.29_006.22_p1_n050" x="32.29214000000002" y="128.77824699999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797014" inkscape:label="bad_phi_0037.22_006.71_p1_n049" x="32.22494400000005" y="128.29209500000002" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797061" inkscape:label="bad_phi_0037.02_007.12_p1_n048" x="32.017461000000026" y="127.87953400000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797089" inkscape:label="bad_phi_0034.87_008.42_p1_n043" x="29.86643300000003" y="126.57712300000003" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797113" inkscape:label="bad_phi_0034.42_008.64_p1_n042" x="29.42263700000001" y="126.35627099999999" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797136" inkscape:label="bad_phi_0033.96_008.79_p1_n041" x="28.962740000000053" y="126.20640900000001" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797161" inkscape:label="bad_phi_0033.49_008.89_p1_n040" x="28.490595999999982" y="126.10842400000001" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797191" inkscape:label="bad_phi_0032.98_009.06_p1_n039" x="27.97973300000001" y="125.94311300000004" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797214" inkscape:label="bad_phi_0025.93_012.66_p1_n023" x="20.931329000000005" y="122.33593599999995" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797238" inkscape:label="bad_phi_0023.19_013.88_p1_n017" x="18.19225700000004" y="121.11573999999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797262" inkscape:label="bad_phi_0022.78_014.13_p1_n016" x="17.779629" y="120.872701" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797285" inkscape:label="bad_phi_0022.37_014.45_p1_n015" x="17.369248999999968" y="120.55447700000002" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797309" inkscape:label="bad_phi_0022.16_014.88_p1_n014" x="17.164445999999998" y="120.12149799999997" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797333" inkscape:label="bad_phi_0022.19_015.37_p1_n013" x="17.185810999999944" y="119.63395500000001" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797358" inkscape:label="bad_phi_0022.63_016.21_p1_n011" x="17.630998999999974" y="118.78765399999997" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797382" inkscape:label="bad_phi_0022.84_016.70_p1_n010" x="17.838606000000027" y="118.29674999999997" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797405" inkscape:label="bad_phi_0022.96_017.18_p1_n009" x="17.96430399999997" y="117.81524200000001" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797429" inkscape:label="bad_phi_0023.04_017.63_p1_n008" x="18.040656000000013" y="117.36545799999999" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797455" inkscape:label="bad_phi_0022.90_018.15_p1_n007" x="17.903451000000018" y="116.85317799999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+		<rect id="rect_2026_05_19_14_05_29_797480" inkscape:label="bad_phi_0022.58_018.48_p1_n006" x="17.583444999999983" y="116.51672299999996" width="10" height="10" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"/>
+	</g>
+	<g id="layer_2026_05_19_14_05_29_797555" inkscape:label="paths" inkscape:groupmode="layer" style="display:inline;stroke-dashoffset:0;stroke-dasharray:none" marker-end="url(#marker_trapezium)">
+		<path id="path_2026_05_19_14_05_29_797555" inkscape:label="path1_map_argos_holofre_20260514.txt" style="fill:none;stroke:#ff00ff;stroke-width:0.4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dashoffset:0;stroke-dasharray:none" sodipodi:nodetypes="caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac" inkscape:connector-curvature="0" d="M 19.993599000000017,119.995408 C 
+20.145147674059103,120.09417456573715 20.334189439927172,120.12241506585667 20.490664000000038,120.21317599999998 
+20.631534795864354,120.29488618356083 20.780476928252256,120.36256361511948 20.918848000000025,120.44843900000001 
+21.05535798340327,120.53315936254921 21.184093087217093,120.63056431031589 21.324119999999994,120.70933600000001 
+21.467032627759636,120.78973103936846 21.598844625174365,120.88879511895334 21.741265,120.97005899999999 
+21.879421474841365,121.04888993518807 22.009421486649785,121.14140745386521 22.147008000000028,121.221229 
+22.298972671339016,121.30939211082216 22.46001197080352,121.39170187079219 22.583444999999983,121.51672299999996 
+22.692187725926146,121.6268648192272 22.844544061773718,121.71004808204657 22.903451000000018,121.85317799999996 
+22.97073117762386,122.01665290793358 23.037828842861245,122.18870202412506 23.040656000000013,122.36545799999999 
+23.04308804657228,122.51751136815494 22.986661567687975,122.66482165302239 22.96430399999997,122.81524200000001 
+22.939916301134645,122.97932094528221 22.901228345362142,123.14314302749472 22.838606000000027,123.29674999999997 
+22.771534780446586,123.46126966016709 22.72964328430112,123.63988873937149 22.630998999999974,123.78765399999997 
+22.54298421427427,123.9194966895592 22.4792084341766,124.06602049996275 22.400709000000006,124.20374100000004 
+22.321328833598614,124.3430066689125 22.21609780786912,124.47654201888133 22.185810999999944,124.63395500000001 
+22.155076379922434,124.79369544510882 22.09916974227906,124.97249921861965 22.164445999999998,125.12149799999997 
+22.228513342306087,125.2677373259537 22.25678073078825,125.44115686398675 22.369248999999968,125.55447700000002 
+22.49118782206449,125.67733942153893 22.634783139491333,125.77791741678868 22.779629,125.872701 
+22.913200372187134,125.96010683421503 23.041669442457646,126.06278266966524 23.19225700000004,126.11573999999996 
+23.36403475641248,126.17614931627384 23.51229739761493,126.29550143356937 23.68658800000003,126.34822399999996 
+23.838207609855772,126.3940886355191 23.967631443560208,126.49857416218413 24.118938999999955,126.54545800000005 
+24.275618662890565,126.59400642730179 24.419136515465198,126.67879676524444 24.574297,126.73200099999997 
+24.717345288918978,126.78105198593778 24.852511456631532,126.85082541857741 24.993813000000046,126.90470200000004 
+25.163700556139588,126.96947808476773 25.318567073410804,127.06998041575434 25.488792999999987,127.13386200000002 
+25.640617352228446,127.19083792806089 25.786726929733618,127.26253891843214 25.931329000000005,127.33593599999995 
+26.073052046906128,127.40787174763227 26.21153273367088,127.48632754173457 26.355287999999973,127.55411100000003 
+26.506597081527048,127.62545623189851 26.64593652027736,127.72077125564124 26.79806599999995,127.79034999999999 
+26.944916163521498,127.8575141683475 27.083487137076077,127.94151509864616 27.227576,128.01441499999999 
+27.376952467296064,128.08999009657225 27.522501069709506,128.17321416125606 27.673772999999983,128.24491999999998 
+27.82872601007864,128.3183707421981 27.968727445613126,128.4208610267916 28.123438999999962,128.494819 
+28.268629407074627,128.56422550476373 28.407259485995837,128.64676331147086 28.551950000000033,128.71720600000003 
+28.706889120550954,128.7926382305444 28.85087538254959,128.88931355522072 29.005847000000017,128.96467900000005 
+29.157935969435357,129.03864256194834 29.30764961193347,129.11743956689224 29.459974999999986,129.19091500000002 
+29.60381927415756,129.26029949642532 29.737555206463753,129.3492874227503 29.880563000000052,129.42038000000002 
+30.031182852294023,129.49525671279844 30.176500949135857,129.58045291618635 30.32668799999999,129.65619400000003 
+30.477682691408972,129.73234238637303 30.626186724096215,129.81344293389975 30.778220000000033,129.88749600000006 
+30.917880544144396,129.95552249910452 31.053112661297064,130.0322954760195 31.191148,130.103562 
+31.345276584399926,130.18313733599325 31.492023028940594,130.27690450148884 31.648339999999962,130.35208999999998 
+31.807783398637184,130.42877925088305 31.947647092110174,130.54402228864922 32.110589000000004,130.61296700000003 
+32.244185555714125,130.66949497423604 32.376580050787766,130.7288446037353 32.51033700000005,130.784992 
+32.66257260572684,130.8488962153 32.82021344594364,130.9005343638339 32.97973300000001,130.94311300000004 
+33.15266015537998,130.98927036594625 33.3121865404529,131.0941282578715 33.49059599999998,131.108424 
+33.65081723937078,131.12126234123696 33.805228437347296,131.1743812591816 33.96274000000005,131.206409 
+34.120739506740165,131.2385359573235 34.27634808488824,131.28848059631036 34.42263700000001,131.356271 
+34.572559408139,131.42574516734953 34.72589782199509,131.49021355210027 34.86643300000003,131.57712300000003 
+35.010657786194656,131.66631416707708 35.15938086367112,131.74805164178656 35.30731400000002,131.83094700000004 
+35.4550260386884,131.91371846461834 35.59713675595128,132.0063960554362 35.746272999999974,132.08657300000004 
+35.88583352717785,132.1616019557191 36.0200153060249,132.24633634650058 36.159312,132.32185400000003 
+36.31467136976539,132.4060797968874 36.46617759097546,132.49727081646256 36.621263,132.582 
+36.766201995819415,132.6611858038467 36.92770059148131,132.74089499718139 37.017461000000026,132.87953400000004 
+37.101119497153945,133.0087483252703 37.18346396678737,133.14385703979485 37.22494400000005,133.29209500000002 
+37.26902690419263,133.4496348882617 37.299505118290654,133.61482156174714 37.29214000000002,133.77824699999996 
+37.284834539081544,133.94034869410996 37.35200206600939,134.10010527692384 37.344652999999994,134.262205 
+37.33660097917425,134.4398099288985 37.29498205248365,134.61732930439337 37.231678999999986,134.78346499999998 
+37.17733187381816,134.92609631489222 37.132591839035626,135.07230903688787 37.089451000000054,135.21871999999996 
+37.043964800694766,135.3730906241575 36.98364127781963,135.52275328645487 36.92594799999995,135.67298900000003 
+36.861038480996626,135.84201610804246 36.78109502571283,136.0049885706875 36.71550300000001,136.17375200000004 
+36.656178182336475,136.32639036668297 36.6030380581833,136.48298718039302 36.522230000000036,136.62542299999996 
+36.4478079645437,136.7566025364888 36.379044360683224,136.89103296921292 36.31364499999995,137.02693599999998 
+36.23499001847813,137.190384851237 36.15729766871698,137.35432996258692 36.075423,137.51619000000005 
+36.00059736798562,137.66411462414942 35.941270692096396,137.81957730275656 35.865725999999995,137.96713599999998 
+35.789888795063575,138.11526605192614 35.721084976276074,138.2669151685044 35.64592700000003,138.415391 
+35.571237914882204,138.56294052921817 35.49910237579115,138.71176909892824 35.42538400000001,138.85980600000005 
+35.3537580507525,139.00364101330752 35.28018695930007,139.14651025578826 35.205648999999994,139.288858 
+35.12589015507274,139.44117625184015 35.08557447824853,139.61170918904463 35.009716000000026,139.76600699999995 
+34.94125051348169,139.9052673033923 34.87284612497558,140.04459226405822 34.80102499999998,140.18215199999997 
+34.72761522758435,140.32275448864755 34.65255186986974,140.46251173469273 34.58116099999995,140.60415 
+34.509827192689386,140.7456750541652 34.44163929731724,140.8888090223162 34.37585200000001,141.03299600000003 
+34.31115124426685,141.17480158866908 34.215127964921635,141.30097819808475 34.15152599999999,141.44327999999996 
+34.08400195625245,141.59435698495975 34.07430340645885,141.76759882453064 34.00332500000002,141.91708400000005 
+33.93281800389957,142.06557635436138 33.8450391603086,142.2119304911988 33.724860000000035,142.32408299999997 
+33.61322242571532,142.42826440716203 33.47929392160529,142.52564996839612 33.32955500000003,142.555566 
+33.17876623507243,142.58569177764502 33.0159353295079,142.55653326183517 32.87101500000006,142.50512400000002 
+32.717682210448174,142.4507304890775 32.584372100417454,142.34919149812356 32.43256299999996,142.29067999999995 
+32.26839590785289,142.22740538419816 32.12257279237997,142.12417303331222 31.967854999999986,142.04040599999996 
+31.824292712468605,141.96267876037848 31.679172357754624,141.8878312367333 31.536145000000033,141.809124 
+31.381474306851374,141.72400949426856 31.229926387602177,141.63332150044062 31.07791899999995,141.54353700000001 
+30.954169465716973,141.4704432491593 30.821334193150165,141.41360281490915 30.69707900000003,141.34137199999998 
+30.561555087996112,141.26259056354206 30.408681470747524,141.21732681844196 30.270849999999996,141.142656 
+30.13071677479502,141.06673819574087 29.996313038813355,140.978758358694 29.849642000000017,140.91640099999995 
+29.69977228596963,140.85268372090536 29.538332514310582,140.81301470778214 29.37653499999999,140.79451100000006 
+29.20051419252286,140.77438066858554 29.016844559819788,140.75501441412632 28.84504400000003,140.79829400000006 
+28.6896172113552,140.83744874462548 28.546898827382734,140.91616711014535 28.39939400000003,140.97888 
+28.24490887548211,141.04456062055988 28.101521670050943,141.13456718550844 27.94693099999995,141.19999900000005 
+27.81211448958038,141.25706123342763 27.679105644072706,141.31835065776283 27.546397999999954,141.38015900000005 
+27.410110458461645,141.44363467292703 27.25254415475115,141.4504040016708 27.114323000000013,141.509551 
+26.96332522524972,141.57416531426293 26.81173202646164,141.67117962250245 26.723649000000023,141.80980399999999 
+26.64081026827421,141.94017494749664 26.560725502194373,142.073989461574 26.502797999999984,142.217179 
+26.43938293402755,142.37393310956566 26.328063925632023,142.50766834388844 26.258756999999946,142.66190800000004 
+26.191657058419082,142.81123610567136 26.14472027993702,142.97075007805665 26.11668099999997,143.13204199999996 
+26.091785681340184,143.27524873722837 26.054895045181524,143.41610941702606 26.023896000000036,143.55812000000003 
+25.987947936614546,143.72280266710345 25.954387907088858,143.8880049826979 25.91776100000004,144.05253800000003 
+25.88073933368787,144.21884432909098 25.847179865613384,144.38723904517212 25.787236000000007,144.54672300000004 
+25.728494691731157,144.70300748480292 25.674250332941256,144.86220566147665 25.595696999999973,145.00953100000004 
+25.516758714104753,145.1575783107446 25.443655848704566,145.3086646038564 25.367155000000025,145.457986 
+25.294938503757635,145.59894480275977 25.227748339381037,145.74243324935856 25.15614400000004,145.88370399999997 
+25.081013507506214,146.03193162366665 24.991568842482593,146.1726232709492 24.916762999999946,146.321015 
+24.84080957694937,146.4716831751016 24.767626357777885,146.62402425086123 24.703618000000006,146.78014199999996 
+24.642620059264118,146.92891727779795 24.58087134026266,147.07740778282266 24.516481999999996,147.22474699999998 
+24.44769939733476,147.382139120975 24.38584255098806,147.5425355202051 24.31532500000003,147.699158 
+24.245933127547687,147.85328029989307 24.16723943193938,148.0032821948828 24.102758999999992,148.15952300000004 
+24.03811732544034,148.31615450778543 23.985414568052533,148.47776105784476 23.915543999999954,148.63213099999996 
+23.854390416374258,148.76724189762103 23.809468573269555,148.9091968146704 23.751453999999967,149.04568500000005 
+23.686220481923556,149.19915686065724 23.626798571947006,149.35505179746053 23.561856000000034,149.508647 
+23.49627370139865,149.6637552153768 23.428638743456304,149.81800999071368 23.365012999999976,149.973931 
+23.30111107351115,150.13052882239413 23.220972072756467,150.28004329156397 23.153070999999954,150.43494899999996 
+23.09026663197733,150.57822737140816 23.05238603598616,150.73138940752256 22.993116999999984,150.876166 
+22.92654968408351,151.03877011542738 22.852108649652223,151.19804062813137 22.780665,151.358562 
+22.7130997739456,151.51036923310824 22.671059833355116,151.67280800546064 22.60193400000003,151.82391099999995 
+22.53802606947147,151.9636081176908 22.502800515558533,152.11483919897182 22.44651799999997,152.25777900000003 
+22.382959787660866,152.4191967713149 22.34356457028946,152.59044679828503 22.268335999999977,152.74676699999998 
+22.19559872975117,152.8979104381076 22.150378396621704,153.06099576062502 22.08288600000003,153.21455300000002 
+22.015510278791567,153.36784478200116 21.959290267005372,153.52585835441607 21.89273700000001,153.67950900000005 
+21.828851041400753,153.82700166601342 21.785777421323587,153.98340802294751 21.715428999999972,154.12793 
+21.6472216155596,154.26805348626215 21.613515252673324,154.42291166209827 21.549819999999954,154.56514300000003 
+21.480668906765345,154.7195572160573 21.426247046818276,154.88035024044575 21.355643999999984,155.03410599999995 
+21.28618146745714,155.1853780050052 21.26081766929167,155.35601337359788 21.18019700000002,155.50164500000005 
+21.10297482160047,155.64113765781917 21.0376280772432,155.7869126098915 20.963115000000016,155.92787099999998 
+20.88389034169427,156.07774241458708 20.81282566331629,156.23196178118678 20.729826000000003,156.379776 
+20.64707562242188,156.52714626548652 20.56843906282063,156.67698757907044 20.47965099999999,156.82080099999996 
+20.39311259699059,156.9609705608981 20.32652412296784,157.11297038281327 20.237862999999948,157.25180699999999 
+20.1472161966376,157.39375304259818 20.084871834322485,157.55225212295375 19.997451999999953,157.69620799999996 
+19.910191950094372,157.83990075705674 19.82913145423936,157.9902900102245 19.716282999999976,158.11489800000004 
+19.608391524606077,158.2340324618175 19.47635505182768,158.3330421259799 19.335987000000046,158.411339 
+19.20290962140507,158.48556915858023 19.07318773341933,158.57245679616733 18.927077000000054,158.61571600000002 
+18.775638067997647,158.66055273084373 18.62478812935626,158.72439000583893 18.466906999999992,158.72858900000006 
+18.303807520668215,158.7329267809887 18.141174068433088,158.70173119259698 17.980665000000045,158.672455 
+17.800148468539305,158.63952952860086 17.616378107164337,158.61692210437047 17.441525999999953,158.56127100000003 
+17.302466567690658,158.51701181944657 17.16201324231372,158.4761643815034 17.01943700000004,158.44504500000005 
+16.85691482587697,158.40957212277158 16.704989554739882,158.33405211450213 16.54272000000003,158.29744100000005 
+16.38139961967954,158.26104403739737 16.227383752803917,158.19582063828864 16.065690000000018,158.16111999999998 
+15.911283571706349,158.127983273783 15.754897259195104,158.10463137240936 15.600363000000016,158.072096 
+15.43435408023015,158.03714477264032 15.262726936412719,158.0310417416024 15.09801600000003,157.990411 
+14.937482581236168,157.9508107645912 14.778801314552311,157.90268096822547 14.616352000000006,157.87186899999995 
+14.455176671159848,157.84129867026581 14.283336799867584,157.8158120311556 14.124442000000045,157.85661000000005 
+13.96825744855687,157.8967120830706 13.80330924329337,157.9188657438135 13.66058099999998,157.99390200000005 
+13.51892238943742,158.06837592014313 13.394604322871146,158.17203422287105 13.263855000000035,158.26432799999998 
+13.123665524308194,158.36328542433841 13.036910428826445,158.5251367660436 12.899741999999947,158.628241 
+12.777629408771077,158.72002833971658 12.665949073630259,158.83642214229474 12.598173999999972,158.97332700000004 
+12.526724828463443,159.11765349259417 12.48061684421782,159.27336851629752 12.413733999999977,159.41986699999995 
+12.341482864636191,159.57812405231812 12.272832383714103,159.7380064365974 12.200826000000006,159.89637500000003 
+12.13604599170776,160.0388501018076 12.083114364227413,160.18644895324474 12.021018000000026,160.33011399999998 
+11.952670548128026,160.48824145224216 11.885441499430954,160.6469022691772 11.813109000000054,160.80324700000006 
+11.746888776094352,160.946380213466 11.700785016316672,161.09823552217483 11.635019000000057,161.241578 
+11.563818128537605,161.3967661946083 11.512741008530043,161.56052317151534 11.445096000000035,161.71729400000004 
+11.38082389260012,161.86624795454168 11.31611503260774,162.01504362178503 11.248257999999964,162.16239900000005 
+11.173688873483798,162.32433006917097 11.114546489139912,162.49313757398374 11.038414999999986,162.65434000000005 
+10.97396474540517,162.79080833282035 10.912320944258227,162.92858822678795 10.848154000000022,163.06519000000003 
+10.779843952138208,163.21061181763525 10.725492636550257,163.36224955705086 10.659460999999965,163.50872000000004 
+10.585994595559441,163.67168214000537 10.543587954113036,163.84728420114664 10.473283000000038,164.01163499999996 
+10.408793645726291,164.1623907614702 10.34034465204104,164.31143075837792 10.275720999999976,164.462129 
+10.21477537284261,164.60425032179296 10.167645379340684,164.75208594090236 10.105455000000006,164.89366700000005 
+10.0301107280319,165.0651938814127 9.95749913973441,165.2380683795849 9.875283999999965,165.40641000000005 
+9.814414376078616,165.53104508738272 9.793265666924071,165.67230550984516 9.734862000000021,165.79811500000005 
+9.659167804837125,165.9611706539116 9.602514133056388,166.13274694303516 9.524441000000024,166.29467699999998 
+9.453865739089451,166.44105585751686 9.39681534407805,166.5937009764922 9.326283999999987,166.74010099999998 
+9.25575441335377,166.88649737565356 9.207091517727577,167.04275988547056 9.13678600000003,167.18926399999998 
+9.067274246765237,167.33411405140714 9.01169954837917,167.48530553249395 8.944578999999976,167.63127899999995 
+8.871850256228981,167.78944914568513 8.820436311040794,167.9568874067004 8.747051000000056,168.11475399999995 
+8.67687052977169,168.26572633484454 8.615987733189968,168.42085739348443 8.548666000000026,168.573126 
+8.481172454351622,168.72578321272624 8.445615148945421,168.891326899633 8.377390999999989,169.04365900000005 
+8.309903792960313,169.19434564329515 8.266556364225494,169.3551930350386 8.197476000000051,169.50515600000006 
+8.132032700553964,169.64722345045175 8.08513859629204,169.79719540079782 8.023734999999988,169.941055 
+7.95581820684572,170.10017406194868 7.893401438159685,170.2616238590066 7.824253999999996,170.420212 
+7.7605719041830525,170.56626549755458 7.717077065258195,170.72039264165562 7.657937999999945,170.86834399999998 
+7.598560864951878,171.01689095025347 7.5454959032023226,171.16790916299828 7.486135999999988,171.316463 
+7.421974184613191,171.47703408166433 7.3814750480314615,171.64636146144562 7.318011999999953,171.80721000000005 
+7.258562265688056,171.9578867036588 7.20623028374996,172.11154940250344 7.140033000000017,172.25938599999995 
+7.068410356464028,172.41933890628638 7.020778382301728,172.58929338040468 6.949794999999995,172.74953100000005 
+6.887914072924104,172.8892207714855 6.830062274913985,173.03066121221116 6.77054899999996,173.171376 
+6.701583378261944,173.33444017083627 6.661863199406298,173.50905915773103 6.59032000000002,173.67100900000003 
+6.53045024831556,173.806534066288 6.49012114113691,173.95007933168563 6.431444000000056,174.08612500000004 
+6.361855574038827,174.2474689873418 6.310601013752375,174.41630482268192 6.241250000000036,174.57775100000003 
+6.17487233553868,174.7322753480487 6.119923588788652,174.8915229239908 6.054333000000042,175.046383 
+5.996640732075093,175.18259505665355 5.962067933646949,175.32839584504438 5.8978590000000395,175.46166000000005 
+5.818337725106289,175.62670456463957 5.745415889001606,175.79489446912964 5.6648629999999685,175.95943799999998 
+5.596856919395577,176.09835245436648 5.52541831726694,176.23564553696463 5.461075000000051,176.37629400000003 
+5.390244061637532,176.53112379490653 5.373583384256904,176.70743217320285 5.3003159999999525,176.86112400000002 
+5.235440801312848,176.9972116725868 5.159379620724621,177.12785209279855 5.096407999999997,177.26483099999996 
+5.025163049195953,177.41980645390208 4.994619888553757,177.59183185668155 4.919607000000042,177.74501899999996 
+4.84625506551356,177.89481423542554 4.797260401145195,178.05568115423785 4.724837999999977,178.20592799999997 
+4.660523436782341,178.33935439994275 4.6349229960202365,178.4892880321264 4.570111999999995,178.622474 
+4.489932916080306,178.7872412393699 4.439136730799532,178.96507244090662 4.361864999999966,179.13122299999998 
+4.300854105633562,179.26240932266762 4.247481101967992,179.3970355935321 4.187632000000008,179.52875600000004 
+4.1173510096589325,179.6834356912617 4.068126364299587,179.84706306626424 3.998929999999973,180.00223100000005 
+3.9276452290159796,180.16208203744077 3.900779841711824,180.33976402583835 3.8260249999999587,180.498022 
+3.7590954299639634,180.6397136673603 3.6973322451780177,180.78379830177482 3.634851000000026,180.927507 
+3.565448086746983,181.08713573800298 3.516770212859001,181.25536252928612 3.445359000000053,181.41410299999995 
+3.3834977944177353,181.5516146945912 3.3407680107710576,181.69709988288378 3.2812410000000227,181.83563800000002 
+3.217530732096634,181.9839118750358 3.1733474024297266,182.13996133727085 3.1123139999999694,182.289357 
+3.0461499475554774,182.45131130813763 3.0083493923816604,182.62385395172487 2.9430429999999888,182.786156 
+2.8867023143731103,182.92617611663763 2.836819563159793,183.0688031798627 2.7778580000000375,183.20773999999994 
+2.7106711143314897,183.36605894117895 2.6677661431092474,183.53420987264724 2.5969720000000507,183.69094900000005 
+2.535334581340976,183.82741502372198 2.4913251963121184,183.97118829380088 2.436409000000026,184.11049500000001 
+2.370425999468239,184.27787502786987 2.3301015578774695,184.4548778270256 2.2603410000000395,184.620719 
+2.1985282477221517,184.76766592322497 2.1576282781530836,184.9227964500991 2.0965929999999844,185.070068 
+2.0304611386510487,185.2296370560182 1.9700761961233866,185.39153994718663 1.9045630000000529,185.55136400000004 
+1.8475453739405339,185.69046251171778 1.8030286233910147,185.83442660774062 1.7474089999999478,185.97409000000005 
+1.6858618203162905,186.12863775445328 1.6376443257996698,186.28824079196988 1.5772200000000112,186.44323099999997 
+1.5177405517437137,186.595797568791 1.4654011282439114,186.75110452533738 1.404912999999965,186.903274 
+1.3465010401899917,187.05022047522345 1.3090985792589436,187.20483404608547 1.2531209999999646,187.35272499999996 
+1.1888676329172085,187.52248031768033 1.1423525526695357,187.6987270120003 1.0753270000000157,187.86740699999996 
+1.013865663879642,188.02208379155672 0.9578734466866763,188.17895431140994 0.8936169999999493,188.332491 
+0.8377170590460992,188.4660603501428 0.7914907953155534,188.6050069690309 0.7181880000000547,188.729876 
+0.6297781612983044,188.88047940931494 0.5835592901851214,189.05327594455423 0.49564299999997274,189.20416799999998 
+0.41134785064309654,189.34884503680155 0.35803744236284274,189.5103606304407 0.2715849999999591,189.65375900000004 
+0.18897052416025417,189.79079134765425 0.1097871726107087,189.92993540962334 0.0336690000000317,190.07068000000004 
+-0.04359185359669482,190.21353743888324 -0.08940135770887991,190.3713386912192 -0.15543300000001636,190.519721 
+-0.2232587905591572,190.67213501014498 -0.2964983940399861,190.8230901629471 -0.3469239999999445,190.98211100000003 
+-0.3958680065146609,191.13645950482294 -0.44625687953532633,191.29101048521215 -0.5121870000000399,191.43890299999998 
+-0.5794679784486334,191.5898257198436 -0.6172836028845268,191.75254666404487 -0.6812400000000025,191.90490799999998 
+-0.7417293821498561,192.04900997401842 -0.7917791276760227,192.19742949389922 -0.8546420000000126,192.340512 
+-0.9243383509839305,192.49914822192534 -0.943395835221736,192.67703297141964 -1.0137580000000526,192.835375 
+-1.083682694944173,192.9927325526022 -1.1395458654160393,193.1559725779448 -1.2035620000000335,193.31582500000002 
+-1.260057572915457,193.45689809391024 -1.2813351749033473,193.61036820069444 -1.3371879999999692,193.75169700000004 
+-1.3957573072573268,193.89989952792098 -1.4390352523271304,194.0539536027668 -1.4999950000000126,194.201189 
+-1.5625787351585814,194.35234679605674 -1.596846329495861,194.51437534554248 -1.6615010000000439,194.66465900000003 
+-1.7255812932114623,194.8136075688725 -1.7405699305826374,194.98057252849276 -1.8043030000000044,195.12967000000003 
+-1.86976635647261,195.28281531397408 -1.9169889962590787,195.44320768288958 -1.9789429999999584,195.597806 
+-2.0381888501109415,195.74564646502063 -2.098525219046678,195.89322224169246 -2.1663429999999835,196.037332 
+-2.2399383873236047,196.19371891403136 -2.259721424539407,196.37213225913308 -2.3354570000000194,196.52749400000005 
+-2.403250798204567,196.66656421165385 -2.4480673490685376,196.816063447003 -2.515728999999965,196.955198 
+-2.593589891568854,197.11530553795183 -2.6537693057450724,197.28357056837217 -2.730531000000042,197.444208 
+-2.804267123882937,197.598513890115 -2.832658158132517,197.77159464460772 -2.9037379999999757,197.927142 
+-2.9631477039999936,198.05715104474552 -3.0249503732864014,198.18608130640064 -3.0825439999999844,198.31690500000002 
+-3.1536345861682094,198.4783869832222 -3.210046446200181,198.64603080972154 -3.279961999999955,198.80802500000004 
+-3.341396585802272,198.95036880536645 -3.371222721310005,199.1051781095465 -3.4345590000000357,199.24668599999995 
+-3.5037891014443403,199.40136205318606 -3.537333083572207,199.5700228157324 -3.6012550000000374,199.72696699999995 
+-3.6676483842958305,199.88997925184378 -3.699190809654624,200.06558048459476 -3.7629010000000562,200.22965999999997 
+-3.818964570710932,200.3740463762491 -3.869023340858689,200.52070115128254 -3.923844000000031,200.66556400000002 
+-3.9848431430291384,200.8267534086449 -4.011346824413067,200.99956546180738 -4.071562999999969,201.16104900000005 
+-4.131961511072632,201.3230215127761 -4.169446301497828,201.49301025243983 -4.231225999999992,201.65446099999997 
+-4.284900794011492,201.79473095644835 -4.3237413737994075,201.940324499643 -4.375798000000032,202.08120299999996 
+-4.435835048342938,202.24367855697926 -4.469333835709676,202.41509789932798 -4.528385999999955,202.57793400000003 
+-4.581104042739753,202.72330378649258 -4.6131117915223285,202.8757361179613 -4.667569999999955,203.02046299999995 
+-4.729558702942086,203.18520275088838 -4.777014850370392,203.35673187734255 -4.858239000000026,203.51288699999998 
+-4.931706159224632,203.65412914673004 -4.9577837530034685,203.81618082366697 -5.025565000000029,203.960238 
+-5.096958262401131,204.11197188284268 -5.1363642240634135,204.2772740474885 -5.205775000000017,204.42992500000003 
+-5.271860606744326,204.5752631075302 -5.309736032878277,204.73215039521563 -5.372688000000039,204.878873 
+-5.438488280420188,205.0322341891765 -5.475263848833606,205.19714672540158 -5.543066999999951,205.34963300000004 
+-5.617340712269424,205.51667127904363 -5.667205854870758,205.69374091222335 -5.739015999999992,205.861853 
+-5.801933667851927,206.00914723651192 -5.8423323569199965,206.1654460277075 -5.906072999999992,206.31238599999995 
+-5.968114941440604,206.45540999090645 -6.020675948988469,206.60339299496343 -6.096910999999977,206.73938299999998 
+-6.177886695444272,206.88382948603498 -6.225464829901398,207.04523353256866 -6.304887000000008,207.19054000000006 
+-6.382727272585953,207.33295231408476 -6.431411201621245,207.489976048887 -6.5082949999999755,207.63290700000005 
+-6.581815204360282,207.76958485615228 -6.646707100176286,207.91074759018989 -6.713565000000017,208.05080499999997 
+-6.78388674111045,208.19811864489782 -6.8508968785866955,208.3470097390317 -6.922207999999955,208.49384699999996 
+-6.994377566228309,208.6424518910776 -7.011086685746363,208.8143158444824 -7.085684000000015,208.96171700000002 
+-7.160738707553492,209.11002194544108 -7.207116546420025,209.27180519531134 -7.283299000000056,209.419534 
+-7.3545203286410015,209.55764246532283 -7.409508564704765,209.7036452922771 -7.478780000000029,209.84274200000004 
+-7.548798721879507,209.9833392555771 -7.576415768895572,210.14232343934475 -7.644746000000055,210.28374899999994 
+-7.7146181235935956,210.42836587153215 -7.790751290249432,210.5698994521067 -7.860743999999954,210.71445800000004 
+-7.9378034103581285,210.87361166761207 -7.976758447086581,211.0493558319289 -8.053289999999947,211.20876399999997 
+-8.117213364148938,211.3419104734221 -8.182506385187935,211.4744151327901 -8.244553999999994,211.60844599999996 
+-8.318619438580413,211.7684369197683 -8.372350959146729,211.9374652799412 -8.448851999999988,212.09630600000003 
+-8.509825183627413,212.222905903526 -8.556594510697323,212.36074860064002 -8.646787000000018,212.46850099999995 
+-8.754704564232725,212.59742943482922 -8.885664162589592,212.71681843943009 -9.039132999999993,212.78549199999998 
+-9.191612650867683,212.85372292372517 -9.362668906676845,212.8952993083193 -9.52958000000001,212.88850300000001 
+-9.703983411589661,212.8814016184591 -9.879100256141442,212.8429418301023 -10.041803999999956,212.77973999999995 
+-10.175593484435353,212.72776983591984 -10.30766984982472,212.67138148232016 -10.44213000000002,212.621172 
+-10.596090606109897,212.5636807483511 -10.743322961373906,212.48956848803653 -10.894087000000013,212.42415200000005 
+-11.057022467966476,212.3534543310593 -11.223009335506617,212.29000678629336 -11.38728100000003,212.22247200000004 
+-11.545462990272426,212.15744077905606 -11.710656977973827,212.11011027501888 -11.867844999999988,212.04271200000005 
+-12.015650815087042,211.97933657961994 -12.161845937832368,211.9121874364737 -12.310403999999949,211.850596 
+-12.453518826755158,211.7912613019572 -12.60463503576193,211.75242975676497 -12.747285000000034,211.69198600000004 
+-12.905005014863605,211.62515674934934 -13.072685991823732,211.58390499426287 -13.230972999999949,211.51842999999997 
+-13.36477106696691,211.4630847902573 -13.500811321283436,211.41328694732067 -13.63483199999996,211.35848299999998 
+-13.79136062769635,211.29447506668248 -13.941168465616556,211.2148975487994 -14.09714299999996,211.14955099999997 
+-14.258913313101516,211.08177627189332 -14.427970451872966,211.03257588439612 -14.590630000000033,210.96696399999996 
+-14.736338516953765,210.90818964288428 -14.87644671700582,210.83578172525768 -15.023439000000053,210.78029600000002 
+-15.186566945304776,210.7187194861133 -15.348654245917146,210.65440037989583 -15.510542999999984,210.58963600000004 
+-15.6500213061762,210.533837028295 -15.78095211042978,210.45785211458474 -15.92109000000005,210.403731 
+-16.076666295767495,210.34364758818526 -16.23667284683654,210.29522964239504 -16.39709400000004,210.24963300000002 
+-16.567034396926942,210.20133069475946 -16.740982382048173,210.13079869196395 -16.916962000000012,210.14642000000003 
+-17.060539619689166,210.15916505678763 -17.220243153399338,210.06818197031942 -17.34916899999996,210.13264200000003 
+-17.495178371867155,210.20564340889018 -17.665320930029452,210.27356941494304 -17.751070000000027,210.41247599999997 
+-17.835504838818906,210.54925363647112 -17.901112194901884,210.69784231668166 -17.95661199999995,210.84869700000002 
+-18.01812491235239,211.01589598198768 -18.086118451950938,211.18075039624773 -18.143857000000025,211.34929 
+-18.19321633092818,211.49337055549006 -18.212471609834438,211.64741098427487 -18.269952999999987,211.78844800000002 
+-18.33638242737061,211.9514400251703 -18.373366895369827,212.1251553340411 -18.43505300000004,212.29000099999996 
+-18.491430186901425,212.44065948257662 -18.531585311693107,212.59699862636012 -18.58622200000002,212.74829699999998 
+-18.642954524654897,212.90539910444227 -18.711408659981885,213.05821241653803 -18.782681000000025,213.20927500000005 
+-18.84942344896524,213.35073642479256 -18.871270941590637,213.50984888559753 -18.930308999999966,213.65469499999995 
+-18.996558331891947,213.8172335143896 -19.02907380731392,213.991830640246 -19.08956999999998,214.15659700000003 
+-19.142647017203444,214.30115662471212 -19.19426984378265,214.44624786193992 -19.247457000000054,214.59076700000003 
+-19.302068459707016,214.7391562286474 -19.32518419323776,214.897682735638 -19.376626999999985,215.04719999999998 
+-19.426170165998315,215.19119600476972 -19.453121760436375,215.3432963004392 -19.51383599999997,215.48294999999996 
+-19.582182023858195,215.64015817967368 -19.58739371867796,215.81958814657037 -19.652467,215.97817899999995 
+-19.71166429062066,216.122449407908 -19.77485224174643,216.26510221458932 -19.83164499999998,216.41033600000003 
+-19.89643211052885,216.57601341376346 -19.94917645112298,216.7463162638727 -20.016441999999984,216.91100300000005 
+-20.08106884453241,217.06922937694844 -20.137074991322834,217.23088570605375 -20.20168000000001,217.38912100000005 
+-20.264445330226067,217.54285041945707 -20.31457999427448,217.70151343048235 -20.376537999999982,217.85556999999994 
+-20.434320902662535,217.99924531131342 -20.473160218691874,218.1500746986385 -20.531159000000002,218.29366300000004 
+-20.592326696528517,218.44509662402845 -20.64102572510535,218.60129076430633 -20.69865500000003,218.75410599999998 
+-20.75683850589985,218.9083908870441 -20.796710486133748,219.06926222358265 -20.85671000000002,219.22285 
+-20.918266256881452,219.38042275367366 -20.952660192381472,219.547888586348 -21.01653699999997,219.70453499999996 
+-21.077016425348233,219.85284994299332 -21.113361755004348,220.01015938956743 -21.172086000000036,220.159178 
+-21.232610941857843,220.31276605775736 -21.277010901978997,220.4722797219124 -21.334064000000012,220.62719100000004 
+-21.3886148777749,220.7753082186971 -21.428159956646255,220.92861551552346 -21.469155999999998,221.08104200000002 
+-21.510375166823223,221.23429807492676 -21.545406259923197,221.38928724219681 -21.591143999999986,221.54125599999998 
+-21.639937467878212,221.70337775524888 -21.63564598767141,221.90658324561707 -21.76160600000003,222.01971300000002 
+-21.875782331324558,222.1222593564213 -22.024326744552468,222.19460219472433 -22.175411000000054,222.221538 
+-22.336608681169537,222.250276860565 -22.502715951940218,222.20906126010607 -22.666027999999983,222.19723799999997 
+-22.835956638280095,222.18493572032298 -23.013770397998087,222.17552993056609 -23.168686999999977,222.10462199999995 
+-23.294236613761882,222.0471558331709 -23.418933406223687,221.98777632008284 -23.542543000000023,221.926248 
+-23.6815617545858,221.85704956508607 -23.825840863611006,221.79866295243244 -23.970383999999967,221.74190099999998 
+-24.13247007374082,221.6782499527244 -24.29981403676868,221.62856470617237 -24.46677599999998,221.57909700000005 
+-24.613337607360336,221.53567353762128 -24.760832796118734,221.49523340340545 -24.90625799999998,221.44814399999996 
+-25.056346373842416,221.3995446389971 -25.211908694127487,221.3698273921043 -25.36441100000002,221.329436 
+-25.5302169657416,221.28552103270033 -25.70056888844192,221.2610368013086 -25.868660999999975,221.226902 
+-26.02623749604993,221.19490262576574 -26.17806661564282,221.1374968183062 -26.336060999999972,221.10762899999997 
+-26.482283687679455,221.0799865449493 -26.616753702764868,221.00671204341234 -26.76164700000004,220.97278400000005 
+-26.925005638589482,220.93453213405735 -27.07940263795342,220.86492618771024 -27.237647000000038,220.80917699999998 
+-27.393320502635447,220.75433352116954 -27.5553874215085,220.71804491509602 -27.70929799999999,220.65843299999995 
+-27.85023077262258,220.60384758710518 -27.99596996616981,220.56231321467737 -28.13712799999996,220.50831300000004 
+-28.3019747836679,220.44525061902607 -28.47422184277491,220.40263904796848 -28.638641000000007,220.33847000000003 
+-28.77755595213057,220.28425466173144 -28.91371950306541,220.22257764738822 -29.054935999999998,220.17467599999998 
+-29.217442238206786,220.1195527198596 -29.3792080590772,220.06220213105905 -29.54019100000005,220.00277700000004 
+-29.697662540492843,219.94464806485826 -29.864139443339354,219.91328572036707 -30.021794,219.85565499999996 
+-30.170042398914575,219.801462706395 -30.318174211496512,219.74614768484446 -30.46981500000004,219.70233599999995 
+-30.633802087625895,219.6549572526818 -30.793999260832834,219.59515734365914 -30.957634999999982,219.54657899999995 
+-31.115427385640032,219.49973536562368 -31.273508544820515,219.45386896253603 -31.431336999999985,219.407147 
+-31.579888965771147,219.3631711569144 -31.735786469517052,219.3464794133539 -31.88364200000001,219.30021599999998 
+-32.03412319109316,219.25313102777886 -32.18440801691315,219.2053687223904 -32.33394299999998,219.15535999999997 
+-32.498935220598696,219.10018194075133 -32.66168942080401,219.03798306747353 -32.82850599999995,218.98859400000003 
+-32.97272713261282,218.94589472344103 -33.12945331904723,218.94506257567627 -33.268080000000054,218.886705 
+-33.424474623039714,218.8208676663304 -33.591883944585334,218.7846700181044 -33.75115200000005,218.72612500000002 
+-33.90407443077572,218.66991255705273 -34.06211713539858,218.62854808567363 -34.21583999999996,218.574563 
+-34.370570924558706,218.52022389930528 -34.52794750700775,218.4737153319286 -34.68347400000005,218.421697 
+-34.83442875904302,218.3712077578714 -34.98873923645533,218.33079149837397 -35.138529999999946,218.27694699999995 
+-35.28138260672506,218.22559652438633 -35.42519478644306,218.17466075072275 -35.56084099999998,218.10651499999994 
+-35.71883765356574,218.02714086719823 -35.88487136332992,217.96489108937112 -36.04705100000001,217.894457 
+-36.19180782581566,217.8315895807856 -36.346520335108266,217.79336832380818 -36.49086399999999,217.729558 
+-36.62613144152931,217.66976002236686 -36.75381062446843,217.59074895367655 -36.894713000000024,217.54580899999996 
+-37.04413802937211,217.49815079783866 -37.19468526121295,217.45382623169735 -37.34277499999996,217.40216799999996 
+-37.519769034557385,217.34042706561036 -37.6988661563405,217.28484307820497 -37.87777200000005,217.228883 
+-38.01500204593276,217.18595872237222 -38.15847238016738,217.16553931861586 -38.296491999999944,217.125226 
+-38.457635310289675,217.07815862205473 -38.61918208187967,217.0319498721857 -38.77784799999995,216.97710800000004 
+-38.930856537241084,216.92422156577334 -39.09116212456388,216.89510030208874 -39.24599999999998,216.84783700000003 
+-39.41093232431285,216.79749242993773 -39.58129994247429,216.76433380045376 -39.743258999999966,216.70511799999997 
+-39.89277310811008,216.65045234729655 -40.03318983050826,216.57042863991262 -40.18625499999996,216.52668100000005 
+-40.34876562681052,216.48023374875868 -40.50728928662738,216.42059730780238 -40.66956300000004,216.373329 
+-40.82307670175953,216.32861237427028 -40.9638626236823,216.23867307828846 -41.121703000000025,216.21312999999998 
+-41.293091254429555,216.185394488322 -41.46207979742553,216.1442986856938 -41.63141499999995,216.10597399999995 
+-41.79644273891074,216.06862419837353 -41.95552433210344,216.0086390932821 -42.118082999999956,215.96169399999997 
+-42.25691841225796,215.92159991296262 -42.411860327604245,215.9455897134044 -42.545905999999945,215.89160300000003 
+-42.699697090349446,215.8296638461992 -42.860242968207444,215.78589936939602 -43.018800000000056,215.73744499999998 
+-43.194383694358294,215.6837873533466 -43.376920339413005,215.65522800597284 -43.55295799999999,215.60307899999998 
+-43.69871234390064,215.5599010565685 -43.84718737597507,215.52644012656015 -43.993588000000045,215.48550699999998 
+-44.14719450458631,215.44255913325037 -44.30175602492511,215.4030850107937 -44.455442999999946,215.36042599999996 
+-44.61836763588258,215.31520288465595 -44.7832618455667,215.2773215778882 -44.94635800000003,215.23272099999997 
+-45.107700253659004,215.1886000470812 -45.26956307073738,215.14580760822798 -45.42858000000001,215.093927 
+-45.5752705699191,215.046067969996 -45.72542519341948,215.00910093235893 -45.87150299999996,214.95940299999995 
+-46.033245543620524,214.90437568147297 -46.200483274579824,214.8668456122706 -46.36337200000003,214.81530999999995 
+-46.50691036178716,214.76989655999694 -46.656606696361905,214.746300536082 -46.80110300000001,214.70403399999998 
+-46.97252077325538,214.65389267931585 -47.14793378168645,214.61810691125459 -47.31923800000004,214.56757900000002 
+-47.47904024210027,214.5204437129264 -47.63913166046518,214.4742928602294 -47.798947,214.42720199999997 
+-47.95735241582872,214.3805265849985 -48.125742759349805,214.36890634492715 -48.280813999999964,214.31212800000003 
+-48.42384366921863,214.25975859958987 -48.562888731874864,214.19464441509444 -48.71011499999997,214.15560000000005 
+-48.879475762211996,214.11068551575272 -49.04617398682785,214.05543068236216 -49.216948,214.01623099999995 
+-49.37454510410771,213.980055961963 -49.525430607185626,213.9191627124793 -49.67931299999998,213.869507 
+-49.8355195972822,213.81910129899575 -49.99663642570738,213.7841576740292 -50.151386,213.72944199999995 
+-50.30274353188304,213.67592566941084 -50.4517876111355,213.61587379781724 -50.603939999999966,213.564661 
+-50.74857768923664,213.51597756629974 -50.89076973374222,213.45936238269678 -51.03777400000001,213.41837599999997 
+-51.199175361561174,213.37337555109366 -51.36114771096106,213.3301814378782 -51.521135999999956,213.28039 
+-51.69007411563916,213.22781320365675 -51.860893551185086,213.181398787347 -52.029732999999965,213.12850600000002 
+-52.18438812572356,213.0800567736229 -52.34509126190437,213.052475184915 -52.49962400000004,213.00363700000003 
+-52.657241172627664,212.95382401721452 -52.82142683964946,212.9270713949437 -52.97976500000004,212.87959999999998 
+-53.12674308431747,212.8355344716822 -53.27268907767018,212.78809561184812 -53.419280999999955,212.74276199999997 
+-53.57221951155475,212.69546570284206 -53.73028591462685,212.6655659411972 -53.88250400000004,212.61599999999999 
+-54.05382292387344,212.56021435740786 -54.22327792620342,212.49857548427667 -54.39579100000003,212.4466 
+-54.54007517076707,212.40312944160098 -54.68611549157197,212.365564245649 -54.830043000000046,212.32092699999998 
+-54.99407526364496,212.27005452588685 -55.161679693617316,212.23135623607436 -55.32623799999999,212.18221200000005 
+-55.46532417717185,212.14067484471525 -55.61142845397171,212.1231386507908 -55.74812899999995,212.07431999999994 
+-55.91240239997637,212.01565450099008 -56.08419429416688,211.9796298688492 -56.24839599999996,211.92076399999996 
+-56.394198602466986,211.86849416010295 -56.533563151070325,211.79868329766282 -56.68087600000001,211.75083500000005 
+-56.84457542990174,211.6976642202203 -57.01671212427016,211.67247589393298 -57.179363999999964,211.61618199999998 
+-57.326512476503694,211.56525384013992 -57.47750734208694,211.52355720934668 -57.61946999999998,211.45958099999996 
+-57.766391216944044,211.39337019026402 -57.8980303742801,211.29707180555363 -58.04187200000001,211.22441300000003 
+-58.18809166107451,211.15055297604 -58.31339214599416,211.0393362443756 -58.45979599999998,210.96584199999995 
+-58.61114480836261,210.88986540509882 -58.76223556862533,210.81200100316812 -58.920387000000005,210.751445 
+-59.072564493323625,210.69317641091595 -59.21130185321749,210.60336475184272 -59.36310900000001,210.54413799999998 
+-59.51950317537103,210.48312164332197 -59.69986888888286,210.5140508714553 -59.860544000000004,210.465413 
+-59.99201378370003,210.42561585658802 -60.12073670964878,210.37442466766095 -60.25550399999997,210.34785599999998 
+-60.42382965294678,210.31467147636442 -60.58705346437773,210.2587227600642 -60.75503000000003,210.22381399999995 
+-60.88928995377239,210.1959121951728 -61.025240624466846,210.17650890478524 -61.15934400000003,210.14786400000003 
+-61.324719389278584,210.1125392942581 -61.49797654761778,210.12330057509428 -61.66282699999999,210.085602 
+-61.81299154835392,210.0512618485426 -61.955387750492264,209.9879007971498 -62.10507099999995,209.95151999999996 
+-62.27036406231991,209.91134520829598 -62.43744260226356,209.87884360547605 -62.60303099999999,209.83990400000005 
+-62.781351849448015,209.79797024364655 -62.95753171071931,209.74715058030029 -63.13615900000002,209.706542 
+-63.27136629418237,209.6758043882661 -63.4122537187817,209.67264225377914 -63.54632000000004,209.63725799999997 
+-63.70608768496538,209.59509034785697 -63.85969355496968,209.53229831986482 -64.015803,209.47813499999995 
+-64.16349923857274,209.42689070398 -64.31234759257711,209.37526813215732 -64.45055100000002,209.302193 
+-64.5993926559646,209.22349288773103 -64.74261441590943,209.13337616254512 -64.89634799999999,209.06472099999996 
+-65.05368638255925,208.99445598736077 -65.20918300941594,208.92013443214398 -65.36593600000003,208.848573 
+-65.51600213598056,208.78006427447542 -65.66957956625606,208.7192843874435 -65.81856300000004,208.64845200000002 
+-65.95412958095426,208.58399849436364 -66.07153991364964,208.48565922491923 -66.18802500000004,208.390982 
+-66.32354196855147,208.28083596402314 -66.4265217515433,208.13579450530278 -66.54343100000006,208.00606700000003 
+-66.65762358773657,207.8793540176939 -66.7281187038875,207.71880063847982 -66.831504,207.583126 
+-66.91718952033375,207.47067913926264 -66.98166249283656,207.34329534294397 -67.06458399999997,207.228795 
+-67.16485705685557,207.09033515055 -67.26770313421366,206.9537415381717 -67.37128199999995,206.81773699999997 
+-67.46385887654935,206.6961786565589 -67.55436541696565,206.57302792448684 -67.64851299999998,206.45268199999998 
+-67.762040946757,206.30756275989597 -67.845543772415,206.14006309444278 -67.96307300000001,205.99816499999997 
+-68.0557771766405,205.88623925793172 -68.14391169006967,205.77058140560166 -68.23657400000002,205.65862100000004 
+-68.34373050205681,205.52914780380888 -68.44305739723029,205.39330278080718 -68.55084199999999,205.26435200000003 
+-68.66487434953672,205.1279265725069 -68.75022070073658,204.96874863710264 -68.86740399999996,204.83502 
+-68.96925041899317,204.71879368710938 -69.05027409753893,204.58534851601632 -69.15230599999995,204.469285 
+-69.26706406194137,204.33874519981123 -69.35662485457294,204.187188928125 -69.47336099999995,204.05841499999997 
+-69.5841128673303,203.93624244623663 -69.674005389326,203.7964686020813 -69.78119500000003,203.671159 
+-69.88004094476025,203.5556035284635 -69.97150182619157,203.43389604773904 -70.06932800000004,203.31747600000006 
+-70.18652586365988,203.17800227480973 -70.29871379116685,203.0343366272408 -70.41719799999998,202.89595399999996 
+-70.51798317242458,202.77824281228652 -70.59954087410551,202.64473096213965 -70.70239700000002,202.52882499999998 
+-70.81121801939128,202.40619735051507 -70.90011116598987,202.26698096530788 -71.00674300000003,202.14244499999995 
+-71.1193031120223,202.01098536286634 -71.23664573446649,201.88322449406746 -71.341003,201.74516300000005 
+-71.4377232492161,201.6172050466646 -71.52770730754969,201.4842448653917 -71.624507,201.35634700000003 
+-71.72425407007131,201.2245548732044 -71.80116869363928,201.0751656143234 -71.91092400000002,200.95158400000003 
+-72.02695352914122,200.8209377743559 -72.1078755017154,200.66174980733012 -72.22373300000004,200.53095099999996 
+-72.33943401420186,200.40032885738026 -72.4269547885184,200.2462946973601 -72.543903,200.11678800000004 
+-72.64929064508192,200.00008330067885 -72.73211375672508,199.8644713164373 -72.83519899999999,199.74572799999999 
+-72.94284268092315,199.62173384467508 -73.03452051389695,199.48436447220536 -73.14338299999997,199.36143900000002 
+-73.25366804975533,199.23690719566912 -73.3289166971748,199.0838119722007 -73.44078999999999,198.96070499999996 
+-73.55326179206793,198.83693944173172 -73.61744545079421,198.67275856854724 -73.73683600000004,198.555653 
+-73.84997580569905,198.44467854381526 -73.93711198635765,198.30915599010757 -74.04997200000003,198.197897 
+-74.16927221111371,198.0802891725706 -74.26697026337058,197.9422998075628 -74.38354200000003,197.82198700000004 
+-74.49231822989225,197.70971987597136 -74.6006930394143,197.59706392900455 -74.70894999999996,197.48429599999997 
+-74.84165869489391,197.34605745530848 -74.94233832575867,197.18029064105485 -75.05776100000003,197.02732300000002 
+-75.14688672423824,196.909206244487 -75.22242757053675,196.78085845128487 -75.31626000000006,196.66644499999995 
+-75.42307122516718,196.53620600930947 -75.50565673074823,196.3873483357837 -75.61191399999996,196.25665700000002 
+-75.72452769668428,196.1181475638847 -75.79646485394005,195.9497799373895 -75.90809300000001,195.810475 
+-75.99824545902698,195.69797037546277 -76.05143998854169,195.55928604395262 -76.13908600000002,195.44481800000005 
+-76.24306207901975,195.30902244940717 -76.29840686192722,195.1391289229815 -76.40807700000005,195.00788899999998 
+-76.51690138863648,194.877661167391 -76.6228716203907,194.74505194720427 -76.73256000000003,194.61555099999998 
+-76.84006201441343,194.48863133227871 -76.9441595535676,194.3583440398761 -77.06039099999998,194.23936700000002 
+-77.1795417959163,194.11740165041408 -77.25074490372049,193.9501233360554 -77.38276099999996,193.842215 
+-77.5052961022916,193.74205631201187 -77.62544887691831,193.6390166754478 -77.74718800000005,193.53789200000006 
+-77.86699674223678,193.43837082826997 -77.98003599760614,193.32799755058204 -78.11376499999994,193.248153 
+-78.26530355935085,193.15767503373513 -78.38427543069452,193.01925169965534 -78.53477999999996,192.92706399999997 
+-78.66398842873957,192.84792070304525 -78.79149713278468,192.75202373263676 -78.939706,192.72051799999997 
+-79.11252889716047,192.6837799013034 -79.27958955911117,192.6233425101616 -79.45158400000003,192.582903 
+-79.61526233300947,192.54441878169177 -79.77550107239472,192.49203004123967 -79.93945399999996,192.45473300000003 
+-80.10007438655009,192.4181940661207 -80.25418711172438,192.3566397426556 -80.41422,192.31760799999995 
+-80.58631103089408,192.2756352973662 -80.76002551059798,192.24021982641796 -80.93126500000005,192.19489799999997 
+-81.07738690655628,192.1562240252764 -81.22197093084571,192.11184260045172 -81.36829999999998,192.07396000000006 
+-81.52876994621067,192.03241651932376 -81.6843944318017,191.97333472252683 -81.84510599999999,191.93273599999998 
+-81.99450473314869,191.89499510940345 -82.14100332438761,191.846503179181 -82.28981199999998,191.80649900000003 
+-82.45828861973587,191.76120749494498 -82.62492595200104,191.70894556541054 -82.79437499999995,191.66744000000006 
+-82.94213246440756,191.63124766267924 -83.09046392201265,191.59742486825598 -83.23820899999998,191.56118200000003 
+-83.41362720023494,191.51815072743636 -83.5922702642024,191.48894637085937 -83.76748199999997,191.44508199999996 
+-83.91280690422309,191.4086998166665 -84.05483529975152,191.359405758226 -84.20099200000004,191.32652399999995 
+-84.35630766409713,191.29158169419486 -84.4995523964609,191.21290491095374 -84.65481599999998,191.177732 
+-84.83008062985766,191.13802812170013 -85.00593688772256,191.09758854829613 -85.17562099999998,191.03841599999998 
+-85.32570136479501,190.9860797057238 -85.48647329342623,190.96952902009423 -85.63755900000001,190.92016999999998 
+-85.79283589911722,190.86944173617212 -85.94395654663288,190.80566267047755 -86.10125400000004,190.76159700000005 
+-86.25875973617042,190.71747298069886 -86.41396160289219,190.6638527401053 -86.57399599999997,190.63003000000003 
+-86.72199960289834,190.59874992842822 -86.8723169131274,190.57810702068844 -87.02282600000001,190.56292399999995 
+-87.17833262635179,190.5472368386852 -87.3340653802369,190.53384945926314 -87.48957499999995,190.518192 
+-87.66713013737694,190.5003148915955 -87.84655398290181,190.5467530043876 -88.02465299999994,190.53552100000002 
+-88.17958452718983,190.52575007806274 -88.33584413607537,190.5404123759114 -88.49023299999999,190.524185 
+-88.64387374836804,190.50803625639446 -88.80114887171635,190.50011014563302 -88.94811700000002,190.45250099999998 
+-89.09409688348762,190.40521198833733 -89.23424217970899,190.34151200801182 -89.37704699999995,190.28535899999997 
+-89.53124535586608,190.2247258820512 -89.66864471074962,190.1278112805577 -89.81186100000002,190.044489 
+-89.9471672305574,189.96576873875938 -90.06549746753797,189.85777789790563 -90.20676500000002,189.79033800000002 
+-90.35831039631591,189.7179915388034 -90.51635470037729,189.65944165144572 -90.67517199999998,189.60487899999998 
+-90.82844612845406,189.55222073880077 -90.99719906778932,189.55672773788444 -91.15137000000004,189.506756 
+-91.3017838042274,189.45800206765193 -91.45221271950822,189.40852656722348 -91.60547499999996,189.369643 
+-91.76214538838235,189.32989477519834 -91.90654820749774,189.24747921968617 -92.06460600000003,189.213667 
+-92.18804813512384,189.1872598705238 -92.30777351287531,189.14561292235214 -92.430338,189.11539300000004 
+-92.58842578676445,189.07641433046115 -92.74467486014498,189.02942744912173 -92.90421600000002,188.99690499999997 
+-93.06051073436231,188.96504433038888 -93.20846146450867,188.90076846902753 -93.36202200000002,188.857614 
+-93.51995143671195,188.813231757106 -93.67514304429687,188.75925572316658 -93.83371,188.71720800000003 
+-93.98983302246529,188.67580834267892 -94.14295241732725,188.6232465804576 -94.29985299999998,188.58489899999995 
+-94.46889876849684,188.54358305267817 -94.64277508532291,188.52334614753943 -94.81111099999998,188.47922700000004 
+-94.96845668493813,188.43798828096737 -95.123875889641,188.38947282688184 -95.28171999999995,188.350185 
+-95.4277795867722,188.31383037297917 -95.57171395754199,188.2690877090629 -95.71823900000004,188.23465699999997 
+-95.87995474412003,188.19665675346675 -96.04434305497944,188.16983678711995 -96.20477500000004,188.12673700000005 
+-96.3600284615552,188.085028404235 -96.51903432782171,188.0586402177637 -96.67521199999999,188.020538 
+-96.82693191866383,187.9835233275478 -96.97850740996,187.94591638611803 -97.13002100000006,187.90806599999996 
+-97.29980979494667,187.86565019132206 -97.47160557764755,187.83128299119312 -97.64066700000001,187.78605500000003 
+-97.79827406733727,187.74389132389751 -97.96191064924858,187.72728807794635 -98.11990200000002,187.68658800000003 
+-98.27164360317533,187.64749791660267 -98.42218708983376,187.60379121663505 -98.57422999999994,187.56588999999997 
+-98.73449345139943,187.52593956900955 -98.8967360654492,187.49439534436567 -99.05797600000005,187.45858899999996 
+-99.2065098411723,187.4256042814078 -99.35552290859277,187.394566969229 -99.50316699999996,187.357804 
+-99.66971427188662,187.31633419126467 -99.82938944200225,187.25002502795883 -99.99582899999996,187.208125 
+-100.14035746517368,187.1717409407987 -100.27618974218058,187.1039055356996 -100.42189099999996,187.072546 
+-100.5806473686664,187.0383765900358 -100.74198814818203,187.01728301121466 -100.90111200000001,186.984868 
+-101.05564506604935,186.95338817461993 -101.20708144451203,186.908261206112 -101.35999600000002,186.86967900000002 
+-101.52069791583085,186.82913194795924 -101.67870286500886,186.77807109371543 -101.840058,186.74020700000005 
+-101.98891336344707,186.70527614123375 -102.13147524028852,186.64651166397118 -102.28024500000004,186.611218 
+-102.42669211076634,186.57647535386718 -102.56318216688192,186.50636148055344 -102.70954800000004,186.47127799999998 
+-102.88504897534062,186.42921090739844 -103.06271208345174,186.39672823148487 -103.23906299999999,186.35838 
+-103.38627353571235,186.3263684640749 -103.52650336072304,186.26621255091698 -103.673991,186.235503 
+-103.82962428537155,186.2030973806211 -103.98757015205035,186.18220072090492 -104.14275199999997,186.147698 
+-104.31097556694135,186.11029561784972 -104.47179944077993,186.04301603794795 -104.64059599999996,186.00829099999999 
+-104.81052228492774,185.9733335534753 -104.97930969817537,185.932766434408 -105.14978199999996,185.900577 
+-105.29086083742857,185.87393778685419 -105.42751381559788,185.82709447823004 -105.56811800000003,185.79805399999998 
+-105.71820327141904,185.76705529198978 -105.86138051902901,185.70628465070752 -106.01216399999998,185.67888300000004 
+-106.17177153780642,185.64987776697922 -106.33336237731396,185.63267786216613 -106.49306200000001,185.60418400000003 
+-106.65540635018169,185.57521826132313 -106.80822656033843,185.50680423496112 -106.967176,185.46287500000005 
+-107.11612806816572,185.42170876239447 -107.2705378167376,185.40266752269144 -107.41990899999996,185.36304900000005 
+-107.57966196424866,185.3206768616741 -107.73210556348295,185.25237833935887 -107.89304100000004,185.214746 
+-108.05669027303213,185.17647907065327 -108.22238274582412,185.14738097652196 -108.38616999999999,185.10970899999995 
+-108.54723179775215,185.07266389356573 -108.69406939185217,184.98562948594417 -108.85527200000001,184.949202 
+-109.00737701737387,184.91483032669964 -109.15328751267975,184.85609083583063 -109.30541100000005,184.82180100000005 
+-109.4775342493241,184.78300305981395 -109.6399816459458,184.70768030617728 -109.811917,184.66805799999997 
+-109.956502925167,184.63473833850628 -110.10087172630983,184.59774768849172 -110.24808199999995,184.57918900000004 
+-110.41204014339291,184.5585189201705 -110.57115101994339,184.50757754430924 -110.73494600000004,184.48565199999996 
+-110.88756879924404,184.4652219602865 -111.03834920017653,184.43237502359466 -111.19093099999998,184.41164100000003 
+-111.35438118729599,184.38943009382467 -111.51809227826664,184.3678837082092 -111.68012199999998,184.33696999999995 
+-111.85463340889805,184.3036749062594 -112.023551704444,184.24375966007403 -112.19865200000004,184.21371499999998 
+-112.36137686774362,184.18579378306868 -112.52124408053896,184.1416514717505 -112.68469700000003,184.11836800000003 
+-112.81948993957542,184.09916707283946 -112.95565928370422,184.08944023944184 -113.08980699999995,184.06615499999998 
+-113.26127229329552,184.03639220924515 -113.42537518069537,183.96726358231854 -113.59832200000005,183.94788400000004 
+-113.75677983605794,183.93012798291784 -113.90928310044978,183.87536131078457 -114.067136,183.85285299999998 
+-114.21702806088399,183.8314798285212 -114.36578505248599,183.8027665777522 -114.515312,183.77897299999995 
+-114.6739894246466,183.75372334631788 -114.82925402550109,183.70923299779076 -114.98810800000001,183.685119 
+-115.16078968433885,183.65890595894894 -115.33104146983806,183.61781441072424 -115.50394200000005,183.59308599999997 
+-115.64645019051966,183.57270433278688 -115.7902516200387,183.56218034378207 -115.93276600000002,183.54184199999997 
+-116.09766611619716,183.51830896948172 -116.25532218876617,183.45796915076812 -116.41843700000004,183.424214 
+-116.57664165815481,183.39147496147962 -116.73596843989435,183.3634106156785 -116.89257599999996,183.32372899999996 
+-117.0485450240202,183.28420917819346 -117.20287562446015,183.2378196208914 -117.36014699999998,183.203851 
+-117.51700216466406,183.1699722753749 -117.66164001922084,183.08960645506124 -117.81902100000002,183.05826100000002 
+-117.98356592370453,183.02548870765565 -118.14633659351728,182.98433906467778 -118.31035199999997,182.94901200000004 
+-118.47123000938154,182.91436069519568 -118.62951083176824,182.86749010751964 -118.791425,182.83805800000005 
+-118.96488713024746,182.80652675030285 -119.13797014572322,182.77282880037126 -119.31057899999996,182.73691899999994 
+-119.47192362711053,182.70335262604544 -119.62839847479643,182.64825054639107 -119.79019000000005,182.61690899999996 
+-119.94783078251737,182.5863715173217 -120.10017681437739,182.53260479174867 -120.25682200000006,182.49731399999996 
+-120.41935514619149,182.46069670217685 -120.57947032582717,182.4132647434459 -120.74293599999999,182.38106500000004 
+-120.89265962412048,182.35157218868744 -121.03928596918763,182.30721646652853 -121.18942700000002,182.27992800000004 
+-121.3477940900168,182.25114442890197 -121.5045577761341,182.21344127817008 -121.66356599999995,182.188441 
+-121.83030286583653,182.16222557588048 -121.98675985556906,182.08817141580028 -122.15281500000003,182.05793700000004 
+-122.30966412971327,182.02937876519252 -122.45978471143962,181.96964961086576 -122.61670500000002,181.94148499999994 
+-122.78252602657153,181.91172285305515 -122.95253423366705,181.91091748968165 -123.12096899999995,181.90743499999996 
+-123.28336676490744,181.9040773289388 -123.44644246070129,181.89042747698136 -123.60825799999998,181.90457100000003 
+-123.75738860737715,181.91760579373715 -123.90718243238996,181.92142371321074 -124.05667600000004,181.92926699999998 
+-124.22210786200162,181.93794650078712 -124.3883147494372,181.95724116271583 -124.55343800000003,181.94392400000004 
+-124.7286404096784,181.92979395477664 -124.90029172350307,181.8865095635133 -125.07299799999998,181.85382800000002 
+-125.22968732210165,181.82417735767262 -125.37938066335016,181.7651634390569 -125.53182600000002,181.71835399999998 
+-125.68655906757249,181.67084209667917 -125.82392508638497,181.57879409464215 -125.96990900000003,181.50887699999998 
+-126.11504153090164,181.43936766402294 -126.25217222042602,181.35371505377202 -126.39824499999997,181.286204 
+-126.54338535765976,181.21912388747637 -126.68190929245054,181.13688683110672 -126.83134700000005,181.08002 
+-126.98469025032443,181.02166695871915 -127.12990101055937,180.93980313227678 -127.28833599999996,180.89716999999996 
+-127.44931744895905,180.85385164316597 -127.60478944243971,180.78902273302083 -127.76834699999995,180.75676699999997 
+-127.92217583660818,180.72642990058034 -128.05971597138534,180.62954983245606 -128.21531200000004,180.61022300000002 
+-128.38149381420817,180.58958129012456 -128.54608377460045,180.55768673948626 -128.71151699999996,180.53171899999995 
+-128.87816565817639,180.50556047633688 -129.042133751827,180.464263961558 -129.20634399999994,180.42565000000002 
+-129.36300941628224,180.3888102020635 -129.5221928722866,180.36355855161582 -129.68063700000005,180.335333 
+-129.83526932987502,180.30778648962212 -129.99031061715255,180.28240368129946 -130.14572899999996,180.25970800000005 
+-130.3007634643251,180.2370683821615 -130.4502760171996,180.18441688235976 -130.604965,180.15952600000003 
+-130.76417637912186,180.13390742241097 -130.92065150403027,180.09318451842023 -131.07950900000003,180.06545600000004 
+-131.23491520667153,180.03832990287754 -131.39085111634608,180.0135720613166 -131.54753600000004,179.99522100000002 
+-131.72897098667045,179.9739711864397 -131.9039027718735,179.90981672455086 -132.08565799999997,179.89150700000005 
+-132.2250767957546,179.8774621784354 -132.36569328887913,179.88007313728417 -132.50578900000005,179.87723600000004 
+-132.67296774764452,179.8738503927301 -132.83901618079744,179.84758631249838 -133.006076,179.84042999999997 
+-133.16446802318876,179.8336449883759 -133.32257086004108,179.82073152917314 -133.480998,179.81482300000005 
+-133.6613616822466,179.8080963490071 -133.84159939245853,179.794204811212 -134.02208800000005,179.79461500000002 
+-134.18299746246657,179.79498069209717 -134.34393042497618,179.79322035701637 -134.50478499999997,179.78900199999998 
+-134.65981342286148,179.7849364318604 -134.8149521369279,179.78874362345584 -134.97002699999996,179.787285 
+-135.1465938825105,179.7856242240931 -135.32306995309864,179.77804164048882 -135.499635,179.77619600000003 
+-135.64917086940522,179.77463289643026 -135.79878660000793,179.7820042897614 -135.948265,179.77757399999996 
+-136.11288043618777,179.77269507380356 -136.27712978526392,179.75920324800256 -136.441502,179.749014 
+-136.60021503451503,179.7391755581897 -136.7583804422469,179.72152965223597 -136.91709600000002,179.71173199999998 
+-137.09364037236764,179.70083375921524 -137.27048643622993,179.69403465822222 -137.446727,179.67900299999997 
+-137.60993822872945,179.665082621196 -137.76341459393814,179.59467398843447 -137.92347299999994,179.559846 
+-138.07958300288306,179.52587716631797 -138.23214103085832,179.47615755364882 -138.38898400000005,179.44575199999997 
+-138.55019395645286,179.41449986286898 -138.71158043975186,179.38416477089822 -138.872837,179.35315400000002 
+-139.02813854183773,179.32328842103288 -139.17457802571357,179.2558546234203 -139.32979,179.22552700000006 
+-139.500683869284,179.1921352147574 -139.66834531947814,179.1426443676171 -139.84001999999998,179.11353199999996 
+-140.0033198841486,179.08583981939 -140.16148754422602,179.03284442529764 -140.324158,179.001667 
+-140.47845874910956,178.9720937129772 -140.62850495875443,178.92143131332318 -140.78367100000003,178.896798 
+-140.9513532307376,178.87017768478586 -141.11588911605122,178.82601785719044 -141.28334299999995,178.797997 
+-141.45410981793316,178.76942177376247 -141.62005118257412,178.71511076331058 -141.79123800000002,178.68917 
+-141.9537676978331,178.6645410917357 -142.10727133893488,178.59298083903286 -142.270356,178.57234400000004 
+-142.42908057250418,178.55225888940822 -142.58479606686512,178.51157431481 -142.74365999999998,178.49262299999998 
+-142.90973304928104,178.47281168992936 -143.07205427745805,178.4277649551857 -143.23789699999998,178.40611 
+-143.39705650062558,178.3853277081962 -143.55061287804642,178.33038131890908 -143.70995900000003,178.31108200000006 
+-143.87118265493416,178.29155528234855 -144.03104423074,178.26142533285451 -144.192451,178.243475 
+-144.34445788936034,178.2265700444476 -144.49224298920603,178.18127987969922 -144.643907,178.16153399999996 
+-144.81807158407776,178.1388586605633 -144.9909146295513,178.10600900248392 -145.16553399999998,178.08715299999994 
+-145.32997825093696,178.06939574204978 -145.49301153798808,178.03960387685038 -145.657597,178.02320699999996 
+-145.81850360245858,178.0071766306545 -145.97345640744425,177.9507901397876 -146.13407800000004,177.93211899999994 
+-146.28846880441517,177.91417214587352 -146.4420763909917,177.89000902241946 -146.596228,177.87011199999995 
+-146.75337674885395,177.84982812363137 -146.90810263640572,177.81262305712733 -147.065469,177.79410299999995 
+-147.23979076907779,177.77358750324368 -147.41279723751768,177.7427680455594 -147.58712200000002,177.72227799999996 
+-147.74721712865232,177.7034604984974 -147.90687631470553,177.68106546259924 -148.066549,177.658948 
+-148.22715419603924,177.63670136833537 -148.38054477026662,177.57621944102743 -148.54039999999998,177.54910400000006 
+-148.69519288996082,177.52284725828326 -148.84676107203381,177.47991815275327 -149.00105599999995,177.450878 
+-149.16820309094942,177.4194189162996 -149.32688192449302,177.35290090618173 -149.48787600000003,177.298049 
+-149.64855808265474,177.24330339215624 -149.79782246752484,177.15178562550147 -149.96410400000002,177.11763499999995 
+-150.11295932904295,177.08706333927262 -150.25821459093197,177.04093852800747 -150.406023,177.00565099999994 
+-150.56911606086783,176.9667144402365 -150.72567450913868,176.90258922361897 -150.88941499999999,176.86647200000004 
+-151.0479381136298,176.8315056046166 -151.20393427426416,176.78540506876004 -151.362935,176.75267899999994 
+-151.51942612702476,176.72046946536 -151.67217107178055,176.67171318729152 -151.82845799999996,176.63852699999995 
+-151.99618125449763,176.60291240701815 -152.15711427288022,176.53955512541552 -152.32448499999998,176.50231900000006 
+-152.47821144720058,176.46811841208284 -152.62083092433602,176.39234544512885 -152.77488600000004,176.35965699999997 
+-152.9314846188705,176.3264288487161 -153.08187088614864,176.2665425661104 -153.239188,176.236902 
+-153.40225297181985,176.20617846357618 -153.5668470752064,176.18381952631808 -153.72965799999997,176.15177700000004 
+-153.88353195511377,176.1214933426678 -154.02740242522157,176.0480781455518 -154.18226500000003,176.02334199999996 
+-154.3444700040293,175.9974330507613 -154.5066508176909,175.97135403294283 -154.66864599999997,175.944164 
+-154.83206672584515,175.91673469712862 -154.98901823936967,175.85696953762977 -155.15259700000001,175.83049900000003 
+-155.330428173536,175.8017221175204 -155.4995620443516,175.7293631283053 -155.67775400000005,175.70291199999997 
+-155.8418928053735,175.67854694611742 -156.00564955804873,175.6463241806191 -156.17141400000003,175.63875099999996 
+-156.3196844508292,175.63197705685877 -156.46615016189912,175.6029594859832 -156.61399200000005,175.58981400000005 
+-156.771968785671,175.57576735631392 -156.918515088258,175.48933142240583 -157.07680400000004,175.47940200000005 
+-157.24953614567755,175.46856655727322 -157.42322443804994,175.4820635526703 -157.595954,175.471187 
+-157.76055585573727,175.46082223826875 -157.9156782758979,175.38209159184055 -158.08009500000003,175.36911699999996 
+-158.23733964904318,175.3567083770232 -158.3949645148998,175.34784484093382 -158.551651,175.329701 
+-158.72491698575948,175.30963730093333 -158.89661165105554,175.27685261748127 -159.06753400000002,175.242079 
+-159.2161524258247,175.21184304594124 -159.3605123684565,175.16179080207542 -159.50991999999997,175.13573299999996 
+-159.67097248405275,175.10764424904494 -159.82027985005118,175.02704063477154 -159.98189200000002,175.00237500000003 
+-160.14627362002375,174.9772866820491 -160.30529335636413,174.9232344080168 -160.46951,174.89708800000005 
+-160.62562024557656,174.87223228448863 -160.77787062201617,174.82610214966883 -160.93406800000002,174.80179999999996 
+-161.09985446148994,174.77600592168562 -161.2642164689546,174.74156941973433 -161.429979,174.71562200000005 
+-161.58982047908682,174.6906014243449 -161.7396198961734,174.61726214710075 -161.89955099999997,174.59282099999996 
+-162.0559936455178,174.56891296947651 -162.21214550175614,174.5415340935648 -162.36972100000003,174.526842 
+-162.52874281243464,174.51201505435688 -162.685858349849,174.47802575848164 -162.845281,174.46842400000003 
+-163.01013255382384,174.4584952677676 -163.17068567967692,174.4067492726332 -163.33554200000003,174.39689999999996 
+-163.48499340881528,174.3879710874296 -163.6304521452655,174.33885108090192 -163.78002700000002,174.332308 
+-163.94672321906808,174.32501595315603 -164.1105283046088,174.2830502183465 -164.27709400000003,174.27321800000004 
+-164.44925659432704,174.26305540190594 -164.62006748920612,174.23511640240963 -164.792239,174.22510599999998 
+-164.94560439227382,174.2161890236356 -165.09942881925656,174.20831166317237 -165.251486,174.186424 
+-165.42134831637657,174.1619734009006 -165.5909200122918,174.13541614013695 -165.76106500000003,174.113017 
+-165.9088412020435,174.09356265166412 -166.04141222866997,174.00509457256783 -166.18873499999995,173.98246099999994 
+-166.36368097825437,173.95558360380016 -166.53749650880502,173.92179892763886 -166.711769,173.890854 
+-166.8709900095348,173.8625817088033 -167.0252290130752,173.8097030582485 -167.18459900000005,173.782283 
+-167.35307559386763,173.75329612419932 -167.52115100596893,173.72180248075108 -167.69014200000004,173.69598299999996 
+-167.8327850737145,173.67418911614732 -167.96571226854724,173.60413780668114 -168.10889699999996,173.58624499999996 
+-168.2884377539076,173.56380903236243 -168.46927314010838,173.55229276156638 -168.64858400000003,173.52808800000003 
+-168.79313470798172,173.50857543158645 -168.93077269911782,173.45127549446545 -169.07514500000002,173.43048399999998 
+-169.2400706489475,173.40673255532295 -169.40537478589863,173.38565194479236 -169.57027100000005,173.36169700000005 
+-169.7268044489822,173.33895693802253 -169.8743579864963,173.2680285104194 -170.03153599999996,173.25028299999997 
+-170.2001077614791,173.23125112726484 -170.36120960565415,173.16677357292394 -170.52944000000002,173.14492900000005 
+-170.68887755331764,173.12422616996867 -170.84875084433804,173.10693994423787 -171.00811799999997,173.08570199999997 
+-171.172290439672,173.06382368319953 -171.33116278554974,173.0099709380611 -171.49538900000005,172.98850000000004 
+-171.65435179898998,172.96771720096547 -171.81132275801178,172.93314978441583 -171.97034399999995,172.912819 
+-172.14026962776938,172.89109409544187 -172.30680524159925,172.8456418973659 -172.477171,172.82769199999996 
+-172.6353561591618,172.81102546208513 -172.78814283348754,172.75750966617 -172.94625199999996,172.740137 
+-173.10071384721232,172.7231650927614 -173.25070267581282,172.67585201263466 -173.40493200000003,172.656883 
+-173.56533104283278,172.63715515974582 -173.72232903949657,172.59384196630424 -173.882926,172.57579599999997 
+-174.0419512665478,172.55792664187106 -174.19831692660512,172.51263787160622 -174.358295,172.50871800000004 
+-174.5275502176147,172.50457081465368 -174.69308989591286,172.45256198212905 -174.86224100000004,172.44532100000004 
+-175.02579834054245,172.43831947443311 -175.18711941261643,172.40202636157005 -175.35058800000002,172.393192 
+-175.50782002366157,172.38469468213816 -175.66291359118316,172.34629506647002 -175.82034999999996,172.34348599999998 
+-175.98044611179705,172.3406294776554 -176.1380900894427,172.3032601926734 -176.29639399999996,172.27920200000005 
+-176.46937327997819,172.25291352215038 -176.64183823433916,172.2232843145997 -176.81417899999997,172.19309199999998 
+-176.9741770149559,172.16506200730294 -177.13182977649387,172.12236300630138 -177.29314699999998,172.103342 
+-177.45705758095403,172.08401520943528 -177.61421758465247,172.02319623095036 -177.77804100000003,172.00314400000002 
+-177.9309902880657,171.9844227784855 -178.08254678683682,171.95556229350086 -178.23522300000002,171.93473100000006 
+-178.38872661943412,171.91378681436947 -178.53527768170397,171.85055865648997 -178.68960900000002,171.836999 
+-178.84077497334602,171.82371745290914 -178.9845308585327,171.75830975411304 -179.13585,171.74690499999997 
+-179.3029010514524,171.73431454946171 -179.46382877362237,171.66964700684616 -179.631171,171.66182700000002 
+-179.7947706572852,171.6541818857471 -179.95849825830692,171.64901642282268 -180.12199199999998,171.639368 
+-180.29640860318318,171.62907497521883 -180.46498309459685,171.5629521689409 -180.639591,171.556693 
+-180.79566153028793,171.55109834027655 -180.94901246329823,171.51078841988704 -181.104967,171.50257299999998 
+-181.2824282899046,171.49322464091347 -181.45799080382938,171.45745781703158 -181.63557600000001,171.45087 
+-181.80372297000326,171.4446323096031 -181.96867053833785,171.4012214922917 -182.13637700000004,171.38755200000003 
+-182.2806669454236,171.37579115144842 -182.42182493744372,171.33440658655695 -182.56638199999998,171.32658600000002 
+-182.72896427576086,171.31779024323987 -182.8834607706259,171.24435656010064 -183.045933,171.23371999999995 
+-183.20479082676832,171.2233200637869 -183.35931799979312,171.17000330296855 -183.51840000000004,171.16393000000005 
+-183.6940168618138,171.15722544255925 -183.866331432445,171.10658606063816 -184.04202499999997,171.10234300000002 
+-184.20793061646134,171.0983363217781 -184.37238502028822,171.06985711892037 -184.53794000000005,171.058356 
+-184.69790988390446,171.04724287817385 -184.8558429490264,171.0159446419192 -185.01504699999998,170.996763 
+-185.16897943213814,170.97821650715025 -185.32000430308358,170.94009264504086 -185.47115199999996,170.90554499999996 
+-185.6312313842925,170.86895585005107 -185.7945070250031,170.84810918243863 -185.95606099999998,170.81870700000002 
+-186.13609491119598,170.78594154249754 -186.31339638718123,170.7392996721686 -186.49326900000005,170.70565999999997 
+-186.64582579427076,170.67712891644067 -186.79473798016602,170.63033542382743 -186.94784200000004,170.60490400000003 
+-187.1138756804039,170.57732488809586 -187.2772881773575,170.53528741068817 -187.443306,170.507613 
+-187.6000410814512,170.48148597975432 -187.7540174263071,170.43987297615172 -187.91110600000002,170.41596300000003 
+-188.06991348573922,170.3917913934505 -188.2245612885174,170.34434467489132 -188.38327300000003,170.31955200000004 
+-188.55602864588275,170.29256549393824 -188.72022133475798,170.22303004945388 -188.892785,170.194842 
+-189.06693994841305,170.1663940165173 -189.23726991152694,170.1177029236452 -189.410843,170.08589700000005 
+-189.56658441761658,170.05735859188223 -189.71842954083172,170.0100156154724 -189.87389900000005,169.98003100000005 
+-190.0406323790097,169.94787396875574 -190.2072762734722,169.91360756585686 -190.37582599999996,169.89299000000005 
+-190.52680733415366,169.87452145861357 -190.67532368804098,169.83739641793818 -190.82674899999995,169.82301500000005 
+-191.00459002445643,169.80612478484272 -191.1812157087992,169.76338783451695 -191.35980600000005,169.767656 
+-191.51016373086338,169.77124942981447 -191.6601035125666,169.74815761827074 -191.81048899999996,169.74602100000004 
+-191.97249959090482,169.7437192167996 -192.13299713363176,169.70861407964935 -192.29501800000003,169.70721100000003 
+-192.46558625015064,169.7057339011178 -192.63559658920906,169.68511274840614 -192.806154,169.68268799999998 
+-192.972277309711,169.68032628948515 -193.13809541494413,169.66039966829135 -193.30420600000002,169.66353100000003 
+-193.46302507799783,169.66652488034003 -193.62166489413653,169.64829443028998 -193.78051200000004,169.64853900000003 
+-193.94620558625945,169.64879411092647 -194.11143564559495,169.6254604797415 -194.27712299999996,169.62692000000004 
+-194.45062841283914,169.62844838860838 -194.6217174593404,169.58183776744477 -194.795114,169.57550500000002 
+-194.96448094848188,169.56931940083246 -195.13092453360287,169.5294041459341 -195.298764,169.50588100000004 
+-195.45860652634667,169.48347864640334 -195.61460176646358,169.4365808693242 -195.77492800000005,169.417953 
+-195.95056979305014,169.39754565744215 -196.12324269969133,169.35420837279742 -196.29929600000003,169.33772399999998 
+-196.45239623837733,169.32338878787755 -196.6090878832274,169.30001888291463 -196.76048000000003,169.326956 
+-196.9339278655532,169.3578174844829 -197.10065849891305,169.41888584909486 -197.27183100000002,169.460558 
+-197.42733871244934,169.49841653930366 -197.57036994973078,169.57622179425402 -197.7215,169.62890600000003 
+-197.87204571919892,169.68138650689014 -198.02096656203662,169.74034747478925 -198.163228,169.812319 
+-198.29828941926814,169.880647961671 -198.4365638375764,169.94250907736352 -198.57149800000002,170.01108899999997 
+-198.73216894074096,170.09274957051844 -198.88774711304245,170.1846078984238 -199.05111999999997,170.260719 
+-199.19052951620995,170.32566620174532 -199.32898634982087,170.39264015987533 -199.467718,170.459023 
+-199.6219615451896,170.5328282534325 -199.76923878086188,170.62042453451988 -199.92138899999998,170.69845399999997 
+-200.0733169191103,170.77636946004225 -200.21765680410806,170.86867999211552 -200.37053400000002,170.94471599999997 
+-200.52255635030053,171.02032683625737 -200.67384654577427,171.09740217792375 -200.82525699999997,171.17423099999996 
+-200.96187930873657,171.24355600865442 -201.10986835661288,171.2965640170587 -201.26137700000004,171.319296 
+-201.4286079543532,171.34438691967716 -201.5982983133714,171.36646573093537 -201.767196,171.35814000000005 
+-201.92732402303295,171.35024656545056 -202.08966347362116,171.3615722342946 -202.24754099999996,171.33367999999996 
+-202.40908652850476,171.3051397394977 -202.56618394544273,171.2501815174311 -202.72938299999998,171.233521 
+-202.89146244542815,171.2169747802127 -203.05167999804723,171.18475150824054 -203.21374300000002,171.168045 
+-203.37566126167485,171.1513534125287 -203.5356883064636,171.11944399580545 -203.69724399999996,171.09954700000003 
+-203.85715515879633,171.07985254302264 -204.01373823542554,171.03714167710996 -204.173811,171.01880700000004 
+-204.33114913229645,171.00078554669153 -204.48551695861136,170.9614899514379 -204.64273400000002,170.94244100000003 
+-204.80457310082238,170.92283202412136 -204.96066429951088,170.86709700184974 -205.12251500000002,170.84758399999998 
+-205.27152916862872,170.82961859274928 -205.42011799051397,170.80828480001924 -205.568893,170.78843600000005 
+-205.72156542533082,170.76806722671415 -205.87150723671584,170.72922039684522 -206.02449000000001,170.71133099999997 
+-206.2030051199,170.69045591738154 -206.38198408320955,170.67363592290155 -206.560429,170.65216899999996 
+-206.71220975016115,170.6339097762559 -206.85830038055053,170.58075749850934 -207.00987899999996,170.56088999999997 
+-207.1699684616923,170.53990698040866 -207.32595408041072,170.4930978434137 -207.48602700000004,170.471989 
+-207.6445035489471,170.45109067025726 -207.80480093837411,170.44642507335243 -207.963434,170.42674999999997 "/>
+	</g>
+</svg>
