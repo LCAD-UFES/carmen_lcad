@@ -3659,15 +3659,15 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 
         // Ruído na velocidade linear (v). Como a IMU não mede velocidade linear constante, 
         // esse erro vem da odometria das rodas, mas adaptado para o modelo híbrido.
-        {(char *) "localize_ackerman", (char *) "hybrid_velocity_noise", CARMEN_PARAM_DOUBLE, &(param->velocity_noise_velocity), 0, NULL},
+        {(char *) "localize_ackerman", (char *) "hybrid_velocity_noise", CARMEN_PARAM_DOUBLE, &(param->hybrid_velocity_noise), 0, NULL},
 
         // Ruído na velocidade angular (omega). Substitui a incerteza do volante pela 
         // incerteza da taxa de giro medida ativamente pelo giroscópio (IMU).
-        {(char *) "localize_ackerman", (char *) "hybrid_omega_noise",    CARMEN_PARAM_DOUBLE, &(param->phi_noise_phi), 0, NULL},
+        {(char *) "localize_ackerman", (char *) "hybrid_omega_noise",    CARMEN_PARAM_DOUBLE, &(param->hybrid_omega_noise), 0, NULL},
 
         // Desvio padrão do erro acumulado (drift/bias) gerado pelo giroscópio 
         // durante as curvas. Define o quanto a partícula "escorrega" em rotação.
-        {(char *) "localize_ackerman", (char *) "hybrid_gyro_drift_std", CARMEN_PARAM_DOUBLE, &(param->phi_bias_std), 0, NULL},
+        {(char *) "localize_ackerman", (char *) "hybrid_gyro_drift_std", CARMEN_PARAM_DOUBLE, &(param->hybrid_gyro_drift_std), 0, NULL},
 
 		// Ruído base natural do giroscópio (injetado na leitura mesmo quando não há trepidação)
         {(char *) "localize_ackerman", (char *) "hybrid_base_gyro_noise", CARMEN_PARAM_DOUBLE, &(param->hybrid_base_gyro_noise), 0, NULL},
@@ -3679,7 +3679,7 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
         {(char *) "localize_ackerman", (char *) "hybrid_max_drift_angle", CARMEN_PARAM_DOUBLE, &(param->hybrid_max_drift_angle), 0, NULL},
 			
         };
-
+		carmen_param_allow_unfound_variables(0);
         carmen_param_install_params(argc, argv, gyro_param_list, sizeof(gyro_param_list) / sizeof(gyro_param_list[0]));
     }
 
