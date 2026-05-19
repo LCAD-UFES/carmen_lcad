@@ -328,9 +328,9 @@ carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_parti
             v_step = v;
 
             // MODIFICADO AQUI: Usando hybrid_gyro_drift_std
-            if (fabs(omega) > 0.05) {
+            if (fabs(omega) > filter->param->hybrid_curve_threshold) {
                 filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->hybrid_gyro_drift_std);
-                filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
+                filter->particles[i].phi_bias = carmen_clamp(-filter->param->hybrid_max_drift_angle / 2.0, filter->particles[i].phi_bias, filter->param->hybrid_max_drift_angle / 2.0);
             } else {
                 filter->particles[i].phi_bias = 0.0;
             }
