@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QComboBox, QSpinBox, QListWidget, QInputDialog, 
                              QGraphicsLineItem, QGraphicsTextItem, QGraphicsItem, 
                              QGraphicsPolygonItem, QStyle)
-from PyQt5.QtCore import Qt, QRectF, QPointF
+from PyQt5.QtCore import Qt, QRectF, QPointF, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPen, QPainterPath, QBrush, QPolygonF, QFont
 
 # --- CONFIGURAÇÃO ---
@@ -163,24 +163,156 @@ class CarmenMapData:
 # =============================================================================
 # ITENS GRÁFICOS E NÓS
 # =============================================================================
+def _redistribute_points(rows, p_start, p_end):
+    """Redistribui os pontos internos de um grupo uniformemente entre p_start e p_end.
+
+    Nao cria nem deleta pontos — apenas reposiciona os existentes em linha reta
+    entre os dois extremos, com espacamento proporcional as distancias originais.
+    """
+    n = len(rows)
+    if n <= 1:
+        if n == 1:
+            rows[0][0] = p_start[0]; rows[0][1] = p_start[1]
+        return
+    if n == 2:
+        rows[0][0] = p_start[0]; rows[0][1] = p_start[1]
+        rows[-1][0] = p_end[0];  rows[-1][1] = p_end[1]
+        return
+
+    # Distancias acumuladas originais (para manter proporcao relativa)
+    dists = [0.0]
+    for i in range(1, n):
+        dx = rows[i][0] - rows[i-1][0]
+        dy = rows[i][1] - rows[i-1][1]
+        dists.append(dists[-1] + math.hypot(dx, dy))
+    total = dists[-1]
+
+    for i, row in enumerate(rows):
+        t = (dists[i] / total) if total > 1e-9 else (i / (n - 1))
+        row[0] = p_start[0] + t * (p_end[0] - p_start[0])
+        row[1] = p_start[1] + t * (p_end[1] - p_start[1])
+
+
+def _hermite_blend(rows_a, rows_b, n_blend):
+    """Faz uma interpolacao Hermite (curva-S) entre o fim do grupo A e o inicio do grupo B.
+
+    Pega os ultimos n_blend pontos de rows_a e os primeiros n_blend de rows_b
+    e os redistribui ao longo de uma curva cubica de Hermite, eliminando o L
+    na juncao sem criar pontos novos.
+    n_blend e limitado ao menor dos dois grupos.
+    """
+    n_blend = min(n_blend, len(rows_a), len(rows_b))
+    if n_blend < 2:
+        return
+
+    # Pontos de controle: posicoes dos extremos e tangentes estimadas
+    p0 = [rows_a[-n_blend][0], rows_a[-n_blend][1]]  # inicio da zona de blend em A
+    p1 = [rows_b[n_blend - 1][0], rows_b[n_blend - 1][1]]  # fim da zona de blend em B
+
+    # Tangentes: direcao do segmento imediatamente antes/depois da zona
+    if len(rows_a) > n_blend:
+        ta = [rows_a[-n_blend][0] - rows_a[-n_blend - 1][0],
+              rows_a[-n_blend][1] - rows_a[-n_blend - 1][1]]
+    else:
+        ta = [p1[0] - p0[0], p1[1] - p0[1]]
+
+    if len(rows_b) > n_blend:
+        tb = [rows_b[n_blend][0] - rows_b[n_blend - 1][0],
+              rows_b[n_blend][1] - rows_b[n_blend - 1][1]]
+    else:
+        tb = [p1[0] - p0[0], p1[1] - p0[1]]
+
+    # Normaliza e escala as tangentes pelo comprimento total da zona
+    total_len = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+    for tang in (ta, tb):
+        l = math.hypot(tang[0], tang[1])
+        if l > 1e-9:
+            tang[0] = tang[0] / l * total_len
+            tang[1] = tang[1] / l * total_len
+
+    # Todos os pontos da zona: ultimos de A + primeiros de B
+    zone = list(rows_a[-n_blend:]) + list(rows_b[:n_blend])
+    total_pts = len(zone)
+
+    for k, row in enumerate(zone):
+        t = k / (total_pts - 1) if total_pts > 1 else 0.0
+        # Polinomios de Hermite
+        h00 =  2*t**3 - 3*t**2 + 1
+        h10 =    t**3 - 2*t**2 + t
+        h01 = -2*t**3 + 3*t**2
+        h11 =    t**3 -   t**2
+        row[0] = h00*p0[0] + h10*ta[0] + h01*p1[0] + h11*tb[0]
+        row[1] = h00*p0[1] + h10*ta[1] + h01*p1[1] + h11*tb[1]
+
+
 class RDDFNode(QGraphicsEllipseItem):
-    """Ponto Interativo do RDDF que pode ser arrastado"""
-    def __init__(self, rddf_data_row, scene_x, scene_y, editor):
+    """Ponto interativo do RDDF.
+
+    Ao arrastar:
+    1. Move todos os pontos do grupo pelo offset do drag.
+    2. Redistribui os pontos internos uniformemente entre inicio e fim do grupo
+       (evita empilhamento ao mover reta para tras/frente).
+    3. Aplica interpolacao Hermite nas juncoes com grupos vizinhos
+       (elimina o angulo reto / efeito L).
+    """
+    def __init__(self, owned_rows, scene_x, scene_y, editor):
         super().__init__(-3, -3, 6, 6)
-        self.rddf_data_row = rddf_data_row 
-        self.editor = editor
-        
+        self.owned_rows    = owned_rows
+        self.rddf_data_row = owned_rows[0]
+        self.editor        = editor
+        self._last_scene_x = scene_x
+        self._last_scene_y = scene_y
+        self.prev_node     = None
+        self.next_node     = None
+
         self.setPos(scene_x, scene_y)
         self.setFlag(QGraphicsEllipseItem.ItemIsMovable, False)
         self.setFlag(QGraphicsEllipseItem.ItemSendsGeometryChanges, True)
         self.setBrush(QBrush(QColor(255, 50, 50)))
         self.setPen(QPen(Qt.black))
-        self.setZValue(15.0) 
-        self.setVisible(False) 
+        self.setZValue(15.0)
+        self.setVisible(False)
 
     def itemChange(self, change, value):
         if change == QGraphicsEllipseItem.ItemPositionChange:
             if hasattr(self, 'editor') and self.editor and self.editor.current_mode == 1:
+                new_x = value.x()
+                new_y = value.y()
+                dx_scene = new_x - self._last_scene_x
+                dy_scene = new_y - self._last_scene_y
+                res = self.editor.global_res
+                dx_world =  dx_scene * res
+                dy_world = -dy_scene * res
+
+                # 1. Move todos os pontos do grupo
+                for row in self.owned_rows:
+                    row[0] += dx_world
+                    row[1] += dy_world
+
+                # 2. Redistribui pontos internos uniformemente entre primeiro e ultimo
+                #    (evita empilhamento quando a reta e movida lateralmente)
+                if len(self.owned_rows) > 2:
+                    p_start = [self.owned_rows[0][0],  self.owned_rows[0][1]]
+                    p_end   = [self.owned_rows[-1][0], self.owned_rows[-1][1]]
+                    _redistribute_points(self.owned_rows, p_start, p_end)
+
+                # 3. Blending Hermite nas juncoes com vizinhos
+                #    Usa 30% dos pontos de cada lado como zona de transicao
+                n_blend = max(2, min(8,
+                    len(self.owned_rows) // 3,
+                    len(self.prev_node.owned_rows) // 3 if self.prev_node else 99,
+                ))
+                if self.prev_node is not None:
+                    _hermite_blend(self.prev_node.owned_rows, self.owned_rows, n_blend)
+                if self.next_node is not None:
+                    n_blend_next = max(2, min(8,
+                        len(self.owned_rows) // 3,
+                        len(self.next_node.owned_rows) // 3,
+                    ))
+                    _hermite_blend(self.owned_rows, self.next_node.owned_rows, n_blend_next)
+
+                self._last_scene_x = new_x
+                self._last_scene_y = new_y
                 self.editor.schedule_rddf_update()
         return super().itemChange(change, value)
 
@@ -422,7 +554,18 @@ class MapEditor(QMainWindow):
         self.pending_place_name = None 
 
         # 0 = MAPA | 1 = RDDF | 2 = PLACES (ANOTAÇÕES)
-        self.current_mode = 0 
+        self.current_mode = 0
+
+        # Timers de debounce
+        self._res_timer = QTimer(self)
+        self._res_timer.setSingleShot(True)
+        self._res_timer.setInterval(150)
+        self._res_timer.timeout.connect(self._apply_res_change)
+
+        self._density_timer = QTimer(self)
+        self._density_timer.setSingleShot(True)
+        self._density_timer.setInterval(120)
+        self._density_timer.timeout.connect(self.apply_rddf_filter)
 
         main = QWidget()
         layout = QVBoxLayout()
@@ -543,12 +686,12 @@ class MapEditor(QMainWindow):
         btn_save_rddf.clicked.connect(self.save_rddf)
         t3_layout.addWidget(btn_save_rddf)
         
-        t3_layout.addWidget(QLabel(" | Manter (%):"))
+        t3_layout.addWidget(QLabel(" | Detalhe Curva (\xb0):"))
         self.slider_density = QSlider(Qt.Horizontal)
-        self.slider_density.setRange(1, 100) 
-        self.slider_density.setValue(80) 
+        self.slider_density.setRange(1, 45)
+        self.slider_density.setValue(8)
         self.slider_density.setFixedWidth(80)
-        self.slider_density.valueChanged.connect(self.apply_rddf_filter)
+        self.slider_density.valueChanged.connect(lambda: self._density_timer.start())
         t3_layout.addWidget(self.slider_density)
 
         t3_layout.addWidget(QLabel(" Força Suavização:"))
@@ -864,24 +1007,152 @@ class MapEditor(QMainWindow):
         self.status.showMessage(f"RDDF Carregado: {os.path.basename(filepath)} com {len(self.original_rddf_data)} pontos.")
 
     def apply_rddf_filter(self):
-        if not self.original_rddf_data: return
-        for node in self.rddf_nodes: self.scene.removeItem(node)
+        """Agrupa pontos de retas em 1 handle; curvas ficam individualmente visiveis.
+
+        O slider 'Detalhe Curva (graus)' e o limiar de angulo acumulado:
+        - Valor baixo (1-5): quase todos os pontos viram handles individuais.
+        - Valor alto (20-45): retas longas ficam como 1 handle so.
+        Apos criar os nos, liga prev_node/next_node para que o itemChange
+        costure as fronteiras com Hermite ao arrastar.
+        """
+        if not self.original_rddf_data:
+            return
+
+        for node in self.rddf_nodes:
+            self.scene.removeItem(node)
         self.rddf_nodes.clear()
 
-        val = self.slider_density.value()
-        spacing_m = 5.0 * (1.0 - val / 100.0) 
-        simplified = dynamic_filter(self.original_rddf_data, spacing_m)
+        data       = self.original_rddf_data
+        total      = len(data)
+        thresh_rad = math.radians(max(1, self.slider_density.value()))
 
-        for row in simplified:
-            sx = row[0] / self.global_res
-            sy = -row[1] / self.global_res - 1
-            node = RDDFNode(row, sx, sy, self)
+        groups        = []
+        current_group = [data[0]]
+        accum_angle   = 0.0
+
+        for i in range(1, total):
+            if i >= 2:
+                p0 = data[i - 2]; p1 = data[i - 1]; p2 = data[i]
+                dx1 = p1[0] - p0[0]; dy1 = p1[1] - p0[1]
+                dx2 = p2[0] - p1[0]; dy2 = p2[1] - p1[1]
+                l1  = math.hypot(dx1, dy1)
+                l2  = math.hypot(dx2, dy2)
+                if l1 > 1e-9 and l2 > 1e-9:
+                    cos_a = (dx1*dx2 + dy1*dy2) / (l1 * l2)
+                    delta = math.acos(max(-1.0, min(1.0, cos_a)))
+                else:
+                    delta = 0.0
+            else:
+                delta = 0.0
+
+            accum_angle += delta
+            if accum_angle >= thresh_rad:
+                groups.append(current_group)
+                current_group = [data[i]]
+                accum_angle   = 0.0
+            else:
+                current_group.append(data[i])
+
+        if current_group:
+            groups.append(current_group)
+
+        for group in groups:
+            anchor = group[0]
+            sx = anchor[0] / self.global_res
+            sy = -anchor[1] / self.global_res - 1
+            node = RDDFNode(group, sx, sy, self)
             node.setVisible(self.current_mode == 1)
             node.setFlag(QGraphicsItem.ItemIsMovable, self.current_mode == 1)
             self.scene.addItem(node)
             self.rddf_nodes.append(node)
 
+        # Liga vizinhos — necessario para Hermite funcionar no drag
+        for k, node in enumerate(self.rddf_nodes):
+            node.prev_node = self.rddf_nodes[k - 1] if k > 0                        else None
+            node.next_node = self.rddf_nodes[k + 1] if k < len(self.rddf_nodes) - 1 else None
+
         self.schedule_rddf_update()
+        self.status.showMessage(
+            f"Detalhe {self.slider_density.value()}\xb0 | "
+            f"Handles: {len(self.rddf_nodes)} / Pontos: {total}"
+        )
+
+
+    def apply_laplacian_smoothing(points, iterations, alpha=0.5):
+        """Puxa os pontos para o alinhamento ideal, reduzindo zigue-zague sem deletar pontos."""
+        if not points or len(points) < 3: 
+            return points
+        
+        # Repete a matemática "N" vezes (Força da Suavização)
+        for _ in range(iterations):
+            # Cria uma cópia temporária para não distorcer o cálculo em cadeia
+            temp_data = [list(row) for row in points]
+            
+            # Ignora o primeiro e o último ponto (eles ficam ancorados)
+            for i in range(1, len(points) - 1):
+                prev_p = points[i-1]
+                curr_p = points[i]
+                next_p = points[i+1]
+                
+                # Puxa o ponto X e Y atual (curr_p) em direção ao ponto médio entre o anterior e o próximo
+                temp_data[i][0] = curr_p[0] * (1 - alpha) + ((prev_p[0] + next_p[0]) / 2.0) * alpha
+                temp_data[i][1] = curr_p[1] * (1 - alpha) + ((prev_p[1] + next_p[1]) / 2.0) * alpha
+                
+            points = [list(row) for row in temp_data]
+            
+        return points
+
+    def resample_path(points, spacing_m):
+        """Interpola a curva e cria novos pontos a uma distância exata, mantendo a geometria."""
+        if len(points) < 2: 
+            return points
+        
+        # 1. Calcula as distâncias acumuladas ponto a ponto do trajeto original
+        cum_dist = [0.0]
+        for i in range(1, len(points)):
+            dx = points[i][0] - points[i-1][0]
+            dy = points[i][1] - points[i-1][1]
+            cum_dist.append(cum_dist[-1] + math.hypot(dx, dy))
+            
+        total_len = cum_dist[-1]
+        
+        # Se o caminho inteiro for menor que o espaçamento, não faz nada
+        if total_len <= spacing_m: 
+            return points
+        
+        new_points = []
+        
+        # 2. Cria os "alvos" de distância exatos (ex: 0.0, 0.5, 1.0, 1.5...)
+        dists = np.arange(0, total_len, spacing_m)
+        
+        for d in dists:
+            # Encontra em qual segmento original essa distância cai
+            idx = np.searchsorted(cum_dist, d)
+            
+            if idx == 0:
+                new_points.append(list(points[0]))
+                continue
+            if idx >= len(cum_dist):
+                new_points.append(list(points[-1]))
+                continue
+                
+            # 3. Interpolação Matemática: Pega o ponto Exato na reta entre idx-1 e idx
+            d0 = cum_dist[idx-1]
+            d1 = cum_dist[idx]
+            p0 = np.array(points[idx-1])
+            p1 = np.array(points[idx])
+            
+            t = (d - d0) / (d1 - d0) if d1 > d0 else 0
+            pt = p0 + t * (p1 - p0)
+            new_points.append(pt.tolist())
+            
+        # 4. Garante que o ÚLTIMO ponto original faça parte da lista (para o robô não parar antes)
+        last_orig = points[-1]
+        last_new = new_points[-1]
+        if math.hypot(last_new[0] - last_orig[0], last_new[1] - last_orig[1]) > 0.05:
+            new_points.append(list(last_orig))
+            
+        return new_points
 
     def smooth_rddf_action(self):
         if not self.original_rddf_data: return
@@ -896,8 +1167,11 @@ class MapEditor(QMainWindow):
                 temp_data[i][0] = curr_p[0] * (1 - alpha) + ((prev_p[0] + next_p[0]) / 2.0) * alpha
                 temp_data[i][1] = curr_p[1] * (1 - alpha) + ((prev_p[1] + next_p[1]) / 2.0) * alpha
             self.original_rddf_data = [list(row) for row in temp_data]
+
+        # Reagrupa os nos de controle a partir dos dados suavizados
+        # (apply_rddf_filter agora NUNCA deleta pontos, apenas reagrupa)
         self.apply_rddf_filter()
-        self.status.showMessage(f"Trajeto suavizado com Força {iterations}.")
+        self.status.showMessage(f"Trajeto suavizado com Forca {iterations}. Pontos mantidos: {len(self.original_rddf_data)}.")
 
     def schedule_rddf_update(self):
         for item in self.rddf_path_items: self.scene.removeItem(item)
@@ -958,38 +1232,38 @@ class MapEditor(QMainWindow):
             self.rddf_path_items.append(triangle)
 
     def save_rddf(self):
-        if not self.rddf_nodes: return
+        if not self.original_rddf_data: return
         filepath, _ = QFileDialog.getSaveFileName(self, "Salvar RDDF", "", "Arquivos de Texto (*.txt)")
         if not filepath: return
-        
+
         try:
+            # Salva TODOS os pontos originais (incluindo os dos grupos ocultos),
+            # recalculando Theta de cada ponto em relacao ao proximo vizinho.
+            all_rows = self.original_rddf_data
+            n = len(all_rows)
             with open(filepath, 'w') as f:
-                for i in range(len(self.rddf_nodes)):
-                    node = self.rddf_nodes[i]
-                    gx = node.scenePos().x() * self.global_res
-                    gy = -(node.scenePos().y() + 1) * self.global_res
-                    
-                    if i < len(self.rddf_nodes) - 1:
-                        nnode = self.rddf_nodes[i+1]
-                        nx = nnode.scenePos().x() * self.global_res
-                        ny = -(nnode.scenePos().y() + 1) * self.global_res
-                        theta = math.atan2(ny - gy, nx - gx)
+                for i in range(n):
+                    row = all_rows[i]
+                    gx = row[0]
+                    gy = row[1]
+                    if i < n - 1:
+                        nx_ = all_rows[i + 1][0]
+                        ny_ = all_rows[i + 1][1]
+                        theta = math.atan2(ny_ - gy, nx_ - gx)
                     else:
                         if i > 0:
-                            pnode = self.rddf_nodes[i-1]
-                            px = pnode.scenePos().x() * self.global_res
-                            py = -(pnode.scenePos().y() + 1) * self.global_res
-                            theta = math.atan2(gy - py, gx - px)
-                        else: theta = 0.0
-
-                    row = node.rddf_data_row
-                    row[0] = gx; row[1] = gy
-                    if len(row) >= 3: row[2] = theta
-                    f.write("\t".join([f"{v:.6f}" for v in row]) + "\n")
+                            theta = math.atan2(gy - all_rows[i-1][1], gx - all_rows[i-1][0])
+                        else:
+                            theta = 0.0
+                    row_out = list(row)
+                    if len(row_out) >= 3:
+                        row_out[2] = theta
+                    f.write("\t".join([f"{v:.6f}" for v in row_out]) + "\n")
 
             self.current_rddf_filepath = filepath
-            QMessageBox.information(self, "Sucesso", "RDDF salvo com cálculos de Theta atualizados.")
-        except Exception as e: QMessageBox.critical(self, "Erro", f"Erro ao salvar: {str(e)}")
+            QMessageBox.information(self, "Sucesso", f"RDDF salvo com {n} pontos e Theta recalculado.")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Erro ao salvar: {str(e)}")
 
     def generate_graph_action(self):
         if not self.current_rddf_filepath:
@@ -1022,8 +1296,15 @@ class MapEditor(QMainWindow):
 
     def on_res_changed(self, value):
         self.global_res = value
+        self._res_timer.start()
+
+    def _apply_res_change(self):
         for node in self.rddf_nodes:
-            node.setPos(node.rddf_data_row[0]/self.global_res, -node.rddf_data_row[1]/self.global_res - 1)
+            sx = node.rddf_data_row[0] / self.global_res
+            sy = -node.rddf_data_row[1] / self.global_res - 1
+            node.setPos(sx, sy)
+            node._last_scene_x = sx
+            node._last_scene_y = sy
         self.schedule_rddf_update()
 
     def clear_rddf(self):
