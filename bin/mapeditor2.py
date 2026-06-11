@@ -1,1 +1,1 @@
-mapeditor2.py
+/home/eduardopia/carmen_lcad/src/mapeditor2/mapeditor2.py
