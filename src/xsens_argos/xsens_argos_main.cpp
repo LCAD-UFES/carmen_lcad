@@ -20,6 +20,8 @@ using namespace unitree::robot;
 static carmen_xsens_global_quat_message xsens_quat_msg;
 static int xsens_type = 1; // 1 = Simular MTi-G (IMU + GPS/Vel)
 static int print_xsens = 0;
+static int publish_hz = 100;          // Frequência de publicação (Hz). Default 100Hz se a flag --hz não for passada.
+static double min_publish_interval = 0.01; // Calculado a partir de publish_hz em main()
 
 // --- MÉTODOS DE FORMATAÇÃO E PUBLICAÇÃO (IGUAL AO XSENS_MTIG) ---
 
@@ -74,9 +76,11 @@ void LowStateCallback(const void* message)
     static double last_publish_time = 0.0;
     double current_time = carmen_get_time();
 
-    // Trava de tempo: Só entra no if a cada 0.01 segundos (100Hz)
-    // Isso evita o erro "PENDING LIMIT" na Central do CARMEN
-    if (current_time - last_publish_time >= 0.01) 
+    // Trava de tempo: só entra no if quando já passou min_publish_interval segundos
+    // (calculado a partir da flag --hz, default 100Hz). Isso evita o erro
+    // "PENDING LIMIT" na Central do CARMEN quando o callback chega mais rápido
+    // do que o Hz configurado.
+    if (current_time - last_publish_time >= min_publish_interval) 
     {
         // Método: Cria a mensagem e publica
         xsens_quat_msg = make_xsens_mti_quat_message(low_state);
@@ -113,6 +117,7 @@ read_parameters(int argc, char **argv)
 
     carmen_param_t optional_param_list[] = {
         {(char *) "commandline", (char *) "print_xsens", CARMEN_PARAM_ONOFF, &print_xsens, 0, NULL},
+        {(char *) "commandline", (char *) "hz", CARMEN_PARAM_INT, &publish_hz, 0, NULL},
     };
     carmen_param_allow_unfound_variables(1);
     carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list)/sizeof(optional_param_list[0]));
@@ -147,6 +152,11 @@ int main(int argc, char **argv)
     read_parameters(argc, argv);
     define_ipc_messages();
 
+    // Se o usuário não passar --hz (ou passar <= 0), cai no default de 100Hz.
+    if (publish_hz <= 0)
+        publish_hz = 100;
+    min_publish_interval = 1.0 / (double) publish_hz;
+
     signal(SIGINT, shutdown_module);
 
     // Argumentos de linha de comando
@@ -155,8 +165,8 @@ int main(int argc, char **argv)
     // if (argc > 1) interface = argv[1];
     // if (argc > 2) domain_id = std::stoi(argv[2]);
 
-    printf("[xsens_argos] Iniciando: Interface=%s, Domain=%d\n", 
-           interface.c_str(), domain_id);
+    printf("[xsens_argos] Iniciando: Interface=%s, Domain=%d, Hz=%d\n", 
+           interface.c_str(), domain_id, publish_hz);
 
     // Inicialização Unitree
     ChannelFactory::Instance()->Init(domain_id, interface.c_str());
