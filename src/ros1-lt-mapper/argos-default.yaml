@@ -1,0 +1,162 @@
+lio_sam:
+
+  # Topics
+  pointCloudTopic: "/points_raw"               # Point cloud data
+  imuTopic: "/imu_raw"                         # IMU data
+  odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
+  gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
+
+  # Frames
+  lidarFrame: "velodyne"
+  baselinkFrame: "base_link"
+  odometryFrame: "odom"
+  mapFrame: "map"
+
+  # GPS Settings
+  useImuHeadingInitialization: false           # if using GPS data, set to "true"
+  useGpsElevation: false                      # if GPS elevation is bad, set to "false"
+  gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
+  poseCovThreshold: 25.0                      # m^2, threshold for using GPS data
+  
+  # Export settings
+  savePCD: true                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
+  savePCDDirectory: "/home/user/Desktop/scliosam/data/"  # use global path, and end with "/" 
+    # warning: if you have already data in the above savePCDDirectory, it will all remove and remake them. Thus, backup is recommended if pre-made data exist. 
+
+  # Sensor Settings
+  sensor: velodyne                            # lidar sensor type, either 'velodyne' or 'ouster'
+  N_SCAN: 32                               # number of lidar channel (i.e., 16, 32, 64, 128)
+  Horizon_SCAN: 2000                          # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048)
+  downsampleRate: 1                           # default: 1. Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
+  lidarMinRange: 1.0                          # default: 1.0, minimum lidar range to be used
+  lidarMaxRange: 70.0                       # default: 1000.0, maximum lidar range to be used
+
+  # ── IMU — XSens (ajuste os ruídos conforme calibração) ────────────────
+  imuAccNoise: 0.059653 #3.9939570888238808e-03    # Desvio-padrão do ruído branco do acelerômetro (m/s²/√Hz); ref = valor de calibração allan variance
+  imuGyrNoise: 0.010597 #1.5636343949698187e-05    # Desvio-padrão do ruído branco do giroscópio (rad/s/√Hz); ref = valor de calibração allan variance
+  imuAccBiasN: 0.0002 #6.4356659353532566e-05   # Desvio-padrão do random walk do bias do acelerômetro (m/s²/√Hz); ref = allan variance
+  imuGyrBiasN: 0.0002 #3.5640318696367613e-05 # Desvio-padrão do random walk do bias do giroscópio (rad/s²/√Hz); ref = allan variance
+  imuGravity: 9.574869 #9.80511                   # Magnitude da gravidade local (m/s²); ref = padrão global; atual = calibrado em Vitória/ES
+  imuRPYWeight: 0.3 #0.1                     # Peso da orientação RPY do IMU na fusão; 0=ignora IMU, 1=confia só no IMU
+
+
+  # Extrinsics (lidar -> IMU)
+  extrinsicTrans: [0.0, 0.0, 0.19]
+  extrinsicRot: [1, 0, 0,
+                  0, 1, 0,
+                  0, 0, 1]
+  extrinsicRPY: [1,  0, 0,
+                 0, 1, 0,
+                  0, 0, 1]
+  # extrinsicRot: [1, 0, 0,
+  #                 0, 1, 0,
+  #                 0, 0, 1]
+  # extrinsicRPY: [1, 0, 0,
+  #                 0, 1, 0,
+  #                 0, 0, 1]
+
+  # LOAM feature threshold
+  edgeThreshold: 1.0
+  surfThreshold: 0.1
+  edgeFeatureMinValidNum: 10
+  surfFeatureMinValidNum: 100
+
+  # voxel filter paprams
+  odometrySurfLeafSize: 0.1                     # default: 0.4 - outdoor, 0.2 - indoor
+  mappingCornerLeafSize: 0.05                    # default: 0.2 - outdoor, 0.1 - indoor
+  mappingSurfLeafSize: 0.1                      # default: 0.4 - outdoor, 0.2 - indoor
+
+  # robot motion constraint (in case you are using a 2D robot)
+  z_tollerance: 1000                            # meters
+  rotation_tollerance: 1000                     # radians
+
+  # CPU Params
+  numberOfCores: 8                              # number of cores for mapping optimization
+  mappingProcessInterval: 0.015                  # seconds, regulate mapping frequency
+
+  # ── Surrounding map ────────────────────────────────────────────────────
+  surroundingkeyframeAddingDistThreshold: 1.0   # Distância mínima (m) para adicionar novo keyframe; ref = 1.0 (outdoor com carro)
+  surroundingkeyframeAddingAngleThreshold: 0.5 #0.2 # Rotação mínima (rad) para adicionar novo keyframe; ref = 0.2 (~11.5°)
+  surroundingKeyframeDensity: 2.0               # Downsampling (m) da nuvem dos keyframes vizinhos antes do match
+  surroundingKeyframeSearchRadius: 20.0         # Raio (m) de busca de keyframes vizinhos para o scan matching local
+
+  # ── Loop closure ───────────────────────────────────────────────────────
+  loopClosureEnableFlag: true            # Habilita detecção e correção de loop closure (fecha trajetórias repetidas)
+  loopClosureFrequency: 1.0        # Taxa (Hz) de execução da thread de detecção de loop closure; ref = 1.0
+  surroundingKeyframeSize: 100 #50           # Número de keyframes vizinhos usados para construir o mapa local de matching
+  historyKeyframeSearchRadius: 15.0     # Raio (m) para buscar candidatos de loop closure no histórico de poses
+  historyKeyframeSearchTimeDiff: 60.0 #30.0   # Diferença temporal mínima (s) entre o keyframe atual e o candidato ao loop
+  historyKeyframeSearchNum: 10 #25          # Número de keyframes históricos agregados para formar a nuvem do loop candidate
+  historyKeyframeFitnessScore: 0.3      # Score máximo de ICP para aceitar um loop closure; menor = mais restritivo
+
+  # ── Visualização ───────────────────────────────────────────────────────
+  globalMapVisualizationSearchRadius: 1000.0  # Raio (m) ao redor da pose atual para visualizar o mapa global no RViz
+  globalMapVisualizationPoseDensity: 10.0     # Espaçamento (m) entre poses amostradas para publicar o mapa global
+  globalMapVisualizationLeafSize: 0.2         # Tamanho do voxel (m) do downsampling do mapa global para visualização
+
+
+
+# Navsat (convert GPS coordinates to Cartesian)
+navsat:
+  frequency: 50
+  wait_for_datum: false
+  delay: 0.0
+  magnetic_declination_radians: 0
+  yaw_offset: 0
+  zero_altitude: true
+  broadcast_utm_transform: false
+  broadcast_utm_transform_as_parent_frame: false
+  publish_filtered_gps: false
+
+# EKF for Navsat
+ekf_gps:
+  publish_tf: false
+  map_frame: map
+  odom_frame: odom
+  base_link_frame: base_link
+  world_frame: odom
+
+  frequency: 50
+  two_d_mode: false
+  sensor_timeout: 0.01
+  # -------------------------------------
+  # External IMU:
+  # -------------------------------------
+  imu0: imu_correct
+  # make sure the input is aligned with ROS REP105. "imu_correct" is manually transformed by myself. EKF can also transform the data using tf between your imu and base_link
+  imu0_config: [false, false, false,
+                true,  true,  true,
+                false, false, false,
+                false, false, true,
+                true,  true,  true]
+  imu0_differential: false
+  imu0_queue_size: 50 
+  imu0_remove_gravitational_acceleration: true
+  # -------------------------------------
+  # Odometry (From Navsat):
+  # -------------------------------------
+  odom0: odometry/gps
+  odom0_config: [true,  true,  true,
+                 false, false, false,
+                 false, false, false,
+                 false, false, false,
+                 false, false, false]
+  odom0_differential: false
+  odom0_queue_size: 10
+
+  #                            x     y     z     r     p     y   x_dot  y_dot  z_dot  r_dot p_dot y_dot x_ddot y_ddot z_ddot
+  process_noise_covariance: [  1.0,  0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    1.0,  0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    10.0, 0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0.03, 0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0.03, 0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0.1,  0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0.25,  0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0.25,  0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0.04,  0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0.01, 0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0.01, 0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0.5,  0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0.01, 0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0.01,   0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0.015]

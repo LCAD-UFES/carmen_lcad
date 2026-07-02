@@ -1,0 +1,34 @@
+services:
+  ros1_sclio:
+    build: .
+    network_mode: host
+    environment:
+      - ROS_MASTER_URI=http://localhost:11311
+      - DISPLAY=$DISPLAY
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./sc-lio-sam/config:/root/catkin_ws/src/SC-LIO-SAM/SC-LIO-SAM/config
+      - ./lt-mapper/sessions/in/${SESSION_NAME:-session1}:/home/user/Desktop/scliosam/data
+      - ./shared:/shared
+    stdin_open: true
+    tty: true
+    entrypoint: ["/entrypoint.sh"]
+    command: ["scliosam"]
+
+  ros1_ltmapper:
+    build: .
+    network_mode: host
+    environment:
+      - ROS_MASTER_URI=http://localhost:11311
+      - DISPLAY=$DISPLAY
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./lt-mapper/config:/root/catkin_ws/src/lt-mapper/ltslam/config
+      - ./lt-mapper/sessions:/root/catkin_ws/src/lt-mapper/sessions
+      - ./shared:/shared
+    stdin_open: true
+    tty: true
+    entrypoint: ["/entrypoint.sh"]
+    command: ["ltslam"]
