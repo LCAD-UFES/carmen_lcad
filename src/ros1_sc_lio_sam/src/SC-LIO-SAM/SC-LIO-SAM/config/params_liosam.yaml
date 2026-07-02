@@ -1,46 +1,47 @@
 lio_sam:
 
   # Topics
-  pointCloudTopic: "/os_cloud_node/points"               # Point cloud data
-  imuTopic: "/imu/data"                         # IMU data
+  pointCloudTopic: "/points_raw"               # Point cloud data
+  imuTopic: "/imu_raw"                         # IMU data
   odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
   gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
 
   # Frames
-  lidarFrame: "base_link"
+  lidarFrame: "velodyne"
   baselinkFrame: "base_link"
   odometryFrame: "odom"
   mapFrame: "map"
 
   # GPS Settings
-  useImuHeadingInitialization: true           # if using GPS data, set to "true"
+  useImuHeadingInitialization: false           # if using GPS data, set to "true"
   useGpsElevation: false                      # if GPS elevation is bad, set to "false"
   gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
   poseCovThreshold: 25.0                      # m^2, threshold for using GPS data
   
   # Export settings
   savePCD: true                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
-  savePCDDirectory: "/home/user/Desktop/scliosam/data/"  # use global path, and end with "/" 
+  savePCDDirectory: "/home/miguel/ros1_bridge_docker/ros_ipc_carmen/output/"  # use global path, and end with "/" 
     # warning: if you have already data in the above savePCDDirectory, it will all remove and remake them. Thus, backup is recommended if pre-made data exist. 
 
   # Sensor Settings
-  sensor: ouster                            # lidar sensor type, either 'velodyne' or 'ouster'
-  N_SCAN: 128                               # number of lidar channel (i.e., 16, 32, 64, 128)
-  Horizon_SCAN: 1024                          # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048)
+  sensor: velodyne                            # lidar sensor type, either 'velodyne' or 'ouster'
+  N_SCAN: 32                               # number of lidar channel (i.e., 16, 32, 64, 128)
+  Horizon_SCAN: 2000                          # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048)
   downsampleRate: 1                           # default: 1. Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
-  lidarMinRange: 1.0                          # default: 1.0, minimum lidar range to be used
-  lidarMaxRange: 1000.0                       # default: 1000.0, maximum lidar range to be used
+  lidarMinRange: 0.5                          # default: 1.0, minimum lidar range to be used
+  lidarMaxRange: 70.0                       # default: 1000.0, maximum lidar range to be used
 
-  # IMU Settings
-  imuAccNoise: 0.009939570888238808e-03
-  imuGyrNoise: 0.005636343949698187e-03
-  imuAccBiasN: 0.64356659353532566e-03
-  imuGyrBiasN: 0.35640318696367613e-03
-  imuGravity: 9.80511
-  imuRPYWeight: 0.01
+  # ── IMU — XSens (ajuste os ruídos conforme calibração) ────────────────
+  imuAccNoise: 0.059653 #3.9939570888238808e-03    # Desvio-padrão do ruído branco do acelerômetro (m/s²/√Hz); ref = valor de calibração allan variance
+  imuGyrNoise: 0.010597 #1.5636343949698187e-05    # Desvio-padrão do ruído branco do giroscópio (rad/s/√Hz); ref = valor de calibração allan variance
+  imuAccBiasN: 0.0002 #6.4356659353532566e-05   # Desvio-padrão do random walk do bias do acelerômetro (m/s²/√Hz); ref = allan variance
+  imuGyrBiasN: 0.0002 #3.5640318696367613e-05 # Desvio-padrão do random walk do bias do giroscópio (rad/s²/√Hz); ref = allan variance
+  imuGravity: 9.574869 #9.80511                   # Magnitude da gravidade local (m/s²); ref = padrão global; atual = calibrado em Vitória/ES
+  imuRPYWeight: 0.3                     # Peso da orientação RPY do IMU na fusão; 0=ignora IMU, 1=confia só no IMU
+
 
   # Extrinsics (lidar -> IMU)
-  extrinsicTrans: [-0.1, 0.0, 0.0]
+  extrinsicTrans: [0.0, 0.0, 0.19]
   extrinsicRot: [1, 0, 0,
                   0, 1, 0,
                   0, 0, 1]
@@ -54,45 +55,52 @@ lio_sam:
   #                 0, 1, 0,
   #                 0, 0, 1]
 
-  # LOAM feature threshold
-  edgeThreshold: 1.0
+  # ── LOAM feature threshold ───────────────────────────────────────────
+  # ALTERADO: valores anteriores (edgeThreshold=0.05, edgeFeatureMinValidNum=1)
+  # eram permissivos demais e deixavam ruído de superfícies planas (paredes/chão)
+  # ser classificado como edge feature. Em corredor estreito isso NÃO ajuda a
+  # fixar a translação ao longo do eixo do corredor (X) e ainda contamina a
+  # otimização com features falsas -> favorece degenerescência/drift.
+  # Voltando perto do default original do LIO-SAM, que reserva "edge" pra
+  # features geometricamente confiáveis (quinas, batentes de porta, etc.),
+  # que são justamente o que fixa X num corredor.
+  edgeThreshold: 1.0            # era 0.05
   surfThreshold: 0.1
-  edgeFeatureMinValidNum: 10
+  edgeFeatureMinValidNum: 10    # era 1 -- reforça exigência mínima de edges confiáveis
   surfFeatureMinValidNum: 100
 
   # voxel filter paprams
-  odometrySurfLeafSize: 0.4                     # default: 0.4 - outdoor, 0.2 - indoor
-  mappingCornerLeafSize: 0.2                    # default: 0.2 - outdoor, 0.1 - indoor
-  mappingSurfLeafSize: 0.4                      # default: 0.4 - outdoor, 0.2 - indoor
+  odometrySurfLeafSize: 0.1                     # default: 0.4 - outdoor, 0.2 - indoor
+  mappingCornerLeafSize: 0.05                    # default: 0.2 - outdoor, 0.1 - indoor
+  mappingSurfLeafSize: 0.1                      # default: 0.4 - outdoor, 0.2 - indoor
 
   # robot motion constraint (in case you are using a 2D robot)
   z_tollerance: 1000                            # meters
   rotation_tollerance: 1000                     # radians
 
   # CPU Params
-  numberOfCores: 4                              # number of cores for mapping optimization
-  mappingProcessInterval: 0.15                  # seconds, regulate mapping frequency
+  numberOfCores: 8                              # number of cores for mapping optimization
+  mappingProcessInterval: 0.015                  # seconds, regulate mapping frequency
 
-  # Surrounding map
-  surroundingkeyframeAddingDistThreshold: 1.0   # meters, regulate keyframe adding threshold
-  surroundingkeyframeAddingAngleThreshold: 0.2  # radians, regulate keyframe adding threshold
-  surroundingKeyframeDensity: 2.0               # meters, downsample surrounding keyframe poses   
-  surroundingKeyframeSearchRadius: 50.0         # meters, within n meters scan-to-map optimization (when loop closure disabled)
+  # ── Surrounding map ────────────────────────────────────────────────────
+  surroundingkeyframeAddingDistThreshold: 0.01 #1.0   # Distância mínima (m) para adicionar novo keyframe; ref = 1.0 (outdoor com carro)
+  surroundingkeyframeAddingAngleThreshold: 0.2 #0.2 # Rotação mínima (rad) para adicionar novo keyframe; ref = 0.2 (~11.5°)
+  surroundingKeyframeDensity: 1.0               # Downsampling (m) da nuvem dos keyframes vizinhos antes do match
+  surroundingKeyframeSearchRadius: 70.0         # Raio (m) de busca de keyframes vizinhos para o scan matching local
 
-  # Loop closure
-  loopClosureEnableFlag: true
-  loopClosureFrequency: 1.0                     # Hz, regulate loop closure constraint add frequency
-  surroundingKeyframeSize: 50                   # submap size (when loop closure enabled)
-  historyKeyframeSearchRadius: 15.0             # meters, key frame that is within n meters from current pose will be considerd for loop closure
-  historyKeyframeSearchTimeDiff: 30.0           # seconds, key frame that is n seconds older will be considered for loop closure
-  historyKeyframeSearchNum: 25                  # number of hostory key frames will be fused into a submap for loop closure
-  historyKeyframeFitnessScore: 0.3              # icp threshold, the smaller the better alignment
+  # ── Loop closure ───────────────────────────────────────────────────────
+  loopClosureEnableFlag: true            # Habilita detecção e correção de loop closure (fecha trajetórias repetidas)
+  loopClosureFrequency: 1.0        # Taxa (Hz) de execução da thread de detecção de loop closure; ref = 1.0
+  surroundingKeyframeSize: 100 #50           # Número de keyframes vizinhos usados para construir o mapa local de matching
+  historyKeyframeSearchRadius: 15.0     # Raio (m) para buscar candidatos de loop closure no histórico de poses
+  historyKeyframeSearchTimeDiff: 60.0 #30.0   # Diferença temporal mínima (s) entre o keyframe atual e o candidato ao loop
+  historyKeyframeSearchNum: 10 #25          # Número de keyframes históricos agregados para formar a nuvem do loop candidate
+  historyKeyframeFitnessScore: 0.3      # Score máximo de ICP para aceitar um loop closure; menor = mais restritivo
 
-  # Visualization
-  globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius
-  globalMapVisualizationPoseDensity: 10.0       # meters, global map visualization keyframe density
-  globalMapVisualizationLeafSize: 0.2           # meters, global map visualization cloud density
-
+  # ── Visualização ───────────────────────────────────────────────────────
+  globalMapVisualizationSearchRadius: 1000.0  # Raio (m) ao redor da pose atual para visualizar o mapa global no RViz
+  globalMapVisualizationPoseDensity: 10.0     # Espaçamento (m) entre poses amostradas para publicar o mapa global
+  globalMapVisualizationLeafSize: 0.2         # Tamanho do voxel (m) do downsampling do mapa global para visualização
 
 
 
