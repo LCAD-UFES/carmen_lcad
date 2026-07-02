@@ -44,10 +44,16 @@ sudo apt-get install -y libgtsam-dev libgtsam-unstable-dev
 
 ## 3. Compilar o Projeto 
 
+Criar a pasta para salvar a saída:
+
+```
+mkdir -p /dados/sc_lio_sam_output/
+```
+
 Para evitar erros de referência de diretório em computadores com Carmen, precisamos apontar o caminho correto da biblioteca PCL durante o catkin_make.
 
 ```
-/opt/ros/noetic/setup.bash
+source /opt/ros/noetic/setup.bash
 cd ~/carmen_lcad/src/ros1_sc_lio_sam/
 catkin_make -DPCL_DIR=/usr/lib/x86_64-linux-gnu/cmake/pcl
 ```
