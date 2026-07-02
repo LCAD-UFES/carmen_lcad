@@ -42,33 +42,22 @@ sudo apt-get update
 sudo apt-get install -y libgtsam-dev libgtsam-unstable-dev
 ```
 
-## 3. Criar o Workspace e Clonar o SC-LIO-SAM
-
-Agora, vamos criar um workspace dedicado para o projeto e clonar o repositório oficial na pasta src.
-
-```
-# Criar o workspace
-mkdir -p ~/ros_ws_lio_sam/src
-cd ~/ros_ws_lio_sam/src
-
-# Clonar o repositório
-git clone https://github.com/gisbi-kim/SC-LIO-SAM.git
-```
-
-## 4. Compilar o Projeto (WIP)
+## 3. Compilar o Projeto 
 
 Para evitar erros de referência de diretório em computadores com Carmen, precisamos apontar o caminho correto da biblioteca PCL durante o catkin_make.
 
 ```
-# Voltar para a raiz do workspace
-cd ~/ros_ws_lio_sam
-
-# Compilar apontando para o diretório correto do PCL no Ubuntu 20.04
+/opt/ros/noetic/setup.bash
+cd ~/carmen_lcad/src/ros1_sc_lio_sam/
 catkin_make -DPCL_DIR=/usr/lib/x86_64-linux-gnu/cmake/pcl
-
-# Atualizar o ambiente
-source devel/setup.bash
 ```
-## 5. Testar a Instalação
 
+## 4. Testar a Instalação
+
+Com o central rodando, execute o process:
+
+```
+cd ~/carmen_lcad/bin
+./proccontrol argos/process-argos-playback-lio-sam.ini
+```
 
