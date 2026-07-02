@@ -32,3 +32,20 @@ services:
     tty: true
     entrypoint: ["/entrypoint.sh"]
     command: ["ltslam"]
+
+  ros1_ltremovert:
+    build: .
+    network_mode: host
+    environment:
+      - ROS_MASTER_URI=http://localhost:11311
+      - DISPLAY=$DISPLAY
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./lt-mapper/config_removert:/root/catkin_ws/src/lt-mapper/ltremovert/config
+      - ./lt-mapper/sessions:/root/catkin_ws/src/lt-mapper/sessions
+      - ./shared:/shared
+    stdin_open: true
+    tty: true
+    entrypoint: ["/entrypoint.sh"]
+    command: ["ltremovert"]
