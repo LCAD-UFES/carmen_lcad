@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN git clone https://ceres-solver.googlesource.com/ceres-solver -b 2.0.0 ${CATKIN_WS_DIR}/src/ceres-solver && \
     cd ${CATKIN_WS_DIR}/src/ceres-solver && mkdir build && cd build && \
-    cmake .. && make -j$(nproc) && make install
+    cmake .. && make -j2 && make install
 
 # SC-LIO-SAM (fork compatível com lt-mapper — troque aqui se quiser manter o gisbi-kim)
 WORKDIR ${CATKIN_WS_DIR}/src
@@ -50,11 +50,11 @@ RUN sed -i 's|#include <opencv/cv.h>|#include <opencv2/opencv.hpp>|' \
 # LT-mapper
 RUN git clone https://github.com/dongjae0107/lt-mapper ${CATKIN_WS_DIR}/src/lt-mapper
 
-WORKDIR ${CATKIN_WS_DIR}
-RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin build lio_sam ltslam removert"
-
 RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc && \
     echo "source ${CATKIN_WS_DIR}/devel/setup.bash" >> /root/.bashrc
+
+WORKDIR ${CATKIN_WS_DIR}
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin build -p1 -j1 lio_sam ltslam"
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
