@@ -19,8 +19,7 @@ sudo apt-get install  \
 Execute os comandos abaixo para remover:
 
 ```
-sudo apt-get purge -y libgtsam-dev ros-noetic-gtsam
-sudo apt-get autoremove -y
+sudo apt-get purge libgtsam-dev ros-noetic-gtsam
 
 # Remove os cabeçalhos (headers) do GTSAM
 sudo rm -rf /usr/local/include/gtsam
@@ -39,7 +38,7 @@ Execute os comandos abaixo para baixar, compilar e instalar:
 ```
 sudo add-apt-repository ppa:borglab/gtsam-release-4.0
 sudo apt-get update
-sudo apt-get install -y libgtsam-dev libgtsam-unstable-dev
+sudo apt-get install libgtsam-dev libgtsam-unstable-dev
 ```
 
 ## 3. Compilar o Projeto 
@@ -55,7 +54,7 @@ Para evitar erros de referência de diretório em computadores com Carmen, preci
 ```
 source /opt/ros/noetic/setup.bash
 cd ~/carmen_lcad/src/ros1_sc_lio_sam/
-catkin_make -DPCL_DIR=/usr/lib/x86_64-linux-gnu/cmake/pcl
+catkin_make -j2 -DPCL_DIR=/usr/lib/x86_64-linux-gnu/cmake/pcl -DCMAKE_BUILD_TYPE=Release
 ```
 
 ## 4. Testar a Instalação
