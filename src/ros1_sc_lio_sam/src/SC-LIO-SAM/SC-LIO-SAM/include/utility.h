@@ -7,6 +7,7 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
@@ -91,6 +92,15 @@ public:
     bool savePCD;
     string savePCDDirectory;
 
+    // Localization mode (reuse a previously saved map instead of building/erasing it)
+    bool localizationMode;
+    float initialPoseX;
+    float initialPoseY;
+    float initialPoseZ;
+    float initialPoseRoll;
+    float initialPosePitch;
+    float initialPoseYaw;
+
     // Velodyne Sensor Configuration: Velodyne
     SensorType sensor;
     int N_SCAN;
@@ -173,6 +183,14 @@ public:
 
         nh.param<bool>("lio_sam/savePCD", savePCD, false);
         nh.param<std::string>("lio_sam/savePCDDirectory", savePCDDirectory, "/Downloads/LOAM/");
+
+        nh.param<bool>("lio_sam/localizationMode", localizationMode, false);
+        nh.param<float>("lio_sam/initialPoseX", initialPoseX, 0.0);
+        nh.param<float>("lio_sam/initialPoseY", initialPoseY, 0.0);
+        nh.param<float>("lio_sam/initialPoseZ", initialPoseZ, 0.0);
+        nh.param<float>("lio_sam/initialPoseRoll", initialPoseRoll, 0.0);
+        nh.param<float>("lio_sam/initialPosePitch", initialPosePitch, 0.0);
+        nh.param<float>("lio_sam/initialPoseYaw", initialPoseYaw, 0.0);
 
         std::string sensorStr;
         nh.param<std::string>("lio_sam/sensor", sensorStr, "");

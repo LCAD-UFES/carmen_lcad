@@ -113,6 +113,14 @@ public:
     ros::Subscriber subCloud;
     ros::Subscriber subGPS;
     ros::Subscriber subLoop;
+    ros::Subscriber subInitialPose; // localization: RViz "2D Pose Estimate"
+
+    // Localization mode state (non-static so the pose can be reset at runtime)
+    bool locPoseInitialized = false;
+    bool locResetRequested = false;
+    Eigen::Affine3f locLastImuPreTransformation;
+    bool locLastImuPreTransAvailable = false;
+    Eigen::Affine3f locLastImuTransformation;
 
     std::deque<nav_msgs::Odometry> gpsQueue;
     lio_sam::cloud_info cloudInfo;
@@ -227,6 +235,7 @@ public:
         subCloud = nh.subscribe<lio_sam::cloud_info>("lio_sam/feature/cloud_info", 1, &mapOptimization::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
         subGPS   = nh.subscribe<nav_msgs::Odometry> (gpsTopic, 200, &mapOptimization::gpsHandler, this, ros::TransportHints().tcpNoDelay());
         subLoop  = nh.subscribe<std_msgs::Float64MultiArray>("lio_loop/loop_closure_detection", 1, &mapOptimization::loopInfoHandler, this, ros::TransportHints().tcpNoDelay());
+        subInitialPose = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 8, &mapOptimization::initialPoseHandler, this, ros::TransportHints().tcpNoDelay());
 
         pubHistoryKeyFrames   = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/mapping/icp_loop_closure_history_cloud", 1);
         pubIcpKeyFrames       = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/mapping/icp_loop_closure_corrected_cloud", 1);
@@ -248,24 +257,34 @@ public:
 
         pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
 
-        // giseop
-        // create directory and remove old files;
-        // savePCDDirectory = std::getenv("HOME") + savePCDDirectory; // rather use global path 
-        int unused = system((std::string("exec rm -r ") + savePCDDirectory).c_str());
-        unused = system((std::string("mkdir ") + savePCDDirectory).c_str());
-
         saveSCDDirectory = savePCDDirectory + "SCDs/"; // SCD: scan context descriptor 
-        unused = system((std::string("exec rm -r ") + saveSCDDirectory).c_str());
-        unused = system((std::string("mkdir -p ") + saveSCDDirectory).c_str());
-
         saveNodePCDDirectory = savePCDDirectory + "Scans/";
-        unused = system((std::string("exec rm -r ") + saveNodePCDDirectory).c_str());
-        unused = system((std::string("mkdir -p ") + saveNodePCDDirectory).c_str());
 
-        pgSaveStream = std::fstream(savePCDDirectory + "singlesession_posegraph.g2o", std::fstream::out);
-        pgTimeSaveStream = std::fstream(savePCDDirectory + "times.txt", std::fstream::out); pgTimeSaveStream.precision(dbl::max_digits10);
-        // pgVertexSaveStream = std::fstream(savePCDDirectory + "singlesession_vertex.g2o", std::fstream::out);
-        // pgEdgeSaveStream = std::fstream(savePCDDirectory + "singlesession_edge.g2o", std::fstream::out);
+        if (localizationMode)
+        {
+            // Localization mode: reuse an existing map. Do NOT erase/recreate the map
+            // directory nor truncate any of its files. Just load the map and localize.
+            loadMap();
+        }
+        else
+        {
+            // giseop
+            // create directory and remove old files;
+            // savePCDDirectory = std::getenv("HOME") + savePCDDirectory; // rather use global path 
+            int unused = system((std::string("exec rm -r ") + savePCDDirectory).c_str());
+            unused = system((std::string("mkdir ") + savePCDDirectory).c_str());
+
+            unused = system((std::string("exec rm -r ") + saveSCDDirectory).c_str());
+            unused = system((std::string("mkdir -p ") + saveSCDDirectory).c_str());
+
+            unused = system((std::string("exec rm -r ") + saveNodePCDDirectory).c_str());
+            unused = system((std::string("mkdir -p ") + saveNodePCDDirectory).c_str());
+
+            pgSaveStream = std::fstream(savePCDDirectory + "singlesession_posegraph.g2o", std::fstream::out);
+            pgTimeSaveStream = std::fstream(savePCDDirectory + "times.txt", std::fstream::out); pgTimeSaveStream.precision(dbl::max_digits10);
+            // pgVertexSaveStream = std::fstream(savePCDDirectory + "singlesession_vertex.g2o", std::fstream::out);
+            // pgEdgeSaveStream = std::fstream(savePCDDirectory + "singlesession_edge.g2o", std::fstream::out);
+        }
 
     }
 
@@ -314,6 +333,89 @@ public:
         }
 
         matP.setZero();
+    }
+
+    void loadMap()
+    {
+        // Load a previously saved map so it can be used only for localization.
+        // The saved global feature clouds are used as a fixed map for scan-to-map matching.
+        cout << "****************************************************" << endl;
+        cout << "Localization mode: loading map from " << savePCDDirectory << endl;
+
+        const std::string cornerFile = savePCDDirectory + "cloudCorner.pcd";
+        const std::string surfFile   = savePCDDirectory + "cloudSurf.pcd";
+        const std::string trajFile   = savePCDDirectory + "trajectory.pcd";
+        const std::string transFile  = savePCDDirectory + "transformations.pcd";
+
+        if (pcl::io::loadPCDFile<PointType>(cornerFile, *laserCloudCornerFromMapDS) == -1)
+        {
+            ROS_ERROR_STREAM("Localization mode: could not load corner map: " << cornerFile);
+            ros::shutdown();
+            return;
+        }
+        if (pcl::io::loadPCDFile<PointType>(surfFile, *laserCloudSurfFromMapDS) == -1)
+        {
+            ROS_ERROR_STREAM("Localization mode: could not load surf map: " << surfFile);
+            ros::shutdown();
+            return;
+        }
+
+        // Key poses are needed so the many "cloudKeyPoses3D empty" guards let the pipeline run.
+        if (pcl::io::loadPCDFile<PointType>(trajFile, *cloudKeyPoses3D) == -1)
+        {
+            ROS_ERROR_STREAM("Localization mode: could not load trajectory: " << trajFile);
+            ros::shutdown();
+            return;
+        }
+        if (pcl::io::loadPCDFile<PointTypePose>(transFile, *cloudKeyPoses6D) == -1)
+        {
+            // Not strictly required for matching against the fixed global map; warn only.
+            ROS_WARN_STREAM("Localization mode: could not load transformations (poses 6D): " << transFile);
+        }
+
+        laserCloudCornerFromMapDSNum = laserCloudCornerFromMapDS->size();
+        laserCloudSurfFromMapDSNum   = laserCloudSurfFromMapDS->size();
+
+        // Build the map kdtrees once (the fixed map does not change during localization).
+        kdtreeCornerFromMap->setInputCloud(laserCloudCornerFromMapDS);
+        kdtreeSurfFromMap->setInputCloud(laserCloudSurfFromMapDS);
+
+        // Seed the initial pose (map frame) from parameters.
+        transformTobeMapped[0] = initialPoseRoll;
+        transformTobeMapped[1] = initialPosePitch;
+        transformTobeMapped[2] = initialPoseYaw;
+        transformTobeMapped[3] = initialPoseX;
+        transformTobeMapped[4] = initialPoseY;
+        transformTobeMapped[5] = initialPoseZ;
+
+        cout << "Localization mode: loaded " << laserCloudCornerFromMapDSNum << " corner and "
+             << laserCloudSurfFromMapDSNum << " surf map points, "
+             << cloudKeyPoses3D->size() << " key poses." << endl;
+        cout << "Initial pose guess: x=" << initialPoseX << " y=" << initialPoseY << " z=" << initialPoseZ
+             << " roll=" << initialPoseRoll << " pitch=" << initialPosePitch << " yaw=" << initialPoseYaw << endl;
+        cout << "****************************************************" << endl;
+    }
+
+    void initialPoseHandler(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& poseMsg)
+    {
+        // Runtime pose reset (e.g. RViz "2D Pose Estimate"). Only relevant in localization mode.
+        if (!localizationMode)
+            return;
+
+        double roll, pitch, yaw;
+        tf::Quaternion orientation;
+        tf::quaternionMsgToTF(poseMsg->pose.pose.orientation, orientation);
+        tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+
+        std::lock_guard<std::mutex> lock(mtx);
+        // 2D Pose Estimate only provides x, y and yaw; keep the current z/roll/pitch.
+        transformTobeMapped[2] = yaw;
+        transformTobeMapped[3] = poseMsg->pose.pose.position.x;
+        transformTobeMapped[4] = poseMsg->pose.pose.position.y;
+        locResetRequested = true;
+
+        ROS_INFO_STREAM("Localization mode: initial pose reset to x=" << transformTobeMapped[3]
+                        << " y=" << transformTobeMapped[4] << " yaw=" << yaw);
     }
 
     void writeVertex(const int _node_idx, const gtsam::Pose3& _initPose)
@@ -379,21 +481,39 @@ public:
         {
             timeLastProcessing = timeLaserInfoCur;
 
-            updateInitialGuess();
+            if (localizationMode)
+            {
+                // Localization only: match the current scan against the fixed loaded map.
+                // The map is not modified, so we skip extracting/adding key frames, the
+                // pose graph optimization and the loop-closure corrections.
+                updateInitialGuessLocalization();
 
-            extractSurroundingKeyFrames();
+                downsampleCurrentScan();
 
-            downsampleCurrentScan();
+                scan2MapOptimization();
 
-            scan2MapOptimization();
+                publishOdometry();
 
-            saveKeyFramesAndFactor();
+                publishFrames();
+            }
+            else
+            {
+                updateInitialGuess();
 
-            correctPoses();
+                extractSurroundingKeyFrames();
 
-            publishOdometry();
+                downsampleCurrentScan();
 
-            publishFrames();
+                scan2MapOptimization();
+
+                saveKeyFramesAndFactor();
+
+                correctPoses();
+
+                publishOdometry();
+
+                publishFrames();
+            }
         }
     }
 
@@ -477,7 +597,8 @@ public:
             publishGlobalMap();
         }
 
-        if (savePCD == false)
+        // In localization mode the map must not be overwritten on shutdown.
+        if (savePCD == false || localizationMode)
             return;
 
         // save pose graph (runs when programe is closing)
@@ -537,6 +658,17 @@ public:
         if (cloudKeyPoses3D->points.empty() == true)
             return;
 
+        // In localization mode there are no per-keyframe feature clouds to rebuild the global
+        // map from; just publish the fixed map that was loaded from disk.
+        if (localizationMode)
+        {
+            pcl::PointCloud<PointType>::Ptr loadedMap(new pcl::PointCloud<PointType>());
+            *loadedMap += *laserCloudCornerFromMapDS;
+            *loadedMap += *laserCloudSurfFromMapDS;
+            publishCloud(&pubLaserCloudSurround, loadedMap, timeLaserInfoStamp, odometryFrame);
+            return;
+        }
+
         pcl::KdTreeFLANN<PointType>::Ptr kdtreeGlobalMap(new pcl::KdTreeFLANN<PointType>());;
         pcl::PointCloud<PointType>::Ptr globalMapKeyPoses(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr globalMapKeyPosesDS(new pcl::PointCloud<PointType>());
@@ -580,6 +712,10 @@ public:
     void loopClosureThread()
     {
         if (loopClosureEnableFlag == false)
+            return;
+
+        // No loop closure in localization mode: the map is fixed and not optimized.
+        if (localizationMode)
             return;
 
         ros::Rate rate(loopClosureFrequency);
@@ -1061,6 +1197,65 @@ public:
         }
     }
 
+    void updateInitialGuessLocalization()
+    {
+        // Same idea as updateInitialGuess(), but for localization mode: the pose is seeded
+        // from a known initial pose (parameter or RViz) instead of the map origin, and the
+        // incremental trackers are member variables so the pose can be reset at runtime.
+
+        // save current transformation before any processing
+        incrementalOdometryAffineFront = trans2Affine3f(transformTobeMapped);
+
+        // (re)initialization: on the very first frame or after a runtime pose reset,
+        // just anchor on the current (seeded) pose and skip the incremental update.
+        if (!locPoseInitialized || locResetRequested)
+        {
+            locPoseInitialized = true;
+            locResetRequested = false;
+            locLastImuPreTransAvailable = false;
+            locLastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
+            return;
+        }
+
+        // use imu pre-integration estimation for pose guess
+        if (cloudInfo.odomAvailable == true)
+        {
+            Eigen::Affine3f transBack = pcl::getTransformation(cloudInfo.initialGuessX,    cloudInfo.initialGuessY,     cloudInfo.initialGuessZ, 
+                                                               cloudInfo.initialGuessRoll, cloudInfo.initialGuessPitch, cloudInfo.initialGuessYaw);
+            if (locLastImuPreTransAvailable == false)
+            {
+                locLastImuPreTransformation = transBack;
+                locLastImuPreTransAvailable = true;
+            } else {
+                Eigen::Affine3f transIncre = locLastImuPreTransformation.inverse() * transBack;
+                Eigen::Affine3f transTobe = trans2Affine3f(transformTobeMapped);
+                Eigen::Affine3f transFinal = transTobe * transIncre;
+                pcl::getTranslationAndEulerAngles(transFinal, transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5], 
+                                                              transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
+
+                locLastImuPreTransformation = transBack;
+
+                locLastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
+                return;
+            }
+        }
+
+        // use imu incremental estimation for pose guess (only rotation)
+        if (cloudInfo.imuAvailable == true)
+        {
+            Eigen::Affine3f transBack = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
+            Eigen::Affine3f transIncre = locLastImuTransformation.inverse() * transBack;
+
+            Eigen::Affine3f transTobe = trans2Affine3f(transformTobeMapped);
+            Eigen::Affine3f transFinal = transTobe * transIncre;
+            pcl::getTranslationAndEulerAngles(transFinal, transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5], 
+                                                          transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
+
+            locLastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
+            return;
+        }
+    }
+
     void extractForLoopClosure()
     {
         pcl::PointCloud<PointType>::Ptr cloudToExtract(new pcl::PointCloud<PointType>());
@@ -1505,8 +1700,13 @@ public:
 
         if (laserCloudCornerLastDSNum > edgeFeatureMinValidNum && laserCloudSurfLastDSNum > surfFeatureMinValidNum)
         {
-            kdtreeCornerFromMap->setInputCloud(laserCloudCornerFromMapDS);
-            kdtreeSurfFromMap->setInputCloud(laserCloudSurfFromMapDS);
+            // In localization mode the map is fixed and its kdtrees were already built once
+            // in loadMap(), so we avoid rebuilding them (potentially large) on every scan.
+            if (!localizationMode)
+            {
+                kdtreeCornerFromMap->setInputCloud(laserCloudCornerFromMapDS);
+                kdtreeSurfFromMap->setInputCloud(laserCloudSurfFromMapDS);
+            }
 
             for (int iterCount = 0; iterCount < 30; iterCount++)
             {

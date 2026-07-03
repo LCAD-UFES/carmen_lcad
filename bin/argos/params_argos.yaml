@@ -23,6 +23,18 @@ lio_sam:
   savePCDDirectory: "/dados/sc_lio_sam_output/map_log_argos_20262506_ic2/"  # use global path, and end with "/" 
     # warning: if you have already data in the above savePCDDirectory, it will all remove and remake them. Thus, backup is recommended if pre-made data exist. 
 
+  # Localization mode: reuse an existing map (from savePCDDirectory) only to localize.
+  # When true, the map directory is NOT erased/overwritten and no new files are written.
+  localizationMode: true
+  # Initial pose of the robot inside the map (map frame). Used when localizationMode is true.
+  # It can also be overridden at runtime with RViz "2D Pose Estimate" (/initialpose).
+  initialPoseX: 0.0
+  initialPoseY: 0.0
+  initialPoseZ: 0.0
+  initialPoseRoll: 0.0
+  initialPosePitch: 0.0
+  initialPoseYaw: 0.0
+
   # Sensor Settings
   sensor: velodyne                            # lidar sensor type, either 'velodyne' or 'ouster'
   N_SCAN: 32                               # number of lidar channel (i.e., 16, 32, 64, 128)
