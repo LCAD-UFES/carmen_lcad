@@ -20,7 +20,7 @@ lio_sam:
   
   # Export settings
   savePCD: true                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
-  savePCDDirectory: "/dados/sc_lio_sam_output/map_log_argos_20262506_ic2"  # use global path, and end with "/" 
+  savePCDDirectory: "/dados/sc_lio_sam_output/map_log_argos_20262506_ic2/"  # use global path, and end with "/" 
     # warning: if you have already data in the above savePCDDirectory, it will all remove and remake them. Thus, backup is recommended if pre-made data exist. 
 
   # Sensor Settings
