@@ -1,0 +1,18 @@
+ltslam:
+
+  sessions_dir: "/dados/sc_lio_sam_output/" # end with / 
+
+  central_sess_name: "section1" # should be same as the directory name of that session
+  query_sess_name: "section3" # should be same as the directory name of that session
+  
+  save_directory: "/dados/sc_lio_sam_output/mapa/" # end with "/"
+
+  is_display_debug_msgs: true
+
+  loopFitnessScoreThreshold: 0.7
+
+  kNumSCLoopsUpperBound: 1000 # if you use an enough number, use all the detected loops 
+  kNumRSLoopsUpperBound: 0 # if you use an enough number, use all the detected loops 
+
+  numberOfCores: 16 # currently hard-coded in the utility.cpp
+

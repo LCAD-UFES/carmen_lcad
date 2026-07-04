@@ -2,6 +2,10 @@
 
 #include "lio_sam/cloud_info.h"
 
+#include <atomic>
+#include <std_msgs/Empty.h>
+#include <std_msgs/Header.h>
+
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/slam/dataset.h>
@@ -100,6 +104,7 @@ public:
     ros::Publisher pubLaserCloudSurround;
     ros::Publisher pubLaserOdometryGlobal;
     ros::Publisher pubLaserOdometryIncremental;
+    ros::Publisher pubLocReset;
     ros::Publisher pubKeyPoses;
     ros::Publisher pubPath;
 
@@ -108,7 +113,7 @@ public:
     ros::Publisher pubRecentKeyFrames;
     ros::Publisher pubRecentKeyFrame;
     ros::Publisher pubCloudRegisteredRaw;
-    ros::Publisher pubLoopConstraintEdge;
+    ros::Publisher pubLoopConstraintEdge; 
 
     ros::Subscriber subCloud;
     ros::Subscriber subGPS;
@@ -121,6 +126,12 @@ public:
     Eigen::Affine3f locLastImuPreTransformation;
     bool locLastImuPreTransAvailable = false;
     Eigen::Affine3f locLastImuTransformation;
+    double timeLastLocReset = -1.0;
+
+    // NOVO: pra poder reancorar o odom incremental quando a pose é resetada manualmente
+    bool lastIncreOdomPubFlag = false;
+    nav_msgs::Odometry laserOdomIncremental;
+    Eigen::Affine3f increOdomAffine;
 
     std::deque<nav_msgs::Odometry> gpsQueue;
     lio_sam::cloud_info cloudInfo;
@@ -136,7 +147,14 @@ public:
 
     pcl::PointCloud<PointType>::Ptr laserCloudRaw; // giseop
     pcl::PointCloud<PointType>::Ptr laserCloudRawDS; // giseop
+    pcl::PointCloud<PointType>::Ptr locIcpTargetMap;
     double laserCloudRawTime;
+
+    // NOVO: snap de localização assíncrono, pra não travar o ros::spin() com o ICP
+    std::mutex mtxLocSnap;
+    std::atomic<bool> locSnapPending{false};
+    float locSnapGuess[6];
+    pcl::PointCloud<PointType>::Ptr locSnapScan;
 
     pcl::PointCloud<PointType>::Ptr laserCloudCornerLast; // corner feature set from odoOptimization
     pcl::PointCloud<PointType>::Ptr laserCloudSurfLast; // surf feature set from odoOptimization
@@ -230,12 +248,16 @@ public:
         pubLaserCloudSurround       = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/mapping/map_global", 1);
         pubLaserOdometryGlobal      = nh.advertise<nav_msgs::Odometry> ("lio_sam/mapping/odometry", 1);
         pubLaserOdometryIncremental = nh.advertise<nav_msgs::Odometry> ("lio_sam/mapping/odometry_incremental", 1);
+        pubLocReset                 = nh.advertise<std_msgs::Header>("lio_sam/mapping/loc_reset", 1);
         pubPath                     = nh.advertise<nav_msgs::Path>("lio_sam/mapping/path", 1);
 
-        subCloud = nh.subscribe<lio_sam::cloud_info>("lio_sam/feature/cloud_info", 1, &mapOptimization::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
-        subGPS   = nh.subscribe<nav_msgs::Odometry> (gpsTopic, 200, &mapOptimization::gpsHandler, this, ros::TransportHints().tcpNoDelay());
-        subLoop  = nh.subscribe<std_msgs::Float64MultiArray>("lio_loop/loop_closure_detection", 1, &mapOptimization::loopInfoHandler, this, ros::TransportHints().tcpNoDelay());
-        subInitialPose = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 8, &mapOptimization::initialPoseHandler, this, ros::TransportHints().tcpNoDelay());
+        subCloud        = nh.subscribe<lio_sam::cloud_info>("lio_sam/feature/cloud_info", 1, &mapOptimization::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
+        subGPS          = nh.subscribe<nav_msgs::Odometry> (gpsTopic, 200, &mapOptimization::gpsHandler, this, ros::TransportHints().tcpNoDelay());
+        subLoop         = nh.subscribe<std_msgs::Float64MultiArray>("lio_loop/loop_closure_detection", 1, &mapOptimization::loopInfoHandler, this, ros::TransportHints().tcpNoDelay());
+        subInitialPose  = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 8, &mapOptimization::initialPoseHandler, this, ros::TransportHints().tcpNoDelay());
+
+        subInitialPose  = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 8, &mapOptimization::initialPoseHandler, this, ros::TransportHints().tcpNoDelay());
+        pubLocReset     = nh.advertise<std_msgs::Header>("lio_sam/mapping/loc_reset", 1);   // NOVO: agora carrega o timestamp do frame corrigido (era Empty)
 
         pubHistoryKeyFrames   = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/mapping/icp_loop_closure_history_cloud", 1);
         pubIcpKeyFrames       = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/mapping/icp_loop_closure_corrected_cloud", 1);
@@ -301,6 +323,8 @@ public:
 
         laserCloudRaw.reset(new pcl::PointCloud<PointType>()); // giseop
         laserCloudRawDS.reset(new pcl::PointCloud<PointType>()); // giseop
+        locIcpTargetMap.reset(new pcl::PointCloud<PointType>()); // NOVO
+        locSnapScan.reset(new pcl::PointCloud<PointType>()); // NOVO
 
         laserCloudCornerLast.reset(new pcl::PointCloud<PointType>()); // corner feature set from odoOptimization
         laserCloudSurfLast.reset(new pcl::PointCloud<PointType>()); // surf feature set from odoOptimization
@@ -380,6 +404,31 @@ public:
         kdtreeCornerFromMap->setInputCloud(laserCloudCornerFromMapDS);
         kdtreeSurfFromMap->setInputCloud(laserCloudSurfFromMapDS);
 
+        // NOVO: mapa denso pra ICP de re-localização. Se cloudGlobal.pcd não existir,
+        // cai pro corner+surf mesmo (mais esparso, mas funciona).
+        const std::string globalCloudFile = savePCDDirectory + "cloudGlobal.pcd";
+        if (pcl::io::loadPCDFile<PointType>(globalCloudFile, *locIcpTargetMap) == -1)
+        {
+            ROS_WARN_STREAM("Localization mode: cloudGlobal.pcd nao encontrado (" << globalCloudFile
+                            << "), usando corner+surf como alvo do ICP de encaixe.");
+            *locIcpTargetMap += *laserCloudCornerFromMapDS;
+            *locIcpTargetMap += *laserCloudSurfFromMapDS;
+        }
+
+        // NOVO: downsample defensivo. Enquanto o cloudGlobal.pcd puder vir gigante
+        // (bug de salvar raw em vez de downsampled no SC-LIO-SAM), isso evita que o
+        // ICP de snap fique lento por causa do tamanho do alvo.
+        {
+            pcl::VoxelGrid<PointType> dsGlobal;
+            dsGlobal.setLeafSize(0.3, 0.3, 0.3); // ajusta pro teu ambiente se precisar
+            pcl::PointCloud<PointType>::Ptr locIcpTargetMapDS(new pcl::PointCloud<PointType>());
+            dsGlobal.setInputCloud(locIcpTargetMap);
+            dsGlobal.filter(*locIcpTargetMapDS);
+            cout << "Localization mode: locIcpTargetMap downsampled de " << locIcpTargetMap->size()
+                 << " para " << locIcpTargetMapDS->size() << " pontos." << endl;
+            locIcpTargetMap = locIcpTargetMapDS;
+        }
+
         // Seed the initial pose (map frame) from parameters.
         transformTobeMapped[0] = initialPoseRoll;
         transformTobeMapped[1] = initialPosePitch;
@@ -398,24 +447,164 @@ public:
 
     void initialPoseHandler(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& poseMsg)
     {
-        // Runtime pose reset (e.g. RViz "2D Pose Estimate"). Only relevant in localization mode.
+        // NOVO: essa função agora só calcula o chute inicial e guarda o pedido.
+        // O ICP pesado (que antes travava o ros::spin() inteiro) foi movido pra
+        // locSnapWorker(), que roda numa thread separada. Isso evita o "trava e
+        // teleporta": o laserCloudInfoHandler continua processando scans e
+        // publicando odometria normalmente enquanto o snap é calculado.
         if (!localizationMode)
             return;
+
+        if (locSnapPending.load())
+        {
+            ROS_WARN("Localization mode: ja tem um snap em andamento, ignorando clique novo.");
+            return;
+        }
 
         double roll, pitch, yaw;
         tf::Quaternion orientation;
         tf::quaternionMsgToTF(poseMsg->pose.pose.orientation, orientation);
         tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
 
-        std::lock_guard<std::mutex> lock(mtx);
-        // 2D Pose Estimate only provides x, y and yaw; keep the current z/roll/pitch.
-        transformTobeMapped[2] = yaw;
-        transformTobeMapped[3] = poseMsg->pose.pose.position.x;
-        transformTobeMapped[4] = poseMsg->pose.pose.position.y;
-        locResetRequested = true;
+        // Chute bruto do RViz (só x, y, yaw); mantém z/roll/pitch atuais
+        float guess[6];
+        guess[2] = yaw;
+        guess[3] = poseMsg->pose.pose.position.x;
+        guess[4] = poseMsg->pose.pose.position.y;
 
-        ROS_INFO_STREAM("Localization mode: initial pose reset to x=" << transformTobeMapped[3]
-                        << " y=" << transformTobeMapped[4] << " yaw=" << yaw);
+        // Acha a key pose mais próxima (só x,y) no mapa carregado, pra puxar
+        // um z/roll/pitch que já são reais, em vez de reaproveitar valor velho
+        float bestDist = std::numeric_limits<float>::max();
+        int bestIdx = -1;
+        for (int i = 0; i < (int)cloudKeyPoses3D->size(); ++i)
+        {
+            float dx = cloudKeyPoses3D->points[i].x - guess[3];
+            float dy = cloudKeyPoses3D->points[i].y - guess[4];
+            float d = dx * dx + dy * dy;
+            if (d < bestDist) { bestDist = d; bestIdx = i; }
+        }
+
+        if (bestIdx >= 0)
+        {
+            guess[0] = cloudKeyPoses6D->points[bestIdx].roll;
+            guess[1] = cloudKeyPoses6D->points[bestIdx].pitch;
+            guess[5] = cloudKeyPoses6D->points[bestIdx].z;
+        }
+        else
+        {
+            // fallback se por algum motivo o mapa não tem poses carregadas
+            guess[0] = transformTobeMapped[0];
+            guess[1] = transformTobeMapped[1];
+            guess[5] = transformTobeMapped[5];
+        }
+
+        // guarda o chute + uma cópia do scan atual, e devolve o controle pro
+        // ros::spin() na hora — nada de ICP aqui dentro
+        {
+            std::lock_guard<std::mutex> lockSnap(mtxLocSnap);
+            std::copy(std::begin(guess), std::end(guess), locSnapGuess);
+            locSnapScan->clear();
+            std::lock_guard<std::mutex> lockMain(mtx);
+            *locSnapScan += *laserCloudRawDS;
+        }
+        locSnapPending = true;
+        ROS_INFO("Localization mode: pedido de snap recebido, processando em background...");
+    }
+
+    void locSnapWorker()
+    {
+        // NOVO: roda numa thread própria (ver main()). Faz o ICP pesado de
+        // encaixe contra o locIcpTargetMap sem travar o resto do pipeline.
+        ros::Rate rate(5); // só checa a flag, não fica em busy-loop
+        while (ros::ok())
+        {
+            rate.sleep();
+            if (!locSnapPending.load())
+                continue;
+
+            float guess[6];
+            pcl::PointCloud<PointType>::Ptr scanForIcp(new pcl::PointCloud<PointType>());
+            {
+                std::lock_guard<std::mutex> lockSnap(mtxLocSnap);
+                std::copy(std::begin(locSnapGuess), std::end(locSnapGuess), guess);
+                *scanForIcp += *locSnapScan;
+            }
+
+            if (scanForIcp->points.empty() || locIcpTargetMap->points.empty())
+            {
+                ROS_WARN("Localization mode: sem scan ou mapa carregado, usando o chute bruto.");
+                std::lock_guard<std::mutex> lock(mtx);
+                transformTobeMapped[2] = guess[2];
+                transformTobeMapped[3] = guess[3];
+                transformTobeMapped[4] = guess[4];
+                locResetRequested = true;
+                lastIncreOdomPubFlag = false;
+                // NOVO: carrega o timestamp do frame atual. O imuPreintegration usa
+                // isso pra descartar mensagens de odometria atrasadas (publicadas
+                // pela thread principal ENQUANTO o ICP do snap ainda rodava) que
+                // cheguem depois do loc_reset com a pose antiga, de antes da correção.
+                std_msgs::Header resetMsg;
+                resetMsg.stamp = timeLaserInfoStamp;
+                pubLocReset.publish(resetMsg);
+                locSnapPending = false;
+                continue;
+            }
+
+            // Leva o scan atual pra perto de onde o usuário clicou, antes do ICP
+            PointTypePose guessPose = trans2PointTypePose(guess);
+            Eigen::Affine3f guessAffine = pclPointToAffine3f(guessPose);
+            pcl::PointCloud<PointType>::Ptr scanInMap(new pcl::PointCloud<PointType>());
+            pcl::transformPointCloud(*scanForIcp, *scanInMap, guessAffine.matrix());
+
+            pcl::IterativeClosestPoint<PointType, PointType> icp;
+            icp.setMaxCorrespondenceDistance(20.0); // folga generosa pro clique impreciso
+            icp.setMaximumIterations(100);
+            icp.setTransformationEpsilon(1e-6);
+            icp.setEuclideanFitnessEpsilon(1e-6);
+            icp.setRANSACIterations(0);
+            icp.setInputSource(scanInMap);
+            icp.setInputTarget(locIcpTargetMap);
+
+            pcl::PointCloud<PointType>::Ptr aligned(new pcl::PointCloud<PointType>());
+            icp.align(*aligned); // <- agora roda fora da thread do ROS, não trava mais o mapping
+
+            ROS_INFO_STREAM("Localization mode: ICP snap fitness = " << icp.getFitnessScore());
+
+            if (!icp.hasConverged() || icp.getFitnessScore() > historyKeyframeFitnessScore)
+            {
+                ROS_WARN_STREAM("Localization mode: ICP nao convergiu bem (score " << icp.getFitnessScore()
+                                << " > " << historyKeyframeFitnessScore << "). Clica mais perto da posicao real.");
+                locSnapPending = false;
+                continue; // não mexe em transformTobeMapped — mantém o robô onde estava
+            }
+
+            // Corrige o chute com a transformação encontrada pelo ICP
+            Eigen::Affine3f refinedAffine = Eigen::Affine3f(icp.getFinalTransformation()) * guessAffine;
+            float refined[6];
+            pcl::getTranslationAndEulerAngles(refinedAffine, refined[3], refined[4], refined[5], refined[0], refined[1], refined[2]);
+
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                for (int i = 0; i < 6; ++i)
+                    transformTobeMapped[i] = refined[i];
+                locResetRequested = true;
+                lastIncreOdomPubFlag = false;              // reancora o odom incremental na pose nova
+                
+                timeLastLocReset = timeLaserInfoCur;       // NOVO: Marca o instante do teleporte!
+
+                // NOVO: timestamp do frame atual, pro imuPreintegration descartar
+                std_msgs::Header resetMsg;
+                resetMsg.stamp = timeLaserInfoStamp;
+                pubLocReset.publish(resetMsg);    // avisa o IMU preintegration pra resetar o estado dele
+            }
+
+            ROS_INFO_STREAM("Localization mode: pose encaixada em x=" << transformTobeMapped[3]
+                            << " y=" << transformTobeMapped[4] << " yaw=" << transformTobeMapped[2]);
+
+            ros::Duration(1.0).sleep();
+
+            locSnapPending = false;
+        }
     }
 
     void writeVertex(const int _node_idx, const gtsam::Pose3& _initPose)
@@ -621,8 +810,8 @@ public:
         cout << "****************************************************" << endl;
         cout << "Saving map to pcd files ..." << endl;
         // save key frame transformations
-        pcl::io::savePCDFileASCII(savePCDDirectory + "trajectory.pcd", *cloudKeyPoses3D);
-        pcl::io::savePCDFileASCII(savePCDDirectory + "transformations.pcd", *cloudKeyPoses6D);
+        pcl::io::savePCDFileBinary(savePCDDirectory + "trajectory.pcd", *cloudKeyPoses3D);
+        pcl::io::savePCDFileBinary(savePCDDirectory + "transformations.pcd", *cloudKeyPoses6D);
         // extract global point cloud map        
         pcl::PointCloud<PointType>::Ptr globalCornerCloud(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr globalCornerCloudDS(new pcl::PointCloud<PointType>());
@@ -637,15 +826,15 @@ public:
         // down-sample and save corner cloud
         downSizeFilterCorner.setInputCloud(globalCornerCloud);
         downSizeFilterCorner.filter(*globalCornerCloudDS);
-        pcl::io::savePCDFileASCII(savePCDDirectory + "cloudCorner.pcd", *globalCornerCloudDS);
+        pcl::io::savePCDFileBinary(savePCDDirectory + "cloudCorner.pcd", *globalCornerCloudDS);
         // down-sample and save surf cloud
         downSizeFilterSurf.setInputCloud(globalSurfCloud);
         downSizeFilterSurf.filter(*globalSurfCloudDS);
-        pcl::io::savePCDFileASCII(savePCDDirectory + "cloudSurf.pcd", *globalSurfCloudDS);
+        pcl::io::savePCDFileBinary(savePCDDirectory + "cloudSurf.pcd", *globalSurfCloudDS);
         // down-sample and save global point cloud map
         *globalMapCloud += *globalCornerCloud;
         *globalMapCloud += *globalSurfCloud;
-        pcl::io::savePCDFileASCII(savePCDDirectory + "cloudGlobal.pcd", *globalMapCloud);
+        pcl::io::savePCDFileBinary(savePCDDirectory + "cloudGlobal.pcd", *globalMapCloud);
         cout << "****************************************************" << endl;
         cout << "Saving map to pcd files completed" << endl;
     }
@@ -1215,6 +1404,13 @@ public:
             locLastImuPreTransAvailable = false;
             locLastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
             return;
+        }
+
+        // NOVO: Escudo Anti-Teleporte Fantasma!
+        // Ignora os chutes do imageProjection (que ainda tem buffer velho) por 1.5s apos o clique.
+        if (timeLastLocReset > 0 && (timeLaserInfoCur - timeLastLocReset) < 1.5)
+        {
+            return; 
         }
 
         // use imu pre-integration estimation for pose guess
@@ -2111,10 +2307,10 @@ public:
         br.sendTransform(trans_odom_to_lidar);
 
         // Publish odometry for ROS (incremental)
-        static bool lastIncreOdomPubFlag = false;
-        static nav_msgs::Odometry laserOdomIncremental; // incremental odometry msg
-        static Eigen::Affine3f increOdomAffine; // incremental odometry in affine
-        if (lastIncreOdomPubFlag == false)
+        //bool lastIncreOdomPubFlag = false;
+        //nav_msgs::Odometry laserOdomIncremental; // incremental odometry msg
+        //Eigen::Affine3f increOdomAffine; // incremental odometry in affine
+        if (lastIncreOdomPubFlag == false)   // sem "static bool" aqui
         {
             lastIncreOdomPubFlag = true;
             laserOdomIncremental = laserOdometryROS;
@@ -2208,11 +2404,13 @@ int main(int argc, char** argv)
     
     std::thread loopthread(&mapOptimization::loopClosureThread, &MO);
     std::thread visualizeMapThread(&mapOptimization::visualizeGlobalMapThread, &MO);
+    std::thread locSnapThread(&mapOptimization::locSnapWorker, &MO); // NOVO
 
     ros::spin();
 
     loopthread.join();
     visualizeMapThread.join();
+    locSnapThread.join(); // NOVO
 
     return 0;
 }

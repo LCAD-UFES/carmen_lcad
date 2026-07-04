@@ -1,5 +1,8 @@
 #include "utility.h"
 
+#include <std_msgs/Empty.h>
+#include <std_msgs/Header.h>
+
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/slam/PriorFactor.h>
@@ -27,6 +30,7 @@ public:
 
     ros::Subscriber subImuOdometry;
     ros::Subscriber subLaserOdometry;
+    ros::Subscriber subLocReset;
 
     ros::Publisher pubImuOdometry;
     ros::Publisher pubImuPath;
@@ -58,9 +62,23 @@ public:
 
         subLaserOdometry = nh.subscribe<nav_msgs::Odometry>("lio_sam/mapping/odometry", 5, &TransformFusion::lidarOdometryHandler, this, ros::TransportHints().tcpNoDelay());
         subImuOdometry   = nh.subscribe<nav_msgs::Odometry>(odomTopic+"_incremental",   2000, &TransformFusion::imuOdometryHandler,   this, ros::TransportHints().tcpNoDelay());
+        // NOVO: essa classe funde lidarOdomAffine (pose global do mapping) com
+        // deltas tirados da própria fila imuOdomQueue. Sem isso, num loc_reset
+        // a fila fica com entradas de ANTES e DEPOIS do salto de posição
+        // misturadas, e o delta front/back vira lixo -> teleporte visual na
+        // odometria publicada, mesmo com o snap/ICP correto.
+        subLocReset = nh.subscribe<std_msgs::Header>("lio_sam/mapping/loc_reset", 1, &TransformFusion::locResetHandler, this, ros::TransportHints().tcpNoDelay());
 
         pubImuOdometry   = nh.advertise<nav_msgs::Odometry>(odomTopic, 2000);
         pubImuPath       = nh.advertise<nav_msgs::Path>    ("lio_sam/imu/path", 1);
+    }
+
+    void locResetHandler(const std_msgs::Header::ConstPtr& msg)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ROS_WARN("TransformFusion: pose resetada manualmente, limpando fila de odometria IMU pra evitar teleporte.");
+        imuOdomQueue.clear(); // Aqui é só imuOdomQueue
+        lidarOdomTime = -1;   // espera a próxima odometry antes de fundir de novo
     }
 
     Eigen::Affine3f odom2affine(nav_msgs::Odometry odom)
@@ -161,6 +179,7 @@ public:
 
     ros::Subscriber subImu;
     ros::Subscriber subOdometry;
+    ros::Subscriber subLocReset;
     ros::Publisher pubImuOdometry;
 
     bool systemInitialized = false;
@@ -190,6 +209,7 @@ public:
     bool doneFirstOpt = false;
     double lastImuT_imu = -1;
     double lastImuT_opt = -1;
+    double lastLocResetTime = -1.0;
 
     gtsam::ISAM2 optimizer;
     gtsam::NonlinearFactorGraph graphFactors;
@@ -199,6 +219,24 @@ public:
 
     int key = 1;
 
+    // Pós-reset manual (loc_reset) ou pós-failureDetection: usa noise mais
+    // frouxo no pose_factor por alguns keyframes. Dá tempo do scan2MapOptimization
+    // convergir direito contra o mapa carregado antes de forçar o filtro a
+    // "explicar" erro residual do ICP como velocidade. Sem isso: erro de poucos
+    // cm com dt curto pós-reset -> velocidade absurda -> failureDetection (30 m/s)
+    // -> reseta tudo de novo -> loop de warnings a cada ~0.5s.
+    int resetGraceKeyframesLeft = 0;
+    static const int RESET_GRACE_KEYFRAMES = 5;
+
+    // NOVO: distingue "cold start" real (nó acabou de subir, não tem estimativa
+    // nenhuma -> zera vel/bias, é seguro) de um loc_reset manual (o robô NÃO
+    // parou nem mudou de bias fisicamente, só a ESTIMATIVA de posição estava
+    // errada). Zerar vel_/bias_ num loc_reset joga fora uma estimativa boa e
+    // ainda cria um degrau artificial de velocidade que o otimizador tenta
+    // reconciliar contra a pose corrigida -> é isso que gera o "voo"/teleporte
+    // em loop, independente de quão frouxo o pose_factor esteja.
+    bool preserveStateOnNextInit = false;
+
     gtsam::Pose3 imu2Lidar = gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0), gtsam::Point3(-extTrans.x(), -extTrans.y(), -extTrans.z()));
     gtsam::Pose3 lidar2Imu = gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0), gtsam::Point3(extTrans.x(), extTrans.y(), extTrans.z()));
 
@@ -206,6 +244,7 @@ public:
     {
         subImu      = nh.subscribe<sensor_msgs::Imu>  (imuTopic,                   2000, &IMUPreintegration::imuHandler,      this, ros::TransportHints().tcpNoDelay());
         subOdometry = nh.subscribe<nav_msgs::Odometry>("lio_sam/mapping/odometry_incremental", 5,    &IMUPreintegration::odometryHandler, this, ros::TransportHints().tcpNoDelay());
+        subLocReset = nh.subscribe<std_msgs::Header>("lio_sam/mapping/loc_reset", 1, &IMUPreintegration::locResetHandler, this, ros::TransportHints().tcpNoDelay());
 
         pubImuOdometry = nh.advertise<nav_msgs::Odometry> (odomTopic+"_incremental", 2000);
 
@@ -247,11 +286,38 @@ public:
         systemInitialized = false;
     }
 
+    void locResetHandler(const std_msgs::Header::ConstPtr& msg)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ROS_WARN("IMU Preintegration: Iniciando reset, mantendo fila IMU para integrar a transicao...");
+        
+        // Salva o marco temporal que veio da thread do ICP
+        lastLocResetTime = msg->stamp.toSec(); 
+
+        // AS DUAS LINHAS ABAIXO FORAM REMOVIDAS:
+        // imuQueOpt.clear();
+        // imuQueImu.clear();
+        // O GTSAM precisa das leituras que chegaram DURANTE o cálculo do ICP para 
+        // saber como o robô se moveu do frame do clique até o tempo atual.
+
+        resetParams();   
+        
+        // ZERAR A VELOCIDADE para não sair voando
+        preserveStateOnNextInit = false;    
+        resetGraceKeyframesLeft = RESET_GRACE_KEYFRAMES;   
+    }
+
     void odometryHandler(const nav_msgs::Odometry::ConstPtr& odomMsg)
     {
         std::lock_guard<std::mutex> lock(mtx);
 
+        if (odomMsg->header.stamp.toSec() < lastLocResetTime)
+        {
+            return; 
+        }
+
         double currentCorrectionTime = ROS_TIME(odomMsg);
+
 
         // make sure we have imu data to integrate
         if (imuQueOpt.empty())
@@ -288,12 +354,18 @@ public:
             prevPose_ = lidarPose.compose(lidar2Imu);
             gtsam::PriorFactor<gtsam::Pose3> priorPose(X(0), prevPose_, priorPoseNoise);
             graphFactors.add(priorPose);
-            // initial velocity
-            prevVel_ = gtsam::Vector3(0, 0, 0);
+            // initial velocity e bias: só zera se for cold start de verdade.
+            // Num loc_reset manual, prevVel_/prevBias_ ainda têm os últimos
+            // valores estimados antes do reset e são reaproveitados (só a
+            // POSE estava errada, não a velocidade nem o bias do IMU).
+            if (!preserveStateOnNextInit)
+            {
+                prevVel_  = gtsam::Vector3(0, 0, 0);
+                prevBias_ = gtsam::imuBias::ConstantBias();
+            }
+            preserveStateOnNextInit = false;
             gtsam::PriorFactor<gtsam::Vector3> priorVel(V(0), prevVel_, priorVelNoise);
             graphFactors.add(priorVel);
-            // initial bias
-            prevBias_ = gtsam::imuBias::ConstantBias();
             gtsam::PriorFactor<gtsam::imuBias::ConstantBias> priorBias(B(0), prevBias_, priorBiasNoise);
             graphFactors.add(priorBias);
             // add values
@@ -310,6 +382,9 @@ public:
             
             key = 1;
             systemInitialized = true;
+            if (lastLocResetTime > 0) {
+                ROS_INFO("\033[1;32m----> CONECTADO: Localizacao estabelecida, retomando odometria IMU!\033[0m");
+            }
             return;
         }
 
@@ -373,8 +448,15 @@ public:
                          gtsam::noiseModel::Diagonal::Sigmas(sqrt(imuIntegratorOpt_->deltaTij()) * noiseModelBetweenBias)));
         // add pose factor
         gtsam::Pose3 curPose = lidarPose.compose(lidar2Imu);
-        gtsam::PriorFactor<gtsam::Pose3> pose_factor(X(key), curPose, degenerate ? correctionNoise2 : correctionNoise);
+        // NOVO: durante o grace period pós-reset, trata a pose do lidar como
+        // "degenerate" mesmo que não seja — evita que o primeiro/segundo scan
+        // pós-snap (ainda convergindo contra o mapa) seja lido como salto real
+        // e vire velocidade estourada.
+        bool inResetGrace = (resetGraceKeyframesLeft > 0);
+        gtsam::PriorFactor<gtsam::Pose3> pose_factor(X(key), curPose, (degenerate || inResetGrace) ? correctionNoise2 : correctionNoise);
         graphFactors.add(pose_factor);
+        if (inResetGrace)
+            --resetGraceKeyframesLeft;
         // insert predicted values
         gtsam::NavState propState_ = imuIntegratorOpt_->predict(prevState_, prevBias_);
         graphValues.insert(X(key), propState_.pose());
@@ -397,6 +479,7 @@ public:
         if (failureDetection(prevVel_, prevBias_))
         {
             resetParams();
+            resetGraceKeyframesLeft = RESET_GRACE_KEYFRAMES;   // NOVO: evita reentrar no mesmo loop
             return;
         }
 

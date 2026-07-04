@@ -26,6 +26,8 @@
     <param name="lio_sam/initialPosePitch" value="$(arg initialPosePitch)"/>
     <param name="lio_sam/initialPoseYaw" value="$(arg initialPoseYaw)"/>
 
+    <param name="$(arg project)/savePCDDirectory" type="string" value="$(arg savePCDDirectory)" />
+
     <include file="$(find lio_sam)/launch/include/module_loam.launch" />
 
     <include file="$(find lio_sam)/launch/include/module_robot_state_publisher.launch" />
