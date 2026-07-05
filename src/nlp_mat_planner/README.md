@@ -9,11 +9,13 @@ Executar o NLP-MatPlan  sem argumentos irá estar com o cache_writing habilitado
 
 ======== Passos necessários para utilizar o nlp_matplan park truck & trailer:
 
+- Install CASADI:
+
 ```
 pip3 install casadi==3.5.5
 ```
 
-- Add the following lines to your bash profile
+- Add the following lines to your bash profile:
 
 ```
 #NLP-MatPlan 
@@ -21,11 +23,28 @@ export CASADI_DIR=$(/usr/bin/env python3 -c "import casadi; print(casadi.__path_
 export LD_LIBRARY_PATH=$CASADI_DIR:$LD_LIBRARY_PATH
 ```
 
-Configure o número de semi-trailers definindo o parâmetro do carmen.ini semi_trailer_initial_type
+- Go to ```$CARMEN_HOME/sharedlib/libtrailer_nlp/``` and ensure the lib compilation:
+
+```
+cd $CARMEN_HOME/sharedlib/libtrailer_nlp/
+
+make
+
+```
+
+For more information read:
+```
+CARMEN_HOME/sharedlib/libtrailer_nlp/README.md
+```
+
+- Configure o número de semi-trailers definindo o parâmetro do carmen.ini semi_trailer_initial_type
+
+
+
+
+
 
 ========================================================================
-
-
 
 
 ## Running the Test Case
@@ -36,12 +55,11 @@ Before running the test case, ensure you have completed the Setup section.
 
 1. Extract Geodata
 
-The configuration requires the map data to be unpacked. Navigate to the asset directory and extract the archive:
+The configuration requires the map data to be extracted. Navigate to the asset directory and extract the archive:
 
 ```
 cd $CARMEN_HOME/bin/axor3344-2_arcelor
-```
-```
+
 tar -xvzf geodata.tar.gz
 ```
 2. Start the Central Module
@@ -50,8 +68,7 @@ Open terminal, navigate to the binary directory, and launch the central communic
 
 ```
 cd $CARMEN_HOME/bin
-```
-```
+
 ./central
 ```
 3. Launch Process Control
@@ -60,11 +77,20 @@ Open a second terminal, navigate to the same binary directory, and run the proce
 
 ```
 cd $CARMEN_HOME/bin
-```
-```
+
 ./proccontrol axor3344-2_arcelor/process-navigate_axor3344_sensorbox-6.ini 
 
 ```
+
+4. Select the Task
+
+In the navigator_gui, under the navigation section, select the task: Park Truck and Semi-trailer.
+
+
+![alt text](navigator_gui_1.png)
+
+
+
 
 ## NHCM - Non-Holonomic Cost Matrix
 
