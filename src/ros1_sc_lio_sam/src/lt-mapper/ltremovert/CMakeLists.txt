@@ -84,6 +84,17 @@ add_executable( ${PROJECT_NAME}_removert src/removert_main.cpp
   src/Removerter.cpp
 )
 
+add_executable(${PROJECT_NAME}_reconstruct_feature_map src/reconstruct_feature_map.cpp)
+
+add_dependencies(${PROJECT_NAME}_reconstruct_feature_map ${catkin_EXPORTED_TARGETS})
+target_compile_options(${PROJECT_NAME}_reconstruct_feature_map PRIVATE ${OpenMP_CXX_FLAGS})
+target_link_libraries(${PROJECT_NAME}_reconstruct_feature_map
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${OpenMP_CXX_FLAGS}
+  stdc++fs
+)
+
 add_dependencies(${PROJECT_NAME}_removert ${catkin_EXPORTED_TARGETS})
 target_compile_options(${PROJECT_NAME}_removert PRIVATE ${OpenMP_CXX_FLAGS})
 target_link_libraries(${PROJECT_NAME}_removert 
