@@ -54,6 +54,8 @@
 extern "C" {
 #endif
 
+
+#include "global.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -171,6 +173,35 @@ typedef struct
 	double vertical_angle;
 	double length;
 }carmen_sphere_coord_t, *carmen_sphere_coord_p;
+
+
+#define MAX_NUM_TRAILERS 5
+
+
+typedef struct
+{
+	int u;
+	int v;
+	int u_ref;
+	int v_ref;
+	double cost;
+} edge_t;
+
+
+typedef enum {CREATE_ACTION, READ_ACTION, UPDATE_ACTION, DELETE_ACTION} crud_t;
+
+typedef struct
+{
+	carmen_vector_3D_t annotation_point;
+	double annotation_orientation;
+	char *annotation_description;
+	int annotation_type;
+	int annotation_code;
+	int annotation_id;
+	int size;
+	double *x_points;
+	double *y_points;
+} carmen_annotation_t;
 
 
 typedef struct {

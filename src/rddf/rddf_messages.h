@@ -216,7 +216,7 @@ extern "C"
 
 	#define CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME "carmen_rddf_dynamic_annotation_message"
 	#define CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_FMT "{{double,double,double},double,string,int,int,double,string}"
-
+/*
 
     typedef struct
     {
@@ -226,7 +226,8 @@ extern "C"
 		int annotation_type;
 		int annotation_code;
     } carmen_annotation_t;
-
+*/
+	
     typedef struct
 	{
     	int num_annotations;
@@ -234,6 +235,9 @@ extern "C"
 		double timestamp;
 		char *host;
 	} carmen_rddf_annotation_message;
+
+	//typedef enum {CREATE_ACTION, READ_ACTION, UPDATE_ACTION, DELETE_ACTION} crud_t;
+	
 
 	#define CARMEN_RDDF_ANNOTATION_MESSAGE_NAME "carmen_rddf_annotation_message"
 	#define CARMEN_RDDF_ANNOTATION_MESSAGE_FMT "{int, <{{double,double,double},double,string,int,int}:1>,double,string}"
@@ -249,7 +253,7 @@ extern "C"
 	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME "carmen_rddf_traffic_sign_message"
 	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_FMT "{int,double,double,string}"
 
-	typedef enum {CREATE_ACTION, READ_ACTION, UPDATE_ACTION, DELETE_ACTION} crud_t;
+	
 
 	typedef struct
 	{

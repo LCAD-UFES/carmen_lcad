@@ -27,16 +27,22 @@ SOURCES = global.c carmen_stdio.c geometry.c pswrap.c carmenserial.c global_test
 
 PUBLIC_INCLUDES = global.h carmen_stdio.h ipc_wrapper.h geometry.h pswrap.h \
 	  	  carmen.h carmenserial.h keyctrl.h multicentral.h movement.h \
-		  carmen_gps.h Gdc_Coord_3d.h Gdc_To_Utm_Converter.h Utm_Coord_3d.h Utm_To_Gdc_Converter.h carmen_gps_wrapper.h
+		  carmen_gps.h Gdc_Coord_3d.h Gdc_To_Utm_Converter.h Utm_Coord_3d.h Utm_To_Gdc_Converter.h carmen_gps_wrapper.h\
+		  global_planning_interface.h \
+		  global_planning_messages.h \
+		  global_planning.h 
 
 PUBLIC_LIBRARIES = libglobal.a libgeometry.a libpswrap.a libcarmenserial.a \
-		   libkeyctrl.a libmulticentral.a libmovement.a libcarmen_gps_wrapper.a
+		   libkeyctrl.a libmulticentral.a libmovement.a libcarmen_gps_wrapper.a\
+		   libglobal_planning_interface.a libglobal_planning.a
 
 PUBLIC_BINARIES = carmen-config 
 
 TARGETS = libglobal.a libgeometry.a libpswrap.a libcarmenserial.a global_test \
 	  libkeyctrl.a libmulticentral.a \
-	  test_multicentral libmovement.a test_movement  libcarmen_gps_wrapper.a test_serial parking_sensor_serial
+	  test_multicentral libmovement.a test_movement  libcarmen_gps_wrapper.a test_serial parking_sensor_serial\
+	  libglobal_planning_interface.a \
+	  libglobal_planning.a 
 
 CHECK_CONFIG = $(shell if [ -f carmen-config.c ]; then echo "1"; fi;)
 
@@ -71,7 +77,7 @@ TARGETS += libartwrap.a
 CFLAGS += -DHAVE_LIBART
 endif
 
-libglobal.a:		global.o ipc_wrapper.o carmen_stdio.o carmen_gps.o Gdc_To_Utm_Converter.o Utm_To_Gdc_Converter.o Utm_Coord_3d.o Gdc_Coord_3d.o
+libglobal.a:		global.o ipc_wrapper.o carmen_stdio.o carmen_gps.o Gdc_To_Utm_Converter.o Utm_To_Gdc_Converter.o Utm_Coord_3d.o Gdc_Coord_3d.o global_planning.o
 
 libglobal.so.1:		global.o ipc_wrapper.o carmen_stdio.o
 
@@ -112,4 +118,8 @@ parking_sensor_serial: parking_sensor_serial.o carmenserial.o
 
 libcarmen_gps_wrapper.a: carmen_gps_wrapper.o Utm_Coord_3d.o Utm_To_Gdc_Converter.o Gdc_To_Utm_Converter.o Gdc_Coord_3d.o  
 
+libglobal_planning_interface.a: global_planning_interface.o \
+	carmen_gps.o Gdc_Coord_3d.o Gdc_To_Utm_Converter.o Utm_Coord_3d.o Utm_To_Gdc_Converter.o carmen_gps_wrapper.o
+
+libglobal_planning.a: global_planning.o
 include ../Makefile.rules
