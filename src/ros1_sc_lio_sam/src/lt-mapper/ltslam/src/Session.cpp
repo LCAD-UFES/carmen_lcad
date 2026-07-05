@@ -101,6 +101,7 @@ void Session::loopFindNearKeyframesCentralCoord(
         if (keyNear < 0 || keyNear >= cloudSize )
             continue;
         *nearKeyframes += *transformPointCloud(cloudKeyFrames[keyNear], &cloudKeyPoses6D->points[keyNear]);
+        
     }
 
     if (nearKeyframes->empty())

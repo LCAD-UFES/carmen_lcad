@@ -43,6 +43,14 @@ public:
     std::vector<std::pair<int, int>> SCLoopIdxPairs_;
     std::vector<std::pair<int, int>> RSLoopIdxPairs_;
 
+    // giseop/miguel: yaw (rad) que o Scan Context já estimou pra cada par de SCLoopIdxPairs_
+    // (mesmo índice = mesmo par). Isso era calculado dentro do SCManager e JOGADO FORA -
+    // o ICP do doICPVirtualRelative rodava sempre com chute inicial identidade (yaw=0).
+    // Pra loops com trajetória em sentido contrário (yaw real ~180°), ICP ponto-a-ponto
+    // NÃO converge partindo de identidade -> ICP fitness falha -> loop nunca é aceito,
+    // mesmo quando o Scan Context já tinha achado o nó certo.
+    std::vector<float> SCLoopYawDiffs_;
+
     NonlinearFactorGraph gtSAMgraph;
     Values initialEstimate;
     Values optimizedEstimate;
@@ -51,6 +59,10 @@ public:
     Eigen::MatrixXd poseCovariance;
 
     const gtsam::Pose3 poseOrigin;
+
+    // chute inicial grosseiro do anchor da sessão "query" (não-base), montado a partir
+    // dos params ltslam/query_anchor_init_{x,y,z,yaw_deg}. Ver initTrajectoryByAnchoring().
+    gtsam::Pose3 querySessAnchorInitGuess_;
 
     noiseModel::Diagonal::shared_ptr priorNoise;
     noiseModel::Diagonal::shared_ptr odomNoise;
@@ -96,7 +108,8 @@ public:
     void updateSessionsPoses();
 
     std::optional<gtsam::Pose3> doICPVirtualRelative(Session& target_sess, Session& source_sess, 
-                        const int& loop_idx_target_session, const int& loop_idx_source_session);
+                        const int& loop_idx_target_session, const int& loop_idx_source_session,
+                        const float& _init_yaw_rad = 0.0f); // giseop/miguel: chute inicial de yaw vindo do Scan Context (era ignorado antes)
     std::optional<gtsam::Pose3> doICPGlobalRelative(Session& target_sess, Session& source_sess, 
                         const int& loop_idx_target_session, const int& loop_idx_source_session);
 

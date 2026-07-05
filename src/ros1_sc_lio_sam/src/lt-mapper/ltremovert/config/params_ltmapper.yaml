@@ -6,19 +6,20 @@ removert:
   # @ save option 
   saveMapPCD: true 
   saveCleanScansPCD: true
-  save_pcd_directory: "/dados/sc_lio_sam_output/mapa_end/" # replace to your path (please use an absolute path)
+  save_pcd_directory: "/dados/sc_lio_sam_output/mapa_final_limpo/" # replace to your path (please use an absolute path)
 
   # @ sequence info (replace to your paths) 
   #   please follow the KITTI odometry dataset's scan and pose formats (i.e., make them .bin and line-by-line corresponding se3 poses composed of 12 numbers)
-  # @ Dados originais (Scans) e Poses CORRIGIDAS (Alinhadas pelo ltslam)
-  central_sess_scan_dir: "/dados/sc_lio_sam_output/section1/Scans/"
-  central_sess_pose_path: "/dados/sc_lio_sam_output/mapa/section1_central_aft_intersession_loops.txt" 
+  # --- Sessao Central (A Base: map_lcad_honofre) ---
+  central_sess_scan_dir: "/dados/sc_lio_sam_output/map_lcad_honofre/Scans/"
+  central_sess_pose_path: "/dados/sc_lio_sam_output/mapa_alinhado/map_lcad_honofre_central_aft_intersession_loops.txt" 
 
-  query_sess_scan_dir: "/dados/sc_lio_sam_output/section3/Scans/"
-  query_sess_pose_path: "/dados/sc_lio_sam_output/mapa/section3_central_aft_intersession_loops.txt"
+  # --- Sessao Query (A que foi alinhada: map_honofre_lcad) ---
+  query_sess_scan_dir: "/dados/sc_lio_sam_output/map_honofre_lcad/Scans/"
+  query_sess_pose_path: "/dados/sc_lio_sam_output/mapa_alinhado/map_honofre_lcad_central_aft_intersession_loops.txt"
 
   #
-  sequence_vfov: 50 # including upper and lower fovs, 
+  sequence_vfov: 32 # including upper and lower fovs, 
                     # for example, KITTI's HDL64E is 2 + 24.9 ~ 27 deg. (so 25 + 25 = 50 is recommended because it is enough)
                     #            , MulRan's Ouster OS1-64 has +22.5 to -22.5 d8eg. (so 22.5 + 22.5 = 45 < 50 is also enough and able to cover the all vfov)
   sequence_hfov: 360 # generally for targetting scanning LiDAR but a lidar having restricted hfov also just can use the 360 (because no point regions are considered in the algorithm)
@@ -34,10 +35,10 @@ removert:
 
   # @ Sampling nodes 
   use_keyframe_gap: true 
-  keyframe_gap: 1 # if you use SC-LIO-SAM's poses, the nodes are already keyframe (i.e., spatially apart enough)
+  keyframe_gap: 2 # if you use SC-LIO-SAM's poses, the nodes are already keyframe (i.e., spatially apart enough)
 
   start_idx: 0 # change this // for 0103  
-  end_idx: 0 # change this // for 0103
+  end_idx: 10000000 # change this // for 0103
 
 
   # @ auto repeat
@@ -53,8 +54,8 @@ removert:
   #     - e.g., HDL 64E of KITTI dataset -> appx 25 deg / 64 ray ~ 0.4 deg per pixel -> the magnifier ratio = 1/0.4 = 2.5
   #     - e.g., Ouster OS1-64 of MulRan dataset -> appx 45 deg / 64 ray ~ 0.7 deg per pixel -> the magnifier ratio = 1/0.7 = 1.4
   # - recommend to use the first reverting resolution's magnifier ratio should lied in 1.0 to 1.5
-  remove_resolution_list: [2.5] # for Ouster OS1-64 of MulRan dataset
-  revert_resolution_list: [2.2] # TODO
+  remove_resolution_list: [1.5] # for Ouster OS1-64 of MulRan dataset
+  revert_resolution_list: [1.5] # TODO
 
 
   # @ Removert params 
@@ -64,10 +65,10 @@ removert:
   # about Static sensitivity (you need to tune these below two values, depends on the environement)
   # - if you use a raw scan (saved from the SC-A-LOAM or SC-LIO-SAM saver utility)
   num_nn_points_within: 2 # how many - using higher, more strict static 
-  dist_nn_points_within: 0.01 # meter - using smaller, more strict static (if you use a already downsampled feature cloud, use quite large value such as > 0.2 )
+  dist_nn_points_within: 0.2 # meter - using smaller, more strict static (if you use a already downsampled feature cloud, use quite large value such as > 0.2 )
 
   # @ For faster
-  num_omp_cores: 16 # for faster map points projection (to make a map range image)
+  num_omp_cores: 8 # for faster map points projection (to make a map range image)
 
   # @ For visualization of range images (rviz -d removert_visualization.rviz)
   rimg_color_min: 0.0 # meter

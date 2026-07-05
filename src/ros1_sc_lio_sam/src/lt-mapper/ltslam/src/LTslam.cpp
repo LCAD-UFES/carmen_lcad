@@ -1,3 +1,5 @@
+    // LTslam.cpp
+
 #include "ltslam/LTslam.h"
 
 
@@ -70,6 +72,17 @@ void LTslam::writeAllSessionsTrajectories(std::string _postfix = "")
 LTslam::LTslam()
 : poseOrigin(gtsam::Pose3(gtsam::Rot3::RzRyRx(0.0, 0.0, 0.0), gtsam::Point3(0.0, 0.0, 0.0))) 
 {
+    // giseop/miguel: chute inicial do anchor da sessão query. Se ficar tudo em 0 (default),
+    // o comportamento é EXATAMENTE o antigo (anchor nasce em cima da origem da sessão central).
+    querySessAnchorInitGuess_ = gtsam::Pose3(
+        gtsam::Rot3::RzRyRx(0.0, 0.0, deg2rad(float(query_anchor_init_yaw_deg_))),
+        gtsam::Point3(query_anchor_init_x_, query_anchor_init_y_, query_anchor_init_z_));
+
+    ROS_INFO_STREAM("\033[1;33m [LTslam] Chute inicial do anchor da sessão query: "
+        << "x=" << query_anchor_init_x_ << " y=" << query_anchor_init_y_ << " z=" << query_anchor_init_z_
+        << " yaw_deg=" << query_anchor_init_yaw_deg_
+        << " | scDistThres=" << sc_dist_thres_ << " scNumCandidates=" << sc_num_candidates_
+        << " rsSearchRadius=" << rs_search_radius_ << "\033[0m");
 } // ctor
 
 
@@ -186,7 +199,8 @@ void LTslam::optimizeMultisesseionGraph(bool _toOpt)
 
 std::optional<gtsam::Pose3> LTslam::doICPVirtualRelative( // for SC loop
     Session& target_sess, Session& source_sess, 
-    const int& loop_idx_target_session, const int& loop_idx_source_session)
+    const int& loop_idx_target_session, const int& loop_idx_source_session,
+    const float& _init_yaw_rad)
 {
     // 20201228: get relative virtual measurements using ICP (refer LIO-SAM's code)
 
@@ -214,10 +228,21 @@ std::optional<gtsam::Pose3> LTslam::doICPVirtualRelative( // for SC loop
     icp.setInputSource(cureKeyframeCloud);
     icp.setInputTarget(targetKeyframeCloud);
     pcl::PointCloud<PointType>::Ptr unused_result(new pcl::PointCloud<PointType>());
-    icp.align(*unused_result);
- 
-    // giseop 
-    // TODO icp align with initial 
+
+    // giseop/miguel: ERA "TODO icp align with initial" -- o Scan Context já calcula (via busca
+    // circular do descritor) uma estimativa de yaw entre os dois nós, mas esse valor era
+    // descartado e o ICP sempre partia de identidade (yaw=0). Ponto-a-ponto ICP não converge
+    // corretamente quando o yaw real é grande (ex.: ~180°, típico de percurso em sentido
+    // contrário) partindo de identidade -> a SC loop era rejeitada por fitness mesmo quando
+    // o nó candidato estava certo. Agora usamos o yaw do SC como chute inicial.
+    Eigen::Affine3f init_guess = pcl::getTransformation(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, _init_yaw_rad);
+    icp.align(*unused_result, init_guess.matrix());
+
+    if(is_display_debug_msgs_) {
+        mtx.lock();
+        std::cout << "  [SC loop] ICP init yaw guess (from Scan Context): " << rad2deg(_init_yaw_rad) << " deg." << std::endl;
+        mtx.unlock();
+    }
 
     if (icp.hasConverged() == false || icp.getFitnessScore() > loopFitnessScoreThreshold) {
         mtx.lock();
@@ -308,6 +333,7 @@ void LTslam::detectInterSessionSCloops() // using ScanContext
 
     // Detect loop closures: Find loop edge index pairs 
     SCLoopIdxPairs_.clear();
+    SCLoopYawDiffs_.clear();
     RSLoopIdxPairs_.clear();
     auto& target_scManager = target_sess.scManager;
     auto& source_scManager = source_sess.scManager;
@@ -320,6 +346,7 @@ void LTslam::detectInterSessionSCloops() // using ScanContext
 
         int loop_idx_source_session = source_node_idx;
         int loop_idx_target_session = detectResult.first;
+        float yaw_diff_rad = detectResult.second; // giseop/miguel: antes isso era calculado e nunca usado
 
         if(loop_idx_target_session == -1) { // TODO using NO_LOOP_FOUND rather using -1 
             RSLoopIdxPairs_.emplace_back(std::pair(-1, loop_idx_source_session)); // -1 will be later be found (nn pose). 
@@ -327,9 +354,22 @@ void LTslam::detectInterSessionSCloops() // using ScanContext
         }
 
         SCLoopIdxPairs_.emplace_back(std::pair(loop_idx_target_session, loop_idx_source_session));
+        SCLoopYawDiffs_.emplace_back(yaw_diff_rad);
     }
 
     ROS_INFO_STREAM("\033[1;32m Total " << SCLoopIdxPairs_.size() << " inter-session loops are found. \033[0m");
+
+    if( SCLoopIdxPairs_.empty() ) {
+        ROS_WARN_STREAM("\033[1;31m [LTslam] NENHUM loop SC encontrado entre as sessões!\n"
+            << "  Causas comuns: scDistThres (" << sc_dist_thres_ << ") restritivo demais, "
+            << "scNumCandidates (" << sc_num_candidates_ << ") pequeno demais, ICP "
+            << "loopFitnessScoreThreshold (" << loopFitnessScoreThreshold << ") rejeitando tudo, "
+            << "ou as trajetórias realmente não geram Scan Context parecido em nenhum ponto "
+            << "(comum em percursos de ida/volta com oclusão bem diferente).\n"
+            << "  Sem loop SC, o anchor da sessão query fica no chute inicial "
+            << "(ltslam/query_anchor_init_*) e o RS loop search pode gerar pares FALSOS se "
+            << "esse chute estiver longe da posição real. \033[0m");
+    }
 } // detectInterSessionSCloops
 
 
@@ -377,8 +417,15 @@ void LTslam::addSCloops()
     int num_scloops_to_be_added = std::min( num_scloops_all_found, kNumSCLoopsUpperBound );
     int equisampling_gap = num_scloops_all_found / num_scloops_to_be_added;
 
-    auto sc_loop_idx_pairs_sampled = equisampleElements(SCLoopIdxPairs_, equisampling_gap, num_scloops_to_be_added);
-    auto num_scloops_sampled = sc_loop_idx_pairs_sampled.size();
+    // giseop/miguel: antes usava equisampleElements() só pra SCLoopIdxPairs_, mas agora
+    // precisamos amostrar SCLoopYawDiffs_ com os MESMOS índices originais (senão o yaw
+    // usado no ICP fica desalinhado do par de nós). Calcula os índices uma vez e aplica
+    // nos dois vetores.
+    std::vector<int> equisampled_idx;
+    for (int i=0; i<num_scloops_to_be_added; i++)
+        equisampled_idx.emplace_back(std::round(float(i) * equisampling_gap));
+
+    auto num_scloops_sampled = equisampled_idx.size();
 
     // add selected sc loops 
     auto& target_sess = sessions_.at(target_sess_idx); 
@@ -389,11 +436,13 @@ void LTslam::addSCloops()
     #pragma omp parallel for num_threads(numberOfCores)
     for (int ith = 0; ith < num_scloops_sampled; ith++) 
     {
-        auto& _loop_idx_pair = sc_loop_idx_pairs_sampled.at(ith);
+        int orig_idx = equisampled_idx.at(ith);
+        auto& _loop_idx_pair = SCLoopIdxPairs_.at(orig_idx);
+        float yaw_diff_rad = SCLoopYawDiffs_.at(orig_idx);
         int loop_idx_target_session = _loop_idx_pair.first;
         int loop_idx_source_session = _loop_idx_pair.second;
 
-        auto relative_pose_optional = doICPVirtualRelative(target_sess, source_sess, loop_idx_target_session, loop_idx_source_session); 
+        auto relative_pose_optional = doICPVirtualRelative(target_sess, source_sess, loop_idx_target_session, loop_idx_source_session, yaw_diff_rad); 
 
         if(relative_pose_optional) {
             mtx.lock();
@@ -468,7 +517,7 @@ void LTslam::findNearestRSLoopsTargetNodeIdx() // based-on information gain
         std::vector<int> target_node_idxes_within_ball;
         for (int target_node_idx=0; target_node_idx < int(target_sess.nodes_.size()); target_node_idx++) {
             auto target_pose = isamCurrentEstimate.at<gtsam::Pose3>(genGlobalNodeIdx(target_sess_idx, target_node_idx));
-            if( poseDistance(query_pose_central_coord, target_pose) < 10.0 ) // 10 is a hard-coding for fast test
+            if( poseDistance(query_pose_central_coord, target_pose) < rs_search_radius_ ) // giseop/miguel: era hard-coded em 10.0, agora vem de ltslam/rsSearchRadius
             {
                 target_node_idxes_within_ball.push_back(target_node_idx);
                 // cout << "(all) RS pair detected: " << target_node_idx << " <-> " << source_node_idx << endl;    
@@ -515,8 +564,14 @@ bool LTslam::addRSloops()
 
     // parse RS loop src idx
     int num_rsloops_all_found = int(RSLoopIdxPairs_.size());
-    if( num_rsloops_all_found == 0 )
+    if( num_rsloops_all_found == 0 ) {
+        ROS_WARN_STREAM("\033[1;31m [LTslam] NENHUM candidato RS dentro do raio de "
+            << rs_search_radius_ << " m. Se o anchor da sessão query ainda está no chute "
+            << "inicial (nenhum loop SC achado), aumentar rsSearchRadius sem corrigir o chute "
+            << "só vai piorar (mais falsos positivos). Corrija primeiro "
+            << "ltslam/query_anchor_init_{x,y,z,yaw_deg}. \033[0m");
         return false;
+    }
 
     int num_rsloops_to_be_added = std::min( num_rsloops_all_found, kNumRSLoopsUpperBound );
     int equisampling_gap = num_rsloops_all_found / num_rsloops_to_be_added;
@@ -568,11 +623,31 @@ void LTslam::initTrajectoryByAnchoring(const Session& _sess)
 
     if(_sess.is_base_session_) {
         gtSAMgraph.add(PriorFactor<gtsam::Pose3>(this_session_anchor_node_idx, poseOrigin, priorNoise));
+        initialEstimate.insert(this_session_anchor_node_idx, poseOrigin);
     } else {
-        gtSAMgraph.add(PriorFactor<gtsam::Pose3>(this_session_anchor_node_idx, poseOrigin, largeNoise));
+        // *** ESSE ERA O BUG ***
+        // Antes, o anchor da sessão query nascia (initial estimate) e tinha o prior fraco
+        // (largeNoise) CENTRADOS em poseOrigin — ou seja, exatamente em cima da origem
+        // da sessão central. Se nenhum loop inter-sessão (SC) é encontrado (comum quando
+        // as trajetórias têm 500m+ e/ou são percorridas em sentido contrário), não existe
+        // nenhum BetweenFactorWithAnchoring puxando esse anchor para a posição real, e como
+        // o prior é fraco mas ainda "gravitacional" em torno de poseOrigin, o otimizador não
+        // tem motivo pra mover o anchor dali. Resultado: os dois mapas nascem empilhados na
+        // mesma origem (0,0,0) e o RS loop search (raio fixo) passa a comparar posições que
+        // "por acaso" caem perto, gerando pares de loop errados -> mapa final vira um
+        // caminho novo, não a junção real dos dois.
+        //
+        // Fix: usar um chute inicial (querySessAnchorInitGuess_, vindo de
+        // ltslam/query_anchor_init_{x,y,z,yaw_deg}) tanto no initial estimate quanto no
+        // centro do prior fraco. Se você souber, por ex., que a sessão query começa perto
+        // de onde a central terminou (percurso de volta), passe a pose do último nó da
+        // sessão central + ~180 graus de yaw. O prior continua fraco (largeNoise), então
+        // se loops inter-sessão forem encontrados, o otimizador ainda pode corrigir esse
+        // chute — mas se nenhum loop for achado, pelo menos o mapa não fica todo empilhado
+        // na origem.
+        gtSAMgraph.add(PriorFactor<gtsam::Pose3>(this_session_anchor_node_idx, querySessAnchorInitGuess_, largeNoise));
+        initialEstimate.insert(this_session_anchor_node_idx, querySessAnchorInitGuess_);
     }
-
-    initialEstimate.insert(this_session_anchor_node_idx, poseOrigin);
 } // initTrajectoryByAnchoring
 
 
@@ -646,6 +721,13 @@ void LTslam::loadAllSessions()
         sessions_.insert( std::make_pair(session_idx, 
                                          Session(session_idx, session_name, session_dir_path, isTwoStringSame(session_name, central_sess_name_))) );
 
+        // giseop/miguel: aplica os thresholds de Scan Context vindos do yaml (ltslam/scDistThres,
+        // ltslam/scNumCandidates) em vez dos consts fixos de Scancontext.h. Precisa ser feito
+        // ANTES de detectInterSessionSCloops(). Loops de 500m+ / sentido contrário costumam
+        // precisar de scDistThres mais alto (ex.: 0.4-0.5) e/ou mais candidatos (ex.: 10-20)
+        // pra achar a correspondência certa.
+        sessions_.at(session_idx).scManager.setThresholds(sc_dist_thres_, sc_num_candidates_);
+
         // LTslam::num_sessions++; // incr the global index // TODO: make this private and provide incrSessionIdx
     }
 
@@ -656,4 +738,3 @@ void LTslam::loadAllSessions()
                 } );
 
 } // loadSession
-

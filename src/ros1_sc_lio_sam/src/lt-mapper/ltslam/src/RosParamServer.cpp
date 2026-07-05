@@ -22,6 +22,18 @@ RosParamServer::RosParamServer()
 
     nh.param<float>("ltslam/loopFitnessScoreThreshold", loopFitnessScoreThreshold, 0.5);
 
+    // chute inicial do anchor da sessão query (x, y, z em metros; yaw em graus)
+    // dica: se a sessão query começa aproximadamente onde a central termina (percurso
+    // de volta), um bom chute é a pose do ultimo no da sessão central + ~180 graus de yaw.
+    nh.param<double>("ltslam/query_anchor_init_x",       query_anchor_init_x_,       0.0);
+    nh.param<double>("ltslam/query_anchor_init_y",       query_anchor_init_y_,       0.0);
+    nh.param<double>("ltslam/query_anchor_init_z",       query_anchor_init_z_,       0.0);
+    nh.param<double>("ltslam/query_anchor_init_yaw_deg", query_anchor_init_yaw_deg_, 0.0);
+
+    nh.param<double>("ltslam/scDistThres",     sc_dist_thres_,     0.3);
+    nh.param<int>("ltslam/scNumCandidates",    sc_num_candidates_, 3);
+
+    nh.param<double>("ltslam/rsSearchRadius",  rs_search_radius_,  10.0);
+
     usleep(100);
 } // ctor RosParamServer
-

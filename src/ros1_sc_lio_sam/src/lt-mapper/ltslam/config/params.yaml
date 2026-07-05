@@ -2,17 +2,36 @@ ltslam:
 
   sessions_dir: "/dados/sc_lio_sam_output/" # end with / 
 
-  central_sess_name: "section1" # should be same as the directory name of that session
-  query_sess_name: "section3" # should be same as the directory name of that session
+  central_sess_name: "map_lcad_honofre" # should be same as the directory name of that session
+  query_sess_name: "map_honofre_lcad" # should be same as the directory name of that session
   
-  save_directory: "/dados/sc_lio_sam_output/mapa/" # end with "/"
+  save_directory: "/dados/sc_lio_sam_output/mapa_alinhado/" # end with "/"
 
   is_display_debug_msgs: true
 
-  loopFitnessScoreThreshold: 0.7
+  loopFitnessScoreThreshold: 0.3
 
-  kNumSCLoopsUpperBound: 1000 # if you use an enough number, use all the detected loops 
-  kNumRSLoopsUpperBound: 0 # if you use an enough number, use all the detected loops 
+  kNumSCLoopsUpperBound: 500000 # if you use an enough number, use all the detected loops 
+  kNumRSLoopsUpperBound: 500000 # if you use an enough number, use all the detected loops 
 
   numberOfCores: 16 # currently hard-coded in the utility.cpp
 
+  # --- NOVOS: chute inicial do anchor da sessão query (02) ---
+  # Preencha com uma estimativa grosseira de onde a sessão "02" começa, no referencial
+  # da sessão central "01". Se a 02 é o caminho de volta (começa perto de onde a 01
+  # terminou), pegue a pose do ultimo no de "01" (x,y,z,yaw) e some ~180 graus no yaw.
+  query_anchor_init_x: -107.463
+  query_anchor_init_y: -52.144
+  query_anchor_init_z: 2.035
+  query_anchor_init_yaw_deg: 7.007
+ 
+  # --- NOVOS: tuning do Scan Context ---
+  # Sobem a chance de achar loop em trajetos longos (500m+) / sentido contrário.
+  # Comece testando scDistThres entre 0.4 e 0.5 e scNumCandidates entre 10 e 20.
+  scDistThres: 0.6
+  scNumCandidates: 60
+ 
+  # --- NOVO: raio (m) da busca RS entre sessões ---
+  # Só importa depois que o anchor já está numa posição razoável (via chute inicial
+  # ou via loop SC). Aumentar isso sem corrigir o chute so aumenta falso positivo.
+  rsSearchRadius: 300.0
