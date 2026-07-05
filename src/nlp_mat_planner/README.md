@@ -1,13 +1,13 @@
-Para usar o offroad, execute: ./offroad_planner
+Para usar o NLP-MatPlan, execute: ./nlp_matplan
 Existem argumentos para modificar o comportamento do uso do cache de path.
 Para escolher o arquivo de cache, execute:
-  ./offroad_planner -cache_filename arquivo_de_cache.txt
+  ./nlp_matplan -cache_filename arquivo_de_cache.txt
 Para impedir que novos caminhos sejam inseridos no cache, execute:
-  ./offroad_planner -cache_writing off
+  ./nlp_matplan -cache_writing off
 
-Executar o offroad_planner sem argumentos irá estar com o cache_writing habilitado, e o nome do arquivo de cache padrão (offroad_planner_cache.txt)
+Executar o NLP-MatPlan  sem argumentos irá estar com o cache_writing habilitado, e o nome do arquivo de cache padrão (offroad_planner_cache.txt)
 
-======== Passos necessários para utilizar o offroad park truck & trailer:
+======== Passos necessários para utilizar o nlp_matplan park truck & trailer:
 
 ```
 pip3 install casadi==3.5.5
@@ -16,20 +16,62 @@ pip3 install casadi==3.5.5
 - Add the following lines to your bash profile
 
 ```
-#offroad_planner
+#NLP-MatPlan 
 export CASADI_DIR=$(/usr/bin/env python3 -c "import casadi; print(casadi.__path__[0])")
 export LD_LIBRARY_PATH=$CASADI_DIR:$LD_LIBRARY_PATH
 ```
 
-Configure o número de semi-trailers definindo o parâmetro do astro.ini semi_trailer_initial_type
+Configure o número de semi-trailers definindo o parâmetro do carmen.ini semi_trailer_initial_type
 
 ========================================================================
 
 
-Para baixar as tabelas (matriz NHCM - Non-Holonomic Cost Matrix) do offroad_planner Execute:
+
+
+## Running the Test Case
+
+This test case evaluates the trajectory planning for a tractor configured with two semi-trailers and one dolly (A-double / B-double variant setup). It validates the vehicle's kinematics and optimal control constraints under a multi-articulated configuration.
+
+Before running the test case, ensure you have completed the Setup section.
+
+1. Extract Geodata
+
+The configuration requires the map data to be unpacked. Navigate to the asset directory and extract the archive:
+
+```
+cd $CARMEN_HOME/bin/axor3344-2_arcelor
+```
+```
+tar -xvzf geodata.tar.gz
+```
+2. Start the Central Module
+
+Open terminal, navigate to the binary directory, and launch the central communication module:
+
+```
+cd $CARMEN_HOME/bin
+```
+```
+./central
+```
+3. Launch Process Control
+
+Open a second terminal, navigate to the same binary directory, and run the process with the vehicle configuration:
+
+```
+cd $CARMEN_HOME/bin
+```
+```
+./proccontrol axor3344-2_arcelor/process-navigate_axor3344_sensorbox-6.ini 
+
+```
+
+## NHCM - Non-Holonomic Cost Matrix
+
+Para baixar as tabelas (matriz NHCM - Non-Holonomic Cost Matrix) do NLP-MatPlan Execute:
 make download
 
-Para atualizar as tabelas (matriz NHCM - Non-Holonomic Cost Matrix) do offroad_planner Execute:
+Para atualizar as tabelas (matriz NHCM - Non-Holonomic Cost Matrix) do NLP-MatPlan Execute:
 make update
 
 As tabelas serão baixadas e colocadas na pasta astro/data. Eles ficam na raiz deste diretório:
