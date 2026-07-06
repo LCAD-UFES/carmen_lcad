@@ -74,7 +74,7 @@ nhcm:
 clean: clean_NHCM
 
 clean_NHCM:
-	$(MAKE) clean -C $(CARMEN_HOME)/src/offroad_planner/NHCM
+	$(MAKE) clean -C $(CARMEN_HOME)/src/nlp_mat_planner/NHCM
 
 ifdef USE_CASADI
 nlp_matplan: nlp_mat_planner_main.o nlp_mat_planner_path_planner_astar.o reeds_sheep.o planning.o nlp_mat_planner_distance_map.o \
