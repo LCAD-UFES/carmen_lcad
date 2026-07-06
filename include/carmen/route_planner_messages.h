@@ -259,14 +259,7 @@ typedef struct
 #define EDGE_TYPE_
 // These structs are defined in a C++ library (road_network_generator_utils.h) but this is a C library
 
-typedef struct
-{
-	int u;
-	int v;
-	int u_ref;
-	int v_ref;
-	double cost;
-} edge_t;
+
 
 #define DISABLING_COST	1.0e100
 
