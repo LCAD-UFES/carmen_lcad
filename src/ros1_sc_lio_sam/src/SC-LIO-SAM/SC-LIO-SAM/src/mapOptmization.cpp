@@ -23,6 +23,7 @@
 #include <gtsam/nonlinear/ISAM2.h>
 
 #include "Scancontext.h"
+#include "cuda_map_search.h"
 
 
 using namespace gtsam;
@@ -183,6 +184,15 @@ public:
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurroundingKeyPoses;
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeHistoryKeyPoses;
 
+    // GPU map search state. cudaAvailable é setado uma vez no construtor.
+    // cornerMapUploadedToGpu/surfMapUploadedToGpu dizem se o upload do mapa
+    // local desta cena teve sucesso -- se não, cornerOptimization/
+    // surfOptimization caem pro kdtree normal SEM precisar checar cudaAvailable
+    // de novo (evita reupload falho silencioso virar busca contra mapa velho).
+    bool cudaAvailable = false;
+    bool cornerMapUploadedToGpu = false;
+    bool surfMapUploadedToGpu = false;
+
     pcl::VoxelGrid<PointType> downSizeFilterSC; // giseop
     pcl::VoxelGrid<PointType> downSizeFilterCorner;
     pcl::VoxelGrid<PointType> downSizeFilterSurf;
@@ -221,6 +231,18 @@ public:
     Eigen::Affine3f transPointAssociateToMap;
     Eigen::Affine3f incrementalOdometryAffineFront;
     Eigen::Affine3f incrementalOdometryAffineBack;
+    Eigen::Affine3f incrementalOdometryAffineGuess; // chute puro (ackermann/imu), antes do ICP
+    bool incrementalOdometryGuessFromOdom = false;  // true só se o Guess veio de odom real (ackermann), não do fallback de IMU
+
+    // Histórico do gate anti-salto (ver transformUpdate()): últimas N correções
+    // scan-match vs. odometria, usadas pra estimar um limiar robusto (mediana +
+    // k*MAD) em vez de uma constante chutada.
+    std::deque<float> scanMatchTransJumpHist; // metros
+    std::deque<float> scanMatchRotJumpHist;   // radianos
+    const int    scanMatchJumpHistMinN  = 15; // amostras mín. antes do gate atuar (~1.5s a 10Hz)
+    const size_t scanMatchJumpHistSize  = 40; // janela deslizante (~4s a 10Hz)
+    const float  scanMatchJumpK         = 40.0f; // mediana + k*MAD (maior k = mais permissivo)
+    const float  locSnapFitnessScore    = 1.5f;
 
     // // loop detector 
     SCManager scManager;
@@ -235,6 +257,15 @@ public:
 
     std::string saveSCDDirectory;
     std::string saveNodePCDDirectory;
+
+    // Localization pose logging (graphslam poses_opt.dat format)
+    std::ofstream posesOutStream;
+    bool posesOutEnabled = false;
+    bool posesAnchorSet = false;
+    tf::Transform T_utm_odom = tf::Transform::getIdentity(); // frozen on first logged pose
+    tf::Transform baselink2Lidar = tf::Transform::getIdentity(); // cached base_link -> lidar
+    bool baselink2LidarCached = false;
+    size_t posesWritten = 0;
 
 public:
     mapOptimization()
@@ -287,6 +318,32 @@ public:
             // Localization mode: reuse an existing map. Do NOT erase/recreate the map
             // directory nor truncate any of its files. Just load the map and localize.
             loadMap();
+
+            // Optional: log estimated poses in the graphslam poses_opt.dat format.
+            if (!posesOutputFile.empty())
+            {
+                size_t slashPos = posesOutputFile.find_last_of('/');
+                if (slashPos != std::string::npos && slashPos > 0)
+                {
+                    std::string parentDir = posesOutputFile.substr(0, slashPos);
+                    int unused = system((std::string("mkdir -p '") + parentDir + "'").c_str());
+                    (void)unused;
+                }
+
+                posesOutStream.open(posesOutputFile.c_str(), std::ofstream::out | std::ofstream::trunc);
+                if (posesOutStream.is_open())
+                {
+                    posesOutStream.precision(6);
+                    posesOutStream << std::fixed;
+                    posesOutEnabled = true;
+                    ROS_INFO("Localization mode: gravando poses (formato graphslam) em '%s'.", posesOutputFile.c_str());
+                }
+                else
+                {
+                    ROS_ERROR("Localization mode: nao foi possivel abrir '%s' para gravar poses. Gravacao desativada.",
+                              posesOutputFile.c_str());
+                }
+            }
         }
         else
         {
@@ -352,6 +409,12 @@ public:
         kdtreeCornerFromMap.reset(new pcl::KdTreeFLANN<PointType>());
         kdtreeSurfFromMap.reset(new pcl::KdTreeFLANN<PointType>());
 
+        cudaAvailable = cuda_map_search::init();
+        if (cudaAvailable)
+            ROS_INFO("\033[1;32m----> GPU map search enabled (CUDA).\033[0m");
+        else
+            ROS_WARN("GPU map search unavailable -- using CPU kdtree/VoxelGrid path.");
+
         for (int i = 0; i < 6; ++i){
             transformTobeMapped[i] = 0;
         }
@@ -415,27 +478,61 @@ public:
             *locIcpTargetMap += *laserCloudSurfFromMapDS;
         }
 
-        // NOVO: downsample defensivo. Enquanto o cloudGlobal.pcd puder vir gigante
-        // (bug de salvar raw em vez de downsampled no SC-LIO-SAM), isso evita que o
-        // ICP de snap fique lento por causa do tamanho do alvo.
+        // Sobe o cloudGlobal.pcd puro, sem downsample defensivo -- esse voxel filter
+        // só existia pra "proteger" o ICP contra um cloudGlobal gigante, mas custava
+        // tempo de boot toda vez que o mapa era carregado, atrasando a subida do modo
+        // de localização. Se o cloudGlobal.pcd for salvo grande demais, o certo é
+        // resolver na origem (downsample no momento de salvar o mapa), não aqui.
+        cout << "Localization mode: locIcpTargetMap carregado sem downsample ("
+             << locIcpTargetMap->size() << " pontos)." << endl;
+
+        // ==========================================================
+        // Inicialização Automática com TF Dinâmico (Correção LiDAR invertido)
+        // ==========================================================
+        // 1. Cria a pose inicial baseada no YAML (representando o CARRO)
+        tf::Pose initial_base_link_pose;
+        initial_base_link_pose.setOrigin(tf::Vector3(initialPoseX, initialPoseY, initialPoseZ));
+        tf::Quaternion q_init;
+        q_init.setRPY(initialPoseRoll, initialPosePitch, initialPoseYaw);
+        initial_base_link_pose.setRotation(q_init);
+
+        // 2. Busca a transformação dinâmica base_link -> lidar_link
+        //    (cacheada no membro baselink2Lidar para reuso na gravacao de poses)
+        baselink2Lidar = tf::Transform::getIdentity();
+        if (baselinkFrame != lidarFrame)
         {
-            pcl::VoxelGrid<PointType> dsGlobal;
-            dsGlobal.setLeafSize(0.3, 0.3, 0.3); // ajusta pro teu ambiente se precisar
-            pcl::PointCloud<PointType>::Ptr locIcpTargetMapDS(new pcl::PointCloud<PointType>());
-            dsGlobal.setInputCloud(locIcpTargetMap);
-            dsGlobal.filter(*locIcpTargetMapDS);
-            cout << "Localization mode: locIcpTargetMap downsampled de " << locIcpTargetMap->size()
-                 << " para " << locIcpTargetMapDS->size() << " pontos." << endl;
-            locIcpTargetMap = locIcpTargetMapDS;
+            static tf::TransformListener tfListener;
+            tf::StampedTransform transform;
+            try {
+                // Aguarda até 3 segundos para o ROS subir a árvore de TF no boot
+                tfListener.waitForTransform(baselinkFrame, lidarFrame, ros::Time(0), ros::Duration(3.0));
+                tfListener.lookupTransform(baselinkFrame, lidarFrame, ros::Time(0), transform);
+                baselink2Lidar = transform;
+                baselink2LidarCached = true;
+                ROS_INFO("Localization auto-init: TF dinamico %s -> %s lido com sucesso.", baselinkFrame.c_str(), lidarFrame.c_str());
+            } catch (tf::TransformException ex) {
+                ROS_WARN("Localization auto-init: Falha ao ler TF %s -> %s. Usando identidade. (%s)", 
+                         baselinkFrame.c_str(), lidarFrame.c_str(), ex.what());
+            }
+        }
+        else
+        {
+            baselink2LidarCached = true;
         }
 
-        // Seed the initial pose (map frame) from parameters.
-        transformTobeMapped[0] = initialPoseRoll;
-        transformTobeMapped[1] = initialPosePitch;
-        transformTobeMapped[2] = initialPoseYaw;
-        transformTobeMapped[3] = initialPoseX;
-        transformTobeMapped[4] = initialPoseY;
-        transformTobeMapped[5] = initialPoseZ;
+        // 3. Calcula a pose final do LiDAR aplicando a rotação do sensor
+        tf::Pose initial_lidar_pose = initial_base_link_pose * baselink2Lidar;
+        double r_auto, p_auto, y_auto;
+        initial_lidar_pose.getBasis().getRPY(r_auto, p_auto, y_auto);
+
+        // 4. Alimenta o otimizador com a pose real do LiDAR corrigida
+        transformTobeMapped[0] = r_auto;
+        transformTobeMapped[1] = p_auto;
+        transformTobeMapped[2] = y_auto;
+        transformTobeMapped[3] = initial_lidar_pose.getOrigin().x();
+        transformTobeMapped[4] = initial_lidar_pose.getOrigin().y();
+        transformTobeMapped[5] = initial_lidar_pose.getOrigin().z();
+        // ==========================================================
 
         cout << "Localization mode: loaded " << laserCloudCornerFromMapDSNum << " corner and "
              << laserCloudSurfFromMapDSNum << " surf map points, "
@@ -447,11 +544,9 @@ public:
 
     void initialPoseHandler(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& poseMsg)
     {
-        // NOVO: essa função agora só calcula o chute inicial e guarda o pedido.
-        // O ICP pesado (que antes travava o ros::spin() inteiro) foi movido pra
-        // locSnapWorker(), que roda numa thread separada. Isso evita o "trava e
-        // teleporta": o laserCloudInfoHandler continua processando scans e
-        // publicando odometria normalmente enquanto o snap é calculado.
+        // NOVO: Lê a pose clicada (que representa o CARRO / base_link)
+        // e transforma para a pose do LIDAR dinamicamente usando a TF do ROS.
+        // Isso resolve o LiDAR invertido/dinâmico sem hardcode!
         if (!localizationMode)
             return;
 
@@ -461,16 +556,39 @@ public:
             return;
         }
 
-        double roll, pitch, yaw;
-        tf::Quaternion orientation;
-        tf::quaternionMsgToTF(poseMsg->pose.pose.orientation, orientation);
-        tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+        // 1. Obtém a pose clicada pelo usuário no RViz (frame do mapa -> base_link)
+        tf::Pose clickedPose;
+        tf::poseMsgToTF(poseMsg->pose.pose, clickedPose);
 
-        // Chute bruto do RViz (só x, y, yaw); mantém z/roll/pitch atuais
+        // 2. Busca a transformação dinâmica base_link -> lidar_link
+        tf::Transform baselink2Lidar = tf::Transform::getIdentity();
+        if (baselinkFrame != lidarFrame)
+        {
+            static tf::TransformListener tfListener;
+            tf::StampedTransform transform;
+            try {
+                // Tenta buscar a extrínseca dinâmica (carro -> lidar)
+                tfListener.waitForTransform(baselinkFrame, lidarFrame, ros::Time(0), ros::Duration(1.0));
+                tfListener.lookupTransform(baselinkFrame, lidarFrame, ros::Time(0), transform);
+                baselink2Lidar = transform;
+                ROS_INFO("Localization mode: TF dinamico %s -> %s lido com sucesso.", baselinkFrame.c_str(), lidarFrame.c_str());
+            } catch (tf::TransformException ex) {
+                ROS_WARN("Localization mode: Falha ao ler TF %s -> %s. Usando identidade. (%s)", 
+                         baselinkFrame.c_str(), lidarFrame.c_str(), ex.what());
+            }
+        }
+
+        // 3. Calcula a pose final do LiDAR no mapa multiplicando as matrizes
+        tf::Pose lidarPose = clickedPose * baselink2Lidar;
+
+        double roll, pitch, yaw;
+        lidarPose.getBasis().getRPY(roll, pitch, yaw);
+
+        // 4. Chute bruto ajustado EXATAMENTE para onde o LiDAR está apontando
         float guess[6];
         guess[2] = yaw;
-        guess[3] = poseMsg->pose.pose.position.x;
-        guess[4] = poseMsg->pose.pose.position.y;
+        guess[3] = lidarPose.getOrigin().x();
+        guess[4] = lidarPose.getOrigin().y();
 
         // Acha a key pose mais próxima (só x,y) no mapa carregado, pra puxar
         // um z/roll/pitch que já são reais, em vez de reaproveitar valor velho
@@ -508,7 +626,7 @@ public:
             *locSnapScan += *laserCloudRawDS;
         }
         locSnapPending = true;
-        ROS_INFO("Localization mode: pedido de snap recebido, processando em background...");
+        ROS_INFO("Localization mode: pedido de snap recebido, processando em background com TF dinamica...");
     }
 
     void locSnapWorker()
@@ -539,6 +657,11 @@ public:
                 transformTobeMapped[4] = guess[4];
                 locResetRequested = true;
                 lastIncreOdomPubFlag = false;
+                // Zera o histórico do gate anti-salto: ele foi aprendido com o robô
+                // no estado ANTES do reset (normalmente parado), e vai barrar o
+                // movimento real pós-snap se não for limpo aqui.
+                scanMatchTransJumpHist.clear();
+                scanMatchRotJumpHist.clear();
                 // NOVO: carrega o timestamp do frame atual. O imuPreintegration usa
                 // isso pra descartar mensagens de odometria atrasadas (publicadas
                 // pela thread principal ENQUANTO o ICP do snap ainda rodava) que
@@ -570,12 +693,29 @@ public:
 
             ROS_INFO_STREAM("Localization mode: ICP snap fitness = " << icp.getFitnessScore());
 
-            if (!icp.hasConverged() || icp.getFitnessScore() > historyKeyframeFitnessScore)
+            if (!icp.hasConverged() || icp.getFitnessScore() > locSnapFitnessScore)
             {
                 ROS_WARN_STREAM("Localization mode: ICP nao convergiu bem (score " << icp.getFitnessScore()
-                                << " > " << historyKeyframeFitnessScore << "). Clica mais perto da posicao real.");
+                                << " > " << locSnapFitnessScore << "). Aplicando so o chute bruto, sem refino do ICP.");
+
+                std::lock_guard<std::mutex> lock(mtx);
+                transformTobeMapped[2] = guess[2];
+                transformTobeMapped[3] = guess[3];
+                transformTobeMapped[4] = guess[4];
+                transformTobeMapped[0] = guess[0];
+                transformTobeMapped[1] = guess[1];
+                transformTobeMapped[5] = guess[5];
+                locResetRequested = true;
+                lastIncreOdomPubFlag = false;
+                scanMatchTransJumpHist.clear();
+                scanMatchRotJumpHist.clear();
+
+                std_msgs::Header resetMsg;
+                resetMsg.stamp = timeLaserInfoStamp;
+                pubLocReset.publish(resetMsg);
+
                 locSnapPending = false;
-                continue; // não mexe em transformTobeMapped — mantém o robô onde estava
+                continue;
             }
 
             // Corrige o chute com a transformação encontrada pelo ICP
@@ -590,6 +730,9 @@ public:
                 locResetRequested = true;
                 lastIncreOdomPubFlag = false;              // reancora o odom incremental na pose nova
                 
+                scanMatchTransJumpHist.clear();            // NOVO: idem ao path de fallback acima
+                scanMatchRotJumpHist.clear();
+
                 timeLastLocReset = timeLaserInfoCur;       // NOVO: Marca o instante do teleporte!
 
                 // NOVO: timestamp do frame atual, pro imuPreintegration descartar
@@ -677,17 +820,25 @@ public:
                 // pose graph optimization and the loop-closure corrections.
                 updateInitialGuessLocalization();
 
+                incrementalOdometryAffineGuess = trans2Affine3f(transformTobeMapped);
+                incrementalOdometryGuessFromOdom = cloudInfo.odomAvailable;
+
                 downsampleCurrentScan();
 
                 scan2MapOptimization();
 
                 publishOdometry();
 
+                writeLocalizationPose();
+
                 publishFrames();
             }
             else
             {
                 updateInitialGuess();
+
+                incrementalOdometryAffineGuess = trans2Affine3f(transformTobeMapped);
+                incrementalOdometryGuessFromOdom = cloudInfo.odomAvailable;
 
                 extractSurroundingKeyFrames();
 
@@ -779,7 +930,13 @@ public:
 
     void visualizeGlobalMapThread()
     {
-        //
+        // NOVO: em modo localização o mapa já está carregado em memória desde o
+        // construtor (loadMap()), então a primeira tentativa de publicação roda
+        // assim que a thread sobe -- não espera o primeiro rate.sleep() (5s) nem
+        // depende de qualquer mensagem de odometria/lidar ter chegado. O mapa
+        // "sobe junto com o sistema"; só falta ter subscriber (RViz) conectado.
+        publishGlobalMap();
+
         ros::Rate rate(0.2);
         while (ros::ok()){
             rate.sleep();
@@ -849,12 +1006,37 @@ public:
 
         // In localization mode there are no per-keyframe feature clouds to rebuild the global
         // map from; just publish the fixed map that was loaded from disk.
+        // In localization mode there are no per-keyframe feature clouds to rebuild the global
+        // map from; just publish the fixed map that was loaded from disk.
         if (localizationMode)
         {
-            pcl::PointCloud<PointType>::Ptr loadedMap(new pcl::PointCloud<PointType>());
-            *loadedMap += *laserCloudCornerFromMapDS;
-            *loadedMap += *laserCloudSurfFromMapDS;
-            publishCloud(&pubLaserCloudSurround, loadedMap, timeLaserInfoStamp, odometryFrame);
+            static bool mapPublished = false; // Flag para publicar apenas UMA VEZ
+            
+            if (!mapPublished) 
+            {
+                pcl::PointCloud<PointType>::Ptr loadedMap(new pcl::PointCloud<PointType>());
+                *loadedMap += *laserCloudCornerFromMapDS;
+                *loadedMap += *laserCloudSurfFromMapDS;
+
+                // Filtro para o RViz respirar (NÃO afeta a precisão do ICP/Localização!)
+                pcl::PointCloud<PointType>::Ptr loadedMapDS(new pcl::PointCloud<PointType>());
+                pcl::VoxelGrid<PointType> downSizeFilterRViz;
+                
+                // Tamanho do voxel visual. Se o mapa for muito gigante, suba para 1.0 ou 2.0
+                downSizeFilterRViz.setLeafSize(0.5, 0.5, 0.5); 
+                downSizeFilterRViz.setInputCloud(loadedMap);
+                downSizeFilterRViz.filter(*loadedMapDS);
+
+                // NOVO: usa ros::Time::now() em vez de timeLaserInfoStamp. Esse mapa é
+                // fixo (carregado do disco) e precisa poder ser publicado ANTES da
+                // primeira mensagem de odometria/lidar chegar -- até lá timeLaserInfoStamp
+                // ainda é ros::Time(0) (default), o que deixava a nuvem com timestamp
+                // inválido e ela só "aparecia" quando o primeiro scan setava esse campo.
+                publishCloud(&pubLaserCloudSurround, loadedMapDS, ros::Time::now(), odometryFrame);
+                mapPublished = true;
+                
+                ROS_INFO("Mapa global publicado no RViz com sucesso (otimizado para VRAM)!");
+            }
             return;
         }
 
@@ -903,17 +1085,46 @@ public:
         if (loopClosureEnableFlag == false)
             return;
 
-        // No loop closure in localization mode: the map is fixed and not optimized.
-        if (localizationMode)
-            return;
-
         ros::Rate rate(loopClosureFrequency);
         while (ros::ok())
         {
             rate.sleep();
-            performRSLoopClosure();
-            performSCLoopClosure(); // giseop
-            visualizeLoopClosure();
+            
+            if (localizationMode) 
+            {
+                // MODO LOCALIZAÇÃO: Usa o SC apenas para gerar um "chute" (Guess) para o locSnapWorker
+                if (!locPoseInitialized || locResetRequested) {
+                    auto detectResult = scManager.detectLoopClosureID();
+                    int scMatchID = detectResult.first;
+                    
+                    if (scMatchID != -1 && !locSnapPending.load()) {
+                        ROS_INFO("Scan Context encontrou o mapa global! ID: %d", scMatchID);
+                        
+                        std::lock_guard<std::mutex> lockSnap(mtxLocSnap);
+                        // Puxa o X, Y, Z, Roll, Pitch e Yaw exatos daquele nó salvo no mapa
+                        locSnapGuess[0] = cloudKeyPoses6D->points[scMatchID].roll;
+                        locSnapGuess[1] = cloudKeyPoses6D->points[scMatchID].pitch;
+                        locSnapGuess[2] = cloudKeyPoses6D->points[scMatchID].yaw;
+                        locSnapGuess[3] = cloudKeyPoses6D->points[scMatchID].x;
+                        locSnapGuess[4] = cloudKeyPoses6D->points[scMatchID].y;
+                        locSnapGuess[5] = cloudKeyPoses6D->points[scMatchID].z;
+                        
+                        locSnapScan->clear();
+                        {
+                            std::lock_guard<std::mutex> lockMain(mtx);
+                            *locSnapScan += *laserCloudRawDS;
+                        }
+                        locSnapPending = true; // Dispara a thread de alinhamento ICP do LIO-SAM
+                    }
+                }
+            } 
+            else 
+            {
+                // MODO MAPEAMENTO: Funcionamento normal que otimiza o mapa
+                performRSLoopClosure();
+                performSCLoopClosure(); 
+                visualizeLoopClosure();
+            }
         }
     }
 
@@ -964,7 +1175,7 @@ public:
 
         // ICP Settings
         static pcl::IterativeClosestPoint<PointType, PointType> icp;
-        icp.setMaxCorrespondenceDistance(150); // giseop , use a value can cover 2*historyKeyframeSearchNum range in meter 
+        icp.setMaxCorrespondenceDistance(3.0); // giseop , use a value can cover 2*historyKeyframeSearchNum range in meter 
         icp.setMaximumIterations(100);
         icp.setTransformationEpsilon(1e-6);
         icp.setEuclideanFitnessEpsilon(1e-6);
@@ -1042,9 +1253,12 @@ public:
             // loopFindNearKeyframesWithRespectTo(cureKeyframeCloud, loopKeyCur, 0, loopKeyPre); // giseop 
             // loopFindNearKeyframes(prevKeyframeCloud, loopKeyPre, historyKeyframeSearchNum);
 
-            int base_key = 0;
-            loopFindNearKeyframesWithRespectTo(cureKeyframeCloud, loopKeyCur, 0, base_key); // giseop 
-            loopFindNearKeyframesWithRespectTo(prevKeyframeCloud, loopKeyPre, historyKeyframeSearchNum, base_key); // giseop 
+            //int base_key = 0;
+            //loopFindNearKeyframesWithRespectTo(cureKeyframeCloud, loopKeyCur, 0, base_key); // giseop 
+            //loopFindNearKeyframesWithRespectTo(prevKeyframeCloud, loopKeyPre, historyKeyframeSearchNum, base_key); // giseop 
+
+            loopFindNearKeyframes(cureKeyframeCloud, loopKeyCur, 0);
+            loopFindNearKeyframes(prevKeyframeCloud, loopKeyPre, historyKeyframeSearchNum);
 
             if (cureKeyframeCloud->size() < 300 || prevKeyframeCloud->size() < 1000)
                 return;
@@ -1102,9 +1316,15 @@ public:
         // noiseModel::Diagonal::shared_ptr constraintNoise = noiseModel::Diagonal::Variances(Vector6);
 
         // giseop 
-        pcl::getTranslationAndEulerAngles (correctionLidarFrame, x, y, z, roll, pitch, yaw);
+        //pcl::getTranslationAndEulerAngles (correctionLidarFrame, x, y, z, roll, pitch, yaw);
+        //gtsam::Pose3 poseFrom = Pose3(Rot3::RzRyRx(roll, pitch, yaw), Point3(x, y, z));
+        //gtsam::Pose3 poseTo = Pose3(Rot3::RzRyRx(0.0, 0.0, 0.0), Point3(0.0, 0.0, 0.0));
+
+        Eigen::Affine3f tWrong = pclPointToAffine3f(copy_cloudKeyPoses6D->points[loopKeyCur]);
+        Eigen::Affine3f tCorrect = correctionLidarFrame * tWrong;
+        pcl::getTranslationAndEulerAngles(tCorrect, x, y, z, roll, pitch, yaw);
         gtsam::Pose3 poseFrom = Pose3(Rot3::RzRyRx(roll, pitch, yaw), Point3(x, y, z));
-        gtsam::Pose3 poseTo = Pose3(Rot3::RzRyRx(0.0, 0.0, 0.0), Point3(0.0, 0.0, 0.0));
+        gtsam::Pose3 poseTo = pclPointTogtsamPose3(copy_cloudKeyPoses6D->points[loopKeyPre]);
 
         // giseop, robust kernel for a SC loop
         float robustNoiseScore = 0.5; // constant is ok...
@@ -1403,6 +1623,17 @@ public:
             locResetRequested = false;
             locLastImuPreTransAvailable = false;
             locLastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
+            // FIX: o cold start (boot do no) e' o MESMO tipo de janela arriscada que um
+            // reset em runtime -- buffers do imageProjection ainda nao flusharam e o
+            // AckermannPreintegration normalmente ainda nao tem amostra nenhuma (ver
+            // WARN "sem amostra Ackermann integrada nesta janela" logo apos o boot).
+            // Antes, timeLastLocReset so era armado no reset via RViz/snap worker (linha
+            // ~630), entao nos primeiros segundos apos o boot o Escudo Anti-Teleporte
+            // ficava desarmado e o scan2map corria sem essa protecao -- exatamente a
+            // janela em que aparecem os saltos de varios metros / dezenas de graus no
+            // log (limiares -1/-1, odomReal=0, caindo so no teto fixo de 1.2m/15deg,
+            // repetido muitas vezes por segundo ate o Ackermann sincronizar).
+            timeLastLocReset = timeLaserInfoCur;
             return;
         }
 
@@ -1416,6 +1647,12 @@ public:
         // use imu pre-integration estimation for pose guess
         if (cloudInfo.odomAvailable == true)
         {
+            printf("[GUESS_IN] t=%.3f x=%.4f y=%.4f z=%.4f roll=%.4f pitch=%.4f yaw=%.4f\n",
+                   timeLaserInfoCur,
+                   cloudInfo.initialGuessX, cloudInfo.initialGuessY, cloudInfo.initialGuessZ,
+                   cloudInfo.initialGuessRoll, cloudInfo.initialGuessPitch, cloudInfo.initialGuessYaw);
+            fflush(stdout);
+
             Eigen::Affine3f transBack = pcl::getTransformation(cloudInfo.initialGuessX,    cloudInfo.initialGuessY,     cloudInfo.initialGuessZ, 
                                                                cloudInfo.initialGuessRoll, cloudInfo.initialGuessPitch, cloudInfo.initialGuessYaw);
             if (locLastImuPreTransAvailable == false)
@@ -1450,6 +1687,18 @@ public:
             locLastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
             return;
         }
+
+        // DIAGNOSTICO: nem odom_incremental nem IMU disponiveis -- em modo
+        // ackermann isso significa que transformTobeMapped
+        // NAO foi atualizado neste ciclo e o ICP vai rodar a partir do MESMO
+        // chute do ciclo anterior. Se isso acontecer repetidamente durante um
+        // backlog/reset do AckermannPreintegration, o scan-to-map registra
+        // scans novos numa pose congelada -- e isso "suja" o mapa na mesma
+        // posicao enquanto o robo ja andou. Antes essa falha era silenciosa.
+        ROS_WARN_THROTTLE(1.0,
+            "updateInitialGuessLocalization: sem odom_incremental nem IMU disponivel -- "
+            "chute inicial CONGELADO neste ciclo (transformTobeMapped nao atualizado), "
+            "risco de registrar scan com pose desatualizada");
     }
 
     void extractForLoopClosure()
@@ -1465,6 +1714,73 @@ public:
         }
 
         extractCloud(cloudToExtract);
+    }
+
+    // ---- GPU/CPU downsample helper ------------------------------------
+    // Tenta a GPU primeiro; se cudaAvailable==false OU a chamada falhar em
+    // runtime (driver, OOM, etc.), cai pro pcl::VoxelGrid original sem
+    // travar o node.
+    void gpuVoxelDownsample(pcl::PointCloud<PointType>::Ptr& cloudIn,
+                             pcl::PointCloud<PointType>::Ptr& cloudOut,
+                             pcl::VoxelGrid<PointType>& cpuFilter,
+                             float leafSize)
+    {
+        cloudOut->clear();
+        if (cudaAvailable && !cloudIn->empty())
+        {
+            std::vector<float> xyziIn(cloudIn->size() * 4);
+            for (size_t i = 0; i < cloudIn->size(); ++i)
+            {
+                xyziIn[i*4+0] = cloudIn->points[i].x;
+                xyziIn[i*4+1] = cloudIn->points[i].y;
+                xyziIn[i*4+2] = cloudIn->points[i].z;
+                xyziIn[i*4+3] = cloudIn->points[i].intensity;
+            }
+            std::vector<float> xyziOut;
+            if (cuda_map_search::voxelDownsample(xyziIn, (int)cloudIn->size(), leafSize, xyziOut))
+            {
+                size_t n = xyziOut.size() / 4;
+                cloudOut->resize(n);
+                for (size_t i = 0; i < n; ++i)
+                {
+                    cloudOut->points[i].x = xyziOut[i*4+0];
+                    cloudOut->points[i].y = xyziOut[i*4+1];
+                    cloudOut->points[i].z = xyziOut[i*4+2];
+                    cloudOut->points[i].intensity = xyziOut[i*4+3];
+                }
+                return;
+            }
+            ROS_WARN_THROTTLE(10.0, "GPU voxel downsample failed at runtime, using CPU for this scan");
+        }
+        cpuFilter.setInputCloud(cloudIn);
+        cpuFilter.filter(*cloudOut);
+    }
+
+    // ---- GPU map upload helpers ----------------------------------------
+    bool uploadCornerMapToGpu(pcl::PointCloud<PointType>::Ptr& mapCloud)
+    {
+        if (!cudaAvailable || mapCloud->size() < 5) return false;
+        std::vector<float> xyz(mapCloud->size() * 3);
+        for (size_t i = 0; i < mapCloud->size(); ++i)
+        {
+            xyz[i*3+0] = mapCloud->points[i].x;
+            xyz[i*3+1] = mapCloud->points[i].y;
+            xyz[i*3+2] = mapCloud->points[i].z;
+        }
+        return cuda_map_search::uploadCornerMap(xyz, (int)mapCloud->size());
+    }
+
+    bool uploadSurfMapToGpu(pcl::PointCloud<PointType>::Ptr& mapCloud)
+    {
+        if (!cudaAvailable || mapCloud->size() < 5) return false;
+        std::vector<float> xyz(mapCloud->size() * 3);
+        for (size_t i = 0; i < mapCloud->size(); ++i)
+        {
+            xyz[i*3+0] = mapCloud->points[i].x;
+            xyz[i*3+1] = mapCloud->points[i].y;
+            xyz[i*3+2] = mapCloud->points[i].z;
+        }
+        return cuda_map_search::uploadSurfMap(xyz, (int)mapCloud->size());
     }
 
     void extractNearby()
@@ -1527,13 +1843,18 @@ public:
         }
 
         // Downsample the surrounding corner key frames (or map)
-        downSizeFilterCorner.setInputCloud(laserCloudCornerFromMap);
-        downSizeFilterCorner.filter(*laserCloudCornerFromMapDS);
+        gpuVoxelDownsample(laserCloudCornerFromMap, laserCloudCornerFromMapDS, downSizeFilterCorner, mappingCornerLeafSize);
         laserCloudCornerFromMapDSNum = laserCloudCornerFromMapDS->size();
         // Downsample the surrounding surf key frames (or map)
-        downSizeFilterSurf.setInputCloud(laserCloudSurfFromMap);
-        downSizeFilterSurf.filter(*laserCloudSurfFromMapDS);
+        gpuVoxelDownsample(laserCloudSurfFromMap, laserCloudSurfFromMapDS, downSizeFilterSurf, mappingSurfLeafSize);
         laserCloudSurfFromMapDSNum = laserCloudSurfFromMapDS->size();
+
+        // Upload o mapa local pra GPU UMA VEZ por scan. As 30 iterações do LM
+        // em scan2MapOptimization() vão todas consultar contra este mesmo
+        // upload -- isso é o que transforma "30x upload+busca completos" em
+        // "1x upload, 30x busca em lote barata".
+        cornerMapUploadedToGpu = uploadCornerMapToGpu(laserCloudCornerFromMapDS);
+        surfMapUploadedToGpu   = uploadSurfMapToGpu(laserCloudSurfFromMapDS);
 
         // clear map cache if too large
         if (laserCloudMapContainer.size() > 1000)
@@ -1564,13 +1885,11 @@ public:
 
         // Downsample cloud from current scan
         laserCloudCornerLastDS->clear();
-        downSizeFilterCorner.setInputCloud(laserCloudCornerLast);
-        downSizeFilterCorner.filter(*laserCloudCornerLastDS);
+        gpuVoxelDownsample(laserCloudCornerLast, laserCloudCornerLastDS, downSizeFilterCorner, mappingCornerLeafSize);
         laserCloudCornerLastDSNum = laserCloudCornerLastDS->size();
 
         laserCloudSurfLastDS->clear();
-        downSizeFilterSurf.setInputCloud(laserCloudSurfLast);
-        downSizeFilterSurf.filter(*laserCloudSurfLastDS);
+        gpuVoxelDownsample(laserCloudSurfLast, laserCloudSurfLastDS, downSizeFilterSurf, mappingSurfLeafSize);
         laserCloudSurfLastDSNum = laserCloudSurfLastDS->size();        
 
     }
@@ -1584,16 +1903,52 @@ public:
     {
         updatePointAssociateToMap();
 
+        // Busca em lote na GPU: transforma todos os pontos do scan atual pro
+        // frame do mapa de uma vez, manda pra GPU, e traz de volta os 5
+        // vizinhos de cada um -- substitui as N chamadas individuais de
+        // kdtreeCornerFromMap->nearestKSearch() por 1 kernel launch.
+        bool useGpu = cudaAvailable && cornerMapUploadedToGpu && laserCloudCornerLastDSNum > 0;
+        std::vector<PointType> pointSelCache;
+        std::vector<int> gpuIdx;
+        std::vector<float> gpuSqDist;
+
+        if (useGpu)
+        {
+            std::vector<float> queryXYZ(laserCloudCornerLastDSNum * 3);
+            pointSelCache.resize(laserCloudCornerLastDSNum);
+            for (int i = 0; i < laserCloudCornerLastDSNum; ++i)
+            {
+                pointAssociateToMap(&laserCloudCornerLastDS->points[i], &pointSelCache[i]);
+                queryXYZ[i*3+0] = pointSelCache[i].x;
+                queryXYZ[i*3+1] = pointSelCache[i].y;
+                queryXYZ[i*3+2] = pointSelCache[i].z;
+            }
+            useGpu = cuda_map_search::knnSearchCorner5(queryXYZ, laserCloudCornerLastDSNum, gpuIdx, gpuSqDist);
+        }
+
         #pragma omp parallel for num_threads(numberOfCores)
         for (int i = 0; i < laserCloudCornerLastDSNum; i++)
         {
             PointType pointOri, pointSel, coeff;
-            std::vector<int> pointSearchInd;
-            std::vector<float> pointSearchSqDis;
+            std::vector<int> pointSearchInd(5);
+            std::vector<float> pointSearchSqDis(5);
 
             pointOri = laserCloudCornerLastDS->points[i];
-            pointAssociateToMap(&pointOri, &pointSel);
-            kdtreeCornerFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
+
+            if (useGpu)
+            {
+                pointSel = pointSelCache[i];
+                for (int k = 0; k < 5; ++k)
+                {
+                    pointSearchInd[k]   = gpuIdx[i*5+k];
+                    pointSearchSqDis[k] = gpuSqDist[i*5+k];
+                }
+            }
+            else
+            {
+                pointAssociateToMap(&pointOri, &pointSel);
+                kdtreeCornerFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
+            }
 
             cv::Mat matA1(3, 3, CV_32F, cv::Scalar::all(0));
             cv::Mat matD1(1, 3, CV_32F, cv::Scalar::all(0));
@@ -1676,16 +2031,48 @@ public:
     {
         updatePointAssociateToMap();
 
+        bool useGpu = cudaAvailable && surfMapUploadedToGpu && laserCloudSurfLastDSNum > 0;
+        std::vector<PointType> pointSelCache;
+        std::vector<int> gpuIdx;
+        std::vector<float> gpuSqDist;
+
+        if (useGpu)
+        {
+            std::vector<float> queryXYZ(laserCloudSurfLastDSNum * 3);
+            pointSelCache.resize(laserCloudSurfLastDSNum);
+            for (int i = 0; i < laserCloudSurfLastDSNum; ++i)
+            {
+                pointAssociateToMap(&laserCloudSurfLastDS->points[i], &pointSelCache[i]);
+                queryXYZ[i*3+0] = pointSelCache[i].x;
+                queryXYZ[i*3+1] = pointSelCache[i].y;
+                queryXYZ[i*3+2] = pointSelCache[i].z;
+            }
+            useGpu = cuda_map_search::knnSearchSurf5(queryXYZ, laserCloudSurfLastDSNum, gpuIdx, gpuSqDist);
+        }
+
         #pragma omp parallel for num_threads(numberOfCores)
         for (int i = 0; i < laserCloudSurfLastDSNum; i++)
         {
             PointType pointOri, pointSel, coeff;
-            std::vector<int> pointSearchInd;
-            std::vector<float> pointSearchSqDis;
+            std::vector<int> pointSearchInd(5);
+            std::vector<float> pointSearchSqDis(5);
 
             pointOri = laserCloudSurfLastDS->points[i];
-            pointAssociateToMap(&pointOri, &pointSel); 
-            kdtreeSurfFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
+
+            if (useGpu)
+            {
+                pointSel = pointSelCache[i];
+                for (int k = 0; k < 5; ++k)
+                {
+                    pointSearchInd[k]   = gpuIdx[i*5+k];
+                    pointSearchSqDis[k] = gpuSqDist[i*5+k];
+                }
+            }
+            else
+            {
+                pointAssociateToMap(&pointOri, &pointSel);
+                kdtreeSurfFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
+            }
 
             Eigen::Matrix<float, 5, 3> matA0;
             Eigen::Matrix<float, 5, 1> matB0;
@@ -1924,9 +2311,44 @@ public:
         }
     }
 
+    // Mediana + k*MAD do histórico. MAD é robusto a outlier (até ~50% de
+    // contaminação), então dá pra alimentar com a amostra crua, sem filtrar
+    // os saltos antes. Sem amostra suficiente ainda (arranque), devolve
+    // "infinito" -> gate desligado nos primeiros segundos em vez de usar
+    // um valor chutado.
+    float adaptiveJumpThreshold(const std::deque<float>& hist, float k)
+    {
+        if ((int)hist.size() < scanMatchJumpHistMinN)
+            return std::numeric_limits<float>::max();
+
+        std::vector<float> v(hist.begin(), hist.end());
+        std::sort(v.begin(), v.end());
+        float median = v[v.size() / 2];
+
+        std::vector<float> dev(v.size());
+        for (size_t i = 0; i < v.size(); i++)
+            dev[i] = std::fabs(v[i] - median);
+        std::sort(dev.begin(), dev.end());
+        float mad = dev[dev.size() / 2] * 1.4826f; // ~1 sigma equiv. p/ dist. normal
+
+        return median + k * mad;
+    }
+
+    void pushJumpSample(std::deque<float>& hist, float sample)
+    {
+        hist.push_back(sample);
+        if (hist.size() > scanMatchJumpHistSize)
+            hist.pop_front();
+    }
+
     void transformUpdate()
     {
-        if (cloudInfo.imuAvailable == true)
+        // Em modo Ackermann a atitude (roll/pitch) fornecida via cloud_info é
+        // derivada do modelo 2D (roll=pitch=0) e NÃO de um IMU real. Puxar
+        // roll/pitch para esses zeros descartaria a inclinação estimada pelo
+        // LiDAR. Só aplicamos o slerp de atitude quando a fonte é o IMU
+        // (modo "imu" ou "fusion").
+        if (cloudInfo.imuAvailable == true && odometrySource != "ackermann")
         {
             if (std::abs(cloudInfo.imuPitchInit) < 1.4)
             {
@@ -1947,6 +2369,7 @@ public:
                 tf::Matrix3x3(transformQuaternion.slerp(imuQuaternion, imuWeight)).getRPY(rollMid, pitchMid, yawMid);
                 transformTobeMapped[1] = pitchMid;
             }
+            
         }
 
         transformTobeMapped[0] = constraintTransformation(transformTobeMapped[0], rotation_tollerance);
@@ -1954,6 +2377,63 @@ public:
         transformTobeMapped[5] = constraintTransformation(transformTobeMapped[5], z_tollerance);
 
         incrementalOdometryAffineBack = trans2Affine3f(transformTobeMapped);
+
+        // Gate anti-salto: compara a correção do scan-match (Back) contra o chute
+        // pré-ICP da odometria (Front). Cobre plano XY e rotação (giro no eixo em
+        // curva fechada). Limiar não é mais chutado: vem da estatística recente
+        // de correções normais (mediana + k*MAD).
+        Eigen::Affine3f residual = incrementalOdometryAffineFront.inverse() * incrementalOdometryAffineBack;
+        float rx, ry, rz, rroll, rpitch, ryaw;
+        pcl::getTranslationAndEulerAngles(residual, rx, ry, rz, rroll, rpitch, ryaw);
+        float jumpDist = sqrt(rx * rx + ry * ry);
+
+        Eigen::Quaternionf qFront(incrementalOdometryAffineFront.rotation());
+        Eigen::Quaternionf qBack(incrementalOdometryAffineBack.rotation());
+        float jumpAngle = qFront.angularDistance(qBack); // rad, geodésica (não só yaw)
+
+        //float transThresh = adaptiveJumpThreshold(scanMatchTransJumpHist, scanMatchJumpK);
+        //float rotThresh   = adaptiveJumpThreshold(scanMatchRotJumpHist, scanMatchJumpK);
+
+        float transThresh = 1000.0f; // Gate aposentado
+        float rotThresh   = 1000.0f; // Gate aposentado
+
+        ROS_INFO_STREAM_THROTTLE(1.0, "scan2map correction: " << jumpDist << " m / "
+            << jumpAngle * 180.0 / M_PI << " deg (limiares: "
+            << (transThresh == std::numeric_limits<float>::max() ? -1.f : transThresh) << " m / "
+            << (rotThresh   == std::numeric_limits<float>::max() ? -1.f : rotThresh * 180.0 / M_PI)
+             << " deg)" "valor do transThresh: " << transThresh << " valor do rotThresh: " << rotThresh);
+
+        bool transJumped = jumpDist  > transThresh;
+        bool rotJumped   = jumpAngle > rotThresh;
+
+        if (transJumped || rotJumped)
+        {
+            float alphaTrans = transJumped ? (transThresh / jumpDist)  : 1.0f;
+            float alphaRot   = rotJumped   ? (rotThresh   / jumpAngle) : 1.0f;
+            float alpha = std::min(alphaTrans, alphaRot); // fração mais conservadora das duas
+
+            //ROS_WARN("scan2MapOptimization: salto trans=%.2fm(lim %.2f) rot=%.1fdeg(lim %.1f) -> aplicando %.0f%%",
+            //        jumpDist, transThresh, jumpAngle * 180.0 / M_PI, rotThresh * 180.0 / M_PI, alpha * 100.0f);
+            isDegenerate = true;
+
+            Eigen::Quaternionf qBlend = qFront.slerp(alpha, qBack);
+            Eigen::Vector3f tFront = incrementalOdometryAffineFront.translation();
+            Eigen::Vector3f tBack  = incrementalOdometryAffineBack.translation();
+            Eigen::Vector3f tBlend = tFront + alpha * (tBack - tFront);
+
+            Eigen::Affine3f blended = Eigen::Affine3f::Identity();
+            blended.translate(tBlend);
+            blended.rotate(qBlend);
+
+            pcl::getTranslationAndEulerAngles(blended, transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5],
+                                            transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
+            incrementalOdometryAffineBack = blended;
+        }
+
+        // limiar já foi calculado com o histórico ANTERIOR a este frame, então
+        // dá pra empurrar a amostra crua agora sem viesar a própria decisão.
+        pushJumpSample(scanMatchTransJumpHist, jumpDist);
+        pushJumpSample(scanMatchRotJumpHist, jumpAngle);
     }
 
     float constraintTransformation(float value, float limit)
@@ -2286,6 +2766,85 @@ public:
         globalPath.poses.push_back(pose_stamped);
     }
 
+    void writeLocalizationPose()
+    {
+        // Só grava em modo de localização, com arquivo aberto.
+        if (!posesOutEnabled)
+            return;
+
+        // Filtro temporal: começa a gravar a partir de posesStartTime, que é o
+        // instante em que o robô está na pose da âncora UTM configurada.
+        const double stamp = timeLaserInfoStamp.toSec();
+        if (stamp < posesStartTime)
+            return;
+
+        // Garante a extrínseca base_link -> lidar cacheada (lookup preguiçoso caso
+        // o loadMap() não a tenha conseguido no boot).
+        if (!baselink2LidarCached)
+        {
+            if (baselinkFrame == lidarFrame)
+            {
+                baselink2Lidar = tf::Transform::getIdentity();
+                baselink2LidarCached = true;
+            }
+            else
+            {
+                static tf::TransformListener tfListener;
+                tf::StampedTransform transform;
+                try {
+                    tfListener.lookupTransform(baselinkFrame, lidarFrame, ros::Time(0), transform);
+                    baselink2Lidar = transform;
+                    baselink2LidarCached = true;
+                } catch (tf::TransformException ex) {
+                    ROS_WARN_THROTTLE(2.0, "writeLocalizationPose: TF %s -> %s indisponivel: %s",
+                                      baselinkFrame.c_str(), lidarFrame.c_str(), ex.what());
+                    return;
+                }
+            }
+        }
+
+        // Pose do LiDAR no frame odom, a partir de transformTobeMapped (roll,pitch,yaw,x,y,z).
+        tf::Transform T_odom_lidar;
+        T_odom_lidar.setOrigin(tf::Vector3(transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5]));
+        tf::Quaternion q_lidar;
+        q_lidar.setRPY(transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
+        T_odom_lidar.setRotation(q_lidar);
+
+        // Pose do carro (base_link) no frame odom: T_odom_base = T_odom_lidar * baselink2Lidar^-1
+        tf::Transform T_odom_base = T_odom_lidar * baselink2Lidar.inverse();
+
+        // Congela a âncora UTM na primeira pose válida: T_utm_odom = T_utm_anchor * T_odom_base^-1
+        if (!posesAnchorSet)
+        {
+            tf::Transform T_utm_anchor;
+            T_utm_anchor.setOrigin(tf::Vector3(posesUtmAnchorX, posesUtmAnchorY, 0.0));
+            tf::Quaternion q_anchor;
+            q_anchor.setRPY(0.0, 0.0, posesUtmAnchorYaw);
+            T_utm_anchor.setRotation(q_anchor);
+
+            T_utm_odom = T_utm_anchor * T_odom_base.inverse();
+            posesAnchorSet = true;
+            ROS_INFO("Localization mode: ancora UTM congelada em t=%.6f (x=%.6f y=%.6f yaw=%.6f).",
+                     stamp, posesUtmAnchorX, posesUtmAnchorY, posesUtmAnchorYaw);
+        }
+
+        // Pose do carro em UTM: T_utm_base = T_utm_odom * T_odom_base
+        tf::Transform T_utm_base = T_utm_odom * T_odom_base;
+
+        const double x = T_utm_base.getOrigin().x();
+        const double y = T_utm_base.getOrigin().y();
+        double roll, pitch, yaw;
+        tf::Matrix3x3(T_utm_base.getRotation()).getRPY(roll, pitch, yaw);
+
+        // Formato graphslam (10 campos): x y z roll pitch yaw t t t t.
+        // z, roll e pitch zerados; timestamp do LiDAR repetido 4 vezes.
+        posesOutStream << x << " " << y << " " << 0.0 << " "
+                       << 0.0 << " " << 0.0 << " " << yaw << " "
+                       << stamp << " " << stamp << " " << stamp << " " << stamp << "\n";
+        posesOutStream.flush();
+        ++posesWritten;
+    }
+
     void publishOdometry()
     {
         // Publish odometry for ROS (global)
@@ -2297,14 +2856,23 @@ public:
         laserOdometryROS.pose.pose.position.y = transformTobeMapped[4];
         laserOdometryROS.pose.pose.position.z = transformTobeMapped[5];
         laserOdometryROS.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
+
+        printf("[PUBLISH_GLOBAL] t=%.3f x=%.4f y=%.4f z=%.4f roll=%.4f pitch=%.4f yaw=%.4f\n",
+               timeLaserInfoStamp.toSec(),
+               transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5],
+               transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
+        fflush(stdout);
+
         pubLaserOdometryGlobal.publish(laserOdometryROS);
         
-        // Publish TF
-        static tf::TransformBroadcaster br;
-        tf::Transform t_odom_to_lidar = tf::Transform(tf::createQuaternionFromRPY(transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]),
-                                                      tf::Vector3(transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5]));
-        tf::StampedTransform trans_odom_to_lidar = tf::StampedTransform(t_odom_to_lidar, timeLaserInfoStamp, odometryFrame, "lidar_link");
-        br.sendTransform(trans_odom_to_lidar);
+        // TF odom->lidarFrame removido: esse broadcast competia com a cadeia
+        // já correta e de alta frequência odom->base_link (TransformFusion,
+        // em imuPreintegration.cpp) + base_link->lidarFrame (estático, em
+        // pointcloud_node.cpp). Como esse aqui só atualizava na cadência
+        // (mais lenta) do scan-to-map, sempre que o mapping atrasava o frame
+        // do lidar "travava" na última pose e parecia desconectar do robô.
+        // A pose continua disponível via pubLaserOdometryGlobal acima, pra
+        // quem precisar dela diretamente (não como TF).
 
         // Publish odometry for ROS (incremental)
         //bool lastIncreOdomPubFlag = false;
@@ -2320,7 +2888,9 @@ public:
             increOdomAffine = increOdomAffine * affineIncre;
             float x, y, z, roll, pitch, yaw;
             pcl::getTranslationAndEulerAngles (increOdomAffine, x, y, z, roll, pitch, yaw);
-            if (cloudInfo.imuAvailable == true)
+            // Ver comentário em transformUpdate(): não puxar roll/pitch para a
+            // atitude "IMU" quando ela é, na verdade, o zero do modelo Ackermann.
+            if (cloudInfo.imuAvailable == true && odometrySource != "ackermann")
             {
                 if (std::abs(cloudInfo.imuPitchInit) < 1.4)
                 {
@@ -2354,6 +2924,18 @@ public:
             else
                 laserOdomIncremental.pose.covariance[0] = 0;
         }
+
+        printf("[PUBLISH_INCREMENTAL] t=%.3f x=%.4f y=%.4f z=%.4f qx=%.4f qy=%.4f qz=%.4f qw=%.4f\n",
+               laserOdomIncremental.header.stamp.toSec(),
+               laserOdomIncremental.pose.pose.position.x,
+               laserOdomIncremental.pose.pose.position.y,
+               laserOdomIncremental.pose.pose.position.z,
+               laserOdomIncremental.pose.pose.orientation.x,
+               laserOdomIncremental.pose.pose.orientation.y,
+               laserOdomIncremental.pose.pose.orientation.z,
+               laserOdomIncremental.pose.pose.orientation.w);
+        fflush(stdout);
+
         pubLaserOdometryIncremental.publish(laserOdomIncremental);
     }
 

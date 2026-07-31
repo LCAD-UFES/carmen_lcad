@@ -14,36 +14,6 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (VelodynePointXYZIRT,
     (uint16_t, ring, ring) (float, time, time)
 )
 
-struct OusterPointXYZIRT {
-    PCL_ADD_POINT4D;
-    float intensity;
-    uint32_t t;
-    uint16_t reflectivity;
-    uint8_t ring;
-    uint16_t noise;
-    uint32_t range;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-} EIGEN_ALIGN16;
-POINT_CLOUD_REGISTER_POINT_STRUCT(OusterPointXYZIRT,
-    (float, x, x) (float, y, y) (float, z, z) (float, intensity, intensity)
-    (uint32_t, t, t) (uint16_t, reflectivity, reflectivity)
-    (uint8_t, ring, ring) (uint16_t, noise, noise) (uint32_t, range, range)
-)
-
-struct MulranPointXYZIRT { // from the file player's topic https://github.com/irapkaist/file_player_mulran, see https://github.com/irapkaist/file_player_mulran/blob/17da0cb6ef66b4971ec943ab8d234aa25da33e7e/src/ROSThread.cpp#L7
-     PCL_ADD_POINT4D;
-     float intensity;
-     uint32_t t;
-     int ring;
-
-     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
- }EIGEN_ALIGN16;
- POINT_CLOUD_REGISTER_POINT_STRUCT (MulranPointXYZIRT,
-     (float, x, x) (float, y, y) (float, z, z) (float, intensity, intensity)
-     (uint32_t, t, t) (int, ring, ring)
- )
-
-// Use the Velodyne point format as a common representation
 using PointXYZIRT = VelodynePointXYZIRT;
 
 const int queueLength = 2000;
@@ -80,8 +50,6 @@ private:
     Eigen::Affine3f transStartInverse;
 
     pcl::PointCloud<PointXYZIRT>::Ptr laserCloudIn;
-    pcl::PointCloud<OusterPointXYZIRT>::Ptr tmpOusterCloudIn;
-    pcl::PointCloud<MulranPointXYZIRT>::Ptr tmpMulranCloudIn;
     pcl::PointCloud<PointType>::Ptr   fullCloud;
     pcl::PointCloud<PointType>::Ptr   extractedCloud;
 
@@ -98,11 +66,19 @@ private:
     double timeScanEnd;
     std_msgs::Header cloudHeader;
 
+    // Quando true, o IMU deixa de ser obrigatório: o deskew rotacional (yaw) e a
+    // atitude são derivados da odometria Ackermann (odometrySource == "ackermann").
+    bool useAckermannOdom;
+
 
 public:
     ImageProjection():
     deskewFlag(0)
     {
+        // Deskew/atitude via Ackermann apenas no modo "ackermann".
+        // Em "imu" e "fusion" o IMU continua sendo usado para atitude/deskew.
+        useAckermannOdom = (odometrySource == "ackermann");
+
         subImu        = nh.subscribe<sensor_msgs::Imu>(imuTopic, 2000, &ImageProjection::imuHandler, this, ros::TransportHints().tcpNoDelay());
         subOdom       = nh.subscribe<nav_msgs::Odometry>(odomTopic+"_incremental", 2000, &ImageProjection::odometryHandler, this, ros::TransportHints().tcpNoDelay());
         subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(pointCloudTopic, 5, &ImageProjection::cloudHandler, this, ros::TransportHints().tcpNoDelay());
@@ -119,8 +95,6 @@ public:
     void allocateMemory()
     {
         laserCloudIn.reset(new pcl::PointCloud<PointXYZIRT>());
-        tmpOusterCloudIn.reset(new pcl::PointCloud<OusterPointXYZIRT>());
-        tmpMulranCloudIn.reset(new pcl::PointCloud<MulranPointXYZIRT>());
         fullCloud.reset(new pcl::PointCloud<PointType>());
         extractedCloud.reset(new pcl::PointCloud<PointType>());
 
@@ -220,51 +194,7 @@ public:
 
         cloudQueue.pop_front();
 
-        if (sensor == SensorType::VELODYNE)
-        {
-            pcl::moveFromROSMsg(currentCloudMsg, *laserCloudIn);
-        }
-        else if (sensor == SensorType::OUSTER)
-        {
-            // Convert to Velodyne format
-            pcl::moveFromROSMsg(currentCloudMsg, *tmpOusterCloudIn);
-            laserCloudIn->points.resize(tmpOusterCloudIn->size());
-            laserCloudIn->is_dense = tmpOusterCloudIn->is_dense;
-            for (size_t i = 0; i < tmpOusterCloudIn->size(); i++)
-            {
-                auto &src = tmpOusterCloudIn->points[i];
-                auto &dst = laserCloudIn->points[i];
-                dst.x = src.x;
-                dst.y = src.y;
-                dst.z = src.z;
-                dst.intensity = src.intensity;
-                dst.ring = src.ring;
-                dst.time = src.t * 1e-9f;
-            }
-        }
-        else if (sensor == SensorType::MULRAN)
-        {
-            // Convert to Velodyne format
-            pcl::moveFromROSMsg(currentCloudMsg, *tmpMulranCloudIn);
-            laserCloudIn->points.resize(tmpMulranCloudIn->size());
-            laserCloudIn->is_dense = tmpMulranCloudIn->is_dense;
-            for (size_t i = 0; i < tmpMulranCloudIn->size(); i++)
-            {
-                auto &src = tmpMulranCloudIn->points[i];
-                auto &dst = laserCloudIn->points[i];
-                dst.x = src.x;
-                dst.y = src.y;
-                dst.z = src.z;
-                dst.intensity = src.intensity;
-                dst.ring = src.ring;
-                dst.time = float(src.t);
-            }
-        }
-        else
-        {
-            ROS_ERROR_STREAM("Unknown sensor type: " << int(sensor));
-            ros::shutdown();
-        }
+        pcl::moveFromROSMsg(currentCloudMsg, *laserCloudIn);
 
         // get timestamp
         timeScanEnd = timeScanCur + laserCloudIn->points.back().time;
@@ -320,18 +250,108 @@ public:
         std::lock_guard<std::mutex> lock1(imuLock);
         std::lock_guard<std::mutex> lock2(odoLock);
 
-        // make sure IMU data available for the scan
-        if (imuQueue.empty() || imuQueue.front().header.stamp.toSec() > timeScanCur || imuQueue.back().header.stamp.toSec() < timeScanEnd)
+        // O IMU cobre todo o scan?
+        bool imuCovers = !imuQueue.empty()
+                      && imuQueue.front().header.stamp.toSec() <= timeScanCur
+                      && imuQueue.back().header.stamp.toSec()  >= timeScanEnd;
+
+        if (imuCovers)
+        {
+            // IMU disponível: caminho original (também usado como híbrido em
+            // modo Ackermann quando há IMU montado no robô).
+            imuDeskewInfo();
+        }
+        else if (useAckermannOdom)
+        {
+            // Sem IMU cobrindo o scan e em modo Ackermann: deriva o deskew
+            // rotacional (yaw) e a atitude da odometria Ackermann. Assim o
+            // sistema não descarta todos os scans por falta de IMU.
+            ackermannDeskewInfo();
+        }
+        else
         {
             ROS_DEBUG("Waiting for IMU data ...");
             return false;
         }
 
-        imuDeskewInfo();
-
         odomDeskewInfo();
 
         return true;
+    }
+
+    void ackermannDeskewInfo()
+    {
+        cloudInfo.imuAvailable = false;
+
+        if (odomQueue.empty())
+            return;
+
+        // Inicializa com zero como fallback, mas será sobrescrito se houver odometria
+        cloudInfo.imuRollInit  = 0;
+        cloudInfo.imuPitchInit = 0;
+        cloudInfo.imuYawInit   = 0;
+
+        // Pega Roll, Pitch e Yaw absolutos no início do scan, vindos da odometria incremental Ackermann.
+        for (int i = 0; i < (int)odomQueue.size(); ++i)
+        {
+            if (odomQueue[i].header.stamp.toSec() <= timeScanCur)
+            {
+                tf::Quaternion q;
+                tf::quaternionMsgToTF(odomQueue[i].pose.pose.orientation, q);
+                double r, p, y;
+                tf::Matrix3x3(q).getRPY(r, p, y);
+                
+                // CORREÇÃO: Agora repassamos a atitude 3D completa, não apenas o Yaw!
+                cloudInfo.imuRollInit  = r;
+                cloudInfo.imuPitchInit = p;
+                cloudInfo.imuYawInit   = y;
+            }
+            else
+                break;
+        }
+
+        // Deskew rotacional integrando a velocidade angular convertida ao longo do scan.
+        imuPointerCur = 0;
+        for (int i = 0; i < (int)odomQueue.size(); ++i)
+        {
+            double tcur = odomQueue[i].header.stamp.toSec();
+            if (tcur < timeScanCur - 0.01)
+                continue;
+            if (tcur > timeScanEnd + 0.01)
+                break;
+
+            if (imuPointerCur == 0)
+            {
+                imuRotX[0] = 0;
+                imuRotY[0] = 0;
+                imuRotZ[0] = 0;
+                imuTime[0] = tcur;
+                ++imuPointerCur;
+                continue;
+            }
+
+            // CORREÇÃO: Pega as 3 velocidades angulares (agora no frame correto do Lidar)
+            double ang_x = odomQueue[i].twist.twist.angular.x;
+            double ang_y = odomQueue[i].twist.twist.angular.y;
+            double ang_z = odomQueue[i].twist.twist.angular.z;
+            
+            double dt = tcur - imuTime[imuPointerCur-1];
+            
+            // Integra nos 3 eixos (Lida perfeitamente com sensores invertidos ou com pitch/roll)
+            imuRotX[imuPointerCur] = imuRotX[imuPointerCur-1] + ang_x * dt;
+            imuRotY[imuPointerCur] = imuRotY[imuPointerCur-1] + ang_y * dt;
+            imuRotZ[imuPointerCur] = imuRotZ[imuPointerCur-1] + ang_z * dt;
+            
+            imuTime[imuPointerCur] = tcur;
+            ++imuPointerCur;
+        }
+
+        --imuPointerCur;
+
+        if (imuPointerCur <= 0)
+            return;
+
+        cloudInfo.imuAvailable = true;
     }
 
     void imuDeskewInfo()
@@ -399,7 +419,7 @@ public:
 
         while (!odomQueue.empty())
         {
-            if (odomQueue.front().header.stamp.toSec() < timeScanCur - 0.01)
+            if (odomQueue.front().header.stamp.toSec() < timeScanCur - 0.015)
                 odomQueue.pop_front();
             else
                 break;
@@ -408,7 +428,7 @@ public:
         if (odomQueue.empty())
             return;
 
-        if (odomQueue.front().header.stamp.toSec() > timeScanCur)
+        if (odomQueue.front().header.stamp.toSec() > timeScanCur + 0.015)
             return;
 
         // get start odometry at the beinning of the scan
@@ -437,6 +457,13 @@ public:
         cloudInfo.initialGuessRoll  = roll;
         cloudInfo.initialGuessPitch = pitch;
         cloudInfo.initialGuessYaw   = yaw;
+
+        printf("[ODOM_PICK] timeScanCur=%.3f startOdomStamp=%.3f dt=%.4f qsize=%d x=%.4f y=%.4f z=%.4f yaw=%.4f\n",
+               timeScanCur, ROS_TIME(&startOdomMsg), timeScanCur - ROS_TIME(&startOdomMsg),
+               (int)odomQueue.size(),
+               startOdomMsg.pose.pose.position.x, startOdomMsg.pose.pose.position.y,
+               startOdomMsg.pose.pose.position.z, yaw);
+        fflush(stdout);
 
         cloudInfo.odomAvailable = true;
 
@@ -563,7 +590,7 @@ public:
             thisPoint.intensity = laserCloudIn->points[i].intensity;
 
             float range = pointDistance(thisPoint);
-            if (range < lidarMinRange || range > lidarMaxRange)
+            if (range > lidarMaxRange)
                 continue;
 
             int rowIdn = laserCloudIn->points[i].ring;

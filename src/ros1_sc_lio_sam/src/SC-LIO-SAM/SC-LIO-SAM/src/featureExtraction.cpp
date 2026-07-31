@@ -146,21 +146,24 @@ public:
         pcl::PointCloud<PointType>::Ptr surfaceCloudScan(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr surfaceCloudScanDS(new pcl::PointCloud<PointType>());
 
+        // Extract features for each ring of the lidar
         for (int i = 0; i < N_SCAN; i++)
         {
             surfaceCloudScan->clear();
 
+            // Divide o anel em sub regiões e extrai features de cada sub região das 6
             for (int j = 0; j < 6; j++)
             {
 
-                int sp = (cloudInfo.startRingIndex[i] * (6 - j) + cloudInfo.endRingIndex[i] * j) / 6;
-                int ep = (cloudInfo.startRingIndex[i] * (5 - j) + cloudInfo.endRingIndex[i] * (j + 1)) / 6 - 1;
+                int sp = (cloudInfo.startRingIndex[i] * (6 - j) + cloudInfo.endRingIndex[i] * j) / 6; // start point
+                int ep = (cloudInfo.startRingIndex[i] * (5 - j) + cloudInfo.endRingIndex[i] * (j + 1)) / 6 - 1; // end point
 
                 if (sp >= ep)
                     continue;
 
                 std::sort(cloudSmoothness.begin()+sp, cloudSmoothness.begin()+ep, by_value());
 
+                // Extrai cantos ou arestas???
                 int largestPickedNum = 0;
                 for (int k = ep; k >= sp; k--)
                 {
@@ -168,6 +171,7 @@ public:
                     if (cloudNeighborPicked[ind] == 0 && cloudCurvature[ind] > edgeThreshold)
                     {
                         largestPickedNum++;
+                        // Esta hardcoded para no máximo 20 features (porque???)
                         if (largestPickedNum <= 20){
                             cloudLabel[ind] = 1;
                             cornerCloud->push_back(extractedCloud->points[ind]);
@@ -193,6 +197,7 @@ public:
                     }
                 }
 
+                // Extrai planos
                 for (int k = sp; k <= ep; k++)
                 {
                     int ind = cloudSmoothness[k].ind;

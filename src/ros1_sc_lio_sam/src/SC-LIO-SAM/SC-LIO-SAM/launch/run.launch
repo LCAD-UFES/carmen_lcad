@@ -1,8 +1,10 @@
 <launch>
+    <arg name="use_sim_time" default="false"/> 
+    <param name="/use_sim_time" value="$(arg use_sim_time)"/>
 
     <arg name="project" default="lio_sam"/>
     
-    <arg name="params_file" default="$(find lio_sam)/config/params_liosam.yaml"/>
+    <arg name="params_file"/>
 
     <!-- Localization mode: reuse an existing map only to localize (does NOT erase/overwrite it). -->
     <!-- Usage: roslaunch lio_sam run.launch localizationMode:=true -->
@@ -32,7 +34,7 @@
 
     <include file="$(find lio_sam)/launch/include/module_robot_state_publisher.launch" />
 
-    <include file="$(find lio_sam)/launch/include/module_navsat.launch" />
+    <!-- include file="$(find lio_sam)/launch/include/module_navsat.launch" /-->
 
     <include file="$(find lio_sam)/launch/include/module_rviz.launch" />
 

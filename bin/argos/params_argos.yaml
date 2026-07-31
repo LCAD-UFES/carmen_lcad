@@ -5,6 +5,22 @@ lio_sam:
   imuTopic: "/imu_raw"                         # IMU data
   odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
   gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
+  ackermannTopic: "/ackermann/odom_raw"       # Ackermann odometry (v, phi) from astro_ipc_bridge (TwistStamped)
+
+  # Prediction odometry source: "imu" | "ackermann" | "fusion"
+  #   imu       = so IMU (pre-integracao)
+  #   ackermann = so odometria Ackermann (sem IMU)
+  #   fusion    = IMU + Ackermann no mesmo grafo
+  odometrySource: "imu"
+  # Ackermann kinematics: distance between front and rear axles (meters). Only used when odometrySource == "ackermann".
+  wheelbase: 0.35
+  # Ackermann prediction noise (only used when odometrySource == "ackermann")
+  ackermannVelNoise: 0.2          # stddev da velocidade v [m/s]
+  ackermannSteerNoise: 0.03       # stddev do angulo de estercamento phi [rad]
+  # Escorregamento lateral/diagonal (random walk no tempo): stddev por sqrt(segundo)
+  ackermannSlipNoiseX: 0.05       # slip longitudinal  [m/sqrt(s)]
+  ackermannSlipNoiseY: 0.05       # slip lateral       [m/sqrt(s)]
+  ackermannSlipNoiseTheta: 0.02   # slip angular       [rad/sqrt(s)]
 
   # Frames
   lidarFrame: "velodyne"
@@ -36,11 +52,10 @@ lio_sam:
   initialPoseYaw: 0.0
 
   # Sensor Settings
-  sensor: velodyne                            # lidar sensor type, either 'velodyne' or 'ouster'
+  sensor: velodyne
   N_SCAN: 32                               # number of lidar channel (i.e., 16, 32, 64, 128)
   Horizon_SCAN: 2000                          # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048)
   downsampleRate: 1                           # default: 1. Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
-  lidarMinRange: 0.5                          # default: 1.0, minimum lidar range to be used
   lidarMaxRange: 70.0                       # default: 1000.0, maximum lidar range to be used
 
   # ── IMU — XSens (ajuste os ruídos conforme calibração) ────────────────
@@ -95,13 +110,13 @@ lio_sam:
   mappingProcessInterval: 0.015                  # seconds, regulate mapping frequency
 
   # ── Surrounding map ────────────────────────────────────────────────────
-  surroundingkeyframeAddingDistThreshold: 0.01 #1.0   # Distância mínima (m) para adicionar novo keyframe; ref = 1.0 (outdoor com carro)
-  surroundingkeyframeAddingAngleThreshold: 0.2 #0.2 # Rotação mínima (rad) para adicionar novo keyframe; ref = 0.2 (~11.5°)
+  surroundingkeyframeAddingDistThreshold: 0.1 #1.0   # Distância mínima (m) para adicionar novo keyframe; ref = 1.0 (outdoor com carro)
+  surroundingkeyframeAddingAngleThreshold: 0.1 #0.2 # Rotação mínima (rad) para adicionar novo keyframe; ref = 0.2 (~11.5°)
   surroundingKeyframeDensity: 1.0               # Downsampling (m) da nuvem dos keyframes vizinhos antes do match
   surroundingKeyframeSearchRadius: 70.0         # Raio (m) de busca de keyframes vizinhos para o scan matching local
 
   # ── Loop closure ───────────────────────────────────────────────────────
-  loopClosureEnableFlag: true            # Habilita detecção e correção de loop closure (fecha trajetórias repetidas)
+  loopClosureEnableFlag: false            # Habilita detecção e correção de loop closure (fecha trajetórias repetidas)
   loopClosureFrequency: 1.0        # Taxa (Hz) de execução da thread de detecção de loop closure; ref = 1.0
   surroundingKeyframeSize: 100 #50           # Número de keyframes vizinhos usados para construir o mapa local de matching
   historyKeyframeSearchRadius: 15.0     # Raio (m) para buscar candidatos de loop closure no histórico de poses
@@ -111,8 +126,8 @@ lio_sam:
 
   # ── Visualização ───────────────────────────────────────────────────────
   globalMapVisualizationSearchRadius: 1000.0  # Raio (m) ao redor da pose atual para visualizar o mapa global no RViz
-  globalMapVisualizationPoseDensity: 10.0     # Espaçamento (m) entre poses amostradas para publicar o mapa global
-  globalMapVisualizationLeafSize: 0.2         # Tamanho do voxel (m) do downsampling do mapa global para visualização
+  globalMapVisualizationPoseDensity: 1.0     # Espaçamento (m) entre poses amostradas para publicar o mapa global
+  globalMapVisualizationLeafSize: 0.1         # Tamanho do voxel (m) do downsampling do mapa global para visualização
 
 
 

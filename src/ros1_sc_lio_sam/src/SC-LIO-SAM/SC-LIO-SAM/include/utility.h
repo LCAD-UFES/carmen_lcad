@@ -60,8 +60,6 @@ typedef std::numeric_limits< double > dbl;
 
 typedef pcl::PointXYZI PointType;
 
-enum class SensorType { MULRAN, VELODYNE, OUSTER };
-
 class ParamServer
 {
 public:
@@ -75,6 +73,23 @@ public:
     string imuTopic;
     string odomTopic;
     string gpsTopic;
+    string ackermannTopic;
+
+    // Prediction odometry source: "imu", "ackermann" or "fusion"
+    //   imu       = IMU preintegration only
+    //   ackermann = Ackermann dead reckoning only (no IMU)
+    //   fusion    = IMU + Ackermann in the same factor graph
+    string odometrySource;
+    // Ackermann kinematics: distance between front and rear axles (m)
+    float  wheelbase;
+    // Ackermann measurement noise (control): stddev of v [m/s] and phi [rad]
+    float  ackermannVelNoise;
+    float  ackermannSteerNoise;
+    // Ackermann slip (lateral/diagonal) process noise, random walk in time:
+    // stddev per sqrt(second) for x [m/sqrt(s)], y [m/sqrt(s)] and theta [rad/sqrt(s)]
+    float  ackermannSlipNoiseX;
+    float  ackermannSlipNoiseY;
+    float  ackermannSlipNoiseTheta;
 
     //Frames
     string lidarFrame;
@@ -101,12 +116,18 @@ public:
     float initialPosePitch;
     float initialPoseYaw;
 
-    // Velodyne Sensor Configuration: Velodyne
-    SensorType sensor;
+    // Localization pose logging (graphslam poses_opt.dat format). Only in localizationMode.
+    // Anchors are double (UTM eastings/northings need ~13 significant digits; float would truncate).
+    std::string posesOutputFile;
+    double posesStartTime;
+    double posesUtmAnchorX;
+    double posesUtmAnchorY;
+    double posesUtmAnchorYaw;
+
+    // LiDAR sensor configuration (Velodyne point format: x,y,z,intensity,ring,time)
     int N_SCAN;
     int Horizon_SCAN;
     int downsampleRate;
-    float lidarMinRange;
     float lidarMaxRange;
 
     // IMU
@@ -170,6 +191,15 @@ public:
         nh.param<std::string>("lio_sam/imuTopic", imuTopic, "imu_correct");
         nh.param<std::string>("lio_sam/odomTopic", odomTopic, "odometry/imu");
         nh.param<std::string>("lio_sam/gpsTopic", gpsTopic, "odometry/gps");
+        nh.param<std::string>("lio_sam/ackermannTopic", ackermannTopic, "/ackermann/odom_raw");
+
+        nh.param<std::string>("lio_sam/odometrySource", odometrySource, "imu");
+        nh.param<float>("lio_sam/wheelbase", wheelbase, 2.625);
+        nh.param<float>("lio_sam/ackermannVelNoise", ackermannVelNoise, 0.1);
+        nh.param<float>("lio_sam/ackermannSteerNoise", ackermannSteerNoise, 0.02);
+        nh.param<float>("lio_sam/ackermannSlipNoiseX", ackermannSlipNoiseX, 0.02);
+        nh.param<float>("lio_sam/ackermannSlipNoiseY", ackermannSlipNoiseY, 0.05);
+        nh.param<float>("lio_sam/ackermannSlipNoiseTheta", ackermannSlipNoiseTheta, 0.01);
 
         nh.param<std::string>("lio_sam/lidarFrame", lidarFrame, "base_link");
         nh.param<std::string>("lio_sam/baselinkFrame", baselinkFrame, "base_link");
@@ -192,31 +222,15 @@ public:
         nh.param<float>("lio_sam/initialPosePitch", initialPosePitch, 0.0);
         nh.param<float>("lio_sam/initialPoseYaw", initialPoseYaw, 0.0);
 
-        std::string sensorStr;
-        nh.param<std::string>("lio_sam/sensor", sensorStr, "");
-        if (sensorStr == "velodyne")
-        {
-            sensor = SensorType::VELODYNE;
-        }
-        else if (sensorStr == "ouster")
-        {
-            sensor = SensorType::OUSTER;
-        }
-        else if (sensorStr == "mulran")
-        {
-            sensor = SensorType::MULRAN;
-        }
-        else
-        {
-            ROS_ERROR_STREAM(
-                "Invalid sensor type (must be either 'velodyne' or 'ouster' or 'mulran'): " << sensorStr);
-            ros::shutdown();
-        }
+        nh.param<std::string>("lio_sam/posesOutputFile", posesOutputFile, "");
+        nh.param<double>("lio_sam/posesStartTime",  posesStartTime,  0.0);
+        nh.param<double>("lio_sam/posesUtmAnchorX", posesUtmAnchorX, 0.0);
+        nh.param<double>("lio_sam/posesUtmAnchorY", posesUtmAnchorY, 0.0);
+        nh.param<double>("lio_sam/posesUtmAnchorYaw", posesUtmAnchorYaw, 0.0);
 
         nh.param<int>("lio_sam/N_SCAN", N_SCAN, 16);
         nh.param<int>("lio_sam/Horizon_SCAN", Horizon_SCAN, 1800);
         nh.param<int>("lio_sam/downsampleRate", downsampleRate, 1);
-        nh.param<float>("lio_sam/lidarMinRange", lidarMinRange, 1.0);
         nh.param<float>("lio_sam/lidarMaxRange", lidarMaxRange, 1000.0);
 
         nh.param<float>("lio_sam/imuAccNoise", imuAccNoise, 0.01);
