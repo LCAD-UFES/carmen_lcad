@@ -8,26 +8,17 @@ LINK = g++
 CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations -Wno-parentheses -Wno-ignored-qualifiers
 
 CFLAGS += -std=c11 -Wno-comment
-CXXFLAGS += -std=c++11 -Wno-comment -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+CXXFLAGS += -std=gnu++17 -Wno-comment -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util
 
-# Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
-IFLAGS += -std=c++11
+# PCL 1.14 and distro g2o on Ubuntu 24.04 require a modern C++ standard.
+IFLAGS += -std=gnu++17
+PCL_CFLAGS := $(shell pkg-config --cflags pcl_common pcl_io pcl_visualization pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_surface pcl_segmentation 2>/dev/null)
+PCL_LIBS := $(shell pkg-config --libs pcl_common pcl_io pcl_visualization pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_surface pcl_segmentation 2>/dev/null)
 
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	PCL_INC = $(wildcard /usr/local/include/pcl-*)
-#	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-	IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/  
-else
-	PCL_INC = $(wildcard /usr/local/include/pcl-*)
-#	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
-	IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/ 
-endif
-
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) # -I $(VTK_INC)
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
+IFLAGS += -I/usr/include/eigen3 $(PCL_CFLAGS)
 IFLAGS += -I/usr/local/carmen_boost/include
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
@@ -35,7 +26,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_p
 IFLAGS += `pkg-config --cflags opencv`
 
 LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
-		-lrt -lboost_signals -std=c++11 # -ltf_util    
+		-lrt -std=gnu++17 # -ltf_util    
 LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 		-lmap_io -lmap_util -llaser_interface -lfused_odometry_interface -lvelodyne_interface \
 		-lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \
@@ -44,19 +35,13 @@ LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 		-lxsens_interface -lgps_nmea_interface
 LFLAGS += -L /usr/local/lib -lcholmod -lg2o_core -lg2o_stuff -lg2o_types_slam2d -lg2o_cli
 
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
-			-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt
-else
-	LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
-			-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt
-endif
+LFLAGS += $(PCL_LIBS) -lboost_thread -lboost_system -pthread
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
-LFLAGS += -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lcarmen_util
+LFLAGS += -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lboost_system -lgomp -lcarmen_util
 LFLAGS += -lcarmen_util -lboost_program_options
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <memory>
 #include <map>
 #include <utility>
 #include <unistd.h>
@@ -312,22 +313,22 @@ Eigen::Matrix3d HyperGraphSclamOptimizer::GetInformationMatrix(double xx_var, do
 void HyperGraphSclamOptimizer::RegisterCustomTypes()
 {
     // register the custom gps edge
-    factory->registerType("EDGE_GPS", new g2o::HyperGraphElementCreator<g2o::EdgeGPS>);
+    factory->registerType("EDGE_GPS", std::make_shared<g2o::HyperGraphElementCreator<g2o::EdgeGPS>>());
 
     // register the custom sick edge
-    factory->registerType("EDGE_SICK_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::EdgeSickCalibration>);
+    factory->registerType("EDGE_SICK_CALIBRATION", std::make_shared<g2o::HyperGraphElementCreator<g2o::EdgeSickCalibration>>());
 
     // register the custom velodyne edge
-    factory->registerType("EDGE_VELODYNE_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::EdgeVelodyneCalibration>);
+    factory->registerType("EDGE_VELODYNE_CALIBRATION", std::make_shared<g2o::HyperGraphElementCreator<g2o::EdgeVelodyneCalibration>>());
 
     // register the custom bumblebee edge
-    factory->registerType("EDGE_BUMBLEBEE_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::EdgeBumblebeeCalibration>);
+    factory->registerType("EDGE_BUMBLEBEE_CALIBRATION", std::make_shared<g2o::HyperGraphElementCreator<g2o::EdgeBumblebeeCalibration>>());
 
     // register the custom odometry calibration edge
-    factory->registerType("EDGE_SE2_ODOM_ACKERMAN_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::EdgeSE2OdomAckermanCalibration>);
+    factory->registerType("EDGE_SE2_ODOM_ACKERMAN_CALIBRATION", std::make_shared<g2o::HyperGraphElementCreator<g2o::EdgeSE2OdomAckermanCalibration>>());
 
     // register the custom vertex
-    factory->registerType("VERTEX_ODOM_ACKERMAN_PARAM_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::VertexOdomAckermanParams>);
+    factory->registerType("VERTEX_ODOM_ACKERMAN_PARAM_CALIBRATION", std::make_shared<g2o::HyperGraphElementCreator<g2o::VertexOdomAckermanParams>>());
 }
 
 

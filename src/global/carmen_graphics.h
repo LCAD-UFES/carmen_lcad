@@ -29,18 +29,10 @@
 #ifndef CARMEN_GRAPHICS_H
 #define CARMEN_GRAPHICS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef CARMEN_H
 #error "carmen.h has already been included. Include only one of carmen.h and carmen_graphics.h"
 #endif
 #include <carmen/carmen.h>
 #include <carmen/global_graphics.h>
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -11,6 +11,8 @@ CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
 
 CFLAGS += -Wno-deprecated-declarations
 
+PYTHON_CONFIG ?= /usr/bin/python3-config
+
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
 
@@ -20,7 +22,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L../car_panel_gui/
 
 IFLAGS += `pkg-config --cflags opencv`
 
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+IFLAGS += `$(PYTHON_CONFIG) --includes`
 
 
 LFLAGS += -L/usr/local/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
@@ -41,15 +43,7 @@ LFLAGS += -luser_preferences
 #CFLAGS += -Wno-unknown-pragmas
 #CXXFLAGS += -Wno-unknown-pragmas
 
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
-else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
-else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
-endif
+LFLAGS += `$(PYTHON_CONFIG) --embed --libs` -pthread
 
 # Source code files (.c, .cpp) 
 SOURCES = navigator_gui2_main.cpp navigator_gui2_interface.c 2D_map_view.cpp
@@ -83,6 +77,7 @@ IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
 IFLAGS += `pkg-config --cflags gtkglext-1.0`
 LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
 LFLAGS += `pkg-config --libs gtkglext-1.0`
+LFLAGS += -lX11
 
 endif
 

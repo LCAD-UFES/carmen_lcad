@@ -3,6 +3,7 @@ TARGETSO = 	./lib/libojTorc.so
 
 CCFLAGS	=	-Wall -std=c99 -fPIC -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/
 LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/
+RPATH	=	-Wl,-rpath,'$$ORIGIN/../../libjaus/lib:$$ORIGIN/../../libopenJaus/lib'
 LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lm
 
 SOURCES =	./src/torcInterface.c \
@@ -37,10 +38,10 @@ clean :
 	rm -f $(TARGETSO)
 
 $(TARGET) : $(OBJECTS)
-	g++ $(LFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+	g++ $(LFLAGS) $(RPATH) -o $(TARGET) $(OBJECTS) $(LIBS)
 	
 $(TARGETSO) : $(OBJECTS)
-	g++ -shared $(LFLAGS) -o $(TARGETSO) $(OBJECTS) $(LIBS)
+	g++ -shared $(LFLAGS) $(RPATH) -o $(TARGETSO) $(OBJECTS) $(LIBS)
 
 ./Build/torcInterface.o : ./src/torcInterface.c ./include/torcInterface.h
 	gcc $(CCFLAGS) -o ./Build/torcInterface.o ./src/torcInterface.c

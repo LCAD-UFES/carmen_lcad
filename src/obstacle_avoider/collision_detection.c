@@ -763,7 +763,7 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 	return (proximity_to_obstacles);
 }
 
-carmen_mapper_virtual_laser_message virtual_laser_message;
+static carmen_mapper_virtual_laser_message virtual_laser_message;
 int add_virtual_laser_points = 0;
 
 void

@@ -6,11 +6,13 @@ MODULE_COMMENT =
 
 LINK = g++
 
+PYTHON_CONFIG ?= /usr/bin/python3-config
+
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+IFLAGS += `$(PYTHON_CONFIG) --includes`
 IFLAGS += `pkg-config --cflags opencv` 
 
 # Required default libraries to comunicate with Carmen Core.
@@ -20,15 +22,7 @@ LFLAGS +=  -lgrid_mapping -lprob_models -lz -lmap_io -lmap_util -lmap_interface 
 	-lrotation_geometry -ldownload_map -lrddf_interface -ltracker_interface -lnavigator_astar_interface \
 	-lsimulator_ackerman_interface -lbehavior_selector_interface -lvoice_interface_interface
 
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
-else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
-else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
-endif
+LFLAGS += `$(PYTHON_CONFIG) --embed --libs` -pthread
 
 CFLAGS += -fopenmp -std=c99 
 CXXFLAGS += -Wno-write-strings

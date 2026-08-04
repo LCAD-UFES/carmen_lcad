@@ -25,8 +25,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += -lparam_interface -lipc -lglobal -lobstacle_distance_mapper_interface \
 		   -lmapper_interface -lgrid_mapping -lmap_io -lmap_util -lprob_models -lmap_interface \
 	       -lmap_server_interface -lrotation_geometry -lgeometry -lm -lz -ltf \
-	       -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt \
-	       -lrt -lboost_signals -lboost_system \
+	       -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread \
+	       -lrt -lboost_system -pthread \
 	       -lsimulator_ackerman_interface -lnavigator_ackerman_interface -llocalize_ackerman_interface \
 	       -lbehavior_selector_interface -lmapper_interface -lroute_planner_interface -lcollision_detection \
 	       -lmoving_objects_interface
@@ -57,4 +57,3 @@ obstacle_distance_mapper: obstacle_distance_mapper_main.o obstacle_distance_mapp
 # rules
 
 include ../Makefile.rules
-

@@ -7,6 +7,7 @@ LINK = g++
 
 CXXFLAGS += -fopenmp
 CFLAGS +=  `pkg-config --cflags opencv` -fopenmp
+FLYCAPTURE_LIB := $(firstword $(wildcard /usr/lib/x86_64-linux-gnu/libflycapture.so* /usr/local/lib/libflycapture.so*))
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libbee/include/ \
  	-I$(CARMEN_HOME)/sharedlib/libbee/pgr-stereo-examples-libdc-2.0.2/pgrlibdcstereo \
@@ -24,10 +25,6 @@ else
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libbee/triclops_32/lib
 endif
 
-ifneq ($(PROCESSOR),aarch64)
-LFLAGS += -ltriclops -lpnmutils -lflycapture -lbee -lpgrlibdcstereo
-endif
-
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	-L$(CARMEN_HOME)/sharedlib/libbee/pgr-stereo-examples-libdc-2.0.2/pgrlibdcstereo \
 	-L$(CARMEN_HOME)/sharedlib/libbee/lib -lparam_interface -lipc -lglobal -ldc1394 \
@@ -40,13 +37,13 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src \
 LFLAGS += -luser_preferences
 	
 
-SOURCES = bumblebee_basic_main.cpp bumblebee_basic_interface.c bumblebee_basic_simulator.c  bumblebee_basic_view.cpp # bumblebee_basic_flycap_main.cpp 
+SOURCES = bumblebee_basic_interface.c bumblebee_basic_simulator.c bumblebee_basic_view.cpp # bumblebee_basic_flycap_main.cpp 
 PUBLIC_INCLUDES = bumblebee_basic_messages.h bumblebee_basic_interface.h
 PUBLIC_LIBRARIES = libbumblebee_basic_interface.a 
 PUBLIC_LIBRARIES_SO = libbumblebee_basic_interface.so
 ifneq ($(PROCESSOR),aarch64)
-PUBLIC_BINARIES = bumblebee_basic bumblebee_basic_simulator # bumblebee_basic_flycap
-TARGETS = libbee libbumblebee_basic_interface.a bumblebee_basic bumblebee_basic_simulator # bumblebee_basic_flycap
+PUBLIC_BINARIES = bumblebee_basic_simulator # bumblebee_basic_flycap
+TARGETS = libbumblebee_basic_interface.a bumblebee_basic_simulator # bumblebee_basic_flycap
 endif
 PUBLIC_BINARIES += bumblebee_basic_view 
 TARGETS += bumblebee_basic_view 
@@ -61,12 +58,23 @@ libbumblebee_basic_interface.so.1:	bumblebee_basic_interface.o
 bumblebee_basic_view:			bumblebee_basic_view.o libbumblebee_basic_interface.a
 
 ifneq ($(PROCESSOR),aarch64)
+ifneq ($(strip $(FLYCAPTURE_LIB)),)
+
+LFLAGS += -ltriclops -lpnmutils -lflycapture -lbee -lpgrlibdcstereo
+SOURCES += bumblebee_basic_main.cpp
+PUBLIC_BINARIES += bumblebee_basic
+TARGETS += libbee bumblebee_basic
 
 #bumblebee_basic_flycap: bumblebee_basic_flycap_main.o $(CARMEN_HOME)/sharedlib/libbee/lib/libbee.a libbumblebee_basic_interface.a
 
 bumblebee_basic:			bumblebee_basic_main.o $(CARMEN_HOME)/sharedlib/libbee/lib/libbee.a libbumblebee_basic_interface.a
 
 bumblebee_basic_simulator:		bumblebee_basic_simulator.o
+
+else
+$(info ---- FlyCapture SDK not found; skipping bumblebee_basic runtime on Ubuntu 24.04 baseline)
+bumblebee_basic_simulator:		bumblebee_basic_simulator.o
+endif
 
 endif
 

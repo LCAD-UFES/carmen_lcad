@@ -45,7 +45,7 @@ bi_dimention_vg_ram_wnn wnn_left_neuron_GPU;
 bi_dimention_vg_ram_wnn wnn_right_neuron_GPU;
 
 float gaussian_radius;
-DisparityMap disp;
+static DisparityMap disp;
 
 DisparityMap disp_GPU;
 
@@ -1458,5 +1458,4 @@ void allocDisparityMap(DisparityMap *disp,int w, int h, int numOfDisparity )
 
 	disp->disps=(float *)calloc(w*h*numOfDisparity,sizeof(float));
 }
-
 

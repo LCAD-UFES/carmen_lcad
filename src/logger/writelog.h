@@ -31,7 +31,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/carmen_stdio.h>
-#include <carmen/web_cam_interface.h>
+#include <carmen/web_cam_messages.h>
 #include <carmen/ultrasonic_filter_messages.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/kinect_messages.h>

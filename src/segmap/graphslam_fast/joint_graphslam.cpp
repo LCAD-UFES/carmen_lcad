@@ -1,6 +1,7 @@
 
 #include <carmen/carmen.h>
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <cmath>
 
@@ -199,7 +200,7 @@ main(int argc, char **argv)
 	// Why does it only works at main?
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 	Factory* factory = Factory::instance();
-	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
+	factory->registerType("EDGE_GPS", std::make_shared<HyperGraphElementCreator<EdgeGPS>>());
 	optimizer = initialize_optimizer();
 
 	vector<DatasetCarmen> data;

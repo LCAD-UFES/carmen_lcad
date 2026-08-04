@@ -1,9 +1,9 @@
-#include <qapplication.h>
-//Added by qt3to4:
-#include <Q3HBoxLayout>
+#include <QAction>
 #include <QCloseEvent>
-#include <Q3PopupMenu>
-#include <Q3VBoxLayout>
+#include <QApplication>
+#include <QIcon>
+#include <QMenu>
+#include <QVBoxLayout>
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,6 +12,7 @@ extern "C" {
 #include <carmen/carmen.h>
 #include <carmen/proccontrol_interface.h>
 #include <carmen/user_preferences.h>
+#include <array>
 #include <map>
 #include <string>
 
@@ -33,7 +34,7 @@ carmen_proccontrol_pidtable_message    pidtable;
 carmen_proccontrol_output_message      output;
 
 // <module_name, {Start Program, Stop Program, Show Output, No Output}>
-map<string, int[4]> button_slot_id;
+map<string, array<int, 4>> button_slot_id;
 
 typedef struct
 {
@@ -56,20 +57,22 @@ int user_pref_window_y = -1;
 int user_pref_output_lines = 10;
 
 
-QDisplay::QDisplay( QWidget *parent, const char *name )
-: QWidget( parent, name )
+QDisplay::QDisplay( QWidget *parent )
+: QWidget( parent )
 {
 	int i, j;
 
-	setCaption( "PROCCONTROL GUI" );
+	setWindowTitle( "PROCCONTROL GUI" );
 
-	Q3VBoxLayout  *vbox = new Q3VBoxLayout( this );
+	QVBoxLayout  *vbox = new QVBoxLayout( this );
 
 	for (j=0; j<MAX_NUM_GROUPS; j++) {
-		box[j] = new Q3HBoxLayout( vbox );
+		box[j] = new QHBoxLayout();
+		vbox->addLayout(box[j]);
 		QString s;
 		s.sprintf( "Group (%d)", j );
-		bgrp[j] = new Q3ButtonGroup( 1,  Qt::Vertical, s, this );
+		bgrp[j] = new QGroupBox( s, this );
+		group_layout[j] = new QVBoxLayout( bgrp[j] );
 		box[j]->addWidget( bgrp[j] );
 		{
 			but[j][0] = new QPushButton( bgrp[j] );
@@ -77,13 +80,18 @@ QDisplay::QDisplay( QWidget *parent, const char *name )
 			but[j][0]->setText( "All" );
 			but[j][0]->setMinimumWidth( 60 );
 			but[j][0]->setMaximumWidth( 60 );
+			group_layout[j]->addWidget( but[j][0] );
 			{
-				Q3PopupMenu *menu = new Q3PopupMenu(but[j][0]);
-				menu->insertItem("Start", this, SLOT( startClicked(int) ),
-						0, (NUM_STATES*(j*MAX_NUM_MODULES))+0 );
-				menu->insertItem("Stop", this, SLOT( stopClicked(int) ),
-						0, (NUM_STATES*(j*MAX_NUM_MODULES))+1 );
-				but[j][0]->setPopup(menu);
+				QMenu *menu = new QMenu(but[j][0]);
+				QAction *start_action = menu->addAction("Start");
+				QAction *stop_action = menu->addAction("Stop");
+				connect(start_action, &QAction::triggered, this, [this, j]() {
+					startClicked((NUM_STATES * (j * MAX_NUM_MODULES)) + 0);
+				});
+				connect(stop_action, &QAction::triggered, this, [this, j]() {
+					stopClicked((NUM_STATES * (j * MAX_NUM_MODULES)) + 1);
+				});
+				but[j][0]->setMenu(menu);
 			}
 		}
 		for (i=1; i<MAX_NUM_MODULES; i++) {
@@ -92,27 +100,37 @@ QDisplay::QDisplay( QWidget *parent, const char *name )
 			s.sprintf( "Button\n(%d)", i );
 			but[j][i]->setText( s );
 			but[j][i]->setMaximumWidth( 100 );
-			but[j][i]->setToggleButton( TRUE );
+			but[j][i]->setCheckable( true );
+			group_layout[j]->addWidget( but[j][i] );
 			{
-				Q3PopupMenu *menu = new Q3PopupMenu(but[j][i]);
-				menu->insertItem("Start Program", this, SLOT( startClicked(int) ),
-						0, (NUM_STATES*(j*MAX_NUM_MODULES+i))+0 );
-				menu->insertItem("Stop Program", this, SLOT( stopClicked(int) ),
-						0, (NUM_STATES*(j*MAX_NUM_MODULES+i))+1 );
-				menu->insertItem("Show Output", this, SLOT( showClicked(int) ),
-						0, (NUM_STATES*(j*MAX_NUM_MODULES+i))+2 );
-				menu->insertItem("No Output", this, SLOT( noClicked(int) ),
-						0, (NUM_STATES*(j*MAX_NUM_MODULES+i))+3 );
-				but[j][i]->setPopup(menu);
+				QMenu *menu = new QMenu(but[j][i]);
+				QAction *start_action = menu->addAction("Start Program");
+				QAction *stop_action = menu->addAction("Stop Program");
+				QAction *show_action = menu->addAction("Show Output");
+				QAction *hide_action = menu->addAction("No Output");
+				connect(start_action, &QAction::triggered, this, [this, j, i]() {
+					startClicked((NUM_STATES * (j * MAX_NUM_MODULES + i)) + 0);
+				});
+				connect(stop_action, &QAction::triggered, this, [this, j, i]() {
+					stopClicked((NUM_STATES * (j * MAX_NUM_MODULES + i)) + 1);
+				});
+				connect(show_action, &QAction::triggered, this, [this, j, i]() {
+					showClicked((NUM_STATES * (j * MAX_NUM_MODULES + i)) + 2);
+				});
+				connect(hide_action, &QAction::triggered, this, [this, j, i]() {
+					noClicked((NUM_STATES * (j * MAX_NUM_MODULES + i)) + 3);
+				});
+				but[j][i]->setMenu(menu);
 			}
 			but[j][i]->hide();
 		}
 		bgrp[j]->hide();
 	}
 
-	output =  new Q3TextView( this );
-	output->setMaxLogLines(500);
-	output->setColor(QColor(0, 0, 0));
+	output =  new QPlainTextEdit( this );
+	output->setReadOnly(true);
+	output->document()->setMaximumBlockCount(500);
+	output->setStyleSheet("background-color: rgb(0, 0, 0); color: rgb(255, 255, 255);");
 	QFont font( "Courier" );
 	font.setPointSize( 10 );
 	output->setFont(font);
@@ -139,7 +157,7 @@ QDisplay::showLine( char *module_name, int pid, char *line )
 {
 	static char text[10000];
 	snprintf(text, 10000, "%s (%d): %s", module_name, pid, line);
-	output->append( text );
+	output->appendPlainText( text );
 }
 
 void
@@ -180,7 +198,7 @@ QDisplay::showClicked( int n )
 	int g = (n/NUM_STATES)/MAX_NUM_MODULES;
 	int m = (n/NUM_STATES)%MAX_NUM_MODULES;
 	table.process[g][m-1].output = TRUE;
-	but[g][m]->setOn(1);
+	but[g][m]->setChecked(true);
 	if (!table.output) {
 		carmen_output(TRUE);
 		table.output = TRUE;
@@ -194,7 +212,7 @@ QDisplay::noClicked( int n )
 	int g = (n/NUM_STATES)/MAX_NUM_MODULES;
 	int m = (n/NUM_STATES)%MAX_NUM_MODULES;
 	table.process[g][m-1].output = FALSE;
-	but[g][m]->setOn(0);
+	but[g][m]->setChecked(false);
 	if (table.output) {
 		table.output = 0;
 		for (i=0; i<table.numgrps; i++) {
@@ -340,7 +358,7 @@ QDisplay::hideButton( int group, int module )
 	if (module==0) {
 		bgrp[group]->hide();
 	} else {
-		but[group][module]->setOn(0);
+		but[group][module]->setChecked(false);
 		but[group][module]->hide();
 	}
 }

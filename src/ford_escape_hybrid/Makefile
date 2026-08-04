@@ -2,6 +2,11 @@ include ../Makefile.conf
 
 CFLAGS += -DOLD_MOTION_MODEL -std=gnu99
 
+PYTHON_CONFIG ?= /usr/bin/python3-config
+OPENJAUS_BASE := $(CARMEN_HOME)/sharedlib/OpenJAUS
+OPENJAUS_LIB_DIRS := -L$(OPENJAUS_BASE)/libjaus/lib -L$(OPENJAUS_BASE)/libopenJaus/lib -L$(OPENJAUS_BASE)/ojTorc/lib
+OPENJAUS_RPATH := -Wl,-rpath,$(OPENJAUS_BASE)/libjaus/lib:$(OPENJAUS_BASE)/libopenJaus/lib:$(OPENJAUS_BASE)/ojTorc/lib
+
 IFLAGS += -I../obstacle_avoider
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/include/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/include/
@@ -10,7 +15,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/
 #IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 IFLAGS += -I$(CARMEN_HOME)/include/carmen/
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+IFLAGS += `$(PYTHON_CONFIG) --includes`
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lmotion_planner_interface -lbase_ackerman_interface -lvisual_odometry_interface \
@@ -18,23 +23,13 @@ LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobst
 	  -ltask_manager_interface -lopenJaus -ljaus -lojTorc -lcontrol -lcarmodel -lfann -lgsl -lgslcblas -lford_escape_hybrid_interface \
 	  -lrobot_ackerman_interface -lvoice_interface_interface -lsimulator_ackerman -lsimulator_ackerman_interface
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/lib/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/lib/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/lib/
+LFLAGS += $(OPENJAUS_LIB_DIRS) $(OPENJAUS_RPATH)
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/
 #LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 
 
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
-else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
-else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
-endif
+LFLAGS += `$(PYTHON_CONFIG) --embed --libs` -pthread
 
 MODULE_NAME = FORD_ESCAPE_HYBRID
 MODULE_COMMENT = "LCAD driver for TORC/JAUS Ford Escape Hybrid"

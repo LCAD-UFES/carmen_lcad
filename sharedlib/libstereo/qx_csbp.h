@@ -46,23 +46,23 @@ extern "C" {
 
 #define QX_DEF_BP_NR_NEIGHBOR						4
 
-short  *disp;
-int *m_h_pyramid;
-int *m_w_pyramid;
-int *m_iteration;
-int *m_max_nr_plane_pyramid;
-int m_cost_max_discontinuity;
-int m_max_nr_message;
-int m_nr_scale;
-int m_nr_neighbor;
-int *m_message;
-int *m_selected_disparity_pyramid;
-int *m_data_cost;
-int *m_temp3;
-int *m_temp4;
-int *m_data_cost_selected;
+extern short *disp;
+extern int *m_h_pyramid;
+extern int *m_w_pyramid;
+extern int *m_iteration;
+extern int *m_max_nr_plane_pyramid;
+extern int m_cost_max_discontinuity;
+extern int m_max_nr_message;
+extern int m_nr_scale;
+extern int m_nr_neighbor;
+extern int *m_message;
+extern int *m_selected_disparity_pyramid;
+extern int *m_data_cost;
+extern int *m_temp3;
+extern int *m_temp4;
+extern int *m_data_cost_selected;
 
-struct timeval inicioTotal, fim, tempoDec;
+extern struct timeval inicioTotal, fim, tempoDec;
 
 int timevalSubtract (struct timeval *result, struct timeval *x, struct timeval *y)  ;
 

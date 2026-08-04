@@ -8,6 +8,10 @@ LINK = g++
 
 CFLAGS += -Wall
 CXXFLAGS += -std=c++11
+PYTHON3_CONFIG := /usr/bin/python3-config
+PYTHON3_INCLUDES := $(shell $(PYTHON3_CONFIG) --includes 2>/dev/null)
+PYTHON3_EMBED_LIBS := $(shell $(PYTHON3_CONFIG) --embed --libs 2>/dev/null || $(PYTHON3_CONFIG) --libs 2>/dev/null)
+
 LFLAGS += -lparam_interface -lipc -lglobal -lrddf_interface \
 	-lcarmen_gps_wrapper  -llocalize_ackerman_interface \
 	-lkinect_interface \
@@ -16,21 +20,10 @@ LFLAGS += -lparam_interface -lipc -lglobal -lrddf_interface \
 	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface \
 	-lgsl -lgslcblas -lm -lvoice_interface_interface -lcarmen_util
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine
+LFLAGS += $(PYTHON3_EMBED_LIBS) -pthread
 
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
-else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
-else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
-endif
-
-
-IFLAGS += -I/usr/include/eigen3 
-IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+IFLAGS += -I/usr/include/eigen3 $(PYTHON3_INCLUDES)
+IFLAGS += -I/usr/include/suitesparse -I/usr/local/include/EXTERNAL/csparse/ -I/usr/include/g2o -I/usr/local/include/g2o
 
 SOURCES = rddf_interface.c rddf_play_main.cpp rddf_index.cpp rddf_build_main.cpp rddf_build_from_file.cpp rddf_util.cpp rddf_play_annotations.cpp rddf_by_road_map.cpp rddf_resample.cpp
 SOURCES += test_update_annotation.cpp

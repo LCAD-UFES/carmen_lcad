@@ -5,11 +5,12 @@
 TEMPLATE = app
 TARGET = proccontrol_gui
 DEPENDPATH += .
-INCLUDEPATH += ../../include -I /usr/include/python2.7
+INCLUDEPATH += ../../include
 LIBS += -L../../lib -lcarmenserial -lglobal -lipc -lz -L ./ -lvoice_interface_interface -lespeak
 LIBS += -luser_preferences
 QMAKE_CXXFLAGS += -Wno-write-strings
 QMAKE_CFLAGS += -Wno-write-strings
+CONFIG += c++17
 
 # Input
 HEADERS += proccontrol.h \
@@ -18,6 +19,4 @@ HEADERS += proccontrol.h \
            proccontrol_messages.h 
 SOURCES += proccontrol_gui.cpp \
            proccontrol_interface.c 
-#The following line was inserted by qt3to4
-QT +=  qt3support 
-
+QT += core gui widgets

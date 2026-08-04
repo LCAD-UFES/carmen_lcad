@@ -59,6 +59,8 @@ typedef struct {
 static char *module_name = NULL;
 static unsigned int timeout = 5000;
 static int allow_not_found_parameters = 0;
+static int query_retry_count = 3;
+static useconds_t query_retry_delay_us = 250000;
 
 static carmen_param_t *installed_parameters = NULL;
 static int installed_list_length = 0;
@@ -74,6 +76,24 @@ static void install_parameter(char *module, char *variable,
 			      carmen_param_change_handler_t handler);
 static void change_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 			   void *clientData __attribute__ ((unused)));
+
+static IPC_RETURN_TYPE
+param_query_response_data_with_retry(const char *message_name, void *query, void **response)
+{
+  IPC_RETURN_TYPE err = IPC_Error;
+  int attempt;
+
+  for (attempt = 0; attempt < query_retry_count; attempt++) {
+    err = IPC_queryResponseData(message_name, query, response, timeout);
+    if (err != IPC_Error && err != IPC_Timeout)
+      return err;
+
+    if (attempt + 1 < query_retry_count)
+      usleep(query_retry_delay_us);
+  }
+
+  return err;
+}
 
 static int 
 param_check_commandline_int(const char *lvalue, int *return_value) 
@@ -258,8 +278,8 @@ carmen_param_get_robot(void)
   query.module_name = "paramServer";
   query.variable_name = "robot";
 
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_ROBOT_NAME, &query,
-			      (void **) &response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_ROBOT_NAME, &query,
+			      (void **) &response);
   carmen_test_ipc(err, "Could not query parameter",
 		  CARMEN_PARAM_QUERY_ROBOT_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -304,8 +324,8 @@ carmen_param_get_param_filename(void)
 	  query.timestamp = carmen_get_time();
 	  query.host = carmen_get_host();
 
-	  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_PARAM_FILENAME_NAME, &query,
-				      (void **) &response, timeout);
+	  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_PARAM_FILENAME_NAME, &query,
+				      (void **) &response);
 	  carmen_test_ipc(err, "Could not query parameter",
 			  CARMEN_PARAM_QUERY_PARAM_FILENAME_NAME);
 	  if (err == IPC_Error || err == IPC_Timeout) {
@@ -359,8 +379,8 @@ carmen_param_get_modules(char ***modules, int *num_modules)
   query.variable_name = "modules";
   
   response = NULL;
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_MODULES_NAME, &query,
-			      (void **) &response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_MODULES_NAME, &query,
+			      (void **) &response);
   carmen_test_ipc(err, "Could not query parameter",
 		  CARMEN_PARAM_QUERY_MODULES_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -427,8 +447,8 @@ carmen_param_get_all(const char *module, char ***variables, char ***values,
   query.module_name = (char*)module;
   query.variable_name = "*";
   
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_ALL_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_ALL_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not query all parameters", 
 		  CARMEN_PARAM_QUERY_ALL_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -531,8 +551,8 @@ carmen_param_get_int(const char *variable, int *return_value, int *expert)
   query.module_name = module_name;
   query.variable_name = (char*)variable;
   
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_INT_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_INT_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not query int parameter", 
 		  CARMEN_PARAM_QUERY_INT_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -606,8 +626,8 @@ carmen_param_get_double(const char *variable, double *return_value, int *expert)
   query.module_name = module_name;
   query.variable_name = (char*)variable;
   
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_DOUBLE_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_DOUBLE_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not query double parameter", 
 		  CARMEN_PARAM_QUERY_DOUBLE_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -682,8 +702,8 @@ carmen_param_get_onoff(const char *variable, int *return_value, int *expert)
   query.module_name = module_name;
   query.variable_name = (char*)variable;
   
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_ONOFF_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_ONOFF_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not query onoff parameter", 
 		  CARMEN_PARAM_QUERY_ONOFF_NAME);
   if (err == IPC_Error || err == IPC_Timeout)
@@ -758,8 +778,8 @@ carmen_param_get_string(const char *variable, char **return_value, int *expert)
   query.module_name = module_name;
   query.variable_name = (char*)variable;
   
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_STRING_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_STRING_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not query string parameter", 
 		  CARMEN_PARAM_QUERY_STRING_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -838,8 +858,8 @@ carmen_param_get_filename(const char *variable, char **return_value, int *expert
   query.module_name = module_name;
   query.variable_name = (char*)variable;
   
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_STRING_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_STRING_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not query filename parameter", 
 		  CARMEN_PARAM_QUERY_STRING_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -918,8 +938,8 @@ carmen_param_get_directory(char *variable, char **return_value, int *expert)
   query.module_name = module_name;
   query.variable_name = variable;
   
-  err = IPC_queryResponseData(CARMEN_PARAM_QUERY_STRING_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_QUERY_STRING_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not query filename parameter", 
 		  CARMEN_PARAM_QUERY_STRING_NAME);
   if (err == IPC_Error || err == IPC_Timeout)
@@ -1017,8 +1037,8 @@ carmen_param_set_variable(const char *variable, const char *new_value, char **re
   query.variable_name = (char*)variable;
   query.value = (char*)new_value;
   
-  err = IPC_queryResponseData(CARMEN_PARAM_SET_NAME, &query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_SET_NAME, &query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not set variable", CARMEN_PARAM_SET_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
     sprintf(error_buffer, "Did you remember to start the parameter server?\n"
@@ -1565,8 +1585,8 @@ carmen_param_check_version(char *prog_name)
   }  
 
   query = carmen_default_message_create();
-  err = IPC_queryResponseData(CARMEN_PARAM_VERSION_QUERY_NAME, query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_VERSION_QUERY_NAME, query, 
+			      (void **)&response);
   carmen_test_ipc(err, "Could not check Carmen version", 
 		  CARMEN_PARAM_VERSION_QUERY_NAME);
   if (err == IPC_Error || err == IPC_Timeout) {
@@ -1684,8 +1704,8 @@ carmen_param_get_paramserver_host(char **hostname)
   }
 
   query = carmen_default_message_create();
-  err = IPC_queryResponseData(CARMEN_PARAM_VERSION_QUERY_NAME, query, 
-			      (void **)&response, timeout);
+  err = param_query_response_data_with_retry(CARMEN_PARAM_VERSION_QUERY_NAME, query, 
+			      (void **)&response);
   carmen_test_ipc_return_int(err, "Could not check Carmen version", 
 			     CARMEN_PARAM_VERSION_QUERY_NAME);
   *hostname = (char *)calloc(strlen(response->host)+1, sizeof(char));

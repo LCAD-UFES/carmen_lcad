@@ -18,6 +18,23 @@ extern int *m_data_cost;
 extern int *m_temp3;
 extern int *m_temp4;*/
 
+short *disp;
+int *m_h_pyramid;
+int *m_w_pyramid;
+int *m_iteration;
+int *m_max_nr_plane_pyramid;
+int m_cost_max_discontinuity;
+int m_max_nr_message;
+int m_nr_scale;
+int m_nr_neighbor;
+int *m_message;
+int *m_selected_disparity_pyramid;
+int *m_data_cost;
+int *m_temp3;
+int *m_temp4;
+int *m_data_cost_selected;
+struct timeval inicioTotal, fim, tempoDec;
+
 int timevalSubtract (struct timeval *result, struct timeval *x, struct timeval *y)
 {
   /* Perform the carry for the later subtraction by updating y. */
@@ -163,4 +180,3 @@ void disparityCSBP(unsigned char *image_left,unsigned char *image_right, int ste
     }
 
 }
-

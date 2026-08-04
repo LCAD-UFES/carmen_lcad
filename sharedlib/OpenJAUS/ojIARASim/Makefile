@@ -3,6 +3,7 @@ TARGETSO = 	./lib/libojIARASim.so
 
 CCFLAGS	=	-fPIC -Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojTorc/include
 LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojTorc/lib/
+RPATH	=	-Wl,-rpath,'$$ORIGIN/../../libjaus/lib:$$ORIGIN/../../libopenJaus/lib:$$ORIGIN/../../ojTorc/lib'
 LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lojTorc
 
 SOURCES =	./src/main.c \
@@ -44,10 +45,10 @@ else
 endif
 
 $(TARGET) : $(OBJECTS)
-	g++ $(LFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+	g++ $(LFLAGS) $(RPATH) -o $(TARGET) $(OBJECTS) $(LIBS)
 
 $(TARGETSO) : $(OBJECTS)
-	g++ -shared $(LFLAGS) -o $(TARGETSO) $(OBJECTS) $(LIBS)
+	g++ -shared $(LFLAGS) $(RPATH) -o $(TARGETSO) $(OBJECTS) $(LIBS)
 
 ./Build/main.o : ./src/main.c
 	gcc $(CCFLAGS) -o ./Build/main.o ./src/main.c
@@ -66,4 +67,3 @@ $(TARGETSO) : $(OBJECTS)
 
 ./Build/vss.o : ./src/vss.c
 	gcc $(CCFLAGS) -o ./Build/vss.o ./src/vss.c
-

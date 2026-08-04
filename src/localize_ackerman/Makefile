@@ -3,11 +3,11 @@ include ../Makefile.conf
 #SUBDIRS = model_learn_ackerman
 
 CFLAGS += -std=c11 -fopenmp
-CXXFLAGS += -std=c++11 -fopenmp -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+CXXFLAGS += -std=gnu++14 -fopenmp -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 LINK = g++
 
 #CFLAGS += -std=c11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
-#CXXFLAGS += -std=c++11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
+#CXXFLAGS += -std=gnu++14 -fopenmp -fsanitize=address -fno-omit-frame-pointer
 #LINK = g++ -fsanitize=address -fno-omit-frame-pointer
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
@@ -18,6 +18,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib -L/
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
+PCL_CFLAGS := $(shell pkg-config --cflags pcl_common pcl_io pcl_visualization pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_surface pcl_segmentation 2>/dev/null)
+PCL_LIBS := $(shell pkg-config --libs pcl_common pcl_io pcl_visualization pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_surface pcl_segmentation 2>/dev/null)
 
 LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io -lmap_util -llaser_interface \
 	  -lrobot_ackerman_interface -lobstacle_avoider_interface -lipc -lmap_server_interface \
@@ -27,21 +29,11 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 	  -ltask_manager_interface -lbehavior_selector_interface -lgsl -lgslcblas -lcarmodel -ldbscan \
 	  -lgps_xyz_interface `pkg-config --libs opencv`
 
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system 
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lboost_system -pthread
 
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-ifeq ($(UBUNTU_VERSION),"16.04")
-	PCL_INC = $(wildcard /usr/include/pcl-*)
-	VTK_INC1 = $(wildcard /usr/local/include/vtk-5*)
-	VTK_INC2 = $(wildcard /usr/include/vtk-*)
-	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC1) -I $(VTK_INC2)
-else
-	PCL_INC = $(wildcard /usr/include/pcl-*)
-	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
-endif
-
-LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization
+# PCL 1.14 on Ubuntu 24.04 requires C++14 and pkg-config based flags.
+IFLAGS += -I/usr/include/eigen3 $(PCL_CFLAGS)
+LFLAGS += $(PCL_LIBS)
 
 MODULE_NAME = LOCALIZE ACKERMAN
 MODULE_COMMENT = Markov Localization Module
@@ -130,6 +122,5 @@ model_learn_ackerman/model_learner_ackerman:
 	$(MAKE) -C model_learn_ackerman
 
 include ../Makefile.rules
-
 
 

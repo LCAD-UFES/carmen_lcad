@@ -60,9 +60,6 @@ typedef struct
 #define     CARMEN_BLOG_FORMAT_MSG_ID       0
 #define     CARMEN_BLOG_DATA_MSG_ID         1
 
-MSG_INSTANCE current_msgRef;
-
-
 //double
 //carmen_blogfile_handle_one_message(void)
 //{

@@ -7,20 +7,22 @@ MODULE_COMMENT = Moving objects simulator
 LINK = g++
 
 # Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+PCL_CFLAGS := $(shell pkg-config --cflags pcl_common pcl_io pcl_visualization pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_surface pcl_segmentation 2>/dev/null)
+PCL_LIBS := $(shell pkg-config --libs pcl_common pcl_io pcl_visualization pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_surface pcl_segmentation 2>/dev/null)
+IFLAGS += -I/usr/include/eigen3 $(PCL_CFLAGS)
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -L/usr/local/carmen_boost/lib
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface \
--L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lboost_thread-mt -lrt -lboost_signals -lboost_system \
+-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lboost_thread -lrt -lboost_system -pthread \
 -llocalize_ackerman_interface -lmoving_objects_interface -lmap_server_interface -lmapper_interface \
+$(PCL_LIBS)
 
 # C++11 flag
 CFLAGS += -Wall
+CXXFLAGS += -std=gnu++14
 
 # Source code files (.c, .cpp) 
 SOURCES = moving_objects_simulator_main.cpp moving_objects_simulator.cpp
@@ -51,4 +53,3 @@ moving_objects_simulator:	moving_objects_simulator_main.o moving_objects_simulat
 # rules
 
 include ../Makefile.rules
-

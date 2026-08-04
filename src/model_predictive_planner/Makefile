@@ -7,6 +7,7 @@ MODULE_COMMENT = Model-predictive motion planner
 LINK = g++
 CFLAGS += -fopenmp
 CXXFLAGS += -fopenmp -std=c++0x
+PYTHON_CONFIG ?= /usr/bin/python3-config
 #CXXFLAGS += -DDEBUG_OBJECTS_PLOT
 #CFLAGS += -msse3 -O4 -fopenmp
 #CXXFLAGS += -std=c++0x -msse3 -O4 -fopenmp
@@ -18,7 +19,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
 
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+IFLAGS += `$(PYTHON_CONFIG) --includes`
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
@@ -37,15 +38,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lcollision_detection -lcarmodel -lgsl -lgslcblas -lm -lford_escape_hybrid_interface -lmoving_objects_interface \
 		-ltask_manager_interface -lvoice_interface_interface
 			
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
-else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
-else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
-endif
+LFLAGS += `$(PYTHON_CONFIG) --embed --libs` -pthread
 
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp \
 		model_predictive_planner_optimizer.cpp global_state.cpp publisher_util.cpp util.cpp pose.cpp \

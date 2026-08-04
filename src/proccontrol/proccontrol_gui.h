@@ -26,21 +26,14 @@
  *
  ********************************************************/
 
-#include <q3frame.h>
-#include <q3groupbox.h>
-#include <qpushbutton.h>
-#include <q3buttongroup.h>
-#include <qlayout.h>
-#include <qlabel.h>
-#include <qcursor.h>
-#include <qwidget.h>
-#include <q3popupmenu.h>
-#include <q3multilineedit.h>
-#include <q3textview.h>
-#include <qfont.h>
-//Added by qt3to4:
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QPlainTextEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
 #include <QCloseEvent>
-#include <Q3HBoxLayout>
+#include <QFont>
 
 #define MAX_NUM_GROUPS   20
 #define MAX_NUM_MODULES  40
@@ -74,7 +67,7 @@ class QDisplay : public QWidget {
   Q_OBJECT
 
 public:
-  QDisplay( QWidget *parent = 0, const char *name = 0 );
+  QDisplay( QWidget *parent = 0 );
   void showStatus( int group, int button, int status );
   void showStatus2( int group, int button, int status, char* module_name );
   void setGroup( int group, char * group_name );
@@ -84,9 +77,10 @@ public:
 
 private:
   QPushButton  *but[MAX_NUM_GROUPS][MAX_NUM_MODULES];
-  Q3HBoxLayout  *box[MAX_NUM_GROUPS];
-  Q3ButtonGroup *bgrp[MAX_NUM_GROUPS];
-  Q3TextView *output;
+  QHBoxLayout  *box[MAX_NUM_GROUPS];
+  QVBoxLayout  *group_layout[MAX_NUM_GROUPS];
+  QGroupBox *bgrp[MAX_NUM_GROUPS];
+  QPlainTextEdit *output;
 
 public slots:
   void startClicked( int );
@@ -100,5 +94,4 @@ protected:
 
 protected slots:
 };
-
 

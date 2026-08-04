@@ -5,7 +5,7 @@ MODULE_COMMENT = Modules for logging, displaying, and playing back data.
 
 LINK = g++
 CFLAGS += -Wall
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=gnu++11
 
 ifdef FOR_XAVIER  
 INTERFACE_LIBS = -lxavier_interface -lparam_interface
@@ -21,7 +21,7 @@ endif
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface -lglobal -lipc -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-			-lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv` -luser_preferences 
+			-lboost_thread -lrt -lboost_system -pthread `pkg-config --libs opencv` -luser_preferences 
 
 SOURCES = logger.c playback_interface.c playback.cpp writelog.cpp readlog.cpp log_timestamp_repair.c logger_interface.c print_binary_log.cpp log_fix_messages.cpp
 

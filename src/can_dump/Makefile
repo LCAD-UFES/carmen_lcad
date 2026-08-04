@@ -7,12 +7,17 @@ MODULE_COMMENT = Allows dumping from a can interface in a Raspberry Pi
 LINK = g++
 CFLAGS += -Wall
 
+OPENJAUS_BASE := $(CARMEN_HOME)/sharedlib/OpenJAUS
+OPENJAUS_LIB_DIRS := -L$(OPENJAUS_BASE)/ojIARASim/lib -L$(OPENJAUS_BASE)/ojTorc/lib -L$(OPENJAUS_BASE)/libopenJaus/lib -L$(OPENJAUS_BASE)/libjaus/lib
+OPENJAUS_RPATH := -Wl,-rpath,$(OPENJAUS_BASE)/ojIARASim/lib:$(OPENJAUS_BASE)/ojTorc/lib:$(OPENJAUS_BASE)/libopenJaus/lib:$(OPENJAUS_BASE)/libjaus/lib
+OPENJAUS_RPATH_LINK := -Wl,-rpath-link,$(OPENJAUS_BASE)/ojIARASim/lib -Wl,-rpath-link,$(OPENJAUS_BASE)/ojTorc/lib -Wl,-rpath-link,$(OPENJAUS_BASE)/libopenJaus/lib -Wl,-rpath-link,$(OPENJAUS_BASE)/libjaus/lib
+
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/ojIARASim/include
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/ojIARASim/lib
+LFLAGS += $(OPENJAUS_LIB_DIRS) $(OPENJAUS_RPATH) $(OPENJAUS_RPATH_LINK)
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lojIARASim -lparam_interface -lglobal -lipc -pthread -lcan_dump_interface
+LFLAGS += -lojIARASim -lojTorc -lopenJaus -ljaus -lparam_interface -lglobal -lipc -pthread -lcan_dump_interface
 
 # Source code files (.c, .cpp) 
 SOURCES = can_dump_main.cpp can_view_main.cpp can_playback_main.cpp toyota_corolla_simulator_main.cpp can_dump_interface.c can_playback_one_can_main.cpp
@@ -47,4 +52,3 @@ can_playback_one_can: can_playback_one_can_main.o libcan_dump_interface.a
 # rules
 
 include ../Makefile.rules
-

@@ -13,8 +13,8 @@ LFLAGS += $(INTERFACE_LIBS) -lgrid_mapping -lprob_models -lX11 -lglobal -lipc \
 	-lsimulator_ackerman_interface -llocalize_ackerman_interface -lnavigator_ackerman_interface  \
 	-lmap_graphics -lglobal_graphics `pkg-config --libs gtk+-2.0` -lfused_odometry_interface \
 	-lmap_io -lrddf_interface -lmap_server_interface -lbehavior_selector_interface \
-	-ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lboost_system \
-	-lrt -lboost_signals -lrotation_geometry -lrobot_ackerman_interface
+	-ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lboost_system \
+	-lrt -pthread -lrotation_geometry -lrobot_ackerman_interface
 
 
 MODULE_NAME = NAVIGATOR GUI

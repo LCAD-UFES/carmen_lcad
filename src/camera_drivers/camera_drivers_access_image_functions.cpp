@@ -42,7 +42,7 @@ int initialize_ffmpeg(av_ffmpeg *afp, char* ip_address)
         return 2;
     }
     // find primary video stream
-    AVCodec *vcodec = nullptr;
+    const AVCodec *vcodec = nullptr;
     ret = av_find_best_stream(inctx, AVMEDIA_TYPE_VIDEO, -1, -1, &vcodec, 0);
     if (ret < 0)
     {
@@ -75,13 +75,18 @@ int initialize_ffmpeg(av_ffmpeg *afp, char* ip_address)
     }
 
     // open video decoder context
-    AVCodec *pCodec = avcodec_find_decoder(vstrm->codecpar->codec_id);
+    const AVCodec *pCodec = avcodec_find_decoder(vstrm->codecpar->codec_id);
+    if (!pCodec)
+    {
+        std::cout << "avcodec_find_decoder: unable to find decoder" << std::endl;
+        return 2;
+    }
     AVCodecContext *avctx = avcodec_alloc_context3(pCodec);
     avcodec_parameters_to_context(avctx, vstrm->codecpar);
 
     vstrm->time_base = avctx->time_base;
 
-    ret = avcodec_open2(avctx, vcodec, nullptr);
+    ret = avcodec_open2(avctx, pCodec, nullptr);
     if (ret < 0)
     {
         std::cout << "avcodec_open2: ret=" << ret << std::endl;

@@ -27,7 +27,10 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #include "proccontrol_messages.h"
 #include "proccontrol_ipc.h"
 #include "proccontrol.h"
@@ -40,6 +43,37 @@ int num_processes = 0;
 int my_pid;
 char *my_hostname = NULL;
 char warning_msg[2000];
+
+static void set_carmen_home_from_proccontrol_binary(void)
+{
+	char executable_path[PATH_MAX];
+	char candidate_path[PATH_MAX];
+	char resolved_home[PATH_MAX];
+	char marker_path[PATH_MAX];
+	ssize_t length;
+	char *last_slash;
+
+	length = readlink("/proc/self/exe", executable_path, sizeof(executable_path) - 1);
+	if (length <= 0)
+		return;
+
+	executable_path[length] = '\0';
+	last_slash = strrchr(executable_path, '/');
+	if (last_slash == NULL)
+		return;
+
+	*last_slash = '\0';
+
+	snprintf(candidate_path, sizeof(candidate_path), "%s/../..", executable_path);
+	if (realpath(candidate_path, resolved_home) == NULL)
+		return;
+
+	snprintf(marker_path, sizeof(marker_path), "%s/src/Makefile.conf", resolved_home);
+	if (!carmen_file_exists(marker_path))
+		return;
+
+	setenv("CARMEN_HOME", resolved_home, 1);
+}
 
 void kill_process(process_info_p process)
 {
@@ -517,6 +551,8 @@ static void reconnect_central(void)
 int main(int argc, char **argv)
 {
 	char filename[256];
+
+	set_carmen_home_from_proccontrol_binary();
 
 	my_hostname = carmen_get_host();
 	if(argc >= 2)

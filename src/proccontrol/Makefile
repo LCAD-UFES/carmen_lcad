@@ -37,17 +37,18 @@ proccontrol_setgroup:		proccontrol_setgroup.o \
 
 proccontrol_viewoutput:		proccontrol_viewoutput.o \
 				libproccontrol_interface.a
-proccontrol_gui: 			proccontrol_gui.cpp proccontrol_gui.h proccontrol_interface.c
-	+qmake-qt4 -o Makefile.qmake-qt4
-	+sed -i '/^CXXFLAGS.*/a CXXFLAGS += -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations' Makefile.qmake-qt4 
-	+make -f Makefile.qmake-qt4
-	
+proccontrol_gui: 			../utilities/user_preferences/libuser_preferences.a proccontrol.pro proccontrol_gui.cpp proccontrol_gui.h proccontrol_interface.c
+	+make -C ../utilities/user_preferences
+	+qmake -o Makefile.qmake-qt5 proccontrol.pro
+	+sed -i '/^CXXFLAGS.*/a CXXFLAGS += -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations' Makefile.qmake-qt5
+	+make -f Makefile.qmake-qt5
+
 #clean: clean_proccontrol_gui
 clean: clean_proccontrol_gui
 
 clean_proccontrol_gui:
-	+qmake-qt4 -o Makefile.qmake-qt4
-	+make -f Makefile.qmake-qt4 clean
-	+rm Makefile.qmake-qt4
+	+qmake -o Makefile.qmake-qt5 proccontrol.pro
+	+make -f Makefile.qmake-qt5 clean
+	+rm -f Makefile.qmake-qt5
 	
 include ../Makefile.rules

@@ -30,8 +30,8 @@ LFLAGS += \
 	-lpng \
 	-lreadlog \
 	-lkinect_interface \
-	-lboost_signals \
 	-lboost_system \
+	-lpthread \
 	`pkg-config --libs opencv` \
 
 SOURCES = \

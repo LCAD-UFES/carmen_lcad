@@ -98,7 +98,7 @@ typedef struct
 	char	*error_description;
 } ErrorDescription;
 
-enum
+typedef enum
 {
 	GEAR_1 = 3,
 	GEAR_2,

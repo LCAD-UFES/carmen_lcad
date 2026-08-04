@@ -4,7 +4,7 @@ MODULE_NAME = "GPS XYZ"
 MODULE_COMMENT = "GPS Module XYZ"
 
 CFLAGS += 
-CXXFLAGS += -std=c++11 -Wno-deprecated-declarations -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+CXXFLAGS += -std=gnu++14 -Wno-deprecated-declarations -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 IFLAGS += 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
@@ -12,8 +12,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib -L/
 
 LFLAGS += -L../../sharedlib/libtf/src
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lxsens_mtig_interface -lvelodyne_interface -lgps_nmea_interface -lbase_ackerman_interface \
-		  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt \
-		  -lboost_signals -lboost_system -lstdc++ -pthread
+		  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt \
+		  -lboost_system -lstdc++ -pthread
 
 SOURCES = gps_xyz_interface.c gps_xyz-test.cpp gps_xyz.cpp
 

@@ -116,7 +116,7 @@ int carmen_rddf_num_poses_ahead = 100;
 double robot_max_centripetal_acceleration = 1.5;
 
 int use_truepos = 0;
-extern carmen_mapper_virtual_laser_message virtual_laser_message;
+carmen_mapper_virtual_laser_message virtual_laser_message;
 
 carmen_rddf_road_profile_message *last_rddf_message = NULL;
 static carmen_rddf_road_profile_message *last_rddf_message_copy = NULL;

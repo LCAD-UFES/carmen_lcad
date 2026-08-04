@@ -6,12 +6,13 @@ MODULE_COMMENT = Stereo Velodyne LIDAR
 
 LINK = g++
 
-# Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+PCL_CFLAGS := $(shell pkg-config --cflags pcl_common pcl_surface pcl_io pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_visualization 2>/dev/null)
+PCL_LIBS := $(shell pkg-config --libs pcl_common pcl_surface pcl_io pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_visualization 2>/dev/null)
 
-LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+# Application specific include directories.
+IFLAGS += -I/usr/include/eigen3 $(PCL_CFLAGS)
+
+LFLAGS += $(PCL_LIBS) -lboost_thread -lrt -lboost_system -pthread
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne -L/usr/local/carmen_boost/lib

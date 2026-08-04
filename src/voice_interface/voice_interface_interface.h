@@ -10,7 +10,6 @@
 
 #include <carmen/carmen.h>
 #include <carmen/voice_interface_messages.h>
-#include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

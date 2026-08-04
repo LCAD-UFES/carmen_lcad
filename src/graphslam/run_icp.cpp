@@ -157,7 +157,7 @@ perform_icp(pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud, pcl::Point
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_filtered = GridFiltering(source_pointcloud, 0.2);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target_filtered = GridFiltering(target_pointcloud, 0.2);
 
-	gicp.setInputCloud(source_filtered);
+	gicp.setInputSource(source_filtered);
 	gicp.setInputTarget(target_filtered);
 	gicp.align(out_pcl_pointcloud);
 	(*correction) = gicp.getFinalTransformation().cast<double>();
@@ -262,9 +262,9 @@ process_data()
 	carmen_pose_3D_t measured_pose_out;
 	Eigen::Matrix<double, 4, 4> correction, T;
 
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud_with_guess = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target_pointcloud = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud_with_guess(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 	// first pose is set to zero
 	memset(&measured_pose_out, 0, sizeof(measured_pose_out));
@@ -348,4 +348,3 @@ main(int argc, char **argv)
 
 	return 0;
 }
-

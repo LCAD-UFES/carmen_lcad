@@ -1,5 +1,13 @@
 #!/bin/bash
 
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd)"
+DEFAULT_CARMEN_HOME="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+
+if [ -z "${CARMEN_HOME:-}" ] || [ ! -d "${CARMEN_HOME}/src" ]; then
+	export CARMEN_HOME="${DEFAULT_CARMEN_HOME}"
+fi
+
 function make_module()
 {
 	cd "$CARMEN_HOME/src/$1"
@@ -26,8 +34,7 @@ function make_list_of_modules()
 	done
 }
 
-
-$CARMEN_HOME/bin/make_clean_all
+"$CARMEN_HOME/bin/make_clean_all"
 
 PREPARATION="sensors/web_cam sensors/ultrasonic tracker lane_detector path_planner sensors/camera . sensors/camera velodyne_camera_calibration 
 	     camera_boxes_to_world ../sharedlib/libclustering sensors/web_cam laser-ldmrs tracker ../sharedlib/libcarmodel
@@ -39,4 +46,3 @@ echo -e "\nPreparation...\n"
 make_list_of_modules "$PREPARATION" -ignore_errors
 
 make_list_of_modules "$MODULES"
-

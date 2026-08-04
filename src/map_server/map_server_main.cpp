@@ -1,4 +1,5 @@
 #include <carmen/carmen.h>
+#include <sys/stat.h>
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/grid_mapping.h>
 #include "map_server_messages.h"
@@ -857,6 +858,20 @@ initialize_structures(void)
 	carmen_grid_mapping_initialize_map(current_road_map, ((double)map_width / map_grid_res), map_grid_res, 'r');
 }
 
+static void
+validate_map_path_or_die(void)
+{
+	if ((map_file_name != NULL) || !block_map)
+		return;
+
+	if ((map_path == NULL) || (map_path[0] == '\0'))
+		carmen_die("map_server: map_path was not provided.\n");
+
+	struct stat map_path_stat;
+	if ((stat(map_path, &map_path_stat) != 0) || !S_ISDIR(map_path_stat.st_mode))
+		carmen_die("map_server: map_path directory not found: %s\n", map_path);
+}
+
 
 void
 map_server_get_first_map()
@@ -921,6 +936,7 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 	define_messages();
+	validate_map_path_or_die();
 
 	carmen_grid_mapping_init_parameters(map_grid_res, map_width);
 

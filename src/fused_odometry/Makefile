@@ -7,7 +7,7 @@ LINK = g++
 CXXFLAGS += -Wall -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=gnu++14
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models 
@@ -17,7 +17,7 @@ LFLAGS += -lglobal -lipc -lparam_interface -lxsens_interface -lgps_xyz_interface
 LFLAGS += -llocalize_ackerman_interface -llocalize_ackerman_motion -lvisual_odometry_interface \
 		  -lxsens_mtig_interface -lbase_ackerman_interface -lgps_nmea_interface \
 		  -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics \
-		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lm -pthread
+		  -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lboost_system -lm -pthread
 
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
@@ -67,6 +67,5 @@ clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
 	
 include ../Makefile.rules
-
 
 

@@ -5,7 +5,7 @@ MODULE_COMMENT = tracker_opentld
 
 LINK = g++
 
-CXXFLAGS += 
+CXXFLAGS += -std=gnu++11
 CFLAGS += 
 IFLAGS += `pkg-config --cflags opencv` -I 3rdparty/cvblobs -I libopentld/mftracker -I libopentld/tld -I libopentld/imacq -I main_utils -I 3rdparty/libconfig
 LFLAGS += `pkg-config --libs opencv` -lopentld  -l3rdparty -lopencv_video -lparam_interface -lipc -lglobal \

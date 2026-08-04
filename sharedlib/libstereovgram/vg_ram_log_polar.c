@@ -11,7 +11,7 @@ unsigned int	**HamDist;
 unsigned short	**disps;
 vg_ram_wnn		*stereo_wnn;
 float gaussian_radius;
-DisparityMap disp;
+static DisparityMap disp;
 DisparityMap disp_out;
 
 int inc_stereo_height;
@@ -979,4 +979,3 @@ void allocDisparityMap(DisparityMap *disp,int w, int h, int numOfDisparity )
 
 	disp->disps=(unsigned char *)calloc(w*h*numOfDisparity,sizeof(unsigned char ));
 }
-

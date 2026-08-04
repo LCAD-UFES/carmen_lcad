@@ -3,6 +3,8 @@ include ../Makefile.conf
 MODULE_NAME = PI CAMERA
 MODULE_COMMENT = Raspberry Pi Camera Driver Module
 
+SUBDIRS = ../sensors/camera
+
 LINK = g++
 CXXFLAGS += -std=c++0x
 

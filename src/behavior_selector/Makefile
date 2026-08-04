@@ -7,6 +7,8 @@ LINK=g++
 CFLAGS += -std=c99 
 CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
 
+PYTHON_CONFIG ?= /usr/bin/python3-config
+
 #LINK=g++ -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
 #CFLAGS += -std=c99 -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
 #CXXFLAGS += -std=c++11 -fsanitize=address -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined
@@ -18,7 +20,7 @@ IFLAGS += \
 	-I/usr/local/include/EXTERNAL/csparse/ \
 	-I/usr/local/include/g2o/
 
-IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
+IFLAGS += `$(PYTHON_CONFIG) --includes`
 
 LFLAGS += \
 	-L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp \
@@ -57,15 +59,7 @@ LFLAGS += \
 	`pkg-config --libs opencv` \
   -lcarmen_util
 	
-UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
-#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
-ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
-else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
-else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
-endif
+LFLAGS += `$(PYTHON_CONFIG) --embed --libs` -pthread
 
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -lford_escape_hybrid_interface
 

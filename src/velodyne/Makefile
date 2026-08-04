@@ -7,7 +7,7 @@ MODULE_COMMENT = Velodyne LIDAR Module
 LINK = g++
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+CXXFLAGS += -std=gnu++14 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 # Application specific include directories.
 
@@ -18,7 +18,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface -lvelodyne -lrotation_geometry
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -pthread
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lboost_system -pthread
 CFLAGS += -Wall
 
 # Source code files (.c, .cpp) 

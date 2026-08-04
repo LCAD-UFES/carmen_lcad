@@ -1,6 +1,7 @@
 
 #include <carmen/carmen.h>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 #include <cmath>
@@ -474,7 +475,7 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 void
 initialize_g2o_stuff(g2o::Factory *factory, SparseOptimizer *optimizer)
 {
-	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
+	factory->registerType("EDGE_GPS", std::make_shared<HyperGraphElementCreator<EdgeGPS>>());
 
 	MyCholmodSolver *cholmod_solver = new MyCholmodSolver();
 	cholmod_solver->setBlockOrdering(false);
@@ -663,4 +664,3 @@ int main(int argc, char **argv)
 	free_g2o_stuff(factory, optimizer);
 	return 0;
 }
-

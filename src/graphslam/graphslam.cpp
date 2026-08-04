@@ -2,6 +2,7 @@
 #include <carmen/util_io.h>
 
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <cmath>
 
@@ -567,8 +568,8 @@ graphslam(double gps_xy_std_multiplier, double gps_yaw_std,
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 
 	Factory *factory = Factory::instance();
-	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
-	factory->registerType("EDGE_GPS_NEW", new HyperGraphElementCreator<EdgeGPSNew>);
+	factory->registerType("EDGE_GPS", std::make_shared<HyperGraphElementCreator<EdgeGPS>>());
+	factory->registerType("EDGE_GPS_NEW", std::make_shared<HyperGraphElementCreator<EdgeGPSNew>>());
 
 	SparseOptimizer *optimizer = initialize_optimizer();
 	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);

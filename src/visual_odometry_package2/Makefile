@@ -10,12 +10,12 @@ LINK = g++
 CXXFLAGS += -Wall -msse3 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=gnu++14
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lbase_ackerman_interface -lvisual_odometry_interface -lstereo_interface -lviso
-LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lboost_system -pthread
  
 SOURCES = visual_odometry_main.cpp visual_odometry_interface.c
 PUBLIC_INCLUDES = visual_odometry_messages.h visual_odometry_interface.h
@@ -61,4 +61,3 @@ clean_libviso:
 endif
 
 include ../Makefile.rules
-

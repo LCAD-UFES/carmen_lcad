@@ -160,7 +160,7 @@ namespace tf
 #if defined(BOOST_DATE_TIME_HAS_NANOSECONDS)
     return pt::from_time_t(sec) + pt::nanoseconds(nsec);
 #else
-    return pt::from_time_t(sec) + pt::microseconds(nsec/1000.0);
+    return pt::from_time_t(sec) + pt::microseconds(nsec / 1000);
 #endif
   }
 
@@ -168,4 +168,3 @@ namespace tf
 }
 
 #endif // ROS_IMPL_TIME_H_INCLUDED
-

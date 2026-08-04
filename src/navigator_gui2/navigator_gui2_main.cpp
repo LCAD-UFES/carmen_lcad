@@ -1,4 +1,5 @@
 #include <locale.h>
+#include <sys/stat.h>
 #include "navigator_gui2_main.h"
 #include <carmen/carmen.h>
 #include <carmen/navigator_ackerman_interface.h>
@@ -59,6 +60,7 @@ static int goal_set = 0, autonomous = 0; // Checks if Go button has been pressed
 static char *map_path = NULL;
 char *annotation_path = NULL;
 int autonomous_record_screen = 0;
+static int missing_map_path_warning_emitted = 0;
 
 int publish_map_view = 0;
 double publish_map_view_interval = 0.5;
@@ -102,6 +104,48 @@ navigator_get_empty_map()
 	carmen_map_interface_set_superimposed_map(NULL);
 }
 
+static int
+ensure_complete_map_loaded_from_path()
+{
+	if ((map_path == NULL) || (map_path[0] == '\0'))
+		return 0;
+
+	struct stat map_path_stat;
+	if ((stat(map_path, &map_path_stat) != 0) || !S_ISDIR(map_path_stat.st_mode))
+	{
+		if (!missing_map_path_warning_emitted)
+		{
+			fprintf(stderr, "navigator_gui2: map_path directory not found: %s\n", map_path);
+			missing_map_path_warning_emitted = 1;
+		}
+		return 0;
+	}
+
+	if (complete_map != NULL)
+		return (complete_map->complete_map != NULL);
+
+	complete_map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+	carmen_test_alloc(complete_map);
+
+	if (carmen_grid_mapping_read_complete_map(map_path, complete_map) == -1)
+	{
+		free(complete_map);
+		complete_map = NULL;
+		return 0;
+	}
+
+	return 1;
+}
+
+static void
+navigator_display_fallback_complete_map()
+{
+	/* Keep the requested map type active, but show the on-disk map until
+	   the corresponding online map arrives through IPC. */
+	if (ensure_complete_map_loaded_from_path())
+		gui->navigator_graphics_display_map(complete_map, CARMEN_COMPLETE_MAP_v);
+}
+
 
 static void
 navigator_get_specific_map(int is_superimposed, carmen_map_t *specific_map, carmen_navigator_map_t type)
@@ -113,7 +157,11 @@ navigator_get_specific_map(int is_superimposed, carmen_map_t *specific_map, carm
 	gui->navigator_graphics_set_flags(type);
 
 	if ((specific_map == NULL) || (specific_map->complete_map == NULL))
+	{
+		if (!is_superimposed)
+			navigator_display_fallback_complete_map();
 		return;
+	}
 
 	if (!is_superimposed)
 		gui->navigator_graphics_display_map(specific_map, type);
@@ -128,17 +176,8 @@ navigator_get_complete_map(int is_superimposed)
 	if (is_superimposed)
 		return (NULL);
 
-	if (complete_map == NULL)
-	{
-		complete_map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
-		int result = carmen_grid_mapping_read_complete_map(map_path, complete_map);
-		if (result == -1)
-		{
-			free(complete_map);
-			complete_map = NULL;
-			return (NULL);
-		}
-	}
+	if (!ensure_complete_map_loaded_from_path())
+		return (NULL);
 
 	if (map_type != CARMEN_COMPLETE_MAP_v)
 	{
@@ -593,8 +632,6 @@ get_active_maps_from_menu(char **map, char **superimposed_map)
 void
 set_window_size_and_position()
 {
-	gtk_window_maximize(GTK_WINDOW(gui->controls_.main_window));
-
 	if (window_width > 0 && window_height > 0)
 		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), window_width, window_height);
 	if (window_x >= 0 && window_y >= 0)

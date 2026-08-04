@@ -24,20 +24,18 @@ LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11
 		-lmapper_interface -lmap_server_interface -lprob_models -lgrid_mapping -lmap_interface -lmap_io -lfrenet_path_planner_interface \
 		-lviewer_3D_interface -lbase_ackerman_interface -loffroad_planner_interface -ltask_manager_interface -lcargo_interface #-llane_analysis_interface
 		
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -ljpeg
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lboost_system -pthread -lrt -ljpeg
 
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
 # Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-*)
-#VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
+PCL_CFLAGS := $(shell pkg-config --cflags pcl_common pcl_io pcl_visualization 2>/dev/null)
+PCL_LIBS := $(shell pkg-config --libs pcl_common pcl_surface pcl_io pcl_registration pcl_kdtree pcl_features pcl_search pcl_octree pcl_sample_consensus pcl_filters pcl_visualization 2>/dev/null)
 
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) # -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(PCL_CFLAGS)
 
-LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
-		  -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system \
-		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lcollision_detection
+LFLAGS += $(PCL_LIBS) -lcollision_detection
 LFLAGS += -luser_preferences
 
 SUBDIRS += glm
@@ -57,14 +55,24 @@ PUBLIC_OTHERS = Touareg2.mtl Touareg2.obj
 TARGETS = viewer_3D xsens_viewer libvelodyne_360_drawer.a libviewer_3D_interface.a 3D_map_view libxyz_pointcloud_lidar_interface.a
 
 libxyz_pointcloud_lidar_interface.a: xyz_pointcloud_lidar_interface.o
-
-libviewer_3D_interface.a: viewer_3D_interface.o
+	@if [ ! -f $< ]; then echo "Erro: $< não encontrado!"; exit 1; fi
+	/usr/bin/ar cr $@ $<
+	ranlib $@
 
 libvelodyne_360_drawer.a: velodyne_360_drawer.o
+	@if [ ! -f $< ]; then echo "Erro: $< não encontrado!"; exit 1; fi
+	/usr/bin/ar cr $@ $<
+	ranlib $@
 
-viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o velodyne_360_drawer.o \
-	interface_drawer.o map_drawer.o texture_loader.o download_map.o trajectory_drawer.o velodyne_intensity_drawer.o \
-	annotation_drawer.o symotha_drawer.o cargo_drawer.o libviewer_3D_interface.a libxyz_pointcloud_lidar_interface.a#lane_analysis_drawer.o
+libviewer_3D_interface.a: viewer_3D_interface.o
+	@if [ ! -f $< ]; then echo "Erro: $< não encontrado!"; exit 1; fi
+	/usr/bin/ar cr $@ $<
+	ranlib $@
+
+viewer_3D: viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o \
+	velodyne_360_drawer.o interface_drawer.o map_drawer.o download_map.o texture_loader.o trajectory_drawer.o \
+	velodyne_intensity_drawer.o annotation_drawer.o symotha_drawer.o cargo_drawer.o xyz_pointcloud_lidar_interface.o \
+	libviewer_3D_interface.a libxyz_pointcloud_lidar_interface.a libvelodyne_360_drawer.a
 
 xsens_viewer: xsens_viewer.o Window.o draw_car.o texture_loader.o download_map.o
 

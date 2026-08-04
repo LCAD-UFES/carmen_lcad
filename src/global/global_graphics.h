@@ -29,11 +29,12 @@
 #ifndef GLOBAL_GRAPHICS_H
 #define GLOBAL_GRAPHICS_H
 
+#include <gtk/gtk.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <gtk/gtk.h>
 #include <carmen/global.h>
 #include <carmen/map.h>
 #include <carmen/road_mapper.h>

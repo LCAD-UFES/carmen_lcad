@@ -1,5 +1,6 @@
 #include <carmen/carmen.h>
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <cmath>
 
@@ -602,7 +603,7 @@ int main(int argc, char **argv)
 	DlWrapper dlSolverWrapper;
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 	Factory* factory = Factory::instance();
-	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
+	factory->registerType("EDGE_GPS", std::make_shared<HyperGraphElementCreator<EdgeGPS>>());
 
 	optimizer = initialize_optimizer();
 	load_data_to_optimizer(optimizer);

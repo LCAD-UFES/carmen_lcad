@@ -9,7 +9,8 @@ MODULE_COMMENT = Mapping, Detection and Inference State of Traffic Lights
 LINK = g++
 CXXFLAGS += -Wno-ignored-qualifiers -fopenmp 
 CFLAGS += -Wall -fopenmp 
-SUBDIRS += TLightStateRecog
+
+WNN_HEADER := $(firstword $(wildcard /usr/include/wnn/VgRamNeuron.h /usr/local/include/wnn/VgRamNeuron.h))
 
 IFLAGS +=  -std=c++11 -I/usr/local/include/bullet/ 
 
@@ -47,28 +48,27 @@ endif
 endif
 
 
-
-#SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp mapping_traffic_light_main.cpp log_generate_images.cpp
-SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp log_generate_images.cpp #traffic_light_annotation_tool.cpp tlight_train.cpp tlight_evaluate_train.cpp 
-
-PUBLIC_INCLUDES = traffic_light_interface.h traffic_light_messages.h traffic_light.h
+SOURCES = traffic_light_interface.cpp
+PUBLIC_INCLUDES = traffic_light_interface.h traffic_light_messages.h
 
 PUBLIC_LIBRARIES = libtraffic_light_interface.a
 
-#PUBLIC_BINARIES = traffic_light mapping_traffic_light log_generate_images
-PUBLIC_BINARIES = traffic_light log_generate_images
-
-#TARGETS = libtraffic_light_interface.a  traffic_light mapping_traffic_light log_generate_images
 TARGETS = libtraffic_light_interface.a  
-
-ifneq (, $(shell which nvcc))
-TARGETS += traffic_light log_generate_images #traffic_light_annotation_tool tlight_train tlight_evaluate_train
-endif
 
 PUBLIC_LIBRARIES_SO = libtraffic_light_interface.so
 
 ifndef NO_PYTHON
 TARGETS += libtraffic_light_interface.so.1
+endif
+
+ifneq ($(strip $(WNN_HEADER)),)
+SUBDIRS += TLightStateRecog
+SOURCES += traffic_light.cpp log_generate_images.cpp TLightStateRecog/tlight_vgram.cpp
+PUBLIC_INCLUDES += traffic_light.h
+
+ifneq (, $(shell which nvcc))
+PUBLIC_BINARIES = traffic_light log_generate_images
+TARGETS += traffic_light log_generate_images #traffic_light_annotation_tool tlight_train tlight_evaluate_train
 endif
 
 ifndef NO_GRAPHICS
@@ -82,12 +82,11 @@ endif
 
 #tlight_evaluate_train: tlight_evaluate_train.o tlight_vgram.o
 tlight_train: tlight_train.o tlight_vgram.o
+endif
 
-libtraffic_light_interface.a:		traffic_light_interface.o traffic_light.o
+libtraffic_light_interface.a:		traffic_light_interface.o
 
-libtraffic_light_interface.so.1:	traffic_light_interface.o traffic_light.o
-
-SOURCES += TLightStateRecog/tlight_vgram.cpp
+libtraffic_light_interface.so.1:	traffic_light_interface.o
 
 ifdef CAFFE_HOME
 libsqueezenet_tlight.a: squeezenet_tlight.o
