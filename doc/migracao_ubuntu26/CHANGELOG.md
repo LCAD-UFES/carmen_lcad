@@ -1,8 +1,8 @@
 # Changelog da migração — alterações de código/Makefile
 
-Tudo abaixo está **apenas no working tree local** (branch `migracao_ubuntu26`, nada commitado,
-nada pushed). Revisar com `git diff` antes de decidir o que entra no commit — ver
-`CHECKLIST_COMMIT.md`.
+Tudo abaixo está na branch `ubuntu26`, commitado em `e666f3127` ("migração geral")
+e ainda **não publicado**. Ver `CHECKLIST_COMMIT.md` para o levantamento do que
+entrou e o que ficou de fora.
 
 Ambiente: Ubuntu 26.04 LTS "resolute", gcc/g++ 15.2.0, CMake 4.2.3, GNU Make, Python 3.14.
 Todas as alterações abaixo foram feitas rodando `make` de verdade e recompilando o módulo

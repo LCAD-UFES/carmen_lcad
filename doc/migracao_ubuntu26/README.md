@@ -4,7 +4,7 @@ Esta pasta reúne **tudo relacionado à migração do build do `carmen_lcad` de 
 16.04/20.04 para Ubuntu 26.04 LTS ("resolute")**: o que foi alterado no código e nos
 Makefiles, por quê, e o que precisa ser instalado no sistema.
 
-Branch de trabalho: **`migracao_ubuntu26`** (criada a partir de `ubuntu26`). **Nada foi
+Branch de trabalho: **`ubuntu26`**. **Nada foi
 commitado nem pushed** — as alterações estão só no working tree local, para revisão
 (`git diff`) antes de decidir o que entra no commit.
 
@@ -16,7 +16,10 @@ commitado nem pushed** — as alterações estão só no working tree local, par
   Ubuntu 26.04, o que mudou de nome, o que sumiu do apt, e o que continua sem pacote.
 - **`CHECKLIST_COMMIT.md`** — o que está no working tree agora: o que deve subir no commit, o
   que é artefato local de build e não deve subir, e os comandos prontos.
-- **`install/`** — o roteiro de instalação numa máquina nova, em ordem:
+- **`install/INSTALL_UBUNTU_26.04.md`** — 👉 **o tutorial de instalação**, do `git clone`
+  até o `make` passando. É o que uma pessoa nova deve seguir; os arquivos numerados abaixo
+  são o detalhe e o porquê de cada passo dele.
+- **`install/`** — o roteiro em partes, em ordem:
   - `00_ambiente_e_bashrc.md` — variáveis do `~/.bashrc` (`CARMEN_HOME` etc.) e `configure`
   - `01_ferramentas_de_build.md` — compilador, make, cmake (e o cuidado com a versão do gcc)
   - `02_boost.md`
@@ -26,10 +29,13 @@ commitado nem pushed** — as alterações estão só no working tree local, par
 
 ## Como usar (máquina nova)
 
+Siga o [`install/INSTALL_UBUNTU_26.04.md`](install/INSTALL_UBUNTU_26.04.md) — ele
+consolida os passos abaixo, com os comandos prontos e as armadilhas sinalizadas.
+
 ```bash
 git clone https://github.com/LCAD-UFES/carmen_lcad.git ~/carmen_lcad
-# 1) doc/migracao_ubuntu26/install/00 → bashrc + configure
-# 2) install/01 a 04 → pacotes
+# 1) bloco #CARMEN no ~/.bashrc
+# 2) pacotes apt (+ GtkGLExt da fonte, se faltar)
 cd $CARMEN_HOME/src && ./configure --nojava --nocuda --noqt3
 make -j$(nproc)
 ```

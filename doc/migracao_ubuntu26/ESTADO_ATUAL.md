@@ -1,6 +1,6 @@
 # Estado atual da migração — build completo, runtime iniciado
 
-Atualizado em 2026-08-19, na branch `migracao_ubuntu26`.
+Atualizado em 2026-08-19, na branch `ubuntu26`.
 **Nada commitado** (a pedido) — tudo está no working tree.
 
 ## O build compila inteiro
@@ -23,7 +23,7 @@ Artefatos gerados: **657** binários em `bin/`, **138** arquivos em `lib/`,
 ```bash
 source ~/.bashrc                 # o bloco #CARMEN já está lá
 cd $CARMEN_HOME/src
-git branch --show-current        # deve dizer: migracao_ubuntu26
+git branch --show-current        # deve dizer: ubuntu26
 make -j$(nproc) 2>&1 | tee /tmp/make_carmen.log
 ```
 

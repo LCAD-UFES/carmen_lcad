@@ -1,6 +1,6 @@
 # Checklist de commit — migração Ubuntu 26.04
 
-Levantamento do `git status`/`git diff` do working tree (branch **`migracao_ubuntu26`**),
+Levantamento do `git status`/`git diff` do working tree (branch **`ubuntu26`**),
 organizado para decidir o que vai para o commit. O *porquê* de cada alteração está no
 `CHANGELOG.md`; aqui é só o "o que sobe / o que não sobe".
 
@@ -150,7 +150,7 @@ Também **não versionar**:
 
 ```bash
 cd $CARMEN_HOME
-git status                 # confira que está na branch migracao_ubuntu26
+git status                 # confira que está na branch ubuntu26
 
 # 1) tudo que já é rastreado e mudou por causa da migração
 git add -u
@@ -164,5 +164,5 @@ git diff --cached --name-only | xargs -I{} sh -c 'file -b "{}" | grep -q ELF && 
 git commit -m "migração Ubuntu 26.04: Boost/OpenCV4/PCL/VTK/Python3/GCC15 + docs da migração"
 ```
 
-A branch `migracao_ubuntu26` foi criada a partir de `ubuntu26` e não é protegida — dá para
+A branch `ubuntu26` não é protegida — dá para
 commitar/push direto nela, sem PR para `master`.
