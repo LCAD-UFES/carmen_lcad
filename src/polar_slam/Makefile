@@ -1,14 +1,19 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 MODULE_NAME = POLAR SLAM
 MODULE_COMMENT = Polar SLAM
 
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 LINK = g++
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I$(CARMEN_HOME)/sharedlib/prob_models  -fopenmp 
-LFLAGS += -lglobal -lipc -llaser_interface -lGL -lglut -lGLU -lvelodyne_interface -lparam_interface `pkg-config --libs opencv` \
-	 -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
+LFLAGS += -lglobal -lipc -llaser_interface -lGL -lglut -lGLU -lvelodyne_interface -lparam_interface `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
+	 -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt \
 	 -L$(CARMEN_HOME)/sharedlib/prob_models -lprob_models -lmap_interface -lrotation_geometry -lfused_odometry_interface -lbase_ackerman_interface    
 	 
 CFLAGS += -pg

@@ -39,8 +39,8 @@ LFLAGS += \
 	-lobstacle_distance_mapper_interface \
 	-ludatmo \
 	-lmoving_objects_interface \
-	-lvoice_interface_interface `python3.5-config --libs` \
-	`pkg-config --libs opencv`
+	-lvoice_interface_interface `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` \
+	`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 	
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
@@ -51,7 +51,7 @@ LFLAGS += \
 	-lboost_log_setup \
 	-lboost_log \
 	-lboost_thread \
-	-lboost_system
+	
 endif
 
 SOURCES = \

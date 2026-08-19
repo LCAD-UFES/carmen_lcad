@@ -147,7 +147,7 @@ perform_icp(pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud, pcl::Point
 	pcl::PointCloud<pcl::PointXYZRGB> out_pcl_pointcloud;
 	pcl::PointCloud<pcl::PointXYZRGB> out_pcl_pointcloud_transformed;
 
-	gicp.setInputCloud(source_pointcloud);
+	gicp.setInputSource(source_pointcloud);
 	gicp.setInputTarget(target_pointcloud);
 	gicp.align(out_pcl_pointcloud);
 	(*measured_pose_out) = gicp.getFinalTransformation().cast<double>();
@@ -292,10 +292,10 @@ add_icp_restriction(int i, int j)
 
 	if (is_first)
 	{
-		source_pointcloud = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
-		target_pointcloud = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
-		source_pointcloud_world = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
-		target_pointcloud_world = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
+		source_pointcloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+		target_pointcloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+		source_pointcloud_world = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+		target_pointcloud_world = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 		is_first = 0;
 	}

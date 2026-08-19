@@ -28,8 +28,13 @@
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+/* Migração Ubuntu 26.04: além da API C (headers *_c.h), este arquivo precisa da API C++
+   para carregar imagem — cvLoadImage foi removida do binário do OpenCV >= 4. */
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <string.h>
 #include <cmath>
 
@@ -328,7 +333,11 @@ static AnnotationDrawer *annotation_drawer;
 static symotha_drawer_t *symotha_drawer;
 static CargoDrawer *cargoDrawer;
 
-static double beta[MAX_NUM_TRAILERS];
+/* Migração Ubuntu 26.04: em C++17 o <cmath> passou a expor as mathematical special
+   functions, entre elas std::beta — com "using namespace std" o nome global `beta`
+   virou ambíguo (error: reference to 'beta' is ambiguous). Renomeado para g_beta,
+   convenção que o próprio arquivo já usa para outras globais. */
+static double g_beta[MAX_NUM_TRAILERS];
 static int semi_trailer_engaged = 0;
 
 window *w = NULL;
@@ -787,7 +796,7 @@ draw_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message, point_
 #ifdef USE_REAR_BULLBAR
 	if (semi_trailer_config.num_semi_trailers != 0 && xyz_lidar_config.sensor_reference == 2)
 	{
-		choosed_sensor_referenced[xyz_lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
+		choosed_sensor_referenced[xyz_lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, g_beta, semi_trailer_config);
 	}
 	rotation_matrix *board_to_car_matrix = create_rotation_matrix(choosed_sensor_referenced[xyz_lidar_config.sensor_reference].orientation);
 
@@ -871,7 +880,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 #ifdef USE_REAR_BULLBAR
 	if (semi_trailer_config.num_semi_trailers != 0 && lidar_config.sensor_reference == 2)
 	{
-		choosed_sensor_referenced[lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
+		choosed_sensor_referenced[lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, g_beta, semi_trailer_config);
 	}
 	rotation_matrix *board_to_car_matrix = create_rotation_matrix(choosed_sensor_referenced[lidar_config.sensor_reference].orientation);
 
@@ -1011,7 +1020,22 @@ find_map_from_data(int x_origin, int y_origin)
 
 //	printf("%s\n", map_filename);
 
-	map = cvLoadImage(map_filename, CV_LOAD_IMAGE_ANYCOLOR);
+#if CV_MAJOR_VERSION >= 4
+	/* cvLoadImage() não existe mais; carrega com o loader C++ e clona para um IplImage,
+	   porque este ponteiro é devolvido ao chamador (que depois faz cvReleaseImage nele) —
+	   uma view sobre a cv::Mat local morreria ao sair da função. */
+	map = NULL;
+	{
+		cv::Mat map_mat = cv::imread(map_filename, cv::IMREAD_ANYCOLOR);
+		if (!map_mat.empty())
+		{
+			IplImage map_ipl = cvIplImage(map_mat);
+			map = cvCloneImage(&map_ipl);
+		}
+	}
+#else
+	map = cvLoadImage(map_filename, cv::IMREAD_ANYCOLOR);
+#endif
 
 	return map;
 
@@ -1238,9 +1262,9 @@ draw_everything()
         draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
 
     if (draw_car_flag)
-        draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+        draw_car_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
     else
-    	draw_car_outline_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+    	draw_car_outline_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 
     if (draw_stereo_cloud_flag)
     {
@@ -1402,7 +1426,7 @@ draw_everything()
 //        draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
 //        draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
 
-        draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+        draw_collision_range(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
     }
 
     if (draw_map_flag || draw_map_level1_flag || draw_costs_map_flag || draw_offline_map_flag)
@@ -1721,14 +1745,14 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
         last_localize_ackerman_trail -= localize_ackerman_size;
 
 
-//    beta = localize_ackerman_message->pose.orientation.yaw - localize_ackerman_message->trailer_theta[0];
-//    beta = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[0]);
+//    g_beta = localize_ackerman_message->pose.orientation.yaw - localize_ackerman_message->trailer_theta[0];
+//    g_beta = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[0]);
      for (int i = 0; i < semi_trailer_config.num_semi_trailers; i++)
      {
      	if (i == 0)
-     		beta[i] = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[i]);
+     		g_beta[i] = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[i]);
      	else
-     		beta[i] = convert_theta1_to_beta(localize_ackerman_message->trailer_theta[i - 1], localize_ackerman_message->trailer_theta[i]);
+     		g_beta[i] = convert_theta1_to_beta(localize_ackerman_message->trailer_theta[i - 1], localize_ackerman_message->trailer_theta[i]);
      }
 	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
@@ -1741,13 +1765,13 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 		{
 			if (i == 0)
 			{
-				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - beta[i]);
-				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - beta[i]);
+				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - g_beta[i]);
+				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - g_beta[i]);
 			}
 			else
 			{
-				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - beta[i]);
-				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - beta[i]);
+				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - g_beta[i]);
+				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - g_beta[i]);
 			}
 		localize_ackerman_semi_trailer_trail[last_localize_ackerman_semi_trailer_trail] = pos;
 
@@ -4636,11 +4660,11 @@ draw_while_picking()
 
 	if (draw_car_flag)
 	{
-		draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+		draw_car_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 
 	}
 	else
-		draw_car_outline_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+		draw_car_outline_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 
 	if (draw_stereo_cloud_flag)
 	{
@@ -4721,7 +4745,7 @@ draw_while_picking()
 //		draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
 //		draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
 
-		draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+		draw_collision_range(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 	}
 
 	if (draw_map_flag || draw_map_level1_flag || draw_costs_map_flag || draw_offline_map_flag)

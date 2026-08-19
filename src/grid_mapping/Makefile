@@ -1,5 +1,10 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 # Module name and description
 MODULE_NAME = GRID_MAPPING_PACKAGE
 MODULE_COMMENT = Grid Mapping Package
@@ -11,7 +16,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lprob_models -lmap_io -lglobal -lparam_interface -llaser_interface -lipc \
@@ -19,8 +24,8 @@ LFLAGS += -lprob_models -lmap_io -lglobal -lparam_interface -llaser_interface -l
 	-lultrasonic_filter_interface -lvisual_odometry_interface -ljpeg \
 	-llocalize_ackerman_interface -lmap_interface  -lmap_server_interface \
 	-ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-	-lboost_thread-mt -lrt -lboost_signals -lboost_system -lrotation_geometry \
-	`pkg-config --libs opencv`
+	-lboost_thread -lrt -lrotation_geometry \
+	`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 	
 CFLAGS +=  -std=c99
 

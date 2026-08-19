@@ -4,8 +4,8 @@
 #include <carmen/segmap_dataset.h>
 #include <Eigen/Core>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 using namespace cv;
 using namespace pcl;

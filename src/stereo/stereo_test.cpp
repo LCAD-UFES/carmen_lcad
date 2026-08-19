@@ -1,13 +1,17 @@
 #include <qx_csbp.h>
 #include <sys/time.h>
 #include <stdio.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <omp.h>
 
 #include <vg_ram.h>
 
 #include "elas.h"
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage/CV_RGB da API C não existem mais
+   no OpenCV 4 — este header os reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 static int max_disparity_rescale;
 static double lambda = 1024;
@@ -534,8 +538,8 @@ int main(int argc __attribute__ ((unused)), char **argv)
 	FILE *fout = fopen(argv[14], "w");
 	FILE *fmiddle_bury = fopen(argv[16], "w");
 
-	IplImage *left = cvLoadImage(argv[1], CV_LOAD_IMAGE_COLOR);
-	IplImage *right= cvLoadImage(argv[2], CV_LOAD_IMAGE_COLOR);
+	IplImage *left = cvLoadImage(argv[1], cv::IMREAD_COLOR);
+	IplImage *right= cvLoadImage(argv[2], cv::IMREAD_COLOR);
 
 	image_left_copy = cvCreateImage(cvSize(left->width, left->height), IPL_DEPTH_8U, 3);
 	image_right_copy = cvCreateImage(cvSize(left->width, left->height), IPL_DEPTH_8U, 3);

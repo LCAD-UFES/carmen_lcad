@@ -3,7 +3,7 @@
 
 
 #include <vector>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 #include "helper/bounding_box.h"
 #include "tracker/tracker.h"

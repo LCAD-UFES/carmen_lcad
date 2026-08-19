@@ -3,7 +3,10 @@
 #include <carmen/carmen.h>
 #include <carmen/viewer_3D_interface.h>
 #include <carmen/user_preferences.h>
-#include <opencv/cv.h>
+/* Migração Ubuntu 26.04: opencv/cv.h não existe mais; a API C usada aqui
+   (cvPoint/cvScalar/CV_FONT_*) está nos headers *_c.h do OpenCV 4. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/version.hpp>

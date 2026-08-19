@@ -15,6 +15,7 @@ include Makefile.conf
 
 PACKAGES = ipc global param_daemon proccontrol argos_lidar_driver camera_drivers \
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
+	   sensors/web_cam sensors/ultrasonic sensors/camera traffic_light \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu \
 	   fused_odometry bumblebee_basic laser_ldmrs viewer_3D \

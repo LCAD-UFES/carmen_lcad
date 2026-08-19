@@ -1,5 +1,10 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 MODULE_NAME = RDDF 
 MODULE_COMMENT = Rddf Builder And Player
 
@@ -17,7 +22,7 @@ LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine
 LFLAGS += -lparam_interface -lipc -lglobal -lrddf_interface -lcarmen_gps_wrapper  -llocalize_ackerman_interface	-lkinect_interface -lprob_models -lobstacle_distance_mapper_interface \
 	-lobstacle_avoider_interface -lrobot_ackerman_interface -lsimulator_ackerman_interface -ltraffic_light_interface -lcollision_detection \
 	-lmoving_objects_interface -lbase_ackerman_interface -lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface \
-	-lgsl -lgslcblas -lm -lvoice_interface_interface `python3.5-config --libs` `pkg-config --libs opencv`
+	-lgsl -lgslcblas -lm -lvoice_interface_interface `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 SOURCES = rddf_interface.c rddf_play_main.cpp rddf_index.cpp rddf_build_main.cpp rddf_util.cpp stehs_planner.cpp
 

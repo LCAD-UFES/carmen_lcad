@@ -11,7 +11,8 @@
 #include <carmen/stereo_util.h>
 
 /* OpenCV Includes */
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/video/tracking.hpp>
 
 #ifdef __cplusplus
@@ -30,12 +31,11 @@ typedef struct
   double outlier_max_distance_from_mean;
 } kalman_filter_params;
 
-typedef struct
-{
-  CvKalman *kalman_filter;
-  CvMat *control;
-  CvMat *z_k;
-} kalman_filter;
+/* Migração Ubuntu 26.04: este typedef usava CvKalman, a implementação em API C do filtro
+   de Kalman, removida por completo no OpenCV 4 (só existe a cv::KalmanFilter, C++). O tipo
+   não era usado em lugar nenhum do repositório — o código que roda o filtro
+   (kalman_update_state, logo abaixo) já recebe um cv::KalmanFilter *. Removido em vez de
+   portado, para não criar um tipo C++ dentro deste bloco extern "C". */
 
 void kalman_update_state(cv::KalmanFilter *filter, kalman_filter_params *state[], double measurements[]);
 void init_kalman_filter_params(kalman_filter_params *state, double value_variance, double value_variance_factor, double observation_variance);

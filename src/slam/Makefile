@@ -16,7 +16,7 @@ LFLAGS += -lglobal -lparam_interface -lipc -lprob_models \
 	-llocalize_interface -llocalize_ackerman_interface -lmapper_interface \
 	-lbase_interface -lmap_interface -lrobot_ackerman_interface \
 	-lobstacle_avoider_interface -lsimulator_ackerman_interface \
-	-ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
+	-ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt \
 	-lrotation_geometry -lvelodyne_interface -lfused_odometry_interface
 
 MODULE_NAME = SLAM

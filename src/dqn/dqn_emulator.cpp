@@ -2,9 +2,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <math.h>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <carmen/carmen.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui.hpp>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/robot_ackerman_interface.h>
 #include <carmen/mapper_interface.h>

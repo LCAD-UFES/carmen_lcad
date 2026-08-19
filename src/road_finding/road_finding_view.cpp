@@ -11,8 +11,9 @@
 #include <carmen/v_disparity.h>
 
 /* OpenCV includes */
-#include<opencv/cv.h>
-#include<opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 /* Image Utils includes */
 #include "image_utils.h"

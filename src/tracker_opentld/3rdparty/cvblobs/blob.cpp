@@ -15,6 +15,14 @@ MODIFICATIONS (Modification, Author, Date):
 
 
 #include "blob.h"
+/* Migracao Ubuntu 26.04: no OpenCV 4 o CV_RGB() que sobra e o do imgproc.hpp (C++),
+   que devolve cv::Scalar e nao converte para o CvScalar que a API C (cvDrawContours)
+   espera. Redefinido para a versao C, mantendo a ordem BGR original. */
+#include <opencv2/imgproc/imgproc_c.h>
+#if CV_MAJOR_VERSION >= 4
+#undef CV_RGB
+#define CV_RGB(r, g, b)  cvScalar((b), (g), (r), 0)
+#endif
 
 
 CBlob::CBlob()

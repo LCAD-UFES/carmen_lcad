@@ -8,12 +8,12 @@ MODULE_COMMENT = realsense Camera Module
 LINK = g++
 
 # Required default libraries to comunicate with Carmen Core.
-#LFLAGS += `pkg-config --libs opencv` -lparam_interface -lglobal -lbumblebee_basic_interface -lipc
+#LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lparam_interface -lglobal -lbumblebee_basic_interface -lipc
 LFLAGS += 	-lparam_interface -lglobal -lbumblebee_basic_interface -llaser_ldmrs_interface -lipc -lrealsense2\
-			-lstereo_interface -lstereo_velodyne -lstereo_velodyne_interface `pkg-config --libs opencv` -std=c++11 
+			-lstereo_interface -lstereo_velodyne -lstereo_velodyne_interface `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -std=c++11 
 
-CFLAGS += -Wall -std=c++11 #`pkg-config --cflags opencv`
-CXXFLAGS += -Wall -std=c++11 #`pkg-config --cflags opencv` -std=c++11
+CFLAGS += -Wall -std=c++11 #`pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+CXXFLAGS += -Wall -std=c++11 #`pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -std=c++11
 
 SOURCES = realsense_camera_sensor_main.cpp 
 PUBLIC_BINARIES = realsense_camera_main

@@ -1,5 +1,8 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: faltavam os -I do OpenCV (headers agora em /usr/include/opencv4).
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 # Module name and description
 MODULE_NAME = RDDF 
 MODULE_COMMENT = Rddf Builder And Player
@@ -20,11 +23,11 @@ LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -pthread
 endif
 
 

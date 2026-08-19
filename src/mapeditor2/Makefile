@@ -7,11 +7,11 @@ CC = g++
 CFLAGS += -fpermissive
 
 # --- CONFIGURAÇÃO DE BIBLIOTECAS ---
-IFLAGS += `pkg-config opencv --cflags`
+IFLAGS += `pkg-config opencv4 --cflags 2>/dev/null || pkg-config opencv --cflags`
 LFLAGS += -lmap_io -lmap_interface -lglobal_graphics \
       -lglobal -lipc -lparam_interface \
       -lpthread -lz -lm \
-      `pkg-config opencv --libs`
+      `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs`
 
 # --- MUDANÇA AQUI: Listamos os dois arquivos novos ---
 SOURCES = carmen_read.c carmen_save.c

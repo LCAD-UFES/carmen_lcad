@@ -9,14 +9,14 @@ LINK = g++
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -L/usr/local/carmen_boost/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface \
--L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lboost_thread-mt -lrt -lboost_signals -lboost_system \
+-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lboost_thread -lrt \
 -llocalize_ackerman_interface -lmoving_objects_interface -lmap_server_interface -lmapper_interface \
 
 # C++11 flag

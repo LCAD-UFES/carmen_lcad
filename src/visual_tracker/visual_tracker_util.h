@@ -1,7 +1,8 @@
 #ifndef CARMEN_VISUAL_TRACKER_UTIL_H
 #define CARMEN_VISUAL_TRACKER_UTIL_H 1
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 
 #ifdef __cplusplus
 extern "C" {

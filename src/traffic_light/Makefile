@@ -7,20 +7,37 @@ MODULE_NAME = TRAFFIC_LIGHT
 MODULE_COMMENT = Mapping, Detection and Inference State of Traffic Lights
 
 LINK = g++
+
+# ---------------------------------------------------------------------------------------
+# Migração Ubuntu 26.04: este módulo depende da libwnn (repo do LCAD, sem pacote apt) e,
+# para os binários de reconhecimento, de CUDA/Caffe. Só que a `libtraffic_light_interface`
+# (wrapper IPC puro) e os headers públicos são necessários para o `rddf`, que faz
+# #include <carmen/traffic_light_interface.h> e linka -ltraffic_light_interface. Por isso o
+# módulo entrou no PACKAGES do src/Makefile, com tudo que depende da libwnn condicionado à
+# presença dela: sem a lib instalada, sai só a interface (que basta para o rddf); com a lib,
+# o módulo volta a ser construído inteiro, sem editar nada.
+# ---------------------------------------------------------------------------------------
+HAS_WNN := $(firstword $(wildcard /usr/local/lib/libwnn.* /usr/lib/libwnn.* /usr/lib/x86_64-linux-gnu/libwnn.*))
+
 CXXFLAGS += -Wno-ignored-qualifiers -fopenmp 
 CFLAGS += -Wall -fopenmp 
+ifneq ($(HAS_WNN),)
 SUBDIRS += TLightStateRecog
+endif
 
 IFLAGS +=  -std=c++11 -I/usr/local/include/bullet/ 
 
 LFLAGS += -lpthread -fopenmp -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -ltime_profile -lbumblebee_basic_interface -lstereo_interface \
-	 -llocalize_ackerman_interface -lrddf_interface -lwnn 
+	 -llocalize_ackerman_interface -lrddf_interface
+ifneq ($(HAS_WNN),)
+LFLAGS += -lwnn
+endif
 
-LFLAGS += -lboost_system  -lgomp 
+LFLAGS +=  -lgomp 
 
-IFLAGS += `pkg-config opencv --cflags`
-LFLAGS += `pkg-config opencv --libs`
+IFLAGS += `pkg-config opencv4 --cflags 2>/dev/null || pkg-config opencv --cflags`
+LFLAGS += `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs`
 
 ifneq (, $(shell which nvcc))
 
@@ -75,9 +92,11 @@ ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags` 
 LFLAGS += -lparam_interface -lipc -lglobal -lglobal_graphics \
 	`$(GTK_CONFIG) --libs` 
+ifneq ($(HAS_WNN),)
 SOURCES += traffic_light_view.cpp
 PUBLIC_BINARIES += traffic_light_view
 TARGETS += traffic_light_view
+endif
 endif
 
 #tlight_evaluate_train: tlight_evaluate_train.o tlight_vgram.o
@@ -87,7 +106,9 @@ libtraffic_light_interface.a:		traffic_light_interface.o traffic_light.o
 
 libtraffic_light_interface.so.1:	traffic_light_interface.o traffic_light.o
 
+ifneq ($(HAS_WNN),)
 SOURCES += TLightStateRecog/tlight_vgram.cpp
+endif
 
 ifdef CAFFE_HOME
 libsqueezenet_tlight.a: squeezenet_tlight.o

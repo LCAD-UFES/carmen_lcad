@@ -13,8 +13,9 @@
 #include <prob_transforms.h>
 #include <carmen/rddf_interface.h>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 #include <carmen/download_map_interface.h>
 #include <carmen/navigator_astar_interface.h>
@@ -118,7 +119,7 @@ int level_msg = 0;
 //
 //	sprintf(full_image_path, "%s/%c%d_%d.bmp", google_maps_data_location, 'm', (int)x_origin, (int)y_origin);
 //
-//	IplImage* img = cvLoadImage(full_image_path, CV_LOAD_IMAGE_COLOR);
+//	IplImage* img = cvLoadImage(full_image_path, cv::IMREAD_COLOR);
 //	if (img == NULL)
 //		return;
 ////	sprintf(full_image_path, "%s/%c%d.bmp", google_maps_data_location, 'a', count);

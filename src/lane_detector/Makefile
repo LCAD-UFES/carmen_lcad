@@ -8,16 +8,16 @@ LINK = g++
 CFLAGS += -Wall -g
 CXXFLAGS += -Wno-sign-compare -DUSE_OPENCV -g  -ltf
 
-IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML -g
+IFLAGS += `pkg-config opencv4 --cflags 2>/dev/null || pkg-config opencv --cflags` -std=c++14 -DNO_NVML -g
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -DUSE_OPENCV -DNO_NVML
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
-LFLAGS += -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt
 
-LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -ltf -lrt -lLinearMath -lboost_thread-mt \
-          -lboost_signals -lboost_system -lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
-          -lcamera_boxes_to_world -ldarknet2 `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv` -lpython2.7
+LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -ltf -lrt -lLinearMath -lboost_thread \
+          -lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
+          -lcamera_boxes_to_world -ldarknet2 `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs` `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs`
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 

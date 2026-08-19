@@ -1,4 +1,4 @@
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 //#include <carmen/carmen.h>
 //#include <carmen/visual_tracker_interface.h>

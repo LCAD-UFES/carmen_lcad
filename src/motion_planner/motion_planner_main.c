@@ -148,15 +148,18 @@ map_handler(carmen_mapper_map_message *message)
 }
 
 
+/* Migração Ubuntu 26.04: estes dois são passados direto para carmen_subscribe_message(),
+   que espera carmen_handler_t = void (*)(void *). Estavam declarados no estilo K&R (sem
+   parâmetros) — até o GCC 13 isso era só aviso, no GCC 14+ é erro de tipo. */
 static void
-go_handler()
+go_handler(void *msg __attribute__ ((unused)))
 {
 	motion_planner_go();
 }
 
 
 static void
-stop_handler()
+stop_handler(void *msg __attribute__ ((unused)))
 {
 	motion_planner_stop();
 }

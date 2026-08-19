@@ -5,12 +5,12 @@ LINK = g++
 MODULE_NAME = CARMEN_ROS_INTERFACE 
 MODULE_COMMENT = Module to provide communication between ros and carmen
 
-IFLAGS += `pkg-config --cflags opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
 LFLAGS += -lstereo_interface -lparam_interface -lipc -lglobal -lbumblebee_basic_interface \
 			-lvisual_search_thin_interface -lvergence_interface   
 
-LFLAGS += `pkg-config --libs opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 ## ROS CORE
 IFLAGS += -I /opt/ros/fuerte/include/

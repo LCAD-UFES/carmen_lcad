@@ -12,7 +12,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
 LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface -lfused_odometry_interface -ltf \
-		  -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lboost_system
+		  -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = simple_2d_mapper_main.cpp simple_2d_mapper_core.cpp simple_2d_mapper_interface.c

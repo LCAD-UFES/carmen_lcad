@@ -10,12 +10,16 @@
 #include <carmen/stereo_util.h>
 
 /* OpenCV Includes */
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 /* Prob Models includes */
 #include <prob_measurement_model.h>
 #include <prob_map.h>
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 /* Image show */
 static GtkWidget *drawing_area;

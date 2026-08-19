@@ -1,6 +1,6 @@
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <locale.h>
 
 #include <opencv2/opencv.hpp>

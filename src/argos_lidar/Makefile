@@ -14,11 +14,11 @@ IFLAGS += -I /usr/include/jsoncpp/ -I /usr/local/lib/
 LFLAGS += -ljsoncpp 
 
 # viewer libraries
-IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv` 
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` 
 IFLAGS += -I /usr/local/include/ouster -I /usr/local/include/optional-lite -I /usr/local/include/ouster/imp
 
 LFLAGS += -lparam_interface -lglobal -lipc -pthread -lvelodyne_interface -louster_client -louster_viz -louster_pcap -ltins -lpcap
-LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
+LFLAGS += -L /usr/lib/x86_64-linux-gnu/
 
 # ROS Geral
 ROS2_PREFIX = /opt/ros/foxy

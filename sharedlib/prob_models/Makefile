@@ -2,14 +2,14 @@ include ../../src/Makefile.conf
 
 LINK = g++
 CFLAGS += -fopenmp -std=c11 
-CXXFLAGS += -fopenmp -std=c++11 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+CXXFLAGS += -fopenmp -std=c++14 -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet -I/usr/include/bullet -I/usr/local/carmen_boost/include
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet -I/usr/include/bullet
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 LFLAGS += -lz -lmap_io -lmap_interface -lmap_util -lglobal -lipc -llocalize_ackerman_core  \
-	  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt \
-	  -lrt -lboost_signals -lboost_system
+	  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread \
+	  -lrt
 
 MODULE_NAME = PROB_MODELS
 MODULE_COMMENT = Probabilistic Models LIB 

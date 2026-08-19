@@ -16,10 +16,21 @@
 #include <carmen/mapper_interface.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
+/* Migração Ubuntu 26.04: constantes legadas (CV_RETR_*, CV_CHAIN_APPROX_*, CV_FILLED, ...)
+   continuam existindo no OpenCV 4, mas só nos headers da API C (types_c.h via imgproc_c.h);
+   antes chegavam por inclusão transitiva. */
+#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <omp.h>
 #include <vector>
+/* Migração Ubuntu 26.04: no OpenCV 4 o único CV_RGB() que sobra é o do imgproc.hpp (C++),
+   que devolve cv::Scalar. Redefinido para a versão C (cvScalar), que serve tanto para a API
+   C (cvLine/cvRectangle/cvSet...) quanto para a C++ (CvScalar converte para cv::Scalar). */
+#if CV_MAJOR_VERSION >= 4
+#undef CV_RGB
+#define CV_RGB(r, g, b)  cvScalar((b), (g), (r), 0)
+#endif
 
 static char *map_path = (char *)".";
 char new_complete_map_name[1024];

@@ -45,7 +45,10 @@ bi_dimention_vg_ram_wnn wnn_left_neuron_GPU;
 bi_dimention_vg_ram_wnn wnn_right_neuron_GPU;
 
 float gaussian_radius;
-DisparityMap disp;
+/* Migração Ubuntu 26.04: era um global não-static com nome genérico (`disp`), que colide
+   no link com o `disp` da libstereo (outro símbolo, sem relação) agora que o GCC usa
+   -fno-common por padrão. Só é usado dentro deste arquivo, então virou static. */
+static DisparityMap disp;
 
 DisparityMap disp_GPU;
 

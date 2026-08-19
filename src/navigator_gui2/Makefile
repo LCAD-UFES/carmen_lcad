@@ -7,7 +7,7 @@ SUBDIRS = navigator_gui2_view
 
 LINK = g++
 
-CXXFLAGS += -std=c++11 -Wno-deprecated-declarations
+CXXFLAGS += -std=c++14 -Wno-deprecated-declarations
 
 CFLAGS += -Wno-deprecated-declarations
 
@@ -18,7 +18,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I../car_panel_gui/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L../car_panel_gui/
 
-IFLAGS += `pkg-config --cflags opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
 IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6 -I/usr/include/python3.8
 
@@ -33,10 +33,14 @@ LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lma
 		  -lglm -lGL -lGLU -lglut -ltf -lmoving_objects_interface -laudit_interface -llane_detector_interface -lmodel_predictive_planner_interface \
 		  -loffroad_planner_interface -luser_app_server_interface -lvoice_interface_interface
 
-LFLAGS += `pkg-config --libs opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -ltask_manager_interface -lcarmen_util
 LFLAGS += -luser_preferences
+# Migração Ubuntu 26.04: gtk_gui.cpp chama XRecolorCursor() direto (pegando Display*/Cursor
+# do GDK). O `pkg-config --libs gtk+-2.0` não devolve mais -lX11, e o ld do 26.04 não aceita
+# resolver símbolo por DSO indireta ("DSO missing from command line").
+LFLAGS += -lX11
 
 #CFLAGS += -Wno-unknown-pragmas
 #CXXFLAGS += -Wno-unknown-pragmas
@@ -44,11 +48,11 @@ LFLAGS += -luser_preferences
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -pthread
 endif
 
 # Source code files (.c, .cpp) 

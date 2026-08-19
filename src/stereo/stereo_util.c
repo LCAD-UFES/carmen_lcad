@@ -8,7 +8,8 @@
  */
 #include <carmen/carmen.h>
 #include <carmen/global.h>
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include "stereo_util.h"
 
 //http://www.ptgrey.com/products/bumblebee2/bumblebee2_xb3_datasheet.pdf

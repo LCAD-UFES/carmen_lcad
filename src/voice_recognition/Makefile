@@ -9,10 +9,10 @@ CFLAGS += -Wno-unused-parameter
 
 # Application specific include directories.
 IFLAGS += -I$(MAEHOME)/include
-IFLAGS += `pkg-config --cflags opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += `pkg-config --libs opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 LFLAGS += -L$(MAEHOME)/lib -L/usr/local/lib -L/usr/X11R6/lib
 LFLAGS += -lnet_conn -lforms -lGA -lX11 -lglut -lGLU -lGL -lm -lfl -lrt -lz -fopenmp 	\
 		  -lparam_interface -lipc -lglobal -lmap_interface -lasound -lfftw3

@@ -4,14 +4,14 @@ include ../Makefile.conf
 #LINK = g++
 
 CFLAGS += -fopenmp
-CXXFLAGS += -std=c++11 -Wno-write-strings -Wno-deprecated-declarations
+CXXFLAGS += -std=c++17 -Wno-write-strings -Wno-deprecated-declarations
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11 -llaser_interface \
@@ -24,20 +24,20 @@ LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11
 		-lmapper_interface -lmap_server_interface -lprob_models -lgrid_mapping -lmap_interface -lmap_io -lfrenet_path_planner_interface \
 		-lviewer_3D_interface -lbase_ackerman_interface -loffroad_planner_interface -ltask_manager_interface -lcargo_interface #-llane_analysis_interface
 		
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -ljpeg
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -ljpeg
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 #VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) # -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) # $(addprefix -I,$(VTK_INC))
 
 LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
-		  -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system \
-		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lcollision_detection
+		  -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  \
+		  -lboost_thread -lrt -lcollision_detection
 LFLAGS += -luser_preferences
 
 SUBDIRS += glm

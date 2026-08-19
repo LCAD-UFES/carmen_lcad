@@ -1,20 +1,25 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 #SUBDIRS = model_learn_ackerman
 
 CFLAGS += -std=c11 -fopenmp
-CXXFLAGS += -std=c++11 -fopenmp -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
+CXXFLAGS += -std=c++17 -fopenmp -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
 LINK = g++
 
 #CFLAGS += -std=c11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
-#CXXFLAGS += -std=c++11 -fopenmp -fsanitize=address -fno-omit-frame-pointer
+#CXXFLAGS += -std=c++17 -fopenmp -fsanitize=address -fno-omit-frame-pointer
 #LINK = g++ -fsanitize=address -fno-omit-frame-pointer
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib -L/usr/lib/x86_64-linux-gnu
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/lib/x86_64-linux-gnu
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
@@ -25,20 +30,20 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 	  -lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface -lcarmodel \
 	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -lmoving_objects_interface -lxsens_interface \
 	  -ltask_manager_interface -lbehavior_selector_interface -lgsl -lgslcblas -lcarmodel -ldbscan \
-	  -lgps_xyz_interface `pkg-config --libs opencv`
+	  -lgps_xyz_interface `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system 
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt 
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 ifeq ($(UBUNTU_VERSION),"16.04")
 	PCL_INC = $(wildcard /usr/include/pcl-*)
 	VTK_INC1 = $(wildcard /usr/local/include/vtk-5*)
 	VTK_INC2 = $(wildcard /usr/include/vtk-*)
-	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC1) -I $(VTK_INC2)
+	IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC1)) $(addprefix -I,$(VTK_INC2))
 else
 	PCL_INC = $(wildcard /usr/include/pcl-*)
 	VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-	IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+	IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 endif
 
 LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization

@@ -27,7 +27,7 @@
 #ifndef INTEGRALIMAGE_H_
 #define INTEGRALIMAGE_H_
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 namespace tld
 {

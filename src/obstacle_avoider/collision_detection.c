@@ -763,8 +763,24 @@ carmen_obstacle_avoider_proximity_to_obstacles(carmen_robot_and_trailers_pose_t 
 	return (proximity_to_obstacles);
 }
 
+/* Migração Ubuntu 26.04: estes dois globais colidiam no link com símbolos de mesmo nome em
+   outros módulos — `virtual_laser_message` também é definido em mapper/mapper.cpp, e
+   `add_virtual_laser_points` é o nome de uma FUNÇÃO em mapper/mapper.h (coisas diferentes,
+   mesmo nome). Até o GCC 9 o default -fcommon escondia o conflito; do GCC 10 em diante o
+   default é -fno-common e o link do `mapper` (que linka -lcollision_detection) falha com
+   "multiple definition". Como os dois só são usados dentro deste arquivo (as funções de
+   desenho add_circle/add_line abaixo), viraram static — cada módulo passa a ter o seu, sem
+   depender da fusão acidental que o -fcommon fazia. */
+/* Migração Ubuntu 26.04: com -fno-common (default do GCC 10+), esta variável não pode mais
+   ser definida aqui E em mapper/mapper.cpp — o link do `mapper` (que linka
+   -lcollision_detection) falhava com "multiple definition". Antes, o -fcommon fundia as duas
+   num símbolo só, e é disso que o resto do código depende: o behavior_selector e o
+   obstacle_distance_mapper declaram `extern virtual_laser_message` contando com a definição
+   que vem desta biblioteca. Então a definição única ficou AQUI e mapper.cpp virou extern. */
 carmen_mapper_virtual_laser_message virtual_laser_message;
-int add_virtual_laser_points = 0;
+/* Este é local mesmo: o nome colide com a FUNÇÃO add_virtual_laser_points() de mapper.h
+   (coisas diferentes, mesmo nome) e ninguém o usa de fora deste arquivo. */
+static int add_virtual_laser_points = 0;
 
 void
 add_circle(carmen_point_t center, double radius, int color)

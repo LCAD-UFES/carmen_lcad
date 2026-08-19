@@ -12,12 +12,12 @@ IFLAGS += -Imvog_model/include
 # Required default libraries to comunicate with Carmen Core
 LFLAGS += -L/usr/local/lib
 LFLAGS += -lparam_interface -lipc -lglobal -lkinect_interface -lfused_odometry_interface -llaser_interface \
-	  -lstereo_interface -lmvog_interface -lboost_system
+	  -lstereo_interface -lmvog_interface
 
 IFLAGS += `pkg-config --cflags bullet`
 LFLAGS += `pkg-config --libs bullet`
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 

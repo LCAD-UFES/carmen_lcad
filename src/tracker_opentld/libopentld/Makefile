@@ -7,8 +7,8 @@ LINK = g++
 
 CXXFLAGS += 
 CFLAGS += 
-IFLAGS += `pkg-config --cflags opencv` -I ../3rdparty/cvblobs -I mftracker -I tld 
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -I ../3rdparty/cvblobs -I mftracker -I tld 
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 SUBDIRS += 
 
 SOURCES =  imacq/ImAcq.cpp \

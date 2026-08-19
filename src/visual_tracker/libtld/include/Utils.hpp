@@ -20,7 +20,8 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <algorithm>
 #include <math.h>
 #include <numeric>

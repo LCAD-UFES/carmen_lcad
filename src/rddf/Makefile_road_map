@@ -1,8 +1,8 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
-OPENCV_CFLAGS = $(shell pkg-config --cflags opencv)
-OPENCV_LIBS = $(shell pkg-config --libs opencv)
+OPENCV_CFLAGS = $(shell pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv)
+OPENCV_LIBS = $(shell pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv)
 
 GSL_CFLAGS = $(shell pkg-config --cflags gsl)
 GSL_LIBS = $(shell pkg-config --libs gsl)

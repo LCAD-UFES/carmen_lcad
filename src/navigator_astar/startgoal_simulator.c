@@ -8,7 +8,12 @@
 
 carmen_point_t globalpos, goalpos;
 
-void periodic_publish_globalpos()
+/* Migração Ubuntu 26.04: esta função é registrada como TIMER_HANDLER_TYPE
+   (carmen_ipc_addPeriodicTimer), que exige a assinatura de 3 argumentos. Estava declarada
+   no estilo K&R (sem parâmetros) — até o GCC 13 isso era só aviso, no GCC 14+ é erro. */
+void periodic_publish_globalpos(void *clientData __attribute__ ((unused)),
+		unsigned long currentTime __attribute__ ((unused)),
+		unsigned long scheduledTime __attribute__ ((unused)))
 {
 	static carmen_localize_ackerman_globalpos_message message;
 	message.globalpos = globalpos;

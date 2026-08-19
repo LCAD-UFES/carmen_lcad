@@ -14,8 +14,8 @@ CXXFLAGS += -std=c++11
 
 
 # ORB_SLAM2 Dependencies
-IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 `pkg-config --cflags opencv` 
-LFLAGS += -lGL -lGLEW -lpangolin `pkg-config --libs opencv`
+IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` 
+LFLAGS += -lGL -lGLEW -lpangolin `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 
 # ORB_SLAM2

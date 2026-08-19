@@ -21,8 +21,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libminorucalib
 IFLAGS += 
 LFLAGS += -lminoru -lminorucalib -lelas
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 # Source code files (.c, .cpp) 
 SOURCES = main.cpp anyoption.cpp drawing.cpp fast.cpp gridmap3d.cpp linefit.cpp motionmodel.cpp pointcloud.cpp polynomial.cpp stereo.cpp stereodense.cpp

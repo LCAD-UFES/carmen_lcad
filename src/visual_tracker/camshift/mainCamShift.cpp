@@ -20,6 +20,9 @@
 #include "visualControl.h"
 #include <carmen/carmen.h>
 #include <carmen/visual_tracker_util.h>
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 VisualControl *camshift = NULL;
 

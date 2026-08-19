@@ -4,8 +4,9 @@
 #include "ml_road_finding_basic.h"
 
 // OpenCV includes
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 // OpenMP includes
 #include <omp.h>

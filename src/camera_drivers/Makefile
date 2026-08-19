@@ -1,5 +1,10 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 MODULE_NAME = CAMERA DRIVER
 MODULE_COMMENT = Camera Module Drivers, Visualizer and Supplementary Functions
 
@@ -7,7 +12,7 @@ LINK = g++
 CFLAGS += -Wall -g
 CXXFLAGS += -std=c++11
 
-LFLAGS += -lparam_interface -lipc -pthread -lglobal `pkg-config --libs opencv` `pkg-config --libs libavformat libavcodec libswscale libavutil`
+LFLAGS += -lparam_interface -lipc -pthread -lglobal `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` `pkg-config --libs libavformat libavcodec libswscale libavutil`
 
 SOURCES = camera_drivers_main.cpp camera_drivers_interface.cpp camera_drivers_process_image.cpp camera_drivers_access_image_functions.cpp camera_viewer.cpp camera_check.cpp
 

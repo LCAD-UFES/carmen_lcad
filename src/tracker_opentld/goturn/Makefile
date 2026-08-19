@@ -1,5 +1,8 @@
 include ../../Makefile.conf
 
+# Migração Ubuntu 26.04: faltavam os -I do OpenCV (headers agora em /usr/include/opencv4).
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 MODULE_NAME = GOTURN-tracker
 MODULE_COMMENT = Thrun tracker inside the tracker_opentld module
 
@@ -10,7 +13,7 @@ LINK = g++
 CFLAGS += -Wall
 CXXFLAGS += -Wall -Wno-ignored-qualifiers
 IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include \
-		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda/include/ \
+		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -I /usr/local/cuda/include/ \
 		  # -lcudnn -lcublas \
 		  # -D CPU_ONLY 
 		  
@@ -23,7 +26,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/algl
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 	  
-LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs opencv` \
+LFLAGS += -lboost_filesystem -lboost_regex `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
 		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface -lvelodyne_camera_calibration \
 		  -lvelodyne_interface -lstereo_interface -llocalize_ackerman_interface -lrotation_geometry \
@@ -31,7 +34,7 @@ LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs ope
 		  -lgsl -lgslcblas -lm -lcollision_detection -lalglib
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath\
-		-lboost_thread-mt -lrt -lboost_signals -lboost_system \
+		-lboost_thread -lrt \
 		-L/usr/local/cuda/lib64/ -lcublas
 
 SOURCES = goturn_main.cpp \

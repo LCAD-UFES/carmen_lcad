@@ -224,7 +224,10 @@ robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ac
 
 
 static void 
-shutdown_module()
+/* Migração Ubuntu 26.04: este handler é passado para signal(), que exige
+   void (*)(int). Estava no estilo K&R (sem parâmetros) — até o GCC 13 era só aviso,
+   no GCC 14+ é erro de tipo. */
+shutdown_module(int sig __attribute__ ((unused)))
 {
 	static int done = 0;
 

@@ -10,8 +10,8 @@ LFLAGS += -lshared_memory_test_interface -lparam_interface -lcarmenserial -lipc 
 LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface 
 LFLAGS += -lmapper_interface -lrt -lpthread
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 SOURCES = shared_memory_test_client.cpp shared_memory_test_server.cpp shared_memory_test_interface.cpp
 

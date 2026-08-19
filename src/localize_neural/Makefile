@@ -3,7 +3,7 @@ include ../Makefile.conf
 MODULE_NAME = "LOCALIZE NEURAL"
 MODULE_COMMENT = "LOCALIZE NEURAL Module"
 
-CXXFLAGS = -std=c++11
+CXXFLAGS = -std=c++14
 
 IFLAGS += -isystem /usr/include/bullet/
 IFLAGS += -I/usr/local/include/bullet/
@@ -13,18 +13,18 @@ LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lmovement
 LFLAGS += -llocalize_ackerman_interface -lbumblebee_basic_interface -lfused_odometry_interface -lvelodyne_interface
 LFLAGS += -lrotation_geometry -lmapper_interface -lcamera_drivers
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath  
-LFLAGS += -lboost_thread-mt -lrt -lboost_signals -lboost_system -lm -pthread
+LFLAGS += -lboost_thread -lrt -lm -pthread
 
 # Torch dependencies
 TORCH := $(shell if [ -e $(HOME)/torch/install/lib ] ; then echo $(HOME)/torch/install ; else echo /usr/local ; fi)
 IFLAGS += -I $(TORCH)/include -I $(TORCH)/include/TH
 LFLAGS += -L$(TORCH)/lib -lTH -lluaT -lluajit -llapack
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 #CFLAGS += -nostartfiles 
 

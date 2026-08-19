@@ -21,6 +21,10 @@
 
 #include "NormalizedPatch.h"
 #include "DetectorCascade.h"
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
 
 using namespace std;
 using namespace cv;
@@ -79,12 +83,16 @@ void tldNormalizeImg(const Mat &img, float *output)
 
 }
 
-CvRect tldBoundaryToRect(int *boundary)
+/* Migração Ubuntu 26.04: no OpenCV 4 CvRect (API C) e cv::Rect deixaram de ter conversão
+   implícita entre si. Estas duas funções são internas deste arquivo (não aparecem no
+   TLDUtil.h nem em nenhum outro módulo), e já recebiam/devolviam um cv::Rect na prática —
+   trocado o tipo declarado para cv::Rect, que é o que o img(rect) do OpenCV espera. */
+Rect tldBoundaryToRect(int *boundary)
 {
     return Rect(boundary[0], boundary[1], boundary[2], boundary[3]);
 }
 
-void tldExtractSubImage(const Mat &img, Mat &subImage, CvRect rect)
+void tldExtractSubImage(const Mat &img, Mat &subImage, Rect rect)
 {
     subImage = img(rect).clone();
 }

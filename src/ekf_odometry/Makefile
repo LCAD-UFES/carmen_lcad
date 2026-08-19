@@ -13,7 +13,7 @@ IFLAGS += -I../../sharedlib/libtf/src -I/usr/local/include/bullet/
 CXXFLAGS += -I/usr/local/include/
 CFLAGS += -I/usr/local/include/
 LFLAGS += -L../../sharedlib/libtf/src -lopencv_core -lopencv_features2d -lopencv_ml -lopencv_imgproc -lopencv_highgui  
-LFLAGS += -lglobal -lipc -lparam_interface -lmap_interface -lvisual_odometry_interface -lneural_global_localizer_interface -lstereo_interface -lvisual_search_thin_interface -llocalize_ackerman_interface -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_system -lboost_thread-mt -lrt -lboost_signals -lorocos-bfl    
+LFLAGS += -lglobal -lipc -lparam_interface -lmap_interface -lvisual_odometry_interface -lneural_global_localizer_interface -lstereo_interface -lvisual_search_thin_interface -llocalize_ackerman_interface -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lorocos-bfl    
 # Source code files (.c, .cpp) 
 SOURCES = ekf_odometry_main.cpp ekf_odometry_interface.c ekf_odometry_core.cpp ekf_odometry_util.cpp nonlinearanalyticconditionalgaussianodo.cpp nonlinearanalyticconditionalgaussianmeasurement.cpp
 

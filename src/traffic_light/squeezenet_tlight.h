@@ -2,7 +2,7 @@
 #ifndef CARMEN_SQUEEZENET_TLIGHT_H
 #define CARMEN_SQUEEZENET_TLIGHT_H
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 

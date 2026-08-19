@@ -1836,7 +1836,12 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 	{
 		char host[128];
 		CLF_READ_STRING(host, &string);
-		msg->host = (char*) malloc (strlen(host) * sizeof (char));
+		// +1 para o '\0': o strcpy abaixo escreve strlen(host)+1 bytes. Sem ele
+		// o playback aborta com "*** buffer overflow detected ***" na primeira
+		// CAMERA<N>_MESSAGE do log -- o _FORTIFY_SOURCE do toolchain do 26.04
+		// pega o estouro que antes passava batido na folga do malloc.
+		// O mesmo bug ja tinha sido corrigido no fork de onde veio o sc_lio_sam.
+		msg->host = (char*) malloc ((strlen(host) + 1) * sizeof (char));
 		strcpy(msg->host, host);
 
 		for (int i = 0; i < msg->number_of_images; i++)
@@ -1870,7 +1875,7 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 		if (compress_image)
 		{
 			sprintf(path_with_extension, "%s.png", path);
-			img = imread(path_with_extension, CV_LOAD_IMAGE_COLOR);
+			img = imread(path_with_extension, cv::IMREAD_COLOR);
 			msg->images[i].raw_data = img.data;
 		}
 		else

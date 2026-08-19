@@ -10,7 +10,7 @@
 #include <carmen/segmap_sensor_viewer.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 #include <carmen/segmap_grayscale_cell.h>
 #include <carmen/segmap_color_cell.h>

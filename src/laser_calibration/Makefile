@@ -19,15 +19,15 @@ LFLAGS += -lgrid_mapping -lprob_models -lm -lz -lmap_io -lmap_util -llocalize_ac
 	-lmapper_interface -lobstacle_avoider_interface -llocalize_ackerman_interface \
 	-llocalize_ackerman_interface -lmap_interface -lgrid_mapping -lultrasonic_filter_interface \
 	-lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface -lfused_odometry_interface  -lstereo_velodyne \
-	-lstereo_velodyne_interface -lstereo_interface `pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+	-lstereo_velodyne_interface -lstereo_interface `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 
-LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_thread -lrt
 
 	
 CFLAGS += -Wall -std=c99

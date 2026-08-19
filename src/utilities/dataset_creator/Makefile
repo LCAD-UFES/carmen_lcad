@@ -1,8 +1,8 @@
 include ../../Makefile.conf
 LINK = g++
 CFLAGS +=  -o  
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 MODULE_NAME = SPLIT LOG
 MODULE_COMMENT = Utility to split logs

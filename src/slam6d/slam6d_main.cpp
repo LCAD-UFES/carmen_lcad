@@ -10,8 +10,9 @@
 #include <kinfu_wrapper.h>
 #include "slam6d_opengl_thread.h"
 #include <Eigen/Core>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 static double slam6d_volume_size_g;
 static int kinect_width_g, kinect_height_g;

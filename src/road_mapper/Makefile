@@ -1,5 +1,8 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: faltavam os -I do OpenCV (headers agora em /usr/include/opencv4).
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 MODULE_NAME = Road Mapper
 MODULE_COMMENT = Create, view, learn and predict *road maps*
 
@@ -8,11 +11,11 @@ CFLAGS += -Wall
 CXXFLAGS += -Wno-ignored-qualifiers -O3
 
 IFLAGS += \
-	`pkg-config --cflags opencv` \
+	`pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` \
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L/usr/local/carmen_boost/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 LFLAGS += \
 	-lparam_interface \
@@ -30,9 +33,9 @@ LFLAGS += \
 	-lpng \
 	-lreadlog \
 	-lkinect_interface \
-	-lboost_signals \
-	-lboost_system \
-	`pkg-config --libs opencv` \
+	 \
+	 \
+	`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
 
 SOURCES = \
 	road_mapper_main.cpp \

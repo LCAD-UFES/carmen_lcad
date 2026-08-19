@@ -3,9 +3,9 @@
 #include <cstdlib>
 #include <deque>
 #include <math.h>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <carmen/carmen.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui.hpp>
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/fused_odometry_interface.h>

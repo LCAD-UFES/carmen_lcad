@@ -7,8 +7,8 @@
 
 #include "tracker/tracker.h"
 #include "regressor/regressor_train.h"
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 //using std::std::string;
 

@@ -32,6 +32,11 @@
 #include <fstream>
 #include <math.h>
 #include <algorithm>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 #define SHOW_DETECTIONS
 #define SHOW_BBOX true
@@ -156,8 +161,12 @@ construct_the_line(bbox_t &predictions, bool left_or_right)
 double
 calculate_the_distance_point_to_the_line (lines line_aux, carmen_velodyne_points_in_cam_with_obstacle_t point_aux)
 {
-	double distance = (abs(line_aux.a * point_aux.velodyne_points_in_cam.ipx + line_aux.b * point_aux.velodyne_points_in_cam.ipy + line_aux.c)
-			/ sqrt(line_aux.a * line_aux.a + line_aux.b * line_aux.b));
+	/* Migração Ubuntu 26.04: os campos a/b/c de `lines` são unsigned int, então a expressão
+	   toda é unsigned — e em C++17, com <cmath> trazendo as sobrecargas de std::abs, a
+	   chamada abs(unsigned) ficou ambígua. Convertido para double + fabs, que é o que a
+	   conta quer dizer (distância); o valor não muda (o operando já era não-negativo). */
+	double distance = (fabs((double) (line_aux.a * point_aux.velodyne_points_in_cam.ipx + line_aux.b * point_aux.velodyne_points_in_cam.ipy + line_aux.c))
+			/ sqrt((double) (line_aux.a * line_aux.a + line_aux.b * line_aux.b)));
 	return distance;
 }
 

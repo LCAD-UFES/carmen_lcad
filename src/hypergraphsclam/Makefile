@@ -5,10 +5,10 @@ MODULE_COMMENT = Sensor Calibration
 
 LINK = g++
 
-CXXFLAGS += -std=c++11 -O3 -Wno-deprecated-declarations
+CXXFLAGS += -std=c++17 -O3 -Wno-deprecated-declarations
 
 #cheating
-IFLAGS += -std=c++11 -O3
+IFLAGS += -std=c++17 -O3
 
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam \
 	-I$(CARMEN_HOME)/src/hypergraphsclam/Helpers \
@@ -21,7 +21,7 @@ IFLAGS += -I/usr/include/
 # eigen and PCL includes
 PCL_INC = $(wildcard /usr/local/include/pcl-1.8*)
 
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC))
 
 # the suitesparse includes
 IFLAGS += -I/usr/include/suitesparse
@@ -33,7 +33,7 @@ IFLAGS += -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src
 
 #boost
-LFLAGS += -lboost_system -lboost_filesystem
+LFLAGS += -lboost_filesystem
 
 # PCL
 LFLAGS += -lpcl_common -lpcl_io -lpcl_registration -lpcl_features -lpcl_search -lpcl_filters -lpcl_visualization -lpcl_kdtree

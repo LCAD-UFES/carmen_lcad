@@ -35,6 +35,10 @@
 
 #include <carmen/carmen.h>
 #include <carmen/global_graphics_qt.h>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
 
 using namespace cv;
 
@@ -516,7 +520,13 @@ void VideoWindow::adjust(IplImage* inFrame, IplImage* outFrame)
 	//Avelino - begin
 	Mat outMat = (cv::Mat) outFrame;
 	imgMat.convertTo(outMat, CV_8UC3, alpha, beta);
+#if CV_MAJOR_VERSION >= 4
+	/* Migração Ubuntu 26.04: cv::Mat -> IplImage implícito foi removido no OpenCV 4;
+	   cvIplImage() faz o mesmo (header sobre o buffer da Mat, sem cópia). */
+	*outFrame = cvIplImage(outMat);
+#else
 	*outFrame = (IplImage) outMat;
+#endif
 	//Avelino - end
 }
 

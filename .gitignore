@@ -753,3 +753,90 @@ src/imu_viewer/Makefile.qmake
 src/imu_viewer/moc_mainwindow.cpp
 src/imu_viewer/moc_objectgl.cpp
 /.metadata/
+
+# ─── Migração Ubuntu 26.04: binários e lixo de execução que o build/os testes
+#     geraram e que não estavam cobertos pelas regras acima ────────────────────
+/src/camera_drivers/camera_check
+/src/camera_drivers/camera_drivers
+/src/camera_drivers/camera_viewer
+/src/can_dump/can_playback
+/src/can_dump/can_playback_one_can
+/src/can_dump/can_view
+/src/can_dump/toyota_corolla_simulator
+/src/ford_escape_hybrid/fake_odometry
+/src/ford_escape_hybrid/ford_escape_hybrid_tune_pid_automatic
+/src/gps/correct_hdt_message
+/src/joystick_vehicle/joystick_vehicle
+/src/logger/log_fix_messages
+/src/logger/print_binary_log
+/src/mapeditor2/carmen_read
+/src/mapeditor2/carmen_save
+/src/mapper/test_diff_map
+/src/navigator_gui2/2D_map_view
+/src/rddf/rddf_build_from_file
+/src/rddf/rddf_resample
+/src/rddf/test_update_annotation
+/src/utilities/list_ipc_message/list_ipc_message
+/src/utilities/print_ipc_message/print_ipc_message
+/src/utilities/publish_pose/util_publish_dummy_gps
+/src/utilities/publish_pose/util_publish_final_goal
+/src/utilities/publish_pose/util_publish_gps_from_globalpos
+/src/viewer_3D/3D_map_view
+
+# bin/: o `make` recria estes symlinks (absolutos, com /home/<user> dentro —
+# quebram em qualquer outra máquina) e estes executáveis
+/bin/camera_check
+/bin/camera_drivers
+/bin/camera_viewer
+/bin/can_playback
+/bin/can_playback_one_can
+/bin/can_view
+/bin/converte_video_para_whatsapp
+/bin/fake_odometry
+/bin/filetypes.sh
+/bin/gdown.pl
+/bin/grep_all
+/bin/joystick_vehicle
+/bin/list_ipc_message
+/bin/log_fix_messages
+/bin/make_log
+/bin/mv_log.sh
+/bin/print_ipc_message
+/bin/publish_pose_from_annotation
+/bin/rddf_build_from_file
+/bin/rddf_generate.py
+/bin/rddf_resample
+/bin/rddf_view.py
+/bin/rebuild_caffe
+/bin/save_map_images
+/bin/timestamp_graph
+/bin/toyota_corolla_simulator
+/bin/Touareg2.mtl
+/bin/Touareg2.obj
+/bin/update_map_from_image
+/bin/util_publish_dummy_gps
+/bin/util_publish_final_goal
+/bin/util_publish_gps_from_globalpos
+
+# lib/compat/: symlinks de soname gerados na máquina (apontam para libs do
+# sistema). O README.md ao lado diz como recriá-los — ele SIM é versionado.
+/lib/compat/*.so*
+
+# Saída de execução (playback/proccontrol/mapper), não é fonte
+/bin/caco*.txt
+/bin/final_goal_pose.txt
+/bin/odometry_graph.txt
+/bin/obstacle_distance_map.map
+/bin/visible_obstacle_distance_map.map
+
+# qmake
+/src/imu_viewer/moc_predefs.h
+/src/imu_viewer/.qmake.stash
+
+# Workspace catkin do sc_lio_sam (gerado pelo catkin_make)
+/src/sc_lio_sam/build/
+/src/sc_lio_sam/devel/
+/src/sc_lio_sam/install/
+/src/sc_lio_sam/.catkin_tools/
+/src/sc_lio_sam/.catkin_workspace
+/src/sc_lio_sam/src/CMakeLists.txt

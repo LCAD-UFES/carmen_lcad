@@ -8,10 +8,20 @@
 #include <carmen/stereo_util.h>
 
 /* OpenCV Includes */
-#include<opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include<omp.h>
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+
+/* Migração Ubuntu 26.04: no OpenCV 4 o CV_RGB() do imgproc.hpp (C++) expande para
+   cv::Scalar, que não converte implicitamente para CvScalar — e este módulo passa o
+   resultado direto para funções da API C (cvLine etc.). Redefinido para a versão C
+   (mesma ordem BGR do original). */
+#if CV_MAJOR_VERSION >= 4
+#undef CV_RGB
+#define CV_RGB(r, g, b)  cvScalar((b), (g), (r), 0)
+#endif
 
 #define RED_OBSTACLES_DISTANCE  10.0
 #define GREEN_OBSTACLES_DISTANCE  20.0

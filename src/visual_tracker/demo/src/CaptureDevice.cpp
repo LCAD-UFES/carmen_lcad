@@ -22,6 +22,9 @@
 #include <carmen/visual_tracker_messages.h>
 #include <carmen/visual_tracker_util.h>
 #include <carmen/global_graphics_qt.h>
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 CaptureDevice::CaptureDevice(QObject* parent)
 : QThread(parent)

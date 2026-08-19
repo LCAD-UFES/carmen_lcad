@@ -3,8 +3,9 @@
 #include <locale.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include "neural_localizer_user_functions.h"
 #include "neural_localizer_utils.h"
 

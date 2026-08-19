@@ -1,7 +1,7 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CFLAGS += -std=c++11
+CFLAGS += -std=c++14
 CXXFLAGS += -std=gnu++11
 
 MODULE_NAME = SqueezeSeg V2 Neural Network
@@ -11,14 +11,14 @@ MODULE_COMMENT = Semantic segmentation of LiDAR point cloud
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp -lprob_models
 
-IFLAGS += -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -lpython2.7 -lpthread `pkg-config --libs opencv` `python2.7-config --libs` 
+IFLAGS += `pkg-config --cflags python3 2>/dev/null || python3-config --includes` -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -lpthread `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lvelodyne_camera_calibration
 LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
-		  `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration -lvelodyne_interface -lparam_interface
+		  `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
+		  -lboost_thread -lrt -lvelodyne_camera_calibration -lvelodyne_interface -lparam_interface
 
 SOURCES = libsqueeze_seg.cpp velodyne_to_SqueezeSeg.cpp
  

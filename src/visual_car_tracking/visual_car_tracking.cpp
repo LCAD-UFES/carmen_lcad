@@ -1,5 +1,9 @@
 
 #include "../visual_car_tracking/visual_car_tracking.h"
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/imgproc/imgproc_c.h>
 
 
 
@@ -23,7 +27,9 @@ void cascade_car_finder(carmen_bumblebee_basic_stereoimage_message *message)
 
 	/* Detect cars */
 	std::vector<cv::Rect> cars;
-	car_cascade.detectMultiScale( image, cars, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, cv::Size(30, 30) );
+	/* Migração Ubuntu 26.04: CV_HAAR_SCALE_IMAGE (API C do Haar, objdetect/objdetect_c.h) foi
+	   removida no OpenCV 4. O equivalente da API C++ é cv::CASCADE_SCALE_IMAGE, mesmo valor. */
+	car_cascade.detectMultiScale( image, cars, 1.1, 2, 0|cv::CASCADE_SCALE_IMAGE, cv::Size(30, 30) );
 
 	/* Draw rectangles on the detected cars */
 	for( unsigned int i = 0; i < cars.size(); i++ )

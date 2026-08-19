@@ -8,7 +8,7 @@ LINK = g++
 
 # Application specific include directories.
 IFLAGS += -I/usr/include/boost
-LFLAGS += -lboost_filesystem -lboost_system -lboost_thread -lboost_system -lboost_date_time -lboost_program_options -lboost_serialization 
+LFLAGS += -lboost_filesystem -lboost_thread -lboost_date_time -lboost_program_options -lboost_serialization 
 IFLAGS += -I/usr/local/include
 LFLAGS += -L/usr/local/lib -lompl
 

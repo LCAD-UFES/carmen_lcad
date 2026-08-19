@@ -54,17 +54,17 @@ LFLAGS += \
 	-ltask_manager_interface \
 	-lgsl -lgslcblas \
 	-lextra_keys_interface \
-	`pkg-config --libs opencv` \
+	`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
   -lcarmen_util
 	
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -pthread
 endif
 
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -lford_escape_hybrid_interface
@@ -76,7 +76,7 @@ LFLAGS += \
 	-lboost_log_setup \
 	-lboost_log \
 	-lboost_thread \
-	-lboost_system
+	
 endif
 
 SOURCES = \

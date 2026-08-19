@@ -3,7 +3,7 @@
 #define __SEGMAP_COLOR_CELL_H__
 
 #include <cstdio>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <pcl/point_types.h>
 #include <carmen/segmap_grayscale_cell.h>
 #include <carmen/segmap_cell_interface.h>

@@ -13,8 +13,9 @@
 #include <prob_transforms.h>
 #include <carmen/rddf_interface.h>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 #include <carmen/download_map_interface.h>
 #include <carmen/navigator_astar_interface.h>

@@ -5,6 +5,18 @@
 #endif
 
 #include <vector>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+/* Migração Ubuntu 26.04: no OpenCV 4 o único CV_RGB() que sobra é o do imgproc.hpp (C++),
+   que devolve cv::Scalar. Redefinido para a versão C (cvScalar), que serve tanto para a API
+   C (cvLine/cvRectangle/cvSet...) quanto para a C++ (CvScalar converte para cv::Scalar). */
+#if CV_MAJOR_VERSION >= 4
+#undef CV_RGB
+#define CV_RGB(r, g, b)  cvScalar((b), (g), (r), 0)
+#endif
 
 v_disparity get_v_disparity_instance(stereo_util stereo_util_instance, int stereo_disparity)
 {
@@ -122,7 +134,7 @@ cvLineSegment *find_hough_lines(const IplImage *image, int *n_lines, v_disparity
 	/* Morphological skeleton of the image */
 #if CV_MAJOR_VERSION == 2
 	cv::Mat img(ch1_image);
-#elif CV_MAJOR_VERSION == 3
+#elif CV_MAJOR_VERSION >= 3
 	cv::Mat img = cv::cvarrToMat(ch1_image);
 #endif
 	cv::threshold(img, img, 127, 255, cv::THRESH_BINARY);

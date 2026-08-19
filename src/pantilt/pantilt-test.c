@@ -99,11 +99,10 @@ main( int argc, char *argv[] )
   float  tilt = 0;
   
   int           use_keyboard = 0;
-#ifdef __APPLE__
+  /* Migração Ubuntu 26.04: struct termio (API System V, <termio.h>) foi removida da glibc;
+     a POSIX <termios.h> — que o ramo do macOS já usava — está disponível nas duas
+     plataformas, então o código passou a ser um só. */
   struct termios      cooked, raw;
-#else
-  struct termio	cooked, raw;
-#endif
   unsigned char	c;
   unsigned int	i, numC, code[MAX_CODE_LENGTH];
   
@@ -143,21 +142,13 @@ main( int argc, char *argv[] )
 #endif
       signal(c, catcher);
     }
-#ifdef __APPLE__
-      tcgetattr(KEYBOARD,&cooked);
+    /* tcgetattr/tcsetattr (POSIX) no lugar de ioctl(TCGETA/TCSETA) (System V) */
+    tcgetattr(KEYBOARD, &cooked);
     memcpy(&raw, &cooked, sizeof(struct termios));
-#else
-    ioctl(KEYBOARD, TCGETA, &cooked);
-    memcpy(&raw, &cooked, sizeof(struct termio));
-#endif
     raw.c_lflag &=~ (ICANON | ECHO);
     raw.c_cc[VEOL] = 1;
     raw.c_cc[VEOF] = 2;
-#ifdef __APPLE__
-      tcsetattr(KEYBOARD, TCSANOW, &cooked);
-#else
-    ioctl(KEYBOARD, TCSETA, &raw);
-#endif
+    tcsetattr(KEYBOARD, TCSANOW, &raw);   /* aplica o modo raw, como o ramo Linux fazia */
     signalled = 0;
     numC = 0;
     fprintf( stderr, "\r                      \rpan=%3.1f tilt=%3.1f",
@@ -234,11 +225,7 @@ main( int argc, char *argv[] )
       usleep(10000);
     }
     printf("\nBye...\n");
-#ifdef __APPLE__
-      tcsetattr(0, TCSANOW, &cooked);
-#else
-    ioctl(0, TCSETA, &cooked);
-#endif
+    tcsetattr(0, TCSANOW, &cooked);   /* restaura o modo original do terminal */
   }
   exit(0);
 }

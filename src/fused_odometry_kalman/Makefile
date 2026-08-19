@@ -11,10 +11,10 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -lglobal -lipc -lparam_interface -lxsens_interface -lgps_xyz_interface
 LFLAGS += -lbase_ackerman_interface -llocalize_ackerman_interface -lvisual_odometry_interface -lxsens_mtig_interface
-LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lm
+LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lm
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 SOURCES = fused_odometry_kalman.cpp fused_odometry_main.cpp xsens_xyz_handler.cpp car_odometry_handler.cpp
 PUBLIC_INCLUDES = 

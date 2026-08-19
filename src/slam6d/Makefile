@@ -7,13 +7,13 @@ MODULE_COMMENT = SLAM6D Based on Kinect Fusion
 
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 
 IFLAGS += -I../../sharedlib/libkinfu \
 			   -I/usr/local/cuda/include -I/home/lcad12/NVIDIA_GPU_Computing_SDK/C/common/inc
-IFLAGS += -I/usr/local/cuda/include -I/usr/include/eigen3  `pkg-config --cflags opencv` -I/usr/local/cuda/lib64/
+IFLAGS += -I/usr/local/cuda/include -I/usr/include/eigen3  `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -I/usr/local/cuda/lib64/
 LFLAGS += -L/usr/local/lib/ -L/usr/lib64 -L../../sharedlib/libkinfu -L../../sharedlib/libsiftgpu -L/usr/local/cuda/lib64/
-LFLAGS += -lglobal -lipc -lparam_interface -lkinfu -lkinect_interface -lpcl_common -lpcl_gpu_containers -lpcl_gpu_kinfu -lpcl_geometry -lpcl_io -lGL -lGLU -lglut -lcudart `pkg-config --libs opencv`
+LFLAGS += -lglobal -lipc -lparam_interface -lkinfu -lkinect_interface -lpcl_common -lpcl_gpu_containers -lpcl_gpu_kinfu -lpcl_geometry -lpcl_io -lGL -lGLU -lglut -lcudart `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 SOURCES = slam6d_main.cpp slam6d_opengl_interface.cpp slam6d_opengl_thread.cpp slam6d_interface.c kernelsVbo.cu
  

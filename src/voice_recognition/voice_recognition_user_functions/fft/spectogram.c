@@ -9,8 +9,9 @@
 #include "wav_decoder.h"
 #include "fftw3_util.h"
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 extern wav_format_chunk file_format;
 

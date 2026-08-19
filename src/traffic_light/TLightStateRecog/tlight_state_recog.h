@@ -2,7 +2,7 @@
 #ifndef TLIGHT_STATE_RECOG_H_
 #define TLIGHT_STATE_RECOG_H_
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 class TLightRecogInterface
 {

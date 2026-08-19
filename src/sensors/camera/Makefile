@@ -45,8 +45,8 @@ PUBLIC_BINARIES += camera_view
 TARGETS += camera_view
 endif
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 cvcam/libcvcam.a:
 	$(MAKE) -C cvcam

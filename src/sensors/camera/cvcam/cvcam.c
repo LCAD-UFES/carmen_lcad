@@ -28,8 +28,9 @@
 
 #include <carmen/carmen.h>
 #include "../camera_hw_interface.h"
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include "opencv2/videoio/videoio_c.h"
 
 static carmen_camera_image_t buffer_image;

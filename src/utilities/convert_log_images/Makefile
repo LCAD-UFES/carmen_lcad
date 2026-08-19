@@ -4,9 +4,9 @@ MODULE_NAME = CONVERT LOG IMAGES
 MODULE_COMMENT = Convert log images from raw format to png
 
 CXXFLAGS += -std=c++11
-IFLAGS += `pkg-config --cflags opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
-LFLAGS += `pkg-config --libs opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 SOURCES = to_png_old_log.cpp to_png_new_log.cpp to_png_log_intelbras.cpp
 

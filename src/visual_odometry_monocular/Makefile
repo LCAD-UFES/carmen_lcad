@@ -10,7 +10,7 @@ IFLAGS += -I/usr/include/eigen3
 
 LFLAGS +=
 
-LFLAGS += -lglobal -lipc -lparam_interface -lbumblebee_basic_interface -lcamera_interface -lm `pkg-config --cflags opencv` `pkg-config --libs opencv`
+LFLAGS += -lglobal -lipc -lparam_interface -lbumblebee_basic_interface -lcamera_interface -lm `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 SOURCES = camera_odometry_main.cpp
 

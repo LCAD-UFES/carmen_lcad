@@ -1,11 +1,16 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 MODULE_NAME = LOGGER
 MODULE_COMMENT = Modules for logging, displaying, and playing back data.
 
 LINK = g++
 CFLAGS += -Wall
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 
 ifdef FOR_XAVIER  
 INTERFACE_LIBS = -lxavier_interface -lparam_interface
@@ -19,9 +24,9 @@ INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface -lobstacle_avoider_in
 endif
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface -lglobal -lipc -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-			-lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv` -luser_preferences 
+			-lboost_thread -lrt `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -luser_preferences 
 
 SOURCES = logger.c playback_interface.c playback.cpp writelog.cpp readlog.cpp log_timestamp_repair.c logger_interface.c print_binary_log.cpp log_fix_messages.cpp
 

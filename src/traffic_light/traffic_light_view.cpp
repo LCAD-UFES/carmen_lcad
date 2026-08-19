@@ -250,7 +250,7 @@ carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
 
 #if CV_MAJOR_VERSION == 2
 	resize(image, resized_image, size);
-#elif CV_MAJOR_VERSION == 3
+#elif CV_MAJOR_VERSION >= 3
 	cv::resize(image, resized_image, size);
 #endif
     src_buffer = gdk_pixbuf_new_from_data(resized_image.data, GDK_COLORSPACE_RGB,

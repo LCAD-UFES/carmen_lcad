@@ -51,7 +51,10 @@ typedef struct {
   int compressed;
   FILE *fp;
 #ifndef NO_ZLIB
-  gzFile *comp_fp;
+  /* zlib: gzFile JÁ é um ponteiro (typedef struct gzFile_s *gzFile); declarar
+     gzFile * criava um ponteiro-para-ponteiro. Até o GCC 13 isso era só warning
+     (-Wincompatible-pointer-types); no GCC 15 virou erro. Ver doc/migracao_ubuntu26/ */
+  gzFile comp_fp;
 #endif
 } carmen_FILE;
 

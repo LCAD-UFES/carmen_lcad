@@ -9,6 +9,16 @@
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgcodecs/imgcodecs_c.h>
+#elif CV_MAJOR_VERSION >= 4
+/* Migração Ubuntu 26.04: o OpenCV >= 4 removeu o opencv2/imgcodecs/imgcodecs_c.h (o header
+   dá #error se incluído). A API C de core/imgproc que este arquivo usa (cvCreateImage,
+   cvCopy, IplImage) continua existindo nos headers *_c.h; para carregar imagem e para o
+   flip é preciso a API C++ (cv::imread, cv::flip), daí os dois grupos de include. */
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #else
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -91,11 +101,19 @@ update_remission_map_image_using_small_map(double map_center_x, double map_cente
 void
 rotate_map()
 {
+#if CV_MAJOR_VERSION >= 4
+	/* cvConvertImage()/CV_CVTIMG_FLIP foram removidas do OpenCV >= 4 (sem equivalente na
+	   API C). Mesmo efeito com a API C++: flip vertical in-place, sobre uma view da mesma
+	   memória (cvarrToMat não copia). */
+	cv::Mat ipl_image_mat = cv::cvarrToMat(ipl_image);
+	cv::flip(ipl_image_mat, ipl_image_mat, 0);
+#else
 	IplImage *cpy = cvCreateImage (cvSize(ipl_image->width, ipl_image->height), ipl_image->depth, ipl_image->nChannels);
 	cvCopy(ipl_image, cpy, NULL);
 
 	cvConvertImage(cpy, ipl_image, CV_CVTIMG_FLIP);
 	cvReleaseImage (&cpy);
+#endif
 }
 
 char *
@@ -138,7 +156,21 @@ int create_texture(void)
 	strcpy(texture_file_name, CARMEN_HOME_ENVIRONMENT_VARIABLE);
 	strcat(texture_file_name, "/src/viewer_3D/Logo.png");
 	ipl_image = NULL;
-	ipl_image = cvLoadImage(texture_file_name, CV_LOAD_IMAGE_UNCHANGED);
+#if CV_MAJOR_VERSION >= 4
+	/* cvLoadImage() foi removida do binário do OpenCV >= 4. Carrega pelo loader C++ e
+	   clona para um IplImage próprio: o ponteiro sobrevive ao escopo desta função (fica
+	   no ipl_image global), então não dá para usar só uma view em cima da cv::Mat local. */
+	{
+		cv::Mat texture_mat = cv::imread(texture_file_name, cv::IMREAD_UNCHANGED);
+		if (!texture_mat.empty())
+		{
+			IplImage texture_ipl = cvIplImage(texture_mat);
+			ipl_image = cvCloneImage(&texture_ipl);
+		}
+	}
+#else
+	ipl_image = cvLoadImage(texture_file_name, cv::IMREAD_UNCHANGED);
+#endif
 	if (!ipl_image)
 	{
 		printf("Could not load image file %s in create_texture().\n", texture_file_name);

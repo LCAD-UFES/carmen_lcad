@@ -7,7 +7,7 @@ LINK = g++
 CXXFLAGS += -Wall -msse3
 
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC))
 
 LFLAGS += -lglobal -lipc -lparam_interface
 LFLAGS += -lfused_odometry_interface -lvelodyne_interface -lrotation_geometry

@@ -40,7 +40,18 @@
 #ifndef CARMEN_LOCALIZE_ACKERMAN_CORE_H
 #define CARMEN_LOCALIZE_ACKERMAN_CORE_H
 
+/* O omp.h do GCC 15 declara templates C++ (alocadores OpenMP 5). Este header é
+   incluído (via carmen.h) dentro de um bloco extern "C", e "template with C linkage"
+   é erro. O extern "C++" abaixo devolve linkage C++ só para o omp.h; as funções C do
+   próprio omp.h continuam com linkage C, porque ele tem o seu próprio extern "C"
+   interno. Ver doc/migracao_ubuntu26/ */
+#ifdef __cplusplus
+extern "C++" {
+#endif
 #include <omp.h>
+#ifdef __cplusplus
+}
+#endif
 #include <carmen/robot_ackerman_messages.h>
 #include <carmen/robot_ackerman_interface.h>
 #include <carmen/base_ackerman_messages.h>

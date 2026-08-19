@@ -1,6 +1,10 @@
 #include "gtk_gui.h"
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/rrt_node.h>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/imgproc/imgproc_c.h>
 
 #define PUBLISH_MAP_VIEW 0
 
@@ -2307,7 +2311,7 @@ namespace View
 //
 //		cv::cvtColor(image, bgr, CV_RGB2BGR);
 //
-//		params.push_back(CV_IMWRITE_JPEG_QUALITY);
+//		params.push_back(cv::IMWRITE_JPEG_QUALITY);
 //		params.push_back(50);
 //
 //		cv::imencode(".jpeg", bgr, img_buff, params);

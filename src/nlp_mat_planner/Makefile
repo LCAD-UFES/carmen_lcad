@@ -1,5 +1,10 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 USE_CASADI = 1
 
 MODULE_NAME = NLP-MATPlan
@@ -27,7 +32,7 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 	-lobstacle_distance_mapper_interface -lbehavior_selector_interface \
 	-lcarmodel -lcarmen_gps_wrapper -lrotation_geometry -lmodel_predictive_planner_optimizer \
 	-ltask_manager_interface \
-	-lgsl -lgslcblas -lcarmen_util `pkg-config --libs opencv` \
+	-lgsl -lgslcblas -lcarmen_util `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
 
 ifdef USE_CASADI
 CASADI_DIR=$(shell /usr/bin/env python3 -c "import casadi; print(casadi.__path__[0])")

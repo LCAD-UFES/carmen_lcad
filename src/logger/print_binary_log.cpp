@@ -60,7 +60,10 @@ typedef struct
 #define     CARMEN_BLOG_FORMAT_MSG_ID       0
 #define     CARMEN_BLOG_DATA_MSG_ID         1
 
-MSG_INSTANCE current_msgRef;
+/* Migração Ubuntu 26.04: esta era uma definição duplicada de current_msgRef, que já é
+   definida em global/ipc_wrapper.c (e declarada como extern em ipc_wrapper.h). Até o GCC 9
+   o default -fcommon fundia as duas em uma; do GCC 10 em diante o default é -fno-common e
+   isso vira "multiple definition" no link. A variável não é usada neste arquivo. */
 
 
 //double

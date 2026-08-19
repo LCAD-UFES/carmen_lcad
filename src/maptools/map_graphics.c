@@ -426,7 +426,7 @@ static gint motion_event (GtkWidget *widget __attribute__ ((unused)),
 		carmen_map_graphics_adjust_scrollbars(map_view, &(map_view->centre));
 	} else if (map_view->motion_handler) {
 		screen_to_world(&screen_point, &world_point, map_view);
-		(map_view->motion_handler)(map_view, &world_point, event);
+		(map_view->motion_handler)(map_view, &world_point, (GdkEvent *) event);
 	}
 
 	return TRUE;
@@ -439,7 +439,7 @@ static int keyboard_press_event(GtkWidget *widget __attribute__ ((unused)),
 		return TRUE;
 
 	if (map_view->keyboard_press_handler) {
-		(map_view->keyboard_press_handler)(map_view, event);
+		(map_view->keyboard_press_handler)(map_view, (GdkEvent *) event);
 	}
 
 	return TRUE;
@@ -463,7 +463,7 @@ static int button_release_event(GtkWidget *widget __attribute__ ((unused)),
 		map_view->button_two_down = 0;
 		map_view->centre = point;
 	} else if (map_view->button_release_handler) {
-		(map_view->button_release_handler)(map_view, &point, event);
+		(map_view->button_release_handler)(map_view, &point, (GdkEvent *) event);
 	}
 
 	return TRUE;
@@ -487,7 +487,7 @@ static int button_press_event(GtkWidget *widget __attribute__ ((unused)),
 		map_view->button_two_down = 1;
 		carmen_map_graphics_adjust_scrollbars(map_view, &point);
 	} else if (map_view->button_press_handler) {
-		(map_view->button_press_handler)(map_view, &point, event);
+		(map_view->button_press_handler)(map_view, &point, (GdkEvent *) event);
 	}
 
 	return TRUE;

@@ -3,7 +3,7 @@
 #define __SEGMAP_CELL_INTERFACE_H__
 
 #include <cstdio>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <pcl/point_types.h>
 
 

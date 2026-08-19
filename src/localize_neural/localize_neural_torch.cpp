@@ -1,8 +1,9 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <lua.hpp>
 #include <luaT.h>
 #include <TH/TH.h>

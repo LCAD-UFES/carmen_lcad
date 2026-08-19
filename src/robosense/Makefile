@@ -7,7 +7,7 @@ MODULE_COMMENT = ROBOSENSE LIDAR Module for variable_message
 LINK = g++
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 
 # Application specific include directories.
 
@@ -18,7 +18,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lipc -lglobal -lparam_interface -lvelodyne_interface
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -pthread
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -pthread
 CFLAGS += -Wall
 
 # Source code files (.c, .cpp) 

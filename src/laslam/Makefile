@@ -1,5 +1,10 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 # Module name and description
 MODULE_NAME = LANDMARK SLAM - CORE
 MODULE_COMMENT = Landmark Slam based on Visual Features
@@ -13,8 +18,8 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/u
 LFLAGS += -L/usr/local/lib -L/home/lcad/tplib/pcl/build/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lparam_interface -lipc -lglobal -lstereo_interface -lbumblebee_basic_interface -lvisual_odometry_interface \
 	  -lglm -ljpeg -lGL -lGLU -lglut -ltf -lBulletDynamics \
-	  -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
-	  `pkg-config --libs opencv`
+	  -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread -lrt \
+	  `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 CFLAGS += -Wno-unknown-pragmas
 CXXFLAGS += -Wno-unknown-pragmas

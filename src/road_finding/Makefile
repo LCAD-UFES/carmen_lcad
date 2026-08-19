@@ -1,5 +1,10 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 ifndef CARMEN_DEBUG
 CXXFLAGS += -Wall -O3 -fopenmp
 else
@@ -11,7 +16,7 @@ LFLAGS += -L/usr/local/lib
 LFLAGS += -lglobal -lparam_interface -lipc -lgsl -lGL -lGLU -lglut \
 			-lstereo_interface -lv_disparity \
 			-lm -lgslcblas -fopenmp \
-			`pkg-config --libs opencv`
+			`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 MODULE_NAME = ROAD_FINDING
 MODULE_COMMENT = Road Finding Library and Viewer 

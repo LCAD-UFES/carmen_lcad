@@ -21,8 +21,29 @@
 
 #include <cstdio>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+/* Migração Ubuntu 26.04: cvLoadImage() foi removida do binário do OpenCV 4; o
+   substituto (cv::imread) é C++ e vive no imgcodecs. Ver imAcqLoadImg/imAcqLoadFrame. */
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+
+#if CV_MAJOR_VERSION >= 4
+/* Reimplementação mínima da cvLoadImage removida: carrega com o loader C++ e devolve um
+   IplImage próprio (cvCloneImage), porque o ponteiro é devolvido ao chamador, que depois
+   dá cvReleaseImage nele. Devolve NULL quando o arquivo não existe, igual à original. */
+static IplImage *
+cvLoadImage(const char *filename, int flags = cv::IMREAD_COLOR)
+{
+	cv::Mat mat = cv::imread(filename, flags);
+	if (mat.empty())
+		return (NULL);
+
+	IplImage ipl = cvIplImage(mat);
+	return (cvCloneImage(&ipl));
+}
+#endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32)
 #include <windows.h>

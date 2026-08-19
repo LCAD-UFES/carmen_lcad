@@ -1,7 +1,8 @@
 /* OpenCV Includes */
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include <opencv/ml.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/ml.hpp>
 #include <opencv2/video/tracking.hpp>
 
 /* Carmen includes */
@@ -40,6 +41,9 @@
 #include "stereo_mapping_interface.h"
 #include "stereo_mapping_map.h"
 #include "stereo_mapping_kalman_filter.h"
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 /* Stereo Parameters */
 static int stereo_height;

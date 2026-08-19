@@ -9,10 +9,10 @@ SUBDIRS += libvoice libvoice_google
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/python2.7
+IFLAGS += `pkg-config --cflags python3 2>/dev/null || python3-config --includes`
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lpython2.7 -lparam_interface -lipc -lglobal -lvoice_interface_interface
+LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -lparam_interface -lipc -lglobal -lvoice_interface_interface
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = voice_interface_main.cpp voice_interface_interface.cpp voice_interface.cpp

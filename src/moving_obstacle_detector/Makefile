@@ -13,7 +13,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models  -fopenmp
 LFLAGS += -lglobal -lipc -llaser_interface -lGL -lglut -lGLU -lparam_interface \
 	 -L$(CARMEN_HOME)/sharedlib/prob_models -lprob_models \
 	 -lmap_interface -lrotation_geometry -lfused_odometry_interface -lbase_ackerman_interface -lmap_server_interface \
-	 -lmapper_interface -lmoving_objects_interface -llocalize_ackerman_interface -lobstacle_distance_mapper_interface `pkg-config --cflags opencv` `pkg-config --libs opencv`
+	 -lmapper_interface -lmoving_objects_interface -llocalize_ackerman_interface -lobstacle_distance_mapper_interface `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 SOURCES = moving_obstacle_detector_main.cpp
 

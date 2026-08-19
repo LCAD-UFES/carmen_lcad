@@ -10,10 +10,10 @@ CXXFLAGS = -std=c++11
 
 IFLAGS += -I/usr/include/python3.5
 
-LFLAGS += -lglobal -lipc -lparam_interface -lvoice_interface_interface `python3.5-config --libs` -lnavigator_ackerman_interface
-#LFLAGS += `pkg-config --libs opencv` -lparam_interface -lglobal -lbumblebee_basic_interface -lipc
-#CFLAGS += -Wall `pkg-config --cflags opencv`
-#CXXFLAGS += -Wall `pkg-config --cflags opencv` -std=c++11
+LFLAGS += -lglobal -lipc -lparam_interface -lvoice_interface_interface `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` -lnavigator_ackerman_interface
+#LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lparam_interface -lglobal -lbumblebee_basic_interface -lipc
+#CFLAGS += -Wall `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+#CXXFLAGS += -Wall `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -std=c++11
 
 SOURCES = call_iara_app_main.c 
 PUBLIC_INCLUDES = call_iara_app_messages.h

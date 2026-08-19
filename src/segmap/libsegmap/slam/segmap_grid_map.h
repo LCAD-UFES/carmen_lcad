@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include <opencv/cv.hpp>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>

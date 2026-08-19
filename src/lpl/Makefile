@@ -1,13 +1,18 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 MODULE_NAME = Neural Object Detector
 MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 
 LINK = g++
-CXXFLAGS = -std=c++11
+CXXFLAGS = -std=c++14
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/opencv4 -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include -I/usr/include/python3.8 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/opencv4 -I/usr/local/include/bullet/ -I/usr/include/python3.8 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
 
 IFLAGS += -I/usr/local/include/onnxruntime/include
 LFLAGS += -L/usr/lib/x86_64-linux-gnu
@@ -35,24 +40,24 @@ LFLAGS += -L$(CARMEN_HOME)/src/lpl/play_with_tensorrt/pj_tensorrt_perception_yol
 
 
 #LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
-		  -lmoving_objects_interface -ldarknet2 `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
-		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
-		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
+		  -lmoving_objects_interface -ldarknet2 `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
+		  -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lvelodyne_camera_calibration \
+		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` \
 		  -lcamera_drivers -lpython3.8
 
 #LFLAGS += -lglobal -lipc -lvelodyne_interface  -lpthread -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
-		  -lmoving_objects_interface -lopencv_imgproc -lopencv_imgcodecs -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
-		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
-		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
+		  -lmoving_objects_interface -lopencv_imgproc -lopencv_imgcodecs -ldarknet `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
+		  -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lvelodyne_camera_calibration \
+		  -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` \
 		  -lcamera_drivers -lpython3.8 -lonnxruntime  -lopencv_core -lopencv_features2d -lopencv_highgui  \
 		 -lImageProcessor -lCommonHelper -lInferenceHelper -lopencv_imgproc -lopencv_imgcodecs -lopencv_core  -lopencv_highgui -pthread -fopenmp -lcuda -lcudart \
 		 -lopencv_calib3d -lopencv_core -lopencv_dnn -lopencv_features2d -lopencv_flann -lopencv_gapi -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching -lopencv_video -lopencv_videoio -lopencv_aruco -lopencv_barcode -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_datasets -lopencv_dnn_objdetect -lopencv_dnn_superres -lopencv_dpm -lopencv_face -lopencv_freetype -lopencv_fuzzy -lopencv_hdf -lopencv_hfs -lopencv_img_hash -lopencv_intensity_transform -lopencv_line_descriptor -lopencv_mcc -lopencv_optflow -lopencv_phase_unwrapping -lopencv_plot -lopencv_quality -lopencv_rapid -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_shape -lopencv_stereo -lopencv_structured_light -lopencv_superres -lopencv_surface_matching -lopencv_text -lopencv_tracking -lopencv_videostab -lopencv_wechat_qrcode -lopencv_xfeatures2d -lopencv_ximgproc -lopencv_xobjdetect -lopencv_xphoto \
 		 -lnvinfer -lnvinfer_plugin -lnvonnxparser
 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lpthread -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
-          -lmoving_objects_interface -ldarknet `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
-          -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
-          -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `python3.8-config --libs` \
+          -lmoving_objects_interface -ldarknet `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
+          -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lvelodyne_camera_calibration \
+          -ltraffic_light_interface -llaser_ldmrs_interface -llaser_ldmrs_utils -lrddf_interface `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` \
           -lcamera_drivers -lpython3.8 -lonnxruntime -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -lopencv_highgui \
           -lImageProcessor -lCommonHelper -lInferenceHelper -pthread -fopenmp -lcuda -lcudart -lopencv_calib3d -lopencv_dnn \
           -lopencv_features2d -lopencv_flann -lopencv_gapi -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching \

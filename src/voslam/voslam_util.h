@@ -15,8 +15,8 @@
 #include <tf.h>
 #include <Eigen/Core>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 #define STEREO_RANGE_MAX 20.0
 

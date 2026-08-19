@@ -13,8 +13,8 @@ LFLAGS +=  -lparam_interface -lipc -lglobal -llocalize_ackerman_interface -lmap_
 LFLAGS += -L./ELAS/build/ -lELAS
 LFLAGS += -ldarknet
 # OpenCV
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 
 SOURCES			= $(wildcard *.cpp)

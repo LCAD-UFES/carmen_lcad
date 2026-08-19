@@ -3,8 +3,8 @@
 #include <locale.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include "visual_memory_user_functions.h"
 #include "visual_memory_utils.h"
 

@@ -6,6 +6,10 @@
  */
 
 #include "visual_tracker_util.h"
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
 
 void
 copy_RGB_image_to_BGR_image(unsigned char *original, IplImage *copy, int nchannels)

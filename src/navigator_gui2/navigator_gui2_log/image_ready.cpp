@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include "opencv2/opencv.hpp"
 #include <cstring>
 #include <string>
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
 			count = std::atoi(split);
 			snprintf(temp,sizeof(temp),"%spictures/%d.jpg", folder_dir, count);
 
-			image = cv::imread(temp, CV_LOAD_IMAGE_COLOR);
+			image = cv::imread(temp, cv::IMREAD_COLOR);
 
 			height = image.size().height;
 			width = image.size().width;

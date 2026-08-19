@@ -7,9 +7,12 @@ LFLAGS += -lipc -lparam_interface -lstdc++
 ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags`
 LFLAGS += `$(GTK_CONFIG) --libs`
-IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore/ -I/usr/include/qt4/QtGui -I/usr/include -I/usr/include/qt4/ -I$CARMEN_HOME/include
-IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include 
-LFLAGS += -lQtGui -lQtCore -lpthread
+# Migração Ubuntu 26.04: Qt4 não existe mais no apt (nem os paths /usr/include/qt4 e
+# /usr/lib64/qt4 do tutorial antigo). O global_graphics_qt só usa QSocketNotifier/QObject,
+# que existem igual no Qt5 (pacote qtbase5-dev). pkg-config resolve os paths reais
+# (/usr/include/x86_64-linux-gnu/qt5/...), com fallback pros nomes antigos.
+IFLAGS += -I. -fPIC `pkg-config --cflags Qt5Core Qt5Gui 2>/dev/null || pkg-config --cflags QtCore QtGui 2>/dev/null`
+LFLAGS += `pkg-config --libs Qt5Core Qt5Gui 2>/dev/null || echo -lQtGui -lQtCore` -lpthread
 else
 CFLAGS += -DNO_GRAPHICS
 endif
@@ -30,7 +33,8 @@ PUBLIC_INCLUDES = global.h carmen_stdio.h ipc_wrapper.h geometry.h pswrap.h \
 		  carmen_gps.h Gdc_Coord_3d.h Gdc_To_Utm_Converter.h Utm_Coord_3d.h Utm_To_Gdc_Converter.h carmen_gps_wrapper.h\
 		  global_planning_interface.h \
 		  global_planning_messages.h \
-		  global_planning.h 
+		  global_planning.h \
+		  opencv_c_compat.h 
 
 PUBLIC_LIBRARIES = libglobal.a libgeometry.a libpswrap.a libcarmenserial.a \
 		   libkeyctrl.a libmulticentral.a libmovement.a libcarmen_gps_wrapper.a\

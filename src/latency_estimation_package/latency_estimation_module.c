@@ -3,8 +3,8 @@
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/visual_odometry_interface.h>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 #define TEST_GPS_LATENCY
 #define TEST_GPS_LATENCY_USING_POSITION

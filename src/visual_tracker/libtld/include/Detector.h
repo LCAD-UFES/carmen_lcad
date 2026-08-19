@@ -20,7 +20,8 @@
 #ifndef DETECTOR_H_
 #define DETECTOR_H_
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <map>
 #include <list>
 #include <vector>

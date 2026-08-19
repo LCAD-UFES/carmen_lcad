@@ -14,7 +14,7 @@
 #include <fstream>
 
 #include <opencv2/core/version.hpp>
-#if CV_MAJOR_VERSION == 3
+#if CV_MAJOR_VERSION >= 3
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -131,7 +131,11 @@ static carmen_laser_laser_message flaser; // moving_objects
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 
-carmen_mapper_virtual_laser_message virtual_laser_message;
+/* Migração Ubuntu 26.04: a definição desta variável passou para
+   obstacle_avoider/collision_detection.c (libcollision_detection, que este módulo linka) —
+   ver o comentário lá. Antes ela era definida nos dois lugares e o -fcommon do GCC <= 9
+   fundia as duas; com -fno-common isso vira "multiple definition" no link. */
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 carmen_mapper_virtual_scan_message virtual_scan_message;
 

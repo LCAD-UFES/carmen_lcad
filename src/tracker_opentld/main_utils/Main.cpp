@@ -30,6 +30,9 @@
 #include "../main_utils/Trajectory.h"
 #include "ImAcq.h"
 #include "TLDUtil.h"
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 using namespace tld;
 using namespace cv;

@@ -7,8 +7,8 @@ CXXFLAGS += -std=c++11
 MODULE_NAME = Deeplab Neural Network
 MODULE_COMMENT = Semantic segmentation inference using Deeplab tensorflow model
 
-IFLAGS += -I/usr/include/python2.7
-LFLAGS += -ldeeplab -lpython2.7 -lpthread `pkg-config --libs opencv` 
+IFLAGS += `pkg-config --cflags python3 2>/dev/null || python3-config --includes`
+LFLAGS += -ldeeplab `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -lpthread `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` 
 
 SOURCES = generate_semantic_map_images.cpp
  

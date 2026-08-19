@@ -11,8 +11,8 @@ MAE_INC_DIR = $(MAEHOME)/include
 MAE_LIB = -L$(MAE_LIB_DIR)
 MAE_INC	= -I$(MAE_INC_DIR) -I.
 
-INC_PATH =$(MAE_INC) `pkg-config --cflags opencv`
-LIB_PATH =$(MAE_LIB) `pkg-config --libs opencv` -L/usr/local/lib -L/usr/X11R6/lib
+INC_PATH =$(MAE_INC) `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LIB_PATH =$(MAE_LIB) `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -L/usr/local/lib -L/usr/X11R6/lib
 
 INC_PATH+=-I$(CARMEN_HOME)/include
 LIB_PATH+=-L$(CARMEN_HOME)/lib

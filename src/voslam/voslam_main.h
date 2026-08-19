@@ -2,8 +2,8 @@
 #define VOSLAM_MAIN_H_
 
 #include <vector>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 #include <tf.h>
 #include <Eigen/Core>

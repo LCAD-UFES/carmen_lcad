@@ -7,7 +7,7 @@
 #include <deque>
 #include <cfloat>
 #include <cstdlib>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <carmen/carmen.h>
 
 using namespace cv;

@@ -36,7 +36,8 @@ image_0000_TimeStamp_pose_poseAno_Dist_message.png estado
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/playback_interface.h>
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
