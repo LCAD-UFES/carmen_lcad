@@ -206,7 +206,11 @@ main(int argc, char **argv)
 
     if (argc > 2)
     {
-        camera_name = (char*) malloc(sizeof(char)*strlen(argv[1]));
+        // +1 para o '\0'. Sem ele o strcpy estoura o buffer em UM byte e o
+        // _FORTIFY_SOURCE do toolchain do 26.04 aborta com
+        // "*** buffer overflow detected ***" (SIGABRT) -- o proccontrol so' via
+        // "exited due to SIGNAL (code = 6)" e respawnava em loop.
+        camera_name = (char*) malloc(sizeof(char)*(strlen(argv[1]) + 1));
         strcpy(camera_name, argv[1]);
         camera_id = atoi(argv[2]);
     }

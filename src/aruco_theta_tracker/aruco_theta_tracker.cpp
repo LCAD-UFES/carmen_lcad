@@ -237,7 +237,8 @@ aruco_theta_tracker_read_parameters(int argc, char **argv, aruco_theta_tracker_p
     {
         read_json_from_file(json_file, values);
 
-        params.camera_name = (char*) malloc(strlen(values["camera_name"].asCString())*sizeof(char));
+        // +1 para o '\0' que o strcpy escreve (ver camera_viewer.cpp:209)
+        params.camera_name = (char*) malloc((strlen(values["camera_name"].asCString()) + 1)*sizeof(char));
         strcpy(params.camera_name, values["camera_name"].asCString());
         params.camera_id = values["camera_id"].asInt();
         params.detector_id = values["detector_id"].asInt();

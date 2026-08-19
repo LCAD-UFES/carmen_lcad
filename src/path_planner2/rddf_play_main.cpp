@@ -2440,7 +2440,8 @@ carmen_motion_plan_handler(carmen_base_ackerman_motion_command_message *message)
 	memcpy(current_motion_command_message->motion_command, message->motion_command, sizeof(carmen_ackerman_motion_command_t) * message->num_motion_commands);
 	current_motion_command_message->num_motion_commands = message->num_motion_commands;
 	current_motion_command_message->timestamp = message->timestamp;
-	current_motion_command_message->host = (char*)malloc(strlen(message->host));
+	// +1 para o '\0' que o strcpy escreve (ver camera_viewer.cpp:209)
+	current_motion_command_message->host = (char*)malloc(strlen(message->host) + 1);
 	strcpy(current_motion_command_message->host, message->host);
 }
 

@@ -223,7 +223,7 @@ Se o `gcc` padrão não for o 15 (passo 3), use:
 make -C $CARMEN_HOME/src CC=gcc-15 CXX=g++-15 -j$(nproc)
 ```
 
-### Três armadilhas do build
+### Quatro armadilhas do build
 
 ⚠️ **Nunca rode dois `make` simultâneos na mesma árvore.** Não há lock: um
 processo compila o `.o` enquanto o outro linka o arquivo pela metade, gerando
@@ -240,6 +240,34 @@ dele da lista `PACKAGES` em `src/Makefile`.
 
 ```bash
 cd $CARMEN_HOME/src/<modulo> && rm -f *.o *.a Makefile.depend && make
+```
+
+⚠️ **Nunca rode `make` num módulo que está fora da lista `PACKAGES`** do
+`src/Makefile`. O alvo `export` de cada módulo **repõe os symlinks de
+`include/carmen/`** apontando para os headers dele. Como os módulos fora do
+`PACKAGES` estão fora justamente por terem código desatualizado, os headers deles
+são incompatíveis — e um `make` inocente ali sequestra headers públicos e quebra
+a compilação de módulos que não têm nada a ver.
+
+Aconteceu de verdade: um `make` em `src/path_planner2` repontou
+`rddf_{messages,interface,util,index}.h` de `src/rddf/` para `src/path_planner2/`,
+e todo módulo que usa rddf parou de compilar com
+`'carmen_ackerman_traj_point_t' does not name a type`.
+
+Para conferir se algum header foi sequestrado:
+
+```bash
+cd $CARMEN_HOME
+for f in include/carmen/*; do
+  t=$(readlink "$f"); [ -n "$t" ] && echo "$t"
+done | sed 's|.*/src/||; s|/.*||' | sort -u
+```
+
+Todo nome que aparecer precisa estar no `PACKAGES` do `src/Makefile`. Para
+consertar, refaça o symlink para o módulo correto:
+
+```bash
+ln -sf $CARMEN_HOME/src/<modulo_certo>/<header>.h $CARMEN_HOME/include/carmen/<header>.h
 ```
 
 ## 10. Opcional: hardware, CUDA e ROS

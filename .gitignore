@@ -840,3 +840,6 @@ src/imu_viewer/moc_objectgl.cpp
 /src/sc_lio_sam/.catkin_tools/
 /src/sc_lio_sam/.catkin_workspace
 /src/sc_lio_sam/src/CMakeLists.txt
+
+# cmake do aruco_theta_tracker (modulo fora do PACKAGES)
+/src/aruco_theta_tracker/build/

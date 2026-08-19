@@ -39,6 +39,14 @@ Nenhum deles é necessário para subir `central` + `param_daemon` + `proccontrol
 
 ## c) Módulos fora do `PACKAGES` do `src/Makefile`
 
+> ⚠️ **Não rode `make` neles.** O alvo `export` de cada módulo repõe os symlinks de
+> `include/carmen/` para os headers dele. Como esses módulos estão fora do `PACKAGES`
+> por terem código desatualizado, os headers são incompatíveis e um `make` ali
+> sequestra headers públicos, quebrando módulos que não têm relação nenhuma. Já
+> aconteceu com `src/path_planner2`, que repontou `rddf_{messages,interface,util,index}.h`
+> de `src/rddf/` para si mesmo. Ver a seção *Quatro armadilhas do build* no
+> [`INSTALL_UBUNTU_26.04.md`](INSTALL_UBUNTU_26.04.md), com o comando de conferência.
+
 O `src/` tem ~218 diretórios, mas o `PACKAGES` do `src/Makefile` lista pouco mais de 80. Todo
 o resto (`mapper2`, `mapper3`, `mapper_datmo`, `graphslam_*`, `virtual_scan*`, `lpl`,
 `laslam`, `polar_slam`, `deep_mapper`, `neural_object_detector*`, `rl_motion_planner`, ...)

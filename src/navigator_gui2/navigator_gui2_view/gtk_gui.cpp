@@ -707,7 +707,18 @@ namespace View
 			return;
 
 		// Register idle function
-		g_idle_add (on_drawArea_idle, this);
+		// ATENCAO: aqui era g_idle_add(). Um idle source roda sempre que o main loop nao tem
+		// nada melhor a fazer, ou seja, o GLib nunca bloqueia no poll: ele fazia ppoll() com
+		// timeout zero e despachava on_drawArea_idle() dezenas de milhares de vezes por
+		// segundo. Como o proprio callback ja limita o redraw a ~11 Hz comparando o relogio
+		// (draw_callbacks.cpp), na esmagadora maioria das voltas ele so lia o relogio e
+		// retornava -- queimando um nucleo inteiro sem desenhar nada (medido: 99,8% de CPU
+		// com a GUI parada, sem nenhuma mensagem chegando).
+		//
+		// Com g_timeout_add(10, ...) o main loop volta a dormir entre as chamadas. A taxa de
+		// redraw NAO muda: continua governada pelo mesmo teste de 0.09 s dentro do callback,
+		// que agora e consultado 100x/s em vez de dezenas de milhares.
+		g_timeout_add (10, on_drawArea_idle, this);
 
 		// Show window. All other widgets are automatically shown by GtkBuilder
 		gtk_widget_show_all(controls_.main_window);
