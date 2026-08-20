@@ -2,6 +2,45 @@
 #include "viewer_3D.h"
 #include "Window.h"
 
+// Desliga a sincronizacao com o retrace da tela, para que o glXSwapBuffers() volte na hora
+// em vez de bloquear. Cada driver expoe a extensao com um nome; tentamos as tres, da mais
+// especifica para a mais antiga. Se nenhuma existir, seguimos com o vsync ligado -- nao ha
+// como fazer melhor e nao vale abortar o modulo por causa disso.
+static void
+desliga_vsync (Display *display, GLXDrawable drawable)
+{
+    typedef void (*swap_interval_ext_t) (Display *, GLXDrawable, int);
+    typedef int  (*swap_interval_mesa_t) (unsigned int);
+    typedef int  (*swap_interval_sgi_t) (int);
+
+    const char *extensoes = glXQueryExtensionsString (display, DefaultScreen (display));
+
+    if (extensoes && strstr (extensoes, "GLX_EXT_swap_control"))
+    {
+        swap_interval_ext_t glXSwapIntervalEXT_ptr =
+                (swap_interval_ext_t) glXGetProcAddressARB ((const GLubyte *) "glXSwapIntervalEXT");
+        if (glXSwapIntervalEXT_ptr)
+        {
+            glXSwapIntervalEXT_ptr (display, drawable, 0);
+            return;
+        }
+    }
+
+    swap_interval_mesa_t glXSwapIntervalMESA_ptr =
+            (swap_interval_mesa_t) glXGetProcAddressARB ((const GLubyte *) "glXSwapIntervalMESA");
+    if (glXSwapIntervalMESA_ptr)
+    {
+        glXSwapIntervalMESA_ptr (0);
+        return;
+    }
+
+    swap_interval_sgi_t glXSwapIntervalSGI_ptr =
+            (swap_interval_sgi_t) glXGetProcAddressARB ((const GLubyte *) "glXSwapIntervalSGI");
+    if (glXSwapIntervalSGI_ptr)
+        glXSwapIntervalSGI_ptr (0);
+}
+
+
 
 int
 processWindow (window* w, void (*mouseFunc)(int type, int button, int x, int y), void (*keyPress)(int code), void (*keyRelease)(int code), void (*resizeFunc)(int width, int height))
@@ -225,6 +264,15 @@ initWindow (int width, int height)
 
     // Bind the rendering context to the window
     glXMakeCurrent (w->g_pDisplay, w->g_window, glxContext);
+
+    // Desliga o vsync. O desenho do viewer_3D roda dentro do handler de timer do IPC
+    // (carmen_ipc_addPeriodicTimer, em viewer_3D.cpp), entao tudo que o glXSwapBuffers()
+    // bloquear e tempo em que o socket do IPC nao e drenado -- o central trava ao escrever
+    // para este modulo e o barramento inteiro para (o playback engasga junto). Com a janela
+    // ocluida o compositor Wayland para de mandar eventos de presente e a espera passa de
+    // 1 s por quadro. O modulo ja limita a taxa de desenho por conta propria, entao o vsync
+    // nao acrescenta nada.
+    desliga_vsync (w->g_pDisplay, w->g_window);
 
     // Request the X window to be displayed on the screen
     XMapWindow (w->g_pDisplay, w->g_window);

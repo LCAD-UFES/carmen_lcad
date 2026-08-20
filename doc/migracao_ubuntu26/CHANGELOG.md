@@ -704,3 +704,97 @@ depurar com ferramentas X, rode com `GDK_BACKEND=x11`.
 O `proccontrol.pro`, o `proccontrol_gui.cpp` e o `proccontrol_gui.h` foram **deixados como
 estavam** — não são mais compilados por nada, como já acontece no fork. Removê-los é uma
 decisão à parte, de limpeza.
+
+---
+
+## Sessão 2 — 2026-08-20
+
+### 45. `viewer_3D`: desligado o vsync — era ele que fazia o `playback` engasgar
+
+**Sintoma.** Com a stack de playback de pé (`bin/argos/process-argos-playback.ini`), o
+`playback` engasgava: travava por ~1 s, e em seguida recuperava o atraso reproduzindo a ~2x.
+Acontecia a cada poucos segundos, de forma irregular, e o mesmo padrão aparecia na stack de
+simulação.
+
+**Causa.** O desenho do `viewer_3D` roda **dentro do handler de timer do IPC** —
+`carmen_ipc_addPeriodicTimer(1.0 / 40.0, draw_timer_handler, NULL)`, em `viewer_3D.cpp`. Logo,
+todo tempo que o `glXSwapBuffers()` fica bloqueado é tempo em que o socket IPC do módulo não é
+drenado. O `central` é single-thread: quando ele bloqueia escrevendo para o `viewer_3D`, **o
+barramento inteiro para**, e todo mundo que publica — inclusive o `playback` — congela junto.
+
+Numa sessão Wayland, com a janela do `viewer_3D` ocluída, o compositor deixa de mandar eventos
+de presente e a espera do swap passa de 1 s por quadro. Daí as travadas de ~1 s.
+
+**Como foi isolado.** Instrumentando o `playback` por fora (uma sonda que manda
+`CARMEN_PLAYBACK_COMMAND_PLAY` e assina `carmen_playback_info_message`, medindo por segundo a
+taxa real de reprodução e o **maior silêncio entre mensagens**), e ligando/desligando módulos
+com `proccontrol_setgroup` / `proccontrol_setmodule`. Janelas de 40 s:
+
+| condição | travadas > 0,5 s | pior travada |
+|---|---|---|
+| stack completa | 9 | 2,03 s |
+| grupo `interface` desligado | 0 | 0,12 s |
+| só os dois `camera_viewer` desligados | 13 | 2,06 s |
+| `navigator_gui2` desligado | 21 | 2,05 s |
+| **`viewer_3D` desligado** | **0** | 0,10 s |
+
+Confirmação do mecanismo: o `wchan` do `viewer_3D` ficava em
+`drm_syncobj_array_wait_timeout` (espera de vsync) com 0,0% de CPU, e amostrando
+`ss -tnpm` a 10 Hz o RecvQ do socket dele ficava **travado em 22 KB** por centenas de
+milissegundos — contrapressão de IPC de verdade.
+
+**Hipótese descartada com medição:** I/O síncrono das nuvens do lidar em
+`carmen_string_and_file_to_variable_velodyne_scan_message()` (`src/logger/readlog.cpp`), que
+faz `fopen` + 3 `fread` por shot + `fclose` dentro do laço principal do playback. Com os
+arquivos do lidar em page cache, o `/proc/<pid>/io` do `playback` marcava **0 KB/s de
+`read_bytes`** durante as travadas e o engasgo continuava idêntico; `folio_wait_bit_common`
+apareceu em 5 de 1435 amostras de `wchan` (0,3%). O disco está fora — o padrão de leitura
+continua feio, mas não é o que causa o engasgo.
+
+**Correção.** Em `src/viewer_3D/Window.cpp`, uma função `desliga_vsync()` chamada logo após o
+`glXMakeCurrent()` em `initWindow()`. Ela tenta as três extensões de controle de swap, da mais
+específica para a mais antiga — `GLX_EXT_swap_control` (`glXSwapIntervalEXT`), depois
+`glXSwapIntervalMESA`, depois `glXSwapIntervalSGI` — e, se nenhuma existir, segue com o vsync
+ligado (não vale abortar o módulo por causa disso). O módulo já limita a taxa de desenho em
+40 Hz por conta própria, então o vsync não acrescentava nada.
+
+É a mesma correção que um fork deste código-base já tinha.
+
+**Verificação.** Stack completa, `viewer_3D` subido pelo `proccontrol` com o binário
+recompilado e sem variável de ambiente: **0 travadas > 0,5 s em 40 s, taxa 1,000x, maior
+silêncio 0,11 s** (que é o espaçamento normal entre mensagens). O `wchan` do módulo passou de
+`drm_syncobj_array_wait_timeout` para `poll_schedule_timeout` — esperando IPC, como deveria.
+
+**Onde mais isso pode morder.** Qualquer módulo que desenhe dentro do handler de timer do IPC
+e faça swap com vsync tem o mesmo problema latente numa sessão Wayland. Se aparecer engasgo
+parecido, o teste rápido é rodar o módulo suspeito com `__GL_SYNC_TO_VBLANK=0 vblank_mode=0` e
+ver se some.
+
+### Achados desta sessão que **não** viraram correção
+
+**O terminal do `proccontrol` não mostra erro de módulo.** O `proccontrol` faz `dup2` do
+stdout/stderr de cada módulo para um pipe (`src/proccontrol/proccontrol.c`) e publica o
+conteúdo por IPC; o terminal só mostra as linhas `Spawned`/`Killing` dele mesmo. Para ver o
+erro de verdade: `./proccontrol_viewoutput` em outro terminal, a janela de output do
+`proccontrol_gui`, ou rodar o módulo na mão.
+
+**`joystick_vehicle`: botão de ativação errado.** O código testa `joystick.buttons[8]`, mas a
+mensagem na tela manda apertar START. Num gamepad Xbox 360 pelo driver `xpad` (8 eixos, 11
+botões) os índices são 6 = SELECT/Back, 7 = START, **8 = BTN_MODE, o botão redondo do meio**.
+Apertando START nada acontece: `joystick_activated` fica 0 e o módulo não publica nem o estado
+`Free_Running` nem o motion command. O teste é de nível, não de borda, então um toque longo
+pode alternar duas vezes. Para diagnosticar:
+`./joystick_vehicle -direct_v_and_phi_mode on -show_state on`.
+
+**`joystick_vehicle` morre se o `/dev/input/js0` sumir** (`carmen_die`, em `main()`). Um tranco
+no cabo do controle vira loop de respawn do `proccontrol`.
+
+**`util_publish_initial_pose` / `util_publish_final_goal` nunca saem** — ficam em *"tecle
+qualquer tecla para terminar"*. Sob o `proccontrol` eles não têm terminal, então sobrevivem ao
+`kill` e vazam um processo por rodada.
+
+**A cadeia de controle da simulação está sadia.** Publicando `carmen_base_ackerman_motion_command`
+na mão contra `simulator_ackerman`, o carro anda como esperado. Vale saber que o simulador só
+aplica `target_v` se `behavior_selector_low_level_state != Stopped`
+(`src/simulator_ackerman/simulator_ackerman_simulation.c`) — `target_phi` ele aplica sempre. Se
+um dia o carro esterçar mas não andar, é esse o ponto.

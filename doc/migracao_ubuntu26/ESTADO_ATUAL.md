@@ -70,10 +70,33 @@ As pendências de *compilação* que ficaram de fora de propósito (módulos for
 `proccontrol_gui` em Qt3, bridges ROS, GtkGLExt) estão nas seções a) a h) de
 `install/05_pendencias_conhecidas.md`; a seção **j)** lista o que ainda esperar do runtime.
 
+## Runtime — sessão 2 (2026-08-20): o engasgo do `playback`
+
+A stack de playback (`bin/argos/process-argos-playback.ini`) sobe inteira e roda. O `playback`
+engasgava — travava ~1 s e recuperava a ~2x, a cada poucos segundos. **Causa achada e
+corrigida:** era o `viewer_3D` bloqueando no vsync. O desenho dele roda dentro do handler de
+timer do IPC, então o tempo parado no `glXSwapBuffers()` é tempo sem drenar o socket; o
+`central` é single-thread e trava o barramento inteiro ao escrever para um módulo que não lê.
+Numa sessão Wayland, com a janela ocluída, a espera do swap passa de 1 s por quadro. A correção
+(`desliga_vsync()` em `src/viewer_3D/Window.cpp`) é o item **45** do `CHANGELOG.md`. Depois
+dela: **0 travadas > 0,5 s em 40 s, taxa 1,000x**, com a stack completa.
+
+A hipótese anterior — I/O síncrono das nuvens em `src/logger/readlog.cpp` — foi **descartada
+com medição**: com os arquivos em page cache o `playback` lia 0 KB/s de disco e o engasgo
+continuava idêntico.
+
+Ficaram **abertos** (documentados no fim do `CHANGELOG.md`, sem correção):
+
+| o quê | resumo |
+|---|---|
+| `joystick_vehicle` | ativa em `buttons[8]` = botão do meio do Xbox, mas a mensagem manda apertar START; e faz `carmen_die` se o `/dev/input/js0` sumir, virando loop de respawn |
+| `util_publish_initial_pose` / `_final_goal` | travam em "tecle qualquer tecla"; sob o `proccontrol` vazam um processo por rodada |
+| saída dos módulos | o terminal do `proccontrol` nunca mostra erro de módulo — usar `./proccontrol_viewoutput` |
+
 ## Arquivos desta migração (todos já salvos)
 
 - `doc/migracao_ubuntu26/README.md` — visão geral e causas-raiz
-- `doc/migracao_ubuntu26/CHANGELOG.md` — **44 itens**, cada alteração e o porquê
+- `doc/migracao_ubuntu26/CHANGELOG.md` — **45 itens**, cada alteração e o porquê
 - `doc/migracao_ubuntu26/AUDIT_DEPENDENCIAS.md` — dependências e pacotes no 26.04
 - `doc/migracao_ubuntu26/CHECKLIST_COMMIT.md` — o que sobe / o que não sobe no commit
 - `doc/migracao_ubuntu26/ESTADO_ATUAL.md` — este arquivo
