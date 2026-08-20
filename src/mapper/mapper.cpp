@@ -124,6 +124,97 @@ int globalpos_initialized = 0;
 extern carmen_localize_ackerman_globalpos_message *globalpos_history;
 extern int last_globalpos;
 
+/* ------------------------------------------------------------------------
+ * Gate de pose: so' integra o scan quando a globalpos e' confiavel.
+ *
+ * O mapper sempre usou globalpos_history[last_globalpos], isto e', a pose MAIS
+ * RECENTE, sem nunca comparar o timestamp dela com o do scan. Isso e' inofensivo
+ * quando quem publica a pose esta' sincronizado com o lidar, e desastroso quando
+ * nao esta': o atraso da pose entra como offset de deskew em
+ *   dt1 = points_timestamp - robot_timestamp - N*dt
+ * e a nuvem e' ESTICADA proporcionalmente ao atraso -- o mapa "mancha".
+ *
+ * Duas situacoes reais em que isso acontece:
+ *   - quem publica pose fica mudo por um tempo (o graphslam_publish antigo so'
+ *     publica com v > 0.1, entao com o carro parado a pose congela);
+ *   - o localizador reencaixa o robo no mapa (loop closure, relocalizacao por
+ *     Scan Context, clique de pose inicial). Cada reencaixe e' um SALTO na
+ *     trajetoria, e o mapper pintava atravessando o salto.
+ *
+ * Os dois gates abaixo sao OPCIONAIS e vem DESLIGADOS (0 = desligado). Com os
+ * valores padrao o comportamento do mapper e' exatamente o de antes.
+ * ------------------------------------------------------------------------ */
+
+double pose_gate_max_delay = 0.0;	/* s; rejeita o scan se |scan_ts - pose_ts| passar disso. 0 = desligado */
+double pose_gate_jump = 0.0;		/* m; pose que anda mais que isso entre mensagens conta como salto. 0 = desligado */
+int pose_gate_settle = 0;		/* quantos scans descartar depois de cada salto */
+
+static int pose_gate_settle_left = 0;
+static long int pose_gate_rejected_delay = 0;
+static long int pose_gate_rejected_settle = 0;
+static long int pose_gate_jumps_seen = 0;
+
+
+/* Chamada quando chega uma globalpos nova: detecta salto de pose e arma o
+ * descarte dos proximos pose_gate_settle scans. */
+static void
+pose_gate_note_new_globalpos(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	static int have_previous = 0;
+	static double previous_x = 0.0, previous_y = 0.0;
+
+	if (pose_gate_jump <= 0.0)
+		return;
+
+	if (have_previous)
+	{
+		double dx = globalpos_message->globalpos.x - previous_x;
+		double dy = globalpos_message->globalpos.y - previous_y;
+
+		if (sqrt(dx * dx + dy * dy) > pose_gate_jump)
+		{
+			pose_gate_jumps_seen++;
+			pose_gate_settle_left = pose_gate_settle;
+			fprintf(stderr, "mapper: salto de pose de %.2f m detectado (salto %ld); descartando %d scans.\n",
+					sqrt(dx * dx + dy * dy), pose_gate_jumps_seen, pose_gate_settle);
+		}
+	}
+
+	previous_x = globalpos_message->globalpos.x;
+	previous_y = globalpos_message->globalpos.y;
+	have_previous = 1;
+}
+
+
+/* Devolve 1 quando o scan NAO deve ser integrado ao mapa. */
+static int
+pose_gate_blocks_scan(double scan_timestamp)
+{
+	if (pose_gate_settle_left > 0)
+	{
+		pose_gate_settle_left--;
+		pose_gate_rejected_settle++;
+		return (1);
+	}
+
+	if (pose_gate_max_delay > 0.0)
+	{
+		double delay = fabs(scan_timestamp - globalpos_history[last_globalpos].timestamp);
+
+		if (delay > pose_gate_max_delay)
+		{
+			pose_gate_rejected_delay++;
+			if ((pose_gate_rejected_delay % 100) == 1)
+				fprintf(stderr, "mapper: scan descartado, pose %.3f s fora de sincronia (limite %.3f s; %ld descartados ate' agora).\n",
+						delay, pose_gate_max_delay, pose_gate_rejected_delay);
+			return (1);
+		}
+	}
+
+	return (0);
+}
+
+
 extern carmen_robot_ackerman_config_t car_config;
 extern carmen_map_config_t map_config;
 
@@ -1288,6 +1379,9 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 	if (!globalpos_initialized)
 		return (ok_to_publish);
 
+	if (pose_gate_blocks_scan(velodyne_message->timestamp))
+		return (ok_to_publish);
+
 	if (sensors_data[sensor_number].last_timestamp == 0.0)
 	{
 		sensors_data[sensor_number].last_timestamp = velodyne_message->timestamp;
@@ -1344,7 +1438,10 @@ update_data_params_with_lidar_data(int sensor_number, carmen_velodyne_variable_s
 
 	if (!globalpos_initialized)
 		return (ok_to_publish);
-	
+
+	if (pose_gate_blocks_scan(msg->timestamp))
+		return (ok_to_publish);
+
 	int num_points = msg->number_of_shots * sensors_params[sensor_number].vertical_resolution;
 
 	// ok_to_publish = 0;
@@ -1407,6 +1504,9 @@ mapper_stereo_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable
 
 	ok_to_publish = 0;
 	if (!globalpos_initialized)
+		return (ok_to_publish);
+
+	if (pose_gate_blocks_scan(message->timestamp))
 		return (ok_to_publish);
 
 	if (sensors_data[sensor_number].last_timestamp == 0.0)
@@ -1790,6 +1890,8 @@ mapper_set_robot_pose_into_the_map(carmen_map_set_t *map_set, carmen_localize_ac
 		globalpos_initialized = 1;
 	else
 		return;
+
+	pose_gate_note_new_globalpos(globalpos_message);
 
 	last_globalpos = (last_globalpos + 1) % GLOBAL_POS_QUEUE_SIZE;
 
@@ -3043,6 +3145,9 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
 		{(char *) "commandline", (char *) "level_msg", CARMEN_PARAM_INT, &level_msg, 0, NULL},
 		{(char *) "commandline", (char *) "clean_bellow_car", CARMEN_PARAM_ONOFF, &clean_map_bellow_car, 0, NULL},
+		{(char *) "commandline", (char *) "pose_gate_max_delay", CARMEN_PARAM_DOUBLE, &pose_gate_max_delay, 0, NULL},
+		{(char *) "commandline", (char *) "pose_gate_jump", CARMEN_PARAM_DOUBLE, &pose_gate_jump, 0, NULL},
+		{(char *) "commandline", (char *) "pose_gate_settle", CARMEN_PARAM_INT, &pose_gate_settle, 0, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map",		   CARMEN_PARAM_ONOFF,  &publish_diff_map, 		    1, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map_interval", CARMEN_PARAM_DOUBLE, &publish_diff_map_interval, 1, NULL},
 		{(char *) "mapper", 	 (char *) "safe_height_from_ground_level1", CARMEN_PARAM_DOUBLE, &safe_height_from_ground_level, 0, NULL},

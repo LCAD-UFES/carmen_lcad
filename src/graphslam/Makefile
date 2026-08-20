@@ -61,17 +61,18 @@ LFLAGS += -lcarmen_util -lboost_program_options
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
-SOURCES = grab_data.cpp grab_data_from_log.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp loop_closure_via_localization.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp pointcloud_viewer.cpp
+SOURCES = grab_data.cpp grab_data_from_log.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp loop_closure_via_localization.cpp graphslam_publish_main.cpp graphslam_publish_globalpos_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp pointcloud_viewer.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = grab_data grab_data_from_log run_icp_for_loop_closure loop_closure_via_localization graphslam graphslam_publish multimap_matching multimap_optimization pointcloud_viewer
-TARGETS = grab_data grab_data_from_log graphslam run_icp_for_loop_closure loop_closure_via_localization graphslam_publish multimap_matching multimap_optimization gen_data_to_plot pointcloud_viewer #run_icp   
+PUBLIC_BINARIES = grab_data grab_data_from_log run_icp_for_loop_closure loop_closure_via_localization graphslam graphslam_publish graphslam_publish_globalpos multimap_matching multimap_optimization pointcloud_viewer
+TARGETS = grab_data grab_data_from_log graphslam run_icp_for_loop_closure loop_closure_via_localization graphslam_publish graphslam_publish_globalpos multimap_matching multimap_optimization gen_data_to_plot pointcloud_viewer #run_icp   
 
 pointcloud_viewer: pointcloud_viewer.o
 run_icp: run_icp.o
 graphslam: graphslam.o $(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 graphslam_publish: graphslam_publish_main.o
+graphslam_publish_globalpos: graphslam_publish_globalpos_main.o
 run_icp_for_loop_closure: run_icp_for_loop_closure.o
 loop_closure_via_localization: loop_closure_via_localization.o
 grab_data: grab_data.o velodyne_util.o graphslam_params.o

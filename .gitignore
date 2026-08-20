@@ -34,6 +34,7 @@ Makefile.depend
 *.*~
 *~
 *complete_map.map
+bin/obstacle_heuristic.map
 .settings/
 .settings/org.eclipse.cdt.codan.core.prefs
 data/map*/*.bmp
@@ -55,6 +56,7 @@ bin/grab_data_for_calibration
 bin/graphslam
 bin/graphslam_guarapari
 bin/graphslam_publish
+bin/graphslam_publish_globalpos
 bin/base_ackerman
 bin/behavior_selector
 bin/build_complete_map
@@ -282,6 +284,7 @@ src/graphslam/grab_data_guarapari
 src/graphslam/graphslam
 src/graphslam/graphslam_guarapari
 src/graphslam/graphslam_publish
+src/graphslam/graphslam_publish_globalpos
 src/graphslam/multimap_matching
 src/graphslam/multimap_optimization
 src/graphslam/run_icp

@@ -12,22 +12,7 @@
         <col id="0" translatable="yes">Robot</col>
       </row>
       <row>
-        <col id="0" translatable="yes">COPIADORA</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">CT3</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">ELEVADOR</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">HONOFRE</col>
-      </row>
-      <row>
         <col id="0" translatable="yes">LCAD4</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">SAGUAO_CT13</col>
       </row>
     </data>
   </object>

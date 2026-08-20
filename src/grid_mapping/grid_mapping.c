@@ -512,7 +512,7 @@ carmen_grid_mapping_save_block_map_by_origin(char *map_path, char map_type, carm
 
 			copy_map_to_cell(unk_map->map, map, k);
 
-			char full_map_path[100];
+			char full_map_path[1024];	// era [100]: um map_path longo estourava a pilha aqui (a funcao irma da linha 420 ja usa 1024)
 			sprintf(full_map_path, "%s/%c%d_%d.map", map_path, map_type,
 					x_origin, y_origin);
 
