@@ -843,3 +843,11 @@ src/imu_viewer/moc_objectgl.cpp
 
 # cmake do aruco_theta_tracker (modulo fora do PACKAGES)
 /src/aruco_theta_tracker/build/
+bin/pi_nit_client_driver
+bin/pi_nit_link_test
+bin/pi_nit_camera_publisher
+
+# Dados de teste do pi_nit: video de exemplo, pesos das redes e o venv do lado
+# Python. Tudo baixado por script (COMO_TESTAR.md / download_model.sh), nada disso
+# entra no repositorio.
+/data/pi_nit/

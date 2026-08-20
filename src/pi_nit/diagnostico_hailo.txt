@@ -1,0 +1,85 @@
+RELATORIO DE DIAGNOSTICO - Hailo AI HAT+ nao detectado
+Raspberry Pi 5 'pi-nit' (192.168.1.20) - 05/08/2026 12:19
+
+== 1. PCIe ESTA HABILITADO NO SISTEMA ==
+dtparam=pciex1
+dtparam=pciex1_gen=3
+
+dmesg do controlador do conector externo:
+[    1.702536] brcm-pcie 1000110000.pcie: host bridge /axi/pcie@1000110000 ranges:
+[    1.754043] brcm-pcie 1000110000.pcie: PCI host bridge to bus 0001:00
+[    2.171230] brcm-pcie 1000110000.pcie: link down
+
+  -> o controlador INICIALIZA e cria o bus 0001:00.
+     Se o PCIe estivesse desabilitado, estas linhas NAO existiriam.
+     'link down' = ligado e chamando; ninguem respondeu.
+
+== 2. TENTATIVAS DE FORCAR O LINK (todas sem efeito) ==
+  dtparam=pciex1_gen=3 ............. link down
+  dtparam=pciex1_gen=2 ............. link down
+  dtparam=pciex1_gen=1 ............. link down
+  dtoverlay=pciex1-compat-pi5,no-l0s,no-mip ... link down
+  pcie_aspm=off no cmdline.txt ..... link down
+  echo 1 > /sys/bus/pci/rescan ..... nada aparece
+  rpi-eeprom-update -a (bootloader mai/2026) ... link down
+
+== 3. SOFTWARE DO HAILO: INSTALADO E CORRETO ==
+driver:  /lib/modules/6.12.93+rpt-rpi-2712/updates/dkms/hailo_pci.ko.xz
+modinfo: resolve
+SDK:     HailoRT-CLI version 4.20.0
+kernel:  6.12.93+rpt-rpi-2712
+
+== 4. ALIMENTACAO DO RASPBERRY: SAUDAVEL ==
+throttled: throttled=0x0  (0x0 = sem subtensao)
+   3V3_SYS_V volt(9)=3.31467300V
+     EXT5V_V volt(24)=5.13488000V
+corrente negociada:        5000 mA
+
+== 5. O QUE O BARRAMENTO ENXERGA ==
+0002:00:00.0 PCI bridge: Broadcom Inc. and subsidiaries BCM2712 PCIe Bridge (rev 30)
+0002:01:00.0 Ethernet controller: Raspberry Pi Ltd RP1 PCIe 2.0 South Bridge
+  -> so o RP1 (chip interno do proprio Pi). Nenhum Hailo (vendor 1e60).
+
+== 6. SINTOMAS FISICOS OBSERVADOS ==
+  - LED de alimentacao do HAT: APAGADO (ja acendeu amarelo antes)
+  - Placa fria ao toque (sem consumo)
+  - 5 V medidos com multimetro CHEGANDO no conector do HAT
+  - EEPROM do HAT (I2C, pinos 27/28) nao responde: /proc/device-tree/hat ausente
+
+== CONCLUSAO (durante o diagnostico, 12:19) ==
+  Os 5 V chegam na placa e ela nao inicializa. O PCIe do Pi esta
+  habilitado e funcional - o controlador sobe e fica chamando. Nenhuma
+  configuracao de PCIe pode fazer um chip sem alimentacao responder.
+  A falha esta no circuito de alimentacao do proprio HAT.
+
+  Historico relevante: a placa FUNCIONAVA (LED amarelo aceso) e parou
+  de energizar apos uma limpeza.
+
+
+== DESFECHO (05/08/2026 18:03) - A CONCLUSAO ACIMA ESTAVA ERRADA ==
+
+  ERA O CABO FLAT DO PCIe. Trocado o cabo, na hora:
+
+    == hardware PCIe
+      [ok] enlace PCIe do conector externo ativo
+      [ok] Hailo no barramento: 0001:01:00.0 Co-processor [0b40]:
+           Hailo Technologies Ltd. Hailo-8 AI Processor
+
+  Nada de driver, EEPROM, dtparam, fonte ou SDK precisou mudar - todas
+  aquelas tentativas da secao 2 falharam porque o problema nunca esteve
+  no software.
+
+  Por que despistou:
+    - O cabo tinha continuidade nas primeiras e nas ultimas vias, e
+      falha nas do meio. Testar as pontas com o multimetro "aprovava"
+      um cabo quebrado.
+    - Sem o cabo passando, o HAT nao recebe o 3V3 do PCIe e o LED fica
+      apagado - o que parece defeito de alimentacao da placa, embora os
+      5 V do conector estivessem chegando.
+    - As duas vias mudas ao mesmo tempo (PCIe e a EEPROM I2C do HAT nos
+      pinos 40) sugerem "placa morta", mas o cabo explica as duas.
+
+  REGRA PRATICA: com 'link down' + LED do HAT apagado, TROQUE O CABO
+  FLAT ANTES de mexer em qualquer coisa de software. Rode primeiro o
+  tools/pi_nit_check.sh, que ja separa os tres casos (enlace PCIe, HAT
+  nos 40 pinos, dispositivo no barramento).

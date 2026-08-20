@@ -93,10 +93,46 @@ Ficaram **abertos** (documentados no fim do `CHANGELOG.md`, sem correção):
 | `util_publish_initial_pose` / `_final_goal` | travam em "tecle qualquer tecla"; sob o `proccontrol` vazam um processo por rodada |
 | saída dos módulos | o terminal do `proccontrol` nunca mostra erro de módulo — usar `./proccontrol_viewoutput` |
 
+## Módulo novo: `src/pi_nit` (2026-08-20)
+
+Detecção de pessoas em Raspberry Pi 5 + Hailo-8L, trazida de outra árvore de código. Compila
+limpo e gera `pi_nit_client_driver`, `pi_nit_link_test` e `pi_nit_camera_publisher`. Já está no
+`PACKAGES`. Dependência nova do sistema: `libzmq3-dev`. Detalhes do porte no item **46** do
+`CHANGELOG.md`; como o módulo funciona, em `src/pi_nit/README.md`.
+
+**Validado em execução em 2026-08-20**, com o servidor em modo `--dummy` no loopback — o
+roteiro virou o **Teste 0** do `src/pi_nit/COMO_TESTAR.md`. Passou a cadeia inteira: enlace ZMQ,
+protocolo binário, `camera_message` → cliente, batch de 3 câmeras (149 enviados / 149 recebidos
+em cada), letterbox e volta das coordenadas, tracking, publicação das três
+`neural_detector_message_{3,4,5}_name` no IPC, o stream do viewer na porta 5562 e o
+`tools/test_client.py`. A tabela com os números está no item **46** do `CHANGELOG.md`.
+
+Para refazer, em dois terminais:
+
+```bash
+# 1
+cd $CARMEN_HOME/src/pi_nit/pi_nit_server
+$CARMEN_HOME/data/pi_nit/venv/bin/python3 pi_nit_server.py --dummy --bind 127.0.0.1 --batch-size 1
+# 2
+$CARMEN_HOME/bin/pi_nit_link_test 127.0.0.1 -frames 30 -fps 15
+```
+
+⚠️ **O que falta é a inferência de verdade** — o dummy devolve uma caixa fixa. São dois
+caminhos, nenhum feito:
+
+- **Hailo-8L no Raspberry** (Testes 2 e 2b do `COMO_TESTAR.md`): precisa do hardware na rede.
+- **Backend `cpu`** (Teste 1): detecções reais no PC, mas exige `ultralytics` + `torch` (~3 GB)
+  no venv `data/pi_nit/venv`, mais os pesos do `pi_nit_server/download_model.sh`. **Decisão
+  pendente com o Miguel** — vale o download?
+
+O venv em `data/pi_nit/venv` já existe, criado com `--system-site-packages` (o Python do 26.04
+é o 3.14 e não tem wheel de `opencv-python-headless`; o `cv2` e o `numpy` vêm dos pacotes do
+sistema). `data/pi_nit/` inteiro está no `.gitignore`.
+
 ## Arquivos desta migração (todos já salvos)
 
 - `doc/migracao_ubuntu26/README.md` — visão geral e causas-raiz
-- `doc/migracao_ubuntu26/CHANGELOG.md` — **45 itens**, cada alteração e o porquê
+- `doc/migracao_ubuntu26/CHANGELOG.md` — **46 itens**, cada alteração e o porquê
 - `doc/migracao_ubuntu26/AUDIT_DEPENDENCIAS.md` — dependências e pacotes no 26.04
 - `doc/migracao_ubuntu26/CHECKLIST_COMMIT.md` — o que sobe / o que não sobe no commit
 - `doc/migracao_ubuntu26/ESTADO_ATUAL.md` — este arquivo

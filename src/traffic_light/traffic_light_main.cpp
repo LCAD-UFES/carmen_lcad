@@ -14,6 +14,10 @@
 #if CV_MAJOR_VERSION == 2
 #include <opencv2/contrib/detection_based_tracker.hpp>
 #endif
+/* Migração Ubuntu 26.04: no OpenCV 4 os tipos da API C (CvPoint) e as constantes antigas
+   (CV_INTER_CUBIC) não chegam mais por inclusão transitiva de core.hpp/imgproc.hpp — vêm
+   de core_c.h/imgproc_c.h, que este header inclui. */
+#include <carmen/opencv_c_compat.h>
 
 
 //USE_CAFFE IS DEFINED IN MAKEFILE IF CAFFE_HOME ENV. VARIABLE IS SET

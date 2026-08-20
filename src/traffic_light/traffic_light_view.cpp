@@ -12,6 +12,8 @@
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+/* Migração Ubuntu 26.04: CvPoint (API C) não chega mais por core.hpp no OpenCV 4. */
+#include <carmen/opencv_c_compat.h>
 #include <algorithm>
 
 static int roi_x = 0;

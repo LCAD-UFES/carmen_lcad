@@ -31,7 +31,7 @@ PACKAGES = ipc global param_daemon proccontrol argos_lidar_driver camera_drivers
 	   path_interpolator_planner \
 	   odometry_calibration utilities \
 	   visual_car_tracking model_predictive_planner utilities \
-	   moving_objects_simulator pi_imu pi_camera \
+	   moving_objects_simulator pi_imu pi_camera pi_nit \
 	   road_mapper can_dump imu_viewer \
 	   tracker_opentld  joystick_vehicle \
 	   velodyne_camera_calibration graphslam mapeditor2 # ipc_watcher carmen_map_converter argos_globalpos argos_ros_mapper zed_driver deep_vgl traffic_light robot_ackerman_gui 

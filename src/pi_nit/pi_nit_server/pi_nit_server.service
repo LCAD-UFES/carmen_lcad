@@ -1,0 +1,56 @@
+[Unit]
+Description=pi_nit - deteccao de pessoas no Hailo-8L para o CARMEN
+Documentation=file:/opt/pi_nit/app/README.md
+After=network-online.target
+Wants=network-online.target
+# Nao inicia se o acelerador nao apareceu (o driver cria /dev/hailo0)
+ConditionPathExists=/dev/hailo0
+# Nunca desiste de reiniciar, por mais falhas seguidas que aconteçam
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=pi_nit
+Group=pi_nit
+
+EnvironmentFile=/etc/pi_nit/pi_nit_server.conf
+WorkingDirectory=/opt/pi_nit/app
+
+# Habilita o 'hailortcli monitor' - o equivalente ao nvtop para o acelerador.
+# Sem esta variavel no processo que faz a inferencia, o monitor abre vazio.
+# O custo e' desprezivel: o processo so passa a publicar estatisticas.
+Environment=HAILO_MONITOR=1
+
+ExecStart=/opt/pi_nit/venv/bin/python3 /opt/pi_nit/app/pi_nit_server.py
+
+# Sobe de novo sempre: em campo o Raspberry precisa se recuperar sozinho de
+# qualquer falha (queda do PCIe, erro de firmware, excecao nao prevista).
+Restart=always
+RestartSec=3
+
+# Prioridade: a inferencia nao pode ser preterida por tarefas de fundo
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=2
+
+# Log direto no journal (journalctl -u pi_nit_server -f)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pi_nit
+
+# Acesso ao acelerador
+DeviceAllow=/dev/hailo0 rw
+
+# Endurecimento basico
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+ReadWritePaths=/opt/pi_nit
+
+# Em um Pi 5 de 2 GB o servico usa ~400 MB. Descomente para garantir que ele
+# nunca sufoque o sistema:
+# MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+# Dependencias Python do servico (instaladas no venv /opt/pi_nit/venv).
+#
+# hailo_platform NAO entra aqui: ele vem do wheel gerado ao compilar o
+# HailoRT e fica no site-packages do sistema. Por isso o venv e' criado com
+# --system-site-packages (veja install.sh).
+pyzmq>=25.0
+numpy>=1.24,<2.0
+opencv-python-headless>=4.8

@@ -798,3 +798,152 @@ na mão contra `simulator_ackerman`, o carro anda como esperado. Vale saber que 
 aplica `target_v` se `behavior_selector_low_level_state != Stopped`
 (`src/simulator_ackerman/simulator_ackerman_simulation.c`) — `target_phi` ele aplica sempre. Se
 um dia o carro esterçar mas não andar, é esse o ponto.
+
+### 46. Novo módulo `src/pi_nit` — detecção de pessoas em Raspberry Pi 5 + Hailo-8L
+
+Módulo trazido de outra árvore de código, onde foi escrito. Tira a inferência 2D da GPU do PC
+e a coloca num acelerador dedicado de ~5 W: o cliente C++ assina a câmera, manda o frame por
+ZMQ para um Raspberry Pi 5 com Hailo-8L, recebe as caixas de volta e publica a
+`neural_detector_message`. A documentação completa de funcionamento, parâmetros e testes está
+em `src/pi_nit/README.md`, `src/pi_nit/COMO_TESTAR.md` e `src/pi_nit/HARDWARE.md`.
+
+O que o porte exigiu:
+
+**a) A interface `neural_detector` veio junto.** `neural_detector_message` é o formato que o
+`pi_nit` publica, e nesta árvore **não existe** módulo dono dela. Os três arquivos
+(`neural_detector_messages.h`, `neural_detector_interface.h`, `neural_detector_interface.c`)
+foram trazidos para dentro de `src/pi_nit/` e são compilados e exportados por ele como
+`libneural_detector_interface.a`. Está comentado no `Makefile` do módulo: se um dia entrar um
+módulo dono da interface, é só apagar os três arquivos e voltar a linkar com
+`-lneural_detector_interface`.
+
+**b) `process_image()` tem assinatura diferente aqui.** A árvore de origem devolve as
+intrínsecas corrigidas pela retificação:
+
+```c
+int process_image(camera_message *, int image_index, char *camera_name, int correct,
+                  cv::Mat &src_image, double &new_fx, double &new_fy, double &new_cu, double &new_cv);
+```
+
+A daqui (`src/camera_drivers/camera_drivers_process_image.hpp`) devolve só a imagem, com cinco
+parâmetros. O `pi_nit` declarava as quatro intrínsecas e **não as usava** — trabalha em pixels
+da imagem original —, então a chamada foi encurtada para a assinatura desta árvore. **Nenhuma
+alteração no `camera_drivers`.**
+
+**c) Nomes.** O prefixo de identificadores da árvore de origem mapeia 1:1 para o do CARMEN,
+então a conversão foi mecânica: identificadores e macros passaram a `carmen_*` / `CARMEN_*`, os
+includes passaram a `<carmen/...>`, a variável de ambiente do home da árvore passou a
+`CARMEN_HOME`, e a prosa das quatro documentações foi reescrita. A mensagem de status ficou
+`carmen_pi_nit_status_message` / `CARMEN_PI_NIT_STATUS_NAME`.
+
+**d) O que não foi copiado.** Os pesos YOLO (`pi_nit_server/tools/*.pt`, ~147 MB) e o vídeo de
+exemplo (`data/pi_nit/pedestres.avi`, 7,8 MB) — binários não entram no repositório. O
+`pi_nit_server/download_model.sh` já existia para baixar os pesos. Também ficaram de fora os
+artefatos de build e um arquivo vazio de nome inválido (`pi_nit_server/image/imagem:`). Foi
+criado `src/pi_nit/.gitignore` para os três binários do módulo e para `*.pt`/`*.hef`/`*.onnx`/`venv/`,
+e as três entradas `bin/pi_nit_*` foram para o `.gitignore` da raiz.
+
+**e) Documentação do que não existe aqui.** O `README.md` do módulo ganhou uma seção
+*"Leia primeiro: o que existe nesta árvore"* deixando explícito que os consumidores citados ao
+longo do texto (`neural_image_tracker`, `multiple_object_tracker`, `image_path_projector`) são
+da árvore de origem e **não fazem parte desta** — as referências a arquivos e linhas deles
+servem para explicar de onde vem o formato da mensagem e o que um consumidor faz com ela.
+
+`pi_nit` foi acrescentado ao `PACKAGES` do `src/Makefile` (junto de `pi_imu` e `pi_camera`).
+Dependência nova do sistema: **`libzmq3-dev`** (a `libzmq` 4.3.5 do 26.04 serve). Compila
+limpo e gera `pi_nit_client_driver`, `pi_nit_link_test` e `pi_nit_camera_publisher` em `bin/`.
+
+#### Validação em execução (2026-08-20)
+
+A cadeia inteira foi exercitada nesta máquina, **sem o Raspberry**, com o servidor em modo
+`--dummy` no loopback. O roteiro virou o **Teste 0** do `src/pi_nit/COMO_TESTAR.md`.
+
+| camada | como foi exercitada | resultado |
+|---|---|---|
+| enlace ZMQ (C++ ↔ Python) | `pi_nit_link_test 127.0.0.1 -frames 30 -fps 15` | enviados 30, recebidos 29, 14,5 fps de retorno |
+| protocolo binário | o mesmo teste, com o servidor decodificando | caixa devolvida e decodificada em todos os frames |
+| `camera_message` → cliente | `pi_nit_camera_publisher` tocando `pedestres.avi` em loop | 149 frames por câmera em 15 s, sem descarte |
+| batch de 3 câmeras | 3 publishers (mensagens 3, 4 e 5) + 1 cliente com as 3 | `enviados 149/150/149, recebidos 149/149/149` |
+| letterbox e volta das coordenadas | caixa fixa do dummy remapeada | `307, 96, 153×479` em pixels da imagem original de 768×576 |
+| tracking | `-track` no padrão | `track_id` estável em 1 ao longo da sequência |
+| publicação IPC | `print_ipc_message neural_detector_message_{3,4,5}_name` | as três mensagens saem, com `obj_id -1` (convenção do MOT) |
+| stream do viewer | SUB em `tcp://127.0.0.1:5562` | 149 quadros em 5 s (3 partes: id, JPEG, deteções) |
+| cliente Python | `tools/test_client.py --simulate-cameras 3 --loop` | roda e imprime as deteções, `descartados no envio 0` |
+
+Duas coisas do 26.04 que o roteiro original não previa, e que ficaram documentadas no
+`COMO_TESTAR.md`:
+
+- **O venv precisa de `--system-site-packages`.** O Python do 26.04 é o **3.14** e não há wheel
+  de `opencv-python-headless` para ele; o `requirements.txt` só se resolve reaproveitando o
+  `python3-opencv` e o `python3-numpy` do sistema. Sobra o `pyzmq`, que tem wheel. (A árvore de
+  origem supunha um venv que já existia lá, de outro módulo.)
+- **A URL do vídeo de exemplo estava errada** — `github.com/opencv/opencv/raw/master/...`
+  devolve HTML. Trocada por `raw.githubusercontent.com/opencv/opencv/4.x/...`.
+
+O `data/pi_nit/` inteiro (vídeo, pesos e venv) entrou no `.gitignore` da raiz: é tudo baixado
+por script.
+
+⚠️ **O que continua sem validação:** a **inferência de verdade**. O modo `--dummy` devolve uma
+caixa fixa, então nada além do caminho de dados foi provado. Faltam os dois:
+
+- o **Hailo-8L no Raspberry** (Testes 2 e 2b) — precisa do hardware na rede;
+- o backend **`cpu`** (Teste 1), que daria detecções reais no PC, mas exige `ultralytics` +
+  `torch` (~3 GB) no venv. Não instalado.
+
+O que já estava verificado antes: compila e linka sem aviso, os `static_assert` de layout do
+protocolo passam (o que garante que o header C++ e o `pi_nit_protocol.py` continuam de acordo),
+os binários sobem e o `include/carmen` não foi sequestrado.
+
+### 47. `traffic_light`: a API C do OpenCV, escondida atrás do `nvcc`
+
+Relatado como "erro de OpenCV no `traffic_light`" numa **outra máquina, na mesma branch**.
+A causa da diferença entre as duas máquinas está no `Makefile` do módulo:
+
+```make
+ifneq (, $(shell which nvcc))
+TARGETS += traffic_light log_generate_images
+endif
+```
+
+Numa máquina **sem CUDA** (como a do desenvolvimento) o alvo é só
+`libtraffic_light_interface.a`, e o `make` nunca chega a compilar
+`traffic_light_main.cpp` nem `log_generate_images.cpp`. Numa máquina **com CUDA** ele compila
+os dois — e aí aparecem os erros de OpenCV 4 que estavam guardados ali desde sempre. O mesmo
+vale para `TLightStateRecog/tlight_vgram.cpp` e `traffic_light_view.cpp`, que dependem da
+`libwnn` (`HAS_WNN`, item 27).
+
+Quatro arquivos, todos com o mesmo remédio — `#include <carmen/opencv_c_compat.h>`:
+
+| arquivo | o que quebrava | quando compila |
+|---|---|---|
+| `log_generate_images.cpp` | `#include <opencv/cv.h>` (diretório removido no OpenCV 4); `IplImage`, `cvCreateImage`, `cvCvtColor`, `CV_BGR2RGB`; `cvSaveImage` saiu do binário | com `nvcc` |
+| `traffic_light_main.cpp` | `CvPoint`, `CV_BGR2GRAY`, `CV_INTER_CUBIC` | com `nvcc` |
+| `traffic_light_view.cpp` | `CvPoint` | com `libwnn` |
+| `TLightStateRecog/tlight_vgram.cpp` | `CV_BGR2YCrCb`, `CV_YCrCb2BGR` | com `libwnn` |
+
+O `log_generate_images.cpp` tinha o `#if CV_MAJOR_VERSION == 2 / #elif >= 3` do item 16 já
+aplicado, mas o ramo do `>= 3` continuava incluindo `<opencv/cv.h>` — o `==3` → `>=3` só
+consertou a *escolha* do ramo, não o conteúdo dele. Vale procurar esse resto em quem ainda usa
+o par legacy/`opencv/cv.h`.
+
+**Verificação.** Como esta máquina não tem `nvcc` nem `libwnn`, os arquivos foram compilados
+na mão, com as mesmas flags do `Makefile`:
+
+```bash
+g++ -c -std=c++11 -I$CARMEN_HOME/include $(pkg-config --cflags opencv4) \
+    -I/usr/local/include/bullet/ log_generate_images.cpp -o /tmp/x.o     # ok
+g++ -fsyntax-only -std=c++11 -I$CARMEN_HOME/include $(pkg-config --cflags opencv4) \
+    $(pkg-config --cflags gtk+-2.0) traffic_light_view.cpp                # ok
+```
+
+Antes da correção os três reproduziam o erro; depois, os três compilam limpo. O
+`tlight_vgram.cpp` **não pôde ser compilado aqui** — o `tlight_vgram.h` inclui
+`wnn/VgRamNeuron.h`, que vem da `libwnn`. A correção dele é a mesma dos outros, mas só será
+provada numa máquina que tenha a lib.
+
+`make` no módulo continua saindo 0 nesta máquina, e o `include/carmen` não foi sequestrado.
+
+⚠️ Só existem **dois** módulos com alvo condicionado ao `nvcc`: `traffic_light` e
+`road_mapper`. O do `road_mapper` é duplamente condicionado (`nvcc` **e** `CAFFE_ENET_HOME`) e
+o arquivo dele já tinha sido corrigido. Fora esses dois, uma máquina com CUDA não compila nada
+a mais do que esta.

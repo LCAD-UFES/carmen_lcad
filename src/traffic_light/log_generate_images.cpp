@@ -8,9 +8,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #if CV_MAJOR_VERSION == 2
 #include <opencv2/legacy/legacy.hpp>
-#elif CV_MAJOR_VERSION >= 3
-#include <opencv/cv.h>
 #endif
+/* Migração Ubuntu 26.04: aqui havia um #include <opencv/cv.h> para OpenCV >= 3, e esse
+   diretório deixou de existir no 4. A API C que este arquivo usa (IplImage, cvCreateImage,
+   cvCvtColor, CV_BGR2RGB, cvReleaseImage) mudou de arquivo, e o cvSaveImage saiu do binário;
+   este header traz os headers certos e reimplementa o que falta em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 using namespace cv;
 using namespace std;
