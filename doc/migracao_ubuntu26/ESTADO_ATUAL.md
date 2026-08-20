@@ -139,3 +139,13 @@ sistema). `data/pi_nit/` inteiro está no `.gitignore`.
 - `doc/migracao_ubuntu26/install/00` a `05` — roteiro de instalação numa máquina nova
 - `src/global/opencv_c_compat.h` — header novo de compatibilidade com a API C do OpenCV
 - `~/.bashrc` — bloco `#CARMEN` (backup do original em `~/.bashrc.bak.*`)
+
+## Instalação numa máquina nova: a lacuna do GtkGLExt fechou (2026-08-20)
+
+O passo 7 do `install/INSTALL_UBUNTU_26.04.md` — o único que exige compilar da fonte — não
+trazia os comandos, porque nesta máquina o GtkGLExt já veio instalado de uma migração
+anterior. O roteiro foi executado do zero e escrito lá: tarball do GNOME + os seis patches do
+pacote Debian da Deepin, `autoreconf -fi`, `configure`, `make`, `sudo make install`. Detalhes
+e as três armadilhas (os autotools que faltavam na lista de apt, o patch `03` que o `series`
+do Debian deixa comentado mas é necessário, e o `05_nopangox` sem o qual nem compila) estão no
+item **48** do `CHANGELOG.md`.

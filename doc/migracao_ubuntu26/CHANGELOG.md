@@ -947,3 +947,43 @@ provada numa máquina que tenha a lib.
 `road_mapper`. O do `road_mapper` é duplamente condicionado (`nvcc` **e** `CAFFE_ENET_HOME`) e
 o arquivo dele já tinha sido corrigido. Fora esses dois, uma máquina com CUDA não compila nada
 a mais do que esta.
+
+### 48. GtkGLExt: o roteiro de build, que era a maior lacuna do tutorial
+
+O passo 7 do `install/INSTALL_UBUNTU_26.04.md` era o único que mandava compilar da fonte, e
+o único que **não trazia os comandos** — nesta máquina o GtkGLExt já veio instalado de uma
+migração anterior, então o roteiro nunca tinha sido executado do zero aqui. O próprio doc
+dizia: *"a sequência exata de comandos deste passo ainda não está registrada… é a maior
+lacuna deste tutorial"*.
+
+Executado e registrado em 2026-08-20. É o tarball oficial do GNOME
+(`download.gnome.org/sources/gtkglext/1.2/gtkglext-1.2.0.tar.gz`, md5
+`5c3240bfc1b21becd33ce35c5abe6f8d`) mais os **seis** patches de build do pacote Debian
+mantido pela Deepin (`deepin-community/gtkglext`, em `debian/patches`), `autoreconf -fi`,
+`./configure --prefix=/usr/local`, `make`, `sudo make install`, `sudo ldconfig`. Os comandos
+completos e a tabela do que cada patch conserta estão no passo 7.
+
+Três coisas que valem ficar registradas fora do roteiro:
+
+- **`autoconf`, `automake` e `libtool` não estavam em nenhuma lista de apt do tutorial.** Os
+  patches mexem em `configure.in`, então o `configure` precisa ser regerado — sem os
+  autotools o roteiro para logo no começo. Entraram como pré-requisito do passo 7.
+- **O patch `03_gdkglext-config-h-installation-path.diff` precisa ser aplicado, mesmo estando
+  comentado no `series` do pacote Debian.** É ele que instala o `gdkglext-config.h` em
+  `/usr/local/include/gtkglext-1.0/` em vez de dentro do `libdir` — que é justamente onde o
+  `.pc` gerado manda procurar (`Cflags: -I${includedir}/gtkglext-1.0`). Sem ele, quem incluir
+  esse header não acha.
+- **`05_nopangox.diff` é o indispensável.** O PangoX não existe mais no Pango atual (só
+  sobrou o PangoXft); sem esse patch o módulo nem compila.
+
+**Como foi verificado.** Baixado, aplicado, `autoreconf -fi`, `./configure` e `make -j` do
+zero, todos com saída 0 (`multihead support: yes`, `OpenGL LIBS: -lGLU -lGL`). O
+`sudo make install` **não** foi reexecutado, porque a lib já estava instalada nesta máquina e
+não fazia sentido mexer numa instalação boa; em lugar dele, `make install DESTDIR=<tmp>`
+reproduziu exatamente o layout que já existe em `/usr/local` — `gtk/gtkgl.h` e
+`gdkglext-config.h` nos mesmos caminhos, e o `.pc` com o mesmo `Cflags`. O md5 do tarball do
+GNOME bate com o da instalação original.
+
+A lib continua **sem pacote** em qualquer distro atual — isso não tem conserto do nosso lado,
+e a pendência **g)** de `install/05_pendencias_conhecidas.md` continua aberta por esse motivo.
+O que deixou de ser verdade é que os comandos eram desconhecidos.

@@ -103,12 +103,18 @@ Contém `.deb`s e SDKs antigos: `boost_1_61_0.tar.xz` (não é mais necessário 
 `src/` referencia essa pasta (`grep -rl "ubuntu_packages" src/` não retorna nada) — é material
 de instalação manual, não do build.
 
-## g) GtkGLExt continua sem pacote
+## g) GtkGLExt continua sem pacote ✅ **roteiro de build registrado**
 
-Ver `install/04`, seção 4.3. Nesta máquina ele já estava compilado e instalado em
-`/usr/local` (veio da migração de outro repositório do LCAD). **Numa máquina nova é a
-dependência mais provável de travar o build**, porque a GUI principal (`navigator_gui2`) e
-mais ~20 módulos dependem dela e ela não existe em pacote nenhum.
+Ver `install/04`, seção 4.3, e o **passo 7** do `install/INSTALL_UBUNTU_26.04.md`. Nesta
+máquina ele já estava compilado e instalado em `/usr/local` (veio da migração de outro
+repositório do LCAD). **Numa máquina nova é a dependência mais provável de travar o build**,
+porque a GUI principal (`navigator_gui2`) e mais ~20 módulos dependem dela e ela não existe em
+pacote nenhum.
+
+A lib continua sem pacote — isso não tem conserto do nosso lado. O que mudou em 2026-08-20 é
+que **a sequência de comandos deixou de ser desconhecida**: foi executada do zero (download,
+patches, `autoreconf`, `configure`, `make`) e a instalação conferida num `DESTDIR` local, que
+reproduziu exatamente o layout de `/usr/local`. Está escrita no passo 7.
 
 ## h) Módulos fora do `PACKAGES` com o padrão antigo de `Ptr` do PCL
 

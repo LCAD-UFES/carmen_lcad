@@ -67,7 +67,11 @@ ls /usr/local/include/gtkglext-1.0/gtk/gtkgl.h
 ```
 
 Se não estiver instalado, é aqui que o build vai parar com `gtk/gtkgl.h: No such file or
-directory`.
+directory`. **A sequência completa de comandos está no passo 7 do
+[`INSTALL_UBUNTU_26.04.md`](INSTALL_UBUNTU_26.04.md#7-gtkglext--a-única-lib-sem-pacote)** —
+tarball do GNOME + os seis patches do pacote Debian da Deepin, `autoreconf -fi`,
+`./configure --prefix=/usr/local`, `make`, `sudo make install`, `sudo ldconfig`. Foi
+executada e verificada do zero em 2026-08-20.
 
 ## 4.4 SDKs de hardware (proprietários / sem pacote)
 

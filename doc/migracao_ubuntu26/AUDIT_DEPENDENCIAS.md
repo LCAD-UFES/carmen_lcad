@@ -36,7 +36,7 @@ customizado. Nada disso é mais necessário:
 |---|---|---|
 | `libqt4-dev`, `qt4-qmake` | **NOT-FOUND** — Qt4 saiu do Ubuntu | `qtbase5-dev`; ver `CHANGELOG.md` item 13 |
 | `libncurses5`, `libncurses5-dev` | **NOT-FOUND** | `libncurses-dev` (ABI atual) |
-| `libgtkglext1`, `libgtkglext1-dev`, `libgtkglextmm-x11-1.2-dev` | **NOT-FOUND** | Compilar da fonte — ver `install/04`, seção 4.3 |
+| `libgtkglext1`, `libgtkglext1-dev`, `libgtkglextmm-x11-1.2-dev` | **NOT-FOUND** | Compilar da fonte — roteiro completo no **passo 7** do `install/INSTALL_UBUNTU_26.04.md` |
 | `libglade2-0`, `libglade2-dev`, `libglademm-2.4-dev` | **NOT-FOUND** | Não é preciso: o código já usa `GtkBuilder` |
 | `freeglut3` (runtime) | NOT-FOUND | `freeglut3-dev` traz o runtime junto |
 | `libcurl4-nss-dev` | NOT-FOUND | `libcurl4-openssl-dev` |
@@ -81,7 +81,9 @@ Não são dependências, mas causam a mesma classe de erro "só no Ubuntu novo":
 
 Iguais ao tutorial original:
 
-- **GtkGLExt** — sem pacote em nenhuma distro atual; compilar da fonte (`install/04`, 4.3).
+- **GtkGLExt** — sem pacote em nenhuma distro atual; compilar da fonte. Os comandos estão no
+  **passo 7** do `install/INSTALL_UBUNTU_26.04.md` (tarball do GNOME + 6 patches do pacote
+  Debian da Deepin), verificados do zero em 2026-08-20 — ver item 48 do `CHANGELOG.md`.
   É pré-requisito da GUI principal (`navigator_gui2`) e de ~20 módulos.
 - **Kvaser CAN SDK** (`linuxcan`) — driver do fabricante.
 - **PointGrey/FLIR Flycapture 2** — SDK proprietário de câmera (`bumblebee_basic`).

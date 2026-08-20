@@ -169,17 +169,88 @@ ls /usr/local/include/gtkglext-1.0/gtk/gtkgl.h
 
 Se os dois comandos responderem, pule para o passo 8.
 
-Se **não** estiver instalado: a rota conhecida é compilar da fonte a partir do
-tarball oficial do GNOME somado aos patches de build que o pacote Debian da Deepin
-ainda mantém, seguido de `sudo make install` — o header vai para
-`/usr/local/include/gtkglext-1.0/gtk/gtkgl.h` e o `.pc` gerado aponta para lá,
-então **nenhum Makefile do CARMEN precisa mudar**.
+Se **não** estiver instalado, o roteiro abaixo foi executado do zero nesta máquina e
+funciona. São o tarball oficial do GNOME (2010, a última release) mais os seis
+patches de build que o pacote Debian mantido pela Deepin ainda carrega — a lib está
+morta upstream desde ~2008, mas as distros que ainda a empacotam mantêm os patches
+que a fazem compilar contra GTK2/glibc/Pango modernos.
 
-> ⚠️ **A sequência exata de comandos deste passo ainda não está registrada** —
-> na máquina onde a migração foi feita o GtkGLExt já vinha instalado, então o
-> roteiro nunca foi executado do zero aqui. Quando alguém instalar numa máquina
-> limpa, **anote os comandos e atualize esta seção**. É a maior lacuna deste
-> tutorial.
+**Pré-requisito:** os patches mexem em `configure.in`, então é preciso regerar o
+`configure` com os autotools, que não entram na lista do passo 3:
+
+```bash
+sudo apt-get install -y autoconf automake libtool
+```
+
+**O build:**
+
+```bash
+mkdir -p ~/packages/gtkglext_build && cd ~/packages/gtkglext_build
+
+curl -LO https://download.gnome.org/sources/gtkglext/1.2/gtkglext-1.2.0.tar.gz
+# md5 esperado: 5c3240bfc1b21becd33ce35c5abe6f8d
+mkdir -p patches && cd patches
+for p in 01_fix_fontcache_nullderef.diff \
+         02_fix_gtk-2.20_deprecated_symbols.diff \
+         03_gdkglext-config-h-installation-path.diff \
+         04_glibc2.27-ftbfs.diff \
+         05_nopangox.diff \
+         libGL.so.1.diff ; do
+    curl -LO https://raw.githubusercontent.com/deepin-community/gtkglext/master/debian/patches/$p
+done
+cd ..
+
+tar xzf gtkglext-1.2.0.tar.gz
+cd gtkglext-1.2.0
+
+for p in ../patches/*.diff; do patch -p1 < "$p"; done
+
+autoreconf -fi                 # os patches mexem em configure.in
+./configure --prefix=/usr/local
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+```
+
+O `configure` deve terminar com `multihead support: yes` e `OpenGL LIBS: -lGLU -lGL`.
+Os avisos de `automake` sobre `INCLUDES` e `configure.in` são cosméticos — é código de
+2006 sendo processado por autotools de 2026.
+
+**Confira depois de instalar:**
+
+```bash
+pkg-config --modversion gtkglext-1.0     # 1.2.0
+pkg-config --cflags gtkglext-1.0         # -I/usr/local/include/gtkglext-1.0 ...
+ls /usr/local/include/gtkglext-1.0/gtk/gtkgl.h
+ls /usr/local/include/gtkglext-1.0/gdkglext-config.h
+```
+
+Para o que cada patch serve:
+
+| patch | o que conserta |
+|---|---|
+| `01_fix_fontcache_nullderef.diff` | *null deref* na função de cache de fonte |
+| `02_fix_gtk-2.20_deprecated_symbols.diff` | símbolos do GTK2 removidos desde a 2.20 |
+| `03_gdkglext-config-h-installation-path.diff` | põe o `gdkglext-config.h` no `includedir` |
+| `04_glibc2.27-ftbfs.diff` | quebra de build com glibc >= 2.27 |
+| `05_nopangox.diff` | tira a dependência de **PangoX**, que não existe mais no Pango atual (só sobrou PangoXft). Sem ele nem compila |
+| `libGL.so.1.diff` | ajuste do link contra a `libGL` |
+
+> O `series` do pacote Debian deixa o `03` comentado; aqui ele **é aplicado**. É o que faz
+> o `gdkglext-config.h` ser instalado em `/usr/local/include/gtkglext-1.0/` em vez de
+> dentro do `libdir` — que é onde o `.pc` gerado manda procurar
+> (`Cflags: -I${includedir}/gtkglext-1.0`). Sem o `03`, quem incluir `gdkglext-config.h`
+> não acha o header.
+
+O header vai para `/usr/local/include/gtkglext-1.0/gtk/gtkgl.h` e o `.pc` gerado aponta
+para lá, então **nenhum Makefile do CARMEN precisa mudar** — todos usam
+`pkg-config gtkglext-1.0`.
+
+> Verificado em 2026-08-20: baixado, aplicado, `autoreconf`, `configure` e
+> `make -j` do zero, e a instalação conferida num `DESTDIR` local (sem `sudo`),
+> que reproduziu exatamente o layout já presente em `/usr/local`. O único passo
+> não reexecutado foi o `sudo make install`, porque a lib já estava instalada
+> nesta máquina.
 
 ## 8. `configure`
 
