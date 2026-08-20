@@ -987,3 +987,85 @@ GNOME bate com o da instalação original.
 A lib continua **sem pacote** em qualquer distro atual — isso não tem conserto do nosso lado,
 e a pendência **g)** de `install/05_pendencias_conhecidas.md` continua aberta por esse motivo.
 O que deixou de ser verdade é que os comandos eram desconhecidos.
+
+### 49. `logger`: `cannot find -lbumblebee_basic_interface` em build limpo
+
+Relatado como erro de link do `logger` noutra máquina. **Não é problema de máquina** — é um
+defeito do `Makefile` do `bumblebee_basic` que só se manifesta em **build limpo**, e que a
+própria correção do item 27 introduziu.
+
+O item 27 pôs o driver do Bumblebee2 atrás da detecção do SDK FlyCapture. O gating ficou
+assim:
+
+```make
+ifneq ($(BUILD_FLYCAP),)
+PUBLIC_BINARIES = bumblebee_basic bumblebee_basic_simulator
+TARGETS = libbee libbumblebee_basic_interface.a bumblebee_basic bumblebee_basic_simulator
+endif
+PUBLIC_BINARIES += bumblebee_basic_view
+TARGETS += bumblebee_basic_view
+```
+
+A `libbumblebee_basic_interface.a` ficou **dentro** do `ifneq`. Só que a `phase1` do build do
+topo constrói exatamente `$(filter %.a, $(TARGETS))` (`Makefile.rules`, alvo `libraries`).
+Numa máquina **sem** o FlyCapture — que é a situação normal — `TARGETS` na `phase1` é só
+`bumblebee_basic_view`, então:
+
+1. a `phase1` do módulo termina **sem produzir nada**, e sem criar o symlink em `lib/`;
+2. ela termina com **sucesso**, então o build do topo segue para a `phase2`;
+3. na `phase2`, o `logger` — que vem **antes** do `bumblebee_basic` na lista `PACKAGES` — tenta
+   linkar e morre com `cannot find -lbumblebee_basic_interface`.
+
+A lib só sairia mais tarde, na `phase2` do `bumblebee_basic`, arrastada pela regra
+`bumblebee_basic_view: bumblebee_basic_view.o libbumblebee_basic_interface.a`. Numa árvore já
+construída ela ficou do build anterior e o erro **não aparece** — é por isso que aqui passava e
+lá não. São **64** Makefiles desta árvore que linkam essa interface; o `logger` é só o primeiro
+a chegar nela.
+
+**Correção:** tirar a lib do condicional.
+
+```make
+TARGETS = libbumblebee_basic_interface.a
+
+ifneq ($(BUILD_FLYCAP),)
+PUBLIC_BINARIES = bumblebee_basic bumblebee_basic_simulator
+TARGETS += libbee bumblebee_basic bumblebee_basic_simulator
+endif
+PUBLIC_BINARIES += bumblebee_basic_view
+TARGETS += bumblebee_basic_view
+```
+
+**Verificação.** Reproduzido e conferido nos dois sentidos: apagando a `.a` e o symlink,
+`make phase1` no `bumblebee_basic` não produzia nada e o `make phase2` no `logger` falhava com
+a mensagem exata do relato; com a correção, a `phase1` arquiva a lib e copia para `lib/`, e o
+`logger` linka. O `make -j$(nproc)` da árvore inteira volta a sair **0**, com
+`Done making binaries...`.
+
+#### A regra geral, para não repetir
+
+**Toda `.a` que está em `PUBLIC_LIBRARIES` precisa estar em `TARGETS` incondicionalmente.** O
+que é opcional é o *binário* que depende do SDK, não a interface que o resto da árvore linka.
+
+Varri os módulos do `PACKAGES` comparando `PUBLIC_LIBRARIES` com
+`$(filter %.a, $(TARGETS))`, com os condicionais avaliados nesta máquina. Além do
+`bumblebee_basic`, aparecem mais quatro casos — todos **inofensivos hoje**, e por isso não
+alterados:
+
+| módulo | lib | por que não quebra |
+|---|---|---|
+| `maptools` | `liblinemapping.a` | ninguém linka `-llinemapping` |
+| `laser` | `liblaser.a` | ninguém linka `-llaser` |
+| `fused_odometry` | `libfused_odometry.a` | ninguém linka `-lfused_odometry` |
+| `joystick`, `joystick_vehicle` | `libjoystick_interface.a` | só o `cvis` linka, e ele não está no `PACKAGES` |
+
+Se algum desses módulos ganhar um consumidor novo, o sintoma vai ser este mesmo: passa na
+máquina de quem já tinha a árvore construída, quebra em build limpo. O comando da varredura:
+
+```bash
+cd $CARMEN_HOME/src
+for pkg in $(make --eval='__p: ; @echo $(PACKAGES)' __p); do
+    pub=$(make -C $pkg --eval='__p: ; @echo $(PUBLIC_LIBRARIES)' __p 2>/dev/null)
+    tgt=$(make -C $pkg --eval='__p: ; @echo $(filter %.a,$(TARGETS))' __p 2>/dev/null)
+    for l in $pub; do case " $tgt " in *" $l "*) ;; *) echo "$pkg: $l fora de TARGETS";; esac; done
+done
+```

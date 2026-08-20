@@ -206,3 +206,41 @@ um `process-*.ini` de `bin/`. O que esperar:
 - permissões de device (LIDAR/CAN/câmera) e drivers que dependem de hardware;
 - GUIs GTK2 em tela HiDPI/4K (o GTK2 não tem suporte a HiDPI — a interface sai
   "embaralhada"/minúscula; contorno é rodar com `GDK_SCALE`/resolução menor).
+
+## k) `Failed to load module "canberra-gtk-module"` — aviso cosmético, não é erro
+
+Toda GUI **GTK2** do CARMEN imprime isto ao abrir:
+
+```
+Gtk-Message: Failed to load module "canberra-gtk-module"
+```
+
+Não é defeito do módulo que você rodou. Foi relatado no `list_ipc_message`, mas aparece igual
+no `playback_control` e em qualquer outra GUI GTK2 — e **não** aparece no `proccontrol_gui`,
+que foi reescrito em GTK3 (item a).
+
+**Causa.** A sessão do GNOME manda, via XSettings (`Gtk/Modules`), que toda aplicação GTK
+carregue o `canberra-gtk-module`, que é quem toca os sons de evento da interface. O Ubuntu
+26.04 **deixou de empacotar a versão GTK2 desse módulo**:
+
+```bash
+apt-cache policy libcanberra-gtk-module     # Candidate: (none)
+apt-cache policy libcanberra-gtk3-module    # Installed: 0.30-18ubuntu3
+```
+
+Só sobrou a variante GTK3. As aplicações GTK3 acham o módulo e ficam quietas; as GTK2 procuram
+em `/usr/lib/x86_64-linux-gnu/gtk-2.0/modules/`, não acham, e avisam.
+
+**Consequência: nenhuma.** O `libcanberra` só serve para tocar som de evento. A janela abre e o
+programa funciona normalmente — verificado no `list_ipc_message`, cuja janela
+("Monitor de Mensagens IPC") sobe e opera com o aviso na tela.
+
+⚠️ **Não tente "consertar" com um symlink.** O arquivo
+`/usr/lib/x86_64-linux-gnu/gtk-3.0/modules/libcanberra-gtk-module.so` existe e o nome engana —
+mas ele pertence ao pacote `libcanberra-gtk3-module` e o `ldd` mostra que linka contra
+`libgtk-3.so.0`. Apontá-lo para o diretório de módulos do GTK2 carregaria GTK3 dentro de um
+processo GTK2, o que é bem pior do que a linha de aviso.
+
+Também **não adianta** mexer no ambiente: `GTK_MODULES=` vazio, `GTK_MODULES` explícito e um
+`gtk-modules = ""` via `GTK2_RC_FILES` foram testados, e o aviso continua — a lista de módulos
+vem do XSettings da sessão, não da variável de ambiente. Conviva com ele.

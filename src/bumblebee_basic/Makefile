@@ -61,9 +61,24 @@ SOURCES = bumblebee_basic_main.cpp bumblebee_basic_interface.c bumblebee_basic_s
 PUBLIC_INCLUDES = bumblebee_basic_messages.h bumblebee_basic_interface.h
 PUBLIC_LIBRARIES = libbumblebee_basic_interface.a 
 PUBLIC_LIBRARIES_SO = libbumblebee_basic_interface.so
+
+# ---------------------------------------------------------------------------------------
+# Migração Ubuntu 26.04: a `libbumblebee_basic_interface.a` PRECISA estar em TARGETS sempre,
+# fora do gating do FlyCapture. A `phase1` do build do topo constrói só o que está em
+# TARGETS (`Makefile.rules`, alvo `libraries`: `filter %.a, $(TARGETS)`), então, com a lib
+# só dentro do `ifneq ($(BUILD_FLYCAP),)`, numa máquina sem o SDK a `phase1` deste módulo
+# terminava **sem produzir nada** — e sem criar o symlink em `lib/`. A lib acabava saindo só
+# na `phase2`, como dependência da regra do `bumblebee_basic_view`; mas o `logger` vem antes
+# do `bumblebee_basic` na lista `PACKAGES`, então a `phase2` dele rodava primeiro e falhava
+# com `cannot find -lbumblebee_basic_interface`. São 64 Makefiles desta árvore que linkam
+# essa interface. Numa árvore já construída o erro não aparece (a lib ficou do build
+# anterior) — ele só se manifesta em build limpo, o que fazia parecer problema de máquina.
+# ---------------------------------------------------------------------------------------
+TARGETS = libbumblebee_basic_interface.a
+
 ifneq ($(BUILD_FLYCAP),)
 PUBLIC_BINARIES = bumblebee_basic bumblebee_basic_simulator # bumblebee_basic_flycap
-TARGETS = libbee libbumblebee_basic_interface.a bumblebee_basic bumblebee_basic_simulator # bumblebee_basic_flycap
+TARGETS += libbee bumblebee_basic bumblebee_basic_simulator # bumblebee_basic_flycap
 endif
 PUBLIC_BINARIES += bumblebee_basic_view 
 TARGETS += bumblebee_basic_view 
