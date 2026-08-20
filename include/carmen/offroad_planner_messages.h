@@ -5,8 +5,8 @@
  *      Author: Alberto
  */
 
-#ifndef NLP_MAT_PLANNER_MESSAGES_H_
-#define NLP_MAT_PLANNER_MESSAGES_H_
+#ifndef OFFROAD_PLANNER_MESSAGES_H_
+#define OFFROAD_PLANNER_MESSAGES_H_
 
 #include <carmen/carmen.h>
 
@@ -27,8 +27,7 @@ typedef enum OFFROAD_PLANNER_FEEDBACK
 	OBSTACLE_DISTANCE_MAP_NOT_AVAILABLE,
 	COULD_NOT_COMPUTE_GOAL_DISTANCE_MAP,
 	COULD_NOT_FIND_SUITABLE_GOAL_POSE,
-	OFFROAD_PLANNER_TEST,
-	DEACTIVATE
+	OFFROAD_PLANNER_TEST
 } carmen_offroad_planner_feedback_t;
 
 #define print_offroad_planner_feedback(x) ( \
@@ -42,9 +41,7 @@ typedef enum OFFROAD_PLANNER_FEEDBACK
 	(x == OBSTACLE_DISTANCE_MAP_NOT_AVAILABLE)? "OBSTACLE_DISTANCE_MAP_NOT_AVAILABLE": \
 	(x == COULD_NOT_COMPUTE_GOAL_DISTANCE_MAP)? "COULD_NOT_COMPUTE_GOAL_DISTANCE_MAP": \
 	(x == COULD_NOT_FIND_SUITABLE_GOAL_POSE)? "COULD_NOT_FIND_SUITABLE_GOAL_POSE": \
-	(x == OFFROAD_PLANNER_TEST)? "OFFROAD_PLANNER_TEST": \
-	(x == DEACTIVATE)? "": \
-	"" \
+	(x == OFFROAD_PLANNER_TEST)? "OFFROAD_PLANNER_TEST": "" \
 	)
 
 
@@ -57,13 +54,12 @@ typedef struct
 	carmen_robot_and_trailers_traj_point_t transition_pose;
 	carmen_robot_and_trailers_traj_point_t goal_pose;
 
-	double time_to_plan;
     double timestamp;
     char *host;
 } carmen_offroad_planner_plan_message;
 
 #define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_NAME	"carmen_offroad_planner_plan_message"
-#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, int, [double:5], double, double}:2>, int, {double, double, double, int, [double:5], double, double}, {double, double, double, int, [double:5], double, double}, double, double, string}"
+#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, int, [double:5], double, double}:2>, int, {double, double, double, int, [double:5], double, double}, {double, double, double, int, [double:5], double, double}, double, string}"
 
 #ifdef __cplusplus
 }
