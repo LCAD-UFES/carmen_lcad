@@ -1,0 +1,187 @@
+lio_sam:
+
+  # Topics
+  # /points_raw = nuvem crua; /points_raw_no_vehicle = ja' sem os pontos que caem
+  # sobre o modelo de colisao do robo (pointcloud_node.cpp:127). Num quadrupede as
+  # proprias pernas entram no scan e sujam o mapa, entao usamos a filtrada -- e' o
+  # que a IARA faz. Depende do bloco robot_collision_height/... la' embaixo.
+  # Para voltar ao comportamento anterior, troque por "/points_raw".
+  pointCloudTopic: "/points_raw_no_vehicle"    # Point cloud data
+  imuTopic: "/imu_raw"                         # IMU data
+  odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
+  gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
+  ackermannTopic: "/ackermann/odom_raw"       # Ackermann odometry (v, phi) from carmen_ipc_bridge (TwistStamped)
+
+  # Prediction odometry source: "imu" | "ackermann" | "fusion"
+  #   imu       = so IMU (pre-integracao)
+  #   ackermann = so odometria Ackermann (sem IMU)
+  #   fusion    = IMU + Ackermann no mesmo grafo
+  odometrySource: "imu"
+  # Ackermann kinematics: distance between front and rear axles (meters). Only used when odometrySource == "ackermann".
+  wheelbase: 0.35
+  # Ackermann prediction noise (only used when odometrySource == "ackermann")
+  ackermannVelNoise: 0.2          # stddev da velocidade v [m/s]
+  ackermannSteerNoise: 0.03       # stddev do angulo de estercamento phi [rad]
+  # Escorregamento lateral/diagonal (random walk no tempo): stddev por sqrt(segundo)
+  ackermannSlipNoiseX: 0.05       # slip longitudinal  [m/sqrt(s)]
+  ackermannSlipNoiseY: 0.05       # slip lateral       [m/sqrt(s)]
+  ackermannSlipNoiseTheta: 0.02   # slip angular       [rad/sqrt(s)]
+  ackermannYawLockKeyframes: 0    # reforco: trava o yaw ate' N keyframes; 0 = so' "mapa global > 0"
+
+  # Frames
+  lidarFrame: "velodyne"
+  baselinkFrame: "base_link"
+  odometryFrame: "odom"
+  mapFrame: "map"
+
+  # GPS Settings
+  useImuHeadingInitialization: false           # if using GPS data, set to "true"
+  useGpsElevation: false                      # if GPS elevation is bad, set to "false"
+  gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
+  poseCovThreshold: 25.0                      # m^2, threshold for using GPS data
+  
+  # Export settings
+  savePCD: true                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
+  savePCDDirectory: "/dados/sc_lio_sam_output/section4/"  # use global path, and end with "/" 
+    # warning: if you have already data in the above savePCDDirectory, it will all remove and remake them. Thus, backup is recommended if pre-made data exist. 
+
+  # Localization mode: reuse an existing map (from savePCDDirectory) only to localize.
+  # When true, the map directory is NOT erased/overwritten and no new files are written.
+  localizationMode: true
+  # Initial pose of the robot inside the map (map frame). Used when localizationMode is true.
+  # It can also be overridden at runtime with RViz "2D Pose Estimate" (/initialpose).
+  initialPoseX: 0.0
+  initialPoseY: 0.0
+  initialPoseZ: 0.0
+  initialPoseRoll: 0.0
+  initialPosePitch: 0.0
+  initialPoseYaw: 0.0
+
+  # ── Gravacao de poses (formato graphslam poses_opt.dat) ────────────────
+  # So' em localizationMode, e so' depois que o robo encaixa no mapa. E' este
+  # arquivo que alimenta o graphslam pra gerar o mapa CARMEN.
+  posesEnable: true               # liga/desliga a gravacao inteira
+  posesOutputFile: "/dados/sc_lio_sam_output/poses_opt.dat"
+  posesStartTime: 0.0             # so' grava scans com stamp ROS >= isto; 0 = desligado
+  posesSettleScans: 20            # scans descartados apos cada encaixe (~1 s a 20 Hz)
+  posesInterpolateMaxError: 0.10  # m, flecha maxima (s*dyaw/8) pra interpolar scan nao processado
+  posesInterpolateMaxGap: 5.0     # s, teto de sanidade da interpolacao; 0 = desliga
+  # posesCarmenStampTopic e' GATE DURO: todo scan sem timestamp CARMEN casado e'
+  # descartado (mapOptmization.cpp:4713). Quem publica e' o pointcloud_node do
+  # bridge (pointcloud_node.cpp:191), junto com a nuvem.
+  posesCarmenStampTopic: "/carmen/scan_time_reference"
+  # posesAckermannTopic NAO afeta SE a linha e' gravada, mas preenche a COLUNA
+  # odometry_ts do poses_opt.dat: writePoseLine() chama nearestAckermannStamp()
+  # (mapOptmization.cpp:4220), que procura no deque ackermannCarmenStamps dentro de
+  # uma janela de 0,2 s. Sem publicador desse topico a coluna sai -1 (sentinela),
+  # e ai o `graphslam_publish -poses_from odometry` descarta TODAS as poses, porque
+  # ele exige odometry_timestamp > 0 (publish_poses.cpp:136).
+  # No ARGOS, que nao tem odometria Ackermann, use `-poses_from lidar`: a coluna
+  # lidar_ts e' preenchida com o proprio timestamp CARMEN do scan, sempre valida.
+  posesAckermannTopic: "/ackermann/odom_raw"
+
+  # ── Origem do mundo (transformacao T_out = T_origem * T_base) ──────────
+  # O ARGOS NAO TEM GPS, entao a origem e' manual: o modo "gps" calcularia a
+  # ancora a partir de um fix real + rumo, e sem GPS ele nunca ficaria valido e
+  # o poses_opt.dat sairia em coordenadas puras do SC-LIO-SAM (perto de zero).
+  posesOriginMode: "manual"    # "manual" = usa posesOrigin* abaixo | "gps" = calcula do fix + rumo
+  # Convencao do CARMEN (src/gps_xyz/gps_xyz.cpp:460-461): x = northing da UTM, y = -easting.
+  # Os valores abaixo sao a UTM zona 24S de 20.2769 S / 40.3044 W (UFES) -- as
+  # MESMAS coordenadas do util_publish_dummy_gps no process ini, pra que o mapa
+  # gerado e a posicao que o resto do CARMEN enxerga fiquem no mesmo lugar.
+  # Cuidado ao trocar: o localize_ackerman se recusa a publicar globalpos com
+  # |x| < 1.000.000 (localize_ackerman_main.cpp:3428), e sem log nenhum. Por isso
+  # nao da' pra usar (0,0) aqui -- nao sairia mapa.
+  posesOriginX: 7757339.037
+  posesOriginY: -363784.117
+  posesOriginZ: 0.0
+  posesOriginYaw: 0.0          # DIFERENCA de rumo entre os frames, NAO o yaw absoluto do CARMEN
+  posesOriginLock: true        # em modo manual mantenha travado: nada de GPS mexer na origem
+  # Os quatro abaixo so' valem no modo "gps"; ficam aqui so' pra documentar.
+  posesOriginRefine: false     # modo gps: segue refinando enquanto encaixado; false congela
+  posesOriginMinSamples: 20    # modo gps: amostras antes de a origem valer
+  posesOriginMaxDt: 0.50       # s, buraco maximo entre scans pra interpolar a pose no instante do fix
+  posesOriginMinBaseline: 1.0  # m, deslocamento minimo pra tirar rumo do movimento
+  posesOriginRelPosNoise: 0.25 # m^2, erro RELATIVO do GPS
+
+  # Sensor Settings
+  sensor: velodyne
+  N_SCAN: 32                               # number of lidar channel (i.e., 16, 32, 64, 128)
+  Horizon_SCAN: 2000                          # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048)
+  downsampleRate: 1                           # default: 1. Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
+  lidarMaxRange: 70.0                       # default: 1000.0, maximum lidar range to be used
+
+  # ── IMU — XSens (ajuste os ruídos conforme calibração) ────────────────
+  imuAccNoise: 0.059653 #3.9939570888238808e-03    # Desvio-padrão do ruído branco do acelerômetro (m/s²/√Hz); ref = valor de calibração allan variance
+  imuGyrNoise: 0.010597 #1.5636343949698187e-05    # Desvio-padrão do ruído branco do giroscópio (rad/s/√Hz); ref = valor de calibração allan variance
+  imuAccBiasN: 0.0002 #6.4356659353532566e-05   # Desvio-padrão do random walk do bias do acelerômetro (m/s²/√Hz); ref = allan variance
+  imuGyrBiasN: 0.0002 #3.5640318696367613e-05 # Desvio-padrão do random walk do bias do giroscópio (rad/s²/√Hz); ref = allan variance
+  imuGravity: 9.574869 #9.80511                   # Magnitude da gravidade local (m/s²); ref = padrão global; atual = calibrado em Vitória/ES
+  imuRPYWeight: 0.3                     # Peso da orientação RPY do IMU na fusão; 0=ignora IMU, 1=confia só no IMU
+
+
+  # Extrinsics (IMU -> LiDAR frame, REP-105)
+  extrinsicTrans: [0.0, 0.0, 0.19]
+  extrinsicRPY: [0.0, 0.0, 0.0]  # roll, pitch, yaw [rad]
+
+  # ── Modelo de colisao 3D do veiculo (usado pelo bridge) ────────────────
+  # E' o filtro que tira do scan os pontos que batem no proprio robo
+  # (pointcloud_node.cpp:1303 ensure_collision_heights()). ATENCAO: o bridge so'
+  # carrega o filtro se robot_collision_height E semi_trailer_collision_height
+  # forem AMBOS > 0 -- mesmo o ARGOS nao tendo reboque, deixar o segundo em 0
+  # desliga o filtro inteiro em silencio. Valores de partida, ajuste medindo.
+  robot_collision_height: 0.70         # m, do chao ao topo do robo
+  semi_trailer_collision_height: 0.70  # m, sem reboque: repete o valor acima (nao pode ser 0)
+  collision_safety_margin: 0.10        # m, somado ao raio de todos os circulos
+
+  # ── LOAM feature threshold ───────────────────────────────────────────
+  # ALTERADO: valores anteriores (edgeThreshold=0.05, edgeFeatureMinValidNum=1)
+  # eram permissivos demais e deixavam ruído de superfícies planas (paredes/chão)
+  # ser classificado como edge feature. Em corredor estreito isso NÃO ajuda a
+  # fixar a translação ao longo do eixo do corredor (X) e ainda contamina a
+  # otimização com features falsas -> favorece degenerescência/drift.
+  # Voltando perto do default original do LIO-SAM, que reserva "edge" pra
+  # features geometricamente confiáveis (quinas, batentes de porta, etc.),
+  # que são justamente o que fixa X num corredor.
+  edgeThreshold: 1.0            # era 0.05
+  surfThreshold: 0.1
+  edgeFeatureMinValidNum: 10    # era 1 -- reforça exigência mínima de edges confiáveis
+  surfFeatureMinValidNum: 100
+
+  # voxel filter paprams
+  odometrySurfLeafSize: 0.1                     # default: 0.4 - outdoor, 0.2 - indoor
+  mappingCornerLeafSize: 0.05                    # default: 0.2 - outdoor, 0.1 - indoor
+  mappingSurfLeafSize: 0.1                      # default: 0.4 - outdoor, 0.2 - indoor
+
+  # robot motion constraint (in case you are using a 2D robot)
+  z_tollerance: 1000                            # meters
+  rotation_tollerance: 1000                     # radians
+
+  # CPU Params
+  numberOfCores: 8                              # number of cores for mapping optimization
+  mappingProcessInterval: 0.015                  # seconds, regulate mapping frequency
+  slamQueueSize: 1        # fila dos subscribers da cadeia SLAM. 1 = descarta scan velho (tempo real);
+                          # 50-100 em playback/mapa = absorve transiente sem perder pose
+  useGpu: true           # busca de mapa na GPU (CUDA). Deixado off por seguranca;
+                          # o roslaunch com gpu:=true sobrescreve este valor
+
+  # ── Surrounding map ────────────────────────────────────────────────────
+  surroundingkeyframeAddingDistThreshold: 0.1 #1.0   # Distância mínima (m) para adicionar novo keyframe; ref = 1.0 (outdoor com carro)
+  surroundingkeyframeAddingAngleThreshold: 0.1 #0.2 # Rotação mínima (rad) para adicionar novo keyframe; ref = 0.2 (~11.5°)
+  surroundingKeyframeDensity: 1.0               # Downsampling (m) da nuvem dos keyframes vizinhos antes do match
+  surroundingKeyframeSearchRadius: 70.0         # Raio (m) de busca de keyframes vizinhos para o scan matching local
+
+  # ── Loop closure ───────────────────────────────────────────────────────
+  loopClosureEnableFlag: false            # Habilita detecção e correção de loop closure (fecha trajetórias repetidas)
+  loopClosureFrequency: 1.0        # Taxa (Hz) de execução da thread de detecção de loop closure; ref = 1.0
+  surroundingKeyframeSize: 100 #50           # Número de keyframes vizinhos usados para construir o mapa local de matching
+  historyKeyframeSearchRadius: 15.0     # Raio (m) para buscar candidatos de loop closure no histórico de poses
+  historyKeyframeSearchTimeDiff: 60.0 #30.0   # Diferença temporal mínima (s) entre o keyframe atual e o candidato ao loop
+  historyKeyframeSearchNum: 10 #25          # Número de keyframes históricos agregados para formar a nuvem do loop candidate
+  historyKeyframeFitnessScore: 0.3      # Score máximo de ICP para aceitar um loop closure; menor = mais restritivo
+
+  # ── Visualizacao ───────────────────────────────────────────────────────
+  globalMapVisualizationSearchRadius: 1000.0  # m, raio do mapa global publicado
+  globalMapVisualizationPoseDensity: 10.0     # m, espacamento das poses amostradas
+  globalMapVisualizationLeafSize: 0.01        # m, voxel do downsample da visualizacao
+

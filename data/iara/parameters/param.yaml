@@ -1,0 +1,147 @@
+lio_sam:
+
+  # ── Topics ─────────────────────────────────────────────────────────────
+  pointCloudTopic: "/points_raw_no_vehicle"   # nuvem ja' sem os pontos sobre o veiculo
+  imuTopic: "/imu_raw"                        # IMU cru
+  odomTopic: "odometry/imu"                   # odometria da pre-integracao do IMU
+  gpsTopic: "odometry/gps"                    # GPS fundido (UTM) do gps_localization_node
+  ackermannTopic: "/ackermann/odom_raw"       # v e phi do bridge (TwistStamped)
+
+  # ── Odometria de predicao ──────────────────────────────────────────────
+  odometrySource: "ackermann"           # "imu" | "ackermann" | "fusion"
+  wheelbase: 2.625                # distancia entre eixos (m), so' no modo ackermann
+  ackermannVelNoise: 0.05         # stddev da velocidade v [m/s]
+  ackermannSteerNoise: 0.05       # stddev do estercamento phi [rad]
+  ackermannSlipNoiseX: 0.05       # slip longitudinal [m/sqrt(s)]
+  ackermannSlipNoiseY: 0.05       # slip lateral [m/sqrt(s)]
+  ackermannSlipNoiseTheta: 0.02   # slip angular [rad/sqrt(s)]
+  ackermannYawLockKeyframes: 0    # reforco: trava o yaw ate' N keyframes; 0 = so' "mapa global > 0"
+
+  # ── Frames ─────────────────────────────────────────────────────────────
+  lidarFrame: "velodyne"
+  baselinkFrame: "base_link"
+  odometryFrame: "odom"
+  mapFrame: "map"
+
+  # ── GPS ────────────────────────────────────────────────────────────────
+  useImuHeadingInitialization: true   # inicializa o rumo pelo IMU
+  useGpsElevation: true               # usa a altitude do GPS
+  gpsCovThreshold: 2.0                # m^2, limiar pra aceitar fix no grafo
+  poseCovThreshold: 25.0              # m^2, limiar da covariancia da pose SLAM
+  gpsAnchorIgnoreCov: false           # DEBUG: ignora o limiar so' pra gravar gps_utm_anchor.txt
+
+  # ── Processamento ──────────────────────────────────────────────────────
+  slamQueueSize: 1        # fila dos subscribers da cadeia SLAM. 1 = descarta scan velho (carro);
+                          # 50-100 em playback/mapa = absorve transiente (buraco, lombada) sem perder pose
+  useGpu: false                       # busca de mapa na GPU (CUDA); gpu:=true no roslaunch sobrescreve
+  numberOfCores: 12                   # threads da otimizacao de mapa
+  mappingProcessInterval: 0.015       # s, intervalo minimo entre scans processados
+
+  # ── Mapa salvo ─────────────────────────────────────────────────────────
+  savePCD: true                                          # grava o mapa ao encerrar
+  savePCDDirectory: "/dados/sc_lio_sam_output/section4/"  # caminho absoluto, terminando em "/"
+                                                         # ATENCAO: em mapeamento essa pasta e' APAGADA no boot
+
+  # ── Modo localizacao ───────────────────────────────────────────────────
+  localizationMode: true    # true = reusa o mapa de savePCDDirectory, sem alterar nada nele
+  initialPoseX: 0.0         # chute inicial da pose no mapa; RViz "2D Pose Estimate" sobrescreve
+  initialPoseY: 0.0
+  initialPoseZ: 0.0
+  initialPoseRoll: 0.0
+  initialPosePitch: 0.0
+  initialPoseYaw: 0.0
+
+  # ── Gravacao de poses (formato graphslam poses_opt.dat) ────────────────
+  # So' em localizationMode, e so' depois que o robo encaixa no mapa.
+  posesEnable: true               # liga/desliga a gravacao inteira
+  posesOutputFile: "/dados/sc_lio_sam_output/poses_opt.dat"
+  posesStartTime: 0.0             # so' grava scans com stamp ROS >= isto; 0 = desligado
+  posesSettleScans: 20            # scans descartados apos cada encaixe (~1 s a 20 Hz)
+  posesInterpolateMaxError: 0.10  # m, flecha maxima (s*dyaw/8) pra interpolar scan nao processado
+  posesInterpolateMaxGap: 5.0     # s, teto de sanidade da interpolacao; 0 = desliga
+  posesAstroStampTopic: "/astro/scan_time_reference"  # ponte de tempo ASTRO<->ROS (bridge)
+  posesAckermannTopic: "/ackermann/odom_raw"          # timestamps da coluna odometry_ts
+
+  # ── Origem do mundo (transformacao T_out = T_origem * T_base) ──────────
+  posesOriginMode: "gps"       # "manual" = usa posesOrigin* abaixo | "gps" = calcula do fix + rumo
+  posesOriginX: 1000000.0      # so' no modo manual. UTM tem falso leste 500000: (0,0) nao gera mapa
+  posesOriginY: 0.0
+  posesOriginZ: 0.0
+  posesOriginYaw: 0.0          # DIFERENCA de rumo entre os frames, NAO o yaw absoluto do ASTRO
+  posesOriginLock: false       # trava a origem: GPS nunca atualiza. Use com fix ruim pra nao estragar uma origem boa
+  posesOriginRefine: true      # modo gps: segue refinando enquanto encaixado; false congela
+  posesOriginMinSamples: 20    # modo gps: amostras antes de a origem valer
+  posesOriginMaxDt: 0.50       # s, buraco maximo entre scans pra interpolar a pose no instante do fix
+  posesOriginMinBaseline: 1.0  # m, deslocamento minimo pra tirar rumo do movimento
+  posesOriginRelPosNoise: 0.25 # m^2, erro RELATIVO do GPS (nao o absoluto de 25); menor = confia mais no deslocamento
+
+  # ── Sensor ─────────────────────────────────────────────────────────────
+  sensor: velodyne
+  N_SCAN: 128            # linhas do lidar (lidar0_shot_size)
+  Horizon_SCAN: 1800     # colunas por volta
+  downsampleRate: 4      # 1 = usa todas as linhas
+  lidarMinRange: 0.01    # m
+  lidarMaxRange: 230.0   # m
+
+  # ── IMU ────────────────────────────────────────────────────────────────
+  imuAccNoise: 0.006738    # ruido do acelerometro
+  imuGyrNoise: 0.00660     # ruido do giroscopio
+  imuAccBiasN: 0.059011    # random walk do bias do acelerometro
+  imuGyrBiasN: 0.000009    # random walk do bias do giroscopio
+  imuGravity: 9.8315       # m/s^2, medido com o sensor parado (era 9.473617)
+  imuRPYWeight: 0.1        # peso do IMU no slerp de atitude do transformUpdate
+
+  # ── Extrinseca IMU -> LiDAR ────────────────────────────────────────────
+  extrinsicTrans: [0.65, 0.13, 0.50]                          # xyz [m]
+  extrinsicRPY: [-0.0174444, -0.036, 1.5707963267948966]      # roll, pitch, yaw [rad]
+                                                              # roll/pitch em 0.0 nivelam a pose parada;
+                                                              # o yaw (pi/2) e' alinhamento real de eixos
+
+  # ── Caixa de exclusao de auto-scan (frame do lidar) ────────────────────
+  lidarExcludeBoxEnable: false  # false = quem filtra e' o modelo de colisao 3D do ipc_bridge_node
+  lidarExcludeBoxMinX: -3.0     # m
+  lidarExcludeBoxMaxX: 1.0
+  lidarExcludeBoxMinY: -2.0
+  lidarExcludeBoxMaxY: 2.0
+  lidarExcludeBoxMinZ: -2.5
+  lidarExcludeBoxMaxZ: 2.5
+
+  # ── Modelo de colisao 3D do veiculo (usado pelo bridge) ────────────────
+  robot_collision_height: 2.5          # m, do chao ao topo dos cilindros do caminhao
+  semi_trailer_collision_height: 5.0   # m, idem para o semi-reboque
+  collision_safety_margin: 0.25        # m, somado ao raio de todos os circulos
+
+  # ── LOAM: extracao de features ─────────────────────────────────────────
+  edgeThreshold: 1.0           # curvatura minima pra virar edge (era 0.05, permissivo demais)
+  surfThreshold: 0.1           # curvatura maxima pra virar surface
+  edgeFeatureMinValidNum: 10   # minimo de edges pra rodar o scan matching (era 1)
+  surfFeatureMinValidNum: 100  # minimo de surfaces
+
+  # ── Voxel filters ──────────────────────────────────────────────────────
+  odometrySurfLeafSize: 0.4    # m, ref: 0.4 outdoor / 0.2 indoor
+  mappingCornerLeafSize: 0.2   # m, ref: 0.2 outdoor / 0.1 indoor
+  mappingSurfLeafSize: 0.4     # m, ref: 0.4 outdoor / 0.2 indoor
+
+  # ── Restricao de movimento (robo 2D) ───────────────────────────────────
+  z_tollerance: 1000           # m, 1000 = sem restricao
+  rotation_tollerance: 1000    # rad, 1000 = sem restricao
+
+  # ── Mapa local (surrounding) ───────────────────────────────────────────
+  surroundingkeyframeAddingDistThreshold: 2.0   # m entre keyframes (era 0.1: 20x mais keyframes)
+  surroundingkeyframeAddingAngleThreshold: 0.2  # rad (~11.5 deg) pra adicionar keyframe
+  surroundingKeyframeDensity: 1.0               # m, downsample dos keyframes vizinhos
+  surroundingKeyframeSearchRadius: 30.0         # m, raio de busca dos vizinhos
+
+  # ── Loop closure ───────────────────────────────────────────────────────
+  loopClosureEnableFlag: true           # habilita deteccao e correcao de loop
+  loopClosureFrequency: 1.0             # Hz da thread de deteccao
+  surroundingKeyframeSize: 50           # keyframes vizinhos no mapa local de matching
+  historyKeyframeSearchRadius: 50.0     # m, raio pra buscar candidatos no historico
+  historyKeyframeSearchTimeDiff: 10.0   # s, diferenca temporal minima ate' o candidato
+  historyKeyframeSearchNum: 12          # keyframes agregados no candidato (12 * 2.0 m = ~24 m)
+  historyKeyframeFitnessScore: 0.5      # score ICP maximo pra aceitar o loop; menor = mais restritivo
+
+  # ── Visualizacao ───────────────────────────────────────────────────────
+  globalMapVisualizationSearchRadius: 1000.0  # m, raio do mapa global publicado
+  globalMapVisualizationPoseDensity: 10.0     # m, espacamento das poses amostradas
+  globalMapVisualizationLeafSize: 0.01        # m, voxel do downsample da visualizacao
