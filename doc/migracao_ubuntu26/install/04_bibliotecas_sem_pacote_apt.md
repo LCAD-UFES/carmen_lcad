@@ -4,7 +4,8 @@
 
 ```bash
 sudo apt-get install -y \
-    libgtk2.0-dev libgtk-3-dev qtbase5-dev \
+    libgtk2.0-dev libgtk-3-dev libgtkmm-2.4-dev qtbase5-dev \
+    libzmq3-dev \
     libimlib2-dev imagemagick libmagick++-dev \
     libwrap0-dev \
     libncurses-dev \
@@ -39,6 +40,58 @@ Trocas em relação ao tutorial de 16.04/20.04 (detalhes em `../AUDIT_DEPENDENCI
 | `libjasper-dev` | Só era necessário para compilar o OpenCV 3 na mão — irrelevante agora |
 | `libvtk5-dev`/`libvtk6-dev` | `libvtk9-dev` (já vem como dependência do `libpcl-dev`) |
 | `python-numpy`, `python-dev` (Python 2) | `python3-numpy`, `python3-dev` — Python 2 não existe mais |
+
+### `libgtkmm-2.4-dev` — o `list_ipc_message`
+
+Faltava no tutorial de 16.04/20.04. É o **binding C++ do GTK2**, e não vem junto com o
+`libgtk2.0-dev` (esse fornece só o `gtk+-2.0`, a API C) — é pacote independente.
+
+Quem precisa é `src/utilities/list_ipc_message`, o único Makefile da árvore que usa
+`pkg-config gtkmm-2.4`:
+
+```make
+IFLAGS += ... $(shell pkg-config --cflags gtkmm-2.4) ...
+LFLAGS += ... $(shell pkg-config --libs gtkmm-2.4) -lipc
+```
+
+Não é um módulo opcional: `utilities` está no `PACKAGES` do `src/Makefile`, e o
+`utilities/Makefile` tem `list_ipc_message` em `SUBDIRS`. Ou seja, **o `make` da árvore
+inteira passa por ele**, e sem o pacote o build para com `Package 'gtkmm-2.4' not found`.
+
+Conferir:
+
+```bash
+pkg-config --modversion gtkmm-2.4    # esperado: 2.24.x
+```
+
+### `libzmq3-dev` — o `pi_nit`
+
+Também faltava. É a lib C do ZeroMQ, usada pelo módulo `src/pi_nit` (detecção de pessoas no
+Raspberry Pi 5 + Hailo-8L, ver `../CHANGELOG.md`, item 46), que fala com o Raspberry por ZMQ:
+
+```make
+LFLAGS += ... -lzmq -lpthread -lm
+```
+
+`pi_nit` está no `PACKAGES`, então isto também é obrigatório para o build da árvore. O código
+inclui só `<zmq.h>`, a **API C** — o `cppzmq-dev` (binding C++ header-only, `zmq.hpp`) **não é
+necessário**, mesmo que apareça instalado em algumas máquinas.
+
+Conferir:
+
+```bash
+pkg-config --modversion libzmq       # esperado: 4.3.x
+ls /usr/include/zmq.h
+```
+
+> O lado do Raspberry (`src/pi_nit/pi_nit_server/`) é Python e usa `pyzmq`, instalado lá no
+> Pi — não nesta máquina.
+
+### Nota: `libgtkmm-3.0-dev` não é necessário
+
+`src/ipc_watcher/Makefile` usa `pkg-config gtkmm-3.0`, mas o `ipc_watcher` está
+**comentado** na lista `PACKAGES` do `src/Makefile`, então o build da árvore não passa por
+ele. Se você descomentar, aí sim precisa instalar `libgtkmm-3.0-dev`.
 
 ## 4.2 `libnsl` (o `param_daemon` linka `-lnsl`)
 

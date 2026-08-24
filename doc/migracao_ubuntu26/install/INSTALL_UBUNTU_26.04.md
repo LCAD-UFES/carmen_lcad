@@ -123,7 +123,8 @@ Bullet 3.24, SuiteSparse 7.12, VTK 9.5.2.
 
 ```bash
 sudo apt-get install -y \
-    libgtk2.0-dev libgtk-3-dev qtbase5-dev \
+    libgtk2.0-dev libgtk-3-dev libgtkmm-2.4-dev qtbase5-dev \
+    libzmq3-dev \
     libimlib2-dev imagemagick libmagick++-dev \
     libwrap0-dev \
     libncurses-dev \

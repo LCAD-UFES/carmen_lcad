@@ -50,6 +50,24 @@ customizado. Nada disso é mais necessário:
 | `python-numpy`, `python-dev`, `python-pip` (Python 2) | NOT-FOUND | `python3-numpy`, `python3-dev`, `python3-pip` |
 | `oracle-java8-installer` (PPA webupd8) | PPA morto | Não usado — `configure --nojava` |
 
+## Pacotes que o tutorial antigo nunca listou
+
+Não mudaram de nome nem sumiram — simplesmente faltavam no roteiro de 16.04/20.04. Os dois
+são **obrigatórios** para o `make` da árvore, porque os módulos que os usam estão no
+`PACKAGES` do `src/Makefile`.
+
+| Pacote | Quem exige | Sintoma se faltar |
+|---|---|---|
+| `libgtkmm-2.4-dev` | `src/utilities/list_ipc_message` (`pkg-config gtkmm-2.4`) | `Package 'gtkmm-2.4' not found` |
+| `libzmq3-dev` | `src/pi_nit` (`-lzmq`, inclui `<zmq.h>`) | `cannot find -lzmq` / `zmq.h: No such file or directory` |
+
+O `libgtkmm-2.4-dev` é o binding **C++** do GTK2 e é pacote independente do `libgtk2.0-dev`,
+que fornece só a API C (`gtk+-2.0`). O `pi_nit` usa apenas a API C do ZeroMQ, então o
+`cppzmq-dev` (`zmq.hpp`) **não** é necessário.
+
+`src/ipc_watcher` usa `gtkmm-3.0`, mas está comentado no `PACKAGES` — `libgtkmm-3.0-dev` só
+é preciso se ele for reativado.
+
 ## Removido do próprio Boost (não é questão de nome de pacote)
 
 - **`Boost.Signals`** (v1, `-lboost_signals`) — removido do Boost faz anos; não existe

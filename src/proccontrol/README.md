@@ -1,5 +1,9 @@
 # PROCCONTROL
 
+A sintaxe do arquivo de processos, a linha de comando do `proccontrol` e a forma como os
+caminhos são resolvidos na hora de iniciar um módulo estão em
+[README_ARQUIVO_DE_PROCESSOS.md](README_ARQUIVO_DE_PROCESSOS.md).
+
 ## Default values by comand line
 
 The map `button_slot_id` was defined as `<module_name, {Start Program, Stop Program, Show Output, No Output}>` containing the identifiers of each button, whose hash key is the module name. To set a default value of a button in a module, just pass it via the command line, and treat in the main function.

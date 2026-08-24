@@ -1069,3 +1069,152 @@ for pkg in $(make --eval='__p: ; @echo $(PACKAGES)' __p); do
     for l in $pub; do case " $tgt " in *" $l "*) ;; *) echo "$pkg: $l fora de TARGETS";; esac; done
 done
 ```
+
+## Sessão 3 — 2026-08-24
+
+### 50. `proccontrol`: variáveis, `-SET` na linha de comando e `#` deixado para o shell
+
+O `proccontrol` já sabia substituir `${VAR}` a partir de linhas `SET` do arquivo de
+processos, mas a implementação tinha limitações que apareciam justamente nos arquivos que
+mais usam caminhos parametrizados (`${MAP_PATH}`, `${LOG_PATH}`, `${PARAM_PATH}`). Cinco
+mudanças em `src/proccontrol/proccontrol.c`, todas na leitura do arquivo e na linha de
+comando — `start_process()`, `kill_process()` e o laço de `process_timer()` não foram
+tocados.
+
+**a) O arquivo de processos passou a ser o último argumento.**
+
+```c
+/* antes */                     /* depois */
+strcpy(filename, argv[1]);      strncpy(process_file, argv[argc - 1], sizeof(process_file) - 1);
+```
+
+Isso abre espaço para opções antes do arquivo. A forma de sempre —
+`proccontrol process-x.ini`, com o arquivo como único argumento — continua funcionando
+igual, porque aí `argv[1]` e `argv[argc-1]` são o mesmo argumento. O buffer também subiu
+de `char[256]` para `char[1000]`, e o `strcpy` virou `strncpy`.
+
+**b) Nova opção `-SET VAR=VALOR`, com precedência sobre o arquivo.**
+
+```bash
+proccontrol -SET MAP_PATH=/dados/mapa_novo process-volta_da_ufes.ini
+```
+
+As variáveis de `-SET` são registradas por `parse_options()` **antes** da leitura do
+arquivo; a nova `set_variable()` ignora uma linha `SET` que redefina variável já existente
+e avisa (`variable X of the process file overridden by the command line`). É dessa ordem
+que vem a precedência. Permite reaproveitar um arquivo de processos trocando só um caminho,
+sem editá-lo.
+
+**c) As variáveis passaram a ir também para o ambiente (`setenv`).**
+
+Antes a substituição era só textual: o módulo lançado não enxergava a variável. Agora
+`set_variable()` faz `setenv(var, value, 1)`, e como o módulo nasce de um `fork()` +
+`execv("/bin/bash", ...)` ele herda o ambiente. Com isso o módulo pode ler
+`getenv("MAP_PATH")`, e um `source venv/bin/activate` na `command_line` enxerga a variável.
+
+**d) O `#` deixou de ser removido da `command_line`.**
+
+Antes, a linha era truncada no **primeiro `#`, em qualquer posição** — o que destruía as
+expansões de parâmetro do shell que usam `#`:
+
+```c
+/* antes */
+for(i = 0; i < l; i++)
+    if(line[i] == '#' || line[i] == '\n')
+        line[i] = '\0';
+```
+
+Agora só o `\n` é retirado; o `#` faz parte da linha de comando e quem o interpreta é o
+`bash`. `${MAP_PATH##*/}` e `${#VAR}` passam a funcionar. Comentário no fim da linha
+continua funcionando — é o `bash` que o trata —, **desde que precedido de espaço**, que é a
+regra do próprio shell.
+
+Isso exigiu corrigir 8 arquivos de processos que tinham `${LOG_PATH}# -autostart on`, com o
+`#` colado. Nessa forma o `bash` não vê comentário: vê um argumento terminado em `#`, e o
+`playback` receberia um nome de arquivo inexistente. Passaram a ser `${LOG_PATH} # -autostart on`:
+
+```
+bin/process-volta_da_ufes_playback_aruco_bau.ini
+bin/process-volta_da_ufes_playback_sensorbox.ini
+bin/process-volta_da_ufes_playback_zed_aruco.ini
+bin/process-volta_da_ufes_playback_zed_aruco_1.ini
+bin/process-volta_da_ufes_playback_zed_aruco_1_2.ini
+bin/process-volta_da_ufes_playback_zed_teste.ini
+bin/process-volta_da_ufes_playback_zed_teste1.ini
+data/iara/process/process-volta_da_ufes_playback_sensorbox.ini
+```
+
+O último está num diretório (`data/iara/`) que nunca foi commitado nesta árvore; a correção
+foi feita no arquivo em disco, mas ele fica de fora deste commit.
+
+**e) Validação de formato, `SET` mais tolerante e `trim()` corrigido.**
+
+Cada linha de módulo passa por `sscanf(line, "%255s %255s %d %d %c", ...)` e, se não tiver
+os cinco campos, o `proccontrol` aborta dizendo **qual linha**
+(`LINE #23: INVALID FORMAT: ...`) em vez de montar um `process[]` silenciosamente errado.
+Pega, entre outros, o caso de uma variável que expande para vazio sendo todo o
+`command_line`.
+
+O parsing do `SET` passou de `"SET %[^= ] = %s#*"` para `"SET %255[^= ] = %255[^\n#]"` mais
+`trim()`: o valor agora pode conter espaços (`SET FRASE = uma frase com espaços`), aceita
+comentário na própria linha `SET`, e ganhou limite de largura no `sscanf` — antes era um
+`%s` sem limite escrevendo num `char[256]`.
+
+O `trim()` estava quebrado de duas formas e era código morto (não tinha chamador). Agora é
+usado, então foi corrigido: o descarte de espaços à esquerda só avançava um ponteiro local,
+sem alterar a string do chamador, e uma string vazia levava a `s[-1]` — que é exatamente o
+caso de `SET LOG_PATH=`, presente em vários arquivos da árvore.
+
+Junto disso, `env_replace()` foi **removida**. Ela expandia `${VAR}` a partir de `getenv()`
+antes do `exec`, o que era redundante — o `bash` já faz isso — e era o que quebrava
+`${VAR##*/}`, porque `getenv("MAP_PATH##*/")` devolve `NULL` e a variável virava string
+vazia. `$CARMEN_HOME` (a forma sem chaves, usada em 75 linhas da árvore) nunca passou por
+ela: sempre foi o `bash` que expandiu. O limite de variáveis subiu de 64 para 256
+(`MAX_VARS`), e a tabela `vars_use`/`values_use` saiu de local de `read_process_ini()` para
+o escopo do arquivo, já que agora `parse_options()` também a preenche.
+
+**Verificação.** Como `read_process_ini()` só roda depois do `carmen_ipc_initialize()` e
+lançaria os módulos de verdade, o parser foi exercitado por um harness que linka o
+`proccontrol.c` real com `-Dmain=...` e um `main` próprio que só chama
+`parse_options()` + `read_process_ini()` e imprime o `process[]` resultante. Os **392**
+`process*.ini` da árvore passam sem uma única rejeição de formato. Fim a fim, com o
+`central` no ar, um arquivo de teste confirmou: o módulo recebe `MAP_PATH` no ambiente
+(`getenv` e `${MAP_PATH##*/}` dentro do módulo), `$CARMEN_HOME` é expandido, o comentário
+`# ...` no fim da linha é ignorado pelo shell, `-SET` sobrepõe o arquivo, e a invocação
+antiga com o arquivo como único argumento continua idêntica.
+
+### 51. Tutorial: faltavam `libgtkmm-2.4-dev` e `libzmq3-dev` na lista de pacotes
+
+Dois pacotes obrigatórios para o `make` da árvore não estavam em nenhum bloco `apt-get
+install` do tutorial — nem no de 16.04/20.04, nem no novo. Numa máquina limpa o build
+pararia neles.
+
+**`libgtkmm-2.4-dev`** — exigido por `src/utilities/list_ipc_message`, o único Makefile da
+árvore que usa `pkg-config gtkmm-2.4`. Não é opcional: `utilities` está no `PACKAGES` do
+`src/Makefile` e `list_ipc_message` está no `SUBDIRS` do `utilities/Makefile`. É o binding
+**C++** do GTK2 e é pacote independente do `libgtk2.0-dev`, que fornece só a API C
+(`gtk+-2.0`) — confirmado com `dpkg -S` no `.pc`:
+
+```
+libgtkmm-2.4-dev:amd64: /usr/lib/x86_64-linux-gnu/pkgconfig/gtkmm-2.4.pc
+```
+
+Sem ele: `Package 'gtkmm-2.4' not found`.
+
+**`libzmq3-dev`** — exigido por `src/pi_nit` (item 46), que linka `-lzmq` e inclui `<zmq.h>`
+para falar com o Raspberry. `pi_nit` também está no `PACKAGES`. O módulo usa só a **API C**
+do ZeroMQ, então o `cppzmq-dev` (binding C++ header-only, `zmq.hpp`) não é necessário, ainda
+que apareça instalado em algumas máquinas.
+
+Sem ele: `cannot find -lzmq` ou `zmq.h: No such file or directory`.
+
+**Onde entrou:** os dois no bloco `apt` de `install/04_bibliotecas_sem_pacote_apt.md` (4.1) e
+no de `install/INSTALL_UBUNTU_26.04.md` (passo 6), mais três subseções novas em 4.1
+explicando quem exige cada um e como conferir, e uma seção nova em `AUDIT_DEPENDENCIAS.md`
+("Pacotes que o tutorial antigo nunca listou") — as tabelas de lá tratam de pacotes
+renomeados/extintos, e estes dois são um caso diferente: nunca foram listados.
+
+**Verificado de passagem:** `src/ipc_watcher/Makefile` usa `pkg-config gtkmm-3.0`, mas o
+`ipc_watcher` está **comentado** na lista `PACKAGES` do `src/Makefile`, então o build da
+árvore não passa por ele e `libgtkmm-3.0-dev` não entra na lista de obrigatórios. Ficou
+registrado como nota, para o caso de alguém reativar o módulo.

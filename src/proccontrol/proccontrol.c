@@ -35,11 +35,24 @@
 
 //#define OLD_SIGNALS_CONDITION
 
+/* Numero maximo de variaveis (linhas SET do arquivo de processos mais as
+   definidas por -SET na linha de comando). */
+#define MAX_VARS 256
+
 process_info_t process[MAX_PROCESSES];
 int num_processes = 0;
 int my_pid;
 char *my_hostname = NULL;
 char warning_msg[2000];
+
+/* Arquivo de processos em uso. */
+char process_file[1000];
+
+/* Tabela de variaveis. vars_use guarda o padrao ${VAR} ja montado, pronto para a
+   substituicao textual feita em read_process_ini(); values_use guarda o valor. */
+char vars_use[MAX_VARS][259];
+char values_use[MAX_VARS][256];
+int n_vars = 0;
 
 void kill_process(process_info_p process)
 {
@@ -341,50 +354,79 @@ void str_replace(char *dest, char *orig, char *rep, char *with) {
 	free(result);
 }
 
-void env_replace(char *dest, char *orig)
-{
-	int is_env = 0;
-	char env_name[1021], _env_name[1024], *val;
-	for (size_t i = 0, j = 0; orig[i] && orig[i+1]; i++)
-	{
-		if (!is_env && (orig[i] == '$') && (orig[i+1] == '{'))
-		{
-			j = 0;
-			i+=1;
-			is_env = 1;
-			continue;
-		}
-		else if(is_env && (orig[i] == '}'))
-		{
-			env_name[j] = '\0';
-			is_env = 0;
-			val = getenv(env_name);
-			sprintf(_env_name, "${%s}", env_name);
-			str_replace(dest, orig, _env_name, val);
-			continue;
-		}
-		if (is_env)
-			env_name[j++] = orig[i];
-	}
-
-}
-
-// https://stackoverflow.com/questions/656542/trim-a-string-in-c
+/* Remove espacos em branco do inicio e do fim de s, no lugar. Trata string
+   vazia e string so de espacos, casos que ocorrem em linhas como "SET VAR=". */
 void trim(char *s)
 {
-    int i;
+	char *start = s;
+	size_t len;
 
-    while (isspace (*s)) s++;
-    for (i = strlen (s) - 1; (isspace (s[i])); i--);
-    s[i + 1] = '\0';
+	while (*start != '\0' && isspace((unsigned char)*start))
+		start++;
+	if (start != s)
+		memmove(s, start, strlen(start) + 1);
+
+	for (len = strlen(s); len > 0 && isspace((unsigned char)s[len - 1]); len--)
+		s[len - 1] = '\0';
+}
+
+/* Registra VAR=VALOR na tabela de variaveis e tambem no ambiente, de modo que o
+   modulo lancado enxergue a variavel via getenv() e que scripts invocados na
+   linha de comando do modulo possam usa-la.
+
+   Precedencia: as definicoes de -SET (linha de comando) sao registradas antes da
+   leitura do arquivo; por isso, uma linha SET do arquivo que redefina a mesma
+   variavel e ignorada. */
+void set_variable(char *var, char *value, int from_command_line)
+{
+	char var_pattern[259];
+	int l;
+
+	if (strlen(var) == 0)
+	{
+		fprintf(stderr, "Error: empty variable name in %s.\n",
+				from_command_line ? "command line" : "process file");
+		return;
+	}
+
+	snprintf(var_pattern, sizeof(var_pattern), "${%s}", var);
+
+	for (l = 0; l < n_vars; l++)
+		if (strcmp(vars_use[l], var_pattern) == 0)
+		{
+			if (!from_command_line)
+			{
+				fprintf(stderr, "Info: variable %s of the process file overridden by the command line.\n", var);
+				return;
+			}
+			/* -SET repetido na propria linha de comando: o ultimo vence. */
+			fprintf(stderr, "Warning: command line variable %s redefined.\n", var);
+			snprintf(values_use[l], sizeof(values_use[l]), "%s", value);
+			setenv(var, value, 1);
+			return;
+		}
+
+	if (n_vars >= MAX_VARS)
+	{
+		fprintf(stderr, "Error: maximum number of variables (%d) exceeded; %s ignored.\n", MAX_VARS, var);
+		return;
+	}
+
+	snprintf(vars_use[n_vars], sizeof(vars_use[n_vars]), "${%s}", var);
+	snprintf(values_use[n_vars], sizeof(values_use[n_vars]), "%s", value);
+	setenv(var, value, 1);
+	fprintf(stderr, "Info: setting variable from %s: %s = %s\n",
+			from_command_line ? "command line" : "process file", var, values_use[n_vars]);
+	n_vars++;
 }
 
 void read_process_ini(char *filename)
 {
 	FILE *fp;
-	char *err, *mark, line[4096], 
-		 var[256], value[256], vars_use[64][259], values_use[64][256];
-	int i, l, n_vars=0;
+	char *err, *mark, line[4096],
+		 token1[256], token2[256], token5,
+		 var[256], value[256];
+	int i, l, count_lines = 0, count_tokens, token3, token4;
 
 	num_processes = 0;
 
@@ -395,17 +437,25 @@ void read_process_ini(char *filename)
 	do {
 		err = fgets(line, 1000, fp);
 		if(err != NULL) {
+			count_lines++;
+
 			/* variable */
-			if(!strncmp("SET", line, 3) && (n_vars < 64))
+			if(!strncmp("SET", line, 3))
 			{
-				if (sscanf(line, "SET %[^= ] = %s#*", var, value))
-				{
-					sprintf(vars_use[n_vars], "${%s}", var);
-					sprintf(values_use[n_vars], "%s", value);
-					n_vars++;
-				}
-				for (l = 0; l < n_vars; l++) // replace variables
+				/* expande na propria linha SET as variaveis ja definidas */
+				for (l = 0; l < n_vars; l++)
 					str_replace(line, line, vars_use[l], values_use[l]);
+
+				var[0] = '\0';
+				value[0] = '\0';
+				if (sscanf(line, "SET %255[^= ] = %255[^\n#]", var, value) < 1)
+				{
+					fprintf(stderr, "LINE #%d: INVALID SET FORMAT:   %s", count_lines, line);
+					continue;
+				}
+				trim(var);
+				trim(value);
+				set_variable(var, value, 0);
 
 				continue;
 			}
@@ -413,12 +463,25 @@ void read_process_ini(char *filename)
 			for (l = 0; l < n_vars; l++) // replace variables
 				str_replace(line, line, vars_use[l], values_use[l]);
 
-			env_replace(line, line);
+			/* Valida o formato da linha: os quatro primeiros campos e o primeiro
+			   caractere do quinto (a linha de comando). Linha em branco e linha de
+			   comentario sao ignoradas; o resto e erro fatal, com o numero da linha. */
+			count_tokens = sscanf(line, "%255s %255s %d %d %c", token1, token2, &token3, &token4, &token5);
+			if (count_tokens <= 0 || token1[0] == '#' || token1[0] == '\n')
+				continue;
+			if (count_tokens != 5 || strchr(token1, '#') != NULL || strchr(token2, '#') != NULL ||
+					token5 == '#' || token5 == '\n')
+			{
+				fprintf(stderr, "LINE #%d: INVALID FORMAT:   %s", count_lines, line);
+				exit(1);
+			}
 
 			l = strlen(line);
-			/* strip out comments and newlines */
+			/* Tira so o fim de linha. O '#' NAO e removido aqui: ele faz parte da
+			   linha de comando, e quem o interpreta e o shell -- e assim as
+			   expansoes de parametro do bash que usam '#' chegam intactas. */
 			for(i = 0; i < l; i++)
-				if(line[i] == '#' || line[i] == '\n')
+				if(line[i] == '\n')
 					line[i] = '\0';
 
 			/* advance to the first non-whitespace character */
@@ -514,21 +577,71 @@ static void reconnect_central(void)
 	} while(err == -1);
 }
 
+/* Le as opcoes da linha de comando. So existe uma: -SET VAR=VALOR, que define
+   uma variavel com precedencia sobre a linha SET equivalente do arquivo de
+   processos. O ultimo argumento (o arquivo) fica de fora: quem chama passa
+   argc - 1. */
+void parse_options(int argc, char **argv)
+{
+	char var[256], value[256], *eq_ptr;
+	int parameter = 0;
+	size_t len;
+
+	while(++parameter < argc)
+	{
+		if(strcmp(argv[parameter], "-SET") != 0)
+			continue;
+
+		if(parameter + 1 >= argc)
+			carmen_die("Error: -SET requires a VAR=VALUE argument.\n");
+
+		parameter++;
+		eq_ptr = strchr(argv[parameter], '=');
+		if(eq_ptr == NULL || eq_ptr == argv[parameter])
+		{
+			fprintf(stderr, "Error: invalid format for -SET. Use -SET VAR=VALUE. Argument: %s\n",
+					argv[parameter]);
+			continue;
+		}
+
+		len = eq_ptr - argv[parameter];
+		if(len > sizeof(var) - 1)
+			len = sizeof(var) - 1;
+		memcpy(var, argv[parameter], len);
+		var[len] = '\0';
+
+		strncpy(value, eq_ptr + 1, sizeof(value) - 1);
+		value[sizeof(value) - 1] = '\0';
+
+		trim(var);
+		trim(value);
+		set_variable(var, value, 1);
+	}
+}
+
 int main(int argc, char **argv)
 {
-	char filename[256];
-
 	my_hostname = carmen_get_host();
+
+	/* O arquivo de processos e sempre o ULTIMO argumento; as opcoes vem antes. */
 	if(argc >= 2)
-		strcpy(filename, argv[1]);
+	{
+		strncpy(process_file, argv[argc - 1], sizeof(process_file) - 1);
+		process_file[sizeof(process_file) - 1] = '\0';
+	}
 	else {
-		strcpy(filename, "process.ini");
-		if(!carmen_file_exists(filename))
-			strcpy(filename, "../race/src/process.ini");
+		strcpy(process_file, "process.ini");
+		if(!carmen_file_exists(process_file))
+			strcpy(process_file, "../race/src/process.ini");
 	}
 
-	if(!carmen_file_exists(filename))
-		carmen_die("Error: could not open process file %s\n", filename);
+	if(!carmen_file_exists(process_file))
+		carmen_die("Error: could not open process file %s\n", process_file);
+
+	/* As variaveis de -SET sao registradas antes da leitura do arquivo; e dessa
+	   ordem que vem a precedencia da linha de comando (ver set_variable()). */
+	if(argc > 1)
+		parse_options(argc - 1, argv);
 
 	/* construct unique IPC module name */
 	snprintf(module_name, 200, "%s-%d", carmen_extract_filename(argv[0]), getpid());
@@ -541,7 +654,7 @@ int main(int argc, char **argv)
 	/* get my process ID */
 	my_pid = getpid();
 
-	read_process_ini(filename);
+	read_process_ini(process_file);
 
 	/* subscribe to requests to change process and group state */
 	carmen_subscribe_message(CARMEN_PROCCONTROL_MODULESET_NAME,
