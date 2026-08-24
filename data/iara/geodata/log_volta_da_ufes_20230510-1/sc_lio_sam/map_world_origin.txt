@@ -1,6 +1,0 @@
-# origem do mundo: frame CARMEN/UTM <- frame do mapa (SC-LIO-SAM)
-# x y z roll pitch yaw
-# roll e pitch ainda NAO sao estimados (origem planar) -- reservados
-7757873.427393108 -363749.493975439 5.609086737 0.000000000 0.000000000 -2.237043311
-# amostras=280 yaw_std_deg=84.727808242 rumo_bussola=280 rumo_deslocamento=16
-pesos 28000.000000000 23485.713799483
