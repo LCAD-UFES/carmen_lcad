@@ -1,6 +1,4 @@
 bin/frenet_path_planner
-bin/offroad_planner
-bin/route_planner
 lib/libfrenet_path_planner_interface.a
 lib/liboffroad_planner_interface.a
 lib/libroute_planner_interface.a
@@ -210,8 +208,6 @@ bin/minorucalib
 #bin/ouster
 bin/ouster_viewer
 bin/frenet_path_planner
-bin/offroad_planner
-bin/route_planner
 bin/task_manager
 bin/config_usb_extra_keys.bash  
 bin/extra_keys
