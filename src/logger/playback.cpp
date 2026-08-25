@@ -1470,6 +1470,26 @@ read_message(int message_num, int publish, int no_wait)
 			command[j] = line[j];
 		command[j] = 0;
 
+		// Ha' logs em que o GPS vem numerado no PROPRIO nome da mensagem
+		// ("NMEAGGA1"), e nao so' no campo nr que vem logo depois na linha. Como
+		// o casamento abaixo e' por strncmp com o tamanho do token lido, o sufixo
+		// faz "NMEAGGA1" nao bater com "NMEAGGA" da tabela -- e a linha era
+		// descartada em silencio: nenhum GPGGA publicado, nenhum aviso.
+		// O numero e' redundante (o nr e' o primeiro campo), entao basta apara-lo.
+		// So' o NMEAGGA precisa disso: as mensagens que ja' nascem numeradas
+		// (VELODYNE_VARIABLE_SCAN_IN_FILE0 e afins) tem entrada propria na tabela.
+		if (strncmp(command, "NMEAGGA", 7) == 0 && command[7] != '\0')
+		{
+			int k = 7;
+			while (command[k] >= '0' && command[k] <= '9')
+				k++;
+			if (command[k] == '\0')	// so' digitos ate' o fim: e' mesmo o sufixo
+			{
+				command[7] = '\0';
+				j = 7;
+			}
+		}
+
 		if (strncmp(command, logger_callbacks[i].logger_message_name, j) == 0)
 		{
 			if (!basic_messages || !logger_callbacks[i].interpreted)

@@ -706,12 +706,28 @@ char *carmen_string_to_robot_ackerman_laser_message(char *string,
 	return current_pos;
 }
 
+// O proximo campo da linha comeca com letra? Usado para distinguir os dois layouts
+// do NMEAGGA sem precisar contar campos. Nao consome nada.
+static int
+next_field_is_alphabetic(const char *pos)
+{
+	if (pos == NULL)
+		return (0);
+
+	while (*pos == ' ' || *pos == '\t')
+		pos++;
+
+	return ((*pos >= 'A' && *pos <= 'Z') || (*pos >= 'a' && *pos <= 'z'));
+}
+
+
 char *carmen_string_to_gps_gpgga_message(char *string,
 		carmen_gps_gpgga_message *gps_msg)
 {
 	char *current_pos = string;
 
-	if (strncmp(current_pos, "NMEAGGA ", 8) == 0)
+	// "NMEAGGA " ou "NMEAGGA<n> ": ha' logs que numeram o GPS no proprio nome.
+	if (strncmp(current_pos, "NMEAGGA", 7) == 0)
 		current_pos = carmen_next_word(current_pos);
 
 	gps_msg->nr               = CLF_READ_INT(&current_pos);
@@ -735,9 +751,37 @@ char *carmen_string_to_gps_gpgga_message(char *string,
 	gps_msg->num_satellites   = CLF_READ_INT(&current_pos);
 	gps_msg->hdop             = CLF_READ_DOUBLE(&current_pos);
 	gps_msg->sea_level        = CLF_READ_DOUBLE(&current_pos);
-	gps_msg->altitude         = CLF_READ_DOUBLE(&current_pos);
-	gps_msg->geo_sea_level    = CLF_READ_DOUBLE(&current_pos);
-	gps_msg->geo_sep          = CLF_READ_DOUBLE(&current_pos);
+
+	// Depois da altitude ha' dois layouts em circulacao:
+	//
+	//   CARMEN  ... hdop sea_level altitude geo_sea_level geo_sep data_age ...
+	//   outro   ... hdop altitude  'M'      geo_sep       'M'     data_age ...
+	//
+	// O segundo guarda a UNIDADE do GPGGA ('M' de metros) depois de cada altitude,
+	// como no proprio NMEA. Distinguir pelo conteudo e' seguro: naquela posicao um
+	// e' sempre numero e o outro sempre letra.
+	//
+	// Isto NAO era um erro barulhento: CLF_READ_DOUBLE e' strtod, que numa letra
+	// devolve 0.0 e NAO avanca o ponteiro. Um 'M' inesperado travava a leitura ali
+	// e todo o resto da linha -- inclusive o timestamp -- saía zerado, calado.
+	if (next_field_is_alphabetic(current_pos))
+	{
+		gps_msg->altitude = gps_msg->sea_level;		// mesma grandeza, nomes diferentes
+		current_pos = carmen_next_word(current_pos);
+		CLF_READ_CHAR(&current_pos);			// unidade da altitude
+
+		gps_msg->geo_sea_level = CLF_READ_DOUBLE(&current_pos);
+		gps_msg->geo_sep       = gps_msg->geo_sea_level;
+		current_pos = carmen_next_word(current_pos);
+		CLF_READ_CHAR(&current_pos);			// unidade da separacao geoidal
+	}
+	else
+	{
+		gps_msg->altitude         = CLF_READ_DOUBLE(&current_pos);
+		gps_msg->geo_sea_level    = CLF_READ_DOUBLE(&current_pos);
+		gps_msg->geo_sep          = CLF_READ_DOUBLE(&current_pos);
+	}
+
 	gps_msg->data_age         = CLF_READ_INT(&current_pos);
 	gps_msg->timestamp        = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&gps_msg->host, &current_pos);

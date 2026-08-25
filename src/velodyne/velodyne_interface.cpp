@@ -2,6 +2,40 @@
 #include <carmen/carmen.h>
 #include <carmen/velodyne_messages.h>
 
+/*
+ * LiDARs cujo driver NAO aplica o desvio de azimute por canal -- quem corrige e' o
+ * CARMEN, com lidar<N>_horizontal_angles. Sao os Hesai de 128 canais em uso.
+ * Modelo novo que precise da correcao: acrescentar aqui.
+ */
+static const char *special_lidar_models[] =
+{
+	"OT-128",
+	"JT-128",
+	NULL
+};
+
+static int
+is_special_model(const char *model)
+{
+	if (model == NULL)
+		return (0);
+
+	for (int i = 0; special_lidar_models[i] != NULL; i++)
+	{
+		if (strcmp(model, special_lidar_models[i]) == 0)
+			return (1);
+	}
+
+	return (0);
+}
+
+
+int
+needs_horizontal_correction(const char *model)
+{
+	return (is_special_model(model));
+}
+
 int velodyne_vertical_correction_size = 32;
 
 double velodyne_vertical_correction[32] =
@@ -231,8 +265,8 @@ carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message 
 
 
 void
-carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_partial_scan_message *velodyne_message,
-		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
+carmen_velodyne_partial_scan_update_points_with_horizontal_correction(carmen_velodyne_partial_scan_message *velodyne_message,
+		int vertical_resolution, spherical_point_cloud *points, double *horizontal_angles_deltas, unsigned char *intensity,
 		int *ray_order, double *vertical_correction, double range_max, double timestamp, int use_remission)
 {
 	points->timestamp = timestamp;
@@ -241,7 +275,10 @@ carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_
 	{
 		for (int j = 0; j < vertical_resolution; j++)
 		{
-			double angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle);
+			// horizontal_angles_deltas NULL == LiDAR sem correcao de azimute por canal:
+			// delta 0 deixa o angulo exatamente como era antes desta funcao existir.
+			double delta = (horizontal_angles_deltas != NULL) ? horizontal_angles_deltas[j] : 0.0;
+			double angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle + delta);
 			double range = (double) (velodyne_message->partial_scan[i].distance[ray_order[j]]) / 500.0;
 
 			if (range <= 0.0)  // @@@ Aparentemente o Velodyne diz range zero quando de range_max
@@ -263,8 +300,19 @@ carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_
 
 
 void
-variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_message *msg, int vertical_resolution, spherical_point_cloud *points,
-		unsigned char *intensity, int *ray_order, double *vertical_correction, double range_max, double range_division_factor, double timestamp, int use_remission)
+carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_partial_scan_message *velodyne_message,
+		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
+		int *ray_order, double *vertical_correction, double range_max, double timestamp, int use_remission)
+{
+	carmen_velodyne_partial_scan_update_points_with_horizontal_correction(velodyne_message, vertical_resolution, points,
+			NULL, intensity, ray_order, vertical_correction, range_max, timestamp, use_remission);
+}
+
+
+void
+variable_scan_update_points_with_horizontal_correction(carmen_velodyne_variable_scan_message *msg, int vertical_resolution,
+		spherical_point_cloud *points, double *horizontal_angles_deltas, unsigned char *intensity, int *ray_order,
+		double *vertical_correction, double range_max, double range_division_factor, double timestamp, int use_remission)
 {
 	points->timestamp = timestamp;
 
@@ -272,7 +320,9 @@ variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_m
 	{
 		for (int j = 0; j < vertical_resolution; j++)
 		{
-			double angle = carmen_degrees_to_radians(msg->partial_scan[i].angle);
+			// Ver comentario na versao partial_scan: NULL == sem correcao.
+			double delta = (horizontal_angles_deltas != NULL) ? horizontal_angles_deltas[j] : 0.0;
+			double angle = carmen_degrees_to_radians(msg->partial_scan[i].angle + delta);
 			double range = (double) (msg->partial_scan[i].distance[ray_order[j]]) / range_division_factor;
 
 			if (range <= 0.0)
@@ -281,11 +331,20 @@ variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_m
 			points->sphere_points[i * vertical_resolution + j].horizontal_angle = carmen_normalize_theta(-angle);
 			points->sphere_points[i * vertical_resolution + j].vertical_angle = carmen_degrees_to_radians(vertical_correction[j]);
 			points->sphere_points[i * vertical_resolution + j].length = range;
-			
+
 			if (use_remission)
 				intensity[i * vertical_resolution + j] = msg->partial_scan[i].intensity[ray_order[j]];
 		}
 	}
+}
+
+
+void
+variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_message *msg, int vertical_resolution, spherical_point_cloud *points,
+		unsigned char *intensity, int *ray_order, double *vertical_correction, double range_max, double range_division_factor, double timestamp, int use_remission)
+{
+	variable_scan_update_points_with_horizontal_correction(msg, vertical_resolution, points, NULL, intensity, ray_order,
+			vertical_correction, range_max, range_division_factor, timestamp, use_remission);
 }
 
 
@@ -380,6 +439,7 @@ void
 load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lidar_config)
 {
     char *vertical_angles_string, *ray_order_string;
+    char *horizontal_angles_string = NULL;
     char lidar_string[256];
 
  	carmen_lidar_config *lidar_config_p = *lidar_config;
@@ -411,14 +471,56 @@ load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lid
  	};
  	carmen_param_install_params(argc, argv, param_list, (sizeof(param_list) / sizeof(param_list[0])));
 
+	// lidar<N>_horizontal_angles e' OPCIONAL: LiDAR que nao precisa de correcao de
+	// azimute por canal simplesmente nao tem a chave, e o calloc abaixo deixa tudo
+	// em zero -- mesmo resultado de antes deste parametro existir.
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t optional_param_list[] =
+	{
+		{lidar_string, (char *) "horizontal_angles", CARMEN_PARAM_STRING, &horizontal_angles_string, 0, NULL},
+	};
+	carmen_param_install_params(argc, argv, optional_param_list, (sizeof(optional_param_list) / sizeof(optional_param_list[0])));
+	carmen_param_allow_unfound_variables(0);
+
     lidar_config_p->vertical_angles = (double *) malloc(lidar_config_p->shot_size * sizeof(double));
  	lidar_config_p->ray_order = (int *) malloc(lidar_config_p->shot_size * sizeof(int));
- 		
+	lidar_config_p->horizontal_angles_deltas = (double *) calloc(lidar_config_p->shot_size, sizeof(double));
+
+	// CLF_READ_DOUBLE e' strtod: numa string exaurida ele devolve 0.0 e nao avanca,
+	// sem sinalizar erro. A contagem abaixo serve so' pra AVISAR quando a chave vem
+	// com menos valores que shot_size -- os canais sem valor ficam com delta 0 (o
+	// calloc acima), que e' o mesmo resultado de um LiDAR sem correcao horizontal.
+	//
+	// Nao desligar a correcao inteira nesse caso: os .ini em uso trazem a tabela de
+	// azimute parcial (so' os canais medidos na calibracao) e contam com os demais
+	// em zero. Zerar tudo descartaria a correcao dos canais que ela tem, e a nuvem
+	// sai igual a de antes deste parametro existir.
+	int horizontal_angles_count = 0;
+	if (horizontal_angles_string != NULL)
+	{
+		char *p = horizontal_angles_string, *end = NULL;
+		for (double v = strtod(p, &end); end != p; v = strtod(p, &end))
+		{
+			(void) v;
+			horizontal_angles_count++;
+			p = end;
+		}
+		if (horizontal_angles_count < lidar_config_p->shot_size)
+			carmen_warn("lidar%d_horizontal_angles tem %d valores para shot_size %d: "
+					"os %d canais restantes ficam com offset de azimute 0.\n",
+					lidar_id, horizontal_angles_count, lidar_config_p->shot_size,
+					lidar_config_p->shot_size - horizontal_angles_count);
+	}
+
 	for (int i = 0; i < lidar_config_p->shot_size; i++)
  		lidar_config_p->ray_order[i] = CLF_READ_INT(&ray_order_string); // CLF_READ_INT takes an int number from a string
 
    	for (int i = 0; i < lidar_config_p->shot_size; i++)
+	{
  		lidar_config_p->vertical_angles[i] = CLF_READ_DOUBLE(&vertical_angles_string); // CLF_READ_DOUBLE takes a double number from a string
+		if (horizontal_angles_string != NULL)
+			lidar_config_p->horizontal_angles_deltas[i] = CLF_READ_DOUBLE(&horizontal_angles_string);
+	}
 
  	// DO NOT ERASE very useful for debug
  	// printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config_p->model, lidar_config_p->port, lidar_config_p->shot_size, lidar_config_p->min_sensing, lidar_config_p->max_sensing, lidar_config_p->range_division_factor, lidar_config_p->time_between_shots);

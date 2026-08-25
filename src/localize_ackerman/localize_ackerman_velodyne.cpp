@@ -510,8 +510,9 @@ localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(carmen_compact
 	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points,
 			NUM_VELODYNE_POINT_CLOUDS, carmen_localize_ackerman_use_remission(velodyne_params->correction_type));
 
-	variable_scan_update_points_with_remission_check(velodyne_message, velodyne_params->vertical_resolution,
-			&(velodyne_data->points[velodyne_data->point_cloud_index]), velodyne_data->intensity[velodyne_data->point_cloud_index],
+	variable_scan_update_points_with_horizontal_correction(velodyne_message, velodyne_params->vertical_resolution,
+			&(velodyne_data->points[velodyne_data->point_cloud_index]), velodyne_params->horizontal_angles_deltas,
+			velodyne_data->intensity[velodyne_data->point_cloud_index],
 			velodyne_params->ray_order,	velodyne_params->vertical_correction, velodyne_params->range_max, 
 			velodyne_params->range_division_factor, velodyne_message->timestamp,
 			carmen_localize_ackerman_use_remission(velodyne_params->correction_type));
@@ -559,7 +560,8 @@ localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variabl
 	build_sensor_point_cloud(&(sensor_data->points), sensor_data->intensity, &(sensor_data->point_cloud_index), num_points,
 			NUM_VELODYNE_POINT_CLOUDS, carmen_localize_ackerman_use_remission(sensor_params->correction_type));
 
-	variable_scan_update_points_with_remission_check(msg, sensor_params->vertical_resolution, &(sensor_data->points[sensor_data->point_cloud_index]),
+	variable_scan_update_points_with_horizontal_correction(msg, sensor_params->vertical_resolution, &(sensor_data->points[sensor_data->point_cloud_index]),
+			sensor_params->horizontal_angles_deltas,
 			sensor_data->intensity[sensor_data->point_cloud_index], sensor_params->ray_order, sensor_params->vertical_correction, sensor_params->range_max,
 			sensor_params->range_division_factor, msg->timestamp, carmen_localize_ackerman_use_remission(sensor_params->correction_type));
 
@@ -605,7 +607,8 @@ localize_ackerman_variable_scan_build_instanteneous_maps(carmen_velodyne_variabl
 	build_sensor_point_cloud(&(sensor_data->points), sensor_data->intensity, &(sensor_data->point_cloud_index), num_points,
 			NUM_VELODYNE_POINT_CLOUDS, carmen_localize_ackerman_use_remission(sensor_params->correction_type));
 
-	variable_scan_update_points_with_remission_check(msg, sensor_params->vertical_resolution, &(sensor_data->points[sensor_data->point_cloud_index]),
+	variable_scan_update_points_with_horizontal_correction(msg, sensor_params->vertical_resolution, &(sensor_data->points[sensor_data->point_cloud_index]),
+			sensor_params->horizontal_angles_deltas,
 			sensor_data->intensity[sensor_data->point_cloud_index], sensor_params->ray_order, sensor_params->vertical_correction, sensor_params->range_max,
 			sensor_params->range_division_factor, msg->timestamp, carmen_localize_ackerman_use_remission(sensor_params->correction_type));
 

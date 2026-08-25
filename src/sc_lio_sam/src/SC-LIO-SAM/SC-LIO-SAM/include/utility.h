@@ -255,6 +255,13 @@ public:
     double posesOriginMaxDt;       // casamento GPS <-> pose SLAM (s)
     double posesOriginMinBaseline; // deslocamento minimo (m) pra tirar rumo do movimento
     double posesOriginRelPosNoise; // variancia do erro RELATIVO do GPS (m^2)
+    // Exigir que o robo ENCAIXE no mapa antes de comecar a gravar poses.
+    // O encaixe (locEverAnchored) so' e' marcado por um snap: clique no RViz,
+    // auto-relocalize por GPS, ou Scan Context. Num veiculo SEM GPS, em
+    // posesOriginMode "manual", nenhum dos tres acontece sozinho -- e o arquivo
+    // ficava vazio esperando um encaixe que nunca vinha.
+    // Default: exige em modo "gps", nao exige em modo "manual".
+    bool   posesRequireAnchor;
     int    posesSettleScans;
     double posesInterpolateMaxGap;
     double posesInterpolateMaxError;
@@ -386,6 +393,12 @@ public:
         nh.param<double>("lio_sam/posesOriginMaxDt", posesOriginMaxDt, 0.50);
         nh.param<double>("lio_sam/posesOriginMinBaseline", posesOriginMinBaseline, 1.0);
         nh.param<double>("lio_sam/posesOriginRelPosNoise", posesOriginRelPosNoise, 0.25);
+        // Default derivado do modo da origem: em "gps" a pose inicial vem de um fix
+        // que ainda nao foi validado contra o mapa, entao esperar o encaixe evita
+        // gravar o salto da correcao. Em "manual" a pose inicial e' a que o operador
+        // deu (initialPose*), nao ha' salto nenhum para esperar.
+        // Pode ser forcado nos dois sentidos pelo .yaml.
+        nh.param<bool>("lio_sam/posesRequireAnchor", posesRequireAnchor, (posesOriginMode == "gps"));
         nh.param<int>("lio_sam/posesSettleScans",  posesSettleScans, 20);
         nh.param<double>("lio_sam/posesInterpolateMaxGap", posesInterpolateMaxGap, 5.0);
         nh.param<double>("lio_sam/posesInterpolateMaxError", posesInterpolateMaxError, 0.10);

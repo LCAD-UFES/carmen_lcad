@@ -23,6 +23,15 @@ typedef struct
 	int *ray_order;                 // Order of the laser beams from the bottom up
 	double *vertical_angles;        // Angles beteween laser beams in the same shot
 	int sensor_reference;			// If it is in reference in relation to the sensorboard (0), to the front_bullbar (1), or the rear_bullbar (2)
+	// Offset de azimute de cada canal, em graus, lido de lidar<N>_horizontal_angles.
+	// LiDARs multi-canal (Hesai OT-128, por exemplo) nao disparam todos os raios de um
+	// shot no mesmo azimute: cada canal tem um desvio proprio, de ate' alguns graus.
+	// Ignorar isso borra a nuvem em azimute -- a 50 m, 4 graus dao ~3,5 m de erro lateral.
+	// Campo OPCIONAL: load_lidar_config() faz calloc, entao fica tudo zero (= sem
+	// correcao, comportamento antigo) quando a chave nao existe no .ini.
+	// Acrescentado no FIM do struct de proposito: assim os offsets dos campos que ja'
+	// existiam nao mudam, e objeto antigo que nao usa este campo continua valido.
+	double *horizontal_angles_deltas;
 }carmen_lidar_config;
 
 typedef struct

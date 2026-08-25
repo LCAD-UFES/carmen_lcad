@@ -61,8 +61,18 @@ lio_sam:
   # So' em localizationMode, e so' depois que o robo encaixa no mapa. E' este
   # arquivo que alimenta o graphslam pra gerar o mapa CARMEN.
   posesEnable: true               # liga/desliga a gravacao inteira
-  posesOutputFile: "/dados/sc_lio_sam_output/poses_opt.dat"
+  posesOutputFile: "/dados/sc_lio_sam_output/poses_opt2.dat"
   posesStartTime: 0.0             # so' grava scans com stamp ROS >= isto; 0 = desligado
+  # posesRequireAnchor: exigir que o robo ENCAIXE no mapa antes de comecar a gravar.
+  # O encaixe so' e' marcado por um snap -- clique de "2D Pose Estimate" no RViz,
+  # auto-relocalize por GPS, ou Scan Context. O ARGOS nao tem GPS, entao nenhum dos
+  # tres acontece sozinho: sem esta chave em false, o poses_opt.dat fica VAZIO
+  # esperando um encaixe que nunca vem, mesmo com o robo ja' partindo do lugar certo.
+  # Aqui a pose inicial e' a que o operador deu em initialPose*, nao vem de fix
+  # nenhum, entao nao ha' correcao pendente para esperar.
+  # O default ja' e' false quando posesOriginMode e' "manual"; fica explicito porque
+  # e' a diferenca que faz o arquivo existir.
+  posesRequireAnchor: false
   posesSettleScans: 20            # scans descartados apos cada encaixe (~1 s a 20 Hz)
   posesInterpolateMaxError: 0.10  # m, flecha maxima (s*dyaw/8) pra interpolar scan nao processado
   posesInterpolateMaxGap: 5.0     # s, teto de sanidade da interpolacao; 0 = desliga
@@ -172,7 +182,7 @@ lio_sam:
   surroundingKeyframeSearchRadius: 70.0         # Raio (m) de busca de keyframes vizinhos para o scan matching local
 
   # ── Loop closure ───────────────────────────────────────────────────────
-  loopClosureEnableFlag: false            # Habilita detecção e correção de loop closure (fecha trajetórias repetidas)
+  loopClosureEnableFlag: true            # Habilita detecção e correção de loop closure (fecha trajetórias repetidas)
   loopClosureFrequency: 1.0        # Taxa (Hz) de execução da thread de detecção de loop closure; ref = 1.0
   surroundingKeyframeSize: 100 #50           # Número de keyframes vizinhos usados para construir o mapa local de matching
   historyKeyframeSearchRadius: 15.0     # Raio (m) para buscar candidatos de loop closure no histórico de poses

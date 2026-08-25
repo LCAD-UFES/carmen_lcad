@@ -97,16 +97,38 @@ if(CUDA_FOUND)
   #   sm_61 -> GTX 10 series, ex 1060/1070/1080 (Pascal) -- CUDA >= 8.0
   #   sm_75 -> RTX 20 series (Turing)        -- CUDA >= 10.0
   #   sm_86 -> RTX 30 series (Ampere)        -- CUDA >= 11.1
+  #   sm_89 -> RTX 40 series (Ada Lovelace)  -- CUDA >= 11.8
+  #   sm_120 -> RTX 50 series (Blackwell)    -- CUDA >= 12.8
   # Se a frota ainda tiver placa Kepler (GTX 600/700), adicione:
   #   -gencode arch=compute_35,code=sm_35
-  set(_CMS_GENCODE_FLAGS -O3 --std=c++14)
+  # Padrao C++ do lado do nvcc. A partir do CUDA 12 o Thrust/CUB/libcu++ que vem
+  # no toolkit EXIGEM C++17 -- com --std=c++14 o build morre em:
+  #   error #error Thrust requires at least C++17
+  # O host (CMAKE_CXX_STANDARD 14, linha 6) fica como esta': o .cu e' compilado
+  # separado e so' expoe uma interface C simples, entao os dois padroes convivem.
+  if(CUDA_VERSION VERSION_GREATER_EQUAL "12.0")
+    set(_CMS_GENCODE_FLAGS -O3 --std=c++17)
+  else()
+    set(_CMS_GENCODE_FLAGS -O3 --std=c++14)
+  endif()
   set(_CMS_HIGHEST_ARCH "")
 
-  if(CUDA_VERSION VERSION_GREATER_EQUAL "6.5")
+  # LIMITE SUPERIOR nas arquiteturas velhas: o CUDA 13 REMOVEU o suporte a
+  # Maxwell (sm_52), Pascal (sm_61) e Volta (sm_70). Pedi-las a um nvcc 13 nao
+  # e' aviso, e' erro fatal na hora do build:
+  #   nvcc fatal: Unsupported gpu architecture 'compute_52'
+  # Sem esta guarda, instalar um toolkit novo QUEBRA a compilacao -- e o repo do
+  # Ubuntu 26.04 so' publica CUDA 13.
+  #
+  # Consequencia a saber: um build feito com CUDA 13 NAO roda em placa Maxwell ou
+  # Pascal. PTX so' tem compatibilidade pra frente (GPU mais nova que o virtual
+  # arch), nunca pra tras. Se a frota ainda tiver GTX 900/10, aquela maquina
+  # precisa compilar com um toolkit 12.x.
+  if(CUDA_VERSION VERSION_GREATER_EQUAL "6.5" AND CUDA_VERSION VERSION_LESS "13.0")
     list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_52,code=sm_52)
     set(_CMS_HIGHEST_ARCH "52")
   endif()
-  if(CUDA_VERSION VERSION_GREATER_EQUAL "8.0")
+  if(CUDA_VERSION VERSION_GREATER_EQUAL "8.0" AND CUDA_VERSION VERSION_LESS "13.0")
     list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_61,code=sm_61)
     set(_CMS_HIGHEST_ARCH "61")
   endif()
@@ -117,6 +139,19 @@ if(CUDA_FOUND)
   if(CUDA_VERSION VERSION_GREATER_EQUAL "11.1")
     list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_86,code=sm_86)
     set(_CMS_HIGHEST_ARCH "86")
+  endif()
+  if(CUDA_VERSION VERSION_GREATER_EQUAL "11.8")
+    list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_89,code=sm_89)
+    set(_CMS_HIGHEST_ARCH "89")
+  endif()
+  # Blackwell (RTX 50). O compute_120 so' existe a partir do CUDA 12.8 -- pedir
+  # antes disso da' "nvcc fatal: Unsupported gpu architecture 'compute_120'".
+  # Sem este bloco, numa RTX 50 o build passa mas o SASS mais alto e' sm_89: o
+  # driver cai no PTX de compute_89 e compila em JIT (funciona, mas com pausa no
+  # primeiro kernel). Com o bloco, sai SASS nativo.
+  if(CUDA_VERSION VERSION_GREATER_EQUAL "12.8")
+    list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_120,code=sm_120)
+    set(_CMS_HIGHEST_ARCH "120")
   endif()
 
   # PTX fallback (forward compatibility): -gencode ...,code=sm_XX só embute

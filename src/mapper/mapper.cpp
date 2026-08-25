@@ -77,6 +77,10 @@ char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 int neural_map_num_clouds = 1;
 extern int mapping_mode;
+// -interpolate_by_globalpos on: durante a varredura, em vez de EXTRAPOLAR a pose pelo
+// modelo de bicicleta (v, phi), interpola entre as duas ultimas globalpos reais. Vale
+// so' em mapping_mode, onde as poses vem prontas de um SLAM e sao melhores que o modelo.
+int interpolate_by_globalpos = 0;
 int publish_diff_map = 0;
 double publish_diff_map_interval = 0.5;
 double mapper_velodyne_range_max;
@@ -421,6 +425,57 @@ mapper_clone_map(carmen_map_t *source, carmen_map_t *target, char map_type)
 }
 
 
+
+/*
+ * Pose do robo dt segundos depois de robot_timestamp, INTERPOLADA entre as duas ultimas
+ * globalpos, em vez de extrapolada pelo modelo de bicicleta.
+ *
+ * O modelo de bicicleta estima a taxa de guinada a partir de v e phi (esterco). Numa
+ * varredura de ~50 ms isso e' aproximacao boa em reta e ruim em curva -- e o erro de
+ * guinada aparece no mapa como a nuvem GIRADA um pouco, borrando parede e poste.
+ * Quando as poses ja' vem de um SLAM, a guinada real esta' na diferenca entre duas
+ * globalpos seguidas: usar ela e' mais fiel que remodelar a dinamica do carro.
+ *
+ * Procura a globalpos anterior mais proxima (ate' 0,5 s atras) e aplica regra de tres:
+ *   (dt) / (t_atual - t_anterior) = (pose_i - pose_atual) / (pose_atual - pose_anterior)
+ */
+static carmen_pose_3D_t
+interpolate_position_by_globalpos(carmen_pose_3D_t robot_pose, double robot_timestamp, double dt)
+{
+	double diff, min_diff_timestamp = 0.5;
+	int last_last_globalpos = last_globalpos;
+	int i = last_globalpos;
+
+	do {
+		i--;
+		if (i < 0)
+			i = GLOBAL_POS_QUEUE_SIZE - 1;
+
+		diff = fabs(globalpos_history[i].timestamp - robot_timestamp);
+		if (diff < min_diff_timestamp && diff > 0.0)
+		{
+			min_diff_timestamp = diff;
+			last_last_globalpos = i;
+		}
+	} while (i != last_globalpos);
+
+	carmen_pose_3D_t ip = robot_pose;
+
+	// Sem globalpos anterior utilizavel, o denominador seria zero: devolve a pose crua,
+	// que e' o mesmo que nao interpolar.
+	double base = robot_timestamp - globalpos_history[last_last_globalpos].timestamp;
+	if (last_last_globalpos == last_globalpos || base == 0.0)
+		return (ip);
+
+	diff = dt / base;
+	ip.position.x += diff * (robot_pose.position.x - globalpos_history[last_last_globalpos].pose.position.x);
+	ip.position.y += diff * (robot_pose.position.y - globalpos_history[last_last_globalpos].pose.position.y);
+	ip.orientation.yaw += diff * carmen_normalize_theta(robot_pose.orientation.yaw - globalpos_history[last_last_globalpos].pose.orientation.yaw);
+
+	return (ip);
+}
+
+
 static void
 update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 	carmen_map_set_t *map_set,
@@ -473,6 +528,12 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 			phi,
 			car_config.distance_between_front_and_rear_axles
 		);
+
+		if (interpolate_by_globalpos && mapping_mode)
+			robot_interpolated_position = interpolate_position_by_globalpos(
+					sensor_data->robot_pose[point_cloud_index],
+					sensor_data->robot_timestamp[point_cloud_index],
+					dt1 + dt2);
 
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
@@ -586,6 +647,12 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 		double dt2 = j * dt;
 		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
 				dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+
+		if (interpolate_by_globalpos && mapping_mode)
+			robot_interpolated_position = interpolate_position_by_globalpos(
+					sensor_data->robot_pose[point_cloud_index],
+					sensor_data->robot_timestamp[point_cloud_index],
+					dt1 + dt2);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
@@ -712,6 +779,12 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_set_t *m
 		double dt2 = j * dt;
 		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
 				dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+
+		if (interpolate_by_globalpos && mapping_mode)
+			robot_interpolated_position = interpolate_position_by_globalpos(
+					sensor_data->robot_pose[point_cloud_index],
+					sensor_data->robot_timestamp[point_cloud_index],
+					dt1 + dt2);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
@@ -1467,8 +1540,9 @@ update_data_params_with_lidar_data(int sensor_number, carmen_velodyne_variable_s
 	// 	printf ("%lf ", sensors_params[sensor_number].vertical_correction[i]);
 	// printf ("\n");
 
-	variable_scan_update_points_with_remission_check(msg, sensors_params[sensor_number].vertical_resolution,
+	variable_scan_update_points_with_horizontal_correction(msg, sensors_params[sensor_number].vertical_resolution,
 			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index],
+			sensors_params[sensor_number].horizontal_angles_deltas,
 			sensors_data[sensor_number].intensity[sensors_data[sensor_number].point_cloud_index],
 			sensors_params[sensor_number].ray_order, sensors_params[sensor_number].vertical_correction, sensors_params[sensor_number].range_max,
 			sensors_params[sensor_number].range_division_factor, msg->timestamp, use_remission);
@@ -2462,7 +2536,11 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 
 	for (i = 0; i < number_of_sensors; i++)
 	{
+		// Banda de altura padrao de todo sensor: a global do mapper. Quem tiver
+		// lidar<N>_safe_height_from_ground / lidar<N>_unsafe_height_above_ground no
+		// .ini sobrescreve em carmen_mapper_get_lidars_sensor_params().
 		sensors_params[i].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
+		sensors_params[i].safe_height_from_ground = safe_height_from_ground;
 
 		sensors_data[i].ray_position_in_the_floor = (carmen_vector_2D_t **)  calloc(number_of_threads, sizeof(carmen_vector_2D_t*));
 		sensors_data[i].maxed = (int **) calloc(number_of_threads, sizeof(int*));
@@ -2480,6 +2558,7 @@ carmen_mapper_get_alive_sensors(int argc, char **argv)
 		sensors_params[i].ray_order = NULL;
 		sensors_params[i].sensor_to_support_matrix = NULL;
 		sensors_params[i].vertical_correction = NULL;
+		sensors_params[i].horizontal_angles_deltas = NULL;	// so' os LiDARs da lista de needs_horizontal_correction() preenchem
 		sensors_params[i].vertical_resolution = 0;
 
 		for (int j = 0; j < number_of_threads; j++)
@@ -2596,19 +2675,40 @@ carmen_mapper_sort_ray_order_by_vertical_correction_angles(sensor_parameters_t p
 
 
 void
+/*
+ * Reordena as tabelas por ray_order, para que o indice i passe a significar "o i-esimo raio
+ * em ordem de elevacao" -- que e' como o resto do modulo consome (distance[ray_order[i]]).
+ *
+ * O horizontal_angles_deltas TEM que vir junto. Ele e' indexado pelo mesmo i, entao se
+ * ficar na ordem crua do .ini enquanto vertical_correction e ray_order sao permutados, cada
+ * anel passa a receber o desvio de azimute de OUTRO anel. No OT-128 da IARA, cujos
+ * vertical_angles sao estritamente decrescentes, o sort ascendente transforma ray_order na
+ * reversao total [n-1..0]: o anel i recebe o desvio do anel n-1-i. Isso nao gera erro
+ * nenhum -- compila, roda, e a nuvem sai girada por anel.
+ *
+ * Sensor sem correcao horizontal tem horizontal_angles_deltas == NULL, e o memcpy estouraria:
+ * por isso as duas guardas.
+ */
 carmen_mapper_sort_vertical_correction_angles(sensor_parameters_t params)
 {
 	double aux[params.vertical_resolution];
+	double aux2[params.vertical_resolution];
 
 	memcpy(aux, params.vertical_correction, params.vertical_resolution * sizeof(double));
+	if (params.horizontal_angles_deltas != NULL)
+		memcpy(aux2, params.horizontal_angles_deltas, params.vertical_resolution * sizeof(double));
 
 	for (int i = 0; i < params.vertical_resolution; i++)
+	{
 		params.vertical_correction[i] = aux[params.ray_order[i]];
+		if (params.horizontal_angles_deltas != NULL)
+			params.horizontal_angles_deltas[i] = aux2[params.ray_order[i]];
+	}
 }
 
 
 void
-carmen_mapper_get_lidars_sensor_params()
+carmen_mapper_get_lidars_sensor_params(int argc, char **argv)
 {
 #ifdef USE_REAR_BULLBAR
 	//0 a 2, 0 é a sensor_board, 1 é a front_bullbar, 2 é a rear_bullbar
@@ -2653,11 +2753,56 @@ carmen_mapper_get_lidars_sensor_params()
 		sensors_params[i + 10].vertical_resolution = lidar_config[i].shot_size;
 		sensors_params[i + 10].ray_order = lidar_config[i].ray_order;
 		sensors_params[i + 10].vertical_correction = lidar_config[i].vertical_angles;
+		// LiDAR que nao precisa da correcao fica com NULL e o caminho segue como antes.
+		if (needs_horizontal_correction(lidar_config[i].model))
+			sensors_params[i + 10].horizontal_angles_deltas = lidar_config[i].horizontal_angles_deltas;
+
+		// Diz de fora se a correcao de azimute por canal esta' de pe' neste LiDAR --
+		// sem isso, so' dava para saber lendo o codigo, e uma nuvem borrada por falta
+		// de correcao parece um monte de outra coisa no mapa.
+		if (sensors_params[i + 10].horizontal_angles_deltas != NULL)
+		{
+			double min_delta = 0.0, max_delta = 0.0;
+			int nao_zerados = 0;
+			for (int k = 0; k < lidar_config[i].shot_size; k++)
+			{
+				double d = sensors_params[i + 10].horizontal_angles_deltas[k];
+				if (d < min_delta) min_delta = d;
+				if (d > max_delta) max_delta = d;
+				if (d != 0.0) nao_zerados++;
+			}
+			printf("[mapper] lidar%d (%s): correcao HORIZONTAL de azimute LIGADA -- %d de %d canais com desvio, faixa %.3f..%.3f graus\n",
+					i, lidar_config[i].model, nao_zerados, lidar_config[i].shot_size, min_delta, max_delta);
+		}
+		else
+			printf("[mapper] lidar%d (%s): correcao HORIZONTAL de azimute DESLIGADA (modelo fora da lista de needs_horizontal_correction)\n",
+					i, lidar_config[i].model);
+		fflush(stdout);
 		sensors_params[i + 10].range_max = lidar_config[i].max_range;
 		sensors_params[i + 10].range_max_factor = mapper_range_max_factor;
 		sensors_params[i + 10].range_division_factor = (double) lidar_config[i].range_division_factor;
 		sensors_params[i + 10].time_spent_by_each_scan = lidar_config[i].time_between_shots;
+		// Banda de altura DESTE LiDAR. As duas chaves sao opcionais: sem elas vale a
+		// global do mapper, que e' o que valia antes de a banda por sensor existir.
+		// Dois LiDARs do mesmo carro podem ter bandas diferentes -- um no teto vendo
+		// longe, outro no para-choque vendo o proximo, cada um com o seu teto.
 		sensors_params[i + 10].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
+		sensors_params[i + 10].safe_height_from_ground = safe_height_from_ground;
+		{
+			char safe_key[128], unsafe_key[128];
+			sprintf(safe_key, "lidar%d_safe_height_from_ground", i);
+			sprintf(unsafe_key, "lidar%d_unsafe_height_above_ground", i);
+
+			carmen_param_allow_unfound_variables(1);
+			carmen_param_t height_band_param_list[] =
+			{
+				{(char *) "mapper", safe_key, CARMEN_PARAM_DOUBLE, &sensors_params[i + 10].safe_height_from_ground, 0, NULL},
+				{(char *) "mapper", unsafe_key, CARMEN_PARAM_DOUBLE, &sensors_params[i + 10].unsafe_height_above_ground, 0, NULL},
+			};
+			carmen_param_install_params(argc, argv, height_band_param_list,
+					sizeof(height_band_param_list) / sizeof(height_band_param_list[0]));
+			carmen_param_allow_unfound_variables(0);
+		}
 
 		carmen_mapper_init_velodyne_points(&sensors_data[i + 10].points, &sensors_data[i + 10].intensity, &sensors_data[i + 10].robot_pose, &sensors_data[i + 10].robot_velocity,
 		        &sensors_data[i + 10].robot_timestamp, &sensors_data[i + 10].robot_phi, &sensors_data[i + 10].points_timestamp);
@@ -3143,6 +3288,7 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "commandline", (char *) "num_clouds", CARMEN_PARAM_INT, &neural_map_num_clouds, 0, NULL},
 		{(char *) "commandline", (char *) "time_secs_between_map_save", CARMEN_PARAM_DOUBLE, &time_secs_between_map_save, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
+		{(char *) "commandline",  (char *) "interpolate_by_globalpos", CARMEN_PARAM_ONOFF, &interpolate_by_globalpos, 0, NULL},
 		{(char *) "commandline", (char *) "level_msg", CARMEN_PARAM_INT, &level_msg, 0, NULL},
 		{(char *) "commandline", (char *) "clean_bellow_car", CARMEN_PARAM_ONOFF, &clean_map_bellow_car, 0, NULL},
 		{(char *) "commandline", (char *) "pose_gate_max_delay", CARMEN_PARAM_DOUBLE, &pose_gate_max_delay, 0, NULL},
@@ -3167,5 +3313,5 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 	carmen_mapper_get_sensors_param(argc, argv);
 
 	// FILL THE sensor_params STRUCTURE VECTOR from 10 to 25 with alive lidars data
-	carmen_mapper_get_lidars_sensor_params();
+	carmen_mapper_get_lidars_sensor_params(argc, argv);
 }

@@ -130,7 +130,21 @@ public:
         // carimba o FIM -- e o graphslam_publish casa timestamps com tolerancia de
         // 1 us. Sem essa ponte nao da' pra reconstruir o valor original com
         // precisao suficiente do lado do SC-LIO-SAM.
-        scan_time_ref_pub_ = nh_.advertise<sensor_msgs::TimeReference>("/carmen/scan_time_reference", 20);
+        //
+        // FILA DE 400, nao 20. Do outro lado o mapOptmization assina com fila 400 e roda
+        // em ros::spin() SINGLE-THREAD: enquanto o ICP mastiga o mapa (26 M de pontos no
+        // ARGOS), o callback deste topico nao roda e as mensagens se acumulam. Com fila
+        // 20 -- 1 s a 20 Hz -- elas eram DESCARTADAS aqui no publicador antes de chegar.
+        //
+        // O estrago era total e silencioso: o lookupCarmenStamp() do SC-LIO-SAM faz busca
+        // EXATA por nanossegundo, entao stamp perdido = scan sem timestamp CARMEN = pose
+        // descartada. Medido no ARGOS: a nuvem chegava ao mapOptimization 2 s ANTES do
+        // TimeReference correspondente, 516 scans descartados, poses_opt.dat com 0 bytes.
+        // Na IARA nao aparecia porque o mapa e' menor e o ICP acompanha.
+        //
+        // 400 casa com a fila do assinante e cobre ~20 s de atraso a 20 Hz. TimeReference
+        // tem ~50 bytes: o custo de memoria e' desprezivel perto de perder a pose.
+        scan_time_ref_pub_ = nh_.advertise<sensor_msgs::TimeReference>("/carmen/scan_time_reference", 400);
         collision_markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/collision_model_markers", 1);
         // Latched: quem assinar depois (RViz reaberto) recebe o modelo na hora.
         car_model_pub_ = nh_.advertise<visualization_msgs::Marker>("/car_model_marker", 1, /*latch=*/true);
@@ -564,17 +578,17 @@ void PointcloudNode::load_carmen_lidar_config(int argc, char **argv)
     // offset fica em 0/identidade (setado no construtor) e o ponto sai
     // exatamente como antes: nenhuma regressão pros LiDARs sem essa correção.
     //
-    // DESLIGADO NO CARMEN. O campo horizontal_angles_deltas nao existe no
-    // carmen_lidar_config do CARMEN (velodyne_messages.h) -- e' um acrescimo do
-    // fork de origem, alimentado pela chave lidar<N>_horizontal_angles do
-    // param_daemon de la'. Sem o campo nao ha' o que ler, e o caminho ja' esta' pra
-    // isso: ring_cos_az_off_/ring_sin_az_off_ ficam na identidade posta pelo
-    // construtor e o azimute sai do proprio indice do shot, como em qualquer
-    // LiDAR sem correcao horizontal.
+    // LIGADO. O campo horizontal_angles_deltas foi acrescentado ao
+    // carmen_lidar_config (velodyne_messages.h) e o load_lidar_config()
+    // (velodyne_interface.cpp) passou a ler a chave OPCIONAL
+    // lidar<N>_horizontal_angles do param_daemon.
     //
-    // Pra religar: acrescente o campo ao carmen_lidar_config + load_lidar_config()
-    // do CARMEN e troque o 0 por 1 aqui.
-#define CARMEN_LIDAR_CONFIG_HAS_HORIZONTAL_DELTAS 0
+    // Quando a chave nao existe -- ou tem menos valores que shot_size -- o
+    // load_lidar_config deixa o vetor todo em zero, e o has_non_zero_deltas
+    // abaixo detecta isso: ring_cos_az_off_/ring_sin_az_off_ ficam na identidade
+    // posta pelo construtor e o azimute sai do proprio indice do shot, como em
+    // qualquer LiDAR sem correcao horizontal. Nenhuma regressao.
+#define CARMEN_LIDAR_CONFIG_HAS_HORIZONTAL_DELTAS 1
 
 #if CARMEN_LIDAR_CONFIG_HAS_HORIZONTAL_DELTAS
     if (num_rays > 0 && cfg->horizontal_angles_deltas && cfg->ray_order) {

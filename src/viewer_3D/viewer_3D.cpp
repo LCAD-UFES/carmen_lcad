@@ -659,7 +659,13 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 	int discarded_points = 0;
 
     dt = lidar_message->timestamp - car_fused_time - lidar_message->number_of_shots * lidar_config.time_between_shots;
-	
+
+    // Desvio de azimute por canal (lidar<N>_horizontal_angles). Sem isso os aneis
+    // saem girados uns em relacao aos outros e a nuvem borra -- e' o mesmo ajuste
+    // que o mapper e o localize fazem via variable_scan_update_points_with_horizontal_correction().
+    int apply_horizontal_correction = needs_horizontal_correction(lidar_config.model) &&
+                                      (lidar_config.horizontal_angles_deltas != NULL);
+
     for (int i = 0; i < lidar_message->number_of_shots; i++, dt += lidar_config.time_between_shots)
 	{
 		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi, distance_between_front_and_rear_axles);
@@ -674,7 +680,11 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 				continue;
 			}
 
-			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(lidar_message->partial_scan[i].angle),
+			double horizontal_angle = lidar_message->partial_scan[i].angle;
+			if (apply_horizontal_correction)
+				horizontal_angle += lidar_config.horizontal_angles_deltas[j];
+
+			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(horizontal_angle),
 							carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) lidar_message->partial_scan[i].distance[j] / (double) lidar_config.range_division_factor,
 							lidar_to_board_matrix, board_to_car_matrix, lidar_pose_position, sensor_board_1_pose_position);
             carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position, &r_matrix_car_to_global);

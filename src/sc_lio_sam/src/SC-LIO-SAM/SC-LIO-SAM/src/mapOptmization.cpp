@@ -4672,10 +4672,23 @@ public:
 
         // Só depois que o robô encaixou no mapa. Antes disso a pose vem do chute
         // inicial / GPS / snap, e cada correção entra no arquivo como um salto.
-        if (!locEverAnchored.load())
+        //
+        // Com posesRequireAnchor false (default do modo "manual") este portao sai do
+        // caminho: a pose inicial e' a que o operador deu em initialPose*, nao vem de
+        // fix nenhum, e nao ha' correcao pendente para esperar. Sem isso, veiculo sem
+        // GPS so' comecava a gravar depois de um clique de "2D Pose Estimate" no RViz --
+        // e, se ninguem clicasse, o arquivo ficava vazio sem nunca dizer o porque alem
+        // desta linha de log.
+        //
+        // O tratamento de descontinuidade adiante NAO depende deste portao: se um snap
+        // acontecer no meio da gravacao, o locAnchorCount muda, o aviso sai e os
+        // posesSettleScans seguintes sao descartados do mesmo jeito.
+        if (posesRequireAnchor && !locEverAnchored.load())
         {
             ROS_INFO_THROTTLE(10.0,
-                "poses_opt: aguardando o robo encaixar no mapa para comecar a gravar.");
+                "poses_opt: aguardando o robo encaixar no mapa para comecar a gravar. "
+                "(posesRequireAnchor=true; em veiculo sem GPS use posesOriginMode 'manual' "
+                "ou ponha posesRequireAnchor: false)");
             return;
         }
 
