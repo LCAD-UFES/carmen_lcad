@@ -150,3 +150,203 @@ O comentário em `carmen-argos.ini:1037` diz que o
 `behavior_selector_rddf_num_poses_ahead_limit = 150` foi dimensionado supondo espaçamento de
 **0,5 m** (75 m de janela). O valor atual está ~10× mais denso do que o resto dos parâmetros
 supõe. Numa rota de 442 m, 7 m de lookahead é pouco.
+
+---
+
+# Segundo bug: o `route_planner` segfaultava com 2+ anotações
+
+Encontrado em 2026-08-26, depois que a correção acima entrou. É **independente** dela e
+muito mais antigo.
+
+## Sintoma
+
+`proccontrol` reportando, de forma intermitente:
+
+```
+./route_planner ... exited due to SIGNAL (code = 11)
+```
+
+Código 11 = `SIGSEGV`. O `proccontrol` respawnava o módulo, mas a instância nova voltava em
+`IDLE` sem destino — `set_destination_flag` só é ligado por uma
+`carmen_route_planner_destination_message` que chega de fora, e ninguém reenvia. Resultado
+prático: o robô terminava o rddf que os módulos de baixo ainda tinham em mãos, parava no
+último ponto dele, e nada mais era atualizado.
+
+## Causa raiz: a struct cresceu, o formato IPC não
+
+`carmen_annotation_t` (`src/global/global.h`) tinha **9 campos**:
+
+```c
+carmen_vector_3D_t annotation_point;   //  0..24
+double annotation_orientation;         // 24..32
+char  *annotation_description;         // 32..40
+int    annotation_type;                // 40..44
+int    annotation_code;                // 44..48
+int    annotation_id;                  // 48..52   <-- sem uso
+int    size;                           // 52..56   <-- sem uso
+double *x_points;                      // 56..64   <-- sem uso
+double *y_points;                      // 64..72   <-- sem uso
+```
+
+→ `sizeof(carmen_annotation_t)` = **72 bytes**.
+
+Mas o formato IPC em `rddf_messages.h` descreve só os **5 primeiros**:
+
+```
+CARMEN_RDDF_ANNOTATION_MESSAGE_FMT
+  "{int, <{{double,double,double},double,string,int,int}:1>,double,string}"
+```
+
+→ o marshaller anda pelo array de **48 em 48 bytes**.
+
+A partir do **segundo** elemento tudo desalinha. No offset 32 do "elemento 1" (48+32 = 80),
+onde o formato espera o `char *annotation_description`, o que está de fato na memória é o
+campo `annotation_point.y` do elemento real — um `double`. O IPC chama `strlen()` nesse valor
+e morre.
+
+Isso foi confirmado bit a bit no gdb: o ponteiro que estourou era `0x408f412597531754`, que
+como IEEE754 vale `1000.1433550349707` — exatamente o `y` da segunda anotação.
+
+```
+#0  __strlen_avx2 ()
+#1  x_ipcStrLen (s=0x408f412597531754 <Cannot access memory>)
+#2  x_ipc_STR_Trans_ELength (dstart=32)
+#3  x_ipc_bufferSize1 (dataStruct=<annotation_queue_message>)
+...
+#9  IPC_publishData (msgName="carmen_rddf_annotation_message")
+#10 carmen_rddf_play_publish_annotation_queue ()
+#11 build_and_send_rddf_and_annotations ()
+#12 route_planner (globalpos)
+```
+
+**Com uma anotação só nunca quebra** — apenas o elemento 0 é lido, e os 48 primeiros bytes
+dele estão corretos. É exatamente por isso que um mapa funcionava e o outro não:
+
+| Mapa | anotações | comportamento |
+|---|---|---|
+| `lcad2` | 1 | nunca caiu |
+| `ufes_argos` | 6 | caía |
+| `argos-rddf-ct13` (simulador) | várias | caía |
+
+Não é regressão da migração: os 4 campos entraram no commit `831a94b58`
+("subindo arquivos src/global") sem que o `_FMT` fosse atualizado junto.
+
+## Correção
+
+Os 4 campos **não são usados em lugar nenhum da árvore** (verificado por busca em
+`src/` e `sharedlib/`). Foram removidos, e `sizeof(carmen_annotation_t)` voltou a 48 —
+casando com o formato.
+
+Optou-se por encolher a struct em vez de estender o `_FMT` porque o formato de 5 campos já
+está **compilado dentro dos binários pré-compilados** de `bin/` (`task_manager`,
+`offroad_planner`...). Mudar o formato quebraria todos eles de uma vez — exatamente a classe
+de problema descrita na primeira metade deste documento.
+
+## A armadilha do rebuild
+
+Mexer em `global.h` obriga a recompilar **todo módulo que usa a struct**, e o
+`Makefile.depend` de vários deles **não lista `global.h`** — o `make` os considera em dia e
+não os reconstrói. Depois do primeiro rebuild o crash apenas *mudou de lugar*, para dentro da
+`librddf_util`, porque `src/rddf/rddf_play_annotations.o` continuava sendo o objeto de 18 de
+agosto, ainda com o layout de 72 bytes.
+
+Foi preciso apagar os `.o` à mão:
+
+```bash
+for m in global rddf behavior_selector navigator_gui2 viewer_3D; do
+    rm -f src/$m/*.o src/$m/*/*.o
+    (cd src/$m && make)
+done
+# e depois os que ficam fora do PACKAGES
+for m in route_planner offroad_planner; do rm -f src/$m/*.o; (cd src/$m && make); done
+```
+
+Eram **57 objetos velhos**. Como diagnosticar: procure na instrução que falhou um offset
+maior que o `sizeof` atual da struct, ou a constante mágica de divisão do `vector::size()`
+(`0x6666666666666667` corresponde a elementos de 80 bytes) — ela denuncia código compilado
+contra o layout antigo.
+
+## Verificação
+
+Reproduzido e corrigido com o simulador, sem hardware, usando
+`data/argos/process/process-argos-navigate.ini`:
+
+| | antes | depois |
+|---|---|---|
+| SIGSEGV em 70 s | 177 | **0** |
+| reinícios do `route_planner` | 178 | **1** (só o inicial) |
+| erros de unmarshall | 0 | 0 |
+
+Confirmado ainda com uma rodada de **120 s** com os binários de produção (sem `-g`, sem gdb):
+nenhum módulo morreu.
+
+---
+
+# Terceiro bug: "anda ate' um ponto e para"
+
+Encontrado em 2026-08-26, depois dos dois anteriores. Nao e' crash: o robo navega, para no
+meio da rota e nao segue mais.
+
+## Causa raiz: 3 velocidades de ruido em 6291 pontos
+
+O rddf gravado com a odometria do Go2 tem velocidades que oscilam em torno de zero quando o
+robo esta' praticamente parado. No `rddf_ufes.txt`:
+
+```
+pontos                      : 6291
+com |v| > 0.05 m/s          : 6287, TODOS positivos
+negativos                   : 3   (o mais negativo: -0.035 m/s)
+trocas de sinal de v        : indices 0, 115 e 117
+```
+
+Nao existe manobra de re' nenhuma nesse percurso. Mas dois consumidores leem o **sinal** de
+`v` e concluem que existe:
+
+**1. `save_path_beyond_first_velocity_switch()` corta a rota.** Ela varre o indice do rddf e
+quebra no primeiro `carmen_sign(v[i]) != carmen_sign(v[i+1])`, guardando o resto em
+`saved_path` para depois. Com o ruido, o corte caiu no ponto 115: dos 597 nos planejados, o
+indice ficou com **109**. Media pelo DBG:
+
+```
+[DBG] build_route: route_indexes=597
+[DBG-rddf] pos=0 size=109 ahead=100
+```
+
+A janela de poses entao drenava (100, 97, 92, ... 4, 3) conforme o robo avanccava, ate'
+`End_Of_Path_Reached` ~7 m depois -- de uma rota de 37 m.
+
+**2. O `behavior_selector` decide dar re'.** Ele le' o sinal das poses publicadas; ao ver os
+pontos negativos a' frente vai para `Stopping_To_Reverse` -> `Free_Reverse_Running`. Os pontos
+de ruido ficam em (7757343.74, -363787.13), exatamente onde o robo parava.
+
+## Correção
+
+Duas mudancas em `route_planner_main.cpp`, ambas com o mesmo limiar:
+
+```c
+#define MIN_V_FOR_DIRECTION_SWITCH 0.05   // m/s
+```
+
+- `save_path_beyond_first_velocity_switch()` passou a ignorar pontos abaixo do limiar ao
+  procurar a troca de sentido -- um ponto "parado" nao inicia nem encerra uma manobra.
+- `build_route_in_rddf_play_format()` (as duas sobrecargas) sanea o SINAL da velocidade ao
+  montar o indice: mantem o modulo e adota o ultimo sentido significativo. Trechos de re' de
+  verdade (|v| acima do limiar) continuam sendo respeitados.
+
+Corrigir no planner, e nao no dado, resolve para qualquer mapa -- inclusive rddfs ja'
+gravados -- e dispensa regerar grafo.
+
+## Verificação
+
+Simulacao completa LCAD -> CT13 (37 m) com `process-argos-navigate-ufes.ini`:
+
+| | antes | depois |
+|---|---|---|
+| indice do rddf | 109 de 597 | **597 de 597** |
+| janela de poses | drenava 100 -> 3 | **fica em 100** |
+| distancia percorrida | ~7 m, parava | **37 m, chegou** |
+| estados do behavior_selector | `Stopping_To_Reverse`, `Free_Reverse_Running` | `Free_Running` ate' `End_Of_Path_Reached` |
+| pose final | (7757343.7, -363787.2) | (7757361.20, -363791.19) |
+| alvo RDDF_PLACE_CT13 | | (7757361.09, -363791.25) -- **12 cm** |
+
+Ao chegar, o `route_planner` volta para `IDLE`, que e' o estado terminal correto.

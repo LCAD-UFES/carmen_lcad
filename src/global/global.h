@@ -204,10 +204,17 @@ typedef struct
 	char *annotation_description;
 	int annotation_type;
 	int annotation_code;
-	int annotation_id;
-	int size;
-	double *x_points;
-	double *y_points;
+	/* NAO acrescentar campos aqui sem atualizar o CARMEN_RDDF_ANNOTATION_MESSAGE_FMT em
+	   rddf_messages.h -- e sem recompilar TODOS os modulos que publicam/assinam a mensagem,
+	   inclusive os binarios pre-compilados de bin/ (task_manager, offroad_planner...).
+
+	   Havia aqui `int annotation_id; int size; double *x_points; double *y_points;`, sem uso
+	   em lugar nenhum da arvore. Eles levavam sizeof(carmen_annotation_t) a 72 bytes, mas o
+	   FMT descreve so' os 5 primeiros campos = 48 bytes. O marshaller do IPC anda pelo array
+	   de 48 em 48; a partir do SEGUNDO elemento ele lia desalinhado e pegava o `y` (um double)
+	   onde esperava o char* annotation_description -- strlen() nesse valor => SIGSEGV.
+	   Por isso so' quebrava com 2+ anotacoes na janela. Removidos para a struct voltar a casar
+	   com o formato. */
 } carmen_annotation_t;
 
 

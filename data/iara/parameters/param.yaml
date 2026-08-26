@@ -68,7 +68,7 @@ lio_sam:
   posesOriginY: 0.0
   posesOriginZ: 0.0
   posesOriginYaw: 0.0          # DIFERENCA de rumo entre os frames, NAO o yaw absoluto do ASTRO
-  posesOriginLock: true       # trava a origem: GPS nunca atualiza. Use com fix ruim pra nao estragar uma origem boa
+  posesOriginLock: false       # trava a origem: GPS nunca atualiza. Use com fix ruim pra nao estragar uma origem boa
   posesOriginRefine: false      # modo gps: segue refinando enquanto encaixado; false congela
   posesOriginMinSamples: 20    # modo gps: amostras antes de a origem valer
   posesOriginMaxDt: 0.50       # s, buraco maximo entre scans pra interpolar a pose no instante do fix
