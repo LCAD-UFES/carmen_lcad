@@ -9,12 +9,7 @@ This software is being developed with the support of DI/LCAD/UFES and is finance
 ### ➡️ Ubuntu 26.04 LTS — [**tutorial completo, aqui no repositório**](doc/migracao_ubuntu26/install/INSTALL_UBUNTU_26.04.md)
 
 Esta é a versão recomendada e o tutorial mais atual. Ele fica **dentro do próprio
-repositório** (não na wiki), então acompanha o código: é só seguir na ordem, copiando
-e colando.
-
-Ficou bem mais curto que os anteriores. Nos tutoriais de 16.04/20.04 era preciso
-compilar Boost, OpenCV, PCL (com patches manuais), g2o, dlib e FANN da fonte — no
-26.04 tudo isso vem do `apt`. Sobrou **uma única** biblioteca sem pacote, o GtkGLExt.
+repositório** (não na wiki).
 
 Resumo do caminho (o passo a passo com todos os detalhes está no tutorial):
 
@@ -60,6 +55,12 @@ English:
 
 Os `.ini` de parâmetros ficam em `src/`, e os binários rodam a partir de `bin/` — os
 caminhos dentro dos `.ini` são relativos a `bin/`.
+
+```bash
+cd $CARMEN_HOME/bin
+./central
+```
+
 
 ```bash
 cd $CARMEN_HOME/bin
