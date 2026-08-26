@@ -259,7 +259,21 @@ typedef struct
 #define EDGE_TYPE_
 // These structs are defined in a C++ library (road_network_generator_utils.h) but this is a C library
 
-
+/* Migracao Ubuntu 26.04: identico ao edge_t do global.h. O compilador trata dois typedef
+   de struct anonima como tipos DISTINTOS, entao com os dois headers no mesmo arquivo da'
+   "conflicting types for 'edge_t'". Guarda so' este typedef -- o EDGE_TYPE_ externo envolve
+   tambem o route_t, que precisa continuar sendo definido aqui. */
+#ifndef CARMEN_EDGE_T_DEFINED
+#define CARMEN_EDGE_T_DEFINED
+typedef struct
+{
+	int u;
+	int v;
+	int u_ref;
+	int v_ref;
+	double cost;
+} edge_t;
+#endif
 
 #define DISABLING_COST	1.0e100
 

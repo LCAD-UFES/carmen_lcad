@@ -14,6 +14,9 @@ commitado nem pushed** — as alterações estão só no working tree local, par
   da migração (arquivo, o quê, por quê). É o documento principal.
 - **`AUDIT_DEPENDENCIAS.md`** — auditoria das dependências externas: nome/versão do pacote no
   Ubuntu 26.04, o que mudou de nome, o que sumiu do apt, e o que continua sem pacote.
+- **`DIAGNOSTICO_ROUTE_OFFROAD_PLANNER.md`** — por que o `route_planner` travava na
+  pré-rota: formato IPC divergente entre os dois binários pré-compilados, a cronologia
+  dos commits que produziu isso, e a correção.
 - **`CHECKLIST_COMMIT.md`** — o que está no working tree agora: o que deve subir no commit, o
   que é artefato local de build e não deve subir, e os comandos prontos.
 - **`install/INSTALL_UBUNTU_26.04.md`** — 👉 **o tutorial de instalação**, do `git clone`

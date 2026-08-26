@@ -178,6 +178,12 @@ typedef struct
 #define MAX_NUM_TRAILERS 5
 
 
+/* Migracao Ubuntu 26.04: mesmo typedef existe em route_planner_messages.h, e o compilador
+   trata dois typedef de struct anonima como tipos DISTINTOS -- quem incluisse os dois levava
+   "conflicting types for 'edge_t'". A macro e' compartilhada com aquele header: o primeiro a
+   ser incluido define, o segundo pula. */
+#ifndef CARMEN_EDGE_T_DEFINED
+#define CARMEN_EDGE_T_DEFINED
 typedef struct
 {
 	int u;
@@ -186,6 +192,7 @@ typedef struct
 	int v_ref;
 	double cost;
 } edge_t;
+#endif
 
 
 typedef enum {CREATE_ACTION, READ_ACTION, UPDATE_ACTION, DELETE_ACTION} crud_t;

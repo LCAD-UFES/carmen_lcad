@@ -26,7 +26,10 @@
 #include <Python.h>
 
 #include <opencv2/core/version.hpp>
-#if CV_MAJOR_VERSION == 3
+// Migracao Ubuntu 26.04: OpenCV 4. O guard testava == 3 e caia no #else, que inclui
+// opencv/cv.h -- a API C do OpenCV 1.x, REMOVIDA no 4. Os headers modernos do ramo
+// do 3 valem igual no 4, entao >= 3 cobre os dois.
+#if CV_MAJOR_VERSION >= 3
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
