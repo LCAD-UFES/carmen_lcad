@@ -131,8 +131,23 @@ sudo apt-get install \
     libgtest-dev libudev-dev \
     libasound2-dev mpg123 portaudio19-dev \
     libjsoncpp-dev libfann-dev libnsl-dev libnotify-dev \
-    libpcap-dev autoconf automake libtool
+    libpcap-dev autoconf automake libtool \
+    libcasadi-dev libcasadi3.7
 ```
+
+Os **dois** pacotes da CasADi sao necessarios, e o `libcasadi-dev` **nao** puxa o outro
+(ele nao declara `Depends`, conferido com `apt-cache show`). Sem o runtime `libcasadi3.7`
+o build passa e a falha so' aparece na hora de rodar:
+
+```
+./offroad_planner: error while loading shared libraries: libcasadi.so.3.7:
+cannot open shared object file: No such file or directory
+```
+
+Quem exige a CasADi nao e' o `offroad_planner` diretamente e sim a `lib/libtrailer_nlp.so`,
+uma lib pre-compilada versionada no repo, que pede a soname `libcasadi.so.3.7` desde
+junho de 2023. Ver a secao da CasADi em `05_pendencias_conhecidas.md` para o motivo de o
+`-lcasadi` ter saido do `CASADI_DIR` do python no 26.04.
 
 ## 6. GtkGLExt — a única lib sem pacote
 

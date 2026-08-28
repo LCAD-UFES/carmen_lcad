@@ -74,6 +74,11 @@ initGl(int width, int height, carmen_vector_3D_t robot_size)
 
     glGenBuffers (1, &laser_buffer_id);
     glBindBuffer (GL_ARRAY_BUFFER, laser_buffer_id);
+    // Nao deixe o VBO ligado depois de criar: enquanto GL_ARRAY_BUFFER_BINDING != 0, toda
+    // chamada de vertex array com ponteiro de cliente (as glutSolid* da freeglut, usadas por
+    // draw_annotations()) trata o ponteiro como offset dentro deste buffer, que nao tem data
+    // store -- o driver le fora e o viewer_3D morre com SIGSEGV.
+    glBindBuffer (GL_ARRAY_BUFFER, 0);
 
     laser_pos_buffer = NULL;
 

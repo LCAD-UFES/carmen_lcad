@@ -17,6 +17,7 @@ xsens::Packet* packet;
 CmtOutputMode mode;
 CmtOutputSettings settings;
 char *dev;
+int baudrate;
 
 /* publish a global position message */
 
@@ -206,15 +207,29 @@ void shutdown_xsens(int x)
 static int read_parameters(int argc, char **argv)
 {
 	int num_items;
+	int mode_index, settings_index;
 
 	carmen_param_t param_list[] = {
-		{(char*)"xsens_mti", (char*)"mode", CARMEN_PARAM_INT, &mode, 0, NULL},
-		{(char*)"xsens_mti", (char*)"settings", CARMEN_PARAM_INT, &settings, 0, NULL},
+		{(char*)"xsens_mti", (char*)"mode", CARMEN_PARAM_INT, &mode_index, 0, NULL},
+		{(char*)"xsens_mti", (char*)"settings", CARMEN_PARAM_INT, &settings_index, 0, NULL},
 		{(char*)"xsens_mti", (char*)"dev", CARMEN_PARAM_STRING, &dev, 0, NULL}
 		};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	mode = (CmtOutputMode) mode_index;
+	settings = (CmtOutputSettings) settings_index;
+
+	// Opcional: inis antigos nao tem este parametro e continuam no baudrate historico da IARA.
+	baudrate = CARMEN_XSENS_DEFAULT_BAUDRATE;
+	carmen_param_t optional_param_list[] = {
+		{(char*)"xsens_mti", (char*)"baudrate", CARMEN_PARAM_INT, &baudrate, 0, NULL}
+		};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list)/sizeof(optional_param_list[0]));
+	carmen_param_allow_unfound_variables(0);
 
 	return 0;
 }
@@ -222,7 +237,7 @@ static int read_parameters(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    unsigned long mtCount;
+    unsigned long mtCount = 1;	// initializeXsens() sobrescreve, mas o Packet abaixo e alocado antes dela
 
     /* initialize carmen */
     //carmen_randomize(&argc, &argv);
@@ -239,7 +254,7 @@ int main(int argc, char **argv)
 
     packet = new xsens::Packet((unsigned short) mtCount, cmt3.isXm());
     /* Initializing Xsens */
-    initializeXsens(cmt3, mode, settings, mtCount, (char*)pName);
+    initializeXsens(cmt3, mode, settings, mtCount, (char*)pName, baudrate);
 
     /* Setup exit handler */
     signal(SIGINT, shutdown_xsens);

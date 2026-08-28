@@ -12,7 +12,22 @@
         <col id="0" translatable="yes">Robot</col>
       </row>
       <row>
-        <col id="0" translatable="yes">LCAD4</col>
+        <col id="0" translatable="yes">no_0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">no_180</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">no_360</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">no_540</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">no_720</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">no_900</col>
       </row>
     </data>
   </object>
@@ -29,13 +44,16 @@
         <col id="0" translatable="yes">Abort mission</col>
       </row>
       <row>
-        <col id="0" translatable="yes">MISSION2</col>
+        <col id="0" translatable="yes">FIBONACCI_MAIN</col>
       </row>
       <row>
-        <col id="0" translatable="yes">MISSION3</col>
+        <col id="0" translatable="yes">MISSION_TESTE_BANCADA</col>
       </row>
       <row>
-        <col id="0" translatable="yes">MISSION4</col>
+        <col id="0" translatable="yes">MISSION_TESTE_NAVEGACAO</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">MISSION_TESTE_PLACES</col>
       </row>
     </data>
   </object>
